@@ -1,0 +1,71 @@
+package omegadrive.bus;
+
+import omegadrive.GenesisProvider;
+import omegadrive.joypad.JoypadProvider;
+import omegadrive.memory.MemoryProvider;
+import omegadrive.sound.SoundProvider;
+import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.psg.PsgProvider;
+import omegadrive.util.Size;
+import omegadrive.vdp.VdpProvider;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+/**
+ * ${FILE}
+ * <p>
+ * Federico Berti
+ * <p>
+ * Copyright 2018
+ */
+public interface BusProvider {
+
+    Logger LOG = LogManager.getLogger(BusProvider.class.getSimpleName());
+
+    static BusProvider createBus() {
+        return new GenesisBus();
+    }
+
+    static BusProvider createLegacyBus(GenesisProvider genesis, MemoryProvider memory, JoypadProvider joypad, SoundProvider sound) {
+        return new GenBusLegacy(genesis, memory, null, null, joypad, null, sound);
+    }
+
+    BusProvider attachDevice(Object device);
+
+    GenesisProvider getEmulator();
+
+    MemoryProvider getMemory();
+
+    VdpProvider getVdp();
+
+    JoypadProvider getJoypad();
+
+    SoundProvider getSound();
+
+    long read(long address, Size size);
+
+    void setHLinesPassed(int value);
+
+    int getHLinesPassed();
+
+    void setHIntPending(boolean value);
+
+    void setSsf2Mapper(boolean value);
+
+    void checkInterrupts();
+
+    void write(long address, long data, Size size);
+
+    void reset();
+
+    long readInterruptVector(long vector);
+
+    default PsgProvider getPsg() {
+        return getSound().getPsg();
+    }
+
+    default FmProvider getFm() {
+        return getSound().getFm();
+    }
+
+}

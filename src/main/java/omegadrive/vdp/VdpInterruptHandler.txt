@@ -1,0 +1,203 @@
+https://gendev.spritesmind.net/forum/viewtopic.php?t=1308
+- Panorama Cotton is a bit tricky too, need good h int timing as correct interrupt pending emulation.
+- "Sunset Riders" does not display its logo effect correctly if you don't emulate the rarely
+used HVC latch bit (there is a thread about that one somewhere on the forum).
+
+
+http://gendev.spritesmind.net/forum/viewtopic.php?f=22&t=768
+
+//----------------------------------------------------------------------------------------
+//|        Video |PAL              |PAL              |PAL              |PAL              |
+//|         Mode |H32     (RSx=00) |H32     (RSx=00) |H40     (RSx=11) |H40     (RSx=11) |
+//|              |V28     (M2=0)   |V30     (M2=1)   |V28     (M2=0)   |V30     (M2=1)   |
+//| Test         |Int none(LSMx=*0)|Int none(LSMx=*0)|Int none(LSMx=*0)|Int none(LSMx=*0)|
+//|--------------------------------------------------------------------------------------|
+//|HCounter      |[1]0x00-0x93,    |<Same as H32V28> |[1]0x00-0xB6,    |<Same as H40V28> |
+//|progression   |[2]0xE9-0xFF     |                 |[2]0xE4-0xFF     |                 |
+//|--------------------------------------------------------------------------------------|
+//|VCounter      |HCounter changes |                 |HCounter changes |                 |
+//|increment     |from 0x84 to 0x85|<Same as H32V28> |from 0xA4 to 0xA5|<Same as H40V28> |
+//|              |in [1].          |                 |in [1].          |                 |
+//|--------------------------------------------------------------------------------------|
+//|HBlank set    |HCounter changes |                 |HCounter changes |                 |
+//|              |from 0x92 to 0x93|<Same as H32V28> |from 0xB2 to 0xB3|<Same as H40V28> |
+//|              |at end of [1].   |                 |in [1].          |                 |
+//|--------------------------------------------------------------------------------------|
+//|HBlank cleared|HCounter changes |                 |HCounter changes |                 |
+//|              |from 0x04 to 0x05|<Same as H32V28> |from 0x05 to 0x06|<Same as H40V28> |
+//|              |in [1].          |                 |in [1].          |                 |
+//|--------------------------------------------------------------------------------------|
+//|VCounter      |[1]0x00-0xFF,    |[1]0x00-0xFF,    |                 |                 |
+//|progression   |[2]0x00-0x02,    |[2]0x00-0x0A,    |<Same as H32V28> |<Same as H32V30> |
+//|              |[3]0xCA-0xFF     |[3]0xD2-0xFF     |                 |                 |
+//|--------------------------------------------------------------------------------------|
+//|VBlank set    |Vcounter changes |Vcounter changes |                 |                 |
+//|              |from 0xDF to 0xE0|from 0xEF to 0xF0|<Same as H32V28> |<Same as H32V30> |
+//|              |in [1].          |in [1].          |                 |                 |
+//|--------------------------------------------------------------------------------------|
+//|VBlank cleared|Vcounter changes |Vcounter changes |                 |                 |
+//|              |from 0xFE to 0xFF|from 0xFE to 0xFF|<Same as H32V28> |<Same as H32V30> |
+//|              |in [3].          |in [3].          |                 |                 |
+//|--------------------------------------------------------------------------------------|
+//|F flag set    |HCounter changes |HCounter changes |                 |                 |
+//|              |from 0x00 to 0x01|from 0x00 to 0x01|                 |                 |
+//|              |at start of [1], |at start of [1], |<Same as H32V28> |<Same as H32V30> |
+//|              |while VCounter is|while VCounter is|                 |                 |
+//|              |set to 0xE0 in   |set to 0xF0 in   |                 |                 |
+//|              |[1].             |[1].             |                 |                 |
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+//|        Video |NTSC             |NTSC             |NTSC             |NTSC             |
+//|         Mode |H32     (RSx=00) |H32     (RSx=00) |H40     (RSx=11) |H40     (RSx=11) |
+//|              |V28     (M2=0)   |V30     (M2=1)   |V28     (M2=0)   |V30     (M2=1)   |
+//| Test         |Int none(LSMx=*0)|Int none(LSMx=*0)|Int none(LSMx=*0)|Int none(LSMx=*0)|
+//|--------------------------------------------------------------------------------------|
+//|HCounter      |[1]0x00-0x93,    |<Same as H32V28> |[1]0x00-0xB6,    |<Same as H40V28> |
+//|progression   |[2]0xE9-0xFF     |                 |[2]0xE4-0xFF     |                 |
+//|--------------------------------------------------------------------------------------|
+//|VCounter      |HCounter changes |                 |HCounter changes |                 |
+//|increment     |from 0x84 to 0x85|<Same as H32V28> |from 0xA4 to 0xA5|<Same as H40V28> |
+//|              |in [1].          |                 |in [1].          |                 |
+//|--------------------------------------------------------------------------------------|
+//|HBlank set    |HCounter changes |                 |HCounter changes |                 |
+//|              |from 0x92 to 0x93|<Same as H32V28> |from 0xB2 to 0xB3|<Same as H40V28> |
+//|              |at end of [1].   |                 |in [1].          |                 |
+//|--------------------------------------------------------------------------------------|
+//|HBlank cleared|HCounter changes |                 |HCounter changes |                 |
+//|              |from 0x04 to 0x05|<Same as H32V28> |from 0x05 to 0x06|<Same as H40V28> |
+//|              |in [1].          |                 |in [1].          |                 |
+//|--------------------------------------------------------------------------------------|
+//|VCounter      |[1]0x00-0xEA     |[1]0x00-0xFF     |                 |                 |
+//|progression   |[2]0xE5-0xFF     |[2]0x00-0xFF     |<Same as H32V28> |<Same as H32V30> |
+//|              |                 |                 |                 |                 |
+//|--------------------------------------------------------------------------------------|
+//|VBlank set    |Vcounter changes |Vcounter changes |                 |                 |
+//|              |from 0xDF to 0xE0|from 0xEF to 0xF0|<Same as H32V28> |<Same as H32V30> |
+//|              |in [1].          |in [1].          |                 |                 |
+//|--------------------------------------------------------------------------------------|
+//|VBlank cleared|Vcounter changes |Vcounter changes |                 |                 |
+//|              |from 0xFE to 0xFF|from 0xFE to 0xFF|<Same as H32V28> |<Same as H32V30> |
+//|              |in [2].          |in [2].          |                 |                 |
+//|--------------------------------------------------------------------------------------|
+//|F flag set    |HCounter changes |HCounter changes |                 |                 |
+//|              |from 0x00 to 0x01|from 0x00 to 0x01|                 |                 |
+//|              |at start of [1], |at start of [1], |<Same as H32V28> |<Same as H32V30> |
+//|              |while VCounter is|while VCounter is|                 |                 |
+//|              |set to 0xE0 in   |set to 0xF0 in   |                 |                 |
+//|              |[1].             |[1].             |                 |                 |
+//----------------------------------------------------------------------------------------
+
+
+// The vertical counter will count to 224 pixels in 28 vertical cell mode,
+// and count to 240 pixels in 30 vertical cell mode.
+// The horizontal counter will count to 256 pixels in 32 horizontal cell mode,
+// and 320 pixels in 40 vertical cell mode.
+// During HBlank in 32 horizontal cell mode, when the counter reaches 264, it will increment.
+// It will then increment normally until 296 and then jump to a value of -46 indicating
+// the beam is restarting on a new line.
+// During HBlank in 40 horizontal cell mode, when the counter reaches 328, it will increment.
+// It will then increment normally until 360 and then jump to a value of -46 indicating
+// the beam is restarting on a new line.
+// During VBlank in 28 vertical cell mode the counter will continue to increment normally from 224 to 234.
+// It will reset to 229, indicating the beam will re-start on the top of the display.
+// It will then increment until active display.
+// During VBlank in 30 vertical cell mode the counter will continue to increment normally from 240 to 10.
+// It will reset to 210, indicating the beam will re-start on the top of the display.
+// It will then increment until active display.
+
+//    NTSC, 256x192 (SMS games only)
+//-------------
+//
+//    Lines Description
+//
+//192 Active display
+//24 Bottom border
+//3 Bottom blanking
+//3 Vertical blanking
+//13 Top blanking
+//27 Top border
+//
+//    V counter values
+//00-DA, D5-FF
+//
+//    NTSC, 256x224
+//-------------
+//
+//    Lines Description
+//
+//224 Active display
+//8 Bottom border
+//3 Bottom blanking
+//3 Vertical blanking
+//13 Top blanking
+//11 Top border
+//
+//    V counter values
+//00-EA, E5-FF
+//
+//    NTSC, 256x240
+//-------------
+//
+//    This mode does not work on NTSC machines. All 30 rows of the name table are
+//    displayed, there is no border, blanking, or retrace period, and the next
+//    frame starts after the 30th row. The display rolls continuously though it
+//    can be stabilized by adjusting the vertical hold.
+//
+//    V counter values
+//00-FF, 00-06
+//
+//    PAL, 256x192 (SMS games only)
+//------------
+//
+//    Lines Description
+//
+//192 Active display
+//48 Bottom border
+//3 Bottom blanking
+//3 Vertical blanking
+//13 Top blanking
+//54 Top border
+//
+//    V counter values
+//00-F2, BA-FF
+//
+//    PAL, 256x224
+//------------
+//
+//    Lines Description
+//
+//224 Active display
+//32 Bottom border
+//3 Bottom blanking
+//3 Vertical blanking
+//13 Top blanking
+//38 Top border
+//
+//    V counter values
+//00-FF, 00-02, CA-FF
+//
+//    PAL, 256x240
+//------------
+//
+//    Lines Description
+//
+//240 Active display
+//24 Bottom border
+//3 Bottom blanking
+//3 Vertical blanking
+//13 Top blanking
+//30 Top border
+//
+//    V counter values
+//00-FF, 00-0A, D2-FF
+//
+//    Here are some details about what the different screen areas look like,
+//    useful if you are emulating overscan or if you want to have a 'virtual'
+//    vertical hold control in your emulator.
+//
+//    Active display - Where the display generated by the VDP goes.
+//    Bottom border - Filled with border color from VDP register #7.
+//    Bottom blanking - Filled with a light black color. (like display was blanked)
+//    Vertical sync - Filled with a pure black color. (like display was turned off)
+//    Top blanking - Filled with a light black color. (like display was blanked)
+//    Top border - Filled with the border color from VDP register #7.

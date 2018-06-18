@@ -1,0 +1,40 @@
+group 'com.fberti.genesis'
+version '0.1-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    // https://mvnrepository.com/artifact/net.java.jinput/jinput
+    compile group: 'net.java.jinput', name: 'jinput', version: '2.0.7'
+    // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.10.0'
+    // https://mvnrepository.com/artifact/com.google.guava/guava
+    compile group: 'com.google.guava', name: 'guava', version: '25.1-jre'
+
+    //include local jars
+    compile fileTree(dir: 'lib', include: ['*.jar'])
+    testCompile fileTree(dir: 'lib', include: ['*.jar'])
+}
+
+def getDate() {
+    new Date().format('yyyyMMddHHmmssSSS')
+}
+
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Jar File Example',
+                'Implementation-Version': version,
+                'Main-Class': 'main.gen.Genesis'
+    }
+    baseName = project.name + '-all-' + getDate()
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
