@@ -22,11 +22,11 @@ public class FileLoader {
 
     private static int[] EMPTY = new int[0];
 
-    public static String basePath = "./roms/";
+    public static String basePath = System.getProperty("user.home") + File.separatorChar + "roms";
 
     public static Optional<File> openRomDialog() {
         Optional<File> res = Optional.empty();
-        JFileChooser fileChooser = new JFileChooser();
+        JFileChooser fileChooser = new JFileChooser(basePath);
         fileChooser.setFileFilter(new FileFilter() {
             @Override
             public String getDescription() {
@@ -39,7 +39,6 @@ public class FileLoader {
                 return f.isDirectory() || name.endsWith(".md") || name.endsWith(".bin");
             }
         });
-        fileChooser.setCurrentDirectory(new File(basePath));
         int result = fileChooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
             res = Optional.ofNullable(fileChooser.getSelectedFile());
