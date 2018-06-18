@@ -1,5 +1,5 @@
 group 'com.fberti.genesis'
-version '0.1-SNAPSHOT'
+version '0.01-SNAPSHOT'
 
 apply plugin: 'java'
 
@@ -24,7 +24,7 @@ dependencies {
 }
 
 def getDate() {
-    new Date().format('yyyyMMddHHmmssSSS')
+    new Date().format('yyyyMMdd')//HHmmssSSS')
 }
 
 //create a single Jar with all dependencies
@@ -32,7 +32,7 @@ task fatJar(type: Jar) {
     manifest {
         attributes 'Implementation-Title': 'Gradle Jar File Example',
                 'Implementation-Version': version,
-                'Main-Class': 'main.gen.Genesis'
+                'Main-Class': 'omegadrive.Genesis'
     }
     baseName = project.name + '-all-' + getDate()
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
