@@ -228,8 +228,7 @@ public class GenesisVdp implements VdpProvider {
         if (m3) {
             return lastVCounter;
         }
-        lastVCounter = interruptHandler.getVCounterExternal();
-        return lastVCounter;
+        return interruptHandler.getVCounterExternal();
     }
 
     @Override
@@ -237,8 +236,7 @@ public class GenesisVdp implements VdpProvider {
         if (m3) {
             return lastHCounter;
         }
-        lastHCounter = interruptHandler.getHCounterExternal();
-        return lastHCounter;
+        return interruptHandler.getHCounterExternal();
     }
 
     @Override
@@ -417,8 +415,9 @@ public class GenesisVdp implements VdpProvider {
         if (reg == 0x00) {
             lcb = ((data >> 5) & 1) == 1;
             ie1 = ((data >> 4) & 1) == 1;
-            m3 = ((data >> 1) & 1) == 1;
             de = ((data >> 0) & 1) == 1;
+            boolean newM3 = ((data >> 1) & 1) == 1;
+            updateM3(newM3);
         } else if (reg == 0x01) {
             evram = ((data >> 7) & 1) == 1;
             disp = ((data >> 6) & 1) == 1;
@@ -448,6 +447,14 @@ public class GenesisVdp implements VdpProvider {
             dmaSourceAddressHi = (int) (data & 0x3F);
             dmaMode = (int) ((data >> 6) & 0x3);
         }
+    }
+
+    private void updateM3(boolean newM3) {
+        if (newM3 && !m3) {
+            lastVCounter = getVCounter();
+            lastHCounter = getHCounter();
+        }
+        m3 = newM3;
     }
 
     boolean dmaRecien = false;
@@ -1659,13 +1666,13 @@ public class GenesisVdp implements VdpProvider {
     //    The address register wraps past address 7Fh.
     private void writeCramByte(int address, int data) {
         address &= (VDP_CRAM_SIZE - 1);
-        cram[address] = data;
+        cram[address] = data & 0xFF;
     }
 
     //    The address register wraps past address FFFFh.
     private void writeVramByte(int address, int data) {
         address &= (VDP_VRAM_SIZE - 1);
-        vram[address] = data;
+        vram[address] = data & 0xFF;
     }
 
     //    Even though there are 40 words of VSRAM, the address register will wrap
@@ -1673,7 +1680,7 @@ public class GenesisVdp implements VdpProvider {
     private void writeVsramByte(int address, int data) {
         address &= 0x7F;
         if (address < VDP_VSRAM_SIZE) {
-            vsram[address] = data;
+            vsram[address] = data & 0xFF;
         } else {
             //Arrow Flash
             LOG.warn("Ignoring vsram write to address: " + Integer.toHexString(address));
@@ -1690,8 +1697,6 @@ public class GenesisVdp implements VdpProvider {
         int addr = (int) ((first & 0x3FFF) | ((second & 0x3) << 14));
 
         int offset = addr + autoIncrementTotal;
-
-        data = data & 0xFF;
 
         writeVramByte(offset, data);
         int incrementOffset = autoIncrementTotal + autoIncrementData;
@@ -1722,7 +1727,7 @@ public class GenesisVdp implements VdpProvider {
 
         int offset = address + autoIncrementTotal;
 
-        int data1 = (word >> 8) & 0xFF;
+        int data1 = (word >> 8);
         int data2 = word & 0xFF;
 
         if (vramMode == VramMode.vsramWrite) {
