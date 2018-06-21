@@ -712,35 +712,24 @@ public class GenesisVdp implements VdpProvider {
     public boolean[][] windowPrio = new boolean[COLS][ROWS];
 
     private void runNew() {
+        interruptHandler.increaseHCounter();
+        line = interruptHandler.getvCounter();
         boolean displayEnable = isDisplayEnable();
-        int hCounter = interruptHandler.increaseHCounter();
-        boolean hBlankSet = interruptHandler.ishBlankSet();
-        boolean hBlankToggle = (hBlankSet && hb == 0) || (!hBlankSet && hb == 1);
-
-        if (hBlankToggle) {
-            hb = hBlankSet ? 1 : 0;
-        }
-        //draw on the last counter (use 9bit internal counter value)
-        if (hCounter == interruptHandler.COUNTER_LIMIT) {
-            //draw the line
-            drawScanline(displayEnable);
-        }
-
-        int vCounter = interruptHandler.getvCounter();
-        boolean vBlankSet = interruptHandler.isvBlankSet();
-        boolean vBlankToggle = (vBlankSet && vb == 0) || (!vBlankSet && vb == 1);
-        if (vBlankToggle) {
-//            LOG.info("VBlankToggle: hC " + hCounter + ", vC " + vCounter + ", vblank: " + vBlankSet);
-            vb = vBlankSet ? 1 : 0;
-        }
+        //disabling the display implies blanking
+        hb = !displayEnable || interruptHandler.ishBlankSet() ? 1 : 0;
+        vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
         if (interruptHandler.isvIntPending()) {
             vip = 1;
+            interruptHandler.printState("Set Vip, line " + line);
         }
+
         //draw on the last counter (use 9bit internal counter value)
-        if (vCounter == VdpInterruptHandler.COUNTER_LIMIT) {
-            spritesFrame = 0;
-            line = 0;
-            if (vBlankToggle) {
+        if (interruptHandler.isLastHCounter()) {
+            //draw the line
+            drawScanline(displayEnable);
+            //draw the frame
+            if (interruptHandler.isLastVCounter()) {
+                spritesFrame = 0;
                 evaluateSprites();
                 compaginateImage();
                 bus.getEmulator().renderScreen(screenData);
@@ -752,6 +741,7 @@ public class GenesisVdp implements VdpProvider {
 
     private void resetHLinesCounter() {
         bus.setHLinesPassed(registers[0xA]); //set the next HINT line
+        interruptHandler.printState("Reset HLine to " + bus.getHLinesPassed() + ", on line: " + line);
     }
 
     private void resetMode() {
@@ -767,26 +757,24 @@ public class GenesisVdp implements VdpProvider {
     private void drawScanline(boolean displayEnable) {
         //draw line
         int lineLimit = videoMode.getDimension().height;
-        if (displayEnable) {
-            if (line < lineLimit) {
+        if (line < lineLimit) {
+            if (displayEnable) {
                 spritesLine = 0;
-
                 renderBack();
                 renderPlaneA();
                 renderPlaneB();
                 renderWindow();
                 renderSprites();
             }
-        }
 //        The counter is loaded with the contents of register #10 in the following
 //        situations:
 //
 //        - Line zero of the frame.
 //        - When the counter has expired.
 //        - Lines 225 through 261. (note that line 224 is not included)
-        if (line < lineLimit) {
             bus.setHLinesPassed(bus.getHLinesPassed() - 1);
             if (bus.getHLinesPassed() == -1) {
+                interruptHandler.printState("Set HINT, line " + line);
                 bus.setHIntPending(true);
                 resetHLinesCounter();
             }
@@ -794,7 +782,6 @@ public class GenesisVdp implements VdpProvider {
         if (line == 0 || line > lineLimit) {
             resetHLinesCounter();
         }
-        line++;
     }
 
     public boolean isDisplayEnable() {

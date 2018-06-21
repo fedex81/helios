@@ -1,6 +1,7 @@
 package omegadrive.vdp;
 
 import omegadrive.util.VideoMode;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -183,10 +184,12 @@ public class VdpInterruptHandler {
     }
 
     public int getVCounterExternal() {
+//        printState();
         return vCounterInternal & 0xFF;
     }
 
     public int getHCounterExternal() {
+//        printState();
         return (hCounterInternal >> 1) & 0xFF;
     }
 
@@ -194,23 +197,55 @@ public class VdpInterruptHandler {
         return vIntPending;
     }
 
+    public boolean isLastHCounter() {
+        return hCounterInternal == COUNTER_LIMIT;
+    }
+
+    public boolean isLastVCounter() {
+        return vCounterInternal == COUNTER_LIMIT;
+    }
+
+
     public static void main(String[] args) {
         VdpInterruptHandler h = new VdpInterruptHandler();
         h.setMode(VideoMode.PAL_H32_V30);
 
 //        h.vCounterInternal =  h.vdpCounterMode.vBlankSet-1;
 
-        for (int i = 1; i < 50000; i++) {
+        boolean prevHblank = false;
+        boolean prevVblank = false;
+        boolean prevVintPending = false;
+        for (int i = 1; i < 500000; i++) {
             int hc = h.increaseHCounter();
             int hce = h.getHCounterExternal();
             int vc = h.getvCounter();
             int vce = h.getVCounterExternal();
-            System.out.println(i + ",hce=" + Integer.toHexString(hce) +
-                    "(" + Integer.toHexString(hc) + "), vce=" + Integer.toHexString(vce)
-                    + "(" + vc + ")" + ", hBlankSet=" + h.hBlankSet + ",vBlankSet=" + h.vBlankSet
+            boolean hBlankToggle = prevHblank != h.ishBlankSet();
+            boolean vBlankToggle = prevVblank != h.isvBlankSet();
+            boolean vIntPendingToggle = prevVintPending != h.isvIntPending();
+            if (hBlankToggle || vBlankToggle || vIntPendingToggle) {
 
-            );
+                System.out.println(i + ",hce=" + Integer.toHexString(hce) +
+                        "(" + Integer.toHexString(hc) + "), vce=" + Integer.toHexString(vce)
+                        + "(" + Integer.toHexString(vc) + ")" + ", hBlankSet=" + h.hBlankSet + ",vBlankSet=" + h.vBlankSet
+                        + ", vIntPending=" + h.vIntPending
+                );
+            }
+            prevHblank = h.ishBlankSet();
+            prevVblank = h.isvBlankSet();
+            prevVintPending = h.isvIntPending();
         }
 
+    }
+
+
+    public void printState(String head) {
+        if (LOG.isEnabled(Level.DEBUG)) {
+            LOG.debug(head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
+                    "(" + Integer.toHexString(this.hCounterInternal) + "), vce=" + Integer.toHexString(vCounterInternal & 0xFF)
+                    + "(" + Integer.toHexString(this.vCounterInternal) + ")" + ", hBlankSet=" + hBlankSet + ",vBlankSet=" + vBlankSet
+                    + ", vIntPending=" + vIntPending
+            );
+        }
     }
 }

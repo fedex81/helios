@@ -266,7 +266,6 @@ public class Genesis implements GenesisProvider {
             try {
                 run68k(counter);
                 runZ80(counter);
-                bus.checkInterrupts();
                 vdp.run(CYCLES);
                 vdp.dmaFill();
                 //            	vdp.dmaFill();
@@ -305,6 +304,7 @@ public class Genesis implements GenesisProvider {
         //run half speed compared to VDP
         if (counter % 2 == 0) {
             if (!cpu.isStopped()) {
+                bus.checkInterrupts();
                 cpu.runInstruction();
             }
         }
