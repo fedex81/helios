@@ -603,14 +603,14 @@ public class GenBusLegacy implements BusProvider {
 
     @Override
     public void checkInterrupts() {
-        if (vdp.getVip() == 1) {
+        if (vdp.getVip()) {
             vintPending = true;
         }
         //VINT takes precedence over HINT
         if (vintPending && vdp.isIe0()) {
             cpu.raiseInterrupt(M68kProvider.VBLANK_INTERRUPT_LEVEL);
             z80.interrupt();
-            vdp.setVip(0);
+            vdp.setVip(false);
             vintPending = false;
             return;
         }

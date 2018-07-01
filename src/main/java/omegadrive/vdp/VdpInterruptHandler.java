@@ -139,7 +139,11 @@ public class VdpInterruptHandler {
         return counterInternal;
     }
 
-    public int increaseVCounter() {
+    private int increaseVCounter() {
+        return increaseVCounterInternal();
+    }
+
+    private int increaseVCounterInternal() {
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
@@ -152,7 +156,10 @@ public class VdpInterruptHandler {
     }
 
     public int increaseHCounter() {
-        vIntPending = false;
+        return increaseHCounterInternal();
+    }
+
+    private int increaseHCounterInternal() {
         hCounterInternal = updateCounterValue(hCounterInternal, vdpCounterMode.hJumpTrigger,
                 vdpCounterMode.hTotalCount);
         if (hCounterInternal == vdpCounterMode.hBlankSet) {
@@ -197,8 +204,12 @@ public class VdpInterruptHandler {
         return vIntPending;
     }
 
+    public void setvIntPending(boolean vIntPending) {
+        this.vIntPending = vIntPending;
+    }
+
     public boolean isLastHCounter() {
-        return hCounterInternal == COUNTER_LIMIT;
+        return hCounterInternal == COUNTER_LIMIT - 1;
     }
 
     public boolean isLastVCounter() {

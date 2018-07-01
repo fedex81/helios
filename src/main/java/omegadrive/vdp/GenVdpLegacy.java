@@ -213,13 +213,13 @@ public class GenVdpLegacy implements VdpProvider {
     }
 
     @Override
-    public int getVip() {
-        return vip;
+    public boolean getVip() {
+        return vip == 1;
     }
 
     @Override
-    public void setVip(int value) {
-        this.vip = value;
+    public void setVip(boolean value) {
+        this.vip = value ? 1 : 0;
     }
 
     private boolean isH40() {

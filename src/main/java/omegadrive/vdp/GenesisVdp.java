@@ -250,13 +250,14 @@ public class GenesisVdp implements VdpProvider {
     }
 
     @Override
-    public int getVip() {
-        return vip;
+    public boolean getVip() {
+        return interruptHandler.isvIntPending();
     }
 
     @Override
-    public void setVip(int value) {
-        this.vip = value;
+    public void setVip(boolean value) {
+        interruptHandler.setvIntPending(value);
+        vip = value ? 1 : 0;
     }
 
     @Override
@@ -713,13 +714,12 @@ public class GenesisVdp implements VdpProvider {
 
     private void runNew() {
         interruptHandler.increaseHCounter();
-        line = interruptHandler.getvCounter();
         boolean displayEnable = isDisplayEnable();
         //disabling the display implies blanking
         hb = !displayEnable || interruptHandler.ishBlankSet() ? 1 : 0;
         vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
-        if (interruptHandler.isvIntPending()) {
-            vip = 1;
+        vip = interruptHandler.isvIntPending() ? 1 : vip;
+        if (vip == 1) {
             interruptHandler.printState("Set Vip, line " + line);
         }
 
@@ -727,9 +727,11 @@ public class GenesisVdp implements VdpProvider {
         if (interruptHandler.isLastHCounter()) {
             //draw the line
             drawScanline(displayEnable);
+            line++;
             //draw the frame
             if (interruptHandler.isLastVCounter()) {
                 spritesFrame = 0;
+                line = 0;
                 evaluateSprites();
                 compaginateImage();
                 bus.getEmulator().renderScreen(screenData);

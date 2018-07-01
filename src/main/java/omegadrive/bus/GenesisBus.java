@@ -628,7 +628,6 @@ public class GenesisBus implements BusProvider {
     boolean hintFrameTaken = false;
 
     int hLinesPassed = 0;
-    private boolean vintPending;
     boolean hintPending;
 
     //	https://www.gamefaqs.com/genesis/916377-genesis/faqs/9755
@@ -636,15 +635,11 @@ public class GenesisBus implements BusProvider {
 
     @Override
     public void checkInterrupts() {
-        if (vdp.getVip() == 1) {
-            vintPending = true;
-        }
         //VINT takes precedence over HINT
-        if (vintPending && vdp.isIe0()) {
+        if (vdp.getVip() && vdp.isIe0()) {
             cpu.raiseInterrupt(M68kProvider.VBLANK_INTERRUPT_LEVEL);
             z80.interrupt();
-            vdp.setVip(0);
-            vintPending = false;
+            vdp.setVip(false);
             return;
         }
 

@@ -63,9 +63,9 @@ public interface VdpProvider {
 
     boolean isIe1();
 
-    int getVip();
+    boolean getVip();
 
-    void setVip(int value);
+    void setVip(boolean value);
 
     VideoMode getVideoMode();
 }
