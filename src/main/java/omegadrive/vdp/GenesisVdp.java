@@ -719,9 +719,6 @@ public class GenesisVdp implements VdpProvider {
         hb = !displayEnable || interruptHandler.ishBlankSet() ? 1 : 0;
         vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
-        if (vip == 1) {
-            interruptHandler.printState("Set Vip, line " + line);
-        }
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastHCounter()) {
@@ -736,7 +733,6 @@ public class GenesisVdp implements VdpProvider {
                 compaginateImage();
                 bus.getEmulator().renderScreen(screenData);
                 resetMode();
-                resetHLinesCounter();
             }
         }
     }

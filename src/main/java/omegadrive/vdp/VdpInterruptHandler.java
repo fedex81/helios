@@ -33,6 +33,8 @@ public class VdpInterruptHandler {
     private boolean hBlankSet;
     private boolean vIntPending;
 
+    private boolean verbose = false;
+
     enum VdpCounterMode {
         PAL_H32_V28(VideoMode.PAL_H32_V28,
                 H32_PIXELS, 296,  //hcount, hjumptrigger
@@ -174,6 +176,7 @@ public class VdpInterruptHandler {
         }
         if (hCounterInternal == 0x01 && vCounterInternal == vdpCounterMode.vBlankSet) {
             vIntPending = true;
+            printState("Set Vip");
         }
         return hCounterInternal;
     }
@@ -191,12 +194,10 @@ public class VdpInterruptHandler {
     }
 
     public int getVCounterExternal() {
-//        printState();
         return vCounterInternal & 0xFF;
     }
 
     public int getHCounterExternal() {
-//        printState();
         return (hCounterInternal >> 1) & 0xFF;
     }
 
@@ -209,7 +210,7 @@ public class VdpInterruptHandler {
     }
 
     public boolean isLastHCounter() {
-        return hCounterInternal == COUNTER_LIMIT - 1;
+        return hCounterInternal == COUNTER_LIMIT;
     }
 
     public boolean isLastVCounter() {
@@ -251,8 +252,8 @@ public class VdpInterruptHandler {
 
 
     public void printState(String head) {
-        if (LOG.isEnabled(Level.DEBUG)) {
-            LOG.debug(head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
+        if (verbose && LOG.isEnabled(Level.INFO)) {
+            LOG.info(head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
                     "(" + Integer.toHexString(this.hCounterInternal) + "), vce=" + Integer.toHexString(vCounterInternal & 0xFF)
                     + "(" + Integer.toHexString(this.vCounterInternal) + ")" + ", hBlankSet=" + hBlankSet + ",vBlankSet=" + vBlankSet
                     + ", vIntPending=" + vIntPending
