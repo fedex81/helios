@@ -642,6 +642,9 @@ public final class YM2612 implements FmProvider {
     }
 
     public final void synchronizeTimers(int length) {
+        if (length <= 0) {
+            return;
+        }
         int i = length;
 
         i = YM2612_TimerBase * length;
@@ -891,15 +894,11 @@ public final class YM2612 implements FmProvider {
     }
 
     private int getTimerACount(int YM2612_TimerA) {
-        //TODO should be:  AL = 18*(1024 - A)
-        return (1024 - YM2612_TimerA);
-//                (1024 - YM2612_TimerA)  << 12;
+        return 18 * (1024 - YM2612_TimerA);
     }
 
     private int getTimerBCount(int YM2612_TimerB) {
-        //TODO should be:  BL = 288*(256 - A)
-        return 16 * (256 - YM2612_TimerB);
-//                (256 - YM2612_TimerB) << (12 + 4);
+        return 288 * (256 - YM2612_TimerB);
     }
 
     private final int setYM(int address, int data) {       // INT, UCHAR
