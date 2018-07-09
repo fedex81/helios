@@ -178,9 +178,10 @@ public class VdpInterruptHandler {
 
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
             increaseVCounter();
+
         }
-        //vCounter in incremented just HINT flag is set
-        if (hCounterInternal == vdpCounterMode.vCounterIncrementOn + 2) {
+        //vCounter in incremented just after HINT flag is set
+        if (hCounterInternal == COUNTER_LIMIT) { //OutRun needs COUNTER_LIMIT
             handleHLinesPassed();
         }
         if (hCounterInternal == 0x01 && vCounterInternal == vdpCounterMode.vBlankSet) {
@@ -239,7 +240,7 @@ public class VdpInterruptHandler {
     }
 
     public boolean isLastVCounter() {
-        return vCounterInternal == 0;
+        return vCounterInternal == COUNTER_LIMIT;
     }
 
     public void resetHLinesCounter(int value) {
