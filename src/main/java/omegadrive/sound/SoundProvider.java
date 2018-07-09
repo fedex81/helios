@@ -24,6 +24,7 @@ public interface SoundProvider {
 
     int SAMPLE_RATE = 22050;
 
+
     PsgProvider getPsg();
 
     FmProvider getFm();
@@ -54,6 +55,10 @@ public interface SoundProvider {
     }
 
     default void setRecording(boolean recording) {
+        //NO OP
+    }
+
+    default void updateElapsedMicros(int micros) {
         //NO OP
     }
 

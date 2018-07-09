@@ -268,7 +268,7 @@ public class Genesis implements GenesisProvider {
                 runZ80(counter);
                 vdp.run(CYCLES);
                 vdp.dmaFill();
-                syncSound();
+                syncSound(counter);
                 //            	vdp.dmaFill();
                 if (canRenderScreen) {
                     long now = System.currentTimeMillis();
@@ -282,8 +282,7 @@ public class Genesis implements GenesisProvider {
                         LOG.info("Game thread stopped");
                         break;
                     }
-                    syncSound();
-                    sound.output(targetFps);
+                    sound.output(0);
                     lastRender = now;
                     startCycle = System.nanoTime();
                 }
@@ -295,13 +294,17 @@ public class Genesis implements GenesisProvider {
         }
     }
 
-    private long latestNs = 0;
+    private long latestNs = System.nanoTime();
 
-    private void syncSound() {
-        long now = System.nanoTime();
-        int elapsedMicros = (int) ((now - latestNs) / 1000);
-        sound.getFm().synchronizeTimers(elapsedMicros);
-        latestNs = now;
+    private void syncSound(long counter) {
+        if (counter % 100 == 0) {
+            long now = System.nanoTime();
+            int elapsedMicros = (int) ((now - latestNs) / 1000);
+            if (elapsedMicros > 0) {
+                sound.updateElapsedMicros(elapsedMicros);
+                latestNs = now;
+            }
+        }
     }
 
     private void syncCycle(long startCycle, int targetFps) {

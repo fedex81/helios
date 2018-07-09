@@ -75,10 +75,11 @@ public class JavaSoundManager implements SoundProvider {
             byte[] mix_buf_bytes16 = new byte[fm_buf_ints.length];
             byte[] psg_buf_bytes = new byte[psgSize];
             do {
-                while (!hasOutput) {
-                    int ms = micros.getAndSet(0);
-                    fm.synchronizeTimers(ms);
-                }
+//                while (!hasOutput) {
+//                    int ms = micros.getAndSet(0);
+//                    fm.synchronizeTimers(ms);
+//                }
+                fm.synchronizeTimers(micros.getAndSet(0));
                 hasOutput = false;
                 psg.output(psg_buf_bytes);
                 fm.output(fm_buf_ints);
@@ -122,6 +123,11 @@ public class JavaSoundManager implements SoundProvider {
     }
 
     @Override
+    public void updateElapsedMicros(int micros) {
+        this.micros.getAndAdd(micros);
+    }
+
+    @Override
     public PsgProvider getPsg() {
         return psg;
     }
@@ -134,7 +140,6 @@ public class JavaSoundManager implements SoundProvider {
     @Override
     public void output(int micros) {
         hasOutput = true;
-        //this.micros.set(micros);
     }
 
     @Override
