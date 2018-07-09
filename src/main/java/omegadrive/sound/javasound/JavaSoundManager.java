@@ -16,6 +16,7 @@ import javax.sound.sampled.SourceDataLine;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * ${FILE}
@@ -45,6 +46,7 @@ public class JavaSoundManager implements SoundProvider {
     private boolean mute = false;
     public volatile boolean close;
     public volatile boolean hasOutput = false;
+    private volatile AtomicInteger micros = new AtomicInteger(0);
     private volatile boolean isSoundWorking = false;
 
     public static JavaSoundManager createSoundProvider(RegionDetector.Region region) {
@@ -66,19 +68,17 @@ public class JavaSoundManager implements SoundProvider {
     }
 
     private Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
-        //TODO
-        int fmSize = 20; //SoundProvider.getFmBufferIntSize(region.getFps());
-        int psgSize = 10; //SoundProvider.getPsgBufferByteSize(region.getFps());
+        int fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
+        int psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
         return () -> {
             int[] fm_buf_ints = new int[fmSize];
             byte[] mix_buf_bytes16 = new byte[fm_buf_ints.length];
             byte[] psg_buf_bytes = new byte[psgSize];
             do {
-//                while (!hasOutput){
-//                    fm.synchronizeTimers(1);
-//                    Util.sleep(1);
-//                }
-//                fm.synchronizeTimers(1);
+                while (!hasOutput) {
+                    int ms = micros.getAndSet(0);
+                    fm.synchronizeTimers(ms);
+                }
                 hasOutput = false;
                 psg.output(psg_buf_bytes);
                 fm.output(fm_buf_ints);
@@ -97,7 +97,6 @@ public class JavaSoundManager implements SoundProvider {
                 }
                 Arrays.fill(fm_buf_ints, 0);
                 Arrays.fill(psg_buf_bytes, SoundUtil.ZERO_BYTE);
-//                Arrays.fill(mix_buf_bytes16, SoundUtil.ZERO_BYTE);
             } while (!close);
             LOG.info("Stopping sound thread");
             psg.reset();
@@ -133,8 +132,9 @@ public class JavaSoundManager implements SoundProvider {
     }
 
     @Override
-    public void output(int fps) {
+    public void output(int micros) {
         hasOutput = true;
+        //this.micros.set(micros);
     }
 
     @Override
