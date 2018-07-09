@@ -26,12 +26,14 @@ public class VdpInterruptHandler {
 
     private int hCounterInternal;
     private int vCounterInternal = 0;
+    private int hLinePassed = 0;
 
     private VideoMode videoMode;
     private VdpCounterMode vdpCounterMode;
     private boolean vBlankSet;
     private boolean hBlankSet;
     private boolean vIntPending;
+    private boolean hIntPending;
 
     private boolean verbose = false;
 
@@ -146,8 +148,10 @@ public class VdpInterruptHandler {
     }
 
     private int increaseVCounterInternal() {
+
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
+
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
         }
@@ -171,14 +175,27 @@ public class VdpInterruptHandler {
         if (hCounterInternal == vdpCounterMode.hBlankClear) {
             hBlankSet = false;
         }
+
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
             increaseVCounter();
         }
+        //vCounter in incremented just HINT flag is set
+        if (hCounterInternal == vdpCounterMode.vCounterIncrementOn + 2) {
+            handleHLinesPassed();
+        }
         if (hCounterInternal == 0x01 && vCounterInternal == vdpCounterMode.vBlankSet) {
             vIntPending = true;
-            printState("Set Vip");
+//            printState("Set Vip");
         }
         return hCounterInternal;
+    }
+
+    private void handleHLinesPassed() {
+        hLinePassed--;
+        if (hLinePassed == -1) {
+            hIntPending = true;
+            printState("Set HINT, vCount " + vCounterInternal);
+        }
     }
 
     public boolean isvBlankSet() {
@@ -209,12 +226,28 @@ public class VdpInterruptHandler {
         this.vIntPending = vIntPending;
     }
 
+    public boolean isHIntPending() {
+        return hIntPending;
+    }
+
+    public void setHIntPending(boolean hIntPending) {
+        this.hIntPending = hIntPending;
+    }
+
     public boolean isLastHCounter() {
         return hCounterInternal == COUNTER_LIMIT;
     }
 
     public boolean isLastVCounter() {
-        return vCounterInternal == COUNTER_LIMIT;
+        return vCounterInternal == 0;
+    }
+
+    public void resetHLinesCounter(int value) {
+        this.hLinePassed = value;
+    }
+
+    public int getHLinesPassed() {
+        return hLinePassed;
     }
 
 

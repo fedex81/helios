@@ -251,7 +251,7 @@ public class Genesis implements GenesisProvider {
     }
 
     private static int CYCLES = 2;
-    private static long nsToMs = 1000000;
+    private static long nsToMillis = 1000000;
 
     void loop() {
         LOG.info("Starting game loop");
@@ -268,12 +268,13 @@ public class Genesis implements GenesisProvider {
                 runZ80(counter);
                 vdp.run(CYCLES);
                 vdp.dmaFill();
+                syncSound();
                 //            	vdp.dmaFill();
                 if (canRenderScreen) {
                     long now = System.currentTimeMillis();
                     fps = Math.max((int) (1000d / (now - lastRender)), 1);
                     double intvSec = (lastRender - start) / 1000d;
-                    sound.output(targetFps);
+
                     renderScreenInternal(getStats(fps, intvSec, counter));
                     canRenderScreen = false;
                     syncCycle(startCycle, targetFps);
@@ -281,6 +282,8 @@ public class Genesis implements GenesisProvider {
                         LOG.info("Game thread stopped");
                         break;
                     }
+                    syncSound();
+                    sound.output(targetFps);
                     lastRender = now;
                     startCycle = System.nanoTime();
                 }
@@ -292,11 +295,20 @@ public class Genesis implements GenesisProvider {
         }
     }
 
+    private long latestNs = 0;
+
+    private void syncSound() {
+        long now = System.nanoTime();
+        int elapsedMicros = (int) ((now - latestNs) / 1000);
+        sound.getFm().synchronizeTimers(elapsedMicros);
+        latestNs = now;
+    }
+
     private void syncCycle(long startCycle, int targetFps) {
-        long targetNs = (long) (1000d / targetFps * nsToMs);
+        long targetNs = (long) ((1000d / targetFps) * nsToMillis);
         long elapsedNs = System.nanoTime() - startCycle;
-        if (targetNs - elapsedNs > nsToMs) {
-            Util.sleep(((targetNs - elapsedNs) / nsToMs));
+        if (targetNs - elapsedNs > nsToMillis) {
+            Util.sleep(((targetNs - elapsedNs) / nsToMillis));
         }
     }
 

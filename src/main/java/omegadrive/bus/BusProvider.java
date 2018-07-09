@@ -44,12 +44,6 @@ public interface BusProvider {
 
     long read(long address, Size size);
 
-    void setHLinesPassed(int value);
-
-    int getHLinesPassed();
-
-    void setHIntPending(boolean value);
-
     void setSsf2Mapper(boolean value);
 
     void checkInterrupts();
@@ -57,8 +51,6 @@ public interface BusProvider {
     void write(long address, long data, Size size);
 
     void reset();
-
-    long readInterruptVector(long vector);
 
     default PsgProvider getPsg() {
         return getSound().getPsg();

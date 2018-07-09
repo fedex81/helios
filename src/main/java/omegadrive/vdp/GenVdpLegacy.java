@@ -3,7 +3,7 @@ package omegadrive.vdp;
 //	info de quirks a implementar:
 //	https://emudocs.org/Genesis/Graphics/genvdp.txt
 
-import omegadrive.bus.BusProvider;
+import omegadrive.bus.GenBusLegacy;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -155,13 +155,13 @@ public class GenVdpLegacy implements VdpProvider {
 
     int line;
 
-    private BusProvider bus;
+    private GenBusLegacy bus;
     private VdpColorMapper colorMapper;
     private VdpInterruptHandler interruptHandler;
     private VideoMode videoMode;
 
 
-    public GenVdpLegacy(BusProvider bus) {
+    public GenVdpLegacy(GenBusLegacy bus) {
         this.bus = bus;
         this.colorMapper = new VdpColorMapper();
         this.interruptHandler = new VdpInterruptHandler();
@@ -220,6 +220,16 @@ public class GenVdpLegacy implements VdpProvider {
     @Override
     public void setVip(boolean value) {
         this.vip = value ? 1 : 0;
+    }
+
+    @Override
+    public boolean getHip() {
+        return false;
+    }
+
+    @Override
+    public void setHip(boolean value) {
+
     }
 
     private boolean isH40() {

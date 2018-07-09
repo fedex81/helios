@@ -63,9 +63,32 @@ public interface VdpProvider {
 
     boolean isIe1();
 
+    /**
+     * State of the Vertical interrupt pending flag
+     *
+     * @return
+     */
     boolean getVip();
 
+    /**
+     * Set the Vertical interrupt pending flag
+     * @return
+     */
     void setVip(boolean value);
+
+    /**
+     * State of the Horizontal interrupt pending flag
+     *
+     * @return
+     */
+    boolean getHip();
+
+    /**
+     * Set the Horizontal interrupt pending flag
+     *
+     * @return
+     */
+    void setHip(boolean value);
 
     VideoMode getVideoMode();
 }

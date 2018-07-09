@@ -357,21 +357,6 @@ public class GenesisBus implements BusProvider {
     }
 
     @Override
-    public void setHLinesPassed(int value) {
-        this.hLinesPassed = value;
-    }
-
-    @Override
-    public int getHLinesPassed() {
-        return hLinesPassed;
-    }
-
-    @Override
-    public void setHIntPending(boolean value) {
-        this.hintPending = value;
-    }
-
-    @Override
     public GenesisProvider getEmulator() {
         return emu;
     }
@@ -625,11 +610,6 @@ public class GenesisBus implements BusProvider {
         return s;
     }
 
-    boolean hintFrameTaken = false;
-
-    int hLinesPassed = 0;
-    boolean hintPending;
-
     //	https://www.gamefaqs.com/genesis/916377-genesis/faqs/9755
     //	http://darkdust.net/writings/megadrive/initializing
 
@@ -643,13 +623,9 @@ public class GenesisBus implements BusProvider {
             return;
         }
 
-        if (hintPending && vdp.isIe1()) {
+        if (vdp.getHip() && vdp.isIe1()) {
             cpu.raiseInterrupt(M68kProvider.HBLANK_INTERRUPT_LEVEL);
-            hintPending = false;
+            vdp.setHip(false);
         }
-    }
-
-    public long readInterruptVector(long vector) {
-        return Util.readRom(memory, Size.LONG, vector);
     }
 }

@@ -318,17 +318,16 @@ public class GenBusLegacy implements BusProvider {
         return data;
     }
 
-    @Override
+
     public void setHLinesPassed(int value) {
         this.hLinesPassed = value;
     }
 
-    @Override
+
     public int getHLinesPassed() {
         return hLinesPassed;
     }
 
-    @Override
     public void setHIntPending(boolean value) {
         this.hintPending = value;
     }

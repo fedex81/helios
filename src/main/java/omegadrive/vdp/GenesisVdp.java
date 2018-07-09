@@ -157,8 +157,6 @@ public class GenesisVdp implements VdpProvider {
 
     long all;
 
-    int line;
-
     private BusProvider bus;
     private VdpColorMapper colorMapper;
     private VdpInterruptHandler interruptHandler;
@@ -258,6 +256,16 @@ public class GenesisVdp implements VdpProvider {
     public void setVip(boolean value) {
         interruptHandler.setvIntPending(value);
         vip = value ? 1 : 0;
+    }
+
+    @Override
+    public boolean getHip() {
+        return interruptHandler.isHIntPending();
+    }
+
+    @Override
+    public void setHip(boolean value) {
+        interruptHandler.setHIntPending(false);
     }
 
     @Override
@@ -712,6 +720,8 @@ public class GenesisVdp implements VdpProvider {
     public int[][] windowIndex = new int[COLS][ROWS];
     public boolean[][] windowPrio = new boolean[COLS][ROWS];
 
+    int line;
+
     private void runNew() {
         interruptHandler.increaseHCounter();
         boolean displayEnable = isDisplayEnable();
@@ -724,6 +734,7 @@ public class GenesisVdp implements VdpProvider {
         if (interruptHandler.isLastHCounter()) {
             //draw the line
             drawScanline(displayEnable);
+            handleHLinesCounter(line);
             line++;
             //draw the frame
             if (interruptHandler.isLastVCounter()) {
@@ -737,9 +748,26 @@ public class GenesisVdp implements VdpProvider {
         }
     }
 
+    //        The counter is loaded with the contents of register #10 in the following
+//        situations:
+//
+//        - Line zero of the frame.
+//        - When the counter has expired.
+//        - Lines 225 through 261. (note that line 224 is not included)
+    private void handleHLinesCounter(int line) {
+        int lineLimit = videoMode.getDimension().height;
+        int hLinesPassed = interruptHandler.getHLinesPassed();
+        if (hLinesPassed == -1 || line == 0 || line > lineLimit) {
+            resetHLinesCounter();
+        }
+    }
+
     private void resetHLinesCounter() {
-        bus.setHLinesPassed(registers[0xA]); //set the next HINT line
-        interruptHandler.printState("Reset HLine to " + bus.getHLinesPassed() + ", on line: " + line);
+        int val = registers[0xA];
+        interruptHandler.resetHLinesCounter(val);
+        if (val > 0 && val < 255) {
+            interruptHandler.printState("Reset HLine to " + val + ", on line: " + line + ", ie1: " + ie1);
+        }
     }
 
     private void resetMode() {
@@ -751,6 +779,7 @@ public class GenesisVdp implements VdpProvider {
             pal = videoMode.isPal() ? 1 : 0;
         }
     }
+
 
     private void drawScanline(boolean displayEnable) {
         //draw line
@@ -764,21 +793,6 @@ public class GenesisVdp implements VdpProvider {
                 renderWindow();
                 renderSprites();
             }
-//        The counter is loaded with the contents of register #10 in the following
-//        situations:
-//
-//        - Line zero of the frame.
-//        - When the counter has expired.
-//        - Lines 225 through 261. (note that line 224 is not included)
-            bus.setHLinesPassed(bus.getHLinesPassed() - 1);
-            if (bus.getHLinesPassed() == -1) {
-                interruptHandler.printState("Set HINT, line " + line);
-                bus.setHIntPending(true);
-                resetHLinesCounter();
-            }
-        }
-        if (line == 0 || line > lineLimit) {
-            resetHLinesCounter();
         }
     }
 
