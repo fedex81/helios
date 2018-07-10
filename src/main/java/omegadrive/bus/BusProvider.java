@@ -46,7 +46,7 @@ public interface BusProvider {
 
     void setSsf2Mapper(boolean value);
 
-    void checkInterrupts();
+    boolean checkInterrupts();
 
     void write(long address, long data, Size size);
 

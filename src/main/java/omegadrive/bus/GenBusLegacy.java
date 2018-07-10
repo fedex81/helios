@@ -601,7 +601,7 @@ public class GenBusLegacy implements BusProvider {
     //	http://darkdust.net/writings/megadrive/initializing
 
     @Override
-    public void checkInterrupts() {
+    public boolean checkInterrupts() {
         if (vdp.getVip()) {
             vintPending = true;
         }
@@ -611,13 +611,15 @@ public class GenBusLegacy implements BusProvider {
             z80.interrupt();
             vdp.setVip(false);
             vintPending = false;
-            return;
+            return true;
         }
 
         if (hintPending && vdp.isIe1()) {
             cpu.raiseInterrupt(M68kProvider.HBLANK_INTERRUPT_LEVEL);
             hintPending = false;
+            return true;
         }
+        return false;
     }
 
     public long readInterruptVector(long vector) {

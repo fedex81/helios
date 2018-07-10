@@ -440,6 +440,8 @@ public class GenesisVdp implements VdpProvider {
             h40 = rs0 && rs1;
         } else if (reg == 0x0F) {
             autoIncrementData = (int) (data & 0xFF);
+        } else if (reg == 0x0A) {
+            updateReg10(data);
         } else if (reg == 0x13) {
             dmaLengthCounterLo = (int) (data & 0xFF);
 
@@ -455,6 +457,12 @@ public class GenesisVdp implements VdpProvider {
         } else if (reg == 0x17) {
             dmaSourceAddressHi = (int) (data & 0x3F);
             dmaMode = (int) ((data >> 6) & 0x3);
+        }
+    }
+
+    private void updateReg10(long data) {
+        if (data != registers[0x0A]) {
+            interruptHandler.printState("Update hLinePassed register: " + (data & 0x00FF));
         }
     }
 
@@ -729,15 +737,18 @@ public class GenesisVdp implements VdpProvider {
         hb = !displayEnable || interruptHandler.ishBlankSet() ? 1 : 0;
         vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
+        //TODO this reloads the hlinecounter immediately when it overflows (good)
+        //TODO dont evaluate at every hCounter!!!
+        handleHLinesCounter(line);
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastHCounter()) {
             //draw the line
             drawScanline(displayEnable);
-            handleHLinesCounter(line);
             line++;
             //draw the frame
-            if (interruptHandler.isLastVCounter()) {
+            if (interruptHandler.isDrawFrameCounter()) {
+                interruptHandler.printState("Draw Screen");
                 spritesFrame = 0;
                 line = 0;
                 evaluateSprites();
@@ -757,7 +768,7 @@ public class GenesisVdp implements VdpProvider {
     private void handleHLinesCounter(int line) {
         int lineLimit = videoMode.getDimension().height;
         int hLinesPassed = interruptHandler.getHLinesPassed();
-        if (hLinesPassed == -1 || line == 0 || line > lineLimit) {
+        if (hLinesPassed < 0 || line == 0 || line > lineLimit) {
             resetHLinesCounter();
         }
     }
@@ -765,9 +776,7 @@ public class GenesisVdp implements VdpProvider {
     private void resetHLinesCounter() {
         int val = registers[0xA];
         interruptHandler.resetHLinesCounter(val);
-        if (val > 0 && val < 255) {
-            interruptHandler.printState("Reset HLine to " + val + ", on line: " + line + ", ie1: " + ie1);
-        }
+        interruptHandler.printState("Reset HLine to " + val + ", on line: " + line + ", ie1: " + ie1);
     }
 
     private void resetMode() {
@@ -783,6 +792,7 @@ public class GenesisVdp implements VdpProvider {
 
     private void drawScanline(boolean displayEnable) {
         //draw line
+        interruptHandler.printState("Draw Scanline: " + line);
         int lineLimit = videoMode.getDimension().height;
         if (line < lineLimit) {
             if (displayEnable) {

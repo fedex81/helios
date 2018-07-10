@@ -28,6 +28,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,6 +57,15 @@ public class Genesis implements GenesisProvider {
     private GenesisWindow emuFrame;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    public static boolean verbose = false;
+    private static NumberFormat df = DecimalFormat.getInstance();
+
+    static {
+        df.setMinimumFractionDigits(3);
+        df.setMinimumFractionDigits(3);
+    }
+
 
     public static void main(String[] args) throws Exception {
         loadProperties();
@@ -319,8 +330,9 @@ public class Genesis implements GenesisProvider {
         //run half speed compared to VDP
         if (counter % 2 == 0) {
             if (!cpu.isStopped()) {
-                bus.checkInterrupts();
-                cpu.runInstruction();
+                if (!bus.checkInterrupts()) {
+                    cpu.runInstruction();
+                }
             }
         }
     }
@@ -332,9 +344,10 @@ public class Genesis implements GenesisProvider {
         }
     }
 
+
     private String getStats(int fps, double intvSec, long counter) {
-        long cps = (long) (counter / intvSec);
-        String s = cps + "cps(avg), " + fps + "fps";
+        String cps = df.format((counter / intvSec) / 1000000d);
+        String s = cps + "Mcps, " + fps + "fps";
         return s;
     }
 

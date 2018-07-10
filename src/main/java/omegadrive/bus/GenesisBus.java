@@ -614,18 +614,20 @@ public class GenesisBus implements BusProvider {
     //	http://darkdust.net/writings/megadrive/initializing
 
     @Override
-    public void checkInterrupts() {
+    public boolean checkInterrupts() {
         //VINT takes precedence over HINT
         if (vdp.getVip() && vdp.isIe0()) {
             cpu.raiseInterrupt(M68kProvider.VBLANK_INTERRUPT_LEVEL);
             z80.interrupt();
             vdp.setVip(false);
-            return;
+            return true;
         }
 
         if (vdp.getHip() && vdp.isIe1()) {
             cpu.raiseInterrupt(M68kProvider.HBLANK_INTERRUPT_LEVEL);
             vdp.setHip(false);
+            return true;
         }
+        return false;
     }
 }

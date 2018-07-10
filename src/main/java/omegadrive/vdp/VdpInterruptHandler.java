@@ -1,5 +1,6 @@
 package omegadrive.vdp;
 
+import omegadrive.Genesis;
 import omegadrive.util.VideoMode;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -35,7 +36,7 @@ public class VdpInterruptHandler {
     private boolean vIntPending;
     private boolean hIntPending;
 
-    private boolean verbose = false;
+    private boolean verbose = Genesis.verbose;
 
     enum VdpCounterMode {
         PAL_H32_V28(VideoMode.PAL_H32_V28,
@@ -178,15 +179,14 @@ public class VdpInterruptHandler {
 
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
             increaseVCounter();
-
         }
-        //vCounter in incremented just after HINT flag is set
-        if (hCounterInternal == COUNTER_LIMIT) { //OutRun needs COUNTER_LIMIT
+        //Vcounter is incremented just before HINT pending flag is set,
+        if (hCounterInternal == vdpCounterMode.vCounterIncrementOn + 2) { //OutRun needs COUNTER_LIMIT
             handleHLinesPassed();
         }
-        if (hCounterInternal == 0x01 && vCounterInternal == vdpCounterMode.vBlankSet) {
+        if (hCounterInternal == 0x02 && vCounterInternal == vdpCounterMode.vBlankSet) {
             vIntPending = true;
-//            printState("Set Vip");
+            printState("Set VIP: true");
         }
         return hCounterInternal;
     }
@@ -195,7 +195,7 @@ public class VdpInterruptHandler {
         hLinePassed--;
         if (hLinePassed == -1) {
             hIntPending = true;
-            printState("Set HINT, vCount " + vCounterInternal);
+            printState("Set HIP: true, hLinePassed: " + hLinePassed);
         }
     }
 
@@ -225,6 +225,7 @@ public class VdpInterruptHandler {
 
     public void setvIntPending(boolean vIntPending) {
         this.vIntPending = vIntPending;
+        printState("Set VIP: " + vIntPending);
     }
 
     public boolean isHIntPending() {
@@ -232,6 +233,7 @@ public class VdpInterruptHandler {
     }
 
     public void setHIntPending(boolean hIntPending) {
+        printState("Set HIP: " + hIntPending + ", hLinePassed: " + hLinePassed);
         this.hIntPending = hIntPending;
     }
 
@@ -239,8 +241,8 @@ public class VdpInterruptHandler {
         return hCounterInternal == COUNTER_LIMIT;
     }
 
-    public boolean isLastVCounter() {
-        return vCounterInternal == COUNTER_LIMIT;
+    public boolean isDrawFrameCounter() {
+        return isLastHCounter() && vCounterInternal == COUNTER_LIMIT;
     }
 
     public void resetHLinesCounter(int value) {
