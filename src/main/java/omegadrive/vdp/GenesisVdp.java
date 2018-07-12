@@ -20,7 +20,7 @@ import java.util.Objects;
  * https://github.com/DarkMoe/genefusto
  * @author DarkMoe
  */
-public class GenesisVdp implements VdpProvider {
+public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
@@ -166,7 +166,7 @@ public class GenesisVdp implements VdpProvider {
     public GenesisVdp(BusProvider bus) {
         this.bus = bus;
         this.colorMapper = new VdpColorMapper();
-        this.interruptHandler = new VdpInterruptHandler();
+        this.interruptHandler = VdpInterruptHandler.createInstance(this);
     }
 
     @Override
@@ -737,10 +737,6 @@ public class GenesisVdp implements VdpProvider {
         hb = !displayEnable || interruptHandler.ishBlankSet() ? 1 : 0;
         vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
-        //TODO this reloads the hlinecounter immediately when it overflows (good)
-        //TODO dont evaluate at every hCounter!!!
-        handleHLinesCounter(line);
-
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastHCounter()) {
             //draw the line
@@ -759,24 +755,9 @@ public class GenesisVdp implements VdpProvider {
         }
     }
 
-    //        The counter is loaded with the contents of register #10 in the following
-//        situations:
-//
-//        - Line zero of the frame.
-//        - When the counter has expired.
-//        - Lines 225 through 261. (note that line 224 is not included)
-    private void handleHLinesCounter(int line) {
-        int lineLimit = videoMode.getDimension().height;
-        int hLinesPassed = interruptHandler.getHLinesPassed();
-        if (hLinesPassed < 0 || line == 0 || line > lineLimit) {
-            resetHLinesCounter();
-        }
-    }
-
-    private void resetHLinesCounter() {
-        int val = registers[0xA];
-        interruptHandler.resetHLinesCounter(val);
-        interruptHandler.printState("Reset HLine to " + val + ", on line: " + line + ", ie1: " + ie1);
+    @Override
+    public int getHLinesCounter() {
+        return registers[0xA];
     }
 
     private void resetMode() {

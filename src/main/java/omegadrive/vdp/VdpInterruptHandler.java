@@ -13,10 +13,16 @@ import org.apache.logging.log4j.Logger;
  * <p>
  * Copyright 2018
  * <p>
- * TODO Lotus II
  */
 public class VdpInterruptHandler {
 
+    /**
+     * Relevant Games:
+     * Kawasaki
+     * Outrun
+     * Gunstar Heroes
+     * Lotus II
+     */
     private static Logger LOG = LogManager.getLogger(VdpInterruptHandler.class.getSimpleName());
 
     public static int PAL_SCANLINES = 313;
@@ -28,9 +34,12 @@ public class VdpInterruptHandler {
     private int hCounterInternal;
     private int vCounterInternal = 0;
     private int hLinePassed = 0;
+    private int baseHLinePassed = 0;
 
     private VideoMode videoMode;
     private VdpCounterMode vdpCounterMode;
+    private VdpHLineProvider vdpHLineProvider;
+
     private boolean vBlankSet;
     private boolean hBlankSet;
     private boolean vIntPending;
@@ -118,6 +127,12 @@ public class VdpInterruptHandler {
         }
     }
 
+    public static VdpInterruptHandler createInstance(VdpHLineProvider vdpHLineProvider) {
+        VdpInterruptHandler handler = new VdpInterruptHandler();
+        handler.vdpHLineProvider = vdpHLineProvider;
+        return handler;
+    }
+
     public void setMode(VideoMode videoMode) {
         if (this.videoMode != videoMode) {
             this.videoMode = videoMode;
@@ -169,6 +184,7 @@ public class VdpInterruptHandler {
     private int increaseHCounterInternal() {
         hCounterInternal = updateCounterValue(hCounterInternal, vdpCounterMode.hJumpTrigger,
                 vdpCounterMode.hTotalCount);
+        handleHLinesCounter();
         if (hCounterInternal == vdpCounterMode.hBlankSet) {
             hBlankSet = true;
         }
@@ -180,10 +196,6 @@ public class VdpInterruptHandler {
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
             increaseVCounter();
         }
-        //Vcounter is incremented just before HINT pending flag is set,
-        if (hCounterInternal == vdpCounterMode.vCounterIncrementOn + 2) { //OutRun needs COUNTER_LIMIT
-            handleHLinesPassed();
-        }
         if (hCounterInternal == 0x02 && vCounterInternal == vdpCounterMode.vBlankSet) {
             vIntPending = true;
             printState("Set VIP: true");
@@ -191,11 +203,21 @@ public class VdpInterruptHandler {
         return hCounterInternal;
     }
 
-    private void handleHLinesPassed() {
-        hLinePassed--;
-        if (hLinePassed == -1) {
-            hIntPending = true;
-            printState("Set HIP: true, hLinePassed: " + hLinePassed);
+    private void handleHLinesCounter() {
+        //Vcounter is incremented just before HINT pending flag is set,
+        if (hCounterInternal == vdpCounterMode.vCounterIncrementOn + 2) {
+            hLinePassed--;
+            boolean isValidVCounterForHip = vCounterInternal > 0x00 && vCounterInternal <= vdpCounterMode.vBlankSet;
+            boolean triggerHip = isValidVCounterForHip && hLinePassed == -1; //aka triggerHippy
+            if (triggerHip) {
+                hIntPending = true;
+                printState("Set HIP: true, hLinePassed: " + hLinePassed);
+            }
+            //reload on line = 0 and vblank
+            boolean isForceResetVCounter = vCounterInternal == 0x00 || vCounterInternal > vdpCounterMode.vBlankSet;
+            if (isForceResetVCounter || triggerHip) {
+                resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
+            }
         }
     }
 
@@ -247,12 +269,9 @@ public class VdpInterruptHandler {
 
     public void resetHLinesCounter(int value) {
         this.hLinePassed = value;
+        this.baseHLinePassed = value;
+        printState("Reset hLinePassed: " + value);
     }
-
-    public int getHLinesPassed() {
-        return hLinePassed;
-    }
-
 
     public static void main(String[] args) {
         VdpInterruptHandler h = new VdpInterruptHandler();
