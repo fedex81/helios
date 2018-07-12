@@ -82,10 +82,7 @@ public class Genesis implements GenesisProvider {
             LOG.error("Unable to load properties file: " + PROPERTIES_FILENAME);
         }
         System.getProperties().store(System.out, null);
-    }
-
-    private Genesis() throws Exception {
-        this(false);
+        verbose = Boolean.valueOf(System.getProperty("emu.debug", "false"));
     }
 
     public static GenesisProvider createInstance() {
@@ -100,7 +97,7 @@ public class Genesis implements GenesisProvider {
         return genesis;
     }
 
-    private Genesis(boolean debug) throws InvocationTargetException, InterruptedException {
+    private Genesis() throws InvocationTargetException, InterruptedException {
         Util.registerJmx(this);
         init();
         SwingUtilities.invokeAndWait(() -> createFrame());
