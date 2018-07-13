@@ -211,7 +211,7 @@ public class VdpInterruptHandler {
             boolean triggerHip = isValidVCounterForHip && hLinePassed == -1; //aka triggerHippy
             if (triggerHip) {
                 hIntPending = true;
-                printState("Set HIP: true, hLinePassed: " + hLinePassed);
+                printState("Set HIP: true, hLinePassed: %s", hLinePassed);
             }
             //reload on line = 0 and vblank
             boolean isForceResetVCounter = vCounterInternal == 0x00 || vCounterInternal > vdpCounterMode.vBlankSet;
@@ -247,7 +247,7 @@ public class VdpInterruptHandler {
 
     public void setvIntPending(boolean vIntPending) {
         this.vIntPending = vIntPending;
-        printState("Set VIP: " + vIntPending);
+        printState("Set VIP: %s", vIntPending);
     }
 
     public boolean isHIntPending() {
@@ -255,7 +255,7 @@ public class VdpInterruptHandler {
     }
 
     public void setHIntPending(boolean hIntPending) {
-        printState("Set HIP: " + hIntPending + ", hLinePassed: " + hLinePassed);
+        printState("Set HIP: %s, hLinePassed: %s", hIntPending, hLinePassed);
         this.hIntPending = hIntPending;
     }
 
@@ -270,7 +270,7 @@ public class VdpInterruptHandler {
     public void resetHLinesCounter(int value) {
         this.hLinePassed = value;
         this.baseHLinePassed = value;
-        printState("Reset hLinePassed: " + value);
+        printState("Reset hLinePassed: %s", value);
     }
 
     public static void main(String[] args) {
@@ -305,14 +305,18 @@ public class VdpInterruptHandler {
 
     }
 
-
-    public void printState(String head) {
+    public void printState(String str, Object... args) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
-            LOG.info(head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
-                    "(" + Integer.toHexString(this.hCounterInternal) + "), vce=" + Integer.toHexString(vCounterInternal & 0xFF)
-                    + "(" + Integer.toHexString(this.vCounterInternal) + ")" + ", hBlankSet=" + hBlankSet + ",vBlankSet=" + vBlankSet
-                    + ", vIntPending=" + vIntPending
-            );
+            printStateString(String.format(str, args));
         }
+    }
+
+
+    private void printStateString(String head) {
+        LOG.info(head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
+                "(" + Integer.toHexString(this.hCounterInternal) + "), vce=" + Integer.toHexString(vCounterInternal & 0xFF)
+                + "(" + Integer.toHexString(this.vCounterInternal) + ")" + ", hBlankSet=" + hBlankSet + ",vBlankSet=" + vBlankSet
+                + ", vIntPending=" + vIntPending
+        );
     }
 }

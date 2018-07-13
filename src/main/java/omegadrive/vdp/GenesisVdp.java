@@ -462,7 +462,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void updateReg10(long data) {
         if (data != registers[0x0A]) {
-            interruptHandler.printState("Update hLinePassed register: " + (data & 0x00FF));
+            interruptHandler.printState("Update hLinePassed register: %s", (data & 0x00FF));
         }
     }
 
@@ -773,7 +773,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void drawScanline(boolean displayEnable) {
         //draw line
-        interruptHandler.printState("Draw Scanline: " + line);
+        interruptHandler.printState("Draw Scanline: %s", line);
         int lineLimit = videoMode.getDimension().height;
         if (line < lineLimit) {
             if (displayEnable) {
