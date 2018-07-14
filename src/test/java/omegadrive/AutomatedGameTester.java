@@ -39,7 +39,7 @@ public class AutomatedGameTester {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Current folder: " + new File(".").getAbsolutePath());
-        new AutomatedGameTester().testAll(true);
+        new AutomatedGameTester().testAll(false);
 //        new AutomatedGameTester().testCartridgeInfo();
 //        new AutomatedGameTester().testList();
         System.exit(0);
