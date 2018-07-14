@@ -5,11 +5,11 @@ A Java-based Sega Mega Drive/Genesis emulator.
 # How to Run
 Requires java 8+ installed.
 
-Get the most recent jar file from the download section.
+Get the most recent jar file from the download section, for example omega-drive-all-20180714-0.02-SNAPSHOT.jar
 
 Open a prompt/terminal and run:
 
-java -jar <jar_file_name_here>
+java -jar omega-drive-all-20180714-0.02-SNAPSHOT.jar
 
 # Credits
 
