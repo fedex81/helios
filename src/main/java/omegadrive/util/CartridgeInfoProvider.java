@@ -19,6 +19,8 @@ public class CartridgeInfoProvider {
     public static final long DEFAULT_ROM_END_ADDRESS = 0x3F_FFFF;
     public static final long DEFAULT_RAM_END_ADDRESS = 0xFF_FFFF;
     public static final long DEFAULT_RAM_START_ADDRESS = 0xFF_0000;
+    public static final long DEFAULT_SRAM_START_ADDRESS = 0x20_0000;
+    public static final long DEFAULT_SRAM_END_ADDRESS = 0x20_FFFF;
 
     public static final int ROM_START_ADDRESS = 0x1A0;
     public static final int ROM_END_ADDRESS = 0x1A4;
@@ -149,6 +151,8 @@ public class CartridgeInfoProvider {
                 sramEnd |= memoryProvider.readCartridgeWord(SRAM_END_ADDRESS + 2);
                 if (sramEnd - sramStart < 0) {
                     LOG.error("Unexpected SRAM setup: " + toString());
+                    sramStart = DEFAULT_SRAM_START_ADDRESS;
+                    sramEnd = DEFAULT_SRAM_END_ADDRESS;
                 }
             } else if (!isBackup && isSramType) {
                 LOG.warn("Volatile SRAM? " + romName);
