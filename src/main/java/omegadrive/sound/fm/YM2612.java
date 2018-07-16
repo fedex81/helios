@@ -715,8 +715,11 @@ public final class YM2612 implements FmProvider {
         cSlot SL = CH.SLOT[nsl];
         if (SL.Ecurp == RELEASE) {
             SL.Fcnt = 0;
-            // Fix Ecco 2 splash sound
-            SL.Ecnt = (DECAY_TO_ATTACK[ENV_TAB[SL.Ecnt >> ENV_LBITS]] + ENV_ATTACK) & SL.ChgEnM;
+            try {
+                SL.Ecnt = (DECAY_TO_ATTACK[ENV_TAB[SL.Ecnt >> ENV_LBITS]] + ENV_ATTACK) & SL.ChgEnM; // Fix Ecco 2 splash sound
+            } catch (ArrayIndexOutOfBoundsException e) {
+                LOG.error("KEY_ON error", e); //wolf3d demo
+            }
             SL.ChgEnM = 0xFFFFFFFF;
             SL.Einc = SL.EincA;
             SL.Ecmp = ENV_DECAY;
