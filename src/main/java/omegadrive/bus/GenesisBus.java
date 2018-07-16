@@ -1,5 +1,6 @@
 package omegadrive.bus;
 
+import omegadrive.Genesis;
 import omegadrive.GenesisProvider;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.m68k.M68kProvider;
@@ -322,6 +323,7 @@ public class GenesisBus implements BusProvider {
 //            the odd byte (e.g. C00009h) returns the H counter.
             int v = vdp.getVCounter();
             int h = vdp.getHCounter();
+            logVdpCounter(v, h);
             if (size == Size.WORD) {
                 return (v << 8) | h;
             } else if (size == Size.BYTE) {
@@ -335,6 +337,12 @@ public class GenesisBus implements BusProvider {
         }
 
         return 0;
+    }
+
+    private void logVdpCounter(int v, int h) {
+        if (Genesis.verbose) {
+            LOG.info("Read HV counter, v=" + v + ", h=" + h);
+        }
     }
 
     //    Byte-wide reads

@@ -5,3 +5,24 @@ http://gendev.spritesmind.net/forum/viewtopic.php?t=206
  Pete Sampras Tennis, Pete Sampras Tennis 96, Micro Machines 2, Micro Machines 96, Micro Machines Military Edition, and Super Skidmarks.
 
 - Sonic & Knuckles mapper
+
+
+2018-07-16 13:00:34.545 ERROR [cycle-wolf3d_256x144_fb2_NTSC_PAL_demover.bin]: Error main cycle
+java.lang.ArrayIndexOutOfBoundsException: 8242
+	at omegadrive.sound.fm.YM2612.KEY_ON(YM2612.java:719) ~[classes/:?]
+	at omegadrive.sound.fm.YM2612.setYM(YM2612.java:962) ~[classes/:?]
+	at omegadrive.sound.fm.YM2612.write0(YM2612.java:522) ~[classes/:?]
+	at omegadrive.z80.Z80Memory.writeMemory(Z80Memory.java:113) ~[classes/:?]
+	at omegadrive.z80.Z80Memory.writeByte(Z80Memory.java:157) ~[classes/:?]
+	at omegadrive.z80.Z80CoreWrapper.writeByte(Z80CoreWrapper.java:147) ~[classes/:?]
+	at omegadrive.util.Util.writeZ80(Util.java:95) ~[classes/:?]
+	at omegadrive.bus.GenesisBus.write(GenesisBus.java:412) ~[classes/:?]
+	at omegadrive.m68k.MC68000Wrapper$1.writeByte(MC68000Wrapper.java:64) ~[classes/:?]
+	at omegadrive.m68k.tonyheadford.cpu.CpuCore.writeMemoryByte(CpuCore.java:876) ~[headford68k-0.1.jar:?]
+	at omegadrive.m68k.tonyheadford.cpu.CpuCore$AddressRegisterWithIndexOperand.setByte(CpuCore.java:1569) ~[headford68k-0.1.jar:?]
+	at omegadrive.m68k.tonyheadford.cpu.instructions.MOVE.move_byte(MOVE.java:132) ~[headford68k-0.1.jar:?]
+	at omegadrive.m68k.tonyheadford.cpu.instructions.MOVE$1.execute(MOVE.java:75) ~[headford68k-0.1.jar:?]
+	at omegadrive.m68k.tonyheadford.cpu.MC68000.execute(MC68000.java:58) ~[headford68k-0.1.jar:?]
+	at omegadrive.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:154) ~[classes/:?]
+	at omegadrive.Genesis.run68k(Genesis.java:331) ~[classes/:?]
+	at omegadrive.Genesis.loop(Genesis.java:275) [classes/:?]

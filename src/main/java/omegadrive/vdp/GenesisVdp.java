@@ -423,10 +423,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
         if (reg == 0x00) {
             lcb = ((data >> 5) & 1) == 1;
-            ie1 = ((data >> 4) & 1) == 1;
             de = ((data >> 0) & 1) == 1;
             boolean newM3 = ((data >> 1) & 1) == 1;
             updateM3(newM3);
+            boolean newIe1 = ((data >> 4) & 1) == 1;
+            updateIe1(newIe1);
         } else if (reg == 0x01) {
             evram = ((data >> 7) & 1) == 1;
             disp = ((data >> 6) & 1) == 1;
@@ -472,6 +473,13 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             lastHCounter = getHCounter();
         }
         m3 = newM3;
+    }
+
+    private void updateIe1(boolean newIe1) {
+        if (ie1 != newIe1) {
+            ie1 = newIe1;
+            interruptHandler.printState("Update ie1 register: %s", newIe1);
+        }
     }
 
     boolean dmaRecien = false;

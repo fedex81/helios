@@ -45,7 +45,7 @@ public class VdpInterruptHandler {
     private boolean vIntPending;
     private boolean hIntPending;
 
-    private boolean verbose = Genesis.verbose;
+    private static boolean verbose = Genesis.verbose;
 
     enum VdpCounterMode {
         PAL_H32_V28(VideoMode.PAL_H32_V28,
@@ -206,8 +206,11 @@ public class VdpInterruptHandler {
     private void handleHLinesCounter() {
         //Vcounter is incremented just before HINT pending flag is set,
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn + 2) {
-            hLinePassed--;
-            boolean isValidVCounterForHip = vCounterInternal > 0x00 && vCounterInternal <= vdpCounterMode.vBlankSet;
+            //it is decremented on each lines between line 0 and line $E0
+            if (vCounterInternal <= vdpCounterMode.vBlankSet) {
+                hLinePassed--;
+            }
+            boolean isValidVCounterForHip = vCounterInternal > 0x00; //Lotus II
             boolean triggerHip = isValidVCounterForHip && hLinePassed == -1; //aka triggerHippy
             if (triggerHip) {
                 hIntPending = true;
@@ -274,34 +277,15 @@ public class VdpInterruptHandler {
     }
 
     public static void main(String[] args) {
-        VdpInterruptHandler h = new VdpInterruptHandler();
+        VdpInterruptHandler.verbose = true;
+        VdpInterruptHandler h = createInstance(() -> {
+            return 0;
+        });
         h.setMode(VideoMode.PAL_H32_V30);
-
-//        h.vCounterInternal =  h.vdpCounterMode.vBlankSet-1;
-
-        boolean prevHblank = false;
-        boolean prevVblank = false;
-        boolean prevVintPending = false;
-        for (int i = 1; i < 500000; i++) {
-            int hc = h.increaseHCounter();
-            int hce = h.getHCounterExternal();
-            int vc = h.getvCounter();
-            int vce = h.getVCounterExternal();
-            boolean hBlankToggle = prevHblank != h.ishBlankSet();
-            boolean vBlankToggle = prevVblank != h.isvBlankSet();
-            boolean vIntPendingToggle = prevVintPending != h.isvIntPending();
-            if (hBlankToggle || vBlankToggle || vIntPendingToggle) {
-
-                System.out.println(i + ",hce=" + Integer.toHexString(hce) +
-                        "(" + Integer.toHexString(hc) + "), vce=" + Integer.toHexString(vce)
-                        + "(" + Integer.toHexString(vc) + ")" + ", hBlankSet=" + h.hBlankSet + ",vBlankSet=" + h.vBlankSet
-                        + ", vIntPending=" + h.vIntPending
-                );
-            }
-            prevHblank = h.ishBlankSet();
-            prevVblank = h.isvBlankSet();
-            prevVintPending = h.isvIntPending();
-        }
+        do {
+            h.increaseHCounter();
+            h.printState("", null);
+        } while (!h.isDrawFrameCounter());
 
     }
 
