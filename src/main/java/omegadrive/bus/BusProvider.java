@@ -20,6 +20,8 @@ import org.apache.logging.log4j.Logger;
  */
 public interface BusProvider {
 
+    int ADDRESS_UPPER_LIMIT = 0xFFFFFF;
+
     Logger LOG = LogManager.getLogger(BusProvider.class.getSimpleName());
 
     static BusProvider createBus() {

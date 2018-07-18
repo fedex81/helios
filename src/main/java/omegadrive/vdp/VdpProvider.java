@@ -49,7 +49,7 @@ public interface VdpProvider {
 
     long readDataPort(Size size);
 
-    void writeDataPort(int data, Size size);
+    void writeDataPort(long data);
 
     int readControl();
 

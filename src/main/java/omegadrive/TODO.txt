@@ -1,7 +1,7 @@
 
 - Mappers
 http://gendev.spritesmind.net/forum/viewtopic.php?t=206
-- codemaster mapper
+- codemaster mapper + EEPROM
  Pete Sampras Tennis, Pete Sampras Tennis 96, Micro Machines 2, Micro Machines 96, Micro Machines Military Edition, and Super Skidmarks.
 
 - Sonic & Knuckles mapper
@@ -26,3 +26,5 @@ java.lang.ArrayIndexOutOfBoundsException: 8242
 	at omegadrive.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:154) ~[classes/:?]
 	at omegadrive.Genesis.run68k(Genesis.java:331) ~[classes/:?]
 	at omegadrive.Genesis.loop(Genesis.java:275) [classes/:?]
+
+- DMA Fill: contra hard cops

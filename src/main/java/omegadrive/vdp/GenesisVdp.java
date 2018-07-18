@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * GenesisVdp
@@ -32,7 +33,22 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     int[] vsram = new int[VDP_VSRAM_SIZE];
 
     enum VramMode {
-        vramRead, cramRead, vsramRead, vramWrite, cramWrite, vsramWrite;
+        vramRead(0b0000), cramRead(0b1000), vsramRead(0b0100), vramWrite(0b0001), cramWrite(0b0011), vsramWrite(0b0101);
+
+        private final int addressMode;
+
+        VramMode(int addressMode) {
+            this.addressMode = addressMode;
+        }
+
+        public static VramMode getVramMode(int addressMode) {
+            for (VramMode mode : VramMode.values()) {
+                if (mode.addressMode == addressMode) {
+                    return mode;
+                }
+            }
+            return null;
+        }
     }
 
     VramMode vramMode;
@@ -353,26 +369,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             autoIncrementTotal = 0;    // reset
 
             int addressMode = code & 0xF;    // solo el primer byte, el bit 4 y 5 son para DMA
-            // que ya fue contemplado arriba
-            if (addressMode == 0b0000) { // VRAM Read
-                vramMode = VramMode.vramRead;
-
-            } else if (addressMode == 0b0001) { // VRAM Write
-                vramMode = VramMode.vramWrite;
-
-            } else if (addressMode == 0b1000) { // CRAM Read
-                vramMode = VramMode.cramRead;
-
-            } else if (addressMode == 0b0011) { // CRAM Write
-                vramMode = VramMode.cramWrite;
-
-            } else if (addressMode == 0b0100) { // VSRAM Read
-                vramMode = VramMode.vsramWrite;
-
-            } else if (addressMode == 0b0101) { // VSRAM Write
-                vramMode = VramMode.vsramWrite;
-            }
-
+            vramMode = Optional.ofNullable(VramMode.getVramMode(addressMode)).orElse(vramMode);
             LOG.debug("Video mode: " + Objects.toString(vramMode));
 
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
@@ -532,106 +529,45 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public void writeDataPort(int data, Size size) {
-        this.dataPort = data;
-        this.writePendingControlPort = false;
-        if (size == Size.BYTE) {
-            if (vramFill) {
-                if (vramMode == VramMode.vramWrite) {
-                    vramWriteByte(data);
-                } else {
-                    LOG.warn("que hace ? otros modos ?");
-                }
-
-                autoIncrementTotal = 1;
-
-                if (m1) {
-                    dma = 1;
-                    vramFill = false;
-
-                    dataPort = (data << 8) | data;
-
-                    return;
-                } else {
-                    LOG.warn("M1 should be 1 in the DMA transfer. otherwise we can't guarantee the operation.");
-                }
-
-            } else if (vramMode == VramMode.vramWrite) {
-                vramWriteByte(data);
-            } else if (vramMode == VramMode.cramWrite || vramMode == VramMode.vsramWrite) {
-                LOG.error(vramMode + ", " + size + " wide write not supported: " + data);
-            } else {
-                LOG.warn("Unexpected write, data : " + data + ",vramMode: " + Objects.toString(vramMode));
-            }
-
-        } else if (size == Size.WORD) {
-            if (vramFill) {
-//Performing a DMA fill does perform a normal VRAM write.
+    public void writeDataPort(long dataL) {
+        //Performing a DMA fill does perform a normal VRAM write.
 //After the VRAM write has been processed however, a DMA fill operation is triggered immediately after.
 //Normal VRAM writes are always 16-bit, so the first write that is carried out when you try and
 //start a DMA fill will always be 16-bit. The DMA fill operation that follows will perform 8-bit writes.
-                if (vramMode == VramMode.vramWrite) {
-                    vramWriteWord(data);
-                } else {
-                    LOG.warn("Unexpected write during vramFill, data : " + data + ", vramMode: " + Objects.toString(vramMode));
-                }
-                autoIncrementTotal = 1;
-
-                if (m1) {
-                    dma = 1;
-                    vramFill = false;
-
-                    dataPort = data;
-
-                    return;
-                } else {
-                    LOG.warn("M1 should be 1 in the DMA transfer. otherwise we can't guarantee the operation.");
-                }
-
-            } else if (vramMode == VramMode.vramWrite) {
+        int data = (int) dataL;
+        if (vramFill) {
+            if (vramMode == VramMode.vramWrite) {
                 vramWriteWord(data);
-
-            } else if (vramMode == VramMode.cramWrite) {
-                cramWriteWord(data);
-
-            } else if (vramMode == VramMode.vsramWrite) {
-                vsramWriteWord(data);
-
             } else {
-                LOG.warn("Unexpected write, data: " + data + ", vramMode: " + Objects.toString(vramMode));
+                LOG.warn("Unexpected write during vramFill, data : " + data + ", vramMode: " + Objects.toString(vramMode));
+            }
+            autoIncrementTotal = 1;
+
+            if (m1) {
+                dma = 1;
+                vramFill = false;
+
+                dataPort = data;
+
+                return;
+            } else {
+                LOG.warn("M1 should be 1 in the DMA transfer. otherwise we can't guarantee the operation.");
             }
 
-        } else {    //	LONG
-            if (vramFill) {
-                if (m1) {
-                    dma = 1;
-                    vramFill = false;
+        } else if (vramMode == VramMode.vramWrite) {
+            vramWriteWord(data);
 
-                    dataPort = data;
+        } else if (vramMode == VramMode.cramWrite) {
+            cramWriteWord(data);
 
-                    return;
-                } else {
-                    LOG.warn("M1 should be 1 in the DMA transfer. otherwise we can't guarantee the operation.");
-                }
+        } else if (vramMode == VramMode.vsramWrite) {
+            vsramWriteWord(data);
 
-            } else if (vramMode == VramMode.vramWrite) {
-                vramWriteWord(data >> 16);
-                vramWriteWord(data & 0xFFFF);
-
-            } else if (vramMode == VramMode.cramWrite) {
-                cramWriteWord(data >> 16);
-                cramWriteWord(data & 0xFFFF);
-
-            } else if (vramMode == VramMode.vsramWrite) {
-                vsramWriteWord(data >> 16);
-                vsramWriteWord(data & 0xFFFF);
-
-            } else {
-                LOG.warn("Unexpected write, data: " + data + ", vramMode: " + Objects.toString(vramMode));
-            }
+        } else {
+            LOG.warn("Unexpected write, data: " + data + ", vramMode: " + Objects.toString(vramMode));
         }
-
     }
+
 
 //	 Registers 19, 20, specify how many 16-bit words to transfer:
 //
@@ -682,6 +618,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 LOG.warn("Should be even! " + destAddr);
             }
             if (destAddr > 0xFFFF) {
+                LOG.warn("DMA destAddr overflow"); //TODO investigate
                 return;
             }
             if (vramMode == VramMode.vramWrite) {
@@ -700,6 +637,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             }
 
             sourceTrue += 2;
+            if (sourceTrue > BusProvider.ADDRESS_UPPER_LIMIT) {
+                sourceTrue = (sourceTrue & BusProvider.ADDRESS_UPPER_LIMIT) + 0xFF0000;
+                LOG.warn("DMA sourceAddr overflow");
+            }
+
             destAddr += registers[15];
 
             dmaLength--;
@@ -714,6 +656,18 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         dmaLengthCounterLo = 0;
         registers[0x14] = 0;
         registers[0x13] = 0;
+    }
+
+    public static void main(String[] args) {
+        int source = 0xFF0000;
+        int i = 0;
+        while (i < 100000) {
+            source += 2;
+            source = source > 0xFFFFFF ? (source & 0xFFFFFF) + 0xFF0000 : source;
+//            if(source > 0xFFFFF0) {
+            System.out.println(Integer.toHexString(source));
+//            }
+        }
     }
 
     public int[][] screenData = new int[COLS][ROWS];
@@ -1685,13 +1639,12 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    private void vramWriteByte(int data) {
+    private void vramFillWriteByte(int data) {
         int address = addressPort;
 
         long first = all >> 16;
         long second = all & 0xFFFF;
 
-        int code = (int) ((first >> 14) | (((second >> 4) & 0xF) << 2));
         int addr = (int) ((first & 0x3FFF) | ((second & 0x3) << 14));
 
         int offset = addr + autoIncrementTotal;
@@ -1716,12 +1669,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private void videoRamWriteWord(VramMode vramMode, int data) {
         int word = data;
         int address = addressPort;
-
-        long first = all >> 16;
-        long second = all & 0xFFFF;
-
-        int code = (int) ((first >> 14) | (((second >> 4) & 0xF) << 2));
-        int addr = (int) ((first & 0x3FFF) | ((second & 0x3) << 13));
 
         int offset = address + autoIncrementTotal;
 

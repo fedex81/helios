@@ -486,7 +486,7 @@ public class GenBusLegacy implements BusProvider {
             addressL = addressL & 0x1F; //low 5 bits
 
             if (addressL < 0x4) {    //DATA PORT
-                vdp.writeDataPort((int) data, size);
+                vdp.writeDataPort((int) data);
 
             } else if (addressL >= 0x4 && addressL < 0x8) {    //CONTROL PORT
 //                Doing an 8-bit write to the control or data port is interpreted by

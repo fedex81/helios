@@ -572,8 +572,7 @@ public class GenVdpLegacy implements VdpProvider {
 
     boolean dmaRequested;
 
-    @Override
-    public void writeDataPort(int data, Size size) {
+    private void writeDataPort(int data, Size size) {
         this.dataPort = data;
 
         if (size == Size.BYTE) {
@@ -672,6 +671,11 @@ public class GenVdpLegacy implements VdpProvider {
             }
         }
 
+    }
+
+    @Override
+    public void writeDataPort(long data) {
+        writeDataPort((int) data, Size.WORD);
     }
 
 //	 Registers 19, 20, specify how many 16-bit words to transfer:

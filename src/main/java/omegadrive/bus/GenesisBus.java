@@ -330,7 +330,7 @@ public class GenesisBus implements BusProvider {
                 boolean even = address % 2 == 0;
                 return even ? v : h;
             }
-        } else if (address >= 0xE00000 && address <= 0xFFFFFF) {  //RAM (64K mirrored)
+        } else if (address >= 0xE00000 && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             return Util.readRam(memory, size, address);
         } else {
             LOG.warn("NOT MAPPED: " + pad4(address) + " - " + pad4(cpu.getPC()));
@@ -362,6 +362,55 @@ public class GenesisBus implements BusProvider {
             data |= data2;
         }
         return data;
+    }
+
+    //      Doing an 8-bit write to the control or data port is interpreted by
+//                the VDP as a 16-bit word, with the data written used for both halfs
+//                of the word.
+    private void vdpWrite(long addressL, Size size, long data) {
+        addressL = addressL & 0x1F; //low 5 bits
+
+        if (addressL < 0x4) {    //DATA PORT
+            if (size == Size.BYTE) {
+                data = data << 8 | data;
+                vdp.writeDataPort(data);
+            } else if (size == Size.WORD) {
+                vdp.writeDataPort(data);
+            } else {
+                vdp.writeDataPort(data >> 16);
+                vdp.writeDataPort(data & 0xFFFF);
+            }
+        } else if (addressL >= 0x4 && addressL < 0x8) {    //CONTROL PORT
+            if (size == Size.BYTE) {
+                data = data << 8 | data;
+                vdp.writeControlPort(data);
+            } else if (size == Size.WORD) {
+                vdp.writeControlPort(data);
+            } else {
+                vdp.writeControlPort(data >> 16);
+                vdp.writeControlPort(data & 0xFFFF);
+            }
+        } else if (addressL >= 0x8 && addressL < 0x0F) {   //HV Counter
+            LOG.warn("HV counter write");
+        }
+        //            Doing byte-wide writes to even PSG addresses has no effect.
+//
+//            If you want to write to the PSG via word-wide writes, the data
+//            must be in the LSB. For instance:
+//
+//            move.b      (a4)+, d0       ; PSG data in LSB
+//            move.w      d0, $C00010     ; Write to PSG
+        else if (addressL >= 0x10 && addressL < 0x18) {
+//                LOG.debug("PSG Output: " + data + ": " + Long.toBinaryString(data));
+            int psgData = (int) data;
+            if (size == Size.WORD) {
+                LOG.warn("TODO Check this");
+                psgData = (int) (data & 0xFF);
+            }
+            sound.getPsg().write(psgData);
+        } else {
+            LOG.warn("TODO Check this");
+        }
     }
 
     @Override
@@ -508,48 +557,9 @@ public class GenesisBus implements BusProvider {
             }
         } else if (address == 0xA14000) {    //	VDP TMSS
             LOG.warn("TMSS: " + Integer.toHexString((int) data));
-            //c07f1100
         } else if (addressL >= 0xC00000 && addressL < 0xDFFFFF) {  //VDP
-            addressL = addressL & 0x1F; //low 5 bits
-
-            if (addressL < 0x4) {    //DATA PORT
-                vdp.writeDataPort((int) data, size);
-
-            } else if (addressL >= 0x4 && addressL < 0x8) {    //CONTROL PORT
-//                Doing an 8-bit write to the control or data port is interpreted by
-//                the VDP as a 16-bit word, with the data written used for both halfs
-//                of the word.
-                if (size == Size.BYTE) {
-                    data = data << 8 | data;
-                    vdp.writeControlPort(data);
-                } else if (size == Size.WORD) {
-                    vdp.writeControlPort(data);
-                } else {
-                    vdp.writeControlPort(data >> 16);
-                    vdp.writeControlPort(data & 0xFFFF);
-                }
-            } else if (addressL >= 0x8 && addressL < 0x0F) {   //HV Counter
-                LOG.warn("HV counter write");
-            }
-//            Doing byte-wide writes to even PSG addresses has no effect.
-//
-//            If you want to write to the PSG via word-wide writes, the data
-//            must be in the LSB. For instance:
-//
-//            move.b      (a4)+, d0       ; PSG data in LSB
-//            move.w      d0, $C00010     ; Write to PSG
-            else if (addressL >= 0x10 && addressL < 0x18) {
-//                LOG.debug("PSG Output: " + data + ": " + Long.toBinaryString(data));
-                int psgData = (int) data;
-                if (size == Size.WORD) {
-                    LOG.warn("TODO Check this");
-                    psgData = (int) (data & 0xFF);
-                }
-                sound.getPsg().write(psgData);
-            } else {
-                LOG.warn("TODO Check this");
-            }
-        } else if (addressL >= 0xE00000 && addressL <= 0xFFFFFF) {  //RAM (64K mirrored)
+            vdpWrite(addressL, size, data);
+        } else if (addressL >= 0xE00000 && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             long addressZ = addressL & 0xFFFF;
             Util.writeRam(memory, size, addressZ, data);
         } else {
