@@ -1639,21 +1639,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    private void vramFillWriteByte(int data) {
-        int address = addressPort;
-
-        long first = all >> 16;
-        long second = all & 0xFFFF;
-
-        int addr = (int) ((first & 0x3FFF) | ((second & 0x3) << 14));
-
-        int offset = addr + autoIncrementTotal;
-
-        writeVramByte(offset, data);
-        int incrementOffset = autoIncrementTotal + autoIncrementData;
-        autoIncrementTotal = incrementOffset;
-    }
-
     private void cramWriteWord(int data) {
         videoRamWriteWord(VramMode.cramWrite, data);
     }
