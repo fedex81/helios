@@ -25,7 +25,7 @@ import java.util.Objects;
  * https://github.com/DarkMoe/genefusto
  * @author DarkMoe
  */
-public class GenesisBus implements BusProvider {
+public class GenesisBus implements BusProvider, GenesisMapper {
 
     private static Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
@@ -39,6 +39,7 @@ public class GenesisBus implements BusProvider {
     public SoundProvider sound;
 
     public CartridgeInfoProvider cartridgeInfoProvider;
+    private GenesisMapper mapper;
 
     public static long ROM_START_ADDRESS;
     public static long ROM_END_ADDRESS;
@@ -58,12 +59,8 @@ public class GenesisBus implements BusProvider {
 
     int[] sram = new int[0];
 
-    //	https://emu-docs.org/Genesis/ssf2.txt
-    boolean ssf2Mapper = false;
-
-    int[] banks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
-
     protected GenesisBus() {
+        this.mapper = this;
     }
 
     void initializeRomData() {
@@ -119,68 +116,6 @@ public class GenesisBus implements BusProvider {
         busState = ok ? BusState.READY : BusState.NOT_READY;
     }
 
-    private long readSsf2(long address, Size size) {
-        address = address & 0xFF_FFFF;    // el memory map llega hasta ahi
-        long data;
-        if (ssf2Mapper && address >= 0x080000 && address <= 0x3FFFFF) {
-            if (address >= 0x080000 && address <= 0x0FFFFF) {
-                address = (banks[1] * 0x80000) + (address - 0x80000);
-            } else if (address >= 0x100000 && address <= 0x17FFFF) {
-                address = (banks[2] * 0x80000) + (address - 0x100000);
-            } else if (address >= 0x180000 && address <= 0x1FFFFF) {
-                address = (banks[3] * 0x80000) + (address - 0x180000);
-            } else if (address >= 0x200000 && address <= 0x27FFFF) {
-                address = (banks[4] * 0x80000) + (address - 0x200000);
-            } else if (address >= 0x280000 && address <= 0x2FFFFF) {
-                address = (banks[5] * 0x80000) + (address - 0x280000);
-            } else if (address >= 0x300000 && address <= 0x37FFFF) {
-                address = (banks[6] * 0x80000) + (address - 0x300000);
-            } else if (address >= 0x380000 && address <= 0x3FFFFF) {
-                address = (banks[7] * 0x80000) + (address - 0x380000);
-            }
-
-            if (size == Size.BYTE) {
-                //TODO fix
-                if (address >= 0x200000 && address <= 0x20FFFF && sramMode == SramMode.READ_WRITE) {
-                    address = address - 0x200000;
-                    if (address < 0x200) {
-                        data = sram[(int) address];
-                    } else {
-                        data = 0;
-                    }
-
-                } else {
-                    data = memory.readCartridgeByte(address);
-                }
-
-            } else if (size == Size.WORD) {
-                if (address >= 0x200000 && address <= 0x20FFFF && sramMode == SramMode.READ_WRITE) {
-                    address = address - 0x200000;
-                    data = sram[(int) address] << 8;
-                    data |= sram[(int) address + 1];
-                } else {
-                    data = memory.readCartridgeWord(address);
-                }
-
-            } else {
-                if (address >= 0x200000 && address <= 0x20FFFF && sramMode == SramMode.READ_WRITE) {
-                    address = address - 0x200000;
-                    data = sram[(int) address] << 24;
-                    data |= sram[(int) address + 1] << 16;
-                    data |= sram[(int) address + 2] << 8;
-                    data |= sram[(int) address + 3];
-
-                } else {
-                    data = memory.readCartridgeWord(address) << 16;
-                    data |= memory.readCartridgeWord(address + 2);
-
-                }
-            }
-            return data;
-
-        }
-        return -1;
-    }
 
     private static boolean isSramRead(SramMode sramMode, long address) {
         if (!SRAM_AVAILABLE) {
@@ -204,16 +139,9 @@ public class GenesisBus implements BusProvider {
 
 
     @Override
-    public long read(long address, Size size) {
+    public long readData(long address, Size size) {
         address = address & 0xFF_FFFF;    // el memory map llega hasta ahi
         long data;
-        if (ssf2Mapper) {
-            data = readSsf2(address, size);
-            if (data >= 0) {
-                return data;
-            }
-        }
-
         if (address <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {  //ROM
             boolean sramRead = isSramRead(sramMode, address);
             data = sramRead ? Util.readSram(sram, size, address, SRAM_START_ADDRESS) : Util.readRom(memory, size, address);
@@ -420,16 +348,14 @@ public class GenesisBus implements BusProvider {
 
     @Override
     public void setSsf2Mapper(boolean value) {
-        this.ssf2Mapper = value;
+        this.mapper = value ? Ssf2Mapper.getOrCreateInstance(this, mapper, memory) : mapper;
     }
 
     //	https://wiki.megadrive.org/index.php?title=IO_Registers
     @Override
-    public void write(long address, long data, Size size) {
+    public void writeData(long address, long data, Size size) {
         long addressL = (address & 0xFF_FFFF);
-        if (ssf2Mapper) {
-            writeSsf2(addressL, data);
-        }
+
         if (size == Size.BYTE) {
             data = data & 0xFF;
         } else if (size == Size.WORD) {
@@ -555,6 +481,7 @@ public class GenesisBus implements BusProvider {
             } else {
                 sramMode = SramMode.READ_ONLY;
             }
+//            checkSsf2Mapper(address, data);
         } else if (address == 0xA14000) {    //	VDP TMSS
             LOG.warn("TMSS: " + Integer.toHexString((int) data));
         } else if (addressL >= 0xC00000 && addressL < 0xDFFFFF) {  //VDP
@@ -567,37 +494,27 @@ public class GenesisBus implements BusProvider {
         }
     }
 
-    //	A page is specified with 6 bits (bits 7 and 6 are always 0) thus allowing a possible 64 pages
-    // (SSFII only has 10, though.)
-    private void writeSsf2(long addressL, long data) {
-        if (addressL == 0xA130F3 && ssf2Mapper) {    //	0x080000 - 0x0FFFFF
-            data = data & 0x3F;
-            banks[1] = (int) data;
-
-        } else if (addressL == 0xA130F5 && ssf2Mapper) {    //	0x100000 - 0x17FFFF
-            data = data & 0x3F;
-            banks[2] = (int) data;
-
-        } else if (addressL == 0xA130F7 && ssf2Mapper) {    //	0x180000 - 0x1FFFFF
-            data = data & 0x3F;
-            banks[3] = (int) data;
-
-        } else if (addressL == 0xA130F9 && ssf2Mapper) {    //	0x200000 - 0x27FFFF
-            data = data & 0x3F;
-            banks[4] = (int) data;
-
-        } else if (addressL == 0xA130FB && ssf2Mapper) {    //	0x280000 - 0x2FFFFF
-            data = data & 0x3F;
-            banks[5] = (int) data;
-
-        } else if (addressL == 0xA130FD && ssf2Mapper) {    //	0x300000 - 0x37FFFF
-            data = data & 0x3F;
-            banks[6] = (int) data;
-
-        } else if (addressL == 0xA130FF && ssf2Mapper) {    //	0x380000 - 0x3FFFFF
-            data = data & 0x3F;
-            banks[7] = (int) data;
+    //TODO fix
+    private void checkSsf2Mapper(long address, long data) {
+        //ssf2 mapper check
+        if (address >= Ssf2Mapper.BANK_SET_START_ADDRESS && address <= Ssf2Mapper.BANK_SET_END_ADDRESS
+                && this.cartridgeInfoProvider.getRomEnd() >= ROM_END_ADDRESS) {
+            GenesisMapper previousMapper = mapper;
+            this.mapper = Ssf2Mapper.getOrCreateInstance(this, mapper, memory);
+            if (mapper != previousMapper) {  //mapper toggle
+                this.mapper.writeBankData(address, data);
+            }
         }
+    }
+
+    @Override
+    public long read(long address, Size size) {
+        return mapper.readData(address, size);
+    }
+
+    @Override
+    public void write(long address, long data, Size size) {
+        mapper.writeData(address, data, size);
     }
 
     @Override

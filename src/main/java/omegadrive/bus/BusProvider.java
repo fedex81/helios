@@ -44,11 +44,11 @@ public interface BusProvider {
 
     SoundProvider getSound();
 
-    long read(long address, Size size);
-
     void setSsf2Mapper(boolean value);
 
     boolean checkInterrupts();
+
+    long read(long address, Size size);
 
     void write(long address, long data, Size size);
 
