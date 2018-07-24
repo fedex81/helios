@@ -234,6 +234,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 value = value << 8;
             }
             return value;
+        } else if (address >= 0xA13000 && address <= 0xA130FF) {
+            LOG.info("Mapper read at: " + Long.toHexString(address));
         } else if (address >= 0xC00000 && address <= 0xC00007) { // VDP Data and Control
             return vdpRead(address, size);
         } else if (address >= 0xC00008 && address <= 0xC0000E) { //	VDP HV counter
@@ -344,11 +346,6 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     @Override
     public GenesisProvider getEmulator() {
         return emu;
-    }
-
-    @Override
-    public void setSsf2Mapper(boolean value) {
-        this.mapper = value ? Ssf2Mapper.getOrCreateInstance(this, mapper, memory) : mapper;
     }
 
     //	https://wiki.megadrive.org/index.php?title=IO_Registers
@@ -472,16 +469,23 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             //$A130F1 (what you'd officially write to if you had a full blown mapper) has this format: ??????WE,
             //where W = allow writing and E = enable SRAM (it needs to be 00 to make SRAM hidden and 11 to make SRAM writeable).
             //These games generally just look at the /TIME signal (the entire $A130xx range) unless they feature a full-blown mapper).
-            LOG.info("SRAM Register enable: " + Integer.toHexString((int) data));
-            data = data & 3;
-            if (data == 0) {
-                sramMode = SramMode.DISABLE;
-            } else if (data == 3) {
-                sramMode = SramMode.READ_WRITE;
+            if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= Ssf2Mapper.BANK_SET_END_ADDRESS) {
+                LOG.info("Mapper bank set, address: " + Long.toHexString(addressL) + ", data: " + Integer.toHexString((int) data));
+                checkSsf2Mapper();
+                mapper.writeBankData(addressL, data);
+            } else if (addressL == 0xA130F1) {
+                data = data & 3;
+                if (data == 2) { //SSF2 Mapper
+                    checkSsf2Mapper();
+                } else if (data == 3) {
+                    sramMode = SramMode.READ_WRITE;
+                } else {
+                    sramMode = SramMode.READ_ONLY;
+                }
+                LOG.info("Mapper register set: " + data);
             } else {
-                sramMode = SramMode.READ_ONLY;
+                LOG.warn("Unexpected mapper set, address: " + Long.toHexString(addressL) + ", data: " + Integer.toHexString((int) data));
             }
-//            checkSsf2Mapper(address, data);
         } else if (address == 0xA14000) {    //	VDP TMSS
             LOG.warn("TMSS: " + Integer.toHexString((int) data));
         } else if (addressL >= 0xC00000 && addressL < 0xDFFFFF) {  //VDP
@@ -494,18 +498,10 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         }
     }
 
-    //TODO fix
-    private void checkSsf2Mapper(long address, long data) {
-        //ssf2 mapper check
-        if (address >= Ssf2Mapper.BANK_SET_START_ADDRESS && address <= Ssf2Mapper.BANK_SET_END_ADDRESS
-                && this.cartridgeInfoProvider.getRomEnd() >= ROM_END_ADDRESS) {
-            GenesisMapper previousMapper = mapper;
-            this.mapper = Ssf2Mapper.getOrCreateInstance(this, mapper, memory);
-            if (mapper != previousMapper) {  //mapper toggle
-                this.mapper.writeBankData(address, data);
-            }
-        }
+    private void checkSsf2Mapper() {
+        this.mapper = Ssf2Mapper.getOrCreateInstance(this, mapper, memory);
     }
+
 
     @Override
     public long read(long address, Size size) {

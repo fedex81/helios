@@ -44,8 +44,6 @@ public interface BusProvider {
 
     SoundProvider getSound();
 
-    void setSsf2Mapper(boolean value);
-
     boolean checkInterrupts();
 
     long read(long address, Size size);

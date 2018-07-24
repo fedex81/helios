@@ -3,6 +3,7 @@ package omegadrive.bus;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,7 +39,7 @@ public class Ssf2Mapper implements GenesisMapper {
         Ssf2Mapper mapper = new Ssf2Mapper();
         mapper.baseMapper = baseMapper;
         mapper.memory = memoryProvider;
-        LOG.info("Ssf2Mapper created");
+        LOG.info("Ssf2Mapper created and enabled");
         return mapper;
     }
 
@@ -46,6 +47,7 @@ public class Ssf2Mapper implements GenesisMapper {
     public long readData(long address, Size size) {
         address = address & 0xFF_FFFF;
         if (address >= 0x080000 && address <= 0x3FFFFF) {
+            Util.printLevelIfVerbose(LOG, Level.DEBUG, "Bank read: {}", Long.toHexString(address));
             if (address >= 0x080000 && address <= 0x0FFFFF) {
                 address = (banks[1] * 0x80000) + (address - 0x80000);
             } else if (address >= 0x100000 && address <= 0x17FFFF) {
@@ -107,5 +109,7 @@ public class Ssf2Mapper implements GenesisMapper {
             data = data & 0x3F;
             banks[7] = (int) data;
         }
+        Util.printLevelIfVerbose(LOG, Level.INFO, "Bank write to: {} , value : {}", Long.toHexString(addressL), data);
     }
+
 }

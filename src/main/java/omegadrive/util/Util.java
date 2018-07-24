@@ -1,8 +1,11 @@
 package omegadrive.util;
 
 import com.google.common.collect.Range;
+import omegadrive.Genesis;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.z80.Z80Provider;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -134,6 +137,12 @@ public class Util {
             for (int j = 0; j < src[i].length; j++) {
                 dest[i] = src[i];
             }
+        }
+    }
+
+    public static void printLevelIfVerbose(Logger LOG, Level level, String str, Object... args) {
+        if (Genesis.verbose) {
+            LOG.log(level, str, args);
         }
     }
 

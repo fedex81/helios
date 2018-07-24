@@ -342,11 +342,6 @@ public class GenBusLegacy implements BusProvider {
         return emu;
     }
 
-    @Override
-    public void setSsf2Mapper(boolean value) {
-        this.ssf2Mapper = value;
-    }
-
     //	https://wiki.megadrive.org/index.php?title=IO_Registers
     @Override
     public void write(long address, long data, Size size) {

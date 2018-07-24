@@ -15,6 +15,7 @@ public class GameQuirks {
 
     private static Logger LOG = LogManager.getLogger(GameQuirks.class.getSimpleName());
 
+    @Deprecated
     public static boolean isSsf2Mapper(MemoryProvider memory) {
         int[] ssf2Title = new int[]{
                 0x53, 0x55, 0x50, 0x45, 0x52, 0x20, 0x53, 0x54, 0x52, 0x45, 0x45, 0x54, 0x20, 0x46, 0x49, 0x47,

@@ -245,7 +245,6 @@ public class Genesis implements GenesisProvider {
 
             //detect ROM first
             bus.reset();
-            bus.setSsf2Mapper(GameQuirks.isSsf2Mapper(memory));
             cpu.reset();
             cpu.initialize();
             joypad.initialize();
