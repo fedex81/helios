@@ -235,7 +235,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             }
             return value;
         } else if (address >= 0xA13000 && address <= 0xA130FF) {
-            LOG.info("Mapper read at: " + Long.toHexString(address));
+            LOG.warn("Unexpected mapper read at: " + Long.toHexString(address));
         } else if (address >= 0xC00000 && address <= 0xC00007) { // VDP Data and Control
             return vdpRead(address, size);
         } else if (address >= 0xC00008 && address <= 0xC0000E) { //	VDP HV counter
@@ -260,10 +260,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 boolean even = address % 2 == 0;
                 return even ? v : h;
             }
+        } else if (address == 0xC0001C) {
+            LOG.warn("Ignoring VDP debug register write, address : " + pad4(address));
         } else if (address >= 0xE00000 && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             return Util.readRam(memory, size, address);
         } else {
-            LOG.warn("NOT MAPPED: " + pad4(address) + " - " + pad4(cpu.getPC()));
+            LOG.warn("BUS READ NOT MAPPED: " + pad4(address) + " - " + pad4(cpu.getPC()));
         }
 
         return 0;
@@ -334,12 +336,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 //                LOG.debug("PSG Output: " + data + ": " + Long.toBinaryString(data));
             int psgData = (int) data;
             if (size == Size.WORD) {
-                LOG.warn("TODO Check this");
+                LOG.warn("PSG word write, address: " + Long.toHexString(addressL) + ", data: " + data);
                 psgData = (int) (data & 0xFF);
             }
             sound.getPsg().write(psgData);
         } else {
-            LOG.warn("TODO Check this");
+            LOG.warn("Unexpected vdpWrite, address: " + Long.toHexString(addressL) + ", data: " + data);
         }
     }
 
