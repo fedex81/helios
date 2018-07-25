@@ -1,6 +1,7 @@
 package omegadrive.bus;
 
 import omegadrive.memory.MemoryProvider;
+import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.Level;
@@ -21,6 +22,9 @@ public class Ssf2Mapper implements GenesisMapper {
 
     public static final int BANK_SET_START_ADDRESS = 0xA130F3;
     public static final int BANK_SET_END_ADDRESS = 0xA130FF;
+
+    public static final int BANK_SIZE = 0x80000;
+    public static final int BANKABLE_START_ADDRESS = 0x80000;
 
     private int[] banks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
     private GenesisMapper baseMapper;
@@ -46,23 +50,10 @@ public class Ssf2Mapper implements GenesisMapper {
     @Override
     public long readData(long address, Size size) {
         address = address & 0xFF_FFFF;
-        if (address >= 0x080000 && address <= 0x3FFFFF) {
+        if (address >= BANKABLE_START_ADDRESS && address <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {
             Util.printLevelIfVerbose(LOG, Level.DEBUG, "Bank read: {}", Long.toHexString(address));
-            if (address >= 0x080000 && address <= 0x0FFFFF) {
-                address = (banks[1] * 0x80000) + (address - 0x80000);
-            } else if (address >= 0x100000 && address <= 0x17FFFF) {
-                address = (banks[2] * 0x80000) + (address - 0x100000);
-            } else if (address >= 0x180000 && address <= 0x1FFFFF) {
-                address = (banks[3] * 0x80000) + (address - 0x180000);
-            } else if (address >= 0x200000 && address <= 0x27FFFF) {
-                address = (banks[4] * 0x80000) + (address - 0x200000);
-            } else if (address >= 0x280000 && address <= 0x2FFFFF) {
-                address = (banks[5] * 0x80000) + (address - 0x280000);
-            } else if (address >= 0x300000 && address <= 0x37FFFF) {
-                address = (banks[6] * 0x80000) + (address - 0x300000);
-            } else if (address >= 0x380000 && address <= 0x3FFFFF) {
-                address = (banks[7] * 0x80000) + (address - 0x380000);
-            }
+            int bankSelector = (int) (address / BANK_SIZE);
+            address = (banks[bankSelector] * BANK_SIZE) + (address - bankSelector * BANK_SIZE);
             return Util.readRom(memory, size, address);
         }
         return baseMapper.readData(address, size);

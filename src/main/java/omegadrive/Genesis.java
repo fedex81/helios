@@ -327,7 +327,10 @@ public class Genesis implements GenesisProvider {
         if (counter % 2 == 0) {
             if (!cpu.isStopped()) {
                 if (!bus.checkInterrupts()) {
-                    cpu.runInstruction();
+                    int res = cpu.runInstruction();
+                    if (res == 34) {  //TODO why 34??
+                        throw new RuntimeException("M68k error");
+                    }
                 }
             }
         }

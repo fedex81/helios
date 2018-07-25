@@ -205,18 +205,22 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             } else {
                 return joypad.readControlRegister2();
             }
-            //If the 68k wishes to access anything in the Z80 address space, the Z80 must be stopped.
-            // This can be accomplished through the register at $A11100.
-            // To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
-            // To see if the Z80 has stopped, bit 0 of $A11100 must be checked - if it's clear,
-            // the 68k may access the bus, but wait if it is set.
-            // Once access to the Z80 area is complete,
-            // #$0000 needs to be written to $A11100 to return the bus back to the Z80.
-            // No waiting to see if the bus is returned is required here ? it is handled automatically.
-            // However, if the Z80 is required to be reset (for example, to load a new program to it's memory)
-            // this may be done by writing #$0000 to $A11200, but only when the Z80 bus is requested.
-            // After returning the bus after loading the new program to it's memory,
-            // the Z80 may be let go from reset by writing #$0100 to $A11200.
+        } else if (address == 0xA10013 || address == 0xA10019 || address == 0xA1001F) {
+            LOG.info("Reading serial control, " + pad4(address));
+            return 0;
+        }
+        //If the 68k wishes to access anything in the Z80 address space, the Z80 must be stopped.
+        // This can be accomplished through the register at $A11100.
+        // To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
+        // To see if the Z80 has stopped, bit 0 of $A11100 must be checked - if it's clear,
+        // the 68k may access the bus, but wait if it is set.
+        // Once access to the Z80 area is complete,
+        // #$0000 needs to be written to $A11100 to return the bus back to the Z80.
+        // No waiting to see if the bus is returned is required here ? it is handled automatically.
+        // However, if the Z80 is required to be reset (for example, to load a new program to it's memory)
+        // this may be done by writing #$0000 to $A11200, but only when the Z80 bus is requested.
+        // After returning the bus after loading the new program to it's memory,
+        // the Z80 may be let go from reset by writing #$0100 to $A11200.
 
 //            Reading this bit will return 0 if the bus can be accessed by the 68000,
 //            or 1 if the Z80 is still busy.
@@ -225,7 +229,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 //            have the bus) it will also return 1. The only time it will switch from
 //            1 to 0 is right after the bus is requested, and if the Z80 is still
 //            busy accessing memory or not.
-        } else if (address == 0xA11100 || address == 0xA11101 || address == 0xA11200 || address == 0xA11201) {    //	Z80 bus request
+        else if (address == 0xA11100 || address == 0xA11101 || address == 0xA11200 || address == 0xA11201) {    //	Z80 bus request
             int value = z80.isBusRequested() ? 0 : 1;
             value = z80.isReset() ? 1 : value;
 //            Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
@@ -363,7 +367,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             data = data & 0xFFFF_FFFFL;
         }
 
-        if (addressL <= 0x3FFFFF) {    //	Cartridge ROM/RAM
+        if (addressL <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
             boolean sramWrite = isSramWrite(sramMode, address);
             if (sramWrite) {
                 addressL = addressL - SRAM_START_ADDRESS;
@@ -477,8 +481,9 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 mapper.writeBankData(addressL, data);
             } else if (addressL == 0xA130F1) {
                 data = data & 3;
-                if (data == 2) { //SSF2 Mapper
+                if (data % 2 == 0) { //enable ROM
                     checkSsf2Mapper();
+                    sramMode = SramMode.DISABLE;
                 } else if (data == 3) {
                     sramMode = SramMode.READ_WRITE;
                 } else {
