@@ -279,10 +279,7 @@ public class Genesis implements GenesisProvider {
                 //            	vdp.dmaFill();
                 if (canRenderScreen) {
                     long now = System.currentTimeMillis();
-                    fps = Math.max((int) (1000d / (now - lastRender)), 1);
-                    double intvSec = (lastRender - start) / 1000d;
-
-                    renderScreenInternal(getStats(fps, intvSec, counter));
+                    renderScreenInternal(getStats(now, lastRender, counter, start));
                     canRenderScreen = false;
                     syncCycle(startCycle, targetFps);
                     if (Thread.currentThread().isInterrupted()) {
@@ -341,7 +338,9 @@ public class Genesis implements GenesisProvider {
     }
 
 
-    private String getStats(int fps, double intvSec, long counter) {
+    private String getStats(long now, long lastRender, long counter, long start) {
+        long fps = 1000 / (now - lastRender + 1);
+        double intvSec = (lastRender - start) / 1000d;
         String cps = df.format((counter / intvSec) / 1000000d);
         String s = cps + "Mcps, " + fps + "fps";
         return s;
