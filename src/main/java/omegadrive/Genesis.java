@@ -73,6 +73,7 @@ public class Genesis implements GenesisProvider {
         loadProperties();
         InputProvider.bootstrap();
         boolean isHeadless = isHeadless();
+        LOG.info("Headless mode: " + isHeadless);
         Genesis genesis = new Genesis(isHeadless);
         if (args.length > 0) {
             String filePath = args[0];
