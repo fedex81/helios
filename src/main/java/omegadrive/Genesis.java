@@ -22,12 +22,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileReader;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Optional;
@@ -70,7 +72,16 @@ public class Genesis implements GenesisProvider {
     public static void main(String[] args) throws Exception {
         loadProperties();
         InputProvider.bootstrap();
-        Genesis genesis = new Genesis();
+        boolean isHeadless = isHeadless();
+        Genesis genesis = new Genesis(isHeadless);
+        if (args.length > 0) {
+            String filePath = args[0];
+            LOG.info("Launching file at: " + filePath);
+            genesis.handleNewGame(Paths.get(filePath));
+        }
+        if (isHeadless) {
+            Util.waitForever();
+        }
     }
 
     private static void loadProperties() throws Exception {
@@ -89,7 +100,7 @@ public class Genesis implements GenesisProvider {
         InputProvider.bootstrap();
         Genesis genesis = null;
         try {
-            genesis = new Genesis();
+            genesis = new Genesis(false);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -97,10 +108,10 @@ public class Genesis implements GenesisProvider {
         return genesis;
     }
 
-    private Genesis() throws InvocationTargetException, InterruptedException {
+    private Genesis(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         Util.registerJmx(this);
         init();
-        SwingUtilities.invokeAndWait(() -> createFrame());
+        SwingUtilities.invokeAndWait(() -> createFrame(isHeadless));
     }
 
     @Override
@@ -119,6 +130,12 @@ public class Genesis implements GenesisProvider {
                 attachDevice(cpu).attachDevice(z80).attachDevice(sound);
     }
 
+    private static boolean isHeadless() {
+        GraphicsEnvironment ge =
+                GraphicsEnvironment.getLocalGraphicsEnvironment();
+        return ge.isHeadlessInstance();
+    }
+
 
     @Override
     public void setPlayers(int i) {
@@ -126,8 +143,8 @@ public class Genesis implements GenesisProvider {
     }
 
     // Create the frame on the event dispatching thread
-    private void createFrame() {
-        emuFrame = new EmuFrame(this);
+    private void createFrame(boolean isHeadless) {
+        emuFrame = isHeadless ? GenesisWindow.HEADLESS_INSTANCE : new EmuFrame(this);
         emuFrame.init();
 
         emuFrame.addKeyListener(new KeyAdapter() {

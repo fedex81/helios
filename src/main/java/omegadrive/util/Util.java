@@ -27,6 +27,17 @@ public class Util {
         }
     }
 
+    public static void waitForever() {
+        Object lock = new Object();
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
     public static void waitOnObject(Object object, long ms) {
         synchronized (object) {
             try {
