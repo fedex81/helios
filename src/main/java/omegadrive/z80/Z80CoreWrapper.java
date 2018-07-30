@@ -47,11 +47,11 @@ public class Z80CoreWrapper implements Z80Provider {
     }
 
     private boolean updateRunningFlag() {
-        //TODO this breaks Z80 WAV PLAYER
-//        if(z80Core.isHalted()){
-//            wasRunning = false;
-//            return false;
-//        }
+        //TODO check why this breaks Z80 WAV PLAYER
+        if (z80Core.isHalted()) {
+            wasRunning = false;
+            return false;
+        }
         boolean nowRunning = isRunning();
         if (wasRunning != nowRunning) {
 //            LOG.info("Z80: " + (nowRunning ? "ON" : "OFF"));

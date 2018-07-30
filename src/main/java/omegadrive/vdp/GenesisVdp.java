@@ -391,7 +391,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                         memToVram = true;
 
                         if (m1) {
+                            dma = 1;
                             dmaMem2Vram(all);
+                            dma = 0;
                         } else {
                             LOG.warn("DMA but no m1 set !!");
                         }
@@ -619,7 +621,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         long sourceAddr = ((registers[0x17] & 0x7F) << 16) | (registers[0x16] << 8) | (registers[0x15]);
         long sourceTrue = sourceAddr << 1;    // duplica, trabaja asi
         int destAddr = (int) (((commandWord & 0x3) << 14) | ((commandWord & 0x3FFF_0000L) >> 16));
-
+        printDmaInfo("68k to VRAM, src: {}, dest: {}, len: {}", Long.toHexString(sourceTrue),
+                Long.toHexString(destAddr), dmaLength);
         while (dmaLength > 0) {
             int dataWord = (int) bus.read(sourceTrue, Size.WORD);
             int data1 = dataWord >> 8;
@@ -658,15 +661,16 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             dmaLength--;
         }
 
-        int newSource = (int) (sourceTrue >> 1);
-        registers[0x17] = ((registers[0x17] & 0x80) | ((newSource >> 16) & 0x7F));
-        registers[0x16] = (newSource >> 8) & 0xFF;
-        registers[0x15] = newSource & 0xFF;
-
-        dmaLengthCounterHi = 0;
-        dmaLengthCounterLo = 0;
-        registers[0x14] = 0;
-        registers[0x13] = 0;
+        //TODO do i need this??
+//        int newSource = (int) (sourceTrue >> 1);
+//        registers[0x17] = ((registers[0x17] & 0x80) | ((newSource >> 16) & 0x7F));
+//        registers[0x16] = (newSource >> 8) & 0xFF;
+//        registers[0x15] = newSource & 0xFF;
+//
+//        dmaLengthCounterHi = 0;
+//        dmaLengthCounterLo = 0;
+//        registers[0x14] = 0;
+//        registers[0x13] = 0;
     }
 
     public static void main(String[] args) {
