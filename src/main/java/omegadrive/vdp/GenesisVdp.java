@@ -1,10 +1,12 @@
 package omegadrive.vdp;
 
+import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -414,6 +416,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
         registers[reg] = dataControl;
         updateVariables(reg, dataControl);
+        printDmaInfo("writeReg: {}, data: {}", reg, dataControl);
     }
 
     private void updateVariables(int reg, int data) {
@@ -483,7 +486,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     @Override
     public void dmaFill() {
         if (dma == 1) {
+//            The VDP decrements the length before checking if it's equal to 0,
+//            which results in an integer underflow if the length is 0. In other words, if you set the DMA length to 0,
+//            it will act like you set it to $10000.
             int dmaLength = (dmaLengthCounterHi << 8) | dmaLengthCounterLo;
+            dmaLength = (dmaLength - 1) & (VDP_VRAM_SIZE - 1);
 
             long first = all >> 16;
             long second = all & 0xFFFF;
@@ -502,7 +509,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             int data1 = dataPort & 0xFF;
 
             destAddr = destAddr & 0xFFFF;    //	16 Zhang Majhong hace DMA length 0xFFFF que es el doble del limite (hace el doble de operaciones)
-
+            printDmaInfo("DMA fill, length: {}, destAddr: {}", dmaLength, destAddr);
             if (vramMode == VramMode.vramWrite) {
                 writeVramByte(destAddr, data1);
             } else {
@@ -510,20 +517,25 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 return;
             }
 
-            dmaLength = (dmaLength - 1);    // idem FIXME no es fijo
-            if (dmaLength <= 0) {
-                dma = 0;
-                return;
-            }
-
             autoIncrementTotal += registers[0xF];
-
-            dmaLength = dmaLength & 0xFFFF;
             dmaLengthCounterHi = dmaLength >> 8;
             dmaLengthCounterLo = dmaLength & 0xFF;
 
             registers[0x14] = dmaLength >> 8;
             registers[0x13] = dmaLength & 0xFF;
+
+            if (dmaLength == 0) {
+                dma = 0;
+                printDmaInfo("DMA fill OFF");
+                return;
+            }
+        }
+    }
+
+    private void printDmaInfo(String str, Object... args) {
+        if (Genesis.verbose) {
+            String dmaStr = ", DMA " + dma + ", dmaMode: " + dmaMode + " - " + dmaModeEnum + ", vramMode: " + Objects.toString(vramMode);
+            Util.printLevelIfVerbose(LOG, Level.INFO, str + dmaStr, args);
         }
     }
 
@@ -547,7 +559,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 vramFill = false;
 
                 dataPort = data;
-
+                printDmaInfo("writeDataPort, data: {}", data);
                 return;
             } else {
                 LOG.warn("M1 should be 1 in the DMA transfer. otherwise we can't guarantee the operation.");
