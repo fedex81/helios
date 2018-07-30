@@ -413,11 +413,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             return;
         }
         registers[reg] = dataControl;
-        updateVariables(reg, data);
+        updateVariables(reg, dataControl);
     }
 
-    private void updateVariables(int reg, long data) {
-
+    private void updateVariables(int reg, int data) {
         if (reg == 0x00) {
             lcb = ((data >> 5) & 1) == 1;
             de = ((data >> 0) & 1) == 1;
@@ -437,24 +436,24 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             boolean rs1 = Util.bitSetTest(data, 0);
             h40 = rs0 && rs1;
         } else if (reg == 0x0F) {
-            autoIncrementData = (int) (data & 0xFF);
+            autoIncrementData = data;
         } else if (reg == 0x0A) {
             updateReg10(data);
         } else if (reg == 0x13) {
-            dmaLengthCounterLo = (int) (data & 0xFF);
+            dmaLengthCounterLo = data;
 
         } else if (reg == 0x14) {
-            dmaLengthCounterHi = (int) (data & 0xFF);
+            dmaLengthCounterHi = data;
 
         } else if (reg == 0x15) {
-            dmaSourceAddressLow = (int) (data & 0xFF);
+            dmaSourceAddressLow = data;
 
         } else if (reg == 0x16) {
-            dmaSourceAddressMid = (int) (data & 0xFF);
+            dmaSourceAddressMid = data;
 
         } else if (reg == 0x17) {
-            dmaSourceAddressHi = (int) (data & 0x3F);
-            dmaMode = (int) ((data >> 6) & 0x3);
+            dmaSourceAddressHi = data & 0x3F;
+            dmaMode = (data >> 6) & 0x3;
         }
     }
 

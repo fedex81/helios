@@ -10,6 +10,8 @@ import org.apache.logging.log4j.Logger;
  * Federico Berti
  * <p>
  * Copyright 2018
+ *
+ * TODO support EEPROM, f1 world champ edition
  */
 public class CartridgeInfoProvider {
 
@@ -184,7 +186,7 @@ public class CartridgeInfoProvider {
             LOG.warn("Unable to parse RAM END ADDRESS");
             ramEnd = DEFAULT_RAM_END_ADDRESS;
         }
-        if (ramEnd - ramStart > MemoryProvider.M68K_RAM_SIZE) {
+        if (Math.abs(ramEnd - ramStart) > MemoryProvider.M68K_RAM_SIZE) {
             LOG.warn("Invalid RAM size: " + (ramEnd - ramStart) + " bytes");
             ramStart = DEFAULT_RAM_START_ADDRESS;
             ramEnd = DEFAULT_RAM_END_ADDRESS;
