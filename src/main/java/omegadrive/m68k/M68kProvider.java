@@ -15,11 +15,7 @@ public interface M68kProvider {
 
     long getPC();
 
-    void setStop(boolean value);
-
     boolean isStopped();
-
-    int getInterruptMask();
 
     void raiseInterrupt(int level);
 
