@@ -37,6 +37,7 @@ public class MC68000Wrapper implements M68kProvider {
         };
         this.addressSpace = getAddressSpace(busProvider);
         m68k.setAddressSpace(addressSpace);
+//        startMonitor();
     }
 
     private void startMonitor() {
@@ -166,20 +167,23 @@ public class MC68000Wrapper implements M68kProvider {
 
     @Override
     public int runInstruction() {
-        if (monitor != null) {
-            monitor.handleStep(null);
-            printCpuState();
-            monitor = null;
-            setStop(true);
-            return 0;
-        } else {
-            return m68k.execute();
+        int res = 0;
+        try {
+            res = m68k.execute();
+            if (monitor != null) {
+                printCpuState();
+            }
+        } catch (Exception e) {
+            LOG.error("68k error", e);
+            handleException(ILLEGAL_ACCESS_EXCEPTION); //TODO
         }
+        return res;
     }
 
     private void handleException(int vector) {
         if (vector == ILLEGAL_ACCESS_EXCEPTION) {
             printCpuState();
+            setStop(true);
         }
     }
 

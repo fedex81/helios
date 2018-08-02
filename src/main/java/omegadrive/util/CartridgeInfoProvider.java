@@ -91,7 +91,6 @@ public class CartridgeInfoProvider {
         provider.memoryProvider = memoryProvider;
         provider.romName = rom;
         provider.init();
-//        LOG.info(provider.toString());
         return provider;
     }
 
@@ -145,7 +144,7 @@ public class CartridgeInfoProvider {
             long byte2 = memoryProvider.readCartridgeByte(SRAM_FLAG_ADDRESS + 3);
             boolean isBackup = Util.bitSetTest(byte1, 7); //backup vs volatile
             boolean isSramType = (byte2 & 0x20) == 0x20; //sram vs EEPROM
-            if (isBackup && isSramType) {
+            if (isBackup) { //&& isSramType) {
                 sramEnabled = true;
                 sramStart = memoryProvider.readCartridgeWord(SRAM_START_ADDRESS) << 16;
                 sramStart |= memoryProvider.readCartridgeWord(SRAM_START_ADDRESS + 2);
