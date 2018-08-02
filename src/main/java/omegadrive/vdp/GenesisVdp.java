@@ -351,7 +351,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void writeRamAddress(long data) {
         if (!writePendingControlPort) {
-            LOG.debug("first");
             firstWrite = data;
             writePendingControlPort = true;
 
@@ -365,8 +364,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             int code = (int) ((first >> 14) | (((second >> 4) & 0xF) << 2));
             int addr = (int) ((first & 0x3FFF) | ((second & 0x3) << 14));
 
-            LOG.debug("second code " + Integer.toHexString(code));
-
             addressPort = addr;
             autoIncrementTotal = 0;    // reset
 
@@ -376,36 +373,46 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((code & 0b100000) > 0) { // DMA
-                int dmaBits = code >> 4;
-                dmaRecien = true;
-
-                if ((dmaBits & 0b10) > 0) {        //	VRAM Fill
-                    if ((registers[0x17] & 0x80) == 0x80) {
-//						FILL mode fills with same data from free even VRAM address.
-//						FILL for only VRAM.
-                        dmaModeEnum = DmaMode.VRAM_FILL;
-                        vramFill = true;
-
-                    } else {
-                        dmaModeEnum = DmaMode.MEM_TO_VRAM;
-                        memToVram = true;
-
-                        if (m1) {
-                            dma = 1;
-                            dmaMem2Vram(all);
-                            dma = 0;
-                        } else {
-                            LOG.warn("DMA but no m1 set !!");
-                        }
-                    }
-
-                } else if ((dmaBits & 0b11) > 0) {        //	VRAM Copy
-                    dmaModeEnum = DmaMode.VRAM_COPY;
-                    //Games that use VRAM copies include Aleste, Bad Omen, and Viewpoint.
-                    LOG.error("VRAM copy not supported");
-                }
+                setupDma(code, data);
             }
         }
+    }
+
+    private void setupDma(int code, long data) {
+        dmaRecien = true;
+        dmaModeEnum = getDmaMode();
+        if (!m1) {
+            LOG.warn("Attempting DMA but m1 not set: " + dmaModeEnum);
+            printDmaInfo("writeRam, address: {}, data: {}", addressPort, data);
+            return;
+        }
+        switch (dmaModeEnum) {
+            case VRAM_FILL:
+                vramFill = true;
+                break;
+            case MEM_TO_VRAM:
+                memToVram = true;
+                dma = 1;
+                dmaMem2Vram(all);
+                dma = 0;
+                break;
+            case VRAM_COPY:
+                //Games that use VRAM copies include Aleste, Bad Omen, and Viewpoint.
+                //Langrisser II
+                //James Pond 3 - Operation Starfish - some platforms requires correct VRAM Copy
+                LOG.error("DMA: VRAM copy not supported");
+                break;
+            default:
+                LOG.error("Unexpected DMA mode: " + dmaModeEnum);
+
+        }
+    }
+
+    private DmaMode getDmaMode() {
+        int dmaBits = registers[0x17] >> 6;
+        DmaMode mode = (dmaBits & 0b10) < 2 ? DmaMode.MEM_TO_VRAM : DmaMode.VRAM_FILL;
+        mode = (dmaBits & 0b11) == 3 ? DmaMode.VRAM_COPY : mode;
+        return mode;
     }
 
     private void writeRegister(long data) {
