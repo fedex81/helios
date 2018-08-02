@@ -386,11 +386,20 @@ public class MC68000Monitor implements Runnable {
     }
 
     protected String dumpInfo() {
-        this.writer.println();
-        this.writer.printf("D0: %08x   D4: %08x   A0: %08x   A4: %08x     PC:  %08x\n", this.cpu.getDataRegisterLong(0), this.cpu.getDataRegisterLong(4), this.cpu.getAddrRegisterLong(0), this.cpu.getAddrRegisterLong(4), this.cpu.getPC());
-        this.writer.printf("D1: %08x   D5: %08x   A1: %08x   A5: %08x     SR:  %04x %s\n", this.cpu.getDataRegisterLong(1), this.cpu.getDataRegisterLong(5), this.cpu.getAddrRegisterLong(1), this.cpu.getAddrRegisterLong(5), this.cpu.getSR(), this.makeFlagView());
-        this.writer.printf("D2: %08x   D6: %08x   A2: %08x   A6: %08x     USP: %08x\n", this.cpu.getDataRegisterLong(2), this.cpu.getDataRegisterLong(6), this.cpu.getAddrRegisterLong(2), this.cpu.getAddrRegisterLong(6), this.cpu.getUSP());
-        this.writer.printf("D3: %08x   D7: %08x   A3: %08x   A7: %08x     SSP: %08x\n\n", this.cpu.getDataRegisterLong(3), this.cpu.getDataRegisterLong(7), this.cpu.getAddrRegisterLong(3), this.cpu.getAddrRegisterLong(7), this.cpu.getSSP());
+        StringBuilder sb = new StringBuilder("\n");
+
+        sb.append(String.format("D0: %08x   D4: %08x   A0: %08x   A4: %08x     PC:  %08x\n",
+                this.cpu.getDataRegisterLong(0), this.cpu.getDataRegisterLong(4), this.cpu.getAddrRegisterLong(0),
+                this.cpu.getAddrRegisterLong(4), this.cpu.getPC()));
+        sb.append(String.format("D1: %08x   D5: %08x   A1: %08x   A5: %08x     SR:  %04x %s\n",
+                this.cpu.getDataRegisterLong(1), this.cpu.getDataRegisterLong(5), this.cpu.getAddrRegisterLong(1),
+                this.cpu.getAddrRegisterLong(5), this.cpu.getSR(), this.makeFlagView()));
+        sb.append(String.format("D2: %08x   D6: %08x   A2: %08x   A6: %08x     USP: %08x\n",
+                this.cpu.getDataRegisterLong(2), this.cpu.getDataRegisterLong(6), this.cpu.getAddrRegisterLong(2),
+                this.cpu.getAddrRegisterLong(6), this.cpu.getUSP()));
+        sb.append(String.format("D3: %08x   D7: %08x   A3: %08x   A7: %08x     SSP: %08x\n\n",
+                this.cpu.getDataRegisterLong(3), this.cpu.getDataRegisterLong(7), this.cpu.getAddrRegisterLong(3),
+                this.cpu.getAddrRegisterLong(7), this.cpu.getSSP()));
         this.buffer.delete(0, this.buffer.length());
         int addr = this.cpu.getPC();
         if (addr >= 0 && addr < this.memory.size()) {
@@ -405,7 +414,7 @@ public class MC68000Monitor implements Runnable {
         } else {
             this.buffer.append(String.format("%08x   ????", addr));
         }
-        return String.format("\n==> %s\n\n", this.buffer.toString());
+        return sb.append(String.format("\n==> %s\n\n", this.buffer.toString())).toString();
     }
 
     protected String makeFlagView() {
