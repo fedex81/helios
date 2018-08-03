@@ -48,7 +48,7 @@ public class EmuFrame implements GenesisWindow {
 
     private final JLabel gameLabel = new JLabel();
     private final JLabel fpsLabel = new JLabel("");
-    private final static String FRAME_TITLE_HEAD = "Genesis Emu";
+    private final static String FRAME_TITLE_HEAD = "Omega Drive";
     public static String basePath = "./roms/";
 
     private JFrame jFrame;
@@ -184,13 +184,14 @@ public class EmuFrame implements GenesisWindow {
         gameLabel.setHorizontalAlignment(SwingConstants.CENTER);
         gameLabel.setVerticalAlignment(SwingConstants.CENTER);
 
+        jFrame.setMinimumSize(new Dimension(640, 480));
         jFrame.setDefaultCloseOperation(jFrame.EXIT_ON_CLOSE);
         jFrame.setResizable(true);
         jFrame.setJMenuBar(bar);
         jFrame.add(gameLabel, -1);
-        jFrame.setMinimumSize(new Dimension(640, 480));
-        jFrame.setLocationRelativeTo(null);
+
         jFrame.pack();
+        jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
     }
 
