@@ -373,14 +373,14 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((code & 0b100000) > 0) { // DMA
-                setupDma(code, data);
+                setupDma(data);
             }
         }
     }
 
-    private void setupDma(int code, long data) {
+    private void setupDma(long data) {
         dmaRecien = true;
-        dmaModeEnum = getDmaMode();
+        dmaModeEnum = VdpDmaHandler.getDmaMode(registers[0x17]);
         if (!m1) {
             LOG.warn("Attempting DMA but m1 not set: " + dmaModeEnum);
             printDmaInfo("writeRam, address: {}, data: {}", addressPort, data);
@@ -406,13 +406,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 LOG.error("Unexpected DMA mode: " + dmaModeEnum);
 
         }
-    }
-
-    private DmaMode getDmaMode() {
-        int dmaBits = registers[0x17] >> 6;
-        DmaMode mode = (dmaBits & 0b10) < 2 ? DmaMode.MEM_TO_VRAM : DmaMode.VRAM_FILL;
-        mode = (dmaBits & 0b11) == 3 ? DmaMode.VRAM_COPY : mode;
-        return mode;
     }
 
     private void writeRegister(long data) {
@@ -494,51 +487,58 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     @Override
     public void dmaFill() {
+        //TODO this should be called by hcounter in runNew
+        int count = 10;
         if (dma == 1) {
+            boolean done;
+            do {
+                done = dmaFillSingle();
+                count--;
+            } while (count > 0 && !done);
+        }
+    }
+
+    public boolean dmaFillSingle() {
 //            The VDP decrements the length before checking if it's equal to 0,
 //            which results in an integer underflow if the length is 0. In other words, if you set the DMA length to 0,
 //            it will act like you set it to $10000.
-            int dmaLength = (dmaLengthCounterHi << 8) | dmaLengthCounterLo;
-            dmaLength = (dmaLength - 1) & (VDP_VRAM_SIZE - 1);
+        int dmaLength = (dmaLengthCounterHi << 8) | dmaLengthCounterLo;
+        dmaLength = (dmaLength - 1) & (VDP_VRAM_SIZE - 1);
 
-            long first = all >> 16;
-            long second = all & 0xFFFF;
+        int destAddr = (int) (((all & 0x3) << 14) | ((all & 0x3FFF_0000L) >> 16));
 
-            int code = (int) ((first >> 14) | (((second >> 4) & 0xF) << 2));
-            int addr = (int) ((first & 0x3FFF) | ((second & 0x3) << 13));
-
-            int destAddr = (int) (((all & 0x3) << 14) | ((all & 0x3FFF_0000L) >> 16));
-
-            if (destAddr % 2 == 1) {
-                LOG.warn("Address not even! " + destAddr);
-            }
-
-            destAddr += autoIncrementTotal;
-
-            int data1 = dataPort & 0xFF;
-
-            destAddr = destAddr & 0xFFFF;    //	16 Zhang Majhong hace DMA length 0xFFFF que es el doble del limite (hace el doble de operaciones)
-            printDmaInfo("DMA fill, length: {}, destAddr: {}", dmaLength, destAddr);
-            if (vramMode == VramMode.vramWrite) {
-                writeVramByte(destAddr, data1);
-            } else {
-                LOG.warn("DMA: Unexpected write to RAM: " + Objects.toString(vramMode));
-                return;
-            }
-
-            autoIncrementTotal += registers[0xF];
-            dmaLengthCounterHi = dmaLength >> 8;
-            dmaLengthCounterLo = dmaLength & 0xFF;
-
-            registers[0x14] = dmaLength >> 8;
-            registers[0x13] = dmaLength & 0xFF;
-
-            if (dmaLength == 0) {
-                dma = 0;
-                printDmaInfo("DMA fill OFF");
-                return;
-            }
+        if (destAddr % 2 == 1) {
+            LOG.warn("Address not even! " + destAddr);
         }
+
+        destAddr += autoIncrementTotal;
+
+        int data1 = dataPort & 0xFF;
+
+        destAddr = destAddr & 0xFFFF;    //	16 Zhang Majhong hace DMA length 0xFFFF que es el doble del limite (hace el doble de operaciones)
+        printDmaInfo("DMA fill, length: {}, destAddr: {}", dmaLength, destAddr);
+        if (vramMode == VramMode.vramWrite) {
+            writeVramByte(destAddr, data1);
+        } else {
+            LOG.warn("DMA: Unexpected write to RAM: " + Objects.toString(vramMode));
+            printDmaInfo("DMA fill error");
+            dma = 0;
+            return true;
+        }
+
+        autoIncrementTotal += registers[0xF];
+        dmaLengthCounterHi = dmaLength >> 8;
+        dmaLengthCounterLo = dmaLength & 0xFF;
+
+        registers[0x14] = dmaLength >> 8;
+        registers[0x13] = dmaLength & 0xFF;
+
+        if (dmaLength == 0) {
+            dma = 0;
+            printDmaInfo("DMA fill OFF");
+            return true;
+        }
+        return false;
     }
 
     private void printDmaInfo(String str, Object... args) {
@@ -568,7 +568,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 vramFill = false;
 
                 dataPort = data;
-                printDmaInfo("writeDataPort, data: {}", data);
+                printDmaInfo("writeDataPort, data: {}, address: {}", data, addressPort);
                 return;
             } else {
                 LOG.warn("M1 should be 1 in the DMA transfer. otherwise we can't guarantee the operation.");
