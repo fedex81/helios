@@ -13,6 +13,25 @@ import omegadrive.util.VideoMode;
  */
 public interface VdpProvider {
 
+    enum VramMode {
+        vramRead(0b0000), cramRead(0b1000), vsramRead(0b0100), vramWrite(0b0001), cramWrite(0b0011), vsramWrite(0b0101);
+
+        int addressMode;
+
+        VramMode(int addressMode) {
+            this.addressMode = addressMode;
+        }
+
+        public static VramMode getVramMode(int addressMode) {
+            for (VramMode mode : VramMode.values()) {
+                if (mode.addressMode == addressMode) {
+                    return mode;
+                }
+            }
+            return null;
+        }
+    }
+
     int MAX_SPRITES_PER_FRAME_H40 = 80;
     int MAX_SPRITES_PER_FRAME_H32 = 64;
     int MAX_SPRITES_PER_LINE_H40 = 20;
@@ -39,13 +58,14 @@ public interface VdpProvider {
 
     static VdpProvider createVdp(BusProvider bus) {
         return new GenesisVdp(bus);
+//        return new GenesisVdpOldDma(bus);
     }
 
     void init();
 
     void run(int cycles);
 
-    void dmaFill();
+    void doDma();
 
     long readDataPort(Size size);
 
@@ -62,6 +82,18 @@ public interface VdpProvider {
     boolean isIe0();
 
     boolean isIe1();
+
+    int getRegisterData(int reg);
+
+    void writeVramByte(int address, int data);
+
+    void videoRamWriteWordRaw(VramMode vramMode, int data, int address);
+
+    void videoRamWriteWord(VramMode vramMode, int data, int address);
+
+    int readVramByte(int address);
+
+    VramMode getVramMode();
 
     /**
      * State of the Vertical interrupt pending flag

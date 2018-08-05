@@ -292,7 +292,7 @@ public class Genesis implements GenesisProvider {
                 run68k(counter);
                 runZ80(counter);
                 vdp.run(CYCLES);
-                vdp.dmaFill();
+                vdp.doDma();
                 syncSound(counter);
                 //            	vdp.dmaFill();
                 if (canRenderScreen) {

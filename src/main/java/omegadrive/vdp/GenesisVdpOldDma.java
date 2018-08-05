@@ -23,7 +23,7 @@ import java.util.Optional;
  * https://github.com/DarkMoe/genefusto
  * @author DarkMoe
  */
-public class GenesisVdp implements VdpProvider, VdpHLineProvider {
+public class GenesisVdpOldDma implements VdpProvider, VdpHLineProvider {
 
     private static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
@@ -109,9 +109,14 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     //	reg 0x17
     int dmaSourceAddressHi;
+    int dmaMode;
 
+    boolean vramFill = false;
     boolean memToVram = false;
     int autoIncrementTotal;
+
+    VdpDmaHandler.DmaMode dmaModeEnum;
+
 
     //	Status register:
 //	15	14	13	12	11	10	9		8			7	6		5		4	3	2	1	0
@@ -150,15 +155,13 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private BusProvider bus;
     private VdpColorMapper colorMapper;
     private VdpInterruptHandler interruptHandler;
-    private VdpDmaHandler dmaHandler;
     private VideoMode videoMode;
 
 
-    public GenesisVdp(BusProvider bus) {
+    public GenesisVdpOldDma(BusProvider bus) {
         this.bus = bus;
         this.colorMapper = new VdpColorMapper();
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
-        this.dmaHandler = VdpDmaHandler.createInstance(this, bus);
     }
 
     @Override
@@ -241,7 +244,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     @Override
     public int getRegisterData(int reg) {
-        return registers[reg];
+        return 0;
     }
 
     @Override
@@ -352,34 +355,39 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             printDmaInfo("writeAddr: {}, data: {}, firstWrite: {}", addr, all, writePendingControlPort);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((code & 0b100000) > 0) { // DMA
-                setupDma(all);
+                setupDma(data);
                 printDmaInfo("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}", addr, all, writePendingControlPort);
             }
         }
     }
 
     private void setupDma(long data) {
-        VdpDmaHandler.DmaMode dmaModeEnum = dmaHandler.getDmaMode(registers[0x17]);
+        dmaRecien = true;
+        dmaModeEnum = VdpDmaHandler.getDmaModeStatic(registers[0x17]);
         if (!m1) {
             LOG.warn("Attempting DMA but m1 not set: " + dmaModeEnum);
             printDmaInfo("writeRam, address: {}, data: {}", addressPort, data);
             return;
         }
         switch (dmaModeEnum) {
-            case MEM_TO_VRAM:
-                //doesnt need to set dma in the SR
-//                dmaMem2Vram(all);
-                dmaHandler.setupDmaRegister(data);
-                break;
             case VRAM_FILL:
-                dmaHandler.setupDmaRegister(data);
+                vramFill = true;
+                break;
+            case MEM_TO_VRAM:
+                memToVram = true;
+                dma = 1;
+                dmaMem2Vram(all);
+                dma = 0;
                 break;
             case VRAM_COPY:
-                dmaHandler.setupDmaRegister(data);
-                dma = 1;
+                //Games that use VRAM copies include Aleste, Bad Omen, and Viewpoint.
+                //Langrisser II
+                //James Pond 3 - Operation Starfish - some platforms requires correct VRAM Copy
+                LOG.error("DMA: VRAM copy not supported");
                 break;
             default:
                 LOG.error("Unexpected DMA mode: " + dmaModeEnum);
+
         }
     }
 
@@ -433,6 +441,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
         } else if (reg == 0x17) {
             dmaSourceAddressHi = data & 0x3F;
+            dmaMode = (data >> 6) & 0x3;
         }
     }
 
@@ -457,55 +466,216 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    @Override
-    public void doDma() {
+    boolean dmaRecien = false;
+
+
+    public void dmaFill() {
         //TODO this should be called by hcounter in runNew
+        int count = 10;
         if (dma == 1) {
-            boolean dmaDone = false;
-            VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
-            if (mode == VdpDmaHandler.DmaMode.VRAM_COPY || mode == VdpDmaHandler.DmaMode.VRAM_FILL) {
-                dmaDone = dmaHandler.doDma();
-            }
-            dma = dmaDone ? 0 : dma;
-            if (dma == 0 && dmaDone) {
-                Util.printLevelIfVerbose(LOG, Level.INFO, "{}: OFF", mode);
-            }
+            boolean done;
+            do {
+                done = dmaFillSingle();
+                count--;
+            } while (count > 0 && !done);
         }
+    }
+
+    public boolean dmaFillSingle() {
+//            The VDP decrements the length before checking if it's equal to 0,
+//            which results in an integer underflow if the length is 0. In other words, if you set the DMA length to 0,
+//            it will act like you set it to $10000.
+        int dmaLength = (dmaLengthCounterHi << 8) | dmaLengthCounterLo;
+        dmaLength = (dmaLength - 1) & (VDP_VRAM_SIZE - 1);
+
+        int destAddr = (int) (((all & 0x3) << 14) | ((all & 0x3FFF_0000L) >> 16));
+
+        if (destAddr % 2 == 1) {
+            LOG.warn("Address not even! " + destAddr);
+        }
+
+        destAddr += autoIncrementTotal;
+
+        int data1 = dataPort & 0xFF;
+
+        destAddr = destAddr & 0xFFFF;    //	16 Zhang Majhong hace DMA length 0xFFFF que es el doble del limite (hace el doble de operaciones)
+//        printDmaInfo("DMA fill, length: {}, destAddr: {}", dmaLength, destAddr);
+        if (vramMode == VramMode.vramWrite) {
+            writeVramByte(destAddr, data1);
+        } else {
+            LOG.warn("DMA: Unexpected write to RAM: " + Objects.toString(vramMode));
+            printDmaInfo("DMA fill error");
+            dma = 0;
+            return true;
+        }
+
+        autoIncrementTotal += registers[0xF];
+        dmaLengthCounterHi = dmaLength >> 8;
+        dmaLengthCounterLo = dmaLength & 0xFF;
+
+        registers[0x14] = dmaLength >> 8;
+        registers[0x13] = dmaLength & 0xFF;
+
+        if (dmaLength == 0) {
+            dma = 0;
+            printDmaInfo("DMA fill OFF");
+            return true;
+        }
+        return false;
     }
 
     private void printDmaInfo(String str, Object... args) {
         if (Genesis.verbose) {
-            String dmaStr = ", DMA " + dma + ", dmaMode: " + dmaHandler.getDmaMode() + ", vramMode: " + Objects.toString(vramMode);
-            Util.printLevel(LOG, Level.INFO, str + dmaStr, args);
+            String dmaStr = ", DMA " + dma + ", dmaMode: " + dmaModeEnum + ", vramMode: " + Objects.toString(vramMode);
+            Util.printLevelIfVerbose(LOG, Level.INFO, str + dmaStr, args);
         }
     }
 
     @Override
     public void writeDataPort(long dataL) {
-        writePendingControlPort = false;
+        //Performing a DMA fill does perform a normal VRAM write.
+//After the VRAM write has been processed however, a DMA fill operation is triggered immediately after.
+//Normal VRAM writes are always 16-bit, so the first write that is carried out when you try and
+//start a DMA fill will always be 16-bit. The DMA fill operation that follows will perform 8-bit writes.
         int data = (int) dataL;
-        setupDmaFillMaybe(data);
-        if (vramMode == VramMode.vramWrite) {
+        if (vramFill) {
+            int dmaLen = registers[20] << 8 | registers[19];
+            printDmaInfo("VRAM FILL SETUP, data: {}, destAddr: {}, destAddrInc: {}, dmaLen: {}, vramMode: {}",
+                    data, Long.toHexString(addressPort), registers[15], dmaLen, vramMode);
+            if (vramMode == VramMode.vramWrite) {
+                vramWriteWord(data);
+            } else {
+                LOG.warn("Unexpected write during vramFill, data : " + data + ", vramMode: " + Objects.toString(vramMode));
+            }
+            autoIncrementTotal = 1;
+
+            if (m1) {
+                dma = 1;
+                vramFill = false;
+
+                dataPort = data;
+                printDmaInfo("writeDataPort, data: {}, address: {}", data, addressPort);
+                return;
+            } else {
+                LOG.warn("M1 should be 1 in the DMA transfer. otherwise we can't guarantee the operation.");
+            }
+
+        } else if (vramMode == VramMode.vramWrite) {
             vramWriteWord(data);
+
         } else if (vramMode == VramMode.cramWrite) {
             cramWriteWord(data);
+
         } else if (vramMode == VramMode.vsramWrite) {
             vsramWriteWord(data);
+
         } else {
             LOG.warn("Unexpected write, data: " + data + ", vramMode: " + Objects.toString(vramMode));
         }
     }
 
-    private void setupDmaFillMaybe(int data) {
-        if (m1) {
-            VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
-            boolean dmaOk = mode == VdpDmaHandler.DmaMode.VRAM_FILL; // && vramMode == VramMode.vramWrite;
-            if (dmaOk) {
-                dma = 1;
-                printDmaInfo("writeDataPort, data: {}, address: {}", data, addressPort);
-                dmaHandler.setupDmaDataPort(data);
+
+//	 Registers 19, 20, specify how many 16-bit words to transfer:
+//
+//	 #19: L07 L06 L05 L04 L03 L02 L01 L00
+//	 #20: L15 L14 L13 L12 L11 L10 L08 L08
+//
+//	 Note that a length of 7FFFh equals FFFFh bytes transferred, and a length
+//	 of FFFFh = 1FFFF bytes transferred.
+//
+//	 Registers 21, 22, 23 specify the source address on the 68000 side:
+//
+//	 #21: S08 S07 S06 S05 S04 S03 S02 S01
+//	 #22: S16 S15 S14 S13 S12 S11 S10 S09
+//	 #23:  0  S23 S22 S21 S20 S19 S18 S17
+//
+//	 If the source address goes past FFFFFFh, it wraps to FF0000h.
+//	 (Actually, it probably wraps at E00000h, but there's no way to tell as
+//	  the two addresses are functionally equivelant)
+//
+//	 When doing a transfer to CRAM, the operation is aborted once the address
+//	 register is larger than 7Fh. The only known game that requires this is
+//	 Batman & Robin, which will have palette corruption in levels 1 and 3
+//	 otherwise. This rule may possibly apply to VSRAM transfers as well.
+
+    //	 The following events occur after the command word is written:
+//
+//		 - 68000 is frozen.
+//		 - VDP reads a word from source address.
+//		 - Source address is incremented by 2.
+//		 - VDP writes word to VRAM, CRAM, or VSRAM.
+//		   (For VRAM, the data is byteswapped if the address register has bit 0 set)
+//		 - Address register is incremented by the value in register #15.
+//		 - Repeat until length counter has expired.
+//		 - 68000 resumes operation.
+    private void dmaMem2Vram(long commandWord) {
+        int dmaLength = (dmaLengthCounterHi << 8) | dmaLengthCounterLo;
+
+        long sourceAddr = ((registers[0x17] & 0x7F) << 16) | (registers[0x16] << 8) | (registers[0x15]);
+        long sourceTrue = sourceAddr << 1;    // duplica, trabaja asi
+        int destAddr = (int) (((commandWord & 0x3) << 14) | ((commandWord & 0x3FFF_0000L) >> 16));
+        //MEM_TO_VRAM START, srcAddr: 16775168, destAddr: 14336, destAddrInc: 2, dmaLen: 320, vramMode: vramWrite
+        printDmaInfo("MEM_TO_VRAM START, srcAddr: {}, destAddr: {}, destAddrInc: {}, dmaLen: {}", Long.toHexString(sourceTrue),
+                Long.toHexString(destAddr), registers[15], dmaLength);
+        while (dmaLength > 0) {
+            int dataWord = (int) bus.read(sourceTrue, Size.WORD);
+            int data1 = dataWord >> 8;
+            int data2 = dataWord & 0xFF;
+
+            if (destAddr % 2 == 1) {
+                LOG.warn("Should be even! " + destAddr);
+            }
+            if (destAddr > 0xFFFF) {
+                LOG.warn("DMA destAddr overflow"); //TODO investigate
                 return;
             }
+            if (vramMode == VramMode.vramWrite) {
+                writeVramByte(destAddr, data1);
+                writeVramByte(destAddr + 1, data2);
+
+            } else if (vramMode == VramMode.cramWrite) {
+                writeCramByte(destAddr, data1);
+                writeCramByte(destAddr + 1, data2);
+
+            } else if (vramMode == VramMode.vsramWrite) {
+                writeVsramByte(destAddr, data1);
+                writeVsramByte(destAddr + 1, data2);
+            } else {
+                LOG.error("dmaMem2Vram, Unexpected mode: " + vramMode);
+            }
+
+            sourceTrue += 2;
+            if (sourceTrue > BusProvider.ADDRESS_UPPER_LIMIT) {
+                sourceTrue = (sourceTrue & BusProvider.ADDRESS_UPPER_LIMIT) + 0xFF0000;
+                LOG.warn("DMA sourceAddr overflow");
+            }
+
+            destAddr += registers[15];
+
+            dmaLength--;
+        }
+
+        //TODO do i need this??
+//        int newSource = (int) (sourceTrue >> 1);
+//        registers[0x17] = ((registers[0x17] & 0x80) | ((newSource >> 16) & 0x7F));
+//        registers[0x16] = (newSource >> 8) & 0xFF;
+//        registers[0x15] = newSource & 0xFF;
+//
+//        dmaLengthCounterHi = 0;
+//        dmaLengthCounterLo = 0;
+//        registers[0x14] = 0;
+//        registers[0x13] = 0;
+    }
+
+    public static void main(String[] args) {
+        int source = 0xFF0000;
+        int i = 0;
+        while (i < 100000) {
+            source += 2;
+            source = source > 0xFFFFFF ? (source & 0xFFFFFF) + 0xFF0000 : source;
+//            if(source > 0xFFFFF0) {
+            System.out.println(Integer.toHexString(source));
+//            }
         }
     }
 
@@ -595,6 +765,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     @Override
     public void run(int cycles) {
         runNew();
+    }
+
+    @Override
+    public void doDma() {
+        dmaFill();
     }
 
     int spritesFrame = 0;
@@ -1445,7 +1620,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         return readVsramByte(address) << 8 | readVsramByte(address + 1);
     }
 
-    @Override
     public int readVramByte(int address) {
         address &= (VDP_VRAM_SIZE - 1);
         return vram[address];
@@ -1453,7 +1627,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     @Override
     public VramMode getVramMode() {
-        return vramMode;
+        return null;
     }
 
     private int readVramWord(int address) {
@@ -1467,10 +1641,19 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     //    The address register wraps past address FFFFh.
-    @Override
     public void writeVramByte(int address, int data) {
         address &= (VDP_VRAM_SIZE - 1);
         vram[address] = data & 0xFF;
+    }
+
+    @Override
+    public void videoRamWriteWordRaw(VramMode vramMode, int data, int address) {
+
+    }
+
+    @Override
+    public void videoRamWriteWord(VramMode vramMode, int data, int address) {
+
     }
 
     //    Even though there are 40 words of VSRAM, the address register will wrap
@@ -1497,36 +1680,29 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         videoRamWriteWord(VramMode.vsramWrite, data);
     }
 
-    @Override
-    public void videoRamWriteWord(VramMode vramMode, int data, int address) {
-        int offset = address + autoIncrementTotal;
-        videoRamWriteWordRaw(vramMode, data, offset);
-        int incrementOffset = autoIncrementTotal + autoIncrementData;
-        autoIncrementTotal = incrementOffset;
-    }
-
-    @Override
-    public void videoRamWriteWordRaw(VramMode vramMode, int data, int address) {
+    private void videoRamWriteWord(VramMode vramMode, int data) {
         int word = data;
+        int address = addressPort;
+
+        int offset = address + autoIncrementTotal;
+
         int data1 = (word >> 8);
         int data2 = word & 0xFF;
 
         if (vramMode == VramMode.vsramWrite) {
-            writeVsramByte(address, data1);
-            writeVsramByte(address + 1, data2);
+            writeVsramByte(offset, data1);
+            writeVsramByte(offset + 1, data2);
         } else if (vramMode == VramMode.cramWrite) {
-            writeCramByte(address, data1);
-            writeCramByte(address + 1, data2);
+            writeCramByte(offset, data1);
+            writeCramByte(offset + 1, data2);
         } else if (vramMode == VramMode.vramWrite) {
-            writeVramByte(address, data1);
-            writeVramByte(address + 1, data2);
+            writeVramByte(offset, data1);
+            writeVramByte(offset + 1, data2);
         } else {
             LOG.warn("Unexpected videoRam write: " + vramMode);
         }
-    }
-
-    private void videoRamWriteWord(VramMode vramMode, int data) {
-        videoRamWriteWord(vramMode, data, addressPort);
+        int incrementOffset = autoIncrementTotal + autoIncrementData;
+        autoIncrementTotal = incrementOffset;
     }
 
 }

@@ -45,7 +45,7 @@ public class VdpInterruptHandler {
     private boolean vIntPending;
     private boolean hIntPending;
 
-    private static boolean verbose = Genesis.verbose;
+    private static boolean verbose = Genesis.verbose && false;
 
     enum VdpCounterMode {
         PAL_H32_V28(VideoMode.PAL_H32_V28,

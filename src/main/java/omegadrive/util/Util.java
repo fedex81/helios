@@ -153,8 +153,12 @@ public class Util {
 
     public static void printLevelIfVerbose(Logger LOG, Level level, String str, Object... args) {
         if (Genesis.verbose) {
-            LOG.log(level, str, args);
+            printLevel(LOG, level, str, args);
         }
+    }
+
+    public static void printLevel(Logger LOG, Level level, String str, Object... args) {
+        LOG.log(level, str, args);
     }
 
     public static List<Range<Integer>> getRangeList(int... values) {
