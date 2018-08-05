@@ -95,22 +95,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     //	REG 0xF
     int autoIncrementData;
 
-    //	reg 0x13
-    int dmaLengthCounterLo;
-
-    //	reg 0x14
-    int dmaLengthCounterHi;
-
-    //	reg 0x15
-    int dmaSourceAddressLow;
-
-    //	reg 0x16
-    int dmaSourceAddressMid;
-
-    //	reg 0x17
-    int dmaSourceAddressHi;
-
-    boolean memToVram = false;
     int autoIncrementTotal;
 
     //	Status register:
@@ -142,7 +126,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     //	DMA is set for the duration of a DMA operation. This is only useful for fills and copies, since the M68K is frozen during M68K to VRAM transfers.
     int dma;
     //	PAL seems to be set when the system's display is PAL, and possibly reflects the state of having 240 line display enabled.
-// The same information can be obtained from the version register.
+    // The same information can be obtained from the version register.
     int pal;
 
     long all;
@@ -419,20 +403,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             autoIncrementData = data;
         } else if (reg == 0x0A) {
             updateReg10(data);
-        } else if (reg == 0x13) {
-            dmaLengthCounterLo = data;
-
-        } else if (reg == 0x14) {
-            dmaLengthCounterHi = data;
-
-        } else if (reg == 0x15) {
-            dmaSourceAddressLow = data;
-
-        } else if (reg == 0x16) {
-            dmaSourceAddressMid = data;
-
-        } else if (reg == 0x17) {
-            dmaSourceAddressHi = data & 0x3F;
         }
     }
 
