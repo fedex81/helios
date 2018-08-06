@@ -229,6 +229,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
+    public void updateRegisterData(int reg, int data) {
+        registers[reg] = data;
+    }
+
+    @Override
     public boolean getVip() {
         return interruptHandler.isvIntPending();
     }
@@ -444,7 +449,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     private void printDmaInfo(String str, Object... args) {
-        if (Genesis.verbose) {
+        if (Genesis.verbose || true) {
             String dmaStr = ", DMA " + dma + ", dmaMode: " + dmaHandler.getDmaMode() + ", vramMode: " + Objects.toString(vramMode);
             Util.printLevel(LOG, Level.INFO, str + dmaStr, args);
         }

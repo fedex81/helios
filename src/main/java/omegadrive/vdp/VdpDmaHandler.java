@@ -76,6 +76,24 @@ public class VdpDmaHandler {
 
     enum DmaMode {
         MEM_TO_VRAM, VRAM_FILL, VRAM_COPY;
+
+        public static DmaMode getDmaMode(int reg17) {
+            int dmaBits = reg17 >> 6;
+            DmaMode mode = null;
+            switch (dmaBits) {
+                case 3:
+                    mode = DmaMode.VRAM_COPY;
+                    break;
+                case 2:
+                    mode = DmaMode.VRAM_FILL;
+                    break;
+                case 0: //fall-through
+                case 1:
+                    mode = DmaMode.MEM_TO_VRAM;
+                    break;
+            }
+            return mode;
+        }
     }
 
     public static VdpDmaHandler createInstance(VdpProvider vdpProvider, BusProvider busProvider) {
@@ -106,9 +124,11 @@ public class VdpDmaHandler {
 
     public void setupDmaDataPort(int dataWord) {
         dmaFillData = dataWord;
-        vdpProvider.writeVramByte(destAddress, dataWord & 0xFF);
-        vdpProvider.writeVramByte(destAddress ^ 1, (dataWord >> 8) & 0xFF);
         printInfo("START");
+        dmaLen = decreaseDmaLength();
+        vdpProvider.writeVramByte(destAddress ^ 1, dataWord & 0xFF);
+        vdpProvider.writeVramByte(destAddress, (dataWord >> 8) & 0xFF);
+        destAddress += 2;
     }
 
 
@@ -142,15 +162,8 @@ public class VdpDmaHandler {
         return dmaMode;
     }
 
-    public static DmaMode getDmaModeStatic(int reg17) {
-        int dmaBits = reg17 >> 6;
-        DmaMode mode = (dmaBits & 0b10) < 2 ? DmaMode.MEM_TO_VRAM : DmaMode.VRAM_FILL;
-        mode = (dmaBits & 0b11) == 3 ? DmaMode.VRAM_COPY : mode;
-        return mode;
-    }
-
     public DmaMode getDmaMode(int reg17) {
-        DmaMode mode = getDmaModeStatic(reg17);
+        DmaMode mode = DmaMode.getDmaMode(reg17);
         if (dmaMode != mode) {
             Util.printLevelIfVerbose(LOG, Level.INFO, "Dma mode changed from : {} to {}", dmaMode, mode);
             dmaMode = mode;
@@ -173,6 +186,7 @@ public class VdpDmaHandler {
             printInfo("DONE");
             dmaMode = null;
         }
+        updateVdpRegisters();
         return done;
     }
 
@@ -187,8 +201,8 @@ public class VdpDmaHandler {
     }
 
     public boolean dmaFillSingleByte() {
-        dmaLen = decreaseDmaLength();
-//        printInfo("IN PROGRESS");
+        dmaLen--;
+        printInfo("IN PROGRESS");
         int msb = (dmaFillData >> 8) & 0xFF;
         vdpProvider.writeVramByte(destAddress, msb);
         destAddress += destAddressIncrement;
@@ -209,7 +223,7 @@ public class VdpDmaHandler {
     }
 
     private boolean dmaCopySingleByte() {
-        dmaLen = decreaseDmaLength();
+        dmaLen--;
         int data = vdpProvider.readVramByte(sourceAddress);
         vdpProvider.writeVramByte(destAddress, data);
         sourceAddress++;
@@ -244,6 +258,7 @@ public class VdpDmaHandler {
             sourceAddress = wrapSourceAddress(sourceAddress);
             destAddress += destAddressIncrement;
         } while (dmaLen > 0);
+        updateVdpRegisters();
         printInfo("DONE ");
     }
 
@@ -258,6 +273,16 @@ public class VdpDmaHandler {
 
     private int wrapSourceAddress(int sourceAddress) {
         return (sourceAddress % sourceAddressWrap) + sourceAddressLowerBound;
+    }
+
+    private void updateVdpRegisters() {
+        vdpProvider.updateRegisterData(19, dmaLen & 0xFF);
+        vdpProvider.updateRegisterData(20, dmaLen >> 8);
+
+        int reg22 = (sourceAddress >> 8) & 0xFF;
+        int reg21 = sourceAddress & 0xFF;
+        vdpProvider.updateRegisterData(21, reg21);
+        vdpProvider.updateRegisterData(22, reg22);
     }
 
     public static void main(String[] args) {

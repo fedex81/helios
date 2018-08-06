@@ -248,6 +248,11 @@ public class GenesisVdpOldDma implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
+    public void updateRegisterData(int reg, int data) {
+
+    }
+
+    @Override
     public boolean getVip() {
         return interruptHandler.isvIntPending();
     }
@@ -363,7 +368,7 @@ public class GenesisVdpOldDma implements VdpProvider, VdpHLineProvider {
 
     private void setupDma(long data) {
         dmaRecien = true;
-        dmaModeEnum = VdpDmaHandler.getDmaModeStatic(registers[0x17]);
+        dmaModeEnum = VdpDmaHandler.DmaMode.getDmaMode(registers[0x17]);
         if (!m1) {
             LOG.warn("Attempting DMA but m1 not set: " + dmaModeEnum);
             printDmaInfo("writeRam, address: {}, data: {}", addressPort, data);

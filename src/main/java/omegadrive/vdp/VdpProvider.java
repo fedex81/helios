@@ -85,6 +85,8 @@ public interface VdpProvider {
 
     int getRegisterData(int reg);
 
+    void updateRegisterData(int reg, int data);
+
     void writeVramByte(int address, int data);
 
     void videoRamWriteWordRaw(VramMode vramMode, int data, int address);
