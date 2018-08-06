@@ -449,7 +449,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     private void printDmaInfo(String str, Object... args) {
-        if (Genesis.verbose || true) {
+        if (Genesis.verbose) {
             String dmaStr = ", DMA " + dma + ", dmaMode: " + dmaHandler.getDmaMode() + ", vramMode: " + Objects.toString(vramMode);
             Util.printLevel(LOG, Level.INFO, str + dmaStr, args);
         }

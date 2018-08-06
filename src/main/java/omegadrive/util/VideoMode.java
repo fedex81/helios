@@ -22,8 +22,12 @@ public enum VideoMode {
     PAL_H32_V28(EUROPE, H32, V28_CELL),
     NTSCU_H32_V28(USA, H32, V28_CELL),
     NTSCJ_H32_V28(JAPAN, H32, V28_CELL),
+    NTSCU_H32_V30(USA, H32, V30_CELL),
+    NTSCJ_H32_V30(JAPAN, H32, V30_CELL),
     NTSCU_H40_V28(USA, H40, V28_CELL),
-    NTSCJ_H40_V28(JAPAN, H40, V28_CELL),;
+    NTSCJ_H40_V28(JAPAN, H40, V28_CELL),
+    NTSCU_H40_V30(USA, H40, V30_CELL),
+    NTSCJ_H40_V30(JAPAN, H40, V30_CELL),;
 
     private static Logger LOG = LogManager.getLogger(VideoMode.class.getSimpleName());
 

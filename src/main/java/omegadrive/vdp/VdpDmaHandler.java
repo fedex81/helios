@@ -64,7 +64,7 @@ public class VdpDmaHandler {
     private int destAddressIncrement;
     private GenesisVdp.VramMode vramMode;
 
-    private static boolean verbose = Genesis.verbose || true;
+    private static boolean verbose = Genesis.verbose;
 
     //TODO this should be called by hcounter in runNew
     private static int BYTES_PER_CALL = 20;

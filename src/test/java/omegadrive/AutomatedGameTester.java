@@ -24,18 +24,24 @@ import java.util.stream.Collectors;
  */
 public class AutomatedGameTester {
 
-    private static String romFolder = "data/emu/roms/gen_roms";
+    private static String romFolder =
+//            "/data/emu/roms/genesis/nointro";
+//            "/data/emu/roms/genesis/goodgen/verified"
+            "/home/fede/roms/issues";
+    private static String romList = "";
+    private static boolean noIntro = true;
     private static String startRom = null;
     private static String header = "rom;boot;sound";
-    private static int BOOT_DELAY_MS = 5000;
+    private static int BOOT_DELAY_MS = 500;
     private static int AUDIO_DELAY_MS = 25000;
 
+
     private static Predicate<Path> testRomsPredicate = p ->
-            (p.toString().endsWith("bin") || p.toString().endsWith("smd"));
+            (p.toString().endsWith("bin") || p.toString().endsWith("md"));
 
     private static Predicate<Path> testVerifiedRomsPredicate = p ->
             testRomsPredicate.test(p) &&
-                    p.getFileName().toString().contains("[!]");
+                    (noIntro || p.getFileName().toString().contains("[!]"));
 
     public static void main(String[] args) throws Exception {
         System.out.println("Current folder: " + new File(".").getAbsolutePath());
@@ -46,7 +52,7 @@ public class AutomatedGameTester {
     }
 
     private void testAll(boolean random) throws Exception {
-        Path folder = Paths.get("/", romFolder);
+        Path folder = Paths.get(romFolder);
         List<Path> testRoms = Files.list(folder).filter(testVerifiedRomsPredicate).sorted().collect(Collectors.toList());
         if (random) {
             Collections.shuffle(testRoms);
@@ -57,9 +63,9 @@ public class AutomatedGameTester {
     }
 
     private void testList() throws Exception {
-        String[] arr = nonBoot201805.split(";");
+        String[] arr = romList.split(";");
         List<String> list = Arrays.stream(arr).map(String::trim).sorted().collect(Collectors.toList());
-        Path folder = Paths.get("/", romFolder);
+        Path folder = Paths.get(romFolder);
         List<Path> testRoms = Files.list(folder).filter(p -> list.contains(p.getFileName().toString())).
                 sorted().collect(Collectors.toList());
         testRoms(testRoms);
@@ -70,6 +76,8 @@ public class AutomatedGameTester {
         System.out.println("Roms to test: " + testRoms.size());
         System.out.println(header);
         boolean skip = true;
+        File logFile = new File("./test_output.log");
+        long logFileLen = 0;
 
         for (Path rom : testRoms) {
             skip &= shouldSkip(rom);
@@ -83,26 +91,43 @@ public class AutomatedGameTester {
             Util.sleep(BOOT_DELAY_MS);
             boolean boots = false;
             boolean soundOk = false;
+            boolean tooManyErrors = false;
             int totalDelay = BOOT_DELAY_MS;
             if (genesisProvider.isGameRunning()) {
                 boots = true;
                 do {
+                    tooManyErrors = checkLogFileSize(logFile, rom.getFileName().toString(), logFileLen);
                     soundOk = genesisProvider.isSoundWorking();
                     if (!soundOk) { //wait a bit longer
                         Util.sleep(BOOT_DELAY_MS);
                         totalDelay += BOOT_DELAY_MS;
                         soundOk = genesisProvider.isSoundWorking();
                     }
-                } while (!soundOk && totalDelay < AUDIO_DELAY_MS);
+                } while (!soundOk && totalDelay < AUDIO_DELAY_MS && !tooManyErrors);
                 genesisProvider.handleCloseGame();
             }
             System.out.println(rom.getFileName().toString() + ";" + boots + ";" + soundOk);
+            logFileLen = logFileLength(logFile);
             Util.sleep(2000);
         }
     }
 
+    private long logFileLength(File file) {
+        return file.exists() ? file.length() : 0;
+    }
+
+    private boolean checkLogFileSize(File logFile, String rom, long previousLen) {
+        int limit = 100 * 1024; //100 Kbytes
+        long len = logFileLength(logFile);
+        boolean tooManyErrors = len - previousLen > limit;
+        if (tooManyErrors) {
+            System.out.println(rom + ": stopping, log file too big, bytes: " + len);
+        }
+        return tooManyErrors;
+    }
+
     private void testCartridgeInfo() throws Exception {
-        Path folder = Paths.get("/", romFolder);
+        Path folder = Paths.get(romFolder);
         List<Path> testRoms = Files.list(folder).
                 filter(testRomsPredicate).
                 sorted().collect(Collectors.toList());
@@ -122,9 +147,9 @@ public class AutomatedGameTester {
             try {
                 CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,
                         rom.getFileName().toString());
-                if (cartridgeInfoProvider.isSramEnabled()) {
+//                if (cartridgeInfoProvider.isSramEnabled()) {
                     System.out.println(rom.getFileName().toString() + ";" + cartridgeInfoProvider.toSramCsvString());
-                }
+//                }
             } catch (Exception e) {
                 System.err.println("Exception: " + rom.getFileName());
             }
@@ -141,19 +166,4 @@ public class AutomatedGameTester {
         }
         return skip;
     }
-
-    static String nonBoot201805 =
-            "Battle Squadron (UE) [!].bin;\n" +
-                    "Misadventures of Flink, The (E) [!].bin;\n" +
-                    "NBA Pro Basketball '94 (J) [!].bin;\n" +
-                    "NBA Showdown 94 (UE) [!].bin;\n" +
-                    "NCAA College Football (U) [!].bin;\n" +
-                    "NFL 98 (U) [!].bin;\n" +
-                    "NFL Prime Time (U) [!].bin;\n" +
-                    "Pete Sampras Tennis (UE) (REV00) (J-Cart) [c][!].bin;\n" +
-                    "Pro Action Replay (Unl) [!].bin;\n" +
-                    "Pro Action Replay 2 V2.1 (Unl) (Mar 1st) [!].bin;\n" +
-                    "Pro Action Replay 2 V2.1 (Unl) [!].bin;\n" +
-                    "Sangokushi II (J) [!].bin;\n" +
-                    "Sega Radica! Volume 1 (U) [!].bin;\n";
 }

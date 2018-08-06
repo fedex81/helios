@@ -79,6 +79,18 @@ public class VdpInterruptHandler {
                 NTSC_SCANLINES, 235,
                 0x93 << 1, 0x05 << 1, 0xE0, 0x85 << 1
         ),
+
+        NTSCJ_H32_V30(VideoMode.NTSCJ_H32_V30,
+                H32_PIXELS, 296,
+                NTSC_SCANLINES, -1,
+                0x93 << 1, 0x05 << 1, 0xF0, 0x85 << 1
+        ),
+        NTSCU_H32_V30(VideoMode.NTSCU_H32_V30,
+                H32_PIXELS, 296,
+                NTSC_SCANLINES, -1,
+                0x93 << 1, 0x05 << 1, 0xF0, 0x85 << 1
+        ),
+
         NTSCJ_H40_V28(VideoMode.NTSCJ_H40_V28,
                 H40_PIXELS, 366,
                 NTSC_SCANLINES, 235,
@@ -88,6 +100,17 @@ public class VdpInterruptHandler {
                 H40_PIXELS, 366,
                 NTSC_SCANLINES, 235,
                 0xB3 << 1, 0x06 << 1, 0xE0, 0xA5 << 1
+        ),
+
+        NTSCJ_H40_V30(VideoMode.NTSCJ_H40_V30,
+                H40_PIXELS, 366,
+                NTSC_SCANLINES, -1,
+                0xB3 << 1, 0x06 << 1, 0xF0, 0xA5 << 1
+        ),
+        NTSCU_H40_V30(VideoMode.NTSCU_H40_V30,
+                H40_PIXELS, 366,
+                NTSC_SCANLINES, -1,
+                0xB3 << 1, 0x06 << 1, 0xF0, 0xA5 << 1
         ),;
 
         int hTotalCount;
@@ -281,7 +304,7 @@ public class VdpInterruptHandler {
         VdpInterruptHandler h = createInstance(() -> {
             return 0;
         });
-        h.setMode(VideoMode.PAL_H32_V30);
+        h.setMode(VideoMode.NTSCJ_H32_V30);
         do {
             h.increaseHCounter();
             h.printState("", null);
