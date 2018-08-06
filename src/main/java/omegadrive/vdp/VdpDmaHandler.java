@@ -252,7 +252,7 @@ public class VdpDmaHandler {
     }
 
     private static int getDmaSourceWrap(int sourceAddress) {
-        return sourceAddress > BusProvider.ADDRESS_RAM_MAP_START ? DMA_RAM_SOURCE_ADDRESS_WRAP
+        return sourceAddress >= BusProvider.ADDRESS_RAM_MAP_START ? DMA_RAM_SOURCE_ADDRESS_WRAP
                 : DMA_ROM_SOURCE_ADDRESS_WRAP;
     }
 
