@@ -1451,7 +1451,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             vsram[address] = data & 0xFF;
         } else {
             //Arrow Flash
-            LOG.warn("Ignoring vsram write to address: " + Integer.toHexString(address));
+            LOG.debug("Ignoring vsram write to address: " + Integer.toHexString(address));
         }
     }
 

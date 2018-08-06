@@ -266,7 +266,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             }
         } else if (address == 0xC0001C) {
             LOG.warn("Ignoring VDP debug register write, address : " + pad4(address));
-        } else if (address >= 0xE00000 && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
+        } else if (address >= RAM_START_ADDRESS && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             return Util.readRam(memory, size, address);
         } else {
             LOG.warn("BUS READ NOT MAPPED: " + pad4(address) + " - " + pad4(cpu.getPC()));
@@ -497,7 +497,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             LOG.warn("TMSS: " + Integer.toHexString((int) data));
         } else if (addressL >= 0xC00000 && addressL < 0xDFFFFF) {  //VDP
             vdpWrite(addressL, size, data);
-        } else if (addressL >= 0xE00000 && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
+        } else if (addressL >= ADDRESS_RAM_MAP_START && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             long addressZ = addressL & 0xFFFF;
             Util.writeRam(memory, size, addressZ, data);
         } else {

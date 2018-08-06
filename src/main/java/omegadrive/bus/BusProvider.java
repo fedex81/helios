@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 public interface BusProvider {
 
     int ADDRESS_UPPER_LIMIT = 0xFFFFFF;
+    int ADDRESS_RAM_MAP_START = 0xE00000;
 
     Logger LOG = LogManager.getLogger(BusProvider.class.getSimpleName());
 

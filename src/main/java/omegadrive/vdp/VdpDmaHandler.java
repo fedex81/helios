@@ -18,6 +18,36 @@ import org.apache.logging.log4j.Logger;
  * TODO thunderForce IV
  *
  */
+
+/**
+ * None of the DMA register settings are "cached", they are used live.
+ * In particular, the DMA source address and transfer count are actively modified during DMA operations.
+ * You can, for example, perform a DMA transfer for a count of 0x1000,
+ * then only rewrite the lower transfer count byte with 0x80, and trigger another DMA transfer,
+ * and it will only perform a transfer for 0x80 steps.
+ * <p>
+ * I can tell you that the DMA source address registers are never cleared under any circumstances,
+ * but a DMA operation will actively modify them as it runs,
+ * so you would expect the source address registers to be incremented by a DMA operation.
+ * I can tell you that the correct behaviour is for the combined DMA source address registers 21 and 22
+ * to be incremented by 1 on each DMA update step, with every DMA operation,
+ * including a DMA fill for what it's worth, even though it doesn't use the source address.
+ * DMA source address register 23 is never modified under any circumstances by the DMA operation.
+ * This is why a DMA transfer wraps at 0x20000 byte boundaries:
+ * it's unable to modify the upper DMA source address register.
+ * If it was able to do this, it could inadvertantly modify the DMA mode during a DMA operation,
+ * which would be very bad.
+ * <p>
+ * Here are some other mitigating factors which may cause you problems:
+ * -DMA operations to invalid write targets still run to completion, the result is simply not stored,
+ * so if a DMA operation is triggered to an invalid target, the DMA source address still needs to be updated.
+ * -DMA operations always run to completion, they never abort, IE, when you reach the "end" of CRAM or VSRAM.
+ * Writes to CRAM and VSRAM wrap at an 0x80 byte boundary.
+ * Writes to the upper portion of VSRAM in this region (0x50-0x80) are discarded.
+ * <p>
+ * Any information you may read which is contrary to this info (IE, in genvdp.txt) is incorrect.
+ * http://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=908&p=15801&hilit=dma+wrap#p15801
+ */
 public class VdpDmaHandler {
 
     private static Logger LOG = LogManager.getLogger(VdpDmaHandler.class.getSimpleName());
@@ -27,15 +57,19 @@ public class VdpDmaHandler {
 
     private int dmaLen;
     private int sourceAddress;
+    private int sourceAddressLowerBound;
+    private int sourceAddressWrap;
     private int destAddress;
     private int dmaFillData;
     private int destAddressIncrement;
     private GenesisVdp.VramMode vramMode;
 
-    private static boolean verbose = Genesis.verbose;
+    private static boolean verbose = Genesis.verbose || true;
 
     //TODO this should be called by hcounter in runNew
-    private static int BYTES_PER_CALL = 2;
+    private static int BYTES_PER_CALL = 20;
+    private static int DMA_ROM_SOURCE_ADDRESS_WRAP = 0x20000; //128Kbytes
+    private static int DMA_RAM_SOURCE_ADDRESS_WRAP = 0x10000; //64Kbytes
 
 
     private DmaMode dmaMode;
@@ -56,6 +90,8 @@ public class VdpDmaHandler {
         int reg22 = vdpProvider.getRegisterData(22);
         int reg21 = vdpProvider.getRegisterData(21);
         sourceAddress = (reg22 & 0xFF) << 8 | reg21;
+        sourceAddressLowerBound = getDmaSourceLowerBound(sourceAddress);
+        sourceAddressWrap = getDmaSourceWrap(sourceAddress);
         destAddress = (int) ((commandWord & 0x3) << 14 | ((commandWord & 0x3FFF_0000L) >> 16));
         destAddressIncrement = vdpProvider.getRegisterData(15);
         vramMode = vdpProvider.getVramMode();
@@ -177,6 +213,7 @@ public class VdpDmaHandler {
         int data = vdpProvider.readVramByte(sourceAddress);
         vdpProvider.writeVramByte(destAddress, data);
         sourceAddress++;
+        sourceAddress = wrapSourceAddress(sourceAddress);
         destAddress += destAddressIncrement;
         return dmaLen == 0;
     }
@@ -190,6 +227,8 @@ public class VdpDmaHandler {
 
     private void dma68kToVram() {
         sourceAddress = sourceAddress << 1;  // needs to double it
+        sourceAddressLowerBound = getDmaSourceLowerBound(sourceAddress);
+        sourceAddressWrap = getDmaSourceWrap(sourceAddress);
         printInfo("START");
         boolean byteSwap = (destAddress & 1) == 0 && vramMode == GenesisVdp.VramMode.vramWrite;
         if (destAddress % 2 == 1) {
@@ -200,30 +239,41 @@ public class VdpDmaHandler {
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
 //            dataWord = byteSwap ? dataWord & 0xFF | dataWord >> 8 : dataWord;
             vdpProvider.videoRamWriteWordRaw(vramMode, dataWord, destAddress);
-
 //            printInfo("IN PROGRESS");
-//            LOG.info("srcAdd: " + Integer.toHexString(sourceAddress));
             sourceAddress += 2;
-            if (sourceAddress > BusProvider.ADDRESS_UPPER_LIMIT) {
-                sourceAddress = (sourceAddress & BusProvider.ADDRESS_UPPER_LIMIT) + 0xFF0000;
-                LOG.warn("DMA sourceAddr overflow");
-            }
+            sourceAddress = wrapSourceAddress(sourceAddress);
             destAddress += destAddressIncrement;
         } while (dmaLen > 0);
-        printInfo("DONE");
+        printInfo("DONE ");
+    }
+
+    private static int getDmaSourceLowerBound(int sourceAddress) {
+        return sourceAddress - (sourceAddress % getDmaSourceWrap(sourceAddress));
+    }
+
+    private static int getDmaSourceWrap(int sourceAddress) {
+        return sourceAddress > BusProvider.ADDRESS_RAM_MAP_START ? DMA_RAM_SOURCE_ADDRESS_WRAP
+                : DMA_ROM_SOURCE_ADDRESS_WRAP;
+    }
+
+    private int wrapSourceAddress(int sourceAddress) {
+        return (sourceAddress % sourceAddressWrap) + sourceAddressLowerBound;
     }
 
     public static void main(String[] args) {
-        long res = 3221225600L;
-        long res1 = 2013266051L;
-        long d1 = (int) (res & 0x3) << 14 | ((res & 0x3FFF_0000L) >> 16);
-        long d2 = (int) (res1 & 0x3) << 14 | ((res1 & 0x3FFF) >> 16);
-
-        System.out.println(d1);
-        System.out.println(d2);
-        d1 = (int) (((res & 0x3) << 14) | ((res & 0x3FFF_0000L) >> 16));
-        d2 = (int) (((res1 & 0x3) << 14) | ((res1 & 0x3FFF_0000L) >> 16));
-        System.out.println(d1);
-        System.out.println(d2);
+        //srcAddr: 5fffc, destAddr: 8000, destAddrInc: 2, dmaLen: 4, vramMode: vramWrite
+//        int start = 0xFFFFFC;
+        int start = 0x5fffc;
+        int lowerBound = getDmaSourceLowerBound(start);
+        int wrap = getDmaSourceWrap(start);
+        int cnt = 4;
+        System.out.println(Long.toHexString(start));
+        System.out.println(Long.toHexString(lowerBound));
+        do {
+            start += 2;
+            long start1 = start;
+            start = (start % wrap) + lowerBound;
+            System.out.println(Long.toHexString(start) + " - " + Long.toHexString(start1));
+        } while(--cnt > 0);
     }
 }
