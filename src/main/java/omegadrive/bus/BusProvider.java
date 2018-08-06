@@ -29,10 +29,6 @@ public interface BusProvider {
         return new GenesisBus();
     }
 
-    static BusProvider createLegacyBus(GenesisProvider genesis, MemoryProvider memory, JoypadProvider joypad, SoundProvider sound) {
-        return new GenBusLegacy(genesis, memory, null, null, joypad, null, sound);
-    }
-
     BusProvider attachDevice(Object device);
 
     GenesisProvider getEmulator();
