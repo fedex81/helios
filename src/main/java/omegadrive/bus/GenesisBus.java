@@ -11,6 +11,7 @@ import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.VdpProvider;
 import omegadrive.z80.Z80Provider;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,6 +29,8 @@ import java.util.Objects;
 public class GenesisBus implements BusProvider, GenesisMapper {
 
     private static Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
+
+    private static boolean verbose = false || Genesis.verbose;
 
     private GenesisProvider emu;
     private MemoryProvider memory;
@@ -137,6 +140,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         return sramWrite;
     }
 
+    private static void logInfo(String str, Object... args) {
+        if (verbose) {
+            Util.printLevel(LOG, Level.INFO, str, args);
+        }
+    }
+
 
     @Override
     public long readData(long address, Size size) {
@@ -191,6 +200,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             return joypad.readDataRegister3();
 
         } else if (address == 0xA1000C || address == 0xA1000D) {    //	Expansion Port Control
+            LOG.warn("Expansion port control");
             return 0;
         } else if (address == 0xA10008 || address == 0xA10009) {    //	Controller 1 control
             if (size == Size.BYTE) {
@@ -358,7 +368,6 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     @Override
     public void writeData(long address, long data, Size size) {
         long addressL = (address & 0xFF_FFFF);
-
         if (size == Size.BYTE) {
             data = data & 0xFF;
         } else if (size == Size.WORD) {
@@ -403,7 +412,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             joypad.writeDataRegister2(data);
 
         } else if (addressL == 0xA10006 || address == 0xA10007) {    //	Expansion port data
-            // ???
+            LOG.warn("Expansion port data");
 
         } else if (addressL == 0xA10009) {    //	Controller 1 control
             joypad.writeControlRegister1(data);
@@ -512,11 +521,21 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     @Override
     public long read(long address, Size size) {
+        if (verbose) {
+            long res = mapper.readData(address, size);
+            logInfo("Read address: {}, size: {}, result: {}",
+                    Long.toHexString(address), size, Long.toHexString(res));
+            return res;
+        }
         return mapper.readData(address, size);
     }
 
     @Override
     public void write(long address, long data, Size size) {
+        if (verbose) {
+            logInfo("Write address: {}, data: {}, size: {}", Long.toHexString(address),
+                    Long.toHexString(data), size);
+        }
         mapper.writeData(address, data, size);
     }
 

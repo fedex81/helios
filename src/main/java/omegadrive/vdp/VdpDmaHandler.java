@@ -1,6 +1,5 @@
 package omegadrive.vdp;
 
-import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -64,10 +63,10 @@ public class VdpDmaHandler {
     private int destAddressIncrement;
     private GenesisVdp.VramMode vramMode;
 
-    private static boolean verbose = Genesis.verbose;
+    private static boolean verbose = GenesisVdp.verbose;
 
     //TODO this should be called by hcounter in runNew
-    private static int BYTES_PER_CALL = 20;
+    private static int BYTES_PER_CALL = 2;
     private static int DMA_ROM_SOURCE_ADDRESS_WRAP = 0x20000; //128Kbytes
     private static int DMA_RAM_SOURCE_ADDRESS_WRAP = 0x10000; //64Kbytes
 
@@ -125,10 +124,8 @@ public class VdpDmaHandler {
     public void setupDmaDataPort(int dataWord) {
         dmaFillData = dataWord;
         printInfo("START");
-        dmaLen = decreaseDmaLength();
         vdpProvider.writeVramByte(destAddress ^ 1, dataWord & 0xFF);
         vdpProvider.writeVramByte(destAddress, (dataWord >> 8) & 0xFF);
-        destAddress += 2;
     }
 
 

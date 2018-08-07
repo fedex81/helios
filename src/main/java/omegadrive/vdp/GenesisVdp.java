@@ -27,6 +27,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
+    public static boolean verbose = false || Genesis.verbose;
+
     public static int ROWS = VDP_VIDEO_ROWS;
     public static int COLS = VDP_VIDEO_COLS;
 
@@ -164,7 +166,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 vsram[i] = 0xFF;
             }
         }
-        Arrays.fill(vram, 0x00);
+        Arrays.fill(vram, 0x10);
+
+        registers[23] = 0x80;
 
         this.videoMode = getVideoMode(bus.getEmulator().getRegion(), false, false);
         this.interruptHandler.setMode(videoMode);
@@ -176,7 +180,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     public int readControl() {
         // The value assigned to these bits will be whatever value these bits were set to from the
         // last read the M68000 performed.
-        // W rites from the M68000 don't affect these bits, only reads.
+        // Writes from the M68000 don't affect these bits, only reads.
         int control = (
                 (empty << 9)
                         | (full << 8)
@@ -321,7 +325,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         if (!writePendingControlPort) {
             firstWrite = data;
             writePendingControlPort = true;
-            printDmaInfo("writeAddr, data: {}, firstWrite: {}", firstWrite, writePendingControlPort);
+            logInfo("writeAddr, data: {}, firstWrite: {}", firstWrite, writePendingControlPort);
         } else {
             writePendingControlPort = false;
 
@@ -338,11 +342,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             int addressMode = code & 0xF;    // solo el primer byte, el bit 4 y 5 son para DMA
             vramMode = Optional.ofNullable(VramMode.getVramMode(addressMode)).orElse(vramMode);
             LOG.debug("Video mode: " + Objects.toString(vramMode));
-            printDmaInfo("writeAddr: {}, data: {}, firstWrite: {}", addr, all, writePendingControlPort);
+            logInfo("writeAddr: {}, data: {}, firstWrite: {}", addr, all, writePendingControlPort);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((code & 0b100000) > 0) { // DMA
                 setupDma(all);
-                printDmaInfo("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}", addr, all, writePendingControlPort);
+                logInfo("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}", addr, all, writePendingControlPort);
             }
         }
     }
@@ -351,7 +355,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         VdpDmaHandler.DmaMode dmaModeEnum = dmaHandler.getDmaMode(registers[0x17]);
         if (!m1) {
             LOG.warn("Attempting DMA but m1 not set: " + dmaModeEnum);
-            printDmaInfo("writeRam, address: {}, data: {}", addressPort, data);
+            logInfo("writeRam, address: {}, data: {}", addressPort, data);
             return;
         }
         switch (dmaModeEnum) {
@@ -382,7 +386,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
         registers[reg] = dataControl;
         updateVariables(reg, dataControl);
-        printDmaInfo("writeReg: {}, data: {}", reg, dataControl);
+        logInfo("writeReg: {}, data: {}", reg, dataControl);
     }
 
     private void updateVariables(int reg, int data) {
@@ -448,8 +452,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    private void printDmaInfo(String str, Object... args) {
-        if (Genesis.verbose) {
+    private void logInfo(String str, Object... args) {
+        if (verbose) {
             String dmaStr = ", DMA " + dma + ", dmaMode: " + dmaHandler.getDmaMode() + ", vramMode: " + Objects.toString(vramMode);
             Util.printLevel(LOG, Level.INFO, str + dmaStr, args);
         }
@@ -477,7 +481,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             boolean dmaOk = mode == VdpDmaHandler.DmaMode.VRAM_FILL; // && vramMode == VramMode.vramWrite;
             if (dmaOk) {
                 dma = 1;
-                printDmaInfo("writeDataPort, data: {}, address: {}", data, addressPort);
+                logInfo("writeDataPort, data: {}, address: {}", data, addressPort);
                 dmaHandler.setupDmaDataPort(data);
                 return;
             }

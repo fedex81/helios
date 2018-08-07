@@ -19,6 +19,8 @@ public class MC68000Wrapper implements M68kProvider {
 
     private static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
 
+    private static boolean verbose = false;
+
     private static int ILLEGAL_ACCESS_EXCEPTION = 4;
 
     private MC68000 m68k;
@@ -37,7 +39,9 @@ public class MC68000Wrapper implements M68kProvider {
         };
         this.addressSpace = getAddressSpace(busProvider);
         m68k.setAddressSpace(addressSpace);
-//        startMonitor();
+        if (verbose) {
+            startMonitor();
+        }
     }
 
     private void startMonitor() {
@@ -191,6 +195,6 @@ public class MC68000Wrapper implements M68kProvider {
         startMonitor();
         String str = monitor.dumpInfo();
         str += monitor.handleDisassemble(new String[]{"d", "" + (m68k.getPC() - 8), "16"});
-        LOG.error(str);
+        LOG.info(str);
     }
 }
