@@ -194,6 +194,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                         | (pal << 0)
         );
         writePendingControlPort = false;
+        logInfo("readControl: {}", control);
         return control;
     }
 
@@ -361,15 +362,15 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         switch (dmaModeEnum) {
             case MEM_TO_VRAM:
                 //doesnt need to set dma in the SR
-//                dmaMem2Vram(all);
                 dmaHandler.setupDmaRegister(data);
                 break;
+            //on DMA Fill, busy flag is actually immediately (?) set after the CTRL port write,
+            //not the DATA port write that starts the Fill operation
             case VRAM_FILL:
-                dmaHandler.setupDmaRegister(data);
-                break;
+                //fall-through
             case VRAM_COPY:
-                dmaHandler.setupDmaRegister(data);
                 dma = 1;
+                dmaHandler.setupDmaRegister(data);
                 break;
             default:
                 LOG.error("Unexpected DMA mode: " + dmaModeEnum);
@@ -478,9 +479,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private void setupDmaFillMaybe(int data) {
         if (m1) {
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
-            boolean dmaOk = mode == VdpDmaHandler.DmaMode.VRAM_FILL; // && vramMode == VramMode.vramWrite;
+            boolean dmaOk = mode == VdpDmaHandler.DmaMode.VRAM_FILL;
             if (dmaOk) {
-                dma = 1;
                 logInfo("writeDataPort, data: {}, address: {}", data, addressPort);
                 dmaHandler.setupDmaDataPort(data);
                 return;
@@ -512,7 +512,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void runNew() {
         interruptHandler.increaseHCounter();
-        boolean displayEnable = isDisplayEnable();
+        boolean displayEnable = disp;
         //disabling the display implies blanking
         hb = !displayEnable || interruptHandler.ishBlankSet() ? 1 : 0;
         vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
@@ -565,10 +565,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 renderSprites();
             }
         }
-    }
-
-    public boolean isDisplayEnable() {
-        return disp;
     }
 
     @Override
