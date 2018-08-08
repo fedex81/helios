@@ -48,19 +48,10 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     public static long ROM_END_ADDRESS;
     public static long RAM_START_ADDRESS;
     public static long RAM_END_ADDRESS;
-    public static long SRAM_START_ADDRESS;
-    public static long SRAM_END_ADDRESS;
-    public static boolean SRAM_AVAILABLE;
-
-    enum SramMode {DISABLE, READ_ONLY, READ_WRITE}
 
     enum BusState {READY, NOT_READY}
 
-    private SramMode sramMode;
-
     private BusState busState = BusState.NOT_READY;
-
-    int[] sram = new int[0];
 
     protected GenesisBus() {
         this.mapper = this;
@@ -71,11 +62,9 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         ROM_END_ADDRESS = cartridgeInfoProvider.getRomEnd();
         RAM_START_ADDRESS = cartridgeInfoProvider.getRamStart();
         RAM_END_ADDRESS = cartridgeInfoProvider.getRamEnd();
-        SRAM_START_ADDRESS = cartridgeInfoProvider.getSramStart();
-        SRAM_END_ADDRESS = cartridgeInfoProvider.getSramEnd();
-        SRAM_AVAILABLE = cartridgeInfoProvider.isSramEnabled();
-        sram = new int[cartridgeInfoProvider.getSramSizeBytes()];
-        sramMode = SramMode.DISABLE;
+        if (cartridgeInfoProvider.isSramEnabled()) {
+            mapper = BackupMemoryMapper.createInstance(this, cartridgeInfoProvider);
+        }
     }
 
     @Override
@@ -119,27 +108,6 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         busState = ok ? BusState.READY : BusState.NOT_READY;
     }
 
-
-    private static boolean isSramRead(SramMode sramMode, long address) {
-        if (!SRAM_AVAILABLE) {
-            return false; //fast path
-        }
-        boolean sramRead = sramMode != SramMode.DISABLE;
-        sramRead |= SRAM_START_ADDRESS > ROM_END_ADDRESS;  //if no overlap allow to read
-        sramRead &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
-        return sramRead;
-    }
-
-    private static boolean isSramWrite(SramMode sramMode, long address) {
-        if (!SRAM_AVAILABLE) {
-            return false; //fast path
-        }
-        boolean sramWrite = sramMode == SramMode.READ_WRITE;
-        sramWrite |= SRAM_START_ADDRESS > ROM_END_ADDRESS;  //if no overlap allow to write
-        sramWrite &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
-        return sramWrite;
-    }
-
     private static void logInfo(String str, Object... args) {
         if (verbose) {
             Util.printLevel(LOG, Level.INFO, str, args);
@@ -152,14 +120,14 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         address = address & 0xFF_FFFF;    // el memory map llega hasta ahi
         long data;
         if (address <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {  //ROM
-            boolean sramRead = isSramRead(sramMode, address);
-            data = sramRead ? Util.readSram(sram, size, address, SRAM_START_ADDRESS) : Util.readRom(memory, size, address);
-            if (!sramRead && (address < ROM_START_ADDRESS || address > ROM_END_ADDRESS)) {
-                LOG.warn("Unexpected ROM read: " + Integer.toHexString((int) address));
+            if (isSramUsedWithBrokenHeader(address)) { // Buck Rogers
+                checkBackupMemoryMapper(SramMode.READ_WRITE);
+                return mapper.readData(address, size);
             }
-            return data;
-        } else if (address >= 0x400000 && address < 0xA00000) {  //Reserved
+            return Util.readRom(memory, size, address);
+        } else if (address > CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS && address < 0xA00000) {  //Reserved
             LOG.warn("Read on reserved address: " + Integer.toHexString((int) address));
+
             return 0;
 //            The Z80 bus can only be accessed by the 68000 when the Z80 is running
 //            and the 68000 has the bus. (as opposed to the Z80 being reset, and/or
@@ -359,6 +327,14 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         }
     }
 
+    private static boolean isSramUsedWithBrokenHeader(long address) {
+        boolean noOverlapBetweenRomAndSram =
+                CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS > GenesisBus.ROM_END_ADDRESS;
+        return noOverlapBetweenRomAndSram &&
+                (address >= CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS &&
+                        address <= CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS);
+    }
+
     @Override
     public GenesisProvider getEmulator() {
         return emu;
@@ -377,18 +353,15 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         }
 
         if (addressL <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
-            boolean sramWrite = isSramWrite(sramMode, address);
-            if (sramWrite) {
-                addressL = addressL - SRAM_START_ADDRESS;
-                Util.writeSram(sram, size, addressL, data);
-            } else {
-                if (addressL < ROM_START_ADDRESS || addressL > ROM_END_ADDRESS) {
-                    LOG.warn("Unexpected ROM write: " + Integer.toHexString((int) addressL));
-                }
-                LOG.warn("Unexpected write to cart rom: " +
-                        Integer.toHexString((int) addressL) + ", value : " + data + ", SramMode: " + sramMode);
+            if (isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
+                LOG.info("Unexpected Sram write: " + Long.toHexString(addressL) + ", value : " + data);
+                checkBackupMemoryMapper(SramMode.READ_WRITE);
+                mapper.writeData(address, data, size);
+                return;
             }
-//            The Z80 bus can only be accessed by the 68000 when the Z80 is running
+            LOG.error("Unexpected write to ROM: " + Long.toHexString(addressL) + ", value : " + data);
+        } else if (addressL >= 0xA00000 && addressL <= 0xA0FFFF) {    //	Z80 addressing space
+            //            The Z80 bus can only be accessed by the 68000 when the Z80 is running
 //            and the 68000 has the bus. (as opposed to the Z80 being reset, and/or
 //            having the bus itself)
 //
@@ -398,7 +371,6 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
 //            Addresses A08000-A0FFFFh mirror A00000-A07FFFh, so the 68000 cannot
 //            access it's own banked memory.
-        } else if (addressL >= 0xA00000 && addressL <= 0xA0FFFF) {    //	Z80 addressing space
             if (!z80.isBusRequested() || z80.isReset()) {
                 LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
                 return;
@@ -482,21 +454,21 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         } else if (addressL >= 0xA13000 && addressL <= 0xA130FF) {
             //	Sonic 3 will write to this register to enable and disable writing to its save game memory
             //$A130F1 (what you'd officially write to if you had a full blown mapper) has this format: ??????WE,
-            //where W = allow writing and E = enable SRAM (it needs to be 00 to make SRAM hidden and 11 to make SRAM writeable).
-            //These games generally just look at the /TIME signal (the entire $A130xx range) unless they feature a full-blown mapper).
+            //where W = allow writing and E = enable SRAM (it needs to be 00 to make SRAM hidden
+            // and 11 to make SRAM writeable).
+            //These games generally just look at the /TIME signal (the entire $A130xx range)
+            // unless they feature a full-blown mapper).
             if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= Ssf2Mapper.BANK_SET_END_ADDRESS) {
                 LOG.info("Mapper bank set, address: " + Long.toHexString(addressL) + ", data: " + Integer.toHexString((int) data));
                 checkSsf2Mapper();
                 mapper.writeBankData(addressL, data);
             } else if (addressL == 0xA130F1) {
-                data = data & 3;
-                if (data % 2 == 0) { //enable ROM
+                boolean rom = (data & 3) % 2 == 0;
+                //NOTE we dont support Ssf2Mapper and SRAM at the same time
+                if (rom) { //enable ROM
                     checkSsf2Mapper();
-                    sramMode = SramMode.DISABLE;
-                } else if (data == 3) {
-                    sramMode = SramMode.READ_WRITE;
                 } else {
-                    sramMode = SramMode.READ_ONLY;
+                    checkBackupMemoryMapper(SramMode.READ_WRITE);
                 }
                 LOG.info("Mapper register set: " + data);
             } else {
@@ -516,6 +488,10 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private void checkSsf2Mapper() {
         this.mapper = Ssf2Mapper.getOrCreateInstance(this, mapper, memory);
+    }
+
+    private void checkBackupMemoryMapper(SramMode sramMode) {
+        this.mapper = BackupMemoryMapper.getOrCreateInstance(this, mapper, cartridgeInfoProvider, sramMode);
     }
 
 

@@ -87,9 +87,8 @@ public class Util {
         return data;
     }
 
-    public static long readSram(int[] sram, Size size, long address, long SRAM_START_ADDRESS) {
+    public static long readSram(int[] sram, Size size, long address) {
         long data;
-        address = address - SRAM_START_ADDRESS;
         if (size == Size.BYTE) {
             data = sram[(int) address];
         } else if (size == Size.WORD) {
