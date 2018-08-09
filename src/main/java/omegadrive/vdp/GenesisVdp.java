@@ -175,6 +175,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         this.pal = videoMode.isPal() ? 1 : 0;
     }
 
+    private int lastControl = -1;
 
     @Override
     public int readControl() {
@@ -194,7 +195,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                         | (pal << 0)
         );
         writePendingControlPort = false;
-        logInfo("readControl: {}", control);
+        if (control != lastControl) {
+            lastControl = control;
+            logInfo("readControl: {}", control);
+        }
         return control;
     }
 
@@ -464,6 +468,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     public void writeDataPort(long dataL) {
         writePendingControlPort = false;
         int data = (int) dataL;
+        logInfo("writeDataPort, data: {}, address: {}", data, addressPort);
         setupDmaFillMaybe(data);
         if (vramMode == VramMode.vramWrite) {
             vramWriteWord(data);
@@ -481,7 +486,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
             boolean dmaOk = mode == VdpDmaHandler.DmaMode.VRAM_FILL;
             if (dmaOk) {
-                logInfo("writeDataPort, data: {}, address: {}", data, addressPort);
                 dmaHandler.setupDmaDataPort(data);
                 return;
             }
