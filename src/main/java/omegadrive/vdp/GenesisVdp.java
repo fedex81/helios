@@ -65,7 +65,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     long firstWrite;
 
     int dataPort;
-    int addressPort;
+    int addressRegister;
+    int codeRegister;
 
     //	Reg 0
     //	Left Column Blank
@@ -320,6 +321,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
         if (mode == 0b10) {        //	Write 1 - Setting Register
             writeRegister(data);
+            //Writing to a VDP register will clear the code register.
+            codeRegister = 0;
 
         } else { // Write 2 - Setting RAM address
             writeRamAddress(data);
@@ -331,27 +334,27 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             firstWrite = data;
             writePendingControlPort = true;
             logInfo("writeAddr, data: {}, firstWrite: {}", firstWrite, writePendingControlPort);
+//            It is perfectly valid to write the first half of the command word only.
+//            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
+//            values, while the remaining address and code bits _retain_ their former value.
+            codeRegister = (int) (codeRegister << 2 | firstWrite >> 14) & 0x3F;
+            addressRegister = (int) (addressRegister << 14 | (firstWrite & 0x3FFF));
         } else {
             writePendingControlPort = false;
+            all = (firstWrite << 16) | data;
 
-            long first = firstWrite;
-            long second = data;
-            all = (first << 16) | second;
-
-            int code = (int) ((first >> 14) | (((second >> 4) & 0xF) << 2));
-            int addr = (int) ((first & 0x3FFF) | ((second & 0x3) << 14));
-
-            addressPort = addr;
+            codeRegister = (int) (((data >> 4) & 0xF) << 2 | codeRegister & 0x3);
+            addressRegister = (int) ((data & 0x3) << 14 | (addressRegister & 0x3FFF));
             autoIncrementTotal = 0;    // reset
 
-            int addressMode = code & 0xF;    // solo el primer byte, el bit 4 y 5 son para DMA
+            int addressMode = codeRegister & 0xF;    // solo el primer byte, el bit 4 y 5 son para DMA
             vramMode = Optional.ofNullable(VramMode.getVramMode(addressMode)).orElse(vramMode);
             LOG.debug("Video mode: " + Objects.toString(vramMode));
-            logInfo("writeAddr: {}, data: {}, firstWrite: {}", addr, all, writePendingControlPort);
+            logInfo("writeAddr: {}, data: {}, firstWrite: {}", addressRegister, all, writePendingControlPort);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
-            if ((code & 0b100000) > 0) { // DMA
+            if ((codeRegister & 0b100000) > 0) { // DMA
                 setupDma(all);
-                logInfo("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}", addr, all, writePendingControlPort);
+                logInfo("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}", addressRegister, all, writePendingControlPort);
             }
         }
     }
@@ -360,7 +363,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         VdpDmaHandler.DmaMode dmaModeEnum = dmaHandler.getDmaMode(registers[0x17]);
         if (!m1) {
             LOG.warn("Attempting DMA but m1 not set: " + dmaModeEnum);
-            logInfo("writeRam, address: {}, data: {}", addressPort, data);
+            logInfo("writeRam, address: {}, data: {}", addressRegister, data);
             return;
         }
         switch (dmaModeEnum) {
@@ -468,7 +471,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     public void writeDataPort(long dataL) {
         writePendingControlPort = false;
         int data = (int) dataL;
-        logInfo("writeDataPort, data: {}, address: {}", data, addressPort);
+        logInfo("writeDataPort, data: {}, address: {}", data, addressRegister);
         setupDmaFillMaybe(data);
         if (vramMode == VramMode.vramWrite) {
             vramWriteWord(data);
@@ -1399,8 +1402,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         } else {
             LOG.warn("Unexpected videoRam read: " + mode);
         }
-        int incrementOffset = autoIncrementTotal + autoIncrementData;
-        autoIncrementTotal = incrementOffset;
+        autoIncrementTotal += autoIncrementData;
         return data;
     }
 
@@ -1480,8 +1482,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     public void videoRamWriteWord(VramMode vramMode, int data, int address) {
         int offset = address + autoIncrementTotal;
         videoRamWriteWordRaw(vramMode, data, offset);
-        int incrementOffset = autoIncrementTotal + autoIncrementData;
-        autoIncrementTotal = incrementOffset;
+        autoIncrementTotal += autoIncrementData;
     }
 
     @Override
@@ -1505,7 +1506,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     private void videoRamWriteWord(VramMode vramMode, int data) {
-        videoRamWriteWord(vramMode, data, addressPort);
+        videoRamWriteWord(vramMode, data, addressRegister);
     }
 
 }

@@ -2,10 +2,10 @@ package omegadrive.vdp;
 
 import omegadrive.bus.BusProvider;
 import omegadrive.util.Size;
-import omegadrive.util.Util;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Objects;
 
 /**
  * ${FILE}
@@ -66,12 +66,12 @@ public class VdpDmaHandler {
     private static boolean verbose = GenesisVdp.verbose;
 
     //TODO this should be called by hcounter in runNew
-    private static int BYTES_PER_CALL = 2;
+    private static int BYTES_PER_CALL = 10;
     private static int DMA_ROM_SOURCE_ADDRESS_WRAP = 0x20000; //128Kbytes
     private static int DMA_RAM_SOURCE_ADDRESS_WRAP = 0x10000; //64Kbytes
 
 
-    private DmaMode dmaMode;
+    private DmaMode dmaMode = null;
 
     enum DmaMode {
         MEM_TO_VRAM, VRAM_FILL, VRAM_COPY;
@@ -137,7 +137,7 @@ public class VdpDmaHandler {
         if (!verbose) {
             return;
         }
-        String str = dmaMode.name() + " " + head;
+        String str = Objects.toString(dmaMode) + " " + head;
         String src = Long.toHexString(sourceAddress);
         String dest = Long.toHexString(destAddress);
         if (dmaMode == DmaMode.VRAM_COPY) {
@@ -162,7 +162,7 @@ public class VdpDmaHandler {
     public DmaMode getDmaMode(int reg17) {
         DmaMode mode = DmaMode.getDmaMode(reg17);
         if (dmaMode != mode) {
-            Util.printLevelIfVerbose(LOG, Level.INFO, "Dma mode changed from : {} to {}", dmaMode, mode);
+            printInfo("Dma mode changed");
             dmaMode = mode;
         }
         return dmaMode;
@@ -198,7 +198,7 @@ public class VdpDmaHandler {
     }
 
     public boolean dmaFillSingleByte() {
-        dmaLen--;
+        dmaLen = decreaseDmaLength();
         printInfo("IN PROGRESS");
         int msb = (dmaFillData >> 8) & 0xFF;
         vdpProvider.writeVramByte(destAddress, msb);
@@ -220,7 +220,7 @@ public class VdpDmaHandler {
     }
 
     private boolean dmaCopySingleByte() {
-        dmaLen--;
+        dmaLen = decreaseDmaLength();
         int data = vdpProvider.readVramByte(sourceAddress);
         vdpProvider.writeVramByte(destAddress, data);
         sourceAddress++;
@@ -273,6 +273,7 @@ public class VdpDmaHandler {
     }
 
     private void updateVdpRegisters() {
+        dmaLen = Math.max(dmaLen, 0);
         vdpProvider.updateRegisterData(19, dmaLen & 0xFF);
         vdpProvider.updateRegisterData(20, dmaLen >> 8);
 
