@@ -12,7 +12,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * GenesisVdp
@@ -347,40 +346,15 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             addressRegister = (int) ((data & 0x3) << 14 | (addressRegister & 0x3FFF));
             autoIncrementTotal = 0;    // reset
 
-            int addressMode = codeRegister & 0xF;    // solo el primer byte, el bit 4 y 5 son para DMA
-            vramMode = Optional.ofNullable(VramMode.getVramMode(addressMode)).orElse(vramMode);
+            int addressMode = codeRegister & 0xF;    // CD0-CD3
+            vramMode = VramMode.getVramMode(addressMode);
             LOG.debug("Video mode: " + Objects.toString(vramMode));
             logInfo("writeAddr: {}, data: {}, firstWrite: {}", addressRegister, all, writePendingControlPort);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((codeRegister & 0b100000) > 0) { // DMA
-                setupDma(all);
+                dmaHandler.setupDma(vramMode, all, m1);
                 logInfo("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}", addressRegister, all, writePendingControlPort);
             }
-        }
-    }
-
-    private void setupDma(long data) {
-        VdpDmaHandler.DmaMode dmaModeEnum = dmaHandler.getDmaMode(registers[0x17]);
-        if (!m1) {
-            LOG.warn("Attempting DMA but m1 not set: " + dmaModeEnum);
-            logInfo("writeRam, address: {}, data: {}", addressRegister, data);
-            return;
-        }
-        switch (dmaModeEnum) {
-            case MEM_TO_VRAM:
-                //doesnt need to set dma in the SR
-                dmaHandler.setupDmaRegister(data);
-                break;
-            //on DMA Fill, busy flag is actually immediately (?) set after the CTRL port write,
-            //not the DATA port write that starts the Fill operation
-            case VRAM_FILL:
-                //fall-through
-            case VRAM_COPY:
-                dma = 1;
-                dmaHandler.setupDmaRegister(data);
-                break;
-            default:
-                LOG.error("Unexpected DMA mode: " + dmaModeEnum);
         }
     }
 
@@ -472,7 +446,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         writePendingControlPort = false;
         int data = (int) dataL;
         logInfo("writeDataPort, data: {}, address: {}", data, addressRegister);
-        setupDmaFillMaybe(data);
         if (vramMode == VramMode.vramWrite) {
             vramWriteWord(data);
         } else if (vramMode == VramMode.cramWrite) {
@@ -482,6 +455,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         } else {
             LOG.warn("Unexpected write, data: " + data + ", vramMode: " + Objects.toString(vramMode));
         }
+        setupDmaFillMaybe(data);
     }
 
     private void setupDmaFillMaybe(int data) {
@@ -1435,6 +1409,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     @Override
     public VramMode getVramMode() {
         return vramMode;
+    }
+
+    @Override
+    public void setDmaFlag(int value) {
+        dma = value;
     }
 
     private int readVramWord(int address) {

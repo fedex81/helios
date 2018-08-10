@@ -366,9 +366,27 @@ public class GenesisVdpOldDma implements VdpProvider, VdpHLineProvider {
         }
     }
 
+    public static VdpDmaHandler.DmaMode getDmaMode(int reg17) {
+        int dmaBits = reg17 >> 6;
+        VdpDmaHandler.DmaMode mode = null;
+        switch (dmaBits) {
+            case 3:
+                mode = VdpDmaHandler.DmaMode.VRAM_COPY;
+                break;
+            case 2:
+                mode = VdpDmaHandler.DmaMode.VRAM_FILL;
+                break;
+            case 0: //fall-through
+            case 1:
+                mode = VdpDmaHandler.DmaMode.MEM_TO_VRAM;
+                break;
+        }
+        return mode;
+    }
+
     private void setupDma(long data) {
         dmaRecien = true;
-        dmaModeEnum = VdpDmaHandler.DmaMode.getDmaMode(registers[0x17]);
+        dmaModeEnum = getDmaMode(registers[0x17]);
         if (!m1) {
             LOG.warn("Attempting DMA but m1 not set: " + dmaModeEnum);
             printDmaInfo("writeRam, address: {}, data: {}", addressPort, data);
@@ -1633,6 +1651,11 @@ public class GenesisVdpOldDma implements VdpProvider, VdpHLineProvider {
     @Override
     public VramMode getVramMode() {
         return null;
+    }
+
+    @Override
+    public void setDmaFlag(int value) {
+        dma = value;
     }
 
     private int readVramWord(int address) {

@@ -61,7 +61,7 @@ public class VdpDmaHandler {
     private int destAddress;
     private int dmaFillData;
     private int destAddressIncrement;
-    private GenesisVdp.VramMode vramMode;
+    private GenesisVdp.VramMode vramDestination;
 
     private static boolean verbose = GenesisVdp.verbose;
 
@@ -73,26 +73,17 @@ public class VdpDmaHandler {
 
     private DmaMode dmaMode = null;
 
+    /**
+     * Bits CD3-CD0
+     * 0000b : VRAM read
+     * 0001b : VRAM write
+     * 0011b : CRAM write
+     * 0100b : VSRAM read
+     * 0101b : VSRAM write
+     * 1000b : CRAM read
+     */
     enum DmaMode {
         MEM_TO_VRAM, VRAM_FILL, VRAM_COPY;
-
-        public static DmaMode getDmaMode(int reg17) {
-            int dmaBits = reg17 >> 6;
-            DmaMode mode = null;
-            switch (dmaBits) {
-                case 3:
-                    mode = DmaMode.VRAM_COPY;
-                    break;
-                case 2:
-                    mode = DmaMode.VRAM_FILL;
-                    break;
-                case 0: //fall-through
-                case 1:
-                    mode = DmaMode.MEM_TO_VRAM;
-                    break;
-            }
-            return mode;
-        }
     }
 
     public static VdpDmaHandler createInstance(VdpProvider vdpProvider, BusProvider busProvider) {
@@ -102,7 +93,43 @@ public class VdpDmaHandler {
         return d;
     }
 
-    public void setupDmaRegister(long commandWord) {
+    private boolean checkSetup(boolean m1, long data) {
+        if (!m1 && dmaMode != null) {
+            //Andre Agassi needs it
+            LOG.warn("Attempting DMA but m1 not set: " + dmaMode + ", data: " + data);
+        } else if (!m1) {
+            LOG.warn("Attempting DMA but m1 not set: " + dmaMode + ", data: " + data);
+            return false;
+        } else if (dmaMode == null) {
+            return false;
+        }
+        return true;
+    }
+
+    public void setupDma(VdpProvider.VramMode vramMode, long data, boolean m1) {
+        dmaMode = getDmaMode(vdpProvider.getRegisterData(23), vramMode);
+        if (!checkSetup(m1, data)) {
+            return;
+        }
+        switch (dmaMode) {
+            case MEM_TO_VRAM:
+                //doesnt need to set dma in the SR
+                setupDmaRegister(data);
+                break;
+            //on DMA Fill, busy flag is actually immediately (?) set after the CTRL port write,
+            //not the DATA port write that starts the Fill operation
+            case VRAM_FILL:
+                //fall-through
+            case VRAM_COPY:
+                vdpProvider.setDmaFlag(1);
+                setupDmaRegister(data);
+                break;
+            default:
+                LOG.error("Unexpected DMA mode: " + dmaMode + ",vramMode: " + vramMode);
+        }
+    }
+
+    private void setupDmaRegister(long commandWord) {
         dmaLen = getDmaLength();
         int reg22 = vdpProvider.getRegisterData(22);
         int reg21 = vdpProvider.getRegisterData(21);
@@ -111,11 +138,10 @@ public class VdpDmaHandler {
         sourceAddressWrap = getDmaSourceWrap(sourceAddress);
         destAddress = (int) ((commandWord & 0x3) << 14 | ((commandWord & 0x3FFF_0000L) >> 16));
         destAddressIncrement = vdpProvider.getRegisterData(15);
-        vramMode = vdpProvider.getVramMode();
         if (dmaMode == DmaMode.MEM_TO_VRAM) {
             sourceAddress = ((vdpProvider.getRegisterData(23) & 0x7F) << 16) | sourceAddress;
             dma68kToVram();
-            dmaMode = null;
+//            dmaMode = null;
         } else {
             printInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
         }
@@ -142,29 +168,20 @@ public class VdpDmaHandler {
         String dest = Long.toHexString(destAddress);
         if (dmaMode == DmaMode.VRAM_COPY) {
             str += ", srcAddr: " + src + ", destAddr: " + dest +
-                    ", destAddrInc: " + destAddressIncrement + ", dmaLen: " + dmaLen + ", vramMode: " + vramMode;
+                    ", destAddrInc: " + destAddressIncrement + ", dmaLen: " + dmaLen + ", vramDestination: " + vramDestination;
         }
         if (dmaMode == DmaMode.VRAM_FILL) {
             str += ", fillData: " + dmaFillData + ", destAddr: " + dest +
-                    ", destAddrInc: " + destAddressIncrement + ", dmaLen: " + dmaLen + ", vramMode: " + vramMode;
+                    ", destAddrInc: " + destAddressIncrement + ", dmaLen: " + dmaLen + ", vramDestination: " + vramDestination;
         }
         if (dmaMode == DmaMode.MEM_TO_VRAM) {
             str += ", srcAddr: " + src + ", destAddr: " + dest +
-                    ", destAddrInc: " + destAddressIncrement + ", dmaLen: " + dmaLen + ", vramMode: " + vramMode;
+                    ", destAddrInc: " + destAddressIncrement + ", dmaLen: " + dmaLen + ", vramDestination: " + vramDestination;
         }
         LOG.info(str);
     }
 
     public DmaMode getDmaMode() {
-        return dmaMode;
-    }
-
-    public DmaMode getDmaMode(int reg17) {
-        DmaMode mode = DmaMode.getDmaMode(reg17);
-        if (dmaMode != mode) {
-            printInfo("Dma mode changed");
-            dmaMode = mode;
-        }
         return dmaMode;
     }
 
@@ -241,7 +258,7 @@ public class VdpDmaHandler {
         sourceAddressLowerBound = getDmaSourceLowerBound(sourceAddress);
         sourceAddressWrap = getDmaSourceWrap(sourceAddress);
         printInfo("START");
-        boolean byteSwap = (destAddress & 1) == 0 && vramMode == GenesisVdp.VramMode.vramWrite;
+        boolean byteSwap = (destAddress & 1) == 0;
         if (destAddress % 2 == 1) {
             LOG.warn("Should be even! " + destAddress);
         }
@@ -249,7 +266,7 @@ public class VdpDmaHandler {
             dmaLen = decreaseDmaLength();
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
 //            dataWord = byteSwap ? dataWord & 0xFF | dataWord >> 8 : dataWord;
-            vdpProvider.videoRamWriteWordRaw(vramMode, dataWord, destAddress);
+            vdpProvider.videoRamWriteWordRaw(vramDestination, dataWord, destAddress);
 //            printInfo("IN PROGRESS");
             sourceAddress += 2;
             sourceAddress = wrapSourceAddress(sourceAddress);
@@ -281,6 +298,40 @@ public class VdpDmaHandler {
         int reg21 = sourceAddress & 0xFF;
         vdpProvider.updateRegisterData(21, reg21);
         vdpProvider.updateRegisterData(22, reg22);
+    }
+
+    private DmaMode getDmaMode(int reg17, VdpProvider.VramMode vramMode) {
+        int dmaBits = reg17 >> 6;
+        DmaMode mode = null;
+        switch (dmaBits) {
+            case 3:
+                mode = DmaMode.VRAM_COPY;
+                if (vramMode == VdpProvider.VramMode.vramRead) {
+                    vramDestination = vramMode;
+                    break;
+                }
+                //fall-through
+            case 2:
+                mode = DmaMode.VRAM_FILL;
+                if (vramMode == VdpProvider.VramMode.vramWrite) {
+                    vramDestination = vramMode;
+                    break;
+                }
+                //fall-through
+            case 0:
+                //fall-through
+            case 1:
+                if (vramMode.isWriteMode()) {
+                    mode = DmaMode.MEM_TO_VRAM;
+                    vramDestination = vramMode;
+                    break;
+                }
+                //fall-through
+            default:
+                LOG.error("Unexpected setup: " + mode + ", vramDestination: " + vramMode);
+                mode = null;
+        }
+        return mode;
     }
 
     public static void main(String[] args) {

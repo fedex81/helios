@@ -30,6 +30,10 @@ public interface VdpProvider {
             }
             return null;
         }
+
+        public boolean isWriteMode() {
+            return this == vramWrite || this == vsramWrite || this == cramWrite;
+        }
     }
 
     int MAX_SPRITES_PER_FRAME_H40 = 80;
@@ -96,6 +100,8 @@ public interface VdpProvider {
     int readVramByte(int address);
 
     VramMode getVramMode();
+
+    void setDmaFlag(int value);
 
     /**
      * State of the Vertical interrupt pending flag
