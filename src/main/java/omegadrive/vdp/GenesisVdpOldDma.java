@@ -1649,11 +1649,6 @@ public class GenesisVdpOldDma implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public VramMode getVramMode() {
-        return null;
-    }
-
-    @Override
     public void setDmaFlag(int value) {
         dma = value;
     }
@@ -1676,11 +1671,6 @@ public class GenesisVdpOldDma implements VdpProvider, VdpHLineProvider {
 
     @Override
     public void videoRamWriteWordRaw(VramMode vramMode, int data, int address) {
-
-    }
-
-    @Override
-    public void videoRamWriteWord(VramMode vramMode, int data, int address) {
 
     }
 

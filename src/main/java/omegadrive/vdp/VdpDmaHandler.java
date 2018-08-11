@@ -258,14 +258,9 @@ public class VdpDmaHandler {
         sourceAddressLowerBound = getDmaSourceLowerBound(sourceAddress);
         sourceAddressWrap = getDmaSourceWrap(sourceAddress);
         printInfo("START");
-        boolean byteSwap = (destAddress & 1) == 0;
-        if (destAddress % 2 == 1) {
-            LOG.warn("Should be even! " + destAddress);
-        }
         do {
             dmaLen = decreaseDmaLength();
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
-//            dataWord = byteSwap ? dataWord & 0xFF | dataWord >> 8 : dataWord;
             vdpProvider.videoRamWriteWordRaw(vramDestination, dataWord, destAddress);
 //            printInfo("IN PROGRESS");
             sourceAddress += 2;
@@ -335,19 +330,17 @@ public class VdpDmaHandler {
     }
 
     public static void main(String[] args) {
-        //srcAddr: 5fffc, destAddr: 8000, destAddrInc: 2, dmaLen: 4, vramMode: vramWrite
-//        int start = 0xFFFFFC;
-        int start = 0x5fffc;
-        int lowerBound = getDmaSourceLowerBound(start);
-        int wrap = getDmaSourceWrap(start);
-        int cnt = 4;
-        System.out.println(Long.toHexString(start));
-        System.out.println(Long.toHexString(lowerBound));
-        do {
-            start += 2;
-            long start1 = start;
-            start = (start % wrap) + lowerBound;
-            System.out.println(Long.toHexString(start) + " - " + Long.toHexString(start1));
-        } while(--cnt > 0);
+        //m1 masks cd5
+        int firstWrite = 65000;
+        int codeRegister = 0x3E;
+        int m1 = 0;
+
+        System.out.println(Integer.toBinaryString(firstWrite >> 14));
+        System.out.println(Integer.toBinaryString(codeRegister << 2));
+        codeRegister = (codeRegister << 2 | firstWrite >> 14) & 0x3F;
+        System.out.println(Integer.toBinaryString(codeRegister));
+        System.out.println(Integer.toBinaryString((m1 << 5) | 0x1F));
+        codeRegister &= ((m1 << 5) | 0x1F);
+        System.out.println(Integer.toBinaryString(codeRegister));
     }
 }

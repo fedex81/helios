@@ -95,11 +95,7 @@ public interface VdpProvider {
 
     void videoRamWriteWordRaw(VramMode vramMode, int data, int address);
 
-    void videoRamWriteWord(VramMode vramMode, int data, int address);
-
     int readVramByte(int address);
-
-    VramMode getVramMode();
 
     void setDmaFlag(int value);
 

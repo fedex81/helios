@@ -97,8 +97,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     //	REG 0xF
     int autoIncrementData;
 
-    int autoIncrementTotal;
-
     //	Status register:
 //	15	14	13	12	11	10	9		8			7	6		5		4	3	2	1	0
 //	0	0	1	1	0	1	EMPTY	FULL		VIP	SOVR	SCOL	ODD	VB	HB	DMA	PAL
@@ -309,11 +307,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 //	VRAM Read	0	0	0	0	0	0
 //	CRAM Read	0	0	1	0	0	0
 //	VSRAM Read	0	0	0	1	0	0
-
-    //	DMA Mode		CD5	CD4
-//	Memory to VRAM	1	0
-//	VRAM Fill		1	0
-//	VRAM Copy		1	1
     @Override
     public void writeControlPort(long data) {
         long mode = (data >> 14);
@@ -326,6 +319,26 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         } else { // Write 2 - Setting RAM address
             writeRamAddress(data);
         }
+    }
+
+    @Override
+    public void writeDataPort(long dataL) {
+        writePendingControlPort = false;
+        int data = (int) dataL;
+        logInfo("writeDataPort, data: {}, address: {}", data, addressRegister);
+        if (setupDmaFillMaybe(data)) {
+            return;
+        }
+        videoRamWriteWordRaw(vramMode, data, addressRegister);
+        addressRegister += autoIncrementData;
+    }
+
+    @Override
+    public long readDataPort(Size size) {
+        this.writePendingControlPort = false;
+        logInfo("readDataPort, address{} , size {}", addressRegister, size);
+        addressRegister += autoIncrementData;
+        return readVideoRam(vramMode, size);
     }
 
     private void writeRamAddress(long data) {
@@ -343,8 +356,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             all = (firstWrite << 16) | data;
 
             codeRegister = (int) (((data >> 4) & 0xF) << 2 | codeRegister & 0x3);
+            //m1 masks CD5
+//            codeRegister &= (((m1 ? 1 : 0)<< 5) | 0x1F); //breaks Andre Agassi
             addressRegister = (int) ((data & 0x3) << 14 | (addressRegister & 0x3FFF));
-            autoIncrementTotal = 0;    // reset
 
             int addressMode = codeRegister & 0xF;    // CD0-CD3
             vramMode = VramMode.getVramMode(addressMode);
@@ -434,38 +448,22 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    private void logInfo(String str, Object... args) {
-        if (verbose) {
-            String dmaStr = ", DMA " + dma + ", dmaMode: " + dmaHandler.getDmaMode() + ", vramMode: " + Objects.toString(vramMode);
-            Util.printLevel(LOG, Level.INFO, str + dmaStr, args);
-        }
-    }
-
-    @Override
-    public void writeDataPort(long dataL) {
-        writePendingControlPort = false;
-        int data = (int) dataL;
-        logInfo("writeDataPort, data: {}, address: {}", data, addressRegister);
-        if (vramMode == VramMode.vramWrite) {
-            vramWriteWord(data);
-        } else if (vramMode == VramMode.cramWrite) {
-            cramWriteWord(data);
-        } else if (vramMode == VramMode.vsramWrite) {
-            vsramWriteWord(data);
-        } else {
-            LOG.warn("Unexpected write, data: " + data + ", vramMode: " + Objects.toString(vramMode));
-        }
-        setupDmaFillMaybe(data);
-    }
-
-    private void setupDmaFillMaybe(int data) {
+    private boolean setupDmaFillMaybe(int data) {
         if (m1) {
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
             boolean dmaOk = mode == VdpDmaHandler.DmaMode.VRAM_FILL;
             if (dmaOk) {
                 dmaHandler.setupDmaDataPort(data);
-                return;
+                return true;
             }
+        }
+        return false;
+    }
+
+    private void logInfo(String str, Object... args) {
+        if (verbose) {
+            String dmaStr = ", DMA " + dma + ", dmaMode: " + dmaHandler.getDmaMode() + ", vramMode: " + Objects.toString(vramMode);
+            Util.printLevel(LOG, Level.INFO, str + dmaStr, args);
         }
     }
 
@@ -551,6 +549,103 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     @Override
     public void run(int cycles) {
         runNew();
+    }
+
+    private long readVideoRam(VramMode mode, Size size) {
+        if (size != Size.WORD) {
+            LOG.warn(mode + " byte-wide read"); //TODO shouldnt happen?
+        }
+        long data = 0;
+        if (mode == VramMode.vramRead) {
+            data = readVramWord(addressRegister);
+        } else if (mode == VramMode.vsramRead) {
+            data = readVsramWord(addressRegister);
+        } else if (mode == VramMode.cramRead) {
+            data = readCramWord(addressRegister);
+        } else {
+            LOG.warn("Unexpected videoRam read: " + mode);
+        }
+        return data;
+    }
+
+    //Each word has the following format:
+    // ----bbb-ggg-rrr-
+    private int readCramByte(int address) {
+        address &= (VDP_CRAM_SIZE - 1);
+        return cram[address] & 0xEEE;
+    }
+
+    private int readCramWord(int address) {
+        return readCramByte(address) << 8 | readCramByte(address + 1);
+    }
+
+    private int readVsramByte(int address) {
+        address &= 0x7F;
+        return vsram[address];
+    }
+
+    private int readVsramWord(int address) {
+        return readVsramByte(address) << 8 | readVsramByte(address + 1);
+    }
+
+    @Override
+    public int readVramByte(int address) {
+        address &= (VDP_VRAM_SIZE - 1);
+        return vram[address];
+    }
+
+    @Override
+    public void setDmaFlag(int value) {
+        dma = value;
+    }
+
+    private int readVramWord(int address) {
+        return readVramByte(address) << 8 | readVramByte(address + 1);
+    }
+
+    //    The address register wraps past address 7Fh.
+    private void writeCramByte(int address, int data) {
+        address &= (VDP_CRAM_SIZE - 1);
+        cram[address] = data & 0xFF;
+    }
+
+    //    The address register wraps past address FFFFh.
+    @Override
+    public void writeVramByte(int address, int data) {
+        address &= (VDP_VRAM_SIZE - 1);
+        vram[address] = data & 0xFF;
+    }
+
+    //    Even though there are 40 words of VSRAM, the address register will wrap
+//    when it passes 7Fh. Writes to the addresses beyond 50h are ignored.
+    private void writeVsramByte(int address, int data) {
+        address &= 0x7F;
+        if (address < VDP_VSRAM_SIZE) {
+            vsram[address] = data & 0xFF;
+        } else {
+            //Arrow Flash
+            LOG.debug("Ignoring vsram write to address: " + Integer.toHexString(address));
+        }
+    }
+
+    @Override
+    public void videoRamWriteWordRaw(VramMode vramMode, int data, int address) {
+        int word = data;
+        int data1 = (word >> 8);
+        int data2 = word & 0xFF;
+
+        if (vramMode == VramMode.vsramWrite) {
+            writeVsramByte(address, data1);
+            writeVsramByte(address + 1, data2);
+        } else if (vramMode == VramMode.cramWrite) {
+            writeCramByte(address, data1);
+            writeCramByte(address + 1, data2);
+        } else if (vramMode == VramMode.vramWrite) {
+            writeVramByte(address, data1);
+            writeVramByte(address + 1, data2);
+        } else {
+            LOG.warn("Unexpected videoRam write: " + vramMode);
+        }
     }
 
     int spritesFrame = 0;
@@ -1347,145 +1442,4 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private int getColor(int red, int green, int blue) {
         return colorMapper.getColor(red, green, blue);
     }
-
-    @Override
-    public long readDataPort(Size size) {
-        this.writePendingControlPort = false;
-        return readVideoRam(vramMode, size);
-    }
-
-    private long readVideoRam(VramMode mode, Size size) {
-        if (size != Size.WORD) {
-            LOG.warn(mode + " byte-wide read"); //TODO shouldnt happen?
-        }
-
-        long first = all >> 16;
-        long second = all & 0xFFFF;
-
-        int code = (int) ((first >> 14) | (((second >> 4) & 0xF) << 2));
-        int addr = (int) ((first & 0x3FFF) | ((second & 0x3) << 14));
-
-        int offset = addr + autoIncrementTotal;
-        long data = 0;
-        if (mode == VramMode.vramRead) {
-            data = readVramWord(offset);
-        } else if (mode == VramMode.vsramRead) {
-            data = readVsramWord(offset);
-        } else if (mode == VramMode.cramRead) {
-            data = readCramWord(offset);
-        } else {
-            LOG.warn("Unexpected videoRam read: " + mode);
-        }
-        autoIncrementTotal += autoIncrementData;
-        return data;
-    }
-
-    //Each word has the following format:
-    // ----bbb-ggg-rrr-
-    private int readCramByte(int address) {
-        address &= (VDP_CRAM_SIZE - 1);
-        return cram[address] & 0xEEE;
-    }
-
-    private int readCramWord(int address) {
-        return readCramByte(address) << 8 | readCramByte(address + 1);
-    }
-
-    private int readVsramByte(int address) {
-        address &= 0x7F;
-        return vsram[address];
-    }
-
-    private int readVsramWord(int address) {
-        return readVsramByte(address) << 8 | readVsramByte(address + 1);
-    }
-
-    @Override
-    public int readVramByte(int address) {
-        address &= (VDP_VRAM_SIZE - 1);
-        return vram[address];
-    }
-
-    @Override
-    public VramMode getVramMode() {
-        return vramMode;
-    }
-
-    @Override
-    public void setDmaFlag(int value) {
-        dma = value;
-    }
-
-    private int readVramWord(int address) {
-        return readVramByte(address) << 8 | readVramByte(address + 1);
-    }
-
-    //    The address register wraps past address 7Fh.
-    private void writeCramByte(int address, int data) {
-        address &= (VDP_CRAM_SIZE - 1);
-        cram[address] = data & 0xFF;
-    }
-
-    //    The address register wraps past address FFFFh.
-    @Override
-    public void writeVramByte(int address, int data) {
-        address &= (VDP_VRAM_SIZE - 1);
-        vram[address] = data & 0xFF;
-    }
-
-    //    Even though there are 40 words of VSRAM, the address register will wrap
-//    when it passes 7Fh. Writes to the addresses beyond 50h are ignored.
-    private void writeVsramByte(int address, int data) {
-        address &= 0x7F;
-        if (address < VDP_VSRAM_SIZE) {
-            vsram[address] = data & 0xFF;
-        } else {
-            //Arrow Flash
-            LOG.debug("Ignoring vsram write to address: " + Integer.toHexString(address));
-        }
-    }
-
-    private void cramWriteWord(int data) {
-        videoRamWriteWord(VramMode.cramWrite, data);
-    }
-
-    private void vramWriteWord(int data) {
-        videoRamWriteWord(VramMode.vramWrite, data);
-    }
-
-    private void vsramWriteWord(int data) {
-        videoRamWriteWord(VramMode.vsramWrite, data);
-    }
-
-    @Override
-    public void videoRamWriteWord(VramMode vramMode, int data, int address) {
-        int offset = address + autoIncrementTotal;
-        videoRamWriteWordRaw(vramMode, data, offset);
-        autoIncrementTotal += autoIncrementData;
-    }
-
-    @Override
-    public void videoRamWriteWordRaw(VramMode vramMode, int data, int address) {
-        int word = data;
-        int data1 = (word >> 8);
-        int data2 = word & 0xFF;
-
-        if (vramMode == VramMode.vsramWrite) {
-            writeVsramByte(address, data1);
-            writeVsramByte(address + 1, data2);
-        } else if (vramMode == VramMode.cramWrite) {
-            writeCramByte(address, data1);
-            writeCramByte(address + 1, data2);
-        } else if (vramMode == VramMode.vramWrite) {
-            writeVramByte(address, data1);
-            writeVramByte(address + 1, data2);
-        } else {
-            LOG.warn("Unexpected videoRam write: " + vramMode);
-        }
-    }
-
-    private void videoRamWriteWord(VramMode vramMode, int data) {
-        videoRamWriteWord(vramMode, data, addressRegister);
-    }
-
 }
