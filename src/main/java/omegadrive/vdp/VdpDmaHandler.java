@@ -72,6 +72,7 @@ public class VdpDmaHandler {
 
 
     private DmaMode dmaMode = null;
+    private boolean dmaFillReady;
 
     /**
      * Bits CD3-CD0
@@ -141,7 +142,6 @@ public class VdpDmaHandler {
         if (dmaMode == DmaMode.MEM_TO_VRAM) {
             sourceAddress = ((vdpProvider.getRegisterData(23) & 0x7F) << 16) | sourceAddress;
             dma68kToVram();
-//            dmaMode = null;
         } else {
             printInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
         }
@@ -152,6 +152,7 @@ public class VdpDmaHandler {
         printInfo("START");
         vdpProvider.writeVramByte(destAddress ^ 1, dataWord & 0xFF);
         vdpProvider.writeVramByte(destAddress, (dataWord >> 8) & 0xFF);
+        dmaFillReady = true;
     }
 
 
@@ -190,17 +191,22 @@ public class VdpDmaHandler {
         boolean done = false;
         switch (dmaMode) {
             case VRAM_FILL:
-                done = dmaFill();
+                if (dmaFillReady) {
+                    done = dmaFill();
+                    updateVdpRegisters();
+                }
                 break;
             case VRAM_COPY:
                 done = dmaCopy();
+                updateVdpRegisters();
                 break;
         }
         if (done) {
             printInfo("DONE");
             dmaMode = null;
+            dmaFillReady = false;
         }
-        updateVdpRegisters();
+
         return done;
     }
 
