@@ -433,14 +433,12 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    @Override
-    public void doDma() {
-        //TODO this should be called by hcounter in runNew
+    private void doDma(int byteSlots) {
         if (dma == 1) {
             boolean dmaDone = false;
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
             if (mode == VdpDmaHandler.DmaMode.VRAM_COPY || mode == VdpDmaHandler.DmaMode.VRAM_FILL) {
-                dmaDone = dmaHandler.doDma();
+                dmaDone = dmaHandler.doDma(byteSlots);
             }
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
@@ -497,6 +495,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         hb = !displayEnable || interruptHandler.ishBlankSet() ? 1 : 0;
         vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
+        runDma();
+
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastHCounter()) {
             //draw the line
@@ -511,7 +511,29 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 compaginateImage();
                 bus.getEmulator().renderScreen(screenData);
                 resetMode();
+                LOG.debug("DmaSlots: {}", dmaSlots);
+                dmaSlots = 0;
             }
+        }
+    }
+
+    int dmaActiveScreenLine = -1;
+    int dmaDisableScreenCounter = -1;
+    int dmaSlots = 0;
+    int DMA_SLOTS_ACTIVE_SCREEN_LINE = 13;
+    int DMA_SLOTS_DISABLED_SCREEN_LINE = 200;
+
+    //TODO
+    private void runDma() {
+        if (hb == 1 && line != dmaActiveScreenLine) {
+            doDma(DMA_SLOTS_ACTIVE_SCREEN_LINE);
+            dmaActiveScreenLine = line;
+            dmaSlots += DMA_SLOTS_ACTIVE_SCREEN_LINE;
+        }
+        if (vb == 1 && interruptHandler.getvCounter() != dmaDisableScreenCounter) {
+            doDma(DMA_SLOTS_DISABLED_SCREEN_LINE);
+            dmaDisableScreenCounter = interruptHandler.getvCounter();
+            dmaSlots += DMA_SLOTS_DISABLED_SCREEN_LINE;
         }
     }
 

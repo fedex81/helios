@@ -790,7 +790,6 @@ public class GenesisVdpOldDma implements VdpProvider, VdpHLineProvider {
         runNew();
     }
 
-    @Override
     public void doDma() {
         dmaFill();
     }

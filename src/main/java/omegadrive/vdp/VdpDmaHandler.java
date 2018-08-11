@@ -46,6 +46,10 @@ import java.util.Objects;
  * <p>
  * Any information you may read which is contrary to this info (IE, in genvdp.txt) is incorrect.
  * http://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=908&p=15801&hilit=dma+wrap#p15801
+ *
+ *     //Games that use VRAM copies include Aleste, Bad Omen, and Viewpoint.
+ *     //Langrisser II
+ *     //James Pond 3 - Operation Starfish - some platforms requires correct VRAM Copy
  */
 public class VdpDmaHandler {
 
@@ -65,8 +69,6 @@ public class VdpDmaHandler {
 
     private static boolean verbose = GenesisVdp.verbose;
 
-    //TODO this should be called by hcounter in runNew
-    private static int BYTES_PER_CALL = 10;
     private static int DMA_ROM_SOURCE_ADDRESS_WRAP = 0x20000; //128Kbytes
     private static int DMA_RAM_SOURCE_ADDRESS_WRAP = 0x10000; //64Kbytes
 
@@ -186,18 +188,19 @@ public class VdpDmaHandler {
         return dmaMode;
     }
 
-    //TODO this should be called by hcounter in runNew
-    public boolean doDma() {
+
+    //TODO add 68k_VPD dma
+    public boolean doDma(int byteSlots) {
         boolean done = false;
         switch (dmaMode) {
             case VRAM_FILL:
                 if (dmaFillReady) {
-                    done = dmaFill();
+                    done = dmaFill(byteSlots);
                     updateVdpRegisters();
                 }
                 break;
             case VRAM_COPY:
-                done = dmaCopy();
+                done = dmaCopy(byteSlots / 2);
                 updateVdpRegisters();
                 break;
         }
@@ -210,8 +213,8 @@ public class VdpDmaHandler {
         return done;
     }
 
-    private boolean dmaFill() {
-        int count = BYTES_PER_CALL;
+    private boolean dmaFill(int byteSlots) {
+        int count = byteSlots;
         boolean done;
         do {
             done = dmaFillSingleByte();
@@ -229,11 +232,8 @@ public class VdpDmaHandler {
         return dmaLen == 0;
     }
 
-    //Games that use VRAM copies include Aleste, Bad Omen, and Viewpoint.
-    //Langrisser II
-    //James Pond 3 - Operation Starfish - some platforms requires correct VRAM Copy
-    private boolean dmaCopy() {
-        int count = BYTES_PER_CALL;
+    private boolean dmaCopy(int byteSlots) {
+        int count = byteSlots;
         boolean done;
         do {
             done = dmaCopySingleByte();

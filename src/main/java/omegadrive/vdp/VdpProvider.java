@@ -68,8 +68,6 @@ public interface VdpProvider {
 
     void run(int cycles);
 
-    void doDma();
-
     //always a word
     int readDataPort();
 
