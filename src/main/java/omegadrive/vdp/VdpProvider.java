@@ -1,7 +1,6 @@
 package omegadrive.vdp;
 
 import omegadrive.bus.BusProvider;
-import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
 
 /**
@@ -71,7 +70,8 @@ public interface VdpProvider {
 
     void doDma();
 
-    long readDataPort(Size size);
+    //always a word
+    int readDataPort();
 
     void writeDataPort(long data);
 
@@ -93,7 +93,9 @@ public interface VdpProvider {
 
     void writeVramByte(int address, int data);
 
-    void videoRamWriteWordRaw(VramMode vramMode, int data, int address);
+    void writeVideoRamWord(VramMode vramMode, int data, int address);
+
+    int readVideoRamWord(VramMode mode, int address);
 
     int readVramByte(int address);
 

@@ -167,7 +167,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         Arrays.fill(vram, 0x10);
 
         registers[23] = 0x80;
-
         this.videoMode = getVideoMode(bus.getEmulator().getRegion(), false, false);
         this.interruptHandler.setMode(videoMode);
         this.pal = videoMode.isPal() ? 1 : 0;
@@ -329,16 +328,18 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         if (setupDmaFillMaybe(data)) {
             return;
         }
-        videoRamWriteWordRaw(vramMode, data, addressRegister);
+        writeVideoRamWord(vramMode, data, addressRegister);
         addressRegister += autoIncrementData;
+        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
 
     @Override
-    public long readDataPort(Size size) {
+    public int readDataPort() {
         this.writePendingControlPort = false;
-        logInfo("readDataPort, address{} , size {}", addressRegister, size);
+        logInfo("readDataPort, address{} , size {}", addressRegister, Size.WORD);
         addressRegister += autoIncrementData;
-        return readVideoRam(vramMode, size);
+        logInfo("After readDataPort, address: {}", addressRegister);
+        return readVideoRam(vramMode);
     }
 
     private void writeRamAddress(long data) {
@@ -551,28 +552,28 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         runNew();
     }
 
-    private long readVideoRam(VramMode mode, Size size) {
-        if (size != Size.WORD) {
-            LOG.warn(mode + " byte-wide read"); //TODO shouldnt happen?
-        }
-        long data = 0;
+    @Override
+    public int readVideoRamWord(VramMode mode, int address) {
+        int data = 0;
         if (mode == VramMode.vramRead) {
-            data = readVramWord(addressRegister);
+            data = readVramWord(address);
         } else if (mode == VramMode.vsramRead) {
-            data = readVsramWord(addressRegister);
+            data = readVsramWord(address);
         } else if (mode == VramMode.cramRead) {
-            data = readCramWord(addressRegister);
+            data = readCramWord(address);
         } else {
             LOG.warn("Unexpected videoRam read: " + mode);
         }
         return data;
     }
 
-    //Each word has the following format:
-    // ----bbb-ggg-rrr-
+    public int readVideoRam(VramMode mode) {
+        return readVideoRamWord(mode, addressRegister);
+    }
+
     private int readCramByte(int address) {
         address &= (VDP_CRAM_SIZE - 1);
-        return cram[address] & 0xEEE;
+        return cram[address];
     }
 
     private int readCramWord(int address) {
@@ -629,7 +630,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public void videoRamWriteWordRaw(VramMode vramMode, int data, int address) {
+    public void writeVideoRamWord(VramMode vramMode, int data, int address) {
         int word = data;
         int data1 = (word >> 8);
         int data2 = word & 0xFF;
@@ -1302,6 +1303,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     private int getColorFromIndex(int colorIndex) {
+        //Each word has the following format:
+        // ----bbb-ggg-rrr-
         int color1 = readCramWord(colorIndex);
 
         int r = (color1 >> 1) & 0x7;

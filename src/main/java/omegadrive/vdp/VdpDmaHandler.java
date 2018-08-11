@@ -261,7 +261,7 @@ public class VdpDmaHandler {
         do {
             dmaLen = decreaseDmaLength();
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
-            vdpProvider.videoRamWriteWordRaw(vramDestination, dataWord, destAddress);
+            vdpProvider.writeVideoRamWord(vramDestination, dataWord, destAddress);
 //            printInfo("IN PROGRESS");
             sourceAddress += 2;
             sourceAddress = wrapSourceAddress(sourceAddress);

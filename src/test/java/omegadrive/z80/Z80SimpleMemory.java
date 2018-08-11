@@ -1,6 +1,5 @@
 package omegadrive.z80;
 
-import com.codingrodent.microprocessor.IMemory;
 
 /**
  * ${FILE}

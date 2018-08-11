@@ -267,12 +267,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         boolean even = address % 2 == 0;
         boolean isVdpData = address <= 0xC00003;
         //read word by default
-        long data = isVdpData ? vdp.readDataPort(Size.WORD) : vdp.readControl();
+        long data = isVdpData ? vdp.readDataPort() : vdp.readControl();
         if (size == Size.BYTE) {
             data = even ? data >> 8 : data & 0xFF;
         } else if (size == Size.LONG) {
             data = data << 16;
-            long data2 = isVdpData ? vdp.readDataPort(Size.WORD) : vdp.readControl();
+            long data2 = isVdpData ? vdp.readDataPort() : vdp.readControl();
             data |= data2;
         }
         return data;

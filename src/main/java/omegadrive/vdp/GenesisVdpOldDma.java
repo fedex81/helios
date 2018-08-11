@@ -1591,9 +1591,9 @@ public class GenesisVdpOldDma implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public long readDataPort(Size size) {
+    public int readDataPort() {
         this.writePendingControlPort = false;
-        return readVideoRam(vramMode, size);
+        return (int) readVideoRam(vramMode, Size.WORD);
     }
 
     private long readVideoRam(VramMode mode, Size size) {
@@ -1670,9 +1670,15 @@ public class GenesisVdpOldDma implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public void videoRamWriteWordRaw(VramMode vramMode, int data, int address) {
+    public void writeVideoRamWord(VramMode vramMode, int data, int address) {
 
     }
+
+    @Override
+    public int readVideoRamWord(VramMode mode, int address) {
+        return 0;
+    }
+
 
     //    Even though there are 40 words of VSRAM, the address register will wrap
 //    when it passes 7Fh. Writes to the addresses beyond 50h are ignored.
