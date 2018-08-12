@@ -1,6 +1,5 @@
 package omegadrive.vdp;
 
-import omegadrive.bus.BusProvider;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +15,7 @@ import java.util.stream.IntStream;
  */
 public class GenesisVdpTest {
 
-    VdpProvider vdp = new GenesisVdp(BusProvider.createBus());
+    VdpMemoryInterface mem = new GenesisVdpMemoryInterface();
 
     int lsb = 0xDD;
     int msb = 0xEE;
@@ -27,140 +26,140 @@ public class GenesisVdpTest {
     @Before
     public void init() {
         IntStream.range(0, VdpProvider.VDP_CRAM_SIZE - 1).forEach(i ->
-                vdp.writeVideoRamWord(VdpProvider.VramMode.cramWrite, 0, i)
+                mem.writeVideoRamWord(VdpProvider.VdpRamType.CRAM, 0, i)
         );
         IntStream.range(0, VdpProvider.VDP_VRAM_SIZE - 1).forEach(i ->
-                vdp.writeVideoRamWord(VdpProvider.VramMode.vramWrite, 0, i)
+                mem.writeVideoRamWord(VdpProvider.VdpRamType.VRAM, 0, i)
         );
         IntStream.range(0, VdpProvider.VDP_VSRAM_SIZE - 1).forEach(i ->
-                vdp.writeVideoRamWord(VdpProvider.VramMode.vsramWrite, 0, i)
+                mem.writeVideoRamWord(VdpProvider.VdpRamType.VSRAM, 0, i)
         );
     }
 
 
     @Test
     public void testCram_01() {
-        vdp.writeVideoRamWord(VdpProvider.VramMode.cramWrite, (int) data, 0);
-        long res = vdp.readVideoRamWord(VdpProvider.VramMode.cramRead, 0);
+        mem.writeVideoRamWord(VdpProvider.VdpRamType.CRAM, (int) data, 0);
+        long res = mem.readVideoRamWord(VdpProvider.VdpRamType.CRAM, 0);
         Assert.assertEquals(data, res);
 
-        vdp.writeVideoRamWord(VdpProvider.VramMode.cramWrite, (int) data, 1);
-        res = vdp.readVideoRamWord(VdpProvider.VramMode.cramRead, 1);
+        mem.writeVideoRamWord(VdpProvider.VdpRamType.CRAM, (int) data, 1);
+        res = mem.readVideoRamWord(VdpProvider.VdpRamType.CRAM, 1);
         Assert.assertEquals(data, res);
     }
 
     @Test
     public void testCram_02() {
         int baseAddress = 0x48;
-        vdp.writeVideoRamWord(VdpProvider.VramMode.cramWrite, (int) data, baseAddress);
-        long res = vdp.readVideoRamWord(VdpProvider.VramMode.cramRead, baseAddress);
+        mem.writeVideoRamWord(VdpProvider.VdpRamType.CRAM, (int) data, baseAddress);
+        long res = mem.readVideoRamWord(VdpProvider.VdpRamType.CRAM, baseAddress);
         Assert.assertEquals(data, res);
 
-        vdp.writeVideoRamWord(VdpProvider.VramMode.cramWrite, 0x1122, 0);
-        res = vdp.readVideoRamWord(VdpProvider.VramMode.cramRead, 0);
+        mem.writeVideoRamWord(VdpProvider.VdpRamType.CRAM, 0x1122, 0);
+        res = mem.readVideoRamWord(VdpProvider.VdpRamType.CRAM, 0);
         Assert.assertEquals(0x1122, res);
 
-        vdp.writeVideoRamWord(VdpProvider.VramMode.cramWrite, (int) data, VdpProvider.VDP_CRAM_SIZE);
-        res = vdp.readVideoRamWord(VdpProvider.VramMode.cramRead, VdpProvider.VDP_CRAM_SIZE);
+        mem.writeVideoRamWord(VdpProvider.VdpRamType.CRAM, (int) data, VdpProvider.VDP_CRAM_SIZE);
+        res = mem.readVideoRamWord(VdpProvider.VdpRamType.CRAM, VdpProvider.VDP_CRAM_SIZE);
         Assert.assertEquals(data, res);
     }
 
     @Test
     public void testVsram_01() {
         int baseAddress = 0x48;
-        vdp.writeVideoRamWord(VdpProvider.VramMode.vsramWrite, (int) data, baseAddress);
-        long res = vdp.readVideoRamWord(VdpProvider.VramMode.vsramRead, baseAddress);
+        mem.writeVideoRamWord(VdpProvider.VdpRamType.VSRAM, (int) data, baseAddress);
+        long res = mem.readVideoRamWord(VdpProvider.VdpRamType.VSRAM, baseAddress);
         Assert.assertEquals(data, res);
 
-        vdp.writeVideoRamWord(VdpProvider.VramMode.vsramWrite, 0x1122, 0);
-        res = vdp.readVideoRamWord(VdpProvider.VramMode.vsramRead, 0);
+        mem.writeVideoRamWord(VdpProvider.VdpRamType.VSRAM, 0x1122, 0);
+        res = mem.readVideoRamWord(VdpProvider.VdpRamType.VSRAM, 0);
         Assert.assertEquals(0x1122, res);
 
-        vdp.writeVideoRamWord(VdpProvider.VramMode.vsramWrite, (int) data, VdpProvider.VDP_VSRAM_SIZE);
-        res = vdp.readVideoRamWord(VdpProvider.VramMode.vsramRead, VdpProvider.VDP_VSRAM_SIZE);
+        mem.writeVideoRamWord(VdpProvider.VdpRamType.VSRAM, (int) data, VdpProvider.VDP_VSRAM_SIZE);
+        res = mem.readVideoRamWord(VdpProvider.VdpRamType.VSRAM, VdpProvider.VDP_VSRAM_SIZE);
         Assert.assertEquals(Long.toHexString(0x1111), Long.toHexString(res));
 
-        vdp.writeVideoRamWord(VdpProvider.VramMode.vsramWrite, 0x3344, VdpProvider.VDP_VSRAM_SIZE - 2);
-        res = readVideoRamAddressLong(VdpProvider.VramMode.vsramRead, VdpProvider.VDP_VSRAM_SIZE - 2);
+        mem.writeVideoRamWord(VdpProvider.VdpRamType.VSRAM, 0x3344, VdpProvider.VDP_VSRAM_SIZE - 2);
+        res = readVideoRamAddressLong(VdpProvider.VdpRamType.VSRAM, VdpProvider.VDP_VSRAM_SIZE - 2);
         Assert.assertEquals(Long.toHexString(0x33441111), Long.toHexString(res));
     }
 
     @Test
     public void testVram_Even() {
-        testVdpRam_EvenOdd(VdpProvider.VramMode.vramRead, VdpProvider.VramMode.vramWrite, 8);
+        testVdpRam_EvenOdd(VdpProvider.VdpRamType.VRAM, 8);
     }
 
     @Test
     public void testVram_Odd() {
-        testVdpRam_EvenOdd(VdpProvider.VramMode.vramRead, VdpProvider.VramMode.vramWrite, 9);
+        testVdpRam_EvenOdd(VdpProvider.VdpRamType.VRAM, 9);
     }
 
     @Test
     public void testVsram_Even() {
-        testVdpRam_EvenOdd(VdpProvider.VramMode.vsramRead, VdpProvider.VramMode.vsramWrite, 8);
+        testVdpRam_EvenOdd(VdpProvider.VdpRamType.VSRAM, 8);
     }
 
     @Test
     public void testVsram_Odd() {
-        testVdpRam_EvenOdd(VdpProvider.VramMode.vsramRead, VdpProvider.VramMode.vsramWrite, 9);
+        testVdpRam_EvenOdd(VdpProvider.VdpRamType.VSRAM, 9);
     }
 
     @Test
     public void testCram_Even() {
-        testVdpRam_EvenOdd(VdpProvider.VramMode.cramRead, VdpProvider.VramMode.cramWrite, 8);
+        testVdpRam_EvenOdd(VdpProvider.VdpRamType.CRAM, 8);
     }
 
     @Test
     public void testCram_Odd() {
-        testVdpRam_EvenOdd(VdpProvider.VramMode.cramRead, VdpProvider.VramMode.cramWrite, 9);
+        testVdpRam_EvenOdd(VdpProvider.VdpRamType.CRAM, 9);
     }
 
 
-    private void testVdpRam_EvenOdd(VdpProvider.VramMode readMode, VdpProvider.VramMode writeMode, int address) {
+    private void testVdpRam_EvenOdd(VdpProvider.VdpRamType vdpRamType, int address) {
         boolean even = address % 2 == 0;
-        boolean byteSwap = writeMode == VdpProvider.VramMode.vramWrite && !even;
-        vdp.writeVideoRamWord(writeMode, (int) data, address);
+        boolean byteSwap = vdpRamType == VdpProvider.VdpRamType.VRAM && !even;
+        mem.writeVideoRamWord(vdpRamType, (int) data, address);
 
         long readData = byteSwap ? byteSwapData : data;
 
-        long res = vdp.readVideoRamWord(readMode, address);
+        long res = mem.readVideoRamWord(vdpRamType, address);
         Assert.assertEquals(Long.toHexString(readData), Long.toHexString(res));
 
-        res = vdp.readVideoRamWord(readMode, address - 1);
+        res = mem.readVideoRamWord(vdpRamType, address - 1);
         expected = even ? 0 : readData;
         Assert.assertEquals(Long.toHexString(expected), Long.toHexString(res));
 
-        res = vdp.readVideoRamWord(readMode, address - 2);
+        res = mem.readVideoRamWord(vdpRamType, address - 2);
         Assert.assertEquals(Long.toHexString(0), Long.toHexString(res));
 
-        res = vdp.readVideoRamWord(readMode, address + 1);
+        res = mem.readVideoRamWord(vdpRamType, address + 1);
         expected = even ? readData : 0;
         Assert.assertEquals(Long.toHexString(expected), Long.toHexString(res));
 
-        res = vdp.readVideoRamWord(readMode, address + 2);
+        res = mem.readVideoRamWord(vdpRamType, address + 2);
         Assert.assertEquals(Long.toHexString(0), Long.toHexString(res));
 
-        res = readVideoRamAddressLong(readMode, address);
+        res = readVideoRamAddressLong(vdpRamType, address);
         expected = readData << 16;
         Assert.assertEquals(Long.toHexString(expected), Long.toHexString(res));
 
-        res = readVideoRamAddressLong(readMode, address - 1);
+        res = readVideoRamAddressLong(vdpRamType, address - 1);
         expected = even ? readData : readData << 16;
         Assert.assertEquals(Long.toHexString(expected), Long.toHexString(res));
 
-        res = readVideoRamAddressLong(readMode, address - 2);
+        res = readVideoRamAddressLong(vdpRamType, address - 2);
         Assert.assertEquals(Long.toHexString(readData), Long.toHexString(res));
 
-        res = readVideoRamAddressLong(readMode, address + 1);
+        res = readVideoRamAddressLong(vdpRamType, address + 1);
         expected = even ? readData << 16 : 0;
         Assert.assertEquals(Long.toHexString(expected), Long.toHexString(res));
 
-        res = readVideoRamAddressLong(readMode, address + 2);
+        res = readVideoRamAddressLong(vdpRamType, address + 2);
         Assert.assertEquals(Long.toHexString(0), Long.toHexString(res));
     }
 
-    private long readVideoRamAddressLong(VdpProvider.VramMode mode, int address) {
-        long data = vdp.readVideoRamWord(mode, address);
-        return data << 16 | vdp.readVideoRamWord(mode, address + 2);
+    private long readVideoRamAddressLong(VdpProvider.VdpRamType vdpRamType, int address) {
+        long data = mem.readVideoRamWord(vdpRamType, address);
+        return data << 16 | mem.readVideoRamWord(vdpRamType, address + 2);
     }
 }
