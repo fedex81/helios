@@ -109,16 +109,14 @@ public class VdpDmaHandler {
         return true;
     }
 
-    public void setupDma(VdpProvider.VramMode vramMode, long data, boolean m1) {
+    public DmaMode setupDma(VdpProvider.VramMode vramMode, long data, boolean m1) {
         dmaMode = getDmaMode(vdpProvider.getRegisterData(23), vramMode);
         if (!checkSetup(m1, data)) {
-            return;
+            return null;
         }
         switch (dmaMode) {
             case MEM_TO_VRAM:
-                //doesnt need to set dma in the SR
-                setupDmaRegister(data);
-                break;
+                //fall-through
             //on DMA Fill, busy flag is actually immediately (?) set after the CTRL port write,
             //not the DATA port write that starts the Fill operation
             case VRAM_FILL:
@@ -129,7 +127,9 @@ public class VdpDmaHandler {
                 break;
             default:
                 LOG.error("Unexpected DMA mode: " + dmaMode + ",vramMode: " + vramMode);
+                dmaMode = null;
         }
+        return dmaMode;
     }
 
     private void setupDmaRegister(long commandWord) {
@@ -143,7 +143,9 @@ public class VdpDmaHandler {
         destAddressIncrement = vdpProvider.getRegisterData(15);
         if (dmaMode == DmaMode.MEM_TO_VRAM) {
             sourceAddress = ((vdpProvider.getRegisterData(23) & 0x7F) << 16) | sourceAddress;
-            dma68kToVram();
+            sourceAddress = sourceAddress << 1;  // needs to double it
+            sourceAddressLowerBound = getDmaSourceLowerBound(sourceAddress);
+            sourceAddressWrap = getDmaSourceWrap(sourceAddress);
         } else {
             printInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
         }
@@ -188,8 +190,6 @@ public class VdpDmaHandler {
         return dmaMode;
     }
 
-
-    //TODO add 68k_VPD dma
     public boolean doDma(int byteSlots) {
         boolean done = false;
         switch (dmaMode) {
@@ -201,6 +201,10 @@ public class VdpDmaHandler {
                 break;
             case VRAM_COPY:
                 done = dmaCopy(byteSlots / 2);
+                updateVdpRegisters();
+                break;
+            case MEM_TO_VRAM:
+                done = dma68kToVram(byteSlots);
                 updateVdpRegisters();
                 break;
         }
@@ -259,22 +263,20 @@ public class VdpDmaHandler {
         return (dmaLen - 1) & (VdpProvider.VDP_VRAM_SIZE - 1);
     }
 
-    private void dma68kToVram() {
-        sourceAddress = sourceAddress << 1;  // needs to double it
-        sourceAddressLowerBound = getDmaSourceLowerBound(sourceAddress);
-        sourceAddressWrap = getDmaSourceWrap(sourceAddress);
+    private boolean dma68kToVram(int slots) {
+        slots = vramDestination == VdpProvider.VramMode.vramWrite ? slots / 2 : slots;
         printInfo("START");
         do {
             dmaLen = decreaseDmaLength();
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
             vdpProvider.writeVideoRamWord(vramDestination, dataWord, destAddress);
-//            printInfo("IN PROGRESS");
+            printInfo("IN PROGRESS");
             sourceAddress += 2;
             sourceAddress = wrapSourceAddress(sourceAddress);
             destAddress += destAddressIncrement;
-        } while (dmaLen > 0);
-        updateVdpRegisters();
-        printInfo("DONE ");
+            slots--;
+        } while (dmaLen > 0 && slots > 0);
+        return dmaLen == 0;
     }
 
     private static int getDmaSourceLowerBound(int sourceAddress) {

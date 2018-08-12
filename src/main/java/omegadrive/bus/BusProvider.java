@@ -49,6 +49,11 @@ public interface BusProvider {
 
     void reset();
 
+    boolean shouldStop68k();
+
+    //VDP setting this
+    void setStop68k(boolean value);
+
     default PsgProvider getPsg() {
         return getSound().getPsg();
     }
@@ -56,5 +61,6 @@ public interface BusProvider {
     default FmProvider getFm() {
         return getSound().getFm();
     }
+
 
 }

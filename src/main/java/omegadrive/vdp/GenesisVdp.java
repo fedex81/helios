@@ -368,7 +368,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             logInfo("writeAddr: {}, data: {}, firstWrite: {}", addressRegister, all, writePendingControlPort);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((codeRegister & 0b100000) > 0) { // DMA
-                dmaHandler.setupDma(vramMode, all, m1);
+                VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
+                if (dmaMode == VdpDmaHandler.DmaMode.MEM_TO_VRAM) {
+                    bus.setStop68k(true);
+                }
                 logInfo("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}", addressRegister, all, writePendingControlPort);
             }
         }
@@ -436,14 +439,13 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void doDma(int byteSlots) {
         if (dma == 1) {
-            boolean dmaDone = false;
+            boolean dmaDone;
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
-            if (mode == VdpDmaHandler.DmaMode.VRAM_COPY || mode == VdpDmaHandler.DmaMode.VRAM_FILL) {
-                dmaDone = dmaHandler.doDma(byteSlots);
-            }
+            dmaDone = dmaHandler.doDma(byteSlots);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
                 Util.printLevelIfVerbose(LOG, Level.INFO, "{}: OFF", mode);
+                bus.setStop68k(false);
             }
         }
     }

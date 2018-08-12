@@ -53,6 +53,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private BusState busState = BusState.NOT_READY;
 
+    private boolean stop68k = false;
+
     protected GenesisBus() {
         this.mapper = this;
     }
@@ -74,6 +76,19 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         LOG.info(cartridgeInfoProvider.toString());
         detectState();
         LOG.info("Bus state: " + busState);
+    }
+
+    @Override
+    public boolean shouldStop68k() {
+        return stop68k;
+    }
+
+    @Override
+    public void setStop68k(boolean value) {
+        if (stop68k != value) {
+            LOG.debug("VDP stop 68k: {}", value);
+        }
+        stop68k = value;
     }
 
     @Override
