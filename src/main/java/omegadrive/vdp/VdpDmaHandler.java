@@ -306,11 +306,11 @@ public class VdpDmaHandler {
         DmaMode mode = null;
         switch (dmaBits) {
             case 3:
+                //For DMA copy, CD0-CD3 are ignored.
+                // You can only perform a DMA copy within VRAM.
                 mode = DmaMode.VRAM_COPY;
-                if (vramMode == VdpProvider.VramMode.vramRead) {
-                    vramDestination = vramMode;
-                    break;
-                }
+                vramDestination = VdpProvider.VramMode.vramWrite;
+                break;
                 //fall-through
             case 2:
                 mode = DmaMode.VRAM_FILL;
@@ -336,17 +336,9 @@ public class VdpDmaHandler {
     }
 
     public static void main(String[] args) {
-        //m1 masks cd5
-        int firstWrite = 65000;
-        int codeRegister = 0x3E;
-        int m1 = 0;
+        int regA = 255;
+        regA >>>= 1;
+        System.out.println(regA);
 
-        System.out.println(Integer.toBinaryString(firstWrite >> 14));
-        System.out.println(Integer.toBinaryString(codeRegister << 2));
-        codeRegister = (codeRegister << 2 | firstWrite >> 14) & 0x3F;
-        System.out.println(Integer.toBinaryString(codeRegister));
-        System.out.println(Integer.toBinaryString((m1 << 5) | 0x1F));
-        codeRegister &= ((m1 << 5) | 0x1F);
-        System.out.println(Integer.toBinaryString(codeRegister));
     }
 }

@@ -117,7 +117,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     @Override
     public long readData(long address, Size size) {
-        address = address & 0xFF_FFFF;    // el memory map llega hasta ahi
+        address = address & 0xFF_FFFF;
         long data;
         if (address <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {  //ROM
             if (isSramUsedWithBrokenHeader(address)) { // Buck Rogers
@@ -283,7 +283,6 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 //                of the word.
     private void vdpWrite(long addressL, Size size, long data) {
         addressL = addressL & 0x1F; //low 5 bits
-
         if (addressL < 0x4) {    //DATA PORT
             if (size == Size.BYTE) {
                 data = data << 8 | data;
@@ -315,11 +314,9 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 //            move.b      (a4)+, d0       ; PSG data in LSB
 //            move.w      d0, $C00010     ; Write to PSG
         else if (addressL >= 0x10 && addressL < 0x18) {
-//                LOG.debug("PSG Output: " + data + ": " + Long.toBinaryString(data));
-            int psgData = (int) data;
+            int psgData = (int) (data & 0xFF);
             if (size == Size.WORD) {
                 LOG.warn("PSG word write, address: " + Long.toHexString(addressL) + ", data: " + data);
-                psgData = (int) (data & 0xFF);
             }
             sound.getPsg().write(psgData);
         } else {
@@ -356,7 +353,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             if (isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
                 LOG.info("Unexpected Sram write: " + Long.toHexString(addressL) + ", value : " + data);
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
-                mapper.writeData(address, data, size);
+                mapper.writeData(addressL, data, size);
                 return;
             }
             LOG.error("Unexpected write to ROM: " + Long.toHexString(addressL) + ", value : " + data);
@@ -377,13 +374,13 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             }
             int addressInt = addressL >= 0xA08000 ? (int) (addressL - 0xA08000) : (int) (addressL - 0xA00000);
             Util.writeZ80(z80, size, addressInt, data);
-        } else if (addressL == 0xA10002 || address == 0xA10003) {    //	Controller 1 data
+        } else if (addressL == 0xA10002 || addressL == 0xA10003) {    //	Controller 1 data
             joypad.writeDataRegister1(data);
 
-        } else if (addressL == 0xA10004 || address == 0xA10005) {    //	Controller 2 data
+        } else if (addressL == 0xA10004 || addressL == 0xA10005) {    //	Controller 2 data
             joypad.writeDataRegister2(data);
 
-        } else if (addressL == 0xA10006 || address == 0xA10007) {    //	Expansion port data
+        } else if (addressL == 0xA10006 || addressL == 0xA10007) {    //	Expansion port data
             LOG.warn("Expansion port data");
 
         } else if (addressL == 0xA10009) {    //	Controller 1 control
@@ -395,15 +392,15 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         } else if (addressL == 0xA1000D) {    //	Controller 2 control
             joypad.writeControlRegister3(data);
 
-        } else if (address == 0xA10012 || address == 0xA10013) {    //	Controller 1 serial control
+        } else if (addressL == 0xA10012 || addressL == 0xA10013) {    //	Controller 1 serial control
             LOG.warn("IMPL CONTR 1 !!");
 
-        } else if (address == 0xA10018 || address == 0xA10019) {    //	Controller 2 serial control
+        } else if (addressL == 0xA10018 || addressL == 0xA10019) {    //	Controller 2 serial control
             LOG.warn("IMPL CONTR 2 !!");
 
-        } else if (address == 0xA1001E || address == 0xA1001F) {    //	Expansion port serial control
+        } else if (addressL == 0xA1001E || addressL == 0xA1001F) {    //	Expansion port serial control
             LOG.warn("expansion port serial control !!");
-        } else if (address == 0xA11000 || address == 0xA11001) {    //	Memory mode register
+        } else if (addressL == 0xA11000 || addressL == 0xA11001) {    //	Memory mode register
 //            Only D8 of address $A11OO0 is effective and for WRITE ONLY.
 //            $A11OO0 D8 ( W)
 //            O: ROM MODE
@@ -474,7 +471,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             } else {
                 LOG.warn("Unexpected mapper set, address: " + Long.toHexString(addressL) + ", data: " + Integer.toHexString((int) data));
             }
-        } else if (address == 0xA14000) {    //	VDP TMSS
+        } else if (addressL == 0xA14000) {    //	VDP TMSS
             LOG.warn("TMSS: " + Integer.toHexString((int) data));
         } else if (addressL >= 0xC00000 && addressL < 0xDFFFFF) {  //VDP
             vdpWrite(addressL, size, data);
@@ -482,7 +479,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             long addressZ = addressL & 0xFFFF;
             Util.writeRam(memory, size, addressZ, data);
         } else {
-            LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) address) + " - PC: " + Integer.toHexString((int) cpu.getPC()));
+            LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) addressL) + " - PC: " + Integer.toHexString((int) cpu.getPC()));
         }
     }
 

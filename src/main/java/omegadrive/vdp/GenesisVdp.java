@@ -61,7 +61,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 // - It is cleared when the data port is written to or read from.
 // - It is cleared when the control port is read.
     boolean writePendingControlPort = false;
-    long firstWrite;
+    int firstWrite;
 
     int dataPort;
     int addressRegister;
@@ -307,8 +307,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 //	CRAM Read	0	0	1	0	0	0
 //	VSRAM Read	0	0	0	1	0	0
     @Override
-    public void writeControlPort(long data) {
-        long mode = (data >> 14);
+    public void writeControlPort(long dataL) {
+        long mode = (dataL >> 14);
+        int data = (int) dataL;
 
         if (mode == 0b10) {        //	Write 1 - Setting Register
             writeRegister(data);
@@ -322,27 +323,27 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     @Override
     public void writeDataPort(long dataL) {
-        writePendingControlPort = false;
         int data = (int) dataL;
+        writePendingControlPort = false;
         logInfo("writeDataPort, data: {}, address: {}", data, addressRegister);
         if (setupDmaFillMaybe(data)) {
             return;
         }
         writeVideoRamWord(vramMode, data, addressRegister);
         addressRegister += autoIncrementData;
-        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
+//        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
 
     @Override
     public int readDataPort() {
         this.writePendingControlPort = false;
-        logInfo("readDataPort, address{} , size {}", addressRegister, Size.WORD);
+        int res = readVideoRam(vramMode);
+        logInfo("readDataPort, address {} , size {}, result {}", addressRegister, Size.WORD, res);
         addressRegister += autoIncrementData;
-        logInfo("After readDataPort, address: {}", addressRegister);
-        return readVideoRam(vramMode);
+        return res;
     }
 
-    private void writeRamAddress(long data) {
+    private void writeRamAddress(int data) {
         if (!writePendingControlPort) {
             firstWrite = data;
             writePendingControlPort = true;
@@ -356,10 +357,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             writePendingControlPort = false;
             all = (firstWrite << 16) | data;
 
-            codeRegister = (int) (((data >> 4) & 0xF) << 2 | codeRegister & 0x3);
+            codeRegister = (((data >> 4) & 0xF) << 2 | codeRegister & 0x3);
             //m1 masks CD5
 //            codeRegister &= (((m1 ? 1 : 0)<< 5) | 0x1F); //breaks Andre Agassi
-            addressRegister = (int) ((data & 0x3) << 14 | (addressRegister & 0x3FFF));
+            addressRegister = ((data & 0x3) << 14 | (addressRegister & 0x3FFF));
 
             int addressMode = codeRegister & 0xF;    // CD0-CD3
             vramMode = VramMode.getVramMode(addressMode);
@@ -373,9 +374,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    private void writeRegister(long data) {
-        int dataControl = (int) (data & 0x00FF);
-        int reg = (int) ((data >> 8) & 0x1F);
+    private void writeRegister(int data) {
+        int dataControl = data & 0x00FF;
+        int reg = (data >> 8) & 0x1F;
 
         if (reg >= VDP_REGISTERS_SIZE) {
             LOG.warn("Ignoring write to invalid VPD register: " + reg);
@@ -577,6 +578,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     @Override
     public int readVideoRamWord(VramMode mode, int address) {
         int data = 0;
+        //ignore A0, always use an even address
+        address &= ~1;
         if (mode == VramMode.vramRead) {
             data = readVramWord(address);
         } else if (mode == VramMode.vsramRead) {
@@ -604,6 +607,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private int readVsramByte(int address) {
         address &= 0x7F;
+        if (address >= VDP_VSRAM_SIZE) {
+            address = 0;
+        }
         return vsram[address];
     }
 
@@ -647,7 +653,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             vsram[address] = data & 0xFF;
         } else {
             //Arrow Flash
-            LOG.debug("Ignoring vsram write to address: " + Integer.toHexString(address));
+            LOG.debug("Ignoring vsram write to address: {}", Integer.toHexString(address));
         }
     }
 
@@ -656,16 +662,18 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         int word = data;
         int data1 = (word >> 8);
         int data2 = word & 0xFF;
-
+        //ignore A0
+        int index = address & ~1;
         if (vramMode == VramMode.vsramWrite) {
-            writeVsramByte(address, data1);
-            writeVsramByte(address + 1, data2);
+            writeVsramByte(index, data1);
+            writeVsramByte(index + 1, data2);
         } else if (vramMode == VramMode.cramWrite) {
-            writeCramByte(address, data1);
-            writeCramByte(address + 1, data2);
+            writeCramByte(index, data1);
+            writeCramByte(index + 1, data2);
         } else if (vramMode == VramMode.vramWrite) {
-            writeVramByte(address, data1);
-            writeVramByte(address + 1, data2);
+            boolean byteSwap = (address & 1) == 1;
+            writeVramByte(index, byteSwap ? data2 : data1);
+            writeVramByte(index + 1, byteSwap ? data1 : data2);
         } else {
             LOG.warn("Unexpected videoRam write: " + vramMode);
         }
