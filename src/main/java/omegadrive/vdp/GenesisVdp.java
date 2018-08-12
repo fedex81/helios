@@ -31,10 +31,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     public static int ROWS = VDP_VIDEO_ROWS;
     public static int COLS = VDP_VIDEO_COLS;
 
-    int[] vram = new int[VDP_VRAM_SIZE];
-    int[] cram = new int[VDP_CRAM_SIZE];
-    int[] vsram = new int[VDP_VSRAM_SIZE];
-
     VramMode vramMode;
 
 //	VSRAM
@@ -134,37 +130,23 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private BusProvider bus;
     private VdpColorMapper colorMapper;
     private VdpInterruptHandler interruptHandler;
+    private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
     private VideoMode videoMode;
 
 
     public GenesisVdp(BusProvider bus) {
         this.bus = bus;
+        this.memoryInterface = new GenesisVdpMemoryInterface();
         this.colorMapper = new VdpColorMapper();
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
-        this.dmaHandler = VdpDmaHandler.createInstance(this, bus);
+        this.dmaHandler = VdpDmaHandler.createInstance(this, memoryInterface, bus);
     }
 
     @Override
     public void init() {
         empty = 1;
         vb = 1;
-
-        for (int i = 0; i < cram.length; i++) {
-            if (i % 2 == 0) {
-                cram[i] = 0x0E;
-            } else {
-                cram[i] = 0xEE;
-            }
-        }
-        for (int i = 0; i < vsram.length; i++) {
-            if (i % 2 == 0) {
-                vsram[i] = 0x07;
-            } else {
-                vsram[i] = 0xFF;
-            }
-        }
-        Arrays.fill(vram, 0x10);
 
         registers[23] = 0x80;
         this.videoMode = getVideoMode(bus.getEmulator().getRegion(), false, false);
@@ -329,7 +311,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         if (setupDmaFillMaybe(data)) {
             return;
         }
-        writeVideoRamWord(vramMode, data, addressRegister);
+        memoryInterface.writeVideoRamWord(vramMode.getRamType(), data, addressRegister);
         addressRegister += autoIncrementData;
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
@@ -337,7 +319,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     @Override
     public int readDataPort() {
         this.writePendingControlPort = false;
-        int res = readVideoRam(vramMode);
+        if (vramMode == null) {
+            LOG.warn("readDataPort when vramMode is not set, address {} , size {}", addressRegister, Size.WORD);
+            return 0;
+        }
+        int res = memoryInterface.readVideoRamWord(vramMode.getRamType(), addressRegister);
         logInfo("readDataPort, address {} , size {}, result {}", addressRegister, Size.WORD, res);
         addressRegister += autoIncrementData;
         return res;
@@ -578,107 +564,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public int readVideoRamWord(VramMode mode, int address) {
-        int data = 0;
-        //ignore A0, always use an even address
-        address &= ~1;
-        if (mode == VramMode.vramRead) {
-            data = readVramWord(address);
-        } else if (mode == VramMode.vsramRead) {
-            data = readVsramWord(address);
-        } else if (mode == VramMode.cramRead) {
-            data = readCramWord(address);
-        } else {
-            LOG.warn("Unexpected videoRam read: " + mode);
-        }
-        return data;
-    }
-
-    public int readVideoRam(VramMode mode) {
-        return readVideoRamWord(mode, addressRegister);
-    }
-
-    private int readCramByte(int address) {
-        address &= (VDP_CRAM_SIZE - 1);
-        return cram[address];
-    }
-
-    private int readCramWord(int address) {
-        return readCramByte(address) << 8 | readCramByte(address + 1);
-    }
-
-    private int readVsramByte(int address) {
-        address &= 0x7F;
-        if (address >= VDP_VSRAM_SIZE) {
-            address = 0;
-        }
-        return vsram[address];
-    }
-
-    private int readVsramWord(int address) {
-        return readVsramByte(address) << 8 | readVsramByte(address + 1);
-    }
-
-    @Override
-    public int readVramByte(int address) {
-        address &= (VDP_VRAM_SIZE - 1);
-        return vram[address];
-    }
-
-    @Override
     public void setDmaFlag(int value) {
         dma = value;
-    }
-
-    private int readVramWord(int address) {
-        return readVramByte(address) << 8 | readVramByte(address + 1);
-    }
-
-    //    The address register wraps past address 7Fh.
-    private void writeCramByte(int address, int data) {
-        address &= (VDP_CRAM_SIZE - 1);
-        cram[address] = data & 0xFF;
-    }
-
-    //    The address register wraps past address FFFFh.
-    @Override
-    public void writeVramByte(int address, int data) {
-        address &= (VDP_VRAM_SIZE - 1);
-        vram[address] = data & 0xFF;
-    }
-
-    //    Even though there are 40 words of VSRAM, the address register will wrap
-//    when it passes 7Fh. Writes to the addresses beyond 50h are ignored.
-    private void writeVsramByte(int address, int data) {
-        address &= 0x7F;
-        if (address < VDP_VSRAM_SIZE) {
-            vsram[address] = data & 0xFF;
-        } else {
-            //Arrow Flash
-            LOG.debug("Ignoring vsram write to address: {}", Integer.toHexString(address));
-        }
-    }
-
-    @Override
-    public void writeVideoRamWord(VramMode vramMode, int data, int address) {
-        int word = data;
-        int data1 = (word >> 8);
-        int data2 = word & 0xFF;
-        //ignore A0
-        int index = address & ~1;
-        if (vramMode == VramMode.vsramWrite) {
-            writeVsramByte(index, data1);
-            writeVsramByte(index + 1, data2);
-        } else if (vramMode == VramMode.cramWrite) {
-            writeCramByte(index, data1);
-            writeCramByte(index + 1, data2);
-        } else if (vramMode == VramMode.vramWrite) {
-            boolean byteSwap = (address & 1) == 1;
-            writeVramByte(index, byteSwap ? data2 : data1);
-            writeVramByte(index + 1, byteSwap ? data1 : data2);
-        } else {
-            LOG.warn("Unexpected videoRam write: " + vramMode);
-        }
     }
 
     int spritesFrame = 0;
@@ -708,14 +595,14 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         for (int i = 0; i < maxSprites; i++) {
             int baseAddress = spriteTable + (i * 8);
 
-            int byte0 = readVramByte(baseAddress);
-            int byte1 = readVramByte(baseAddress + 1);
-            int byte2 = readVramByte(baseAddress + 2);
-            int byte3 = readVramByte(baseAddress + 3);
-            int byte4 = readVramByte(baseAddress + 4);
-            int byte5 = readVramByte(baseAddress + 5);
-            int byte6 = readVramByte(baseAddress + 6);
-            int byte7 = readVramByte(baseAddress + 7);
+            int byte0 = memoryInterface.readVramByte(baseAddress);
+            int byte1 = memoryInterface.readVramByte(baseAddress + 1);
+            int byte2 = memoryInterface.readVramByte(baseAddress + 2);
+            int byte3 = memoryInterface.readVramByte(baseAddress + 3);
+            int byte4 = memoryInterface.readVramByte(baseAddress + 4);
+            int byte5 = memoryInterface.readVramByte(baseAddress + 5);
+            int byte6 = memoryInterface.readVramByte(baseAddress + 6);
+            int byte7 = memoryInterface.readVramByte(baseAddress + 7);
 
             int linkData = byte3 & 0x7F;
 
@@ -771,14 +658,14 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         while (currSprite != -1) {
             baseAddress = spriteTable + (currSprite * 8);
 
-            int byte0 = readVramByte(baseAddress);
-            int byte1 = readVramByte(baseAddress + 1);
-            int byte2 = readVramByte(baseAddress + 2);
-            int byte3 = readVramByte(baseAddress + 3);
-            int byte4 = readVramByte(baseAddress + 4);
-            int byte5 = readVramByte(baseAddress + 5);
-            int byte6 = readVramByte(baseAddress + 6);
-            int byte7 = readVramByte(baseAddress + 7);
+            int byte0 = memoryInterface.readVramByte(baseAddress);
+            int byte1 = memoryInterface.readVramByte(baseAddress + 1);
+            int byte2 = memoryInterface.readVramByte(baseAddress + 2);
+            int byte3 = memoryInterface.readVramByte(baseAddress + 3);
+            int byte4 = memoryInterface.readVramByte(baseAddress + 4);
+            int byte5 = memoryInterface.readVramByte(baseAddress + 5);
+            int byte6 = memoryInterface.readVramByte(baseAddress + 6);
+            int byte7 = memoryInterface.readVramByte(baseAddress + 7);
 
             linkData = byte3 & 0x7F;
             verticalPos = ((byte0 & 0x1) << 8) | byte1;        //	bit 9 interlace mode only
@@ -847,7 +734,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                     if (grab < 0) {
                         continue;    //	FIXME guardar en cache de sprites yPos y otros atrib
                     }
-                    int data = readVramByte(grab);
+                    int data = memoryInterface.readVramByte(grab);
                     int pixel1, pixel2;
                     if (horFlip) {
                         pixel1 = data & 0x0F;
@@ -1123,7 +1010,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
             loc = tileLocator + (loc * 2);
             loc += vertOffset;
-            int nameTable = readVramWord(loc);
+            int nameTable = memoryInterface.readVideoRamWord(VdpRamType.VRAM, loc);
 
 //			An entry in a name table is 16 bits, and works as follows:
 //			15			14 13	12				11		   			10 9 8 7 6 5 4 3 2 1 0
@@ -1163,7 +1050,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 point /= 2;
 
                 int grab = (tileIndex + point) + (pointVert * 4);
-                int data = readVramByte(grab);
+                int data = memoryInterface.readVramByte(grab);
 
                 int pixel1;
                 if ((pixelInTile % 2) == 0) {
@@ -1258,7 +1145,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         for (int horTile = tileStart; horTile < tileEnd; horTile++) {
             int loc = tileLocator;
 
-            int nameTable = readVramWord(loc);
+            int nameTable = memoryInterface.readVideoRamWord(VdpRamType.VRAM, loc);  //VramWord(loc);
             tileLocator += 2;
 
 //				An entry in a name table is 16 bits, and works as follows:
@@ -1304,7 +1191,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                     windowIndex[po + 1][line] = 0;
                 } else {
                     int grab = (tileIndex + point) + (pointVert * 4);
-                    int data = readVramByte(grab);
+                    int data = memoryInterface.readVramByte(grab);
 
                     int pixel1, pixel2;
                     if (horFlip) {
@@ -1337,7 +1224,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private int getColorFromIndex(int colorIndex) {
         //Each word has the following format:
         // ----bbb-ggg-rrr-
-        int color1 = readCramWord(colorIndex);
+        int color1 = memoryInterface.readVideoRamWord(VdpRamType.CRAM, colorIndex);
 
         int r = (color1 >> 1) & 0x7;
         int g = (color1 >> 5) & 0x7;
@@ -1352,7 +1239,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         int vramOffset = 0;
         if (HS == 0b00) {    //	entire screen is scrolled at once by one longword in the horizontal scroll table
             vramOffset = isPlaneA ? hScrollBase : hScrollBase + 2;
-            scrollDataHor = readVramWord(vramOffset);
+            scrollDataHor = memoryInterface.readVideoRamWord(VdpRamType.VRAM, vramOffset);
             if (horScrollSize == 0) {    //	32 tiles
                 scrollDataHor &= 0xFF;
                 if (scrollDataHor != 0) {
@@ -1381,7 +1268,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             int scrollLine = hScrollBase + ((line / 8) * 32);    // 32 bytes por 8 scanlines
 
             vramOffset = isPlaneA ? scrollLine : scrollLine + 2;
-            scrollDataHor = readVramWord(vramOffset);
+            scrollDataHor = memoryInterface.readVideoRamWord(VdpRamType.VRAM, vramOffset);//readVramWord(vramOffset);
 
             if (scrollDataHor != 0) {
                 if (horScrollSize == 0) {    //	32 tiles
@@ -1407,7 +1294,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         } else if (HS == 0b11) {    //	scroll one scanline
             int scrollLine = hScrollBase + ((line) * 4);    // 4 bytes por 1 scanline
             vramOffset = isPlaneA ? scrollLine : scrollLine + 2;
-            scrollDataHor = readVramWord(vramOffset);
+            scrollDataHor = memoryInterface.readVideoRamWord(VdpRamType.VRAM, vramOffset);//readVramWord(vramOffset);
 
             if (horScrollSize == 0) {    //	32 tiles
                 scrollDataHor &= 0xFF;
@@ -1443,7 +1330,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                                     int tileLocator, boolean isPlaneA) {
         int scrollMap = 0;
         int vsramOffset = isPlaneA ? scrollLine : scrollLine + 2;
-        int scrollDataVer = readVsramWord(vsramOffset);
+        int scrollDataVer = memoryInterface.readVideoRamWord(VdpRamType.VSRAM, vsramOffset);//readVsramWord(vsramOffset);
 
         if (verScrollSize == 0) {    // 32 tiles (0x20)
             scrollMap = (scrollDataVer + line) & 0xFF;    //	32 * 8 lineas = 0x100

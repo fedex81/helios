@@ -12,12 +12,25 @@ import omegadrive.util.VideoMode;
  */
 public interface VdpProvider {
 
+    enum VdpRamType {
+        VRAM,
+        CRAM,
+        VSRAM;
+    }
+
     enum VramMode {
-        vramRead(0b0000), cramRead(0b1000), vsramRead(0b0100), vramWrite(0b0001), cramWrite(0b0011), vsramWrite(0b0101);
+        vramRead(0b0000, VdpRamType.VRAM),
+        cramRead(0b1000, VdpRamType.CRAM),
+        vsramRead(0b0100, VdpRamType.VSRAM),
+        vramWrite(0b0001, VdpRamType.VRAM),
+        cramWrite(0b0011, VdpRamType.CRAM),
+        vsramWrite(0b0101, VdpRamType.VSRAM);
 
-        int addressMode;
+        private VdpRamType ramType;
+        private int addressMode;
 
-        VramMode(int addressMode) {
+        VramMode(int addressMode, VdpRamType ramType) {
+            this.ramType = ramType;
             this.addressMode = addressMode;
         }
 
@@ -28,6 +41,10 @@ public interface VdpProvider {
                 }
             }
             return null;
+        }
+
+        public VdpRamType getRamType() {
+            return ramType;
         }
 
         public boolean isWriteMode() {
@@ -61,7 +78,6 @@ public interface VdpProvider {
 
     static VdpProvider createVdp(BusProvider bus) {
         return new GenesisVdp(bus);
-//        return new GenesisVdpOldDma(bus);
     }
 
     void init();
@@ -88,14 +104,6 @@ public interface VdpProvider {
     int getRegisterData(int reg);
 
     void updateRegisterData(int reg, int data);
-
-    void writeVramByte(int address, int data);
-
-    void writeVideoRamWord(VramMode vramMode, int data, int address);
-
-    int readVideoRamWord(VramMode mode, int address);
-
-    int readVramByte(int address);
 
     void setDmaFlag(int value);
 

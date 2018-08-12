@@ -1,5 +1,6 @@
 package omegadrive.vdp;
 
+import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
@@ -13,8 +14,6 @@ import java.util.Objects;
  * Federico Berti
  * <p>
  * Copyright 2018
- *
- * TODO thunderForce IV
  *
  */
 
@@ -55,7 +54,10 @@ public class VdpDmaHandler {
 
     private static Logger LOG = LogManager.getLogger(VdpDmaHandler.class.getSimpleName());
 
+    public static boolean verbose = false || Genesis.verbose;
+
     private VdpProvider vdpProvider;
+    private VdpMemoryInterface memoryInterface;
     private BusProvider busProvider;
 
     private int dmaLen;
@@ -65,9 +67,7 @@ public class VdpDmaHandler {
     private int destAddress;
     private int dmaFillData;
     private int destAddressIncrement;
-    private GenesisVdp.VramMode vramDestination;
-
-    private static boolean verbose = GenesisVdp.verbose;
+    private GenesisVdp.VdpRamType vramDestination;
 
     private static int DMA_ROM_SOURCE_ADDRESS_WRAP = 0x20000; //128Kbytes
     private static int DMA_RAM_SOURCE_ADDRESS_WRAP = 0x10000; //64Kbytes
@@ -89,10 +89,12 @@ public class VdpDmaHandler {
         MEM_TO_VRAM, VRAM_FILL, VRAM_COPY;
     }
 
-    public static VdpDmaHandler createInstance(VdpProvider vdpProvider, BusProvider busProvider) {
+    public static VdpDmaHandler createInstance(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
+                                               BusProvider busProvider) {
         VdpDmaHandler d = new VdpDmaHandler();
         d.vdpProvider = vdpProvider;
         d.busProvider = busProvider;
+        d.memoryInterface = memoryInterface;
         return d;
     }
 
@@ -154,8 +156,8 @@ public class VdpDmaHandler {
     public void setupDmaDataPort(int dataWord) {
         dmaFillData = dataWord;
         printInfo("START");
-        vdpProvider.writeVramByte(destAddress ^ 1, dataWord & 0xFF);
-        vdpProvider.writeVramByte(destAddress, (dataWord >> 8) & 0xFF);
+        memoryInterface.writeVramByte(destAddress ^ 1, dataWord & 0xFF);
+        memoryInterface.writeVramByte(destAddress, (dataWord >> 8) & 0xFF);
         dmaFillReady = true;
     }
 
@@ -231,7 +233,7 @@ public class VdpDmaHandler {
         dmaLen = decreaseDmaLength();
         printInfo("IN PROGRESS");
         int msb = (dmaFillData >> 8) & 0xFF;
-        vdpProvider.writeVramByte(destAddress, msb);
+        memoryInterface.writeVramByte(destAddress, msb);
         destAddress += destAddressIncrement;
         return dmaLen == 0;
     }
@@ -248,8 +250,8 @@ public class VdpDmaHandler {
 
     private boolean dmaCopySingleByte() {
         dmaLen = decreaseDmaLength();
-        int data = vdpProvider.readVramByte(sourceAddress);
-        vdpProvider.writeVramByte(destAddress, data);
+        int data = memoryInterface.readVramByte(sourceAddress);
+        memoryInterface.writeVramByte(destAddress, data);
         sourceAddress++;
         sourceAddress = wrapSourceAddress(sourceAddress);
         destAddress += destAddressIncrement;
@@ -264,12 +266,12 @@ public class VdpDmaHandler {
     }
 
     private boolean dma68kToVram(int slots) {
-        slots = vramDestination == VdpProvider.VramMode.vramWrite ? slots / 2 : slots;
+        slots = vramDestination == VdpProvider.VdpRamType.VRAM ? slots / 2 : slots;
         printInfo("START");
         do {
             dmaLen = decreaseDmaLength();
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
-            vdpProvider.writeVideoRamWord(vramDestination, dataWord, destAddress);
+            memoryInterface.writeVideoRamWord(vramDestination, dataWord, destAddress);
             printInfo("IN PROGRESS");
             sourceAddress += 2;
             sourceAddress = wrapSourceAddress(sourceAddress);
@@ -311,13 +313,13 @@ public class VdpDmaHandler {
                 //For DMA copy, CD0-CD3 are ignored.
                 // You can only perform a DMA copy within VRAM.
                 mode = DmaMode.VRAM_COPY;
-                vramDestination = VdpProvider.VramMode.vramWrite;
+                vramDestination = VdpProvider.VdpRamType.VRAM;
                 break;
                 //fall-through
             case 2:
                 mode = DmaMode.VRAM_FILL;
                 if (vramMode == VdpProvider.VramMode.vramWrite) {
-                    vramDestination = vramMode;
+                    vramDestination = vramMode.getRamType();
                     break;
                 }
                 //fall-through
@@ -326,7 +328,7 @@ public class VdpDmaHandler {
             case 1:
                 if (vramMode.isWriteMode()) {
                     mode = DmaMode.MEM_TO_VRAM;
-                    vramDestination = vramMode;
+                    vramDestination = vramMode.getRamType();
                     break;
                 }
                 //fall-through
