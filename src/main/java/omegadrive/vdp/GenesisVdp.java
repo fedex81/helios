@@ -309,7 +309,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         if (setupDmaFillMaybe(data)) {
             return;
         }
-        memoryInterface.writeVideoRamWord(vramMode.getRamType(), data, addressRegister);
+        memoryInterface.writeVideoRamWord(vramMode, data, addressRegister);
         addressRegister += autoIncrementData;
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
@@ -317,11 +317,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     @Override
     public int readDataPort() {
         this.writePendingControlPort = false;
-        if (vramMode == null) {
-            LOG.warn("readDataPort when vramMode is not set, address {} , size {}", addressRegister, Size.WORD);
-            return 0;
-        }
-        int res = memoryInterface.readVideoRamWord(vramMode.getRamType(), addressRegister);
+        int res = memoryInterface.readVideoRamWord(vramMode, addressRegister);
         logInfo("readDataPort, address {} , size {}, result {}", addressRegister, Size.WORD, res);
         addressRegister += autoIncrementData;
         return res;
