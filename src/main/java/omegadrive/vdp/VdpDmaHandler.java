@@ -3,6 +3,7 @@ package omegadrive.vdp;
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.Size;
+import omegadrive.util.VideoMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -76,15 +77,6 @@ public class VdpDmaHandler {
     private DmaMode dmaMode = null;
     private boolean dmaFillReady;
 
-    /**
-     * Bits CD3-CD0
-     * 0000b : VRAM read
-     * 0001b : VRAM write
-     * 0011b : CRAM write
-     * 0100b : VSRAM read
-     * 0101b : VSRAM write
-     * 1000b : CRAM read
-     */
     enum DmaMode {
         MEM_TO_VRAM, VRAM_FILL, VRAM_COPY;
     }
@@ -192,8 +184,9 @@ public class VdpDmaHandler {
         return dmaMode;
     }
 
-    public boolean doDma(int byteSlots) {
+    public boolean doDma(VideoMode videoMode, boolean isBlanking) {
         boolean done = false;
+        int byteSlots = getDmaSlotsPerLine(dmaMode, videoMode, isBlanking);
         switch (dmaMode) {
             case VRAM_FILL:
                 if (dmaFillReady) {
@@ -202,13 +195,15 @@ public class VdpDmaHandler {
                 }
                 break;
             case VRAM_COPY:
-                done = dmaCopy(byteSlots / 2);
+                done = dmaCopy(byteSlots);
                 updateVdpRegisters();
                 break;
             case MEM_TO_VRAM:
                 done = dma68kToVram(byteSlots);
                 updateVdpRegisters();
                 break;
+            default:
+                LOG.error("Unexpected dma setting: {}", dmaMode);
         }
         if (done) {
             printInfo("DONE");
@@ -265,19 +260,21 @@ public class VdpDmaHandler {
         return (dmaLen - 1) & (VdpProvider.VDP_VRAM_SIZE - 1);
     }
 
-    private boolean dma68kToVram(int slots) {
-        slots = vramDestination == VdpProvider.VdpRamType.VRAM ? slots / 2 : slots;
-        printInfo("START");
+    private boolean dma68kToVram(int byteSlots) {
+        byteSlots = vramDestination == VdpProvider.VdpRamType.VRAM ? byteSlots : byteSlots * 2;
+        printInfo("START, Dma byteSlots: " + byteSlots);
         do {
+            //dmaLen is words
             dmaLen = decreaseDmaLength();
+            byteSlots -= 2;
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
             memoryInterface.writeVideoRamWord(vramDestination, dataWord, destAddress);
             printInfo("IN PROGRESS");
             sourceAddress += 2;
             sourceAddress = wrapSourceAddress(sourceAddress);
             destAddress += destAddressIncrement;
-            slots--;
-        } while (dmaLen > 0 && slots > 0);
+        } while (dmaLen > 0 && byteSlots > 0);
+        printInfo("Byte slots remaining: " + byteSlots);
         return dmaLen == 0;
     }
 
@@ -339,10 +336,36 @@ public class VdpDmaHandler {
         return mode;
     }
 
+    private int getDmaSlotsPerLine(DmaMode dmaMode, VideoMode videoMode, boolean isBlanking) {
+        int slots = 0;
+        switch (dmaMode) {
+            case MEM_TO_VRAM:
+                slots = videoMode.isH32() ?
+                        (isBlanking ? 167 : 16) : //H32
+                        (isBlanking ? 205 : 18);  //H40
+                break;
+            case VRAM_FILL:
+                slots = videoMode.isH32() ?
+                        (isBlanking ? 166 : 15) : //H32
+                        (isBlanking ? 204 : 17);  //H40
+                break;
+            case VRAM_COPY:
+                slots = videoMode.isH32() ?
+                        (isBlanking ? 83 : 8) : //H32
+                        (isBlanking ? 102 : 9);  //H40
+                break;
+        }
+        printInfo("Dma byteSlots: " + slots + ", isBlanking: " + isBlanking);
+        return slots;
+    }
+
+
     public static void main(String[] args) {
-        int regA = 255;
-        regA >>>= 1;
-        System.out.println(regA);
+        long firstWrite = 0x4002;
+        long all = ((firstWrite << 16) | 0x8002);
+//        Integer.MAX_VALUE = 7fff_ffff
+        System.out.println(firstWrite);
+        System.out.println(all);
 
     }
 }

@@ -55,6 +55,14 @@ public enum VideoMode {
         return region;
     }
 
+    public boolean isH32() {
+        return h == H32;
+    }
+
+    public boolean isV28() {
+        return v == V28_CELL;
+    }
+
     public static VideoMode getVideoMode(RegionDetector.Region region, boolean isH40, boolean isV30,
                                          VideoMode currentMode) {
         int hMode = isH40 ? H40 : H32;

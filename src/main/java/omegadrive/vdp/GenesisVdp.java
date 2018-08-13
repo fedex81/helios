@@ -57,9 +57,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 // - It is cleared when the data port is written to or read from.
 // - It is cleared when the control port is read.
     boolean writePendingControlPort = false;
-    int firstWrite;
-
-    int dataPort;
+    long firstWrite;
     int addressRegister;
     int codeRegister;
 
@@ -333,15 +331,15 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         if (!writePendingControlPort) {
             firstWrite = data;
             writePendingControlPort = true;
-            logInfo("writeAddr, data: {}, firstWrite: {}", firstWrite, writePendingControlPort);
 //            It is perfectly valid to write the first half of the command word only.
 //            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
 //            values, while the remaining address and code bits _retain_ their former value.
-            codeRegister = (int) (codeRegister << 2 | firstWrite >> 14) & 0x3F;
-            addressRegister = (int) (addressRegister << 14 | (firstWrite & 0x3FFF));
+            codeRegister = (int) ((codeRegister << 2 | firstWrite >> 14) & 0x3F);
+            addressRegister = (int) ((addressRegister & 0xC000) | (firstWrite & 0x3FFF));
+            logInfo("writeAddr-1, firstWord: {}, address: {}, code: {}", firstWrite, addressRegister, codeRegister);
         } else {
             writePendingControlPort = false;
-            all = (firstWrite << 16) | data;
+            all = ((firstWrite << 16) | data);
 
             codeRegister = (((data >> 4) & 0xF) << 2 | codeRegister & 0x3);
             //m1 masks CD5
@@ -351,7 +349,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             int addressMode = codeRegister & 0xF;    // CD0-CD3
             vramMode = VramMode.getVramMode(addressMode);
             LOG.debug("Video mode: " + Objects.toString(vramMode));
-            logInfo("writeAddr: {}, data: {}, firstWrite: {}", addressRegister, all, writePendingControlPort);
+            logInfo("writeAddr-2: secondWord: {}, dataLong: {}, address: {}", data, all, addressRegister);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((codeRegister & 0b100000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
@@ -423,11 +421,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    private void doDma(int byteSlots) {
+    private void doDma(boolean isBlanking) {
         if (dma == 1) {
             boolean dmaDone;
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
-            dmaDone = dmaHandler.doDma(byteSlots);
+            dmaDone = dmaHandler.doDma(videoMode, isBlanking);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
                 Util.printLevelIfVerbose(LOG, Level.INFO, "{}: OFF", mode);
@@ -437,7 +435,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     private boolean setupDmaFillMaybe(int data) {
-        if (m1) {
+        //this should proceed even with m1 =0
+        if (dma == 1) {
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
             boolean dmaOk = mode == VdpDmaHandler.DmaMode.VRAM_FILL;
             if (dmaOk) {
@@ -514,13 +513,16 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     //TODO
     private void runDma() {
+        if (dma == 0) {
+            return;
+        }
         if (hb == 1 && line != dmaActiveScreenLine) {
-            doDma(DMA_SLOTS_ACTIVE_SCREEN_LINE);
+            doDma(false);
             dmaActiveScreenLine = line;
             dmaSlots += DMA_SLOTS_ACTIVE_SCREEN_LINE;
         }
         if (vb == 1 && interruptHandler.getvCounter() != dmaDisableScreenCounter) {
-            doDma(DMA_SLOTS_DISABLED_SCREEN_LINE);
+            doDma(true);
             dmaDisableScreenCounter = interruptHandler.getvCounter();
             dmaSlots += DMA_SLOTS_DISABLED_SCREEN_LINE;
         }
