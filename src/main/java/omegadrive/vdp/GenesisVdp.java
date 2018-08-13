@@ -330,7 +330,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 //            It is perfectly valid to write the first half of the command word only.
 //            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
 //            values, while the remaining address and code bits _retain_ their former value.
-            codeRegister = (int) ((codeRegister << 2 | firstWrite >> 14) & 0x3F);
+            codeRegister = (int) ((codeRegister & 0x3C | firstWrite >> 14) & 0x3F);
             addressRegister = (int) ((addressRegister & 0xC000) | (firstWrite & 0x3FFF));
             logInfo("writeAddr-1, firstWord: {}, address: {}, code: {}", firstWrite, addressRegister, codeRegister);
         } else {
@@ -345,7 +345,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             int addressMode = codeRegister & 0xF;    // CD0-CD3
             vramMode = VramMode.getVramMode(addressMode);
             LOG.debug("Video mode: " + Objects.toString(vramMode));
-            logInfo("writeAddr-2: secondWord: {}, dataLong: {}, address: {}", data, all, addressRegister);
+            logInfo("writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}", data, addressRegister, codeRegister, all);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((codeRegister & 0b100000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
@@ -479,7 +479,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         hb = !displayEnable || interruptHandler.ishBlankSet() ? 1 : 0;
         vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
-        runDma();
+        runDma(hb == 1 || vb == 1);
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastHCounter()) {
@@ -508,16 +508,16 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     int DMA_SLOTS_DISABLED_SCREEN_LINE = 200;
 
     //TODO
-    private void runDma() {
+    private void runDma(boolean isBlanking) {
         if (dma == 0) {
             return;
         }
-        if (hb == 1 && line != dmaActiveScreenLine) {
+        if (!isBlanking && line != dmaActiveScreenLine) {
             doDma(false);
             dmaActiveScreenLine = line;
             dmaSlots += DMA_SLOTS_ACTIVE_SCREEN_LINE;
         }
-        if (vb == 1 && interruptHandler.getvCounter() != dmaDisableScreenCounter) {
+        if (isBlanking && interruptHandler.getvCounter() != dmaDisableScreenCounter) {
             doDma(true);
             dmaDisableScreenCounter = interruptHandler.getvCounter();
             dmaSlots += DMA_SLOTS_DISABLED_SCREEN_LINE;
