@@ -5,12 +5,6 @@ import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.nio.charset.Charset;
-
 /**
  * Z80Memory
  * <p>
@@ -96,6 +90,7 @@ public class Z80Memory implements IMemory {
 
 
     private void writeMemory(int address, int data) {
+        data = data & 0xFF;
         if (address < MEMORY_SIZE) {  //RAM
             memory[address] = data;
         } else if (address >= MEMORY_SIZE && address < MEMORY_SIZE * 2) { //RAM MIRROR
@@ -143,13 +138,13 @@ public class Z80Memory implements IMemory {
     @Override
     // Read a byte from memory
     public int readByte(int address) {
-        return readMemory(address);
+        return readMemory(address) & 0xFF;
     }
 
     @Override
     // Read a word from memory
     public int readWord(int address) {
-        return readByte(address) + readByte(address + 1) * 0xFF;
+        throw new UnsupportedOperationException("Z80 word read at address: " + address);
     }
 
     @Override
@@ -159,10 +154,7 @@ public class Z80Memory implements IMemory {
 
     @Override
     public void writeWord(int address, int data) {
-        writeByte(address, (data & 0x00FF));
-        address = (address + 1) & 65535;
-        data = (data >>> 8);
-        writeByte(address, data);
+        throw new UnsupportedOperationException("Z80 word write at address: " + address + ", data: " + data);
     }
 
     //	 From 8000H - FFFFH is window of 68K memory.
@@ -186,51 +178,4 @@ public class Z80Memory implements IMemory {
     public int[] getMemory() {
         return memory;
     }
-
-    /**
-     * Read a standard tape dump file into an array and return
-     *
-     * @param fileName The file to read
-     * @throws IOException Thrown if a failure occurs while reading the file
-     */
-    private void readHexDumpFile(String fileName) throws IOException {
-        String line;
-        int address, base;
-        LineNumberReader source = new LineNumberReader(new InputStreamReader(new FileInputStream(fileName), Charset.forName("UTF-8")));
-        //
-        boolean firstTime = true;
-        while (true) { // read a line
-
-            String inputLine = source.readLine();
-            if ((null == inputLine) || (inputLine.charAt(0) == '.')) {
-                break;
-            }
-            line = inputLine.trim();
-            // System.out.println("<" + line + ">");
-
-            // convert and place into memory
-
-            address = Integer.parseInt(line.substring(0, 4), 16);
-            // System.out.println("Address : " + address + " : " + line.substring(0, 4));
-            if (firstTime) {
-                firstTime = false;
-            }
-            base = 5;
-            for (int i = 0; i < 8; i++) {
-                int value = Integer.parseInt(line.substring(base, base + 2), 16);
-                memory[address] = value;
-                base = base + 3;
-                address++;
-            }
-        }
-        source.close();
-    }
-
-    public static void main(String[] args) {
-        int val = 0x1C0A;
-        System.out.println(val & 0x1F);
-        val = 0x1FFC;
-        System.out.println(val & 0x1F);
-    }
-
 }
