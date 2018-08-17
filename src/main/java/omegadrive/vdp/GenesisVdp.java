@@ -476,7 +476,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         interruptHandler.increaseHCounter();
         boolean displayEnable = disp;
         //disabling the display implies blanking
-        hb = !displayEnable || interruptHandler.ishBlankSet() ? 1 : 0;
+        hb = interruptHandler.ishBlankSet() ? 1 : 0;
         vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
         runDma(hb == 1 || vb == 1);
