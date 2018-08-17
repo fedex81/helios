@@ -245,6 +245,7 @@ public class VdpDmaHandler {
 
     private boolean dmaCopySingleByte() {
         dmaLen = decreaseDmaLength();
+        printInfo("IN PROGRESS");
         int data = memoryInterface.readVramByte(sourceAddress);
         memoryInterface.writeVramByte(destAddress, data);
         sourceAddress++;

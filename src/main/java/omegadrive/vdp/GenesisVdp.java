@@ -147,6 +147,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         vb = 1;
 
         registers[23] = 0x80;
+        registers[15] = 0x02;
+        updateVariables(23, 0x80);
+        updateVariables(15, 0x02);
         this.videoMode = getVideoMode(bus.getEmulator().getRegion(), false, false);
         this.interruptHandler.setMode(videoMode);
         this.pal = videoMode.isPal() ? 1 : 0;
