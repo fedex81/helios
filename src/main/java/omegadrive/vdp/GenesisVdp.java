@@ -138,7 +138,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         this.memoryInterface = new GenesisVdpMemoryInterface();
         this.colorMapper = new VdpColorMapper();
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
-        this.dmaHandler = VdpDmaHandler.createInstance(this, memoryInterface, bus);
+        this.dmaHandler = VdpDmaHandlerImpl.createInstance(this, memoryInterface, bus);
     }
 
     @Override
@@ -352,7 +352,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((codeRegister & 0b100000) > 0) { // DMA
                 IVdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
-                if (dmaMode == VdpDmaHandler2.DmaMode.MEM_TO_VRAM) {
+                if (dmaMode == IVdpDmaHandler.DmaMode.MEM_TO_VRAM) {
                     bus.setStop68k(true);
                 }
                 logInfo("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}", addressRegister, all, writePendingControlPort);
@@ -436,8 +436,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private boolean setupDmaFillMaybe(int data) {
         //this should proceed even with m1 =0
         if (dma == 1) {
-            VdpDmaHandler2.DmaMode mode = dmaHandler.getDmaMode();
-            boolean dmaOk = mode == VdpDmaHandler2.DmaMode.VRAM_FILL;
+            IVdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
+            boolean dmaOk = mode == IVdpDmaHandler.DmaMode.VRAM_FILL;
             if (dmaOk) {
                 dmaHandler.setupDmaDataPort(data);
                 return true;
