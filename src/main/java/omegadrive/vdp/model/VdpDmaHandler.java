@@ -10,7 +10,7 @@ import omegadrive.vdp.VdpProvider;
  * <p>
  * Copyright 2018
  */
-public interface IVdpDmaHandler {
+public interface VdpDmaHandler {
 
     enum DmaMode {
         MEM_TO_VRAM, VRAM_FILL, VRAM_COPY;

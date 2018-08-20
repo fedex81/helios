@@ -4,7 +4,7 @@ import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.model.IVdpDmaHandler;
+import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,7 +53,7 @@ import java.util.Objects;
  *     //Langrisser II
  *     //James Pond 3 - Operation Starfish - some platforms requires correct VRAM Copy
  */
-public class VdpDmaHandlerImpl implements IVdpDmaHandler {
+public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     private static Logger LOG = LogManager.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
 
@@ -76,7 +76,7 @@ public class VdpDmaHandlerImpl implements IVdpDmaHandler {
     private static int DMA_RAM_SOURCE_ADDRESS_WRAP = 0x10000; //64Kbytes
 
 
-    private IVdpDmaHandler.DmaMode dmaMode = null;
+    private VdpDmaHandler.DmaMode dmaMode = null;
     private boolean dmaFillReady;
 
     public static VdpDmaHandlerImpl createInstance(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface,

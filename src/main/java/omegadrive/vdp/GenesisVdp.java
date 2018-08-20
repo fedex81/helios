@@ -6,7 +6,7 @@ import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.model.IVdpDmaHandler;
+import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.Level;
@@ -132,7 +132,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private VdpColorMapper colorMapper;
     private VdpInterruptHandler interruptHandler;
     private VdpMemoryInterface memoryInterface;
-    private IVdpDmaHandler dmaHandler;
+    private VdpDmaHandler dmaHandler;
     private VideoMode videoMode;
 
 
@@ -354,8 +354,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             logInfo("writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}", data, addressRegister, codeRegister, all);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((codeRegister & 0b100000) > 0) { // DMA
-                IVdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
-                if (dmaMode == IVdpDmaHandler.DmaMode.MEM_TO_VRAM) {
+                VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
+                if (dmaMode == VdpDmaHandler.DmaMode.MEM_TO_VRAM) {
                     bus.setStop68k(true);
                 }
                 logInfo("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}", addressRegister, all, writePendingControlPort);
@@ -426,7 +426,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private void doDma(boolean isBlanking) {
         if (dma == 1) {
             boolean dmaDone;
-            IVdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
+            VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
             dmaDone = dmaHandler.doDma(videoMode, isBlanking);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
@@ -439,8 +439,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private boolean setupDmaFillMaybe(int data) {
         //this should proceed even with m1 =0
         if (dma == 1) {
-            IVdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
-            boolean dmaOk = mode == IVdpDmaHandler.DmaMode.VRAM_FILL;
+            VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
+            boolean dmaOk = mode == VdpDmaHandler.DmaMode.VRAM_FILL;
             if (dmaOk) {
                 dmaHandler.setupDmaDataPort(data);
                 return true;
