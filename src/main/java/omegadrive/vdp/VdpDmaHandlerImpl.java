@@ -18,9 +18,9 @@ import java.util.Objects;
  * <p>
  * Copyright 2018
  */
-public class VdpDmaHandlerImpl2 implements VdpDmaHandler {
+public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
-    private static Logger LOG = LogManager.getLogger(VdpDmaHandlerImpl2.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
 
@@ -37,7 +37,7 @@ public class VdpDmaHandlerImpl2 implements VdpDmaHandler {
 
     public static VdpDmaHandler createInstance(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
                                                BusProvider busProvider) {
-        VdpDmaHandlerImpl2 d = new VdpDmaHandlerImpl2();
+        VdpDmaHandlerImpl d = new VdpDmaHandlerImpl();
         d.vdpProvider = vdpProvider;
         d.busProvider = busProvider;
         d.memoryInterface = memoryInterface;
