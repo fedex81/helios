@@ -15,45 +15,10 @@ import java.util.Objects;
  * Federico Berti
  * <p>
  * Copyright 2018
- *
  */
+public class VdpDmaHandler2 implements IVdpDmaHandler {
 
-/**
- * None of the DMA register settings are "cached", they are used live.
- * In particular, the DMA source address and transfer count are actively modified during DMA operations.
- * You can, for example, perform a DMA transfer for a count of 0x1000,
- * then only rewrite the lower transfer count byte with 0x80, and trigger another DMA transfer,
- * and it will only perform a transfer for 0x80 steps.
- * <p>
- * I can tell you that the DMA source address registers are never cleared under any circumstances,
- * but a DMA operation will actively modify them as it runs,
- * so you would expect the source address registers to be incremented by a DMA operation.
- * I can tell you that the correct behaviour is for the combined DMA source address registers 21 and 22
- * to be incremented by 1 on each DMA update step, with every DMA operation,
- * including a DMA fill for what it's worth, even though it doesn't use the source address.
- * DMA source address register 23 is never modified under any circumstances by the DMA operation.
- * This is why a DMA transfer wraps at 0x20000 byte boundaries:
- * it's unable to modify the upper DMA source address register.
- * If it was able to do this, it could inadvertantly modify the DMA mode during a DMA operation,
- * which would be very bad.
- * <p>
- * Here are some other mitigating factors which may cause you problems:
- * -DMA operations to invalid write targets still run to completion, the result is simply not stored,
- * so if a DMA operation is triggered to an invalid target, the DMA source address still needs to be updated.
- * -DMA operations always run to completion, they never abort, IE, when you reach the "end" of CRAM or VSRAM.
- * Writes to CRAM and VSRAM wrap at an 0x80 byte boundary.
- * Writes to the upper portion of VSRAM in this region (0x50-0x80) are discarded.
- * <p>
- * Any information you may read which is contrary to this info (IE, in genvdp.txt) is incorrect.
- * http://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=908&p=15801&hilit=dma+wrap#p15801
- *
- *     //Games that use VRAM copies include Aleste, Bad Omen, and Viewpoint.
- *     //Langrisser II
- *     //James Pond 3 - Operation Starfish - some platforms requires correct VRAM Copy
- */
-public class VdpDmaHandler implements IVdpDmaHandler {
-
-    private static Logger LOG = LogManager.getLogger(VdpDmaHandler.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(VdpDmaHandler2.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
 
@@ -61,25 +26,16 @@ public class VdpDmaHandler implements IVdpDmaHandler {
     private VdpMemoryInterface memoryInterface;
     private BusProvider busProvider;
 
-    private int dmaLen;
-    private int sourceAddress;
-    private int sourceAddressLowerBound;
-    private int sourceAddressWrap;
     private int destAddress;
     private int dmaFillData;
-    private int destAddressIncrement;
     private GenesisVdp.VdpRamType vramDestination;
 
-    private static int DMA_ROM_SOURCE_ADDRESS_WRAP = 0x20000; //128Kbytes
-    private static int DMA_RAM_SOURCE_ADDRESS_WRAP = 0x10000; //64Kbytes
-
-
-    private IVdpDmaHandler.DmaMode dmaMode = null;
+    private DmaMode dmaMode = null;
     private boolean dmaFillReady;
 
-    public static VdpDmaHandler createInstance(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
-                                               BusProvider busProvider) {
-        VdpDmaHandler d = new VdpDmaHandler();
+    public static VdpDmaHandler2 createInstance(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
+                                                BusProvider busProvider) {
+        VdpDmaHandler2 d = new VdpDmaHandler2();
         d.vdpProvider = vdpProvider;
         d.busProvider = busProvider;
         d.memoryInterface = memoryInterface;
@@ -107,8 +63,8 @@ public class VdpDmaHandler implements IVdpDmaHandler {
         switch (dmaMode) {
             case MEM_TO_VRAM:
                 //fall-through
-            //on DMA Fill, busy flag is actually immediately (?) set after the CTRL port write,
-            //not the DATA port write that starts the Fill operation
+                //on DMA Fill, busy flag is actually immediately (?) set after the CTRL port write,
+                //not the DATA port write that starts the Fill operation
             case VRAM_FILL:
                 //fall-through
             case VRAM_COPY:
@@ -123,22 +79,8 @@ public class VdpDmaHandler implements IVdpDmaHandler {
     }
 
     private void setupDmaRegister(long commandWord) {
-        dmaLen = getDmaLength();
-        int reg22 = vdpProvider.getRegisterData(22);
-        int reg21 = vdpProvider.getRegisterData(21);
-        sourceAddress = (reg22 & 0xFF) << 8 | reg21;
-        sourceAddressLowerBound = getDmaSourceLowerBound(sourceAddress);
-        sourceAddressWrap = getDmaSourceWrap(sourceAddress);
         destAddress = (int) ((commandWord & 0x3) << 14 | ((commandWord & 0x3FFF_0000L) >> 16));
-        destAddressIncrement = vdpProvider.getRegisterData(15);
-        if (dmaMode == DmaMode.MEM_TO_VRAM) {
-            sourceAddress = ((vdpProvider.getRegisterData(23) & 0x7F) << 16) | sourceAddress;
-            sourceAddress = sourceAddress << 1;  // needs to double it
-            sourceAddressLowerBound = getDmaSourceLowerBound(sourceAddress);
-            sourceAddressWrap = getDmaSourceWrap(sourceAddress);
-        } else {
-            printInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
-        }
+        printInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
     }
 
     public void setupDmaDataPort(int dataWord) {
@@ -154,13 +96,29 @@ public class VdpDmaHandler implements IVdpDmaHandler {
         return vdpProvider.getRegisterData(20) << 8 | vdpProvider.getRegisterData(19);
     }
 
+    private int getSourceAddressLow() {
+        int reg22 = vdpProvider.getRegisterData(22);
+        int reg21 = vdpProvider.getRegisterData(21);
+        return (reg22 & 0xFF) << 8 | reg21;
+    }
+
+    private int getSourceAddress() {
+        int sourceAddress = getSourceAddressLow();
+        if (dmaMode == DmaMode.MEM_TO_VRAM) {
+            sourceAddress = ((vdpProvider.getRegisterData(23) & 0x7F) << 16) | sourceAddress;
+        }
+        return sourceAddress;
+    }
+
     private void printInfo(String head) {
         if (!verbose) {
             return;
         }
+        int dmaLen = getDmaLength();
         String str = Objects.toString(dmaMode) + " " + head;
-        String src = Long.toHexString(sourceAddress);
+        String src = Long.toHexString(getSourceAddress());
         String dest = Long.toHexString(destAddress);
+        int destAddressIncrement = getDestAddressIncrement();
         if (dmaMode == DmaMode.VRAM_COPY) {
             str += ", srcAddr: " + src + ", destAddr: " + dest +
                     ", destAddrInc: " + destAddressIncrement + ", dmaLen: " + dmaLen + ", vramDestination: " + vramDestination;
@@ -176,10 +134,12 @@ public class VdpDmaHandler implements IVdpDmaHandler {
         LOG.info(str);
     }
 
+    @Override
     public DmaMode getDmaMode() {
         return dmaMode;
     }
 
+    @Override
     public boolean doDma(VideoMode videoMode, boolean isBlanking) {
         boolean done = false;
         int byteSlots = getDmaSlotsPerLine(dmaMode, videoMode, isBlanking);
@@ -187,16 +147,13 @@ public class VdpDmaHandler implements IVdpDmaHandler {
             case VRAM_FILL:
                 if (dmaFillReady) {
                     done = dmaFill(byteSlots);
-                    updateVdpRegisters();
                 }
                 break;
             case VRAM_COPY:
                 done = dmaCopy(byteSlots);
-                updateVdpRegisters();
                 break;
             case MEM_TO_VRAM:
                 done = dma68kToVram(byteSlots);
-                updateVdpRegisters();
                 break;
             default:
                 LOG.error("Unexpected dma setting: {}", dmaMode);
@@ -221,11 +178,13 @@ public class VdpDmaHandler implements IVdpDmaHandler {
     }
 
     public boolean dmaFillSingleByte() {
-        dmaLen = decreaseDmaLength();
+        int dmaLen = decreaseDmaLength();
 //        printInfo("IN PROGRESS");
         int msb = (dmaFillData >> 8) & 0xFF;
         memoryInterface.writeVramByte(destAddress, msb);
-        destAddress += destAddressIncrement;
+        //not needed
+        increaseSourceAddress(1);
+        destAddress += getDestAddressIncrement();
         return dmaLen == 0;
     }
 
@@ -240,13 +199,13 @@ public class VdpDmaHandler implements IVdpDmaHandler {
     }
 
     private boolean dmaCopySingleByte() {
-        dmaLen = decreaseDmaLength();
+        int dmaLen = decreaseDmaLength();
+        int sourceAddress = getSourceAddress();
 //        printInfo("IN PROGRESS");
         int data = memoryInterface.readVramByte(sourceAddress);
         memoryInterface.writeVramByte(destAddress, data);
-        sourceAddress++;
-        sourceAddress = wrapSourceAddress(sourceAddress);
-        destAddress += destAddressIncrement;
+        increaseSourceAddress(1);
+        destAddress += getDestAddressIncrement();
         return dmaLen == 0;
     }
 
@@ -254,12 +213,36 @@ public class VdpDmaHandler implements IVdpDmaHandler {
     //which results in an integer underflow if the length is 0. In other words, if you set the DMA length to 0,
     //it will act like you set it to $10000.
     private int decreaseDmaLength() {
-        return (dmaLen - 1) & (VdpProvider.VDP_VRAM_SIZE - 1);
+        int dmaLen = getDmaLength();
+        dmaLen = (dmaLen - 1) & (VdpProvider.VDP_VRAM_SIZE - 1);
+        dmaLen = Math.max(dmaLen, 0);
+        vdpProvider.updateRegisterData(19, dmaLen & 0xFF);
+        vdpProvider.updateRegisterData(20, dmaLen >> 8);
+        return dmaLen;
+    }
+
+    private int increaseSourceAddress(int inc) {
+        int sourceAddress = getSourceAddressLow() + inc;
+        setSourceAddress(sourceAddress);
+        return sourceAddress;
+    }
+
+    private void setSourceAddress(int sourceAddress) {
+        int reg22 = (sourceAddress >> 8) & 0xFF;
+        int reg21 = sourceAddress & 0xFF;
+        vdpProvider.updateRegisterData(21, reg21);
+        vdpProvider.updateRegisterData(22, reg22);
+    }
+
+    private int getDestAddressIncrement() {
+        return vdpProvider.getRegisterData(15);
     }
 
     private boolean dma68kToVram(int byteSlots) {
         byteSlots = vramDestination == VdpProvider.VdpRamType.VRAM ? byteSlots : byteSlots * 2;
         printInfo("START, Dma byteSlots: " + byteSlots);
+        int dmaLen = 0;
+        int sourceAddress = getSourceAddress() << 1;
         do {
             //dmaLen is words
             dmaLen = decreaseDmaLength();
@@ -267,36 +250,11 @@ public class VdpDmaHandler implements IVdpDmaHandler {
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
             memoryInterface.writeVideoRamWord(vramDestination, dataWord, destAddress);
 //            printInfo("IN PROGRESS");
-            sourceAddress += 2;
-            sourceAddress = wrapSourceAddress(sourceAddress);
-            destAddress += destAddressIncrement;
+            sourceAddress = increaseSourceAddress(2) << 1;
+            destAddress += getDestAddressIncrement();
         } while (dmaLen > 0 && byteSlots > 0);
         printInfo("Byte slots remaining: " + byteSlots);
         return dmaLen == 0;
-    }
-
-    private static int getDmaSourceLowerBound(int sourceAddress) {
-        return sourceAddress - (sourceAddress % getDmaSourceWrap(sourceAddress));
-    }
-
-    private static int getDmaSourceWrap(int sourceAddress) {
-        return sourceAddress >= BusProvider.ADDRESS_RAM_MAP_START ? DMA_RAM_SOURCE_ADDRESS_WRAP
-                : DMA_ROM_SOURCE_ADDRESS_WRAP;
-    }
-
-    private int wrapSourceAddress(int sourceAddress) {
-        return (sourceAddress % sourceAddressWrap) + sourceAddressLowerBound;
-    }
-
-    private void updateVdpRegisters() {
-        dmaLen = Math.max(dmaLen, 0);
-        vdpProvider.updateRegisterData(19, dmaLen & 0xFF);
-        vdpProvider.updateRegisterData(20, dmaLen >> 8);
-
-        int reg22 = (sourceAddress >> 8) & 0xFF;
-        int reg21 = sourceAddress & 0xFF;
-        vdpProvider.updateRegisterData(21, reg21);
-        vdpProvider.updateRegisterData(22, reg22);
     }
 
     private DmaMode getDmaMode(int reg17, VdpProvider.VramMode vramMode) {
@@ -309,7 +267,7 @@ public class VdpDmaHandler implements IVdpDmaHandler {
                 mode = DmaMode.VRAM_COPY;
                 vramDestination = VdpProvider.VdpRamType.VRAM;
                 break;
-                //fall-through
+            //fall-through
             case 2:
                 mode = DmaMode.VRAM_FILL;
                 if (vramMode == VdpProvider.VramMode.vramWrite) {
