@@ -259,7 +259,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             }
         } else if (address == 0xC0001C) {
             LOG.warn("Ignoring VDP debug register write, address : " + pad4(address));
-        } else if (address >= RAM_START_ADDRESS && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
+        } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             return Util.readRam(memory, size, address);
         } else {
             LOG.warn("BUS READ NOT MAPPED: " + pad4(address) + " - " + pad4(cpu.getPC()));
