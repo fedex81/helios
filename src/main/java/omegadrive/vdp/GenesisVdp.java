@@ -141,7 +141,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         this.memoryInterface = new GenesisVdpMemoryInterface();
         this.colorMapper = new VdpColorMapper();
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
-        this.dmaHandler = VdpDmaHandlerImpl.createInstance(this, memoryInterface, bus);
+        this.dmaHandler = VdpDmaHandlerImpl2.createInstance(this, memoryInterface, bus);
     }
 
     @Override

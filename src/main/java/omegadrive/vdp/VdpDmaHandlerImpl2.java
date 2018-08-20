@@ -35,8 +35,8 @@ public class VdpDmaHandlerImpl2 implements VdpDmaHandler {
     private DmaMode dmaMode = null;
     private boolean dmaFillReady;
 
-    public static VdpDmaHandlerImpl2 createInstance(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
-                                                    BusProvider busProvider) {
+    public static VdpDmaHandler createInstance(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
+                                               BusProvider busProvider) {
         VdpDmaHandlerImpl2 d = new VdpDmaHandlerImpl2();
         d.vdpProvider = vdpProvider;
         d.busProvider = busProvider;
@@ -181,7 +181,7 @@ public class VdpDmaHandlerImpl2 implements VdpDmaHandler {
 
     public boolean dmaFillSingleByte() {
         int dmaLen = decreaseDmaLength();
-//        printInfo("IN PROGRESS");
+        printInfo("IN PROGRESS");
         int msb = (dmaFillData >> 8) & 0xFF;
         memoryInterface.writeVramByte(destAddress, msb);
         //not needed
@@ -203,7 +203,7 @@ public class VdpDmaHandlerImpl2 implements VdpDmaHandler {
     private boolean dmaCopySingleByte() {
         int dmaLen = decreaseDmaLength();
         int sourceAddress = getSourceAddress();
-//        printInfo("IN PROGRESS");
+        printInfo("IN PROGRESS");
         int data = memoryInterface.readVramByte(sourceAddress);
         memoryInterface.writeVramByte(destAddress, data);
         increaseSourceAddress(1);
@@ -244,15 +244,16 @@ public class VdpDmaHandlerImpl2 implements VdpDmaHandler {
         byteSlots = vramDestination == VdpProvider.VdpRamType.VRAM ? byteSlots : byteSlots * 2;
         printInfo("START, Dma byteSlots: " + byteSlots);
         int dmaLen = 0;
-        int sourceAddress = getSourceAddress() << 1;
+        int sourceAddress = 0;
         do {
             //dmaLen is words
             dmaLen = decreaseDmaLength();
+            sourceAddress = getSourceAddress() << 1; //needs to double it
             byteSlots -= 2;
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
             memoryInterface.writeVideoRamWord(vramDestination, dataWord, destAddress);
-//            printInfo("IN PROGRESS");
-            sourceAddress = increaseSourceAddress(2) << 1;
+            printInfo("IN PROGRESS");
+            increaseSourceAddress(1); //increase by 1, becomes 2 (bytes) when doubling
             destAddress += getDestAddressIncrement();
         } while (dmaLen > 0 && byteSlots > 0);
         printInfo("Byte slots remaining: " + byteSlots);
@@ -325,4 +326,37 @@ public class VdpDmaHandlerImpl2 implements VdpDmaHandler {
         System.out.println(all);
 
     }
+    /**
+     * None of the DMA register settings are "cached", they are used live.
+     * In particular, the DMA source address and transfer count are actively modified during DMA operations.
+     * You can, for example, perform a DMA transfer for a count of 0x1000,
+     * then only rewrite the lower transfer count byte with 0x80, and trigger another DMA transfer,
+     * and it will only perform a transfer for 0x80 steps.
+     * <p>
+     * I can tell you that the DMA source address registers are never cleared under any circumstances,
+     * but a DMA operation will actively modify them as it runs,
+     * so you would expect the source address registers to be incremented by a DMA operation.
+     * I can tell you that the correct behaviour is for the combined DMA source address registers 21 and 22
+     * to be incremented by 1 on each DMA update step, with every DMA operation,
+     * including a DMA fill for what it's worth, even though it doesn't use the source address.
+     * DMA source address register 23 is never modified under any circumstances by the DMA operation.
+     * This is why a DMA transfer wraps at 0x20000 byte boundaries:
+     * it's unable to modify the upper DMA source address register.
+     * If it was able to do this, it could inadvertantly modify the DMA mode during a DMA operation,
+     * which would be very bad.
+     * <p>
+     * Here are some other mitigating factors which may cause you problems:
+     * -DMA operations to invalid write targets still run to completion, the result is simply not stored,
+     * so if a DMA operation is triggered to an invalid target, the DMA source address still needs to be updated.
+     * -DMA operations always run to completion, they never abort, IE, when you reach the "end" of CRAM or VSRAM.
+     * Writes to CRAM and VSRAM wrap at an 0x80 byte boundary.
+     * Writes to the upper portion of VSRAM in this region (0x50-0x80) are discarded.
+     * <p>
+     * Any information you may read which is contrary to this info (IE, in genvdp.txt) is incorrect.
+     * http://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=908&p=15801&hilit=dma+wrap#p15801
+     *
+     *     //Games that use VRAM copies include Aleste, Bad Omen, and Viewpoint.
+     *     //Langrisser II
+     *     //James Pond 3 - Operation Starfish - some platforms requires correct VRAM Copy
+     */
 }
