@@ -2,6 +2,7 @@ package omegadrive.vdp;
 
 import omegadrive.Genesis;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.VdpHLineProvider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -1,6 +1,7 @@
-package omegadrive.vdp;
+package omegadrive.vdp.model;
 
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.VdpProvider;
 
 /**
  * ${FILE}

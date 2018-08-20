@@ -1,4 +1,4 @@
-package omegadrive.vdp;
+package omegadrive.vdp.model;
 
 /**
  * ${FILE}

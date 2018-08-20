@@ -1,6 +1,7 @@
 package omegadrive.vdp;
 
 import omegadrive.Genesis;
+import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

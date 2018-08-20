@@ -1,5 +1,6 @@
 package omegadrive.vdp;
 
+import omegadrive.vdp.model.VdpMemoryInterface;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

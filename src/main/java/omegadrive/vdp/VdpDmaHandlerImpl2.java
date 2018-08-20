@@ -4,6 +4,8 @@ import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.IVdpDmaHandler;
+import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

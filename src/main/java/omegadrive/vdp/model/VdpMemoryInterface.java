@@ -1,6 +1,7 @@
-package omegadrive.vdp;
+package omegadrive.vdp.model;
 
 import omegadrive.util.Size;
+import omegadrive.vdp.VdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
