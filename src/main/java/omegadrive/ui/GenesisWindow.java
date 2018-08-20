@@ -25,6 +25,8 @@ public interface GenesisWindow {
 
     void setFullScreen(boolean value);
 
+    String getRegionOverride();
+
     GenesisWindow HEADLESS_INSTANCE = new GenesisWindow() {
         @Override
         public void addKeyListener(KeyAdapter keyAdapter) {
@@ -54,6 +56,11 @@ public interface GenesisWindow {
         @Override
         public void setFullScreen(boolean value) {
 
+        }
+
+        @Override
+        public String getRegionOverride() {
+            return null;
         }
     };
 }

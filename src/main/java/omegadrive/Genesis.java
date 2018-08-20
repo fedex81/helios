@@ -256,7 +256,7 @@ public class Genesis implements GenesisProvider {
             String rom = file.getFileName().toString();
             Thread.currentThread().setName(threadNamePrefix + rom);
             emuFrame.setTitle(rom);
-            region = RegionDetector.detectRegion(memory);
+            region = getRegionInternal(memory);
             LOG.info("Running game: " + rom + ", region: " + region);
             sound = JavaSoundManager.createSoundProvider(region);
             bus.attachDevice(sound);
@@ -273,6 +273,18 @@ public class Genesis implements GenesisProvider {
             loop();
             handleCloseGame();
         }
+    }
+
+
+    private RegionDetector.Region getRegionInternal(MemoryProvider memory) {
+        RegionDetector.Region romRegion = RegionDetector.detectRegion(memory);
+        String regionOvr = emuFrame.getRegionOverride();
+        RegionDetector.Region ovrRegion = RegionDetector.getRegion(regionOvr);
+        if (ovrRegion != null && ovrRegion != romRegion) {
+            LOG.info("Setting region override from: " + romRegion + " to " + ovrRegion);
+            romRegion = ovrRegion;
+        }
+        return romRegion;
     }
 
     private static int CYCLES = 2;

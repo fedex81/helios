@@ -49,9 +49,7 @@ public class RegionDetector {
 
         Region res = optRegion.orElse(null);
         if (!optRegion.isPresent()) {
-            if (verbose) {
-                LOG.warn("Unable to find a region, defaulting to EUROPE");
-            }
+            LOG.warn("Unable to find a region, defaulting to EUROPE");
             res = Region.EUROPE;
         }
 
@@ -111,5 +109,13 @@ public class RegionDetector {
             return versionCode;
         }
     }
+
+    public static Region getRegion(String regionName) {
+        if (Objects.isNull(regionName) || regionName.length() < 1) {
+            return null;
+        }
+        return Region.getRegion(regionName.charAt(0));
+    }
+
 
 }

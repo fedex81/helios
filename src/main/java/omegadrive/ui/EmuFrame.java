@@ -235,6 +235,14 @@ public class EmuFrame implements GenesisWindow {
         fullScreenItem.setState(value);
     }
 
+    @Override
+    public String getRegionOverride() {
+        String regionOverride = usaBios.getState() ? "USA" : null;
+        regionOverride = eurBios.getState() ? "EUROPE" : regionOverride;
+        regionOverride = japBios.getState() ? "JAPAN" : regionOverride;
+        return regionOverride;
+    }
+
     public void renderScreen(int[][] data, String label, VideoMode videoMode) {
         SwingUtilities.invokeLater(() -> {
             boolean changed = resizeScreen(videoMode);
