@@ -116,10 +116,9 @@ public class EmuFrame implements GenesisWindow {
         bar.add(menuView);
 
         usaBios = new JCheckBoxMenuItem("USA", false);
-//    	usaBios.addActionListener(new ScreenListener(1));
         menuBios.add(usaBios);
 
-        eurBios = new JCheckBoxMenuItem("Europe", true);
+        eurBios = new JCheckBoxMenuItem("Europe", false);
         menuBios.add(eurBios);
 
         japBios = new JCheckBoxMenuItem("Japan", false);
