@@ -134,6 +134,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
     private VideoMode videoMode;
+    private RegionDetector.Region region;
 
 
     public GenesisVdp(BusProvider bus) {
@@ -175,9 +176,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         writeRegister(22, 0);
         writeRegister(23, 128);
 
-        this.videoMode = getVideoMode(bus.getEmulator().getRegion(), false, false);
-        this.interruptHandler.setMode(videoMode);
-        this.pal = videoMode.isPal() ? 1 : 0;
+        region = bus.getEmulator().getRegion();
+        resetMode();
     }
 
     private int lastControl = -1;
@@ -561,7 +561,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     private void resetMode() {
-        VideoMode newVideoMode = getVideoMode(videoMode.getRegion(), isH40(), isV30());
+        VideoMode newVideoMode = getVideoMode(region, isH40(), isV30());
         if (videoMode != newVideoMode) {
             this.videoMode = newVideoMode;
             LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
