@@ -149,10 +149,32 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         empty = 1;
         vb = 1;
 
-        registers[23] = 0x80;
-        registers[15] = 0x02;
-        updateVariables(23, 0x80);
-        updateVariables(15, 0x02);
+        //from TMSS
+        writeRegister(0, 4);
+        writeRegister(1, 20);
+        writeRegister(2, 48);
+        writeRegister(3, 60);
+        writeRegister(4, 7);
+        writeRegister(5, 108);
+        writeRegister(6, 0);
+        writeRegister(7, 0);
+        writeRegister(8, 0);
+        writeRegister(9, 0);
+        writeRegister(10, 255);
+        writeRegister(11, 0);
+        writeRegister(12, 129);
+        writeRegister(13, 55);
+        writeRegister(14, 0);
+        writeRegister(15, 1);
+        writeRegister(16, 1);
+        writeRegister(17, 0);
+        writeRegister(18, 0);
+        writeRegister(19, 255);
+        writeRegister(20, 255);
+        writeRegister(21, 0);
+        writeRegister(22, 0);
+        writeRegister(23, 128);
+
         this.videoMode = getVideoMode(bus.getEmulator().getRegion(), false, false);
         this.interruptHandler.setMode(videoMode);
         this.pal = videoMode.isPal() ? 1 : 0;
@@ -366,7 +388,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private void writeRegister(int data) {
         int dataControl = data & 0x00FF;
         int reg = (data >> 8) & 0x1F;
+        writeRegister(reg, dataControl);
+    }
 
+    private void writeRegister(int reg, int dataControl) {
         if (reg >= VDP_REGISTERS_SIZE) {
             LOG.warn("Ignoring write to invalid VPD register: " + reg);
             return;
