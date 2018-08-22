@@ -17,10 +17,7 @@ public class GenesisMemoryProvider implements MemoryProvider {
 
     @Override
     public long readCartridgeByte(long address) {
-        if (address > cartridge.length - 1) {
-            LOG.error("Invalid ROM readByte, address : " + Integer.toHexString((int) address));
-            return 0;
-        }
+        address &= cartridge.length - 1;
         return cartridge[(int) address];
     }
 
