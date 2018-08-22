@@ -22,6 +22,8 @@ public interface BusProvider {
 
     int ADDRESS_UPPER_LIMIT = 0xFFFFFF;
     int ADDRESS_RAM_MAP_START = 0xE00000;
+    int Z80_ADDRESS_SPACE_START = 0xA00000;
+    int Z80_ADDRESS_SPACE_END = 0xA0FFFF;
 
     Logger LOG = LogManager.getLogger(BusProvider.class.getSimpleName());
 

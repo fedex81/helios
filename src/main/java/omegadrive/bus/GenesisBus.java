@@ -140,31 +140,11 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 return mapper.readData(address, size);
             }
             return Util.readRom(memory, size, address);
-        } else if (address > CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS && address < 0xA00000) {  //Reserved
+        } else if (address > CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
             LOG.warn("Read on reserved address: " + Integer.toHexString((int) address));
-
             return 0;
-//            The Z80 bus can only be accessed by the 68000 when the Z80 is running
-//            and the 68000 has the bus. (as opposed to the Z80 being reset, and/or
-//            having the bus itself)
-//
-//            Otherwise, reading $A00000-A0FFFF will return the MSB of the next
-//            instruction to be fetched, and the LSB will be set to zero. Writes
-//            are ignored.
-        } else if (address >= 0xA00000 && address <= 0xA0FFFF) {    //	Z80 addressing space
-            if (!z80.isBusRequested() || z80.isReset()) {
-                LOG.warn("Reading Z80 memory without busreq");
-                return 0;
-            }
-            data = z80.readMemory((int) (address - 0xA00000));
-            if (size == Size.BYTE) {
-                return data;
-            } else {
-                //    A word-wide read from Z80 RAM has the LSB of the data duplicated in the MSB
-                LOG.info("Word-wide read from Z80 ram");
-                return data << 8 | data;
-            }
-
+        } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
+            return z80MemoryRead(address, size);
         } else if (address == 0xA10000 || address == 0xA10001) {    //	Version register (read-only word-long)
             data = emu.getRegionCode();
             if (size == Size.BYTE) {
@@ -274,6 +254,42 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         }
     }
 
+    //            The Z80 bus can only be accessed by the 68000 when the Z80 is running
+//            and the 68000 has the bus. (as opposed to the Z80 being reset, and/or
+//            having the bus itself)
+//
+//            Otherwise, reading $A00000-A0FFFF will return the MSB of the next
+//            instruction to be fetched, and the LSB will be set to zero. Writes
+//            are ignored.
+//
+//            Addresses A08000-A0FFFFh mirror A00000-A07FFFh, so the 68000 cannot
+//            access it's own banked memory.
+    private long z80MemoryRead(long address, Size size) {
+        long data;
+        if (!z80.isBusRequested() || z80.isReset()) {
+            LOG.warn("Reading Z80 memory without busreq");
+            return 0;
+        }
+        int addressZ = (int) (address & 0xA07FFF) - Z80_ADDRESS_SPACE_START;
+        data = z80.readMemory(addressZ);
+        if (size == Size.BYTE) {
+            return data;
+        } else {
+            //    A word-wide read from Z80 RAM has the LSB of the data duplicated in the MSB
+            LOG.info("Word-wide read from Z80 ram");
+            return data << 8 | data;
+        }
+    }
+
+    private void z80MemoryWrite(long address, Size size, long data) {
+        if (!z80.isBusRequested() || z80.isReset()) {
+            LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
+            return;
+        }
+        int addressZ = (int) (address & 0xA07FFF) - Z80_ADDRESS_SPACE_START;
+        Util.writeZ80(z80, size, addressZ, data);
+    }
+
     //    Byte-wide reads
 //
 //    Reading from even VDP addresses returns the MSB of the 16-bit data,
@@ -372,23 +388,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 return;
             }
             LOG.error("Unexpected write to ROM: " + Long.toHexString(addressL) + ", value : " + data);
-        } else if (addressL >= 0xA00000 && addressL <= 0xA0FFFF) {    //	Z80 addressing space
-            //            The Z80 bus can only be accessed by the 68000 when the Z80 is running
-//            and the 68000 has the bus. (as opposed to the Z80 being reset, and/or
-//            having the bus itself)
-//
-//            Otherwise, reading $A00000-A0FFFF will return the MSB of the next
-//            instruction to be fetched, and the LSB will be set to zero. Writes
-//            are ignored.
-
-//            Addresses A08000-A0FFFFh mirror A00000-A07FFFh, so the 68000 cannot
-//            access it's own banked memory.
-            if (!z80.isBusRequested() || z80.isReset()) {
-                LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
-                return;
-            }
-            int addressInt = addressL >= 0xA08000 ? (int) (addressL - 0xA08000) : (int) (addressL - 0xA00000);
-            Util.writeZ80(z80, size, addressInt, data);
+        } else if (addressL >= Z80_ADDRESS_SPACE_START && addressL <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
+            z80MemoryWrite(address, size, data);
         } else if (addressL == 0xA10002 || addressL == 0xA10003) {    //	Controller 1 data
             joypad.writeDataRegister1(data);
 

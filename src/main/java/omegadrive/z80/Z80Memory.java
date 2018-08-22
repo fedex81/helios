@@ -81,6 +81,11 @@ public class Z80Memory implements IMemory {
                 LOG.info("Reading 68k memory, but pointer: " + romBankPointer);
             }
             address = address - START_68K_BANK + (romBank68kSerial << 15);
+            //this seems to be not allowed
+            if (address >= BusProvider.ADDRESS_RAM_MAP_START && address < BusProvider.ADDRESS_UPPER_LIMIT) {
+                LOG.warn("Z80 reading from 68k RAM");
+                return 0xFF;
+            }
             return (int) busProvider.read(address, Size.BYTE);
         } else {
             LOG.error("Illegal Z80 memory read: " + Integer.toHexString(address));
@@ -127,8 +132,11 @@ public class Z80Memory implements IMemory {
             LOG.warn("Illegal Write to VDP: " + Integer.toHexString(address));
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             address = address - START_68K_BANK + (romBank68kSerial << 15);
-//            LOG.warn("Illegal write to 68k: " + Integer.toHexString(address));
-            busProvider.write(address, data, Size.BYTE); //TODO Alex Kidd writes to PSG via 68k??
+            //Z80 write to 68k RAM - this seems to be allowed
+            if (address >= BusProvider.ADDRESS_RAM_MAP_START && address < BusProvider.ADDRESS_UPPER_LIMIT) {
+                LOG.info("Z80 writing to 68k RAM");
+            }
+            busProvider.write(address, data, Size.BYTE);
         } else {
             LOG.error("Illegal Z80 memory write:  " + Integer.toHexString(address) + ", " + data);
         }
