@@ -9,10 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * ${FILE}
@@ -77,6 +74,8 @@ public class RegionDetector {
         USA('U', 1, 0xA0, NTSC_FPS), //10100000
         EUROPE('E', 0, 0xC1, PAL_FPS); //11000001
 
+        private static EnumSet<Region> values = EnumSet.allOf(Region.class);
+
         private char region;
         private long versionCode;
         private int fps;
@@ -91,7 +90,7 @@ public class RegionDetector {
 
         public static Region getRegion(char region) {
             Region res = null;
-            for (Region r : Region.values()) {
+            for (Region r : Region.values) {
                 res = r.region == region ? r : res;
             }
             return res;

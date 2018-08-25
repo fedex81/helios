@@ -3,6 +3,8 @@ package omegadrive.vdp;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.VideoMode;
 
+import java.util.EnumSet;
+
 /**
  * ${FILE}
  * <p>
@@ -26,6 +28,8 @@ public interface VdpProvider {
         cramWrite(0b0011, VdpRamType.CRAM),
         vsramWrite(0b0101, VdpRamType.VSRAM);
 
+        private static EnumSet<VramMode> values = EnumSet.allOf(VramMode.class);
+
         private VdpRamType ramType;
         private int addressMode;
 
@@ -35,7 +39,7 @@ public interface VdpProvider {
         }
 
         public static VramMode getVramMode(int addressMode) {
-            for (VramMode mode : VramMode.values()) {
+            for (VramMode mode : VramMode.values) {
                 if (mode.addressMode == addressMode) {
                     return mode;
                 }

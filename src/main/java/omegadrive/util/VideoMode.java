@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
+import java.util.EnumSet;
 
 import static omegadrive.util.RegionDetector.Region.*;
 import static omegadrive.vdp.VdpProvider.*;
@@ -30,6 +31,8 @@ public enum VideoMode {
     NTSCJ_H40_V30(JAPAN, H40, V30_CELL),;
 
     private static Logger LOG = LogManager.getLogger(VideoMode.class.getSimpleName());
+
+    private static EnumSet<VideoMode> values = EnumSet.allOf(VideoMode.class);
 
     private RegionDetector.Region region;
     private int h;
@@ -67,7 +70,7 @@ public enum VideoMode {
                                          VideoMode currentMode) {
         int hMode = isH40 ? H40 : H32;
         int vMode = isV30 ? V30_CELL : V28_CELL;
-        for (VideoMode m : VideoMode.values()) {
+        for (VideoMode m : VideoMode.values) {
             if (m.getRegion() == region && m.v == vMode && m.h == hMode) {
                 return m;
             }

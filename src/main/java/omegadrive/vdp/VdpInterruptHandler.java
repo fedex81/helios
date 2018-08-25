@@ -7,6 +7,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.EnumSet;
+
 /**
  * ${FILE}
  * <p>
@@ -47,6 +49,7 @@ public class VdpInterruptHandler {
     private boolean hIntPending;
 
     private static boolean verbose = Genesis.verbose && false;
+
 
     enum VdpCounterMode {
         PAL_H32_V28(VideoMode.PAL_H32_V28,
@@ -114,6 +117,8 @@ public class VdpInterruptHandler {
                 0xB3 << 1, 0x06 << 1, 0xF0, 0xA5 << 1
         ),;
 
+        private static EnumSet<VdpCounterMode> values = EnumSet.allOf(VdpCounterMode.class);
+
         int hTotalCount;
         int hJumpTrigger;
         int hBlankSet;
@@ -141,7 +146,7 @@ public class VdpInterruptHandler {
         }
 
         public static VdpCounterMode getCounterMode(VideoMode videoMode) {
-            for (VdpCounterMode v : VdpCounterMode.values()) {
+            for (VdpCounterMode v : VdpCounterMode.values) {
                 if (v.videoMode == videoMode) {
                     return v;
                 }
