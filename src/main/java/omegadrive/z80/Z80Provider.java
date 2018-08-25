@@ -13,10 +13,6 @@ public interface Z80Provider {
 
     int executeInstruction();
 
-    int getPC();
-
-    void setPC(int pc);
-
     void requestBus();
 
     void unrequestBus();

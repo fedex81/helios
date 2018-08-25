@@ -48,7 +48,6 @@ public class Z80CoreWrapper implements Z80Provider {
     }
 
     private boolean updateRunningFlag() {
-        //TODO check why this breaks Z80 WAV PLAYER
         if (z80Core.isHalted()) {
             wasRunning = false;
             return false;
@@ -100,16 +99,6 @@ public class Z80CoreWrapper implements Z80Provider {
         str += String.format("NMI: %s  INTLine: %s  pendingE1: %s\n", state.isNMI(), state.isINTLine(),
                 state.isPendingEI());
         return str;
-    }
-
-    @Override
-    public int getPC() {
-        return z80Core.getRegPC();
-    }
-
-    @Override
-    public void setPC(int pc) {
-        z80Core.setRegPC(pc);
     }
 
     @Override
@@ -188,7 +177,7 @@ public class Z80CoreWrapper implements Z80Provider {
             @Override
             public int inPort(int port) {
                 LOG.warn("inPort: " + port);
-                return 0;
+                return 0xFF;
             }
 
             @Override
