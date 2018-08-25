@@ -360,6 +360,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 //            values, while the remaining address and code bits _retain_ their former value.
             codeRegister = (int) ((codeRegister & 0x3C | firstWrite >> 14) & 0x3F);
             addressRegister = (int) ((addressRegister & 0xC000) | (firstWrite & 0x3FFF));
+            vramMode = VramMode.getVramMode(codeRegister & 0xF);
             logInfo("writeAddr-1, firstWord: {}, address: {}, code: {}", firstWrite, addressRegister, codeRegister);
         } else {
             writePendingControlPort = false;
