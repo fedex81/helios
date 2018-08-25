@@ -1,5 +1,5 @@
 group 'com.fberti.genesis'
-version '0.03'
+version '0.04'
 //version '0.03-SNAPSHOT'
 
 apply plugin: 'java'
