@@ -23,7 +23,7 @@ public class CartridgeInfoProvider {
     public static final long DEFAULT_RAM_START_ADDRESS = 0xFF_0000;
     public static final long DEFAULT_SRAM_START_ADDRESS = 0x20_0000;
     public static final long DEFAULT_SRAM_END_ADDRESS = 0x20_FFFF;
-    public static final int DEFAULT_SRAM_BYTE_SIZE = (int) (DEFAULT_SRAM_END_ADDRESS - DEFAULT_SRAM_START_ADDRESS);
+    public static final int DEFAULT_SRAM_BYTE_SIZE = (int) (DEFAULT_SRAM_END_ADDRESS - DEFAULT_SRAM_START_ADDRESS) + 1;
 
     public static final int ROM_START_ADDRESS = 0x1A0;
     public static final int ROM_END_ADDRESS = 0x1A4;

@@ -150,14 +150,14 @@ public class Util {
         }
     }
 
-    public static void printLevelIfVerbose(Logger LOG, Level level, String str, Object... args) {
+    public static void printLevelIfVerbose(Logger LOG, Level level, String str, Object arg) {
         if (Genesis.verbose) {
-            printLevel(LOG, level, str, args);
+            printLevel(LOG, level, str, arg);
         }
     }
 
-    public static void printLevel(Logger LOG, Level level, String str, Object... args) {
-        LOG.log(level, str, args);
+    public static void printLevel(Logger LOG, Level level, String str, Object arg) {
+        LOG.log(level, str, arg);
     }
 
     public static List<Range<Integer>> getRangeList(int... values) {

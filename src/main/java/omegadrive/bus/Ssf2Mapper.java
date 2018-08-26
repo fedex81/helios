@@ -100,7 +100,7 @@ public class Ssf2Mapper implements GenesisMapper {
             data = data & 0x3F;
             banks[7] = (int) data;
         }
-        Util.printLevelIfVerbose(LOG, Level.INFO, "Bank write to: {} , value : {}", Long.toHexString(addressL), data);
+        Util.printLevelIfVerbose(LOG, Level.INFO, "Bank write to: {}", Long.toHexString(addressL));
     }
 
 }

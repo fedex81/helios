@@ -13,6 +13,9 @@ import org.apache.logging.log4j.Logger;
  * Federico Berti
  * <p>
  * Copyright 2018
+ *
+ * TODO
+ * http://gendev.spritesmind.net/forum/viewtopic.php?f=2&t=2476&p=29985&hilit=sram#p29985
  */
 public class BackupMemoryMapper implements GenesisMapper {
 
@@ -93,8 +96,10 @@ public class BackupMemoryMapper implements GenesisMapper {
         }
         sramRead &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (sramRead) {
-            address = address - SRAM_START_ADDRESS;
-            return Util.readSram(sram, size, address);
+            address = (address & 0xFFFF);
+            long res = Util.readSram(sram, size, address);
+            logInfo("SRAM read at: {} {}, result: {} ", address, size, res);
+            return res;
         }
         return baseMapper.readData(address, size);
     }
@@ -111,10 +116,17 @@ public class BackupMemoryMapper implements GenesisMapper {
         }
         sramWrite &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (sramWrite) {
-            address = address - SRAM_START_ADDRESS;
+            address = (address & 0xFFFF);
+            logInfo("SRAM write at: {} {}, data: {} ", address, size, data);
             Util.writeSram(sram, size, address, data);
         } else {
             baseMapper.writeData(address, data, size);
+        }
+    }
+
+    public static void logInfo(String str, Object... res) {
+        if (verbose) {
+            LOG.info(str, res);
         }
     }
 }

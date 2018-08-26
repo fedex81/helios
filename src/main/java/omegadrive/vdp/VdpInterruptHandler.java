@@ -287,7 +287,7 @@ public class VdpInterruptHandler {
     }
 
     public void setHIntPending(boolean hIntPending) {
-        printState("Set HIP: %s, hLinePassed: %s", hIntPending, hLinePassed);
+        printState("Set HIP: %s", hIntPending);
         this.hIntPending = hIntPending;
     }
 
@@ -318,9 +318,13 @@ public class VdpInterruptHandler {
 
     }
 
-    public void printState(String str, Object... args) {
+    public void printState(String str) {
+        printState(str, "");
+    }
+
+    public void printState(String str, Object arg) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
-            printStateString(String.format(str, args));
+            printStateString(String.format(str, arg));
         }
     }
 
