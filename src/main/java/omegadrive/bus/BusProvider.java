@@ -20,10 +20,16 @@ import org.apache.logging.log4j.Logger;
  */
 public interface BusProvider {
 
-    int ADDRESS_UPPER_LIMIT = 0xFFFFFF;
-    int ADDRESS_RAM_MAP_START = 0xE00000;
     int Z80_ADDRESS_SPACE_START = 0xA00000;
     int Z80_ADDRESS_SPACE_END = 0xA0FFFF;
+    int IO_ADDRESS_SPACE_START = 0xA10000;
+    int IO_ADDRESS_SPACE_END = 0xA10FFF;
+    int INTERNAL_REG_ADDRESS_SPACE_START = 0xA11000;
+    int INTERNAL_REG_ADDRESS_SPACE_END = 0xBFFFFF;
+    int VDP_ADDRESS_SPACE_START = 0xC00000;
+    int VDP_ADDRESS_SPACE_END = 0xDFFFFF;
+    int ADDRESS_UPPER_LIMIT = 0xFFFFFF;
+    int ADDRESS_RAM_MAP_START = 0xE00000;
 
     Logger LOG = LogManager.getLogger(BusProvider.class.getSimpleName());
 

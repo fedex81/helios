@@ -25,6 +25,11 @@ import java.util.Objects;
  * Based on genefusto GenVdp
  * https://github.com/DarkMoe/genefusto
  * @author DarkMoe
+ *
+ * https://wiki.megadrive.org/index.php?title=IO_Registers
+ * https://www.gamefaqs.com/genesis/916377-genesis/faqs/9755
+ * http://darkdust.net/writings/megadrive/initializing
+ *
  */
 public class GenesisBus implements BusProvider, GenesisMapper {
 
@@ -123,17 +128,29 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         busState = ok ? BusState.READY : BusState.NOT_READY;
     }
 
-    private static void logInfo(String str, Object... args) {
+    @Override
+    public long read(long address, Size size) {
         if (verbose) {
-            Util.printLevel(LOG, Level.INFO, str, args);
+            long res = mapper.readData(address, size);
+            logInfo("Read address: {}, size: {}, result: {}",
+                    Long.toHexString(address), size, Long.toHexString(res));
+            return res;
         }
+        return mapper.readData(address, size);
     }
 
+    @Override
+    public void write(long address, long data, Size size) {
+        if (verbose) {
+            logInfo("Write address: {}, data: {}, size: {}", Long.toHexString(address),
+                    Long.toHexString(data), size);
+        }
+        mapper.writeData(address, data, size);
+    }
 
     @Override
     public long readData(long address, Size size) {
         address = address & 0xFF_FFFF;
-        long data;
         if (address <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {  //ROM
             if (isSramUsedWithBrokenHeader(address)) { // Buck Rogers
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
@@ -145,230 +162,20 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             return 0;
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             return z80MemoryRead(address, size);
-        } else if (address == 0xA10000 || address == 0xA10001) {    //	Version register (read-only word-long)
-            data = emu.getRegionCode();
-            if (size == Size.BYTE) {
-                return data;
-            } else {
-                return data << 8 | data;
-            }
-
-        } else if (address == 0xA10002 || address == 0xA10003) {    //	Controller 1 data
-            return joypad.readDataRegister1();
-
-        } else if (address == 0xA10004 || address == 0xA10005) {    //	Controller 2 data
-            return joypad.readDataRegister2();
-
-        } else if (address == 0xA10006 || address == 0xA10007) {    //	Expansion data
-            return joypad.readDataRegister3();
-
-        } else if (address == 0xA1000C || address == 0xA1000D) {    //	Expansion Port Control
-            LOG.warn("Expansion port control");
-            return 0;
-        } else if (address == 0xA10008 || address == 0xA10009) {    //	Controller 1 control
-            if (size == Size.BYTE) {
-                return joypad.readControlRegister1() & 0xFF;
-            } else {
-                return joypad.readControlRegister1();
-            }
-
-        } else if (address == 0xA1000A || address == 0xA1000B) {    //	Controller 2 control
-            if (size == Size.BYTE) {
-                return joypad.readControlRegister2() & 0xFF;
-            } else {
-                return joypad.readControlRegister2();
-            }
-        } else if (address == 0xA10013 || address == 0xA10019 || address == 0xA1001F) {
-            LOG.info("Reading serial control, " + pad4(address));
-            return 0;
-        }
-        //If the 68k wishes to access anything in the Z80 address space, the Z80 must be stopped.
-        // This can be accomplished through the register at $A11100.
-        // To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
-        // To see if the Z80 has stopped, bit 0 of $A11100 must be checked - if it's clear,
-        // the 68k may access the bus, but wait if it is set.
-        // Once access to the Z80 area is complete,
-        // #$0000 needs to be written to $A11100 to return the bus back to the Z80.
-        // No waiting to see if the bus is returned is required here ? it is handled automatically.
-        // However, if the Z80 is required to be reset (for example, to load a new program to it's memory)
-        // this may be done by writing #$0000 to $A11200, but only when the Z80 bus is requested.
-        // After returning the bus after loading the new program to it's memory,
-        // the Z80 may be let go from reset by writing #$0100 to $A11200.
-
-//            Reading this bit will return 0 if the bus can be accessed by the 68000,
-//            or 1 if the Z80 is still busy.
-
-//            If the Z80 is reset, or if it is running (meaning the 68000 does not
-//            have the bus) it will also return 1. The only time it will switch from
-//            1 to 0 is right after the bus is requested, and if the Z80 is still
-//            busy accessing memory or not.
-        else if (address == 0xA11100 || address == 0xA11101 || address == 0xA11200 || address == 0xA11201) {    //	Z80 bus request
-            int value = z80.isBusRequested() ? 0 : 1;
-            value = z80.isReset() ? 1 : value;
-//            Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
-//            the Z80's /BUSREQ line.
-            if (size == Size.WORD) {
-                value = value << 8;
-            }
-            return value;
-        } else if (address >= 0xA13000 && address <= 0xA130FF) {
-            LOG.warn("Unexpected mapper read at: " + Long.toHexString(address));
-        } else if (address >= 0xC00000 && address <= 0xC00007) { // VDP Data and Control
+        } else if (address >= IO_ADDRESS_SPACE_START && address <= IO_ADDRESS_SPACE_END) {    //IO Addressing space
+            return ioRead(address, size);
+        } else if (address >= INTERNAL_REG_ADDRESS_SPACE_START && address <= INTERNAL_REG_ADDRESS_SPACE_END) {
+            return internalRegRead(address, size);
+        } else if (address >= VDP_ADDRESS_SPACE_START && address <= VDP_ADDRESS_SPACE_END) { // VDP
             return vdpRead(address, size);
-        } else if (address >= 0xC00008 && address <= 0xC0000E) { //	VDP HV counter
-//            Reading the HV counter will return the following data:
-//
-//            VC7 VC6 VC5 VC4 VC3 VC2 VC1 VC0     (D15-D08)
-//            HC8 HC7 HC6 HC5 HC4 HC3 HC2 HC1     (D07-D00)
-//
-//            VCx = Vertical position in lines.
-//            HCx = Horizontal position in pixels.
-//
-//            According to the manual, VC0 is replaced with VC8 when in interlace mode 2.
-//
-//            For 8-bit reads, the even byte (e.g. C00008h) returns the V counter, and
-//            the odd byte (e.g. C00009h) returns the H counter.
-            int v = vdp.getVCounter();
-            int h = vdp.getHCounter();
-            logVdpCounter(v, h);
-            if (size == Size.WORD) {
-                return (v << 8) | h;
-            } else if (size == Size.BYTE) {
-                boolean even = address % 2 == 0;
-                return even ? v : h;
-            }
-        } else if (address == 0xC0001C) {
-            LOG.warn("Ignoring VDP debug register write, address : " + pad4(address));
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             return Util.readRam(memory, size, address);
         } else {
             LOG.warn("BUS READ NOT MAPPED: " + pad4(address) + " - " + pad4(cpu.getPC()));
         }
-
         return 0;
     }
 
-    private void logVdpCounter(int v, int h) {
-        if (Genesis.verbose) {
-            LOG.info("Read HV counter, v=" + v + ", h=" + h);
-        }
-    }
-
-    //            The Z80 bus can only be accessed by the 68000 when the Z80 is running
-//            and the 68000 has the bus. (as opposed to the Z80 being reset, and/or
-//            having the bus itself)
-//
-//            Otherwise, reading $A00000-A0FFFF will return the MSB of the next
-//            instruction to be fetched, and the LSB will be set to zero. Writes
-//            are ignored.
-//
-//            Addresses A08000-A0FFFFh mirror A00000-A07FFFh, so the 68000 cannot
-//            access it's own banked memory.
-    private long z80MemoryRead(long address, Size size) {
-        long data;
-        if (!z80.isBusRequested() || z80.isReset()) {
-            LOG.warn("Reading Z80 memory without busreq");
-            return 0;
-        }
-        int addressZ = (int) (address & 0xA07FFF) - Z80_ADDRESS_SPACE_START;
-        data = z80.readMemory(addressZ);
-        if (size == Size.BYTE) {
-            return data;
-        } else {
-            //    A word-wide read from Z80 RAM has the LSB of the data duplicated in the MSB
-            LOG.info("Word-wide read from Z80 ram");
-            return data << 8 | data;
-        }
-    }
-
-    private void z80MemoryWrite(long address, Size size, long data) {
-        if (!z80.isBusRequested() || z80.isReset()) {
-            LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
-            return;
-        }
-        int addressZ = (int) (address & 0xA07FFF) - Z80_ADDRESS_SPACE_START;
-        Util.writeZ80(z80, size, addressZ, data);
-    }
-
-    //    Byte-wide reads
-//
-//    Reading from even VDP addresses returns the MSB of the 16-bit data,
-//    and reading from odd address returns the LSB:
-    private long vdpRead(long address, Size size) {
-        boolean even = address % 2 == 0;
-        boolean isVdpData = address <= 0xC00003;
-        //read word by default
-        long data = isVdpData ? vdp.readDataPort() : vdp.readControl();
-        if (size == Size.BYTE) {
-            data = even ? data >> 8 : data & 0xFF;
-        } else if (size == Size.LONG) {
-            data = data << 16;
-            long data2 = isVdpData ? vdp.readDataPort() : vdp.readControl();
-            data |= data2;
-        }
-        return data;
-    }
-
-    //      Doing an 8-bit write to the control or data port is interpreted by
-//                the VDP as a 16-bit word, with the data written used for both halfs
-//                of the word.
-    private void vdpWrite(long addressL, Size size, long data) {
-        addressL = addressL & 0x1F; //low 5 bits
-        if (addressL < 0x4) {    //DATA PORT
-            if (size == Size.BYTE) {
-                data = data << 8 | data;
-                vdp.writeDataPort(data);
-            } else if (size == Size.WORD) {
-                vdp.writeDataPort(data);
-            } else {
-                vdp.writeDataPort(data >> 16);
-                vdp.writeDataPort(data & 0xFFFF);
-            }
-        } else if (addressL >= 0x4 && addressL < 0x8) {    //CONTROL PORT
-            if (size == Size.BYTE) {
-                data = data << 8 | data;
-                vdp.writeControlPort(data);
-            } else if (size == Size.WORD) {
-                vdp.writeControlPort(data);
-            } else {
-                vdp.writeControlPort(data >> 16);
-                vdp.writeControlPort(data & 0xFFFF);
-            }
-        } else if (addressL >= 0x8 && addressL < 0x0F) {   //HV Counter
-            LOG.warn("HV counter write");
-        }
-        //            Doing byte-wide writes to even PSG addresses has no effect.
-//
-//            If you want to write to the PSG via word-wide writes, the data
-//            must be in the LSB. For instance:
-//
-//            move.b      (a4)+, d0       ; PSG data in LSB
-//            move.w      d0, $C00010     ; Write to PSG
-        else if (addressL >= 0x10 && addressL < 0x18) {
-            int psgData = (int) (data & 0xFF);
-            if (size == Size.WORD) {
-                LOG.warn("PSG word write, address: " + Long.toHexString(addressL) + ", data: " + data);
-            }
-            sound.getPsg().write(psgData);
-        } else {
-            LOG.warn("Unexpected vdpWrite, address: " + Long.toHexString(addressL) + ", data: " + data);
-        }
-    }
-
-    private static boolean isSramUsedWithBrokenHeader(long address) {
-        boolean noOverlapBetweenRomAndSram =
-                CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS > GenesisBus.ROM_END_ADDRESS;
-        return noOverlapBetweenRomAndSram &&
-                (address >= CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS &&
-                        address <= CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS);
-    }
-
-    @Override
-    public GenesisProvider getEmulator() {
-        return emu;
-    }
-
-    //	https://wiki.megadrive.org/index.php?title=IO_Registers
     @Override
     public void writeData(long address, long data, Size size) {
         long addressL = (address & 0xFF_FFFF);
@@ -390,33 +197,67 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             LOG.error("Unexpected write to ROM: " + Long.toHexString(addressL) + ", value : " + data);
         } else if (addressL >= Z80_ADDRESS_SPACE_START && addressL <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             z80MemoryWrite(address, size, data);
-        } else if (addressL == 0xA10002 || addressL == 0xA10003) {    //	Controller 1 data
-            joypad.writeDataRegister1(data);
+        } else if (addressL >= IO_ADDRESS_SPACE_START && addressL <= IO_ADDRESS_SPACE_END) {    //	IO addressing space
+            ioWrite(addressL, size, data);
+        } else if (addressL >= INTERNAL_REG_ADDRESS_SPACE_START && addressL <= INTERNAL_REG_ADDRESS_SPACE_END) {
+            internalRegWrite(addressL, size, data);
+        } else if (addressL >= VDP_ADDRESS_SPACE_START && addressL < VDP_ADDRESS_SPACE_END) {  //VDP
+            vdpWrite(addressL, size, data);
+        } else if (addressL >= ADDRESS_RAM_MAP_START && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
+            long addressZ = addressL & 0xFFFF;
+            Util.writeRam(memory, size, addressZ, data);
+        } else {
+            LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) addressL) + " - PC: " + Integer.toHexString((int) cpu.getPC()));
+        }
+    }
 
-        } else if (addressL == 0xA10004 || addressL == 0xA10005) {    //	Controller 2 data
-            joypad.writeDataRegister2(data);
+    private void logVdpCounter(int v, int h) {
+        if (Genesis.verbose) {
+            LOG.info("Read HV counter, v=" + v + ", h=" + h);
+        }
+    }
 
-        } else if (addressL == 0xA10006 || addressL == 0xA10007) {    //	Expansion port data
-            LOG.warn("Expansion port data");
+    //If the 68k wishes to access anything in the Z80 address space, the Z80 must be stopped.
+    // This can be accomplished through the register at $A11100.
+    // To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
+    // To see if the Z80 has stopped, bit 0 of $A11100 must be checked - if it's clear,
+    // the 68k may access the bus, but wait if it is set.
+    // Once access to the Z80 area is complete,
+    // #$0000 needs to be written to $A11100 to return the bus back to the Z80.
+    // No waiting to see if the bus is returned is required here ? it is handled automatically.
+    // However, if the Z80 is required to be reset (for example, to load a new program to it's memory)
+    // this may be done by writing #$0000 to $A11200, but only when the Z80 bus is requested.
+    // After returning the bus after loading the new program to it's memory,
+    // the Z80 may be let go from reset by writing #$0100 to $A11200.
 
-        } else if (addressL == 0xA10009) {    //	Controller 1 control
-            joypad.writeControlRegister1(data);
+//            Reading this bit will return 0 if the bus can be accessed by the 68000,
+//            or 1 if the Z80 is still busy.
 
-        } else if (addressL == 0xA1000B) {    //	Controller 2 control
-            joypad.writeControlRegister2(data);
+    //            If the Z80 is reset, or if it is running (meaning the 68000 does not
+//            have the bus) it will also return 1. The only time it will switch from
+//            1 to 0 is right after the bus is requested, and if the Z80 is still
+//            busy accessing memory or not.
+    private long internalRegRead(long address, Size size) {
+        int value = 0;
+        if (address == 0xA11100 || address == 0xA11101 || address == 0xA11200 || address == 0xA11201) {    //	Z80 bus request
+            value = z80.isBusRequested() ? 0 : 1;
+            value = z80.isReset() ? 1 : value;
+//            Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
+//            the Z80's /BUSREQ line.
+            if (size == Size.WORD) {
+                value = value << 8;
+            }
+            return value;
+        } else if (address >= 0xA13000 && address <= 0xA130FF) {
+            LOG.warn("Unexpected mapper read at: " + Long.toHexString(address));
+        } else {
+            LOG.warn("Unexpected internalRegRead: " + address);
+        }
+        return value;
+    }
 
-        } else if (addressL == 0xA1000D) {    //	Controller 2 control
-            joypad.writeControlRegister3(data);
-
-        } else if (addressL == 0xA10012 || addressL == 0xA10013) {    //	Controller 1 serial control
-            LOG.warn("IMPL CONTR 1 !!");
-
-        } else if (addressL == 0xA10018 || addressL == 0xA10019) {    //	Controller 2 serial control
-            LOG.warn("IMPL CONTR 2 !!");
-
-        } else if (addressL == 0xA1001E || addressL == 0xA1001F) {    //	Expansion port serial control
-            LOG.warn("expansion port serial control !!");
-        } else if (addressL == 0xA11000 || addressL == 0xA11001) {    //	Memory mode register
+    private void internalRegWrite(long addressL, Size size, long data) {
+        if (addressL == 0xA11000 || addressL == 0xA11001) {    //	Memory mode register
 //            Only D8 of address $A11OO0 is effective and for WRITE ONLY.
 //            $A11OO0 D8 ( W)
 //            O: ROM MODE
@@ -489,14 +330,227 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             }
         } else if (addressL == 0xA14000) {    //	VDP TMSS
             LOG.warn("TMSS: " + Integer.toHexString((int) data));
-        } else if (addressL >= 0xC00000 && addressL < 0xDFFFFF) {  //VDP
-            vdpWrite(addressL, size, data);
-        } else if (addressL >= ADDRESS_RAM_MAP_START && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            long addressZ = addressL & 0xFFFF;
-            Util.writeRam(memory, size, addressZ, data);
         } else {
-            LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) addressL) + " - PC: " + Integer.toHexString((int) cpu.getPC()));
+            LOG.warn("Unexpected internalRegWrite: " + addressL + ", " + data);
         }
+    }
+
+    private long ioRead(long address, Size size) {
+        long data = 0;
+        if (address == 0xA10000 || address == 0xA10001) {    //	Version register (read-only word-long)
+            data = emu.getRegionCode();
+            if (size == Size.BYTE) {
+                return data;
+            } else {
+                return data << 8 | data;
+            }
+
+        } else if (address == 0xA10002 || address == 0xA10003) {    //	Controller 1 data
+            data = joypad.readDataRegister1();
+
+        } else if (address == 0xA10004 || address == 0xA10005) {    //	Controller 2 data
+            data = joypad.readDataRegister2();
+
+        } else if (address == 0xA10006 || address == 0xA10007) {    //	Expansion data
+            data = joypad.readDataRegister3();
+        } else if (address == 0xA10008 || address == 0xA10009) {    //	Controller 1 control
+            if (size == Size.BYTE) {
+                data = joypad.readControlRegister1() & 0xFF;
+            } else if (size == Size.WORD) {
+                data = joypad.readControlRegister1();
+            } else if (size == Size.LONG) { //Codemasters
+                data = joypad.readControlRegister1();
+                data = data << 16 | joypad.readControlRegister2();
+            }
+        } else if (address == 0xA1000A || address == 0xA1000B) {    //	Controller 2 control
+            if (size == Size.BYTE) {
+                data = joypad.readControlRegister2() & 0xFF;
+            } else {
+                data = joypad.readControlRegister2();
+            }
+        } else if (address == 0xA1000C || address == 0xA1000D) {    //	Expansion Port Control
+            if (size == Size.BYTE) {
+                data = joypad.readControlRegister3() & 0xFF;
+            } else {
+                data = joypad.readControlRegister3();
+            }
+        } else if (address == 0xA10013 || address == 0xA10019 || address == 0xA1001F) {
+            LOG.info("Reading serial control, " + pad4(address));
+            data = 0;
+        } else {
+            LOG.warn("Unexpected ioRead: " + address);
+        }
+        return data;
+    }
+
+    private void ioWrite(long addressL, Size size, long data) {
+        if (size != Size.BYTE) {
+            LOG.warn("Word wide write: " + addressL + ", " + data);
+        }
+        if (addressL == 0xA10002 || addressL == 0xA10003) {    //	Controller 1 data
+            joypad.writeDataRegister1(data);
+        } else if (addressL == 0xA10004 || addressL == 0xA10005) {    //	Controller 2 data
+            joypad.writeDataRegister2(data);
+        } else if (addressL == 0xA10006 || addressL == 0xA10007) {    //	Expansion port data
+            LOG.warn("Expansion port data");
+        } else if (addressL == 0xA10008 || addressL == 0xA10009) {    //	Controller 1 control
+            joypad.writeControlRegister1(data & 0xFF);
+        } else if (addressL == 0xA1000A || addressL == 0xA1000B) {    //	Controller 2 control
+            joypad.writeControlRegister2(data & 0xFF);
+        } else if (addressL == 0xA1000C || addressL == 0xA1000D) {    //	Controller 2 control
+            joypad.writeControlRegister3(data & 0xFF);
+        } else if (addressL == 0xA10012 || addressL == 0xA10013) {    //	Controller 1 serial control
+            LOG.warn("IMPL CONTR 1 !!");
+        } else if (addressL == 0xA10018 || addressL == 0xA10019) {    //	Controller 2 serial control
+            LOG.warn("IMPL CONTR 2 !!");
+        } else if (addressL == 0xA1001E || addressL == 0xA1001F) {    //	Expansion port serial control
+            LOG.warn("expansion port serial control !!");
+        } else {
+            LOG.warn("Unexpected ioWrite: " + addressL + ", " + data);
+        }
+    }
+
+    //            The Z80 bus can only be accessed by the 68000 when the Z80 is running
+//            and the 68000 has the bus. (as opposed to the Z80 being reset, and/or
+//            having the bus itself)
+//
+//            Otherwise, reading $A00000-A0FFFF will return the MSB of the next
+//            instruction to be fetched, and the LSB will be set to zero. Writes
+//            are ignored.
+//
+//            Addresses A08000-A0FFFFh mirror A00000-A07FFFh, so the 68000 cannot
+//            access it's own banked memory.
+    private long z80MemoryRead(long address, Size size) {
+        long data;
+        if (!z80.isBusRequested() || z80.isReset()) {
+            LOG.warn("Reading Z80 memory without busreq");
+            return 0;
+        }
+        int addressZ = (int) (address & 0xA07FFF) - Z80_ADDRESS_SPACE_START;
+        data = z80.readMemory(addressZ);
+        if (size == Size.BYTE) {
+            return data;
+        } else {
+            //    A word-wide read from Z80 RAM has the LSB of the data duplicated in the MSB
+            LOG.info("Word-wide read from Z80 ram");
+            return data << 8 | data;
+        }
+    }
+
+    private void z80MemoryWrite(long address, Size size, long data) {
+        if (!z80.isBusRequested() || z80.isReset()) {
+            LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
+            return;
+        }
+        int addressZ = (int) (address & 0xA07FFF) - Z80_ADDRESS_SPACE_START;
+        Util.writeZ80(z80, size, addressZ, data);
+    }
+
+    //    Byte-wide reads
+//
+//    Reading from even VDP addresses returns the MSB of the 16-bit data,
+//    and reading from odd address returns the LSB:
+    private long vdpRead(long address, Size size) {
+        long data = 0;
+        if (address >= 0xC00000 && address <= 0xC00007) {
+            boolean even = address % 2 == 0;
+            boolean isVdpData = address <= 0xC00003;
+            //read word by default
+            data = isVdpData ? vdp.readDataPort() : vdp.readControl();
+            if (size == Size.BYTE) {
+                data = even ? data >> 8 : data & 0xFF;
+            } else if (size == Size.LONG) {
+                data = data << 16;
+                long data2 = isVdpData ? vdp.readDataPort() : vdp.readControl();
+                data |= data2;
+            }
+        } else if (address >= 0xC00008 && address <= 0xC0000E) { //	VDP HV counter
+//            Reading the HV counter will return the following data:
+//
+//            VC7 VC6 VC5 VC4 VC3 VC2 VC1 VC0     (D15-D08)
+//            HC8 HC7 HC6 HC5 HC4 HC3 HC2 HC1     (D07-D00)
+//
+//            VCx = Vertical position in lines.
+//            HCx = Horizontal position in pixels.
+//
+//            According to the manual, VC0 is replaced with VC8 when in interlace mode 2.
+//
+//            For 8-bit reads, the even byte (e.g. C00008h) returns the V counter, and
+//            the odd byte (e.g. C00009h) returns the H counter.
+            int v = vdp.getVCounter();
+            int h = vdp.getHCounter();
+            logVdpCounter(v, h);
+            if (size == Size.WORD) {
+                return (v << 8) | h;
+            } else if (size == Size.BYTE) {
+                boolean even = address % 2 == 0;
+                return even ? v : h;
+            }
+        } else if (address == 0xC0001C) {
+            LOG.warn("Ignoring VDP debug register write, address : " + pad4(address));
+        } else {
+            LOG.warn("Unexpected vdpRead, address: " + Long.toHexString(address));
+        }
+        return data;
+    }
+
+    //      Doing an 8-bit write to the control or data port is interpreted by
+//                the VDP as a 16-bit word, with the data written used for both halfs
+//                of the word.
+    private void vdpWrite(long addressL, Size size, long data) {
+        addressL = addressL & 0x1F; //low 5 bits
+        if (addressL < 0x4) {    //DATA PORT
+            if (size == Size.BYTE) {
+                data = data << 8 | data;
+                vdp.writeDataPort(data);
+            } else if (size == Size.WORD) {
+                vdp.writeDataPort(data);
+            } else {
+                vdp.writeDataPort(data >> 16);
+                vdp.writeDataPort(data & 0xFFFF);
+            }
+        } else if (addressL >= 0x4 && addressL < 0x8) {    //CONTROL PORT
+            if (size == Size.BYTE) {
+                data = data << 8 | data;
+                vdp.writeControlPort(data);
+            } else if (size == Size.WORD) {
+                vdp.writeControlPort(data);
+            } else {
+                vdp.writeControlPort(data >> 16);
+                vdp.writeControlPort(data & 0xFFFF);
+            }
+        } else if (addressL >= 0x8 && addressL < 0x0F) {   //HV Counter
+            LOG.warn("HV counter write");
+        }
+        //            Doing byte-wide writes to even PSG addresses has no effect.
+//
+//            If you want to write to the PSG via word-wide writes, the data
+//            must be in the LSB. For instance:
+//
+//            move.b      (a4)+, d0       ; PSG data in LSB
+//            move.w      d0, $C00010     ; Write to PSG
+        else if (addressL >= 0x10 && addressL < 0x18) {
+            int psgData = (int) (data & 0xFF);
+            if (size == Size.WORD) {
+                LOG.warn("PSG word write, address: " + Long.toHexString(addressL) + ", data: " + data);
+            }
+            sound.getPsg().write(psgData);
+        } else {
+            LOG.warn("Unexpected vdpWrite, address: " + Long.toHexString(addressL) + ", data: " + data);
+        }
+    }
+
+    private static boolean isSramUsedWithBrokenHeader(long address) {
+        boolean noOverlapBetweenRomAndSram =
+                CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS > GenesisBus.ROM_END_ADDRESS;
+        return noOverlapBetweenRomAndSram &&
+                (address >= CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS &&
+                        address <= CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS);
+    }
+
+    @Override
+    public GenesisProvider getEmulator() {
+        return emu;
     }
 
     private void checkSsf2Mapper() {
@@ -505,27 +559,6 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private void checkBackupMemoryMapper(SramMode sramMode) {
         this.mapper = BackupMemoryMapper.getOrCreateInstance(this, mapper, cartridgeInfoProvider, sramMode);
-    }
-
-
-    @Override
-    public long read(long address, Size size) {
-        if (verbose) {
-            long res = mapper.readData(address, size);
-            logInfo("Read address: {}, size: {}, result: {}",
-                    Long.toHexString(address), size, Long.toHexString(res));
-            return res;
-        }
-        return mapper.readData(address, size);
-    }
-
-    @Override
-    public void write(long address, long data, Size size) {
-        if (verbose) {
-            logInfo("Write address: {}, data: {}, size: {}", Long.toHexString(address),
-                    Long.toHexString(data), size);
-        }
-        mapper.writeData(address, data, size);
     }
 
     @Override
@@ -556,9 +589,6 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         return s;
     }
 
-    //	https://www.gamefaqs.com/genesis/916377-genesis/faqs/9755
-    //	http://darkdust.net/writings/megadrive/initializing
-
     @Override
     public boolean checkInterrupts() {
         //VINT takes precedence over HINT
@@ -575,5 +605,17 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             return true;
         }
         return false;
+    }
+
+    private static void logInfo(String str, Object... args) {
+        if (verbose) {
+            Util.printLevel(LOG, Level.INFO, str, args);
+        }
+    }
+
+    public static void main(String[] args) {
+        long address = -2;
+        address = address & 0xFF_FFFF;
+        System.out.println(Long.toHexString(address));
     }
 }
