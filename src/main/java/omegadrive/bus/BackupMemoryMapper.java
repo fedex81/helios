@@ -41,8 +41,10 @@ public class BackupMemoryMapper implements GenesisMapper {
         mapper.sramMode = sramMode;
         mapper.cartridgeInfoProvider = cart;
         SRAM_START_ADDRESS = mapper.cartridgeInfoProvider.getSramStart();
+        SRAM_START_ADDRESS = SRAM_START_ADDRESS > 0 ? SRAM_START_ADDRESS : CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS;
         SRAM_END_ADDRESS = mapper.cartridgeInfoProvider.getSramEnd();
-        SRAM_AVAILABLE = mapper.cartridgeInfoProvider.isSramEnabled();
+        SRAM_END_ADDRESS = SRAM_END_ADDRESS > 0 ? SRAM_END_ADDRESS : CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS;
+        SRAM_AVAILABLE = true; //mapper.cartridgeInfoProvider.isSramEnabled();
         mapper.sram = new int[CartridgeInfoProvider.DEFAULT_SRAM_BYTE_SIZE];
         LOG.info("BackupMemoryMapper created");
         return mapper;
