@@ -62,6 +62,10 @@ public enum VideoMode {
         return h == H32;
     }
 
+    public boolean isH40() {
+        return h == H40;
+    }
+
     public boolean isV28() {
         return v == V28_CELL;
     }

@@ -138,5 +138,7 @@ public interface VdpProvider {
      */
     void setHip(boolean value);
 
+    boolean isDisplayEnabled();
+
     VideoMode getVideoMode();
 }
