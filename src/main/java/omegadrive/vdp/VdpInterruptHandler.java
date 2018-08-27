@@ -322,12 +322,29 @@ public class VdpInterruptHandler {
         printState(str, "");
     }
 
-    public void printState(String str, Object arg) {
+    public void printState(String str, String arg) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(String.format(str, arg));
         }
     }
 
+    public void printState(String str, long arg) {
+        if (verbose && LOG.isEnabled(Level.INFO)) {
+            printStateString(String.format(str, arg));
+        }
+    }
+
+    public void printState(String str, int arg) {
+        if (verbose && LOG.isEnabled(Level.INFO)) {
+            printStateString(String.format(str, arg));
+        }
+    }
+
+    public void printState(String str, boolean arg) {
+        if (verbose && LOG.isEnabled(Level.INFO)) {
+            printStateString(String.format(str, arg));
+        }
+    }
 
     private void printStateString(String head) {
         LOG.info(head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
