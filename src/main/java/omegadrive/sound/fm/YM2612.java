@@ -972,9 +972,9 @@ public final class YM2612 implements FmProvider {
                 else KEY_OFF(CH, S3);
                 break;
             case 0x2A:
-                //8 bit signed to 14 bit unsigned
+                //8 bit unsigned to 13 bit signed
                 if (dacWritesCounter < DAC_QUEUE_LIMIT) {
-                    int val = (data - 0x80) << 6;
+                    int val = (data - 0x80) << 5;
                     dacQueue.offer(val);
                     dacWritesCounter++;
                 } else {
