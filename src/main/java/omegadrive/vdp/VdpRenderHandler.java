@@ -60,6 +60,9 @@ public class VdpRenderHandler {
         this.colorMapper = new VdpColorMapper();
     }
 
+    public void setVideoMode(VideoMode videoMode) {
+        this.videoMode = videoMode;
+    }
 
     private int getHorizontalTiles(boolean isH40) {
         return isH40 ? 40 : 32;
@@ -108,7 +111,6 @@ public class VdpRenderHandler {
 
     public int[][] renderFrame() {
         spritesFrame = 0;
-        videoMode = vdpProvider.getVideoMode();
         evaluateSprites();
         return compaginateImage();
     }

@@ -533,6 +533,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             this.videoMode = newVideoMode;
             LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
             interruptHandler.setMode(videoMode);
+            renderHandler.setVideoMode(videoMode);
             pal = videoMode.isPal() ? 1 : 0;
         }
     }
