@@ -45,16 +45,11 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     private boolean checkSetup(boolean m1, long data) {
-        if (!m1 && dmaMode != null) {
-            //Andre Agassi needs it
+        if (!m1) {
             LOG.warn("Attempting DMA but m1 not set: " + dmaMode + ", data: " + data);
-        } else if (!m1) {
-            LOG.warn("Attempting DMA but m1 not set: " + dmaMode + ", data: " + data);
-            return false;
-        } else if (dmaMode == null) {
             return false;
         }
-        return true;
+        return dmaMode != null;
     }
 
     public DmaMode setupDma(VdpProvider.VramMode vramMode, long data, boolean m1) {
