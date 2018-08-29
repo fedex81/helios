@@ -420,7 +420,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void updateReg10(long data) {
         if (data != registers[0x0A]) {
-            interruptHandler.printState("Update hLinePassed register: %s", (data & 0x00FF));
+            interruptHandler.logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
         }
     }
 
@@ -435,7 +435,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private void updateIe1(boolean newIe1) {
         if (ie1 != newIe1) {
             ie1 = newIe1;
-            interruptHandler.printState("Update ie1 register: %s", newIe1);
+            interruptHandler.logVerbose("Update ie1 register: %s", newIe1);
         }
     }
 
@@ -488,7 +488,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             line++;
             //draw the frame
             if (interruptHandler.isDrawFrameCounter()) {
-                interruptHandler.printState("Draw Screen");
+                interruptHandler.logVerbose("Draw Screen");
                 line = 0;
                 int[][] screenData = renderHandler.renderFrame();
                 bus.getEmulator().renderScreen(screenData);
@@ -541,7 +541,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void drawScanline(boolean displayEnable) {
         //draw line
-        interruptHandler.printState("Draw Scanline: %s", line);
+        interruptHandler.logVeryVerbose("Draw Scanline: %s", line);
         int lineLimit = videoMode.getDimension().height;
         if (line < lineLimit) {
             if (displayEnable) {

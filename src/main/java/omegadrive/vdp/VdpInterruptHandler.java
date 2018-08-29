@@ -48,8 +48,8 @@ public class VdpInterruptHandler {
     private boolean vIntPending;
     private boolean hIntPending;
 
-    private static boolean verbose = Genesis.verbose && false;
-
+    private static boolean veryVerbose = false || Genesis.verbose;
+    private static boolean verbose = false || veryVerbose;
 
     enum VdpCounterMode {
         PAL_H32_V28(VideoMode.PAL_H32_V28,
@@ -227,7 +227,7 @@ public class VdpInterruptHandler {
         }
         if (hCounterInternal == 0x02 && vCounterInternal == vdpCounterMode.vBlankSet) {
             vIntPending = true;
-            printState("Set VIP: true");
+            logVerbose("Set VIP: true");
         }
         return hCounterInternal;
     }
@@ -243,7 +243,7 @@ public class VdpInterruptHandler {
             boolean triggerHip = isValidVCounterForHip && hLinePassed == -1; //aka triggerHippy
             if (triggerHip) {
                 hIntPending = true;
-                printState("Set HIP: true, hLinePassed: %s", hLinePassed);
+                logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
             }
             //reload on line = 0 and vblank
             boolean isForceResetVCounter = vCounterInternal == 0x00 || vCounterInternal > vdpCounterMode.vBlankSet;
@@ -279,7 +279,7 @@ public class VdpInterruptHandler {
 
     public void setvIntPending(boolean vIntPending) {
         this.vIntPending = vIntPending;
-        printState("Set VIP: %s", vIntPending);
+        logVerbose("Set VIP: %s", vIntPending);
     }
 
     public boolean isHIntPending() {
@@ -287,7 +287,7 @@ public class VdpInterruptHandler {
     }
 
     public void setHIntPending(boolean hIntPending) {
-        printState("Set HIP: %s", hIntPending);
+        logVerbose("Set HIP: %s", hIntPending);
         this.hIntPending = hIntPending;
     }
 
@@ -302,7 +302,7 @@ public class VdpInterruptHandler {
     public void resetHLinesCounter(int value) {
         this.hLinePassed = value;
         this.baseHLinePassed = value;
-        printState("Reset hLinePassed: %s", value);
+        logVeryVerbose("Reset hLinePassed: %s", value);
     }
 
     public static void main(String[] args) {
@@ -313,35 +313,37 @@ public class VdpInterruptHandler {
         h.setMode(VideoMode.NTSCJ_H32_V30);
         do {
             h.increaseHCounter();
-            h.printState("", null);
+            h.printStateString("");
         } while (!h.isDrawFrameCounter());
 
     }
 
-    public void printState(String str) {
-        printState(str, "");
+    public void logVerbose(String str) {
+        if (verbose && LOG.isEnabled(Level.INFO)) {
+            printStateString(str);
+        }
     }
 
-    public void printState(String str, String arg) {
+    public void logVerbose(String str, long arg) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(String.format(str, arg));
         }
     }
 
-    public void printState(String str, long arg) {
+    public void logVerbose(String str, int arg) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(String.format(str, arg));
         }
     }
 
-    public void printState(String str, int arg) {
+    public void logVerbose(String str, boolean arg) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(String.format(str, arg));
         }
     }
 
-    public void printState(String str, boolean arg) {
-        if (verbose && LOG.isEnabled(Level.INFO)) {
+    public void logVeryVerbose(String str, int arg) {
+        if (veryVerbose && LOG.isEnabled(Level.INFO)) {
             printStateString(String.format(str, arg));
         }
     }
