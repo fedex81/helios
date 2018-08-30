@@ -352,7 +352,8 @@ public class Genesis implements GenesisProvider {
         if (counter % 2 == 0) {
             boolean canRun = !cpu.isStopped() && !bus.shouldStop68k();
             if (canRun) {
-                if (!bus.checkInterrupts()) {
+                boolean runInstr = bus.handleVdpInterrupts();
+                if (runInstr) {
                     cpu.runInstruction();
                 }
             }
@@ -365,7 +366,6 @@ public class Genesis implements GenesisProvider {
             z80.executeInstruction();
         }
     }
-
 
     private String getStats(long now, long lastRender, long counter, long start) {
         long fps = 1000 / (now - lastRender + 1);

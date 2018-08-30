@@ -33,6 +33,13 @@ public interface BusProvider {
 
     Logger LOG = LogManager.getLogger(BusProvider.class.getSimpleName());
 
+    enum VdpIntState {
+        NONE,
+        PROCESS_INT,
+        ACK_INT,
+        INT_DONE
+    }
+
     static BusProvider createBus() {
         return new GenesisBus();
     }
@@ -49,7 +56,7 @@ public interface BusProvider {
 
     SoundProvider getSound();
 
-    boolean checkInterrupts();
+    boolean handleVdpInterrupts();
 
     long read(long address, Size size);
 

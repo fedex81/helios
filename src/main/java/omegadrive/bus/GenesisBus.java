@@ -57,6 +57,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     enum BusState {READY, NOT_READY}
 
     private BusState busState = BusState.NOT_READY;
+    private BusProvider.VdpIntState vdpIntState = BusProvider.VdpIntState.NONE;
 
     private boolean stop68k = false;
 
@@ -589,22 +590,65 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         return s;
     }
 
-    @Override
-    public boolean checkInterrupts() {
-        //VINT takes precedence over HINT
-        if (vdp.getVip() && vdp.isIe0()) {
+    private void raiseInterrupts() {
+        if (isVdpVInt()) {
             cpu.raiseInterrupt(M68kProvider.VBLANK_INTERRUPT_LEVEL);
             z80.interrupt();
-            vdp.setVip(false);
-            return true;
-        }
-
-        if (vdp.getHip() && vdp.isIe1()) {
+        } else if (isVdpHInt()) {
             cpu.raiseInterrupt(M68kProvider.HBLANK_INTERRUPT_LEVEL);
-            vdp.setHip(false);
-            return true;
         }
-        return false;
+    }
+
+    private void ackInterrupts() {
+        if (isVdpVInt()) {
+            vdp.setVip(false);
+        } else if (isVdpHInt()) {
+            vdp.setHip(false);
+        }
+    }
+
+    private boolean isVdpVInt() {
+        return vdp.getVip() && vdp.isIe0();
+    }
+
+    private boolean isVdpHInt() {
+        return vdp.getHip() && vdp.isIe1();
+    }
+
+    private boolean checkInterrupts() {
+        return isVdpVInt() || isVdpHInt();
+    }
+
+    /* Cycle-accurate VINT flag (Ex-Mutants, Tyrant / Mega-Lo-Mania, Marvel Land) */
+    /* this allows VINT flag to be read just before vertical interrupt is being triggered */
+    @Override
+    public boolean handleVdpInterrupts() {
+        boolean vdpInt = checkInterrupts();
+        if (!vdpInt) {
+            vdpIntState = BusProvider.VdpIntState.NONE;
+        }
+        switch (vdpIntState) {
+            case NONE:
+                vdpIntState = BusProvider.VdpIntState.PROCESS_INT;
+                break;
+            case PROCESS_INT:
+                raiseInterrupts();
+                vdpIntState = VdpIntState.ACK_INT;
+                break;
+            case ACK_INT:
+                ackInterrupts();
+                vdpIntState = BusProvider.VdpIntState.INT_DONE;
+                break;
+            case INT_DONE:
+                //Lotus II
+                vdpIntState = BusProvider.VdpIntState.NONE;
+                break;
+            default:
+                LOG.error("Unexpected state while handling vdp interrupts");
+                break;
+        }
+        return true;
+
     }
 
     private static void logInfo(String str, Object... args) {

@@ -201,6 +201,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         if (control != lastControl) {
             lastControl = control;
             logInfo("readControl: {}", control);
+            interruptHandler.logVerbose("readControl: {}", control);
         }
         return control;
     }
