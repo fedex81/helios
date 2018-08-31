@@ -601,10 +601,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     private void raiseInterruptsZ80() {
-        if (isVdpVInt()) {
-            logInfo("Z80 raise interrupt");
-            z80.interrupt();
-        }
+        logInfo("Z80 raise interrupt");
+        z80.interrupt();
     }
 
     private void ackInterrupts() {
@@ -640,6 +638,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             vdpIntState = BusProvider.VdpIntState.NONE;
             return true;
         }
+//        verbose = true;
         switch (vdpIntState) {
             case NONE:
                 vdpIntState = BusProvider.VdpIntState.PROCESS_INT;
@@ -662,6 +661,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 LOG.error("Unexpected state while handling vdp interrupts");
                 break;
         }
+//        verbose = false;
         logInfo("VDP interrupt state: {}", vdpIntState);
         return true;
 
@@ -669,6 +669,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     @Override
     public boolean handleVdpInterruptsZ80() {
+        //NOTE: if z80 is not running, the interrupt will be lost
         if (shouldRaiseZ80) {
             raiseInterruptsZ80();
             shouldRaiseZ80 = false;

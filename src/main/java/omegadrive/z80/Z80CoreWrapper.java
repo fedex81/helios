@@ -66,7 +66,7 @@ public class Z80CoreWrapper implements Z80Provider {
     @Override
     public int executeInstruction() {
         if (!updateRunningFlag()) {
-            return 0;
+            return -1;
         }
         try {
 //            LOG.info(toString(z80Core.getZ80State()));
