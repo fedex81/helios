@@ -1,6 +1,6 @@
 package omegadrive.memory;
 
-import omegadrive.util.CartridgeInfoProvider;
+import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,12 +16,14 @@ public class GenesisMemoryProvider implements MemoryProvider {
     private int[] cartridge;
     private int[] ram = new int[M68K_RAM_SIZE];
 
-    private long romMask = CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS;
+    private long romMask;
+    private int romSize;
 
     @Override
     public long readCartridgeByte(long address) {
-        if (address > cartridge.length - 1) {
+        if (address > romSize - 1) {
             address &= romMask;
+            address = address > romSize - 1 ? address - (romSize - 1) : address;
         }
         return cartridge[(int) address];
     }
@@ -54,6 +56,12 @@ public class GenesisMemoryProvider implements MemoryProvider {
     @Override
     public void setCartridge(int[] data) {
         this.cartridge = data;
-        this.romMask = data.length ^ CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS;
+        this.romSize = data.length;
+        this.romMask = (long) Math.pow(2, Util.log2(romSize) + 1) - 1;
+    }
+
+    @Override
+    public int getRomSize() {
+        return romSize;
     }
 }

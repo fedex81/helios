@@ -26,4 +26,6 @@ public interface MemoryProvider {
     void writeRam(long address, long data);
 
     void setCartridge(int[] data);
+
+    int getRomSize();
 }

@@ -36,6 +36,12 @@ public class MC68000Wrapper implements M68kProvider {
                 super.raiseException(vector);
                 handleException(vector);
             }
+
+            @Override
+            public void stop() {
+                MC68000Wrapper.LOG.info("68k Stop");
+                MC68000Wrapper.this.setStop(true);
+            }
         };
         this.addressSpace = getAddressSpace(busProvider);
         m68k.setAddressSpace(addressSpace);
@@ -44,7 +50,8 @@ public class MC68000Wrapper implements M68kProvider {
         }
     }
 
-    private void startMonitor() {
+    @Override
+    public void startMonitor() {
         if (monitor == null) {
             monitor = new MC68000Monitor(m68k, addressSpace);
             monitor.running = true;
@@ -142,9 +149,9 @@ public class MC68000Wrapper implements M68kProvider {
         return m68k.getPC();
     }
 
+
     private void setStop(boolean value) {
         LOG.warn("M68K stop: " + value);
-        m68k.stop(); //NO OP
         this.stop = value;
     }
 

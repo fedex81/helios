@@ -24,4 +24,6 @@ public interface M68kProvider {
     void initialize();
 
     int runInstruction();
+
+    void startMonitor();
 }

@@ -251,6 +251,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             return value;
         } else if (address >= 0xA13000 && address <= 0xA130FF) {
             LOG.warn("Unexpected mapper read at: " + Long.toHexString(address));
+        } else if (address == 0xA14100 || address == 0xA14101) {
+            LOG.warn("TMSS read enable cart");
         } else {
             LOG.warn("Unexpected internalRegRead: " + address);
         }
@@ -329,8 +331,13 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             } else {
                 LOG.warn("Unexpected mapper set, address: " + Long.toHexString(addressL) + ", data: " + Integer.toHexString((int) data));
             }
-        } else if (addressL == 0xA14000) {    //	VDP TMSS
-            LOG.warn("TMSS: " + Integer.toHexString((int) data));
+        } else if (addressL >= 0xA14000 || addressL <= 0xA14003) {
+            //          used to lock/unlock the VDP by writing either "SEGA" to unlock it or anything else to lock it.
+            LOG.warn("TMSS write, vdp lock: " + Integer.toHexString((int) data));
+        } else if (addressL == 0xA14100 || addressL == 0xA14101) {    //	VDP TMSS
+//            control the bankswitching between the cart and the TMSS rom.
+//            Setting the first bit to 1 enable the cart, and setting it to 0 enable the TMSS.
+            LOG.warn("TMSS write enable cart: " + (data == 1));
         } else {
             LOG.warn("Unexpected internalRegWrite: " + addressL + ", " + data);
         }

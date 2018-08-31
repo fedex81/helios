@@ -109,6 +109,7 @@ public class Util {
         } else if (size == Size.WORD) {
             z80.writeWord(addressInt, data);
         } else {
+            //TODO this sohuldnt happen?
             z80.writeWord(addressInt, data >> 16);
             z80.writeWord(addressInt + 2, data & 0xFFFF);
         }
@@ -148,6 +149,11 @@ public class Util {
                 dest[i] = src[i];
             }
         }
+    }
+
+    public static int log2(int n) {
+        if (n <= 0) throw new IllegalArgumentException();
+        return 31 - Integer.numberOfLeadingZeros(n);
     }
 
     public static void printLevelIfVerbose(Logger LOG, Level level, String str, Object arg) {
