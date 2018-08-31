@@ -363,7 +363,10 @@ public class Genesis implements GenesisProvider {
     private void runZ80(long counter) {
         //run half speed compared to 68k
         if ((counter + 1) % 4 == 0) {
-            z80.executeInstruction();
+            boolean runInstr = bus.handleVdpInterruptsZ80();
+            if (runInstr) {
+                z80.executeInstruction();
+            }
         }
     }
 

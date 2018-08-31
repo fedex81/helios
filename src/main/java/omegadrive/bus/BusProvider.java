@@ -58,6 +58,8 @@ public interface BusProvider {
 
     boolean handleVdpInterrupts();
 
+    boolean handleVdpInterruptsZ80();
+
     long read(long address, Size size);
 
     void write(long address, long data, Size size);

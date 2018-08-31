@@ -591,19 +591,29 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     private void raiseInterrupts() {
+        int level = isVdpHInt() ? M68kProvider.HBLANK_INTERRUPT_LEVEL : 0;
+        //VINT has priority
+        level = isVdpVInt() ? M68kProvider.VBLANK_INTERRUPT_LEVEL : level;
+        if (level > 0) {
+            logInfo("68k raise interrupt: {}", level);
+            cpu.raiseInterrupt(level);
+        }
+    }
+
+    private void raiseInterruptsZ80() {
         if (isVdpVInt()) {
-            cpu.raiseInterrupt(M68kProvider.VBLANK_INTERRUPT_LEVEL);
+            logInfo("Z80 raise interrupt");
             z80.interrupt();
-        } else if (isVdpHInt()) {
-            cpu.raiseInterrupt(M68kProvider.HBLANK_INTERRUPT_LEVEL);
         }
     }
 
     private void ackInterrupts() {
         if (isVdpVInt()) {
             vdp.setVip(false);
+            logInfo("Ack VDP VINT");
         } else if (isVdpHInt()) {
             vdp.setHip(false);
+            logInfo("Ack VDP HINT");
         }
     }
 
@@ -619,6 +629,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         return isVdpVInt() || isVdpHInt();
     }
 
+    private boolean shouldRaiseZ80 = false;
+
     /* Cycle-accurate VINT flag (Ex-Mutants, Tyrant / Mega-Lo-Mania, Marvel Land) */
     /* this allows VINT flag to be read just before vertical interrupt is being triggered */
     @Override
@@ -626,10 +638,13 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         boolean vdpInt = checkInterrupts();
         if (!vdpInt) {
             vdpIntState = BusProvider.VdpIntState.NONE;
+            return true;
         }
         switch (vdpIntState) {
             case NONE:
                 vdpIntState = BusProvider.VdpIntState.PROCESS_INT;
+                shouldRaiseZ80 = isVdpVInt();
+                logInfo("Z80 interrupt detected: {}", shouldRaiseZ80);
                 break;
             case PROCESS_INT:
                 raiseInterrupts();
@@ -647,8 +662,18 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 LOG.error("Unexpected state while handling vdp interrupts");
                 break;
         }
+        logInfo("VDP interrupt state: {}", vdpIntState);
         return true;
 
+    }
+
+    @Override
+    public boolean handleVdpInterruptsZ80() {
+        if (shouldRaiseZ80) {
+            raiseInterruptsZ80();
+            shouldRaiseZ80 = false;
+        }
+        return true;
     }
 
     private static void logInfo(String str, Object... args) {
