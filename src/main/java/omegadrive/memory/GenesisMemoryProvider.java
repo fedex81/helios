@@ -23,7 +23,7 @@ public class GenesisMemoryProvider implements MemoryProvider {
     public long readCartridgeByte(long address) {
         if (address > romSize - 1) {
             address &= romMask;
-            address = address > romSize - 1 ? address - (romSize - 1) : address;
+            address = address > romSize - 1 ? address - (romSize) : address;
         }
         return cartridge[(int) address];
     }
