@@ -458,11 +458,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 //
 //    Reading from even VDP addresses returns the MSB of the 16-bit data,
 //    and reading from odd address returns the LSB:
-    private long vdpRead(long address, Size size) {
+    private long vdpRead(long addressL, Size size) {
         long data = 0;
-        if (address >= 0xC00000 && address <= 0xC00007) {
+        long address = addressL & 0x1F; //low 5 bits
+        if (address <= 0x07) {
             boolean even = address % 2 == 0;
-            boolean isVdpData = address <= 0xC00003;
+            boolean isVdpData = address <= 0x03;
             //read word by default
             data = isVdpData ? vdp.readDataPort() : vdp.readControl();
             if (size == Size.BYTE) {
@@ -472,7 +473,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 long data2 = isVdpData ? vdp.readDataPort() : vdp.readControl();
                 data |= data2;
             }
-        } else if (address >= 0xC00008 && address <= 0xC0000E) { //	VDP HV counter
+        } else if (address >= 0x08 && address <= 0x0E) { //	VDP HV counter
 //            Reading the HV counter will return the following data:
 //
 //            VC7 VC6 VC5 VC4 VC3 VC2 VC1 VC0     (D15-D08)
@@ -494,13 +495,17 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 boolean even = address % 2 == 0;
                 return even ? v : h;
             }
-        } else if (address == 0xC0001C) {
-            LOG.warn("Ignoring VDP debug register write, address : " + pad4(address));
+        } else if (address == 0x1C) {
+            LOG.warn("Ignoring VDP debug register write, address : " + pad4(addressL));
+        } else if (address > 0x17) {
+            LOG.info("vdpRead on unused address: " + Long.toHexString(addressL));
+//            return 0xFF;
         } else {
-            LOG.warn("Unexpected vdpRead, address: " + Long.toHexString(address));
+            LOG.warn("Unexpected vdpRead, address: " + Long.toHexString(addressL));
         }
         return data;
     }
+
 
     //      Doing an 8-bit write to the control or data port is interpreted by
 //                the VDP as a 16-bit word, with the data written used for both halfs
@@ -691,8 +696,5 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     public static void main(String[] args) {
-        long address = -2;
-        address = address & 0xFF_FFFF;
-        System.out.println(Long.toHexString(address));
     }
 }
