@@ -37,9 +37,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Scanner;
+import java.util.*;
 
 /**
  * MC68000Monitor
@@ -57,6 +55,7 @@ public class MC68000Monitor implements Runnable {
     private boolean showBytes;
     private boolean autoRegs;
     private ArrayList<Integer> breakpoints;
+
 
     public MC68000Monitor(Cpu cpu, AddressSpace memory) {
         this.cpu = cpu;
@@ -415,6 +414,38 @@ public class MC68000Monitor implements Runnable {
             this.buffer.append(String.format("%08x   ????", addr));
         }
         return sb.append(String.format("\n==> %s\n\n", this.buffer.toString())).toString();
+    }
+
+    public static String dumpOp(MC68000 cpu) {
+        StringBuilder builder = new StringBuilder();
+        int addr = cpu.getPC();
+        if (addr >= 0) {
+            int opcode = cpu.readMemoryWord(addr);
+            Instruction i = cpu.getInstructionFor(opcode);
+            DisassembledInstruction di = i.disassemble(addr, opcode);
+            di.formatInstruction(builder);
+//            di.shortFormat(this.buffer);
+        } else {
+            builder.append(String.format("%08x   ????", addr));
+        }
+        return builder.toString();
+    }
+
+    private static Set<String> instSet = new TreeSet<>();
+
+    public static boolean addToInstructionSet(MC68000 cpu) {
+        int addr = cpu.getPC();
+        int opcode = cpu.readMemoryWord(addr);
+        Instruction i = cpu.getInstructionFor(opcode);
+        String name = i.getClass().getTypeName();
+        String str = name.substring(name.lastIndexOf('.') + 1);
+        return instSet.add(str);
+    }
+
+    public static String dumpInstructionSet() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Instruction set: " + instSet.size() + "\n").append(Arrays.toString(instSet.toArray()));
+        return sb.toString();
     }
 
     protected String makeFlagView() {

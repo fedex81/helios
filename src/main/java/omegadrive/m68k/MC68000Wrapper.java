@@ -153,6 +153,7 @@ public class MC68000Wrapper implements M68kProvider {
     private void setStop(boolean value) {
         LOG.warn("M68K stop: " + value);
         this.stop = value;
+        LOG.info(MC68000Monitor.dumpInstructionSet());
     }
 
     @Override
@@ -180,6 +181,7 @@ public class MC68000Wrapper implements M68kProvider {
     public int runInstruction() {
         int res = 0;
         try {
+//            printVerbose();
             res = m68k.execute();
             if (monitor != null) {
                 printCpuState();
@@ -189,6 +191,13 @@ public class MC68000Wrapper implements M68kProvider {
             handleException(ILLEGAL_ACCESS_EXCEPTION); //TODO
         }
         return res;
+    }
+
+    private void printVerbose() {
+        MC68000Monitor.dumpOp(m68k);
+        if (MC68000Monitor.addToInstructionSet(m68k)) {
+            MC68000Monitor.dumpInstructionSet();
+        }
     }
 
     private void handleException(int vector) {
