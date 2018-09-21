@@ -139,7 +139,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     @Override
     public boolean doDma(VideoMode videoMode, boolean isBlanking) {
         boolean done = false;
-        int byteSlots = getDmaSlotsPerLine(dmaMode, videoMode, isBlanking);
+        int byteSlots = getDmaSlotsPerLineInternal(dmaMode, videoMode, isBlanking);
         switch (dmaMode) {
             case VRAM_FILL:
                 if (dmaFillReady) {
@@ -289,13 +289,20 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return mode;
     }
 
-    private int getDmaSlotsPerLine(DmaMode dmaMode, VideoMode videoMode, boolean isBlanking) {
+    private int getDmaSlotsPerLineInternal(DmaMode dmaMode, VideoMode videoMode, boolean isBlanking) {
+        int slots = VdpDmaHandlerImpl.getDmaSlotsPerLine(dmaMode, videoMode, isBlanking);
+        printInfo("Dma byteSlots: " + slots + ", isBlanking: " + isBlanking);
+        return slots;
+    }
+
+    //VDPRATES.txt
+    public static int getDmaSlotsPerLine(DmaMode dmaMode, VideoMode videoMode, boolean isBlanking) {
         int slots = 0;
         switch (dmaMode) {
             case MEM_TO_VRAM:
                 slots = videoMode.isH32() ?
                         (isBlanking ? 167 : 16) : //H32
-                        (isBlanking ? 205 : 18);  //H40
+                        (isBlanking ? 198 : 18);  //H40
                 break;
             case VRAM_FILL:
                 slots = videoMode.isH32() ?
@@ -308,7 +315,6 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                         (isBlanking ? 102 : 9);  //H40
                 break;
         }
-        printInfo("Dma byteSlots: " + slots + ", isBlanking: " + isBlanking);
         return slots;
     }
 

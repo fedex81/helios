@@ -480,7 +480,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         hb = interruptHandler.ishBlankSet() ? 1 : 0;
         vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
-        runDma(hb == 1 || vb == 1);
+        runDma();
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastHCounter()) {
@@ -494,32 +494,28 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 int[][] screenData = renderHandler.renderFrame();
                 bus.getEmulator().renderScreen(screenData);
                 resetMode();
-                LOG.debug("DmaSlots: {}", dmaSlots);
-                dmaSlots = 0;
             }
         }
     }
 
     int dmaActiveScreenLine = -1;
     int dmaDisableScreenCounter = -1;
-    int dmaSlots = 0;
-    int DMA_SLOTS_ACTIVE_SCREEN_LINE = 13;
-    int DMA_SLOTS_DISABLED_SCREEN_LINE = 200;
 
     //TODO
-    private void runDma(boolean isBlanking) {
+    private void runDma() {
         if (dma == 0) {
             return;
         }
-        if (!isBlanking && line != dmaActiveScreenLine) {
-            doDma(false);
+        boolean isVBlank = vb == 1;
+        boolean isHBlank = hb == 1;
+        boolean dmaActiveLine = isHBlank && !isVBlank && line != dmaActiveScreenLine;
+        boolean dmaPassiveLine = isVBlank && interruptHandler.getvCounter() != dmaDisableScreenCounter;
+        if (dmaActiveLine) {
+            doDma(isVBlank);
             dmaActiveScreenLine = line;
-            dmaSlots += DMA_SLOTS_ACTIVE_SCREEN_LINE;
-        }
-        if (isBlanking && interruptHandler.getvCounter() != dmaDisableScreenCounter) {
-            doDma(true);
+        } else if (dmaPassiveLine) {
+            doDma(isVBlank);
             dmaDisableScreenCounter = interruptHandler.getvCounter();
-            dmaSlots += DMA_SLOTS_DISABLED_SCREEN_LINE;
         }
     }
 
