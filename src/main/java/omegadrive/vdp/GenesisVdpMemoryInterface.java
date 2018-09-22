@@ -27,14 +27,18 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         int data = 0;
         //ignore A0, always use an even address
         address &= ~1;
-        if (vramType == VdpProvider.VdpRamType.VRAM) {
-            data = readVramWord(address);
-        } else if (vramType == VdpProvider.VdpRamType.VSRAM) {
-            data = readVsramWord(address);
-        } else if (vramType == VdpProvider.VdpRamType.CRAM) {
-            data = readCramWord(address);
-        } else {
-            LOG.warn("Unexpected videoRam read: " + vramType);
+        switch (vramType) {
+            case VRAM:
+                data = readVramWord(address);
+                break;
+            case VSRAM:
+                data = readVsramWord(address);
+                break;
+            case CRAM:
+                data = readCramWord(address);
+                break;
+            default:
+                LOG.warn("Unexpected videoRam read: " + vramType);
         }
         return data;
     }
@@ -59,18 +63,23 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         int data2 = word & 0xFF;
         //ignore A0
         int index = address & ~1;
-        if (vramType == VdpProvider.VdpRamType.VSRAM) {
-            writeVsramByte(index, data1);
-            writeVsramByte(index + 1, data2);
-        } else if (vramType == VdpProvider.VdpRamType.CRAM) {
-            writeCramByte(index, data1);
-            writeCramByte(index + 1, data2);
-        } else if (vramType == VdpProvider.VdpRamType.VRAM) {
-            boolean byteSwap = (address & 1) == 1;
-            writeVramByte(index, byteSwap ? data2 : data1);
-            writeVramByte(index + 1, byteSwap ? data1 : data2);
-        } else {
-            LOG.warn("Unexpected videoRam write: " + vramType);
+
+        switch (vramType) {
+            case VRAM:
+                boolean byteSwap = (address & 1) == 1;
+                writeVramByte(index, byteSwap ? data2 : data1);
+                writeVramByte(index + 1, byteSwap ? data1 : data2);
+                break;
+            case VSRAM:
+                writeVsramByte(index, data1);
+                writeVsramByte(index + 1, data2);
+                break;
+            case CRAM:
+                writeCramByte(index, data1);
+                writeCramByte(index + 1, data2);
+                break;
+            default:
+                LOG.warn("Unexpected videoRam write: " + vramType);
         }
     }
 

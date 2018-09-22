@@ -26,7 +26,8 @@ public interface VdpProvider {
         vsramRead(0b0100, VdpRamType.VSRAM),
         vramWrite(0b0001, VdpRamType.VRAM),
         cramWrite(0b0011, VdpRamType.CRAM),
-        vsramWrite(0b0101, VdpRamType.VSRAM);
+        vsramWrite(0b0101, VdpRamType.VSRAM),
+        vramRead_8bit(0b1100, VdpRamType.VRAM);
 
         private static EnumSet<VramMode> values = EnumSet.allOf(VramMode.class);
 

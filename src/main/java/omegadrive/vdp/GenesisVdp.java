@@ -134,7 +134,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private int line;
 
-
     public GenesisVdp(BusProvider bus) {
         this.bus = bus;
         this.memoryInterface = new GenesisVdpMemoryInterface();
@@ -337,6 +336,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     public int readDataPort() {
         this.writePendingControlPort = false;
         int res = memoryInterface.readVideoRamWord(vramMode, addressRegister);
+        if (vramMode == VdpProvider.VramMode.vramRead_8bit) {
+            //The 8-bit VRAM read function reads a single byte from VRAM.
+            // The returned value consists of the VRAM byte as the low byte, plus a byte from the FIFO as the high byte.
+            res &= 0xFF;
+        }
         logInfo("readDataPort, address {} , size {}, result {}", addressRegister, Size.WORD, res);
         addressRegister += autoIncrementData;
         return res;
