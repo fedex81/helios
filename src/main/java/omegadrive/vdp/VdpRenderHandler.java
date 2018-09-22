@@ -11,6 +11,10 @@ import java.util.Arrays;
  * <p>
  * Federico Berti
  * <p>
+ * Based on genefusto GenVdp
+ * https://github.com/DarkMoe/genefusto
+ * @author DarkMoe
+ *
  * Copyright 2018
  */
 public class VdpRenderHandler {
@@ -138,10 +142,6 @@ public class VdpRenderHandler {
             int byte1 = memoryInterface.readVramByte(baseAddress + 1);
             int byte2 = memoryInterface.readVramByte(baseAddress + 2);
             int byte3 = memoryInterface.readVramByte(baseAddress + 3);
-            int byte4 = memoryInterface.readVramByte(baseAddress + 4);
-            int byte5 = memoryInterface.readVramByte(baseAddress + 5);
-            int byte6 = memoryInterface.readVramByte(baseAddress + 6);
-            int byte7 = memoryInterface.readVramByte(baseAddress + 7);
 
             int linkData = byte3 & 0x7F;
 
@@ -149,7 +149,7 @@ public class VdpRenderHandler {
             int verSize = byte2 & 0x3;
 
             int verSizePixels = (verSize + 1) * 8;
-            int realY = (int) (verticalPos - 128);
+            int realY = verticalPos - 128;
             for (int j = realY; j < realY + verSizePixels; j++) {
                 if (j < 0 || j >= INDEXES_NUM) {
                     continue;
@@ -169,7 +169,8 @@ public class VdpRenderHandler {
     }
 
     private void renderSprites(int line) {
-        //	AT16 is only valid if 128 KB mode is enabled, and allows for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
+        //	AT16 is only valid if 128 KB mode is enabled, and allows
+        // for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
         int spriteTableLoc = vdpProvider.getRegisterData(0x5) & 0x7F;
         int spriteTable = spriteTableLoc * 0x200;
 
@@ -598,10 +599,10 @@ public class VdpRenderHandler {
         int reg12 = vdpProvider.getRegisterData(0x12);
 
         int windowVert = reg12 & 0x1F;
-        boolean down = ((reg12 & 0x80) == 0x80) ? true : false;
+        boolean down = (reg12 & 0x80) == 0x80;
 
         int windowHorizontal = reg11 & 0x1F;
-        boolean right = ((reg11 & 0x80) == 0x80) ? true : false;
+        boolean right = (reg11 & 0x80) == 0x80;
 
         int horizontalLimit = windowHorizontal * 2 * 8; //2-cell = 2*8 pixels
         int vertLimit = (windowVert * 8);
@@ -647,7 +648,7 @@ public class VdpRenderHandler {
                                     int tileLocator, boolean isPlaneA) {
         int scrollMap = 0;
         int vsramOffset = isPlaneA ? scrollLine : scrollLine + 2;
-        int scrollDataVer = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VSRAM, vsramOffset);//readVsramWord(vsramOffset);
+        int scrollDataVer = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VSRAM, vsramOffset);
 
         if (verScrollSize == 0) {    // 32 tiles (0x20)
             scrollMap = (scrollDataVer + line) & 0xFF;    //	32 * 8 lineas = 0x100
@@ -784,7 +785,7 @@ public class VdpRenderHandler {
         for (int horTile = tileStart; horTile < tileEnd; horTile++) {
             int loc = tileLocator;
 
-            int nameTable = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VRAM, loc);  //VramWord(loc);
+            int nameTable = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VRAM, loc);
             tileLocator += 2;
 
 //				An entry in a name table is 16 bits, and works as follows:
