@@ -40,7 +40,8 @@ public class MC68000Wrapper implements M68kProvider {
             @Override
             public void stop() {
                 MC68000Wrapper.LOG.info("68k Stop");
-                MC68000Wrapper.this.setStop(true);
+                //TODO ThunderForce IV uses STOP, why?
+//                MC68000Wrapper.this.setStop(true);
             }
         };
         this.addressSpace = getAddressSpace(busProvider);
@@ -194,9 +195,9 @@ public class MC68000Wrapper implements M68kProvider {
     }
 
     private void printVerbose() {
-        MC68000Monitor.dumpOp(m68k);
+        LOG.info(MC68000Monitor.dumpOp(m68k));
         if (MC68000Monitor.addToInstructionSet(m68k)) {
-            MC68000Monitor.dumpInstructionSet();
+            LOG.info(MC68000Monitor.dumpInstructionSet());
         }
     }
 
@@ -210,7 +211,11 @@ public class MC68000Wrapper implements M68kProvider {
     private void printCpuState() {
         startMonitor();
         String str = monitor.dumpInfo();
-        str += monitor.handleDisassemble(new String[]{"d", "" + (m68k.getPC() - 8), "16"});
+        try {
+            str += monitor.handleDisassemble(new String[]{"d", "" + (m68k.getPC() - 8), "16"});
+        } catch (Exception e) {
+            LOG.error("Unable to disassemble", e);
+        }
         LOG.info(str);
     }
 }

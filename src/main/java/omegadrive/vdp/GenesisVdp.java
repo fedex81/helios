@@ -12,6 +12,7 @@ import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Objects;
 
@@ -451,7 +452,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             dmaDone = dmaHandler.doDma(videoMode, isBlanking);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
-                Util.printLevelIfVerbose(LOG, Level.INFO, "{}: OFF", mode);
+                logInfo("{}: OFF", mode);
                 bus.setStop68k(false);
             }
         }
@@ -472,8 +473,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void logInfo(String str, Object... args) {
         if (verbose) {
-            String dmaStr = ", DMA " + dma + ", dmaMode: " + dmaHandler.getDmaMode() + ", vramMode: " + Objects.toString(vramMode);
-            Util.printLevel(LOG, Level.INFO, str + dmaStr, args);
+            LOG.log(Level.INFO, new ParameterizedMessage(str, args));
         }
     }
 

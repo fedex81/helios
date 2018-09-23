@@ -11,9 +11,9 @@ import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.VdpProvider;
 import omegadrive.z80.Z80Provider;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Objects;
 
@@ -691,7 +691,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private static void logInfo(String str, Object... args) {
         if (verbose) {
-            Util.printLevel(LOG, Level.INFO, str, args);
+            LOG.info(new ParameterizedMessage(str, args));
         }
     }
 

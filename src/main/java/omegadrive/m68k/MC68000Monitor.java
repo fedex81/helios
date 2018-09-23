@@ -386,10 +386,11 @@ public class MC68000Monitor implements Runnable {
 
     protected String dumpInfo() {
         StringBuilder sb = new StringBuilder("\n");
+        int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
 
         sb.append(String.format("D0: %08x   D4: %08x   A0: %08x   A4: %08x     PC:  %08x\n",
                 this.cpu.getDataRegisterLong(0), this.cpu.getDataRegisterLong(4), this.cpu.getAddrRegisterLong(0),
-                this.cpu.getAddrRegisterLong(4), this.cpu.getPC()));
+                this.cpu.getAddrRegisterLong(4), wrapPc));
         sb.append(String.format("D1: %08x   D5: %08x   A1: %08x   A5: %08x     SR:  %04x %s\n",
                 this.cpu.getDataRegisterLong(1), this.cpu.getDataRegisterLong(5), this.cpu.getAddrRegisterLong(1),
                 this.cpu.getAddrRegisterLong(5), this.cpu.getSR(), this.makeFlagView()));
@@ -400,33 +401,32 @@ public class MC68000Monitor implements Runnable {
                 this.cpu.getDataRegisterLong(3), this.cpu.getDataRegisterLong(7), this.cpu.getAddrRegisterLong(3),
                 this.cpu.getAddrRegisterLong(7), this.cpu.getSSP()));
         this.buffer.delete(0, this.buffer.length());
-        int addr = this.cpu.getPC();
-        if (addr >= 0 && addr < this.memory.size()) {
-            int opcode = this.cpu.readMemoryWord(addr);
+        if (wrapPc >= 0 && wrapPc < this.memory.size()) {
+            int opcode = this.cpu.readMemoryWord(wrapPc);
             Instruction i = this.cpu.getInstructionFor(opcode);
-            DisassembledInstruction di = i.disassemble(addr, opcode);
+            DisassembledInstruction di = i.disassemble(wrapPc, opcode);
             if (this.showBytes) {
                 di.formatInstruction(this.buffer);
             } else {
                 di.shortFormat(this.buffer);
             }
         } else {
-            this.buffer.append(String.format("%08x   ????", addr));
+            this.buffer.append(String.format("%08x   ????", wrapPc));
         }
         return sb.append(String.format("\n==> %s\n\n", this.buffer.toString())).toString();
     }
 
     public static String dumpOp(MC68000 cpu) {
         StringBuilder builder = new StringBuilder();
-        int addr = cpu.getPC();
-        if (addr >= 0) {
-            int opcode = cpu.readMemoryWord(addr);
+        int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
+        if (wrapPc >= 0) {
+            int opcode = cpu.readMemoryWord(wrapPc);
             Instruction i = cpu.getInstructionFor(opcode);
-            DisassembledInstruction di = i.disassemble(addr, opcode);
+            DisassembledInstruction di = i.disassemble(wrapPc, opcode);
             di.formatInstruction(builder);
 //            di.shortFormat(this.buffer);
         } else {
-            builder.append(String.format("%08x   ????", addr));
+            builder.append(String.format("%08x   ????", wrapPc));
         }
         return builder.toString();
     }
@@ -434,8 +434,8 @@ public class MC68000Monitor implements Runnable {
     private static Set<String> instSet = new TreeSet<>();
 
     public static boolean addToInstructionSet(MC68000 cpu) {
-        int addr = cpu.getPC();
-        int opcode = cpu.readMemoryWord(addr);
+        int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
+        int opcode = cpu.readMemoryWord(wrapPc);
         Instruction i = cpu.getInstructionFor(opcode);
         String name = i.getClass().getTypeName();
         String str = name.substring(name.lastIndexOf('.') + 1);
@@ -485,7 +485,8 @@ public class MC68000Monitor implements Runnable {
 
     protected void handlePC(String[] tokens) {
         if (tokens.length == 1) {
-            this.writer.printf("PC: %08x\n", this.cpu.getPC());
+            int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
+            this.writer.printf("PC: %08x\n", wrapPc);
         } else if (tokens.length == 2) {
             int value;
             try {

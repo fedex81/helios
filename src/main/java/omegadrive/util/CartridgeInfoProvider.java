@@ -174,10 +174,10 @@ public class CartridgeInfoProvider {
             LOG.warn("Invalid ROM START ADDRESS: " + romStart);
             romStart = DEFAULT_ROM_START_ADDRESS;
         }
-        int romSize = memoryProvider.getRomSize();
-        if (romEnd != romSize - 1) {
-            LOG.warn("Invalid ROM END ADDRESS: " + romEnd);
-            romEnd = romSize - 1;
+        int romEndAddressFromFile = memoryProvider.getRomSize() - 1;
+        if (romEnd != romEndAddressFromFile) {
+            LOG.warn("Invalid ROM END ADDRESS: " + romEnd + ", setting to: " + romEndAddressFromFile);
+            romEnd = romEndAddressFromFile;
         }
         if (ramStart == 0) {
             LOG.warn("Unable to parse RAM START ADDRESS");
