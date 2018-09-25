@@ -27,6 +27,8 @@ public interface Z80Provider {
 
     boolean isRunning();
 
+    boolean isHalted();
+
     void interrupt();
 
     int readMemory(int address);

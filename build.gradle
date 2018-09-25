@@ -18,6 +18,10 @@ dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.10.0'
     // https://mvnrepository.com/artifact/com.google.guava/guava
     compile group: 'com.google.guava', name: 'guava', version: '25.1-jre'
+    // https://mvnrepository.com/artifact/net.sf.emustudio/emuLib
+    compile group: 'net.sf.emustudio', name: 'emuLib', version: '9.0.1'
+
+
 
     //include local jars
     compile fileTree(dir: 'lib', include: ['*.jar'])

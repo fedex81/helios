@@ -1,11 +1,17 @@
 package omegadrive.z80;
 
+import emulib.plugins.cpu.DisassembledInstruction;
 import omegadrive.bus.BusProvider;
+import omegadrive.z80.disasm.Z80Decoder;
+import omegadrive.z80.disasm.Z80Disasm;
+import omegadrive.z80.disasm.Z80MemContext;
 import omegadrive.z80.jsanchezv.MemIoOps;
 import omegadrive.z80.jsanchezv.Z80;
 import omegadrive.z80.jsanchezv.Z80State;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.function.Function;
 
 /**
  * ${FILE}
@@ -18,12 +24,15 @@ import org.apache.logging.log4j.Logger;
  * <p>
  * https://github.com/scoffey/jz80sim
  * https://github.com/lesniakbj/Vizu-80
+ *
+ * TODO check interrupt handling vs halt
  */
 public class Z80CoreWrapper implements Z80Provider {
 
     private Z80 z80Core;
     private Z80Memory memory;
     private MemIoOps memIoOps;
+    private Z80Disasm z80Disasm;
 
     private boolean resetState;
     private boolean busRequested;
@@ -37,17 +46,21 @@ public class Z80CoreWrapper implements Z80Provider {
         memIoOps = createGenesisIo(this);
         memIoOps.setRam(memory.getMemory());
         this.z80Core = new Z80(memIoOps, null);
+
+        Z80MemContext memContext = Z80MemContext.createInstance(memory);
+        this.z80Disasm = new Z80Disasm(memContext, new Z80Decoder(memContext));
     }
 
     @Override
     public void initialize() {
-        z80Core.reset();
-        this.unrequestBus();
+        reset();
+        unrequestBus();
         wasRunning = false;
         LOG.info("Z80 init, reset: " + resetState + ", busReq: " + busRequested);
     }
 
     private boolean updateRunningFlag() {
+        //TODO check why this breaks Z80 WAV PLAYER
         if (z80Core.isHalted()) {
             wasRunning = false;
             return false;
@@ -69,7 +82,7 @@ public class Z80CoreWrapper implements Z80Provider {
             return -1;
         }
         try {
-//            LOG.info(toString(z80Core.getZ80State()));
+//            printVerbose();
             z80Core.execute();
         } catch (Exception e) {
             LOG.error("z80 exception", e);
@@ -139,6 +152,11 @@ public class Z80CoreWrapper implements Z80Provider {
         return !busRequested && !resetState;
     }
 
+    @Override
+    public boolean isHalted() {
+        return z80Core.isHalted();
+    }
+
     //    If the Z80 has interrupts disabled when the frame interrupt is supposed
 //    to occur, it will be missed, rather than made pending.
     @Override
@@ -146,6 +164,7 @@ public class Z80CoreWrapper implements Z80Provider {
         boolean interruptDisabled = !z80Core.isIFF1() && !z80Core.isIFF2();
         if (!interruptDisabled) {
             activeInterrupt = true;
+            z80Core.setHalted(false);
         }
     }
 
@@ -202,5 +221,13 @@ public class Z80CoreWrapper implements Z80Provider {
                 return res;
             }
         };
+    }
+
+    private static Function<DisassembledInstruction, String> disasmToString = d ->
+            String.format("%08x   %12s   %s", d.getAddress(), d.getOpCode(), d.getMnemo());
+
+    private void printVerbose() {
+        String str = disasmToString.apply(z80Disasm.disassemble(z80Core.getRegPC()));
+        LOG.info(str);
     }
 }
