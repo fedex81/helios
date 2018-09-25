@@ -20,7 +20,7 @@ public class Z80Exerciser implements NotifyOps {
 
     private static Logger LOG = LogManager.getLogger(Z80Exerciser.class.getSimpleName());
 
-    private static String resourcesPath = "./test/src/main/gen/z80/";
+    private static String resourcesPath = "./src/test/java/omegadrive/z80/";
 
     private final Z80 z80;
     private Z80SimpleMemory memory = new Z80SimpleMemory();
