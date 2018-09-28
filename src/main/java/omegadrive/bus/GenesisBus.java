@@ -195,7 +195,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 mapper.writeData(addressL, data, size);
                 return;
             }
-            LOG.error("Unexpected write to ROM: " + Long.toHexString(addressL) + ", value : " + data);
+            //Batman&Robin writes to address 0 - tries to enable debug mode?
+            String msg = "Unexpected write to ROM: " + Long.toHexString(addressL) + ", value : " + data;
+            LOG.warn(msg);
+            if (addressL > 0) {
+                throw new IllegalArgumentException(msg);
+            }
         } else if (addressL >= Z80_ADDRESS_SPACE_START && addressL <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             z80MemoryWrite(address, size, data);
         } else if (addressL >= IO_ADDRESS_SPACE_START && addressL <= IO_ADDRESS_SPACE_END) {    //	IO addressing space
