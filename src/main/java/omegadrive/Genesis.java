@@ -1,6 +1,7 @@
 package omegadrive;
 
 import omegadrive.bus.BusProvider;
+import omegadrive.bus.GenesisBus;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.joypad.JoypadProvider;
@@ -15,6 +16,8 @@ import omegadrive.ui.GenesisWindow;
 import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
+import omegadrive.vdp.GenesisVdp;
+import omegadrive.vdp.GenesisVdpMemoryInterface;
 import omegadrive.vdp.VdpProvider;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
@@ -141,6 +144,16 @@ public class Genesis implements GenesisProvider {
     @Override
     public void setPlayers(int i) {
         inputProvider.setPlayers(i);
+    }
+
+    @Override
+    public void setDebug(boolean value) {
+        Genesis.verbose = value;
+        GenesisVdp.verbose = value;
+        GenesisVdpMemoryInterface.verbose = value;
+        GenesisBus.verbose = value;
+        MC68000Wrapper.verbose = value;
+        Z80CoreWrapper.verbose = value;
     }
 
     // Create the frame on the event dispatching thread
@@ -350,12 +363,10 @@ public class Genesis implements GenesisProvider {
     private void run68k(long counter) {
         //run half speed compared to VDP
         if (counter % 2 == 0) {
+            bus.handleVdpInterrupts();
             boolean canRun = !cpu.isStopped() && !bus.shouldStop68k();
             if (canRun) {
-                boolean runInstr = bus.handleVdpInterrupts();
-                if (runInstr) {
-                    cpu.runInstruction();
-                }
+                cpu.runInstruction();
             }
         }
     }

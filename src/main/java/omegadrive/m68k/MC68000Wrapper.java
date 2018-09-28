@@ -1,5 +1,6 @@
 package omegadrive.m68k;
 
+import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.m68k.tonyheadford.cpu.MC68000;
 import omegadrive.m68k.tonyheadford.memory.AddressSpace;
@@ -19,7 +20,7 @@ public class MC68000Wrapper implements M68kProvider {
 
     private static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
 
-    private static boolean verbose = false;
+    public static boolean verbose = Genesis.verbose || false;
 
     private static int ILLEGAL_ACCESS_EXCEPTION = 4;
 
@@ -140,7 +141,8 @@ public class MC68000Wrapper implements M68kProvider {
 
             @Override
             public int size() {
-                return MemoryProvider.M68K_RAM_SIZE;
+                //NOTE: used for debugging
+                return BusProvider.ADDRESS_UPPER_LIMIT + 1;
             }
         };
     }
@@ -164,7 +166,9 @@ public class MC68000Wrapper implements M68kProvider {
 
     @Override
     public void raiseInterrupt(int level) {
+        printCpuState("Before INT: " + level);
         m68k.raiseInterrupt(level);
+        printCpuState("After INT: " + level);
     }
 
     @Override
@@ -182,11 +186,9 @@ public class MC68000Wrapper implements M68kProvider {
     public int runInstruction() {
         int res = 0;
         try {
-//            printVerbose();
+            printVerbose();
             res = m68k.execute();
-            if (monitor != null) {
-                printCpuState();
-            }
+//            printCpuState();
         } catch (Exception e) {
             LOG.error("68k error", e);
             handleException(ILLEGAL_ACCESS_EXCEPTION); //TODO
@@ -195,20 +197,37 @@ public class MC68000Wrapper implements M68kProvider {
     }
 
     private void printVerbose() {
-        LOG.info(MC68000Monitor.dumpOp(m68k));
+        if (!verbose) {
+            return;
+        }
+        String res = MC68000Monitor.dumpOp(m68k);
+        LOG.info(res);
         if (MC68000Monitor.addToInstructionSet(m68k)) {
             LOG.info(MC68000Monitor.dumpInstructionSet());
         }
+//            startMonitor();
     }
 
     private void handleException(int vector) {
         if (vector == ILLEGAL_ACCESS_EXCEPTION) {
-            printCpuState();
+            printCpuState("Exception: " + vector);
             setStop(true);
         }
     }
 
-    private void printCpuState() {
+    private void printCpuState(String head) {
+        if (!verbose) {
+            return;
+        }
+        startMonitor();
+        String str = monitor.dumpInfo();
+        LOG.info(head + str);
+    }
+
+    private void printCpuStateLong() {
+        if (!verbose) {
+            return;
+        }
         startMonitor();
         String str = monitor.dumpInfo();
         try {

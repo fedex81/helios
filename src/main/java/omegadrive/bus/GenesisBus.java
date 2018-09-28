@@ -35,7 +35,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private static Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
-    private static boolean verbose = false || Genesis.verbose;
+    public static boolean verbose = false || Genesis.verbose;
 
     private GenesisProvider emu;
     private MemoryProvider memory;
@@ -414,7 +414,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         } else if (addressL == 0xA1001E || addressL == 0xA1001F) {    //	Expansion port serial control
             LOG.warn("expansion port serial control !!");
         } else {
-            LOG.warn("Unexpected ioWrite: " + addressL + ", " + data);
+            LOG.warn("Unexpected ioWrite: " + Long.toHexString(addressL) + ", " + data);
         }
     }
 
@@ -646,18 +646,18 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     @Override
     public boolean handleVdpInterrupts() {
         boolean vdpInt = checkInterrupts();
-        if (!vdpInt) {
-            vdpIntState = BusProvider.VdpIntState.NONE;
+        if (!vdpInt && vdpIntState == BusProvider.VdpIntState.NONE) {
             return true;
         }
-//        verbose = true;
         switch (vdpIntState) {
             case NONE:
+//                this.emu.setDebug(true);
                 vdpIntState = BusProvider.VdpIntState.PROCESS_INT;
                 shouldRaiseZ80 = isVdpVInt();
                 logInfo("Z80 interrupt detected: {}", shouldRaiseZ80);
                 break;
             case PROCESS_INT:
+                //Ex-Mutants needs this delay
                 raiseInterrupts();
                 vdpIntState = VdpIntState.ACK_INT;
                 break;
@@ -668,12 +668,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             case INT_DONE:
                 //Lotus II
                 vdpIntState = BusProvider.VdpIntState.NONE;
+//                this.emu.setDebug(false);
                 break;
             default:
                 LOG.error("Unexpected state while handling vdp interrupts");
                 break;
         }
-//        verbose = false;
         logInfo("VDP interrupt state: {}", vdpIntState);
         return true;
 

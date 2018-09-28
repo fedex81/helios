@@ -1,6 +1,7 @@
 package omegadrive.z80;
 
 import emulib.plugins.cpu.DisassembledInstruction;
+import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.z80.disasm.Z80Decoder;
 import omegadrive.z80.disasm.Z80Disasm;
@@ -28,6 +29,8 @@ import java.util.function.Function;
  * TODO check interrupt handling vs halt
  */
 public class Z80CoreWrapper implements Z80Provider {
+
+    public static boolean verbose = Genesis.verbose || false;
 
     private Z80 z80Core;
     private Z80Memory memory;
@@ -82,7 +85,7 @@ public class Z80CoreWrapper implements Z80Provider {
             return -1;
         }
         try {
-//            printVerbose();
+            printVerbose();
             z80Core.execute();
         } catch (Exception e) {
             LOG.error("z80 exception", e);
@@ -192,6 +195,9 @@ public class Z80CoreWrapper implements Z80Provider {
      * @return
      */
     private static MemIoOps createGenesisIo(Z80Provider provider) {
+//        The Z80 runs in interrupt mode 1, where an interrupt causes a RST 38h.
+//        However, interrupt mode 0 can be used as well, since FFh will be read off the bus.
+
         return new MemIoOps() {
             @Override
             public int inPort(int port) {
@@ -227,7 +233,9 @@ public class Z80CoreWrapper implements Z80Provider {
             String.format("%08x   %12s   %s", d.getAddress(), d.getOpCode(), d.getMnemo());
 
     private void printVerbose() {
-        String str = disasmToString.apply(z80Disasm.disassemble(z80Core.getRegPC()));
-        LOG.info(str);
+        if (verbose) {
+            String str = disasmToString.apply(z80Disasm.disassemble(z80Core.getRegPC()));
+            LOG.info(str);
+        }
     }
 }

@@ -43,4 +43,6 @@ public interface GenesisProvider {
     void init();
 
     void setPlayers(int i);
+
+    void setDebug(boolean value);
 }
