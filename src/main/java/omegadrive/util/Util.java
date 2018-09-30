@@ -129,17 +129,17 @@ public class Util {
         }
     }
 
-    public static void writeSram(int[] sram, Size size, long addressL, long data) {
+    public static void writeSram(int[] sram, Size size, int address, long data) {
         if (size == Size.BYTE) {
-            sram[(int) addressL] = (int) data;
+            sram[address] = (int) (data & 0xFF);
         } else if (size == Size.WORD) {
-            sram[(int) addressL] = (int) (data >> 8) & 0xFF;
-            sram[(int) addressL + 1] = (int) data & 0xFF;
+            sram[address] = (int) ((data >> 8) & 0xFF);
+            sram[address + 1] = (int) (data & 0xFF);
         } else {
-            sram[(int) addressL] = (int) (data >> 24) & 0xFF;
-            sram[(int) addressL + 1] = (int) (data >> 16) & 0xFF;
-            sram[(int) addressL + 2] = (int) (data >> 8) & 0xFF;
-            sram[(int) addressL + 3] = (int) data & 0xFF;
+            sram[address] = (int) ((data >> 24) & 0xFF);
+            sram[address + 1] = (int) ((data >> 16) & 0xFF);
+            sram[address + 2] = (int) ((data >> 8) & 0xFF);
+            sram[address + 3] = (int) (data & 0xFF);
         }
     }
 

@@ -83,6 +83,10 @@ public class CartridgeInfoProvider {
         return sramEnabled;
     }
 
+    public String getRomName() {
+        return romName;
+    }
+
     public static CartridgeInfoProvider createInstance(MemoryProvider memoryProvider) {
         return createInstance(memoryProvider, null);
     }

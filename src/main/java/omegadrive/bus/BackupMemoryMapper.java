@@ -2,10 +2,16 @@ package omegadrive.bus;
 
 import omegadrive.Genesis;
 import omegadrive.util.CartridgeInfoProvider;
+import omegadrive.util.FileLoader;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * ${FILE}
@@ -21,6 +27,8 @@ public class BackupMemoryMapper implements GenesisMapper {
 
     private static Logger LOG = LogManager.getLogger(BackupMemoryMapper.class.getSimpleName());
 
+    private final static String DEFAULT_SRAM_FOLDER = System.getProperty("user.home") + "/.omgdrv/sram";
+
     private static boolean verbose = false || Genesis.verbose;
 
     public static boolean SRAM_AVAILABLE;
@@ -30,6 +38,9 @@ public class BackupMemoryMapper implements GenesisMapper {
     private GenesisMapper baseMapper;
     private CartridgeInfoProvider cartridgeInfoProvider;
     private SramMode sramMode = SramMode.DISABLE;
+
+    private static String fileType = "srm";
+    private Path backupFile;
 
     private int[] sram = new int[0];
 
@@ -49,7 +60,8 @@ public class BackupMemoryMapper implements GenesisMapper {
         SRAM_END_ADDRESS = SRAM_END_ADDRESS > 0 ? SRAM_END_ADDRESS : CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS;
         SRAM_AVAILABLE = true; //mapper.cartridgeInfoProvider.isSramEnabled();
         mapper.sram = new int[CartridgeInfoProvider.DEFAULT_SRAM_BYTE_SIZE];
-        LOG.info("BackupMemoryMapper created");
+        LOG.info("BackupMemoryMapper created, using folder: " + DEFAULT_SRAM_FOLDER);
+        initBackupFileIfNecessary(mapper);
         return mapper;
     }
 
@@ -96,6 +108,7 @@ public class BackupMemoryMapper implements GenesisMapper {
         }
         sramRead &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (sramRead) {
+            readFile();
             address = (address & 0xFFFF);
             long res = Util.readSram(sram, size, address);
             logInfo("SRAM read at: {} {}, result: {} ", address, size, res);
@@ -118,9 +131,52 @@ public class BackupMemoryMapper implements GenesisMapper {
         if (sramWrite) {
             address = (address & 0xFFFF);
             logInfo("SRAM write at: {} {}, data: {} ", address, size, data);
-            Util.writeSram(sram, size, address, data);
+            Util.writeSram(sram, size, (int) address, data);
+            writeFile(sram);
         } else {
             baseMapper.writeData(address, data, size);
+        }
+    }
+
+    private void writeFile(int[] sram) {
+        initBackupFileIfNecessary(this);
+        try {
+            if (Files.isWritable(backupFile)) {
+                FileLoader.writeFile(backupFile, sram);
+            }
+        } catch (IOException e) {
+            LOG.error("Unable to write to file: " + backupFile);
+        }
+    }
+
+    private void readFile() {
+        initBackupFileIfNecessary(this);
+        try {
+            if (Files.isReadable(backupFile)) {
+                sram = FileLoader.readFile(backupFile);
+            }
+        } catch (IOException e) {
+            LOG.error("Unable to read from file: " + backupFile);
+        }
+    }
+
+    private static void initBackupFileIfNecessary(BackupMemoryMapper mapper) {
+        if (mapper.backupFile == null) {
+            try {
+                mapper.backupFile = Paths.get(DEFAULT_SRAM_FOLDER,
+                        mapper.cartridgeInfoProvider.getRomName() + "." + fileType);
+                long size = 0;
+                if (Files.isReadable(mapper.backupFile)) {
+                    size = Files.size(mapper.backupFile);
+                } else {
+                    LOG.info("Creating backup memory file: " + mapper.backupFile);
+                    mapper.sram = new int[CartridgeInfoProvider.DEFAULT_SRAM_BYTE_SIZE];
+                    FileLoader.writeFile(mapper.backupFile, mapper.sram);
+                }
+                LOG.info("Using sram file: " + mapper.backupFile + " size: " + size + " bytes");
+            } catch (Exception e) {
+                LOG.error("Unable to create file for: " + mapper.cartridgeInfoProvider.getRomName());
+            }
         }
     }
 

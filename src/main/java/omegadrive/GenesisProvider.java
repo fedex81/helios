@@ -45,4 +45,6 @@ public interface GenesisProvider {
     void setPlayers(int i);
 
     void setDebug(boolean value);
+
+    String getRomName();
 }

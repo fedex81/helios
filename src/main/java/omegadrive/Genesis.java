@@ -57,6 +57,7 @@ public class Genesis implements GenesisProvider {
     private InputProvider inputProvider;
 
     private RegionDetector.Region region = null;
+    private String romName;
 
     private Future<Void> runningGameFuture;
     private GenesisWindow emuFrame;
@@ -238,6 +239,11 @@ public class Genesis implements GenesisProvider {
         return region;
     }
 
+    @Override
+    public String getRomName() {
+        return romName;
+    }
+
     class GameRunnable implements Runnable {
         private Path file;
         private static final String threadNamePrefix = "cycle-";
@@ -266,11 +272,11 @@ public class Genesis implements GenesisProvider {
                 return;
             }
 
-            String rom = file.getFileName().toString();
-            Thread.currentThread().setName(threadNamePrefix + rom);
-            emuFrame.setTitle(rom);
+            romName = file.getFileName().toString();
+            Thread.currentThread().setName(threadNamePrefix + romName);
+            emuFrame.setTitle(romName);
             region = getRegionInternal(memory);
-            LOG.info("Running game: " + rom + ", region: " + region);
+            LOG.info("Running game: " + romName + ", region: " + region);
             sound = JavaSoundManager.createSoundProvider(region);
             bus.attachDevice(sound);
 
@@ -312,6 +318,7 @@ public class Genesis implements GenesisProvider {
         int targetFps = region.getFps();
         long lastRender = start;
         int fps = targetFps;
+//        setDebug(true);
         for (; ; ) {
             try {
                 run68k(counter);

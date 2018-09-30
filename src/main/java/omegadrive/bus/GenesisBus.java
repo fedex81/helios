@@ -41,12 +41,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     private MemoryProvider memory;
     private JoypadProvider joypad;
 
-    public VdpProvider vdp;
-    public Z80Provider z80;
-    public M68kProvider cpu;
-    public SoundProvider sound;
+    private VdpProvider vdp;
+    private Z80Provider z80;
+    private M68kProvider cpu;
+    private SoundProvider sound;
 
-    public CartridgeInfoProvider cartridgeInfoProvider;
+    private CartridgeInfoProvider cartridgeInfoProvider;
     private GenesisMapper mapper;
 
     public static long ROM_START_ADDRESS;
@@ -77,7 +77,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     @Override
     public void reset() {
-        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memory);
+        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memory, getEmulator().getRomName());
         initializeRomData();
         LOG.info(cartridgeInfoProvider.toString());
         detectState();
