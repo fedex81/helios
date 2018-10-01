@@ -186,8 +186,14 @@ public class MC68000Wrapper implements M68kProvider {
     public int runInstruction() {
         int res = 0;
         try {
+//            String str = MC68000Monitor.dumpOp(m68k);
             printVerbose();
             res = m68k.execute();
+            //TODO check SSP vs a7 sync
+//            if(m68k.getSSP() != m68k.getAddrRegisterLong(7)){
+//                LOG.info(str);
+//                m68k.setSSP(m68k.getAddrRegisterLong(7));
+//            }
 //            printCpuState();
         } catch (Exception e) {
             LOG.error("68k error", e);

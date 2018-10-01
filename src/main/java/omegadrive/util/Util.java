@@ -5,6 +5,7 @@ import omegadrive.Genesis;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
@@ -18,6 +19,10 @@ import java.util.List;
  * Copyright 2018
  */
 public class Util {
+
+    private static Logger LOG = LogManager.getLogger(Util.class.getSimpleName());
+
+    public static boolean verbose = Genesis.verbose || false;
 
     public static void sleep(long ms) {
         try {
@@ -67,22 +72,31 @@ public class Util {
             data = memory.readCartridgeWord(address) << 16;
             data |= memory.readCartridgeWord(address + 2);
         }
+        if (verbose) {
+            LOG.info("Read   ROM: {}, {}: {}", Long.toHexString(address), size,
+                    Long.toHexString(data));
+        }
         return data;
     }
 
-    public static long readRam(MemoryProvider memory, Size size, long address) {
+    public static long readRam(MemoryProvider memory, Size size, long addressL) {
         long data;
-        address = address & 0xFFFF;
+        int address = (int) (addressL & 0xFFFF);
+
         if (size == Size.BYTE) {
-            data = memory.readRam(address);
+            data = memory.readRamByte(address);
         } else if (size == Size.WORD) {
-            data = memory.readRam(address) << 8;
-            data |= memory.readRam(address + 1);
+            data = memory.readRamByte(address) << 8;
+            data |= memory.readRamByte(address + 1);
         } else {
-            data = memory.readRam(address) << 24;
-            data |= memory.readRam(address + 1) << 16;
-            data |= memory.readRam(address + 2) << 8;
-            data |= memory.readRam(address + 3);
+            data = memory.readRamByte(address) << 24;
+            data |= memory.readRamByte(address + 1) << 16;
+            data |= memory.readRamByte(address + 2) << 8;
+            data |= memory.readRamByte(address + 3);
+        }
+        if (verbose) {
+            LOG.info("Read  RAM: {}, {}: {}", Long.toHexString(address), size,
+                    Long.toHexString(data));
         }
         return data;
     }
@@ -115,17 +129,22 @@ public class Util {
         }
     }
 
-    public static void writeRam(MemoryProvider memory, Size size, long addr, long data) {
+    public static void writeRam(MemoryProvider memory, Size size, long addressL, long data) {
+        int address = (int) (addressL & 0xFFFF);
         if (size == Size.BYTE) {
-            memory.writeRam(addr, data);
+            memory.writeRamByte(address, data);
         } else if (size == Size.WORD) {
-            memory.writeRam(addr, (data >> 8));
-            memory.writeRam(addr + 1, (data & 0xFF));
+            memory.writeRamByte(address, (data >> 8));
+            memory.writeRamByte(address + 1, (data & 0xFF));
         } else if (size == Size.LONG) {
-            memory.writeRam(addr, (data >> 24) & 0xFF);
-            memory.writeRam(addr + 1, (data >> 16) & 0xFF);
-            memory.writeRam(addr + 2, (data >> 8) & 0xFF);
-            memory.writeRam(addr + 3, (data & 0xFF));
+            memory.writeRamByte(address, (data >> 24) & 0xFF);
+            memory.writeRamByte(address + 1, (data >> 16) & 0xFF);
+            memory.writeRamByte(address + 2, (data >> 8) & 0xFF);
+            memory.writeRamByte(address + 3, (data & 0xFF));
+        }
+        if (verbose) {
+            LOG.info("Write  RAM: {}, {}: {}", Long.toHexString(address), size,
+                    Long.toHexString(data));
         }
     }
 

@@ -21,9 +21,9 @@ public interface MemoryProvider {
 
     long readCartridgeWord(long address);
 
-    long readRam(long address);
+    int readRamByte(int address);
 
-    void writeRam(long address, long data);
+    void writeRamByte(int address, long data);
 
     void setCartridge(int[] data);
 

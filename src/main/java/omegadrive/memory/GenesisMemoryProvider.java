@@ -36,18 +36,18 @@ public class GenesisMemoryProvider implements MemoryProvider {
     }
 
     @Override
-    public long readRam(long address) {
+    public int readRamByte(int address) {
         if (address < M68K_RAM_SIZE) {
-            return ram[(int) address];
+            return ram[address];
         }
         LOG.error("Invalid RAM read, address : " + Integer.toHexString((int) address));
         return 0;
     }
 
     @Override
-    public void writeRam(long address, long data) {
+    public void writeRamByte(int address, long data) {
         if (address < M68K_RAM_SIZE) {
-            ram[(int) address] = (int) data;
+            ram[address] = (int) data;
         } else {
             LOG.error("Invalid RAM write, address : " + Integer.toHexString((int) address) + ", data: " + data);
         }
