@@ -1,9 +1,10 @@
 package omegadrive.m68k;
 
+import m68k.cpu.InstructionType;
+import m68k.cpu.MC68000;
+import m68k.memory.AddressSpace;
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
-import omegadrive.m68k.tonyheadford.cpu.MC68000;
-import omegadrive.m68k.tonyheadford.memory.AddressSpace;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
@@ -42,7 +43,18 @@ public class MC68000Wrapper implements M68kProvider {
             public void stop() {
                 MC68000Wrapper.LOG.info("68k Stop");
                 //TODO ThunderForce IV uses STOP, why?
-//                MC68000Wrapper.this.setStop(true);
+                MC68000Wrapper.this.setStop(true);
+            }
+
+
+            //TODO check: is this is needed for all instructions? sgdk_cube fails
+            @Override
+            public void calcFlagsParam(InstructionType type, int src, int dst, int result, int extraParam, m68k.cpu.Size sz) {
+                if (type == InstructionType.ADD) {
+                    result = sz.byteCount() == 1 ? result & 0xFF : result;
+                    result = sz.byteCount() == 2 ? result & 0xFFFF : result;
+                }
+                super.calcFlagsParam(type, src, dst, result, extraParam, sz);
             }
         };
         this.addressSpace = getAddressSpace(busProvider);
@@ -186,7 +198,6 @@ public class MC68000Wrapper implements M68kProvider {
     public int runInstruction() {
         int res = 0;
         try {
-//            String str = MC68000Monitor.dumpOp(m68k);
             printVerbose();
             res = m68k.execute();
             //TODO check SSP vs a7 sync
@@ -196,8 +207,11 @@ public class MC68000Wrapper implements M68kProvider {
 //            }
 //            printCpuState();
         } catch (Exception e) {
+            verbose = true;
             LOG.error("68k error", e);
-            handleException(ILLEGAL_ACCESS_EXCEPTION); //TODO
+            printVerbose();
+            handleException(ILLEGAL_ACCESS_EXCEPTION);
+            verbose = false;
         }
         return res;
     }

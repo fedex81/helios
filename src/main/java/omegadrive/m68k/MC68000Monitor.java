@@ -25,12 +25,12 @@ package omegadrive.m68k;
 //
 */
 
-import omegadrive.m68k.tonyheadford.cpu.Cpu;
-import omegadrive.m68k.tonyheadford.cpu.DisassembledInstruction;
-import omegadrive.m68k.tonyheadford.cpu.Instruction;
-import omegadrive.m68k.tonyheadford.cpu.MC68000;
-import omegadrive.m68k.tonyheadford.memory.AddressSpace;
-import omegadrive.m68k.tonyheadford.memory.MemorySpace;
+import m68k.cpu.Cpu;
+import m68k.cpu.DisassembledInstruction;
+import m68k.cpu.Instruction;
+import m68k.cpu.MC68000;
+import m68k.memory.AddressSpace;
+import m68k.memory.MemorySpace;
 import omegadrive.util.Util;
 
 import java.io.File;
