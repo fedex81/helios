@@ -6,8 +6,6 @@
     <JAVADOC />
     <SOURCES>
       <root url="file://$PROJECT_DIR$/docs/lib" />
-      <root url="jar://$PROJECT_DIR$/docs/lib/m68k-0.3.zip!/m68k-0.3/src" />
-      <root url="jar://$PROJECT_DIR$/docs/lib/m68k-0.3.zip!/m68k-0.3/test" />
     </SOURCES>
     <jarDirectory url="file://$PROJECT_DIR$/lib" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/docs/lib" recursive="false" type="SOURCES" />

@@ -1,5 +1,3 @@
--DMA changes
--- Adventures of Batman and Robin is broken
 - Mappers
 http://gendev.spritesmind.net/forum/viewtopic.php?t=206
 - codemaster mapper + EEPROM

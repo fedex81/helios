@@ -1,5 +1,6 @@
 package omegadrive.m68k;
 
+import m68k.cpu.Instruction;
 import m68k.cpu.InstructionType;
 import m68k.cpu.MC68000;
 import m68k.memory.AddressSpace;
@@ -16,6 +17,9 @@ import org.apache.logging.log4j.Logger;
  * Federico Berti
  * <p>
  * Copyright 2018
+ *
+ * NOTES: f-line emulator. Tecmo Cup
+ *        a-line emulator. Mamono Hunter Yohko
  */
 public class MC68000Wrapper implements M68kProvider {
 
@@ -40,6 +44,22 @@ public class MC68000Wrapper implements M68kProvider {
             }
 
             @Override
+            public int execute() {
+                //save the PC address
+                currentInstructionAddress = reg_pc;
+                int opcode = fetchPCWord();
+
+                Instruction i = i_table[opcode];
+                if (i != null) {
+                    return i.execute(opcode);
+                } else {
+                    //TODO this seems to be necessary
+                    reg_pc = currentInstructionAddress;
+                    return unknown.execute(opcode);
+                }
+            }
+
+            @Override
             public void stop() {
                 MC68000Wrapper.LOG.info("68k Stop");
                 //TODO ThunderForce IV uses STOP, why?
@@ -47,13 +67,19 @@ public class MC68000Wrapper implements M68kProvider {
             }
 
 
-            //TODO check: is this is needed for all instructions? sgdk_cube fails
+            //TODO check: is this is needed for all instructions?
             @Override
             public void calcFlagsParam(InstructionType type, int src, int dst, int result, int extraParam, m68k.cpu.Size sz) {
                 if (type == InstructionType.ADD) {
-                    result = sz.byteCount() == 1 ? result & 0xFF : result;
-                    result = sz.byteCount() == 2 ? result & 0xFFFF : result;
+                    int result1 = result;
+                    result1 = sz.byteCount() == 1 ? result & 0xFF : result1;
+                    result1 = sz.byteCount() == 2 ? result & 0xFFFF : result1;
+//                    if(type != InstructionType.ADD && result1 == 0 && 0 != result){
+//                        LOG.info(type + ", result: " + result + ", result1: " + result1);
+//                    }
+                    result = result1;
                 }
+
                 super.calcFlagsParam(type, src, dst, result, extraParam, sz);
             }
         };
