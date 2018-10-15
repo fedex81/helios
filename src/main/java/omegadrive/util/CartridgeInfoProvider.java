@@ -1,8 +1,11 @@
 package omegadrive.util;
 
+import omegadrive.memory.GenesisMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Arrays;
 
 /**
  * ${FILE}
@@ -35,6 +38,8 @@ public class CartridgeInfoProvider {
 
     public static final String EXTERNAL_RAM_FLAG_VALUE = "RA";
 
+    public static final boolean AUTOFIX_CHECKSUM = false;
+
     private MemoryProvider memoryProvider;
     private RegionDetector.Region region;
     private long romStart;
@@ -44,6 +49,8 @@ public class CartridgeInfoProvider {
     private long sramStart;
     private long sramEnd;
     private boolean sramEnabled;
+    private long checksum;
+    private long computedChecksum;
 
     private String romName;
 
@@ -87,6 +94,10 @@ public class CartridgeInfoProvider {
         return romName;
     }
 
+    public boolean hasCorrectChecksum() {
+        return checksum == computedChecksum;
+    }
+
     public static CartridgeInfoProvider createInstance(MemoryProvider memoryProvider) {
         return createInstance(memoryProvider, null);
     }
@@ -102,6 +113,18 @@ public class CartridgeInfoProvider {
     private void init() {
         this.region = RegionDetector.detectRegion(memoryProvider, false);
         this.initMemoryLayout(memoryProvider);
+        this.initChecksum();
+    }
+
+    private void initChecksum() {
+        this.checksum = memoryProvider.readCartridgeWord(MemoryProvider.CHECKSUM_START_ADDRESS);
+        this.computedChecksum = computeChecksum(memoryProvider);
+
+        //defaults to false
+        if (AUTOFIX_CHECKSUM && checksum != computedChecksum) {
+            LOG.info("Auto-fix checksum from: {} to: {}", checksum, computedChecksum);
+            memoryProvider.setChecksumRomValue(computedChecksum);
+        }
     }
 
     @Override
@@ -111,7 +134,8 @@ public class CartridgeInfoProvider {
                 Long.toHexString(romEnd)).append("\n");
         sb.append("RAM size: " + (ramEnd - ramStart + 1) + " bytes, start-end: " + Long.toHexString(ramStart) + " - " +
                 Long.toHexString(ramEnd)).append("\n");
-        sb.append("SRAM flag: " + sramEnabled);
+        sb.append("SRAM flag: " + sramEnabled).append("\n");
+        sb.append("ROM header checksum: " + checksum + ", computed: " + computedChecksum + ", match: " + hasCorrectChecksum());
         if (sramEnabled) {
             sb.append("\nSRAM size: " + getSramSizeBytes() + " bytes, start-end: " + Long.toHexString(sramStart) + " - " +
                     Long.toHexString(sramEnd));
@@ -196,5 +220,31 @@ public class CartridgeInfoProvider {
             ramStart = DEFAULT_RAM_START_ADDRESS;
             ramEnd = DEFAULT_RAM_END_ADDRESS;
         }
+    }
+
+    private static long computeChecksum(MemoryProvider memoryProvider) {
+        long res = 0;
+        //checksum is computed starting from byte 0x200
+        int i = 0x200;
+        for (; i < memoryProvider.getRomSize() - 1; i += 2) {
+            long val = memoryProvider.readCartridgeWord(i);
+            res = (res + val) & 0xFFFF;
+        }
+        //read final byte ??
+        res = i % 2 != 0 ? (res + memoryProvider.readCartridgeByte(i)) & 0xFFFF : res;
+
+        return res;
+    }
+
+    public static void main(String[] args) {
+        MemoryProvider mp = new GenesisMemoryProvider();
+        int[] data = new int[0x203];
+        Arrays.fill(data, 0);
+        data[0x200] = 0;
+        data[0x201] = 1;
+        data[0x202] = 1;
+        mp.setCartridge(data);
+        System.out.println(computeChecksum(mp));
+
     }
 }

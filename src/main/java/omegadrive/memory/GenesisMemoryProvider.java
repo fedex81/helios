@@ -61,6 +61,12 @@ public class GenesisMemoryProvider implements MemoryProvider {
     }
 
     @Override
+    public void setChecksumRomValue(long value) {
+        this.cartridge[CHECKSUM_START_ADDRESS] = (int) ((value >> 8) & 0xFF);
+        this.cartridge[CHECKSUM_START_ADDRESS + 1] = (int) (value & 0xFF);
+    }
+
+    @Override
     public int getRomSize() {
         return romSize;
     }
