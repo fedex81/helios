@@ -1,11 +1,8 @@
 package omegadrive.util;
 
-import omegadrive.memory.GenesisMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.Arrays;
 
 /**
  * ${FILE}
@@ -118,7 +115,7 @@ public class CartridgeInfoProvider {
 
     private void initChecksum() {
         this.checksum = memoryProvider.readCartridgeWord(MemoryProvider.CHECKSUM_START_ADDRESS);
-        this.computedChecksum = computeChecksum(memoryProvider);
+        this.computedChecksum = Util.computeChecksum(memoryProvider);
 
         //defaults to false
         if (AUTOFIX_CHECKSUM && checksum != computedChecksum) {
@@ -220,31 +217,5 @@ public class CartridgeInfoProvider {
             ramStart = DEFAULT_RAM_START_ADDRESS;
             ramEnd = DEFAULT_RAM_END_ADDRESS;
         }
-    }
-
-    private static long computeChecksum(MemoryProvider memoryProvider) {
-        long res = 0;
-        //checksum is computed starting from byte 0x200
-        int i = 0x200;
-        for (; i < memoryProvider.getRomSize() - 1; i += 2) {
-            long val = memoryProvider.readCartridgeWord(i);
-            res = (res + val) & 0xFFFF;
-        }
-        //read final byte ??
-        res = i % 2 != 0 ? (res + memoryProvider.readCartridgeByte(i)) & 0xFFFF : res;
-
-        return res;
-    }
-
-    public static void main(String[] args) {
-        MemoryProvider mp = new GenesisMemoryProvider();
-        int[] data = new int[0x203];
-        Arrays.fill(data, 0);
-        data[0x200] = 0;
-        data[0x201] = 1;
-        data[0x202] = 1;
-        mp.setCartridge(data);
-        System.out.println(computeChecksum(mp));
-
     }
 }

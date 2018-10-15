@@ -170,6 +170,20 @@ public class Util {
         }
     }
 
+    public static long computeChecksum(MemoryProvider memoryProvider) {
+        long res = 0;
+        //checksum is computed starting from byte 0x200
+        int i = 0x200;
+        int size = memoryProvider.getRomSize();
+        for (; i < size - 1; i += 2) {
+            long val = memoryProvider.readCartridgeWord(i);
+            res = (res + val) & 0xFFFF;
+        }
+        //read final byte ??
+        res = size % 2 != 0 ? (res + memoryProvider.readCartridgeByte(i)) & 0xFFFF : res;
+        return res;
+    }
+
     public static int log2(int n) {
         if (n <= 0) throw new IllegalArgumentException();
         return 31 - Integer.numberOfLeadingZeros(n);
