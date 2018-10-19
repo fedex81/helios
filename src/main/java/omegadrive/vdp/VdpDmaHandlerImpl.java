@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 /**
  * ${FILE}
@@ -80,11 +81,12 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         printInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
     }
 
+    //TODO still buggy I think
+    //https://gendev.spritesmind.net/forum/viewtopic.php?t=2663
     public void setupDmaDataPort(int dataWord) {
         dmaFillData = dataWord;
         printInfo("START");
-        memoryInterface.writeVramByte(destAddress ^ 1, dataWord & 0xFF);
-        memoryInterface.writeVramByte(destAddress, (dataWord >> 8) & 0xFF);
+        destAddress ^= 1;
         dmaFillReady = true;
     }
 
@@ -108,26 +110,22 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     private void printInfo(String head) {
+        printInfo(head, Long.MIN_VALUE);
+    }
+
+    private void printInfo(String head, long srcAddress) {
         if (!verbose) {
             return;
         }
         int dmaLen = getDmaLength();
         String str = Objects.toString(dmaMode) + " " + head;
-        String src = Long.toHexString(getSourceAddress());
+        String src = Long.toHexString(srcAddress > Long.MIN_VALUE ? srcAddress : getSourceAddress());
         String dest = Long.toHexString(destAddress);
         int destAddressIncrement = getDestAddressIncrement();
-        if (dmaMode == DmaMode.VRAM_COPY) {
-            str += ", srcAddr: " + src + ", destAddr: " + dest +
-                    ", destAddrInc: " + destAddressIncrement + ", dmaLen: " + dmaLen + ", vramDestination: " + vramDestination;
-        }
-        if (dmaMode == DmaMode.VRAM_FILL) {
-            str += ", fillData: " + dmaFillData + ", destAddr: " + dest +
-                    ", destAddrInc: " + destAddressIncrement + ", dmaLen: " + dmaLen + ", vramDestination: " + vramDestination;
-        }
-        if (dmaMode == DmaMode.MEM_TO_VRAM) {
-            str += ", srcAddr: " + src + ", destAddr: " + dest +
-                    ", destAddrInc: " + destAddressIncrement + ", dmaLen: " + dmaLen + ", vramDestination: " + vramDestination;
-        }
+
+        str += dmaMode == DmaMode.VRAM_FILL ? " fillData: " + Long.toHexString(dmaFillData) : " srcAddr: " + src;
+        str += ", destAddr: " + dest + ", destAddrInc: " + destAddressIncrement +
+                ", dmaLen: " + dmaLen + ", vramDestination: " + vramDestination;
         LOG.info(str);
     }
 
@@ -247,8 +245,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             byteSlots -= 2;
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
             memoryInterface.writeVideoRamWord(vramDestination, dataWord, destAddress);
-            printInfo("IN PROGRESS");
-            increaseSourceAddress(1); //increase by 1, becomes 2 (bytes) when doubling
+            printInfo("IN PROGRESS: ", sourceAddress);
+            //increase by 1, becomes 2 (bytes) when doubling
+            increaseSourceAddress(1);
             destAddress += getDestAddressIncrement();
         } while (dmaLen > 0 && byteSlots > 0);
         printInfo("Byte slots remaining: " + byteSlots);
@@ -318,15 +317,74 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return slots;
     }
 
-
     public static void main(String[] args) {
-        long firstWrite = 0x4002;
-        long all = ((firstWrite << 16) | 0x8002);
-//        Integer.MAX_VALUE = 7fff_ffff
-        System.out.println(firstWrite);
-        System.out.println(all);
+        long fillData = 0x68ac;
+        long destAddr = 0x8002;
 
+        System.out.println(Long.toHexString(destAddr ^ 1));
+        BusProvider busProvider = BusProvider.createBus();
+        VdpMemoryInterface memoryInterface = new GenesisVdpMemoryInterface();
+        VdpDmaHandler dmaHandler = new VdpDmaHandlerImpl();
+
+        VdpProvider vdpProvider = new GenesisVdp(busProvider, memoryInterface, dmaHandler);
+
+        ((VdpDmaHandlerImpl) dmaHandler).vdpProvider = vdpProvider;
+        ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
+
+        vdpProvider.writeControlPort(0x8F02);
+        vdpProvider.writeControlPort(16384);
+        vdpProvider.writeControlPort(2);
+        vdpProvider.writeDataPort(750);
+        vdpProvider.writeDataPort(1260);
+        vdpProvider.writeDataPort(1770);
+        vdpProvider.writeDataPort(2280);
+        vdpProvider.writeDataPort(2790);
+        vdpProvider.writeDataPort(3300);
+        vdpProvider.writeDataPort(3810);
+        vdpProvider.writeDataPort(736);
+        vdpProvider.writeDataPort(1230);
+        vdpProvider.writeDataPort(1740);
+        vdpProvider.writeDataPort(2250);
+        vdpProvider.writeDataPort(2760);
+        vdpProvider.writeDataPort(3270);
+        vdpProvider.writeDataPort(3780);
+        vdpProvider.writeDataPort(706);
+        vdpProvider.writeDataPort(1216);
+
+        IntStream.range(0x8000, 0x8016).forEach(a ->
+                System.out.print(Long.toHexString(memoryInterface.readVramByte(a)) + ","));
+        System.out.println();
+
+        vdpProvider.writeControlPort(0x8F00);
+        vdpProvider.writeControlPort(0x8154);
+        vdpProvider.writeControlPort(0x9305);
+        vdpProvider.writeControlPort(0x9400);
+        vdpProvider.writeControlPort(0x9500);
+        vdpProvider.writeControlPort(0x9600);
+        vdpProvider.writeControlPort(0x9780);
+
+        vdpProvider.writeControlPort(16386);
+        vdpProvider.writeControlPort(130);
+
+        vdpProvider.writeDataPort(0x68ac);
+
+        IntStream.range(0x8000, 0x8016).forEach(a ->
+                System.out.print(Long.toHexString(memoryInterface.readVramByte(a)) + ","));
+        System.out.println();
+
+        dmaHandler.doDma(VideoMode.PAL_H40_V30, true);
+
+        IntStream.range(0x8000, 0x8016).forEach(a ->
+                System.out.print(Long.toHexString(memoryInterface.readVramByte(a)) + ","));
+        System.out.println();
+
+        //ThunderForce IV breaks if this fails
+        int[] expected = {0x2, 0xEE, 0x68, 0x68, 0x06, 0xEA};
+        for (int i = 0; i < expected.length; i++) {
+            System.out.println(Long.toHexString(expected[i]) + ": " + Long.toHexString(memoryInterface.readVramByte(0x8000 + i)));
+        }
     }
+
     /**
      * None of the DMA register settings are "cached", they are used live.
      * In particular, the DMA source address and transfer count are actively modified during DMA operations.

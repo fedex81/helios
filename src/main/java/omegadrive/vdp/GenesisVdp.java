@@ -135,6 +135,14 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private int line;
 
+    public GenesisVdp(BusProvider bus, VdpMemoryInterface memoryInterface, VdpDmaHandler dmaHandler) {
+        this.bus = bus;
+        this.memoryInterface = memoryInterface;
+        this.interruptHandler = VdpInterruptHandler.createInstance(this);
+        this.dmaHandler = dmaHandler;
+        this.renderHandler = new VdpRenderHandler(this, memoryInterface);
+    }
+
     public GenesisVdp(BusProvider bus) {
         this.bus = bus;
         this.memoryInterface = new GenesisVdpMemoryInterface();
@@ -325,9 +333,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         int data = (int) dataL;
         writePendingControlPort = false;
         logInfo("writeDataPort, data: {}, address: {}", data, addressRegister);
-        if (setupDmaFillMaybe(data)) {
-            return;
-        }
+        setupDmaFillMaybe(data);
         memoryInterface.writeVideoRamWord(vramMode, data, addressRegister);
         addressRegister += autoIncrementData;
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
