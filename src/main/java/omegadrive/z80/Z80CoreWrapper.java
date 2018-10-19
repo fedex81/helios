@@ -201,7 +201,8 @@ public class Z80CoreWrapper implements Z80Provider {
         return new MemIoOps() {
             @Override
             public int inPort(int port) {
-                LOG.warn("inPort: " + port);
+                //TF4 calls this by mistake
+                LOG.debug("inPort: {}", port);
                 return 0xFF;
             }
 

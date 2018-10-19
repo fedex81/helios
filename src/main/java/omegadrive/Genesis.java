@@ -370,11 +370,12 @@ public class Genesis implements GenesisProvider {
     private void run68k(long counter) {
         //run half speed compared to VDP
         if (counter % 2 == 0) {
-            bus.handleVdpInterrupts();
             boolean canRun = !cpu.isStopped() && !bus.shouldStop68k();
             if (canRun) {
                 cpu.runInstruction();
             }
+            //interrupts are processed after the current instruction
+            bus.handleVdpInterrupts();
         }
     }
 

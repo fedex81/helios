@@ -20,10 +20,15 @@ public enum Size {
         return this.max;
     }
 
-    public static void main(String[] args) {
-        int data = 0x87;
-        data = data << 8 | data;
-        System.out.println(Integer.toHexString(data));
+    public static long getMaxFromByteCount(int byteCount) {
+        switch (byteCount) {
+            case 1:
+                return BYTE.getMax();
+            case 2:
+                return WORD.getMax();
+            case 4:
+                return LONG.getMax();
+        }
+        return 0;
     }
-
 }

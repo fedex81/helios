@@ -41,6 +41,8 @@ public class MC68000Wrapper implements M68kProvider {
                 handleException(vector);
                 super.raiseException(vector);
                 handleException(vector);
+                //Hardball III
+                setStop(false);
             }
 
             @Override
@@ -53,7 +55,7 @@ public class MC68000Wrapper implements M68kProvider {
                 if (i != null) {
                     return i.execute(opcode);
                 } else {
-                    //TODO this seems to be necessary
+                    //TODO a-line and f-line: this seems to be necessary
                     reg_pc = currentInstructionAddress;
                     return unknown.execute(opcode);
                 }
@@ -61,26 +63,361 @@ public class MC68000Wrapper implements M68kProvider {
 
             @Override
             public void stop() {
-                MC68000Wrapper.LOG.info("68k Stop");
-                //TODO ThunderForce IV uses STOP, why?
                 MC68000Wrapper.this.setStop(true);
             }
 
 
-            //TODO check: is this is needed for all instructions?
+
             @Override
             public void calcFlagsParam(InstructionType type, int src, int dst, int result, int extraParam, m68k.cpu.Size sz) {
-                if (type == InstructionType.ADD) {
-                    int result1 = result;
-                    result1 = sz.byteCount() == 1 ? result & 0xFF : result1;
-                    result1 = sz.byteCount() == 2 ? result & 0xFFFF : result1;
-//                    if(type != InstructionType.ADD && result1 == 0 && 0 != result){
-//                        LOG.info(type + ", result: " + result + ", result1: " + result1);
-//                    }
-                    result = result1;
-                }
+                boolean Sm = (src & sz.msb()) != 0;
+                boolean Dm = (dst & sz.msb()) != 0;
+                boolean Rm = (result & sz.msb()) != 0;
+                boolean Zm = sz.byteCount() == 4 ? result == 0 :
+                        (result & omegadrive.util.Size.getMaxFromByteCount(sz.byteCount())) == 0;
 
-                super.calcFlagsParam(type, src, dst, result, extraParam, sz);
+
+                switch (type) {
+                    case ADD:    //ADD, ADDI, ADDQ
+                    {
+                        if ((Sm && Dm && !Rm) || (!Sm && !Dm && Rm)) {
+                            reg_sr |= V_FLAG;
+                        } else {
+                            reg_sr &= ~(V_FLAG);
+                        }
+
+                        if ((Sm && Dm) || (!Rm && Dm) || (Sm && !Rm)) {
+                            reg_sr |= (C_FLAG | X_FLAG);
+                        } else {
+                            reg_sr &= ~(C_FLAG | X_FLAG);
+                        }
+
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+                        break;
+                    }
+
+                    case ADDX: {
+                        if ((Sm && Dm && !Rm) || (!Sm && !Dm && Rm)) {
+                            reg_sr |= V_FLAG;
+                        } else {
+                            reg_sr &= ~(V_FLAG);
+                        }
+
+                        if ((Sm && Dm) || (!Rm && Dm) || (Sm && !Rm)) {
+                            reg_sr |= (C_FLAG | X_FLAG);
+                        } else {
+                            reg_sr &= ~(C_FLAG | X_FLAG);
+                        }
+
+                        if (!Zm) {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+                        break;
+                    }
+
+                    case ASL: {
+                        //params are different here!
+                        if (src != 0)    // shift count
+                        {
+                            if (dst != 0)    // last bit out
+                            {
+                                reg_sr |= (C_FLAG | X_FLAG);
+                            } else {
+                                reg_sr &= ~(C_FLAG | X_FLAG);
+                            }
+                        }
+
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+
+                        if (extraParam != 0)    // msb changed
+                        {
+                            reg_sr |= V_FLAG;
+                        } else {
+                            reg_sr &= ~V_FLAG;
+                        }
+
+                        break;
+                    }
+
+                    case ASR: {
+                        //params are different here!
+                        if (src != 0)    // shift count
+                        {
+                            if (dst != 0)    // last bit out
+                            {
+                                reg_sr |= (C_FLAG | X_FLAG);
+                            } else {
+                                reg_sr &= ~(C_FLAG | X_FLAG);
+                            }
+                        }
+
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+
+                        // always cleared
+                        reg_sr &= ~V_FLAG;
+
+                        break;
+                    }
+
+                    case CMP:    // CMP, CMPA, CMPI CMPM
+                    {
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if ((!Sm && Dm && !Rm) || (Sm && !Dm && Rm)) {
+                            reg_sr |= V_FLAG;
+                        } else {
+                            reg_sr &= ~(V_FLAG);
+                        }
+
+                        if ((Sm && !Dm) || (Rm && !Dm) || (Sm && Rm)) {
+                            reg_sr |= C_FLAG;
+                        } else {
+                            reg_sr &= ~(C_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+                        break;
+                    }
+                    case LSL:
+                    case LSR:
+                    case ROXL:
+                    case ROXR: {
+                        if (src > 0)    //shift count
+                        {
+                            if (dst != 0)    //last bit out
+                            {
+                                reg_sr |= (C_FLAG | X_FLAG);
+                            } else {
+                                reg_sr &= ~(C_FLAG | X_FLAG);
+                            }
+                        }
+
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+
+                        reg_sr &= ~(V_FLAG);
+
+                        break;
+                    }
+                    case AND:
+                    case EOR:
+                    case MOVE:
+                    case NOT:
+                    case OR: {
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+
+                        reg_sr &= ~(V_FLAG | C_FLAG);
+                        break;
+                    }
+                    case NEG: {
+                        if (Sm && Rm) {
+                            reg_sr |= V_FLAG;
+                        } else {
+                            reg_sr &= ~(V_FLAG);
+                        }
+
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                            reg_sr &= ~(X_FLAG | C_FLAG);
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                            reg_sr |= (X_FLAG | C_FLAG);
+                        }
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+                        break;
+                    }
+                    case NEGX: {
+                        if (Sm && Rm) {
+                            reg_sr |= V_FLAG;
+                        } else {
+                            reg_sr &= ~(V_FLAG);
+                        }
+                        if (Sm || Rm) {
+                            reg_sr |= (X_FLAG | C_FLAG);
+                        } else {
+                            reg_sr &= ~(X_FLAG | C_FLAG);
+                        }
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+                        break;
+                    }
+                    case ROL:
+                    case ROR: {
+                        if (src > 0)    //shift count
+                        {
+                            if (dst != 0)    //last bit out
+                            {
+                                reg_sr |= C_FLAG;
+                            } else {
+                                reg_sr &= ~(C_FLAG);
+                            }
+                        }
+
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+
+                        reg_sr &= ~(V_FLAG);
+
+                        break;
+                    }
+
+                    case SUB: {
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if ((!Sm && Dm && !Rm) || (Sm && !Dm && Rm)) {
+                            reg_sr |= V_FLAG;
+                        } else {
+                            reg_sr &= ~(V_FLAG);
+                        }
+
+                        if ((Sm && !Dm) || (Rm && !Dm) || (Sm && Rm)) {
+                            reg_sr |= (C_FLAG | X_FLAG);
+                        } else {
+                            reg_sr &= ~(C_FLAG | X_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+                        break;
+                    }
+
+                    case SUBX: {
+                        if (!Zm) {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if ((!Sm && Dm && !Rm) || (Sm && !Dm && Rm)) {
+                            reg_sr |= V_FLAG;
+                        } else {
+                            reg_sr &= ~(V_FLAG);
+                        }
+
+                        if ((Sm && !Dm) || (Rm && !Dm) || (Sm && Rm)) {
+                            reg_sr |= (C_FLAG | X_FLAG);
+                        } else {
+                            reg_sr &= ~(C_FLAG | X_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+                        break;
+                    }
+
+                    // swap also affects the SR
+                    case SWAP: {
+                        if (Zm) {
+                            reg_sr |= Z_FLAG;
+                        } else {
+                            reg_sr &= ~(Z_FLAG);
+                        }
+
+                        if (Rm) {
+                            reg_sr |= N_FLAG;
+                        } else {
+                            reg_sr &= ~(N_FLAG);
+                        }
+                        reg_sr &= ~(V_FLAG);            // these are always set to 0
+                        reg_sr &= ~(C_FLAG);
+                        break;
+                    }
+                    default: {
+                        throw new IllegalArgumentException("No flags handled for " + type);
+                    }
+                }
             }
         };
         this.addressSpace = getAddressSpace(busProvider);
@@ -192,9 +529,8 @@ public class MC68000Wrapper implements M68kProvider {
 
 
     private void setStop(boolean value) {
-        LOG.warn("M68K stop: " + value);
+        LOG.debug("M68K stop: " + value);
         this.stop = value;
-        LOG.info(MC68000Monitor.dumpInstructionSet());
     }
 
     @Override
@@ -224,14 +560,12 @@ public class MC68000Wrapper implements M68kProvider {
     public int runInstruction() {
         int res = 0;
         try {
-            printVerbose();
             res = m68k.execute();
             //TODO check SSP vs a7 sync
 //            if(m68k.getSSP() != m68k.getAddrRegisterLong(7)){
 //                LOG.info(str);
 //                m68k.setSSP(m68k.getAddrRegisterLong(7));
 //            }
-//            printCpuState();
         } catch (Exception e) {
             verbose = true;
             LOG.error("68k error", e);
@@ -251,7 +585,6 @@ public class MC68000Wrapper implements M68kProvider {
         if (MC68000Monitor.addToInstructionSet(m68k)) {
             LOG.info(MC68000Monitor.dumpInstructionSet());
         }
-//            startMonitor();
     }
 
     private void handleException(int vector) {
