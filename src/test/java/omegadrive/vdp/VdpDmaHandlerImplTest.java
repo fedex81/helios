@@ -155,11 +155,11 @@ public class VdpDmaHandlerImplTest {
         vdpProvider.writeControlPort(dmaFillLong >> 16);
         vdpProvider.writeControlPort(dmaFillLong & 0xFFFF);
 
-        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
+//        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
 
         vdpProvider.writeDataPort(0x68ac);
 
-        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
+//        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
 
         str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
