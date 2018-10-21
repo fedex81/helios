@@ -72,10 +72,7 @@ public class Util {
             data = memory.readCartridgeWord(address) << 16;
             data |= memory.readCartridgeWord(address + 2);
         }
-        if (verbose) {
-            LOG.info("Read   ROM: {}, {}: {}", Long.toHexString(address), size,
-                    Long.toHexString(data));
-        }
+        LogHelper.printLevel(LOG, Level.DEBUG, "Read ROM: {}, {}: {}", address, data, size, verbose);
         return data;
     }
 
@@ -94,10 +91,7 @@ public class Util {
             data |= memory.readRamByte(address + 2) << 8;
             data |= memory.readRamByte(address + 3);
         }
-        if (verbose) {
-            LOG.info("Read  RAM: {}, {}: {}", Long.toHexString(address), size,
-                    Long.toHexString(data));
-        }
+        LogHelper.printLevel(LOG, Level.DEBUG, "Read RAM: {}, {}: {}", address, data, size, verbose);
         return data;
     }
 
@@ -114,6 +108,7 @@ public class Util {
             data |= sram[(int) address + 2] << 8;
             data |= sram[(int) address + 3];
         }
+        LogHelper.printLevel(LOG, Level.DEBUG, "Read SRAM: {}, {}: {}", address, data, size, verbose);
         return data;
     }
 
@@ -127,6 +122,7 @@ public class Util {
             z80.writeWord(addressInt, data >> 16);
             z80.writeWord(addressInt + 2, data & 0xFFFF);
         }
+        LogHelper.printLevel(LOG, Level.DEBUG, "Write Z80: {}, {}: {}", addressInt, data, size, verbose);
     }
 
     public static void writeRam(MemoryProvider memory, Size size, long addressL, long data) {
@@ -142,10 +138,7 @@ public class Util {
             memory.writeRamByte(address + 2, (data >> 8) & 0xFF);
             memory.writeRamByte(address + 3, (data & 0xFF));
         }
-        if (verbose) {
-            LOG.info("Write  RAM: {}, {}: {}", Long.toHexString(address), size,
-                    Long.toHexString(data));
-        }
+        LogHelper.printLevel(LOG, Level.DEBUG, "Write RAM: {}, {}: {}", address, data, size, verbose);
     }
 
     public static void writeSram(int[] sram, Size size, int address, long data) {
@@ -160,6 +153,7 @@ public class Util {
             sram[address + 2] = (int) ((data >> 8) & 0xFF);
             sram[address + 3] = (int) (data & 0xFF);
         }
+        LogHelper.printLevel(LOG, Level.DEBUG, "Write SRAM: {}, {}: {}", address, data, size, verbose);
     }
 
     public static void arrayDataCopy(int[][] src, int[][] dest) {
@@ -187,16 +181,6 @@ public class Util {
     public static int log2(int n) {
         if (n <= 0) throw new IllegalArgumentException();
         return 31 - Integer.numberOfLeadingZeros(n);
-    }
-
-    public static void printLevelIfVerbose(Logger LOG, Level level, String str, Object arg) {
-        if (Genesis.verbose) {
-            printLevel(LOG, level, str, arg);
-        }
-    }
-
-    public static void printLevel(Logger LOG, Level level, String str, Object arg) {
-        LOG.log(level, str, arg);
     }
 
     public static List<Range<Integer>> getRangeList(int... values) {

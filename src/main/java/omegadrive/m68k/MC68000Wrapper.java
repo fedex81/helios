@@ -73,13 +73,17 @@ public class MC68000Wrapper implements M68kProvider {
                 boolean Sm = (src & sz.msb()) != 0;
                 boolean Dm = (dst & sz.msb()) != 0;
                 boolean Rm = (result & sz.msb()) != 0;
-                boolean Zm = sz.byteCount() == 4 ? result == 0 :
-                        (result & omegadrive.util.Size.getMaxFromByteCount(sz.byteCount())) == 0;
+                boolean Zm = result == 0;
+                //TODO this breaks Lotus II
+//                        sz.byteCount() == 4 ? result == 0 :
+//                        (result & omegadrive.util.Size.getMaxFromByteCount(sz.byteCount())) == 0;
 
 
                 switch (type) {
                     case ADD:    //ADD, ADDI, ADDQ
                     {
+                        Zm = sz.byteCount() == 4 ? result == 0 :
+                                (result & omegadrive.util.Size.getMaxFromByteCount(sz.byteCount())) == 0;
                         if ((Sm && Dm && !Rm) || (!Sm && !Dm && Rm)) {
                             reg_sr |= V_FLAG;
                         } else {

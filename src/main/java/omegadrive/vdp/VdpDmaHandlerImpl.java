@@ -25,8 +25,8 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     public static boolean verbose = false || Genesis.verbose;
 
-    private VdpProvider vdpProvider;
-    private VdpMemoryInterface memoryInterface;
+    protected VdpProvider vdpProvider;
+    protected VdpMemoryInterface memoryInterface;
     private BusProvider busProvider;
 
     private int destAddress;
@@ -86,8 +86,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     public void setupDmaDataPort(int dataWord) {
         dmaFillData = dataWord;
         printInfo("START");
-        destAddress ^= 1;
         dmaFillReady = true;
+        destAddress ^= 1;
+        destAddress += getDestAddressIncrement();
     }
 
 

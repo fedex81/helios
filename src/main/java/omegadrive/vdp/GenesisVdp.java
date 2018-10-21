@@ -2,17 +2,13 @@ package omegadrive.vdp;
 
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
-import omegadrive.util.VideoMode;
+import omegadrive.util.*;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Objects;
 
@@ -208,8 +204,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         writePendingControlPort = false;
         if (control != lastControl) {
             lastControl = control;
-            logInfo("readControl: {}", control);
-            interruptHandler.logVerbose("readControl: {}", control);
+            LogHelper.printLevel(LOG, Level.INFO, "readControl: {}", control, verbose);
         }
         return control;
     }
@@ -332,10 +327,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     public void writeDataPort(long dataL) {
         int data = (int) dataL;
         writePendingControlPort = false;
-        logInfo("writeDataPort, data: {}, address: {}", data, addressRegister);
-        setupDmaFillMaybe(data);
+        LogHelper.printLevel(LOG, Level.INFO, "writeDataPort, data: {}, address: {}", data, addressRegister, verbose);
         memoryInterface.writeVideoRamWord(vramMode, data, addressRegister);
         addressRegister += autoIncrementData;
+        setupDmaFillMaybe(data);
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
 
@@ -348,7 +343,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             // The returned value consists of the VRAM byte as the low byte, plus a byte from the FIFO as the high byte.
             res &= 0xFF;
         }
-        logInfo("readDataPort, address {} , size {}, result {}", addressRegister, Size.WORD, res);
+        LogHelper.printLevel(LOG, Level.INFO, "readDataPort, address {} , result {}, size {}", addressRegister, res,
+                Size.WORD, verbose);
         addressRegister += autoIncrementData;
         return res;
     }
@@ -363,7 +359,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             codeRegister = (int) ((codeRegister & 0x3C | firstWrite >> 14) & 0x3F);
             addressRegister = (int) ((addressRegister & 0xC000) | (firstWrite & 0x3FFF));
             vramMode = VramMode.getVramMode(codeRegister & 0xF);
-            logInfo("writeAddr-1, firstWord: {}, address: {}, code: {}", firstWrite, addressRegister, codeRegister);
+            LogHelper.printLevel(LOG, Level.INFO, "writeAddr-1, firstWord: {}, address: {}, code: {}"
+                    , firstWrite, addressRegister, codeRegister, verbose);
         } else {
             writePendingControlPort = false;
             all = ((firstWrite << 16) | data);
@@ -376,14 +373,16 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             int addressMode = codeRegister & 0xF;    // CD0-CD3
             vramMode = VramMode.getVramMode(addressMode);
             LOG.debug("Video mode: " + Objects.toString(vramMode));
-            logInfo("writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}", data, addressRegister, codeRegister, all);
+            LogHelper.printLevel(LOG, Level.INFO, "writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}"
+                    , data, addressRegister, codeRegister, all, verbose);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((codeRegister & 0b100000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
                 if (dmaMode == VdpDmaHandler.DmaMode.MEM_TO_VRAM) {
                     bus.setStop68k(true);
                 }
-                logInfo("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}", addressRegister, all, writePendingControlPort);
+                LogHelper.printLevel(LOG, Level.INFO, "After DMA setup, writeAddr: {}, data: {}, firstWrite: {}"
+                        , addressRegister, all, writePendingControlPort, verbose);
             }
         }
     }
@@ -401,7 +400,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
         registers[reg] = dataControl;
         updateVariables(reg, dataControl);
-        logInfo("writeReg: {}, data: {}", reg, dataControl);
+        LogHelper.printLevel(LOG, Level.INFO, "writeReg: {}, data: {}", reg, dataControl, verbose);
     }
 
     private void updateVariables(int reg, int data) {
@@ -458,7 +457,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             dmaDone = dmaHandler.doDma(videoMode, isBlanking);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
-                logInfo("{}: OFF", mode);
+                LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", mode, verbose);
                 bus.setStop68k(false);
             }
         }
@@ -475,12 +474,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             }
         }
         return false;
-    }
-
-    private void logInfo(String str, Object... args) {
-        if (verbose) {
-            LOG.log(Level.INFO, new ParameterizedMessage(str, args));
-        }
     }
 
     private void runNew() {

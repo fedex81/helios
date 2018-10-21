@@ -1,5 +1,6 @@
 package omegadrive.ui;
 
+import com.google.common.base.Strings;
 import omegadrive.Genesis;
 import omegadrive.GenesisProvider;
 import omegadrive.util.FileLoader;
@@ -252,7 +253,9 @@ public class EmuFrame implements GenesisWindow {
             } else {
                 RenderingStrategy.toLinear(pixelsDest, data, baseScreenSize);
             }
-            getFpsLabel().setText(label);
+            if (!Strings.isNullOrEmpty(label)) {
+                getFpsLabel().setText(label);
+            }
             gameLabel.repaint();
         });
     }

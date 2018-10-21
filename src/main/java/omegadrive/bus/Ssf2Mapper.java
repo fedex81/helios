@@ -2,6 +2,7 @@ package omegadrive.bus;
 
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.CartridgeInfoProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.Level;
@@ -51,7 +52,7 @@ public class Ssf2Mapper implements GenesisMapper {
     public long readData(long address, Size size) {
         address = address & 0xFF_FFFF;
         if (address >= BANKABLE_START_ADDRESS && address <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {
-            Util.printLevelIfVerbose(LOG, Level.DEBUG, "Bank read: {}", Long.toHexString(address));
+            LogHelper.printLevel(LOG, Level.DEBUG, "Bank read: {}", address);
             int bankSelector = (int) (address / BANK_SIZE);
             address = (banks[bankSelector] * BANK_SIZE) + (address - bankSelector * BANK_SIZE);
             return Util.readRom(memory, size, address);
@@ -100,7 +101,7 @@ public class Ssf2Mapper implements GenesisMapper {
             data = data & 0x3F;
             banks[7] = (int) data;
         }
-        Util.printLevelIfVerbose(LOG, Level.INFO, "Bank write to: {}", Long.toHexString(addressL));
+        LogHelper.printLevel(LOG, Level.INFO, "Bank write to: {}", addressL);
     }
 
 }

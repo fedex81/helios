@@ -65,6 +65,7 @@ public class Genesis implements GenesisProvider {
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public static boolean verbose = false;
+    public static boolean showFps = false;
     private static NumberFormat df = DecimalFormat.getInstance();
 
     static {
@@ -99,6 +100,7 @@ public class Genesis implements GenesisProvider {
         }
         System.getProperties().store(System.out, null);
         verbose = Boolean.valueOf(System.getProperty("emu.debug", "false"));
+        showFps = Boolean.valueOf(System.getProperty("emu.fps", "false"));
     }
 
     public static GenesisProvider createInstance() {
@@ -391,6 +393,9 @@ public class Genesis implements GenesisProvider {
     }
 
     private String getStats(long now, long lastRender, long counter, long start) {
+        if (!showFps) {
+            return "";
+        }
         long fps = 1000 / (now - lastRender + 1);
         double intvSec = (lastRender - start) / 1000d;
         String cps = df.format((counter / intvSec) / 1000000d);

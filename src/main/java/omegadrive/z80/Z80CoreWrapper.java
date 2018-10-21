@@ -87,6 +87,9 @@ public class Z80CoreWrapper implements Z80Provider {
         try {
             printVerbose();
             z80Core.execute();
+            if (verbose) {
+                LOG.info("Z80State: " + toString(z80Core.getZ80State()));
+            }
         } catch (Exception e) {
             LOG.error("z80 exception", e);
             LOG.error("Z80State: " + toString(z80Core.getZ80State()));
