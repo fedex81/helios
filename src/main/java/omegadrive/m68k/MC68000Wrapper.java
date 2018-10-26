@@ -533,7 +533,7 @@ public class MC68000Wrapper implements M68kProvider {
 
 
     private void setStop(boolean value) {
-        LOG.debug("M68K stop: " + value);
+        LOG.debug("M68K stop: {}", value);
         this.stop = value;
     }
 
@@ -544,9 +544,9 @@ public class MC68000Wrapper implements M68kProvider {
 
     @Override
     public void raiseInterrupt(int level) {
-        printCpuState("Before INT: " + level);
+        printCpuState("Before INT: ", level);
         m68k.raiseInterrupt(level);
-        printCpuState("After INT: " + level);
+        printCpuState("After INT: ", level);
     }
 
     @Override
@@ -596,6 +596,13 @@ public class MC68000Wrapper implements M68kProvider {
             printCpuState("Exception: " + vector);
             setStop(true);
         }
+    }
+
+    private void printCpuState(String head, int value) {
+        if (!verbose) {
+            return;
+        }
+        printCpuState(head + value);
     }
 
     private void printCpuState(String head) {
