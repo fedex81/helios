@@ -142,4 +142,8 @@ public interface VdpProvider {
     boolean isDisplayEnabled();
 
     VideoMode getVideoMode();
+
+    default void dumpScreenData() {
+        throw new UnsupportedOperationException("Not supported");
+    }
 }

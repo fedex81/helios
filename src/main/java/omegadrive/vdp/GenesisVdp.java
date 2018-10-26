@@ -3,6 +3,7 @@ package omegadrive.vdp;
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.*;
+import omegadrive.vdp.model.IVdpRenderHandler;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
@@ -125,7 +126,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private VdpInterruptHandler interruptHandler;
     private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
-    private VdpRenderHandler renderHandler;
+    private IVdpRenderHandler renderHandler;
     private VideoMode videoMode;
     private RegionDetector.Region region;
 
@@ -136,7 +137,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         this.memoryInterface = memoryInterface;
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.dmaHandler = dmaHandler;
-        this.renderHandler = new VdpRenderHandler(this, memoryInterface);
+        this.renderHandler = new VdpRenderHandlerNew(this, memoryInterface);
     }
 
     public GenesisVdp(BusProvider bus) {
@@ -144,7 +145,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         this.memoryInterface = new GenesisVdpMemoryInterface();
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.dmaHandler = VdpDmaHandlerImpl.createInstance(this, memoryInterface, bus);
-        this.renderHandler = new VdpRenderHandler(this, memoryInterface);
+        this.renderHandler = new VdpRenderHandlerNew(this, memoryInterface);
     }
 
     @Override
@@ -548,6 +549,12 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 renderHandler.renderLine(line);
             }
         }
+    }
+
+
+    @Override
+    public void dumpScreenData() {
+        renderHandler.dumpScreenData();
     }
 
     @Override

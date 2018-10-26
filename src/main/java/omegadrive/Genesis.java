@@ -66,6 +66,7 @@ public class Genesis implements GenesisProvider {
 
     public static boolean verbose = false;
     public static boolean showFps = false;
+    private boolean vdpDumpScreenData = false;
     private static NumberFormat df = DecimalFormat.getInstance();
 
     static {
@@ -330,6 +331,7 @@ public class Genesis implements GenesisProvider {
                 if (canRenderScreen) {
                     long now = System.currentTimeMillis();
                     renderScreenInternal(getStats(now, lastRender, counter, start));
+                    handleVdpDumpScreenData();
                     canRenderScreen = false;
                     syncCycle(startCycle, targetFps);
                     if (Thread.currentThread().isInterrupted()) {
@@ -414,6 +416,13 @@ public class Genesis implements GenesisProvider {
         canRenderScreen = true;
     }
 
+    private void handleVdpDumpScreenData() {
+        if (vdpDumpScreenData) {
+            vdp.dumpScreenData();
+            vdpDumpScreenData = false;
+        }
+    }
+
     private void renderScreenInternal(String label) {
         emuFrame.renderScreen(vdpScreen, label, vdp.getVideoMode());
     }
@@ -448,6 +457,9 @@ public class Genesis implements GenesisProvider {
                 break;
             case KeyEvent.VK_D:
                 bus.getJoypad().setC(val);
+                break;
+            case KeyEvent.VK_B:
+                vdpDumpScreenData = !vdpDumpScreenData;
                 break;
             case KeyEvent.VK_ESCAPE:
                 if (pressed) {
