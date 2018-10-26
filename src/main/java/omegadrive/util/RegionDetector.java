@@ -69,10 +69,15 @@ public class RegionDetector {
                 forEach(RegionDetector::detectRegion);
     }
 
+    //REGION_JAPAN_NTSC 0x00
+    //REGION_JAPAN_PAL  0x40
+    //REGION_USA        0x80
+    //REGION_EUROPE     0xC0
+    // TMSS = REGION_CODE + 1
     public enum Region {
-        JAPAN('J', 2, 0x41, NTSC_FPS), //01000001
-        USA('U', 1, 0xA0, NTSC_FPS), //10100000
-        EUROPE('E', 0, 0xC1, PAL_FPS); //11000001
+        JAPAN('J', 2, 0x00, NTSC_FPS),
+        USA('U', 1, 0xA0, NTSC_FPS),
+        EUROPE('E', 0, 0xC0, PAL_FPS);
 
         private static EnumSet<Region> values = EnumSet.allOf(Region.class);
 
@@ -104,6 +109,11 @@ public class RegionDetector {
         //	EU:	C1C1
         //	JP: ????
         //	US SEGA CD:	8181
+
+        //REGION_JAPAN_NTSC 0x00
+        //REGION_JAPAN_PAL  0x40
+        //REGION_USA        0x80
+        //REGION_EUROPE     0xC0
         public long getVersionCode() {
             return versionCode;
         }
