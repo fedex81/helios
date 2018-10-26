@@ -1,0 +1,21 @@
+package omegadrive.vdp.model;
+
+import omegadrive.util.VideoMode;
+
+/**
+ * ${FILE}
+ * <p>
+ * Federico Berti
+ * <p>
+ * Copyright 2018
+ */
+public interface IVdpRenderHandler {
+
+    void dumpScreenData();
+
+    int[][] renderFrame();
+
+    void setVideoMode(VideoMode videoMode);
+
+    void renderLine(int line);
+}
