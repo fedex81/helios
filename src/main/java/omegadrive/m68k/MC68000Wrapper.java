@@ -18,6 +18,9 @@ import org.apache.logging.log4j.Logger;
  *
  * NOTES: f-line emulator. Tecmo Cup
  *        a-line emulator. Mamono Hunter Yohko
+ *        reset. Bug Hunt (homebrew)
+ *        stop. Hardball III
+ *        add z-flag. sgdk-partic.bin
  */
 public class MC68000Wrapper implements M68kProvider {
 
@@ -39,7 +42,6 @@ public class MC68000Wrapper implements M68kProvider {
                 handleException(vector);
                 super.raiseException(vector);
                 handleException(vector);
-                //Hardball III
                 setStop(false);
             }
 

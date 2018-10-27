@@ -10,7 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
-import java.util.stream.IntStream;
 
 /**
  * ${FILE}
@@ -47,7 +46,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     private boolean checkSetup(boolean m1, long data) {
         if (!m1) {
-            LOG.warn("Attempting DMA but m1 not set: " + dmaMode + ", data: " + data);
+            LOG.warn("Attempting DMA but m1 not set: {}, data: {}", dmaMode, data);
             return false;
         }
         return dmaMode != null;
@@ -316,74 +315,6 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                 break;
         }
         return slots;
-    }
-
-    public static void main(String[] args) {
-        long fillData = 0x68ac;
-        long destAddr = 0x8002;
-
-        System.out.println(Long.toHexString(destAddr ^ 1));
-        BusProvider busProvider = BusProvider.createBus();
-        VdpMemoryInterface memoryInterface = new GenesisVdpMemoryInterface();
-        VdpDmaHandler dmaHandler = new VdpDmaHandlerImpl();
-
-        VdpProvider vdpProvider = new GenesisVdp(busProvider, memoryInterface, dmaHandler);
-
-        ((VdpDmaHandlerImpl) dmaHandler).vdpProvider = vdpProvider;
-        ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
-
-        vdpProvider.writeControlPort(0x8F02);
-        vdpProvider.writeControlPort(16384);
-        vdpProvider.writeControlPort(2);
-        vdpProvider.writeDataPort(750);
-        vdpProvider.writeDataPort(1260);
-        vdpProvider.writeDataPort(1770);
-        vdpProvider.writeDataPort(2280);
-        vdpProvider.writeDataPort(2790);
-        vdpProvider.writeDataPort(3300);
-        vdpProvider.writeDataPort(3810);
-        vdpProvider.writeDataPort(736);
-        vdpProvider.writeDataPort(1230);
-        vdpProvider.writeDataPort(1740);
-        vdpProvider.writeDataPort(2250);
-        vdpProvider.writeDataPort(2760);
-        vdpProvider.writeDataPort(3270);
-        vdpProvider.writeDataPort(3780);
-        vdpProvider.writeDataPort(706);
-        vdpProvider.writeDataPort(1216);
-
-        IntStream.range(0x8000, 0x8016).forEach(a ->
-                System.out.print(Long.toHexString(memoryInterface.readVramByte(a)) + ","));
-        System.out.println();
-
-        vdpProvider.writeControlPort(0x8F00);
-        vdpProvider.writeControlPort(0x8154);
-        vdpProvider.writeControlPort(0x9305);
-        vdpProvider.writeControlPort(0x9400);
-        vdpProvider.writeControlPort(0x9500);
-        vdpProvider.writeControlPort(0x9600);
-        vdpProvider.writeControlPort(0x9780);
-
-        vdpProvider.writeControlPort(16386);
-        vdpProvider.writeControlPort(130);
-
-        vdpProvider.writeDataPort(0x68ac);
-
-        IntStream.range(0x8000, 0x8016).forEach(a ->
-                System.out.print(Long.toHexString(memoryInterface.readVramByte(a)) + ","));
-        System.out.println();
-
-        dmaHandler.doDma(VideoMode.PAL_H40_V30, true);
-
-        IntStream.range(0x8000, 0x8016).forEach(a ->
-                System.out.print(Long.toHexString(memoryInterface.readVramByte(a)) + ","));
-        System.out.println();
-
-        //ThunderForce IV breaks if this fails
-        int[] expected = {0x2, 0xEE, 0x68, 0x68, 0x06, 0xEA};
-        for (int i = 0; i < expected.length; i++) {
-            System.out.println(Long.toHexString(expected[i]) + ": " + Long.toHexString(memoryInterface.readVramByte(0x8000 + i)));
-        }
     }
 
     /**

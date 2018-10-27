@@ -171,6 +171,7 @@ public class BackupMemoryMapper implements GenesisMapper {
                 } else {
                     LOG.info("Creating backup memory file: " + mapper.backupFile);
                     mapper.sram = new int[CartridgeInfoProvider.DEFAULT_SRAM_BYTE_SIZE];
+                    size = mapper.sram.length;
                     FileLoader.writeFile(mapper.backupFile, mapper.sram);
                 }
                 LOG.info("Using sram file: " + mapper.backupFile + " size: " + size + " bytes");
