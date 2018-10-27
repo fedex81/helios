@@ -3,6 +3,7 @@ package omegadrive.vdp;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.IVdpRenderHandler;
+import omegadrive.vdp.model.RenderPriority;
 import omegadrive.vdp.model.RenderType;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
@@ -190,7 +191,15 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
     private void clearData() {
         Arrays.stream(sprites).forEach(a -> Arrays.fill(a, 0));
         Arrays.stream(spritesIndex).forEach(a -> Arrays.fill(a, 0));
+        Arrays.stream(spritesPrio).forEach(a -> Arrays.fill(a, false));
+        Arrays.stream(planeA).forEach(a -> Arrays.fill(a, 0));
+        Arrays.stream(planeIndexColorA).forEach(a -> Arrays.fill(a, 0));
+        Arrays.stream(planePrioA).forEach(a -> Arrays.fill(a, false));
+        Arrays.stream(planeB).forEach(a -> Arrays.fill(a, 0));
+        Arrays.stream(planeIndexColorB).forEach(a -> Arrays.fill(a, 0));
+        Arrays.stream(planePrioB).forEach(a -> Arrays.fill(a, false));
         Arrays.stream(window).forEach(a -> Arrays.fill(a, 0));
+        Arrays.stream(windowPrio).forEach(a -> Arrays.fill(a, false));
         Arrays.stream(windowIndex).forEach(a -> Arrays.fill(a, 0));
     }
 
@@ -318,12 +327,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
             int spriteLine = (line - realY) % verSizePixels;
 
-            int pointVert;
-            if (verFlip) {
-                pointVert = (spriteLine - (verSizePixels - 1)) * -1;
-            } else {
-                pointVert = spriteLine;
-            }
+            int pointVert = verFlip ? (spriteLine - (verSizePixels - 1)) * -1 : spriteLine;
 
             for (int cellHor = 0; cellHor < (horSize + 1); cellHor++) {
                 //	16 bytes por cell de 8x8
@@ -337,32 +341,19 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
                 }
                 int horLining = vertLining + (cellH * ((verSize + 1) * 32));
                 for (int i = 0; i < 4; i++) {
-                    int sliver = i;
-                    if (horFlip) {
-                        sliver = (i * -1) + 3;
-                    }
-
-                    int grab = (pattern * 0x20) + (horLining) + sliver;
-                    if (grab < 0) {
+                    int sliver = horFlip ? (i * -1) + 3 : i;
+                    int tileBytePointer = (pattern * 0x20) + (horLining) + sliver;
+                    if (tileBytePointer < 0) {
                         continue;    //	FIXME guardar en cache de sprites yPos y otros atrib
                     }
-                    int data = memoryInterface.readVramByte(grab);
-                    int pixel1, pixel2;
-                    if (horFlip) {
-                        pixel1 = data & 0x0F;
-                        pixel2 = (data & 0xF0) >> 4;
-                    } else {
-                        pixel1 = (data & 0xF0) >> 4;
-                        pixel2 = data & 0x0F;
-                    }
-
                     int paletteLine = palette * 32;
+                    int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, horFlip);
+                    int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, horFlip);
+                    int colorIndex1 = paletteLine + (pixelIndexColor1 * 2);
+                    int colorIndex2 = paletteLine + (pixelIndexColor2 * 2);
 
-                    int colorIndex1 = paletteLine + (pixel1 * 2);
-                    int colorIndex2 = paletteLine + (pixel2 * 2);
-
-                    storeSpriteData(pixel1, horOffset, line, priority, colorIndex1);
-                    storeSpriteData(pixel2, horOffset + 1, line, priority, colorIndex2);
+                    storeSpriteData(pixelIndexColor1, horOffset, line, priority, colorIndex1);
+                    storeSpriteData(pixelIndexColor2, horOffset + 1, line, priority, colorIndex2);
                     horOffset += 2;
                 }
             }
@@ -436,6 +427,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
                         && (!bDraw || (bDraw && !bPrio))
                 )));
 
+
                 int pix = 0;
                 if (W) {
                     pix = window[i][j];
@@ -462,7 +454,63 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
                 screenData[i][j] = pix;
             }
         }
-//        clearData(); //TODO old style
+        return screenData;
+    }
+
+    private int[][] compaginateImageOld() {
+        int limitHorTiles = getHorizontalTiles();
+        for (int j = 0; j < ROWS; j++) {
+            for (int i = 0; i < limitHorTiles * 8; i++) {
+                int backColor = planeBack[i][j];
+
+                boolean aPrio = planePrioA[i][j];
+                boolean bPrio = planePrioB[i][j];
+                boolean sPrio = spritesPrio[i][j];
+                boolean wPrio = windowPrio[i][j];
+
+                int aColor = planeIndexColorA[i][j];
+                int bColor = planeIndexColorB[i][j];
+                int wColor = windowIndex[i][j];
+                int spriteIndex = spritesIndex[i][j];
+
+                boolean aDraw = (aColor != 0);
+                boolean bDraw = (bColor != 0);
+                boolean sDraw = (spriteIndex != 0);
+                boolean wDraw = (wColor != 0);
+
+                boolean W = (wDraw && ((wPrio)
+                        || (!wPrio
+                        && (!sDraw || (sDraw && !sPrio))
+                        && (!aDraw || (aDraw && !aPrio))
+                        && (!bDraw || (bDraw && !bPrio))
+                )));
+
+                int pix = 0;
+                if (W) {
+                    pix = window[i][j];
+                } else {
+                    boolean S = (sDraw && ((sPrio)
+                            || (!sPrio && !aPrio && !bPrio)
+                            || (!sPrio && aPrio && !aDraw)
+                            || (!bDraw && bPrio && !sPrio && !aPrio)));
+                    if (S) {
+                        pix = sprites[i][j];
+
+                    } else {
+                        boolean A = (aDraw && aPrio)
+                                || (aDraw && ((!bPrio) || (!bDraw)));
+                        if (A) {
+                            pix = planeA[i][j];
+                        } else if (bDraw) {
+                            pix = planeB[i][j];
+                        } else {
+                            pix = backColor;
+                        }
+                    }
+                }
+                screenData[i][j] = pix;
+            }
+        }
         return screenData;
     }
 
@@ -489,7 +537,9 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 // which results in $30, the proper value for this register.
 //	SA16 is only valid if 128 KB mode is enabled, and allows for rebasing the Plane A nametable to the second 64 KB of VRAM.
     private void renderPlaneA(int line) {
-        renderPlane(line, true);
+        // TODO bit 3 for 128KB VRAM
+        int nameTableLocation = (vdpProvider.getRegisterData(2) & 0x38) * 0x400;
+        renderPlane(line, nameTableLocation, true);
     }
 
     //	$04 - Plane B Name Table Location
@@ -503,15 +553,11 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 // it would be divided by $2000, which results in $07, the proper value for this register.
 //	SB16 is only valid if 128 KB mode is enabled, and allows for rebasing the Plane B nametable to the second 64 KB of VRAM.
     private void renderPlaneB(int line) {
-        renderPlane(line, false);
+        int nameTableLocation = (vdpProvider.getRegisterData(4) & 0x7) * 0x2000;
+        renderPlane(line, nameTableLocation, false);
     }
 
-    private void renderPlane(int line, boolean isPlaneA) {
-
-        int nameTableLocation = isPlaneA ? vdpProvider.getRegisterData(2) & 0x38 :
-                (vdpProvider.getRegisterData(4) & 0x7) << 3;    // TODO bit 3 for 128KB VRAM
-        nameTableLocation *= 0x400;
-
+    private void renderPlane(int line, int nameTableLocation, boolean isPlaneA) {
         int tileLocator = 0;
         int horizontalPlaneSize = getHorizontalPlaneSize();
         int verticalPlaneSize = getVerticalPlaneSize();
@@ -523,65 +569,60 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         int VS = (regB >> 2) & 0x1;
 
         //horizontal scrolling
-        long horizontalScrollingOffset = horizontalScrolling(line, HS, hScrollDataLocation, horizontalPlaneSize, isPlaneA);
+        int horizontalScrollingOffset = horizontalScrolling(line, HS, hScrollDataLocation, horizontalPlaneSize, isPlaneA);
 
         int[][] plane = isPlaneA ? planeA : planeB;
         boolean[][] planePriority = isPlaneA ? planePrioA : planePrioB;
         int[][] planeIndexColor = isPlaneA ? planeIndexColorA : planeIndexColorB;
+        RenderPriority renderPriority = isPlaneA ? RenderPriority.PLANE_A_PRIO : RenderPriority.PLANE_B_PRIO;
         TileDataHolder tileDataHolder = new TileDataHolder();
 
         for (int pixel = 0; pixel < (limitHorTiles * 8); pixel++) {
-            int loc = (int) (((pixel + horizontalScrollingOffset)) % (horizontalPlaneSize * 8)) / 8;
+            int tileLocation = (int) (((pixel + horizontalScrollingOffset)) % (horizontalPlaneSize * 8)) / 8;
 
             int[] res = verticalScrolling(line, VS, pixel, nameTableLocation, verticalPlaneSize, isPlaneA);
             int verticalScrollingOffset = res[0];
             int scrollMap = res[1];
-            loc = tileLocator + (loc * 2);
-            loc += verticalScrollingOffset;
-            int nameTable = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VRAM, loc);
+            tileLocation = tileLocator + (tileLocation * 2);
+            tileLocation += verticalScrollingOffset;
 
-            tileDataHolder = getTileData(nameTable, tileDataHolder);
+            int tileNameTable = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VRAM, tileLocation);
+
+            tileDataHolder = getTileData(tileNameTable, tileDataHolder);
 
             int paletteLine = tileDataHolder.paletteLineIndex * 32;    //	16 colors per line, 2 bytes per color
 
             int tileIndex = tileDataHolder.tileIndex * 0x20;
 
             int row = (scrollMap % 8);
-
             int pointVert = tileDataHolder.vertFlip ? (row - 7) * -1 : row;
-            int pixelInTile = (int) ((pixel + horizontalScrollingOffset) % 8);
+            int pixelInTile = (pixel + horizontalScrollingOffset) % 8;
 
             int point = tileDataHolder.horFlip ? (pixelInTile - 7) * -1 : pixelInTile;
-            int pixel1 = 0;
-            boolean priorityValue = false;
 
             point /= 2;
 
-            int grab = (tileIndex + point) + (pointVert * 4);
-            int data = memoryInterface.readVramByte(grab);
+            int tileBytePointer = (tileIndex + point) + (pointVert * 4);
+            int onePixelData = getPixelIndexColor(tileBytePointer, pixelInTile, tileDataHolder.horFlip);
+            int theColor = getPixelColorValue(onePixelData, paletteLine);
 
-            if ((pixelInTile % 2) == 0) {
-                if (tileDataHolder.horFlip) {
-                    pixel1 = data & 0x0F;
-                } else {
-                    pixel1 = (data & 0xF0) >> 4;
-                }
-            } else {
-                if (tileDataHolder.horFlip) {
-                    pixel1 = (data & 0xF0) >> 4;
-                } else {
-                    pixel1 = data & 0x0F;
-                }
-            }
-
-            int colorIndex1 = paletteLine + (pixel1 * 2);
-            int theColor1 = getColorFromIndex(colorIndex1);
-            priorityValue = tileDataHolder.priority;
-
-            plane[pixel][line] = theColor1;
-            planePriority[pixel][line] = priorityValue;
-            planeIndexColor[pixel][line] = pixel1;
+            // index = 0 -> transparent pixel, but the color value could be any color
+            plane[pixel][line] = theColor;
+            planeIndexColor[pixel][line] = onePixelData;
+            planePriority[pixel][line] = tileDataHolder.priority;
         }
+    }
+
+    private int getPixelIndexColor(int tileBytePointer, int pixelInTile, boolean isHorizontalFlip) {
+        //1 byte represents 2 pixels, 1 pixel = 4 bit = 16 color gamut
+        int twoPixelsData = memoryInterface.readVramByte(tileBytePointer);
+        boolean isFirstPixel = (pixelInTile % 2) == (isHorizontalFlip ? 0 : 1);
+        return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
+    }
+
+    private int getPixelColorValue(int pixelIndexColor, int paletteLine) {
+        int colorIndexCram = paletteLine + (pixelIndexColor * 2);
+        return getColorFromIndex(colorIndexCram);
     }
 
     // This value is effectively the address divided by $400; however, the low
@@ -649,7 +690,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         return verticalScrollRes;
     }
 
-    private long horizontalScrolling(int line, int HS, int hScrollBase, int horizontalPlaneSize, boolean isPlaneA) {
+    private int horizontalScrolling(int line, int HS, int hScrollBase, int horizontalPlaneSize, boolean isPlaneA) {
         int vramOffset = 0;
         int scrollDataShift = (horizontalPlaneSize * 8);
         int horScrollMask = scrollDataShift - 1;
@@ -677,7 +718,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
                 vramOffset = isPlaneA ? scrollLine1 : scrollLine1 + 2;
                 break;
         }
-        long scrollDataHor = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VRAM, vramOffset);
+        int scrollDataHor = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VRAM, vramOffset);
         scrollDataHor &= horScrollMask;
         scrollDataHor = scrollDataShift - scrollDataHor;
         return scrollDataHor;
@@ -708,53 +749,32 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
             tileDataHolder = getTileData(nameTable, tileDataHolder);
 
-            int paletteLine = tileDataHolder.paletteLineIndex * 32;    //	16 colores por linea, 2 bytes por color
+            int paletteLine = tileDataHolder.paletteLineIndex * 32;
 
             int tileIndex = tileDataHolder.tileIndex * 0x20;
-            int pointVert;
-            if (tileDataHolder.vertFlip) {
-                pointVert = (rowInTile - 7) * -1;
-            } else {
-                pointVert = rowInTile;
-            }
+            int pointVert = tileDataHolder.vertFlip ? (rowInTile - 7) * -1 : rowInTile;
+
+            //two pixels at a time as they share a tile
             for (int k = 0; k < 4; k++) {
-                int point;
-                if (tileDataHolder.horFlip) {
-                    point = (k - 3) * -1;
-                } else {
-                    point = k;
-                }
-
+                int point = tileDataHolder.horFlip ? (k - 3) * -1 : k;
                 int po = horTile * 8 + (k * 2);
-                int pixel1 = 0, pixel2 = 0;
 
-                int grab = (tileIndex + point) + (pointVert * 4);
-                int data = memoryInterface.readVramByte(grab);
+                int tileBytePointer = (tileIndex + point) + (pointVert * 4);
 
-                if (tileDataHolder.horFlip) {
-                    pixel1 = data & 0x0F;
-                    pixel2 = (data & 0xF0) >> 4;
-                } else {
-                    pixel1 = (data & 0xF0) >> 4;
-                    pixel2 = data & 0x0F;
-                }
+                int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, tileDataHolder.horFlip);
+                int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, tileDataHolder.horFlip);
 
-                int colorIndex1 = paletteLine + (pixel1 * 2);
-                int colorIndex2 = paletteLine + (pixel2 * 2);
+                int pixelColor1 = getPixelColorValue(pixelIndexColor1, paletteLine);
+                int pixelColor2 = getPixelColorValue(pixelIndexColor2, paletteLine);
 
-                int theColor1 = getColorFromIndex(colorIndex1);
-                int theColor2 = getColorFromIndex(colorIndex2);
-                boolean priorityValue = tileDataHolder.priority;
+                window[po][line] = pixelIndexColor1 > 0 ? pixelColor1 : -pixelColor1;
+                window[po + 1][line] = pixelIndexColor2 > 0 ? pixelColor2 : -pixelColor2;
 
+                windowPrio[po][line] = tileDataHolder.priority;
+                windowPrio[po + 1][line] = tileDataHolder.priority;
 
-                window[po][line] = theColor1;
-                window[po + 1][line] = theColor2;
-
-                windowPrio[po][line] = priorityValue;
-                windowPrio[po + 1][line] = priorityValue;
-
-                windowIndex[po][line] = pixel1;
-                windowIndex[po + 1][line] = pixel2;
+                windowIndex[po][line] = pixelIndexColor1;
+                windowIndex[po + 1][line] = pixelIndexColor2;
             }
         }
     }
