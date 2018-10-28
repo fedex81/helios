@@ -135,16 +135,19 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     public GenesisVdp(BusProvider bus, VdpMemoryInterface memoryInterface, VdpDmaHandler dmaHandler) {
         this.bus = bus;
         this.memoryInterface = memoryInterface;
-        this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.dmaHandler = dmaHandler;
-        this.renderHandler = new VdpRenderHandlerNew(this, memoryInterface);
+        setupVdp();
     }
 
     public GenesisVdp(BusProvider bus) {
         this.bus = bus;
         this.memoryInterface = new GenesisVdpMemoryInterface();
-        this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.dmaHandler = VdpDmaHandlerImpl.createInstance(this, memoryInterface, bus);
+        setupVdp();
+    }
+
+    private void setupVdp() {
+        this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerNew(this, memoryInterface);
     }
 

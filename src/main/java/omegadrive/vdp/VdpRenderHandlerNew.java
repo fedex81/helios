@@ -56,16 +56,14 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
     private boolean[][] planePrioA = new boolean[COLS][ROWS];
     private boolean[][] planePrioB = new boolean[COLS][ROWS];
 
-    private int[][] planeIndexColorA = new int[COLS][ROWS];
-    private int[][] planeIndexColorB = new int[COLS][ROWS];
-
     private int[][] sprites = new int[COLS][ROWS];
     private int[][] spritesIndex = new int[COLS][ROWS];
     private boolean[][] spritesPrio = new boolean[COLS][ROWS];
 
     private int[][] window = new int[COLS][ROWS];
-    private int[][] windowIndex = new int[COLS][ROWS];
     private boolean[][] windowPrio = new boolean[COLS][ROWS];
+
+    private RenderPriority[][] pixelPriority = new RenderPriority[COLS][ROWS];
 
     private int[][] screenData = new int[COLS][ROWS];
 
@@ -167,13 +165,13 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
     public void renderLine(int line) {
         if (line == 0) {
             clearData();
-        }
-        spritesLine = 0;
-        disp = vdpProvider.isDisplayEnabled();
-        if (!disp) { //breaks Gunstar Heroes
-            return;
+            evaluateSprites();
         }
         renderBack(line);
+        disp = vdpProvider.isDisplayEnabled();
+        if (!disp) {
+            return;
+        }
         renderPlaneA(line);
         renderPlaneB(line);
         renderWindow(line);
@@ -182,39 +180,25 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
     public int[][] renderFrame() {
         spritesFrame = 0;
-        evaluateSprites();
         return compaginateImage();
     }
-
 
     //TODO why needed?
     private void clearData() {
         Arrays.stream(sprites).forEach(a -> Arrays.fill(a, 0));
         Arrays.stream(spritesIndex).forEach(a -> Arrays.fill(a, 0));
         Arrays.stream(spritesPrio).forEach(a -> Arrays.fill(a, false));
-        Arrays.stream(planeA).forEach(a -> Arrays.fill(a, 0));
-        Arrays.stream(planeIndexColorA).forEach(a -> Arrays.fill(a, 0));
-        Arrays.stream(planePrioA).forEach(a -> Arrays.fill(a, false));
-        Arrays.stream(planeB).forEach(a -> Arrays.fill(a, 0));
-        Arrays.stream(planeIndexColorB).forEach(a -> Arrays.fill(a, 0));
-        Arrays.stream(planePrioB).forEach(a -> Arrays.fill(a, false));
-        Arrays.stream(window).forEach(a -> Arrays.fill(a, 0));
-        Arrays.stream(windowPrio).forEach(a -> Arrays.fill(a, false));
-        Arrays.stream(windowIndex).forEach(a -> Arrays.fill(a, 0));
+        Arrays.fill(lastIndexes, 0);
+        Arrays.stream(spritesPerLine).forEach(a -> Arrays.fill(a, -1));
+        Arrays.stream(pixelPriority).forEach(a -> Arrays.fill(a, RenderPriority.BACK_PLANE));
     }
+
 
     private void evaluateSprites() {
         //	AT16 is only valid if 128 KB mode is enabled,
         // and allows for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
         int spriteTableLoc = vdpProvider.getRegisterData(0x5) & 0x7F;
         int spriteTable = spriteTableLoc * 0x200;
-
-        //reset
-        int currSprite = 0;
-        for (int i = 0; i < ROWS; i++) {
-            lastIndexes[i] = 0;
-            Arrays.fill(spritesPerLine[i], -1);
-        }
 
         boolean isH40 = videoMode.isH40();
         int maxSprites = maxSpritesPerFrame(isH40);
@@ -240,7 +224,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
                 }
 
                 int last = lastIndexes[j];
-                if (last < maxSprites) { //TODO why??
+                if (last < maxSprites) {
                     spritesPerLine[j][last] = i;
                     lastIndexes[j] = last + 1;
                 }
@@ -275,7 +259,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 //        if (spritesFrame > maxSpritesPerFrame) { //TODO breaks AyrtonSenna
 //            return;
 //        }
-
+        spritesLine = 0;
         while (currSprite != -1) {
             baseAddress = spriteTable + (currSprite * 8);
 
@@ -366,149 +350,56 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         }
     }
 
+    //    The priority flag takes care of the order between each layer, but between sprites the situation is different
+//    (since they're all in the same layer).
+//    Sprites are sorted by their order in the sprite table (going by their link order).
+//    Sprites earlier in the list show up on top of sprites later in the list (priority flag does nothing here).
+// Whichever sprite ends up on top in a given pixel is what will
+// end up in the sprite layer (and sorted against plane A and B).
     private void storeSpriteData(int pixel, int horOffset, int line, boolean priority, int colorIndex) {
         if (horOffset < 0 || horOffset >= COLS) {
             return;
         }
-        if (pixel == 0 && spritesIndex[horOffset][line] == 0) {
-            spritesPrio[horOffset][line] = priority;
-        } else if (pixel != 0) {
-            //TODO this seems to fix the sprite priority issue in Sonic
-            if (priors[horOffset] == 0) {
-                // || (priors[horOffset] == 1 && priority)) {
-                if (priority) {
-                    priors[horOffset] = 1;
-                }
-                int theColor = getColorFromIndex(colorIndex);
-                sprites[horOffset][line] = theColor;
-                spritesIndex[horOffset][line] = pixel;
-                spritesPrio[horOffset][line] = priority;
-            }
+        boolean isSpriteAlreadyShown = pixelPriority[horOffset][line].getRenderType() == RenderType.SPRITE;
+        if (isSpriteAlreadyShown) {
+            return;
+        }
+        int theColor = getColorFromIndex(colorIndex);
+        sprites[horOffset][line] = theColor;
+        spritesIndex[horOffset][line] = pixel;
+        spritesPrio[horOffset][line] = priority;
+
+        if (pixel > 0) {
+            updatePriority(horOffset, line, priority ? RenderPriority.SPRITE_PRIO : RenderPriority.SPRITE_NO_PRIO);
         }
     }
 
-    //The VDP has a complex system of priorities that can be used to achieve several complex effects.
-    // The priority order goes like follows, with the least priority being the first item in the list:
-    //
-    //Backdrop Colour
-    //Plane B with priority bit clear
-    //Plane A with priority bit clear
-    //Sprites with priority bit clear
-    //Window Plane with priority bit clear
-    //Plane B with priority bit set
-    //Plane A with priority bit set
-    //Sprites with priority bit set
-    //Window Plane with priority bit set
     private int[][] compaginateImage() {
-        int limitHorTiles = getHorizontalTiles();
-        for (int j = 0; j < ROWS; j++) {
-            for (int i = 0; i < limitHorTiles * 8; i++) {
-                int backColor = planeBack[i][j];
-
-                boolean aPrio = planePrioA[i][j];
-                boolean bPrio = planePrioB[i][j];
-                boolean sPrio = spritesPrio[i][j];
-                boolean wPrio = windowPrio[i][j];
-
-                int aColor = planeIndexColorA[i][j];
-                int bColor = planeIndexColorB[i][j];
-                int wColor = windowIndex[i][j];
-                int spriteIndex = spritesIndex[i][j];
-
-                boolean aDraw = (aColor != 0);
-                boolean bDraw = (bColor != 0);
-                boolean sDraw = (spriteIndex != 0);
-                boolean wDraw = (wColor != 0);
-
-                boolean W = (wDraw && ((wPrio)
-                        || (!wPrio
-                        && (!sDraw || (sDraw && !sPrio))
-                        && (!aDraw || (aDraw && !aPrio))
-                        && (!bDraw || (bDraw && !bPrio))
-                )));
-
-
-                int pix = 0;
-                if (W) {
-                    pix = window[i][j];
-                } else {
-                    boolean S = (sDraw && ((sPrio)
-                            || (!sPrio && !aPrio && !bPrio)
-                            || (!sPrio && aPrio && !aDraw)
-                            || (!bDraw && bPrio && !sPrio && !aPrio)));
-                    if (S) {
-                        pix = sprites[i][j];
-
-                    } else {
-                        boolean A = (aDraw && aPrio)
-                                || (aDraw && ((!bPrio) || (!bDraw)));
-                        if (A) {
-                            pix = planeA[i][j];
-                        } else if (bDraw) {
-                            pix = planeB[i][j];
-                        } else {
-                            pix = backColor;
-                        }
-                    }
+        int height = videoMode.getDimension().height;
+        int width = videoMode.getDimension().width;
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i < width; i++) {
+                RenderPriority rp = pixelPriority[i][j];
+                RenderType rt = rp.getRenderType();
+                int pixelColor = 0;
+                switch (rt) {
+                    case BACK_PLANE:
+                        pixelColor = planeBack[i][j];
+                        break;
+                    case PLANE_A:
+                        pixelColor = planeA[i][j];
+                        break;
+                    case PLANE_B:
+                        pixelColor = planeB[i][j];
+                        break;
+                    case WINDOW_PLANE:
+                        pixelColor = window[i][j];
+                        break;
+                    case SPRITE:
+                        pixelColor = sprites[i][j];
+                        break;
                 }
-                screenData[i][j] = pix;
-            }
-        }
-        return screenData;
-    }
-
-    private int[][] compaginateImageOld() {
-        int limitHorTiles = getHorizontalTiles();
-        for (int j = 0; j < ROWS; j++) {
-            for (int i = 0; i < limitHorTiles * 8; i++) {
-                int backColor = planeBack[i][j];
-
-                boolean aPrio = planePrioA[i][j];
-                boolean bPrio = planePrioB[i][j];
-                boolean sPrio = spritesPrio[i][j];
-                boolean wPrio = windowPrio[i][j];
-
-                int aColor = planeIndexColorA[i][j];
-                int bColor = planeIndexColorB[i][j];
-                int wColor = windowIndex[i][j];
-                int spriteIndex = spritesIndex[i][j];
-
-                boolean aDraw = (aColor != 0);
-                boolean bDraw = (bColor != 0);
-                boolean sDraw = (spriteIndex != 0);
-                boolean wDraw = (wColor != 0);
-
-                boolean W = (wDraw && ((wPrio)
-                        || (!wPrio
-                        && (!sDraw || (sDraw && !sPrio))
-                        && (!aDraw || (aDraw && !aPrio))
-                        && (!bDraw || (bDraw && !bPrio))
-                )));
-
-                int pix = 0;
-                if (W) {
-                    pix = window[i][j];
-                } else {
-                    boolean S = (sDraw && ((sPrio)
-                            || (!sPrio && !aPrio && !bPrio)
-                            || (!sPrio && aPrio && !aDraw)
-                            || (!bDraw && bPrio && !sPrio && !aPrio)));
-                    if (S) {
-                        pix = sprites[i][j];
-
-                    } else {
-                        boolean A = (aDraw && aPrio)
-                                || (aDraw && ((!bPrio) || (!bDraw)));
-                        if (A) {
-                            pix = planeA[i][j];
-                        } else if (bDraw) {
-                            pix = planeB[i][j];
-                        } else {
-                            pix = backColor;
-                        }
-                    }
-                }
-                screenData[i][j] = pix;
+                screenData[i][j] = pixelColor;
             }
         }
         return screenData;
@@ -524,6 +415,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
         for (int pixel = 0; pixel < (limitHorTiles * 8); pixel++) {
             planeBack[pixel][line] = backColor;
+            pixelPriority[pixel][line] = RenderPriority.BACK_PLANE;
         }
     }
 
@@ -573,12 +465,14 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
         int[][] plane = isPlaneA ? planeA : planeB;
         boolean[][] planePriority = isPlaneA ? planePrioA : planePrioB;
-        int[][] planeIndexColor = isPlaneA ? planeIndexColorA : planeIndexColorB;
-        RenderPriority renderPriority = isPlaneA ? RenderPriority.PLANE_A_PRIO : RenderPriority.PLANE_B_PRIO;
         TileDataHolder tileDataHolder = new TileDataHolder();
 
+        RenderType renderType = isPlaneA ? RenderType.PLANE_A : RenderType.PLANE_B;
+        RenderPriority highPrio = RenderPriority.getRenderPriority(renderType, true);
+        RenderPriority lowPrio = RenderPriority.getRenderPriority(renderType, false);
+
         for (int pixel = 0; pixel < (limitHorTiles * 8); pixel++) {
-            int tileLocation = (int) (((pixel + horizontalScrollingOffset)) % (horizontalPlaneSize * 8)) / 8;
+            int tileLocation = (((pixel + horizontalScrollingOffset)) % (horizontalPlaneSize * 8)) / 8;
 
             int[] res = verticalScrolling(line, VS, pixel, nameTableLocation, verticalPlaneSize, isPlaneA);
             int verticalScrollingOffset = res[0];
@@ -608,8 +502,11 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
             // index = 0 -> transparent pixel, but the color value could be any color
             plane[pixel][line] = theColor;
-            planeIndexColor[pixel][line] = onePixelData;
             planePriority[pixel][line] = tileDataHolder.priority;
+
+            if (onePixelData > 0) {
+                updatePriority(pixel, line, tileDataHolder.priority ? highPrio : lowPrio);
+            }
         }
     }
 
@@ -767,16 +664,28 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
                 int pixelColor1 = getPixelColorValue(pixelIndexColor1, paletteLine);
                 int pixelColor2 = getPixelColorValue(pixelIndexColor2, paletteLine);
 
-                window[po][line] = pixelIndexColor1 > 0 ? pixelColor1 : -pixelColor1;
-                window[po + 1][line] = pixelIndexColor2 > 0 ? pixelColor2 : -pixelColor2;
+                window[po][line] = pixelColor1;
+                window[po + 1][line] = pixelColor2;
 
                 windowPrio[po][line] = tileDataHolder.priority;
                 windowPrio[po + 1][line] = tileDataHolder.priority;
 
-                windowIndex[po][line] = pixelIndexColor1;
-                windowIndex[po + 1][line] = pixelIndexColor2;
+                RenderPriority rp = tileDataHolder.priority ? RenderPriority.WINDOW_PLANE_PRIO :
+                        RenderPriority.WINDOW_PLANE_NO_PRIO;
+
+                if (pixelIndexColor1 > 0) {
+                    updatePriority(po, line, rp);
+                }
+                if (pixelIndexColor2 > 0) {
+                    updatePriority(po + 1, line, rp);
+                }
             }
         }
+    }
+
+    private void updatePriority(int x, int y, RenderPriority rp) {
+        RenderPriority prev = pixelPriority[x][y];
+        pixelPriority[x][y] = prev.compareTo(rp) > 0 ? prev : rp;
     }
 
     private int getColorFromIndex(int colorIndex) {
