@@ -85,6 +85,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     @Override
+    public void resetFrom68k() {
+        this.getFm().reset();
+        this.z80.reset();
+    }
+
+    @Override
     public boolean shouldStop68k() {
         return stop68k;
     }

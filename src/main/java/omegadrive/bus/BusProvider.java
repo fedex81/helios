@@ -66,6 +66,13 @@ public interface BusProvider {
 
     void reset();
 
+    /**
+     * VRES is fed to 68000 for 128 VCLKs (16.7us); ZRES is fed
+     * to the z80 and ym2612, and remains asserted until the 68000 does something to
+     * deassert it; VDP and IO chip are unaffected.
+     */
+    void resetFrom68k();
+
     boolean shouldStop68k();
 
     //VDP setting this

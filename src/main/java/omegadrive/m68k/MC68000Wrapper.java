@@ -47,7 +47,15 @@ public class MC68000Wrapper implements M68kProvider {
 
             @Override
             public void resetExternal() {
-                //TODO reset FM?
+                LOG.info("Reset External");
+                busProvider.resetFrom68k();
+            }
+
+            @Override
+            public void reset() {
+                LOG.info("Reset");
+                super.reset();
+                resetExternal();
             }
 
             @Override
