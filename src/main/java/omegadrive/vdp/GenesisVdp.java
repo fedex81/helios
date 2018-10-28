@@ -545,9 +545,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         interruptHandler.logVeryVerbose("Draw Scanline: %s", line);
         int lineLimit = videoMode.getDimension().height;
         if (line < lineLimit) {
-            if (displayEnable) {
-                renderHandler.renderLine(line);
-            }
+            renderHandler.renderLine(line);
         }
     }
 
