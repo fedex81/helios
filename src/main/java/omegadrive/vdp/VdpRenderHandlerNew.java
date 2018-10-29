@@ -9,7 +9,6 @@ import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.awt.*;
 import java.util.Arrays;
 
 /**
@@ -23,6 +22,26 @@ import java.util.Arrays;
  * @author DarkMoe
  * <p>
  * Copyright 2018
+ *
+ * TODO Sprite Masking
+ * Not quite. My notes from testing:
+ * -Sprite masks at x=0 only work correctly when there's at least one higher priority sprite
+ * on the same line which is not at x=0. (This is what Galaxy Force II relies on)
+ * -Sprite masks at x=0 are never effective when not proceeded by a higher priority sprite
+ * not at x=0 on the same line, unless the previous line ended with a sprite pixel overflow,
+ * in which case, the mask becomes effective for that line only. If that line also causes a dot overflow,
+ * the mask will also be effective on the following line, and so on.
+ * -A sprite mask does contribute to the pixel overflow count for a line according to its given dimensions
+ * just like any other sprite. Note that sprite masks still count towards the pixel count for a line
+ * when sprite masks are the first sprites on a line and are ignored. (This is what Mickey Mania relies on)
+ * -A sprite mask at x=0 does NOT stop the VDP from parsing the remainder of sprites for that line,
+ * it just prevents it from displaying any more pixels as a result of the sprites it locates on that line.
+ * As a result, a sprite pixel overflow can still occur on a line where all sprites were masked,
+ * but there were enough dots in the sprites given after the masking sprite on that line to cause a dot overflow.
+ *
+ * Note point number 2. Nothing emulates that, and my test ROM will be checking for it.
+ * I haven't yet confirmed whether a sprite count overflow on the previous line causes this behaviour,
+ * or whether only a sprite dot overflow on the previous line triggers it.
  */
 public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
@@ -33,19 +52,15 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
     private VdpRenderDump renderDump;
 
     private int spritesFrame = 0;
-    private int spritesLine = 0;
     private boolean disp;
 
     private final static int ROWS = VdpProvider.VDP_VIDEO_ROWS;
     private final static int COLS = VdpProvider.VDP_VIDEO_COLS;
     private final static int INDEXES_NUM = ROWS;
-    private final static Dimension d = new Dimension(COLS, ROWS);
 
     private VideoMode videoMode;
     private VdpColorMapper colorMapper;
 
-    private int[] lastIndexes = new int[INDEXES_NUM];
-    private int[] priors = new int[COLS];
     private int[][] spritesPerLine = new int[INDEXES_NUM][VdpProvider.MAX_SPRITES_PER_FRAME_H40];
     private int[] verticalScrollRes = new int[2];
 
@@ -163,10 +178,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
     }
 
     public void renderLine(int line) {
-        if (line == 0) {
-            clearData();
-            evaluateSprites();
-        }
+        initFrameData(line);
         renderBack(line);
         disp = vdpProvider.isDisplayEnabled();
         if (!disp) {
@@ -176,11 +188,23 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         renderPlaneB(line);
         renderWindow(line);
         renderSprites(line);
+        phase1(line + 1);
+    }
+
+    private void initFrameData(int line) {
+        if (line == 0) {
+            //need to do this here so I can dump data just after rendering the frame
+            renderSpritesBeforeLine0();
+        }
     }
 
     public int[][] renderFrame() {
-        spritesFrame = 0;
-        return compaginateImage();
+        return composeImage();
+    }
+
+    private void renderSpritesBeforeLine0() {
+        clearData();
+        phase1(0);
     }
 
     //TODO why needed?
@@ -188,23 +212,29 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         Arrays.stream(sprites).forEach(a -> Arrays.fill(a, 0));
         Arrays.stream(spritesIndex).forEach(a -> Arrays.fill(a, 0));
         Arrays.stream(spritesPrio).forEach(a -> Arrays.fill(a, false));
-        Arrays.fill(lastIndexes, 0);
         Arrays.stream(spritesPerLine).forEach(a -> Arrays.fill(a, -1));
         Arrays.stream(pixelPriority).forEach(a -> Arrays.fill(a, RenderPriority.BACK_PLANE));
+        spritesFrame = 0;
     }
 
-
-    private void evaluateSprites() {
+    private void phase1(int line) {
         //	AT16 is only valid if 128 KB mode is enabled,
         // and allows for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
         int spriteTableLoc = vdpProvider.getRegisterData(0x5) & 0x7F;
         int spriteTable = spriteTableLoc * 0x200;
 
         boolean isH40 = videoMode.isH40();
-        int maxSprites = maxSpritesPerFrame(isH40);
+        int height = videoMode.getDimension().height;
+        int maxSpritesPerFrame = maxSpritesPerFrame(isH40);
+        int maxSpritesPerLine = maxSpritesPerLine(isH40);
+        int count = 0;
 
-        for (int i = 0; i < maxSprites; i++) {
-            int baseAddress = spriteTable + (i * 8);
+        if (spritesFrame >= maxSpritesPerFrame) {
+            return;
+        }
+        int next = 0;
+        for (int index = 0; index < maxSpritesPerFrame; index++) {
+            int baseAddress = spriteTable + (next * 8);
 
             int byte0 = memoryInterface.readVramByte(baseAddress);
             int byte1 = memoryInterface.readVramByte(baseAddress + 1);
@@ -218,19 +248,18 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
             int verSizePixels = (verSize + 1) * 8;
             int realY = verticalPos - 128;
-            for (int j = realY; j < realY + verSizePixels; j++) {
-                if (j < 0 || j >= INDEXES_NUM) {
-                    continue;
-                }
-
-                int last = lastIndexes[j];
-                if (last < maxSprites) {
-                    spritesPerLine[j][last] = i;
-                    lastIndexes[j] = last + 1;
-                }
+            boolean isSpriteOnLine = line >= realY && line < realY + verSizePixels;
+            if (realY < 0 || realY >= height || !isSpriteOnLine) {
+                next = linkData;
+                continue;
             }
+            spritesPerLine[line][count] = next;
+            spritesFrame += line == realY ? 1 : 0;
+            count++;
+            next = linkData;
 
-            if (linkData == 0) {
+            if (next == 0 || next > maxSpritesPerFrame ||
+                    count >= maxSpritesPerLine || spritesFrame >= maxSpritesPerFrame) {
                 return;
             }
         }
@@ -241,26 +270,16 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         // for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
         int spriteTableLoc = vdpProvider.getRegisterData(0x5) & 0x7F;
         int spriteTable = spriteTableLoc * 0x200;
+        int verticalPos;
 
-        long linkData = 0xFF;
-        long verticalPos;
-
-        int baseAddress = spriteTable;
+        int baseAddress;
         int[] spritesInLine = spritesPerLine[line];
         int ind = 0;
         int currSprite = spritesInLine[0];
 
-
-        boolean isH40 = videoMode.isH40();
-        int maxSpritesPerLine = maxSpritesPerLine(isH40);
-        int maxSpritesPerFrame = maxSpritesPerFrame(isH40);
-        Arrays.fill(priors, 0);
-        //Stop processing sprites, skip the remaining lines
-//        if (spritesFrame > maxSpritesPerFrame) { //TODO breaks AyrtonSenna
-//            return;
-//        }
-        spritesLine = 0;
         while (currSprite != -1) {
+//            LOG.info("Showing sprite, Line: " + line + ", spritesLine: " + ind + ", spritesFrame: " + spritesFrame);
+
             baseAddress = spriteTable + (currSprite * 8);
 
             int byte0 = memoryInterface.readVramByte(baseAddress);
@@ -272,32 +291,14 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
             int byte6 = memoryInterface.readVramByte(baseAddress + 6);
             int byte7 = memoryInterface.readVramByte(baseAddress + 7);
 
-            linkData = byte3 & 0x7F;
             verticalPos = ((byte0 & 0x1) << 8) | byte1;        //	bit 9 interlace mode only
-
-//			if (linkData == 0) {
-//				return;
-//			}
 
             int horSize = (byte2 >> 2) & 0x3;
             int verSize = byte2 & 0x3;
 
-            int horSizePixels = (horSize + 1) * 8;
             int verSizePixels = (verSize + 1) * 8;
 
-            int nextSprite = (int) ((linkData * 8) + spriteTable);
-            baseAddress = nextSprite;
-
-            int realY = (int) (verticalPos - 128);
-
-            spritesFrame++;
-            spritesLine++;
-            //Stop processing sprites, skip the remaining lines
-            if (spritesLine > maxSpritesPerLine) {
-// || spritesFrame > maxSpritesPerFrame) {  //TODO breaks AyrtonSenna
-                return;
-            }
-
+            int realY = verticalPos - 128;
 
             int pattern = ((byte4 & 0x7) << 8) | byte5;
             int palette = (byte4 >> 5) & 0x3;
@@ -314,40 +315,43 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
             int pointVert = verFlip ? (spriteLine - (verSizePixels - 1)) * -1 : spriteLine;
 
             for (int cellHor = 0; cellHor < (horSize + 1); cellHor++) {
-                //	16 bytes por cell de 8x8
+                //	16 bytes for a 8x8 cell
                 //	cada linea dentro de una cell de 8 pixeles, ocupa 4 bytes (o sea, la mitad del ancho en bytes)
                 int currentVerticalCell = pointVert / 8;
                 int vertLining = (currentVerticalCell * 32) + ((pointVert % 8) * 4);
 
-                int cellH = cellHor;
-                if (horFlip) {
-                    cellH = (cellHor * -1) + horSize;
-                }
+                int cellH = horFlip ? (cellHor * -1) + horSize : cellHor;
                 int horLining = vertLining + (cellH * ((verSize + 1) * 32));
-                for (int i = 0; i < 4; i++) {
-                    int sliver = horFlip ? (i * -1) + 3 : i;
-                    int tileBytePointer = (pattern * 0x20) + (horLining) + sliver;
-                    if (tileBytePointer < 0) {
-                        continue;    //	FIXME guardar en cache de sprites yPos y otros atrib
-                    }
-                    int paletteLine = palette * 32;
-                    int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, horFlip);
-                    int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, horFlip);
-                    int colorIndex1 = paletteLine + (pixelIndexColor1 * 2);
-                    int colorIndex2 = paletteLine + (pixelIndexColor2 * 2);
-
-                    storeSpriteData(pixelIndexColor1, horOffset, line, priority, colorIndex1);
-                    storeSpriteData(pixelIndexColor2, horOffset + 1, line, priority, colorIndex2);
-                    horOffset += 2;
-                }
+                int paletteLine = palette * 32;
+                int tileBytePointerBase = (pattern * 0x20) + horLining;
+                renderSprite(line, paletteLine, tileBytePointerBase, horOffset, horFlip, priority);
+                //8 pixels
+                horOffset += 8;
             }
-
             ind++;
             currSprite = spritesInLine[ind];
-            if (currSprite > maxSpritesPerFrame) {
-                return;
-            }
         }
+    }
+
+    private boolean renderSprite(int line, int paletteLine, int tileBytePointerBase, int horOffset,
+                                 boolean horFlip, boolean priority) {
+        for (int i = 0; i < 4; i++) {
+            int sliver = horFlip ? (i * -1) + 3 : i;
+            int tileBytePointer = tileBytePointerBase + sliver;
+            if (tileBytePointer < 0) {
+                LOG.warn("Sprite tileBytePointer < 0");
+                continue;    //	FIXME guardar en cache de sprites yPos y otros atrib
+            }
+            int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, horFlip);
+            int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, horFlip);
+            int colorIndex1 = paletteLine + (pixelIndexColor1 * 2);
+            int colorIndex2 = paletteLine + (pixelIndexColor2 * 2);
+
+            storeSpriteData(pixelIndexColor1, horOffset, line, priority, colorIndex1);
+            storeSpriteData(pixelIndexColor2, horOffset + 1, line, priority, colorIndex2);
+            horOffset += 2;
+        }
+        return true;
     }
 
     //    The priority flag takes care of the order between each layer, but between sprites the situation is different
@@ -374,35 +378,38 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         }
     }
 
-    private int[][] compaginateImage() {
+    private int[][] composeImage() {
         int height = videoMode.getDimension().height;
         int width = videoMode.getDimension().width;
         for (int j = 0; j < height; j++) {
             for (int i = 0; i < width; i++) {
                 RenderPriority rp = pixelPriority[i][j];
-                RenderType rt = rp.getRenderType();
-                int pixelColor = 0;
-                switch (rt) {
-                    case BACK_PLANE:
-                        pixelColor = planeBack[i][j];
-                        break;
-                    case PLANE_A:
-                        pixelColor = planeA[i][j];
-                        break;
-                    case PLANE_B:
-                        pixelColor = planeB[i][j];
-                        break;
-                    case WINDOW_PLANE:
-                        pixelColor = window[i][j];
-                        break;
-                    case SPRITE:
-                        pixelColor = sprites[i][j];
-                        break;
-                }
-                screenData[i][j] = pixelColor;
+                screenData[i][j] = getPixelFromLayer(rp.getRenderType(), i, j);
             }
         }
         return screenData;
+    }
+
+    private int getPixelFromLayer(RenderType rt, int i, int j) {
+        int pixelColor = 0;
+        switch (rt) {
+            case BACK_PLANE:
+                pixelColor = planeBack[i][j];
+                break;
+            case PLANE_A:
+                pixelColor = planeA[i][j];
+                break;
+            case PLANE_B:
+                pixelColor = planeB[i][j];
+                break;
+            case WINDOW_PLANE:
+                pixelColor = window[i][j];
+                break;
+            case SPRITE:
+                pixelColor = sprites[i][j];
+                break;
+        }
+        return pixelColor;
     }
 
     private void renderBack(int line) {

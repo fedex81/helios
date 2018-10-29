@@ -181,10 +181,9 @@ public class VdpRenderHandler implements IVdpRenderHandler {
         int spriteTableLoc = vdpProvider.getRegisterData(0x5) & 0x7F;
         int spriteTable = spriteTableLoc * 0x200;
 
-        long linkData = 0xFF;
         long verticalPos;
 
-        int baseAddress = spriteTable;
+        int baseAddress;
         int[] spritesInLine = spritesPerLine[line];
         int ind = 0;
         int currSprite = spritesInLine[0];
@@ -194,10 +193,6 @@ public class VdpRenderHandler implements IVdpRenderHandler {
         int maxSpritesPerLine = maxSpritesPerLine(isH40);
         int maxSpritesPerFrame = maxSpritesPerFrame(isH40);
         Arrays.fill(priors, 0);
-        //Stop processing sprites, skip the remaining lines
-//        if (spritesFrame > maxSpritesPerFrame) { //TODO breaks AyrtonSenna
-//            return;
-//        }
 
         while (currSprite != -1) {
             baseAddress = spriteTable + (currSprite * 8);
@@ -211,29 +206,17 @@ public class VdpRenderHandler implements IVdpRenderHandler {
             int byte6 = memoryInterface.readVramByte(baseAddress + 6);
             int byte7 = memoryInterface.readVramByte(baseAddress + 7);
 
-            linkData = byte3 & 0x7F;
             verticalPos = ((byte0 & 0x1) << 8) | byte1;        //	bit 9 interlace mode only
-
-//			if (linkData == 0) {
-//				return;
-//			}
 
             int horSize = (byte2 >> 2) & 0x3;
             int verSize = byte2 & 0x3;
-
-            int horSizePixels = (horSize + 1) * 8;
             int verSizePixels = (verSize + 1) * 8;
-
-            int nextSprite = (int) ((linkData * 8) + spriteTable);
-            baseAddress = nextSprite;
-
             int realY = (int) (verticalPos - 128);
 
             spritesFrame++;
             spritesLine++;
             //Stop processing sprites, skip the remaining lines
             if (spritesLine > maxSpritesPerLine) {
-// || spritesFrame > maxSpritesPerFrame) {  //TODO breaks AyrtonSenna
                 return;
             }
 
@@ -293,7 +276,6 @@ public class VdpRenderHandler implements IVdpRenderHandler {
                     int colorIndex1 = paletteLine + (pixel1 * 2);
                     int colorIndex2 = paletteLine + (pixel2 * 2);
 
-                    int color1;
                     if (pixel1 == 0) {
                         if (horOffset >= 0 && horOffset < COLS) {
                             if (spritesIndex[horOffset][line] == 0) {    // solo pisa si la prioridad anterior era 0
@@ -316,7 +298,6 @@ public class VdpRenderHandler implements IVdpRenderHandler {
                         }
                     }
 
-                    int color2;
                     int horOffset2 = horOffset + 1;
                     if (pixel2 == 0) {
                         if (horOffset2 >= 0 && horOffset2 < COLS) {
