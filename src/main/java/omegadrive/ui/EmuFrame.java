@@ -49,7 +49,7 @@ public class EmuFrame implements GenesisWindow {
 
     private final JLabel gameLabel = new JLabel();
     private final JLabel fpsLabel = new JLabel("");
-    private final static String FRAME_TITLE_HEAD = "Omega Drive";
+    private final static String FRAME_TITLE_HEAD = "Omega Drive " + FileLoader.loadVersionFromManifest();
     public static String basePath = "./roms/";
 
     private JFrame jFrame;

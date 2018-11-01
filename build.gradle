@@ -1,8 +1,11 @@
+def dateString = getDate()
 group 'com.fberti.genesis'
-version '0.05'
-//version '0.03-SNAPSHOT'
+
+version dateString + '-SNAPSHOT'
 
 apply plugin: 'java'
+
+
 
 sourceCompatibility = 1.8
 
@@ -21,25 +24,26 @@ dependencies {
     // https://mvnrepository.com/artifact/net.sf.emustudio/emuLib
     compile group: 'net.sf.emustudio', name: 'emuLib', version: '9.0.1'
 
-
-
     //include local jars
     compile fileTree(dir: 'lib', include: ['*.jar'])
     testCompile fileTree(dir: 'lib', include: ['*.jar'])
 }
 
+
+
 def getDate() {
-    new Date().format('yyyyMMdd')//HHmmssSSS')
+    String date = new Date().format('yyMMdd')
+    date.substring(0,2) + "." + date.substring(2)
 }
 
 //create a single Jar with all dependencies
 task fatJar(type: Jar) {
     manifest {
-        attributes 'Implementation-Title': 'Gradle Jar File Example',
+        attributes 'Implementation-Title': 'Omega Drive',
                 'Implementation-Version': version,
                 'Main-Class': 'omegadrive.Genesis'
     }
-    baseName = project.name + '-all-' + getDate()
+    baseName = project.name + '-all' //+ version
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }

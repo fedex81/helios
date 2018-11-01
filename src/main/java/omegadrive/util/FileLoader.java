@@ -7,9 +7,13 @@ import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 /**
  * FileLoader
@@ -23,6 +27,9 @@ public class FileLoader {
     private static int[] EMPTY = new int[0];
 
     public static String basePath = System.getProperty("user.home") + File.separatorChar + "roms";
+
+    private static String SNAPSHOT_VERSION = "SNAPSHOT";
+    private static String MANIFEST_RELATIVE_PATH = "/META-INF/MANIFEST.MF";
 
     public static Optional<File> openRomDialog() {
         Optional<File> res = Optional.empty();
@@ -71,5 +78,28 @@ public class FileLoader {
             LOG.error("Unable to load file: " + file.getFileName());
         }
         return rom;
+    }
+
+    public static String loadVersionFromManifest() {
+        String version = SNAPSHOT_VERSION;
+        Class clazz = FileLoader.class;
+        String className = clazz.getSimpleName() + ".class";
+        String classPath = clazz.getResource(className).toString();
+        if (!classPath.startsWith("jar")) {
+            // Class not from JAR
+            LOG.info("Not running from a JAR, using version: " + version);
+            return version;
+        }
+        String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) +
+                MANIFEST_RELATIVE_PATH;
+        try (InputStream is = new URL(manifestPath).openStream()) {
+            Manifest manifest = new Manifest(is);
+            Attributes attr = manifest.getMainAttributes();
+            version = attr.getValue("Implementation-Version");
+            LOG.info("Using version from Manifest: " + version);
+        } catch (Exception e) {
+            LOG.error("Unable to load manifest file: " + manifestPath);
+        }
+        return version;
     }
 }
