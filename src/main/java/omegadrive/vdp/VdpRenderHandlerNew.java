@@ -109,10 +109,6 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         return isH40 ? VdpProvider.MAX_SPRITES_PER_LINE_H40 : VdpProvider.MAX_SPRITES_PER_LiNE_H32;
     }
 
-    private int getVerticalLines(boolean isV30) {
-        return isV30 ? VdpProvider.VERTICAL_LINES_V30 : VdpProvider.VERTICAL_LINES_V28;
-    }
-
     private int getHorizontalPlaneSize() {
         int reg10 = vdpProvider.getRegisterData(0x10);
         int horScrollSize = reg10 & 3;
@@ -232,31 +228,23 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         if (spritesFrame >= maxSpritesPerFrame) {
             return;
         }
+        SpriteDataHolder holder = new SpriteDataHolder();
         int next = 0;
         for (int index = 0; index < maxSpritesPerFrame; index++) {
             int baseAddress = spriteTable + (next * 8);
+            holder = getPhase1SpriteData(baseAddress, holder);
 
-            int byte0 = memoryInterface.readVramByte(baseAddress);
-            int byte1 = memoryInterface.readVramByte(baseAddress + 1);
-            int byte2 = memoryInterface.readVramByte(baseAddress + 2);
-            int byte3 = memoryInterface.readVramByte(baseAddress + 3);
-
-            int linkData = byte3 & 0x7F;
-
-            int verticalPos = ((byte0 & 0x1) << 8) | byte1;
-            int verSize = byte2 & 0x3;
-
-            int verSizePixels = (verSize + 1) * 8;
-            int realY = verticalPos - 128;
+            int verSizePixels = (holder.verSize + 1) * 8;
+            int realY = holder.verticalPos - 128;
             boolean isSpriteOnLine = line >= realY && line < realY + verSizePixels;
             if (realY < 0 || realY >= height || !isSpriteOnLine) {
-                next = linkData;
+                next = holder.linkData;
                 continue;
             }
             spritesPerLine[line][count] = next;
             spritesFrame += line == realY ? 1 : 0;
             count++;
-            next = linkData;
+            next = holder.linkData;
 
             if (next == 0 || next > maxSpritesPerFrame ||
                     count >= maxSpritesPerLine || spritesFrame >= maxSpritesPerFrame) {
@@ -270,61 +258,34 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         // for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
         int spriteTableLoc = vdpProvider.getRegisterData(0x5) & 0x7F;
         int spriteTable = spriteTableLoc * 0x200;
-        int verticalPos;
 
-        int baseAddress;
         int[] spritesInLine = spritesPerLine[line];
-        int ind = 0;
         int currSprite = spritesInLine[0];
+        SpriteDataHolder holder = new SpriteDataHolder();
 
+        int ind = 0;
+        int baseAddress;
         while (currSprite != -1) {
 //            LOG.info("Showing sprite, Line: " + line + ", spritesLine: " + ind + ", spritesFrame: " + spritesFrame);
 
             baseAddress = spriteTable + (currSprite * 8);
-
-            int byte0 = memoryInterface.readVramByte(baseAddress);
-            int byte1 = memoryInterface.readVramByte(baseAddress + 1);
-            int byte2 = memoryInterface.readVramByte(baseAddress + 2);
-            int byte3 = memoryInterface.readVramByte(baseAddress + 3);
-            int byte4 = memoryInterface.readVramByte(baseAddress + 4);
-            int byte5 = memoryInterface.readVramByte(baseAddress + 5);
-            int byte6 = memoryInterface.readVramByte(baseAddress + 6);
-            int byte7 = memoryInterface.readVramByte(baseAddress + 7);
-
-            verticalPos = ((byte0 & 0x1) << 8) | byte1;        //	bit 9 interlace mode only
-
-            int horSize = (byte2 >> 2) & 0x3;
-            int verSize = byte2 & 0x3;
-
-            int verSizePixels = (verSize + 1) * 8;
-
-            int realY = verticalPos - 128;
-
-            int pattern = ((byte4 & 0x7) << 8) | byte5;
-            int palette = (byte4 >> 5) & 0x3;
-
-            boolean priority = ((byte4 >> 7) & 0x1) == 1;
-            boolean verFlip = ((byte4 >> 4) & 0x1) == 1;
-            boolean horFlip = ((byte4 >> 3) & 0x1) == 1;
-
-            int horizontalPos = ((byte6 & 0x1) << 8) | byte7;
-            int horOffset = horizontalPos - 128;
-
+            holder = getSpriteData(baseAddress, holder);
+            int verSizePixels = (holder.verSize + 1) * 8;
+            int realY = holder.verticalPos - 128;
+            int horOffset = holder.horizontalPos - 128;
             int spriteLine = (line - realY) % verSizePixels;
+            int pointVert = holder.vertFlip ? (spriteLine - (verSizePixels - 1)) * -1 : spriteLine;
 
-            int pointVert = verFlip ? (spriteLine - (verSizePixels - 1)) * -1 : spriteLine;
-
-            for (int cellHor = 0; cellHor < (horSize + 1); cellHor++) {
+            for (int cellHor = 0; cellHor < (holder.horSize + 1); cellHor++) {
                 //	16 bytes for a 8x8 cell
                 //	cada linea dentro de una cell de 8 pixeles, ocupa 4 bytes (o sea, la mitad del ancho en bytes)
                 int currentVerticalCell = pointVert / 8;
                 int vertLining = (currentVerticalCell * 32) + ((pointVert % 8) * 4);
 
-                int cellH = horFlip ? (cellHor * -1) + horSize : cellHor;
-                int horLining = vertLining + (cellH * ((verSize + 1) * 32));
-                int paletteLine = palette * 32;
-                int tileBytePointerBase = (pattern * 0x20) + horLining;
-                renderSprite(line, paletteLine, tileBytePointerBase, horOffset, horFlip, priority);
+                int cellH = holder.horFlip ? (cellHor * -1) + holder.horSize : cellHor;
+                int horLining = vertLining + (cellH * ((holder.verSize + 1) * 32));
+                int tileBytePointerBase = (holder.tileIndex * 0x20) + horLining;
+                renderSprite(line, holder, tileBytePointerBase, horOffset);
                 //8 pixels
                 horOffset += 8;
             }
@@ -333,22 +294,23 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         }
     }
 
-    private boolean renderSprite(int line, int paletteLine, int tileBytePointerBase, int horOffset,
-                                 boolean horFlip, boolean priority) {
+    private boolean renderSprite(int line, SpriteDataHolder holder, int tileBytePointerBase,
+                                 int horOffset) {
+        int paletteLine = holder.paletteLineIndex * 32;
         for (int i = 0; i < 4; i++) {
-            int sliver = horFlip ? (i * -1) + 3 : i;
+            int sliver = holder.horFlip ? (i * -1) + 3 : i;
             int tileBytePointer = tileBytePointerBase + sliver;
             if (tileBytePointer < 0) {
                 LOG.warn("Sprite tileBytePointer < 0");
                 continue;    //	FIXME guardar en cache de sprites yPos y otros atrib
             }
-            int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, horFlip);
-            int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, horFlip);
+            int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, holder.horFlip);
+            int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, holder.horFlip);
             int colorIndex1 = paletteLine + (pixelIndexColor1 * 2);
             int colorIndex2 = paletteLine + (pixelIndexColor2 * 2);
 
-            storeSpriteData(pixelIndexColor1, horOffset, line, priority, colorIndex1);
-            storeSpriteData(pixelIndexColor2, horOffset + 1, line, priority, colorIndex2);
+            storeSpriteData(pixelIndexColor1, horOffset, line, holder.priority, colorIndex1);
+            storeSpriteData(pixelIndexColor2, horOffset + 1, line, holder.priority, colorIndex2);
             horOffset += 2;
         }
         return true;
@@ -634,6 +596,50 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         boolean vertFlip;
         int paletteLineIndex;
         boolean priority;
+    }
+
+    static class SpriteDataHolder extends TileDataHolder {
+        int verticalPos;
+        int horizontalPos;
+        int horSize;
+        int verSize;
+        int linkData;
+    }
+
+    private SpriteDataHolder getPhase1SpriteData(int baseAddress, SpriteDataHolder holder) {
+
+        int byte0 = memoryInterface.readVramByte(baseAddress);
+        int byte1 = memoryInterface.readVramByte(baseAddress + 1);
+        int byte2 = memoryInterface.readVramByte(baseAddress + 2);
+        int byte3 = memoryInterface.readVramByte(baseAddress + 3);
+
+        holder.linkData = byte3 & 0x7F;
+        holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;
+        holder.verSize = byte2 & 0x3;
+        return holder;
+    }
+
+    private SpriteDataHolder getSpriteData(int baseAddress, SpriteDataHolder holder) {
+        int byte0 = memoryInterface.readVramByte(baseAddress);
+        int byte1 = memoryInterface.readVramByte(baseAddress + 1);
+        int byte2 = memoryInterface.readVramByte(baseAddress + 2);
+        int byte3 = memoryInterface.readVramByte(baseAddress + 3);
+        int byte4 = memoryInterface.readVramByte(baseAddress + 4);
+        int byte5 = memoryInterface.readVramByte(baseAddress + 5);
+        int byte6 = memoryInterface.readVramByte(baseAddress + 6);
+        int byte7 = memoryInterface.readVramByte(baseAddress + 7);
+
+        holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;
+        holder.horSize = (byte2 >> 2) & 0x3;
+        holder.verSize = byte2 & 0x3;
+        holder.linkData = byte3 & 0x7F;
+        holder.tileIndex = ((byte4 & 0x7) << 8) | byte5;
+        holder.paletteLineIndex = (byte4 >> 5) & 0x3;
+        holder.priority = ((byte4 >> 7) & 0x1) == 1;
+        holder.vertFlip = ((byte4 >> 4) & 0x1) == 1;
+        holder.horFlip = ((byte4 >> 3) & 0x1) == 1;
+        holder.horizontalPos = ((byte6 & 0x1) << 8) | byte7;
+        return holder;
     }
 
 
