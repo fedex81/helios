@@ -9,7 +9,7 @@ import omegadrive.util.VideoMode;
  * <p>
  * Copyright 2018
  */
-public interface IVdpRenderHandler {
+public interface VdpRenderHandler {
 
     void dumpScreenData();
 

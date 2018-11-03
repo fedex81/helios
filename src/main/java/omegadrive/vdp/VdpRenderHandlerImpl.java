@@ -3,10 +3,10 @@ package omegadrive.vdp;
 import omegadrive.Genesis;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.model.IVdpRenderHandler;
 import omegadrive.vdp.model.RenderPriority;
 import omegadrive.vdp.model.RenderType;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,9 +44,9 @@ import java.util.Arrays;
  * I haven't yet confirmed whether a sprite count overflow on the previous line causes this behaviour,
  * or whether only a sprite dot overflow on the previous line triggers it.
  */
-public class VdpRenderHandlerNew implements IVdpRenderHandler {
+public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
-    private static Logger LOG = LogManager.getLogger(VdpRenderHandlerNew.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
 
     private static boolean verbose = Genesis.verbose || false;
 
@@ -85,7 +85,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
     private int[][] screenData = new int[COLS][ROWS];
 
-    public VdpRenderHandlerNew(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
+    public VdpRenderHandlerImpl(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
         this.memoryInterface = memoryInterface;
         this.colorMapper = new VdpColorMapper();

@@ -2,9 +2,9 @@ package omegadrive.vdp;
 
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.model.IVdpRenderHandler;
 import omegadrive.vdp.model.RenderType;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpRenderHandler;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -19,8 +19,9 @@ import java.util.Arrays;
  * @author DarkMoe
  *
  * Copyright 2018
+ * @deprecated
  */
-public class VdpRenderHandler implements IVdpRenderHandler {
+public class VdpRenderHandlerLegacy implements VdpRenderHandler {
 
     private VdpProvider vdpProvider;
     private VdpMemoryInterface memoryInterface;
@@ -64,7 +65,7 @@ public class VdpRenderHandler implements IVdpRenderHandler {
 
     private int[][] screenData = new int[COLS][ROWS];
 
-    public VdpRenderHandler(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
+    public VdpRenderHandlerLegacy(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
         this.memoryInterface = memoryInterface;
         this.colorMapper = new VdpColorMapper();

@@ -3,10 +3,10 @@ package omegadrive.vdp;
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.*;
-import omegadrive.vdp.model.IVdpRenderHandler;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -126,7 +126,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private VdpInterruptHandler interruptHandler;
     private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
-    private IVdpRenderHandler renderHandler;
+    private VdpRenderHandler renderHandler;
     private VideoMode videoMode;
     private RegionDetector.Region region;
 
@@ -148,7 +148,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void setupVdp() {
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
-        this.renderHandler = new VdpRenderHandlerNew(this, memoryInterface);
+        this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
     }
 
     @Override
