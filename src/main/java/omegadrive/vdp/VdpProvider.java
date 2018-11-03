@@ -60,7 +60,7 @@ public interface VdpProvider {
     int MAX_SPRITES_PER_FRAME_H40 = 80;
     int MAX_SPRITES_PER_FRAME_H32 = 64;
     int MAX_SPRITES_PER_LINE_H40 = 20;
-    int MAX_SPRITES_PER_LiNE_H32 = 16;
+    int MAX_SPRITES_PER_LINE_H32 = 16;
     int VERTICAL_LINES_V30 = 240;
     int VERTICAL_LINES_V28 = 224;
     int VDP_VIDEO_ROWS = 256;

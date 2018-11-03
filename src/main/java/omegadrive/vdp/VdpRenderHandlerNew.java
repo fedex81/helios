@@ -1,5 +1,6 @@
 package omegadrive.vdp;
 
+import omegadrive.Genesis;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.IVdpRenderHandler;
@@ -46,6 +47,8 @@ import java.util.Arrays;
 public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
     private static Logger LOG = LogManager.getLogger(VdpRenderHandlerNew.class.getSimpleName());
+
+    private static boolean verbose = Genesis.verbose || false;
 
     private VdpProvider vdpProvider;
     private VdpMemoryInterface memoryInterface;
@@ -106,7 +109,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
     }
 
     private int maxSpritesPerLine(boolean isH40) {
-        return isH40 ? VdpProvider.MAX_SPRITES_PER_LINE_H40 : VdpProvider.MAX_SPRITES_PER_LiNE_H32;
+        return isH40 ? VdpProvider.MAX_SPRITES_PER_LINE_H40 : VdpProvider.MAX_SPRITES_PER_LINE_H32;
     }
 
     private int getHorizontalPlaneSize() {
@@ -189,6 +192,7 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
     private void initFrameData(int line) {
         if (line == 0) {
+            LOG.debug("New Frame");
             //need to do this here so I can dump data just after rendering the frame
             renderSpritesBeforeLine0();
         }
@@ -246,13 +250,15 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
             count++;
             next = holder.linkData;
 
-            if (next == 0 || next > maxSpritesPerFrame ||
+            if (next == 0 || next >= maxSpritesPerFrame ||
                     count >= maxSpritesPerLine || spritesFrame >= maxSpritesPerFrame) {
                 return;
             }
         }
     }
 
+    //* -Sprite masks at x=0 only work correctly when there's at least one higher priority sprite
+//            * on the same line which is not at x=0. (This is what Galaxy Force II relies on)
     private void renderSprites(int line) {
         //	AT16 is only valid if 128 KB mode is enabled, and allows
         // for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
@@ -265,18 +271,26 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
 
         int ind = 0;
         int baseAddress;
+        boolean nonZeroSpriteOnLine = false;
+        boolean doMasking = false;
         while (currSprite != -1) {
-//            LOG.info("Showing sprite, Line: " + line + ", spritesLine: " + ind + ", spritesFrame: " + spritesFrame);
-
             baseAddress = spriteTable + (currSprite * 8);
             holder = getSpriteData(baseAddress, holder);
-            int verSizePixels = (holder.verSize + 1) * 8;
+            int verSizePixels = (holder.verSize + 1) * 8; //8 * sizeInCells
             int realY = holder.verticalPos - 128;
-            int horOffset = holder.horizontalPos - 128;
+            int realX = holder.horizontalPos - 128;
             int spriteLine = (line - realY) % verSizePixels;
             int pointVert = holder.vertFlip ? (spriteLine - (verSizePixels - 1)) * -1 : spriteLine;
 
-            for (int cellHor = 0; cellHor < (holder.horSize + 1); cellHor++) {
+            if (nonZeroSpriteOnLine && holder.horizontalPos == 0) {
+                doMasking = true;
+                return;
+            }
+//            LOG.info("Line: " + line + ", sprite: "+currSprite +", lastSpriteNonZero: " + lastSpriteNonZero + ", doMasking: " + doMasking
+//                        + "\n" + holder.toString());
+            int horOffset = realX;
+            int horizontalSizeInCells = holder.horSize + 1;
+            for (int cellHor = 0; cellHor < horizontalSizeInCells; cellHor++) {
                 //	16 bytes for a 8x8 cell
                 //	cada linea dentro de una cell de 8 pixeles, ocupa 4 bytes (o sea, la mitad del ancho en bytes)
                 int currentVerticalCell = pointVert / 8;
@@ -285,12 +299,16 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
                 int cellH = holder.horFlip ? (cellHor * -1) + holder.horSize : cellHor;
                 int horLining = vertLining + (cellH * ((holder.verSize + 1) * 32));
                 int tileBytePointerBase = (holder.tileIndex * 0x20) + horLining;
-                renderSprite(line, holder, tileBytePointerBase, horOffset);
+                if (!doMasking) {
+                    renderSprite(line, holder, tileBytePointerBase, horOffset);
+                }
+
                 //8 pixels
                 horOffset += 8;
             }
             ind++;
             currSprite = spritesInLine[ind];
+            nonZeroSpriteOnLine |= holder.horizontalPos != 0;
         }
     }
 
@@ -596,6 +614,17 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         boolean vertFlip;
         int paletteLineIndex;
         boolean priority;
+
+        @Override
+        public String toString() {
+            return "TileDataHolder{" +
+                    "tileIndex=" + tileIndex +
+                    ", horFlip=" + horFlip +
+                    ", vertFlip=" + vertFlip +
+                    ", paletteLineIndex=" + paletteLineIndex +
+                    ", priority=" + priority +
+                    '}';
+        }
     }
 
     static class SpriteDataHolder extends TileDataHolder {
@@ -604,6 +633,17 @@ public class VdpRenderHandlerNew implements IVdpRenderHandler {
         int horSize;
         int verSize;
         int linkData;
+
+        @Override
+        public String toString() {
+            return "SpriteDataHolder{" +
+                    "verticalPos=" + verticalPos +
+                    ", horizontalPos=" + horizontalPos +
+                    ", horSize=" + horSize +
+                    ", verSize=" + verSize +
+                    ", linkData=" + linkData +
+                    ", " + super.toString() + '}';
+        }
     }
 
     private SpriteDataHolder getPhase1SpriteData(int baseAddress, SpriteDataHolder holder) {

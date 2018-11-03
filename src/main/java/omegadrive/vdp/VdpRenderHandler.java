@@ -88,7 +88,7 @@ public class VdpRenderHandler implements IVdpRenderHandler {
     }
 
     private int maxSpritesPerLine(boolean isH40) {
-        return isH40 ? VdpProvider.MAX_SPRITES_PER_LINE_H40 : VdpProvider.MAX_SPRITES_PER_LiNE_H32;
+        return isH40 ? VdpProvider.MAX_SPRITES_PER_LINE_H40 : VdpProvider.MAX_SPRITES_PER_LINE_H32;
     }
 
     private int getVerticalLines(boolean isV30) {
