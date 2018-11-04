@@ -17,6 +17,7 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 /**
  * ${FILE}
@@ -32,6 +33,8 @@ public class EmuFrame implements GenesisWindow {
     private static Logger LOG = LogManager.getLogger(EmuFrame.class.getSimpleName());
 
     private static final int DEFAULT_SCREEN = 0;
+    private static final int DEFAULT_SCALE_FACTOR =
+            Integer.valueOf(System.getProperty("emu.scale", "1"));
 
     private Dimension fullScreenSize;
     private GraphicsDevice[] graphicsDevices;
@@ -44,7 +47,7 @@ public class EmuFrame implements GenesisWindow {
     private BufferedImage dest;
     private int[] pixelsSrc;
     private int[] pixelsDest;
-    private double scale = 1;
+    private double scale = DEFAULT_SCALE_FACTOR;
 
 
     private final JLabel gameLabel = new JLabel();
@@ -184,7 +187,7 @@ public class EmuFrame implements GenesisWindow {
         gameLabel.setHorizontalAlignment(SwingConstants.CENTER);
         gameLabel.setVerticalAlignment(SwingConstants.CENTER);
 
-        jFrame.setMinimumSize(new Dimension(640, 480));
+        jFrame.setMinimumSize(new Dimension(660, 550));
         jFrame.setDefaultCloseOperation(jFrame.EXIT_ON_CLOSE);
         jFrame.setResizable(true);
         jFrame.setJMenuBar(bar);
@@ -223,11 +226,12 @@ public class EmuFrame implements GenesisWindow {
     }
 
     public void resetScreen() {
-        //switch off fullscreen
-//        SwingUtilities.invokeLater(() -> {
-//            fullScreenItem.setState(false);
-//            resizeScreen(RegionDetector.Region.EUROPE, true);
-//        });
+        Arrays.fill(pixelsDest, 0);
+        SwingUtilities.invokeLater(() -> {
+            gameLabel.removeAll();
+            gameLabel.invalidate();
+            jFrame.pack();
+        });
     }
 
     @Override
@@ -266,7 +270,7 @@ public class EmuFrame implements GenesisWindow {
         if (!newBaseScreenSize.equals(baseScreenSize)) {
             baseScreenSize = newBaseScreenSize;
         }
-        double scale = 1;
+        double scale = DEFAULT_SCALE_FACTOR;
         if (goFullScreen) {
             double scaleW = fullScreenSize.getWidth() / baseScreenSize.getWidth();
             double scaleH = fullScreenSize.getHeight() / baseScreenSize.getHeight();

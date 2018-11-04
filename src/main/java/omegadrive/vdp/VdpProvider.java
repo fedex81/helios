@@ -139,6 +139,8 @@ public interface VdpProvider {
      */
     void setHip(boolean value);
 
+    boolean isShadowHighlight();
+
     boolean isDisplayEnabled();
 
     VideoMode getVideoMode();

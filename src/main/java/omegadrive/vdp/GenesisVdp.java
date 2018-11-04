@@ -84,6 +84,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     //	REG 0xC
     boolean h40;
+    boolean ste;  //shadow-highlight
 
     //	REG 0xF
     int autoIncrementData;
@@ -296,6 +297,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         return h40;
     }
 
+    public boolean isShadowHighlight() {
+        return ste;
+    }
+
     //	https://wiki.megadrive.org/index.php?title=VDP_Ports#Write_2_-_Setting_RAM_address
 //	First word
 //	Bit	15	14	13	12	11	10	9	8	7	6	5	4	3	2	1	0
@@ -426,6 +431,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             boolean rs0 = Util.bitSetTest(data, 7);
             boolean rs1 = Util.bitSetTest(data, 0);
             h40 = rs0 && rs1;
+            boolean val = Util.bitSetTest(data, 3);
+            if (val != ste) {
+                LOG.info("Shadow highlight: " + val);
+            }
+            ste = val;
         } else if (reg == 0x0F) {
             autoIncrementData = data;
         } else if (reg == 0x0A) {
