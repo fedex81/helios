@@ -394,7 +394,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             return getColorFromIndex(cramColorIndex);
         }
         PriorityType priorityType = rp.getPriorityType();
-        boolean noChange = priorityType == PriorityType.YES || (cramColorIndex % 32) == 14;
+        RenderType renderType = rp.getRenderType();
+        boolean noChange = priorityType == PriorityType.YES ||
+                (renderType == RenderType.SPRITE && (cramColorIndex % 32) == 28);  //14*2
         shadowHighlightType = noChange ? shadowHighlightType : shadowHighlightType.darker();
         return getColorFromIndex(cramColorIndex, shadowHighlightType);
     }
