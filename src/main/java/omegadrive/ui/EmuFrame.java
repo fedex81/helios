@@ -226,11 +226,12 @@ public class EmuFrame implements GenesisWindow {
     }
 
     public void resetScreen() {
-        Arrays.fill(pixelsDest, 0);
+        Util.sleep(250);
         SwingUtilities.invokeLater(() -> {
-            gameLabel.removeAll();
+            Arrays.fill(pixelsDest, 0);
             gameLabel.invalidate();
-            jFrame.pack();
+            gameLabel.repaint();
+            LOG.info("Blanking screen");
         });
     }
 
