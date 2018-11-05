@@ -33,6 +33,7 @@ public interface BusProvider {
 
     Logger LOG = LogManager.getLogger(BusProvider.class.getSimpleName());
 
+
     enum VdpIntState {
         NONE,
         PROCESS_INT,
@@ -77,6 +78,8 @@ public interface BusProvider {
 
     //VDP setting this
     void setStop68k(boolean value);
+
+    void closeGame();
 
     default PsgProvider getPsg() {
         return getSound().getPsg();

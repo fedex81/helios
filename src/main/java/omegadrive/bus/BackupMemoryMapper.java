@@ -108,7 +108,7 @@ public class BackupMemoryMapper implements GenesisMapper {
         }
         sramRead &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (sramRead) {
-            readFile();
+            initBackupFileIfNecessary(this);
             address = (address & 0xFFFF);
             long res = Util.readSram(sram, size, address);
             logInfo("SRAM read at: {} {}, result: {} ", address, size, res);
@@ -129,10 +129,10 @@ public class BackupMemoryMapper implements GenesisMapper {
         }
         sramWrite &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (sramWrite) {
+            initBackupFileIfNecessary(this);
             address = (address & 0xFFFF);
             logInfo("SRAM write at: {} {}, data: {} ", address, size, data);
             Util.writeSram(sram, size, (int) address, data);
-            writeFile(sram);
         } else {
             baseMapper.writeData(address, data, size);
         }
@@ -145,18 +145,7 @@ public class BackupMemoryMapper implements GenesisMapper {
                 FileLoader.writeFile(backupFile, sram);
             }
         } catch (IOException e) {
-            LOG.error("Unable to write to file: " + backupFile);
-        }
-    }
-
-    private void readFile() {
-        initBackupFileIfNecessary(this);
-        try {
-            if (Files.isReadable(backupFile)) {
-                sram = FileLoader.readFile(backupFile);
-            }
-        } catch (IOException e) {
-            LOG.error("Unable to read from file: " + backupFile);
+            LOG.error("Unable to write to file: " + backupFile, e);
         }
     }
 
@@ -179,6 +168,12 @@ public class BackupMemoryMapper implements GenesisMapper {
                 LOG.error("Unable to create file for: " + mapper.cartridgeInfoProvider.getRomName());
             }
         }
+    }
+
+    @Override
+    public void closeGame() {
+        LOG.info("Writing to sram file: " + this.backupFile);
+        writeFile(this.sram);
     }
 
     public static void logInfo(String str, Object... res) {

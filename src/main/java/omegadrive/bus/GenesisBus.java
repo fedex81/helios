@@ -166,7 +166,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             return Util.readRom(memory, size, address);
         } else if (address > CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
             LOG.warn("Read on reserved address: " + Integer.toHexString((int) address));
-            return 0;
+            return size.getMax();
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             return z80MemoryRead(address, size);
         } else if (address >= IO_ADDRESS_SPACE_START && address <= IO_ADDRESS_SPACE_END) {    //IO Addressing space
@@ -412,7 +412,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         } else if (addressL == 0xA10004 || addressL == 0xA10005) {    //	Controller 2 data
             joypad.writeDataRegister2(data);
         } else if (addressL == 0xA10006 || addressL == 0xA10007) {    //	Expansion port data
-            LOG.warn("Expansion port data");
+            LOG.warn("Write to expansion port: " + Long.toHexString(addressL) +
+                    ", data: " + Long.toHexString(data) + ", size: " + size);
         } else if (addressL == 0xA10008 || addressL == 0xA10009) {    //	Controller 1 control
             joypad.writeControlRegister1(data & 0xFF);
         } else if (addressL == 0xA1000A || addressL == 0xA1000B) {    //	Controller 2 control
@@ -707,6 +708,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         }
     }
 
-    public static void main(String[] args) {
+    @Override
+    public void closeGame() {
+        mapper.closeGame();
     }
 }

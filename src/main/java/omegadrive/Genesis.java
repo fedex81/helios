@@ -209,6 +209,7 @@ public class Genesis implements GenesisProvider {
             }
             LOG.info("Game stopped");
             emuFrame.resetScreen();
+            bus.closeGame();
         }
     }
 
@@ -338,7 +339,6 @@ public class Genesis implements GenesisProvider {
                         LOG.info("Game thread stopped");
                         break;
                     }
-                    sound.output(0);
                     lastRender = now;
                     startCycle = System.nanoTime();
                 }
@@ -350,15 +350,16 @@ public class Genesis implements GenesisProvider {
         }
     }
 
-    private long latestNs = System.nanoTime();
+    private long counterStep = 50;
+
 
     private void syncSound(long counter) {
-        if (counter % 100 == 0) {
-            long now = System.nanoTime();
-            int elapsedMicros = (int) ((now - latestNs) / 1000);
+        if (counter % counterStep == 0) {
+            int frameLenMs = 1000 / region.getFps(); //20ms
+            double scanLineMs = frameLenMs / 313d;
+            int elapsedMicros = (int) (1000 * scanLineMs * (counterStep / 422d));
             if (elapsedMicros > 0) {
                 sound.updateElapsedMicros(elapsedMicros);
-                latestNs = now;
             }
         }
     }

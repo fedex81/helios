@@ -34,6 +34,10 @@ public interface GenesisMapper {
     }
 
     default void setSramMode(SramMode sramMode) {
+        //DO NOTHING
+    }
 
+    default void closeGame() {
+        //DO NOTHING
     }
 }
