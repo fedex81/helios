@@ -85,12 +85,14 @@ public class RegionDetector {
         private long versionCode;
         private int fps;
         private int order;
+        private double frameIntervalMs;
 
         Region(char region, int order, long versionCode, int fps) {
             this.region = region;
             this.versionCode = versionCode;
             this.fps = fps;
             this.order = order;
+            this.frameIntervalMs = 1000d / fps;
         }
 
         public static Region getRegion(char region) {
@@ -105,6 +107,9 @@ public class RegionDetector {
             return fps;
         }
 
+        public double getFrameIntervalMs() {
+            return frameIntervalMs;
+        }
         //	US:	A0A0 rev 0 o A1A1 rev 1
         //	EU:	C1C1
         //	JP: ????

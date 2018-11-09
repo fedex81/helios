@@ -18,7 +18,7 @@ public interface PsgProvider {
 
     static PsgProvider createInstance(RegionDetector.Region region) {
         double clock = getPsgSoundClock(region);
-        LOG.info("Creating instance, clock: " + clock + ", sampleRate: " + SAMPLE_RATE);
+        LOG.info("PSG instance, clock: " + clock + ", sampleRate: " + SAMPLE_RATE);
         PsgProvider psgProvider = new SN76496(clock, SAMPLE_RATE);
         psgProvider.init();
         return psgProvider;

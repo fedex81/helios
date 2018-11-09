@@ -36,7 +36,7 @@ public class FileSoundPersister implements SoundPersister {
             for (byte b : buffer) {
                 try {
                     // output 8 bit signed mono
-                    // or 16 bit signed mono (little endian)
+                    // TODO doesnt work: 16 bit signed mono (little endian)
                     fileWriter.write(b & 0xff);
                 } catch (IOException ioe) {
                     LOG.error("An error occurred while writing the"

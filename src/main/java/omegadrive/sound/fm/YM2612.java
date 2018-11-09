@@ -21,6 +21,8 @@ public final class YM2612 implements FmProvider {
 
     static final int NULL_RATE_SIZE = 32;
 
+    private static final boolean verbose = false;
+
     // YM2612 Hardware
     private final class cSlot {
         int[] DT;
@@ -505,7 +507,7 @@ public final class YM2612 implements FmProvider {
     }
 
     private static void log(Level level, String msg) {
-        if (isResetting) {
+        if (isResetting || !verbose) {
             return;
         }
         LOG.log(level, msg);
@@ -620,31 +622,66 @@ public final class YM2612 implements FmProvider {
 
     //    none of them care about Timer A write order:
 //    counters are reinitialized each time the Timers values are changed (this is needed to fix Outrun music I think)
+
+    //    After some testing, it appears that the timer counter is only reloaded at the following times:
+//            1. When the counter underflows
+//2. When the load bit is switched from 0 to 1 (IE, the counter is changed from the stopped state to the running state).
+// The counter does not restart from the last point it was up to when it is re-enabled.
+//
+//    The timer counter is NOT reloaded when:
+//            1. The load bit is already 1, and reg $27 is written to setting the load bit as 1 again
+//2. The reset or enable bits are changed
+//3. The timer counter registers are modified
     private void setTimers(int data) {
-        //reset status
-        int d45 = ((data & 0x10) >> 3) + ((data & 0x20) >> 5); //get D4 and D5 and the swap them as d45
-        YM2612_Status &= 0xFF - d45; //overflow AB
+        boolean loadA = (data & 1) == 1;
+        boolean loadB = (data & 2) == 2;
+        boolean enableA = (data & 4) == 4;
+        boolean enableB = (data & 8) == 8;
+        boolean resetA = (data & 16) == 16;
+        boolean resetB = (data & 32) == 32;
 
-        if (YM2612_Mode != data) {
-            boolean loadA = (YM2612_Mode & 1) == 0 && (data & 1) == 1; // loadA  0->1
-            boolean loadB = (YM2612_Mode & 3) >> 1 == 0 && (data & 3) >> 1 == 1; // loadB  0->1
+        boolean wasLoadA = (YM2612_Mode & 1) == 1;
+        boolean wasLoadB = (YM2612_Mode & 2) == 2;
+        boolean wasEnabledA = (YM2612_Mode & 4) == 4;
+        boolean wasEnabledB = (YM2612_Mode & 8) == 8;
+        boolean wasResetA = (YM2612_Mode & 16) == 16;
+        boolean wasResetB = (YM2612_Mode & 32) == 32;
 
-            if (loadA) {
-                YM2612_TimerAcnt = YM2612_TimerAL;
-                YM2612_Status &= 0xFD;
-            }
-            if (loadB) {
-                YM2612_TimerBcnt = YM2612_TimerBL;
-                YM2612_Status &= 0xFE;
-            }
+        if (!wasLoadA && loadA) { // loadA  0->1
+            YM2612_TimerAcnt = YM2612_TimerAL;
+        }
+        if (!wasLoadB && loadB) { // loadB  0->1
+            YM2612_TimerBcnt = YM2612_TimerBL;
         }
 
+        if (wasLoadA != loadA) {
+            log(Level.INFO, "Load Timer A: " + loadA + ", count: " + YM2612_TimerAL + ", was: " + YM2612_TimerAcnt);
+        }
+        if (wasLoadB != loadB) {
+            log(Level.INFO, "Load Timer B:" + loadB + ", count: " + YM2612_TimerBL + ", was: " + YM2612_TimerBcnt);
+        }
+        if (wasResetA != resetA) {
+            log(Level.INFO, "Reset Timer A:" + resetA + ", cnt:  " + YM2612_TimerAcnt);
+            //TODO this fixes Quackshot,ThunderForceIV ie. reset only on transitions but it is wrong..
+            YM2612_Status &= 0xFD;
+        }
+        if (wasResetB != resetB) {
+            log(Level.INFO, "Reset Timer B:" + resetB + ", cnt: " + YM2612_TimerBcnt);
+            YM2612_Status &= 0xFE;
+        }
+        if (enableA != wasEnabledA) {
+            log(Level.INFO, "Enable Timer A: " + enableA + ", cnt:  " + YM2612_TimerAcnt);
+        }
+        if (enableB != wasEnabledB) {
+            log(Level.INFO, "Enable Timer B: " + enableB + ", cnt:  " + YM2612_TimerBcnt);
+        }
     }
 
     public final void synchronizeTimers(int length) {
         if (length <= 0) {
             return;
         }
+//        log(Level.INFO, "Sync timer ms: " + length);
         int i = length;
 
         i = YM2612_TimerBase * length;
@@ -652,9 +689,12 @@ public final class YM2612 implements FmProvider {
         if ((YM2612_Mode & 1) != 0) {   //TimerA ON
             YM2612_TimerAcnt -= i;
             if (YM2612_TimerAcnt <= 0) {
-                YM2612_Status |= (YM2612_Mode & 0x04) >> 1; //overflow A, if enabled
-                YM2612_TimerAcnt += YM2612_TimerAL;
-
+                int val = YM2612_TimerAcnt;
+                YM2612_Status |= (YM2612_Mode & 4) >> 1; //overflow A, if enabled
+                do {
+                    YM2612_TimerAcnt += YM2612_TimerAL;
+                } while (YM2612_TimerAcnt < 0);
+//                log(Level.INFO, "Timer A expired at: " + val + ", value: " + YM2612_TimerAcnt);
                 /* CSM mode auto key on */
                 if ((YM2612_Mode & 0x80) != 0) {
                     CSM_Key_Control();
@@ -664,8 +704,12 @@ public final class YM2612 implements FmProvider {
         if ((YM2612_Mode & 2) > 1) { //TimerB ON
             YM2612_TimerBcnt -= i;
             if (YM2612_TimerBcnt <= 0) {
-                YM2612_Status |= (YM2612_Mode & 0x08) >> 3; //overflow B, if enabled
-                YM2612_TimerBcnt += YM2612_TimerBL;
+                int val = YM2612_TimerBcnt;
+                YM2612_Status |= (YM2612_Mode & 8) >> 3; //overflow B, if enabled
+                do {
+                    YM2612_TimerBcnt += YM2612_TimerBL;
+                } while (YM2612_TimerBcnt < 0);
+//                log(Level.INFO, "Timer B expired at: " + val + ", value: " + YM2612_TimerBcnt);
             }
         }
     }
@@ -921,30 +965,20 @@ public final class YM2612 implements FmProvider {
                     YM2612_LFOinc = YM2612_LFOcnt = 0;
                 }
                 break;
-            case 0x24: //Timer A LSB
-                YM2612_TimerA = (YM2612_TimerA & 0x003) | (((int) data) << 2);
-                //TODO skip this as it latches on MSB???
-                count = getTimerACount(YM2612_TimerA);
-                if (YM2612_TimerAL != count) {
-                    YM2612_TimerAcnt = YM2612_TimerAL = count;
-                    YM2612_Status &= 0xFF - 2; //reset overflow A
-                }
+            case 0x24: //Timer A MSB
+                YM2612_TimerA = ((data << 2) & 0x3fc) | (YM2612_TimerA & 3);
+                YM2612_TimerAL = getTimerACount(YM2612_TimerA);
+                log(Level.INFO, "Set Timer A MSB: " + YM2612_TimerAL + ", count: " + YM2612_TimerAcnt);
                 break;
-            case 0x25: //Timer A MSB
+            case 0x25: //Timer A LSB
                 YM2612_TimerA = (YM2612_TimerA & 0x3fc) | (data & 3);
-                count = getTimerACount(YM2612_TimerA);
-                if (YM2612_TimerAL != count) {
-                    YM2612_TimerAcnt = YM2612_TimerAL = count;
-                    YM2612_Status &= 0xFF - 2; //reset overflow A
-                }
+                YM2612_TimerAL = getTimerACount(YM2612_TimerA);
+                log(Level.INFO, "Set Timer A LSB: " + YM2612_TimerAL + ", count: " + YM2612_TimerAcnt);
                 break;
             case 0x26:
                 YM2612_TimerB = data;
-                count = getTimerBCount(YM2612_TimerB);
-                if (YM2612_TimerBL != count) {
-                    YM2612_TimerBcnt = YM2612_TimerBL = count;
-                    YM2612_Status &= 0xFF - 1; //reset overflow B
-                }
+                YM2612_TimerBL = getTimerBCount(YM2612_TimerB);
+                log(Level.INFO, "Set Timer B: " + YM2612_TimerBL + ", count: " + YM2612_TimerBcnt);
                 break;
             case 0x27:
                 if (((data ^ YM2612_Mode) & 0x40) != 0) {
@@ -952,10 +986,10 @@ public final class YM2612 implements FmProvider {
                     // This fix the punch sound in Street of Rage 2
                     YM2612_CHANNEL[2].SLOT[0].Finc = -1;    // recalculate phase step
                 }
-//                YM2612_Status &= (~data >> 4) & (data >> 2);  // Reset Status
-                setTimers(data);
-                YM2612_Mode = data;
-//                LOG.info("Mode set: " + data);
+                if (data != YM2612_Mode) {
+                    setTimers(data);
+                    YM2612_Mode = data;
+                }
                 break;
             case 0x28:
                 if ((nch = data & 3) == 3) return 1;

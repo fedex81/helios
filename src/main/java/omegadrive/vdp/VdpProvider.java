@@ -81,6 +81,26 @@ public interface VdpProvider {
     int H40 = 320;
     int H32 = 256;
 
+    //vdp counter data
+    int PAL_SCANLINES = 313;
+    int NTSC_SCANLINES = 262;
+    int H32_PIXELS = 342;
+    int H40_PIXELS = 420;
+    int H32_JUMP = 0x127;
+    int H40_JUMP = 0x16C;
+    int H32_HBLANK_SET = 0x126;
+    int H40_HBLANK_SET = 0x166;
+    int H32_HBLANK_CLEAR = 0xA;
+    int H40_HBLANK_CLEAR = 0xB;
+    int V28_VBLANK_SET = 0xE0;
+    int V30_VBLANK_SET = 0xF0;
+    int H32_VCOUNTER_INC_ON = 0x10A;
+    int H40_VCOUNTER_INC_ON = 0x14A;
+    int V28_PAL_JUMP = 0x102;
+    int V28_NTSC_JUMP = 0xEA;
+    int V30_PAL_JUMP = 0x10A;
+    int V30_NTSC_JUMP = -1; //never
+
     static VdpProvider createVdp(BusProvider bus) {
         return new GenesisVdp(bus);
     }

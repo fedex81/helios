@@ -19,6 +19,7 @@ import omegadrive.util.Util;
 import omegadrive.vdp.GenesisVdp;
 import omegadrive.vdp.GenesisVdpMemoryInterface;
 import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
@@ -311,7 +312,9 @@ public class Genesis implements GenesisProvider {
     }
 
     private static int CYCLES = 2;
-    private static long nsToMillis = 1000000;
+    private static long nsToMillis = 1_000_000;
+    private long oneScanlineCounter = VdpProvider.H40_PIXELS;
+    private long targetNs;
 
     void loop() {
         LOG.info("Starting game loop");
@@ -319,9 +322,9 @@ public class Genesis implements GenesisProvider {
         long counter = 1;
         long start = System.currentTimeMillis() - 1;
         long startCycle = System.nanoTime();
-        int targetFps = region.getFps();
         long lastRender = start;
-        int fps = targetFps;
+        targetNs = (long) (region.getFrameIntervalMs() * nsToMillis);
+
 //        setDebug(true);
         for (; ; ) {
             try {
@@ -333,12 +336,14 @@ public class Genesis implements GenesisProvider {
                     long now = System.currentTimeMillis();
                     renderScreenInternal(getStats(now, lastRender, counter, start));
                     handleVdpDumpScreenData();
+                    oneScanlineCounter = VdpCounterMode.getNumberOfPixelsPerLine(this.vdp.getVideoMode());
                     canRenderScreen = false;
-                    syncCycle(startCycle, targetFps);
+                    syncCycle(startCycle);
                     if (Thread.currentThread().isInterrupted()) {
                         LOG.info("Game thread stopped");
                         break;
                     }
+                    sound.output(0);
                     lastRender = now;
                     startCycle = System.nanoTime();
                 }
@@ -350,22 +355,13 @@ public class Genesis implements GenesisProvider {
         }
     }
 
-    private long counterStep = 50;
-
-
     private void syncSound(long counter) {
-        if (counter % counterStep == 0) {
-            int frameLenMs = 1000 / region.getFps(); //20ms
-            double scanLineMs = frameLenMs / 313d;
-            int elapsedMicros = (int) (1000 * scanLineMs * (counterStep / 422d));
-            if (elapsedMicros > 0) {
-                sound.updateElapsedMicros(elapsedMicros);
-            }
+        if (counter % oneScanlineCounter == 0) {
+            sound.updateElapsedMicros(64);
         }
     }
 
-    private void syncCycle(long startCycle, int targetFps) {
-        long targetNs = (long) ((1000d / targetFps) * nsToMillis);
+    private void syncCycle(long startCycle) {
         long elapsedNs = System.nanoTime() - startCycle;
         if (targetNs - elapsedNs > nsToMillis) {
             Util.sleep(((targetNs - elapsedNs) / nsToMillis));

@@ -22,6 +22,11 @@ public class SoundHandler {
 
     static long avgSteps = 0;
 
+    interface AudioRunnable extends Runnable {
+
+        void playOnce();
+    }
+
     public static Runnable getSoundRunnable(JavaSoundManager jsm, SourceDataLine dataLine, RegionDetector.Region region) {
         int fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
         int psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());

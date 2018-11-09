@@ -17,7 +17,7 @@ public interface FmProvider {
         double clock = getFmSoundClock(region);
         YM2612 fmProvider = new YM2612();
         fmProvider.init((int) clock, SAMPLE_RATE);
-        LOG.info("Creating instance, clock: " + clock + ", sampleRate: " + SAMPLE_RATE);
+        LOG.info("FM instance, clock: " + clock + ", sampleRate: " + SAMPLE_RATE);
         return fmProvider;
     }
 

@@ -2,12 +2,11 @@ package omegadrive.vdp;
 
 import omegadrive.Genesis;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.vdp.model.VdpHLineProvider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.EnumSet;
 
 /**
  * ${FILE}
@@ -29,27 +28,8 @@ public class VdpInterruptHandler {
     private static Logger LOG = LogManager.getLogger(VdpInterruptHandler.class.getSimpleName());
 
     public static int COUNTER_LIMIT = 0x1FF;
-
-    public static int PAL_SCANLINES = 313;
-    public static int NTSC_SCANLINES = 262;
-    public static int H32_PIXELS = 342;
-    public static int H40_PIXELS = 420;
-    public static int H32_JUMP = 0x127;
-    public static int H40_JUMP = 0x16C;
-    public static int H32_HBLANK_SET = 0x126;
-    public static int H40_HBLANK_SET = 0x166;
-    public static int H32_HBLANK_CLEAR = 0xA;
-    public static int H40_HBLANK_CLEAR = 0xB;
-    public static int V28_VBLANK_SET = 0xE0;
-    public static int V30_VBLANK_SET = 0xF0;
     public static int VBLANK_CLEAR = COUNTER_LIMIT;
-    public static int H32_VCOUNTER_INC_ON = 0x10A;
-    public static int H40_VCOUNTER_INC_ON = 0x14A;
     public static int VINT_SET_ON_HCOUNTER_VALUE = 2; //TODO setting this to 1 breaks Spot,
-    public static int V28_PAL_JUMP = 0x102;
-    public static int V28_NTSC_JUMP = 0xEA;
-    public static int V30_PAL_JUMP = 0x10A;
-    public static int V30_NTSC_JUMP = -1; //never
 
     private int hCounterInternal;
     private int vCounterInternal = 0;
@@ -67,61 +47,6 @@ public class VdpInterruptHandler {
 
     private static boolean veryVerbose = false || Genesis.verbose;
     private static boolean verbose = false || veryVerbose;
-
-    enum VdpCounterMode {
-        PAL_H32_V28(VideoMode.PAL_H32_V28),
-        PAL_H32_V30(VideoMode.PAL_H32_V30),
-        PAL_H40_V28(VideoMode.PAL_H40_V28),
-        PAL_H40_V30(VideoMode.PAL_H40_V30),
-        NTSCJ_H32_V28(VideoMode.NTSCJ_H32_V28),
-        NTSCU_H32_V28(VideoMode.NTSCU_H32_V28),
-
-        NTSCJ_H32_V30(VideoMode.NTSCJ_H32_V30),
-        NTSCU_H32_V30(VideoMode.NTSCU_H32_V30),
-
-        NTSCJ_H40_V28(VideoMode.NTSCJ_H40_V28),
-        NTSCU_H40_V28(VideoMode.NTSCU_H40_V28),
-
-        NTSCJ_H40_V30(VideoMode.NTSCJ_H40_V30),
-        NTSCU_H40_V30(VideoMode.NTSCU_H40_V30),;
-
-        private static EnumSet<VdpCounterMode> values = EnumSet.allOf(VdpCounterMode.class);
-
-        int hTotalCount;
-        int hJumpTrigger;
-        int hBlankSet;
-        int hBlankClear;
-        int vTotalCount;
-        int vJumpTrigger;
-        int vBlankSet;
-        int vCounterIncrementOn;
-        VideoMode videoMode;
-
-        VdpCounterMode(VideoMode videoMode) {
-            boolean isH32 = videoMode.isH32();
-            boolean isV28 = videoMode.isV28();
-            boolean isPal = videoMode.isPal();
-            this.hTotalCount = isH32 ? H32_PIXELS : H40_PIXELS;
-            this.hJumpTrigger = isH32 ? H32_JUMP : H40_JUMP;
-            this.hBlankSet = isH32 ? H32_HBLANK_SET : H40_HBLANK_SET;
-            this.hBlankClear = isH32 ? H32_HBLANK_CLEAR : H40_HBLANK_CLEAR;
-            this.vTotalCount = videoMode.isPal() ? PAL_SCANLINES : NTSC_SCANLINES;
-            this.vJumpTrigger = isPal ? (isV28 ? V28_PAL_JUMP : V30_PAL_JUMP) : (isV28 ? V28_NTSC_JUMP : V30_NTSC_JUMP);
-            this.vBlankSet = isV28 ? V28_VBLANK_SET : V30_VBLANK_SET;
-            this.vCounterIncrementOn = isH32 ? H32_VCOUNTER_INC_ON : H40_VCOUNTER_INC_ON;
-            this.videoMode = videoMode;
-        }
-
-        public static VdpCounterMode getCounterMode(VideoMode videoMode) {
-            for (VdpCounterMode v : VdpCounterMode.values) {
-                if (v.videoMode == videoMode) {
-                    return v;
-                }
-            }
-            LOG.error("Unable to find counter mode for videoMode: " + videoMode);
-            return null;
-        }
-    }
 
     public static VdpInterruptHandler createInstance(VdpHLineProvider vdpHLineProvider) {
         VdpInterruptHandler handler = new VdpInterruptHandler();
