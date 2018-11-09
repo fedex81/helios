@@ -412,6 +412,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         LogHelper.printLevel(LOG, Level.INFO, "writeReg: {}, data: {}", reg, dataControl, verbose);
     }
 
+    int spriteTableLoc = 0;
+
     private void updateVariables(int reg, int data) {
         if (reg == 0x00) {
             lcb = ((data >> 5) & 1) == 1;
@@ -427,6 +429,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             m1 = ((data >> 4) & 1) == 1;
             m2 = ((data >> 3) & 1) == 1;
             m5 = ((data >> 2) & 1) == 1;
+        } else if (reg == 0x05) {
+            if (data != spriteTableLoc) {
+                LOG.info("Sprite table location changed from: {}, to: {}", spriteTableLoc, data);
+            }
+            spriteTableLoc = data;
         } else if (reg == 0x0C) {
             boolean rs0 = Util.bitSetTest(data, 7);
             boolean rs1 = Util.bitSetTest(data, 0);
