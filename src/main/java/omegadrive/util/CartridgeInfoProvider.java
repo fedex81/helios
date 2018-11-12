@@ -38,7 +38,6 @@ public class CartridgeInfoProvider {
     public static final boolean AUTOFIX_CHECKSUM = false;
 
     private MemoryProvider memoryProvider;
-    private RegionDetector.Region region;
     private long romStart;
     private long romEnd;
     private long ramStart;
@@ -50,10 +49,6 @@ public class CartridgeInfoProvider {
     private long computedChecksum;
 
     private String romName;
-
-    public RegionDetector.Region getRegion() {
-        return region;
-    }
 
     public long getRomStart() {
         return romStart;
@@ -108,7 +103,6 @@ public class CartridgeInfoProvider {
     }
 
     private void init() {
-        this.region = RegionDetector.detectRegion(memoryProvider, false);
         this.initMemoryLayout(memoryProvider);
         this.initChecksum();
     }
