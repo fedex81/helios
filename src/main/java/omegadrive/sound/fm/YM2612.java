@@ -1,5 +1,6 @@
 package omegadrive.sound.fm;
 
+import omegadrive.util.LogHelper;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -244,11 +245,13 @@ public final class YM2612 implements FmProvider {
     long YM2612_Inter_Step;    // UINT
     final cChannel[] YM2612_CHANNEL = new cChannel[6];
     final int[][] YM2612_REG = new int[2][0x100];
-    final int DAC_QUEUE_LIMIT = 4000;
     volatile int YM2612_Mode;
     volatile int YM2612_Status;
-    volatile long dacWritesCounter = 0;
+    static int DAC_FREQUENCY_DIAL = 3; // N*64 micros, N = 1 -> dac frequency = 15.6 kHz
+    volatile long dacWritesCounter = -DAC_FREQUENCY_DIAL;
+    volatile int dacValue = 0;
     Queue<Integer> dacQueue;
+    volatile int numberOfScanlines = 0;
 
     /**
      * Creates a new instance of YM2612
@@ -506,11 +509,11 @@ public final class YM2612 implements FmProvider {
         return 0;
     }
 
-    private static void log(Level level, String msg) {
-        if (isResetting || !verbose) {
+    private static void logWarn(String msg) {
+        if (isResetting) {
             return;
         }
-        LOG.log(level, msg);
+        LOG.log(Level.WARN, msg);
     }
 
 
@@ -542,14 +545,21 @@ public final class YM2612 implements FmProvider {
             else
                 setChannel(addr + 0x100, data);
         } else if (addr < 0x30) {
-            log(Level.WARN, "Invalid write: " + Integer.toHexString(addr) + "h, " + data);
+            logWarn("Invalid write: " + Integer.toHexString(addr) + "h, " + data);
         }
     }
 
     public final void update(int[] buf_lr, int offset, int end) {
         offset *= 2;
         end = end * 2 + offset;
-//        synchronizeTimers(1);
+//
+//        if(numberOfScanlines < 100){
+//            return;
+//        }
+//
+//        int scanEnd = (int) (2 * numberOfScanlines*64/43.5d);
+//        numberOfScanlines = 0;
+//        end = Math.min(end, scanEnd);
 
         if (YM2612_CHANNEL[0].SLOT[0].Finc == -1) calc_FINC_CH(YM2612_CHANNEL[0]);
         if (YM2612_CHANNEL[1].SLOT[0].Finc == -1) calc_FINC_CH(YM2612_CHANNEL[1]);
@@ -604,10 +614,6 @@ public final class YM2612 implements FmProvider {
             buf_lr[i] += val;
             buf_lr[i + 1] += val;
             i += 2;
-            dacWritesCounter--;
-        }
-        if (dacWritesCounter < DAC_QUEUE_LIMIT) {
-//            YM2612_Status &= 0x7F; //TODO not convinced
         }
     }
 
@@ -655,25 +661,27 @@ public final class YM2612 implements FmProvider {
         }
 
         if (wasLoadA != loadA) {
-            log(Level.INFO, "Load Timer A: " + loadA + ", count: " + YM2612_TimerAL + ", was: " + YM2612_TimerAcnt);
+            LogHelper.printLevel(LOG, Level.INFO, "Load Timer A: {}, count: {}, was: {}",
+                    loadA, YM2612_TimerAL, YM2612_TimerAcnt, verbose);
         }
         if (wasLoadB != loadB) {
-            log(Level.INFO, "Load Timer B:" + loadB + ", count: " + YM2612_TimerBL + ", was: " + YM2612_TimerBcnt);
+            LogHelper.printLevel(LOG, Level.INFO, "Load Timer B: {}, count: {}, was: {}",
+                    loadB, YM2612_TimerBL, YM2612_TimerBcnt, verbose);
         }
         if (wasResetA != resetA) {
-            log(Level.INFO, "Reset Timer A:" + resetA + ", cnt:  " + YM2612_TimerAcnt);
+            LogHelper.printLevel(LOG, Level.INFO, "Reset Timer A: {}, cnt: {}", resetA, YM2612_TimerAcnt, verbose);
             //TODO this fixes Quackshot,ThunderForceIV ie. reset only on transitions but it is wrong..
             YM2612_Status &= 0xFD;
         }
         if (wasResetB != resetB) {
-            log(Level.INFO, "Reset Timer B:" + resetB + ", cnt: " + YM2612_TimerBcnt);
+            LogHelper.printLevel(LOG, Level.INFO, "Reset Timer B: {}, cnt: {}", resetB, YM2612_TimerBcnt, verbose);
             YM2612_Status &= 0xFE;
         }
         if (enableA != wasEnabledA) {
-            log(Level.INFO, "Enable Timer A: " + enableA + ", cnt:  " + YM2612_TimerAcnt);
+            LogHelper.printLevel(LOG, Level.INFO, "Enable Timer A: {}, cnt:  {}", enableA, YM2612_TimerAcnt, verbose);
         }
         if (enableB != wasEnabledB) {
-            log(Level.INFO, "Enable Timer B: " + enableB + ", cnt:  " + YM2612_TimerBcnt);
+            LogHelper.printLevel(LOG, Level.INFO, "Enable Timer B: {}, cnt:  {}", enableB, YM2612_TimerBcnt, verbose);
         }
     }
 
@@ -681,6 +689,7 @@ public final class YM2612 implements FmProvider {
         if (length <= 0) {
             return;
         }
+
 //        log(Level.INFO, "Sync timer ms: " + length);
         int i = length;
 
@@ -712,6 +721,10 @@ public final class YM2612 implements FmProvider {
 //                log(Level.INFO, "Timer B expired at: " + val + ", value: " + YM2612_TimerBcnt);
             }
         }
+        dacQueue.offer(dacValue);
+        dacValue = 0;
+        dacWritesCounter++;
+        numberOfScanlines++;
     }
 
     /***********************************************
@@ -855,7 +868,7 @@ public final class YM2612 implements FmProvider {
                 }
                 break;
             default:
-                log(Level.WARN, "Invalid write: " + Integer.toHexString(address) + "h, " + data);
+                logWarn("Invalid write: " + Integer.toHexString(address) + "h, " + data);
                 break;
         }
         return 0;
@@ -934,7 +947,7 @@ public final class YM2612 implements FmProvider {
                 else CH.SLOT[3].AMS = 31;
                 break;
             default:
-                log(Level.WARN, "Invalid write: " + Integer.toHexString(address & 0xFC) + "h, " + data);
+                logWarn("Invalid write: " + Integer.toHexString(address & 0xFC) + "h, " + data);
                 break;
         }
         return 0;
@@ -955,7 +968,7 @@ public final class YM2612 implements FmProvider {
 
         switch (address) {
             case 0x21:
-                log(Level.WARN, "Test register write: " + data);
+                logWarn("Test register write: " + data);
             case 0x22:
                 if ((data & 8) != 0) {
                     // Cool Spot music 1, LFO modified severals time which
@@ -968,17 +981,20 @@ public final class YM2612 implements FmProvider {
             case 0x24: //Timer A MSB
                 YM2612_TimerA = ((data << 2) & 0x3fc) | (YM2612_TimerA & 3);
                 YM2612_TimerAL = getTimerACount(YM2612_TimerA);
-                log(Level.INFO, "Set Timer A MSB: " + YM2612_TimerAL + ", count: " + YM2612_TimerAcnt);
+                LogHelper.printLevel(LOG, Level.INFO, "Set Timer A MSB: {}, count: {}", YM2612_TimerAL,
+                        YM2612_TimerAcnt, verbose);
                 break;
             case 0x25: //Timer A LSB
                 YM2612_TimerA = (YM2612_TimerA & 0x3fc) | (data & 3);
                 YM2612_TimerAL = getTimerACount(YM2612_TimerA);
-                log(Level.INFO, "Set Timer A LSB: " + YM2612_TimerAL + ", count: " + YM2612_TimerAcnt);
+                LogHelper.printLevel(LOG, Level.INFO, "Set Timer A LSB: {}, count: {}", YM2612_TimerAL,
+                        YM2612_TimerAcnt, verbose);
                 break;
             case 0x26:
                 YM2612_TimerB = data;
                 YM2612_TimerBL = getTimerBCount(YM2612_TimerB);
-                log(Level.INFO, "Set Timer B: " + YM2612_TimerBL + ", count: " + YM2612_TimerBcnt);
+                LogHelper.printLevel(LOG, Level.INFO, "Set Timer B: {], count: {}", YM2612_TimerBL,
+                        YM2612_TimerBcnt, verbose);
                 break;
             case 0x27:
                 if (((data ^ YM2612_Mode) & 0x40) != 0) {
@@ -1007,26 +1023,18 @@ public final class YM2612 implements FmProvider {
                 break;
             case 0x2A:
                 //8 bit unsigned to 13 bit signed
-                if (dacWritesCounter < DAC_QUEUE_LIMIT) {
-                    int val = (data - 0x80) << 5;
-                    dacQueue.offer(val);
-                    dacWritesCounter++;
-                } else {
-//                    YM2612_Status |= 0x80; //TODO not convinced
+                if (dacWritesCounter > 0) {
+                    dacValue = (data - 0x80) << 5;
+                    dacWritesCounter = -DAC_FREQUENCY_DIAL;
                 }
-                //LOG.info("DAC data: " + YM2612_DacData);
                 break;
             case 0x2B:
                 //enable/disable DAC
                 int flag = (data & 0x80);
-                if (YM2612_DAC != flag) {
-//                    LOG.info("DAC toggled: " + flag);
-                }
                 YM2612_DAC = flag;
-                //dacQueue.offer(0); //avoids clicking?
                 break;
             default:
-                log(Level.WARN, "Unexpected write: " + Integer.toHexString(address) + ", " + data);
+                logWarn("Unexpected write: " + Integer.toHexString(address) + ", " + data);
         }
         return 0;
     }

@@ -51,6 +51,18 @@ public class LogHelper {
         }
     }
 
+    public static void printLevel(Logger LOG, Level level, String str, boolean arg1, int arg2, int arg3, boolean verbose) {
+        if (verbose) {
+            LOG.log(level, new ParameterizedMessage(str, arg1, arg2, arg3));
+        }
+    }
+
+    public static void printLevel(Logger LOG, Level level, String str, boolean arg1, int arg2, boolean verbose) {
+        if (verbose) {
+            LOG.log(level, new ParameterizedMessage(str, arg1, arg2));
+        }
+    }
+
     public static void printLevel(Logger LOG, Level level, String str, Object arg, boolean verbose) {
         if (verbose) {
             printLevel(LOG, level, str, arg);
