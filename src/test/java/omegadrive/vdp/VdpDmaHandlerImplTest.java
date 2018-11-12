@@ -186,7 +186,11 @@ public class VdpDmaHandlerImplTest {
             int word = memoryInterface.readVideoRamWord(type, addr);
             return addr % 2 == 0 ? word >> 8 : word & 0xFF;
         };
-        return IntStream.range(from, to).mapToObj(addr -> Integer.toHexString(getByteFn.apply(addr))).
+        Function<Integer, String> toStringFn = v -> {
+            String s = Integer.toHexString(v).toUpperCase();
+            return s.length() < 2 ? '0' + s : s;
+        };
+        return IntStream.range(from, to).mapToObj(addr -> toStringFn.apply(getByteFn.apply(addr))).
                 collect(Collectors.joining(","));
     }
 
