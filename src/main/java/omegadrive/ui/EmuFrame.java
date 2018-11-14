@@ -38,8 +38,8 @@ public class EmuFrame implements GenesisWindow {
 
     private Dimension fullScreenSize;
     private GraphicsDevice[] graphicsDevices;
-    private Dimension screenSize = new Dimension(ScreenSizeHelper.DEFAULT_X,
-            ScreenSizeHelper.DEFAULT_Y);
+    private Dimension screenSize = new Dimension(ScreenSizeHelper.DEFAULT_X * DEFAULT_SCALE_FACTOR,
+            ScreenSizeHelper.DEFAULT_Y * DEFAULT_SCALE_FACTOR);
     private Dimension baseScreenSize = new Dimension(ScreenSizeHelper.DEFAULT_X,
             ScreenSizeHelper.DEFAULT_Y);
 
