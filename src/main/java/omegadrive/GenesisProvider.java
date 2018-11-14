@@ -24,8 +24,6 @@ public interface GenesisProvider {
 
     void renderScreen(int[][] screenData);
 
-    void handleNewGame();
-
     void handleNewGame(Path file);
 
     void handleCloseGame();

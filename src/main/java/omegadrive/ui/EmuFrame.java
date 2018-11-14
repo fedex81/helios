@@ -11,13 +11,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * ${FILE}
@@ -53,7 +57,6 @@ public class EmuFrame implements GenesisWindow {
     private final JLabel gameLabel = new JLabel();
     private final JLabel fpsLabel = new JLabel("");
     private final static String FRAME_TITLE_HEAD = "Omega Drive " + FileLoader.loadVersionFromManifest();
-    public static String basePath = "./roms/";
 
     private JFrame jFrame;
     private GenesisProvider mainEmu;
@@ -92,9 +95,10 @@ public class EmuFrame implements GenesisWindow {
         LOG.info("Screen detected: " + graphicsDevices.length);
         GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         if (graphicsDevices.length > 1) {
-            gd = graphicsDevices[DEFAULT_SCREEN];
-            LOG.info("Using screen: " + DEFAULT_SCREEN);
+            int screenNumber = Math.min(DEFAULT_SCREEN, graphicsDevices.length - 1);
+            gd = graphicsDevices[screenNumber];
         }
+        LOG.info("Using screen: " + gd.getIDstring());
         fullScreenSize = gd.getDefaultConfiguration().getBounds().getSize();
         LOG.info("Full screen size: " + fullScreenSize);
         LOG.info("Screen size: " + screenSize);
@@ -136,7 +140,7 @@ public class EmuFrame implements GenesisWindow {
         bar.add(fpsLabel);
 
         JMenuItem loadRomItem = new JMenuItem("Load ROM");
-        loadRomItem.addActionListener(e -> mainEmu.handleNewGame());
+        loadRomItem.addActionListener(e -> handleNewGame());
         JMenuItem closeRomItem = new JMenuItem("Close ROM");
         closeRomItem.addActionListener(e -> mainEmu.handleCloseGame());
         JMenuItem exitItem = new JMenuItem("Exit");
@@ -173,7 +177,7 @@ public class EmuFrame implements GenesisWindow {
                         mainEmu.setPlayers(2);
                         break;
                     case KeyEvent.VK_L:
-                        FileLoader.openRomDialog();
+                        loadRomDialog(jFrame);
                         break;
                 }
             }
@@ -194,7 +198,13 @@ public class EmuFrame implements GenesisWindow {
         jFrame.add(gameLabel, -1);
 
         jFrame.pack();
+
+        //get the center location and then reset it
         jFrame.setLocationRelativeTo(null);
+        Point centerPoint = jFrame.getLocation();
+        jFrame.setLocation(gd.getDefaultConfiguration().getBounds().x + centerPoint.x,
+                gd.getDefaultConfiguration().getBounds().y + centerPoint.y);
+
         jFrame.setVisible(true);
     }
 
@@ -203,7 +213,7 @@ public class EmuFrame implements GenesisWindow {
     }
 
     private GraphicsDevice getGraphicsDevice() {
-        return graphicsDevices[DEFAULT_SCREEN];
+        return jFrame.getGraphicsConfiguration().getDevice();
     }
 
     private BufferedImage createImage(GraphicsDevice gd, Dimension d, boolean src) {
@@ -314,6 +324,37 @@ public class EmuFrame implements GenesisWindow {
             jFrame.setLocationRelativeTo(null); //center
             jFrame.pack();
         };
+    }
+
+    private Optional<File> loadRomDialog(Component parent) {
+        Optional<File> res = Optional.empty();
+        JFileChooser fileChooser = new JFileChooser(FileLoader.basePath);
+        fileChooser.setFileFilter(new FileFilter() {
+            @Override
+            public String getDescription() {
+                return "md and bin files";
+            }
+
+            @Override
+            public boolean accept(File f) {
+                String name = f.getName().toLowerCase();
+                return f.isDirectory() || name.endsWith(".md") || name.endsWith(".bin");
+            }
+        });
+        int result = fileChooser.showOpenDialog(parent);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            res = Optional.ofNullable(fileChooser.getSelectedFile());
+        }
+        return res;
+    }
+
+    private void handleNewGame() {
+        mainEmu.handleCloseGame();
+        Optional<File> optFile = loadRomDialog(jFrame);
+        if (optFile.isPresent()) {
+            Path file = optFile.get().toPath();
+            mainEmu.handleNewGame(file);
+        }
     }
 
     @Override

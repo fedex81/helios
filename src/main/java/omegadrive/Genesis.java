@@ -29,14 +29,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.io.File;
 import java.io.FileReader;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -182,15 +180,6 @@ public class Genesis implements GenesisProvider {
     public void handleNewGame(Path file) {
         GameRunnable runnable = new GameRunnable(file);
         runningGameFuture = executorService.submit(runnable, null);
-    }
-
-    public void handleNewGame() {
-        handleCloseGame();
-        Optional<File> optFile = FileLoader.openRomDialog();
-        if (optFile.isPresent()) {
-            Path file = optFile.get().toPath();
-            handleNewGame(file);
-        }
     }
 
     public void handleCloseGame() {

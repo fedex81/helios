@@ -1,7 +1,6 @@
 package omegadrive.util;
 
 import omegadrive.memory.MemoryProvider;
-import omegadrive.ui.EmuFrame;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -61,7 +60,7 @@ public class RegionDetector {
     }
 
     public static void main(String[] args) throws IOException {
-        Path romFolder = Paths.get(EmuFrame.basePath);
+        Path romFolder = Paths.get(FileLoader.basePath);
         Files.list(romFolder).
                 peek(System.out::print).
                 map(FileLoader::readFileSafe).

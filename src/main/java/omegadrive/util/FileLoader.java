@@ -3,15 +3,12 @@ package omegadrive.util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -30,28 +27,6 @@ public class FileLoader {
 
     private static String SNAPSHOT_VERSION = "SNAPSHOT";
     private static String MANIFEST_RELATIVE_PATH = "/META-INF/MANIFEST.MF";
-
-    public static Optional<File> openRomDialog() {
-        Optional<File> res = Optional.empty();
-        JFileChooser fileChooser = new JFileChooser(basePath);
-        fileChooser.setFileFilter(new FileFilter() {
-            @Override
-            public String getDescription() {
-                return "md and bin files";
-            }
-
-            @Override
-            public boolean accept(File f) {
-                String name = f.getName().toLowerCase();
-                return f.isDirectory() || name.endsWith(".md") || name.endsWith(".bin");
-            }
-        });
-        int result = fileChooser.showOpenDialog(null);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            res = Optional.ofNullable(fileChooser.getSelectedFile());
-        }
-        return res;
-    }
 
     public static int[] readFile(Path file) throws IOException {
         byte[] bytes = Files.readAllBytes(file);
