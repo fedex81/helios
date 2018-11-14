@@ -252,7 +252,10 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 //            busy accessing memory or not.
     private long internalRegRead(long address, Size size) {
         int value = 0;
-        if (address == 0xA11100 || address == 0xA11101 || address == 0xA11200 || address == 0xA11201) {    //	Z80 bus request
+        if (address == 0xA11100 || address == 0xA11101
+            //TODO this shouldn't be here???
+//               || address == 0xA11200 || address == 0xA11201
+                ) {    //	Z80 bus request
             value = z80.isBusRequested() ? 0 : 1;
             value = z80.isReset() ? 1 : value;
 //            Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
@@ -260,7 +263,10 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             if (size == Size.WORD) {
                 value = value << 8;
             }
+            LOG.debug("Read Z80 busReq: {}", value);
             return value;
+        } else if (address == 0xA11200 || address == 0xA11201) {
+            LOG.warn("Unexpected Z80 read at: " + Long.toHexString(address));
         } else if (address >= 0xA13000 && address <= 0xA130FF) {
             LOG.warn("Unexpected mapper read at: " + Long.toHexString(address));
         } else if (address == 0xA14100 || address == 0xA14101) {
@@ -284,16 +290,16 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             if (data == 0x0100 || data == 0x1 || data == 0xFFFF) {
                 boolean isReset = z80.isReset();
                 if (!z80.isBusRequested()) {
-                    LOG.debug("busRequested, reset: " + isReset);
+                    LOG.debug("busRequested, reset: {}", isReset);
                     z80.requestBus();
                 } else {
-                    LOG.debug("busRequested, ignored, reset: " + isReset);
+                    LOG.debug("busRequested, ignored, reset: {}", isReset);
                 }
                 //	 #$0000 needs to be written to $A11100 to return the bus back to the Z80
             } else if (data == 0x0000) {
                 if (z80.isBusRequested()) {
                     z80.unrequestBus();
-                    LOG.debug("busUnrequested, reset : " + z80.isReset());
+                    LOG.debug("busUnrequested, reset : {}", z80.isReset());
                 } else {
                     LOG.debug("busUnrequested ignored");
                 }
@@ -315,7 +321,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 //	the Z80 may be let go from reset by writing #$0100 to $A11200.
             } else if (data == 0x0100 || data == 0x1) {
                 z80.disableReset();
-                LOG.debug("Disable reset, busReq : " + z80.isBusRequested());
+                LOG.debug("Disable reset, busReq : {}", z80.isBusRequested());
             } else {
                 LOG.warn("Unexpected data on busReset: " + Integer.toBinaryString((int) data));
             }
