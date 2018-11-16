@@ -66,7 +66,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                 //fall-through
             case VRAM_COPY:
                 vdpProvider.setDmaFlag(1);
-                setupDmaRegister(data);
+                setupDmaRegister();
                 break;
             default:
                 LOG.error("Unexpected DMA mode: " + dmaMode + ",vramMode: " + vramMode);
@@ -75,8 +75,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return dmaMode;
     }
 
-    private void setupDmaRegister(long commandWord) {
-        destAddress = (int) ((commandWord & 0x3) << 14 | ((commandWord & 0x3FFF_0000L) >> 16));
+
+    private void setupDmaRegister() {
+        destAddress = getDestAddress();
         printInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
     }
 
@@ -86,8 +87,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         dmaFillData = dataWord;
         printInfo("START");
         dmaFillReady = true;
-        destAddress ^= 1;
-        destAddress += getDestAddressIncrement();
+        destAddress = getDestAddress();
     }
 
 
@@ -107,6 +107,10 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             sourceAddress = ((vdpProvider.getRegisterData(23) & 0x7F) << 16) | sourceAddress;
         }
         return sourceAddress;
+    }
+
+    private int getDestAddress() {
+        return vdpProvider.getAddressRegister();
     }
 
     private void printInfo(String head) {
@@ -176,7 +180,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         int dmaLen = decreaseDmaLength();
         printInfo("IN PROGRESS");
         int msb = (dmaFillData >> 8) & 0xFF;
-        memoryInterface.writeVramByte(destAddress, msb);
+        memoryInterface.writeVramByte(destAddress ^ 1, msb);
         //not needed
         increaseSourceAddress(1);
         destAddress += getDestAddressIncrement();
@@ -193,12 +197,15 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return done;
     }
 
+    //on VRAM copy, VRAM source and destination address are actually adjacent address ( address ^ 1)
+    //to internal address registers value. This does not matter for most VRAM Copy operations since
+    //they are done on an even byte quantity but can be verified when doing a single byte copy for example.
     private boolean dmaCopySingleByte() {
         int dmaLen = decreaseDmaLength();
-        int sourceAddress = getSourceAddress();
+        int sourceAddress = getSourceAddress() ^ 1;
         printInfo("IN PROGRESS");
         int data = memoryInterface.readVramByte(sourceAddress);
-        memoryInterface.writeVramByte(destAddress, data);
+        memoryInterface.writeVramByte(destAddress ^ 1, data);
         increaseSourceAddress(1);
         destAddress += getDestAddressIncrement();
         return dmaLen == 0;

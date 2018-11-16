@@ -250,6 +250,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
+    public int getAddressRegister() {
+        return addressRegister;
+    }
+
+    @Override
     public void updateRegisterData(int reg, int data) {
         registers[reg] = data;
     }
@@ -381,9 +386,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
             int addressMode = codeRegister & 0xF;    // CD0-CD3
             vramMode = VramMode.getVramMode(addressMode);
-            LOG.debug("Video mode: " + Objects.toString(vramMode));
             LogHelper.printLevel(LOG, Level.INFO, "writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}"
                     , data, addressRegister, codeRegister, all, verbose);
+            LOG.debug("Video mode: {}", Objects.toString(vramMode));
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((codeRegister & 0b100000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);

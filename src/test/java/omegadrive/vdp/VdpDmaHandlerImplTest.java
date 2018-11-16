@@ -42,6 +42,33 @@ public class VdpDmaHandlerImplTest {
         ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
     }
 
+
+    @Test
+    public void testDMACopy_inc0() {
+        int[] expected = {0xF0, 0x44, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D};
+        testDMACopyInternal(0, expected);
+    }
+
+    @Test
+    public void testDMACopy_inc1() {
+        int[] expected = {0x11, 0x22, 0xF0, 0x44, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D};
+        testDMACopyInternal(1, expected);
+    }
+
+    @Test
+    public void testDMACopy_inc2() {
+        //$F022, $F011, $F044
+        int[] expected = {0xF0, 0x22, 0xF0, 0x11, 0xF0, 0x44, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D};
+        testDMACopyInternal(2, expected);
+    }
+
+    @Test
+    public void testDMACopy_inc4() {
+        //$F022, $F00D, $F011, $F00D, $F044,
+        int[] expected = {0xF0, 0x22, 0xF0, 0x0D, 0xF0, 0x11, 0xF0, 0x0D, 0xF0, 0x44, 0xF0, 0x0D, 0xF0, 0x0D, 0xF0, 0x0D};
+        testDMACopyInternal(4, expected);
+    }
+
     /**
      * VDPFIFOTesting #42
      * <p>
@@ -177,6 +204,63 @@ public class VdpDmaHandlerImplTest {
 
         System.out.println("Expected: " + Arrays.toString(exp));
         System.out.println("Actual: " + Arrays.toString(actual));
+
+        Assert.assertArrayEquals(exp, actual);
+    }
+
+
+    private void testDMACopyInternal(int increment, int[] expected) {
+        vdpProvider.writeControlPort(0x8F02);
+        vdpProvider.writeControlPort(0x4000);
+        vdpProvider.writeControlPort(2);
+        vdpProvider.writeDataPort(0xf00d);
+        vdpProvider.writeDataPort(0xf00d);
+        vdpProvider.writeDataPort(0xf00d);
+        vdpProvider.writeDataPort(0xf00d);
+        vdpProvider.writeDataPort(0xf00d);
+        vdpProvider.writeDataPort(0xf00d);
+        vdpProvider.writeDataPort(0xf00d);
+        vdpProvider.writeDataPort(0xf00d);
+
+        vdpProvider.writeControlPort(0x5000);
+        vdpProvider.writeControlPort(2);
+        vdpProvider.writeDataPort(0x1122);
+        vdpProvider.writeDataPort(0x3344);
+        vdpProvider.writeDataPort(0x5566);
+        vdpProvider.writeDataPort(0x7788);
+        vdpProvider.writeDataPort(0x99aa);
+        vdpProvider.writeDataPort(0xbbcc);
+        vdpProvider.writeDataPort(0xddee);
+        vdpProvider.writeDataPort(0xff00);
+
+        String str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        System.out.println(str);
+
+        str = printMemory(VdpProvider.VdpRamType.VRAM, 0x9000, 0x9016);
+        System.out.println(str);
+
+        vdpProvider.writeControlPort(0x8F00 + increment);
+        vdpProvider.writeControlPort(0x8154);
+        vdpProvider.writeControlPort(0x9303);
+        vdpProvider.writeControlPort(0x9400);
+        vdpProvider.writeControlPort(0x9500);
+        vdpProvider.writeControlPort(0x9690);
+        vdpProvider.writeControlPort(0x97C0);
+
+        vdpProvider.writeControlPort(0);
+        vdpProvider.writeControlPort(0xc2);
+
+        dmaHandler.doDma(VideoMode.PAL_H40_V30, true);
+
+        str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        System.out.println(str);
+
+        String[] exp = Arrays.stream(expected).mapToObj(Integer::toHexString).toArray(String[]::new);
+        String[] actual = IntStream.range(0x8000, 0x8000 + expected.length).
+                mapToObj(memoryInterface::readVramByte).map(Integer::toHexString).toArray(String[]::new);
+
+        System.out.println("Expected: " + Arrays.toString(exp));
+        System.out.println("Actual:   " + Arrays.toString(actual));
 
         Assert.assertArrayEquals(exp, actual);
     }

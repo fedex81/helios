@@ -122,6 +122,8 @@ public interface VdpProvider {
 
     int getHCounter();
 
+    int getAddressRegister();
+
     boolean isIe0();
 
     boolean isIe1();
