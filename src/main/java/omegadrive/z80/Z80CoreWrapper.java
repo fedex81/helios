@@ -139,7 +139,15 @@ public class Z80CoreWrapper implements Z80Provider {
     //registers I and R, then sets interrupt status to mode 0.
     @Override
     public void reset() {
-        z80Core.reset();
+        //from Exodus
+        z80Core.setRegSP(0xFFFF);
+        z80Core.setRegAF(0xFFFF);
+        z80Core.setRegPC(0);
+        z80Core.setRegI(0);
+        z80Core.setRegR(0);
+        z80Core.setIFF1(false);
+        z80Core.setIFF2(false);
+        z80Core.setIM(Z80.IntMode.IM0);
         resetState = true;
     }
 
