@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
 
 import static omegadrive.util.RegionDetector.Region.*;
 import static omegadrive.vdp.VdpProvider.*;
@@ -32,7 +34,7 @@ public enum VideoMode {
 
     private static Logger LOG = LogManager.getLogger(VideoMode.class.getSimpleName());
 
-    private static EnumSet<VideoMode> values = EnumSet.allOf(VideoMode.class);
+    private static Set<VideoMode> values = new HashSet<>(EnumSet.allOf(VideoMode.class));
 
     private RegionDetector.Region region;
     private int h;

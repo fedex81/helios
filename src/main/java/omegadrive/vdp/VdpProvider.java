@@ -4,6 +4,8 @@ import omegadrive.bus.BusProvider;
 import omegadrive.util.VideoMode;
 
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * ${FILE}
@@ -29,7 +31,7 @@ public interface VdpProvider {
         vsramWrite(0b0101, VdpRamType.VSRAM),
         vramRead_8bit(0b1100, VdpRamType.VRAM);
 
-        private static EnumSet<VramMode> values = EnumSet.allOf(VramMode.class);
+        private static Set<VramMode> values = new HashSet<>(EnumSet.allOf(VramMode.class));
 
         private VdpRamType ramType;
         private int addressMode;

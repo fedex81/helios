@@ -84,6 +84,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
     private int[][] screenData = new int[COLS][ROWS];
 
+    private SpriteDataHolder spriteDataHolder = new SpriteDataHolder();
+
     public VdpRenderHandlerImpl(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
         this.memoryInterface = memoryInterface;
@@ -233,7 +235,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         if (spritesFrame >= maxSpritesPerFrame) {
             return;
         }
-        SpriteDataHolder holder = new SpriteDataHolder();
+        SpriteDataHolder holder = spriteDataHolder;
         int next = 0;
         for (int index = 0; index < maxSpritesPerFrame; index++) {
             int baseAddress = spriteTable + (next * 8);
@@ -268,7 +270,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
         int[] spritesInLine = spritesPerLine[line];
         int currSprite = spritesInLine[0];
-        SpriteDataHolder holder = new SpriteDataHolder();
+        SpriteDataHolder holder = spriteDataHolder;
 
         int ind = 0;
         int baseAddress;
@@ -477,7 +479,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
         int[][] plane = isPlaneA ? planeA : planeB;
         boolean[][] planePriority = isPlaneA ? planePrioA : planePrioB;
-        TileDataHolder tileDataHolder = new TileDataHolder();
+        TileDataHolder tileDataHolder = spriteDataHolder;
 
         RenderType renderType = isPlaneA ? RenderType.PLANE_A : RenderType.PLANE_B;
         RenderPriority highPrio = RenderPriority.getRenderPriority(renderType, true);
@@ -715,7 +717,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
         int vramLocation = tileLocator;
         int rowInTile = (line % 8);
-        TileDataHolder tileDataHolder = new TileDataHolder();
+        TileDataHolder tileDataHolder = spriteDataHolder;
 
         for (int horTile = tileStart; horTile < tileEnd; horTile++) {
             int nameTable = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VRAM, vramLocation);
