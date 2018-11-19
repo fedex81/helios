@@ -485,10 +485,12 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         RenderPriority highPrio = RenderPriority.getRenderPriority(renderType, true);
         RenderPriority lowPrio = RenderPriority.getRenderPriority(renderType, false);
 
+        int[] fullScreenVerticalOffset = fullScreenVerticalScrolling(line, nameTableLocation, verticalPlaneSize, isPlaneA);
+
         for (int pixel = 0; pixel < (limitHorTiles * 8); pixel++) {
             int tileLocation = (((pixel + horizontalScrollingOffset)) % (horizontalPlaneSize * 8)) / 8;
 
-            int[] res = verticalScrolling(line, VS, pixel, nameTableLocation, verticalPlaneSize, isPlaneA);
+            int[] res = verticalScrolling(line, VS, pixel, nameTableLocation, verticalPlaneSize, isPlaneA, fullScreenVerticalOffset);
             int verticalScrollingOffset = res[0];
             int scrollMap = res[1];
             tileLocation = tileLocator + (tileLocation * 2);
@@ -584,8 +586,16 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         }
     }
 
+    private int[] fullScreenVerticalScrolling(int line, int tileLocator, int verticalPlaneSize,
+                                              boolean isPlaneA) {
+        return verticalScrolling(line, 0, 0, tileLocator, verticalPlaneSize, isPlaneA, null);
+    }
+
     private int[] verticalScrolling(int line, int VS, int pixel, int tileLocator, int verticalPlaneSize,
-                                    boolean isPlaneA) {
+                                    boolean isPlaneA, int[] fullScreenVerticalOffset) {
+        if (VS == 0 && fullScreenVerticalOffset != null) {
+            return fullScreenVerticalOffset;
+        }
         //VS == 1 -> 2 cell scroll
         int scrollLine = VS == 1 ? (pixel / 16) * 4 : 0;
         int vsramOffset = isPlaneA ? scrollLine : scrollLine + 2;
