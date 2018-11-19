@@ -2,6 +2,7 @@ def dateString = getDate()
 group 'com.fberti.genesis'
 
 version dateString + '-SNAPSHOT'
+//version dateString
 
 apply plugin: 'java'
 

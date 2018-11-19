@@ -1,4 +1,21 @@
-## v005  
+## 18.1119
+* 68k: rework Z-flag calc
+* 68k: better handling of STOP, restart on exception
+* 68k: RESET instruction should only reset external devices
+* build: load version from manifest
+* dma: fix fill and copy
+* emu: basic cheat codes support
+* emu: compute checksum and add autofix checksum
+* fm: rework timers
+* sram: write to file only on close
+* ui: default scale set to 2
+* vdp: rework rendering engine
+* vdp: sprite masking, handle simple case
+* vdp: shadow highlight - needs work
+* vdp: refactor timings
+* z80: fix reset logic
+
+## v005
 20181010  
 * 68k and z80: use delays when handling vdp interrupts  
 * 68k and z80: process interrupts when halted  
