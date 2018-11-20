@@ -268,7 +268,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         } else if (address == 0xA11200 || address == 0xA11201) {
             LOG.warn("Unexpected Z80 read at: " + Long.toHexString(address));
         } else if (address >= 0xA13000 && address <= 0xA130FF) {
-            LOG.warn("Unexpected mapper read at: " + Long.toHexString(address));
+            //NOTE genTest does: cmpi.l #'MARS',$A130EC  ;32X
+            LOG.warn("Unexpected /TIME or mapper read at: " + Long.toHexString(address));
         } else if (address == 0xA14100 || address == 0xA14101) {
             LOG.warn("TMSS read enable cart");
         } else {

@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 public class AutomatedGameTester {
 
     private static String romFolder =
-            "/data/emu/roms/genesis/nointro";
-    //            "/data/emu/roms/genesis/goodgen/verified";
+//            "/data/emu/roms/genesis/nointro";
+            "/data/emu/roms/genesis/goodgen/unverified";
 //            "/home/fede/roms/issues";
 //            "/home/fede/roms/tricky";
     private static String romList = "";
