@@ -29,12 +29,11 @@ public class VdpInterruptHandler {
 
     public static int COUNTER_LIMIT = 0x1FF;
     public static int VBLANK_CLEAR = COUNTER_LIMIT;
-    public static int VINT_SET_ON_HCOUNTER_VALUE = 2; //TODO setting this to 1 breaks Spot,
+    public static int VINT_SET_ON_HCOUNTER_VALUE = 1; //TODO setting this to 1 breaks Spot,
 
     private int hCounterInternal;
     private int vCounterInternal = 0;
     private int hLinePassed = 0;
-    private int baseHLinePassed = 0;
 
     private VideoMode videoMode;
     private VdpCounterMode vdpCounterMode;
@@ -47,6 +46,8 @@ public class VdpInterruptHandler {
 
     private static boolean veryVerbose = false || Genesis.verbose;
     private static boolean verbose = false || veryVerbose;
+
+    private boolean eventFlag;
 
     public static VdpInterruptHandler createInstance(VdpHLineProvider vdpHLineProvider) {
         VdpInterruptHandler handler = new VdpInterruptHandler();
@@ -67,6 +68,8 @@ public class VdpInterruptHandler {
         hBlankSet = false;
         vBlankSet = false;
         vIntPending = false;
+        hIntPending = false;
+        resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
     }
 
     private int updateCounterValue(int counterInternal, int jumpTrigger, int totalCount) {
@@ -76,6 +79,7 @@ public class VdpInterruptHandler {
         if (counterInternal == jumpTrigger + 1) {
             counterInternal = (1 + COUNTER_LIMIT) +
                     (jumpTrigger + 1) - totalCount;
+            eventFlag = true;
         }
         return counterInternal;
     }
@@ -88,12 +92,13 @@ public class VdpInterruptHandler {
 
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
-
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
+            eventFlag = true;
         }
         if (vCounterInternal == VBLANK_CLEAR) {
             vBlankSet = false;
+            eventFlag = true;
         }
         return vCounterInternal;
     }
@@ -108,34 +113,40 @@ public class VdpInterruptHandler {
         handleHLinesCounter();
         if (hCounterInternal == vdpCounterMode.hBlankSet) {
             hBlankSet = true;
+            eventFlag = true;
         }
 
         if (hCounterInternal == vdpCounterMode.hBlankClear) {
             hBlankSet = false;
+            eventFlag = true;
         }
 
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
             increaseVCounter();
+            eventFlag = true;
         }
-        if (hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE && vCounterInternal == vdpCounterMode.vBlankSet) {
+        if (vCounterInternal == vdpCounterMode.vBlankSet &&
+                hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
             vIntPending = true;
             logVerbose("Set VIP: true");
+            eventFlag = true;
         }
         return hCounterInternal;
     }
 
     private void handleHLinesCounter() {
         //Vcounter is incremented just before HINT pending flag is set,
-        if (hCounterInternal == vdpCounterMode.vCounterIncrementOn + 2) {
+        if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
             //it is decremented on each lines between line 0 and line $E0
             if (vCounterInternal <= vdpCounterMode.vBlankSet) {
                 hLinePassed--;
             }
-            boolean isValidVCounterForHip = vCounterInternal > 0x00; //Lotus II
+            boolean isValidVCounterForHip = vCounterInternal > 0x00; //Double Clutch intro
             boolean triggerHip = isValidVCounterForHip && hLinePassed == -1; //aka triggerHippy
             if (triggerHip) {
                 hIntPending = true;
                 logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
+                eventFlag = true;
             }
             //reload on line = 0 and vblank
             boolean isForceResetVCounter = vCounterInternal == 0x00 || vCounterInternal > vdpCounterMode.vBlankSet;
@@ -193,7 +204,6 @@ public class VdpInterruptHandler {
 
     public void resetHLinesCounter(int value) {
         this.hLinePassed = value;
-        this.baseHLinePassed = value;
         logVeryVerbose("Reset hLinePassed: %s", value);
     }
 
@@ -220,17 +230,25 @@ public class VdpInterruptHandler {
     private static void testVCounter() {
         VdpInterruptHandler.verbose = true;
         VdpInterruptHandler h = createInstance(() -> {
-            return 1000;
+            return 1;
         });
-        h.setMode(VideoMode.PAL_H40_V30);
+        h.setMode(VideoMode.PAL_H40_V28);
         int count = 0;
+        h.printStateString("Start Line: " + count++);
         do {
-            if (h.hCounterInternal == 0) {
-                h.printStateString("Start Line:" + count);
-            }
             h.increaseHCounter();
-            if (h.isLastHCounter()) {
-                h.printStateString("Done Line: " + count++);
+            if (h.hCounterInternal == 0) {
+                h.printStateString("Start Line: " + count++);
+            }
+            if (h.eventFlag) {
+                h.printStateString("");
+                h.eventFlag = false;
+            }
+            if (h.isvIntPending()) {
+                h.setvIntPending(false);
+            }
+            if (h.isHIntPending()) {
+                h.setHIntPending(false);
             }
         } while (count < 500);
 
@@ -267,10 +285,11 @@ public class VdpInterruptHandler {
     }
 
     private void printStateString(String head) {
-        LOG.info(head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
+        String str = head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
                 "(" + Integer.toHexString(this.hCounterInternal) + "), vce=" + Integer.toHexString(vCounterInternal & 0xFF)
                 + "(" + Integer.toHexString(this.vCounterInternal) + ")" + ", hBlankSet=" + hBlankSet + ",vBlankSet=" + vBlankSet
-                + ", vIntPending=" + vIntPending
-        );
+                + ", vIntPending=" + vIntPending + ", hIntPending=" + hIntPending + ", hLinePassed=" + hLinePassed;
+        LOG.info(str);
+        System.out.println(str);
     }
 }

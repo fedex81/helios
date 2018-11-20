@@ -82,6 +82,8 @@ public interface VdpProvider {
     int V30_CELL = 240;
     int H40 = 320;
     int H32 = 256;
+    int H32_TILES = H32 / 8;
+    int H40_TILES = H40 / 8;
 
     //vdp counter data
     int PAL_SCANLINES = 313;

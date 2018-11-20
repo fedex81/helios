@@ -52,7 +52,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     private VdpRenderDump renderDump;
 
     private int spritesFrame = 0;
-    private boolean disp;
     private boolean shadowHighlightMode;
 
     private final static int ROWS = VdpProvider.VDP_VIDEO_ROWS;
@@ -69,15 +68,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     private int[][] planeB = new int[COLS][ROWS];
     private int[][] planeBack = new int[COLS][ROWS];
 
-    private boolean[][] planePrioA = new boolean[COLS][ROWS];
-    private boolean[][] planePrioB = new boolean[COLS][ROWS];
-
     private int[][] sprites = new int[COLS][ROWS];
     private int[][] spritesIndex = new int[COLS][ROWS];
-    private boolean[][] spritesPrio = new boolean[COLS][ROWS];
 
     private int[][] window = new int[COLS][ROWS];
-    private boolean[][] windowPrio = new boolean[COLS][ROWS];
 
     private RenderPriority[][] pixelPriority = new RenderPriority[COLS][ROWS];
     private ShadowHighlightType[][] shadowHighlight = new ShadowHighlightType[COLS][ROWS];
@@ -98,7 +92,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     }
 
     private int getHorizontalTiles(boolean isH40) {
-        return isH40 ? 40 : 32;
+        return isH40 ? VdpProvider.H40_TILES : VdpProvider.H32_TILES;
     }
 
     private int getHorizontalTiles() {
@@ -180,7 +174,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     public void renderLine(int line) {
         initFrameData(line);
         renderBack(line);
-        disp = vdpProvider.isDisplayEnabled();
+        phase1(line + 1);
+        boolean disp = vdpProvider.isDisplayEnabled();
         if (!disp) {
             return;
         }
@@ -189,14 +184,14 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         renderPlaneB(line);
         renderWindow(line);
         renderSprites(line);
-        phase1(line + 1);
     }
 
     private void initFrameData(int line) {
         if (line == 0) {
             LOG.debug("New Frame");
             //need to do this here so I can dump data just after rendering the frame
-            renderSpritesBeforeLine0();
+            clearData();
+            phase1(0);
         }
     }
 
@@ -204,20 +199,18 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         return composeImage();
     }
 
-    private void renderSpritesBeforeLine0() {
-        clearData();
-        phase1(0);
-    }
-
-    //TODO why needed?
     private void clearData() {
         Arrays.stream(sprites).forEach(a -> Arrays.fill(a, 0));
         Arrays.stream(spritesIndex).forEach(a -> Arrays.fill(a, 0));
-        Arrays.stream(spritesPrio).forEach(a -> Arrays.fill(a, false));
         Arrays.stream(spritesPerLine).forEach(a -> Arrays.fill(a, -1));
         Arrays.stream(pixelPriority).forEach(a -> Arrays.fill(a, RenderPriority.BACK_PLANE));
         Arrays.stream(shadowHighlight).forEach(a -> Arrays.fill(a, ShadowHighlightType.NORMAL));
+        Arrays.stream(window).forEach(a -> Arrays.fill(a, 0));
+        Arrays.stream(planeA).forEach(a -> Arrays.fill(a, 0));
+        Arrays.stream(planeB).forEach(a -> Arrays.fill(a, 0));
         spritesFrame = 0;
+        verticalScrollRes[0] = 0;
+        verticalScrollRes[1] = 0;
     }
 
     private void phase1(int line) {
@@ -350,7 +343,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         pixel = processShadowHighlightSprite(cramColorIndex, pixel, horOffset, line);
         sprites[horOffset][line] = cramColorIndex;
         spritesIndex[horOffset][line] = pixel;
-        spritesPrio[horOffset][line] = priority;
         if (pixel > 0) {
             updatePriority(horOffset, line, priority ? RenderPriority.SPRITE_PRIO : RenderPriority.SPRITE_NO_PRIO);
         }
@@ -478,7 +470,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         int horizontalScrollingOffset = horizontalScrolling(line, HS, hScrollDataLocation, horizontalPlaneSize, isPlaneA);
 
         int[][] plane = isPlaneA ? planeA : planeB;
-        boolean[][] planePriority = isPlaneA ? planePrioA : planePrioB;
         TileDataHolder tileDataHolder = spriteDataHolder;
 
         RenderType renderType = isPlaneA ? RenderType.PLANE_A : RenderType.PLANE_B;
@@ -518,7 +509,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
             // index = 0 -> transparent pixel, but the color value could be any color
             plane[pixel][line] = theColor;
-            planePriority[pixel][line] = tileDataHolder.priority;
 
             if (onePixelData > 0) {
                 updatePriority(pixel, line, tileDataHolder.priority ? highPrio : lowPrio);
@@ -719,7 +709,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     }
 
 
-    private void drawWindowPlane(int line, int tileStart, int tileEnd, boolean isH40) {
+    private void drawWindowPlane(final int line, int tileStart, int tileEnd, boolean isH40) {
         int vertTile = (line / 8);
         int nameTableLocation = getWindowPlaneNameTableLocation(isH40);
         int tileShiftFactor = isH40 ? 128 : 64;
@@ -755,10 +745,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
                 window[po][line] = cramColorIndex1;
                 window[po + 1][line] = cramColorIndex2;
-
-                windowPrio[po][line] = tileDataHolder.priority;
-                windowPrio[po + 1][line] = tileDataHolder.priority;
-
                 RenderPriority rp = tileDataHolder.priority ? RenderPriority.WINDOW_PLANE_PRIO :
                         RenderPriority.WINDOW_PLANE_NO_PRIO;
 

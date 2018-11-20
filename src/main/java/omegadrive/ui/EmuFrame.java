@@ -321,7 +321,10 @@ public class EmuFrame implements GenesisWindow {
             gameLabel.setIcon(new ImageIcon(dest));
             jFrame.setPreferredSize(isFullScreen ? fullScreenSize : baseScreenSize);
             jFrame.getJMenuBar().setVisible(!isFullScreen);
-            jFrame.setLocationRelativeTo(null); //center
+            if (!isFullScreen) {
+                //TODO this breaks multi-monitor
+                jFrame.setLocationRelativeTo(null); //center
+            }
             jFrame.pack();
         };
     }

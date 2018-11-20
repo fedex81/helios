@@ -159,7 +159,8 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         }
         if (done) {
             printInfo("DONE");
-            dmaMode = null;
+            //TODO needed?
+//            dmaMode = null;
             dmaFillReady = false;
         }
 
