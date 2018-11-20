@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
+import java.util.function.Function;
 
 /**
  * ${FILE}
@@ -787,23 +788,27 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         return colorMapper.getColor(r, g, b);
     }
 
+    private Function<int[][], int[][]> toColorFn =
+            input -> Arrays.stream(input).
+                    map(a -> Arrays.stream(a).map(this::getColorFromIndex).toArray()).toArray(int[][]::new);
+
     private int[][] getPlaneData(RenderType type) {
         int[][] res = new int[0][0];
         switch (type) {
             case BACK_PLANE:
-                res = planeBack;
+                res = toColorFn.apply(planeBack);
                 break;
             case WINDOW_PLANE:
-                res = window;
+                res = toColorFn.apply(window);
                 break;
             case PLANE_A:
-                res = planeA;
+                res = toColorFn.apply(planeA);
                 break;
             case PLANE_B:
-                res = planeB;
+                res = toColorFn.apply(planeB);
                 break;
             case SPRITE:
-                res = sprites;
+                res = toColorFn.apply(sprites);
                 break;
             case FULL:
                 res = screenData;
