@@ -187,6 +187,12 @@ public class Genesis implements GenesisProvider {
         sound.reset();
     }
 
+    @Override
+    public void handleCloseApp() {
+        handleCloseGame();
+        sound.close();
+    }
+
     private void handleCloseGameInternal() {
         if (isGameRunning()) {
             runningGameFuture.cancel(true);

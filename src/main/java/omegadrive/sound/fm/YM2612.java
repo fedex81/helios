@@ -1,5 +1,6 @@
 package omegadrive.sound.fm;
 
+import omegadrive.sound.SoundProvider;
 import omegadrive.util.LogHelper;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -7,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * ${FILE}
@@ -247,11 +249,11 @@ public final class YM2612 implements FmProvider {
     final int[][] YM2612_REG = new int[2][0x100];
     volatile int YM2612_Mode;
     volatile int YM2612_Status;
-    static int DAC_FREQUENCY_DIAL = 3; // N*64 micros, N = 1 -> dac frequency = 15.6 kHz
-    volatile long dacWritesCounter = -DAC_FREQUENCY_DIAL;
-    volatile int dacValue = 0;
-    Queue<Integer> dacQueue;
-    volatile int numberOfScanlines = 0;
+
+    //DAC
+    volatile AtomicLong dacWritesCounter = new AtomicLong();
+    private int DAC_SAMPLE_LIMIT = SoundProvider.SAMPLE_RATE;
+    private Queue<Integer> dacQueue;
 
     /**
      * Creates a new instance of YM2612
@@ -552,14 +554,6 @@ public final class YM2612 implements FmProvider {
     public final void update(int[] buf_lr, int offset, int end) {
         offset *= 2;
         end = end * 2 + offset;
-//
-//        if(numberOfScanlines < 100){
-//            return;
-//        }
-//
-//        int scanEnd = (int) (2 * numberOfScanlines*64/43.5d);
-//        numberOfScanlines = 0;
-//        end = Math.min(end, scanEnd);
 
         if (YM2612_CHANNEL[0].SLOT[0].Finc == -1) calc_FINC_CH(YM2612_CHANNEL[0]);
         if (YM2612_CHANNEL[1].SLOT[0].Finc == -1) calc_FINC_CH(YM2612_CHANNEL[1]);
@@ -599,22 +593,35 @@ public final class YM2612 implements FmProvider {
         updateChannel((YM2612_CHANNEL[2].ALGO + algo_type), (YM2612_CHANNEL[2]), buf_lr, offset, end);
         updateChannel((YM2612_CHANNEL[3].ALGO + algo_type), (YM2612_CHANNEL[3]), buf_lr, offset, end);
         updateChannel((YM2612_CHANNEL[4].ALGO + algo_type), (YM2612_CHANNEL[4]), buf_lr, offset, end);
-        if (YM2612_DAC == 0) {
+
+        boolean dacSampleToProcess = dacQueue.peek() != null;
+        if (YM2612_DAC == 0 && !dacSampleToProcess) {
             updateChannel(YM2612_CHANNEL[5].ALGO + algo_type, YM2612_CHANNEL[5], buf_lr, offset, end);
+            drainDacQueue();
         } else {
-            updateDac(buf_lr, offset, end);
+            updateDac(buf_lr, offset, end, dacSampleToProcess);
         }
         YM2612_Inter_Cnt = int_cnt;
     }
 
-    private void updateDac(int[] buf_lr, int offset, int end) {
+    private void updateDac(int[] buf_lr, int offset, int end, boolean dacSampleToProcess) {
         Integer val;
         int i = offset;
-        while ((val = dacQueue.poll()) != null && i < end) {
-            buf_lr[i] += val;
-            buf_lr[i + 1] += val;
-            i += 2;
+        if (dacSampleToProcess) {
+            while ((val = dacQueue.poll()) != null && i < end) {
+                buf_lr[i] += val;
+                buf_lr[i + 1] += val;
+                i += 2;
+                dacWritesCounter.decrementAndGet();
+            }
+        } else {
+            drainDacQueue();
         }
+    }
+
+    private void drainDacQueue() {
+        dacWritesCounter.set(0);
+        dacQueue.clear();
     }
 
 
@@ -721,10 +728,6 @@ public final class YM2612 implements FmProvider {
 //                log(Level.INFO, "Timer B expired at: " + val + ", value: " + YM2612_TimerBcnt);
             }
         }
-        dacQueue.offer(dacValue);
-        dacValue = 0;
-        dacWritesCounter++;
-        numberOfScanlines++;
     }
 
     /***********************************************
@@ -1022,10 +1025,14 @@ public final class YM2612 implements FmProvider {
                 else KEY_OFF(CH, S3);
                 break;
             case 0x2A:
+                int dacValue = (data - 0x80) << 5;
                 //8 bit unsigned to 13 bit signed
-                if (dacWritesCounter > 0) {
-                    dacValue = (data - 0x80) << 5;
-                    dacWritesCounter = -DAC_FREQUENCY_DIAL;
+                if (dacValue != 0 && dacWritesCounter.get() < DAC_SAMPLE_LIMIT) {
+//                    String str = "DAC," + System.nanoTime() + "," + data;
+//                    LOG.info(str);
+//                    System.out.println(str);
+                    dacQueue.offer(dacValue);
+                    dacWritesCounter.incrementAndGet();
                 }
                 break;
             case 0x2B:

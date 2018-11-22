@@ -145,7 +145,7 @@ public class EmuFrame implements GenesisWindow {
         closeRomItem.addActionListener(e -> mainEmu.handleCloseGame());
         JMenuItem exitItem = new JMenuItem("Exit");
         exitItem.addActionListener(e -> {
-            mainEmu.handleCloseGame();
+            mainEmu.handleCloseApp();
             System.exit(0);
         });
 

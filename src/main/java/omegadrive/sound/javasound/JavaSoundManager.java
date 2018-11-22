@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -208,6 +209,13 @@ public class JavaSoundManager implements SoundProvider {
             dataLine.drain();
             dataLine.close();
         }
+    }
+
+    @Override
+    public void close() {
+        reset();
+        List<Runnable> list = executorService.shutdownNow();
+        LOG.info("Closing sound, stopping background tasks: #" + list.size());
     }
 
     @Override

@@ -28,6 +28,8 @@ public interface GenesisProvider {
 
     void handleCloseGame();
 
+    void handleCloseApp();
+
     boolean isGameRunning();
 
     boolean isSoundWorking();

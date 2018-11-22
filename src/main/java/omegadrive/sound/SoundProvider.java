@@ -50,6 +50,8 @@ public interface SoundProvider {
 
     void reset();
 
+    void close();
+
     default boolean isRecording() {
         return false;
     }
@@ -84,6 +86,11 @@ public interface SoundProvider {
 
         @Override
         public void reset() {
+
+        }
+
+        @Override
+        public void close() {
 
         }
 
