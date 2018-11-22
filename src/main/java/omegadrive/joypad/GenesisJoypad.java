@@ -15,9 +15,9 @@ package omegadrive.joypad;
 public class GenesisJoypad implements JoypadProvider {
 
     //SGDK needs 0 here, otherwise it is considered a RESET
-    long control1 = 0; //0xFF;
-    long control2 = 0; //0xFF;
-    long control3 = 0; //0xFF;
+    long control1 = 0;
+    long control2 = 0;
+    long control3 = 0;
 
     int D, U, L, R, A, B, C, S;
     int D2, U2, L2, R2, A2, B2, C2, S2;

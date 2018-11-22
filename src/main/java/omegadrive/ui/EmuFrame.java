@@ -241,6 +241,7 @@ public class EmuFrame implements GenesisWindow {
             Arrays.fill(pixelsDest, 0);
             gameLabel.invalidate();
             gameLabel.repaint();
+            fpsLabel.setText("");
             LOG.info("Blanking screen");
         });
     }

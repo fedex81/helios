@@ -178,13 +178,14 @@ public class Genesis implements GenesisProvider {
     }
 
     public void handleNewGame(Path file) {
+        init();
         GameRunnable runnable = new GameRunnable(file);
         runningGameFuture = executorService.submit(runnable, null);
     }
 
     public void handleCloseGame() {
         handleCloseGameInternal();
-        sound.reset();
+
     }
 
     @Override
@@ -205,6 +206,7 @@ public class Genesis implements GenesisProvider {
             }
             LOG.info("Game stopped");
             emuFrame.resetScreen();
+            sound.reset();
             bus.closeGame();
         }
     }
