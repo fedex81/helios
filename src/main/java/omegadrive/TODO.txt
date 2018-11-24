@@ -1,3 +1,6 @@
+- Test BUS
+-- 68k writes to Z80 -> cant access 68k memory again
+
 - Mappers
 http://gendev.spritesmind.net/forum/viewtopic.php?t=206
 - codemaster mapper + EEPROM

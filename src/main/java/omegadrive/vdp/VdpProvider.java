@@ -1,10 +1,13 @@
 package omegadrive.vdp;
 
+import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.Maps;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.VideoMode;
 
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -56,6 +59,41 @@ public interface VdpProvider {
 
         public boolean isWriteMode() {
             return this == vramWrite || this == vsramWrite || this == cramWrite;
+        }
+    }
+
+    enum VdpRegisterName {
+        MODE_1, // 0
+        MODE_2, // 1
+        PLANE_A_NAMETABLE, //2
+        WINDOW_NAMETABLE, //3
+        PLANE_B_NAMETABLE, //4
+        SPRITE_TABLE_LOC, //5
+        SPRITE_PATTERN_BASE_ADDR, //6
+        BACKGROUND_COLOR, //7
+        UNUSED1, //8
+        UNUSED2, //9
+        HCOUNTER_VALUE, //10 - 0xA
+        MODE_3, // 11 - 0xB
+        MODE_4, //12 - 0xC
+        HORIZONTAL_SCROLL_DATA_LOC, //13 - 0xD
+        NAMETABLE_PATTERN_BASE_ADDR, // 14 -0xE
+        AUTO_INCREMENT, //15 - 0xF
+        PLANE_SIZE, //16 - 0x10
+        WINDOW_PLANE_HOR_POS, //17 - 0x11
+        WINDOW_PLANE_VERT_POS, //18 - 0x12
+        DMA_LENGTH_LOW, //19 - 0x13
+        DMA_LENGTH_HIGH, //20 - 0x14
+        DMA_SOURCE_LOW, //21 - 0x15
+        DMA_SOURCE_MID, //22 - 0x16
+        DMA_SOURCE_HIGH //23 - 0x17
+        ;
+
+        private static Map<Integer, VdpRegisterName> lookup = ImmutableBiMap.copyOf(
+                Maps.toMap(EnumSet.allOf(VdpRegisterName.class), VdpRegisterName::ordinal)).inverse();
+
+        public static VdpRegisterName getRegisterName(int index) {
+            return lookup.get(index);
         }
     }
 
@@ -171,7 +209,17 @@ public interface VdpProvider {
 
     VideoMode getVideoMode();
 
+    default int getRegisterData(VdpRegisterName registerName) {
+        return getRegisterData(registerName.ordinal());
+    }
+
+    default void updateRegisterData(VdpRegisterName registerName, int data) {
+        updateRegisterData(registerName.ordinal(), data);
+    }
+
     default void dumpScreenData() {
         throw new UnsupportedOperationException("Not supported");
     }
+
+
 }

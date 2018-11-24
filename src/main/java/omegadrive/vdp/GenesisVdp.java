@@ -10,8 +10,7 @@ import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.Objects;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 
 /**
  * GenesisVdp
@@ -27,6 +26,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
+    public static boolean regVerbose = false || verbose || Genesis.verbose;
 
     private VramMode vramMode;
 
@@ -386,9 +386,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
             int addressMode = codeRegister & 0xF;    // CD0-CD3
             vramMode = VramMode.getVramMode(addressMode);
-            LogHelper.printLevel(LOG, Level.INFO, "writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}"
-                    , data, addressRegister, codeRegister, all, verbose);
-            LOG.debug("Video mode: {}", Objects.toString(vramMode));
+            LogHelper.printLevel(LOG, Level.INFO,
+                    "writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}, mode: {}"
+                    , data, addressRegister, codeRegister, all, vramMode, verbose);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((codeRegister & 0b100000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
@@ -412,12 +412,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             LOG.warn("Ignoring write to invalid VPD register: " + reg);
             return;
         }
+        LogHelper.printLevel(LOG, Level.INFO, "writeReg: {}, data: {}", reg, dataControl, verbose);
+        logRegisterChange(reg, dataControl);
         registers[reg] = dataControl;
         updateVariables(reg, dataControl);
-        LogHelper.printLevel(LOG, Level.INFO, "writeReg: {}, data: {}", reg, dataControl, verbose);
     }
-
-    int spriteTableLoc = 0;
 
     private void updateVariables(int reg, int data) {
         if (reg == 0x00) {
@@ -434,11 +433,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             m1 = ((data >> 4) & 1) == 1;
             m2 = ((data >> 3) & 1) == 1;
             m5 = ((data >> 2) & 1) == 1;
-        } else if (reg == 0x05) {
-            if (data != spriteTableLoc) {
-                LOG.info("Sprite table location changed from: {}, to: {}", spriteTableLoc, data);
-            }
-            spriteTableLoc = data;
         } else if (reg == 0x0C) {
             boolean rs0 = Util.bitSetTest(data, 7);
             boolean rs1 = Util.bitSetTest(data, 0);
@@ -452,6 +446,15 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             autoIncrementData = data;
         } else if (reg == 0x0A) {
             updateReg10(data);
+        }
+    }
+
+    private void logRegisterChange(int reg, int data) {
+        int current = registers[reg];
+        if (regVerbose && current != data && interruptHandler.isActiveScreen()) {
+            String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- ",
+                    VdpRegisterName.getRegisterName(reg), Long.toHexString(current), Long.toHexString(data)).getFormattedMessage();
+            LOG.info(this.interruptHandler.getStateString(msg));
         }
     }
 
@@ -503,16 +506,21 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     private void runNew() {
-        interruptHandler.increaseHCounter();
+        int hCounterInternal = interruptHandler.increaseHCounter();
         boolean displayEnable = disp;
         //disabling the display implies blanking
         hb = interruptHandler.ishBlankSet() ? 1 : 0;
         vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
-        runDma();
+
+        if (hCounterInternal == 1) {
+            renderHandler.initLineData(line);
+        }
+
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastHCounter()) {
+            runDmaNextLine();
             //draw the line
             drawScanline(displayEnable);
             line++;
@@ -527,25 +535,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    int dmaActiveScreenLine = -1;
-    int dmaDisableScreenCounter = -1;
-
-    //TODO
-    private void runDma() {
-        if (dma == 0) {
-            return;
-        }
+    private void runDmaNextLine() {
         boolean isVBlank = vb == 1;
-        boolean isHBlank = hb == 1;
-        boolean dmaActiveLine = isHBlank && !isVBlank && line != dmaActiveScreenLine;
-        boolean dmaPassiveLine = isVBlank && interruptHandler.getvCounter() != dmaDisableScreenCounter;
-        if (dmaActiveLine) {
-            doDma(isVBlank);
-            dmaActiveScreenLine = line;
-        } else if (dmaPassiveLine) {
-            doDma(isVBlank);
-            dmaDisableScreenCounter = interruptHandler.getvCounter();
-        }
+        boolean isBlanking = !disp || isVBlank;
+        doDma(isBlanking);
     }
 
     @Override

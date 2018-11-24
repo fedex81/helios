@@ -10,6 +10,8 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.function.Function;
 
+import static omegadrive.vdp.VdpProvider.VdpRegisterName.*;
+
 /**
  * ${FILE}
  * <p>
@@ -80,6 +82,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     private int[][] screenData = new int[COLS][ROWS];
 
     private SpriteDataHolder spriteDataHolder = new SpriteDataHolder();
+    private int spriteTableLocation = 0;
+    private int hScrollTableLocation = 0;
 
     public VdpRenderHandlerImpl(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
@@ -109,7 +113,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     }
 
     private int getHorizontalPlaneSize() {
-        int reg10 = vdpProvider.getRegisterData(0x10);
+        int reg10 = vdpProvider.getRegisterData(PLANE_SIZE);
         int horScrollSize = reg10 & 3;
         switch (horScrollSize) {
             case 0:
@@ -126,7 +130,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     }
 
     private int getVerticalPlaneSize() {
-        int reg10 = vdpProvider.getRegisterData(0x10);
+        int reg10 = vdpProvider.getRegisterData(PLANE_SIZE);
         int horScrollSize = reg10 & 3;
         int vertScrollSize = (reg10 >> 4) & 3;
         switch (vertScrollSize) {
@@ -144,19 +148,26 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     }
 
     private int getHScrollDataLocation() {
-        int regD = vdpProvider.getRegisterData(0xD);
+        int regD = vdpProvider.getRegisterData(HORIZONTAL_SCROLL_DATA_LOC);
         int hScrollBase = (regD & 0x3F) * 0x400;    //	bit 6 = mode 128k
         return hScrollBase;
     }
 
     private int getWindowPlaneNameTableLocation(boolean isH40) {
-        int reg3 = vdpProvider.getRegisterData(0x3);
+        int reg3 = vdpProvider.getRegisterData(WINDOW_NAMETABLE);
         //	WD11 is ignored if the display resolution is 320px wide (H40),
         // which limits the Window nametable address to multiples of $1000.
         // TODO bit 6 = 128k mode
         int nameTableLocation = isH40 ? reg3 & 0x3C : reg3 & 0x3E;
         nameTableLocation *= 0x400;
         return nameTableLocation;
+    }
+
+    private int getSpriteTableLocation() {
+        //	AT16 is only valid if 128 KB mode is enabled,
+        // and allows for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
+        int spriteTableLoc = vdpProvider.getRegisterData(SPRITE_TABLE_LOC) & 0x7F;
+        return spriteTableLoc * 0x200;
     }
 
     private TileDataHolder getTileData(int nameTable, TileDataHolder holder) {
@@ -172,8 +183,19 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         return holder;
     }
 
+    @Override
+    public void initLineData(int line) {
+        if (line == 0) {
+            LOG.debug("New Frame");
+            //need to do this here so I can dump data just after rendering the frame
+            clearData();
+            spriteTableLocation = getSpriteTableLocation();
+            phase1(0);
+        }
+        hScrollTableLocation = getHScrollDataLocation(); //improves terminator2
+    }
+
     public void renderLine(int line) {
-        initFrameData(line);
         renderBack(line);
         phase1(line + 1);
         boolean disp = vdpProvider.isDisplayEnabled();
@@ -185,15 +207,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         renderPlaneB(line);
         renderWindow(line);
         renderSprites(line);
-    }
-
-    private void initFrameData(int line) {
-        if (line == 0) {
-            LOG.debug("New Frame");
-            //need to do this here so I can dump data just after rendering the frame
-            clearData();
-            phase1(0);
-        }
     }
 
     public int[][] renderFrame() {
@@ -215,11 +228,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     }
 
     private void phase1(int line) {
-        //	AT16 is only valid if 128 KB mode is enabled,
-        // and allows for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
-        int spriteTableLoc = vdpProvider.getRegisterData(0x5) & 0x7F;
-        int spriteTable = spriteTableLoc * 0x200;
-
         boolean isH40 = videoMode.isH40();
         int height = videoMode.getDimension().height;
         int maxSpritesPerFrame = maxSpritesPerFrame(isH40);
@@ -232,7 +240,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         SpriteDataHolder holder = spriteDataHolder;
         int next = 0;
         for (int index = 0; index < maxSpritesPerFrame; index++) {
-            int baseAddress = spriteTable + (next * 8);
+            int baseAddress = spriteTableLocation + (next * 8);
             holder = getPhase1SpriteData(baseAddress, holder);
 
             int verSizePixels = (holder.verSize + 1) * 8;
@@ -257,11 +265,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     //* -Sprite masks at x=0 only work correctly when there's at least one higher priority sprite
 //            * on the same line which is not at x=0. (This is what Galaxy Force II relies on)
     private void renderSprites(int line) {
-        //	AT16 is only valid if 128 KB mode is enabled, and allows
-        // for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
-        int spriteTableLoc = vdpProvider.getRegisterData(0x5) & 0x7F;
-        int spriteTable = spriteTableLoc * 0x200;
-
         int[] spritesInLine = spritesPerLine[line];
         int currSprite = spritesInLine[0];
         SpriteDataHolder holder = spriteDataHolder;
@@ -270,7 +273,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         int baseAddress;
         boolean nonZeroSpriteOnLine = false;
         while (currSprite != -1) {
-            baseAddress = spriteTable + (currSprite * 8);
+            baseAddress = spriteTableLocation + (currSprite * 8);
             holder = getSpriteData(baseAddress, holder);
             int verSizePixels = (holder.verSize + 1) * 8; //8 * sizeInCells
             int realY = holder.verticalPos - 128;
@@ -415,7 +418,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
     private void renderBack(int line) {
         int limitHorTiles = getHorizontalTiles();
-        int reg7 = vdpProvider.getRegisterData(0x7);
+        int reg7 = vdpProvider.getRegisterData(BACKGROUND_COLOR);
         int backLine = (reg7 >> 4) & 0x3;
         int backEntry = (reg7) & 0xF;
         int cramColorIndex = (backLine * 32) + (backEntry * 2);
@@ -437,7 +440,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 //	SA16 is only valid if 128 KB mode is enabled, and allows for rebasing the Plane A nametable to the second 64 KB of VRAM.
     private void renderPlaneA(int line) {
         // TODO bit 3 for 128KB VRAM
-        int nameTableLocation = (vdpProvider.getRegisterData(2) & 0x38) * 0x400;
+        int nameTableLocation = (vdpProvider.getRegisterData(PLANE_A_NAMETABLE) & 0x38) * 0x400;
         renderPlane(line, nameTableLocation, true);
     }
 
@@ -452,7 +455,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 // it would be divided by $2000, which results in $07, the proper value for this register.
 //	SB16 is only valid if 128 KB mode is enabled, and allows for rebasing the Plane B nametable to the second 64 KB of VRAM.
     private void renderPlaneB(int line) {
-        int nameTableLocation = (vdpProvider.getRegisterData(4) & 0x7) * 0x2000;
+        int nameTableLocation = (vdpProvider.getRegisterData(PLANE_B_NAMETABLE) & 0x7) * 0x2000;
         renderPlane(line, nameTableLocation, false);
     }
 
@@ -461,14 +464,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         int horizontalPlaneSize = getHorizontalPlaneSize();
         int verticalPlaneSize = getVerticalPlaneSize();
         int limitHorTiles = getHorizontalTiles();
-        int hScrollDataLocation = getHScrollDataLocation();
 
-        int regB = vdpProvider.getRegisterData(0xB);
+        int regB = vdpProvider.getRegisterData(MODE_3);
         int HS = regB & 0x3;
         int VS = (regB >> 2) & 0x1;
 
         //horizontal scrolling
-        int horizontalScrollingOffset = horizontalScrolling(line, HS, hScrollDataLocation, horizontalPlaneSize, isPlaneA);
+        int horizontalScrollingOffset = horizontalScrolling(line, HS, hScrollTableLocation, horizontalPlaneSize, isPlaneA);
 
         int[][] plane = isPlaneA ? planeA : planeB;
         TileDataHolder tileDataHolder = spriteDataHolder;
@@ -534,8 +536,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     // was to be located at $F000 in VRAM, it would be divided by $400, which
     // results in $3C, the proper value for this register.
     private void renderWindow(int line) {
-        int reg11 = vdpProvider.getRegisterData(0x11);
-        int reg12 = vdpProvider.getRegisterData(0x12);
+        int reg11 = vdpProvider.getRegisterData(WINDOW_PLANE_HOR_POS);
+        int reg12 = vdpProvider.getRegisterData(WINDOW_PLANE_VERT_POS);
 
         int windowVert = reg12 & 0x1F;
         boolean down = (reg12 & 0x80) == 0x80;

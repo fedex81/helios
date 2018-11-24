@@ -18,4 +18,6 @@ public interface VdpRenderHandler {
     void setVideoMode(VideoMode videoMode);
 
     void renderLine(int line);
+
+    void initLineData(int line);
 }

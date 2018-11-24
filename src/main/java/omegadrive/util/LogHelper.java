@@ -5,6 +5,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 
+import java.util.Objects;
+
 /**
  * ${FILE}
  * <p>
@@ -24,10 +26,25 @@ public class LogHelper {
         }
     }
 
+    public static void printLevel(Logger LOG, Level level, String str, long arg1, long arg2, long arg3, long arg4,
+                                  Object arg5, boolean verbose) {
+        if (verbose) {
+            LOG.log(level, new ParameterizedMessage(str, Long.toHexString(arg1),
+                    Long.toHexString(arg2), Long.toHexString(arg3), Long.toHexString(arg4), Objects.toString(arg5)));
+        }
+    }
+
     public static void printLevel(Logger LOG, Level level, String str, long arg1, long arg2, long arg3, long arg4, boolean verbose) {
         if (verbose) {
             LOG.log(level, new ParameterizedMessage(str, Long.toHexString(arg1),
                     Long.toHexString(arg2), Long.toHexString(arg3), Long.toHexString(arg4)));
+        }
+    }
+
+    public static void printLevel(Logger LOG, Level level, String str, Object arg1, long arg2, long arg3, boolean verbose) {
+        if (verbose) {
+            LOG.log(level, new ParameterizedMessage(str, Objects.toString(arg1),
+                    Long.toHexString(arg2), Long.toHexString(arg3)));
         }
     }
 
@@ -48,6 +65,12 @@ public class LogHelper {
     public static void printLevel(Logger LOG, Level level, String str, long arg, boolean verbose) {
         if (verbose) {
             printLevel(LOG, level, str, Long.toHexString(arg));
+        }
+    }
+
+    public static void printLevel(Logger LOG, Level level, Object str, boolean verbose) {
+        if (verbose) {
+            LOG.log(level, Objects.toString(str));
         }
     }
 

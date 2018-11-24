@@ -11,6 +11,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
 
+import static omegadrive.vdp.VdpProvider.VdpRegisterName.*;
+
 /**
  * ${FILE}
  * <p>
@@ -53,7 +55,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     public DmaMode setupDma(VdpProvider.VramMode vramMode, long data, boolean m1) {
-        dmaMode = getDmaMode(vdpProvider.getRegisterData(23), vramMode);
+        dmaMode = getDmaMode(vdpProvider.getRegisterData(DMA_SOURCE_HIGH), vramMode);
         if (!checkSetup(m1, data)) {
             return null;
         }
@@ -92,19 +94,19 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
 
     private int getDmaLength() {
-        return vdpProvider.getRegisterData(20) << 8 | vdpProvider.getRegisterData(19);
+        return vdpProvider.getRegisterData(DMA_LENGTH_HIGH) << 8 | vdpProvider.getRegisterData(DMA_LENGTH_LOW);
     }
 
     private int getSourceAddressLow() {
-        int reg22 = vdpProvider.getRegisterData(22);
-        int reg21 = vdpProvider.getRegisterData(21);
+        int reg22 = vdpProvider.getRegisterData(DMA_SOURCE_MID);
+        int reg21 = vdpProvider.getRegisterData(DMA_SOURCE_LOW);
         return (reg22 & 0xFF) << 8 | reg21;
     }
 
     private int getSourceAddress() {
         int sourceAddress = getSourceAddressLow();
         if (dmaMode == DmaMode.MEM_TO_VRAM) {
-            sourceAddress = ((vdpProvider.getRegisterData(23) & 0x7F) << 16) | sourceAddress;
+            sourceAddress = ((vdpProvider.getRegisterData(DMA_SOURCE_HIGH) & 0x7F) << 16) | sourceAddress;
         }
         return sourceAddress;
     }
@@ -218,8 +220,8 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         int dmaLen = getDmaLength();
         dmaLen = (dmaLen - 1) & (VdpProvider.VDP_VRAM_SIZE - 1);
         dmaLen = Math.max(dmaLen, 0);
-        vdpProvider.updateRegisterData(19, dmaLen & 0xFF);
-        vdpProvider.updateRegisterData(20, dmaLen >> 8);
+        vdpProvider.updateRegisterData(DMA_LENGTH_LOW, dmaLen & 0xFF);
+        vdpProvider.updateRegisterData(DMA_LENGTH_HIGH, dmaLen >> 8);
         return dmaLen;
     }
 
@@ -232,12 +234,12 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private void setSourceAddress(int sourceAddress) {
         int reg22 = (sourceAddress >> 8) & 0xFF;
         int reg21 = sourceAddress & 0xFF;
-        vdpProvider.updateRegisterData(21, reg21);
-        vdpProvider.updateRegisterData(22, reg22);
+        vdpProvider.updateRegisterData(DMA_SOURCE_LOW, reg21);
+        vdpProvider.updateRegisterData(DMA_SOURCE_MID, reg22);
     }
 
     private int getDestAddressIncrement() {
-        return vdpProvider.getRegisterData(15);
+        return vdpProvider.getRegisterData(AUTO_INCREMENT);
     }
 
     private boolean dma68kToVram(int byteSlots) {

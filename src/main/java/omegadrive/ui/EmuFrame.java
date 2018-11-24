@@ -38,7 +38,7 @@ public class EmuFrame implements GenesisWindow {
 
     private static final int DEFAULT_SCREEN = 0;
     private static final int DEFAULT_SCALE_FACTOR =
-            Integer.valueOf(System.getProperty("emu.scale", "1"));
+            Integer.valueOf(System.getProperty("emu.scale", "2"));
 
     private Dimension fullScreenSize;
     private GraphicsDevice[] graphicsDevices;

@@ -164,6 +164,10 @@ public class VdpInterruptHandler {
         return hBlankSet;
     }
 
+    public boolean isActiveScreen() {
+        return !hBlankSet && !vBlankSet;
+    }
+
     public int getvCounter() {
         return vCounterInternal;
     }
@@ -284,12 +288,16 @@ public class VdpInterruptHandler {
         }
     }
 
-    private void printStateString(String head) {
-        String str = head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
+    public String getStateString(String head) {
+        return head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
                 "(" + Integer.toHexString(this.hCounterInternal) + "), vce=" + Integer.toHexString(vCounterInternal & 0xFF)
                 + "(" + Integer.toHexString(this.vCounterInternal) + ")" + ", hBlankSet=" + hBlankSet + ",vBlankSet=" + vBlankSet
                 + ", vIntPending=" + vIntPending + ", hIntPending=" + hIntPending + ", hLinePassed=" + hLinePassed;
+    }
+
+    private void printStateString(String head) {
+        String str = getStateString(head);
         LOG.info(str);
-        System.out.println(str);
+//        System.out.println(str);
     }
 }
