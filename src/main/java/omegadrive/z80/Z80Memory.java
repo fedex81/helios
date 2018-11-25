@@ -25,8 +25,12 @@ public class Z80Memory implements IMemory {
 
     public static final int START_YM2612 = 0x4000;
     public static final int END_YM2612 = 0x5FFF;
+    public static final int ROM_BANK_ADDRESS = 0x6000;
+    public static final int START_VDP = 0x7F00;
+    public static final int END_VDP = 0x7FFF;
     public static final int START_68K_BANK = 0x8000;
     public static final int END_68K_BANK = 0xFFFF;
+
     public static final int VDP_BASE_ADDRESS = 0xC00000;
 
     private static final int ROM_BANK_POINTER_SIZE = 9;
@@ -69,10 +73,10 @@ public class Z80Memory implements IMemory {
                 return 1;
             }
             return busProvider.getFm().read();
-        } else if (address >= 0x6000 && address <= 0x7EFF) {        //	BankSwitching and Reserved
+        } else if (address >= ROM_BANK_ADDRESS && address <= 0x7EFF) {        //	BankSwitching and Reserved
             LOG.error("Z80 read bank switching: " + Integer.toHexString(address));
             return 0xFF;
-        } else if (address >= 0x7F00 && address <= 0x7FFF) { //read VDP
+        } else if (address >= START_VDP && address <= END_VDP) { //read VDP
             int vdpAddress = VDP_BASE_ADDRESS + address;
             LOG.warn("Z80 read VDP memory , address : " + address);
             return (int) busProvider.read(vdpAddress, Size.BYTE);
@@ -117,18 +121,18 @@ public class Z80Memory implements IMemory {
                 YMD1 = data;
                 busProvider.getFm().write1(YMA1, YMD1);
             }
-        } else if (address >= 0x6000 && address <= 0x60FF) {        //	rom banking
-            if (address == 0x6000) {
+        } else if (address >= ROM_BANK_ADDRESS && address <= 0x60FF) {        //	rom banking
+            if (address == ROM_BANK_ADDRESS) {
                 romBanking(data);
             } else {
                 LOG.warn("Unexpected bank write: " + Integer.toHexString(address) + ", data: " + data);
             }
         } else if (address >= 0x6100 && address <= 0x7EFF) {        //	unused
             LOG.warn("Write to unused memory: " + Integer.toHexString(address));
-        } else if (address >= 0x7F00 && address <= 0x7F1F) {        //	VDP (SN76489 PSG)
+        } else if (address >= START_VDP && address <= 0x7F1F) {        //	VDP (SN76489 PSG)
             int vdpAddress = VDP_BASE_ADDRESS + address;
             busProvider.write(vdpAddress, data, Size.BYTE);
-        } else if (address >= 0x7F20 && address <= 0x7FFF) {        //	VDP Illegal
+        } else if (address >= 0x7F20 && address <= END_VDP) {        //	VDP Illegal
             LOG.warn("Illegal Write to VDP: " + Integer.toHexString(address));
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             address = address - START_68K_BANK + (romBank68kSerial << 15);

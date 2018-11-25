@@ -3,7 +3,6 @@ package omegadrive.util;
 import com.google.common.collect.Range;
 import omegadrive.Genesis;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -110,19 +109,6 @@ public class Util {
         }
         LogHelper.printLevel(LOG, Level.DEBUG, "Read SRAM: {}, {}: {}", address, data, size, verbose);
         return data;
-    }
-
-    public static void writeZ80(Z80Provider z80, Size size, int addressInt, long data) {
-        if (size == Size.BYTE) {
-            z80.writeByte(addressInt, data);
-        } else if (size == Size.WORD) {
-            z80.writeWord(addressInt, data);
-        } else {
-            //TODO this sohuldnt happen?
-            z80.writeWord(addressInt, data >> 16);
-            z80.writeWord(addressInt + 2, data & 0xFFFF);
-        }
-        LogHelper.printLevel(LOG, Level.DEBUG, "Write Z80: {}, {}: {}", addressInt, data, size, verbose);
     }
 
     public static void writeRam(MemoryProvider memory, Size size, long addressL, long data) {

@@ -30,6 +30,7 @@ public interface BusProvider {
     int VDP_ADDRESS_SPACE_END = 0xDFFFFF;
     int ADDRESS_UPPER_LIMIT = 0xFFFFFF;
     int ADDRESS_RAM_MAP_START = 0xE00000;
+    int M68K_TO_Z80_MEMORY_MASK = 0x7FFF;
 
     Logger LOG = LogManager.getLogger(BusProvider.class.getSimpleName());
 

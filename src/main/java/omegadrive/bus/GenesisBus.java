@@ -454,7 +454,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             LOG.warn("Reading Z80 memory without busreq");
             return 0;
         }
-        int addressZ = (int) (address & 0xA07FFF) - Z80_ADDRESS_SPACE_START;
+        int addressZ = (int) (address & BusProvider.M68K_TO_Z80_MEMORY_MASK);
         data = z80.readMemory(addressZ);
         if (size == Size.BYTE) {
             return data;
@@ -470,8 +470,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
             return;
         }
-        int addressZ = (int) (address & 0xA07FFF) - Z80_ADDRESS_SPACE_START;
-        Util.writeZ80(z80, size, addressZ, data);
+        int addressZ = (int) (address & BusProvider.M68K_TO_Z80_MEMORY_MASK);
+        z80.writeMemory(addressZ, data, size);
     }
 
     //    Byte-wide reads

@@ -1,5 +1,7 @@
 package omegadrive.z80;
 
+import omegadrive.util.Size;
+
 /**
  * ${FILE}
  * <p>
@@ -33,7 +35,5 @@ public interface Z80Provider {
 
     int readMemory(int address);
 
-    void writeByte(int addr, long data);
-
-    void writeWord(int addr, long data);
+    void writeMemory(int address, long data, Size size);
 }

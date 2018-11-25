@@ -3,12 +3,15 @@ package omegadrive.z80;
 import emulib.plugins.cpu.DisassembledInstruction;
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
+import omegadrive.util.LogHelper;
+import omegadrive.util.Size;
 import omegadrive.z80.disasm.Z80Decoder;
 import omegadrive.z80.disasm.Z80Disasm;
 import omegadrive.z80.disasm.Z80MemContext;
 import omegadrive.z80.jsanchezv.MemIoOps;
 import omegadrive.z80.jsanchezv.Z80;
 import omegadrive.z80.jsanchezv.Z80State;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -187,25 +190,36 @@ public class Z80CoreWrapper implements Z80Provider {
         return memory.readByte(address);
     }
 
-    @Override
-    public void writeByte(int addr, long data) {
+    private void writeByte(int addr, long data) {
         memory.writeByte(addr, (int) data);
     }
 
     //	https://emu-docs.org/Genesis/gen-hw.txt
     //	When doing word-wide writes to Z80 RAM, only the MSB is written, and the LSB is ignored
-    @Override
-    public void writeWord(int addr, long data) {
+    private void writeWord(int addr, long data) {
         memory.writeByte(addr, (int) (data >> 8));
     }
 
+    @Override
+    public void writeMemory(int address, long data, Size size) {
+        if (size == Size.BYTE) {
+            writeByte(address, data);
+        } else if (size == Size.WORD) {
+            writeWord(address, data);
+        } else {
+            //TODO this sohuldnt happen?
+            writeWord(address, data >> 16);
+            writeWord(address + 2, data & 0xFFFF);
+        }
+        LogHelper.printLevel(LOG, Level.DEBUG, "Write Z80: {}, {}: {}", address, data, size, verbose);
+    }
 
     /**
      * Z80 for genesis doesnt do IO
      *
      * @return
      */
-    private static MemIoOps createGenesisIo(Z80Provider provider) {
+    private static MemIoOps createGenesisIo(Z80CoreWrapper provider) {
 //        The Z80 runs in interrupt mode 1, where an interrupt causes a RST 38h.
 //        However, interrupt mode 0 can be used as well, since FFh will be read off the bus.
 
