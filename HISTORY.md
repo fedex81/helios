@@ -1,3 +1,10 @@
+## 18.1126
+* fm: improve dac
+* sound: close resources on exit
+* emu: fix close and reload rom
+* emu: default screen size scaling to 2x
+* ui: add relevant help menus
+
 ## 18.1119
 * 68k: rework Z-flag calc
 * 68k: better handling of STOP, restart on exception
