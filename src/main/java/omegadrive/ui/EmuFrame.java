@@ -191,6 +191,7 @@ public class EmuFrame implements GenesisWindow {
         jFrame.setResizable(true);
         jFrame.setJMenuBar(bar);
         jFrame.add(gameLabel, -1);
+//        jFrame.setIconImage(new ImageIcon(EmuFrame.class.getResource("/omega.png")).getImage());
 
         jFrame.pack();
 

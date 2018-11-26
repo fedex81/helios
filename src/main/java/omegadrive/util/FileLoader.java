@@ -3,9 +3,7 @@ package omegadrive.util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,11 +68,22 @@ public class FileLoader {
         String filePath = classPath.substring(0, classPath.lastIndexOf("!") + 1) +
                 fileName;
         List<String> lines = Collections.emptyList();
-        try {
-            Path pathObj = Paths.get(filePath);
-            lines = Files.readAllLines(pathObj);
-        } catch (IOException e) {
-            LOG.error("Unable to load " + fileName + ", from path: " + filePath);
+        if (filePath.startsWith("jar")) {
+            try (
+                    InputStream inputStream = clazz.getResourceAsStream("/" + fileName);
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            ) {
+                lines = reader.lines().collect(Collectors.toList());
+            } catch (IOException e) {
+                LOG.error("Unable to load " + fileName + ", from path: " + filePath);
+            }
+        } else {
+            try {
+                Path pathObj = Paths.get(filePath);
+                lines = Files.readAllLines(pathObj);
+            } catch (IOException e) {
+                LOG.error("Unable to load " + fileName + ", from path: " + filePath);
+            }
         }
         return lines;
     }

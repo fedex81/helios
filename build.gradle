@@ -46,5 +46,8 @@ task fatJar(type: Jar) {
     }
     baseName = project.name + '-all' //+ version
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    from {
+        ["CREDITS.md", "README.md", "HISTORY.md", "LICENSE.md"]
+    }
     with jar
 }
