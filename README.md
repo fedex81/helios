@@ -13,20 +13,21 @@ java -jar omega-drive-all-20180714-0.02-SNAPSHOT.jar
 
 # Credits
 
-Based on the Genefusto emulator by DarkMoe: https://github.com/DarkMoe/genefusto
+Initially based on the Genefusto emulator by DarkMoe:
+https://github.com/DarkMoe/genefusto
 
-M68k core: https://github.com/tonyheadford/m68k
+M68k core:
+https://github.com/tonyheadford/m68k
 
-Z80 core: https://github.com/jsanchezv/Z80Core
+Z80 core:
+https://github.com/jsanchezv/Z80Core
 
 YM2612 core: 
-	Stephan Dittrich (original): https://segaretro.org/JEnesis
-	from here: https://github.com/fadookie/gme_p5
+Stephan Dittrich (original): https://segaretro.org/JEnesis
+from here: https://github.com/fadookie/gme_p5
 	
-PSG core: Chris White: http://javagear.sourceforge.net/source-repository.html
+PSG core:
+Chris White: http://javagear.sourceforge.net/source-repository.html
 
-VDP core: DarkMoe: https://github.com/DarkMoe/genefusto
-
-	
-# License 
+# License
 Released under GPL v3.0

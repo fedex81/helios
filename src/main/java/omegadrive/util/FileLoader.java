@@ -9,8 +9,12 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
 /**
  * FileLoader
@@ -53,6 +57,26 @@ public class FileLoader {
             LOG.error("Unable to load file: " + file.getFileName());
         }
         return rom;
+    }
+
+    public static String loadFileContentAsString(String fileName) {
+        return loadFileContent(fileName).stream().collect(Collectors.joining("\n"));
+    }
+
+    public static List<String> loadFileContent(String fileName) {
+        Class clazz = FileLoader.class;
+        String className = clazz.getSimpleName() + ".class";
+        String classPath = clazz.getResource(className).toString();
+        String filePath = classPath.substring(0, classPath.lastIndexOf("!") + 1) +
+                fileName;
+        List<String> lines = Collections.emptyList();
+        try {
+            Path pathObj = Paths.get(filePath);
+            lines = Files.readAllLines(pathObj);
+        } catch (IOException e) {
+            LOG.error("Unable to load " + fileName + ", from path: " + filePath);
+        }
+        return lines;
     }
 
     public static String loadVersionFromManifest() {

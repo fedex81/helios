@@ -20,8 +20,11 @@ import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Optional;
+
+import static omegadrive.util.ScreenSizeHelper.*;
 
 /**
  * ${FILE}
@@ -36,16 +39,10 @@ public class EmuFrame implements GenesisWindow {
 
     private static Logger LOG = LogManager.getLogger(EmuFrame.class.getSimpleName());
 
-    private static final int DEFAULT_SCREEN = 0;
-    private static final int DEFAULT_SCALE_FACTOR =
-            Integer.valueOf(System.getProperty("emu.scale", "2"));
-
     private Dimension fullScreenSize;
     private GraphicsDevice[] graphicsDevices;
-    private Dimension screenSize = new Dimension(ScreenSizeHelper.DEFAULT_X * DEFAULT_SCALE_FACTOR,
-            ScreenSizeHelper.DEFAULT_Y * DEFAULT_SCALE_FACTOR);
-    private Dimension baseScreenSize = new Dimension(ScreenSizeHelper.DEFAULT_X,
-            ScreenSizeHelper.DEFAULT_Y);
+    private Dimension screenSize = DEFAULT_SCALED_SCREEN_SIZE;
+    private Dimension baseScreenSize = DEFAULT_BASE_SCREEN_SIZE;
 
     private BufferedImage src;
     private BufferedImage dest;
@@ -65,14 +62,9 @@ public class EmuFrame implements GenesisWindow {
     private JCheckBoxMenuItem japBios;
     private JCheckBoxMenuItem fullScreenItem;
     private boolean showDebug = false;
-    private EventQueue eventQueue;
 
     public void setTitle(String title) {
         jFrame.setTitle(FRAME_TITLE_HEAD + " - " + title);
-    }
-
-    public void repaint() {
-        jFrame.repaint();
     }
 
     public EmuFrame(Genesis mainEmu) {
@@ -84,13 +76,22 @@ public class EmuFrame implements GenesisWindow {
         frame.init();
     }
 
+    private String getAboutString() {
+        int year = LocalDate.now().getYear();
+        String yrString = year == 2018 ? "2018" : "2018-" + year;
+        String res = FRAME_TITLE_HEAD + "\nA Sega Megadrive (Genesis) emulator, written in Java";
+        res += "\n\nCopyright " + yrString + ", Federico Berti";
+        res += "\n\nSee CREDITS.TXT for more information";
+        res += "\n\nReleased under GPL v.3.0 license.";
+        return res;
+    }
+
     public void init() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
         }
         Util.registerJmx(this);
-        eventQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
         graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
         LOG.info("Screen detected: " + graphicsDevices.length);
         GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
@@ -101,7 +102,8 @@ public class EmuFrame implements GenesisWindow {
         LOG.info("Using screen: " + gd.getIDstring());
         fullScreenSize = gd.getDefaultConfiguration().getBounds().getSize();
         LOG.info("Full screen size: " + fullScreenSize);
-        LOG.info("Screen size: " + screenSize);
+        LOG.info("Emulation viewport size: " + ScreenSizeHelper.DEFAULT_SCALED_SCREEN_SIZE);
+        LOG.info("Application size: " + DEFAULT_FRAME_SIZE);
 
         src = createImage(gd, screenSize, true);
         dest = createImage(gd, screenSize, false);
@@ -150,48 +152,41 @@ public class EmuFrame implements GenesisWindow {
         });
 
         JMenuItem aboutItem = new JMenuItem("About");
-        aboutItem.addActionListener(e -> JOptionPane.showMessageDialog(null, "TODO"));
+        aboutItem.addActionListener(e -> showHelpMessage(aboutItem.getText(), getAboutString()));
 
-        jFrame.addKeyListener(new KeyAdapter() {
+        JMenuItem creditsItem = new JMenuItem("Credits");
+        creditsItem.addActionListener(e ->
+                showHelpMessage(creditsItem.getText(), FileLoader.loadFileContentAsString("CREDITS.md"))
+        );
+        JMenuItem readmeItem = new JMenuItem("Readme");
+        readmeItem.addActionListener(e ->
+                showHelpMessage(readmeItem.getText(), FileLoader.loadFileContentAsString("README.md"))
+        );
+        JMenuItem licenseItem = new JMenuItem("License");
+        licenseItem.addActionListener(e ->
+                showHelpMessage(licenseItem.getText(), FileLoader.loadFileContentAsString("LICENSE.md"))
+        );
 
-            @Override
-            public void keyReleased(KeyEvent e) {
-                switch (e.getKeyCode()) {
-                    case KeyEvent.VK_F:
-                        toggleFullScreen();
-                        break;
-                    case KeyEvent.VK_M:
-                        mainEmu.toggleMute();
-                        break;
-                    case KeyEvent.VK_0:
-                        showDebug = !showDebug;
-                        showDebugInfo(showDebug);
-                        break;
-                    case KeyEvent.VK_R:
-                        mainEmu.toggleSoundRecord();
-                        break;
-                    case KeyEvent.VK_1:
-                        mainEmu.setPlayers(1);
-                        break;
-                    case KeyEvent.VK_2:
-                        mainEmu.setPlayers(2);
-                        break;
-                    case KeyEvent.VK_L:
-                        loadRomDialog(jFrame);
-                        break;
-                }
-            }
-        });
+        JMenuItem historyItem = new JMenuItem("History");
+        historyItem.addActionListener(e ->
+                showHelpMessage(historyItem.getText(), FileLoader.loadFileContentAsString("HISTORY.md"))
+        );
 
         menu.add(loadRomItem);
         menu.add(closeRomItem);
         menu.add(exitItem);
         helpMenu.add(aboutItem);
+        helpMenu.add(readmeItem);
+        helpMenu.add(creditsItem);
+        helpMenu.add(historyItem);
+        helpMenu.add(licenseItem);
+
+        setupFrameKeyListener();
 
         gameLabel.setHorizontalAlignment(SwingConstants.CENTER);
         gameLabel.setVerticalAlignment(SwingConstants.CENTER);
 
-        jFrame.setMinimumSize(new Dimension(660, 550));
+        jFrame.setMinimumSize(DEFAULT_FRAME_SIZE);
         jFrame.setDefaultCloseOperation(jFrame.EXIT_ON_CLOSE);
         jFrame.setResizable(true);
         jFrame.setJMenuBar(bar);
@@ -206,6 +201,14 @@ public class EmuFrame implements GenesisWindow {
                 gd.getDefaultConfiguration().getBounds().y + centerPoint.y);
 
         jFrame.setVisible(true);
+    }
+
+    private void showHelpMessage(String title, String msg) {
+        JTextArea area = new JTextArea(msg);
+        JScrollPane scrollPane = new JScrollPane(area);
+        scrollPane.setPreferredSize(jFrame.getPreferredSize());
+        JOptionPane.showMessageDialog(this.jFrame,
+                scrollPane, "Help: " + title, JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void toggleFullScreen() {
@@ -278,14 +281,14 @@ public class EmuFrame implements GenesisWindow {
 
     private boolean resizeScreen(VideoMode videoMode) {
         boolean goFullScreen = fullScreenItem.getState();
-        Dimension newBaseScreenSize = ScreenSizeHelper.getScreenSize(videoMode, 1);
+        Dimension newBaseScreenSize = getScreenSize(videoMode, 1);
         if (!newBaseScreenSize.equals(baseScreenSize)) {
             baseScreenSize = newBaseScreenSize;
         }
         double scale = DEFAULT_SCALE_FACTOR;
         if (goFullScreen) {
             double scaleW = fullScreenSize.getWidth() / baseScreenSize.getWidth();
-            double scaleH = fullScreenSize.getHeight() / baseScreenSize.getHeight();
+            double scaleH = fullScreenSize.getHeight() * FULL_SCREEN_WITH_TITLE_BAR_FACTOR / baseScreenSize.getHeight();
             scale = Math.min(scaleW, scaleH);
         }
         return resizeScreenInternal(newBaseScreenSize, scale, goFullScreen);
@@ -318,7 +321,7 @@ public class EmuFrame implements GenesisWindow {
             src = createImage(getGraphicsDevice(), baseScreenSize, true);
             Dimension d = new Dimension((int) (src.getWidth() * scale), (int) (src.getHeight() * scale));
             dest = createImage(getGraphicsDevice(), d, false);
-            LOG.info("Screen size: " + d);
+
             gameLabel.setIcon(new ImageIcon(dest));
             jFrame.setPreferredSize(isFullScreen ? fullScreenSize : baseScreenSize);
             jFrame.getJMenuBar().setVisible(!isFullScreen);
@@ -327,6 +330,8 @@ public class EmuFrame implements GenesisWindow {
                 jFrame.setLocationRelativeTo(null); //center
             }
             jFrame.pack();
+            LOG.info("Emulation Viewport size: " + d);
+            LOG.info("Application size: " + jFrame.getSize());
         };
     }
 
@@ -359,6 +364,39 @@ public class EmuFrame implements GenesisWindow {
             Path file = optFile.get().toPath();
             mainEmu.handleNewGame(file);
         }
+    }
+
+    private void setupFrameKeyListener() {
+        jFrame.addKeyListener(new KeyAdapter() {
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_F:
+                        toggleFullScreen();
+                        break;
+                    case KeyEvent.VK_M:
+                        mainEmu.toggleMute();
+                        break;
+                    case KeyEvent.VK_0:
+                        showDebug = !showDebug;
+                        showDebugInfo(showDebug);
+                        break;
+                    case KeyEvent.VK_R:
+                        mainEmu.toggleSoundRecord();
+                        break;
+                    case KeyEvent.VK_1:
+                        mainEmu.setPlayers(1);
+                        break;
+                    case KeyEvent.VK_2:
+                        mainEmu.setPlayers(2);
+                        break;
+                    case KeyEvent.VK_L:
+                        loadRomDialog(jFrame);
+                        break;
+                }
+            }
+        });
     }
 
     @Override
