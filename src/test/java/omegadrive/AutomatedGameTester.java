@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -27,9 +28,9 @@ public class AutomatedGameTester {
 
     private static String romFolder =
 //            "/data/emu/roms/genesis/nointro";
-            "/data/emu/roms/genesis/goodgen/unverified";
+//            "/data/emu/roms/genesis/goodgen/unverified";
 //            "/home/fede/roms/issues";
-//            "/home/fede/roms/tricky";
+            "/home/fede/roms/tricky";
     private static String romList = "";
     private static boolean noIntro = true;
     private static String startRom = null;
@@ -58,9 +59,7 @@ public class AutomatedGameTester {
         Path folder = Paths.get(romFolder);
         List<Path> testRoms = Files.list(folder).filter(testVerifiedRomsPredicate).sorted().collect(Collectors.toList());
         if (shuffle) {
-            Collections.shuffle(testRoms);
-            Collections.shuffle(testRoms);
-            Collections.shuffle(testRoms);
+            Collections.shuffle(testRoms, new Random());
         }
         GenesisProvider genesisProvider = Genesis.createInstance();
         System.out.println("Roms to test: " + testRoms.size());

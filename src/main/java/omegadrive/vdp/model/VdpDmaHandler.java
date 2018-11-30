@@ -22,5 +22,7 @@ public interface VdpDmaHandler {
 
     boolean doDma(VideoMode videoMode, boolean isBlanking);
 
+    boolean doDmaSlot(VideoMode videoMode, boolean isBlanking);
+
     void setupDmaDataPort(int dataWord);
 }

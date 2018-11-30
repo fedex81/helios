@@ -140,6 +140,32 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return dmaMode;
     }
 
+    public boolean doDmaSlot(VideoMode videoMode, boolean isBlanking) {
+        boolean done = false;
+        switch (dmaMode) {
+            case VRAM_FILL:
+                if (dmaFillReady) {
+                    done = dmaFill(1);
+                }
+                break;
+            case VRAM_COPY:
+                done = dmaCopy(1);
+                break;
+            case MEM_TO_VRAM:
+                done = dma68kToVram(1);
+                break;
+            default:
+                LOG.error("Unexpected dma setting: {}", dmaMode);
+        }
+        if (done) {
+            printInfo("DONE");
+            dmaMode = null; //Bug Hunt
+            dmaFillReady = false;
+        }
+        return done;
+    }
+
+
     @Override
     public boolean doDma(VideoMode videoMode, boolean isBlanking) {
         boolean done = false;
@@ -253,7 +279,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             sourceAddress = getSourceAddress() << 1; //needs to double it
             byteSlots -= 2;
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
-            memoryInterface.writeVideoRamWord(vramDestination, dataWord, destAddress);
+            vdpProvider.getFifo().push(vramDestination, destAddress, dataWord);
             printInfo("IN PROGRESS: ", sourceAddress);
             //increase by 1, becomes 2 (bytes) when doubling
             increaseSourceAddress(1);

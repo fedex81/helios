@@ -52,6 +52,7 @@ public class VdpInterruptHandler {
     public static VdpInterruptHandler createInstance(VdpHLineProvider vdpHLineProvider) {
         VdpInterruptHandler handler = new VdpInterruptHandler();
         handler.vdpHLineProvider = vdpHLineProvider;
+        handler.reset();
         return handler;
     }
 
@@ -65,7 +66,7 @@ public class VdpInterruptHandler {
 
     private void reset() {
         hCounterInternal = vCounterInternal = 0;
-        hBlankSet = false;
+        hBlankSet = true;
         vBlankSet = false;
         vIntPending = false;
         hIntPending = false;

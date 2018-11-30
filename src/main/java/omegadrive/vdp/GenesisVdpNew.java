@@ -3,7 +3,10 @@ package omegadrive.vdp;
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.*;
-import omegadrive.vdp.model.*;
+import omegadrive.vdp.model.VdpDmaHandler;
+import omegadrive.vdp.model.VdpHLineProvider;
+import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,9 +21,9 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
  * https://github.com/DarkMoe/genefusto
  * @author DarkMoe
  */
-public class GenesisVdp implements VdpProvider, VdpHLineProvider {
+public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
-    private static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(GenesisVdpNew.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
     public static boolean regVerbose = false || verbose || Genesis.verbose;
@@ -95,8 +98,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 //	When FULL is set, the FIFO is full.
 //	If the FIFO has items but is not full, both EMPTY and FULL will be clear.
 //	The FIFO can hold 4 16-bit words for the VDP to process. If the M68K attempts to write another word once the FIFO has become full, it will be frozen until the first word can be delivered.
-    int empty = 1;
-    int full = 0;
+//    int empty = 1;
+//    int full = 0;
 
     //	VIP indicates that a vertical interrupt has occurred, approximately at line $E0. It seems to be cleared at the end of the frame.
     int vip;
@@ -127,18 +130,17 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private VdpRenderHandler renderHandler;
     private VideoMode videoMode;
     private RegionDetector.Region region;
-    private IVdpFifo fifo;
 
     private int line;
 
-    public GenesisVdp(BusProvider bus, VdpMemoryInterface memoryInterface, VdpDmaHandler dmaHandler) {
+    public GenesisVdpNew(BusProvider bus, VdpMemoryInterface memoryInterface, VdpDmaHandler dmaHandler) {
         this.bus = bus;
         this.memoryInterface = memoryInterface;
         this.dmaHandler = dmaHandler;
         setupVdp();
     }
 
-    public GenesisVdp(BusProvider bus) {
+    public GenesisVdpNew(BusProvider bus) {
         this.bus = bus;
         this.memoryInterface = new GenesisVdpMemoryInterface();
         this.dmaHandler = VdpDmaHandlerImpl.createInstance(this, memoryInterface, bus);
@@ -148,12 +150,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private void setupVdp() {
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
-        this.fifo = IVdpFifo.createNoFifo(memoryInterface);
     }
 
     @Override
     public void init() {
-        empty = 1;
         vb = 1;
 
         //from TMSS
@@ -194,8 +194,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         // last read the M68000 performed.
         // Writes from the M68000 don't affect these bits, only reads.
         int control = (
-                (empty << 9)
-                        | (full << 8)
+                ((fifo.isEmpty() ? 1 : 0) << 9)
+                        | ((fifo.isFull() ? 1 : 0) << 8)
                         | (vip << 7)
                         | (sovr << 6)
                         | (scol << 5)
@@ -289,11 +289,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         return videoMode;
     }
 
-    @Override
-    public IVdpFifo getFifo() {
-        return fifo;
-    }
-
     private VideoMode getVideoMode(RegionDetector.Region region, boolean isH40, boolean isV30) {
         return VideoMode.getVideoMode(region, isH40, isV30, videoMode);
     }
@@ -319,7 +314,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 //	Bit	15	14	13	12	11	10	9	8	7	6	5	4	3	2	1	0
 //	Def	0	 0	 0	 0	 0	 0	0	0	CD5		- CD2	0	A15	 -A14
 
-//	Access mode	CD5	CD4	CD3	CD2	CD1	CD0
+    //	Access mode	CD5	CD4	CD3	CD2	CD1	CD0
 //	VRAM Write	0	0	0	0	0	1
 //	CRAM Write	0	0	0	0	1	1
 //	VSRAM Write	0	0	0	1	0	1
@@ -341,6 +336,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
     }
 
+    private VdpFifo fifo = new VdpFifo();
+
     @Override
     public void writeDataPort(long dataL) {
         int data = (int) dataL;
@@ -349,14 +346,25 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         fifo.push(vramMode.getRamType(), addressRegister, data);
         addressRegister += autoIncrementData;
         setupDmaFillMaybe(data);
+    }
+
+    private void writeDataToVram(boolean vramSlot) {
+        if (!vramSlot || fifo.isEmpty()) {
+            return;
+        }
+        VdpFifo.VdpFifoEntry entry = fifo.pop();
+        memoryInterface.writeVideoRamWord(entry.vdpRamType, entry.data, entry.addressRegister);
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
 
     @Override
     public int readDataPort() {
         this.writePendingControlPort = false;
+        if (fifo.isFull()) {
+            return 0;
+        }
         int res = memoryInterface.readVideoRamWord(vramMode, addressRegister);
-        if (vramMode == VdpProvider.VramMode.vramRead_8bit) {
+        if (vramMode == VramMode.vramRead_8bit) {
             //The 8-bit VRAM read function reads a single byte from VRAM.
             // The returned value consists of the VRAM byte as the low byte, plus a byte from the FIFO as the high byte.
             res &= 0xFF;
@@ -376,7 +384,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 //            values, while the remaining address and code bits _retain_ their former value.
             codeRegister = (int) ((codeRegister & 0x3C | firstWrite >> 14) & 0x3F);
             addressRegister = (int) ((addressRegister & 0xC000) | (firstWrite & 0x3FFF));
-            vramMode = VramMode.getVramMode(codeRegister & 0xF);
+//            vramMode = VramMode.getVramMode(codeRegister & 0xF);
             LogHelper.printLevel(LOG, Level.INFO, "writeAddr-1, firstWord: {}, address: {}, code: {}"
                     , firstWrite, addressRegister, codeRegister, verbose);
         } else {
@@ -487,7 +495,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         if (dma == 1) {
             boolean dmaDone;
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
-            dmaDone = dmaHandler.doDma(videoMode, isBlanking);
+//            dmaDone = dmaHandler.doDma(videoMode, isBlanking);
+            dmaDone = dmaHandler.doDmaSlot(videoMode, isBlanking);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
                 LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", mode, verbose);
@@ -512,19 +521,31 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private void runNew() {
         int hCounterInternal = interruptHandler.increaseHCounter();
         boolean displayEnable = disp;
-        //disabling the display implies blanking
+        //TODO disabling the display implies blanking <- dont think so
         hb = interruptHandler.ishBlankSet() ? 1 : 0;
-        vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
+//        vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
+        //TODO disabling the display implies blanking <- dont think so
+        vb = interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
 
         if (hCounterInternal == 1) {
             renderHandler.initLineData(line);
         }
 
+        //FIFO stuff
+        if (hCounterInternal % 2 == 1) {
+            boolean vramSlot = displayEnable && (hCounterInternal + 2) % 16 == 0;
+            vramSlot |= !displayEnable || vb == 1;
+            if (!fifo.isFull()) {
+                doDma(vramSlot);
+            }
+            writeDataToVram(vramSlot);
+        }
+        //FIFO stuff
+
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastHCounter()) {
-            runDmaNextLine();
             //draw the line
             drawScanline(displayEnable);
             line++;
@@ -537,12 +558,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 resetMode();
             }
         }
-    }
-
-    private void runDmaNextLine() {
-        boolean isVBlank = vb == 1;
-        boolean isBlanking = !disp || isVBlank;
-        doDma(isBlanking);
     }
 
     @Override
@@ -587,4 +602,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         dma = value;
     }
 
+    public VdpFifo getFifo() {
+        return fifo;
+    }
 }
