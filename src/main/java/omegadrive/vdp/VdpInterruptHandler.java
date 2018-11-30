@@ -24,6 +24,7 @@ public class VdpInterruptHandler {
      * Outrun
      * Gunstar Heroes
      * Lotus II
+     * Legend of Galahad
      */
     private static Logger LOG = LogManager.getLogger(VdpInterruptHandler.class.getSimpleName());
 
@@ -33,7 +34,7 @@ public class VdpInterruptHandler {
 
     private int hCounterInternal;
     private int vCounterInternal = 0;
-    private int hLinePassed = 0;
+    protected int hLinePassed = 0;
 
     private VideoMode videoMode;
     private VdpCounterMode vdpCounterMode;
@@ -44,8 +45,8 @@ public class VdpInterruptHandler {
     private boolean vIntPending;
     private boolean hIntPending;
 
-    private static boolean veryVerbose = false || Genesis.verbose;
-    private static boolean verbose = false || veryVerbose;
+    protected static boolean veryVerbose = false || Genesis.verbose;
+    protected static boolean verbose = false || veryVerbose;
 
     private boolean eventFlag;
 
@@ -139,18 +140,17 @@ public class VdpInterruptHandler {
         //Vcounter is incremented just before HINT pending flag is set,
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
             //it is decremented on each lines between line 0 and line $E0
-            if (vCounterInternal <= vdpCounterMode.vBlankSet) {
+            if (vCounterInternal < vdpCounterMode.vBlankSet) {
                 hLinePassed--;
             }
-            boolean isValidVCounterForHip = vCounterInternal > 0x00; //Double Clutch intro
-            boolean triggerHip = isValidVCounterForHip && hLinePassed == -1; //aka triggerHippy
+            boolean triggerHip = hLinePassed == -1; //aka triggerHippy
             if (triggerHip) {
                 hIntPending = true;
                 logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
                 eventFlag = true;
             }
             //reload on line = 0 and vblank
-            boolean isForceResetVCounter = vCounterInternal == 0x00 || vCounterInternal > vdpCounterMode.vBlankSet;
+            boolean isForceResetVCounter = vCounterInternal == COUNTER_LIMIT || vCounterInternal > vdpCounterMode.vBlankSet;
             if (isForceResetVCounter || triggerHip) {
                 resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
             }
@@ -169,8 +169,12 @@ public class VdpInterruptHandler {
         return !hBlankSet && !vBlankSet;
     }
 
-    public int getvCounter() {
+    public int getvCounterInternal() {
         return vCounterInternal;
+    }
+
+    public int gethCounterInternal() {
+        return hCounterInternal;
     }
 
     public int getVCounterExternal() {
@@ -212,53 +216,6 @@ public class VdpInterruptHandler {
         logVeryVerbose("Reset hLinePassed: %s", value);
     }
 
-    public static void main(String[] args) {
-//        testHCounter();
-        testVCounter();
-    }
-
-    private static void testHCounter() {
-        VdpInterruptHandler.verbose = true;
-        VdpInterruptHandler h = createInstance(() -> {
-            return 0;
-        });
-        h.setMode(VideoMode.PAL_H40_V30);
-        int count = 0;
-        h.printStateString("" + count++);
-        do {
-            h.increaseHCounter();
-            h.printStateString("" + count++);
-        } while (count < 500);
-
-    }
-
-    private static void testVCounter() {
-        VdpInterruptHandler.verbose = true;
-        VdpInterruptHandler h = createInstance(() -> {
-            return 1;
-        });
-        h.setMode(VideoMode.PAL_H40_V28);
-        int count = 0;
-        h.printStateString("Start Line: " + count++);
-        do {
-            h.increaseHCounter();
-            if (h.hCounterInternal == 0) {
-                h.printStateString("Start Line: " + count++);
-            }
-            if (h.eventFlag) {
-                h.printStateString("");
-                h.eventFlag = false;
-            }
-            if (h.isvIntPending()) {
-                h.setvIntPending(false);
-            }
-            if (h.isHIntPending()) {
-                h.setHIntPending(false);
-            }
-        } while (count < 500);
-
-    }
-
     public void logVerbose(String str) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(str);
@@ -296,9 +253,8 @@ public class VdpInterruptHandler {
                 + ", vIntPending=" + vIntPending + ", hIntPending=" + hIntPending + ", hLinePassed=" + hLinePassed;
     }
 
-    private void printStateString(String head) {
+    protected void printStateString(String head) {
         String str = getStateString(head);
         LOG.info(str);
-//        System.out.println(str);
     }
 }
