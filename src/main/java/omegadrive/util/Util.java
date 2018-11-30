@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CyclicBarrier;
 
 /**
  * ${FILE}
@@ -41,6 +42,16 @@ public class Util {
             }
         }
     }
+
+    public static void waitOnBarrier(CyclicBarrier barrier) {
+        try {
+            barrier.await();
+        } catch (Exception e) {
+            LOG.warn("Error on barrier", e);
+            barrier.reset();
+        }
+    }
+
 
     public static void waitOnObject(Object object, long ms) {
         synchronized (object) {

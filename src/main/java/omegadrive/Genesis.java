@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -66,6 +67,9 @@ public class Genesis implements GenesisProvider {
     public static boolean verbose = false;
     public static boolean showFps = false;
     private boolean vdpDumpScreenData = false;
+    private volatile boolean pauseFlag = false;
+    private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
+
     private static NumberFormat df = DecimalFormat.getInstance();
 
     static {
@@ -341,7 +345,9 @@ public class Genesis implements GenesisProvider {
                         break;
                     }
                     sound.output(0);
+                    pauseAndWait();
                     lastRender = now;
+
                     startCycle = System.nanoTime();
                 }
                 counter++;
@@ -349,6 +355,19 @@ public class Genesis implements GenesisProvider {
                 LOG.error("Error main cycle", e);
                 break;
             }
+        }
+    }
+
+    private void pauseAndWait() {
+        if (!pauseFlag) {
+            return;
+        }
+        LOG.info("Pause: " + pauseFlag);
+        try {
+            Util.waitOnBarrier(pauseBarrier);
+            LOG.info("Pause: " + pauseFlag);
+        } finally {
+            pauseBarrier.reset();
         }
     }
 
@@ -453,10 +472,21 @@ public class Genesis implements GenesisProvider {
                 bus.getJoypad().setC(val);
                 break;
             case KeyEvent.VK_B:
-                vdpDumpScreenData = !vdpDumpScreenData;
+                if (!pressed) {
+                    vdpDumpScreenData = !vdpDumpScreenData;
+                }
+                break;
+            case KeyEvent.VK_P:
+                if (!pressed) {
+                    boolean isPausing = pauseFlag;
+                    pauseFlag = !pauseFlag;
+                    if (isPausing) {
+                        Util.waitOnBarrier(pauseBarrier);
+                    }
+                }
                 break;
             case KeyEvent.VK_ESCAPE:
-                if (pressed) {
+                if (!pressed) {
                     handleCloseGame();
                 }
                 break;
