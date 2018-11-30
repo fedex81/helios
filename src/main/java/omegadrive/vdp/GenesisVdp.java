@@ -455,7 +455,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void logRegisterChange(int reg, int data) {
         int current = registers[reg];
-        if (regVerbose && current != data && interruptHandler.isActiveScreen()) {
+        boolean doLog = regVerbose && current != data;
+        if (doLog) {
             String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- ",
                     VdpRegisterName.getRegisterName(reg), Long.toHexString(current), Long.toHexString(data)).getFormattedMessage();
             LOG.info(this.interruptHandler.getStateString(msg));

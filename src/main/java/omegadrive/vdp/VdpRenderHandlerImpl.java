@@ -504,7 +504,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
             int point = tileDataHolder.horFlip ? (pixelInTile - 7) * -1 : pixelInTile;
 
-            point /= 2;
+            point >>= 1;
 
             int tileBytePointer = (tileIndex + point) + (pointVert * 4);
             int onePixelData = getPixelIndexColor(tileBytePointer, pixelInTile, tileDataHolder.horFlip);

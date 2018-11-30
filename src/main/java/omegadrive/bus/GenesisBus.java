@@ -159,6 +159,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     public long readData(long address, Size size) {
         address = address & 0xFF_FFFF;
         if (address <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {  //ROM
+//            if(address <= cartridgeInfoProvider.getRomEnd()){ TODO Umk trilogy
             if (isSramUsedWithBrokenHeader(address)) { // Buck Rogers
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
                 return mapper.readData(address, size);
@@ -685,6 +686,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 ackInterrupts();
                 vdpIntState = BusProvider.VdpIntState.INT_DONE;
                 break;
+            //TODO still needed??
             case INT_DONE:
                 //Lotus II
                 vdpIntState = BusProvider.VdpIntState.NONE;
