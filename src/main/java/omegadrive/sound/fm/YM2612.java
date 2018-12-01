@@ -278,7 +278,7 @@ public final class YM2612 implements FmProvider {
     public final int init(int Clock, int Rate) {
         int i, j;
         double x;
-
+        LOG.info("Init");
         if ((Rate == 0) || (Clock == 0)) return 1;
 
         YM2612_Clock = Clock;
@@ -506,7 +506,7 @@ public final class YM2612 implements FmProvider {
 
         write0(0x2A, 0x80);
         dacQueue.clear();
-        LOG.info("Reset");
+
         isResetting = false;
         return 0;
     }

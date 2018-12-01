@@ -318,6 +318,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             if (data == 0x0000) {
                 if (z80.isBusRequested()) {
                     z80.reset();
+                    getFm().reset();
                     LOG.debug("Reset while busRequested");
                 } else {
                     LOG.debug("Reset while busUnrequested, ignoring");
@@ -327,6 +328,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 //	the Z80 may be let go from reset by writing #$0100 to $A11200.
             } else if (data == 0x0100 || data == 0x1) {
                 z80.disableReset();
+                getFm().reset();
                 LOG.debug("Disable reset, busReq : {}", z80.isBusRequested());
             } else {
                 LOG.warn("Unexpected data on busReset: " + Integer.toBinaryString((int) data));
