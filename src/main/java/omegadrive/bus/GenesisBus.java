@@ -288,8 +288,11 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             LOG.info("Setting memory mode to: " + data);
         } else if (addressL == 0xA11100 || addressL == 0xA11101) {    //	Z80 bus request
             //	To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
-            // Street Fighter 2 sends 0xFFFF
-            if (data == 0x0100 || data == 0x1 || data == 0xFFFF) {
+            if (size == Size.WORD) {
+                // Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF
+                data = data & 0x0100;
+            }
+            if (data == 0x0100 || data == 0x1) {
                 boolean isReset = z80.isReset();
                 if (!z80.isBusRequested()) {
                     LOG.debug("busRequested, reset: {}", isReset);
@@ -306,7 +309,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                     LOG.debug("busUnrequested ignored");
                 }
             } else {
-                LOG.warn("Unexpected data on busRequest: " + Integer.toBinaryString((int) data));
+                LOG.warn("Unexpected data on busRequest, address: {} , {}",
+                        Long.toHexString(addressL), Integer.toBinaryString((int) data));
             }
         } else if (addressL == 0xA11200 || addressL == 0xA11201) {    //	Z80 bus reset
             //	if the Z80 is required to be reset (for example, to load a new program to it's memory)
