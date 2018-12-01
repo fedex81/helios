@@ -54,6 +54,10 @@ public interface VdpProvider {
             return null;
         }
 
+        public int getAddressMode() {
+            return addressMode;
+        }
+
         public VdpRamType getRamType() {
             return ramType;
         }

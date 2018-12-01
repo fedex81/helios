@@ -187,6 +187,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         if (region == null) {
             region = bus.getEmulator().getRegion();
         }
+        vramMode = VramMode.getVramMode(codeRegister & 0xF);
         resetMode();
     }
 
@@ -406,7 +407,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 //            It is perfectly valid to write the first half of the command word only.
 //            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
 //            values, while the remaining address and code bits _retain_ their former value.
-            codeRegister = (int) ((codeRegister & 0x3C | firstWrite >> 14) & 0x3F);
+            codeRegister = (int) (codeRegister & 0x3C | ((firstWrite >> 14) & 3));
             addressRegister = (int) ((addressRegister & 0xC000) | (firstWrite & 0x3FFF));
 //            vramMode = VramMode.getVramMode(codeRegister & 0xF);
             LogHelper.printLevel(LOG, Level.INFO, "writeAddr-1, firstWord: {}, address: {}, code: {}"
@@ -426,7 +427,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
                     "writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}, mode: {}"
                     , data, addressRegister, codeRegister, all, vramMode, verbose);
             //	https://wiki.megadrive.org/index.php?title=VDP_DMA
-            if ((codeRegister & 0b100000) > 0) { // DMA
+            if ((codeRegister & 0b10_0000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
                 if (dmaMode == VdpDmaHandler.DmaMode.MEM_TO_VRAM) {
                     bus.setStop68k(true);
@@ -614,6 +615,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         }
     }
 
+    public VramMode getVramMode() {
+        return vramMode;
+    }
 
     @Override
     public void dumpScreenData() {
