@@ -6,8 +6,6 @@ version dateString + '-SNAPSHOT'
 
 apply plugin: 'java'
 
-
-
 sourceCompatibility = 1.8
 
 repositories {

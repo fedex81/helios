@@ -17,48 +17,55 @@ import java.util.Objects;
 public class LogHelper {
 
     private static Logger LOG = LogManager.getLogger(LogHelper.class.getSimpleName());
+    public static boolean printToSytemOut = false;
 
 
     public static void printLevel(Logger LOG, Level level, String str, long arg1, long arg2, long arg3, boolean verbose) {
         if (verbose) {
-            LOG.log(level, new ParameterizedMessage(str, Long.toHexString(arg1),
-                    Long.toHexString(arg2), Long.toHexString(arg3)));
+            ParameterizedMessage pm = new ParameterizedMessage(str, Long.toHexString(arg1),
+                    Long.toHexString(arg2), Long.toHexString(arg3));
+            logParamMessage(LOG, level, pm);
         }
     }
 
     public static void printLevel(Logger LOG, Level level, String str, long arg1, long arg2, long arg3, long arg4,
                                   Object arg5, boolean verbose) {
         if (verbose) {
-            LOG.log(level, new ParameterizedMessage(str, Long.toHexString(arg1),
-                    Long.toHexString(arg2), Long.toHexString(arg3), Long.toHexString(arg4), Objects.toString(arg5)));
+            ParameterizedMessage pm = new ParameterizedMessage(str, Long.toHexString(arg1),
+                    Long.toHexString(arg2), Long.toHexString(arg3), Long.toHexString(arg4), Objects.toString(arg5));
+            logParamMessage(LOG, level, pm);
         }
     }
 
     public static void printLevel(Logger LOG, Level level, String str, long arg1, long arg2, long arg3, long arg4, boolean verbose) {
         if (verbose) {
-            LOG.log(level, new ParameterizedMessage(str, Long.toHexString(arg1),
-                    Long.toHexString(arg2), Long.toHexString(arg3), Long.toHexString(arg4)));
+            ParameterizedMessage pm = new ParameterizedMessage(str, Long.toHexString(arg1),
+                    Long.toHexString(arg2), Long.toHexString(arg3), Long.toHexString(arg4));
+            logParamMessage(LOG, level, pm);
         }
     }
 
     public static void printLevel(Logger LOG, Level level, String str, Object arg1, long arg2, long arg3, boolean verbose) {
         if (verbose) {
-            LOG.log(level, new ParameterizedMessage(str, Objects.toString(arg1),
-                    Long.toHexString(arg2), Long.toHexString(arg3)));
+            ParameterizedMessage pm = new ParameterizedMessage(str, Objects.toString(arg1),
+                    Long.toHexString(arg2), Long.toHexString(arg3));
+            logParamMessage(LOG, level, pm);
         }
     }
 
     public static void printLevel(Logger LOG, Level level, String str, long arg1, long arg2, Object arg3, boolean verbose) {
         if (verbose) {
-            LOG.log(level, new ParameterizedMessage(str, Long.toHexString(arg1),
-                    Long.toHexString(arg2), arg3));
+            ParameterizedMessage pm = new ParameterizedMessage(str, Long.toHexString(arg1),
+                    Long.toHexString(arg2), arg3);
+            logParamMessage(LOG, level, pm);
         }
     }
 
     public static void printLevel(Logger LOG, Level level, String str, long arg1, long arg2, boolean verbose) {
         if (verbose) {
-            LOG.log(level, new ParameterizedMessage(str, Long.toHexString(arg1),
-                    Long.toHexString(arg2)));
+            ParameterizedMessage pm = new ParameterizedMessage(str, Long.toHexString(arg1),
+                    Long.toHexString(arg2));
+            logParamMessage(LOG, level, pm);
         }
     }
 
@@ -70,19 +77,21 @@ public class LogHelper {
 
     public static void printLevel(Logger LOG, Level level, Object str, boolean verbose) {
         if (verbose) {
-            LOG.log(level, Objects.toString(str));
+            logMessage(LOG, level, Objects.toString(str));
         }
     }
 
     public static void printLevel(Logger LOG, Level level, String str, boolean arg1, int arg2, int arg3, boolean verbose) {
         if (verbose) {
-            LOG.log(level, new ParameterizedMessage(str, arg1, arg2, arg3));
+            ParameterizedMessage pm = new ParameterizedMessage(str, arg1, arg2, arg3);
+            logParamMessage(LOG, level, pm);
         }
     }
 
     public static void printLevel(Logger LOG, Level level, String str, boolean arg1, int arg2, boolean verbose) {
         if (verbose) {
-            LOG.log(level, new ParameterizedMessage(str, arg1, arg2));
+            ParameterizedMessage pm = new ParameterizedMessage(str, arg1, arg2);
+            logParamMessage(LOG, level, pm);
         }
     }
 
@@ -94,6 +103,21 @@ public class LogHelper {
 
 
     public static void printLevel(Logger LOG, Level level, String str, Object arg) {
-        LOG.log(level, str, arg);
+        ParameterizedMessage pm = new ParameterizedMessage(str, arg);
+        logParamMessage(LOG, level, pm);
+    }
+
+    private static void logMessage(Logger LOG, Level level, String msg) {
+        LOG.log(level, msg);
+        if (printToSytemOut) {
+            System.out.println(msg);
+        }
+    }
+
+    private static void logParamMessage(Logger LOG, Level level, ParameterizedMessage pm) {
+        LOG.log(level, pm);
+        if (printToSytemOut) {
+            System.out.println(pm.getFormattedMessage());
+        }
     }
 }

@@ -25,10 +25,11 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private static Logger LOG = LogManager.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
+    public static boolean printToSysOut = false;
 
     protected VdpProvider vdpProvider;
     protected VdpMemoryInterface memoryInterface;
-    private BusProvider busProvider;
+    protected BusProvider busProvider;
 
     private int destAddress;
     private int dmaFillData;
@@ -133,6 +134,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         str += ", destAddr: " + dest + ", destAddrInc: " + destAddressIncrement +
                 ", dmaLen: " + dmaLen + ", vramDestination: " + vramDestination;
         LOG.info(str);
+        if (printToSysOut) {
+            System.out.println(str);
+        }
     }
 
     @Override

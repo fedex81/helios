@@ -145,7 +145,7 @@ public interface VdpProvider {
     int V30_NTSC_JUMP = -1; //never
 
     static VdpProvider createVdp(BusProvider bus) {
-        return new GenesisVdp(bus);
+        return new GenesisVdpNew(bus);
     }
 
     void init();

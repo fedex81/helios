@@ -133,10 +133,12 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     private int line;
 
-    public GenesisVdpNew(BusProvider bus, VdpMemoryInterface memoryInterface, VdpDmaHandler dmaHandler) {
+    //TEST
+    protected GenesisVdpNew(BusProvider bus, VdpMemoryInterface memoryInterface, VdpDmaHandler dmaHandler, RegionDetector.Region region) {
         this.bus = bus;
         this.memoryInterface = memoryInterface;
         this.dmaHandler = dmaHandler;
+        this.region = region;
         setupVdp();
     }
 
@@ -182,7 +184,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         writeRegister(22, 0);
         writeRegister(23, 128);
 
-        region = bus.getEmulator().getRegion();
+        if (region == null) {
+            region = bus.getEmulator().getRegion();
+        }
         resetMode();
     }
 
@@ -190,6 +194,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     @Override
     public int readControl() {
+        if (bus.shouldStop68k()) {
+            LOG.warn("readControl with 68k stopped, address: {}", addressRegister, verbose);
+        }
         // The value assigned to these bits will be whatever value these bits were set to from the
         // last read the M68000 performed.
         // Writes from the M68000 don't affect these bits, only reads.
@@ -321,8 +328,19 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 //	VRAM Read	0	0	0	0	0	0
 //	CRAM Read	0	0	1	0	0	0
 //	VSRAM Read	0	0	0	1	0	0
+
+    long pendingControlPortData = -1;
+
     @Override
     public void writeControlPort(long dataL) {
+        if (bus.shouldStop68k()) {
+            pendingControlPortData = dataL;
+            return;
+        }
+        writeControlPortInternal(dataL);
+    }
+
+    private void writeControlPortInternal(long dataL) {
         long mode = (dataL >> 14);
         int data = (int) dataL;
 
@@ -340,6 +358,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     @Override
     public void writeDataPort(long dataL) {
+        if (bus.shouldStop68k()) {
+            LOG.warn("writeDataPort with 68k stopped, data: {}, address: {}", dataL, addressRegister, verbose);
+        }
         int data = (int) dataL;
         writePendingControlPort = false;
         LogHelper.printLevel(LOG, Level.INFO, "writeDataPort, data: {}, address: {}", data, addressRegister, verbose);
@@ -359,6 +380,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     @Override
     public int readDataPort() {
+        if (bus.shouldStop68k()) {
+            LOG.warn("readDataPort with 68k stopped, address: {}", addressRegister, verbose);
+        }
         this.writePendingControlPort = false;
         if (fifo.isFull()) {
             return 0;
@@ -501,6 +525,10 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             if (dma == 0 && dmaDone) {
                 LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", mode, verbose);
                 bus.setStop68k(false);
+                if (pendingControlPortData >= 0) {
+                    writeControlPortInternal(pendingControlPortData);
+                    pendingControlPortData = -1;
+                }
             }
         }
     }
@@ -565,7 +593,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         return registers[0xA];
     }
 
-    private void resetMode() {
+    protected void resetMode() {
         VideoMode newVideoMode = getVideoMode(region, isH40(), isV30());
         if (videoMode != newVideoMode) {
             this.videoMode = newVideoMode;
@@ -602,6 +630,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         dma = value;
     }
 
+    @Override
     public VdpFifo getFifo() {
         return fifo;
     }
