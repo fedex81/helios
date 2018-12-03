@@ -416,7 +416,7 @@ public class MC68000Monitor implements Runnable {
         return sb.append(String.format("\n==> %s\n\n", this.buffer.toString())).toString();
     }
 
-    public static String dumpOp(MC68000 cpu) {
+    public static String dumpOp(Cpu cpu) {
         StringBuilder builder = new StringBuilder();
         int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
         if (wrapPc >= 0) {

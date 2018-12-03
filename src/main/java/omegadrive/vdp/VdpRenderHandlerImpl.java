@@ -790,12 +790,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         return colorMapper.getColor(r, g, b);
     }
 
-    private Function<int[][], int[][]> toColorFn =
-            input -> Arrays.stream(input).
-                    map(a -> Arrays.stream(a).map(this::getColorFromIndex).toArray()).toArray(int[][]::new);
-
     private int[][] getPlaneData(RenderType type) {
-        int[][] res = new int[0][0];
+
+        Function<int[][], int[][]> toColorFn =
+                input -> Arrays.stream(input).
+                        map(a -> Arrays.stream(a).map(this::getColorFromIndex).toArray()).toArray(int[][]::new);
+
+        int[][] res = new int[COLS][ROWS];
         switch (type) {
             case BACK_PLANE:
                 res = toColorFn.apply(planeBack);
