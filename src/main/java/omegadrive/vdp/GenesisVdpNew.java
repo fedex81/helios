@@ -643,13 +643,11 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         return false;
     }
 
-    private void runNew() {
+    @Deprecated
+    private void runOld() {
         int hCounterInternal = interruptHandler.increaseHCounter();
         boolean displayEnable = disp;
-        //TODO disabling the display implies blanking <- dont think so
         hb = interruptHandler.ishBlankSet() ? 1 : 0;
-//        vb = !displayEnable || interruptHandler.isvBlankSet() ? 1 : 0;
-        //TODO disabling the display implies blanking <- dont think so
         vb = interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
 
@@ -683,6 +681,43 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
                 resetMode();
             }
         }
+    }
+
+    private void runNew() {
+        int hCounterInternal = interruptHandler.gethCounterInternal();
+        boolean displayEnable = disp;
+        hb = interruptHandler.ishBlankSet() ? 1 : 0;
+        vb = interruptHandler.isvBlankSet() ? 1 : 0;
+        vip = interruptHandler.isvIntPending() ? 1 : vip;
+
+        //TODO accurate fifo slots
+        boolean vramSlot = displayEnable && (hCounterInternal + 2) % 16 == 0;
+        vramSlot |= !displayEnable || vb == 1;
+        if (!fifo.isFull()) {
+            doDma(vramSlot);
+        }
+        writeDataToVram(vramSlot);
+
+        //draw on the last counter (use 9bit internal counter value)
+        if (interruptHandler.isLastSlot()) {
+            //draw the line
+            drawScanline(displayEnable);
+            line++;
+            //draw the frame
+            if (interruptHandler.isDrawFrameSlot()) {
+                interruptHandler.logVerbose("Draw Screen");
+                line = 0;
+                int[][] screenData = renderHandler.renderFrame();
+                bus.getEmulator().renderScreen(screenData);
+                resetMode();
+            }
+        }
+        if (interruptHandler.isFirstSlot()) {
+            renderHandler.initLineData(line);
+        }
+        //slot granularity -> 2 H counter increases per cycle
+        interruptHandler.increaseHCounter();
+        interruptHandler.increaseHCounter();
     }
 
     @Override

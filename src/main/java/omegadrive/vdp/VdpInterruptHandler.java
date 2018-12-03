@@ -203,10 +203,24 @@ public class VdpInterruptHandler {
         this.hIntPending = hIntPending;
     }
 
+    @Deprecated
     public boolean isLastHCounter() {
         return hCounterInternal == COUNTER_LIMIT;
     }
 
+    public boolean isFirstSlot() {
+        return hCounterInternal <= 1;
+    }
+
+    public boolean isLastSlot() {
+        return hCounterInternal >= COUNTER_LIMIT - 1;
+    }
+
+    public boolean isDrawFrameSlot() {
+        return isLastSlot() && vCounterInternal == COUNTER_LIMIT;
+    }
+
+    @Deprecated
     public boolean isDrawFrameCounter() {
         return isLastHCounter() && vCounterInternal == COUNTER_LIMIT;
     }
