@@ -36,6 +36,12 @@ public class VdpInterruptHandlerTest {
         VdpInterruptHandler h = VdpInterruptHandler.createInstance(() -> hLinePassed);
         hLinesCounterBasic(h, VideoMode.PAL_H40_V28);
         hLinesCounterBasic(h, VideoMode.PAL_H40_V30);
+        hLinesCounterBasic(h, VideoMode.PAL_H32_V28);
+        hLinesCounterBasic(h, VideoMode.PAL_H32_V30);
+        hLinesCounterBasic(h, VideoMode.NTSCU_H32_V28);
+        hLinesCounterBasic(h, VideoMode.NTSCU_H40_V28);
+        hLinesCounterBasic(h, VideoMode.NTSCJ_H32_V28);
+        hLinesCounterBasic(h, VideoMode.NTSCJ_H40_V28);
     }
 
     private void hLinesCounterBasic(VdpInterruptHandler h, VideoMode mode) {

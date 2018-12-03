@@ -361,6 +361,13 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         long mode = (dataL >> 14);
         int data = (int) dataL;
 
+        //TODO: check this writePendingControlPort has precedence,
+        //TODO: a register write could be treated as 2nd part - fixes test #10
+        if (writePendingControlPort) {
+            writeRamAddress(data);
+            return;
+        }
+
         if (mode == 0b10) {        //	Write 1 - Setting Register
             writeRegister(data);
             //Writing to a VDP register will clear the code register.
@@ -385,6 +392,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             return;
         }
         if (fifo.isFull()) {
+            //TODO this should save, portType, data, and size
             LogHelper.printLevel(LOG, Level.INFO, "Pending dataPort write - fifo full: {}", Long.toHexString(dataL), verbose);
             bus.setStop68k(true);
             if (pendingDataPortWrite1 < 0) {
@@ -402,6 +410,10 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         int data = (int) dataL;
         writePendingControlPort = false;
         LogHelper.printLevel(LOG, Level.INFO, "writeDataPort, data: {}, address: {}", data, addressRegister, verbose);
+        if (vramMode == null) { //ignore invalid targets
+            LOG.warn("writeDataPort on invalid target: {}" + data);
+            return;
+        }
         fifo.push(vramMode.getRamType(), addressRegister, data);
         addressRegister += autoIncrementData;
         setupDmaFillMaybe(data);
@@ -465,7 +477,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 //            values, while the remaining address and code bits _retain_ their former value.
             codeRegister = (int) ((codeRegister & 0x3C) | ((firstWrite >> 14) & 3));
             addressRegister = (int) ((addressRegister & 0xC000) | (firstWrite & 0x3FFF));
-//            vramMode = VramMode.getVramMode(codeRegister & 0xF);
+            vramMode = VramMode.getVramMode(codeRegister & 0xF);
             LogHelper.printLevel(LOG, Level.INFO, "writeAddr-1, firstWord: {}, address: {}, code: {}"
                     , firstWrite, addressRegister, codeRegister, verbose);
         } else {
