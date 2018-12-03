@@ -431,9 +431,13 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         }
         int res = memoryInterface.readVideoRamWord(vramMode, addressRegister);
         if (vramMode == VramMode.vramRead_8bit) {
+            //TODO fix
+            boolean even = addressRegister % 2 == 0;
+            res = even ? res & 0xFF : res >> 8;
             //The 8-bit VRAM read function reads a single byte from VRAM.
             // The returned value consists of the VRAM byte as the low byte, plus a byte from the FIFO as the high byte.
-            res &= 0xFF;
+            int fifoData = fifo.peek().data;
+            res = (fifoData & 0xFF00) | (res & 0xFF);
         }
         //mask for the valid bits in the VSRAM buffer: 0000 0111 1111 1111.
         if (vramMode == VramMode.vsramRead) {

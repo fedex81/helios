@@ -43,6 +43,8 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         return data;
     }
 
+    //TODO: shouldnt this flip the byte like in readVramWord
+    //TODO: DMA is doing it but it should be done here
     @Override
     public int readVramByte(int address) {
         address &= (VdpProvider.VDP_VRAM_SIZE - 1);
