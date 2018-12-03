@@ -171,6 +171,8 @@ public interface VdpProvider {
 
     int getAddressRegister();
 
+    void setAddressRegister(int value);
+
     boolean isIe0();
 
     boolean isIe1();

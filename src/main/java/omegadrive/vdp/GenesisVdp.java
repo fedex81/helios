@@ -254,6 +254,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
+    public void setAddressRegister(int value) {
+        this.addressRegister = value;
+    }
+
+    @Override
     public void updateRegisterData(int reg, int data) {
         registers[reg] = data;
     }

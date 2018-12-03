@@ -21,7 +21,7 @@ public class VdpFifo implements IVdpFifo {
     private static Logger LOG = LogManager.getLogger(VdpFifo.class.getSimpleName());
 
     public static final int FIFO_SIZE = 4;
-    public static final int FIFO_REAL_SIZE = 6;
+    public static final int FIFO_REAL_SIZE = 4; //6;
 
     private VdpFifoEntry[] fifo = new VdpFifoEntry[FIFO_REAL_SIZE];
     private int popPointer;
@@ -67,13 +67,17 @@ public class VdpFifo implements IVdpFifo {
         return entry;
     }
 
+    public VdpFifoEntry peek() {
+        return fifo[popPointer];
+    }
+
     @Override
     public boolean isEmpty() {
         return fifoSize == 0;
     }
 
     private boolean isFullInternal() {
-        return fifoSize == FIFO_REAL_SIZE - 1;
+        return fifoSize == FIFO_REAL_SIZE;
     }
 
     @Override

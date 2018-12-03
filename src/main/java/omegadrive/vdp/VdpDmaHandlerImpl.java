@@ -216,7 +216,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         memoryInterface.writeVramByte(destAddress ^ 1, msb);
         //not needed
         increaseSourceAddress(1);
-        destAddress += getDestAddressIncrement();
+        destAddress = increaseDestAddress();
         return dmaLen == 0;
     }
 
@@ -240,7 +240,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         int data = memoryInterface.readVramByte(sourceAddress);
         memoryInterface.writeVramByte(destAddress ^ 1, data);
         increaseSourceAddress(1);
-        destAddress += getDestAddressIncrement();
+        destAddress = increaseDestAddress();
         return dmaLen == 0;
     }
 
@@ -254,6 +254,11 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         vdpProvider.updateRegisterData(DMA_LENGTH_LOW, dmaLen & 0xFF);
         vdpProvider.updateRegisterData(DMA_LENGTH_HIGH, dmaLen >> 8);
         return dmaLen;
+    }
+
+    private int increaseDestAddress() {
+        vdpProvider.setAddressRegister(destAddress + getDestAddressIncrement());
+        return vdpProvider.getAddressRegister();
     }
 
     private int increaseSourceAddress(int inc) {
@@ -288,7 +293,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             printInfo("IN PROGRESS: ", sourceAddress);
             //increase by 1, becomes 2 (bytes) when doubling
             increaseSourceAddress(1);
-            destAddress += getDestAddressIncrement();
+            destAddress = increaseDestAddress();
         } while (dmaLen > 0 && byteSlots > 0);
         printInfo("Byte slots remaining: " + byteSlots);
         return dmaLen == 0;

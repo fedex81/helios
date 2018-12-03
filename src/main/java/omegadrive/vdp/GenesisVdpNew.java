@@ -20,6 +20,9 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
  * Based on genefusto GenVdp
  * https://github.com/DarkMoe/genefusto
  * @author DarkMoe
+ *
+ * TODO
+ * - breaks outrunners
  */
 public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
@@ -262,6 +265,11 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
+    public void setAddressRegister(int value) {
+        addressRegister = value;
+    }
+
+    @Override
     public void updateRegisterData(int reg, int data) {
         registers[reg] = data;
     }
@@ -330,12 +338,20 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 //	CRAM Read	0	0	1	0	0	0
 //	VSRAM Read	0	0	0	1	0	0
 
-    long pendingControlPortData = -1;
+    long pendingControlPortWrite1 = -1;
+    long pendingControlPortWrite2 = -1;
+    long pendingDataPortWrite1 = -1;
+    long pendingDataPortWrite2 = -1;
 
     @Override
     public void writeControlPort(long dataL) {
         if (bus.shouldStop68k()) {
-            pendingControlPortData = dataL;
+            if (pendingControlPortWrite1 < 0) {
+                pendingControlPortWrite1 = dataL;
+            } else {
+                pendingControlPortWrite2 = dataL;
+            }
+            LogHelper.printLevel(LOG, Level.INFO, "Pending ctrlPort write: {}", Long.toHexString(dataL), verbose);
             return;
         }
         writeControlPortInternal(dataL);
@@ -360,8 +376,29 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     @Override
     public void writeDataPort(long dataL) {
         if (bus.shouldStop68k()) {
-            LOG.warn("writeDataPort with 68k stopped, data: {}, address: {}", dataL, addressRegister, verbose);
+            if (pendingDataPortWrite1 < 0) {
+                pendingDataPortWrite1 = dataL;
+            } else {
+                pendingDataPortWrite2 = dataL;
+            }
+            LogHelper.printLevel(LOG, Level.INFO, "Pending dataPort write: {}", Long.toHexString(dataL), verbose);
+            return;
         }
+        if (fifo.isFull()) {
+            LogHelper.printLevel(LOG, Level.INFO, "Pending dataPort write - fifo full: {}", Long.toHexString(dataL), verbose);
+            bus.setStop68k(true);
+            if (pendingDataPortWrite1 < 0) {
+                pendingDataPortWrite1 = dataL;
+            } else {
+                pendingDataPortWrite2 = dataL;
+            }
+            return;
+        }
+        writeDataPortInternal(dataL);
+    }
+
+
+    private void writeDataPortInternal(long dataL) {
         int data = (int) dataL;
         writePendingControlPort = false;
         LogHelper.printLevel(LOG, Level.INFO, "writeDataPort, data: {}, address: {}", data, addressRegister, verbose);
@@ -374,8 +411,12 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         if (!vramSlot || fifo.isEmpty()) {
             return;
         }
+        boolean wasFull = fifo.isFull();
         VdpFifo.VdpFifoEntry entry = fifo.pop();
         memoryInterface.writeVideoRamWord(entry.vdpRamType, entry.data, entry.addressRegister);
+        if (wasFull) {
+            unstop68k();
+        }
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
 
@@ -394,6 +435,17 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             // The returned value consists of the VRAM byte as the low byte, plus a byte from the FIFO as the high byte.
             res &= 0xFF;
         }
+        //mask for the valid bits in the VSRAM buffer: 0000 0111 1111 1111.
+        if (vramMode == VramMode.vsramRead) {
+            int fifoData = fifo.peek().data;
+            res = (fifoData & 0xF800) | (res & 0x7FF);
+        }
+        //mask for the valid bits in the CRAM buffer: 0000 1110 1110 1110.
+        if (vramMode == VramMode.cramRead) {
+            int fifoData = fifo.peek().data;
+            res = (fifoData & 0xF111) | (res & 0xEEE);
+        }
+
         LogHelper.printLevel(LOG, Level.INFO, "readDataPort, address {} , result {}, size {}", addressRegister, res,
                 Size.WORD, verbose);
         addressRegister += autoIncrementData;
@@ -407,7 +459,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 //            It is perfectly valid to write the first half of the command word only.
 //            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
 //            values, while the remaining address and code bits _retain_ their former value.
-            codeRegister = (int) (codeRegister & 0x3C | ((firstWrite >> 14) & 3));
+            codeRegister = (int) ((codeRegister & 0x3C) | ((firstWrite >> 14) & 3));
             addressRegister = (int) ((addressRegister & 0xC000) | (firstWrite & 0x3FFF));
 //            vramMode = VramMode.getVramMode(codeRegister & 0xF);
             LogHelper.printLevel(LOG, Level.INFO, "writeAddr-1, firstWord: {}, address: {}, code: {}"
@@ -416,10 +468,10 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             writePendingControlPort = false;
             all = ((firstWrite << 16) | data);
 
-            codeRegister = (((data >> 4) & 0xF) << 2 | codeRegister & 0x3);
+            codeRegister = (((data >> 4) & 0xF) << 2) | (codeRegister & 0x3);
             //m1 masks CD5
 //            codeRegister &= (((m1 ? 1 : 0)<< 5) | 0x1F); //breaks Andre Agassi
-            addressRegister = ((data & 0x3) << 14 | (addressRegister & 0x3FFF));
+            addressRegister = ((data & 0x3) << 14) | (addressRegister & 0x3FFF);
 
             int addressMode = codeRegister & 0xF;    // CD0-CD3
             vramMode = VramMode.getVramMode(addressMode);
@@ -525,12 +577,40 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
                 LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", mode, verbose);
-                bus.setStop68k(false);
-                if (pendingControlPortData >= 0) {
-                    writeControlPortInternal(pendingControlPortData);
-                    pendingControlPortData = -1;
-                }
+                unstop68k();
             }
+        }
+    }
+
+    private void unstop68k() {
+        bus.setStop68k(false);
+        processPendingWrites();
+    }
+
+    private void processPendingWrites() {
+        if (pendingControlPortWrite1 >= 0) {
+            LogHelper.printLevel(LOG, Level.INFO, "Process pending ctrlPort write: {}",
+                    Long.toHexString(pendingControlPortWrite1), verbose);
+            writeControlPortInternal(pendingControlPortWrite1);
+            pendingControlPortWrite1 = -1;
+        }
+        if (pendingControlPortWrite2 >= 0) {
+            LogHelper.printLevel(LOG, Level.INFO, "Process pending ctrlPort write: {}",
+                    Long.toHexString(pendingControlPortWrite2), verbose);
+            writeControlPortInternal(pendingControlPortWrite2);
+            pendingControlPortWrite2 = -1;
+        }
+        if (pendingDataPortWrite1 >= 0) {
+            LogHelper.printLevel(LOG, Level.INFO, "Process pending dataPort write: {}",
+                    Long.toHexString(pendingDataPortWrite1), verbose);
+            writeDataPortInternal(pendingDataPortWrite1);
+            pendingDataPortWrite1 = -1;
+        }
+        if (pendingDataPortWrite2 >= 0) {
+            LogHelper.printLevel(LOG, Level.INFO, "Process pending dataPort write: {}",
+                    Long.toHexString(pendingDataPortWrite2), verbose);
+            writeDataPortInternal(pendingDataPortWrite2);
+            pendingDataPortWrite2 = -1;
         }
     }
 
