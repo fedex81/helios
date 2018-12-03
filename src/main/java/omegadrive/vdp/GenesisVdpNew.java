@@ -411,7 +411,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         writePendingControlPort = false;
         LogHelper.printLevel(LOG, Level.INFO, "writeDataPort, data: {}, address: {}", data, addressRegister, verbose);
         if (vramMode == null) { //ignore invalid targets
-            LOG.warn("writeDataPort on invalid target: {}" + data);
+            LOG.warn("writeDataPort on invalid target: {}", data);
             return;
         }
         fifo.push(vramMode.getRamType(), addressRegister, data);
@@ -683,6 +683,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         }
     }
 
+    //TODO this breaks VDPFifoTesting
     private void runNew() {
         int hCounterInternal = interruptHandler.gethCounterInternal();
         boolean displayEnable = disp;

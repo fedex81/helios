@@ -20,6 +20,7 @@ D3: 40800000   D7: 0000ffff   A3: 000053b8   A7: ffffeffc     SSP: ffffeffc
 Read on reserved address: 76427c -> Exception
 
 - write test for Ex-Mutants
+- TAS for Gargoyles
 
 - Mappers
 http://gendev.spritesmind.net/forum/viewtopic.php?t=206
