@@ -5,6 +5,8 @@ import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+
 /**
  * ${FILE}
  * <p>
@@ -18,9 +20,28 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     public static boolean verbose = false || Genesis.verbose;
 
-    private int[] vram = new int[VdpProvider.VDP_VRAM_SIZE];
-    private int[] cram = new int[VdpProvider.VDP_CRAM_SIZE];
-    private int[] vsram = new int[VdpProvider.VDP_VSRAM_SIZE];
+    private int[] vram;
+    private int[] cram;
+    private int[] vsram;
+
+    private GenesisVdpMemoryInterface() {
+    }
+
+    public static GenesisVdpMemoryInterface createInstance() {
+        GenesisVdpMemoryInterface i = new GenesisVdpMemoryInterface();
+        i.vram = new int[VdpProvider.VDP_VRAM_SIZE];
+        i.cram = new int[VdpProvider.VDP_CRAM_SIZE];
+        i.vsram = new int[VdpProvider.VDP_VSRAM_SIZE];
+        return i;
+    }
+
+    public static GenesisVdpMemoryInterface createInstance(int[] vram, int[] cram, int[] vsram) {
+        GenesisVdpMemoryInterface i = new GenesisVdpMemoryInterface();
+        i.vram = Arrays.copyOf(vram, vram.length);
+        i.cram = Arrays.copyOf(cram, cram.length);
+        i.vsram = Arrays.copyOf(vsram, vsram.length);
+        return i;
+    }
 
     @Override
     public int readVideoRamWord(VdpProvider.VdpRamType vramType, int address) {

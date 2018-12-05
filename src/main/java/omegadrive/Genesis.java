@@ -47,14 +47,14 @@ public class Genesis implements GenesisProvider {
 
     private static final String PROPERTIES_FILENAME = "./emu.properties";
 
-    private MemoryProvider memory;
-    private VdpProvider vdp;
-    private BusProvider bus;
-    private Z80Provider z80;
-    private M68kProvider cpu;
-    private JoypadProvider joypad;
-    private SoundProvider sound;
-    private InputProvider inputProvider;
+    protected MemoryProvider memory;
+    protected VdpProvider vdp;
+    protected BusProvider bus;
+    protected Z80Provider z80;
+    protected M68kProvider cpu;
+    protected JoypadProvider joypad;
+    protected SoundProvider sound;
+    protected InputProvider inputProvider;
 
     private RegionDetector.Region region = null;
     private String romName;
@@ -119,7 +119,7 @@ public class Genesis implements GenesisProvider {
         return genesis;
     }
 
-    private Genesis(boolean isHeadless) throws InvocationTargetException, InterruptedException {
+    public Genesis(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         Util.registerJmx(this);
         init();
         SwingUtilities.invokeAndWait(() -> createFrame(isHeadless));
@@ -127,14 +127,14 @@ public class Genesis implements GenesisProvider {
 
     @Override
     public void init() {
-        bus = BusProvider.createBus();
-        memory = new GenesisMemoryProvider();
         joypad = new GenesisJoypad();
         inputProvider = InputProvider.createInstance(joypad);
 
+        memory = new GenesisMemoryProvider();
+        bus = BusProvider.createBus();
         vdp = VdpProvider.createVdp(bus);
         cpu = new MC68000Wrapper(bus);
-        z80 = new Z80CoreWrapper(bus);
+        z80 = Z80CoreWrapper.createInstance(bus);
         //sound attached later
         sound = SoundProvider.NO_SOUND;
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
@@ -260,44 +260,52 @@ public class Genesis implements GenesisProvider {
 
         @Override
         public void run() {
-
-            String fileName = file.toAbsolutePath().toString();
             try {
-                if (fileName.toLowerCase().endsWith(".md")
-                        || fileName.toLowerCase().endsWith(".bin")) {
-                    int[] data = FileLoader.readFile(file);
-                    if (data == null || data.length == 0) {
-                        throw new RuntimeException("Empty file!");
+                String fileName = file.toAbsolutePath().toString();
+                try {
+                    if (fileName.toLowerCase().endsWith(".md")
+                            || fileName.toLowerCase().endsWith(".bin")) {
+                        int[] data = FileLoader.readFile(file);
+                        if (data == null || data.length == 0) {
+                            throw new RuntimeException("Empty file!");
+                        }
+                        memory.setCartridge(data);
+                    } else {
+                        throw new RuntimeException("Unexpected file: " + fileName);
                     }
-                    memory.setCartridge(data);
-                } else {
-                    throw new RuntimeException("Unexpected file: " + fileName);
+                } catch (Exception e) {
+                    LOG.error("Unable to load: " + file.toAbsolutePath().toString(), e);
+                    return;
                 }
+
+                romName = file.getFileName().toString();
+                Thread.currentThread().setName(threadNamePrefix + romName);
+                emuFrame.setTitle(romName);
+                region = getRegionInternal(memory);
+                LOG.info("Running game: " + romName + ", region: " + region);
+                sound = JavaSoundManager.createSoundProvider(region);
+                bus.attachDevice(sound);
+
+                resetAfterGameLoad();
+
+                loop();
             } catch (Exception e) {
-                LOG.error("Unable to load: " + file.toAbsolutePath().toString(), e);
-                return;
+                e.printStackTrace();
+                LOG.error(e);
             }
-
-            romName = file.getFileName().toString();
-            Thread.currentThread().setName(threadNamePrefix + romName);
-            emuFrame.setTitle(romName);
-            region = getRegionInternal(memory);
-            LOG.info("Running game: " + romName + ", region: " + region);
-            sound = JavaSoundManager.createSoundProvider(region);
-            bus.attachDevice(sound);
-
-            //detect ROM first
-            bus.reset();
-            cpu.reset();
-            cpu.initialize();
-            joypad.initialize();
-            vdp.init();
-            z80.reset();
-            z80.initialize();
-
-            loop();
             handleCloseGame();
         }
+    }
+
+    protected void resetAfterGameLoad() {
+        //detect ROM first
+        bus.reset();
+        cpu.reset();
+        cpu.initialize();
+        joypad.initialize();
+        vdp.init();
+        z80.reset();
+        z80.initialize();
     }
 
 

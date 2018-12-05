@@ -47,14 +47,29 @@ public class Z80CoreWrapper implements Z80Provider {
 
     private static Logger LOG = LogManager.getLogger(Z80CoreWrapper.class.getSimpleName());
 
-    public Z80CoreWrapper(BusProvider busProvider) {
-        memory = new Z80Memory(busProvider, this);
-        memIoOps = createGenesisIo(this);
-        memIoOps.setRam(memory.getMemory());
-        this.z80Core = new Z80(memIoOps, null);
+    public static Z80CoreWrapper createInstance(BusProvider busProvider) {
+        Z80Memory memory = new Z80Memory(busProvider);
+        Z80CoreWrapper w = createInstance(memory, null);
+        memory.setZ80Provider(w);
+        return w;
+    }
 
-        Z80MemContext memContext = Z80MemContext.createInstance(memory);
-        this.z80Disasm = new Z80Disasm(memContext, new Z80Decoder(memContext));
+    public static Z80CoreWrapper createInstance(Z80Memory z80Memory, Z80State z80State) {
+        Z80CoreWrapper w = new Z80CoreWrapper();
+        w.memIoOps = createGenesisIo(w);
+        w.memIoOps.setRam(z80Memory.getMemory());
+        w.z80Core = new Z80(w.memIoOps, null);
+        w.memory = z80Memory;
+        if (z80State != null) {
+            w.z80Core.setZ80State(z80State);
+        }
+
+        Z80MemContext memContext = Z80MemContext.createInstance(z80Memory);
+        w.z80Disasm = new Z80Disasm(memContext, new Z80Decoder(memContext));
+        return w;
+    }
+
+    private Z80CoreWrapper() {
     }
 
     @Override

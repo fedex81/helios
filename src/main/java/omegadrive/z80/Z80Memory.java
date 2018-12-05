@@ -51,6 +51,11 @@ public class Z80Memory implements IMemory {
     private BusProvider busProvider;
     private Z80Provider z80Provider;
 
+    public Z80Memory(BusProvider busProvider) {
+        this(busProvider, null);
+    }
+
+
     public Z80Memory(BusProvider busProvider, Z80Provider z80Provider) {
         this.busProvider = busProvider;
         this.z80Provider = z80Provider;
@@ -60,6 +65,9 @@ public class Z80Memory implements IMemory {
         }
     }
 
+    public void setZ80Provider(Z80Provider z80Provider) {
+        this.z80Provider = z80Provider;
+    }
 
     private int readMemory(int address) {
         if (address < MEMORY_SIZE) { //RAM
@@ -189,5 +197,9 @@ public class Z80Memory implements IMemory {
 
     public int[] getMemory() {
         return memory;
+    }
+
+    public void setRomBank68kSerial(int romBank68kSerial) {
+        this.romBank68kSerial = romBank68kSerial;
     }
 }

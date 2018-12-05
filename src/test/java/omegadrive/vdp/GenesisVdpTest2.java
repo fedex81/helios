@@ -38,10 +38,10 @@ public class GenesisVdpTest2 {
         GenesisMemoryProvider memory = new GenesisMemoryProvider();
         busProvider = BusProvider.createBus();
         busProvider.attachDevice(memory);
-        memoryInterface = new GenesisVdpMemoryInterface();
+        memoryInterface = GenesisVdpMemoryInterface.createInstance();
         dmaHandler = new VdpDmaHandlerImpl();
 
-        vdpProvider = new GenesisVdpNew(busProvider, memoryInterface, dmaHandler, RegionDetector.Region.EUROPE);
+        vdpProvider = GenesisVdpNew.createInstance(busProvider, memoryInterface, dmaHandler, RegionDetector.Region.EUROPE);
 
         ((VdpDmaHandlerImpl) dmaHandler).vdpProvider = vdpProvider;
         ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
@@ -62,7 +62,7 @@ public class GenesisVdpTest2 {
     public void testWriteControlPortLongWordAndDMA() {
 //        Set Video mode: PAL_H32_V28
         vdpProvider.writeControlPort(0x8C00);
-        ((GenesisVdpNew) vdpProvider).resetMode();
+        ((GenesisVdpNew) vdpProvider).resetVideoMode(true);
         int dmaAutoInc = 2;
         int afterDmaAutoInc = 0x20;
 
@@ -120,7 +120,7 @@ public class GenesisVdpTest2 {
     public void testCodeRegisterUpdate() {
         //        Set Video mode: PAL_H32_V28
         vdpProvider.writeControlPort(0x8C00);
-        ((GenesisVdpNew) vdpProvider).resetMode();
+        ((GenesisVdpNew) vdpProvider).resetVideoMode(true);
 
         Assert.assertEquals(vramRead, ((GenesisVdpNew) vdpProvider).getVramMode());
 

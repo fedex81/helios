@@ -1,6 +1,7 @@
 package omegadrive.vdp;
 
 import omegadrive.Genesis;
+import omegadrive.GenesisProvider;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.*;
 import omegadrive.vdp.model.VdpDmaHandler;
@@ -11,6 +12,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
+
+import java.util.Optional;
 
 /**
  * GenesisVdp
@@ -136,25 +139,37 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     private int line;
 
-    //TEST
-    protected GenesisVdpNew(BusProvider bus, VdpMemoryInterface memoryInterface, VdpDmaHandler dmaHandler, RegionDetector.Region region) {
-        this.bus = bus;
-        this.memoryInterface = memoryInterface;
-        this.dmaHandler = dmaHandler;
-        this.region = region;
-        setupVdp();
+    public static GenesisVdpNew createInstance(BusProvider bus, VdpMemoryInterface memoryInterface,
+                                               VdpDmaHandler dmaHandler, RegionDetector.Region region) {
+        GenesisVdpNew v = new GenesisVdpNew();
+        v.bus = bus;
+        v.memoryInterface = memoryInterface;
+        v.dmaHandler = dmaHandler;
+        v.region = region;
+        v.setupVdp();
+        return v;
     }
 
-    public GenesisVdpNew(BusProvider bus) {
-        this.bus = bus;
-        this.memoryInterface = new GenesisVdpMemoryInterface();
-        this.dmaHandler = VdpDmaHandlerImpl.createInstance(this, memoryInterface, bus);
-        setupVdp();
+    public static GenesisVdpNew createInstance(BusProvider bus, VdpMemoryInterface memoryInterface) {
+        GenesisVdpNew v = new GenesisVdpNew();
+        v.bus = bus;
+        v.memoryInterface = memoryInterface;
+        v.dmaHandler = VdpDmaHandlerImpl.createInstance(v, v.memoryInterface, bus);
+        v.setupVdp();
+        return v;
+    }
+
+    public static GenesisVdpNew createInstance(BusProvider bus) {
+        return createInstance(bus, GenesisVdpMemoryInterface.createInstance());
+    }
+
+    private GenesisVdpNew() {
     }
 
     private void setupVdp() {
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
+        this.initMode();
     }
 
     @Override
@@ -187,11 +202,18 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         writeRegister(22, 0);
         writeRegister(23, 128);
 
+        initMode();
+    }
+
+    //TODO fix this
+    public void initMode() {
         if (region == null) {
-            region = bus.getEmulator().getRegion();
+            region = Optional.ofNullable(bus.getEmulator()).map(GenesisProvider::getRegion).orElse(null);
         }
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
-        resetMode();
+        if (region != null) {
+            resetVideoMode(true);
+        }
     }
 
     private int lastControl = -1;
@@ -678,7 +700,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
                 line = 0;
                 int[][] screenData = renderHandler.renderFrame();
                 bus.getEmulator().renderScreen(screenData);
-                resetMode();
+                resetVideoMode(false);
             }
         }
     }
@@ -710,7 +732,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
                 line = 0;
                 int[][] screenData = renderHandler.renderFrame();
                 bus.getEmulator().renderScreen(screenData);
-                resetMode();
+                resetVideoMode(false);
             }
         }
         if (interruptHandler.isFirstSlot()) {
@@ -726,9 +748,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         return registers[0xA];
     }
 
-    protected void resetMode() {
+    protected void resetVideoMode(boolean force) {
         VideoMode newVideoMode = getVideoMode(region, isH40(), isV30());
-        if (videoMode != newVideoMode) {
+        if (videoMode != newVideoMode || force) {
             this.videoMode = newVideoMode;
             LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
             interruptHandler.setMode(videoMode);

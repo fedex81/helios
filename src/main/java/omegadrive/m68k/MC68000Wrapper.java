@@ -88,7 +88,6 @@ public class MC68000Wrapper implements M68kProvider {
     }
 
     private static AddressSpace getAddressSpace(BusProvider busProvider) {
-        MemoryProvider memoryProvider = busProvider.getMemory();
         return new AddressSpace() {
             @Override
             public void reset() {
@@ -205,6 +204,11 @@ public class MC68000Wrapper implements M68kProvider {
     @Override
     public void initialize() {
         reset();
+    }
+
+
+    public MC68000 getM68k() {
+        return m68k;
     }
 
     @Override

@@ -28,7 +28,7 @@ public class GenesisBusTest {
 
         VdpProvider vdp = VdpProvider.createVdp(bus);
         MC68000Wrapper cpu = new MC68000Wrapper(bus);
-        Z80CoreWrapper z80 = new Z80CoreWrapper(bus);
+        Z80CoreWrapper z80 = Z80CoreWrapper.createInstance(bus);
         //sound attached later
         SoundProvider sound = SoundProvider.NO_SOUND;
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).

@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
  */
 public class GenesisVdpTest {
 
-    VdpMemoryInterface mem = new GenesisVdpMemoryInterface();
+    VdpMemoryInterface mem = GenesisVdpMemoryInterface.createInstance();
 
     int lsb = 0xDD;
     int msb = 0xEE;

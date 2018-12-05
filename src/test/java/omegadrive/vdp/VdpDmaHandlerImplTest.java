@@ -33,7 +33,7 @@ public class VdpDmaHandlerImplTest {
     @Before
     public void setup() {
         BusProvider busProvider = BusProvider.createBus();
-        memoryInterface = new GenesisVdpMemoryInterface();
+        memoryInterface = GenesisVdpMemoryInterface.createInstance();
         dmaHandler = new VdpDmaHandlerImpl();
 
         vdpProvider = new GenesisVdp(busProvider, memoryInterface, dmaHandler);
