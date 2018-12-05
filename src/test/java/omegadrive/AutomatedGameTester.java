@@ -28,9 +28,9 @@ public class AutomatedGameTester {
 
     private static String romFolder =
 //            "/data/emu/roms/genesis/nointro";
-//            "/data/emu/roms/genesis/goodgen/unverified";
+            "/data/emu/roms/genesis/goodgen/unverified";
 //            "/home/fede/roms/issues";
-            "/home/fede/roms/tricky";
+//            "/home/fede/roms/tricky";
     private static String romList = "";
     private static boolean noIntro = true;
     private static String startRom = null;

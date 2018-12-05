@@ -643,8 +643,8 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         return false;
     }
 
-    @Deprecated
-    private void runOld() {
+    //88 pass, vdpfifotest
+    private void runCounter() {
         int hCounterInternal = interruptHandler.increaseHCounter();
         boolean displayEnable = disp;
         hb = interruptHandler.ishBlankSet() ? 1 : 0;
@@ -684,7 +684,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     }
 
     //TODO this breaks VDPFifoTesting
-    private void runNew() {
+    private void runSlot() {
         int hCounterInternal = interruptHandler.gethCounterInternal();
         boolean displayEnable = disp;
         hb = interruptHandler.ishBlankSet() ? 1 : 0;
@@ -758,7 +758,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     @Override
     public void run(int cycles) {
-        runNew();
+        runCounter();
     }
 
     @Override

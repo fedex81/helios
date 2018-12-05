@@ -1,5 +1,6 @@
 package omegadrive.m68k;
 
+import m68k.cpu.Instruction;
 import m68k.cpu.MC68000;
 import m68k.memory.AddressSpace;
 import omegadrive.Genesis;
@@ -59,10 +60,17 @@ public class MC68000Wrapper implements M68kProvider {
             }
 
             @Override
+            public void addInstruction(int opcode, Instruction i) {
+                this.i_table[opcode] = i;
+            }
+
+            @Override
             public void stop() {
                 MC68000Wrapper.this.setStop(true);
             }
         };
+        new MoveEx(m68k).register(m68k);
+        new TasEx(m68k).register(m68k);
         this.addressSpace = getAddressSpace(busProvider);
         m68k.setAddressSpace(addressSpace);
         if (verbose) {
@@ -204,12 +212,8 @@ public class MC68000Wrapper implements M68kProvider {
         int res = 0;
         try {
             printVerbose();
+//            printCpuState("");
             res = m68k.execute();
-            //TODO check SSP vs a7 sync
-//            if(m68k.getSSP() != m68k.getAddrRegisterLong(7)){
-//                LOG.info(str);
-//                m68k.setSSP(m68k.getAddrRegisterLong(7));
-//            }
         } catch (Exception e) {
             verbose = true;
             LOG.error("68k error", e);
