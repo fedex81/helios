@@ -1,8 +1,10 @@
 package omegadrive.save;
 
+import com.google.common.collect.ImmutableMap;
 import m68k.cpu.MC68000;
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
+import omegadrive.input.InputProvider;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.GenesisMemoryProvider;
@@ -22,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 /**
@@ -82,14 +85,32 @@ Z80 State
 0043B : Unknow
 0043C : Z80 BANK (DWORD)*/
 
+    public static Map<String, String> saveStates = ImmutableMap.of(
+            "test01.gs0", "Sonic The Hedgehog (W) (REV00) [!].bin",
+            "test02.gs0", "Sonic The Hedgehog 2 (W) (REV01) [!].bin"
+    );
+
+    static int saveStateTestNumber = 1;
+
     public static void main(String[] args) throws Exception {
-        Path p = Paths.get(".", "test01.gs0");
-        System.out.println(p.toAbsolutePath().toString());
-        byte[] data = Files.readAllBytes(p);
-        load(data);
+        load(saveStates.keySet().toArray()[saveStateTestNumber].toString(),
+                saveStates.values().toArray()[saveStateTestNumber].toString());
     }
 
-    private static void load(byte[] data) throws Exception {
+    private static int[] getData(String key) throws Exception {
+        Path p = Paths.get(".", key);
+        System.out.println(p.toAbsolutePath().toString());
+        byte[] data = Files.readAllBytes(p);
+        int[] dataByte = new int[data.length];
+        for (int i = 0; i < data.length; i++) {
+            dataByte[i] = data[i] & 0xFF;
+        }
+        return dataByte;
+    }
+
+    private static void load(String saveFile, String romFile) throws Exception {
+        int[] data = getData(saveFile);
+        String rom = "/home/fede/roms/" + romFile;
         String fileType = toStringValue(Arrays.copyOfRange(data, 0, 3));
         Assert.assertEquals("GST", fileType);
         System.out.println("File type: " + fileType);
@@ -103,13 +124,12 @@ Z80 State
         Z80CoreWrapper z80w = loadZ80(busProvider, data);
         MC68000Wrapper m68kw = load68k(busProvider, memoryProvider, data);
 
-        String rom = "/home/fede/roms/Sonic The Hedgehog (W) (REV00) [!].bin";
         Genesis genesis = new Genesis(false) {
 
             @Override
             public void init() {
                 joypad = new GenesisJoypad();
-//                inputProvider = InputProvider.createInstance(joypad);
+                inputProvider = InputProvider.createInstance(joypad);
 
                 memory = memoryProvider;
                 bus = busProvider;
@@ -136,7 +156,7 @@ Z80 State
 //-----------  -----  -----------
 //000FA-00112  24     VDP registers
 
-    private static VdpProvider loadVdp(BusProvider busProvider, byte[] data) {
+    private static VdpProvider loadVdp(BusProvider busProvider, int[] data) {
         VdpMemoryInterface memoryInterface = loadVdpMemory(data);
         GenesisVdpNew vdp = GenesisVdpNew.createInstance(busProvider, memoryInterface);
         int vdpRegOffset = 0xFA;
@@ -155,30 +175,33 @@ Z80 State
      * 000D2 : USP
      * 000D6 : SSP
      */
-    private static MC68000Wrapper load68k(BusProvider provider, MemoryProvider memoryProvider, byte[] data) {
+    private static MC68000Wrapper load68k(BusProvider provider, MemoryProvider memoryProvider, int[] data) {
         MC68000Wrapper mc68000Wrapper = new MC68000Wrapper(provider);
         int m68kRamOffset = 0x2478;
         for (int i = 0; i < MemoryProvider.M68K_RAM_SIZE; i++) {
-            memoryProvider.writeRamByte(i, data[i + m68kRamOffset + 1]);
-            memoryProvider.writeRamByte(i + 1, data[i + m68kRamOffset]);
+            memoryProvider.writeRamByte(i, data[i + m68kRamOffset]);
+            memoryProvider.writeRamByte(i + 1, data[i + m68kRamOffset + 1]);
         }
 
         MC68000 m68k = mc68000Wrapper.getM68k();
         int regDOffset = 0x80;
         int regAOffset = 0xA0;
+        m68k.setSR(getUInt32(Arrays.copyOfRange(data, 0xD0, 0xD0 + 2)));
         IntStream.range(0, 8).forEach(i -> m68k.setDataRegisterLong(i,
                 getUInt32(Arrays.copyOfRange(data, regDOffset + i * 4, regDOffset + (1 + i) * 4))));
         IntStream.range(0, 8).forEach(i -> m68k.setAddrRegisterLong(i,
                 getUInt32(Arrays.copyOfRange(data, regAOffset + i * 4, regAOffset + (1 + i) * 4))));
         m68k.setPC(getUInt32(Arrays.copyOfRange(data, 0xC8, 0xC8 + 4)));
-        m68k.setSR(getUInt32(Arrays.copyOfRange(data, 0xD0, 0xD0 + 2)));
-        m68k.setUSP(getUInt32(Arrays.copyOfRange(data, 0xD2, 0xD2 + 2)));
-        m68k.setSSP(getUInt32(Arrays.copyOfRange(data, 0xD6, 0xD6 + 2)));
 
+        int ssp = getUInt32(Arrays.copyOfRange(data, 0xD2, 0xD2 + 2));
+        int usp = getUInt32(Arrays.copyOfRange(data, 0xD6, 0xD6 + 2));
+        //TODO
+        Assert.assertFalse(ssp > 0);
+        Assert.assertFalse(usp > 0);
         return mc68000Wrapper;
     }
 
-    private static int getUInt32(byte... bytes) {
+    private static int getUInt32(int... bytes) {
         int value = (bytes[0] & 0xFF) << 0;
         value = bytes.length > 1 ? value | ((bytes[1] & 0xFF) << 8) : value;
         value = bytes.length > 2 ? value | ((bytes[2] & 0xFF) << 16) : value;
@@ -186,7 +209,7 @@ Z80 State
         return value;
     }
 
-    private static String toStringValue(byte[] data) {
+    private static String toStringValue(int[] data) {
         String value = "";
         for (int i = 0; i < data.length; i++) {
             value += (char) (data[i] & 0xFF);
@@ -194,20 +217,25 @@ Z80 State
         return value;
     }
 
-    private static Z80CoreWrapper loadZ80(BusProvider provider, byte[] data) {
+    private static Z80CoreWrapper loadZ80(BusProvider provider, int[] data) {
         Z80State z80State = loadZ80State(data);
         Z80Memory memory = new Z80Memory(provider);
         int z80RamOffset = 0x474;
         IntStream.range(0, Z80Memory.MEMORY_SIZE).forEach(i -> memory.writeByte(i, data[i + z80RamOffset]));
         Z80CoreWrapper coreWrapper = Z80CoreWrapper.createInstance(memory, z80State);
+        memory.setZ80Provider(coreWrapper);
         coreWrapper.initialize();
-        boolean isReset = data[0x438] > 0;
+        boolean isReset = data[0x438] == 0;
         boolean isBusReq = data[0x439] > 0;
 
         if (isBusReq) {
             coreWrapper.requestBus();
+        } else {
+            coreWrapper.unrequestBus();
         }
-        if (!isReset) {
+        if (isReset) {
+            coreWrapper.reset();
+        } else {
             coreWrapper.disableReset();
         }
         int z80BankInt = getUInt32(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
@@ -215,7 +243,7 @@ Z80 State
         return coreWrapper;
     }
 
-    private static Z80State loadZ80State(byte[] data) {
+    private static Z80State loadZ80State(int[] data) {
         Z80State z80State = new Z80State();
         z80State.setRegAF(getUInt32(data[0x404], data[0x405]));
         z80State.setRegBC(getUInt32(data[0x408], data[0x409]));
@@ -229,13 +257,14 @@ Z80 State
         z80State.setRegBCx(getUInt32(data[0x428], data[0x428]));
         z80State.setRegDEx(getUInt32(data[0x42C], data[0x42D]));
         z80State.setRegHLx(getUInt32(data[0x430], data[0x431]));
-        z80State.setIM(data[0x434] == 0 ? Z80.IntMode.IM0 : Z80.IntMode.IM1);
-        z80State.setIFF1(data[0x436] > 0);
-        z80State.setIFF2(data[0x436] > 0);
+        z80State.setIM(Z80.IntMode.IM1);
+        boolean iffN = data[0x436] > 0;
+        z80State.setIFF1(iffN);
+        z80State.setIFF2(iffN);
         return z80State;
     }
 
-    private static GenesisVdpMemoryInterface loadVdpMemory(byte[] data) {
+    private static GenesisVdpMemoryInterface loadVdpMemory(int[] data) {
         int[] vram = new int[VdpProvider.VDP_VRAM_SIZE];
         int[] cram = new int[VdpProvider.VDP_CRAM_SIZE];
         int[] vsram = new int[VdpProvider.VDP_VSRAM_SIZE];
@@ -244,11 +273,18 @@ Z80 State
         int vramOffset = 0x12478;
         int vsramOffset = 0x192;
 
-        IntStream.range(0, cram.length).forEach(i -> cram[i] = data[i + cramOffset]);
-        IntStream.range(0, vsram.length).forEach(i -> vsram[i] = data[i + vsramOffset]);
         for (int i = 0; i < vram.length; i += 2) {
-            vram[i] = data[i + vramOffset + 1];
-            vram[i + 1] = data[i + vramOffset];
+            vram[i] = data[i + vramOffset];
+            vram[i + 1] = data[i + vramOffset + 1];
+        }
+        for (int i = 0; i < cram.length; i += 2) {
+            cram[i] = data[i + cramOffset + 1];
+            cram[i + 1] = data[i + cramOffset];
+        }
+
+        for (int i = 0; i < vsram.length; i += 2) {
+            vsram[i] = data[i + vsramOffset];
+            vsram[i + 1] = data[i + vsramOffset + 1];
         }
         return GenesisVdpMemoryInterface.createInstance(vram, cram, vsram);
     }

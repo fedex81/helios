@@ -293,7 +293,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     @Override
     public void updateRegisterData(int reg, int data) {
-        registers[reg] = data;
+        writeRegister(reg, data);
     }
 
     @Override
