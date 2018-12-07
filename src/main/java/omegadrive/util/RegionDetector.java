@@ -45,8 +45,8 @@ public class RegionDetector {
 
         Region res = optRegion.orElse(null);
         if (!optRegion.isPresent()) {
-            LOG.warn("Unable to find a region, defaulting to EUROPE");
-            res = Region.EUROPE;
+            LOG.warn("Unable to find a region, defaulting to USA");
+            res = Region.USA;
         }
 
         if (verbose) {
@@ -75,8 +75,8 @@ public class RegionDetector {
     // TMSS = REGION_CODE + 1
     public enum Region {
         JAPAN('J', 2, 0x00, NTSC_FPS),
-        USA('U', 1, 0xA0, NTSC_FPS),
-        EUROPE('E', 0, 0xC0, PAL_FPS);
+        USA('U', 0, 0xA0, NTSC_FPS),
+        EUROPE('E', 1, 0xC0, PAL_FPS);
 
         private static EnumSet<Region> values = EnumSet.allOf(Region.class);
 
