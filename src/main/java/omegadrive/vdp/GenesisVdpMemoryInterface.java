@@ -109,7 +109,8 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     //    Even though there are 40 words of VSRAM, the address register will wrap
 //    when it passes 7Fh. Writes to the addresses beyond 50h are ignored.
-    private void writeVsramByte(int address, int data) {
+    @Override
+    public void writeVsramByte(int address, int data) {
         address &= 0x7F;
         if (address < VdpProvider.VDP_VSRAM_SIZE) {
             vsram[address] = data & 0xFF;
@@ -120,7 +121,8 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     }
 
     //    The address register wraps past address 7Fh.
-    private void writeCramByte(int address, int data) {
+    @Override
+    public void writeCramByte(int address, int data) {
         address &= (VdpProvider.VDP_CRAM_SIZE - 1);
         cram[address] = data & 0xFF;
     }

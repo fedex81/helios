@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.IVdpFifo;
+import omegadrive.vdp.model.VdpMemoryInterface;
 
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -217,6 +218,8 @@ public interface VdpProvider {
     VideoMode getVideoMode();
 
     IVdpFifo getFifo();
+
+    VdpMemoryInterface getVdpMemory();
 
     default int getRegisterData(VdpRegisterName registerName) {
         return getRegisterData(registerName.ordinal());

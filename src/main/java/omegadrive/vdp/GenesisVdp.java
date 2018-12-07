@@ -299,6 +299,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         return fifo;
     }
 
+    @Override
+    public VdpMemoryInterface getVdpMemory() {
+        return this.memoryInterface;
+    }
+
     private VideoMode getVideoMode(RegionDetector.Region region, boolean isH40, boolean isV30) {
         return VideoMode.getVideoMode(region, isH40, isV30, videoMode);
     }

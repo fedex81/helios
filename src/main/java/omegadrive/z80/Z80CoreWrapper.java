@@ -229,6 +229,16 @@ public class Z80CoreWrapper implements Z80Provider {
         LogHelper.printLevel(LOG, Level.DEBUG, "Write Z80: {}, {}: {}", address, data, size, verbose);
     }
 
+    @Override
+    public Z80Memory getZ80Memory() {
+        return this.memory;
+    }
+
+    @Override
+    public void loadZ80State(Z80State z80State) {
+        this.z80Core.setZ80State(z80State);
+    }
+
     /**
      * Z80 for genesis doesnt do IO
      *

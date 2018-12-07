@@ -180,6 +180,14 @@ public class Util {
         return 31 - Integer.numberOfLeadingZeros(n);
     }
 
+    public static int getUInt32(int... bytes) {
+        int value = (bytes[0] & 0xFF) << 0;
+        value = bytes.length > 1 ? value | ((bytes[1] & 0xFF) << 8) : value;
+        value = bytes.length > 2 ? value | ((bytes[2] & 0xFF) << 16) : value;
+        value = bytes.length > 3 ? value | ((bytes[3] & 0xFF) << 24) : value;
+        return value;
+    }
+
     public static List<Range<Integer>> getRangeList(int... values) {
         List<Range<Integer>> list = new ArrayList<>();
         for (int i = 0; i < values.length; i += 2) {

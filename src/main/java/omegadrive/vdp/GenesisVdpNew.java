@@ -792,4 +792,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     public VdpFifo getFifo() {
         return fifo;
     }
+
+    @Override
+    public VdpMemoryInterface getVdpMemory() {
+        return memoryInterface;
+    }
 }
