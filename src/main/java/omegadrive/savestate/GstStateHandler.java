@@ -5,13 +5,15 @@ import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.Size;
-import omegadrive.vdp.GenesisVdpNew;
+import omegadrive.util.Util;
 import omegadrive.vdp.VdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.z80.Z80Memory;
 import omegadrive.z80.Z80Provider;
 import omegadrive.z80.jsanchezv.Z80;
 import omegadrive.z80.jsanchezv.Z80State;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -27,72 +29,106 @@ import static omegadrive.util.Util.getUInt32;
  */
 public class GstStateHandler implements GenesisStateHandler {
 
+    private static Logger LOG = LogManager.getLogger(GstStateHandler.class.getSimpleName());
+
+    private static int FM_REG_OFFSET = 0x1E4;
+    private static int FM_DATA_SIZE = 0x200;
+    private static int VDP_REG_OFFSET = 0xFA;
+    private static int CRAM_DATA_OFFSET = 0x112;
+    private static int VRAM_DATA_OFFSET = 0x12478;
+    private static int VSRAM_DATA_OFFSET = 0x192;
+    private static int Z80_RAM_DATA_OFFSET = 0x474;
+    private static int M68K_RAM_DATA_OFFSET = 0x2478;
+    private static int M68K_REGD_OFFSET = 0x80;
+    private static int M68K_REGA_OFFSET = 0xA0;
+
+    private static String MAGIC_WORD = "GST";
+
+    private int[] data;
+    private int version;
+    private int softwareId;
+    private String fileName;
+
+    private GstStateHandler() {
+    }
+
+    public static GenesisStateHandler createInstance(String fileName, int[] stateData) {
+        GstStateHandler h = new GstStateHandler();
+        h.data = stateData;
+        h.fileName = fileName;
+        GenesisStateHandler res = h.detectStateFileType();
+        return res;
+    }
+
+    private GenesisStateHandler detectStateFileType() {
+        String fileType = Util.toStringValue(data[0], data[1], data[2]);
+        if (!MAGIC_WORD.equalsIgnoreCase(fileType)) {
+            LOG.error("Unable to load save state of type: " + MAGIC_WORD);
+            return GenesisStateHandler.EMPTY_STATE;
+        }
+        version = data[0x50];
+        softwareId = data[0x51];
+        LOG.info("Savestate version: {}, softwareId: {}", version, softwareId);
+        return this;
+    }
+
     @Override
-    public void loadFmState(FmProvider fm, int[] stateData) {
+    public String getFileName() {
+        return fileName;
+    }
+
+    @Override
+    public void loadFmState(FmProvider fm) {
         int i;
-        int ymRegOffset = 0x1E4;
         fm.reset();
-        int ymDataSize = 0x200;
-        int limit = ymDataSize / 2;
+        int limit = FM_DATA_SIZE / 2;
 
         for (i = 0; i < limit; i++) {
             int address = i;
-            fm.write0(address, stateData[ymRegOffset + i]);
-            fm.write1(address, stateData[ymRegOffset + limit + i]);
+            fm.write0(address, data[FM_REG_OFFSET + i]);
+            fm.write1(address, data[FM_REG_OFFSET + limit + i]);
         }
     }
 
     @Override
-    public void loadVdpState(VdpProvider vdp, int[] data) {
-        loadVdpMemory(vdp.getVdpMemory(), data);
-        int vdpRegOffset = 0xFA;
-        IntStream.range(0, 24).forEach(i -> vdp.updateRegisterData(i, data[i + vdpRegOffset] & 0xFF));
-        ((GenesisVdpNew) vdp).initMode();
+    public void loadVdpState(VdpProvider vdp) {
+        loadVdpMemory(vdp.getVdpMemory());
+        IntStream.range(0, 24).forEach(i -> vdp.updateRegisterData(i, data[i + VDP_REG_OFFSET] & 0xFF));
     }
 
-    private void loadVdpMemory(VdpMemoryInterface vdpMemoryInterface, int[] data) {
-        int[] vram = new int[VdpProvider.VDP_VRAM_SIZE];
-        int[] cram = new int[VdpProvider.VDP_CRAM_SIZE];
-        int[] vsram = new int[VdpProvider.VDP_VSRAM_SIZE];
-
-        int cramOffset = 0x112;
-        int vramOffset = 0x12478;
-        int vsramOffset = 0x192;
-
-        for (int i = 0; i < vram.length; i += 2) {
-            vdpMemoryInterface.writeVramByte(i, data[i + vramOffset]);
-            vdpMemoryInterface.writeVramByte(i + 1, data[i + vramOffset + 1]);
+    private void loadVdpMemory(VdpMemoryInterface vdpMemoryInterface) {
+        for (int i = 0; i < VdpProvider.VDP_VRAM_SIZE; i += 2) {
+            vdpMemoryInterface.writeVramByte(i, data[i + VRAM_DATA_OFFSET]);
+            vdpMemoryInterface.writeVramByte(i + 1, data[i + VRAM_DATA_OFFSET + 1]);
         }
-        for (int i = 0; i < cram.length; i += 2) {
-            vdpMemoryInterface.writeCramByte(i, data[i + cramOffset + 1]);
-            vdpMemoryInterface.writeCramByte(i + 1, data[i + cramOffset]);
+        for (int i = 0; i < VdpProvider.VDP_CRAM_SIZE; i += 2) {
+            vdpMemoryInterface.writeCramByte(i, data[i + CRAM_DATA_OFFSET + 1]);
+            vdpMemoryInterface.writeCramByte(i + 1, data[i + CRAM_DATA_OFFSET]);
         }
 
-        for (int i = 0; i < vsram.length; i += 2) {
-            vdpMemoryInterface.writeVsramByte(i, data[i + vsramOffset]);
-            vdpMemoryInterface.writeVsramByte(i + 1, data[i + vsramOffset + 1]);
+        for (int i = 0; i < VdpProvider.VDP_VSRAM_SIZE; i += 2) {
+            vdpMemoryInterface.writeVsramByte(i, data[i + VSRAM_DATA_OFFSET]);
+            vdpMemoryInterface.writeVsramByte(i + 1, data[i + VSRAM_DATA_OFFSET + 1]);
         }
     }
 
     @Override
-    public void loadZ80(Z80Provider z80, int[] data) {
+    public void loadZ80(Z80Provider z80) {
         Z80State z80State = loadZ80State(data);
 
-        int z80RamOffset = 0x474;
         IntStream.range(0, Z80Memory.MEMORY_SIZE).forEach(
-                i -> z80.writeMemory(i, data[i + z80RamOffset], Size.BYTE));
-        boolean isReset = data[0x438] == 0;
-        boolean isBusReq = data[0x439] > 0;
+                i -> z80.writeMemory(i, data[i + Z80_RAM_DATA_OFFSET], Size.BYTE));
+        z80.unrequestBus();
+        z80.disableReset();
 
+        boolean isReset = data[0x438] > 0;
+        boolean isBusReq = data[0x439] > 0;
         if (isBusReq) {
             z80.requestBus();
-        } else {
-            z80.unrequestBus();
         }
         if (isReset) {
-            z80.reset();
-        } else {
-            z80.disableReset();
+            LOG.warn("Z80 should be reset, not doing it!");
+//            z80.reset();
         }
         int z80BankInt = getUInt32(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
         z80.getZ80Memory().setRomBank68kSerial(z80BankInt);
@@ -123,28 +159,28 @@ public class GstStateHandler implements GenesisStateHandler {
 
     //TODO should use M68kProvider
     @Override
-    public void load68k(MC68000Wrapper m68kProvider, MemoryProvider memoryProvider, int[] data) {
-        int m68kRamOffset = 0x2478;
-        for (int i = 0; i < MemoryProvider.M68K_RAM_SIZE; i++) {
-            memoryProvider.writeRamByte(i, data[i + m68kRamOffset]);
-            memoryProvider.writeRamByte(i + 1, data[i + m68kRamOffset + 1]);
+    public void load68k(MC68000Wrapper m68kProvider, MemoryProvider memoryProvider) {
+        for (int i = 0; i < MemoryProvider.M68K_RAM_SIZE; i += 2) {
+            memoryProvider.writeRamByte(i, data[i + M68K_RAM_DATA_OFFSET]);
+            memoryProvider.writeRamByte(i + 1, data[i + M68K_RAM_DATA_OFFSET + 1]);
         }
 
         MC68000 m68k = m68kProvider.getM68k();
-        int regDOffset = 0x80;
-        int regAOffset = 0xA0;
         m68k.setSR(getUInt32(Arrays.copyOfRange(data, 0xD0, 0xD0 + 2)));
         IntStream.range(0, 8).forEach(i -> m68k.setDataRegisterLong(i,
-                getUInt32(Arrays.copyOfRange(data, regDOffset + i * 4, regDOffset + (1 + i) * 4))));
+                getUInt32(Arrays.copyOfRange(data, M68K_REGD_OFFSET + i * 4, M68K_REGD_OFFSET + (1 + i) * 4))));
         IntStream.range(0, 8).forEach(i -> m68k.setAddrRegisterLong(i,
-                getUInt32(Arrays.copyOfRange(data, regAOffset + i * 4, regAOffset + (1 + i) * 4))));
+                getUInt32(Arrays.copyOfRange(data, M68K_REGA_OFFSET + i * 4, M68K_REGA_OFFSET + (1 + i) * 4))));
         m68k.setPC(getUInt32(Arrays.copyOfRange(data, 0xC8, 0xC8 + 4)));
 
         int ssp = getUInt32(Arrays.copyOfRange(data, 0xD2, 0xD2 + 2));
         int usp = getUInt32(Arrays.copyOfRange(data, 0xD6, 0xD6 + 2));
-        //TODO
-//        Assert.assertFalse(ssp > 0);
-//        Assert.assertFalse(usp > 0);
+        if (usp > 0) {
+            LOG.warn("USP is not 0: " + usp);
+        }
+        if (ssp > 0) {
+            LOG.warn("SSP is not 0: " + ssp);
+        }
     }
 
     /*

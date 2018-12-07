@@ -188,6 +188,14 @@ public class Util {
         return value;
     }
 
+    public static String toStringValue(int... data) {
+        String value = "";
+        for (int i = 0; i < data.length; i++) {
+            value += (char) (data[i] & 0xFF);
+        }
+        return value;
+    }
+
     public static List<Range<Integer>> getRangeList(int... values) {
         List<Range<Integer>> list = new ArrayList<>();
         for (int i = 0; i < values.length; i += 2) {

@@ -63,6 +63,32 @@ public class EmuFrame implements GenesisWindow {
     private JCheckBoxMenuItem fullScreenItem;
     private boolean showDebug = false;
 
+    private static FileFilter ROM_FILTER = new FileFilter() {
+        @Override
+        public String getDescription() {
+            return "md and bin files";
+        }
+
+        @Override
+        public boolean accept(File f) {
+            String name = f.getName().toLowerCase();
+            return f.isDirectory() || name.endsWith(".md") || name.endsWith(".bin");
+        }
+    };
+
+    private static FileFilter SAVE_STATE_FILTER = new FileFilter() {
+        @Override
+        public String getDescription() {
+            return "state files";
+        }
+
+        @Override
+        public boolean accept(File f) {
+            String name = f.getName().toLowerCase();
+            return f.isDirectory() || name.contains(".gs");
+        }
+    };
+
     public void setTitle(String title) {
         jFrame.setTitle(FRAME_TITLE_HEAD + " - " + title);
     }
@@ -145,6 +171,12 @@ public class EmuFrame implements GenesisWindow {
         loadRomItem.addActionListener(e -> handleNewGame());
         JMenuItem closeRomItem = new JMenuItem("Close ROM");
         closeRomItem.addActionListener(e -> mainEmu.handleCloseGame());
+        JMenuItem loadStateItem = new JMenuItem("Load State");
+        loadStateItem.addActionListener(e -> handleLoadState());
+
+        JMenuItem saveStateItem = new JMenuItem("Save State");
+        loadStateItem.addActionListener(e -> handleSaveState());
+
         JMenuItem exitItem = new JMenuItem("Exit");
         exitItem.addActionListener(e -> {
             mainEmu.handleCloseApp();
@@ -174,6 +206,8 @@ public class EmuFrame implements GenesisWindow {
 
         menu.add(loadRomItem);
         menu.add(closeRomItem);
+        menu.add(loadStateItem);
+        menu.add(saveStateItem);
         menu.add(exitItem);
         helpMenu.add(aboutItem);
         helpMenu.add(readmeItem);
@@ -337,26 +371,35 @@ public class EmuFrame implements GenesisWindow {
         };
     }
 
-    private Optional<File> loadRomDialog(Component parent) {
+    private Optional<File> loadFileDialog(Component parent, FileFilter filter) {
         Optional<File> res = Optional.empty();
         JFileChooser fileChooser = new JFileChooser(FileLoader.basePath);
-        fileChooser.setFileFilter(new FileFilter() {
-            @Override
-            public String getDescription() {
-                return "md and bin files";
-            }
-
-            @Override
-            public boolean accept(File f) {
-                String name = f.getName().toLowerCase();
-                return f.isDirectory() || name.endsWith(".md") || name.endsWith(".bin");
-            }
-        });
+        fileChooser.setFileFilter(filter);
         int result = fileChooser.showOpenDialog(parent);
         if (result == JFileChooser.APPROVE_OPTION) {
             res = Optional.ofNullable(fileChooser.getSelectedFile());
         }
         return res;
+    }
+
+    private Optional<File> loadRomDialog(Component parent) {
+        return loadFileDialog(parent, ROM_FILTER);
+    }
+
+    private Optional<File> loadStateFileDialog(Component parent) {
+        return loadFileDialog(parent, SAVE_STATE_FILTER);
+    }
+
+    private void handleLoadState() {
+        Optional<File> optFile = loadStateFileDialog(jFrame);
+        if (optFile.isPresent()) {
+            Path file = optFile.get().toPath();
+            mainEmu.handleLoadState(file);
+        }
+    }
+
+    private void handleSaveState() {
+
     }
 
     private void handleNewGame() {

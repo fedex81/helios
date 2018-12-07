@@ -9,6 +9,8 @@ import omegadrive.m68k.M68kProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.GenesisMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.savestate.GenesisStateHandler;
+import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.ui.EmuFrame;
@@ -68,6 +70,8 @@ public class Genesis implements GenesisProvider {
     public static boolean showFps = false;
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
+    private volatile boolean saveStateFlag = false;
+    private volatile GenesisStateHandler stateHandler = GenesisStateHandler.EMPTY_STATE;
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
 
     private static NumberFormat df = DecimalFormat.getInstance();
@@ -189,13 +193,27 @@ public class Genesis implements GenesisProvider {
 
     public void handleCloseGame() {
         handleCloseGameInternal();
-
     }
 
     @Override
     public void handleCloseApp() {
         handleCloseGame();
         sound.close();
+    }
+
+    @Override
+    public void handleLoadState(Path file) {
+        int[] data = FileLoader.readFileSafe(file);
+        loadStateInternal(file.getFileName().toString(), data);
+    }
+
+    private void loadStateInternal(String fileName, int[] data) {
+        stateHandler = GstStateHandler.createInstance(fileName, data);
+        if (stateHandler == GenesisStateHandler.EMPTY_STATE) {
+            return;
+        }
+        LOG.info("Save state detected: " + fileName);
+        this.saveStateFlag = true;
     }
 
     private void handleCloseGameInternal() {
@@ -353,6 +371,8 @@ public class Genesis implements GenesisProvider {
                         break;
                     }
                     sound.output(0);
+
+                    processSaveState();
                     pauseAndWait();
                     lastRender = now;
 
@@ -363,6 +383,19 @@ public class Genesis implements GenesisProvider {
                 LOG.error("Error main cycle", e);
                 break;
             }
+        }
+    }
+
+    private void processSaveState() {
+        if (saveStateFlag) {
+            stateHandler.loadFmState(sound.getFm());
+            stateHandler.loadVdpState(vdp);
+            stateHandler.loadZ80(z80);
+            stateHandler.load68k((MC68000Wrapper) cpu, bus.getMemory());
+            bus.reset();
+            LOG.info("Save state loaded: " + stateHandler.getFileName());
+            stateHandler = GenesisStateHandler.EMPTY_STATE;
+            saveStateFlag = false;
         }
     }
 
@@ -486,11 +519,7 @@ public class Genesis implements GenesisProvider {
                 break;
             case KeyEvent.VK_P:
                 if (!pressed) {
-                    boolean isPausing = pauseFlag;
-                    pauseFlag = !pauseFlag;
-                    if (isPausing) {
-                        Util.waitOnBarrier(pauseBarrier);
-                    }
+                    handlePause();
                 }
                 break;
             case KeyEvent.VK_ESCAPE:
@@ -498,6 +527,14 @@ public class Genesis implements GenesisProvider {
                     handleCloseGame();
                 }
                 break;
+        }
+    }
+
+    private void handlePause() {
+        boolean isPausing = pauseFlag;
+        pauseFlag = !pauseFlag;
+        if (isPausing) {
+            Util.waitOnBarrier(pauseBarrier);
         }
     }
 

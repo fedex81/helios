@@ -82,6 +82,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         LOG.info(cartridgeInfoProvider.toString());
         detectState();
         LOG.info("Bus state: " + busState);
+        stop68k = false;
     }
 
     @Override

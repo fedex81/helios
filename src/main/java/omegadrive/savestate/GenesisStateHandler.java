@@ -17,33 +17,40 @@ public interface GenesisStateHandler {
 
     GenesisStateHandler EMPTY_STATE = new GenesisStateHandler() {
         @Override
-        public void loadFmState(FmProvider fm, int[] stateData) {
+        public String getFileName() {
+            return null;
+        }
+
+        @Override
+        public void loadFmState(FmProvider fm) {
 
         }
 
         @Override
-        public void loadVdpState(VdpProvider vdp, int[] data) {
+        public void loadVdpState(VdpProvider vdp) {
 
         }
 
         @Override
-        public void loadZ80(Z80Provider z80, int[] data) {
+        public void loadZ80(Z80Provider z80) {
 
         }
 
         @Override
-        public void load68k(MC68000Wrapper m68kProvider, MemoryProvider memoryProvider, int[] data) {
+        public void load68k(MC68000Wrapper m68kProvider, MemoryProvider memoryProvider) {
 
         }
 
     };
 
-    void loadFmState(FmProvider fm, int[] stateData);
+    String getFileName();
 
-    void loadVdpState(VdpProvider vdp, int[] data);
+    void loadFmState(FmProvider fm);
 
-    void loadZ80(Z80Provider z80, int[] data);
+    void loadVdpState(VdpProvider vdp);
 
-    void load68k(MC68000Wrapper m68kProvider, MemoryProvider memoryProvider, int[] data);
+    void loadZ80(Z80Provider z80);
+
+    void load68k(MC68000Wrapper m68kProvider, MemoryProvider memoryProvider);
 
 }

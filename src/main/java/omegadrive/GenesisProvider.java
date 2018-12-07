@@ -30,6 +30,8 @@ public interface GenesisProvider {
 
     void handleCloseApp();
 
+    void handleLoadState(Path file);
+
     boolean isGameRunning();
 
     boolean isSoundWorking();
