@@ -1,5 +1,7 @@
-package omegadrive;
+package omegadrive.automated;
 
+import omegadrive.Genesis;
+import omegadrive.GenesisProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.FileLoader;
