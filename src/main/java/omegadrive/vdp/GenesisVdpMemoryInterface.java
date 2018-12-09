@@ -131,7 +131,8 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         return readVramByte(address) << 8 | readVramByte(address + 1);
     }
 
-    private int readCramByte(int address) {
+    @Override
+    public int readCramByte(int address) {
         address &= (VdpProvider.VDP_CRAM_SIZE - 1);
         return cram[address];
     }
@@ -140,7 +141,8 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         return readCramByte(address) << 8 | readCramByte(address + 1);
     }
 
-    private int readVsramByte(int address) {
+    @Override
+    public int readVsramByte(int address) {
         address &= 0x7F;
         if (address >= VdpProvider.VDP_VSRAM_SIZE) {
             address = 0;

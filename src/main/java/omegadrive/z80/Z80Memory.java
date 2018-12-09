@@ -202,4 +202,8 @@ public class Z80Memory implements IMemory {
     public void setRomBank68kSerial(int romBank68kSerial) {
         this.romBank68kSerial = romBank68kSerial;
     }
+
+    public int getRomBank68kSerial() {
+        return romBank68kSerial;
+    }
 }

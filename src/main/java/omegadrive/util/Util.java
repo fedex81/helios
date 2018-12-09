@@ -188,6 +188,13 @@ public class Util {
         return value;
     }
 
+    public static void setUInt32(int value, int[] data, int startIndex) {
+        data[startIndex + 3] = (value >> 24) & 0xFF;
+        data[startIndex + 2] = (value >> 16) & 0xFF;
+        data[startIndex + 1] = (value >> 8) & 0xFF;
+        data[startIndex] = (value) & 0xFF;
+    }
+
     public static String toStringValue(int... data) {
         String value = "";
         for (int i = 0; i < data.length; i++) {

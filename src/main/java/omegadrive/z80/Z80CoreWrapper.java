@@ -239,6 +239,11 @@ public class Z80CoreWrapper implements Z80Provider {
         this.z80Core.setZ80State(z80State);
     }
 
+    @Override
+    public Z80State getZ80State() {
+        return z80Core.getZ80State();
+    }
+
     /**
      * Z80 for genesis doesnt do IO
      *

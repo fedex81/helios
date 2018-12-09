@@ -41,4 +41,6 @@ public interface Z80Provider {
     Z80Memory getZ80Memory();
 
     void loadZ80State(Z80State z80State);
+
+    Z80State getZ80State();
 }

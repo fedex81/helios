@@ -49,4 +49,6 @@ public interface GenesisProvider {
     void setDebug(boolean value);
 
     String getRomName();
+
+    void handleSaveState();
 }

@@ -17,8 +17,18 @@ public interface GenesisStateHandler {
 
     GenesisStateHandler EMPTY_STATE = new GenesisStateHandler() {
         @Override
+        public Type getType() {
+            return null;
+        }
+
+        @Override
         public String getFileName() {
             return null;
+        }
+
+        @Override
+        public int[] getData() {
+            return new int[0];
         }
 
         @Override
@@ -41,9 +51,35 @@ public interface GenesisStateHandler {
 
         }
 
+        @Override
+        public void saveFm(FmProvider fm) {
+
+        }
+
+        @Override
+        public void saveVdp(VdpProvider vdp) {
+
+        }
+
+        @Override
+        public void saveZ80(Z80Provider z80) {
+
+        }
+
+        @Override
+        public void save68k(MC68000Wrapper mc68000Wrapper, MemoryProvider memoryProvider) {
+
+        }
+
     };
 
+    enum Type {SAVE, LOAD}
+
+    Type getType();
+
     String getFileName();
+
+    int[] getData();
 
     void loadFmState(FmProvider fm);
 
@@ -52,5 +88,13 @@ public interface GenesisStateHandler {
     void loadZ80(Z80Provider z80);
 
     void load68k(MC68000Wrapper m68kProvider, MemoryProvider memoryProvider);
+
+    void saveFm(FmProvider fm);
+
+    void saveVdp(VdpProvider vdp);
+
+    void saveZ80(Z80Provider z80);
+
+    void save68k(MC68000Wrapper mc68000Wrapper, MemoryProvider memoryProvider);
 
 }

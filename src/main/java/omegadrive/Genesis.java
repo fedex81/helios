@@ -32,7 +32,9 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.FileReader;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -204,16 +206,54 @@ public class Genesis implements GenesisProvider {
     @Override
     public void handleLoadState(Path file) {
         int[] data = FileLoader.readFileSafe(file);
-        loadStateInternal(file.getFileName().toString(), data);
+        saveStateAction(file.getFileName().toString(), true, data);
     }
 
-    private void loadStateInternal(String fileName, int[] data) {
-        stateHandler = GstStateHandler.createInstance(fileName, data);
+    @Override
+    public void handleSaveState() {
+        try {
+            Path p = Files.createTempFile("save_", ".gs0");
+            String fileName = p.toAbsolutePath().toString();
+            saveStateAction(fileName, false, null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveStateAction(String fileName, boolean load, int[] data) {
+        stateHandler = load ? GstStateHandler.createLoadInstance(fileName, data) : GstStateHandler.createSaveInstance(fileName);
         if (stateHandler == GenesisStateHandler.EMPTY_STATE) {
             return;
         }
-        LOG.info("Save state detected: " + fileName);
+        LOG.info("Save state action detected: {}, using file: ", stateHandler.getType(), fileName);
         this.saveStateFlag = true;
+    }
+
+    private void processSaveState() {
+        if (saveStateFlag) {
+            if (stateHandler.getType() == GenesisStateHandler.Type.LOAD) {
+                stateHandler.loadFmState(sound.getFm());
+                stateHandler.loadVdpState(vdp);
+                stateHandler.loadZ80(z80);
+                stateHandler.load68k((MC68000Wrapper) cpu, bus.getMemory());
+                bus.reset();
+                LOG.info("Savestate loaded from: " + stateHandler.getFileName());
+            } else {
+                stateHandler.saveFm(sound.getFm());
+                stateHandler.saveZ80(z80);
+                stateHandler.save68k((MC68000Wrapper) cpu, bus.getMemory());
+                stateHandler.saveVdp(vdp);
+                int[] data = stateHandler.getData();
+                try {
+                    FileLoader.writeFile(Paths.get(stateHandler.getFileName()), data);
+                    LOG.info("Savestate persisted to: " + stateHandler.getFileName());
+                } catch (IOException e) {
+                    LOG.error("Unable to write to file: " + stateHandler.getFileName(), e);
+                }
+            }
+            stateHandler = GenesisStateHandler.EMPTY_STATE;
+            saveStateFlag = false;
+        }
     }
 
     private void handleCloseGameInternal() {
@@ -383,19 +423,6 @@ public class Genesis implements GenesisProvider {
                 LOG.error("Error main cycle", e);
                 break;
             }
-        }
-    }
-
-    private void processSaveState() {
-        if (saveStateFlag) {
-            stateHandler.loadFmState(sound.getFm());
-            stateHandler.loadVdpState(vdp);
-            stateHandler.loadZ80(z80);
-            stateHandler.load68k((MC68000Wrapper) cpu, bus.getMemory());
-            bus.reset();
-            LOG.info("Save state loaded: " + stateHandler.getFileName());
-            stateHandler = GenesisStateHandler.EMPTY_STATE;
-            saveStateFlag = false;
         }
     }
 

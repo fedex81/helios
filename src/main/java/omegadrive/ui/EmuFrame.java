@@ -175,7 +175,7 @@ public class EmuFrame implements GenesisWindow {
         loadStateItem.addActionListener(e -> handleLoadState());
 
         JMenuItem saveStateItem = new JMenuItem("Save State");
-        loadStateItem.addActionListener(e -> handleSaveState());
+        saveStateItem.addActionListener(e -> handleSaveState());
 
         JMenuItem exitItem = new JMenuItem("Exit");
         exitItem.addActionListener(e -> {
@@ -399,7 +399,7 @@ public class EmuFrame implements GenesisWindow {
     }
 
     private void handleSaveState() {
-
+        mainEmu.handleSaveState();
     }
 
     private void handleNewGame() {

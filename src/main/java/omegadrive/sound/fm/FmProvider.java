@@ -29,6 +29,8 @@ public interface FmProvider {
 
     void write1(int addr, int data);
 
+    int readRegister(int type, int regNumber);
+
     void update(int[] buf_lr, int offset, int end);
 
     default void output(int[] buf_lr) {
@@ -56,6 +58,11 @@ public interface FmProvider {
         @Override
         public void write1(int addr, int data) {
 
+        }
+
+        @Override
+        public int readRegister(int type, int regNumber) {
+            return 0;
         }
 
         @Override

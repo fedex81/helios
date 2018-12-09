@@ -24,6 +24,10 @@ public interface VdpMemoryInterface {
 
     int readVramByte(int address);
 
+    int readCramByte(int address);
+
+    int readVsramByte(int address);
+
     void writeVideoRamWord(VdpProvider.VdpRamType vramType, int data, int address);
 
     int readVideoRamWord(VdpProvider.VdpRamType vramType, int address);
