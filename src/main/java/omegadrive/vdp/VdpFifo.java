@@ -35,7 +35,7 @@ public class VdpFifo implements IVdpFifo {
     boolean logEnable = false;
 
     @Override
-    public void push(GenesisVdp.VdpRamType vdpRamType, int addressReg, int data) {
+    public void push(VdpProvider.VramMode vdpRamMode, int addressReg, int data) {
         if (isFullInternal()) {
             LOG.info("FIFO full");
             return;
@@ -43,13 +43,10 @@ public class VdpFifo implements IVdpFifo {
         VdpFifoEntry entry = fifo[pushPointer];
         entry.data = data;
         entry.addressRegister = addressReg;
-        entry.vdpRamType = vdpRamType;
+        entry.vdpRamMode = vdpRamMode;
         pushPointer = (pushPointer + 1) % FIFO_REAL_SIZE;
         fifoSize++;
-        if (logEnable) {
-            LOG.info("Fifo push: " + vdpRamType + ", " + Integer.toHexString(addressReg) + ", " + Integer.toHexString(data));
-            logEnable = true;
-        }
+        logState(entry, "push");
     }
 
     @Override
@@ -61,10 +58,15 @@ public class VdpFifo implements IVdpFifo {
         VdpFifoEntry entry = fifo[popPointer];
         popPointer = (popPointer + 1) % FIFO_REAL_SIZE;
         fifoSize--;
-        if (logEnable) {
-            LOG.info("Fifo pop: " + entry.vdpRamType + ", " + Integer.toHexString(entry.addressRegister) + ", " + Integer.toHexString(entry.data));
-        }
+        logState(entry, "pop");
         return entry;
+    }
+
+    private void logState(VdpFifoEntry entry, String type) {
+        if (logEnable) {
+            LOG.info("Fifo {}: {}, address: {}, data: {}", type, entry.vdpRamMode,
+                    Integer.toHexString(entry.addressRegister), Integer.toHexString(entry.data));
+        }
     }
 
     public VdpFifoEntry peek() {

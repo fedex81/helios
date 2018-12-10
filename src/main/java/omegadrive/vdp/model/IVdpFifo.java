@@ -1,6 +1,6 @@
 package omegadrive.vdp.model;
 
-import omegadrive.vdp.GenesisVdp;
+import omegadrive.vdp.VdpProvider.VramMode;
 
 /**
  * ${FILE}
@@ -12,14 +12,16 @@ import omegadrive.vdp.GenesisVdp;
 public interface IVdpFifo {
 
     class VdpFifoEntry {
-        public GenesisVdp.VdpRamType vdpRamType;
+        public VramMode vdpRamMode;
         public int addressRegister;
         public int data;
     }
 
-    void push(GenesisVdp.VdpRamType vdpRamType, int addressReg, int data);
+    void push(VramMode vdpRamMode, int addressReg, int data);
 
     VdpFifoEntry pop();
+
+    VdpFifoEntry peek();
 
     boolean isEmpty();
 
@@ -27,14 +29,25 @@ public interface IVdpFifo {
 
     static IVdpFifo createNoFifo(VdpMemoryInterface memoryInterface) {
         return new IVdpFifo() {
+
+            private VdpFifoEntry latest = new VdpFifoEntry();
+
             @Override
-            public void push(GenesisVdp.VdpRamType vdpRamType, int addressReg, int data) {
-                memoryInterface.writeVideoRamWord(vdpRamType, data, addressReg);
+            public void push(VramMode vdpRamMode, int addressReg, int data) {
+                latest.data = data;
+                latest.vdpRamMode = vdpRamMode;
+                latest.addressRegister = addressReg;
+                memoryInterface.writeVideoRamWord(vdpRamMode, data, addressReg);
             }
 
             @Override
             public VdpFifoEntry pop() {
                 throw new IllegalStateException("FIFO is always empty!");
+            }
+
+            @Override
+            public VdpFifoEntry peek() {
+                return latest;
             }
 
             @Override

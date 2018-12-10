@@ -33,7 +33,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     private int destAddress;
     private int dmaFillData;
-    private GenesisVdp.VdpRamType vramDestination;
+    private VdpProvider.VramMode vramMode;
 
     private DmaMode dmaMode = null;
     private boolean dmaFillReady;
@@ -93,6 +93,11 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         destAddress = getDestAddress();
     }
 
+    @Override
+    public boolean dmaInProgress() {
+        return (dmaMode != null && dmaMode == DmaMode.VRAM_FILL && dmaFillReady) || (dmaMode != null && dmaMode != DmaMode.VRAM_FILL);
+    }
+
 
     private int getDmaLength() {
         return vdpProvider.getRegisterData(DMA_LENGTH_HIGH) << 8 | vdpProvider.getRegisterData(DMA_LENGTH_LOW);
@@ -132,7 +137,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
         str += dmaMode == DmaMode.VRAM_FILL ? " fillData: " + Long.toHexString(dmaFillData) : " srcAddr: " + src;
         str += ", destAddr: " + dest + ", destAddrInc: " + destAddressIncrement +
-                ", dmaLen: " + dmaLen + ", vramDestination: " + vramDestination;
+                ", dmaLen: " + dmaLen + ", vramMode: " + vramMode;
         LOG.info(str);
         if (printToSysOut) {
             System.out.println(str);
@@ -144,15 +149,15 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return dmaMode;
     }
 
-    public boolean doDmaSlot(VideoMode videoMode, boolean isBlanking) {
+    public boolean doDmaSlot(VideoMode videoMode) {
         switch (dmaMode) {
             case VRAM_FILL:
                 if (dmaFillReady) {
-                    dmaFill(1);
+                    dmaFillSingleByte();
                 }
                 break;
             case VRAM_COPY:
-                dmaCopy(1);
+                dmaCopySingleByte();
                 break;
             case MEM_TO_VRAM:
                 dma68kToVram(1);
@@ -279,7 +284,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     private boolean dma68kToVram(int byteSlots) {
-        byteSlots = vramDestination == VdpProvider.VdpRamType.VRAM ? byteSlots : byteSlots * 2;
+        byteSlots = vramMode.getRamType() == VdpProvider.VdpRamType.VRAM ? byteSlots : byteSlots * 2;
         printInfo("START, Dma byteSlots: " + byteSlots);
         int dmaLen = 0;
         int sourceAddress = 0;
@@ -289,7 +294,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             sourceAddress = getSourceAddress() << 1; //needs to double it
             byteSlots -= 2;
             int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
-            vdpProvider.getFifo().push(vramDestination, destAddress, dataWord);
+            vdpProvider.getFifo().push(vramMode, destAddress, dataWord);
             printInfo("IN PROGRESS: ", sourceAddress);
             //increase by 1, becomes 2 (bytes) when doubling
             increaseSourceAddress(1);
@@ -307,13 +312,13 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                 //For DMA copy, CD0-CD3 are ignored.
                 // You can only perform a DMA copy within VRAM.
                 mode = DmaMode.VRAM_COPY;
-                vramDestination = VdpProvider.VdpRamType.VRAM;
+                this.vramMode = VdpProvider.VramMode.vramWrite;
                 break;
             //fall-through
             case 2:
                 mode = DmaMode.VRAM_FILL;
                 if (vramMode == VdpProvider.VramMode.vramWrite) {
-                    vramDestination = vramMode.getRamType();
+                    this.vramMode = vramMode;
                     break;
                 }
                 //fall-through
@@ -322,7 +327,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             case 1:
                 if (vramMode.isWriteMode()) {
                     mode = DmaMode.MEM_TO_VRAM;
-                    vramDestination = vramMode.getRamType();
+                    this.vramMode = vramMode;
                     break;
                 }
                 //fall-through

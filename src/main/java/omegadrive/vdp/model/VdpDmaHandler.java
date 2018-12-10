@@ -20,9 +20,12 @@ public interface VdpDmaHandler {
 
     DmaMode setupDma(VdpProvider.VramMode vramMode, long data, boolean m1);
 
+    @Deprecated
     boolean doDma(VideoMode videoMode, boolean isBlanking);
 
-    boolean doDmaSlot(VideoMode videoMode, boolean isBlanking);
+    boolean doDmaSlot(VideoMode videoMode);
 
     void setupDmaDataPort(int dataWord);
+
+    boolean dmaInProgress();
 }

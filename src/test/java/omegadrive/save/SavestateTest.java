@@ -158,8 +158,8 @@ public class SavestateTest {
         IntStream.range(0, VdpProvider.VDP_VRAM_SIZE).forEach(i ->
                 Assert.assertEquals("Vram" + i, vm1.readVramByte(i), vm2.readVramByte(i)));
         IntStream.range(0, VdpProvider.VDP_VSRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vram" + i, vm1.readVsramByte(i), vm2.readVsramByte(i)));
+                Assert.assertEquals("Vsram" + i, vm1.readVsramByte(i), vm2.readVsramByte(i)));
         IntStream.range(0, VdpProvider.VDP_VRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vram" + i, vm1.readCramByte(i), vm2.readCramByte(i)));
+                Assert.assertEquals("Cram" + i, vm1.readCramByte(i), vm2.readCramByte(i)));
     }
 }

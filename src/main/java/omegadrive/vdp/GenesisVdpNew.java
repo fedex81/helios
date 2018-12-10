@@ -4,10 +4,7 @@ import omegadrive.Genesis;
 import omegadrive.GenesisProvider;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.*;
-import omegadrive.vdp.model.VdpDmaHandler;
-import omegadrive.vdp.model.VdpHLineProvider;
-import omegadrive.vdp.model.VdpMemoryInterface;
-import omegadrive.vdp.model.VdpRenderHandler;
+import omegadrive.vdp.model.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,21 +32,6 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     public static boolean regVerbose = false || verbose || Genesis.verbose;
 
     private VramMode vramMode;
-
-//	VSRAM
-//	 The VDP has 40x10 bits of on-chip vertical scroll RAM. It is accessed as
-//	 40 16-bit words through the data port. Each word has the following format:
-//
-//	 ------yyyyyyyyyy
-//
-//	 y = Vertical scroll factor (0-3FFh)
-//
-//	 When accessing VSRAM, only address bits 6 through 1 are valid.
-//	 The high-order address bits are ignored. Since VSRAM is word-wide, address
-//	 bit zero has no effect.
-//
-//	 Even though there are 40 words of VSRAM, the address register will wrap
-//	 when it passes 7Fh. Writes to the addresses beyond 50h are ignored.
 
     int[] registers = new int[VDP_REGISTERS_SIZE];
 
@@ -99,14 +81,6 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 //	15	14	13	12	11	10	9		8			7	6		5		4	3	2	1	0
 //	0	0	1	1	0	1	EMPTY	FULL		VIP	SOVR	SCOL	ODD	VB	HB	DMA	PAL
 
-    //	EMPTY and FULL indicate the status of the FIFO.
-//	When EMPTY is set, the FIFO is empty.
-//	When FULL is set, the FIFO is full.
-//	If the FIFO has items but is not full, both EMPTY and FULL will be clear.
-//	The FIFO can hold 4 16-bit words for the VDP to process. If the M68K attempts to write another word once the FIFO has become full, it will be frozen until the first word can be delivered.
-//    int empty = 1;
-//    int full = 0;
-
     //	VIP indicates that a vertical interrupt has occurred, approximately at line $E0. It seems to be cleared at the end of the frame.
     int vip;
 
@@ -134,6 +108,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
     private VdpRenderHandler renderHandler;
+    private IVdpFifo fifo;
     private VideoMode videoMode;
     private RegionDetector.Region region;
 
@@ -169,6 +144,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     private void setupVdp() {
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
+        this.fifo = IVdpFifo.createNoFifo(memoryInterface); //new VdpFifo();
         this.initMode();
     }
 
@@ -376,6 +352,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             LogHelper.printLevel(LOG, Level.INFO, "Pending ctrlPort write: {}", Long.toHexString(dataL), verbose);
             return;
         }
+        if (dma == 1 && dmaHandler.dmaInProgress()) {
+            LOG.warn("writeControlPort during dma, data : {}, dma: {}", dataL, dmaHandler.getDmaMode());
+        }
         writeControlPortInternal(dataL);
     }
 
@@ -394,13 +373,14 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             writeRegister(data);
             //Writing to a VDP register will clear the code register.
             codeRegister = 0;
+            vramMode = VramMode.getVramMode(codeRegister);
 
         } else { // Write 2 - Setting RAM address
             writeRamAddress(data);
         }
     }
 
-    private VdpFifo fifo = new VdpFifo();
+
 
     @Override
     public void writeDataPort(long dataL) {
@@ -424,6 +404,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             }
             return;
         }
+        if (dma == 1 && dmaHandler.dmaInProgress()) {
+            LOG.warn("writeDataPort during dma, data : {}, dma: {}", dataL, dmaHandler.getDmaMode());
+        }
         writeDataPortInternal(dataL);
     }
 
@@ -432,11 +415,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         int data = (int) dataL;
         writePendingControlPort = false;
         LogHelper.printLevel(LOG, Level.INFO, "writeDataPort, data: {}, address: {}", data, addressRegister, verbose);
-        if (vramMode == null) { //ignore invalid targets
-            LOG.warn("writeDataPort on invalid target: {}", data);
-            return;
-        }
-        fifo.push(vramMode.getRamType(), addressRegister, data);
+        fifo.push(vramMode, addressRegister, data);
         addressRegister += autoIncrementData;
         setupDmaFillMaybe(data);
     }
@@ -447,7 +426,12 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         }
         boolean wasFull = fifo.isFull();
         VdpFifo.VdpFifoEntry entry = fifo.pop();
-        memoryInterface.writeVideoRamWord(entry.vdpRamType, entry.data, entry.addressRegister);
+        if (entry.vdpRamMode == null || !entry.vdpRamMode.isWriteMode()) {
+            LOG.warn("FIFO write on invalid target: {}, data: {}, address: {}",
+                    entry.vdpRamMode, entry.data, entry.addressRegister);
+            return;
+        }
+        memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
         if (wasFull) {
             unstop68k();
         }
@@ -464,26 +448,19 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             return 0;
         }
         int res = memoryInterface.readVideoRamWord(vramMode, addressRegister);
-        if (vramMode == VramMode.vramRead_8bit) {
-            //TODO fix
-            boolean even = addressRegister % 2 == 0;
-            res = even ? res & 0xFF : res >> 8;
-            //The 8-bit VRAM read function reads a single byte from VRAM.
-            // The returned value consists of the VRAM byte as the low byte, plus a byte from the FIFO as the high byte.
-            int fifoData = fifo.peek().data;
-            res = (fifoData & 0xFF00) | (res & 0xFF);
+        int fifoData = fifo.peek().data;
+        switch (vramMode) {
+            case vramRead_8bit:
+                res = memoryInterface.readVramByte(addressRegister ^ 1);
+                res = (fifoData & 0xFF00) | (res & 0xFF);
+                break;
+            case cramRead:
+                res = (fifoData & 0xF111) | (res & 0xEEE);
+                break;
+            case vsramRead:
+                res = (fifoData & 0xF800) | (res & 0x7FF);
+                break;
         }
-        //mask for the valid bits in the VSRAM buffer: 0000 0111 1111 1111.
-        if (vramMode == VramMode.vsramRead) {
-            int fifoData = fifo.peek().data;
-            res = (fifoData & 0xF800) | (res & 0x7FF);
-        }
-        //mask for the valid bits in the CRAM buffer: 0000 1110 1110 1110.
-        if (vramMode == VramMode.cramRead) {
-            int fifoData = fifo.peek().data;
-            res = (fifoData & 0xF111) | (res & 0xEEE);
-        }
-
         LogHelper.printLevel(LOG, Level.INFO, "readDataPort, address {} , result {}, size {}", addressRegister, res,
                 Size.WORD, verbose);
         addressRegister += autoIncrementData;
@@ -535,8 +512,10 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     }
 
     private void writeRegister(int reg, int dataControl) {
-        if (reg >= VDP_REGISTERS_SIZE) {
-            LOG.warn("Ignoring write to invalid VPD register: " + reg);
+        //sms mode only affects reg [0 - 0xA]
+        boolean invalidWrite = reg >= VDP_REGISTERS_SIZE || (!m5 && reg > 0xA);
+        if (invalidWrite) {
+            LOG.warn("Ignoring write to invalid VPD register: {}, mode5: {}, value: {}", reg, m5, dataControl);
             return;
         }
         LogHelper.printLevel(LOG, Level.INFO, "writeReg: {}, data: {}", reg, dataControl, verbose);
@@ -559,7 +538,11 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             ie0 = ((data >> 5) & 1) == 1;
             m1 = ((data >> 4) & 1) == 1;
             m2 = ((data >> 3) & 1) == 1;
-            m5 = ((data >> 2) & 1) == 1;
+            boolean mode5 = ((data >> 2) & 1) == 1;
+            if (m5 != mode5) {
+                LOG.info("Mode5: " + mode5);
+                m5 = mode5;
+            }
         } else if (reg == 0x0C) {
             boolean rs0 = Util.bitSetTest(data, 7);
             boolean rs1 = Util.bitSetTest(data, 0);
@@ -578,7 +561,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     private void logRegisterChange(int reg, int data) {
         int current = registers[reg];
-        if (regVerbose && current != data && interruptHandler.isActiveScreen()) {
+        if (regVerbose && current != data) { // && interruptHandler.isActiveScreen()) {
             String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- ",
                     VdpRegisterName.getRegisterName(reg), Long.toHexString(current), Long.toHexString(data)).getFormattedMessage();
             LOG.info(this.interruptHandler.getStateString(msg));
@@ -611,7 +594,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             boolean dmaDone;
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
 //            dmaDone = dmaHandler.doDma(videoMode, isBlanking);
-            dmaDone = dmaHandler.doDmaSlot(videoMode, isBlanking);
+            dmaDone = dmaHandler.doDmaSlot(videoMode);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
                 LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", mode, verbose);
@@ -789,7 +772,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public VdpFifo getFifo() {
+    public IVdpFifo getFifo() {
         return fifo;
     }
 
