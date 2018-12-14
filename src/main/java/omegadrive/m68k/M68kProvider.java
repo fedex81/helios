@@ -17,7 +17,7 @@ public interface M68kProvider {
 
     boolean isStopped();
 
-    void raiseInterrupt(int level);
+    boolean raiseInterrupt(int level);
 
     void reset();
 

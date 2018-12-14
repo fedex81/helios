@@ -1,6 +1,7 @@
 package omegadrive.vdp;
 
 import omegadrive.bus.BusProvider;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
@@ -36,10 +37,11 @@ public class VdpDmaHandlerImplTest {
         memoryInterface = GenesisVdpMemoryInterface.createInstance();
         dmaHandler = new VdpDmaHandlerImpl();
 
-        vdpProvider = new GenesisVdp(busProvider, memoryInterface, dmaHandler);
+        vdpProvider = GenesisVdpNew.createInstance(busProvider, memoryInterface, dmaHandler, RegionDetector.Region.EUROPE);
 
         ((VdpDmaHandlerImpl) dmaHandler).vdpProvider = vdpProvider;
         ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
+        vdpProvider.updateRegisterData(1, 4); //mode5
     }
 
 
@@ -155,18 +157,25 @@ public class VdpDmaHandlerImplTest {
         vdpProvider.writeDataPort(1260);
         vdpProvider.writeDataPort(1770);
         vdpProvider.writeDataPort(2280);
+        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+
         vdpProvider.writeDataPort(2790);
         vdpProvider.writeDataPort(3300);
         vdpProvider.writeDataPort(3810);
         vdpProvider.writeDataPort(736);
+        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+
         vdpProvider.writeDataPort(1230);
         vdpProvider.writeDataPort(1740);
         vdpProvider.writeDataPort(2250);
         vdpProvider.writeDataPort(2760);
+        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+
         vdpProvider.writeDataPort(3270);
         vdpProvider.writeDataPort(3780);
         vdpProvider.writeDataPort(706);
         vdpProvider.writeDataPort(1216);
+        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
 
         String str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
@@ -191,7 +200,7 @@ public class VdpDmaHandlerImplTest {
         str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
-        dmaHandler.doDma(VideoMode.PAL_H40_V30, true);
+        dmaHandler.doDmaSlot(VideoMode.PAL_H40_V30);
 
         str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
@@ -217,10 +226,13 @@ public class VdpDmaHandlerImplTest {
         vdpProvider.writeDataPort(0xf00d);
         vdpProvider.writeDataPort(0xf00d);
         vdpProvider.writeDataPort(0xf00d);
+        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+
         vdpProvider.writeDataPort(0xf00d);
         vdpProvider.writeDataPort(0xf00d);
         vdpProvider.writeDataPort(0xf00d);
         vdpProvider.writeDataPort(0xf00d);
+        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
 
         vdpProvider.writeControlPort(0x5000);
         vdpProvider.writeControlPort(2);
@@ -228,10 +240,13 @@ public class VdpDmaHandlerImplTest {
         vdpProvider.writeDataPort(0x3344);
         vdpProvider.writeDataPort(0x5566);
         vdpProvider.writeDataPort(0x7788);
+        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+
         vdpProvider.writeDataPort(0x99aa);
         vdpProvider.writeDataPort(0xbbcc);
         vdpProvider.writeDataPort(0xddee);
         vdpProvider.writeDataPort(0xff00);
+        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
 
         String str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);

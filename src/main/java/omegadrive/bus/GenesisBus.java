@@ -30,6 +30,9 @@ import java.util.Objects;
  * https://www.gamefaqs.com/genesis/916377-genesis/faqs/9755
  * http://darkdust.net/writings/megadrive/initializing
  *
+ * TODO
+ * Interrupts are know acknowleged based on what the VDP thinks its asserting rather than what the 68K actually is acking - Fixes Fatal Rewind
+ *
  */
 public class GenesisBus implements BusProvider, GenesisMapper {
 
@@ -48,6 +51,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private CartridgeInfoProvider cartridgeInfoProvider;
     private GenesisMapper mapper;
+
+    private BusArbiter busArbiter;
 
     public static long ROM_START_ADDRESS;
     public static long ROM_END_ADDRESS;
@@ -83,6 +88,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         detectState();
         LOG.info("Bus state: " + busState);
         stop68k = false;
+        this.busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
     }
 
     @Override
@@ -126,6 +132,9 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         }
         if (device instanceof SoundProvider) {
             this.sound = (SoundProvider) device;
+        }
+        if (device instanceof BusArbiter) {
+            this.busArbiter = (BusArbiter) device;
         }
         return this;
     }
@@ -180,7 +189,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             return Util.readRam(memory, size, address);
         } else {
-            LOG.warn("BUS READ NOT MAPPED: " + pad4(address) + " - " + pad4(cpu.getPC()));
+            LOG.warn("BUS READ NOT MAPPED: address: {}, PC: {}", Util.pad4(address), Util.pad4(cpu.getPC()));
         }
         return 0;
     }
@@ -410,7 +419,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 data = joypad.readControlRegister3();
             }
         } else if (address == 0xA10013 || address == 0xA10019 || address == 0xA1001F) {
-            LOG.info("Reading serial control, " + pad4(address));
+            LOG.info("Reading serial control, {}", Util.pad4(address));
             data = 0;
         } else {
             LOG.warn("Unexpected ioRead: " + address);
@@ -524,7 +533,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 return even ? v : h;
             }
         } else if (address == 0x1C) {
-            LOG.warn("Ignoring VDP debug register write, address : " + pad4(addressL));
+            LOG.warn("Ignoring VDP debug register write, address : {}", Util.pad4(addressL));
         } else if (address > 0x17) {
             LOG.info("vdpRead on unused address: " + Long.toHexString(addressL));
 //            return 0xFF;
@@ -622,99 +631,14 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         return sound;
     }
 
-    public final String pad4(long reg) {
-        String s = Long.toHexString(reg).toUpperCase();
-        while (s.length() < 4) {
-            s = "0" + s;
-        }
-        return s;
-    }
-
-    private void raiseInterrupts() {
-        int level = isVdpHInt() ? M68kProvider.HBLANK_INTERRUPT_LEVEL : 0;
-        //VINT has priority
-        level = isVdpVInt() ? M68kProvider.VBLANK_INTERRUPT_LEVEL : level;
-        if (level > 0) {
-            logInfo("68k raise interrupt: {}", level);
-            cpu.raiseInterrupt(level);
-        }
-    }
-
-    private void raiseInterruptsZ80() {
-        logInfo("Z80 raise interrupt");
-        z80.interrupt();
-    }
-
-    private void ackInterrupts() {
-        if (isVdpVInt()) {
-            vdp.setVip(false);
-            logInfo("Ack VDP VINT");
-        } else if (isVdpHInt()) {
-            vdp.setHip(false);
-            logInfo("Ack VDP HINT");
-        }
-    }
-
-    private boolean isVdpVInt() {
-        return vdp.getVip() && vdp.isIe0();
-    }
-
-    private boolean isVdpHInt() {
-        return vdp.getHip() && vdp.isIe1();
-    }
-
-    private boolean checkInterrupts() {
-        return isVdpVInt() || isVdpHInt();
-    }
-
-    private boolean shouldRaiseZ80 = false;
-
-    /* Cycle-accurate VINT flag (Ex-Mutants, Tyrant / Mega-Lo-Mania, Marvel Land) */
-    /* this allows VINT flag to be read just before vertical interrupt is being triggered */
     @Override
     public boolean handleVdpInterrupts() {
-        boolean vdpInt = checkInterrupts();
-        if (!vdpInt && vdpIntState == BusProvider.VdpIntState.NONE) {
-            return true;
-        }
-        switch (vdpIntState) {
-            case NONE:
-//                this.emu.setDebug(true);
-                vdpIntState = BusProvider.VdpIntState.PROCESS_INT;
-                shouldRaiseZ80 = isVdpVInt();
-                logInfo("Z80 interrupt detected: {}", shouldRaiseZ80);
-                break;
-            case PROCESS_INT:
-                //Ex-Mutants needs this delay
-                raiseInterrupts();
-                vdpIntState = VdpIntState.ACK_INT;
-                break;
-            case ACK_INT:
-                ackInterrupts();
-                vdpIntState = BusProvider.VdpIntState.INT_DONE;
-                break;
-            //TODO still needed??
-            case INT_DONE:
-                //Lotus II
-                vdpIntState = BusProvider.VdpIntState.NONE;
-//                this.emu.setDebug(false);
-                break;
-            default:
-                LOG.error("Unexpected state while handling vdp interrupts");
-                break;
-        }
-        logInfo("VDP interrupt state: {}", vdpIntState);
-        return true;
-
+        return busArbiter.handleVdpInterrupts();
     }
 
     @Override
     public boolean handleVdpInterruptsZ80() {
-        //NOTE: if z80 is not running, the interrupt will be lost
-        if (shouldRaiseZ80) {
-            raiseInterruptsZ80();
-            shouldRaiseZ80 = false;
-        }
+        busArbiter.handleVdpInterruptsZ80();
         return true;
     }
 

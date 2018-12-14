@@ -203,6 +203,14 @@ public class Util {
         return value;
     }
 
+    public static final String pad4(long reg) {
+        String s = Long.toHexString(reg).toUpperCase();
+        while (s.length() < 4) {
+            s = "0" + s;
+        }
+        return s;
+    }
+
     public static List<Range<Integer>> getRangeList(int... values) {
         List<Range<Integer>> list = new ArrayList<>();
         for (int i = 0; i < values.length; i += 2) {

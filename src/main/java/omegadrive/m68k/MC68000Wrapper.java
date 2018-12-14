@@ -189,10 +189,15 @@ public class MC68000Wrapper implements M68kProvider {
     }
 
     @Override
-    public void raiseInterrupt(int level) {
-        printCpuState("Before INT: ", level);
+    public boolean raiseInterrupt(int level) {
+//        printCpuState("Before INT: ", level);
         m68k.raiseInterrupt(level);
-        printCpuState("After INT: ", level);
+        boolean raise = m68k.getInterruptLevel() == level;
+        if (raise) {
+//            LOG.info("M68K before INT, level: {}, newLevel: {}", m68k.getInterruptLevel(),  level);
+        }
+        return raise;
+//        printCpuState("After INT: ", level);
     }
 
     @Override
@@ -215,8 +220,11 @@ public class MC68000Wrapper implements M68kProvider {
     public int runInstruction() {
         int res = 0;
         try {
+//            if(m68k.getPC() == 0x25c){
+//                verbose = true;
+//            }
             printVerbose();
-//            printCpuState("");
+            printCpuState("");
             res = m68k.execute();
         } catch (Exception e) {
             verbose = true;
@@ -234,6 +242,7 @@ public class MC68000Wrapper implements M68kProvider {
         }
         String res = MC68000Monitor.dumpOp(m68k);
         LOG.info(res);
+        System.out.println(res);
         if (MC68000Monitor.addToInstructionSet(m68k)) {
             LOG.info(MC68000Monitor.dumpInstructionSet());
         }

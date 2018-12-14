@@ -325,7 +325,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             case 0:
                 //fall-through
             case 1:
-                if (vramMode.isWriteMode()) {
+                if (vramMode != null && vramMode.isWriteMode()) {
                     mode = DmaMode.MEM_TO_VRAM;
                     this.vramMode = vramMode;
                     break;

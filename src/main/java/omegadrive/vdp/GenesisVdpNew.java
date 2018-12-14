@@ -144,7 +144,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     private void setupVdp() {
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
-        this.fifo = IVdpFifo.createNoFifo(memoryInterface); //new VdpFifo();
+        this.fifo = new VdpFifo(); //IVdpFifo.createNoFifo(memoryInterface);
         this.initMode();
     }
 
@@ -184,12 +184,10 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     //TODO fix this
     public void initMode() {
         if (region == null) {
-            region = Optional.ofNullable(bus.getEmulator()).map(GenesisProvider::getRegion).orElse(null);
+            region = Optional.ofNullable(bus.getEmulator()).map(GenesisProvider::getRegion).orElse(RegionDetector.Region.EUROPE);
         }
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
-        if (region != null) {
-            resetVideoMode(true);
-        }
+        resetVideoMode(true);
     }
 
     private int lastControl = -1;
@@ -353,7 +351,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             return;
         }
         if (dma == 1 && dmaHandler.dmaInProgress()) {
-            LOG.warn("writeControlPort during dma, data : {}, dma: {}", dataL, dmaHandler.getDmaMode());
+            LOG.debug("writeControlPort during dma, data : {}, dma: {}", dataL, dmaHandler.getDmaMode());
         }
         writeControlPortInternal(dataL);
     }
@@ -361,23 +359,31 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     private void writeControlPortInternal(long dataL) {
         long mode = (dataL >> 14);
         int data = (int) dataL;
+        updateStateFromControlPortWrite(data);
 
-        //TODO: check this writePendingControlPort has precedence,
+        //TODO: check this: writePendingControlPort has precedence,
         //TODO: a register write could be treated as 2nd part - fixes test #10
-        if (writePendingControlPort) {
-            writeRamAddress(data);
-            return;
-        }
+        boolean isRegisterWrite = !writePendingControlPort && mode == 0b10;
 
-        if (mode == 0b10) {        //	Write 1 - Setting Register
+        if (isRegisterWrite) {
             writeRegister(data);
-            //Writing to a VDP register will clear the code register.
-            codeRegister = 0;
-            vramMode = VramMode.getVramMode(codeRegister);
-
-        } else { // Write 2 - Setting RAM address
+        } else {
             writeRamAddress(data);
         }
+    }
+
+    private void updateStateFromControlPortWrite(int data) {
+        if (!writePendingControlPort) {
+            //            It is perfectly valid to write the first half of the command word only.
+//            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
+//            values, while the remaining address and code bits _retain_ their former value.
+            codeRegister = (codeRegister & 0x3C) | ((data >> 14) & 3);
+            addressRegister = (addressRegister & 0xC000) | (data & 0x3FFF);
+        } else {
+            codeRegister = (((data >> 4) & 0xF) << 2) | (codeRegister & 0x3);
+            addressRegister = ((data & 0x3) << 14) | (addressRegister & 0x3FFF);
+        }
+        vramMode = VramMode.getVramMode(codeRegister & 0xF);
     }
 
 
@@ -405,7 +411,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             return;
         }
         if (dma == 1 && dmaHandler.dmaInProgress()) {
-            LOG.warn("writeDataPort during dma, data : {}, dma: {}", dataL, dmaHandler.getDmaMode());
+            LOG.debug("writeDataPort during dma, data : {}, dma: {}", dataL, dmaHandler.getDmaMode());
         }
         writeDataPortInternal(dataL);
     }
@@ -471,29 +477,14 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         if (!writePendingControlPort) {
             firstWrite = data;
             writePendingControlPort = true;
-//            It is perfectly valid to write the first half of the command word only.
-//            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
-//            values, while the remaining address and code bits _retain_ their former value.
-            codeRegister = (int) ((codeRegister & 0x3C) | ((firstWrite >> 14) & 3));
-            addressRegister = (int) ((addressRegister & 0xC000) | (firstWrite & 0x3FFF));
-            vramMode = VramMode.getVramMode(codeRegister & 0xF);
             LogHelper.printLevel(LOG, Level.INFO, "writeAddr-1, firstWord: {}, address: {}, code: {}"
                     , firstWrite, addressRegister, codeRegister, verbose);
         } else {
             writePendingControlPort = false;
             all = ((firstWrite << 16) | data);
-
-            codeRegister = (((data >> 4) & 0xF) << 2) | (codeRegister & 0x3);
-            //m1 masks CD5
-//            codeRegister &= (((m1 ? 1 : 0)<< 5) | 0x1F); //breaks Andre Agassi
-            addressRegister = ((data & 0x3) << 14) | (addressRegister & 0x3FFF);
-
-            int addressMode = codeRegister & 0xF;    // CD0-CD3
-            vramMode = VramMode.getVramMode(addressMode);
             LogHelper.printLevel(LOG, Level.INFO,
                     "writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}, mode: {}"
                     , data, addressRegister, codeRegister, all, vramMode, verbose);
-            //	https://wiki.megadrive.org/index.php?title=VDP_DMA
             if ((codeRegister & 0b10_0000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
                 if (dmaMode == VdpDmaHandler.DmaMode.MEM_TO_VRAM) {
@@ -660,17 +651,11 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             renderHandler.initLineData(line);
         }
 
-        //FIFO stuff
-        if (hCounterInternal % 2 == 1) {
-            boolean vramSlot = displayEnable && (hCounterInternal + 2) % 16 == 0;
-            vramSlot |= !displayEnable || vb == 1;
-            if (!fifo.isFull()) {
-                doDma(vramSlot);
-            }
-            writeDataToVram(vramSlot);
+        boolean isExternalSlot = !displayEnable || vb == 1 || interruptHandler.isCounterExternalSlot();
+        if (!fifo.isFull()) {
+            doDma(isExternalSlot);
         }
-        //FIFO stuff
-
+        writeDataToVram(isExternalSlot);
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastHCounter()) {
@@ -731,7 +716,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         return registers[0xA];
     }
 
-    protected void resetVideoMode(boolean force) {
+    public void resetVideoMode(boolean force) {
         VideoMode newVideoMode = getVideoMode(region, isH40(), isV30());
         if (videoMode != newVideoMode || force) {
             this.videoMode = newVideoMode;

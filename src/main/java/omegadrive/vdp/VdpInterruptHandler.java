@@ -4,6 +4,7 @@ import omegadrive.Genesis;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.vdp.model.VdpHLineProvider;
+import omegadrive.vdp.model.VdpSlotType;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,6 +36,7 @@ public class VdpInterruptHandler {
     private int hCounterInternal;
     private int vCounterInternal = 0;
     protected int hLinePassed = 0;
+    private int pixelNumber = 0;
 
     private VideoMode videoMode;
     private VdpCounterMode vdpCounterMode;
@@ -66,7 +68,7 @@ public class VdpInterruptHandler {
     }
 
     private void reset() {
-        hCounterInternal = vCounterInternal = 0;
+        hCounterInternal = vCounterInternal = pixelNumber = 0;
         hBlankSet = true;
         vBlankSet = false;
         vIntPending = false;
@@ -112,6 +114,7 @@ public class VdpInterruptHandler {
     private int increaseHCounterInternal() {
         hCounterInternal = updateCounterValue(hCounterInternal, vdpCounterMode.hJumpTrigger,
                 vdpCounterMode.hTotalCount);
+        pixelNumber = (pixelNumber + 1) & vdpCounterMode.hTotalCount;
         handleHLinesCounter();
         if (hCounterInternal == vdpCounterMode.hBlankSet) {
             hBlankSet = true;
@@ -218,6 +221,10 @@ public class VdpInterruptHandler {
 
     public boolean isDrawFrameSlot() {
         return isLastSlot() && vCounterInternal == COUNTER_LIMIT;
+    }
+
+    public boolean isCounterExternalSlot() {
+        return vdpCounterMode.getCounterSlotTypes()[pixelNumber] == VdpSlotType.EXTERNAL;
     }
 
     @Deprecated
