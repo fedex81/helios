@@ -1,5 +1,6 @@
 package omegadrive.vdp;
 
+import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.VdpCounterMode;
 import org.apache.logging.log4j.LogManager;
@@ -18,7 +19,18 @@ import org.junit.Test;
 public class VdpInterruptHandlerTest {
 
     private static Logger LOG = LogManager.getLogger(VdpInterruptHandlerTest.class.getSimpleName());
-    static boolean verbose = false;
+    static boolean verbose = true;
+
+
+    @Test
+    public void stressTest() {
+        do {
+            testHLinesCounter_01();
+            testHLinesCounter_02();
+            testHLinesCounterPending();
+            Util.sleep(1000);
+        } while (true);
+    }
 
     /**
      * GunstarHeroes intro
@@ -35,23 +47,37 @@ public class VdpInterruptHandlerTest {
         int hLinePassed = 0;
         VdpInterruptHandler h = VdpInterruptHandler.createInstance(() -> hLinePassed);
         hLinesCounterBasic(h, VideoMode.PAL_H40_V28);
-        hLinesCounterBasic(h, VideoMode.PAL_H40_V30);
-        hLinesCounterBasic(h, VideoMode.PAL_H32_V28);
-        hLinesCounterBasic(h, VideoMode.PAL_H32_V30);
-        hLinesCounterBasic(h, VideoMode.NTSCU_H32_V28);
-        hLinesCounterBasic(h, VideoMode.NTSCU_H40_V28);
-        hLinesCounterBasic(h, VideoMode.NTSCJ_H32_V28);
-        hLinesCounterBasic(h, VideoMode.NTSCJ_H40_V28);
+//        hLinesCounterBasic(h, VideoMode.PAL_H40_V30);
+//        hLinesCounterBasic(h, VideoMode.PAL_H32_V28);
+//        hLinesCounterBasic(h, VideoMode.PAL_H32_V30);
+//        hLinesCounterBasic(h, VideoMode.NTSCU_H32_V28);
+//        hLinesCounterBasic(h, VideoMode.NTSCU_H40_V28);
+//        hLinesCounterBasic(h, VideoMode.NTSCJ_H32_V28);
+//        hLinesCounterBasic(h, VideoMode.NTSCJ_H40_V28);
     }
 
-    private void hLinesCounterBasic(VdpInterruptHandler h, VideoMode mode) {
-        h.setMode(mode);
-        VdpCounterMode counterMode = VdpCounterMode.getCounterMode(mode);
+    private void runCounterToStartFrame(VdpInterruptHandler h) {
+        boolean isStart;
+        do {
+            h.increaseHCounter();
+            isStart = h.gethCounterInternal() == 0 && h.getvCounterInternal() == 0;
+        } while (!isStart);
+        h.setHIntPending(false);
+        h.setvIntPending(false);
+        printMsg(h.getStateString("Start frame: "));
+    }
+
+    @Test
+    public void testHLinesCounterPending() {
+        int hLinePassed = 0x80;
+        VdpInterruptHandler h = VdpInterruptHandler.createInstance(() -> hLinePassed);
+        h.setMode(VideoMode.PAL_H40_V28);
+        VdpCounterMode counterMode = VdpCounterMode.getCounterMode(VideoMode.PAL_H40_V28);
         int totalCount = counterMode.vTotalCount * 3 + 5;
-        int expectedNumberOfHint = counterMode.vBlankSet * 3 + 5;
-        int numberOfHint = 0;
         int count = 0;
         int line = 0;
+
+        runCounterToStartFrame(h);
         do {
             int hLine = h.hLinePassed;
             if (h.gethCounterInternal() == 0) {
@@ -59,7 +85,49 @@ public class VdpInterruptHandlerTest {
                     line = 0;
                     printMsg(h.getStateString("Start frame, count: " + count));
                 }
-                h.printStateString("Start Line: " + line);
+                printMsg(h.getStateString("Start Line: " + line));
+            }
+            h.increaseHCounter();
+            if (h.isvIntPending()) {
+                h.setvIntPending(false);
+            }
+            if (h.isHIntPending()) {
+//                printMsg(h.getStateString("Line: " + line + ", HINT pending"));
+                Assert.assertEquals(hLinePassed, h.getVCounterExternal());
+                h.setHIntPending(false);
+            }
+            if (h.hLinePassed != hLine) {
+//                printMsg(h.getStateString("Line: " + line + ", hLine Counter changed"));
+            }
+            if (h.gethCounterInternal() == VdpInterruptHandler.COUNTER_LIMIT) {
+                line++;
+                count++;
+            }
+
+        } while (count < totalCount);
+    }
+
+
+    private void hLinesCounterBasic(VdpInterruptHandler h, VideoMode mode) {
+        h.setMode(mode);
+        VdpCounterMode counterMode = VdpCounterMode.getCounterMode(mode);
+
+        int totalCount = counterMode.vTotalCount * 3 + 5;
+        //V28: triggers on line [0-E0] - includes vblank line
+        int expectedNumberOfHint = (counterMode.vBlankSet + 1) * 3 + 5;
+        int numberOfHint = 0;
+        int count = 0;
+        int line = 0;
+        System.out.println("STARTING: " + mode);
+        runCounterToStartFrame(h);
+        do {
+            int hLine = h.hLinePassed;
+            if (h.gethCounterInternal() == 0) {
+                if (h.getvCounterInternal() == 0) {
+                    line = 0;
+                    printMsg(h.getStateString("Start frame, count: " + count));
+                }
+                printMsg(h.getStateString("Start Line: " + line));
             }
             h.increaseHCounter();
             if (h.isvIntPending()) {
@@ -95,10 +163,11 @@ public class VdpInterruptHandlerTest {
         VdpInterruptHandler h = VdpInterruptHandler.createInstance(() -> hLinePassed);
         h.setMode(VideoMode.NTSCU_H40_V28);
 
-
-        int totalCount = VdpProvider.NTSC_SCANLINES * 300 + 5;
+        int totalCount = VdpProvider.NTSC_SCANLINES * 10 + 5;
         int count = 0;
         int line = 0;
+        runCounterToStartFrame(h);
+
         do {
             int hLine = h.hLinePassed;
             if (h.gethCounterInternal() == 0) {
@@ -106,7 +175,7 @@ public class VdpInterruptHandlerTest {
                     line = 0;
                     printMsg(h.getStateString("Start frame, count: " + count));
                 }
-                h.printStateString("Start Line: " + line);
+                printMsg(h.getStateString("Start Line: " + line));
             }
             h.increaseHCounter();
             if (h.isvIntPending()) {

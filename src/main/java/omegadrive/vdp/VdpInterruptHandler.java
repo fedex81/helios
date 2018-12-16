@@ -9,6 +9,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Random;
+
 /**
  * ${FILE}
  * <p>
@@ -16,6 +18,9 @@ import org.apache.logging.log4j.Logger;
  * <p>
  * Copyright 2018
  * <p>
+ *
+ *     TODO fix VDPTEST
+ *     http://gendev.spritesmind.net/forum/viewtopic.php?t=787
  */
 public class VdpInterruptHandler {
 
@@ -34,9 +39,10 @@ public class VdpInterruptHandler {
     public static int VINT_SET_ON_HCOUNTER_VALUE = 1; //TODO setting this to 1 breaks Spot,
 
     private int hCounterInternal;
-    private int vCounterInternal = 0;
+    private int vCounterInternal;
     protected int hLinePassed = 0;
     private int pixelNumber = 0;
+    private int slotNumber = 0;
 
     private VideoMode videoMode;
     private VdpCounterMode vdpCounterMode;
@@ -46,6 +52,8 @@ public class VdpInterruptHandler {
     private boolean hBlankSet;
     private boolean vIntPending;
     private boolean hIntPending;
+
+    private Random rnd = new Random();
 
     protected static boolean veryVerbose = false || Genesis.verbose;
     protected static boolean verbose = false || veryVerbose;
@@ -68,8 +76,14 @@ public class VdpInterruptHandler {
     }
 
     private void reset() {
-        hCounterInternal = vCounterInternal = pixelNumber = 0;
-        hBlankSet = true;
+        if (vdpCounterMode != null) {
+            int hValue = (10 + rnd.nextInt(10)) << 1; //even, no blanking
+            int vValue = rnd.nextInt(10) << 1; //even
+            hCounterInternal = pixelNumber = hValue;
+            vCounterInternal = vValue;
+            slotNumber = pixelNumber >> 1;
+        }
+        hBlankSet = false;
         vBlankSet = false;
         vIntPending = false;
         hIntPending = false;
@@ -93,7 +107,6 @@ public class VdpInterruptHandler {
     }
 
     private int increaseVCounterInternal() {
-
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
@@ -104,6 +117,7 @@ public class VdpInterruptHandler {
             vBlankSet = false;
             eventFlag = true;
         }
+        handleHLinesCounterDecrement();
         return vCounterInternal;
     }
 
@@ -114,8 +128,9 @@ public class VdpInterruptHandler {
     private int increaseHCounterInternal() {
         hCounterInternal = updateCounterValue(hCounterInternal, vdpCounterMode.hJumpTrigger,
                 vdpCounterMode.hTotalCount);
-        pixelNumber = (pixelNumber + 1) & vdpCounterMode.hTotalCount;
-        handleHLinesCounter();
+        pixelNumber = (pixelNumber + 1) % vdpCounterMode.hTotalCount;
+        slotNumber = pixelNumber >> 1;
+
         if (hCounterInternal == vdpCounterMode.hBlankSet) {
             hBlankSet = true;
             eventFlag = true;
@@ -139,24 +154,26 @@ public class VdpInterruptHandler {
         return hCounterInternal;
     }
 
-    private void handleHLinesCounter() {
-        //Vcounter is incremented just before HINT pending flag is set,
-        if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
-            //it is decremented on each lines between line 0 and line $E0
-            if (vCounterInternal < vdpCounterMode.vBlankSet) {
-                hLinePassed--;
-            }
-            boolean triggerHip = hLinePassed == -1; //aka triggerHippy
-            if (triggerHip) {
-                hIntPending = true;
-                logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
-                eventFlag = true;
-            }
-            //reload on line = 0 and vblank
-            boolean isForceResetVCounter = vCounterInternal == COUNTER_LIMIT || vCounterInternal > vdpCounterMode.vBlankSet;
-            if (isForceResetVCounter || triggerHip) {
-                resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
-            }
+    private boolean handleHLinesCounterPending() {
+        boolean triggerHip = hLinePassed == -1; //aka triggerHippy
+        if (triggerHip && !hIntPending) {
+            hIntPending = true;
+            logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
+            eventFlag = true;
+        }
+        return triggerHip;
+    }
+
+    private void handleHLinesCounterDecrement() {
+        //it is decremented on each lines between line 0 and line $E0, including E0
+        if (vCounterInternal <= vdpCounterMode.vBlankSet) {
+            hLinePassed--;
+        }
+        boolean triggerHip = handleHLinesCounterPending();
+        //reload on line = 0 and vblank
+        boolean isForceResetVCounter = vCounterInternal > vdpCounterMode.vBlankSet;
+        if (isForceResetVCounter || triggerHip) {
+            resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
         }
     }
 
@@ -212,19 +229,23 @@ public class VdpInterruptHandler {
     }
 
     public boolean isFirstSlot() {
-        return hCounterInternal <= 1;
+        return slotNumber == 0;
     }
 
     public boolean isLastSlot() {
-        return hCounterInternal >= COUNTER_LIMIT - 1;
+        return slotNumber == vdpCounterMode.getSlotsPerLine() - 1;
     }
 
     public boolean isDrawFrameSlot() {
-        return isLastSlot() && vCounterInternal == COUNTER_LIMIT;
+        return isLastSlot() && vCounterInternal == 0;
     }
 
     public boolean isCounterExternalSlot() {
         return vdpCounterMode.getCounterSlotTypes()[pixelNumber] == VdpSlotType.EXTERNAL;
+    }
+
+    public boolean isExternalSlot() {
+        return vdpCounterMode.getSlotTypes()[slotNumber] == VdpSlotType.EXTERNAL;
     }
 
     @Deprecated
@@ -274,7 +295,7 @@ public class VdpInterruptHandler {
                 + ", vIntPending=" + vIntPending + ", hIntPending=" + hIntPending + ", hLinePassed=" + hLinePassed;
     }
 
-    protected void printStateString(String head) {
+    private void printStateString(String head) {
         String str = getStateString(head);
         LOG.info(str);
     }

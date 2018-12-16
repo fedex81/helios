@@ -90,6 +90,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         this.memoryInterface = memoryInterface;
         this.colorMapper = new VdpColorMapper();
         this.renderDump = new VdpRenderDump();
+        clearData();
     }
 
     public void setVideoMode(VideoMode videoMode) {

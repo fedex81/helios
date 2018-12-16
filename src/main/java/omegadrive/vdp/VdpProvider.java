@@ -148,6 +148,8 @@ public interface VdpProvider {
     int V28_NTSC_JUMP = 0xEA;
     int V30_PAL_JUMP = 0x10A;
     int V30_NTSC_JUMP = -1; //never
+    int H32_SLOTS = H32_PIXELS / 2;
+    int H40_SLOTS = H40_PIXELS / 2;
 
     static VdpProvider createVdp(BusProvider bus) {
         return GenesisVdpNew.createInstance(bus);

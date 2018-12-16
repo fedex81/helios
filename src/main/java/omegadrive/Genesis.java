@@ -70,6 +70,10 @@ public class Genesis implements GenesisProvider {
 
     public static boolean verbose = false;
     public static boolean showFps = false;
+    //vdp at counter = ~13.5/2 = 6.75Mps
+    //vdp at slot = ~13.5/4 = 3.875Mps
+    public static boolean vdpAsCounter = false;
+
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
     private volatile boolean saveStateFlag = false;
@@ -378,7 +382,10 @@ public class Genesis implements GenesisProvider {
         return romRegion;
     }
 
-    private static int CYCLES = 2;
+    private static int M68K_DIVIDER = 2;
+    private static int Z80_DIVIDER = M68K_DIVIDER * 2;
+    private static int VDP_CYCLE = vdpAsCounter ? 1 : 2;
+
     private static long nsToMillis = 1_000_000;
     private long oneScanlineCounter = VdpProvider.H40_PIXELS;
     private long targetNs;
@@ -397,7 +404,7 @@ public class Genesis implements GenesisProvider {
             try {
                 run68k(counter);
                 runZ80(counter);
-                vdp.run(CYCLES);
+                vdp.run(VDP_CYCLE);
                 syncSound(counter);
                 if (canRenderScreen) {
                     long now = System.currentTimeMillis();
@@ -454,7 +461,7 @@ public class Genesis implements GenesisProvider {
 
     private void run68k(long counter) {
         //run half speed compared to VDP
-        if (counter % 2 == 0) {
+        if ((counter + 1) % M68K_DIVIDER == 0) {
             boolean canRun = !cpu.isStopped() && !bus.shouldStop68k() && !vdp.getFifo().isFull();
             if (canRun) {
                 cpu.runInstruction();
@@ -466,7 +473,7 @@ public class Genesis implements GenesisProvider {
 
     private void runZ80(long counter) {
         //run half speed compared to 68k
-        if ((counter + 1) % 4 == 0) {
+        if ((counter + 3) % Z80_DIVIDER == 0) {
             int res = z80.executeInstruction();
             //when halted it can still process interrupts
             if (res >= 0 || z80.isHalted()) {

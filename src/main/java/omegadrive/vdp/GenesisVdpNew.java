@@ -144,7 +144,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     private void setupVdp() {
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
-        this.fifo = new VdpFifo(); //IVdpFifo.createNoFifo(memoryInterface);
+        this.fifo = new VdpFifo();// IVdpFifo.createNoFifo(memoryInterface); //new VdpFifo();
         this.initMode();
     }
 
@@ -660,7 +660,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastHCounter()) {
             //draw the line
-            drawScanline(displayEnable);
+            drawScanline(line, displayEnable);
             line++;
             //draw the frame
             if (interruptHandler.isDrawFrameCounter()) {
@@ -673,37 +673,40 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         }
     }
 
+    boolean resetOnNextFirstSlot = false;
+
     //TODO this breaks VDPFifoTesting
     private void runSlot() {
-        int hCounterInternal = interruptHandler.gethCounterInternal();
         boolean displayEnable = disp;
         hb = interruptHandler.ishBlankSet() ? 1 : 0;
         vb = interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
 
-        //TODO accurate fifo slots
-        boolean vramSlot = displayEnable && (hCounterInternal + 2) % 16 == 0;
-        vramSlot |= !displayEnable || vb == 1;
+        boolean isExternalSlot = !displayEnable || vb == 1 || interruptHandler.isExternalSlot();
         if (!fifo.isFull()) {
-            doDma(vramSlot);
+            doDma(isExternalSlot);
         }
-        writeDataToVram(vramSlot);
+        writeDataToVram(isExternalSlot);
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastSlot()) {
             //draw the line
-            drawScanline(displayEnable);
+            drawScanline(line, displayEnable);
             line++;
             //draw the frame
             if (interruptHandler.isDrawFrameSlot()) {
                 interruptHandler.logVerbose("Draw Screen");
-                line = 0;
                 int[][] screenData = renderHandler.renderFrame();
                 bus.getEmulator().renderScreen(screenData);
                 resetVideoMode(false);
+                resetOnNextFirstSlot = true;
             }
         }
         if (interruptHandler.isFirstSlot()) {
+            if (resetOnNextFirstSlot) {
+                line = 0;
+                resetOnNextFirstSlot = false;
+            }
             renderHandler.initLineData(line);
         }
         //slot granularity -> 2 H counter increases per cycle
@@ -724,11 +727,12 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             interruptHandler.setMode(videoMode);
             renderHandler.setVideoMode(videoMode);
             pal = videoMode.isPal() ? 1 : 0;
+            line = interruptHandler.getVCounterExternal();
         }
     }
 
 
-    private void drawScanline(boolean displayEnable) {
+    private void drawScanline(int line, boolean displayEnable) {
         //draw line
         interruptHandler.logVeryVerbose("Draw Scanline: %s", line);
         int lineLimit = videoMode.getDimension().height;
@@ -748,7 +752,11 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     @Override
     public void run(int cycles) {
-        runCounter();
+        if (cycles == 1) {
+            runCounter();
+        } else {
+            runSlot();
+        }
     }
 
     @Override

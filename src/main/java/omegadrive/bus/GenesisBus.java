@@ -237,7 +237,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private void logVdpCounter(int v, int h) {
         if (Genesis.verbose) {
-            LOG.info("Read HV counter, v=" + v + ", h=" + h);
+            LOG.info("Read HV counter, hce={}, vce={}", Long.toHexString(h), Long.toHexString(v));
         }
     }
 

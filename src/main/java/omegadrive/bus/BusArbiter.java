@@ -97,11 +97,10 @@ public class BusArbiter {
 
     private void evaluateRaiseInterrupt() {
         if (shouldRaise) {
-            logInfo("Raise: Arbiter IPL: {}", ((ipl1 << 1) + (ipl2 << 2)));
-            logInfo("Raise: Vdp State: vint: {}, hint: {}", isVdpVInt(), isVdpHInt());
-            raiseInterrupts68k();
+//            logInfo("Raise: Arbiter IPL: {}", ((ipl1 << 1) + (ipl2 << 2)));
+//            logInfo("Raise: Vdp State: vint: {}, hint: {}", isVdpVInt(), isVdpHInt());
+            shouldAck = raiseInterrupts68k();
             raiseInterruptsZ80();
-            shouldAck = true;
             shouldRaise = false;
         }
     }
@@ -111,8 +110,11 @@ public class BusArbiter {
         //VINT has priority
         level = ipl1 > 0 ? M68kProvider.VBLANK_INTERRUPT_LEVEL : level;
         if (level > 0) {
-            logInfo("raise 68k intLevel: {}", level);
-            return m68k.raiseInterrupt(level);
+            boolean res = m68k.raiseInterrupt(level);
+            if (res) {
+                logInfo("raise 68k intLevel: {}", level);
+            }
+            return res;
         }
         return false;
     }

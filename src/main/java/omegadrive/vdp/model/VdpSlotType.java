@@ -3,8 +3,7 @@ package omegadrive.vdp.model;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static omegadrive.vdp.VdpProvider.H32_PIXELS;
-import static omegadrive.vdp.VdpProvider.H40_PIXELS;
+import static omegadrive.vdp.VdpProvider.*;
 
 /**
  * ${FILE}
@@ -20,8 +19,8 @@ public enum VdpSlotType {
     public static VdpSlotType[] h32CounterSlots = new VdpSlotType[H32_PIXELS];
     public static VdpSlotType[] h40CounterSlots = new VdpSlotType[H40_PIXELS];
 
-    public static VdpSlotType[] h32Slots = new VdpSlotType[H32_PIXELS / 2];
-    public static VdpSlotType[] h40Slots = new VdpSlotType[H40_PIXELS / 2];
+    public static VdpSlotType[] h32Slots = new VdpSlotType[H32_SLOTS];
+    public static VdpSlotType[] h40Slots = new VdpSlotType[H40_SLOTS];
 
     private static int[] externalSlotsH32 = {
             32 * 0 + 14, 32 * 0 + 22, 32 * 0 + 30,
