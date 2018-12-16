@@ -20,7 +20,8 @@ public class GamepadTest {
     public static float ON = 1.0f;
 
     public static void main(String[] args) {
-        String lib = new File(".").getAbsolutePath() + File.separator + "lib";
+        String lib = new File(".").getAbsolutePath() + File.separator + "privateLib"
+                + File.separator + "linux";
         System.out.println(lib);
         System.setProperty("net.java.games.input.librarypath", lib);
         InputProvider inputProvider = InputProvider.createInstance(createTestJoypadProvider());

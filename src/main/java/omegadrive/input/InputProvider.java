@@ -49,7 +49,7 @@ public interface InputProvider {
         Controller controller = detectController();
         InputProvider provider = NO_OP;
         if (controller != null) {
-            provider = new GamepadInputProvider(controller, joypadProvider);
+            provider = GamepadInputProvider.createOrGetInstance(controller, joypadProvider);
             LOG.info("Using Controller: " + controller.getName());
         } else {
             LOG.info("Unable to find a controller");

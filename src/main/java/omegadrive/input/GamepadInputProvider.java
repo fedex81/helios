@@ -6,6 +6,7 @@ import net.java.games.input.Event;
 import net.java.games.input.EventQueue;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.util.PriorityThreadFactory;
+import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,20 +30,32 @@ public class GamepadInputProvider implements InputProvider {
     private static Logger LOG = LogManager.getLogger(GamepadInputProvider.class.getSimpleName());
 
     private static ExecutorService executorService =
-            Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY - 1, GamepadInputProvider.class.getSimpleName()));
-    private long POLLING_INTERVAL_MS = 10;
+            Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY, GamepadInputProvider.class.getSimpleName()));
+    private long POLLING_INTERVAL_MS = 15;
 
-    private JoypadProvider joypadProvider;
+    private volatile JoypadProvider joypadProvider;
     private Controller controller;
     private volatile boolean stop = false;
     private volatile int playerNumber = 1;
     private String pov = Axis.POV.getName();
 
-    public GamepadInputProvider(Controller controller, JoypadProvider joypadProvider) {
-        this.joypadProvider = joypadProvider;
-        this.controller = controller;
-        this.setPlayers(1);
-        this.executorService.submit(inputRunnable());
+    private static InputProvider INSTANCE = NO_OP;
+
+
+    public static InputProvider createOrGetInstance(Controller controller, JoypadProvider joypadProvider) {
+        if (INSTANCE == NO_OP) {
+            GamepadInputProvider g = new GamepadInputProvider();
+            g.joypadProvider = joypadProvider;
+            g.controller = controller;
+            g.setPlayers(1);
+            g.executorService.submit(g.inputRunnable());
+            INSTANCE = g;
+        }
+        ((GamepadInputProvider) INSTANCE).joypadProvider = joypadProvider;
+        return INSTANCE;
+    }
+
+    private GamepadInputProvider() {
     }
 
     private Runnable inputRunnable() {
@@ -50,11 +63,7 @@ public class GamepadInputProvider implements InputProvider {
             LOG.info("Starting controller polling, interval (ms): " + POLLING_INTERVAL_MS);
             do {
                 handleEvents();
-                try {
-                    Thread.sleep(POLLING_INTERVAL_MS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                Util.sleep(POLLING_INTERVAL_MS);
             } while (!stop);
             LOG.info("Controller polling stopped");
         };
