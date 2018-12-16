@@ -28,6 +28,8 @@ public class MC68000Wrapper implements M68kProvider {
     private static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
 
     public static boolean verbose = Genesis.verbose || false;
+    public static boolean STOP_ON_EXCEPTION =
+            Boolean.valueOf(System.getProperty("68k.stop.on.exception", "false"));
 
     private static int ILLEGAL_ACCESS_EXCEPTION = 4;
 
@@ -73,18 +75,6 @@ public class MC68000Wrapper implements M68kProvider {
         new TasEx(m68k).register(m68k);
         this.addressSpace = getAddressSpace(busProvider);
         m68k.setAddressSpace(addressSpace);
-        if (verbose) {
-            startMonitor();
-        }
-    }
-
-    @Override
-    public void startMonitor() {
-        if (monitor == null) {
-            monitor = new MC68000Monitor(m68k, addressSpace);
-            monitor.running = true;
-            LOG.warn("Starting 68k instruction monitor");
-        }
     }
 
     private static AddressSpace getAddressSpace(BusProvider busProvider) {
@@ -190,14 +180,12 @@ public class MC68000Wrapper implements M68kProvider {
 
     @Override
     public boolean raiseInterrupt(int level) {
-//        printCpuState("Before INT: ", level);
         m68k.raiseInterrupt(level);
         boolean raise = m68k.getInterruptLevel() == level;
         if (raise) {
 //            LOG.info("M68K before INT, level: {}, newLevel: {}", m68k.getInterruptLevel(),  level);
         }
         return raise;
-//        printCpuState("After INT: ", level);
     }
 
     @Override
@@ -220,18 +208,16 @@ public class MC68000Wrapper implements M68kProvider {
     public int runInstruction() {
         int res = 0;
         try {
-//            if(m68k.getPC() == 0x25c){
+//            if(m68k.getPC() == 0x506){
 //                verbose = true;
 //            }
             printVerbose();
             printCpuState("");
             res = m68k.execute();
         } catch (Exception e) {
-            verbose = true;
             LOG.error("68k error", e);
             printVerbose();
             handleException(ILLEGAL_ACCESS_EXCEPTION);
-            verbose = false;
         }
         return res;
     }
@@ -240,36 +226,49 @@ public class MC68000Wrapper implements M68kProvider {
         if (!verbose) {
             return;
         }
-        String res = MC68000Monitor.dumpOp(m68k);
-        LOG.info(res);
-        System.out.println(res);
-        if (MC68000Monitor.addToInstructionSet(m68k)) {
-            LOG.info(MC68000Monitor.dumpInstructionSet());
+        try {
+            String res = MC68000Monitor.dumpOp(m68k);
+            LOG.info(res);
+            System.out.println(res);
+            if (MC68000Monitor.addToInstructionSet(m68k)) {
+                LOG.info(MC68000Monitor.dumpInstructionSet());
+            }
+        } catch (Exception e) {
+            String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
+            LOG.warn("Unable to dump the instruction: " + pc, e);
         }
     }
 
     private void handleException(int vector) {
         if (vector == ILLEGAL_ACCESS_EXCEPTION) {
             printCpuState("Exception: " + vector);
-            setStop(true);
+            if (STOP_ON_EXCEPTION) {
+                setStop(true);
+            }
         }
-    }
-
-    private void printCpuState(String head, int value) {
-        if (!verbose) {
-            return;
-        }
-        printCpuState(head + value);
     }
 
     private void printCpuState(String head) {
         if (!verbose) {
             return;
         }
-        startMonitor();
-        String str = monitor.dumpInfo();
-        LOG.info(head + str);
+        try {
+            String str = MC68000Monitor.dumpInfo(m68k, true, addressSpace.size());
+            LOG.info(head + str);
+        } catch (Exception e) {
+            String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
+            LOG.warn("Unable to dump the state: " + pc, e);
+        }
     }
+
+    private void startMonitor() {
+        if (monitor == null) {
+            monitor = new MC68000Monitor(m68k, addressSpace);
+            monitor.running = true;
+            LOG.warn("Starting 68k instruction monitor");
+        }
+    }
+
 
     private void printCpuStateLong() {
         if (!verbose) {

@@ -384,36 +384,40 @@ public class MC68000Monitor implements Runnable {
         return res.toString();
     }
 
-    protected String dumpInfo() {
+    public static String dumpInfo(Cpu cpu, boolean showBytes, int memorySize) {
         StringBuilder sb = new StringBuilder("\n");
         int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
 
         sb.append(String.format("D0: %08x   D4: %08x   A0: %08x   A4: %08x     PC:  %08x\n",
-                this.cpu.getDataRegisterLong(0), this.cpu.getDataRegisterLong(4), this.cpu.getAddrRegisterLong(0),
-                this.cpu.getAddrRegisterLong(4), wrapPc));
+                cpu.getDataRegisterLong(0), cpu.getDataRegisterLong(4), cpu.getAddrRegisterLong(0),
+                cpu.getAddrRegisterLong(4), wrapPc));
         sb.append(String.format("D1: %08x   D5: %08x   A1: %08x   A5: %08x     SR:  %04x %s\n",
-                this.cpu.getDataRegisterLong(1), this.cpu.getDataRegisterLong(5), this.cpu.getAddrRegisterLong(1),
-                this.cpu.getAddrRegisterLong(5), this.cpu.getSR(), this.makeFlagView()));
+                cpu.getDataRegisterLong(1), cpu.getDataRegisterLong(5), cpu.getAddrRegisterLong(1),
+                cpu.getAddrRegisterLong(5), cpu.getSR(), makeFlagView(cpu)));
         sb.append(String.format("D2: %08x   D6: %08x   A2: %08x   A6: %08x     USP: %08x\n",
-                this.cpu.getDataRegisterLong(2), this.cpu.getDataRegisterLong(6), this.cpu.getAddrRegisterLong(2),
-                this.cpu.getAddrRegisterLong(6), this.cpu.getUSP()));
+                cpu.getDataRegisterLong(2), cpu.getDataRegisterLong(6), cpu.getAddrRegisterLong(2),
+                cpu.getAddrRegisterLong(6), cpu.getUSP()));
         sb.append(String.format("D3: %08x   D7: %08x   A3: %08x   A7: %08x     SSP: %08x\n\n",
-                this.cpu.getDataRegisterLong(3), this.cpu.getDataRegisterLong(7), this.cpu.getAddrRegisterLong(3),
-                this.cpu.getAddrRegisterLong(7), this.cpu.getSSP()));
-        this.buffer.delete(0, this.buffer.length());
-        if (wrapPc >= 0 && wrapPc < this.memory.size()) {
-            int opcode = this.cpu.readMemoryWord(wrapPc);
-            Instruction i = this.cpu.getInstructionFor(opcode);
+                cpu.getDataRegisterLong(3), cpu.getDataRegisterLong(7), cpu.getAddrRegisterLong(3),
+                cpu.getAddrRegisterLong(7), cpu.getSSP()));
+        StringBuilder sb2 = new StringBuilder();
+        if (wrapPc >= 0 && wrapPc < memorySize) {
+            int opcode = cpu.readMemoryWord(wrapPc);
+            Instruction i = cpu.getInstructionFor(opcode);
             DisassembledInstruction di = i.disassemble(wrapPc, opcode);
-            if (this.showBytes) {
-                di.formatInstruction(this.buffer);
+            if (showBytes) {
+                di.formatInstruction(sb2);
             } else {
-                di.shortFormat(this.buffer);
+                di.shortFormat(sb2);
             }
         } else {
-            this.buffer.append(String.format("%08x   ????", wrapPc));
+            sb2.append(String.format("%08x   ????", wrapPc));
         }
-        return sb.append(String.format("\n==> %s\n\n", this.buffer.toString())).toString();
+        return sb.append(String.format("\n==> %s\n\n", sb2.toString())).toString();
+    }
+
+    protected String dumpInfo() {
+        return dumpInfo(cpu, showBytes, memory.size());
     }
 
     public static String dumpOp(Cpu cpu) {
@@ -448,14 +452,18 @@ public class MC68000Monitor implements Runnable {
         return sb.toString();
     }
 
-    protected String makeFlagView() {
+    protected static String makeFlagView(Cpu cpu) {
         StringBuilder sb = new StringBuilder(5);
-        sb.append((char) (this.cpu.isFlagSet(16) ? 'X' : '-'));
-        sb.append((char) (this.cpu.isFlagSet(8) ? 'N' : '-'));
-        sb.append((char) (this.cpu.isFlagSet(4) ? 'Z' : '-'));
-        sb.append((char) (this.cpu.isFlagSet(2) ? 'V' : '-'));
-        sb.append((char) (this.cpu.isFlagSet(1) ? 'C' : '-'));
+        sb.append((char) (cpu.isFlagSet(16) ? 'X' : '-'));
+        sb.append((char) (cpu.isFlagSet(8) ? 'N' : '-'));
+        sb.append((char) (cpu.isFlagSet(4) ? 'Z' : '-'));
+        sb.append((char) (cpu.isFlagSet(2) ? 'V' : '-'));
+        sb.append((char) (cpu.isFlagSet(1) ? 'C' : '-'));
         return sb.toString();
+    }
+
+    protected String makeFlagView() {
+        return makeFlagView(this.cpu);
     }
 
     protected char getPrintable(int val) {
