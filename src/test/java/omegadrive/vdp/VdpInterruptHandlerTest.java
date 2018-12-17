@@ -6,6 +6,7 @@ import omegadrive.vdp.model.VdpCounterMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -23,6 +24,7 @@ public class VdpInterruptHandlerTest {
 
 
     @Test
+    @Ignore
     public void stressTest() {
         do {
             testHLinesCounter_01();
@@ -47,24 +49,13 @@ public class VdpInterruptHandlerTest {
         int hLinePassed = 0;
         VdpInterruptHandler h = VdpInterruptHandler.createInstance(() -> hLinePassed);
         hLinesCounterBasic(h, VideoMode.PAL_H40_V28);
-//        hLinesCounterBasic(h, VideoMode.PAL_H40_V30);
-//        hLinesCounterBasic(h, VideoMode.PAL_H32_V28);
-//        hLinesCounterBasic(h, VideoMode.PAL_H32_V30);
-//        hLinesCounterBasic(h, VideoMode.NTSCU_H32_V28);
-//        hLinesCounterBasic(h, VideoMode.NTSCU_H40_V28);
-//        hLinesCounterBasic(h, VideoMode.NTSCJ_H32_V28);
-//        hLinesCounterBasic(h, VideoMode.NTSCJ_H40_V28);
-    }
-
-    private void runCounterToStartFrame(VdpInterruptHandler h) {
-        boolean isStart;
-        do {
-            h.increaseHCounter();
-            isStart = h.gethCounterInternal() == 0 && h.getvCounterInternal() == 0;
-        } while (!isStart);
-        h.setHIntPending(false);
-        h.setvIntPending(false);
-        printMsg(h.getStateString("Start frame: "));
+        hLinesCounterBasic(h, VideoMode.PAL_H40_V30);
+        hLinesCounterBasic(h, VideoMode.PAL_H32_V28);
+        hLinesCounterBasic(h, VideoMode.PAL_H32_V30);
+        hLinesCounterBasic(h, VideoMode.NTSCU_H32_V28);
+        hLinesCounterBasic(h, VideoMode.NTSCU_H40_V28);
+        hLinesCounterBasic(h, VideoMode.NTSCJ_H32_V28);
+        hLinesCounterBasic(h, VideoMode.NTSCJ_H40_V28);
     }
 
     @Test
@@ -77,7 +68,8 @@ public class VdpInterruptHandlerTest {
         int count = 0;
         int line = 0;
 
-        runCounterToStartFrame(h);
+        VdpTestUtil.runCounterToStartFrame(h);
+        printMsg(h.getStateString("Start frame: "));
         do {
             int hLine = h.hLinePassed;
             if (h.gethCounterInternal() == 0) {
@@ -119,7 +111,8 @@ public class VdpInterruptHandlerTest {
         int count = 0;
         int line = 0;
         System.out.println("STARTING: " + mode);
-        runCounterToStartFrame(h);
+        VdpTestUtil.runCounterToStartFrame(h);
+        printMsg(h.getStateString("Start frame: "));
         do {
             int hLine = h.hLinePassed;
             if (h.gethCounterInternal() == 0) {
@@ -166,7 +159,8 @@ public class VdpInterruptHandlerTest {
         int totalCount = VdpProvider.NTSC_SCANLINES * 10 + 5;
         int count = 0;
         int line = 0;
-        runCounterToStartFrame(h);
+        VdpTestUtil.runCounterToStartFrame(h);
+        printMsg(h.getStateString("Start frame: "));
 
         do {
             int hLine = h.hLinePassed;

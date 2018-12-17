@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public class SavestateGameLoader {
 
-    static String romFolder = "/home/fede/roms/";
+    static String romFolder = "/home/fede/roms/savestate_test";
 
     private static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
 
@@ -29,37 +29,37 @@ public class SavestateGameLoader {
             put("sor2.gs1", "Streets of Rage 2 (U) [!].bin").
             put("sor2.gs2", "Streets of Rage 2 (U) [!].bin").
             put("sor2.gs3", "Streets of Rage 2 (U) [!].bin").
-            put("BATROB.gs0", "issues/Adventures of Batman and Robin, The (U) [!].bin").
-            put("BATROB.gs9", "issues/Adventures of Batman and Robin, The (U) [!].bin").
-            put("COMIX_ZN.GS0", "tricky/Comix Zone (U) [!].bin").
-            put("CONTRA4.GS0", "tricky/Contra - The Hard Corps (J) [!].bin").
-            put("D_HEDD_T.gs0", "tricky/Dynamite Headdy (J) [c][!].bin").
-            put("FANTASI.gs0", "owned/Fantasia (E) [!].bin").
-            put("FANTASI.gs9", "owned/Fantasia (E) [!].bin").
-            put("G-AXE.GS0", "tricky/Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE.GS1", "tricky/Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE.GS2", "tricky/Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE.GS4", "tricky/Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE.GS8", "tricky/Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE.GS9", "tricky/Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE2.GS1", "issues/Golden Axe II (W) [!].bin").
-            put("G-AXE2.GS2", "issues/Golden Axe II (W) [!].bin").
-            put("mickeym.gs0", "owned/Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
-            put("mickeym.gs1", "owned/Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
-            put("mickeym.gs2", "owned/Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
-            put("mickeym.gs3", "owned/Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
-            put("mickeym.gs9", "owned/Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
-            put("MORTAL2.GS0", "owned/Mortal Kombat II (W) [!].bin").
-            put("Rocket2.gs0", "tricky/Sparkster (U) [!].bin").
-            put("Rocket2.gs8", "tricky/Sparkster (U) [!].bin").
-            put("Rocket2.gs9", "tricky/Sparkster (U) [!].bin").
-            put("SONIC3D.GS0", "tricky/Sonic 3D Blast (UE) [!].bin").
-            put("SONIC3D.GS1", "tricky/Sonic 3D Blast (UE) [!].bin").
-            put("Thunder4.gs0", "owned/Thunder Force IV (E) [c][!].bin").
-            put("Vector2.gs5", "tricky/Vectorman 2 (U) [!].bin").
-            put("Vector2.gs6", "tricky/Vectorman 2 (U) [!].bin").
-            put("Vector2.gs7", "tricky/Vectorman 2 (U) [!].bin").
-            put("VECTORMA.GS0", "tricky/Vectorman (UE) [!].bin").
+            put("BATROB.gs0", "Adventures of Batman and Robin, The (U) [!].bin").
+            put("BATROB.gs9", "Adventures of Batman and Robin, The (U) [!].bin").
+            put("COMIX_ZN.GS0", "Comix Zone (U) [!].bin").
+            put("CONTRA4.GS0", "Contra - The Hard Corps (J) [!].bin"). //broken
+            put("D_HEDD_T.gs0", "Dynamite Headdy (J) [c][!].bin").
+            put("FANTASI.gs0", "Fantasia (E) [!].bin").
+            put("FANTASI.gs9", "Fantasia (E) [!].bin").
+            put("G-AXE.GS0", "Golden Axe (W) (REV00) [!].bin").
+            put("G-AXE.GS1", "Golden Axe (W) (REV00) [!].bin").
+            put("G-AXE.GS2", "Golden Axe (W) (REV00) [!].bin").
+            put("G-AXE.GS4", "Golden Axe (W) (REV00) [!].bin").
+            put("G-AXE.GS8", "Golden Axe (W) (REV00) [!].bin").
+            put("G-AXE.GS9", "Golden Axe (W) (REV00) [!].bin").
+            put("G-AXE2.GS1", "Golden Axe II (W) [!].bin").
+            put("G-AXE2.GS2", "Golden Axe II (W) [!].bin").
+            put("mickeym.gs0", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
+            put("mickeym.gs1", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
+            put("mickeym.gs2", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
+            put("mickeym.gs3", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
+            put("mickeym.gs9", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
+            put("MORTAL2.GS0", "Mortal Kombat II (W) [!].bin").
+            put("Rocket2.gs0", "Sparkster (U) [!].bin").
+            put("Rocket2.gs8", "Sparkster (U) [!].bin").
+            put("Rocket2.gs9", "Sparkster (U) [!].bin").
+            put("SONIC3D.GS0", "Sonic 3D Blast (UE) [!].bin").
+            put("SONIC3D.GS1", "Sonic 3D Blast (UE) [!].bin").
+            put("Thunder4.gs0", "Thunder Force IV (E) [c][!].bin").
+            put("Vector2.gs5", "Vectorman 2 (U) [!].bin").
+            put("Vector2.gs6", "Vectorman 2 (U) [!].bin").
+            put("Vector2.gs7", "Vectorman 2 (U) [!].bin").
+            put("VECTORMA.GS0", "Vectorman (UE) [!].bin").
             build();
 
 
@@ -67,7 +67,7 @@ public class SavestateGameLoader {
 
     public static void main(String[] args) throws Exception {
 //        loadOne();
-        loadAll(true);
+        loadAll(false);
     }
 
     public static void loadOne() throws Exception {

@@ -2,7 +2,6 @@ package omegadrive.vdp;
 
 import omegadrive.bus.BusProvider;
 import omegadrive.util.RegionDetector;
-import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
@@ -157,25 +156,25 @@ public class VdpDmaHandlerImplTest {
         vdpProvider.writeDataPort(1260);
         vdpProvider.writeDataPort(1770);
         vdpProvider.writeDataPort(2280);
-        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
 
         vdpProvider.writeDataPort(2790);
         vdpProvider.writeDataPort(3300);
         vdpProvider.writeDataPort(3810);
         vdpProvider.writeDataPort(736);
-        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
 
         vdpProvider.writeDataPort(1230);
         vdpProvider.writeDataPort(1740);
         vdpProvider.writeDataPort(2250);
         vdpProvider.writeDataPort(2760);
-        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
 
         vdpProvider.writeDataPort(3270);
         vdpProvider.writeDataPort(3780);
         vdpProvider.writeDataPort(706);
         vdpProvider.writeDataPort(1216);
-        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
 
         String str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
@@ -200,7 +199,7 @@ public class VdpDmaHandlerImplTest {
         str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
-        dmaHandler.doDmaSlot(VideoMode.PAL_H40_V30);
+        VdpTestUtil.runVdpWhileDmaDone(vdpProvider);
 
         str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
@@ -226,13 +225,13 @@ public class VdpDmaHandlerImplTest {
         vdpProvider.writeDataPort(0xf00d);
         vdpProvider.writeDataPort(0xf00d);
         vdpProvider.writeDataPort(0xf00d);
-        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
 
         vdpProvider.writeDataPort(0xf00d);
         vdpProvider.writeDataPort(0xf00d);
         vdpProvider.writeDataPort(0xf00d);
         vdpProvider.writeDataPort(0xf00d);
-        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
 
         vdpProvider.writeControlPort(0x5000);
         vdpProvider.writeControlPort(2);
@@ -240,13 +239,13 @@ public class VdpDmaHandlerImplTest {
         vdpProvider.writeDataPort(0x3344);
         vdpProvider.writeDataPort(0x5566);
         vdpProvider.writeDataPort(0x7788);
-        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
 
         vdpProvider.writeDataPort(0x99aa);
         vdpProvider.writeDataPort(0xbbcc);
         vdpProvider.writeDataPort(0xddee);
         vdpProvider.writeDataPort(0xff00);
-        GenesisVdpTest2.runVdpWhileFifoEmpty(vdpProvider);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
 
         String str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
@@ -258,14 +257,18 @@ public class VdpDmaHandlerImplTest {
         vdpProvider.writeControlPort(0x8154);
         vdpProvider.writeControlPort(0x9303);
         vdpProvider.writeControlPort(0x9400);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
+
         vdpProvider.writeControlPort(0x9500);
         vdpProvider.writeControlPort(0x9690);
         vdpProvider.writeControlPort(0x97C0);
 
         vdpProvider.writeControlPort(0);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
+
         vdpProvider.writeControlPort(0xc2);
 
-        dmaHandler.doDma(VideoMode.PAL_H40_V30, true);
+        VdpTestUtil.runVdpWhileDmaDone(vdpProvider);
 
         str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);

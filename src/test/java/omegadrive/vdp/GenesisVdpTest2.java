@@ -4,7 +4,6 @@ import omegadrive.bus.BusProvider;
 import omegadrive.memory.GenesisMemoryProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
-import omegadrive.vdp.model.IVdpFifo;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
@@ -48,13 +47,6 @@ public class GenesisVdpTest2 {
         ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
         ((VdpDmaHandlerImpl) dmaHandler).busProvider = busProvider;
         vdpProvider.init();
-    }
-
-    public static void runVdpWhileFifoEmpty(VdpProvider vdp) {
-        IVdpFifo fifo = vdp.getFifo();
-        do {
-            vdp.run(1);
-        } while (!fifo.isEmpty());
     }
 
 
@@ -128,7 +120,7 @@ public class GenesisVdpTest2 {
     public void testCodeRegisterUpdate() {
         //        Set Video mode: PAL_H32_V28
         vdpProvider.writeControlPort(0x8C00);
-        runVdpWhileFifoEmpty(vdpProvider);
+        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
         ((GenesisVdpNew) vdpProvider).resetVideoMode(true);
 
         //set vramRead

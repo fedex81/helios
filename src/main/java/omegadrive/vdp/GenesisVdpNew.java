@@ -21,8 +21,6 @@ import java.util.Optional;
  * https://github.com/DarkMoe/genefusto
  * @author DarkMoe
  *
- * TODO
- * - breaks outrunners
  */
 public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
@@ -30,6 +28,8 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     public static boolean verbose = false || Genesis.verbose;
     public static boolean regVerbose = false || verbose || Genesis.verbose;
+
+    private static boolean ENABLE_FIFO = Boolean.valueOf(System.getProperty("vdp.enable.fifo", "false"));
 
     private VramMode vramMode;
 
@@ -144,7 +144,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     private void setupVdp() {
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
-        this.fifo = new VdpFifo();// IVdpFifo.createNoFifo(memoryInterface); //new VdpFifo();
+        this.fifo = ENABLE_FIFO ? new VdpFifo() : IVdpFifo.createNoFifo(memoryInterface);
         this.initMode();
     }
 
@@ -342,12 +342,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     @Override
     public void writeControlPort(long dataL) {
         if (bus.shouldStop68k()) {
-            if (pendingControlPortWrite1 < 0) {
-                pendingControlPortWrite1 = dataL;
-            } else {
-                pendingControlPortWrite2 = dataL;
-            }
-            LogHelper.printLevel(LOG, Level.INFO, "Pending ctrlPort write: {}", Long.toHexString(dataL), verbose);
+            handlePendingWrite(VdpPortType.CONTROL, dataL);
             return;
         }
         if (dma == 1 && dmaHandler.dmaInProgress()) {
@@ -386,32 +381,39 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
     }
 
+    private void handlePendingWrite(VdpPortType type, long data) {
+        boolean fifoFull = fifo.isFull();
+        if (fifoFull) {
+            bus.setStop68k(true);
+        }
+        int num = 0;
+        if (type == VdpPortType.DATA) {
+            boolean data1 = pendingDataPortWrite1 < 0;
+            pendingDataPortWrite1 = data1 ? data : pendingDataPortWrite1;
+            pendingDataPortWrite2 = !data1 && pendingDataPortWrite2 < 0 ? data : pendingDataPortWrite2;
+            num = pendingDataPortWrite1 >= 0 ? 1 : (pendingDataPortWrite2 >= 0 ? 2 : 3);
+        } else if (type == VdpPortType.CONTROL) {
+            boolean data1 = pendingControlPortWrite1 < 0;
+            pendingControlPortWrite1 = data1 ? data : pendingControlPortWrite1;
+            pendingControlPortWrite2 = !data1 && pendingControlPortWrite2 < 0 ? data : pendingControlPortWrite2;
+            num = pendingControlPortWrite1 >= 0 ? 1 : (pendingControlPortWrite2 >= 0 ? 2 : 3);
+        }
+        LOG.warn("{}, Pending {}Port write #{} : {}",
+                (fifoFull ? "Fifo full" : "68k stopped"), type, num, Long.toHexString(data));
+        if (num > 2) {
+            LOG.error("Dropped PORT write: {}, {}", type, Long.toHexString(data));
+        }
+    }
 
 
     @Override
     public void writeDataPort(long dataL) {
-        if (bus.shouldStop68k()) {
-            if (pendingDataPortWrite1 < 0) {
-                pendingDataPortWrite1 = dataL;
-            } else {
-                pendingDataPortWrite2 = dataL;
-            }
-            LogHelper.printLevel(LOG, Level.INFO, "Pending dataPort write: {}", Long.toHexString(dataL), verbose);
-            return;
-        }
-        if (fifo.isFull()) {
-            //TODO this should save, portType, data, and size
-            LogHelper.printLevel(LOG, Level.INFO, "Pending dataPort write - fifo full: {}", Long.toHexString(dataL), verbose);
-            bus.setStop68k(true);
-            if (pendingDataPortWrite1 < 0) {
-                pendingDataPortWrite1 = dataL;
-            } else {
-                pendingDataPortWrite2 = dataL;
-            }
+        if (bus.shouldStop68k() || fifo.isFull()) {
+            handlePendingWrite(VdpPortType.DATA, dataL);
             return;
         }
         if (dma == 1 && dmaHandler.dmaInProgress()) {
-            LOG.debug("writeDataPort during dma, data : {}, dma: {}", dataL, dmaHandler.getDmaMode());
+            LOG.warn("writeDataPort during dma, data : {}, dma: {}", dataL, dmaHandler.getDmaMode());
         }
         writeDataPortInternal(dataL);
     }
@@ -675,18 +677,13 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     boolean resetOnNextFirstSlot = false;
 
-    //TODO this breaks VDPFifoTesting
     private void runSlot() {
         boolean displayEnable = disp;
         hb = interruptHandler.ishBlankSet() ? 1 : 0;
         vb = interruptHandler.isvBlankSet() ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
 
-        boolean isExternalSlot = !displayEnable || vb == 1 || interruptHandler.isExternalSlot();
-        if (!fifo.isFull()) {
-            doDma(isExternalSlot);
-        }
-        writeDataToVram(isExternalSlot);
+        processExternalSlot(displayEnable);
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastSlot()) {
@@ -712,6 +709,16 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         //slot granularity -> 2 H counter increases per cycle
         interruptHandler.increaseHCounter();
         interruptHandler.increaseHCounter();
+    }
+
+
+    private void processExternalSlot(boolean displayEnable) {
+        boolean isExternalSlot = !displayEnable || vb == 1 || interruptHandler.isExternalSlot();
+        //fifo has priority over DMA
+        if (fifo.isEmpty()) {
+            doDma(isExternalSlot);
+        }
+        writeDataToVram(isExternalSlot);
     }
 
     @Override

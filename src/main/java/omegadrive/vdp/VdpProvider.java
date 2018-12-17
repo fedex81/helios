@@ -103,6 +103,8 @@ public interface VdpProvider {
         }
     }
 
+    enum VdpPortType {DATA, CONTROL}
+
     int MAX_SPRITES_PER_FRAME_H40 = 80;
     int MAX_SPRITES_PER_FRAME_H32 = 64;
     int MAX_SPRITES_PER_LINE_H40 = 20;
