@@ -67,41 +67,31 @@ public class GenesisVdpTest2 {
         int afterDmaAutoInc = 0x20;
 
         vdpProvider.writeControlPort(0x8124);
-        vdpProvider.run(1);
         vdpProvider.writeControlPort(0x8134);
-        vdpProvider.run(1);
         vdpProvider.writeControlPort(0x8F00 + dmaAutoInc);
-        vdpProvider.run(1);
         vdpProvider.writeControlPort(0x93E8);
-        vdpProvider.run(1);
+        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+
         vdpProvider.writeControlPort(0x9400);
-        vdpProvider.run(1);
         vdpProvider.writeControlPort(0x951F);
-        vdpProvider.run(1);
         vdpProvider.writeControlPort(0x9683);
-        vdpProvider.run(1);
         vdpProvider.writeControlPort(0x977F);
-        vdpProvider.run(1);
+        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+
         //setup DMA
         vdpProvider.writeControlPort(0x4400);
-        vdpProvider.run(1);
         //move.l, first word
         vdpProvider.writeControlPort(0x81);
-        vdpProvider.run(1);
         Assert.assertTrue(busProvider.shouldStop68k());
 
         //move.l second word, this changes the autoInc value -> needs to happen after DMA!
         vdpProvider.writeControlPort(0x8F00 + afterDmaAutoInc);
-        vdpProvider.run(1);
+        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         //autoInc has not been changed
         Assert.assertEquals(dmaAutoInc, vdpProvider.getRegisterData(VdpProvider.VdpRegisterName.AUTO_INCREMENT));
 
-        //run dma
-        do {
-            vdpProvider.run(1);
-        } while (busProvider.shouldStop68k());
-        vdpProvider.run(1);
+        VdpTestUtil.runVdpUntil(vdpProvider);
 
         //autoInc has now been changed
         Assert.assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(VdpProvider.VdpRegisterName.AUTO_INCREMENT));
@@ -120,7 +110,7 @@ public class GenesisVdpTest2 {
     public void testCodeRegisterUpdate() {
         //        Set Video mode: PAL_H32_V28
         vdpProvider.writeControlPort(0x8C00);
-        VdpTestUtil.runVdpWhileFifoEmpty(vdpProvider);
+        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
         ((GenesisVdpNew) vdpProvider).resetVideoMode(true);
 
         //set vramRead

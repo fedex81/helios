@@ -1,8 +1,6 @@
 package omegadrive.vdp;
 
-import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.IVdpFifo;
-import omegadrive.vdp.model.VdpDmaHandler;
 
 /**
  * ${FILE}
@@ -27,31 +25,23 @@ public class VdpTestUtil {
         h.setvIntPending(false);
     }
 
-    public static void runVdpWhileFifoEmpty(VdpProvider vdp) {
+
+    public static void runVdpSlot(VdpProvider vdp) {
+        vdp.run(VDP_SLOT_CYCLES);
+    }
+
+    public static void runVdpUntilFifoEmpty(VdpProvider vdp) {
         IVdpFifo fifo = vdp.getFifo();
         do {
             vdp.run(VDP_SLOT_CYCLES);
         } while (!fifo.isEmpty());
     }
 
-    public static void runVdpWhileDmaDone(VdpProvider vdp) {
+    public static void runVdpUntil(VdpProvider vdp) {
         boolean dmaDone = false;
         do {
             vdp.run(VDP_SLOT_CYCLES);
             dmaDone = (vdp.readControl() & 0x2) == 0;
         } while (!dmaDone);
     }
-
-
-    public static void doDmaUntilDone(VdpProvider vdp, VdpDmaHandler dmaHandler) {
-        IVdpFifo fifo = vdp.getFifo();
-        boolean dmaDone = false;
-        do {
-            if (!fifo.isFull()) {
-                dmaDone = dmaHandler.doDmaSlot(VideoMode.PAL_H40_V30);
-            }
-            vdp.run(VDP_SLOT_CYCLES);
-        } while (!dmaDone);
-    }
-
 }

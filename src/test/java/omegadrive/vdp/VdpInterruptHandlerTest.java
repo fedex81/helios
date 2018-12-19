@@ -146,7 +146,7 @@ public class VdpInterruptHandlerTest {
     /**
      * LegendOfGalahad intro
      * hCounterLinePassed = 0xb0
-     * TODO fix
+     *
      */
     @Test
     public void testHLinesCounter_02() {

@@ -6,6 +6,7 @@ import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.util.RegionDetector;
 import omegadrive.vdp.GenesisVdpNew;
 import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.VdpTestUtil;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
@@ -66,7 +67,7 @@ public class BusArbiterTest {
         vdp.writeControlPort(0x8174);
         ((GenesisVdpNew) vdp).resetVideoMode(true);
         do {
-            vdp.run(1);
+            VdpTestUtil.runVdpSlot(vdp);
             if (busArbiter.isVdpVInt() && hCounterPending < 0) {
                 hCounterPending = vdp.getHCounter();
                 vCounterPending = vdp.getVCounter();
@@ -81,8 +82,8 @@ public class BusArbiterTest {
 
     /**
      * TODO
-     * Interrupts are know acknowleged based on what the
-     * VDP thinks its asserting rather than what the 68K actually is acking - Fixes Fatal Rewind
+     * Interrupts are know acknowledged based on what the
+     * VDP thinks its asserting rather than what the 68K actually is ack-ing - Fixes Fatal Rewind
      */
     public void testFatalRewind() {
 
