@@ -24,18 +24,32 @@ public class VdpRenderDump {
 
     private static Logger LOG = LogManager.getLogger(VdpRenderDump.class.getSimpleName());
 
-    static GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+    static GraphicsDevice gd;
+    static boolean isHeadless;
+
+    static {
+        isHeadless = GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance();
+        if (!isHeadless) {
+            gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        }
+    }
 
     private Path folder = Paths.get(".", "screencap");
     private int[] pixels = new int[0];
-    private BufferedImage bi = gd.getDefaultConfiguration().createCompatibleImage(1, 1);
+    private BufferedImage bi;
 
     public VdpRenderDump() {
+        if (!isHeadless) {
+            bi = gd.getDefaultConfiguration().createCompatibleImage(1, 1);
+        }
     }
 
-    ;
 
     public void saveRenderToFile(int[][] data, VideoMode videoMode, RenderType type) {
+        if (isHeadless) {
+            LOG.warn("Not supported in headless mode");
+            return;
+        }
         Dimension d = videoMode.getDimension();
         long now = System.currentTimeMillis();
         String fileName = type.toString() + "_" + now + ".jpg";
