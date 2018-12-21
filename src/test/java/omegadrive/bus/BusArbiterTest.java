@@ -7,9 +7,11 @@ import omegadrive.util.RegionDetector;
 import omegadrive.vdp.GenesisVdpNew;
 import omegadrive.vdp.VdpProvider;
 import omegadrive.vdp.VdpTestUtil;
+import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -23,22 +25,26 @@ import java.nio.file.Path;
  */
 public class BusArbiterTest {
 
+    private boolean verbose = false;
+    private VdpProvider vdp;
+    private BusProvider bus;
+    private BusArbiter busArbiter;
+    private M68kProvider cpu;
+
     int hCounterRaise = -1;
     int vCounterRaise = -1;
     int hCounterPending = -1;
     int vCounterPending = -1;
 
-    //    You can execute at least one instruction after enabling VINT in the VDP with a pending VINT.
-//    Emulating this is required to make Sesame Street Counting Cafe to work.
-    @Test
-    public void testSesameStreet() {
+    @Before
+    public void setup() {
         GenesisProvider emu = createGenesisProvider();
-        BusProvider bus = BusProvider.createBus();
-        VdpProvider vdp = VdpProvider.createVdp(bus);
+        bus = BusProvider.createBus();
+        vdp = VdpProvider.createVdp(bus);
         Z80Provider z80 = Z80CoreWrapper.createInstance(bus);
 
 
-        M68kProvider cpu = new MC68000Wrapper(bus) {
+        cpu = new MC68000Wrapper(bus) {
             @Override
             public boolean raiseInterrupt(int level) {
                 hCounterRaise = vdp.getHCounter();
@@ -46,9 +52,28 @@ public class BusArbiterTest {
                 return true;
             }
         };
-        BusArbiter busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
+        busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
 
         bus.attachDevice(vdp).attachDevice(cpu).attachDevice(busArbiter).attachDevice(emu);
+    }
+
+    private void setupZ80() {
+        Z80Provider z80 = new Z80CoreWrapper() {
+            @Override
+            public void interrupt() {
+                hCounterRaise = vdp.getHCounter();
+                vCounterRaise = vdp.getVCounter();
+            }
+        };
+        busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
+
+        bus.attachDevice(busArbiter);
+    }
+
+    //    You can execute at least one instruction after enabling VINT in the VDP with a pending VINT.
+//    Emulating this is required to make Sesame Street Counting Cafe to work.
+    @Test
+    public void testSesameStreet() {
         vdp.writeControlPort(0x8C00);
         vdp.writeControlPort(0x8174);
         ((GenesisVdpNew) vdp).resetVideoMode(true);
@@ -58,7 +83,7 @@ public class BusArbiterTest {
                 hCounterPending = vdp.getHCounter();
                 vCounterPending = vdp.getVCounter();
             }
-            bus.handleVdpInterrupts();
+            bus.handleVdpInterrupts68k();
 
         } while (hCounterRaise < 0);
         Assert.assertEquals(vCounterRaise, vCounterPending);
@@ -80,23 +105,6 @@ public class BusArbiterTest {
      */
     @Test
     public void testLotus2() {
-        GenesisProvider emu = createGenesisProvider();
-        BusProvider bus = BusProvider.createBus();
-        VdpProvider vdp = VdpProvider.createVdp(bus);
-        Z80Provider z80 = Z80CoreWrapper.createInstance(bus);
-
-
-        M68kProvider cpu = new MC68000Wrapper(bus) {
-            @Override
-            public boolean raiseInterrupt(int level) {
-                hCounterRaise = vdp.getHCounter();
-                vCounterRaise = vdp.getVCounter();
-                return true;
-            }
-        };
-        BusArbiter busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
-
-        bus.attachDevice(vdp).attachDevice(cpu).attachDevice(busArbiter).attachDevice(emu);
         vdp.writeControlPort(0x8C00);
         //disable hint
         vdp.writeControlPort(0x8AFF);
@@ -116,11 +124,35 @@ public class BusArbiterTest {
                 VdpTestUtil.runVdpUntilFifoEmpty(vdp);
                 Assert.assertFalse("HINT should not be pending", vdp.getHip());
             }
-            bus.handleVdpInterrupts();
+            bus.handleVdpInterrupts68k();
 
         } while (hCounterRaise < 0);
         //this should be at least 1, ie. no HINT triggered on line 0
         Assert.assertEquals(1, vCounterRaise);
+    }
+
+    @Test
+    public void testZ80Interrupt() {
+        setupZ80();
+        //disable hint
+        vdp.writeControlPort(0x8AFF);
+        vdp.writeControlPort(0x8004);
+        //enable VINT
+        vdp.writeControlPort(0x8164);
+        VdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        ((GenesisVdpNew) vdp).resetVideoMode(true);
+        VdpCounterMode mode = VdpCounterMode.getCounterMode(vdp.getVideoMode());
+        do {
+            VdpTestUtil.runVdpSlot(vdp);
+            bus.handleVdpInterrupts68k();
+        } while (vCounterRaise < 0);
+        Assert.assertEquals(mode.vBlankSet, vCounterRaise);
+        vCounterRaise = -1;
+        do {
+            VdpTestUtil.runVdpSlot(vdp);
+            bus.handleVdpInterrupts68k();
+        } while (vCounterRaise < 0);
+        Assert.assertEquals(mode.vBlankSet, vCounterRaise);
     }
 
     /**

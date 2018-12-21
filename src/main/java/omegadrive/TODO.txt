@@ -1,3 +1,12 @@
+- Vdp read data port
+-- vdp makes the read pending and performs it during the next external slot
+-- 68k should be stopped waiting
+-- TODO
+68k should use a thread to do bus operations, submitting work items to it
+a work item might stop the worker thread
+it the worker thread is stopped 68k halts
+
+
 - Test BUS
 -- 68k writes to Z80 -> cant access 68k memory again
 - move.l d1, -(a6) (Jim power)

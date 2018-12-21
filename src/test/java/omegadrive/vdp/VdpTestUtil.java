@@ -36,8 +36,8 @@ public class VdpTestUtil {
         } while (!fifo.isEmpty());
     }
 
-    public static void runVdpUntil(VdpProvider vdp) {
-        boolean dmaDone = false;
+    public static void runVdpUntilDmaDone(VdpProvider vdp) {
+        boolean dmaDone;
         do {
             vdp.run(VDP_SLOT_CYCLES);
             dmaDone = (vdp.readControl() & 0x2) == 0;

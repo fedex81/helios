@@ -199,7 +199,7 @@ public class VdpDmaHandlerImplTest {
         str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
-        VdpTestUtil.runVdpUntil(vdpProvider);
+        VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
         str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
@@ -268,7 +268,7 @@ public class VdpDmaHandlerImplTest {
 
         vdpProvider.writeControlPort(0xc2);
 
-        VdpTestUtil.runVdpUntil(vdpProvider);
+        VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
         str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);

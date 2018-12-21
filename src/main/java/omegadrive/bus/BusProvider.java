@@ -58,9 +58,9 @@ public interface BusProvider {
 
     SoundProvider getSound();
 
-    boolean handleVdpInterrupts();
+    void handleVdpInterrupts68k();
 
-    boolean handleVdpInterruptsZ80();
+    void handleVdpInterruptsZ80();
 
     long read(long address, Size size);
 

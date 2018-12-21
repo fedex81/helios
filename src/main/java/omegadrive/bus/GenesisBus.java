@@ -632,14 +632,13 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     @Override
-    public boolean handleVdpInterrupts() {
-        return busArbiter.handleVdpInterrupts();
+    public void handleVdpInterrupts68k() {
+        busArbiter.handleInterrupts68k();
     }
 
     @Override
-    public boolean handleVdpInterruptsZ80() {
-        busArbiter.handleVdpInterruptsZ80();
-        return true;
+    public void handleVdpInterruptsZ80() {
+        busArbiter.handleInterruptZ80();
     }
 
     private static void logInfo(String str, Object... args) {

@@ -91,7 +91,7 @@ public class GenesisVdpTest2 {
         //autoInc has not been changed
         Assert.assertEquals(dmaAutoInc, vdpProvider.getRegisterData(VdpProvider.VdpRegisterName.AUTO_INCREMENT));
 
-        VdpTestUtil.runVdpUntil(vdpProvider);
+        VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
         //autoInc has now been changed
         Assert.assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(VdpProvider.VdpRegisterName.AUTO_INCREMENT));

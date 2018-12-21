@@ -19,8 +19,8 @@ import java.util.Random;
  * Copyright 2018
  * <p>
  *
- *     TODO fix VDPTEST
- *     http://gendev.spritesmind.net/forum/viewtopic.php?t=787
+ *  VDPTEST - needs NTSC
+ *  http://gendev.spritesmind.net/forum/viewtopic.php?t=787
  */
 public class VdpInterruptHandler {
 
@@ -106,9 +106,20 @@ public class VdpInterruptHandler {
         return increaseVCounterInternal();
     }
 
+
+    /**
+     * 1) every line, wait for line end (Hcounter $84->$85, or more likely the 9-bits value) then increment VCounter.
+     * 2) if VBLANK flag is set, reload HINT Counter else decrement it.
+     * 3) if VCounter=$E0($F0), set VBLANK flag else if VCounter=$FF, clear it.
+     * 4) if HINT Counter overflows, set HINT flag then reload HINT Counter.
+     * 5) if HINT is enabled and HINT flag is set, interrupt control asserts /IPL2.
+     * 6) if VCounter=$E0($F0), wait for Hcounter $00->$01 then set VINT flag.
+     * 7) if VINT is enabled and VINT flag is set, interrupt control asserts /IPL2 and /IPL1.
+     */
     private int increaseVCounterInternal() {
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
+        handleHLinesCounterDecrement();
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
             eventFlag = true;
@@ -117,7 +128,6 @@ public class VdpInterruptHandler {
             vBlankSet = false;
             eventFlag = true;
         }
-        handleHLinesCounterDecrement();
         return vCounterInternal;
     }
 
@@ -155,17 +165,8 @@ public class VdpInterruptHandler {
     }
 
     private void handleHLinesCounterDecrement() {
-        //it is decremented on each lines between line 0 and line $E0, including E0
-        if (vCounterInternal <= vdpCounterMode.vBlankSet) {
-            hLinePassed--;
-        }
-        //reload on line = 0 and vblank
-        boolean isForceResetVCounter = vCounterInternal == 0 || vBlankSet;
-        if (isForceResetVCounter) {
-            resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
-        }
-        boolean triggerHip = hLinePassed == -1 && vCounterInternal < vdpCounterMode.vBlankSet; //aka triggerHippy
-        if (triggerHip && !hIntPending) {
+        hLinePassed = vBlankSet ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
+        if (hLinePassed < 0) {
             hIntPending = true;
             logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
             eventFlag = true;
@@ -249,9 +250,10 @@ public class VdpInterruptHandler {
         return isLastHCounter() && vCounterInternal == COUNTER_LIMIT;
     }
 
-    public void resetHLinesCounter(int value) {
+    public int resetHLinesCounter(int value) {
         this.hLinePassed = value;
         logVeryVerbose("Reset hLinePassed: %s", value);
+        return hLinePassed;
     }
 
     public void logVerbose(String str) {

@@ -467,7 +467,7 @@ public class Genesis implements GenesisProvider {
                 cpu.runInstruction();
             }
             //interrupts are processed after the current instruction
-            bus.handleVdpInterrupts();
+            bus.handleVdpInterrupts68k();
         }
     }
 

@@ -35,6 +35,7 @@ public class MC68000Wrapper implements M68kProvider {
 
     private MC68000 m68k;
     private AddressSpace addressSpace;
+    private BusProvider busProvider;
     private MC68000Monitor monitor;
     private boolean stop;
 
@@ -73,11 +74,16 @@ public class MC68000Wrapper implements M68kProvider {
         };
         new MoveEx(m68k).register(m68k);
         new TasEx(m68k).register(m68k);
-        this.addressSpace = getAddressSpace(busProvider);
+        this.busProvider = busProvider;
+        this.addressSpace = getAddressSpace(this, busProvider);
         m68k.setAddressSpace(addressSpace);
     }
 
-    private static AddressSpace getAddressSpace(BusProvider busProvider) {
+    protected int memoryRead(int address, Size size) {
+        return (int) busProvider.read(address, size);
+    }
+
+    private static AddressSpace getAddressSpace(MC68000Wrapper wrapper, BusProvider busProvider) {
         return new AddressSpace() {
             @Override
             public void reset() {
@@ -96,17 +102,17 @@ public class MC68000Wrapper implements M68kProvider {
 
             @Override
             public int readByte(int addr) {
-                return (int) busProvider.read(addr, Size.BYTE);
+                return wrapper.memoryRead(addr, Size.BYTE);
             }
 
             @Override
             public int readWord(int addr) {
-                return (int) busProvider.read(addr, Size.WORD);
+                return wrapper.memoryRead(addr, Size.WORD);
             }
 
             @Override
             public int readLong(int addr) {
-                return (int) busProvider.read(addr, Size.LONG);
+                return wrapper.memoryRead(addr, Size.LONG);
             }
 
             @Override

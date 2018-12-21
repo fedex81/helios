@@ -13,6 +13,14 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
  * Federico Berti
  * <p>
  * Copyright 2018
+ *
+ * TODO
+ * z80 INT should last one scanline?
+ * http://gendev.spritesmind.net/forum/viewtopic.php?t=740
+ *
+ * VDPTEST
+ * http://gendev.spritesmind.net/forum/viewtopic.php?t=787
+ *
  */
 public class BusArbiter {
 
@@ -22,21 +30,14 @@ public class BusArbiter {
     protected M68kProvider m68k;
     protected Z80Provider z80;
 
-    private static boolean verbose = false;
+    public static boolean verbose = false;
 
-    //68k pins, vpd -> 68k, ipl1 = 2, ipl2 = 4
-//    private int ipl1;
-//    private int ipl2;
+    private IntState int68k = IntState.ACKED;
 
-    private int vdpInterruptState = 0;
+    enum IntState {NONE, PENDING, ASSERTED, ACKED}
 
-    private IntState vInt = IntState.ACKED;
-    private IntState hInt = IntState.ACKED;
-
-    enum IntState {PENDING, ASSERTED, ACKED}
-
-
-    private boolean shouldRaiseZ80;
+    private IntState z80Int = IntState.ACKED;
+    private int z80IntVcounter = -1;
 
     protected BusArbiter() {
     }
@@ -49,39 +50,82 @@ public class BusArbiter {
         return b;
     }
 
-    public boolean checkVdpInterrupts() {
-        boolean change = false;
+    public void handleInterruptZ80() {
+        switch (z80Int) {
+            case NONE:
+                checkInterruptZ80();
+                break;
+            case PENDING:
+                raiseInterruptsZ80();
+                logInfo("Z80 raise");
+                break;
+            case ASSERTED:
+                //fall through
+            case ACKED:
+                logInfo("Z80 acked");
+                z80Int = IntState.NONE;
+        }
+    }
 
-        if (isVdpVInt() && vInt == IntState.ACKED) {
-            vInt = IntState.PENDING;
-            change = true;
-        } else if (isVdpHInt() && hInt == IntState.ACKED) {
-            hInt = IntState.PENDING;
-            change = true;
+    public void handleInterrupts68k() {
+        switch (int68k) {
+            case NONE:
+                checkInterrupts68k();
+                break;
+            case PENDING:
+                raiseInterrupts68k();
+                break;
+            case ASSERTED:
+                ackInterrupts68k();
+                break;
+            case ACKED:
+                int68k = IntState.NONE;
+                break;
+        }
+    }
+
+    public void checkInterrupts68k() {
+        if (isVdpVInt() || isVdpHInt()) {
+            int68k = IntState.PENDING;
+            logInfo("68k int{}: {}", getLevel68k(), int68k);
+        }
+    }
+
+    public boolean checkInterruptZ80() {
+        boolean change = false;
+        boolean processZ80 = /*z80IntVcounter > 0 ||*/ isVdpVInt();
+        if (processZ80) {
+            logInfo("Z80 check");
+            int vc = vdp.getVCounter();
+            if (z80IntVcounter == -1) {
+                z80IntVcounter = vc;
+                logInfo("Z80 INT detected");
+            }
+            if (z80IntVcounter == vc) {
+                logInfo("Z80 INT still pending");
+                z80Int = IntState.PENDING;
+                change = true;
+            } else {
+                logInfo("Z80 INT over");
+                z80IntVcounter = -1;
+            }
         }
         return change;
     }
 
-    private int getVdpInterruptState() {
-        return isVdpHInt() ? M68kProvider.HBLANK_INTERRUPT_LEVEL : (isVdpVInt() ? M68kProvider.VBLANK_INTERRUPT_LEVEL : 0);
+    public void ackInterrupts68k() {
+        int level = getLevel68k();
+        ackVdpInt(level);
+        int68k = IntState.ACKED;
+        logInfo("68k int{}: {}", level, int68k);
     }
 
-    //from 68k
-    public boolean setVdpInterruptAck() {
-        boolean change = false;
-        int vdpState = getVdpInterruptState();
-        if (isVdpVInt()) {
+    private void ackVdpInt(int level) {
+        if (level == M68kProvider.VBLANK_INTERRUPT_LEVEL) {
             vdp.setVip(false);
-            vInt = IntState.ACKED;
-            logInfo("Ack VDP VINT");
-            change = true;
-        } else if (isVdpHInt()) {
+        } else if (level == M68kProvider.HBLANK_INTERRUPT_LEVEL) {
             vdp.setHip(false);
-            hInt = IntState.ACKED;
-            logInfo("Ack VDP HINT");
-            change = true;
         }
-        return change;
     }
 
     protected boolean isVdpVInt() {
@@ -92,58 +136,23 @@ public class BusArbiter {
         return vdp.getHip() && vdp.isIe1();
     }
 
-    public boolean handleVdpInterrupts() {
-        if (checkVdpInterrupts()) {
-            return false;
+    private void raiseInterrupts68k() {
+        int level = getLevel68k();
+        boolean nonMasked = m68k.raiseInterrupt(level);
+        if (nonMasked) {
+            int68k = IntState.ASSERTED;
+            logInfo("68k int{}: {}", level, int68k);
         }
-        if (evaluateRaiseInterrupt()) {
-            return false;
-        }
-        return evaluateAckInterrupt();
-    }
-
-    private boolean evaluateAckInterrupt() {
-        if (hInt == IntState.ASSERTED || vInt == IntState.ASSERTED) {
-            setVdpInterruptAck();
-            return true;
-        }
-        return false;
-    }
-
-    private boolean evaluateRaiseInterrupt() {
-        boolean change = false;
-        if (vInt == IntState.PENDING) {
-            boolean shouldAck = raiseInterrupts68k(M68kProvider.VBLANK_INTERRUPT_LEVEL);
-            if (shouldAck) {
-                vInt = IntState.ASSERTED;
-                change = true;
-            }
-            raiseInterruptsZ80();
-        } else if (hInt == IntState.PENDING) {
-            boolean shouldAck = raiseInterrupts68k(M68kProvider.HBLANK_INTERRUPT_LEVEL);
-            if (shouldAck) {
-                hInt = IntState.ASSERTED;
-                change = true;
-            }
-        }
-        return change;
-    }
-
-    protected boolean raiseInterrupts68k(int level) {
-            boolean res = m68k.raiseInterrupt(level);
-            if (res) {
-                logInfo("raise 68k intLevel: {}", level);
-            }
-            return res;
     }
 
     private void raiseInterruptsZ80() {
-        if (shouldRaiseZ80) {
-            logInfo("Z80 raise interrupt");
-            z80.interrupt();
-            shouldRaiseZ80 = false;
-        }
+        z80.interrupt();
+        z80Int = IntState.ASSERTED;
+        logInfo("Z80 INT: {}", z80Int);
+    }
 
+    private int getLevel68k() {
+        return isVdpVInt() ? M68kProvider.VBLANK_INTERRUPT_LEVEL : (isVdpHInt() ? M68kProvider.HBLANK_INTERRUPT_LEVEL : 0);
     }
 
     private void logInfo(String str, Object... args) {
@@ -151,9 +160,5 @@ public class BusArbiter {
             String msg = ParameterizedMessage.format(str, args);
             LOG.info(new ParameterizedMessage(msg + vdp.getVdpStateString(), Long.toHexString(vdp.getHCounter()), Long.toHexString(vdp.getVCounter())));
         }
-    }
-
-    public void handleVdpInterruptsZ80() {
-        //TODO needed? delete?
     }
 }

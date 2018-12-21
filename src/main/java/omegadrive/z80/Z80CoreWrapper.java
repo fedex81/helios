@@ -69,7 +69,8 @@ public class Z80CoreWrapper implements Z80Provider {
         return w;
     }
 
-    private Z80CoreWrapper() {
+    //TEST
+    public Z80CoreWrapper() {
     }
 
     @Override
@@ -189,8 +190,8 @@ public class Z80CoreWrapper implements Z80Provider {
         return z80Core.isHalted();
     }
 
-    //    If the Z80 has interrupts disabled when the frame interrupt is supposed
-//    to occur, it will be missed, rather than made pending.
+    //If the Z80 has interrupts disabled when the frame interrupt is supposed
+    //to occur, it will be missed, rather than made pending.
     @Override
     public void interrupt() {
         boolean interruptDisabled = !z80Core.isIFF1() && !z80Core.isIFF2();
