@@ -23,27 +23,13 @@ import java.nio.file.Path;
  */
 public class BusArbiterTest {
 
-
-//    You can execute at least one instruction after enabling VINT in the VDP with a pending VINT.
-//    Emulating this is required to make Sesame Street Counting Cafe to work.
-
-    //    MODE_2 changed from: 14, to: 74 -- , hce=f1(1e2), vce=4f(4f), hBlankSet=true,vBlankSet=false, vIntPending=true,
-//                                         hIntPending=false, hLinePassed=176
-//    vdpHV: f6, 4f Raise: Arbiter IPL: vint: true, hint: true
-//    vdpHV: f6, 4f Raise: Vdp State: vint: true, hint: false
-//    vdpHV: f6, 4f raise 68k intLevel: 6
-//    vdpHV: f6, 4f Z80 raise interrupt
-//    vdpHV: fb, 4f PreAck: Arbiter IPL: vint: true, hint: true
-//    vdpHV: fb, 4f PreAck: Vdp State: vint: true, hint: false
-//    vdpHV: fb, 4f Ack VDP VINT
-//    vdpHV: fb, 4f PostAck: Arbiter IPL: vint: false, hint: false
-//    vdpHV: fb, 4f PostAck: Vdp State: vint: false, hint: false
-
     int hCounterRaise = -1;
     int vCounterRaise = -1;
     int hCounterPending = -1;
     int vCounterPending = -1;
 
+    //    You can execute at least one instruction after enabling VINT in the VDP with a pending VINT.
+//    Emulating this is required to make Sesame Street Counting Cafe to work.
     @Test
     public void testSesameStreet() {
         GenesisProvider emu = createGenesisProvider();
@@ -78,6 +64,63 @@ public class BusArbiterTest {
         Assert.assertEquals(vCounterRaise, vCounterPending);
         //this should be at least 1
         Assert.assertTrue(hCounterRaise > hCounterPending);
+    }
+
+    /**
+     * Lotus 2, hip shouldnt trigger on line 0
+     * <p>
+     * Ack VDP VINT - , hce=6(c), vce=e0(e0), hBlankSet=false,vBlankSet=true, vIntPending=false, hIntPending=false, hLinePassed=243
+     * IntMask from: 6 to: 7
+     * HCOUNTER_VALUE changed from: ff, to: 0 -- , hce=26(4c), vce=e0(e0), hBlankSet=false,vBlankSet=true, vIntPending=false, hIntPending=false, hLinePassed=243
+     * MODE_2 changed from: 24, to: 64 -- , hce=28(50), vce=e0(e0), hBlankSet=false,vBlankSet=true, vIntPending=false, hIntPending=false, hLinePassed=243
+     * IntMask from: 7 to: 3
+     * IntMask from: 3 to: 7
+     * IntMask from: 7 to: 3
+     * Set HIP: true, hLinePassed: -1, hce=85(10a), vce=0(0), hBlankSet=false,vBlankSet=false, vIntPending=false, hIntPending=true, hLinePassed=-1
+     */
+    @Test
+    public void testLotus2() {
+        GenesisProvider emu = createGenesisProvider();
+        BusProvider bus = BusProvider.createBus();
+        VdpProvider vdp = VdpProvider.createVdp(bus);
+        Z80Provider z80 = Z80CoreWrapper.createInstance(bus);
+
+
+        M68kProvider cpu = new MC68000Wrapper(bus) {
+            @Override
+            public boolean raiseInterrupt(int level) {
+                hCounterRaise = vdp.getHCounter();
+                vCounterRaise = vdp.getVCounter();
+                return true;
+            }
+        };
+        BusArbiter busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
+
+        bus.attachDevice(vdp).attachDevice(cpu).attachDevice(busArbiter).attachDevice(emu);
+        vdp.writeControlPort(0x8C00);
+        //disable hint
+        vdp.writeControlPort(0x8AFF);
+        vdp.writeControlPort(0x8004);
+        VdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        ((GenesisVdpNew) vdp).resetVideoMode(true);
+        do {
+            boolean wasVblank = VdpTestUtil.isVBlank(vdp);
+            VdpTestUtil.runVdpSlot(vdp);
+            boolean vBlankTrigger = !wasVblank && VdpTestUtil.isVBlank(vdp);
+            if (vBlankTrigger) {
+                vdp.setHip(false);
+                vdp.setVip(false);
+                //enable hint after vblank period
+                vdp.writeControlPort(0x8A00);
+                vdp.writeControlPort(0x8014);
+                VdpTestUtil.runVdpUntilFifoEmpty(vdp);
+                Assert.assertFalse("HINT should not be pending", vdp.getHip());
+            }
+            bus.handleVdpInterrupts();
+
+        } while (hCounterRaise < 0);
+        //this should be at least 1, ie. no HINT triggered on line 0
+        Assert.assertEquals(1, vCounterRaise);
     }
 
     /**

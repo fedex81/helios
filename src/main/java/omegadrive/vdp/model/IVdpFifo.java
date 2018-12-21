@@ -1,5 +1,6 @@
 package omegadrive.vdp.model;
 
+import omegadrive.vdp.VdpProvider;
 import omegadrive.vdp.VdpProvider.VramMode;
 
 /**
@@ -12,6 +13,7 @@ import omegadrive.vdp.VdpProvider.VramMode;
 public interface IVdpFifo {
 
     class VdpFifoEntry {
+        public VdpProvider.VdpPortType portType;
         public VramMode vdpRamMode;
         public int addressRegister;
         public int data;

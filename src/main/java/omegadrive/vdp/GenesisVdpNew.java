@@ -27,6 +27,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     private static Logger LOG = LogManager.getLogger(GenesisVdpNew.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
+    public static boolean fifoVerbose = false || Genesis.verbose;
     public static boolean regVerbose = false || verbose || Genesis.verbose;
 
     private static boolean ENABLE_FIFO = Boolean.valueOf(System.getProperty("vdp.enable.fifo", "false"));
@@ -34,6 +35,10 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     private VramMode vramMode;
 
     int[] registers = new int[VDP_REGISTERS_SIZE];
+
+    //TODO
+    IVdpFifo.VdpFifoEntry pendingReadEntry = new IVdpFifo.VdpFifoEntry();
+    IVdpFifo.VdpFifoEntry pendingWriteEntry = new IVdpFifo.VdpFifoEntry();
 
     //    This flag is updated when these conditions are met:
 //
@@ -183,9 +188,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     //TODO fix this
     public void initMode() {
-        if (region == null) {
-            region = Optional.ofNullable(bus.getEmulator()).map(GenesisProvider::getRegion).orElse(RegionDetector.Region.EUROPE);
-        }
+        region = Optional.ofNullable(bus.getEmulator()).map(GenesisProvider::getRegion).orElse(RegionDetector.Region.EUROPE);
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
         resetVideoMode(true);
     }
@@ -334,11 +337,6 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 //	CRAM Read	0	0	1	0	0	0
 //	VSRAM Read	0	0	0	1	0	0
 
-    long pendingControlPortWrite1 = -1;
-    long pendingControlPortWrite2 = -1;
-    long pendingDataPortWrite1 = -1;
-    long pendingDataPortWrite2 = -1;
-
     @Override
     public void writeControlPort(long dataL) {
         if (bus.shouldStop68k()) {
@@ -369,7 +367,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     private void updateStateFromControlPortWrite(int data) {
         if (!writePendingControlPort) {
-            //            It is perfectly valid to write the first half of the command word only.
+            //It is perfectly valid to write the first half of the command word only.
 //            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
 //            values, while the remaining address and code bits _retain_ their former value.
             codeRegister = (codeRegister & 0x3C) | ((data >> 14) & 3);
@@ -386,25 +384,17 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         if (fifoFull) {
             bus.setStop68k(true);
         }
-        int num = 0;
-        if (type == VdpPortType.DATA) {
-            boolean data1 = pendingDataPortWrite1 < 0;
-            pendingDataPortWrite1 = data1 ? data : pendingDataPortWrite1;
-            pendingDataPortWrite2 = !data1 && pendingDataPortWrite2 < 0 ? data : pendingDataPortWrite2;
-            num = pendingDataPortWrite1 >= 0 ? 1 : (pendingDataPortWrite2 >= 0 ? 2 : 3);
-        } else if (type == VdpPortType.CONTROL) {
-            boolean data1 = pendingControlPortWrite1 < 0;
-            pendingControlPortWrite1 = data1 ? data : pendingControlPortWrite1;
-            pendingControlPortWrite2 = !data1 && pendingControlPortWrite2 < 0 ? data : pendingControlPortWrite2;
-            num = pendingControlPortWrite1 >= 0 ? 1 : (pendingControlPortWrite2 >= 0 ? 2 : 3);
-        }
-        LOG.warn("{}, Pending {}Port write #{} : {}",
-                (fifoFull ? "Fifo full" : "68k stopped"), type, num, Long.toHexString(data));
-        if (num > 2) {
+        if (pendingWriteEntry.portType != null) {
             LOG.error("Dropped PORT write: {}, {}", type, Long.toHexString(data));
+            return;
         }
+        pendingWriteEntry.data = (int) data;
+        pendingWriteEntry.portType = type;
+        pendingWriteEntry.vdpRamMode = vramMode;
+        pendingWriteEntry.addressRegister = -1;
+        LogHelper.printLevel(LOG, Level.INFO, (fifoFull ? "Fifo full" : "68k stopped") + ", Pending {}Port write #1 : {}",
+                type, data, fifoVerbose);
     }
-
 
     @Override
     public void writeDataPort(long dataL) {
@@ -452,9 +442,14 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             LOG.warn("readDataPort with 68k stopped, address: {}", addressRegister, verbose);
         }
         this.writePendingControlPort = false;
-        if (fifo.isFull()) {
-            return 0;
-        }
+        //TODO need to stop 68k until the result is available
+//        pendingReadEntry.addressRegister = addressRegister;
+//        pendingReadEntry.vdpRamMode = vramMode;
+//        pendingReadEntry.data = -1;
+        return readDataPortInternal();
+    }
+
+    private int readDataPortInternal() {
         int res = memoryInterface.readVideoRamWord(vramMode, addressRegister);
         int fifoData = fifo.peek().data;
         switch (vramMode) {
@@ -501,6 +496,11 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     private void writeRegister(int data) {
         int dataControl = data & 0x00FF;
         int reg = (data >> 8) & 0x1F;
+        //TODO needed?
+//        //writing a register clears the 1st command word
+//        //see Sonic3d intro wrong colors
+//        codeRegister &= ~0x3;
+//        addressRegister &= ~0x3FFF;
         writeRegister(reg, dataControl);
     }
 
@@ -586,7 +586,6 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         if (dma == 1) {
             boolean dmaDone;
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
-//            dmaDone = dmaHandler.doDma(videoMode, isBlanking);
             dmaDone = dmaHandler.doDmaSlot(videoMode);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
@@ -602,29 +601,20 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     }
 
     private void processPendingWrites() {
-        if (pendingControlPortWrite1 >= 0) {
-            LogHelper.printLevel(LOG, Level.INFO, "Process pending ctrlPort write: {}",
-                    Long.toHexString(pendingControlPortWrite1), verbose);
-            writeControlPortInternal(pendingControlPortWrite1);
-            pendingControlPortWrite1 = -1;
-        }
-        if (pendingControlPortWrite2 >= 0) {
-            LogHelper.printLevel(LOG, Level.INFO, "Process pending ctrlPort write: {}",
-                    Long.toHexString(pendingControlPortWrite2), verbose);
-            writeControlPortInternal(pendingControlPortWrite2);
-            pendingControlPortWrite2 = -1;
-        }
-        if (pendingDataPortWrite1 >= 0) {
-            LogHelper.printLevel(LOG, Level.INFO, "Process pending dataPort write: {}",
-                    Long.toHexString(pendingDataPortWrite1), verbose);
-            writeDataPortInternal(pendingDataPortWrite1);
-            pendingDataPortWrite1 = -1;
-        }
-        if (pendingDataPortWrite2 >= 0) {
-            LogHelper.printLevel(LOG, Level.INFO, "Process pending dataPort write: {}",
-                    Long.toHexString(pendingDataPortWrite2), verbose);
-            writeDataPortInternal(pendingDataPortWrite2);
-            pendingDataPortWrite2 = -1;
+        if (pendingWriteEntry.portType != null) {
+            LogHelper.printLevel(LOG, Level.INFO, "Process pending {}Port write: {}",
+                    pendingWriteEntry.portType, pendingWriteEntry.data, fifoVerbose);
+            switch (pendingWriteEntry.portType) {
+                case DATA:
+                    writeDataPortInternal(pendingWriteEntry.data);
+                    break;
+                case CONTROL:
+                    writeControlPortInternal(pendingWriteEntry.data);
+                    break;
+            }
+            pendingWriteEntry.portType = null;
+            pendingWriteEntry.vdpRamMode = null;
+            pendingWriteEntry.data = -1;
         }
     }
 
@@ -779,5 +769,11 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     @Override
     public VdpMemoryInterface getVdpMemory() {
         return memoryInterface;
+    }
+
+
+    @Override
+    public String getVdpStateString() {
+        return interruptHandler.getStateString(" - ");
     }
 }

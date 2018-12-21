@@ -1,7 +1,6 @@
 package omegadrive.util;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 
@@ -16,7 +15,6 @@ import java.util.Objects;
  */
 public class LogHelper {
 
-    private static Logger LOG = LogManager.getLogger(LogHelper.class.getSimpleName());
     public static boolean printToSytemOut = false;
 
 
@@ -41,6 +39,14 @@ public class LogHelper {
         if (verbose) {
             ParameterizedMessage pm = new ParameterizedMessage(str, Long.toHexString(arg1),
                     Long.toHexString(arg2), Long.toHexString(arg3), Long.toHexString(arg4));
+            logParamMessage(LOG, level, pm);
+        }
+    }
+
+    public static void printLevel(Logger LOG, Level level, String str, Object arg1, long arg2, boolean verbose) {
+        if (verbose) {
+            ParameterizedMessage pm = new ParameterizedMessage(str, Objects.toString(arg1),
+                    Long.toHexString(arg2));
             logParamMessage(LOG, level, pm);
         }
     }

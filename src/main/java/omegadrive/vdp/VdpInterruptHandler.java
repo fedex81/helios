@@ -154,25 +154,21 @@ public class VdpInterruptHandler {
         return hCounterInternal;
     }
 
-    private boolean handleHLinesCounterPending() {
-        boolean triggerHip = hLinePassed == -1; //aka triggerHippy
-        if (triggerHip && !hIntPending) {
-            hIntPending = true;
-            logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
-            eventFlag = true;
-        }
-        return triggerHip;
-    }
-
     private void handleHLinesCounterDecrement() {
         //it is decremented on each lines between line 0 and line $E0, including E0
         if (vCounterInternal <= vdpCounterMode.vBlankSet) {
             hLinePassed--;
         }
-        boolean triggerHip = handleHLinesCounterPending();
         //reload on line = 0 and vblank
-        boolean isForceResetVCounter = vCounterInternal > vdpCounterMode.vBlankSet;
-        if (isForceResetVCounter || triggerHip) {
+        boolean isForceResetVCounter = vCounterInternal == 0 || vBlankSet;
+        if (isForceResetVCounter) {
+            resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
+        }
+        boolean triggerHip = hLinePassed == -1 && vCounterInternal < vdpCounterMode.vBlankSet; //aka triggerHippy
+        if (triggerHip && !hIntPending) {
+            hIntPending = true;
+            logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
+            eventFlag = true;
             resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
         }
     }

@@ -13,15 +13,12 @@ import java.util.stream.IntStream;
  * <p>
  * Copyright 2018
  * <p>
- * TODO
- * - when fifo size = 3 and a move.l to vdp happens, I need to write two words -> fifo size = 5
  */
 public class VdpFifo implements IVdpFifo {
 
     private static Logger LOG = LogManager.getLogger(VdpFifo.class.getSimpleName());
 
-    public static final int FIFO_SIZE = 4;
-    public static final int FIFO_REAL_SIZE = 4; //6;
+    public static final int FIFO_REAL_SIZE = 4;
 
     private VdpFifoEntry[] fifo = new VdpFifoEntry[FIFO_REAL_SIZE];
     private int popPointer;
@@ -84,6 +81,6 @@ public class VdpFifo implements IVdpFifo {
 
     @Override
     public boolean isFull() {
-        return fifoSize >= FIFO_SIZE;
+        return fifoSize >= FIFO_REAL_SIZE;
     }
 }

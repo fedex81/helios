@@ -25,7 +25,6 @@ public class VdpTestUtil {
         h.setvIntPending(false);
     }
 
-
     public static void runVdpSlot(VdpProvider vdp) {
         vdp.run(VDP_SLOT_CYCLES);
     }
@@ -43,5 +42,9 @@ public class VdpTestUtil {
             vdp.run(VDP_SLOT_CYCLES);
             dmaDone = (vdp.readControl() & 0x2) == 0;
         } while (!dmaDone);
+    }
+
+    public static boolean isVBlank(VdpProvider vdp) {
+        return (vdp.readControl() & 0x8) == 8;
     }
 }

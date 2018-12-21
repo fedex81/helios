@@ -237,5 +237,8 @@ public interface VdpProvider {
         throw new UnsupportedOperationException("Not supported");
     }
 
+    default String getVdpStateString() {
+        return "vdpState: unsupported";
+    }
 
 }
