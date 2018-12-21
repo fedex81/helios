@@ -78,21 +78,21 @@ public class AutomatedGameTester {
             }
 //            System.out.println("Testing: " + rom.getFileName().toString());
             genesisProvider.init();
-            genesisProvider.handleNewGame(rom);
+            genesisProvider.handleNewRom(rom);
 //            genesisProvider.setFullScreen(true);
             Util.sleep(BOOT_DELAY_MS);
             boolean boots = false;
             boolean soundOk = false;
             boolean tooManyErrors = false;
             int totalDelay = BOOT_DELAY_MS;
-            if (genesisProvider.isGameRunning()) {
+            if (genesisProvider.isRomRunning()) {
                 boots = true;
                 do {
                     tooManyErrors = checkLogFileSize(logFile, rom.getFileName().toString(), logFileLen);
                     Util.sleep(BOOT_DELAY_MS);
                     totalDelay += BOOT_DELAY_MS;
                 } while (totalDelay < RUN_DELAY_MS && !tooManyErrors);
-                genesisProvider.handleCloseGame();
+                genesisProvider.handleCloseRom();
             }
             System.out.println(rom.getFileName().toString() + ";" + boots + ";" + soundOk);
             Util.sleep(500);
@@ -137,14 +137,14 @@ public class AutomatedGameTester {
             }
 //            System.out.println("Testing: " + rom.getFileName().toString());
             genesisProvider.init();
-            genesisProvider.handleNewGame(rom);
+            genesisProvider.handleNewRom(rom);
 //            genesisProvider.setFullScreen(true);
             Util.sleep(BOOT_DELAY_MS);
             boolean boots = false;
             boolean soundOk = false;
             boolean tooManyErrors = false;
             int totalDelay = BOOT_DELAY_MS;
-            if (genesisProvider.isGameRunning()) {
+            if (genesisProvider.isRomRunning()) {
                 boots = true;
                 do {
                     tooManyErrors = checkLogFileSize(logFile, rom.getFileName().toString(), logFileLen);
@@ -155,7 +155,7 @@ public class AutomatedGameTester {
                         soundOk = genesisProvider.isSoundWorking();
                     }
                 } while (!soundOk && totalDelay < AUDIO_DELAY_MS && !tooManyErrors);
-                genesisProvider.handleCloseGame();
+                genesisProvider.handleCloseRom();
             }
             System.out.println(rom.getFileName().toString() + ";" + boots + ";" + soundOk);
             logFileLen = logFileLength(logFile);

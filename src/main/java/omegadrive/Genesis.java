@@ -63,7 +63,7 @@ public class Genesis implements GenesisProvider {
     private RegionDetector.Region region = null;
     private String romName;
 
-    private Future<Void> runningGameFuture;
+    private Future<Void> runningRomFuture;
     private GenesisWindow emuFrame;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -97,7 +97,7 @@ public class Genesis implements GenesisProvider {
         if (args.length > 0) {
             String filePath = args[0];
             LOG.info("Launching file at: " + filePath);
-            genesis.handleNewGame(Paths.get(filePath));
+            genesis.handleNewRom(Paths.get(filePath));
         }
         if (isHeadless) {
             Util.waitForever();
@@ -191,19 +191,19 @@ public class Genesis implements GenesisProvider {
         });
     }
 
-    public void handleNewGame(Path file) {
+    public void handleNewRom(Path file) {
         init();
-        GameRunnable runnable = new GameRunnable(file);
-        runningGameFuture = executorService.submit(runnable, null);
+        RomRunnable runnable = new RomRunnable(file);
+        runningRomFuture = executorService.submit(runnable, null);
     }
 
-    public void handleCloseGame() {
-        handleCloseGameInternal();
+    public void handleCloseRom() {
+        handleRomInternal();
     }
 
     @Override
     public void handleCloseApp() {
-        handleCloseGame();
+        handleCloseRom();
         sound.close();
     }
 
@@ -260,10 +260,10 @@ public class Genesis implements GenesisProvider {
         }
     }
 
-    private void handleCloseGameInternal() {
-        if (isGameRunning()) {
-            runningGameFuture.cancel(true);
-            while (isGameRunning()) {
+    private void handleRomInternal() {
+        if (isRomRunning()) {
+            runningRomFuture.cancel(true);
+            while (isRomRunning()) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -273,13 +273,13 @@ public class Genesis implements GenesisProvider {
             LOG.info("Game stopped");
             emuFrame.resetScreen();
             sound.reset();
-            bus.closeGame();
+            bus.closeRom();
         }
     }
 
     @Override
-    public boolean isGameRunning() {
-        return runningGameFuture != null && !runningGameFuture.isDone();
+    public boolean isRomRunning() {
+        return runningRomFuture != null && !runningRomFuture.isDone();
     }
 
     @Override
@@ -312,54 +312,42 @@ public class Genesis implements GenesisProvider {
         return romName;
     }
 
-    class GameRunnable implements Runnable {
+    class RomRunnable implements Runnable {
         private Path file;
         private static final String threadNamePrefix = "cycle-";
 
-        public GameRunnable(Path file) {
+        public RomRunnable(Path file) {
             this.file = file;
         }
 
         @Override
         public void run() {
             try {
-                String fileName = file.toAbsolutePath().toString();
-                try {
-                    if (fileName.toLowerCase().endsWith(".md")
-                            || fileName.toLowerCase().endsWith(".bin")) {
-                        int[] data = FileLoader.readFile(file);
-                        if (data == null || data.length == 0) {
-                            throw new RuntimeException("Empty file!");
-                        }
-                        memory.setCartridge(data);
-                    } else {
-                        throw new RuntimeException("Unexpected file: " + fileName);
-                    }
-                } catch (Exception e) {
-                    LOG.error("Unable to load: " + file.toAbsolutePath().toString(), e);
+                int[] data = FileLoader.loadBinaryFile(file);
+                if (data.length == 0) {
                     return;
                 }
-
+                memory.setCartridge(data);
                 romName = file.getFileName().toString();
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 emuFrame.setTitle(romName);
                 region = getRegionInternal(memory);
-                LOG.info("Running game: " + romName + ", region: " + region);
+                LOG.info("Running rom: " + romName + ", region: " + region);
                 sound = JavaSoundManager.createSoundProvider(region);
                 bus.attachDevice(sound);
 
-                resetAfterGameLoad();
+                resetAfterRomLoad();
 
                 loop();
             } catch (Exception e) {
                 e.printStackTrace();
                 LOG.error(e);
             }
-            handleCloseGame();
+            handleCloseRom();
         }
     }
 
-    protected void resetAfterGameLoad() {
+    protected void resetAfterRomLoad() {
         //detect ROM first
         bus.reset();
         cpu.reset();
@@ -387,7 +375,7 @@ public class Genesis implements GenesisProvider {
     private static int VDP_CYCLE = vdpAsCounter ? 1 : 2;
 
     private static long nsToMillis = 1_000_000;
-    private long oneScanlineCounter = VdpProvider.H40_PIXELS;
+    private long oneScanlineCounter = VdpProvider.H40_PIXELS / VDP_CYCLE;
     private long targetNs;
 
     void loop() {
@@ -449,6 +437,7 @@ public class Genesis implements GenesisProvider {
     private void syncSound(long counter) {
         if (counter % oneScanlineCounter == 0) {
             sound.updateElapsedMicros(64);
+//            LOG.info("Update sound {}", vdp.getVdpStateString());
         }
     }
 
@@ -558,7 +547,7 @@ public class Genesis implements GenesisProvider {
                 break;
             case KeyEvent.VK_ESCAPE:
                 if (!pressed) {
-                    handleCloseGame();
+                    handleCloseRom();
                 }
                 break;
         }

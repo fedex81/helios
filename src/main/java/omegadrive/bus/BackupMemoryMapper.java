@@ -171,7 +171,7 @@ public class BackupMemoryMapper implements GenesisMapper {
     }
 
     @Override
-    public void closeGame() {
+    public void closeRom() {
         LOG.info("Writing to sram file: " + this.backupFile);
         writeFile(this.sram);
     }

@@ -84,7 +84,7 @@ public class SavestateGameLoader {
             for (Map.Entry<String, String> entry : saveStates.entrySet()) {
                 load(genesis, entry.getKey(), entry.getValue());
                 Util.sleep(10_000);
-                genesis.handleCloseGame();
+                genesis.handleCloseRom();
                 Util.sleep(1_000);
             }
         } while (loop);
@@ -98,7 +98,7 @@ public class SavestateGameLoader {
         System.out.println("Loading ROM: " + rom.toAbsolutePath().toString());
         System.out.println("Loading state file: " + rom);
 
-        genesis.handleNewGame(rom);
+        genesis.handleNewRom(rom);
         Util.sleep(1_000);
         genesis.handleLoadState(saveFile);
     }

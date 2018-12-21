@@ -178,12 +178,12 @@ public class BusArbiterTest {
             }
 
             @Override
-            public void handleNewGame(Path file) {
+            public void handleNewRom(Path file) {
 
             }
 
             @Override
-            public void handleCloseGame() {
+            public void handleCloseRom() {
 
             }
 
@@ -198,7 +198,7 @@ public class BusArbiterTest {
             }
 
             @Override
-            public boolean isGameRunning() {
+            public boolean isRomRunning() {
                 return false;
             }
 

@@ -648,9 +648,9 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     @Override
-    public void closeGame() {
+    public void closeRom() {
         if (mapper != this) {
-            mapper.closeGame();
+            mapper.closeRom();
         }
     }
 }

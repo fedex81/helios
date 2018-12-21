@@ -51,7 +51,7 @@ public class EmuFrame implements GenesisWindow {
     private double scale = DEFAULT_SCALE_FACTOR;
 
 
-    private final JLabel gameLabel = new JLabel();
+    private final JLabel screenLabel = new JLabel();
     private final JLabel fpsLabel = new JLabel("");
     private final static String FRAME_TITLE_HEAD = "Omega Drive " + FileLoader.loadVersionFromManifest();
 
@@ -133,7 +133,7 @@ public class EmuFrame implements GenesisWindow {
 
         src = createImage(gd, screenSize, true);
         dest = createImage(gd, screenSize, false);
-        gameLabel.setIcon(new ImageIcon(dest));
+        screenLabel.setIcon(new ImageIcon(dest));
 
         jFrame = new JFrame(FRAME_TITLE_HEAD, gd.getDefaultConfiguration());
 
@@ -168,9 +168,9 @@ public class EmuFrame implements GenesisWindow {
         bar.add(fpsLabel);
 
         JMenuItem loadRomItem = new JMenuItem("Load ROM");
-        loadRomItem.addActionListener(e -> handleNewGame());
+        loadRomItem.addActionListener(e -> handleNewRom());
         JMenuItem closeRomItem = new JMenuItem("Close ROM");
-        closeRomItem.addActionListener(e -> mainEmu.handleCloseGame());
+        closeRomItem.addActionListener(e -> mainEmu.handleCloseRom());
         JMenuItem loadStateItem = new JMenuItem("Load State");
         loadStateItem.addActionListener(e -> handleLoadState());
 
@@ -217,14 +217,14 @@ public class EmuFrame implements GenesisWindow {
 
         setupFrameKeyListener();
 
-        gameLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        gameLabel.setVerticalAlignment(SwingConstants.CENTER);
+        screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        screenLabel.setVerticalAlignment(SwingConstants.CENTER);
 
         jFrame.setMinimumSize(DEFAULT_FRAME_SIZE);
         jFrame.setDefaultCloseOperation(jFrame.EXIT_ON_CLOSE);
         jFrame.setResizable(true);
         jFrame.setJMenuBar(bar);
-        jFrame.add(gameLabel, -1);
+        jFrame.add(screenLabel, -1);
 //        jFrame.setIconImage(new ImageIcon(EmuFrame.class.getResource("/omega.png")).getImage());
 
         jFrame.pack();
@@ -277,8 +277,8 @@ public class EmuFrame implements GenesisWindow {
         Util.sleep(250);
         SwingUtilities.invokeLater(() -> {
             Arrays.fill(pixelsDest, 0);
-            gameLabel.invalidate();
-            gameLabel.repaint();
+            screenLabel.invalidate();
+            screenLabel.repaint();
             fpsLabel.setText("");
             jFrame.setTitle(FRAME_TITLE_HEAD);
             LOG.info("Blanking screen");
@@ -311,7 +311,7 @@ public class EmuFrame implements GenesisWindow {
             if (!Strings.isNullOrEmpty(label)) {
                 getFpsLabel().setText(label);
             }
-            gameLabel.repaint();
+            screenLabel.repaint();
         });
     }
 
@@ -358,7 +358,7 @@ public class EmuFrame implements GenesisWindow {
             Dimension d = new Dimension((int) (src.getWidth() * scale), (int) (src.getHeight() * scale));
             dest = createImage(getGraphicsDevice(), d, false);
 
-            gameLabel.setIcon(new ImageIcon(dest));
+            screenLabel.setIcon(new ImageIcon(dest));
             jFrame.setPreferredSize(isFullScreen ? fullScreenSize : baseScreenSize);
             jFrame.getJMenuBar().setVisible(!isFullScreen);
             if (!isFullScreen) {
@@ -402,12 +402,12 @@ public class EmuFrame implements GenesisWindow {
         mainEmu.handleSaveState();
     }
 
-    private void handleNewGame() {
-        mainEmu.handleCloseGame();
+    private void handleNewRom() {
+        mainEmu.handleCloseRom();
         Optional<File> optFile = loadRomDialog(jFrame);
         if (optFile.isPresent()) {
             Path file = optFile.get().toPath();
-            mainEmu.handleNewGame(file);
+            mainEmu.handleNewRom(file);
         }
     }
 

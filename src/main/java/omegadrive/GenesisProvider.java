@@ -24,15 +24,15 @@ public interface GenesisProvider {
 
     void renderScreen(int[][] screenData);
 
-    void handleNewGame(Path file);
+    void handleNewRom(Path file);
 
-    void handleCloseGame();
+    void handleCloseRom();
 
     void handleCloseApp();
 
     void handleLoadState(Path file);
 
-    boolean isGameRunning();
+    boolean isRomRunning();
 
     boolean isSoundWorking();
 

@@ -80,7 +80,7 @@ public interface BusProvider {
     //VDP setting this
     void setStop68k(boolean value);
 
-    void closeGame();
+    void closeRom();
 
     default PsgProvider getPsg() {
         return getSound().getPsg();

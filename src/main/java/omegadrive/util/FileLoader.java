@@ -88,6 +88,25 @@ public class FileLoader {
         return lines;
     }
 
+    public static int[] loadBinaryFile(Path file) {
+        int[] data = new int[0];
+        try {
+            String fileName = file.toAbsolutePath().toString();
+            if (fileName.toLowerCase().endsWith(".md")
+                    || fileName.toLowerCase().endsWith(".bin")) {
+                data = FileLoader.readFile(file);
+                if (data == null || data.length == 0) {
+                    throw new RuntimeException("Empty file!");
+                }
+            } else {
+                throw new RuntimeException("Unexpected file: " + fileName);
+            }
+        } catch (Exception e) {
+            LOG.error("Unable to load: " + file.toAbsolutePath().toString(), e);
+        }
+        return data;
+    }
+
     public static String loadVersionFromManifest() {
         String version = SNAPSHOT_VERSION;
         Class clazz = FileLoader.class;

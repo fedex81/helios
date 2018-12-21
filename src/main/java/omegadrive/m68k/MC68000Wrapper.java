@@ -219,7 +219,12 @@ public class MC68000Wrapper implements M68kProvider {
 //            }
             printVerbose();
             printCpuState("");
+            int preIntMask = getM68k().getInterruptLevel();
             res = m68k.execute();
+            int postIntMask = getM68k().getInterruptLevel();
+//            if(preIntMask != postIntMask){
+//                LOG.info("IntMask from: {} to: {}", preIntMask, postIntMask);
+//            }
         } catch (Exception e) {
             LOG.error("68k error", e);
             printVerbose();

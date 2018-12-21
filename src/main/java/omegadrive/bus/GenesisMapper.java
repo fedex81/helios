@@ -37,7 +37,7 @@ public interface GenesisMapper {
         //DO NOTHING
     }
 
-    default void closeGame() {
+    default void closeRom() {
         //DO NOTHING
     }
 }
