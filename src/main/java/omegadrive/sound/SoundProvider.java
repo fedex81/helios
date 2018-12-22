@@ -24,6 +24,8 @@ public interface SoundProvider {
 
     int SAMPLE_RATE = 22050;
 
+    int OVERRIDE_AUDIO_BUFFER_SIZE = Integer.valueOf(System.getProperty("audio.buffer.size", "0"));
+
 
     PsgProvider getPsg();
 
@@ -34,6 +36,9 @@ public interface SoundProvider {
     }
 
     static int getFmBufferIntSize(int fps) {
+        if (OVERRIDE_AUDIO_BUFFER_SIZE > 0) {
+            return OVERRIDE_AUDIO_BUFFER_SIZE;
+        }
         int res = 2 * SAMPLE_RATE / fps;
         return res % 2 == 0 ? res : res + 1;
     }

@@ -95,7 +95,7 @@ public class JavaSoundManager implements SoundProvider {
                 fm.output(fm_buf_ints);
 
                 try {
-                    Arrays.fill(mix_buf_bytes16, SoundUtil.ZERO_BYTE);
+//                    Arrays.fill(mix_buf_bytes16, SoundUtil.ZERO_BYTE);
                     SoundUtil.intStereo14ToByteMono16Mix(fm_buf_ints, mix_buf_bytes16, psg_buf_bytes);
                     updateSoundWorking(mix_buf_bytes16);
                     if (!isMute()) {
