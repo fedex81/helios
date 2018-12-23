@@ -24,7 +24,9 @@ public interface InputProvider {
     Logger LOG = LogManager.getLogger(InputProvider.class.getSimpleName());
 
     String OS_NAME = System.getProperty("os.name").toLowerCase();
-    String NATIVE_SUBDIR = OS_NAME.startsWith("win") ? "windows" : "linux";
+    String NATIVE_SUBDIR = OS_NAME.contains("win") ? "windows" :
+            (OS_NAME.contains("mac") ? "osx" : "linux");
+
 
     boolean DEBUG_DETECTION = Boolean.valueOf(System.getProperty("jinput.detect.debug", "false"));
 
