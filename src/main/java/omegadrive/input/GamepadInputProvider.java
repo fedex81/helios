@@ -115,6 +115,9 @@ public class GamepadInputProvider implements InputProvider {
         Component.Identifier id = event.getComponent().getIdentifier();
         double value = event.getComponent().getPollData();
         int emuValue = value == ON ? EMU_ON : EMU_OFF;
+        if (InputProvider.DEBUG_DETECTION) {
+            LOG.info(id + ": " + value);
+        }
 
         if (X == id) {
             if (playerNumber == 1) {
@@ -212,8 +215,6 @@ public class GamepadInputProvider implements InputProvider {
                     joypadProvider.setR2(EMU_ON);
                 }
             }
-        } else {
-//            System.out.println(id + "," + value);
         }
     }
 }
