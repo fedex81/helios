@@ -31,7 +31,7 @@ public class GamepadInputProvider implements InputProvider {
 
     private static ExecutorService executorService =
             Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY, GamepadInputProvider.class.getSimpleName()));
-    private long POLLING_INTERVAL_MS = 15;
+    private long POLLING_INTERVAL_MS = Long.valueOf(System.getProperty("jinput.polling.interval.ms", "5"));
 
     private volatile JoypadProvider joypadProvider;
     private Controller controller;
@@ -118,29 +118,29 @@ public class GamepadInputProvider implements InputProvider {
         if (InputProvider.DEBUG_DETECTION) {
             LOG.info(id + ": " + value);
         }
-
-        if (X == id) {
+        // xbox360: linux || windows
+        if (X == id || _2 == id) {
             if (playerNumber == 1) {
                 joypadProvider.setA(emuValue);
             } else {
                 joypadProvider.setA2(emuValue);
             }
         }
-        if (A == id) {
+        if (A == id || _0 == id) {
             if (playerNumber == 1) {
                 joypadProvider.setB(emuValue);
             } else {
                 joypadProvider.setB2(emuValue);
             }
         }
-        if (B == id) {
+        if (B == id || _1 == id) {
             if (playerNumber == 1) {
                 joypadProvider.setC(emuValue);
             } else {
                 joypadProvider.setC2(emuValue);
             }
         }
-        if (START == id) {
+        if (START == id || _7 == id) {
             if (playerNumber == 1) {
                 joypadProvider.setS(emuValue);
             } else {

@@ -77,7 +77,7 @@ public interface InputProvider {
         if (DEBUG_DETECTION || !cntOpt.isPresent()) {
             LOG.info("Controller detection: " + GamepadTest.detectControllerVerbose());
         }
-        return cntOpt.get();
+        return cntOpt.orElse(null);
     }
 
     void handleEvents();
