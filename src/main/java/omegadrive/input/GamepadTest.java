@@ -184,38 +184,38 @@ public class GamepadTest {
         }
     }
 
-    private static Controller detectController() {
-
+    public static String detectControllerVerbose() {
         Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
-
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < ca.length; i++) {
             /* Get the name of the controller */
-            System.out.println(ca[i].getName());
-            System.out.println("Type: " + ca[i].getType().toString());
+            sb.append("\n" + ca[i].getName() + "\n");
+            sb.append("Position: [" + i + "]\n");
+            sb.append("Type: " + ca[i].getType().toString() + "\n");
 
             /* Get this controllers components (buttons and axis) */
             Component[] components = ca[i].getComponents();
-            System.out.println("Component Count: " + components.length);
+            sb.append("Component Count: " + components.length + "\n");
             for (int j = 0; j < components.length; j++) {
 
                 /* Get the components name */
-                System.out.println("Component " + j + ": " + components[j].getName());
-                System.out.println("    Identifier: " + components[j].getIdentifier().getName());
-                System.out.print("    ComponentType: ");
+                sb.append("Component " + j + ": " + components[j].getName() + "\n");
+                sb.append("    Identifier: " + components[j].getIdentifier().getName() + "\n");
+                sb.append("    ComponentType: ");
                 if (components[j].isRelative()) {
-                    System.out.print("Relative");
+                    sb.append("Relative");
                 } else {
-                    System.out.print("Absolute");
+                    sb.append("Absolute");
                 }
                 if (components[j].isAnalog()) {
-                    System.out.print(" Analog");
+                    sb.append(" Analog");
                 } else {
-                    System.out.print(" Digital");
+                    sb.append(" Digital");
                 }
-                controller = ca[i];
+                sb.append("\n");
             }
         }
-        return controller;
+        return sb.toString();
     }
 }

@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * ${FILE}
@@ -22,7 +23,10 @@ public interface InputProvider {
 
     Logger LOG = LogManager.getLogger(InputProvider.class.getSimpleName());
 
-    String OS = "linux"; //TODO
+    String OS_NAME = System.getProperty("os.name").toLowerCase();
+    String NATIVE_SUBDIR = OS_NAME.startsWith("win") ? "windows" : "linux";
+
+    boolean DEBUG_DETECTION = Boolean.valueOf(System.getProperty("jinput.detect.debug", "false"));
 
     InputProvider NO_OP = new InputProvider() {
         @Override
@@ -59,7 +63,7 @@ public interface InputProvider {
 
     static void bootstrap() {
         String lib = new File(".").getAbsolutePath() + File.separator + "privateLib"
-                + File.separator + OS;
+                + File.separator + NATIVE_SUBDIR;
         System.out.println(lib);
         System.setProperty("net.java.games.input.librarypath", lib);
         LOG.info("Loading system library from: " + lib);
@@ -67,7 +71,11 @@ public interface InputProvider {
 
     static Controller detectController() {
         Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
-        return Arrays.stream(ca).findFirst().orElse(null);
+        Optional<Controller> cntOpt = Optional.ofNullable(Arrays.stream(ca).filter(c -> c.getType() == Controller.Type.GAMEPAD).findFirst().orElse(null));
+        if (DEBUG_DETECTION || !cntOpt.isPresent()) {
+            LOG.info("Controller detection: " + GamepadTest.detectControllerVerbose());
+        }
+        return cntOpt.get();
     }
 
     void handleEvents();
