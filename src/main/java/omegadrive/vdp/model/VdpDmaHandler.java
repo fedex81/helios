@@ -28,4 +28,8 @@ public interface VdpDmaHandler {
     void setupDmaDataPort(int dataWord);
 
     boolean dmaInProgress();
+
+    default String getDmaStateString() {
+        return "Not implemented";
+    }
 }

@@ -339,14 +339,30 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     @Override
     public void writeControlPort(long dataL) {
-        if (bus.shouldStop68k()) {
-            handlePendingWrite(VdpPortType.CONTROL, dataL);
+        writeVdpPort(VdpPortType.CONTROL, dataL);
+    }
+
+    @Override
+    public void writeDataPort(long dataL) {
+        writeVdpPort(VdpPortType.DATA, dataL);
+    }
+
+    private void writeVdpPort(VdpPortType type, long dataL) {
+        if (dma == 1 && dmaHandler.dmaInProgress()) {
+            LOG.warn("write{}Port during dma, data : {}, dma: {}", type, dataL, dmaHandler.getDmaMode());
+        }
+        if (bus.shouldStop68k() || fifo.isFull()) {
+            handlePendingWrite(type, dataL);
             return;
         }
-        if (dma == 1 && dmaHandler.dmaInProgress()) {
-            LOG.debug("writeControlPort during dma, data : {}, dma: {}", dataL, dmaHandler.getDmaMode());
+        switch (type) {
+            case DATA:
+                writeDataPortInternal(dataL);
+                break;
+            case CONTROL:
+                writeControlPortInternal(dataL);
+                break;
         }
-        writeControlPortInternal(dataL);
     }
 
     private void writeControlPortInternal(long dataL) {
@@ -383,9 +399,11 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         boolean fifoFull = fifo.isFull();
         if (fifoFull) {
             bus.setStop68k(true);
+
         }
         if (pendingWriteEntry.portType != null) {
-            LOG.error("Dropped PORT write: {}, {}", type, Long.toHexString(data));
+            LOG.error("Dropped PORT write: {}, {}\n{}\n{}",
+                    type, Long.toHexString(data), getVdpStateString(), dmaHandler.getDmaStateString());
             return;
         }
         pendingWriteEntry.data = (int) data;
@@ -394,20 +412,8 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         pendingWriteEntry.addressRegister = -1;
         LogHelper.printLevel(LOG, Level.INFO, (fifoFull ? "Fifo full" : "68k stopped") + ", Pending {}Port write #1 : {}",
                 type, data, fifoVerbose);
+        bus.setStop68k(true);
     }
-
-    @Override
-    public void writeDataPort(long dataL) {
-        if (bus.shouldStop68k() || fifo.isFull()) {
-            handlePendingWrite(VdpPortType.DATA, dataL);
-            return;
-        }
-        if (dma == 1 && dmaHandler.dmaInProgress()) {
-            LOG.warn("writeDataPort during dma, data : {}, dma: {}", dataL, dmaHandler.getDmaMode());
-        }
-        writeDataPortInternal(dataL);
-    }
-
 
     private void writeDataPortInternal(long dataL) {
         int data = (int) dataL;
@@ -431,7 +437,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         }
         memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
         if (wasFull) {
-            unstop68k();
+            evaluateStop68k();
         }
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
@@ -439,7 +445,10 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     @Override
     public int readDataPort() {
         if (bus.shouldStop68k()) {
-            LOG.warn("readDataPort with 68k stopped, address: {}", addressRegister, verbose);
+            LOG.warn("readDataPort with 68k stopped, address: {}", addressRegister);
+        }
+        if (fifo.isFull()) {
+            LOG.warn("readDataPort with FIFO full, address: {}", addressRegister);
         }
         this.writePendingControlPort = false;
         //TODO need to stop 68k until the result is available
@@ -590,14 +599,16 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
                 LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", mode, verbose);
-                unstop68k();
+                evaluateStop68k();
             }
         }
     }
 
-    private void unstop68k() {
-        bus.setStop68k(false);
+    private void evaluateStop68k() {
         processPendingWrites();
+        boolean stop68 = fifo.isFull() || (dma == 1 && dmaHandler.dmaInProgress());
+        bus.setStop68k(stop68);
+//        LOG.info("Bus stop: " + fifo.isFull());
     }
 
     private void processPendingWrites() {

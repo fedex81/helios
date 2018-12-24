@@ -129,6 +129,19 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         if (!verbose) {
             return;
         }
+        String str = getDmaStateString(head, srcAddress);
+        LOG.info(str);
+        if (printToSysOut) {
+            System.out.println(str);
+        }
+    }
+
+    @Override
+    public String getDmaStateString() {
+        return getDmaStateString("", Long.MIN_VALUE);
+    }
+
+    private String getDmaStateString(String head, long srcAddress) {
         int dmaLen = getDmaLength();
         String str = Objects.toString(dmaMode) + " " + head;
         String src = Long.toHexString(srcAddress > Long.MIN_VALUE ? srcAddress : getSourceAddress());
@@ -138,10 +151,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         str += dmaMode == DmaMode.VRAM_FILL ? " fillData: " + Long.toHexString(dmaFillData) : " srcAddr: " + src;
         str += ", destAddr: " + dest + ", destAddrInc: " + destAddressIncrement +
                 ", dmaLen: " + dmaLen + ", vramMode: " + vramMode;
-        LOG.info(str);
-        if (printToSysOut) {
-            System.out.println(str);
-        }
+        return str;
     }
 
     @Override
