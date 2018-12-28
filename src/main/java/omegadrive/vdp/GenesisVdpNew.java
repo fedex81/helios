@@ -348,10 +348,11 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     }
 
     private void writeVdpPort(VdpPortType type, long dataL) {
-        if (dma == 1 && dmaHandler.dmaInProgress()) {
-            LOG.warn("write{}Port during dma, data : {}, dma: {}", type, dataL, dmaHandler.getDmaMode());
-        }
-        if (bus.shouldStop68k() || fifo.isFull()) {
+        if (bus.shouldStop68k()) {
+//            boolean dmaInProgress = dma == 1 && dmaHandler.dmaInProgress();
+//            if(dmaInProgress){
+//                LOG.warn("write{}Port during dma, data : {}, dma: {}", type, Long.toHexString(dataL), dmaHandler.getDmaMode());
+//            }
             handlePendingWrite(type, dataL);
             return;
         }
@@ -363,6 +364,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
                 writeControlPortInternal(dataL);
                 break;
         }
+        evaluateStop68k();
     }
 
     private void writeControlPortInternal(long dataL) {
@@ -396,11 +398,6 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     }
 
     private void handlePendingWrite(VdpPortType type, long data) {
-        boolean fifoFull = fifo.isFull();
-        if (fifoFull) {
-            bus.setStop68k(true);
-
-        }
         if (pendingWriteEntry.portType != null) {
             LOG.error("Dropped PORT write: {}, {}\n{}\n{}",
                     type, Long.toHexString(data), getVdpStateString(), dmaHandler.getDmaStateString());
@@ -410,9 +407,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         pendingWriteEntry.portType = type;
         pendingWriteEntry.vdpRamMode = vramMode;
         pendingWriteEntry.addressRegister = -1;
-        LogHelper.printLevel(LOG, Level.INFO, (fifoFull ? "Fifo full" : "68k stopped") + ", Pending {}Port write #1 : {}",
-                type, data, fifoVerbose);
-        bus.setStop68k(true);
+        LogHelper.printLevel(LOG, Level.INFO, "Pending {}Port write #1 : {}", type, data, fifoVerbose);
     }
 
     private void writeDataPortInternal(long dataL) {
@@ -437,8 +432,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         }
         memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
         if (wasFull) {
-            evaluateStop68k();
+            processPendingWrites();
         }
+        evaluateStop68k();
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
 
@@ -494,7 +490,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             if ((codeRegister & 0b10_0000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
                 if (dmaMode == VdpDmaHandler.DmaMode.MEM_TO_VRAM) {
-                    bus.setStop68k(true);
+                    bus.setStop68k(BusProvider.DMA_IN_PROGRESS_MASK);
                 }
                 LogHelper.printLevel(LOG, Level.INFO, "After DMA setup, writeAddr: {}, data: {}, firstWrite: {}"
                         , addressRegister, all, writePendingControlPort, verbose);
@@ -591,24 +587,24 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    private void doDma(boolean isBlanking) {
-        if (dma == 1) {
+    private void doDma(boolean externalSlot) {
+        if (externalSlot && dma == 1) {
             boolean dmaDone;
             VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
             dmaDone = dmaHandler.doDmaSlot(videoMode);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
                 LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", mode, verbose);
+                processPendingWrites();
                 evaluateStop68k();
             }
         }
     }
 
     private void evaluateStop68k() {
-        processPendingWrites();
-        boolean stop68 = fifo.isFull() || (dma == 1 && dmaHandler.dmaInProgress());
-        bus.setStop68k(stop68);
-//        LOG.info("Bus stop: " + fifo.isFull());
+        int value = fifo.isFull() ? BusProvider.FIFO_FULL_MASK : 0;
+        value |= (dma == 1 && dmaHandler.dmaInProgress()) ? BusProvider.DMA_IN_PROGRESS_MASK : value;
+        bus.setStop68k(value);
     }
 
     private void processPendingWrites() {
@@ -643,6 +639,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     }
 
     //88 pass, vdpfifotest
+    @Deprecated
     private void runCounter() {
         int hCounterInternal = interruptHandler.increaseHCounter();
         boolean displayEnable = disp;

@@ -99,15 +99,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     @Override
     public boolean shouldStop68k() {
-        return stop68k;
+        return busArbiter.shouldStop68k();
     }
 
     @Override
-    public void setStop68k(boolean value) {
-        if (stop68k != value) {
-            LOG.debug("VDP stop 68k: {}", value);
-        }
-        stop68k = value;
+    public void setStop68k(int mask) {
+        busArbiter.setStop68k(mask);
     }
 
     @Override

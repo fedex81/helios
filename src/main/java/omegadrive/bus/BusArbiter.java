@@ -33,11 +33,19 @@ public class BusArbiter {
     public static boolean verbose = false;
 
     private IntState int68k = IntState.ACKED;
+    private M68kState state68k = M68kState.RUNNING;
+    private int mask68kState = 0;
 
     enum IntState {NONE, PENDING, ASSERTED, ACKED}
 
+    enum M68kState {RUNNING, HALTED}
+
     private IntState z80Int = IntState.ACKED;
     private int z80IntVcounter = -1;
+
+    private static int FIFO_FULL_MASK = 0x01;
+    private static int DMA_IN_PROGRESS_MASK = 0x02;
+
 
     protected BusArbiter() {
     }
@@ -160,5 +168,17 @@ public class BusArbiter {
             String msg = ParameterizedMessage.format(str, args);
             LOG.info(new ParameterizedMessage(msg + vdp.getVdpStateString(), Long.toHexString(vdp.getHCounter()), Long.toHexString(vdp.getVCounter())));
         }
+    }
+
+    public void setStop68k(int mask) {
+        if (mask != mask68kState) {
+            mask68kState = mask;
+            state68k = mask == 0 ? M68kState.RUNNING : M68kState.HALTED;
+//            LOG.info("68k State{} , {}", mask, state68k);
+        }
+    }
+
+    public boolean shouldStop68k() {
+        return state68k != M68kState.RUNNING;
     }
 }

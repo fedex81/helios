@@ -32,6 +32,9 @@ public interface BusProvider {
     int ADDRESS_RAM_MAP_START = 0xE00000;
     int M68K_TO_Z80_MEMORY_MASK = 0x7FFF;
 
+    int FIFO_FULL_MASK = 0x01;
+    int DMA_IN_PROGRESS_MASK = 0x02;
+
     Logger LOG = LogManager.getLogger(BusProvider.class.getSimpleName());
 
 
@@ -78,7 +81,7 @@ public interface BusProvider {
     boolean shouldStop68k();
 
     //VDP setting this
-    void setStop68k(boolean value);
+    void setStop68k(int mask);
 
     void closeRom();
 

@@ -95,6 +95,8 @@ public class Genesis implements GenesisProvider {
         LOG.info("Headless mode: " + isHeadless);
         Genesis genesis = new Genesis(isHeadless);
         if (args.length > 0) {
+            //linux pulseaudio can crash if we start too quickly
+            Util.sleep(250);
             String filePath = args[0];
             LOG.info("Launching file at: " + filePath);
             genesis.handleNewRom(Paths.get(filePath));
@@ -131,7 +133,6 @@ public class Genesis implements GenesisProvider {
 
     public Genesis(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         Util.registerJmx(this);
-        init();
         SwingUtilities.invokeAndWait(() -> createFrame(isHeadless));
     }
 
@@ -451,12 +452,18 @@ public class Genesis implements GenesisProvider {
     private void run68k(long counter) {
         //run half speed compared to VDP
         if ((counter + 1) % M68K_DIVIDER == 0) {
-            boolean canRun = !cpu.isStopped() && !bus.shouldStop68k() && !vdp.getFifo().isFull();
+            //TODO fifo full shoud not stop 68k
+            //TODO fifo full and 68k uses vdp -> stop 68k
+            boolean isFrozen = bus.shouldStop68k();
+            boolean canRun = !cpu.isStopped() && !isFrozen;
             if (canRun) {
                 cpu.runInstruction();
             }
             //interrupts are processed after the current instruction
-            bus.handleVdpInterrupts68k();
+            //TODO interrupt shouldnt be processed when 68k is frozen
+            if (!isFrozen) {
+                bus.handleVdpInterrupts68k();
+            }
         }
     }
 
