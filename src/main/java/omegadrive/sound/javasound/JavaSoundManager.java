@@ -8,6 +8,7 @@ import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
+import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -82,6 +83,7 @@ public class JavaSoundManager implements SoundProvider {
             public void run() {
                 do {
                     playOnce();
+                    Util.sleep(1);
                 } while (!close);
                 LOG.info("Stopping sound thread");
                 psg.reset();

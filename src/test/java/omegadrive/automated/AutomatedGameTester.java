@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 public class AutomatedGameTester {
 
     private static String romFolder =
-//            "/data/emu/roms/genesis/nointro";
-            "/data/emu/roms/genesis/goodgen/unverified";
+            "/data/emu/roms/genesis/nointro";
+    //            "/data/emu/roms/genesis/goodgen/unverified";
 //            "/home/fede/roms/issues";
 //            "/home/fede/roms/tricky";
     private static String romList = "";
@@ -76,17 +76,13 @@ public class AutomatedGameTester {
             if (skip) {
                 continue;
             }
-//            System.out.println("Testing: " + rom.getFileName().toString());
             genesisProvider.init();
             genesisProvider.handleNewRom(rom);
 //            genesisProvider.setFullScreen(true);
             Util.sleep(BOOT_DELAY_MS);
-            boolean boots = false;
-            boolean soundOk = false;
             boolean tooManyErrors = false;
             int totalDelay = BOOT_DELAY_MS;
             if (genesisProvider.isRomRunning()) {
-                boots = true;
                 do {
                     tooManyErrors = checkLogFileSize(logFile, rom.getFileName().toString(), logFileLen);
                     Util.sleep(BOOT_DELAY_MS);
@@ -94,7 +90,7 @@ public class AutomatedGameTester {
                 } while (totalDelay < RUN_DELAY_MS && !tooManyErrors);
                 genesisProvider.handleCloseRom();
             }
-            System.out.println(rom.getFileName().toString() + ";" + boots + ";" + soundOk);
+            System.out.println(rom.getFileName().toString());
             Util.sleep(500);
             if (tooManyErrors) {
                 break;
