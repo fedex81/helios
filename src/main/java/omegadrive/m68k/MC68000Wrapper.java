@@ -74,6 +74,9 @@ public class MC68000Wrapper implements M68kProvider {
         };
         new MoveEx(m68k).register(m68k);
         new TasEx(m68k).register(m68k);
+        //TODO check this
+//        new MovemEx(m68k).register(m68k);
+//        new MovepEx(m68k).register(m68k);
         this.busProvider = busProvider;
         this.addressSpace = getAddressSpace(this, busProvider);
         m68k.setAddressSpace(addressSpace);
@@ -214,17 +217,9 @@ public class MC68000Wrapper implements M68kProvider {
     public int runInstruction() {
         int res = 0;
         try {
-//            if(m68k.getPC() == 0x506){
-//                verbose = true;
-//            }
             printVerbose();
             printCpuState("");
-            int preIntMask = getM68k().getInterruptLevel();
             res = m68k.execute();
-            int postIntMask = getM68k().getInterruptLevel();
-//            if(preIntMask != postIntMask){
-//                LOG.info("IntMask from: {} to: {}", preIntMask, postIntMask);
-//            }
         } catch (Exception e) {
             LOG.error("68k error", e);
             printVerbose();
@@ -240,7 +235,6 @@ public class MC68000Wrapper implements M68kProvider {
         try {
             String res = MC68000Monitor.dumpOp(m68k);
             LOG.info(res);
-            System.out.println(res);
             if (MC68000Monitor.addToInstructionSet(m68k)) {
                 LOG.info(MC68000Monitor.dumpInstructionSet());
             }

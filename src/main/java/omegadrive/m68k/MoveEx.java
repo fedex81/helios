@@ -103,6 +103,7 @@ public class MoveEx implements InstructionHandler {
 
     protected final int move_long(int opcode) {
         Operand src = this.cpu.resolveSrcEA(opcode >> 3 & 7, opcode & 7, Size.Long);
+        int srcMode = opcode >> 3 & 7;
         int dstMode = opcode >> 6 & 7;
         Operand dst = this.cpu.resolveDstEA(dstMode, opcode >> 9 & 7, Size.Long);
 
@@ -111,8 +112,6 @@ public class MoveEx implements InstructionHandler {
         if (swapBytes) {
             int lsw = s & 0xFFFF;
             int msw = (s >> 16) & 0xFFFF;
-            dst.setWord(lsw);
-            dst.setWord(msw);
             long dstAddr = dst.getComputedAddress() & 0xFF_FFFF;
             boolean vdpWrite = dstAddr >= BusProvider.VDP_ADDRESS_SPACE_START &&
                     dstAddr < BusProvider.VDP_ADDRESS_SPACE_END;
@@ -120,9 +119,14 @@ public class MoveEx implements InstructionHandler {
                 StringBuilder sb = new StringBuilder();
                 disassembleOp(0, opcode, Size.Long).shortFormat(sb);
                 LOG.warn("{}, move.l swap bytes, destAddress: {}, data: {}", sb, Long.toHexString(dstAddr), Long.toHexString(s));
+                dst.setWord(lsw);
+                dst.setWord(msw);
+            } else {
+                dst.setLong(s);
             }
+        } else {
+            dst.setLong(s);
         }
-        dst.setLong(s);
         this.cpu.calcFlags(InstructionType.MOVE, s, s, s, Size.Long);
         return LongExecutionTime[src.index()][dst.index()];
     }
