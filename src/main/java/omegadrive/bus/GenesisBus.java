@@ -62,9 +62,6 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     enum BusState {READY, NOT_READY}
 
     private BusState busState = BusState.NOT_READY;
-    private BusProvider.VdpIntState vdpIntState = BusProvider.VdpIntState.NONE;
-
-    private boolean stop68k = false;
 
     protected GenesisBus() {
         this.mapper = this;
@@ -84,11 +81,10 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     public void reset() {
         this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memory, getEmulator().getRomName());
         initializeRomData();
+        this.busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
         LOG.info(cartridgeInfoProvider.toString());
         detectState();
         LOG.info("Bus state: " + busState);
-        stop68k = false;
-        this.busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
     }
 
     @Override
@@ -138,7 +134,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private void detectState() {
         boolean ok = Objects.nonNull(emu) && Objects.nonNull(cpu) && Objects.nonNull(joypad) && Objects.nonNull(vdp) &&
-                Objects.nonNull(memory) && Objects.nonNull(z80) && Objects.nonNull(sound) && Objects.nonNull(cartridgeInfoProvider);
+                Objects.nonNull(memory) && Objects.nonNull(z80) && Objects.nonNull(sound) && Objects.nonNull(cartridgeInfoProvider)
+                && Objects.nonNull(busArbiter);
         busState = ok ? BusState.READY : BusState.NOT_READY;
     }
 

@@ -3,6 +3,9 @@ package omegadrive.joypad;
 //	http://md.squee.co/315-5309
 //	http://md.squee.co/Howto:Read_Control_Pads
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * GenJoypad
  *
@@ -13,6 +16,8 @@ package omegadrive.joypad;
  * @author DarkMoe
  */
 public class GenesisJoypad implements JoypadProvider {
+
+    private static Logger LOG = LogManager.getLogger(GenesisJoypad.class.getSimpleName());
 
     //SGDK needs 0 here, otherwise it is considered a RESET
     long control1 = 0;
@@ -49,13 +54,7 @@ public class GenesisJoypad implements JoypadProvider {
     }
 
     public void writeDataRegister1(long data) {
-        if ((data & 0x40) == 0) {
-//			System.out.println("Deassert TH " + Long.toHexString(data));
-            asserted1 = true;
-        } else {
-//			System.out.println("Assert TH " + Long.toHexString(data));
-            asserted1 = false;
-        }
+        asserted1 = (data & 0x40) == 0;
     }
 
     public int readDataRegister1() {
@@ -69,13 +68,7 @@ public class GenesisJoypad implements JoypadProvider {
     }
 
     public void writeDataRegister2(long data) {
-        if ((data & 0x40) == 0) {
-//			System.out.println("Assert TH " + Long.toHexString(data));
-            asserted2 = true;
-        } else {
-//			System.out.println("Deassert TH " + Long.toHexString(data));
-            asserted2 = false;
-        }
+        asserted2 = (data & 0x40) == 0;
     }
 
     public int readDataRegister2() {
@@ -90,18 +83,24 @@ public class GenesisJoypad implements JoypadProvider {
         return 0x3F;
     }
 
+    private void writeControlCheck(int port, long data) {
+        if (data != 0x40) {
+            LOG.info("Setting ctrlPort{} to {}", port, Long.toHexString(data));
+        }
+    }
+
     public void writeControlRegister1(long data) {
-//		System.out.println("control data port 1! " + Long.toHexString(data));
+        writeControlCheck(1, data);
         control1 = data;
     }
 
     public void writeControlRegister2(long data) {
-//		System.out.println("control data port 2! " + Long.toHexString(data));
+        writeControlCheck(2, data);
         control2 = data;
     }
 
     public void writeControlRegister3(long data) {
-//		System.out.println("control data port 3! " + Long.toHexString(data));
+        writeControlCheck(3, data);
         control3 = data;
     }
 

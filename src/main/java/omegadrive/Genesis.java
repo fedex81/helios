@@ -259,13 +259,9 @@ public class Genesis implements GenesisProvider {
         if (isRomRunning()) {
             runningRomFuture.cancel(true);
             while (isRomRunning()) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                Util.sleep(100);
             }
-            LOG.info("Game stopped");
+            LOG.info("Rom thread cancel");
             emuFrame.resetScreen();
             sound.reset();
             bus.closeRom();
@@ -382,8 +378,7 @@ public class Genesis implements GenesisProvider {
         long lastRender = start;
         targetNs = (long) (region.getFrameIntervalMs() * nsToMillis);
 
-//        setDebug(true);
-        for (; ; ) {
+        do {
             try {
                 run68k(counter);
                 runZ80(counter);
@@ -413,7 +408,8 @@ public class Genesis implements GenesisProvider {
                 LOG.error("Error main cycle", e);
                 break;
             }
-        }
+        } while (!runningRomFuture.isDone());
+        LOG.info("Exiting rom thread loop");
     }
 
     private void updateScanlineCounter() {

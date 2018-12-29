@@ -736,6 +736,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         return memoryInterface;
     }
 
+    protected VramMode getVramMode() {
+        return vramMode;
+    }
 
     @Override
     public String getVdpStateString() {

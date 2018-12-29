@@ -243,7 +243,7 @@ public class BusArbiterTest {
             }
 
             @Override
-            public void handleSaveState() {
+            public void handleSaveState(Path p) {
 
             }
         };
