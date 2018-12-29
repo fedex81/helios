@@ -18,8 +18,11 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Optional;
@@ -50,6 +53,7 @@ public class EmuFrame implements GenesisWindow {
     private int[] pixelsDest;
     private double scale = DEFAULT_SCALE_FACTOR;
 
+    private static String QUICK_SAVE_FILENAME = "quick_save.gs0";
 
     private final JLabel screenLabel = new JLabel();
     private final JLabel fpsLabel = new JLabel("");
@@ -171,11 +175,16 @@ public class EmuFrame implements GenesisWindow {
         loadRomItem.addActionListener(e -> handleNewRom());
         JMenuItem closeRomItem = new JMenuItem("Close ROM");
         closeRomItem.addActionListener(e -> mainEmu.handleCloseRom());
+
         JMenuItem loadStateItem = new JMenuItem("Load State");
         loadStateItem.addActionListener(e -> handleLoadState());
-
         JMenuItem saveStateItem = new JMenuItem("Save State");
         saveStateItem.addActionListener(e -> handleSaveState());
+
+        JMenuItem quickSaveStateItem = new JMenuItem("Quick Save State");
+        quickSaveStateItem.addActionListener(e -> handleQuickSaveState());
+        JMenuItem quickLoadStateItem = new JMenuItem("Quick Load State");
+        quickLoadStateItem.addActionListener(e -> handleQuickLoadState());
 
         JMenuItem exitItem = new JMenuItem("Exit");
         exitItem.addActionListener(e -> {
@@ -208,6 +217,8 @@ public class EmuFrame implements GenesisWindow {
         menu.add(closeRomItem);
         menu.add(loadStateItem);
         menu.add(saveStateItem);
+        menu.add(quickLoadStateItem);
+        menu.add(quickSaveStateItem);
         menu.add(exitItem);
         helpMenu.add(aboutItem);
         helpMenu.add(readmeItem);
@@ -398,8 +409,23 @@ public class EmuFrame implements GenesisWindow {
         }
     }
 
+    private void handleQuickLoadState() {
+        Path file = Paths.get(".", QUICK_SAVE_FILENAME);
+        mainEmu.handleLoadState(file);
+    }
+
+    private void handleQuickSaveState() {
+        Path p = Paths.get(".", QUICK_SAVE_FILENAME);
+        mainEmu.handleSaveState(p);
+    }
+
     private void handleSaveState() {
-        mainEmu.handleSaveState();
+        try {
+            Path p = Files.createTempFile("save_", ".gs0");
+            mainEmu.handleSaveState(p);
+        } catch (IOException e) {
+            LOG.error("Unable to create save state file", e);
+        }
     }
 
     private void handleNewRom() {

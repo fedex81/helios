@@ -34,7 +34,6 @@ import java.awt.event.KeyEvent;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -215,14 +214,9 @@ public class Genesis implements GenesisProvider {
     }
 
     @Override
-    public void handleSaveState() {
-        try {
-            Path p = Files.createTempFile("save_", ".gs0");
-            String fileName = p.toAbsolutePath().toString();
-            saveStateAction(fileName, false, null);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void handleSaveState(Path file) {
+        String fileName = file.toAbsolutePath().toString();
+        saveStateAction(fileName, false, null);
     }
 
     private void saveStateAction(String fileName, boolean load, int[] data) {
