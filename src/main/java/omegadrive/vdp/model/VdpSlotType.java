@@ -16,7 +16,9 @@ public enum VdpSlotType {
     NONE,
     EXTERNAL;
 
+    @Deprecated
     public static VdpSlotType[] h32CounterSlots = new VdpSlotType[H32_PIXELS];
+    @Deprecated
     public static VdpSlotType[] h40CounterSlots = new VdpSlotType[H40_PIXELS];
 
     public static VdpSlotType[] h32Slots = new VdpSlotType[H32_SLOTS];
@@ -27,7 +29,7 @@ public enum VdpSlotType {
             32 * 1 + 14, 32 * 1 + 22, 32 * 1 + 30,
             32 * 2 + 14, 32 * 2 + 22, 32 * 2 + 30,
             32 * 3 + 14, 32 * 3 + 22, 32 * 3 + 30,
-            141, 142, 157, 170
+            141, 142, 156, 170
     };
 
     private static int[] externalSlotsH40 = {

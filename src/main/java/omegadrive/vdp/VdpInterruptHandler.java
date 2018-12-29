@@ -220,11 +220,6 @@ public class VdpInterruptHandler {
         this.hIntPending = hIntPending;
     }
 
-    @Deprecated
-    public boolean isLastHCounter() {
-        return hCounterInternal == COUNTER_LIMIT;
-    }
-
     public boolean isFirstSlot() {
         return slotNumber == 0;
     }
@@ -237,17 +232,8 @@ public class VdpInterruptHandler {
         return isLastSlot() && vCounterInternal == 0;
     }
 
-    public boolean isCounterExternalSlot() {
-        return vdpCounterMode.getCounterSlotTypes()[pixelNumber] == VdpSlotType.EXTERNAL;
-    }
-
     public boolean isExternalSlot() {
         return vdpCounterMode.getSlotTypes()[slotNumber] == VdpSlotType.EXTERNAL;
-    }
-
-    @Deprecated
-    public boolean isDrawFrameCounter() {
-        return isLastHCounter() && vCounterInternal == COUNTER_LIMIT;
     }
 
     public int resetHLinesCounter(int value) {

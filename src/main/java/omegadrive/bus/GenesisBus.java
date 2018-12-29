@@ -442,11 +442,14 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         } else if (addressL == 0xA1000C || addressL == 0xA1000D) {    //	Controller 2 control
             joypad.writeControlRegister3(data & 0xFF);
         } else if (addressL == 0xA10012 || addressL == 0xA10013) {    //	Controller 1 serial control
-            LOG.warn("IMPL CONTR 1 !!");
+            LOG.warn("Write to controller 1 serial: {}, data: {}",
+                    Long.toHexString(addressL), Long.toHexString(data));
         } else if (addressL == 0xA10018 || addressL == 0xA10019) {    //	Controller 2 serial control
-            LOG.warn("IMPL CONTR 2 !!");
+            LOG.warn("Write to controller 2 serial: {}, data: {}",
+                    Long.toHexString(addressL), Long.toHexString(data));
         } else if (addressL == 0xA1001E || addressL == 0xA1001F) {    //	Expansion port serial control
-            LOG.warn("expansion port serial control !!");
+            LOG.warn("Write to expansion port serial: {}, data: {}",
+                    Long.toHexString(addressL), Long.toHexString(data));
         } else {
             LOG.warn("Unexpected ioWrite: " + Long.toHexString(addressL) + ", " + data);
         }

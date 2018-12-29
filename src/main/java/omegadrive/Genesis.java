@@ -399,7 +399,7 @@ public class Genesis implements GenesisProvider {
                     long now = System.currentTimeMillis();
                     renderScreenInternal(getStats(now, lastRender, counter, start));
                     handleVdpDumpScreenData();
-                    oneScanlineCounter = VdpCounterMode.getNumberOfPixelsPerLine(this.vdp.getVideoMode());
+                    updateScanlineCounter();
                     canRenderScreen = false;
                     syncCycle(startCycle);
                     if (Thread.currentThread().isInterrupted()) {
@@ -419,6 +419,14 @@ public class Genesis implements GenesisProvider {
                 LOG.error("Error main cycle", e);
                 break;
             }
+        }
+    }
+
+    private void updateScanlineCounter() {
+        int newVal = VdpCounterMode.getNumberOfPixelsPerLine(this.vdp.getVideoMode()) / VDP_CYCLE;
+        if (newVal != oneScanlineCounter) {
+            LOG.info("Scanline counter has changed from: {} to: {}", oneScanlineCounter, newVal);
+            oneScanlineCounter = newVal;
         }
     }
 

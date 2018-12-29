@@ -187,7 +187,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     }
 
     //TODO fix this
-    public void initMode() {
+    private void initMode() {
         region = Optional.ofNullable(bus.getEmulator()).map(GenesisProvider::getRegion).orElse(RegionDetector.Region.EUROPE);
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
         resetVideoMode(true);
@@ -638,41 +638,6 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         return false;
     }
 
-    //88 pass, vdpfifotest
-    @Deprecated
-    private void runCounter() {
-        int hCounterInternal = interruptHandler.increaseHCounter();
-        boolean displayEnable = disp;
-        hb = interruptHandler.ishBlankSet() ? 1 : 0;
-        vb = interruptHandler.isvBlankSet() ? 1 : 0;
-        vip = interruptHandler.isvIntPending() ? 1 : vip;
-
-        if (hCounterInternal == 1) {
-            renderHandler.initLineData(line);
-        }
-
-        boolean isExternalSlot = !displayEnable || vb == 1 || interruptHandler.isCounterExternalSlot();
-        if (!fifo.isFull()) {
-            doDma(isExternalSlot);
-        }
-        writeDataToVram(isExternalSlot);
-
-        //draw on the last counter (use 9bit internal counter value)
-        if (interruptHandler.isLastHCounter()) {
-            //draw the line
-            drawScanline(line, displayEnable);
-            line++;
-            //draw the frame
-            if (interruptHandler.isDrawFrameCounter()) {
-                interruptHandler.logVerbose("Draw Screen");
-                line = 0;
-                int[][] screenData = renderHandler.renderFrame();
-                bus.getEmulator().renderScreen(screenData);
-                resetVideoMode(false);
-            }
-        }
-    }
-
     boolean resetOnNextFirstSlot = false;
 
     private void runSlot() {
@@ -746,10 +711,6 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    public VramMode getVramMode() {
-        return vramMode;
-    }
-
     @Override
     public void dumpScreenData() {
         renderHandler.dumpScreenData();
@@ -757,11 +718,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     @Override
     public void run(int cycles) {
-        if (cycles == 1) {
-            runCounter();
-        } else {
-            runSlot();
-        }
+        runSlot();
     }
 
     @Override

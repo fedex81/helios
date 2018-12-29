@@ -46,7 +46,6 @@ public enum VdpCounterMode {
     public int slotsPerLine;
     VideoMode videoMode;
     VdpSlotType[] slotTypes;
-    VdpSlotType[] slotCounterTypes;
 
     VdpCounterMode(VideoMode videoMode) {
         boolean isH32 = videoMode.isH32();
@@ -62,7 +61,6 @@ public enum VdpCounterMode {
         this.vCounterIncrementOn = isH32 ? H32_VCOUNTER_INC_ON : H40_VCOUNTER_INC_ON;
         this.videoMode = videoMode;
         this.slotTypes = isH32 ? VdpSlotType.h32Slots : VdpSlotType.h40Slots;
-        this.slotCounterTypes = isH32 ? VdpSlotType.h32CounterSlots : VdpSlotType.h40CounterSlots;
         this.slotsPerLine = isH32 ? H32_SLOTS : H40_SLOTS;
     }
 
@@ -82,10 +80,6 @@ public enum VdpCounterMode {
 
     public VdpSlotType[] getSlotTypes() {
         return slotTypes;
-    }
-
-    public VdpSlotType[] getCounterSlotTypes() {
-        return slotCounterTypes;
     }
 
     public int getSlotsPerLine() {
