@@ -375,80 +375,98 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private long ioRead(long address, Size size) {
         long data = 0;
-        if (address == 0xA10000 || address == 0xA10001) {    //	Version register (read-only word-long)
+        address &= 0xFFF;
+        if (address <= 1) {    //	Version register (read-only word-long)
             data = emu.getRegionCode();
-            if (size == Size.BYTE) {
-                return data;
-            } else {
-                return data << 8 | data;
-            }
+            data = size == Size.WORD ? (data << 8) | data : data;
+            return data;
+        }
+        switch (size) {
+            case BYTE:
+            case WORD:
+                data = ioReadInternal(address);
+                break;
+            case LONG:
+                //Codemasters
+                data = ioReadInternal(address);
+                data = data << 16 | ioReadInternal(address + 2);
+                break;
+        }
+        return data;
+    }
 
-        } else if (address == 0xA10002 || address == 0xA10003) {    //	Controller 1 data
-            data = joypad.readDataRegister1();
-
-        } else if (address == 0xA10004 || address == 0xA10005) {    //	Controller 2 data
-            data = joypad.readDataRegister2();
-
-        } else if (address == 0xA10006 || address == 0xA10007) {    //	Expansion data
-            data = joypad.readDataRegister3();
-        } else if (address == 0xA10008 || address == 0xA10009) {    //	Controller 1 control
-            if (size == Size.BYTE) {
-                data = joypad.readControlRegister1() & 0xFF;
-            } else if (size == Size.WORD) {
+    private long ioReadInternal(long addressL) {
+        long data = 0;
+        //both even and odd addresses
+        int address = (int) ((addressL ^ 1) & 0xFFF);
+        switch (address) {
+            case 2:
+                data = joypad.readDataRegister1();
+                break;
+            case 4:
+                data = joypad.readDataRegister2();
+                break;
+            case 6:
+                data = joypad.readDataRegister3();
+                break;
+            case 8:
                 data = joypad.readControlRegister1();
-            } else if (size == Size.LONG) { //Codemasters
-                data = joypad.readControlRegister1();
-                data = data << 16 | joypad.readControlRegister2();
-            }
-        } else if (address == 0xA1000A || address == 0xA1000B) {    //	Controller 2 control
-            if (size == Size.BYTE) {
-                data = joypad.readControlRegister2() & 0xFF;
-            } else {
+                break;
+            case 0xA:
                 data = joypad.readControlRegister2();
-            }
-        } else if (address == 0xA1000C || address == 0xA1000D) {    //	Expansion Port Control
-            if (size == Size.BYTE) {
-                data = joypad.readControlRegister3() & 0xFF;
-            } else {
+                break;
+            case 0xC:
                 data = joypad.readControlRegister3();
-            }
-        } else if (address == 0xA10013 || address == 0xA10019 || address == 0xA1001F) {
-            LOG.info("Reading serial control, {}", Util.pad4(address));
-            data = 0;
-        } else {
-            LOG.warn("Unexpected ioRead: " + address);
+                break;
+            case 0x12:
+            case 0x18:
+            case 0x1E:
+                int scNumber = address == 0x12 ? 1 : ((address == 0x18) ? 2 : 3);
+                LOG.info("Reading serial control{}, {}", scNumber, Util.pad4(address));
+                break;
+            default:
+                LOG.warn("Unexpected ioRead: {}" + Long.toHexString(addressL));
+                break;
         }
         return data;
     }
 
     private void ioWrite(long addressL, Size size, long data) {
         if (size != Size.BYTE) {
-            LOG.warn("Word wide write: " + addressL + ", " + data);
+            LOG.error("Unexpected sized write: {}, {}, {}", size, Long.toHexString(addressL), Long.toHexString(data));
         }
-        if (addressL == 0xA10002 || addressL == 0xA10003) {    //	Controller 1 data
-            joypad.writeDataRegister1(data);
-        } else if (addressL == 0xA10004 || addressL == 0xA10005) {    //	Controller 2 data
-            joypad.writeDataRegister2(data);
-        } else if (addressL == 0xA10006 || addressL == 0xA10007) {    //	Expansion port data
-            LOG.warn("Write to expansion port: " + Long.toHexString(addressL) +
-                    ", data: " + Long.toHexString(data) + ", size: " + size);
-        } else if (addressL == 0xA10008 || addressL == 0xA10009) {    //	Controller 1 control
-            joypad.writeControlRegister1(data & 0xFF);
-        } else if (addressL == 0xA1000A || addressL == 0xA1000B) {    //	Controller 2 control
-            joypad.writeControlRegister2(data & 0xFF);
-        } else if (addressL == 0xA1000C || addressL == 0xA1000D) {    //	Controller 2 control
-            joypad.writeControlRegister3(data & 0xFF);
-        } else if (addressL == 0xA10012 || addressL == 0xA10013) {    //	Controller 1 serial control
-            LOG.warn("Write to controller 1 serial: {}, data: {}",
-                    Long.toHexString(addressL), Long.toHexString(data));
-        } else if (addressL == 0xA10018 || addressL == 0xA10019) {    //	Controller 2 serial control
-            LOG.warn("Write to controller 2 serial: {}, data: {}",
-                    Long.toHexString(addressL), Long.toHexString(data));
-        } else if (addressL == 0xA1001E || addressL == 0xA1001F) {    //	Expansion port serial control
-            LOG.warn("Write to expansion port serial: {}, data: {}",
-                    Long.toHexString(addressL), Long.toHexString(data));
-        } else {
-            LOG.warn("Unexpected ioWrite: " + Long.toHexString(addressL) + ", " + data);
+        //both even and odd addresses
+        int address = (int) ((addressL ^ 1) & 0xFFF);
+        switch (address) {
+            case 2:
+                joypad.writeDataRegister1(data);
+                break;
+            case 4:
+                joypad.writeDataRegister2(data);
+                break;
+            case 6:
+                LOG.warn("Write to expansion port: " + Long.toHexString(address) +
+                        ", data: " + Long.toHexString(data) + ", size: " + size);
+                break;
+            case 8:
+                joypad.writeControlRegister1(data & 0xFF);
+                break;
+            case 0xA:
+                joypad.writeControlRegister2(data & 0xFF);
+                break;
+            case 0xC:
+                joypad.writeControlRegister3(data & 0xFF);
+                break;
+            case 0x12:
+            case 0x18:
+            case 0x1E:
+                int scNumber = address == 0x12 ? 1 : ((address == 0x18) ? 2 : 3);
+                LOG.warn("Write to controller {} serial: {}, data: {}",
+                        scNumber, Long.toHexString(addressL), Long.toHexString(data));
+                break;
+            default:
+                LOG.warn("Unexpected ioWrite: " + Long.toHexString(address) + ", " + data);
+                break;
         }
     }
 

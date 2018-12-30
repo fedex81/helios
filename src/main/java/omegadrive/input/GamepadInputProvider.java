@@ -113,38 +113,38 @@ public class GamepadInputProvider implements InputProvider {
 
     private void handleEvent(Event event) {
         Component.Identifier id = event.getComponent().getIdentifier();
-        double value = event.getComponent().getPollData();
-        int emuValue = value == ON ? EMU_ON : EMU_OFF;
+        double value = event.getValue();
+        int emuButtonValue = value == ON ? EMU_ON : EMU_OFF;
         if (InputProvider.DEBUG_DETECTION) {
             LOG.info(id + ": " + value);
         }
         // xbox360: linux || windows
         if (X == id || _2 == id) {
             if (playerNumber == 1) {
-                joypadProvider.setA(emuValue);
+                joypadProvider.setA(emuButtonValue);
             } else {
-                joypadProvider.setA2(emuValue);
+                joypadProvider.setA2(emuButtonValue);
             }
         }
         if (A == id || _0 == id) {
             if (playerNumber == 1) {
-                joypadProvider.setB(emuValue);
+                joypadProvider.setB(emuButtonValue);
             } else {
-                joypadProvider.setB2(emuValue);
+                joypadProvider.setB2(emuButtonValue);
             }
         }
         if (B == id || _1 == id) {
             if (playerNumber == 1) {
-                joypadProvider.setC(emuValue);
+                joypadProvider.setC(emuButtonValue);
             } else {
-                joypadProvider.setC2(emuValue);
+                joypadProvider.setC2(emuButtonValue);
             }
         }
         if (START == id || _7 == id) {
             if (playerNumber == 1) {
-                joypadProvider.setS(emuValue);
+                joypadProvider.setS(emuButtonValue);
             } else {
-                joypadProvider.setS2(emuValue);
+                joypadProvider.setS2(emuButtonValue);
             }
         }
         if (pov.equals(id.getName())) {
