@@ -377,8 +377,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private long ioRead(long address, Size size) {
         long data = 0;
-        address &= 0xFFF;
-        if (address <= 1) {    //	Version register (read-only word-long)
+        if ((address & 0xFFF) <= 1) {    //	Version register (read-only word-long)
             data = emu.getRegionCode();
             data = size == Size.WORD ? (data << 8) | data : data;
             return data;
@@ -400,7 +399,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     private long ioReadInternal(long addressL) {
         long data = 0;
         //both even and odd addresses
-        int address = (int) ((addressL ^ 1) & 0xFFF);
+        int address = (int) (addressL & 0xFFE);
         switch (address) {
             case 2:
                 data = joypad.readDataRegister1();
@@ -427,7 +426,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 LOG.info("Reading serial control{}, {}", scNumber, Util.pad4(address));
                 break;
             default:
-                LOG.warn("Unexpected ioRead: {}" + Long.toHexString(addressL));
+                LOG.warn("Unexpected ioRead: {}", Long.toHexString(addressL));
                 break;
         }
         return data;
@@ -438,7 +437,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             LOG.error("Unexpected sized write: {}, {}, {}", size, Long.toHexString(addressL), Long.toHexString(data));
         }
         //both even and odd addresses
-        int address = (int) ((addressL ^ 1) & 0xFFF);
+        int address = (int) (addressL & 0xFFE);
         switch (address) {
             case 2:
                 joypad.writeDataRegister1(data);
