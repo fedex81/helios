@@ -433,7 +433,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     private void ioWrite(long addressL, Size size, long data) {
-        if (size != Size.BYTE) {
+        if (size != Size.BYTE && data > 0xFF) {
             LOG.error("Unexpected sized write: {}, {}, {}", size, Long.toHexString(addressL), Long.toHexString(data));
         }
         //both even and odd addresses
