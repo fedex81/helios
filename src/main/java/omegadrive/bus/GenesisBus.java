@@ -63,8 +63,10 @@ public class GenesisBus implements BusProvider, GenesisMapper {
 
     private BusState busState = BusState.NOT_READY;
 
+    //TEST ONLY
     protected GenesisBus() {
         this.mapper = this;
+        this.busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
     }
 
     void initializeRomData() {
@@ -81,8 +83,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     public void reset() {
         this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memory, getEmulator().getRomName());
         initializeRomData();
-        this.busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
         LOG.info(cartridgeInfoProvider.toString());
+        this.busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
         detectState();
         LOG.info("Bus state: " + busState);
     }

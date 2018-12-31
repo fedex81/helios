@@ -349,10 +349,6 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     private void writeVdpPort(VdpPortType type, long dataL) {
         if (bus.shouldStop68k()) {
-//            boolean dmaInProgress = dma == 1 && dmaHandler.dmaInProgress();
-//            if(dmaInProgress){
-//                LOG.warn("write{}Port during dma, data : {}, dma: {}", type, Long.toHexString(dataL), dmaHandler.getDmaMode());
-//            }
             handlePendingWrite(type, dataL);
             return;
         }
