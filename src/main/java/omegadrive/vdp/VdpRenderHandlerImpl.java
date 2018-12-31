@@ -191,7 +191,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             //need to do this here so I can dump data just after rendering the frame
             clearData();
             spriteTableLocation = getSpriteTableLocation();
-            phase1(0);
+//            phase1(0);
+            phase1AllLines();
         }
         hScrollTableLocation = getHScrollDataLocation(); //improves terminator2
     }
@@ -321,8 +322,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             }
             int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, holder.horFlip);
             int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, holder.horFlip);
-            int colorIndex1 = paletteLine + (pixelIndexColor1 * 2);
-            int colorIndex2 = paletteLine + (pixelIndexColor2 * 2);
+            int colorIndex1 = getCramColorValue(pixelIndexColor1, paletteLine);
+            int colorIndex2 = getCramColorValue(pixelIndexColor2, paletteLine);
 
             storeSpriteData(pixelIndexColor1, horOffset, line, holder.priority, colorIndex1);
             storeSpriteData(pixelIndexColor2, horOffset + 1, line, holder.priority, colorIndex2);
@@ -423,9 +424,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         int backLine = (reg7 >> 4) & 0x3;
         int backEntry = (reg7) & 0xF;
         int cramColorIndex = (backLine * 32) + (backEntry * 2);
+        int cramColor = getCramColorValue(cramColorIndex);
 
         for (int pixel = 0; pixel < (limitHorTiles * 8); pixel++) {
-            planeBack[pixel][line] = cramColorIndex;
+            planeBack[pixel][line] = cramColor;
             pixelPriority[pixel][line] = RenderPriority.BACK_PLANE;
         }
     }
@@ -509,7 +511,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
             int tileBytePointer = (tileIndex + point) + (pointVert * 4);
             int onePixelData = getPixelIndexColor(tileBytePointer, pixelInTile, tileDataHolder.horFlip);
-            int theColor = getPixelColorValue(onePixelData, paletteLine);
+            int theColor = getCramColorValue(onePixelData, paletteLine);
 
             // index = 0 -> transparent pixel, but the color value could be any color
             plane[pixel][line] = theColor;
@@ -527,8 +529,14 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
     }
 
-    private int getPixelColorValue(int pixelIndexColor, int paletteLine) {
-        return paletteLine + (pixelIndexColor * 2);
+    private int getCramColorValue(int cramIndex) {
+        return memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.CRAM, cramIndex);
+    }
+
+    private int getCramColorValue(int pixelIndexColor, int paletteLine) {
+        //Each word has the following format:
+        // ----bbb-ggg-rrr-
+        return memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.CRAM, paletteLine + (pixelIndexColor * 2));
     }
 
     // This value is effectively the address divided by $400; however, the low
@@ -744,8 +752,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
                 int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, tileDataHolder.horFlip);
                 int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, tileDataHolder.horFlip);
 
-                int cramColorIndex1 = getPixelColorValue(pixelIndexColor1, paletteLine);
-                int cramColorIndex2 = getPixelColorValue(pixelIndexColor2, paletteLine);
+                int cramColorIndex1 = getCramColorValue(pixelIndexColor1, paletteLine);
+                int cramColorIndex2 = getCramColorValue(pixelIndexColor2, paletteLine);
 
                 window[po][line] = cramColorIndex1;
                 window[po + 1][line] = cramColorIndex2;
@@ -767,26 +775,18 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         pixelPriority[x][y] = prev.compareTo(rp) > 0 ? prev : rp;
     }
 
-    private int getColorFromIndex(int cramColorIndex, ShadowHighlightType shadowHighlightType) {
-        //Each word has the following format:
-        // ----bbb-ggg-rrr-
-        int color1 = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.CRAM, cramColorIndex);
-
-        int r = (color1 >> 1) & 0x7;
-        int g = (color1 >> 5) & 0x7;
-        int b = (color1 >> 9) & 0x7;
+    private int getColorFromIndex(int cramEncodedColor, ShadowHighlightType shadowHighlightType) {
+        int r = (cramEncodedColor >> 1) & 0x7;
+        int g = (cramEncodedColor >> 5) & 0x7;
+        int b = (cramEncodedColor >> 9) & 0x7;
 
         return colorMapper.getColor(r, g, b, shadowHighlightType);
     }
 
-    private int getColorFromIndex(int cramColorIndex) {
-        //Each word has the following format:
-        // ----bbb-ggg-rrr-
-        int color1 = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.CRAM, cramColorIndex);
-
-        int r = (color1 >> 1) & 0x7;
-        int g = (color1 >> 5) & 0x7;
-        int b = (color1 >> 9) & 0x7;
+    private int getColorFromIndex(int cramEncodedColor) {
+        int r = (cramEncodedColor >> 1) & 0x7;
+        int g = (cramEncodedColor >> 5) & 0x7;
+        int b = (cramEncodedColor >> 9) & 0x7;
 
         return colorMapper.getColor(r, g, b);
     }
