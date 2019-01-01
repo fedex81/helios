@@ -293,11 +293,11 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return vdpProvider.getRegisterData(AUTO_INCREMENT);
     }
 
+    //TODO MKII dmaFill and 68kToVram still buggy
     private boolean dma68kToVram(int byteSlots) {
-        byteSlots = vramMode.getRamType() == VdpProvider.VdpRamType.VRAM ? byteSlots : byteSlots * 2;
         printInfo("START, Dma byteSlots: " + byteSlots);
-        int dmaLen = 0;
-        int sourceAddress = 0;
+        int dmaLen;
+        int sourceAddress;
         do {
             //dmaLen is words
             dmaLen = decreaseDmaLength();
