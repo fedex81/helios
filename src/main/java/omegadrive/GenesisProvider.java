@@ -51,4 +51,8 @@ public interface GenesisProvider {
     String getRomName();
 
     void handleSaveState(Path file);
+
+    void handlePause();
+
+    void reset();
 }

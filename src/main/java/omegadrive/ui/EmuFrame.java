@@ -149,8 +149,19 @@ public class EmuFrame implements GenesisWindow {
         JMenu menu = new JMenu("File");
         bar.add(menu);
 
+        JMenu setting = new JMenu("Setting");
+        bar.add(setting);
+
+        JMenuItem pauseItem = new JMenuItem("Pause");
+        pauseItem.addActionListener(e -> mainEmu.handlePause());
+        setting.add(pauseItem);
+
+        JMenuItem resetItem = new JMenuItem("Reset");
+        resetItem.addActionListener(e -> mainEmu.reset());
+        setting.add(resetItem);
+
         JMenu menuBios = new JMenu("Region");
-        bar.add(menuBios);
+        setting.add(menuBios);
 
         JMenu menuView = new JMenu("View");
         bar.add(menuView);

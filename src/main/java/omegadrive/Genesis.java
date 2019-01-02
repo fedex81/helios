@@ -63,6 +63,7 @@ public class Genesis implements GenesisProvider {
     private String romName;
 
     private Future<Void> runningRomFuture;
+    private Path romFile;
     private GenesisWindow emuFrame;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -193,7 +194,8 @@ public class Genesis implements GenesisProvider {
 
     public void handleNewRom(Path file) {
         init();
-        RomRunnable runnable = new RomRunnable(file);
+        this.romFile = file;
+        Runnable runnable = new RomRunnable(file);
         runningRomFuture = executorService.submit(runnable, null);
     }
 
@@ -256,6 +258,9 @@ public class Genesis implements GenesisProvider {
     }
 
     private void handleRomInternal() {
+        if (pauseFlag) {
+            handlePause();
+        }
         if (isRomRunning()) {
             runningRomFuture.cancel(true);
             while (isRomRunning()) {
@@ -558,12 +563,19 @@ public class Genesis implements GenesisProvider {
         }
     }
 
-    private void handlePause() {
+    @Override
+    public void handlePause() {
         boolean isPausing = pauseFlag;
         pauseFlag = !pauseFlag;
         if (isPausing) {
             Util.waitOnBarrier(pauseBarrier);
         }
+    }
+
+    @Override
+    public void reset() {
+        handleCloseRom();
+        handleNewRom(romFile);
     }
 
     private void keyReleasedHandler(KeyEvent e) {
