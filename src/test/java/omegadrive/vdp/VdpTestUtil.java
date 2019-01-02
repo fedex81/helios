@@ -47,4 +47,8 @@ public class VdpTestUtil {
     public static boolean isVBlank(VdpProvider vdp) {
         return (vdp.readControl() & 0x8) == 8;
     }
+
+    public static boolean isHBlank(VdpProvider vdp) {
+        return (vdp.readControl() & 0x4) == 4;
+    }
 }

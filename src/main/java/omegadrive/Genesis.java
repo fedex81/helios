@@ -415,7 +415,7 @@ public class Genesis implements GenesisProvider {
     private void updateScanlineCounter() {
         int newVal = VdpCounterMode.getNumberOfPixelsPerLine(this.vdp.getVideoMode()) / VDP_CYCLE;
         if (newVal != oneScanlineCounter) {
-            LOG.info("Scanline counter has changed from: {} to: {}", oneScanlineCounter, newVal);
+            LOG.debug("Scanline counter has changed from: {} to: {}", oneScanlineCounter, newVal);
             oneScanlineCounter = newVal;
         }
     }

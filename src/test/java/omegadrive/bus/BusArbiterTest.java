@@ -109,6 +109,7 @@ public class BusArbiterTest {
         //disable hint
         vdp.writeControlPort(0x8AFF);
         vdp.writeControlPort(0x8004);
+        vdp.writeControlPort(0x8144); //enable display
         VdpTestUtil.runVdpUntilFifoEmpty(vdp);
         ((GenesisVdpNew) vdp).resetVideoMode(true);
         do {
@@ -153,6 +154,45 @@ public class BusArbiterTest {
             bus.handleVdpInterrupts68k();
         } while (vCounterRaise < 0);
         Assert.assertEquals(mode.vBlankSet, vCounterRaise);
+    }
+
+    @Test
+    public void testVBlankFlagWhenDisplayDisabled() {
+        vdp.writeControlPort(0x8AFF);
+        vdp.writeControlPort(0x8004);
+        vdp.writeControlPort(0x8144); //enable display
+        VdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        ((GenesisVdpNew) vdp).resetVideoMode(true);
+        do {
+            VdpTestUtil.runVdpSlot(vdp);
+        } while (VdpTestUtil.isVBlank(vdp));
+
+        //disable display -> vblank on
+        vdp.writeControlPort(0x8104);
+        VdpTestUtil.runVdpSlot(vdp);
+        Assert.assertTrue(VdpTestUtil.isVBlank(vdp));
+
+        //enable display
+        vdp.writeControlPort(0x8144);
+        VdpTestUtil.runVdpSlot(vdp);
+        Assert.assertFalse(VdpTestUtil.isVBlank(vdp));
+    }
+
+    @Test
+    public void testHBlankFlagWhenDisplayDisabled() {
+        vdp.writeControlPort(0x8AFF);
+        vdp.writeControlPort(0x8004);
+        vdp.writeControlPort(0x8144); //enable display
+        VdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        ((GenesisVdpNew) vdp).resetVideoMode(true);
+        do {
+            VdpTestUtil.runVdpSlot(vdp);
+        } while (VdpTestUtil.isHBlank(vdp));
+
+        //disable display -> hblank doesnt change
+        vdp.writeControlPort(0x8104);
+        VdpTestUtil.runVdpSlot(vdp);
+        Assert.assertFalse(VdpTestUtil.isHBlank(vdp));
     }
 
     /**

@@ -638,8 +638,14 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     private void runSlot() {
         boolean displayEnable = disp;
+        //slot granularity -> 2 H counter increases per cycle
+        interruptHandler.increaseHCounter();
+        interruptHandler.increaseHCounter();
+
+        //vblank bit is set during all of vblank (and while display is disabled)
+        //VdpFifoTesting !disp -> vb = 1, but not for hb
         hb = interruptHandler.ishBlankSet() ? 1 : 0;
-        vb = interruptHandler.isvBlankSet() ? 1 : 0;
+        vb = interruptHandler.isvBlankSet() || !displayEnable ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
 
         processExternalSlot(displayEnable);
@@ -665,9 +671,6 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             }
             renderHandler.initLineData(line);
         }
-        //slot granularity -> 2 H counter increases per cycle
-        interruptHandler.increaseHCounter();
-        interruptHandler.increaseHCounter();
     }
 
 
