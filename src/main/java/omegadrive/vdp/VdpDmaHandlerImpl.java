@@ -31,10 +31,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     protected VdpMemoryInterface memoryInterface;
     protected BusProvider busProvider;
 
-    private int destAddress;
     private int dmaFillData;
-    private VdpProvider.VramMode vramMode;
-
     private DmaMode dmaMode = null;
     private boolean dmaFillReady;
 
@@ -52,36 +49,21 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             LOG.warn("Attempting DMA but m1 not set: {}, data: {}", dmaMode, data);
             return false;
         }
-        return dmaMode != null;
+        return true;
     }
 
     public DmaMode setupDma(VdpProvider.VramMode vramMode, long data, boolean m1) {
-        dmaMode = getDmaMode(vdpProvider.getRegisterData(DMA_SOURCE_HIGH), vramMode);
         if (!checkSetup(m1, data)) {
             return null;
         }
-        switch (dmaMode) {
-            case MEM_TO_VRAM:
-                //fall-through
-                //on DMA Fill, busy flag is actually immediately (?) set after the CTRL port write,
-                //not the DATA port write that starts the Fill operation
-            case VRAM_FILL:
-                //fall-through
-            case VRAM_COPY:
-                vdpProvider.setDmaFlag(1);
-                setupDmaRegister();
-                break;
-            default:
-                LOG.error("Unexpected DMA mode: " + dmaMode + ",vramMode: " + vramMode);
-                dmaMode = null;
+        dmaMode = getDmaMode(vdpProvider.getRegisterData(DMA_SOURCE_HIGH), vramMode);
+        //on DMA Fill, busy flag is actually immediately (?) set after the CTRL port write,
+        //not the DATA port write that starts the Fill operation
+        if (dmaMode != null) {
+            vdpProvider.setDmaFlag(1);
+            printInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
         }
         return dmaMode;
-    }
-
-
-    private void setupDmaRegister() {
-        destAddress = getDestAddress();
-        printInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
     }
 
     //TODO still buggy I think
@@ -90,7 +72,6 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         dmaFillData = dataWord;
         printInfo("START");
         dmaFillReady = true;
-        destAddress = getDestAddress();
     }
 
     @Override
@@ -145,12 +126,12 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         int dmaLen = getDmaLength();
         String str = Objects.toString(dmaMode) + " " + head;
         String src = Long.toHexString(srcAddress > Long.MIN_VALUE ? srcAddress : getSourceAddress());
-        String dest = Long.toHexString(destAddress);
+        String dest = Long.toHexString(getDestAddress());
         int destAddressIncrement = getDestAddressIncrement();
 
         str += dmaMode == DmaMode.VRAM_FILL ? " fillData: " + Long.toHexString(dmaFillData) : " srcAddr: " + src;
         str += ", destAddr: " + dest + ", destAddrInc: " + destAddressIncrement +
-                ", dmaLen: " + dmaLen + ", vramMode: " + vramMode;
+                ", dmaLen: " + dmaLen + ", vramMode: " + vdpProvider.getVramMode();
         return str;
     }
 
@@ -170,7 +151,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                 dmaCopySingleByte();
                 break;
             case MEM_TO_VRAM:
-                dma68kToVram(1);
+                dma68kToVram();
                 break;
             default:
                 LOG.error("Unexpected dma setting: {}", dmaMode);
@@ -184,79 +165,29 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return done;
     }
 
-
-    @Override
-    @Deprecated
-    public boolean doDma(VideoMode videoMode, boolean isBlanking) {
-        boolean done = false;
-        int byteSlots = getDmaSlotsPerLineInternal(dmaMode, videoMode, isBlanking);
-        switch (dmaMode) {
-            case VRAM_FILL:
-                if (dmaFillReady) {
-                    done = dmaFill(byteSlots);
-                }
-                break;
-            case VRAM_COPY:
-                done = dmaCopy(byteSlots);
-                break;
-            case MEM_TO_VRAM:
-                done = dma68kToVram(byteSlots);
-                break;
-            default:
-                LOG.error("Unexpected dma setting: {}", dmaMode);
-        }
-        if (done) {
-            printInfo("DONE");
-            dmaMode = null; //Bug Hunt
-            dmaFillReady = false;
-        }
-
-        return done;
-    }
-
-    private boolean dmaFill(int byteSlots) {
-        int count = byteSlots;
-        boolean done;
-        do {
-            done = dmaFillSingleByte();
-            count--;
-        } while (count > 0 && !done);
-        return done;
-    }
-
-    public boolean dmaFillSingleByte() {
-        int dmaLen = decreaseDmaLength();
+    public void dmaFillSingleByte() {
+        decreaseDmaLength();
+        int destAddress = getDestAddress();
         printInfo("IN PROGRESS");
         int msb = (dmaFillData >> 8) & 0xFF;
         memoryInterface.writeVramByte(destAddress ^ 1, msb);
         //not needed
         increaseSourceAddress(1);
-        destAddress = increaseDestAddress();
-        return dmaLen == 0;
-    }
-
-    private boolean dmaCopy(int byteSlots) {
-        int count = byteSlots;
-        boolean done;
-        do {
-            done = dmaCopySingleByte();
-            count--;
-        } while (count > 0 && !done);
-        return done;
+        increaseDestAddress();
     }
 
     //on VRAM copy, VRAM source and destination address are actually adjacent address ( address ^ 1)
     //to internal address registers value. This does not matter for most VRAM Copy operations since
     //they are done on an even byte quantity but can be verified when doing a single byte copy for example.
-    private boolean dmaCopySingleByte() {
-        int dmaLen = decreaseDmaLength();
+    private void dmaCopySingleByte() {
+        decreaseDmaLength();
         int sourceAddress = getSourceAddress() ^ 1;
+        int destAddress = getDestAddress();
         printInfo("IN PROGRESS");
         int data = memoryInterface.readVramByte(sourceAddress);
         memoryInterface.writeVramByte(destAddress ^ 1, data);
         increaseSourceAddress(1);
-        destAddress = increaseDestAddress();
-        return dmaLen == 0;
+        increaseDestAddress();
     }
 
     //The VDP decrements the length before checking if it's equal to 0,
@@ -271,15 +202,14 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return dmaLen;
     }
 
-    private int increaseDestAddress() {
+    private void increaseDestAddress() {
+        int destAddress = getDestAddress();
         vdpProvider.setAddressRegister(destAddress + getDestAddressIncrement());
-        return vdpProvider.getAddressRegister();
     }
 
-    private int increaseSourceAddress(int inc) {
-        int sourceAddress = getSourceAddressLow() + inc;
+    private void increaseSourceAddress(int inc) {
+        int sourceAddress = (getSourceAddressLow() + inc) & 0xFFFF;
         setSourceAddress(sourceAddress);
-        return sourceAddress;
     }
 
     private void setSourceAddress(int sourceAddress) {
@@ -294,23 +224,19 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     //TODO MKII dmaFill and 68kToVram still buggy
-    private boolean dma68kToVram(int byteSlots) {
-        printInfo("START, Dma byteSlots: " + byteSlots);
-        int dmaLen;
-        int sourceAddress;
-        do {
-            //dmaLen is words
-            dmaLen = decreaseDmaLength();
-            sourceAddress = getSourceAddress() << 1; //needs to double it
-            byteSlots -= 2;
-            int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
-            vdpProvider.getFifo().push(vramMode, destAddress, dataWord);
-            printInfo("IN PROGRESS: ", sourceAddress);
-            //increase by 1, becomes 2 (bytes) when doubling
-            increaseSourceAddress(1);
-            destAddress = increaseDestAddress();
-        } while (dmaLen > 0 && byteSlots > 0);
-        printInfo("Byte slots remaining: " + byteSlots);
+    private boolean dma68kToVram() {
+        printInfo("START slot");
+        //dmaLen is words
+        int dmaLen = decreaseDmaLength();
+        int sourceAddress = getSourceAddress() << 1; //needs to double it
+        int destAddress = getDestAddress();
+        int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
+        vdpProvider.getFifo().push(vdpProvider.getVramMode(), destAddress, dataWord);
+        printInfo("IN PROGRESS: ", sourceAddress);
+        //increase by 1, becomes 2 (bytes) when doubling
+        increaseSourceAddress(1);
+        increaseDestAddress();
+        printInfo("Done slot");
         return dmaLen == 0;
     }
 
@@ -322,59 +248,24 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                 //For DMA copy, CD0-CD3 are ignored.
                 // You can only perform a DMA copy within VRAM.
                 mode = DmaMode.VRAM_COPY;
-                this.vramMode = VdpProvider.VramMode.vramWrite;
                 break;
-            //fall-through
             case 2:
-                mode = DmaMode.VRAM_FILL;
                 if (vramMode == VdpProvider.VramMode.vramWrite) {
-                    this.vramMode = vramMode;
-                    break;
+                    mode = DmaMode.VRAM_FILL;
                 }
-                //fall-through
+                break;
             case 0:
                 //fall-through
             case 1:
                 if (vramMode != null && vramMode.isWriteMode()) {
                     mode = DmaMode.MEM_TO_VRAM;
-                    this.vramMode = vramMode;
-                    break;
                 }
-                //fall-through
-            default:
-                LOG.error("Unexpected setup: " + mode + ", vramDestination: " + vramMode);
-                mode = null;
+                break;
+        }
+        if (mode == null) {
+            LOG.error("Unexpected setup: {}, vramDestination: {}", dmaBits, vramMode);
         }
         return mode;
-    }
-
-    private int getDmaSlotsPerLineInternal(DmaMode dmaMode, VideoMode videoMode, boolean isBlanking) {
-        int slots = VdpDmaHandlerImpl.getDmaSlotsPerLine(dmaMode, videoMode, isBlanking);
-        printInfo("Dma byteSlots: " + slots + ", isBlanking: " + isBlanking);
-        return slots;
-    }
-
-    //VDPRATES.txt
-    public static int getDmaSlotsPerLine(DmaMode dmaMode, VideoMode videoMode, boolean isBlanking) {
-        int slots = 0;
-        switch (dmaMode) {
-            case MEM_TO_VRAM:
-                slots = videoMode.isH32() ?
-                        (isBlanking ? 167 : 16) : //H32
-                        (isBlanking ? 198 : 18);  //H40
-                break;
-            case VRAM_FILL:
-                slots = videoMode.isH32() ?
-                        (isBlanking ? 166 : 15) : //H32
-                        (isBlanking ? 204 : 17);  //H40
-                break;
-            case VRAM_COPY:
-                slots = videoMode.isH32() ?
-                        (isBlanking ? 83 : 8) : //H32
-                        (isBlanking ? 102 : 9);  //H40
-                break;
-        }
-        return slots;
     }
 
     /**

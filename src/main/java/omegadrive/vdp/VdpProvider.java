@@ -225,6 +225,8 @@ public interface VdpProvider {
 
     VdpMemoryInterface getVdpMemory();
 
+    VramMode getVramMode();
+
     default int getRegisterData(VdpRegisterName registerName) {
         return getRegisterData(registerName.ordinal());
     }
