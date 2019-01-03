@@ -220,6 +220,10 @@ public class VdpInterruptHandler {
         this.hIntPending = hIntPending;
     }
 
+    public int getSlotNumber() {
+        return slotNumber;
+    }
+
     public boolean isFirstSlot() {
         return slotNumber == 0;
     }

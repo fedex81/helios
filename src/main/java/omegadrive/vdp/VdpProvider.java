@@ -243,4 +243,8 @@ public interface VdpProvider {
         return "vdpState: unsupported";
     }
 
+    default void resetVideoMode(boolean force) {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
 }

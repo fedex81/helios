@@ -30,7 +30,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     public static boolean fifoVerbose = false || Genesis.verbose;
     public static boolean regVerbose = false || verbose || Genesis.verbose;
 
-    private static boolean ENABLE_FIFO = Boolean.valueOf(System.getProperty("vdp.enable.fifo", "false"));
+    private static boolean ENABLE_FIFO = Boolean.valueOf(System.getProperty("vdp.enable.fifo", "true"));
 
     private VramMode vramMode;
 
@@ -648,6 +648,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
     boolean resetOnNextFirstSlot = false;
 
     private void runSlot() {
+//        LogHelper.printLevel(LOG, Level.INFO, "Start slot: {}", interruptHandler.getSlotNumber(), verbose);
         boolean displayEnable = disp;
         //slot granularity -> 2 H counter increases per cycle
         interruptHandler.increaseHCounter();
@@ -699,6 +700,7 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         return registers[0xA];
     }
 
+    @Override
     public void resetVideoMode(boolean force) {
         VideoMode newVideoMode = getVideoMode(region, isH40(), isV30());
         if (videoMode != newVideoMode || force) {

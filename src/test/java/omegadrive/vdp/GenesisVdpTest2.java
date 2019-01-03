@@ -60,9 +60,8 @@ public class GenesisVdpTest2 {
      */
     @Test
     public void testWriteControlPortLongWordAndDMA() {
-//        Set Video mode: PAL_H32_V28
-        vdpProvider.writeControlPort(0x8C00);
-        ((GenesisVdpNew) vdpProvider).resetVideoMode(true);
+        VdpTestUtil.setH32(vdpProvider);
+
         int dmaAutoInc = 2;
         int afterDmaAutoInc = 0x20;
 
@@ -108,14 +107,11 @@ public class GenesisVdpTest2 {
      */
     @Test
     public void testCodeRegisterUpdate() {
-        //        Set Video mode: PAL_H32_V28
-        vdpProvider.writeControlPort(0x8C00);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
-        ((GenesisVdpNew) vdpProvider).resetVideoMode(true);
+        VdpTestUtil.setH32(vdpProvider);
 
         //set vramRead
         testCodeRegisterUpdateInternal(vramRead.getAddressMode(), 0, 1280);
-        Assert.assertEquals(vramRead, ((GenesisVdpNew) vdpProvider).getVramMode());
+        Assert.assertEquals(vramRead, vdpProvider.getVramMode());
 
         // from vramRead_8bit -> cramRead
         testCodeRegisterUpdateInternal(cramRead.getAddressMode(), 0, 1312);
@@ -139,7 +135,7 @@ public class GenesisVdpTest2 {
         vdpProvider.writeControlPort(firstWord);
         vdpProvider.writeControlPort(secondWord);
 
-        VdpProvider.VramMode vramMode = ((GenesisVdpNew) vdpProvider).getVramMode();
+        VdpProvider.VramMode vramMode = vdpProvider.getVramMode();
         Assert.assertEquals(VdpProvider.VramMode.getVramMode(expected), vramMode);
     }
 }

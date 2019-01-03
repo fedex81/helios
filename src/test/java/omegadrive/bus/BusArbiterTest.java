@@ -3,8 +3,6 @@ package omegadrive.bus;
 import omegadrive.GenesisProvider;
 import omegadrive.m68k.M68kProvider;
 import omegadrive.m68k.MC68000Wrapper;
-import omegadrive.util.RegionDetector;
-import omegadrive.vdp.GenesisVdpNew;
 import omegadrive.vdp.VdpProvider;
 import omegadrive.vdp.VdpTestUtil;
 import omegadrive.vdp.model.VdpCounterMode;
@@ -13,8 +11,6 @@ import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.nio.file.Path;
 
 /**
  * ${FILE}
@@ -38,7 +34,7 @@ public class BusArbiterTest {
 
     @Before
     public void setup() {
-        GenesisProvider emu = createGenesisProvider();
+        GenesisProvider emu = VdpTestUtil.createTestGenesisProvider();
         bus = BusProvider.createBus();
         vdp = VdpProvider.createVdp(bus);
         Z80Provider z80 = Z80CoreWrapper.createInstance(bus);
@@ -76,7 +72,7 @@ public class BusArbiterTest {
     public void testSesameStreet() {
         vdp.writeControlPort(0x8C00);
         vdp.writeControlPort(0x8174);
-        ((GenesisVdpNew) vdp).resetVideoMode(true);
+        vdp.resetVideoMode(true);
         do {
             VdpTestUtil.runVdpSlot(vdp);
             if (busArbiter.isVdpVInt() && hCounterPending < 0) {
@@ -111,7 +107,7 @@ public class BusArbiterTest {
         vdp.writeControlPort(0x8004);
         vdp.writeControlPort(0x8144); //enable display
         VdpTestUtil.runVdpUntilFifoEmpty(vdp);
-        ((GenesisVdpNew) vdp).resetVideoMode(true);
+        vdp.resetVideoMode(true);
         do {
             boolean wasVblank = VdpTestUtil.isVBlank(vdp);
             VdpTestUtil.runVdpSlot(vdp);
@@ -141,7 +137,7 @@ public class BusArbiterTest {
         //enable VINT
         vdp.writeControlPort(0x8164);
         VdpTestUtil.runVdpUntilFifoEmpty(vdp);
-        ((GenesisVdpNew) vdp).resetVideoMode(true);
+        vdp.resetVideoMode(true);
         VdpCounterMode mode = VdpCounterMode.getCounterMode(vdp.getVideoMode());
         do {
             VdpTestUtil.runVdpSlot(vdp);
@@ -162,7 +158,7 @@ public class BusArbiterTest {
         vdp.writeControlPort(0x8004);
         vdp.writeControlPort(0x8144); //enable display
         VdpTestUtil.runVdpUntilFifoEmpty(vdp);
-        ((GenesisVdpNew) vdp).resetVideoMode(true);
+        vdp.resetVideoMode(true);
         do {
             VdpTestUtil.runVdpSlot(vdp);
         } while (VdpTestUtil.isVBlank(vdp));
@@ -184,7 +180,7 @@ public class BusArbiterTest {
         vdp.writeControlPort(0x8004);
         vdp.writeControlPort(0x8144); //enable display
         VdpTestUtil.runVdpUntilFifoEmpty(vdp);
-        ((GenesisVdpNew) vdp).resetVideoMode(true);
+        vdp.resetVideoMode(true);
         do {
             VdpTestUtil.runVdpSlot(vdp);
         } while (VdpTestUtil.isHBlank(vdp));
@@ -202,90 +198,5 @@ public class BusArbiterTest {
      */
     public void testFatalRewind() {
 
-    }
-
-
-    private static GenesisProvider createGenesisProvider() {
-        return new GenesisProvider() {
-            @Override
-            public RegionDetector.Region getRegion() {
-                return null;
-            }
-
-            @Override
-            public void renderScreen(int[][] screenData) {
-
-            }
-
-            @Override
-            public void handleNewRom(Path file) {
-
-            }
-
-            @Override
-            public void handleCloseRom() {
-
-            }
-
-            @Override
-            public void handleCloseApp() {
-
-            }
-
-            @Override
-            public void handleLoadState(Path file) {
-
-            }
-
-            @Override
-            public boolean isRomRunning() {
-                return false;
-            }
-
-            @Override
-            public boolean isSoundWorking() {
-                return false;
-            }
-
-            @Override
-            public void toggleMute() {
-
-            }
-
-            @Override
-            public void toggleSoundRecord() {
-
-            }
-
-            @Override
-            public void setFullScreen(boolean value) {
-
-            }
-
-            @Override
-            public void init() {
-
-            }
-
-            @Override
-            public void setPlayers(int i) {
-
-            }
-
-            @Override
-            public void setDebug(boolean value) {
-
-            }
-
-            @Override
-            public String getRomName() {
-                return null;
-            }
-
-            @Override
-            public void handleSaveState(Path p) {
-
-            }
-        };
     }
 }

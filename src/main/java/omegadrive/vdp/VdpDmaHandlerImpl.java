@@ -171,7 +171,10 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         printInfo("IN PROGRESS");
         int msb = (dmaFillData >> 8) & 0xFF;
         memoryInterface.writeVramByte(destAddress ^ 1, msb);
-        //not needed
+        postDmaRegisters();
+    }
+
+    private void postDmaRegisters() {
         increaseSourceAddress(1);
         increaseDestAddress();
     }
@@ -186,8 +189,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         printInfo("IN PROGRESS");
         int data = memoryInterface.readVramByte(sourceAddress);
         memoryInterface.writeVramByte(destAddress ^ 1, data);
-        increaseSourceAddress(1);
-        increaseDestAddress();
+        postDmaRegisters();
     }
 
     //The VDP decrements the length before checking if it's equal to 0,
@@ -234,8 +236,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         vdpProvider.getFifo().push(vdpProvider.getVramMode(), destAddress, dataWord);
         printInfo("IN PROGRESS: ", sourceAddress);
         //increase by 1, becomes 2 (bytes) when doubling
-        increaseSourceAddress(1);
-        increaseDestAddress();
+        postDmaRegisters();
         printInfo("Done slot");
         return dmaLen == 0;
     }
