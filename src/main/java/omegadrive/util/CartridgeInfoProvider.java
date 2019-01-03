@@ -90,6 +90,10 @@ public class CartridgeInfoProvider {
         return checksum == computedChecksum;
     }
 
+    public void setSramEnd(long sramEnd) {
+        this.sramEnd = sramEnd;
+    }
+
     public static CartridgeInfoProvider createInstance(MemoryProvider memoryProvider) {
         return createInstance(memoryProvider, null);
     }

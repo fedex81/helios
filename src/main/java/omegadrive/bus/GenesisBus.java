@@ -204,7 +204,8 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         if (addressL <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
             if (isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
                 LOG.info("Unexpected Sram write: " + Long.toHexString(addressL) + ", value : " + data);
-                checkBackupMemoryMapper(SramMode.READ_WRITE);
+                boolean adjust = adjustSramLimits(addressL);
+                checkBackupMemoryMapper(SramMode.READ_WRITE, adjust);
                 mapper.writeData(addressL, data, size);
                 return;
             }
@@ -229,6 +230,18 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         } else {
             LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) addressL) + " - PC: " + Integer.toHexString((int) cpu.getPC()));
         }
+    }
+
+    private boolean adjustSramLimits(long address) {
+        //FIFA 96
+        boolean adjust = cartridgeInfoProvider.getSramEnd() < CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS;
+        adjust &= address > cartridgeInfoProvider.getSramEnd() && address < CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS;
+        if (adjust) {
+            LOG.warn("Adjusting SRAM limit from: {} to: {}", Long.toHexString(cartridgeInfoProvider.getSramEnd()),
+                    Long.toHexString(CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS));
+            cartridgeInfoProvider.setSramEnd(CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS);
+        }
+        return adjust;
     }
 
     private void logVdpCounter(int v, int h) {
@@ -624,7 +637,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     private void checkBackupMemoryMapper(SramMode sramMode) {
-        this.mapper = BackupMemoryMapper.getOrCreateInstance(this, mapper, cartridgeInfoProvider, sramMode);
+        checkBackupMemoryMapper(sramMode, false);
+    }
+
+    private void checkBackupMemoryMapper(SramMode sramMode, boolean forceCreate) {
+        this.mapper = forceCreate ? BackupMemoryMapper.createInstance(this, cartridgeInfoProvider) :
+                BackupMemoryMapper.getOrCreateInstance(this, mapper, cartridgeInfoProvider, sramMode);
     }
 
     @Override
