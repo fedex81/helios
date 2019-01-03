@@ -439,9 +439,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             fifo.pop();
             if (wasFull && !fifo.isFull()) {
                 processPendingWrites();
+                evaluateStop68k();
             }
         }
-        evaluateStop68k();
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
 
