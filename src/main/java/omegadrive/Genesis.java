@@ -134,6 +134,7 @@ public class Genesis implements GenesisProvider {
     public Genesis(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         Util.registerJmx(this);
         SwingUtilities.invokeAndWait(() -> createFrame(isHeadless));
+        sound = SoundProvider.NO_SOUND;
     }
 
     @Override
