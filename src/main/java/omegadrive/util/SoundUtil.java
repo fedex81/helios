@@ -91,17 +91,14 @@ public class SoundUtil {
         int j = 0;
         for (int i = 0; i < input.length; i += 2) {
             //fm: avg 2 channels -> mono
-            // avg = (14 bit + 14 bit)/2 = 14 bit
-            //TODO check DAC contribution
-            int fm = (input[i] + input[i + 1]) >> 1;
-            //PSG: 8 bit -> 15 bit
-            int psg = ((int) psgMono8[j]) << 7;
-            //TODO PSG attenuation: do it better
-            psg = (int) (psg * 0.65);
+            // avg = (16 bit + 16 bit) >> (1 + 1) = 15 bit
+            int fm = (input[i] + input[i + 1]) >> 2;
+            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
+            int psg = ((int) psgMono8[j]) << 5;
             //avg fm and psg
             int out16 = fm + psg;
             output[i] = (byte) (out16 & 0xFF); //lsb
-            output[i + 1] = (byte) (out16 >> 8); //msb
+            output[i + 1] = (byte) ((out16 >> 8) & 0xFF); //msb
             j++;
         }
     }
