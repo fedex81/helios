@@ -1,10 +1,13 @@
 package omegadrive.sound.persist;
 
+import com.google.common.io.Files;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * ${FILE}
@@ -20,7 +23,7 @@ public class FileSoundPersister implements SoundPersister {
     /**
      * For Recording Sound to Disk.
      */
-    private FileWriter fileWriter;
+    private OutputStream fileStream;
     private boolean recording;
 
     @Override
@@ -33,17 +36,14 @@ public class FileSoundPersister implements SoundPersister {
 
     private void recordSound(byte[] buffer) {
         if (isRecording()) {
-            for (byte b : buffer) {
                 try {
-                    // output 8 bit signed mono
-                    // TODO doesnt work: 16 bit signed mono (little endian)
-                    fileWriter.write(b & 0xff);
+                    //16 bit signed mono (little endian)
+                    fileStream.write(buffer);
                 } catch (IOException ioe) {
                     LOG.error("An error occurred while writing the"
                             + " sound file.");
                 }
             }
-        }
     }
 
 
@@ -53,7 +53,8 @@ public class FileSoundPersister implements SoundPersister {
     private void startRecordingInternal(SoundType type) {
         String name = "output_" + type.name() + "_" + System.currentTimeMillis() + ".raw";
         try {
-            fileWriter = new FileWriter(name);
+            Path file = Paths.get(".", name);
+            fileStream = Files.asByteSink(file.toFile()).openBufferedStream();
             LOG.info("Started recording file: " + name);
             recording = true;
         } catch (IOException ioe) {
@@ -73,7 +74,8 @@ public class FileSoundPersister implements SoundPersister {
     public void stopRecording() {
         if (isRecording()) {
             try {
-                fileWriter.close();
+                fileStream.flush();
+                fileStream.close();
                 LOG.info("Stopped recording");
                 recording = false;
             } catch (IOException ioe) {

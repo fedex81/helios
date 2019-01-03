@@ -50,8 +50,6 @@ public class JavaSoundManager implements SoundProvider {
     private volatile boolean isSoundWorking = false;
     private SoundHandler.AudioRunnable playSoundRunnable;
 
-    private boolean newSound = false;
-
     public static JavaSoundManager createSoundProvider(RegionDetector.Region region) {
         PsgProvider psgProvider = PsgProvider.createInstance(region);
         FmProvider fmProvider = FmProvider.createInstance(region);
@@ -65,12 +63,12 @@ public class JavaSoundManager implements SoundProvider {
     private void init(RegionDetector.Region region) {
         dataLine = SoundUtil.createDataLine(audioFormat);
         soundPersister = new FileSoundPersister();
-        this.playSoundRunnable = newSound ? getRunnable(dataLine, region) : getRunnableLegacy(dataLine, region);
+        this.playSoundRunnable = getRunnable(dataLine, region);
         executorService.submit(playSoundRunnable);
         LOG.info("Output audioFormat: " + audioFormat);
     }
 
-    private SoundHandler.AudioRunnable getRunnableLegacy(SourceDataLine dataLine, RegionDetector.Region region) {
+    private SoundHandler.AudioRunnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
         int fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
         int psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
         return new SoundHandler.AudioRunnable() {
@@ -115,54 +113,6 @@ public class JavaSoundManager implements SoundProvider {
         };
     }
 
-    private SoundHandler.AudioRunnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
-        int fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
-        int psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
-        return new SoundHandler.AudioRunnable() {
-
-            int[] fm_buf_ints = new int[fmSize];
-            byte[] mix_buf_bytes16 = new byte[fm_buf_ints.length];
-            byte[] psg_buf_bytes = new byte[psgSize];
-            volatile boolean playNow;
-
-            @Override
-            public void run() {
-                do {
-                    if (playNow) {
-                        if (!isMute()) {
-                            SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16, mix_buf_bytes16.length);
-                        }
-                        if (isRecording()) {
-                            soundPersister.persistSound(DEFAULT_SOUND_TYPE, mix_buf_bytes16);
-                        }
-                        playNow = false;
-                    }
-                } while (!close);
-                LOG.info("Stopping sound thread");
-                psg.reset();
-                fm.reset();
-            }
-
-            @Override
-            public void playOnce() {
-                hasOutput = false;
-                psg.output(psg_buf_bytes);
-                fm.output(fm_buf_ints);
-
-                try {
-                    Arrays.fill(mix_buf_bytes16, SoundUtil.ZERO_BYTE);
-                    SoundUtil.intStereo14ToByteMono16Mix(fm_buf_ints, mix_buf_bytes16, psg_buf_bytes);
-                    updateSoundWorking(mix_buf_bytes16);
-                    playNow = true;
-                } catch (Exception e) {
-                    LOG.error("Unexpected sound error", e);
-                }
-                Arrays.fill(fm_buf_ints, 0);
-                Arrays.fill(psg_buf_bytes, SoundUtil.ZERO_BYTE);
-            }
-        };
-    }
-
     protected void updateSoundWorking(byte[] b) {
         if (isSoundWorking) {
             return;
@@ -198,9 +148,6 @@ public class JavaSoundManager implements SoundProvider {
     @Override
     public void output(int micros) {
         hasOutput = true;
-        if (newSound) {
-            playSoundRunnable.playOnce();
-        }
     }
 
     @Override
