@@ -191,8 +191,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             //need to do this here so I can dump data just after rendering the frame
             clearData();
             spriteTableLocation = getSpriteTableLocation();
-//            phase1(0);
-            phase1AllLines();
+            phase1(0);
+//            phase1AllLines();
         }
         hScrollTableLocation = getHScrollDataLocation(); //improves terminator2
     }
@@ -229,6 +229,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         verticalScrollRes[1] = 0;
     }
 
+    private void phase1AllLines() {
+        //TODO check that this is counting a sprite once per frame and not once per line
+        for (int i = 0; i < spritesPerLine.length; i++) {
+            phase1(i);
+        }
+    }
+
     private void phase1(int line) {
         boolean isH40 = videoMode.isH40();
         int height = videoMode.getDimension().height;
@@ -257,8 +264,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             count++;
             next = holder.linkData;
 
-            if (next == 0 || next >= maxSpritesPerFrame ||
-                    count >= maxSpritesPerLine || spritesFrame >= maxSpritesPerFrame) {
+            if (next == 0 ||
+                    next >= maxSpritesPerFrame ||
+                    count >= maxSpritesPerLine
+                    || spritesFrame >= maxSpritesPerFrame
+                    ) {
                 return;
             }
         }

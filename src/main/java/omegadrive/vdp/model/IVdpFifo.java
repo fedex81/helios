@@ -17,6 +17,7 @@ public interface IVdpFifo {
         public VramMode vdpRamMode;
         public int addressRegister;
         public int data;
+        public boolean firstByteWritten;
     }
 
     void push(VramMode vdpRamMode, int addressReg, int data);

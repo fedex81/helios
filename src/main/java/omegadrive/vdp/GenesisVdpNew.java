@@ -420,15 +420,26 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             return;
         }
         boolean wasFull = fifo.isFull();
-        VdpFifo.VdpFifoEntry entry = fifo.pop();
-        if (entry.vdpRamMode == null || !entry.vdpRamMode.isWriteMode()) {
+        boolean doWrite = true;
+        VdpFifo.VdpFifoEntry entry = fifo.peek();
+        boolean invalidEntry = entry.vdpRamMode == null || !entry.vdpRamMode.isWriteMode();
+        if (invalidEntry) {
             LOG.warn("FIFO write on invalid target: {}, data: {}, address: {}",
                     entry.vdpRamMode, entry.data, entry.addressRegister);
-            return;
+            fifo.pop();
+            doWrite = false;
         }
-        memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
-        if (wasFull) {
-            processPendingWrites();
+        boolean byteWide = entry.vdpRamMode == VramMode.vramWrite;
+        if (byteWide && !entry.firstByteWritten) {
+            entry.firstByteWritten = true;
+            doWrite = false;
+        }
+        if (doWrite) {
+            memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
+            fifo.pop();
+            if (wasFull && !fifo.isFull()) {
+                processPendingWrites();
+            }
         }
         evaluateStop68k();
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
