@@ -93,25 +93,6 @@ public class Ssf2Mapper implements GenesisMapper {
         baseMapper.writeData(addressL, data, size);
     }
 
-    /**	A page is specified with 6 bits (bits 7 and 6 are always 0) thus allowing a possible 64 pages
-     *  (SSFII only has 10, though.)
-     *
-     *        7  6  5  4  3  2  1  0
-     *         +-----------------------+
-     *         |??|??|??|??|??|??|WP|MD|
-     *         +-----------------------+
-     *
-     *         MD:     Mode -- 0 = ROM, 1 = RAM
-     *         WP:     Write protect -- 0 = writable, 1 = not writable
-     *
-     *  0xA130F3 ->	0x080000 - 0x0FFFFF
-     *  0xA130F5 -> 0x100000 - 0x17FFFF
-     *  0xA130F7 -> 0x180000 - 0x1FFFFF
-     *  0xA130F9 -> 0x200000 - 0x27FFFF
-     *  0xA130FB -> 0x280000 - 0x2FFFFF
-     *  0xA130FD -> 0x300000 - 0x37FFFF
-     *  0xA130FF -> 0x380000 - 0x3FFFFF
-     */
     @Override
     public void writeBankData(long addressL, long data) {
         int val = (int) (addressL & 0xF);
