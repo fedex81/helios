@@ -108,7 +108,7 @@ public class LogHelper {
     }
 
 
-    public static void printLevel(Logger LOG, Level level, String str, Object arg) {
+    private static void printLevel(Logger LOG, Level level, String str, Object arg) {
         ParameterizedMessage pm = new ParameterizedMessage(str, arg);
         logParamMessage(LOG, level, pm);
     }
