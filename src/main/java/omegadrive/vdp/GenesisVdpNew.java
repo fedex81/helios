@@ -363,15 +363,16 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         evaluateStop68k();
     }
 
+    //TODO check Clue vs GoldenAxe II
     private void writeControlPortInternal(long dataL) {
         long mode = (dataL >> 14);
         int data = (int) dataL;
-        updateStateFromControlPortWrite(data);
 
         //TODO: check this: writePendingControlPort has precedence,
         //TODO: a register write could be treated as 2nd part - fixes test #10
         boolean isRegisterWrite = !writePendingControlPort && mode == 0b10;
 
+        updateStateFromControlPortWrite(isRegisterWrite, data);
         if (isRegisterWrite) {
             writeRegister(data);
         } else {
@@ -379,16 +380,23 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         }
     }
 
-    private void updateStateFromControlPortWrite(int data) {
-        if (!writePendingControlPort) {
+    private void updateStateFromControlPortWrite(boolean isRegisterWrite, int data) {
+        //TODO write test
+        //Clue breaks when CD is cleared
+        //GoldenAxeII expects CD to be cleared
+        //writing a register clears the 1st command word
+        //see Sonic3d intro wrong colors
+        if (writePendingControlPort) {
+            codeRegister = ((data >> 2) & 0xFF) | (codeRegister & 0x3);
+            addressRegister = (addressRegister & 0x3FFF) | ((data & 0x3) << 14);
+        } else if (isRegisterWrite) {
+//            codeRegister = ~0x3; //TODO fixes GoldenAxeII, breaks CLUE and VdpFifoTesting
+        } else if (!writePendingControlPort) {
             //It is perfectly valid to write the first half of the command word only.
 //            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
 //            values, while the remaining address and code bits _retain_ their former value.
             codeRegister = (codeRegister & 0x3C) | ((data >> 14) & 3);
             addressRegister = (addressRegister & 0xC000) | (data & 0x3FFF);
-        } else {
-            codeRegister = (((data >> 4) & 0xF) << 2) | (codeRegister & 0x3);
-            addressRegister = ((data & 0x3) << 14) | (addressRegister & 0x3FFF);
         }
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
     }
@@ -435,8 +443,10 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
             doWrite = false;
         }
         if (doWrite) {
-            memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
             fifo.pop();
+            LogHelper.printLevel(LOG, Level.INFO, "writeVram: {}, data: {}, address: {}",
+                    entry.vdpRamMode, entry.data, entry.addressRegister, verbose);
+            memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
             if (wasFull && !fifo.isFull()) {
                 processPendingWrites();
                 evaluateStop68k();

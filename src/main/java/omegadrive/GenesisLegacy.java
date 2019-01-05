@@ -21,6 +21,7 @@ import omegadrive.util.Util;
 import omegadrive.vdp.GenesisVdpMemoryInterface;
 import omegadrive.vdp.GenesisVdpNew;
 import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
@@ -43,9 +44,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 //	MEMORY MAP:	https://en.wikibooks.org/wiki/Genesis_Programming
-public class Genesis2 implements GenesisProvider {
+@Deprecated
+public class GenesisLegacy implements GenesisProvider {
 
-    private static Logger LOG = LogManager.getLogger(Genesis2.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(GenesisLegacy.class.getSimpleName());
 
     private static final String PROPERTIES_FILENAME = "./emu.properties";
 
@@ -69,6 +71,9 @@ public class Genesis2 implements GenesisProvider {
 
     public static boolean verbose = false;
     public static boolean showFps = false;
+    //vdp at counter = ~13.5/2 = 6.75Mps
+    //vdp at slot = ~13.5/4 = 3.875Mps
+    public static boolean vdpAsCounter = false;
 
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
@@ -89,7 +94,7 @@ public class Genesis2 implements GenesisProvider {
         InputProvider.bootstrap();
         boolean isHeadless = isHeadless();
         LOG.info("Headless mode: " + isHeadless);
-        Genesis2 genesis = new Genesis2(isHeadless);
+        GenesisLegacy genesis = new GenesisLegacy(isHeadless);
         if (args.length > 0) {
             //linux pulseaudio can crash if we start too quickly
             Util.sleep(250);
@@ -117,9 +122,9 @@ public class Genesis2 implements GenesisProvider {
 
     public static GenesisProvider createInstance() {
         InputProvider.bootstrap();
-        Genesis2 genesis = null;
+        GenesisLegacy genesis = null;
         try {
-            genesis = new Genesis2(false);
+            genesis = new GenesisLegacy(false);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -127,7 +132,7 @@ public class Genesis2 implements GenesisProvider {
         return genesis;
     }
 
-    public Genesis2(boolean isHeadless) throws InvocationTargetException, InterruptedException {
+    public GenesisLegacy(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         Util.registerJmx(this);
         SwingUtilities.invokeAndWait(() -> createFrame(isHeadless));
         sound = SoundProvider.NO_SOUND;
@@ -163,7 +168,7 @@ public class Genesis2 implements GenesisProvider {
 
     @Override
     public void setDebug(boolean value) {
-        Genesis2.verbose = value;
+        GenesisLegacy.verbose = value;
         GenesisVdpNew.verbose = value;
         GenesisVdpMemoryInterface.verbose = value;
         GenesisBus.verbose = value;
@@ -363,19 +368,18 @@ public class Genesis2 implements GenesisProvider {
         return romRegion;
     }
 
-    private static int VDP_CYCLE_SCALE = 4; //slot resolution = 13.30/4 = 3.325 Mhz PAL
-    private static int VDP_DIVIDER = 2;  //3.325 Mhz PAL
-    private static int M68K_DIVIDER = 1; //7.6 Mhz PAL  0.5714
-    private static int Z80_DIVIDER = 2; //3.546 Mhz PAL 0.2666
+    private static int M68K_DIVIDER = 2;
+    private static int Z80_DIVIDER = M68K_DIVIDER * 2;
+    private static int VDP_CYCLE = vdpAsCounter ? 1 : 2;
 
     private static long nsToMillis = 1_000_000;
-    private long oneScanlineCounter = VDP_DIVIDER * VdpProvider.H40_SLOTS;
+    private long oneScanlineCounter = VdpProvider.H40_PIXELS / VDP_CYCLE;
     private long targetNs;
 
     void loop() {
         LOG.info("Starting game loop");
 
-        int counter = 1;
+        long counter = 1;
         long start = System.currentTimeMillis() - 1;
         long startCycle = System.nanoTime();
         long lastRender = start;
@@ -385,10 +389,11 @@ public class Genesis2 implements GenesisProvider {
             try {
                 run68k(counter);
                 runZ80(counter);
-                runVdp(counter);
+                vdp.run(VDP_CYCLE);
+                syncSound(counter);
                 if (canRenderScreen) {
                     long now = System.currentTimeMillis();
-                    renderScreenInternal(getStats(now, lastRender, counter));
+                    renderScreenInternal(getStats(now, lastRender, counter, start));
                     handleVdpDumpScreenData();
                     updateScanlineCounter();
                     canRenderScreen = false;
@@ -404,11 +409,6 @@ public class Genesis2 implements GenesisProvider {
                     lastRender = now;
 
                     startCycle = System.nanoTime();
-                    nextZ80Cycle -= counter;
-                    next68kCycle -= counter;
-                    nextVdpCycle -= counter;
-                    counter = 0;
-
                 }
                 counter++;
             } catch (Exception e) {
@@ -420,7 +420,7 @@ public class Genesis2 implements GenesisProvider {
     }
 
     private void updateScanlineCounter() {
-        int newVal = VDP_DIVIDER * (vdp.getVideoMode().isH32() ? VdpProvider.H32_SLOTS : VdpProvider.H40_SLOTS);
+        int newVal = VdpCounterMode.getNumberOfPixelsPerLine(this.vdp.getVideoMode()) / VDP_CYCLE;
         if (newVal != oneScanlineCounter) {
             LOG.debug("Scanline counter has changed from: {} to: {}", oneScanlineCounter, newVal);
             oneScanlineCounter = newVal;
@@ -454,60 +454,44 @@ public class Genesis2 implements GenesisProvider {
         }
     }
 
-    int next68kCycle = M68K_DIVIDER;
-    int nextZ80Cycle = Z80_DIVIDER;
-    int nextVdpCycle = VDP_DIVIDER;
-
-    private void runVdp(long counter) {
-        if (counter == nextVdpCycle) {
-            vdp.run(1);
-            syncSound(counter);
-            nextVdpCycle += VDP_DIVIDER;
-        }
-    }
-
-    //TODO fifo full shoud not stop 68k
-    //TODO fifo full and 68k uses vdp -> stop 68k
-    //TODO check: interrupt shouldnt be processed when 68k is frozen but are
-    //TODO prcessed when 68k is stopped
     private void run68k(long counter) {
-        if (counter == next68kCycle) {
+        //run half speed compared to VDP
+        if ((counter + 1) % M68K_DIVIDER == 0) {
+            //TODO fifo full shoud not stop 68k
+            //TODO fifo full and 68k uses vdp -> stop 68k
             boolean isFrozen = bus.shouldStop68k();
             boolean canRun = !cpu.isStopped() && !isFrozen;
-            int cycleDelay = 1;
             if (canRun) {
-                cycleDelay = cpu.runInstruction();
+                cpu.runInstruction();
             }
             //interrupts are processed after the current instruction
+            //TODO interrupt shouldnt be processed when 68k is frozen
             if (!isFrozen) {
                 bus.handleVdpInterrupts68k();
             }
-            cycleDelay = Math.max(1, cycleDelay);
-            next68kCycle += M68K_DIVIDER * cycleDelay;
         }
     }
 
     private void runZ80(long counter) {
-        if (counter == nextZ80Cycle) {
-            int cycleDelay = z80.executeInstruction();
+        //run half speed compared to 68k
+        if ((counter + 3) % Z80_DIVIDER == 0) {
+            int res = z80.executeInstruction();
             //when halted it can still process interrupts
-            if (cycleDelay >= 0 || z80.isHalted()) {
+            if (res >= 0 || z80.isHalted()) {
                 bus.handleVdpInterruptsZ80();
             }
-            cycleDelay = Math.max(1, cycleDelay);
-            nextZ80Cycle += Z80_DIVIDER * cycleDelay;
         }
     }
 
-    private String getStats(long now, long lastRender, long counter) {
+    private String getStats(long now, long lastRender, long counter, long start) {
         if (!showFps) {
             return "";
         }
         long fps = 1000 / (now - lastRender + 1);
-        double intvSec = (now - lastRender) / 1000d;
-//        String cps = df.format((counter / intvSec) / 1000000d);
-//        String s = cps + "Mcps, " + fps + "fps";
-        return fps + "fps";
+        double intvSec = (lastRender - start) / 1000d;
+        String cps = df.format((counter / intvSec) / 1000000d);
+        String s = cps + "Mcps, " + fps + "fps";
+        return s;
     }
 
     private boolean canRenderScreen = false;

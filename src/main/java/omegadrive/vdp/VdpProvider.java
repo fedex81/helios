@@ -6,11 +6,11 @@ import omegadrive.bus.BusProvider;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.IVdpFifo;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * ${FILE}
@@ -21,22 +21,29 @@ import java.util.Set;
  */
 public interface VdpProvider {
 
+    Logger LOG = LogManager.getLogger(VdpProvider.class.getSimpleName());
+
     enum VdpRamType {
         VRAM,
         CRAM,
         VSRAM;
     }
 
+    //    Bits CD3-CD0
+// 0000b : VRAM read
+// 0001b : VRAM write
+// 0011b : CRAM write
+// 0100b : VSRAM read
+// 0101b : VSRAM write
+// 1000b : CRAM read
     enum VramMode {
         vramRead(0b0000, VdpRamType.VRAM),
-        cramRead(0b1000, VdpRamType.CRAM),
-        vsramRead(0b0100, VdpRamType.VSRAM),
         vramWrite(0b0001, VdpRamType.VRAM),
         cramWrite(0b0011, VdpRamType.CRAM),
+        vsramRead(0b0100, VdpRamType.VSRAM),
         vsramWrite(0b0101, VdpRamType.VSRAM),
+        cramRead(0b1000, VdpRamType.CRAM),
         vramRead_8bit(0b1100, VdpRamType.VRAM);
-
-        private static Set<VramMode> values = new HashSet<>(EnumSet.allOf(VramMode.class));
 
         private VdpRamType ramType;
         private int addressMode;
@@ -46,13 +53,40 @@ public interface VdpProvider {
             this.addressMode = addressMode;
         }
 
-        public static VramMode getVramMode(int addressMode) {
-            for (VramMode mode : VramMode.values) {
-                if (mode.addressMode == addressMode) {
-                    return mode;
-                }
+        public static VramMode getVramMode(int addressMode, boolean verbose) {
+            VramMode m = null;
+            switch (addressMode) {
+                case 0b0000:
+                    m = VramMode.vramRead;
+                    break;
+                case 0b0001:
+                    m = VramMode.vramWrite;
+                    break;
+                case 0b0011:
+                    m = VramMode.cramWrite;
+                    break;
+                case 0b0100:
+                    m = VramMode.vsramRead;
+                    break;
+                case 0b0101:
+                    m = VramMode.vsramWrite;
+                    break;
+                case 0b1000:
+                    m = VramMode.cramRead;
+                    break;
+                case 0b1100:
+                    m = VramMode.vramRead_8bit;
+                    break;
+                default:
+                    if (verbose) {
+                        LOG.warn("Unexpected value: {}, vramMode is null", addressMode);
+                    }
             }
-            return null;
+            return m;
+        }
+
+        public static VramMode getVramMode(int addressMode) {
+            return getVramMode(addressMode, false);
         }
 
         public int getAddressMode() {

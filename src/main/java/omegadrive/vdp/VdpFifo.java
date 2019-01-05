@@ -62,8 +62,8 @@ public class VdpFifo implements IVdpFifo {
 
     private void logState(VdpFifoEntry entry, String type) {
         if (logEnable) {
-            LOG.info("Fifo {}: {}, address: {}, data: {}", type, entry.vdpRamMode,
-                    Integer.toHexString(entry.addressRegister), Integer.toHexString(entry.data));
+            LOG.info("Fifo {}: {}, address: {}, data: {}, push: {}, pop: {}, size: {}", type, entry.vdpRamMode,
+                    Integer.toHexString(entry.addressRegister), Integer.toHexString(entry.data), pushPointer, popPointer, fifoSize);
         }
     }
 
