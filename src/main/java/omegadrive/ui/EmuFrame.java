@@ -1,7 +1,6 @@
 package omegadrive.ui;
 
 import com.google.common.base.Strings;
-import omegadrive.Genesis;
 import omegadrive.GenesisProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.ScreenSizeHelper;
@@ -97,7 +96,7 @@ public class EmuFrame implements GenesisWindow {
         jFrame.setTitle(FRAME_TITLE_HEAD + " - " + title);
     }
 
-    public EmuFrame(Genesis mainEmu) {
+    public EmuFrame(GenesisProvider mainEmu) {
         this.mainEmu = mainEmu;
     }
 
