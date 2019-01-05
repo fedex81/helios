@@ -188,7 +188,7 @@ public interface VdpProvider {
     int H40_SLOTS = H40_PIXELS / 2;
 
     static VdpProvider createVdp(BusProvider bus) {
-        return GenesisVdpNew.createInstance(bus);
+        return GenesisVdp.createInstance(bus);
     }
 
     void init();

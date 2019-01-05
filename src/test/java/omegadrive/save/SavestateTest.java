@@ -10,7 +10,7 @@ import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.YM2612;
 import omegadrive.util.FileLoader;
-import omegadrive.vdp.GenesisVdpNew;
+import omegadrive.vdp.GenesisVdp;
 import omegadrive.vdp.VdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.z80.Z80CoreWrapper;
@@ -58,7 +58,7 @@ public class SavestateTest {
 
         int[] data = FileLoader.readFileSafe(saveFile);
         GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), data);
-        VdpProvider vdpProvider1 = GenesisVdpNew.createInstance(busProvider);
+        VdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
         MemoryProvider cpuMem1 = new GenesisMemoryProvider();
         Z80Provider z80p1 = Z80CoreWrapper.createInstance(busProvider);
@@ -77,7 +77,7 @@ public class SavestateTest {
 
         int[] savedData = saveHandler.getData();
         GenesisStateHandler loadHandler1 = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), savedData);
-        VdpProvider vdpProvider2 = GenesisVdpNew.createInstance(busProvider);
+        VdpProvider vdpProvider2 = GenesisVdp.createInstance(busProvider);
         MC68000Wrapper cpu2 = new MC68000Wrapper(busProvider);
         MemoryProvider cpuMem2 = new GenesisMemoryProvider();
         Z80Provider z80p2 = Z80CoreWrapper.createInstance(busProvider);

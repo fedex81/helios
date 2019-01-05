@@ -18,8 +18,8 @@ import omegadrive.ui.GenesisWindow;
 import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
+import omegadrive.vdp.GenesisVdp;
 import omegadrive.vdp.GenesisVdpMemoryInterface;
-import omegadrive.vdp.GenesisVdpNew;
 import omegadrive.vdp.VdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
@@ -169,7 +169,7 @@ public class GenesisLegacy implements GenesisProvider {
     @Override
     public void setDebug(boolean value) {
         GenesisLegacy.verbose = value;
-        GenesisVdpNew.verbose = value;
+        GenesisVdp.verbose = value;
         GenesisVdpMemoryInterface.verbose = value;
         GenesisBus.verbose = value;
         MC68000Wrapper.verbose = value;

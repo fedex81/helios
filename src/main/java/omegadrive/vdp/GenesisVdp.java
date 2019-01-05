@@ -22,9 +22,9 @@ import java.util.Optional;
  * @author DarkMoe
  *
  */
-public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
+public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
-    private static Logger LOG = LogManager.getLogger(GenesisVdpNew.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
     public static boolean fifoVerbose = false || Genesis.verbose;
@@ -119,9 +119,9 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     private int line;
 
-    public static GenesisVdpNew createInstance(BusProvider bus, VdpMemoryInterface memoryInterface,
-                                               VdpDmaHandler dmaHandler, RegionDetector.Region region) {
-        GenesisVdpNew v = new GenesisVdpNew();
+    public static GenesisVdp createInstance(BusProvider bus, VdpMemoryInterface memoryInterface,
+                                            VdpDmaHandler dmaHandler, RegionDetector.Region region) {
+        GenesisVdp v = new GenesisVdp();
         v.bus = bus;
         v.memoryInterface = memoryInterface;
         v.dmaHandler = dmaHandler;
@@ -130,8 +130,8 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         return v;
     }
 
-    public static GenesisVdpNew createInstance(BusProvider bus, VdpMemoryInterface memoryInterface) {
-        GenesisVdpNew v = new GenesisVdpNew();
+    public static GenesisVdp createInstance(BusProvider bus, VdpMemoryInterface memoryInterface) {
+        GenesisVdp v = new GenesisVdp();
         v.bus = bus;
         v.memoryInterface = memoryInterface;
         v.dmaHandler = VdpDmaHandlerImpl.createInstance(v, v.memoryInterface, bus);
@@ -139,11 +139,11 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
         return v;
     }
 
-    public static GenesisVdpNew createInstance(BusProvider bus) {
+    public static GenesisVdp createInstance(BusProvider bus) {
         return createInstance(bus, GenesisVdpMemoryInterface.createInstance());
     }
 
-    private GenesisVdpNew() {
+    private GenesisVdp() {
     }
 
     private void setupVdp() {
@@ -576,7 +576,8 @@ public class GenesisVdpNew implements VdpProvider, VdpHLineProvider {
 
     private void logRegisterChange(int reg, int data) {
         int current = registers[reg];
-        if (regVerbose && current != data) { // && interruptHandler.isActiveScreen()) {
+        //&& reg < 0x13 && interruptHandler.isActiveScreen()
+        if (regVerbose && current != data && reg < 0x13) {
             String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- ",
                     VdpRegisterName.getRegisterName(reg), Long.toHexString(current), Long.toHexString(data)).getFormattedMessage();
             LOG.info(this.interruptHandler.getStateString(msg));

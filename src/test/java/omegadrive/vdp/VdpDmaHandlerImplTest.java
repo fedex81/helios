@@ -36,7 +36,7 @@ public class VdpDmaHandlerImplTest {
         memoryInterface = GenesisVdpMemoryInterface.createInstance();
         dmaHandler = new VdpDmaHandlerImpl();
 
-        vdpProvider = GenesisVdpNew.createInstance(busProvider, memoryInterface, dmaHandler, RegionDetector.Region.EUROPE);
+        vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface, dmaHandler, RegionDetector.Region.EUROPE);
 
         ((VdpDmaHandlerImpl) dmaHandler).vdpProvider = vdpProvider;
         ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;

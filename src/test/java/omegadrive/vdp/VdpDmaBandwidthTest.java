@@ -39,7 +39,7 @@ public class VdpDmaBandwidthTest {
         GenesisProvider emu = VdpTestUtil.createTestGenesisProvider();
         BusProvider busProvider = BusProvider.createBus();
         memoryInterface = GenesisVdpMemoryInterface.createInstance();
-        vdpProvider = GenesisVdpNew.createInstance(busProvider, memoryInterface);
+        vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface);
         busProvider.attachDevice(emu);
 
         vdpProvider.updateRegisterData(1, 4); //mode5
@@ -47,7 +47,7 @@ public class VdpDmaBandwidthTest {
         VdpDmaHandlerImpl.verbose = verbose;
         VdpDmaHandlerImpl.printToSysOut = verbose;
         LogHelper.printToSytemOut = verbose;
-        GenesisVdpNew.verbose = verbose;
+        GenesisVdp.verbose = verbose;
     }
 
 
