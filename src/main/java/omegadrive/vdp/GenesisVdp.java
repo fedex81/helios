@@ -671,7 +671,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         vb = interruptHandler.isvBlankSet() || !displayEnable ? 1 : 0;
         vip = interruptHandler.isvIntPending() ? 1 : vip;
 
-        processExternalSlot(displayEnable);
+        processExternalSlot();
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastSlot()) {
@@ -697,8 +697,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
 
-    private void processExternalSlot(boolean displayEnable) {
-        boolean isExternalSlot = !displayEnable || vb == 1 || interruptHandler.isExternalSlot();
+    private void processExternalSlot() {
+        //vb = 1 implies !displayEnable
+        boolean isExternalSlot = interruptHandler.isExternalSlot(vb == 1);
         //fifo has priority over DMA
         if (fifo.isEmpty()) {
             doDma(isExternalSlot);

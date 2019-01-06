@@ -14,6 +14,7 @@ import static omegadrive.vdp.VdpProvider.*;
  */
 public enum VdpSlotType {
     NONE,
+    REFRESH,
     EXTERNAL;
 
     @Deprecated
@@ -23,6 +24,21 @@ public enum VdpSlotType {
 
     public static VdpSlotType[] h32Slots = new VdpSlotType[H32_SLOTS];
     public static VdpSlotType[] h40Slots = new VdpSlotType[H40_SLOTS];
+
+    private static int[] refreshSlotsH32 = {
+            32 * 0 + 38,
+            32 * 1 + 38,
+            32 * 2 + 38,
+            32 * 3 + 38,
+    };
+
+    private static int[] refreshSlotsH40 = {
+            32 * 0 + 38,
+            32 * 1 + 38,
+            32 * 2 + 38,
+            32 * 3 + 38,
+            32 * 4 + 38,
+    };
 
     private static int[] externalSlotsH32 = {
             32 * 0 + 14, 32 * 0 + 22, 32 * 0 + 30,
@@ -44,11 +60,9 @@ public enum VdpSlotType {
     static {
         Arrays.fill(h32Slots, VdpSlotType.NONE);
         Arrays.fill(h40Slots, VdpSlotType.NONE);
-        Arrays.fill(h32CounterSlots, VdpSlotType.NONE);
-        Arrays.fill(h40CounterSlots, VdpSlotType.NONE);
         IntStream.of(externalSlotsH32).forEach(i -> h32Slots[i] = VdpSlotType.EXTERNAL);
         IntStream.of(externalSlotsH40).forEach(i -> h40Slots[i] = VdpSlotType.EXTERNAL);
-        IntStream.of(externalSlotsH32).forEach(i -> h32CounterSlots[i * 2 + 1] = VdpSlotType.EXTERNAL);
-        IntStream.of(externalSlotsH40).forEach(i -> h40CounterSlots[i * 2 + 1] = VdpSlotType.EXTERNAL);
+        IntStream.of(refreshSlotsH32).forEach(i -> h32Slots[i] = VdpSlotType.REFRESH);
+        IntStream.of(refreshSlotsH40).forEach(i -> h40Slots[i] = VdpSlotType.REFRESH);
     }
 }

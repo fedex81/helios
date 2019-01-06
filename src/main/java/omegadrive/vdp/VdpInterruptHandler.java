@@ -236,8 +236,14 @@ public class VdpInterruptHandler {
         return isLastSlot() && vCounterInternal == 0;
     }
 
-    public boolean isExternalSlot() {
-        return vdpCounterMode.getSlotTypes()[slotNumber] == VdpSlotType.EXTERNAL;
+    public boolean isExternalSlot(boolean isBlanking) {
+        VdpSlotType type = vdpCounterMode.getSlotTypes()[slotNumber];
+        if (!isBlanking) {
+            //active screen
+            return type == VdpSlotType.EXTERNAL;
+        }
+        //blanking all but refresh slots
+        return type != VdpSlotType.REFRESH;
     }
 
     public int resetHLinesCounter(int value) {

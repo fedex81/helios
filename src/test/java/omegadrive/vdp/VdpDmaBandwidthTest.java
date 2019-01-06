@@ -4,6 +4,7 @@ import omegadrive.GenesisProvider;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpSlotType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -11,9 +12,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * ${FILE}
@@ -21,6 +19,9 @@ import java.util.stream.IntStream;
  * Federico Berti
  * <p>
  * Copyright 2018
+ *
+ * http://www.tmeeco.eu/BitShit/VDPRATES.TXT
+ * TODO fix DmaCopy
  */
 public class VdpDmaBandwidthTest {
 
@@ -31,8 +32,19 @@ public class VdpDmaBandwidthTest {
 
     boolean verbose = false;
 
-    static int ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32 = 16;
-    static int ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40 = 18;
+    static int ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32 = (int) Arrays.stream(VdpSlotType.h32Slots).filter(t -> t == VdpSlotType.EXTERNAL).count();
+    static int ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40 = (int) Arrays.stream(VdpSlotType.h40Slots).filter(t -> t == VdpSlotType.EXTERNAL).count();
+
+    static int BLANKING_VRAM_DMA_PER_LINE_H32 = (int) Arrays.stream(VdpSlotType.h32Slots).filter(t -> t != VdpSlotType.REFRESH).count();
+    static int BLANKING_VRAM_DMA_PER_LINE_H40 = (int) Arrays.stream(VdpSlotType.h40Slots).filter(t -> t != VdpSlotType.REFRESH).count();
+
+    static int REFRESH_SLOTS_H32 = (int) Arrays.stream(VdpSlotType.h32Slots).filter(t -> t == VdpSlotType.REFRESH).count();
+    static int REFRESH_SLOTS_H40 = (int) Arrays.stream(VdpSlotType.h40Slots).filter(t -> t == VdpSlotType.REFRESH).count();
+
+    //a DMA copy is vram read + vram write -> ie. a one byte transfer requires two slots
+    // 16 slots -> 8 read + 8 write
+    static int ACTIVE_SCREEN_DMA_COPY_PER_LINE_H32 = ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32 / 2;
+    static int ACTIVE_SCREEN_DMA_COPY_PER_LINE_H40 = ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40 / 2;
 
     @Before
     public void setup() {
@@ -50,70 +62,90 @@ public class VdpDmaBandwidthTest {
         GenesisVdp.verbose = verbose;
     }
 
-
+    //TODO fix
     @Test
-    public void testDMADuringVblank() {
-        long dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
-        int dmaLen = 200;
-        setupDMAFillInternal(dmaFillCommand, 2, dmaLen);
-        startDmaFill(dmaLen, true);
-    }
-
-    @Test
-    public void testDMADuringActiveScreenH32() {
+    public void testDMACopyDuringActiveScreenH32() {
         VdpTestUtil.setH32(vdpProvider);
-        testDMADuringActiveScreen(ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32 + 1, true);
+        testDMACopyInternal(ACTIVE_SCREEN_DMA_COPY_PER_LINE_H32 + 1, true, false);
+    }
+
+    //TODO fix
+    @Test
+    public void testDMACopyDuringActiveScreenH40() {
+        VdpTestUtil.setH40(vdpProvider);
+        testDMACopyInternal(ACTIVE_SCREEN_DMA_COPY_PER_LINE_H40 + 1, false, false);
     }
 
     @Test
-    public void testDMADuringActiveScreenH40() {
-        VdpTestUtil.setH40(vdpProvider);
-        testDMADuringActiveScreen(ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40 + 1, false);
+    public void testDMACopyDuringVBlankH32() {
+        VdpTestUtil.setH32(vdpProvider);
+        testDMACopyInternal(BLANKING_VRAM_DMA_PER_LINE_H32 + 1, true, true);
     }
 
-    private void testDMADuringActiveScreen(int dmaLen, boolean h32) {
+    @Test
+    public void testDMACopyDuringVBlankH40() {
+        VdpTestUtil.setH40(vdpProvider);
+        testDMACopyInternal(BLANKING_VRAM_DMA_PER_LINE_H40 + 1, false, true);
+    }
+
+    @Test
+    public void testDMAFillDuringVblankH32() {
+        VdpTestUtil.setH32(vdpProvider);
+        int dmaLen = BLANKING_VRAM_DMA_PER_LINE_H32 + 1;
+        long dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
+        setupDMAFillInternal(dmaFillCommand, 2, dmaLen);
+        startDmaFill(dmaLen, true, true);
+    }
+
+    @Test
+    public void testDMAFillDuringVblankH40() {
+        VdpTestUtil.setH40(vdpProvider);
+        int dmaLen = BLANKING_VRAM_DMA_PER_LINE_H40 + 1;
+        long dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
+        setupDMAFillInternal(dmaFillCommand, 2, dmaLen);
+        startDmaFill(dmaLen, false, true);
+    }
+
+    @Test
+    public void testDMAFillDuringActiveScreenH32() {
+        VdpTestUtil.setH32(vdpProvider);
+        testDMAFillDuringActiveScreen(ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32 + 1, true);
+    }
+
+    @Test
+    public void testDMAFillDuringActiveScreenH40() {
+        VdpTestUtil.setH40(vdpProvider);
+        testDMAFillDuringActiveScreen(ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40 + 1, false);
+    }
+
+    private void testDMAFillDuringActiveScreen(int dmaLen, boolean h32) {
         int slotsPerLine = h32 ? VdpProvider.H32_SLOTS : VdpProvider.H40_SLOTS;
         long dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
         setupDMAFillInternal(dmaFillCommand, 2, dmaLen);
-        int slots = startDmaFill(dmaLen, false);
+        int slots = startDmaFill(dmaLen, h32, false);
         // more than one line
         Assert.assertTrue(vdpProvider.getVCounter() > 0);
         Assert.assertTrue(slots > slotsPerLine);
     }
 
+    private void testDMACopyInternal(int dmaLen, boolean h32, boolean duringVBlank) {
+        int slotsPerLine = h32 ? VdpProvider.H32_SLOTS : VdpProvider.H40_SLOTS;
+        int refreshSlots = h32 ? REFRESH_SLOTS_H32 : REFRESH_SLOTS_H40;
+        int slots = startDMACopy(1, dmaLen, duringVBlank);
+        // more than one line
+        Assert.assertTrue(vdpProvider.getVCounter() > 0);
+        if (!duringVBlank) {
+            Assert.assertTrue(slots > slotsPerLine);
+        } else {
+            Assert.assertEquals(dmaLen + refreshSlots, slots);
+        }
+    }
+
     private void setupDMAFillInternal(long dmaFillLong, int increment, int dmaLength) {
-        vdpProvider.writeControlPort(0x8F02);
-        vdpProvider.writeControlPort(16384);
-        vdpProvider.writeControlPort(2);
-        vdpProvider.writeDataPort(750);
-        vdpProvider.writeDataPort(1260);
-        vdpProvider.writeDataPort(1770);
-        vdpProvider.writeDataPort(2280);
         VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
-
-        vdpProvider.writeDataPort(2790);
-        vdpProvider.writeDataPort(3300);
-        vdpProvider.writeDataPort(3810);
-        vdpProvider.writeDataPort(736);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
-
-        vdpProvider.writeDataPort(1230);
-        vdpProvider.writeDataPort(1740);
-        vdpProvider.writeDataPort(2250);
-        vdpProvider.writeDataPort(2760);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
-
-        vdpProvider.writeDataPort(3270);
-        vdpProvider.writeDataPort(3780);
-        vdpProvider.writeDataPort(706);
-        vdpProvider.writeDataPort(1216);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
-
-        String str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
-        System.out.println(str);
+        vdpProvider.updateRegisterData(VdpProvider.VdpRegisterName.MODE_2, 0x54); //display enable + dma enable
 
         vdpProvider.writeControlPort(0x8F00 + increment);
-        vdpProvider.writeControlPort(0x8154);
         vdpProvider.writeControlPort(0x9300 + dmaLength);
         vdpProvider.writeControlPort(0x9400);
         vdpProvider.writeControlPort(0x9500);
@@ -122,10 +154,13 @@ public class VdpDmaBandwidthTest {
 
         vdpProvider.writeControlPort(dmaFillLong >> 16);
         vdpProvider.writeControlPort(dmaFillLong & 0xFFFF);
+
+        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
     }
 
-    private int startDmaFill(int dmaLen, boolean waitVBlank) {
+    private int startDmaFill(int dmaLen, boolean h32, boolean waitVBlank) {
 //        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
+        int refreshSlots = h32 ? REFRESH_SLOTS_H32 : REFRESH_SLOTS_H40;
         if (waitVBlank) {
             VdpTestUtil.runVdpUntilVBlank(vdpProvider);
             System.out.println("VBlank start" + vdpProvider.getVdpStateString());
@@ -141,54 +176,25 @@ public class VdpDmaBandwidthTest {
         int slots = VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
         System.out.println("Dma done" + vdpProvider.getVdpStateString());
 
-        String str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
-        System.out.println(str);
         if (waitVBlank) {
-            Assert.assertEquals(dmaLen, slots);
+            Assert.assertEquals(dmaLen + refreshSlots, slots);
         }
         return slots;
     }
 
 
-    private void testDMACopyInternal(int increment, int[] expected) {
-        vdpProvider.writeControlPort(0x8F02);
-        vdpProvider.writeControlPort(0x4000);
-        vdpProvider.writeControlPort(2);
-        vdpProvider.writeDataPort(0xf00d);
-        vdpProvider.writeDataPort(0xf00d);
-        vdpProvider.writeDataPort(0xf00d);
-        vdpProvider.writeDataPort(0xf00d);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
-
-        vdpProvider.writeDataPort(0xf00d);
-        vdpProvider.writeDataPort(0xf00d);
-        vdpProvider.writeDataPort(0xf00d);
-        vdpProvider.writeDataPort(0xf00d);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
-
-        vdpProvider.writeControlPort(0x5000);
-        vdpProvider.writeControlPort(2);
-        vdpProvider.writeDataPort(0x1122);
-        vdpProvider.writeDataPort(0x3344);
-        vdpProvider.writeDataPort(0x5566);
-        vdpProvider.writeDataPort(0x7788);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
-
-        vdpProvider.writeDataPort(0x99aa);
-        vdpProvider.writeDataPort(0xbbcc);
-        vdpProvider.writeDataPort(0xddee);
-        vdpProvider.writeDataPort(0xff00);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
-
-        String str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
-        System.out.println(str);
-
-        str = printMemory(VdpProvider.VdpRamType.VRAM, 0x9000, 0x9016);
-        System.out.println(str);
-
+    private int startDMACopy(int increment, int dmaLen, boolean waitVBlank) {
+        vdpProvider.writeControlPort(0x8154); //display enable + dma enable
+        if (waitVBlank) {
+            VdpTestUtil.runVdpUntilVBlank(vdpProvider);
+            System.out.println("VBlank start" + vdpProvider.getVdpStateString());
+        } else {
+            VdpTestUtil.runToStartFrame(vdpProvider);
+            System.out.println("Active Screen start" + vdpProvider.getVdpStateString());
+        }
         vdpProvider.writeControlPort(0x8F00 + increment);
-        vdpProvider.writeControlPort(0x8154);
-        vdpProvider.writeControlPort(0x9303);
+
+        vdpProvider.writeControlPort(0x9300 + dmaLen);
         vdpProvider.writeControlPort(0x9400);
         VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
@@ -200,33 +206,110 @@ public class VdpDmaBandwidthTest {
         VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         vdpProvider.writeControlPort(0xc2);
-
-        VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
-
-        str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
-        System.out.println(str);
-
-        String[] exp = Arrays.stream(expected).mapToObj(Integer::toHexString).toArray(String[]::new);
-        String[] actual = IntStream.range(0x8000, 0x8000 + expected.length).
-                mapToObj(memoryInterface::readVramByte).map(Integer::toHexString).toArray(String[]::new);
-
-        System.out.println("Expected: " + Arrays.toString(exp));
-        System.out.println("Actual:   " + Arrays.toString(actual));
-
-        Assert.assertArrayEquals(exp, actual);
+        System.out.println("Dma started" + vdpProvider.getVdpStateString());
+        int slots = VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
+        System.out.println("Dma done" + vdpProvider.getVdpStateString());
+        return slots;
     }
-
-    private String printMemory(VdpProvider.VdpRamType type, int from, int to) {
-        Function<Integer, Integer> getByteFn = addr -> {
-            int word = memoryInterface.readVideoRamWord(type, addr);
-            return addr % 2 == 0 ? word >> 8 : word & 0xFF;
-        };
-        Function<Integer, String> toStringFn = v -> {
-            String s = Integer.toHexString(v).toUpperCase();
-            return s.length() < 2 ? '0' + s : s;
-        };
-        return IntStream.range(from, to).mapToObj(addr -> toStringFn.apply(getByteFn.apply(addr))).
-                collect(Collectors.joining(","));
-    }
-
 }
+
+/**
+ * ==================================================
+ * SEGA Mega Drive / Genesis VDP access bandwidths
+ * ==================================================
+ * <p>
+ * These are simple tables with all VDP data transfer
+ * rates in bytes. Transfer counts from official MD
+ * documentation are all wrong. These figures are
+ * correct, as the rates I achieve match with what is
+ * in the tables and DMA bitmap mode further verifies
+ * these figures. All numbers are Bytes, except for
+ * one table where values are amount of tiles one can
+ * transfer. A tile is 32 bytes. Active means active
+ * scanlines and Passive means vertical blanking and
+ * overscan lines.
+ * <p>
+ * <p>
+ * ==================================================
+ * *** 68K to VRAM
+ * ==================================================
+ * <p>
+ * +------------+---------+--------+
+ * | Line width | Passive | Active |
+ * +------------+---------+--------+
+ * | 256 pixels |   161   |   16   |
+ * | 320 pixels |   198   |   18   |
+ * +------------+---------+--------+
+ * <p>
+ * +----+------------+---------+---------+---------+
+ * | Hz | Resolution | Passive | Active  |  Total  |
+ * +----+------------+---------+---------+---------+
+ * | 60 | 256 * 224  |   6118  |   3584  |   9702  |
+ * |    | 320 * 224  |   7524  |   4032  |  11556  |
+ * +----+------------+---------+---------+---------+
+ * | 50 | 256 * 224  |  14329  |   3584  |  17913  |
+ * |    | 320 * 224  |  17622  |   4032  |  21654  |
+ * |    | 256 * 240  |  11753  |   3840  |  15593  |
+ * |    | 320 * 240  |  14454  |   4320  |  18774  |
+ * +----+------------+---------+---------+---------+
+ * Number of tiles that can be transferred :
+ * +----+------------+---------+---------+---------+
+ * | Hz | Resolution | Passive | Active  |  Total  |
+ * +----+------------+---------+---------+---------+
+ * | 60 | 256 * 224  |   191   |   112   |   303   |
+ * |    | 320 * 224  |   235   |   126   |   361   |
+ * +----+------------+---------+---------+---------+
+ * | 50 | 256 * 224  |   447   |   112   |   559   |
+ * |    | 320 * 224  |   550   |   126   |   676   |
+ * |    | 256 * 240  |   367   |   120   |   487   |
+ * |    | 320 * 240  |   451   |   135   |   586   |
+ * +----+------------+---------+---------+---------+
+ * <p>
+ * <p>
+ * ==================================================
+ * *** VRAM Fill
+ * ==================================================
+ * <p>
+ * +------------+---------+--------+
+ * | Line width | Passive | Active |
+ * +------------+---------+--------+
+ * | 256 pixels |   166   |   15   |
+ * | 320 pixels |   204   |   17   |
+ * +------------+---------+--------+
+ * <p>
+ * +----+------------+---------+---------+---------+
+ * | Hz | Resolution | Passive | Active  |  Total  |
+ * +----+------------+---------+---------+---------+
+ * | 60 | 256 * 224  |   6308  |   3360  |   9668  |  //38 blank + 224 active screen = 262
+ * |    | 320 * 224  |   7752  |   3808  |  11560  |
+ * +----+------------+---------+---------+---------+
+ * | 50 | 256 * 224  |  14774  |   3360  |  18134  |
+ * |    | 320 * 224  |  18156  |   3808  |  21964  |
+ * |    | 256 * 240  |  12118  |   3600  |  15718  |
+ * |    | 320 * 240  |  14892  |   4080  |  18972  |
+ * +----+------------+---------+---------+---------+
+ * <p>
+ * <p>
+ * ==================================================
+ * *** VRAM Copy
+ * ==================================================
+ * <p>
+ * +------------+---------+--------+
+ * | Line width | Passive | Active |
+ * +------------+---------+--------+
+ * | 256 pixels |    83   |    8   |
+ * | 320 pixels |   102   |    9   |
+ * +------------+---------+--------+
+ * <p>
+ * +----+------------+---------+---------+---------+
+ * | Hz | Resolution | Passive | Active  |  Total  |
+ * +----+------------+---------+---------+---------+
+ * | 60 | 256 * 224  |   3154  |   1792  |   4946  |
+ * |    | 320 * 224  |   3876  |   2016  |   5892  |
+ * +----+------------+---------+---------+---------+
+ * | 50 | 256 * 224  |   7387  |   1792  |   9179  |
+ * |    | 320 * 224  |   9078  |   2016  |  11094  |
+ * |    | 256 * 240  |   6059  |   1920  |   7979  |
+ * |    | 320 * 240  |   7446  |   2160  |   9606  |
+ * +----+------------+---------+---------+---------+
+ */

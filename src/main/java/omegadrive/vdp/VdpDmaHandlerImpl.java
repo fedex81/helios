@@ -25,6 +25,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private static Logger LOG = LogManager.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
+    public static boolean lessVerbose = false || verbose;
     public static boolean printToSysOut = false;
 
     protected VdpProvider vdpProvider;
@@ -61,7 +62,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         //not the DATA port write that starts the Fill operation
         if (dmaMode != null) {
             vdpProvider.setDmaFlag(1);
-            printInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
+            printLessVerboseInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
         }
         return dmaMode;
     }
@@ -70,7 +71,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     //https://gendev.spritesmind.net/forum/viewtopic.php?t=2663
     public void setupDmaDataPort(int dataWord) {
         dmaFillData = dataWord;
-        printInfo("START");
+        printLessVerboseInfo("START");
         dmaFillReady = true;
     }
 
@@ -106,6 +107,15 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         printInfo(head, Long.MIN_VALUE);
     }
 
+    private void printLessVerboseInfo(String head) {
+        if (!lessVerbose) {
+            return;
+        }
+        verbose = true;
+        printInfo(head, Long.MIN_VALUE);
+        verbose = false;
+    }
+
     private void printInfo(String head, long srcAddress) {
         if (!verbose) {
             return;
@@ -132,6 +142,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         str += dmaMode == DmaMode.VRAM_FILL ? " fillData: " + Long.toHexString(dmaFillData) : " srcAddr: " + src;
         str += ", destAddr: " + dest + ", destAddrInc: " + destAddressIncrement +
                 ", dmaLen: " + dmaLen + ", vramMode: " + vdpProvider.getVramMode();
+        str += vdpProvider.getVdpStateString();
         return str;
     }
 
@@ -158,7 +169,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         }
         boolean done = getDmaLength() == 0;
         if (done) {
-            printInfo("DONE");
+            printLessVerboseInfo("DONE");
             dmaMode = null; //Bug Hunt
             dmaFillReady = false;
         }
@@ -185,10 +196,10 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private void dmaCopySingleByte() {
         decreaseDmaLength();
         int sourceAddress = getSourceAddress() ^ 1;
-        int destAddress = getDestAddress();
+        int destAddress = getDestAddress() ^ 1;
         printInfo("IN PROGRESS");
         int data = memoryInterface.readVramByte(sourceAddress);
-        memoryInterface.writeVramByte(destAddress ^ 1, data);
+        memoryInterface.writeVramByte(destAddress, data);
         postDmaRegisters();
     }
 
