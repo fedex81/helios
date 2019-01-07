@@ -18,6 +18,17 @@ public interface IVdpFifo {
         public int addressRegister;
         public int data;
         public boolean firstByteWritten;
+
+        @Override
+        public String toString() {
+            return "VdpFifoEntry{" +
+                    "portType=" + portType +
+                    ", vdpRamMode=" + vdpRamMode +
+                    ", addressRegister=" + addressRegister +
+                    ", data=" + data +
+                    ", firstByteWritten=" + firstByteWritten +
+                    '}';
+        }
     }
 
     void push(VramMode vdpRamMode, int addressReg, int data);

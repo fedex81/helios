@@ -4,6 +4,7 @@ import omegadrive.vdp.model.IVdpFifo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -62,8 +63,9 @@ public class VdpFifo implements IVdpFifo {
 
     private void logState(VdpFifoEntry entry, String type) {
         if (logEnable) {
-            LOG.info("Fifo {}: {}, address: {}, data: {}, push: {}, pop: {}, size: {}", type, entry.vdpRamMode,
-                    Integer.toHexString(entry.addressRegister), Integer.toHexString(entry.data), pushPointer, popPointer, fifoSize);
+            LOG.info("Fifo {}: {}, address: {}, data: {}, push: {}, pop: {}, size: {}\nstate: {}", type, entry.vdpRamMode,
+                    Integer.toHexString(entry.addressRegister), Integer.toHexString(entry.data),
+                    pushPointer, popPointer, fifoSize, Arrays.toString(fifo));
         }
     }
 

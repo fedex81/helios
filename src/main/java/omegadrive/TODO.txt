@@ -1,3 +1,8 @@
+- TODO
+Monster World IV does
+movem_long_r2m: 00c00004   48e1 0208                movem.l  d6/a4,-(a1)
+
+
 - Vdp read data port
 -- vdp makes the read pending and performs it during the next external slot
 -- 68k should be stopped waiting
