@@ -149,6 +149,8 @@ public class VdpInterruptHandler {
         if (hCounterInternal == vdpCounterMode.hBlankClear) {
             hBlankSet = false;
             eventFlag = true;
+            pixelNumber = 0;
+            slotNumber = 0;
         }
 
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
@@ -220,10 +222,6 @@ public class VdpInterruptHandler {
         this.hIntPending = hIntPending;
     }
 
-    public int getSlotNumber() {
-        return slotNumber;
-    }
-
     public boolean isFirstSlot() {
         return slotNumber == 0;
     }
@@ -283,10 +281,11 @@ public class VdpInterruptHandler {
     }
 
     public String getStateString(String head) {
-        return head + ", hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
-                "(" + Integer.toHexString(this.hCounterInternal) + "), vce=" + Integer.toHexString(vCounterInternal & 0xFF)
-                + "(" + Integer.toHexString(this.vCounterInternal) + ")" + ", hBlankSet=" + hBlankSet + ",vBlankSet=" + vBlankSet
-                + ", vIntPending=" + vIntPending + ", hIntPending=" + hIntPending + ", hLinePassed=" + hLinePassed;
+        return head + ", slot=" + Integer.toHexString(slotNumber) + "h,hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
+                "(" + Integer.toHexString(this.hCounterInternal) + ")h, vce=" + Integer.toHexString(vCounterInternal & 0xFF)
+                + "(" + Integer.toHexString(this.vCounterInternal) + ")" +
+                "h, hb" + (hBlankSet ? "1" : "0") + ",vb" + (vBlankSet ? "1" : "0")
+                + ", VINTPen" + (vIntPending ? "1" : "0") + ", HINTPend" + (hIntPending ? "1" : "0") + ", hLines=" + hLinePassed;
     }
 
     private void printStateString(String head) {

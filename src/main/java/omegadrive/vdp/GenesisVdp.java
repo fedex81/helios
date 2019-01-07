@@ -578,8 +578,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         int current = registers[reg];
         //&& reg < 0x13 && interruptHandler.isActiveScreen()
         if (regVerbose && current != data && reg < 0x13) {
-            String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- ",
-                    VdpRegisterName.getRegisterName(reg), Long.toHexString(current), Long.toHexString(data)).getFormattedMessage();
+            String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- de{}",
+                    VdpRegisterName.getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (disp ? 1 : 0)).getFormattedMessage();
             LOG.info(this.interruptHandler.getStateString(msg));
         }
     }
@@ -656,8 +656,6 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         return false;
     }
 
-    boolean resetOnNextFirstSlot = false;
-
     private void runSlot() {
 //        LogHelper.printLevel(LOG, Level.INFO, "Start slot: {}", interruptHandler.getSlotNumber(), verbose);
         boolean displayEnable = disp;
@@ -684,14 +682,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 int[][] screenData = renderHandler.renderFrame();
                 bus.getEmulator().renderScreen(screenData);
                 resetVideoMode(false);
-                resetOnNextFirstSlot = true;
+                line = 0;
             }
         }
         if (interruptHandler.isFirstSlot()) {
-            if (resetOnNextFirstSlot) {
-                line = 0;
-                resetOnNextFirstSlot = false;
-            }
             renderHandler.initLineData(line);
         }
     }
