@@ -111,9 +111,10 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         if (!lessVerbose) {
             return;
         }
+        boolean v = verbose;
         verbose = true;
         printInfo(head, Long.MIN_VALUE);
-        verbose = false;
+        verbose = v;
     }
 
     private void printInfo(String head, long srcAddress) {
@@ -216,8 +217,8 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     private void increaseDestAddress() {
-        int destAddress = getDestAddress();
-        vdpProvider.setAddressRegister(destAddress + getDestAddressIncrement());
+        int destAddress = (getDestAddress() + getDestAddressIncrement()) & 0xFFFF;
+        vdpProvider.setAddressRegister(destAddress);
     }
 
     private void increaseSourceAddress(int inc) {
