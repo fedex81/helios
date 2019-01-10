@@ -103,6 +103,7 @@ public class Z80CoreWrapper implements Z80Provider {
         if (!updateRunningFlag()) {
             return -1;
         }
+        int tstates = (int) memIoOps.getTstates();
         try {
             printVerbose();
             z80Core.execute();
@@ -115,7 +116,7 @@ public class Z80CoreWrapper implements Z80Provider {
             LOG.error("Halting Z80");
             z80Core.setHalted(true);
         }
-        return 0;
+        return (int) (memIoOps.getTstates() - tstates);
     }
 
     private static String toString(Z80State state) {
