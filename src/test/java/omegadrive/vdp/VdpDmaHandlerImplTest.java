@@ -11,8 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -176,7 +174,7 @@ public class VdpDmaHandlerImplTest {
         vdpProvider.writeDataPort(1216);
         VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
-        String str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        String str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
         vdpProvider.writeControlPort(0x8F00 + increment);
@@ -196,12 +194,12 @@ public class VdpDmaHandlerImplTest {
 
 //        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
 
-        str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
         VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
-        str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
         String[] actual = IntStream.range(0x8000, 0x8000 + expected.length).
@@ -247,10 +245,10 @@ public class VdpDmaHandlerImplTest {
         vdpProvider.writeDataPort(0xff00);
         VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
-        String str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        String str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
-        str = printMemory(VdpProvider.VdpRamType.VRAM, 0x9000, 0x9016);
+        str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x9000, 0x9016);
         System.out.println(str);
 
         vdpProvider.writeControlPort(0x8F00 + increment);
@@ -270,7 +268,7 @@ public class VdpDmaHandlerImplTest {
 
         VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
-        str = printMemory(VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
         String[] exp = Arrays.stream(expected).mapToObj(Integer::toHexString).toArray(String[]::new);
@@ -281,19 +279,6 @@ public class VdpDmaHandlerImplTest {
         System.out.println("Actual:   " + Arrays.toString(actual));
 
         Assert.assertArrayEquals(exp, actual);
-    }
-
-    private String printMemory(VdpProvider.VdpRamType type, int from, int to) {
-        Function<Integer, Integer> getByteFn = addr -> {
-            int word = memoryInterface.readVideoRamWord(type, addr);
-            return addr % 2 == 0 ? word >> 8 : word & 0xFF;
-        };
-        Function<Integer, String> toStringFn = v -> {
-            String s = Integer.toHexString(v).toUpperCase();
-            return s.length() < 2 ? '0' + s : s;
-        };
-        return IntStream.range(from, to).mapToObj(addr -> toStringFn.apply(getByteFn.apply(addr))).
-                collect(Collectors.joining(","));
     }
 
 }

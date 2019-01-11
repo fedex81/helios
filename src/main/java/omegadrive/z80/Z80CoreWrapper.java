@@ -24,10 +24,6 @@ import java.util.function.Function;
  * <p>
  * Copyright 2018
  * <p>
- * https://github.com/codesqueak/Z80Processor
- * <p>
- * https://github.com/scoffey/jz80sim
- * https://github.com/lesniakbj/Vizu-80
  *
  * TODO check interrupt handling vs halt
  */

@@ -441,6 +441,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         if (byteWide && !entry.firstByteWritten) {
             entry.firstByteWritten = true;
             doWrite = false;
+            LogHelper.printLevel(LOG, Level.INFO, "writeVram first byte: {}, data: {}, address: {}",
+                    entry.vdpRamMode, entry.data, entry.addressRegister, verbose);
         }
         if (doWrite) {
             fifo.pop();
@@ -577,7 +579,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private void logRegisterChange(int reg, int data) {
         int current = registers[reg];
         //&& reg < 0x13 && interruptHandler.isActiveScreen()
-        if (regVerbose && current != data && reg < 0x13) {
+        if (regVerbose && current != data) { //&& reg < 0x13) {
             String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- de{}",
                     VdpRegisterName.getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (disp ? 1 : 0)).getFormattedMessage();
             LOG.info(this.interruptHandler.getStateString(msg));

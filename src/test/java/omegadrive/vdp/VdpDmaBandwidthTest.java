@@ -2,6 +2,8 @@ package omegadrive.vdp;
 
 import omegadrive.GenesisProvider;
 import omegadrive.bus.BusProvider;
+import omegadrive.memory.GenesisMemoryProvider;
+import omegadrive.memory.MemoryProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpSlotType;
@@ -13,6 +15,8 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
+import static omegadrive.vdp.VdpProvider.VdpRegisterName.*;
+
 /**
  * ${FILE}
  * <p>
@@ -22,6 +26,7 @@ import java.util.Arrays;
  *
  * http://www.tmeeco.eu/BitShit/VDPRATES.TXT
  * TODO fix DmaCopy
+ * https://gendev.spritesmind.net/forum/viewtopic.php?t=1291&start=30
  */
 public class VdpDmaBandwidthTest {
 
@@ -29,8 +34,13 @@ public class VdpDmaBandwidthTest {
 
     VdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
+    MemoryProvider memoryProvider;
 
-    boolean verbose = false;
+    static boolean verbose = true;
+
+    static {
+        LogHelper.printToSytemOut = verbose;
+    }
 
     static int ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32 = (int) Arrays.stream(VdpSlotType.h32Slots).filter(t -> t == VdpSlotType.EXTERNAL).count();
     static int ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40 = (int) Arrays.stream(VdpSlotType.h40Slots).filter(t -> t == VdpSlotType.EXTERNAL).count();
@@ -48,18 +58,134 @@ public class VdpDmaBandwidthTest {
 
     @Before
     public void setup() {
+        memoryProvider = new GenesisMemoryProvider();
         GenesisProvider emu = VdpTestUtil.createTestGenesisProvider();
         BusProvider busProvider = BusProvider.createBus();
         memoryInterface = GenesisVdpMemoryInterface.createInstance();
         vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface);
-        busProvider.attachDevice(emu);
+        busProvider.attachDevice(emu).attachDevice(memoryProvider);
 
         vdpProvider.updateRegisterData(1, 4); //mode5
 
         VdpDmaHandlerImpl.verbose = verbose;
         VdpDmaHandlerImpl.printToSysOut = verbose;
-        LogHelper.printToSytemOut = verbose;
         GenesisVdp.verbose = verbose;
+        VdpFifo.logEnable = verbose;
+        VdpFifo.printToSysOut = verbose;
+    }
+
+    private void setup68kRam() {
+        int val = 0xFF;
+        for (int i = 0; i < VdpProvider.VDP_VRAM_SIZE; i++) {
+            memoryProvider.writeRamByte(i, val);
+            val = (val - 1) & 0xFF;
+        }
+        String str = VdpTestUtil.print68kMemory(memoryProvider, 0, VdpProvider.VDP_VRAM_SIZE);
+        System.out.println(str);
+    }
+
+    @Test
+    public void test68kToCramBlankingH40() {
+        VdpTestUtil.setH40(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.CRAM, BLANKING_VRAM_DMA_PER_LINE_H40 + 1, false, true);
+    }
+
+    @Test
+    public void test68kToCramBlankingH32() {
+        VdpTestUtil.setH32(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.CRAM, BLANKING_VRAM_DMA_PER_LINE_H32 + 1, true, true);
+    }
+
+    @Test
+    public void test68kToCramActiveScreenH32() {
+        VdpTestUtil.setH32(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.CRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32 + 1, true, false);
+    }
+
+    @Test
+    public void test68kToCramActiveScreenH40() {
+        VdpTestUtil.setH40(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.CRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40 + 1, false, false);
+    }
+
+    @Test
+    public void test68kToVsramBlankingH40() {
+        VdpTestUtil.setH40(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.VSRAM, BLANKING_VRAM_DMA_PER_LINE_H40 + 1, false, true);
+    }
+
+    @Test
+    public void test68kToVsramBlankingH32() {
+        VdpTestUtil.setH32(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.VSRAM, BLANKING_VRAM_DMA_PER_LINE_H32 + 1, true, true);
+    }
+
+    @Test
+    public void test68kToVsramActiveScreenH32() {
+        VdpTestUtil.setH32(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.VSRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32 + 1, true, false);
+    }
+
+    @Test
+    public void test68kToVsramActiveScreenH40() {
+        VdpTestUtil.setH40(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.VSRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40 + 1, false, false);
+    }
+
+    @Test
+    public void test68kToVramBlankingH40() {
+        VdpTestUtil.setH40(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.VRAM, BLANKING_VRAM_DMA_PER_LINE_H40 + 1, false, true);
+    }
+
+    @Test
+    public void test68kToVramBlankingH32() {
+        VdpTestUtil.setH32(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.VRAM, BLANKING_VRAM_DMA_PER_LINE_H32 + 1, true, true);
+    }
+
+    @Test
+    public void test68kToVramActiveScreenH32() {
+        VdpTestUtil.setH32(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.VRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32 / 2, true, false);
+    }
+
+    @Test
+    public void test68kToVramActiveScreenH40() {
+        VdpTestUtil.setH40(vdpProvider);
+        test68kDma(VdpProvider.VdpRamType.VRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40 / 2, false, false);
+    }
+
+    //CRAM words == vdp Slots
+    private void test68kDma(VdpProvider.VdpRamType vdpRamType, int dmaLen, boolean h32, boolean blanking) {
+        setup68kRam();
+        int refreshSlots = h32 ? REFRESH_SLOTS_H32 : REFRESH_SLOTS_H40;
+        int slotsPerLine = h32 ? VdpProvider.H32_SLOTS : VdpProvider.H40_SLOTS;
+        int mode2 = blanking ? 0x34 : 0x74; //dma enabled
+        vdpProvider.updateRegisterData(MODE_2, mode2);
+        vdpProvider.updateRegisterData(AUTO_INCREMENT, 2);
+        vdpProvider.updateRegisterData(DMA_LENGTH_LOW, dmaLen);
+        vdpProvider.updateRegisterData(DMA_SOURCE_LOW, 0x80);
+        vdpProvider.updateRegisterData(DMA_SOURCE_MID, 0xfd);
+        vdpProvider.updateRegisterData(DMA_SOURCE_HIGH, 0x7f);
+        System.out.println("CRAM before: " + VdpTestUtil.printVdpMemory(memoryInterface, vdpRamType, 0, 0xFF));
+
+        int commandLong = vdpRamType == VdpProvider.VdpRamType.CRAM ? 0xC000_0080 : (vdpRamType == VdpProvider.VdpRamType.VSRAM)
+                ? 0x4000_0090 : 0x4000_0080;
+        vdpProvider.writeControlPort(commandLong >> 16);
+        vdpProvider.writeControlPort(commandLong & 0xFFFF);
+        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        System.out.println(vdpProvider.getVdpStateString());
+        int slots = VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
+        System.out.println("Slots: " + slots);
+        System.out.println(vdpProvider.getVdpStateString());
+        System.out.println("CRAM after: " + VdpTestUtil.printVdpMemory(memoryInterface, vdpRamType, 0, 0xFF));
+
+        if (blanking) {
+            Assert.assertEquals(dmaLen + refreshSlots, slots);
+        } else {
+            Assert.assertTrue(slots > slotsPerLine);
+        }
     }
 
     //TODO fix
@@ -143,7 +269,7 @@ public class VdpDmaBandwidthTest {
 
     private void setupDMAFillInternal(long dmaFillLong, int increment, int dmaLength) {
         VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
-        vdpProvider.updateRegisterData(VdpProvider.VdpRegisterName.MODE_2, 0x54); //display enable + dma enable
+        vdpProvider.updateRegisterData(MODE_2, 0x54); //display enable + dma enable
 
         vdpProvider.writeControlPort(0x8F00 + increment);
         vdpProvider.writeControlPort(0x9300 + dmaLength);

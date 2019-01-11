@@ -1,8 +1,10 @@
 package omegadrive.vdp;
 
+import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.IVdpFifo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -30,7 +32,8 @@ public class VdpFifo implements IVdpFifo {
         IntStream.range(0, FIFO_SIZE).forEach(i -> fifo[i] = new VdpFifoEntry());
     }
 
-    boolean logEnable = false;
+    public static boolean logEnable = false || GenesisVdp.fifoVerbose;
+    public static boolean printToSysOut = false || LogHelper.printToSytemOut;
 
     @Override
     public void push(VdpProvider.VramMode vdpRamMode, int addressReg, int data) {
@@ -63,9 +66,17 @@ public class VdpFifo implements IVdpFifo {
 
     private void logState(VdpFifoEntry entry, String type) {
         if (logEnable) {
-            LOG.info("Fifo {}: {}, address: {}, data: {}, push: {}, pop: {}, size: {}\nstate: {}", type, entry.vdpRamMode,
+            ParameterizedMessage pm = new ParameterizedMessage(
+                    "Fifo {}: {}, address: {}, data: {}, push: {}, pop: {}, size: {}\nstate: {}", type,
+                    entry.vdpRamMode,
                     Integer.toHexString(entry.addressRegister), Integer.toHexString(entry.data),
                     pushPointer, popPointer, fifoSize, Arrays.toString(fifo));
+            String str = pm.getFormattedMessage();
+            LOG.info(str);
+            if (printToSysOut) {
+                System.out.println(str);
+            }
+
         }
     }
 

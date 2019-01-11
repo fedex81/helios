@@ -1,10 +1,15 @@
 package omegadrive.vdp;
 
 import omegadrive.GenesisProvider;
+import omegadrive.memory.MemoryProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.vdp.model.IVdpFifo;
+import omegadrive.vdp.model.VdpMemoryInterface;
 
 import java.nio.file.Path;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * ${FILE}
@@ -52,9 +57,9 @@ public class VdpTestUtil {
 
     public static void runVdpUntilFifoEmpty(VdpProvider vdp) {
         IVdpFifo fifo = vdp.getFifo();
-        do {
+        while (!fifo.isEmpty()) {
             vdp.run(VDP_SLOT_CYCLES);
-        } while (!fifo.isEmpty());
+        }
     }
 
     public static int runVdpUntilDmaDone(VdpProvider vdp) {
@@ -96,6 +101,28 @@ public class VdpTestUtil {
         //        Set Video mode: PAL_H40_V28
         vdp.writeControlPort(0x8C81);
         vdp.resetVideoMode(true);
+    }
+
+    public static String printVdpMemory(VdpMemoryInterface memoryInterface, VdpProvider.VdpRamType type, int from, int to) {
+        Function<Integer, Integer> getByteFn = addr -> {
+            int word = memoryInterface.readVideoRamWord(type, addr);
+            return addr % 2 == 0 ? word >> 8 : word & 0xFF;
+        };
+        Function<Integer, String> toStringFn = v -> {
+            String s = Integer.toHexString(v).toUpperCase();
+            return s.length() < 2 ? '0' + s : s;
+        };
+        return IntStream.range(from, to).mapToObj(addr -> toStringFn.apply(getByteFn.apply(addr))).
+                collect(Collectors.joining(","));
+    }
+
+    public static String print68kMemory(MemoryProvider memoryProvider, int from, int to) {
+        Function<Integer, String> toStringFn = v -> {
+            String s = Integer.toHexString(memoryProvider.readRamByte(v)).toUpperCase();
+            return s.length() < 2 ? '0' + s : s;
+        };
+        return IntStream.range(from, to).mapToObj(addr -> toStringFn.apply(addr)).
+                collect(Collectors.joining(","));
     }
 
     public static GenesisProvider createTestGenesisProvider() {
