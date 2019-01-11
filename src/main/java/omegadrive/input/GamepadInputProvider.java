@@ -5,6 +5,9 @@ import net.java.games.input.Controller;
 import net.java.games.input.Event;
 import net.java.games.input.EventQueue;
 import omegadrive.joypad.JoypadProvider;
+import omegadrive.joypad.JoypadProvider.JoypadAction;
+import omegadrive.joypad.JoypadProvider.JoypadButton;
+import omegadrive.joypad.JoypadProvider.JoypadNumber;
 import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
@@ -14,6 +17,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static net.java.games.input.Component.Identifier.Button.*;
+import static omegadrive.joypad.JoypadProvider.JoypadNumber.P1;
+import static omegadrive.joypad.JoypadProvider.JoypadNumber.P2;
 
 /**
  * ${FILE}
@@ -37,6 +42,7 @@ public class GamepadInputProvider implements InputProvider {
     private Controller controller;
     private volatile boolean stop = false;
     private volatile int playerNumber = 1;
+    private volatile JoypadNumber joypadNumber = P1;
     private String pov = Axis.POV.getName();
 
     private static InputProvider INSTANCE = NO_OP;
@@ -90,6 +96,7 @@ public class GamepadInputProvider implements InputProvider {
     public void setPlayers(int number) {
         LOG.info("Setting number of players to: " + number);
         this.playerNumber = number;
+        this.joypadNumber = P1.ordinal() == playerNumber ? P1 : P2;
     }
 
     @Override
@@ -98,122 +105,63 @@ public class GamepadInputProvider implements InputProvider {
     }
 
     private void setDirectionOff() {
-        if (playerNumber == 1) {
-            joypadProvider.setU(EMU_OFF);
-            joypadProvider.setD(EMU_OFF);
-            joypadProvider.setL(EMU_OFF);
-            joypadProvider.setR(EMU_OFF);
-        } else if (playerNumber == 2) {
-            joypadProvider.setU2(EMU_OFF);
-            joypadProvider.setD2(EMU_OFF);
-            joypadProvider.setL2(EMU_OFF);
-            joypadProvider.setR2(EMU_OFF);
-        }
+        joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, JoypadAction.RELEASED);
+        joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, JoypadAction.RELEASED);
+        joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, JoypadAction.RELEASED);
+        joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, JoypadAction.RELEASED);
     }
 
     private void handleEvent(Event event) {
         Component.Identifier id = event.getComponent().getIdentifier();
         double value = event.getValue();
-        int emuButtonValue = value == ON ? EMU_ON : EMU_OFF;
+        JoypadAction action = value == ON ? JoypadAction.PRESSED : JoypadAction.RELEASED;
         if (InputProvider.DEBUG_DETECTION) {
             LOG.info(id + ": " + value);
         }
         // xbox360: linux || windows
         if (X == id || _2 == id) {
-            if (playerNumber == 1) {
-                joypadProvider.setA(emuButtonValue);
-            } else {
-                joypadProvider.setA2(emuButtonValue);
-            }
+            joypadProvider.setButtonAction(joypadNumber, JoypadButton.A, action);
         }
         if (A == id || _0 == id) {
-            if (playerNumber == 1) {
-                joypadProvider.setB(emuButtonValue);
-            } else {
-                joypadProvider.setB2(emuButtonValue);
-            }
+            joypadProvider.setButtonAction(joypadNumber, JoypadButton.B, action);
         }
         if (B == id || _1 == id) {
-            if (playerNumber == 1) {
-                joypadProvider.setC(emuButtonValue);
-            } else {
-                joypadProvider.setC2(emuButtonValue);
-            }
+            joypadProvider.setButtonAction(joypadNumber, JoypadButton.C, action);
         }
         if (START == id || _7 == id) {
-            if (playerNumber == 1) {
-                joypadProvider.setS(emuButtonValue);
-            } else {
-                joypadProvider.setS2(emuButtonValue);
-            }
+            joypadProvider.setButtonAction(joypadNumber, JoypadButton.S, action);
         }
         if (pov.equals(id.getName())) {
             if (value == Component.POV.OFF) {
                 setDirectionOff();
             }
             if (value == Component.POV.DOWN) {
-                if (playerNumber == 1) {
-                    joypadProvider.setD(EMU_ON);
-                } else {
-                    joypadProvider.setD2(EMU_ON);
-                }
-            }
-            if (value == Component.POV.DOWN_LEFT) {
-                if (playerNumber == 1) {
-                    joypadProvider.setD(EMU_ON);
-                    joypadProvider.setL(EMU_ON);
-                } else {
-                    joypadProvider.setD2(EMU_ON);
-                    joypadProvider.setL2(EMU_ON);
-                }
-            }
-            if (value == Component.POV.DOWN_RIGHT) {
-                if (playerNumber == 1) {
-                    joypadProvider.setD(EMU_ON);
-                    joypadProvider.setR(EMU_ON);
-                } else {
-                    joypadProvider.setD2(EMU_ON);
-                    joypadProvider.setR2(EMU_ON);
-                }
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, action);
             }
             if (value == Component.POV.UP) {
-                if (playerNumber == 1) {
-                    joypadProvider.setU(EMU_ON);
-                } else {
-                    joypadProvider.setU2(EMU_ON);
-                }
-            }
-            if (value == Component.POV.UP_LEFT) {
-                if (playerNumber == 1) {
-                    joypadProvider.setU(EMU_ON);
-                    joypadProvider.setL(EMU_ON);
-                } else {
-                    joypadProvider.setU2(EMU_ON);
-                    joypadProvider.setL2(EMU_ON);
-                }
-            }
-            if (value == Component.POV.UP_RIGHT) {
-                if (playerNumber == 1) {
-                    joypadProvider.setU(EMU_ON);
-                    joypadProvider.setR(EMU_ON);
-                } else {
-                    joypadProvider.setU2(EMU_ON);
-                    joypadProvider.setR2(EMU_ON);
-                }
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, action);
             }
             if (value == Component.POV.LEFT) {
-                if (playerNumber == 1) {
-                    joypadProvider.setL(EMU_ON);
-                } else {
-                    joypadProvider.setL2(EMU_ON);
-                }
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, action);
             }
             if (value == Component.POV.RIGHT) {
-                if (playerNumber == 1) {
-                    joypadProvider.setR(EMU_ON);
-                } else {
-                    joypadProvider.setR2(EMU_ON);
-                }
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, action);
+            }
+            if (value == Component.POV.DOWN_LEFT) {
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, action);
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, action);
+            }
+            if (value == Component.POV.DOWN_RIGHT) {
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, action);
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, action);
+            }
+            if (value == Component.POV.UP_LEFT) {
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, action);
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, action);
+            }
+            if (value == Component.POV.UP_RIGHT) {
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, action);
+                joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, action);
             }
         }
     }

@@ -475,6 +475,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private int readDataPortInternal() {
         int res = memoryInterface.readVideoRamWord(vramMode, addressRegister);
+        if (vramMode == null) {
+            return res;
+        }
         int fifoData = fifo.peek().data;
         switch (vramMode) {
             case vramRead_8bit:

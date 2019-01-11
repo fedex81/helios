@@ -3,6 +3,7 @@ package omegadrive;
 import omegadrive.bus.BusProvider;
 import omegadrive.bus.GenesisBus;
 import omegadrive.input.InputProvider;
+import omegadrive.input.KeyboardInput;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.m68k.M68kProvider;
@@ -153,6 +154,7 @@ public class Genesis implements GenesisProvider {
         sound = SoundProvider.NO_SOUND;
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(cpu).attachDevice(z80).attachDevice(sound);
+        reloadKeyListeners();
     }
 
     private static boolean isHeadless() {
@@ -193,6 +195,10 @@ public class Genesis implements GenesisProvider {
                 keyReleasedHandler(e);
             }
         });
+    }
+
+    private void reloadKeyListeners() {
+        emuFrame.addKeyListener(KeyboardInput.createKeyAdapter(joypad));
     }
 
     public void handleNewRom(Path file) {
@@ -543,32 +549,7 @@ public class Genesis implements GenesisProvider {
     }
 
     private void keyHandler(KeyEvent e, boolean pressed) {
-        int val = pressed ? 0 : 1;
         switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                bus.getJoypad().setU(val);
-                break;
-            case KeyEvent.VK_LEFT:
-                bus.getJoypad().setL(val);
-                break;
-            case KeyEvent.VK_RIGHT:
-                bus.getJoypad().setR(val);
-                break;
-            case KeyEvent.VK_DOWN:
-                bus.getJoypad().setD(val);
-                break;
-            case KeyEvent.VK_ENTER:
-                bus.getJoypad().setS(val);
-                break;
-            case KeyEvent.VK_A:
-                bus.getJoypad().setA(val);
-                break;
-            case KeyEvent.VK_S:
-                bus.getJoypad().setB(val);
-                break;
-            case KeyEvent.VK_D:
-                bus.getJoypad().setC(val);
-                break;
             case KeyEvent.VK_B:
                 if (!pressed) {
                     vdpDumpScreenData = !vdpDumpScreenData;

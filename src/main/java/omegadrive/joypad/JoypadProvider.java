@@ -9,6 +9,24 @@ package omegadrive.joypad;
  */
 public interface JoypadProvider {
 
+    enum JoypadAction {
+        PRESSED,
+        RELEASED
+    }
+
+    enum JoypadNumber {
+        P1, P2
+    }
+
+    enum JoypadType {
+        BUTTON_3,
+        BUTTON_6
+    }
+
+    enum JoypadButton {
+        A, B, C, X, Y, Z, M, S, U, D, L, R
+    }
+
     void initialize();
 
     int readDataRegister1();
@@ -33,35 +51,5 @@ public interface JoypadProvider {
 
     void writeControlRegister3(long data);
 
-    void setD(int value);
-
-    void setU(int value);
-
-    void setL(int value);
-
-    void setR(int value);
-
-    void setA(int value);
-
-    void setB(int value);
-
-    void setC(int value);
-
-    void setS(int value);
-
-    void setD2(int value);
-
-    void setU2(int value);
-
-    void setL2(int value);
-
-    void setR2(int value);
-
-    void setA2(int value);
-
-    void setB2(int value);
-
-    void setC2(int value);
-
-    void setS2(int value);
+    void setButtonAction(JoypadNumber number, JoypadButton button, JoypadAction action);
 }

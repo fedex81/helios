@@ -91,83 +91,8 @@ public class GamepadTest {
             }
 
             @Override
-            public void setD(int value) {
-                System.out.println("DOWN: " + value);
-            }
-
-            @Override
-            public void setU(int value) {
-                System.out.println("UP: " + value);
-            }
-
-            @Override
-            public void setL(int value) {
-                System.out.println("LEFT: " + value);
-            }
-
-            @Override
-            public void setR(int value) {
-                System.out.println("RIGHT: " + value);
-            }
-
-            @Override
-            public void setA(int value) {
-                System.out.println("A: " + value);
-            }
-
-            @Override
-            public void setB(int value) {
-                System.out.println("B: " + value);
-            }
-
-            @Override
-            public void setC(int value) {
-                System.out.println("C: " + value);
-            }
-
-            @Override
-            public void setS(int value) {
-                System.out.println("START: " + value);
-            }
-
-            @Override
-            public void setD2(int value) {
-
-            }
-
-            @Override
-            public void setU2(int value) {
-
-            }
-
-            @Override
-            public void setL2(int value) {
-
-            }
-
-            @Override
-            public void setR2(int value) {
-
-            }
-
-            @Override
-            public void setA2(int value) {
-
-            }
-
-            @Override
-            public void setB2(int value) {
-
-            }
-
-            @Override
-            public void setC2(int value) {
-
-            }
-
-            @Override
-            public void setS2(int value) {
-
+            public void setButtonAction(JoypadNumber number, JoypadButton button, JoypadAction action) {
+                System.out.println(number + "," + button + "," + action);
             }
         };
     }
