@@ -72,11 +72,7 @@ public class MC68000Wrapper implements M68kProvider {
                 MC68000Wrapper.this.setStop(true);
             }
         };
-        new MoveEx(m68k).register(m68k);
         new TasEx(m68k).register(m68k);
-        //TODO check this
-//        new MovemEx(m68k).register(m68k);
-//        new MovepEx(m68k).register(m68k);
         this.busProvider = busProvider;
         this.addressSpace = getAddressSpace(this, busProvider);
         m68k.setAddressSpace(addressSpace);
@@ -130,7 +126,24 @@ public class MC68000Wrapper implements M68kProvider {
 
             @Override
             public void writeLong(int addr, int value) {
-                busProvider.write(addr, value, Size.LONG);
+                long dstAddr = addr & 0xFF_FFFF;
+                boolean vdpWrite = dstAddr >= BusProvider.VDP_ADDRESS_SPACE_START &&
+                        dstAddr < BusProvider.VDP_ADDRESS_SPACE_END;
+                int lsw = value & 0xFFFF;
+                int msw = (value >> 16) & 0xFFFF;
+                if (vdpWrite) {
+                    String res = MC68000Monitor.dumpOp(wrapper.m68k, wrapper.currentPC);
+                    boolean swapWord = res.contains(",-(a");
+                    if (swapWord) {
+                        LOG.error("Vdp long write with predec address register: {} - {}",
+                                Long.toHexString(dstAddr), res);
+                        writeWord(addr + 2, lsw);
+                        writeWord(addr, msw);
+                        return;
+                    }
+                }
+                writeWord(addr, msw);
+                writeWord(addr + 2, lsw);
             }
 
             @Override
@@ -213,12 +226,15 @@ public class MC68000Wrapper implements M68kProvider {
         return m68k;
     }
 
+    protected int currentPC;
+
     @Override
     public int runInstruction() {
         int res = 0;
         try {
             printVerbose();
             printCpuState("");
+            currentPC = m68k.getPC();
             res = m68k.execute();
         } catch (Exception e) {
             LOG.error("68k error", e);

@@ -420,9 +420,9 @@ public class MC68000Monitor implements Runnable {
         return dumpInfo(cpu, showBytes, memory.size());
     }
 
-    public static String dumpOp(Cpu cpu) {
+    public static String dumpOp(Cpu cpu, int pc) {
         StringBuilder builder = new StringBuilder();
-        int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
+        int wrapPc = pc & 0xFF_FFFF; //PC is 24 bits
         if (wrapPc >= 0) {
             int opcode = cpu.readMemoryWord(wrapPc);
             Instruction i = cpu.getInstructionFor(opcode);
@@ -433,6 +433,10 @@ public class MC68000Monitor implements Runnable {
             builder.append(String.format("%08x   ????", wrapPc));
         }
         return builder.toString();
+    }
+
+    public static String dumpOp(Cpu cpu) {
+        return dumpOp(cpu, cpu.getPC());
     }
 
     private static Set<String> instSet = new TreeSet<>();

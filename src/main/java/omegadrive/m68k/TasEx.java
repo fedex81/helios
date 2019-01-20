@@ -61,8 +61,12 @@ public class TasEx implements InstructionHandler {
         }
         cpu.clrFlags(Cpu.C_FLAG | Cpu.V_FLAG);
 
-        //NOTE: MD1 doesnt do the write
-//            op.setByte(v | 0x80);
+        //NOTE: MD1 doesnt do the write, on mode > 0
+        // ie TAS  d3  -> works ?? (Jim Power)
+        //    TAS (a1) -> doesnt work
+        if (mode == 0) {
+            op.setByte(v | 0x80);
+        }
 
         return (op.isRegisterMode() ? 4 : 14 + op.getTiming());
     }
