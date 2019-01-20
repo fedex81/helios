@@ -51,7 +51,7 @@ public interface SoundProvider {
         return (RegionDetector.Region.USA == r ? NTSC_FM_CLOCK : PAL_FM_CLOCK);
     }
 
-    void output(int micros);
+    void output(int nanos);
 
     void reset();
 

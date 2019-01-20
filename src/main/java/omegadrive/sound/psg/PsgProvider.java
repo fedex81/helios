@@ -31,6 +31,8 @@ public interface PsgProvider {
 
     void output(byte[] output);
 
+    void output(byte[] output, int offset, int end);
+
     void reset();
 
     PsgProvider NO_SOUND = new PsgProvider() {
@@ -47,6 +49,11 @@ public interface PsgProvider {
 
         @Override
         public void output(byte[] ouput) {
+
+        }
+
+        @Override
+        public void output(byte[] output, int offset, int end) {
 
         }
 

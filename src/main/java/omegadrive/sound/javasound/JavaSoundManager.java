@@ -49,6 +49,10 @@ public class JavaSoundManager implements SoundProvider {
     public volatile boolean hasOutput = false;
     private volatile boolean isSoundWorking = false;
     private SoundHandler.AudioRunnable playSoundRunnable;
+    int fmSize;
+    int psgSize;
+
+    private final static boolean playOncePerFrame = false;
 
     public static JavaSoundManager createSoundProvider(RegionDetector.Region region) {
         PsgProvider psgProvider = PsgProvider.createInstance(region, SAMPLE_RATE);
@@ -63,24 +67,30 @@ public class JavaSoundManager implements SoundProvider {
     private void init(RegionDetector.Region region) {
         dataLine = SoundUtil.createDataLine(audioFormat);
         soundPersister = new FileSoundPersister();
+        fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
+        psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
         this.playSoundRunnable = getRunnable(dataLine, region);
         executorService.submit(playSoundRunnable);
         LOG.info("Output audioFormat: " + audioFormat);
     }
 
     private SoundHandler.AudioRunnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
-        int fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
-        int psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
+
         return new SoundHandler.AudioRunnable() {
 
             int[] fm_buf_ints = new int[fmSize];
             byte[] mix_buf_bytes16 = new byte[fm_buf_ints.length];
             byte[] psg_buf_bytes = new byte[psgSize];
+            int fmSizeMono = fmSize / 2;
 
             @Override
             public void run() {
                 do {
-                    playOnce();
+                    if (playOncePerFrame) {
+                        playOncePerFrame();
+                    } else {
+                        playOnce();
+                    }
                     Util.sleep(1);
                 } while (!close);
                 LOG.info("Stopping sound thread");
@@ -88,18 +98,30 @@ public class JavaSoundManager implements SoundProvider {
                 fm.reset();
             }
 
+            private void playOncePerFrame() {
+                if (hasOutput) {
+                    playOnce(fmBufferLen);
+                    hasOutput = false;
+                    Util.sleep((long) (region.getFrameIntervalMs() - 2));
+                }
+            }
+
             @Override
             public void playOnce() {
-                hasOutput = false;
-                psg.output(psg_buf_bytes);
-                fm.output(fm_buf_ints);
+                playOnce(fmSizeMono);
+            }
+
+            public void playOnce(int fmBufferLenMono) {
+                psg.output(psg_buf_bytes, 0, fmBufferLenMono);
+                fm.update(fm_buf_ints, 0, fmBufferLenMono);
 
                 try {
-//                    Arrays.fill(mix_buf_bytes16, SoundUtil.ZERO_BYTE);
+                    Arrays.fill(mix_buf_bytes16, SoundUtil.ZERO_BYTE);
+                    //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
                     SoundUtil.intStereo14ToByteMono16Mix(fm_buf_ints, mix_buf_bytes16, psg_buf_bytes);
                     updateSoundWorking(mix_buf_bytes16);
                     if (!isMute()) {
-                        SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16, mix_buf_bytes16.length);
+                        SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16, fmBufferLenMono * 2);
                     }
                     if (isRecording()) {
                         soundPersister.persistSound(DEFAULT_SOUND_TYPE, mix_buf_bytes16);
@@ -109,6 +131,7 @@ public class JavaSoundManager implements SoundProvider {
                 }
                 Arrays.fill(fm_buf_ints, 0);
                 Arrays.fill(psg_buf_bytes, SoundUtil.ZERO_BYTE);
+
             }
         };
     }
@@ -145,9 +168,21 @@ public class JavaSoundManager implements SoundProvider {
         return fm;
     }
 
+    double d = 1d / 1_000_000_000;
+    int fmBufferLen = 0;
+
     @Override
-    public void output(int micros) {
-        hasOutput = true;
+    public void output(int nanos) {
+//        LOG.info(micros + " micros");
+        if (playOncePerFrame) {
+            double sec = d * nanos;
+            fmBufferLen = (int) (sec * SAMPLE_RATE);
+            if (fmBufferLen > fmSize / 2) {
+                LOG.info("{} micros, bufLen: {}, maxLen: {}", sec, fmBufferLen, fmSize / 2);
+            }
+            fmBufferLen = Math.min(fmBufferLen, fmSize / 2);
+            hasOutput = true;
+        }
     }
 
     @Override

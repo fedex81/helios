@@ -238,16 +238,14 @@ public final class SN76496 implements PsgProvider {
         }
     }
 
-    /**
-     * Convert PSG settings to Java Sound.
-     */
-    public void output(byte[] buffer) {
+    @Override
+    public void output(byte[] buffer, int offset, int end) {
         if (!enabled && !isRecording()) {
             return;
         }
 
         // Loop for length of this video frame
-        for (int i = 0; i < buffer.length; i++) {
+        for (int i = offset; i < end; i++) {
             // Sum the channel outputs
             int join = 0;
             join += chan0.getSample();
@@ -276,6 +274,13 @@ public final class SN76496 implements PsgProvider {
                 }
             }
         }
+    }
+
+    /**
+     * Convert PSG settings to Java Sound.
+     */
+    public void output(byte[] buffer) {
+        output(buffer, 0, buffer.length);
     }
 
     /**

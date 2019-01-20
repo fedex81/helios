@@ -404,23 +404,21 @@ public class Genesis implements GenesisProvider {
                     handleVdpDumpScreenData();
                     updateScanlineCounter();
                     canRenderScreen = false;
-                    syncCycle(startCycle);
+                    int elapsedNs = (int) syncCycle(startCycle);
+                    sound.output(elapsedNs);
                     if (Thread.currentThread().isInterrupted()) {
                         LOG.info("Game thread stopped");
                         break;
                     }
-                    sound.output(0);
-
                     processSaveState();
                     pauseAndWait();
                     lastRender = now;
 
-                    startCycle = System.nanoTime();
                     nextZ80Cycle -= counter;
                     next68kCycle -= counter;
                     nextVdpCycle -= counter;
                     counter = 0;
-
+                    startCycle = System.nanoTime();
                 }
                 counter++;
             } catch (Exception e) {
@@ -459,11 +457,13 @@ public class Genesis implements GenesisProvider {
         }
     }
 
-    private void syncCycle(long startCycle) {
+    private long syncCycle(long startCycle) {
         long elapsedNs = System.nanoTime() - startCycle;
         if (targetNs - elapsedNs > nsToMillis) {
             Util.sleep(((targetNs - elapsedNs) / nsToMillis));
+            elapsedNs = System.nanoTime() - startCycle;
         }
+        return elapsedNs;
     }
 
     int next68kCycle = M68K_DIVIDER;
