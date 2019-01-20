@@ -876,7 +876,7 @@ public final class YM2612 implements FmProvider {
                 }
                 break;
             default:
-                LOG.debug("Invalid write to addr: {}, data: {}", Integer.toHexString(address), data);
+                LOG.warn("Invalid write to addr: {}, data: {}", Integer.toHexString(address), data);
                 break;
         }
         return 0;
@@ -955,7 +955,7 @@ public final class YM2612 implements FmProvider {
                 else CH.SLOT[3].AMS = 31;
                 break;
             default:
-                LOG.debug("Invalid write to addr: {}, data: {}", Integer.toHexString(address), data);
+                LOG.warn("Invalid write to addr: {}, data: {}", Integer.toHexString(address), data);
                 break;
         }
         return 0;
@@ -1046,7 +1046,7 @@ public final class YM2612 implements FmProvider {
                 YM2612_DAC = flag;
                 break;
             default:
-                LOG.debug("Unexpected write to addr: {}, data: {}", Integer.toHexString(address), data);
+                LogHelper.printLevel(LOG, Level.WARN, "Unexpected write to addr: {}, data: {}", address, data, !isResetting);
         }
         return 0;
     }

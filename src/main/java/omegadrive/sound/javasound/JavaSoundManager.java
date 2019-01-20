@@ -51,8 +51,8 @@ public class JavaSoundManager implements SoundProvider {
     private SoundHandler.AudioRunnable playSoundRunnable;
 
     public static JavaSoundManager createSoundProvider(RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.createInstance(region);
-        FmProvider fmProvider = FmProvider.createInstance(region);
+        PsgProvider psgProvider = PsgProvider.createInstance(region, SAMPLE_RATE);
+        FmProvider fmProvider = FmProvider.createInstance(region, SAMPLE_RATE);
         JavaSoundManager jsm = new JavaSoundManager();
         jsm.setFm(fmProvider);
         jsm.setPsg(psgProvider);

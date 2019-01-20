@@ -2,7 +2,8 @@ package omegadrive.sound.fm;
 
 import omegadrive.util.RegionDetector;
 
-import static omegadrive.sound.SoundProvider.*;
+import static omegadrive.sound.SoundProvider.LOG;
+import static omegadrive.sound.SoundProvider.getFmSoundClock;
 
 /**
  * ${FILE}
@@ -13,11 +14,12 @@ import static omegadrive.sound.SoundProvider.*;
  */
 public interface FmProvider {
 
-    static FmProvider createInstance(RegionDetector.Region region) {
+    static FmProvider createInstance(RegionDetector.Region region, int sampleRate) {
         double clock = getFmSoundClock(region);
         YM2612 fmProvider = new YM2612();
-        fmProvider.init((int) clock, SAMPLE_RATE);
-        LOG.info("FM instance, clock: " + clock + ", sampleRate: " + SAMPLE_RATE);
+        fmProvider.init((int) clock, sampleRate);
+//        FmProvider fmProvider = new Ym2612Nuke();
+        LOG.info("FM instance, clock: " + clock + ", sampleRate: " + sampleRate);
         return fmProvider;
     }
 
