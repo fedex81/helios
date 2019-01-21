@@ -43,10 +43,14 @@ task fatJar(type: Jar) {
                 'Implementation-Version': version,
                 'Main-Class': 'omegadrive.Genesis'
     }
-    baseName = project.name + '-all' //+ version
+    baseName = project.name //+ version
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     from {
         ["CREDITS.md", "README.md", "HISTORY.md", "LICENSE.md"]
     }
     with jar
+}
+
+jar {
+    archivesBaseName = rootProject.name + "-core"
 }
