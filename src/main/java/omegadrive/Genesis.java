@@ -375,10 +375,10 @@ public class Genesis implements GenesisProvider {
         return romRegion;
     }
 
-    private static int VDP_CYCLE_SCALE = 4; //slot resolution = 13.30/4 = 3.325 Mhz PAL
     private static int VDP_DIVIDER = 2;  //3.325 Mhz PAL
     private static int M68K_DIVIDER = 1; //7.6 Mhz PAL  0.5714
     private static int Z80_DIVIDER = 2; //3.546 Mhz PAL 0.2666
+    private static int FM_DIVIDER = 4; //1.67 Mhz PAL 0.2666
 
     private static long nsToMillis = 1_000_000;
     private long oneScanlineCounter = VDP_DIVIDER * VdpProvider.H40_SLOTS;
@@ -397,6 +397,7 @@ public class Genesis implements GenesisProvider {
             try {
                 run68k(counter);
                 runZ80(counter);
+                runFM(counter);
                 runVdp(counter);
                 if (canRenderScreen) {
                     long now = System.currentTimeMillis();
@@ -428,6 +429,7 @@ public class Genesis implements GenesisProvider {
         } while (!runningRomFuture.isDone());
         LOG.info("Exiting rom thread loop");
     }
+
 
     private void updateScanlineCounter() {
         int newVal = VDP_DIVIDER * (vdp.getVideoMode().isH32() ? VdpProvider.H32_SLOTS : VdpProvider.H40_SLOTS);
@@ -508,6 +510,12 @@ public class Genesis implements GenesisProvider {
             }
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
+        }
+    }
+
+    private void runFM(int counter) {
+        if (counter % FM_DIVIDER == 0) {
+            bus.getFm().tick();
         }
     }
 

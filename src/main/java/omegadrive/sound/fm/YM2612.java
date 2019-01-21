@@ -5,6 +5,7 @@ import omegadrive.util.LogHelper;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -254,6 +255,7 @@ public final class YM2612 implements FmProvider {
     volatile AtomicLong dacWritesCounter = new AtomicLong();
     private int DAC_SAMPLE_LIMIT = SoundProvider.SAMPLE_RATE;
     private Queue<Integer> dacQueue;
+    private long lastEvent = 0;
 
     /**
      * Creates a new instance of YM2612
@@ -518,12 +520,37 @@ public final class YM2612 implements FmProvider {
         LOG.log(Level.WARN, msg);
     }
 
+    int busyCycles = 180;
+
 
     public final int read() {
         return (YM2612_Status);
     }
 
+    @Override
+    public void tick() {
+        //busy last 90 Z80 cycles = 180 FM cycles
+        busyCycles--;
+        if (busyCycles == 0) {
+            YM2612_Status &= 0x7F;
+        }
+    }
+
+    private void logEvent(String str, int addr, int data) {
+        if (!verbose) {
+            return;
+        }
+        long now = System.nanoTime();
+        double delta = ((now - lastEvent) / 1_000_000d);
+        ParameterizedMessage pm = new ParameterizedMessage(
+                "{}, {}, {}, {}", delta, str, Integer.toHexString(addr), Integer.toHexString(data));
+//        LOG.info(pm.getFormattedMessage());
+        System.out.println(pm.getFormattedMessage());
+        lastEvent = now;
+    }
+
     public final void write0(int addr, int data) {
+        logEvent("write0", addr, data);
         if (addr < 0x30) {
             YM2612_REG[0][addr] = data;
             setYM(addr, data);
@@ -536,9 +563,12 @@ public final class YM2612 implements FmProvider {
                 setChannel(addr, data);
             }
         }
+        YM2612_Status |= 0x80;
+        busyCycles = 180;
     }
 
     public final void write1(int addr, int data) {
+        logEvent("write1", addr, data);
         if (addr >= 0x30 && YM2612_REG[1][addr] != data) {
             YM2612_REG[1][addr] = data;
 
@@ -549,6 +579,8 @@ public final class YM2612 implements FmProvider {
         } else if (addr < 0x30) {
             LOG.debug("Invalid write to addr: {}, data: {}", Integer.toHexString(addr), data);
         }
+        YM2612_Status |= 0x80;
+        busyCycles = 180;
     }
 
     @Override
@@ -559,6 +591,7 @@ public final class YM2612 implements FmProvider {
     public final void update(int[] buf_lr, int offset, int end) {
         offset *= 2;
         end = end * 2 + offset;
+        logEvent("update", offset, end);
 
         if (YM2612_CHANNEL[0].SLOT[0].Finc == -1) calc_FINC_CH(YM2612_CHANNEL[0]);
         if (YM2612_CHANNEL[1].SLOT[0].Finc == -1) calc_FINC_CH(YM2612_CHANNEL[1]);
@@ -607,6 +640,7 @@ public final class YM2612 implements FmProvider {
             updateDac(buf_lr, offset, end, dacSampleToProcess);
         }
         YM2612_Inter_Cnt = int_cnt;
+
     }
 
     private void updateDac(int[] buf_lr, int offset, int end, boolean dacSampleToProcess) {
@@ -653,6 +687,34 @@ public final class YM2612 implements FmProvider {
     private void setTimers(int data) {
         boolean loadA = (data & 1) == 1;
         boolean loadB = (data & 2) == 2;
+        boolean resetA = (data & 16) == 16;
+        boolean resetB = (data & 32) == 32;
+        boolean wasLoadA = (YM2612_Mode & 1) == 1;
+        boolean wasLoadB = (YM2612_Mode & 2) == 2;
+        boolean wasResetA = (YM2612_Mode & 16) == 16;
+        boolean wasResetB = (YM2612_Mode & 32) == 32;
+
+        if (!wasLoadA && loadA) { // loadA  0->1
+            YM2612_TimerAcnt = YM2612_TimerAL;
+        }
+        if (!wasLoadB && loadB) { // loadB  0->1
+            YM2612_TimerBcnt = YM2612_TimerBL;
+        }
+
+        //TF4 intro
+        boolean doResetA = wasResetA != resetA;
+        boolean doResetB = wasResetB != resetB;
+        YM2612_Status &= doResetA ? 0xFD : 0xFF;
+        YM2612_Status &= doResetB ? 0xFE : 0xFF;
+        logTimersChange(data);
+    }
+
+    private void logTimersChange(int data) {
+        if (!verbose) {
+            return;
+        }
+        boolean loadA = (data & 1) == 1;
+        boolean loadB = (data & 2) == 2;
         boolean enableA = (data & 4) == 4;
         boolean enableB = (data & 8) == 8;
         boolean resetA = (data & 16) == 16;
@@ -665,13 +727,6 @@ public final class YM2612 implements FmProvider {
         boolean wasResetA = (YM2612_Mode & 16) == 16;
         boolean wasResetB = (YM2612_Mode & 32) == 32;
 
-        if (!wasLoadA && loadA) { // loadA  0->1
-            YM2612_TimerAcnt = YM2612_TimerAL;
-        }
-        if (!wasLoadB && loadB) { // loadB  0->1
-            YM2612_TimerBcnt = YM2612_TimerBL;
-        }
-
         if (wasLoadA != loadA) {
             LogHelper.printLevel(LOG, Level.INFO, "Load Timer A: {}, count: {}, was: {}",
                     loadA, YM2612_TimerAL, YM2612_TimerAcnt, verbose);
@@ -682,12 +737,9 @@ public final class YM2612 implements FmProvider {
         }
         if (wasResetA != resetA) {
             LogHelper.printLevel(LOG, Level.INFO, "Reset Timer A: {}, cnt: {}", resetA, YM2612_TimerAcnt, verbose);
-            //TODO this fixes Quackshot,ThunderForceIV ie. reset only on transitions but it is wrong..
-            YM2612_Status &= 0xFD;
         }
         if (wasResetB != resetB) {
             LogHelper.printLevel(LOG, Level.INFO, "Reset Timer B: {}, cnt: {}", resetB, YM2612_TimerBcnt, verbose);
-            YM2612_Status &= 0xFE;
         }
         if (enableA != wasEnabledA) {
             LogHelper.printLevel(LOG, Level.INFO, "Enable Timer A: {}, cnt:  {}", enableA, YM2612_TimerAcnt, verbose);
@@ -701,7 +753,6 @@ public final class YM2612 implements FmProvider {
         if (length <= 0) {
             return;
         }
-
 //        log(Level.INFO, "Sync timer ms: " + length);
         int i = length;
 
