@@ -43,6 +43,12 @@ public class GenesisJoypad implements JoypadProvider {
     int readStep1 = 0;
     int readStep2 = 0;
 
+    boolean asserted1;
+    boolean asserted2;
+
+    JoypadType p1Type = JoypadType.BUTTON_3;
+    JoypadType p2Type = JoypadType.BUTTON_3;
+
     private Map<JoypadButton, JoypadAction> stateMap1 = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
             put(D, RELEASED).put(U, RELEASED).
             put(L, RELEASED).put(R, RELEASED).
@@ -53,12 +59,10 @@ public class GenesisJoypad implements JoypadProvider {
 
     private Map<JoypadButton, JoypadAction> stateMap2 = Maps.newHashMap(stateMap1);
 
-    boolean asserted1;
-    boolean asserted2;
-
     public void initialize() {
         writeDataRegister1(0x40);
         writeDataRegister2(0x40);
+        LOG.info("Joypad1: {} - Joypad2: {}", p1Type, p2Type);
     }
 
     public void writeDataRegister1(long data) {
@@ -67,34 +71,22 @@ public class GenesisJoypad implements JoypadProvider {
 
     public int readDataRegister1() {
         readStep1 = (readStep1 + 1) % 7;
-        return readDataRegister(JoypadNumber.P1, asserted1, readStep1);
+        return readDataRegister(JoypadNumber.P1, p1Type, asserted1, readStep1);
     }
 
     public int readDataRegister2() {
         readStep2 = (readStep2 + 1) % 7;
-        return readDataRegister(JoypadNumber.P2, asserted2, readStep2);
+        return readDataRegister(JoypadNumber.P2, p2Type, asserted2, readStep2);
     }
 
-    private int readDataRegister(JoypadNumber n, boolean asserted, int readStep) {
-        int res;
+
+    private int readDataRegister(JoypadNumber n, JoypadType type, boolean asserted, int readStep) {
+        boolean is6Button = type == JoypadType.BUTTON_6;
         if (asserted) {
-            if (readStep != 5) {
-                res = (getValue(n, S) << 5) | (getValue(n, A) << 4);    //	 (00SA0000)
-            } else {
-                //6 buttons
-                res = (getValue(n, S) << 5) | (getValue(n, A) << 4) | (getValue(n, D) << 1) | (getValue(n, U));    //	 (00SA00DU)
-            }
+            return is6Button && readStep == 5 ? get00SA0000(n) : get00SA00DU(n);
         } else {
-            if (readStep != 6) {
-                res = 0xC0 | (getValue(n, C) << 5) | (getValue(n, B) << 4) | (getValue(n, R) << 3) |
-                        (getValue(n, L) << 2) | (getValue(n, D) << 1) | (getValue(n, U));    //	 (11CBRLDU)
-            } else {
-                //6 buttons
-                res = 0xC0 | (getValue(n, C) << 5) | (getValue(n, B) << 4) | (getValue(n, M) << 3) |
-                        (getValue(n, X) << 2) | (getValue(n, Y) << 1) | (getValue(n, Z));    //	 (11CBMXYZ)
-            }
+            return is6Button && readStep == 6 ? get11CBMXYZ(n) : get11CBRLDU(n);
         }
-        return res;
     }
 
     public void writeDataRegister2(long data) {
@@ -124,6 +116,26 @@ public class GenesisJoypad implements JoypadProvider {
     public void writeControlRegister3(long data) {
         writeControlCheck(3, data);
         control3 = data;
+    }
+
+
+    private int get00SA0000(JoypadNumber n) {
+        return (getValue(n, S) << 5) | (getValue(n, A) << 4);
+    }
+
+    //6 buttons
+    private int get00SA00DU(JoypadNumber n) {
+        return (getValue(n, S) << 5) | (getValue(n, A) << 4) | (getValue(n, D) << 1) | (getValue(n, U));
+    }
+
+    private int get11CBRLDU(JoypadNumber n) {
+        return 0xC0 | (getValue(n, C) << 5) | (getValue(n, B) << 4) | (getValue(n, R) << 3) |
+                (getValue(n, L) << 2) | (getValue(n, D) << 1) | (getValue(n, U));
+    }
+
+    //6 buttons
+    private int get11CBMXYZ(JoypadNumber n) {
+        return (getValue(n, S) << 5) | (getValue(n, A) << 4);
     }
 
     private int getValue(JoypadNumber number, JoypadButton button) {
