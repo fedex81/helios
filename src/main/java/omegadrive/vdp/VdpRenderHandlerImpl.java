@@ -248,29 +248,26 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         }
         SpriteDataHolder holder = spriteDataHolder;
         int next = 0;
-        for (int index = 0; index < maxSpritesPerFrame; index++) {
-            int baseAddress = spriteTableLocation + (next * 8);
+        int current = next;
+        boolean stop = false;
+        for (int index = 0; index < maxSpritesPerFrame && !stop; index++) {
+            current = next;
+            int baseAddress = spriteTableLocation + (current * 8);
             holder = getPhase1SpriteData(baseAddress, holder);
-
+            next = holder.linkData;
             int verSizePixels = (holder.verSize + 1) * 8;
             int realY = holder.verticalPos - 128;
             boolean isSpriteOnLine = line >= realY && line < realY + verSizePixels;
-            if (realY < 0 || realY >= height || !isSpriteOnLine) {
-                next = holder.linkData;
+
+            stop = next == 0 || next >= maxSpritesPerFrame;
+            if (!isSpriteOnLine) {
                 continue;
             }
-            spritesPerLine[line][count] = next;
+            spritesPerLine[line][count] = current;
             spritesFrame += line == realY ? 1 : 0;
             count++;
-            next = holder.linkData;
 
-            if (next == 0 ||
-                    next >= maxSpritesPerFrame ||
-                    count >= maxSpritesPerLine
-                    || spritesFrame >= maxSpritesPerFrame
-                    ) {
-                return;
-            }
+            stop |= count >= maxSpritesPerLine || spritesFrame >= maxSpritesPerFrame;
         }
     }
 
