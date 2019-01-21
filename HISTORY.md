@@ -1,3 +1,27 @@
+## 19.0121
+* 68k: fix buggy move.l
+* 68k: move.l with a pre-decremented address register writes lsw and then msw
+* app: fix close
+* dma: fix 68kToVram
+* emu: work on 68k and z80 timings
+* emu: quick save states
+* emu: initial savestate support
+* emu: add ability to pause the emulation
+* fifo: work in progress
+* fm: busy flag and refactor
+* pad: support for 6 buttons - disabled for now
+* region: default to US
+* ui: add pause and reset
+* vdp: fix mid-frame cram updates
+* vdp: fix headless mode
+* vdp: fix rendering when sprites are close to the top/bottom
+* vdp: vb on when !display
+* vdp: dma bandwidth, consider REFRESH slots
+* vdp: use slot granularity
+* vdp: 8bit vram read
+* vdp: hint fixes and tests
+* z80: propagate un/reset to FM
+
 ## 18.1126
 * fm: improve dac
 * sound: close resources on exit
