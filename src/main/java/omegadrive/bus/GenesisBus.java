@@ -687,4 +687,9 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             mapper.closeRom();
         }
     }
+
+    @Override
+    public void newFrame() {
+        busArbiter.newFrame();
+    }
 }

@@ -420,6 +420,7 @@ public class Genesis implements GenesisProvider {
                     nextVdpCycle -= counter;
                     counter = 0;
                     startCycle = System.nanoTime();
+                    bus.newFrame();
                 }
                 counter++;
             } catch (Exception e) {

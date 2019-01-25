@@ -32,7 +32,7 @@ public interface Z80Provider {
 
     boolean isHalted();
 
-    void interrupt();
+    boolean interrupt();
 
     int readMemory(int address);
 

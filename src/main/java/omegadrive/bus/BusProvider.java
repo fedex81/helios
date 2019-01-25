@@ -85,6 +85,8 @@ public interface BusProvider {
 
     void closeRom();
 
+    void newFrame();
+
     default PsgProvider getPsg() {
         return getSound().getPsg();
     }

@@ -190,12 +190,15 @@ public class Z80CoreWrapper implements Z80Provider {
     //If the Z80 has interrupts disabled when the frame interrupt is supposed
     //to occur, it will be missed, rather than made pending.
     @Override
-    public void interrupt() {
-        boolean interruptDisabled = !z80Core.isIFF1() && !z80Core.isIFF2();
-        if (!interruptDisabled) {
-            activeInterrupt = true;
-            z80Core.setHalted(false);
-        }
+    public boolean interrupt() {
+        //TODO this shouldnt be needed, as the check is already happening
+//        boolean interruptEnable = z80Core.isIFF1();
+//        if (interruptEnable) {
+//            activeInterrupt = true;
+//        }
+//        return interruptEnable;
+        activeInterrupt = true;
+        return true;
     }
 
     @Override

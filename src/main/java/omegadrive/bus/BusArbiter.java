@@ -14,8 +14,9 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
  * <p>
  * Copyright 2018
  *
- * TODO
- * z80 INT should last one scanline?
+ * A very short Z80 interrupt routine would be triggered multiple times
+ * if it finishes within 228 Z80 clock cycles. I think (but cannot recall the specifics)
+ * that some games have delay loops in the interrupt handler for this very reason.
  * http://gendev.spritesmind.net/forum/viewtopic.php?t=740
  *
  * VDPTEST
@@ -35,17 +36,14 @@ public class BusArbiter {
     private IntState int68k = IntState.ACKED;
     private M68kState state68k = M68kState.RUNNING;
     private int mask68kState = 0;
+    private boolean vIntFrameExpired;
+    private int vIntOnLine;
 
     enum IntState {NONE, PENDING, ASSERTED, ACKED}
 
     enum M68kState {RUNNING, HALTED}
 
     private IntState z80Int = IntState.ACKED;
-    private int z80IntVcounter = -1;
-
-    private static int FIFO_FULL_MASK = 0x01;
-    private static int DMA_IN_PROGRESS_MASK = 0x02;
-
 
     protected BusArbiter() {
     }
@@ -59,18 +57,16 @@ public class BusArbiter {
     }
 
     public void handleInterruptZ80() {
+        checkInterruptZ80();
         switch (z80Int) {
-            case NONE:
-                checkInterruptZ80();
-                break;
             case PENDING:
+                logInfo("Z80 INT pending");
                 raiseInterruptsZ80();
-                logInfo("Z80 raise");
                 break;
             case ASSERTED:
                 //fall through
             case ACKED:
-                logInfo("Z80 acked");
+                logInfo("Z80 INT acked");
                 z80Int = IntState.NONE;
         }
     }
@@ -99,24 +95,26 @@ public class BusArbiter {
         }
     }
 
+    /**
+     * it means z80 interrupt occurs once per frame (on line 224)
+     * and remains active during one full line if not acknowledged by Z80
+     * once the exception is processed on z80 side, interrupt is cleared until next frame
+     * if Z80 interrupt is masked, interrupt remains pending
+     * for one line and should be processed if unmasked during this period
+     */
     public boolean checkInterruptZ80() {
         boolean change = false;
-        boolean processZ80 = /*z80IntVcounter > 0 ||*/ isVdpVInt();
-        if (processZ80) {
-            logInfo("Z80 check");
-            int vc = vdp.getVCounter();
-            if (z80IntVcounter == -1) {
-                z80IntVcounter = vc;
-                logInfo("Z80 INT detected");
-            }
-            if (z80IntVcounter == vc) {
-                logInfo("Z80 INT still pending");
-                z80Int = IntState.PENDING;
-                change = true;
-            } else {
-                logInfo("Z80 INT over");
-                z80IntVcounter = -1;
-            }
+        int vc = vdp.getVCounter();
+        boolean vIntJustTriggered = z80Int == IntState.NONE && isVdpVInt() && !vIntFrameExpired && vc == vIntOnLine;
+        boolean vIntExpired = z80Int == IntState.PENDING && vc != vIntOnLine;
+
+        if (vIntJustTriggered) {
+            z80Int = IntState.PENDING;
+            logInfo("Z80 INT triggered");
+        } else if (vIntExpired) {
+            vIntFrameExpired = true;
+            z80Int = IntState.NONE;
+            logInfo("Z80 INT expired");
         }
         return change;
     }
@@ -153,10 +151,13 @@ public class BusArbiter {
         }
     }
 
-    private void raiseInterruptsZ80() {
-        z80.interrupt();
-        z80Int = IntState.ASSERTED;
-        logInfo("Z80 INT: {}", z80Int);
+    private boolean raiseInterruptsZ80() {
+        boolean res = z80.interrupt();
+        if (res) {
+            z80Int = IntState.ASSERTED;
+            logInfo("Z80 INT: {}", z80Int);
+        }
+        return res;
     }
 
     private int getLevel68k() {
@@ -181,4 +182,11 @@ public class BusArbiter {
     public boolean shouldStop68k() {
         return state68k != M68kState.RUNNING;
     }
+
+    public void newFrame() {
+        vIntFrameExpired = false;
+        vIntOnLine = vdp.getVideoMode().isV28() ? VdpProvider.V28_VBLANK_SET : VdpProvider.V30_VBLANK_SET;
+        logInfo("NewFrame");
+    }
+
 }
