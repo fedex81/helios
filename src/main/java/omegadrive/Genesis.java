@@ -19,9 +19,11 @@ import omegadrive.ui.GenesisWindow;
 import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
+import omegadrive.util.VideoMode;
 import omegadrive.vdp.GenesisVdp;
 import omegadrive.vdp.GenesisVdpMemoryInterface;
 import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
@@ -375,14 +377,16 @@ public class Genesis implements GenesisProvider {
         return romRegion;
     }
 
+    //NTSC_MCLOCK_MHZ = 53693175;
+    //PAL_MCLOCK_MHZ = 53203424;
     private static int VDP_DIVIDER = 2;  //3.325 Mhz PAL
     private static int M68K_DIVIDER = 1; //7.6 Mhz PAL  0.5714
     private static int Z80_DIVIDER = 2; //3.546 Mhz PAL 0.2666
     private static int FM_DIVIDER = 4; //1.67 Mhz PAL 0.2666
 
     private static long nsToMillis = 1_000_000;
-    private long oneScanlineCounter = VDP_DIVIDER * VdpProvider.H40_SLOTS;
     private long targetNs;
+    private double microsPerTick = 1;
 
     void loop() {
         LOG.info("Starting game loop");
@@ -403,7 +407,7 @@ public class Genesis implements GenesisProvider {
                     long now = System.currentTimeMillis();
                     renderScreenInternal(getStats(now, lastRender, counter));
                     handleVdpDumpScreenData();
-                    updateScanlineCounter();
+                    updateVideoMode();
                     canRenderScreen = false;
                     int elapsedNs = (int) syncCycle(startCycle);
                     sound.output(elapsedNs);
@@ -432,12 +436,11 @@ public class Genesis implements GenesisProvider {
     }
 
 
-    private void updateScanlineCounter() {
-        int newVal = VDP_DIVIDER * (vdp.getVideoMode().isH32() ? VdpProvider.H32_SLOTS : VdpProvider.H40_SLOTS);
-        if (newVal != oneScanlineCounter) {
-            LOG.debug("Scanline counter has changed from: {} to: {}", oneScanlineCounter, newVal);
-            oneScanlineCounter = newVal;
-        }
+    private void updateVideoMode() {
+        VideoMode vm = vdp.getVideoMode();
+        double frameTimeMicros = 1_000_000d / vm.getRegion().getFps();
+        VdpCounterMode vcm = VdpCounterMode.getCounterMode(vm);
+        microsPerTick = (FM_DIVIDER / VDP_DIVIDER) * frameTimeMicros / (vcm.slotsPerLine * vcm.vTotalCount);
     }
 
     private void pauseAndWait() {
@@ -450,13 +453,6 @@ public class Genesis implements GenesisProvider {
             LOG.info("Pause: " + pauseFlag);
         } finally {
             pauseBarrier.reset();
-        }
-    }
-
-    private void syncSound(long counter) {
-        if (counter % oneScanlineCounter == 0) {
-            sound.updateElapsedMicros(64);
-//            LOG.info("Update sound {}", vdp.getVdpStateString());
         }
     }
 
@@ -473,10 +469,10 @@ public class Genesis implements GenesisProvider {
     int nextZ80Cycle = Z80_DIVIDER;
     int nextVdpCycle = VDP_DIVIDER;
 
+
     private void runVdp(long counter) {
         if (counter == nextVdpCycle) {
             vdp.run(1);
-            syncSound(counter);
             nextVdpCycle += VDP_DIVIDER;
         }
     }
@@ -516,7 +512,7 @@ public class Genesis implements GenesisProvider {
 
     private void runFM(int counter) {
         if (counter % FM_DIVIDER == 0) {
-            bus.getFm().tick();
+            bus.getFm().tick(microsPerTick);
         }
     }
 

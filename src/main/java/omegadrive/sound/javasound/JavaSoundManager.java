@@ -102,7 +102,7 @@ public class JavaSoundManager implements SoundProvider {
                 if (hasOutput) {
                     playOnce(fmBufferLen);
                     hasOutput = false;
-                    Util.sleep((long) (region.getFrameIntervalMs() - 2));
+//                    Util.sleep((long) (region.getFrameIntervalMs() - 2));
                 }
             }
 
@@ -151,11 +151,6 @@ public class JavaSoundManager implements SoundProvider {
 
     public void setFm(FmProvider fm) {
         this.fm = fm;
-    }
-
-    @Override
-    public void updateElapsedMicros(int micros) {
-        fm.synchronizeTimers(micros);
     }
 
     @Override

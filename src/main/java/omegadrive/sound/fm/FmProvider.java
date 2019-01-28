@@ -41,9 +41,7 @@ public interface FmProvider {
         update(buf_lr, 0, buf_lr.length / 2);
     }
 
-    void synchronizeTimers(int length);
-
-    void tick();
+    void tick(double microsPerTick);
 
     FmProvider NO_SOUND = new FmProvider() {
         @Override
@@ -82,12 +80,7 @@ public interface FmProvider {
         }
 
         @Override
-        public void synchronizeTimers(int length) {
-
-        }
-
-        @Override
-        public void tick() {
+        public void tick(double microsPerTick) {
 
         }
 

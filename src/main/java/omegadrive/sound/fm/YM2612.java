@@ -25,7 +25,7 @@ public final class YM2612 implements FmProvider {
 
     static final int NULL_RATE_SIZE = 32;
 
-    private static final boolean verbose = false;
+    private static boolean verbose = false;
 
     // YM2612 Hardware
     private final class cSlot {
@@ -242,6 +242,9 @@ public final class YM2612 implements FmProvider {
     int YM2612_TimerBL;
     int YM2612_TimerBcnt;
 
+    static double YM2612_TimerA_factor = 18.77; //micros
+    static double YM2612_TimerB_factor = 300.34; //micros
+
     int YM2612_DAC;
     double YM2612_Frequency;
     long YM2612_Inter_Cnt;    // UINT
@@ -453,11 +456,11 @@ public final class YM2612 implements FmProvider {
 
         YM2612_LFOcnt = 0;
         YM2612_TimerA = 0;
-        YM2612_TimerAL = 0;
-        YM2612_TimerAcnt = 0;
+        YM2612_TimerAL = 1024;
+//        YM2612_TimerAcnt = 0;
         YM2612_TimerB = 0;
-        YM2612_TimerBL = 0;
-        YM2612_TimerBcnt = 0;
+        YM2612_TimerBL = 256;
+//        YM2612_TimerBcnt = 0;
         YM2612_DAC = 0;
 
         YM2612_Status = 0;
@@ -520,18 +523,32 @@ public final class YM2612 implements FmProvider {
         LOG.log(Level.WARN, msg);
     }
 
-    int busyCycles = 180;
+    int busyCycles = BUSY_CYCLES;
+    static int BUSY_CYCLES = 45;
 
 
     public final int read() {
+//        LOG.info("Read timer A/B: {}/{}, cntA/B: {}/{}",
+//                YM2612_Status & 2, YM2612_Status & 1, Long.toHexString(YM2612_TimerAcnt),
+//                Long.toHexString(YM2612_TimerBcnt));
         return (YM2612_Status);
     }
 
+    double acc = 0;
+    double microsPerTick = 0.598802395;
+    double totalAcc = 0;
+
     @Override
-    public void tick() {
-        //busy last 90 Z80 cycles = 180 FM cycles
+    public void tick(double microsPerTick) {
+        acc += microsPerTick;
+        totalAcc += microsPerTick;
+        if (acc > 1) {
+            synchronizeTimers(1);
+            acc -= 1;
+        }
+        //busy last 90 Z80 cycles = 180 FM cycles @ 7.67Mhz = 45 cycles @ 1.67 Mhz
         busyCycles--;
-        if (busyCycles == 0) {
+        if (busyCycles <= 0) {
             YM2612_Status &= 0x7F;
         }
     }
@@ -564,7 +581,7 @@ public final class YM2612 implements FmProvider {
             }
         }
         YM2612_Status |= 0x80;
-        busyCycles = 180;
+        busyCycles = BUSY_CYCLES;
     }
 
     public final void write1(int addr, int data) {
@@ -580,7 +597,7 @@ public final class YM2612 implements FmProvider {
             LOG.debug("Invalid write to addr: {}, data: {}", Integer.toHexString(addr), data);
         }
         YM2612_Status |= 0x80;
-        busyCycles = 180;
+        busyCycles = BUSY_CYCLES;
     }
 
     @Override
@@ -704,6 +721,8 @@ public final class YM2612 implements FmProvider {
         //TF4 intro
         boolean doResetA = wasResetA != resetA;
         boolean doResetB = wasResetB != resetB;
+//        LOG.info("Reset A/B: {}/{}, cntA/B: {}/{}",
+//                doResetA, doResetB, Long.toHexString(YM2612_TimerAcnt), Long.toHexString(YM2612_TimerBcnt));
         YM2612_Status &= doResetA ? 0xFD : 0xFF;
         YM2612_Status &= doResetB ? 0xFE : 0xFF;
         logTimersChange(data);
@@ -749,39 +768,39 @@ public final class YM2612 implements FmProvider {
         }
     }
 
-    public final void synchronizeTimers(int length) {
+    private final void synchronizeTimers(int length) {
         if (length <= 0) {
             return;
         }
-//        log(Level.INFO, "Sync timer ms: " + length);
-        int i = length;
 
-        i = YM2612_TimerBase * length;
+        int i = YM2612_TimerBase * length;
 
         if ((YM2612_Mode & 1) != 0) {   //TimerA ON
             YM2612_TimerAcnt -= i;
             if (YM2612_TimerAcnt <= 0) {
-                int val = YM2612_TimerAcnt;
-                YM2612_Status |= (YM2612_Mode & 4) >> 1; //overflow A, if enabled
+                long val = YM2612_TimerAcnt;
+                YM2612_Status |= (YM2612_Mode & 4) > 0 ? 2 : 0; //overflow A, if enabled
                 do {
                     YM2612_TimerAcnt += YM2612_TimerAL;
                 } while (YM2612_TimerAcnt < 0);
-//                log(Level.INFO, "Timer A expired at: " + val + ", value: " + YM2612_TimerAcnt);
+                LogHelper.printLevel(LOG, Level.INFO, "Timer A expired at: {}, " +
+                        "new value: {}", val, YM2612_TimerAcnt, verbose);
                 /* CSM mode auto key on */
                 if ((YM2612_Mode & 0x80) != 0) {
                     CSM_Key_Control();
                 }
             }
         }
-        if ((YM2612_Mode & 2) > 1) { //TimerB ON
+        if ((YM2612_Mode & 2) > 0) { //TimerB ON
             YM2612_TimerBcnt -= i;
             if (YM2612_TimerBcnt <= 0) {
                 int val = YM2612_TimerBcnt;
-                YM2612_Status |= (YM2612_Mode & 8) >> 3; //overflow B, if enabled
+                YM2612_Status |= (YM2612_Mode & 8) > 0 ? 1 : 0; //overflow B, if enabled
                 do {
                     YM2612_TimerBcnt += YM2612_TimerBL;
                 } while (YM2612_TimerBcnt < 0);
-//                log(Level.INFO, "Timer B expired at: " + val + ", value: " + YM2612_TimerBcnt);
+                LogHelper.printLevel(LOG, Level.INFO, "Timer B expired at: {}, " +
+                        "new value: {}", val, YM2612_TimerBcnt, verbose);
             }
         }
     }
@@ -1013,11 +1032,11 @@ public final class YM2612 implements FmProvider {
     }
 
     private int getTimerACount(int YM2612_TimerA) {
-        return 18 * (1024 - YM2612_TimerA);
+        return (int) (YM2612_TimerA_factor * (1024 - YM2612_TimerA));
     }
 
     private int getTimerBCount(int YM2612_TimerB) {
-        return 288 * (256 - YM2612_TimerB);
+        return (int) (YM2612_TimerB_factor * (256 - YM2612_TimerB));
     }
 
     private final int setYM(int address, int data) {       // INT, UCHAR
@@ -1042,6 +1061,7 @@ public final class YM2612 implements FmProvider {
                 YM2612_TimerAL = getTimerACount(YM2612_TimerA);
                 LogHelper.printLevel(LOG, Level.INFO, "Set Timer A MSB: {}, count: {}", YM2612_TimerAL,
                         YM2612_TimerAcnt, verbose);
+
                 break;
             case 0x25: //Timer A LSB
                 YM2612_TimerA = (YM2612_TimerA & 0x3fc) | (data & 3);
@@ -1052,7 +1072,7 @@ public final class YM2612 implements FmProvider {
             case 0x26:
                 YM2612_TimerB = data;
                 YM2612_TimerBL = getTimerBCount(YM2612_TimerB);
-                LogHelper.printLevel(LOG, Level.INFO, "Set Timer B: {], count: {}", YM2612_TimerBL,
+                LogHelper.printLevel(LOG, Level.INFO, "Set Timer B: {}, count: {}", YM2612_TimerBL,
                         YM2612_TimerBcnt, verbose);
                 break;
             case 0x27:
@@ -1061,10 +1081,8 @@ public final class YM2612 implements FmProvider {
                     // This fix the punch sound in Street of Rage 2
                     YM2612_CHANNEL[2].SLOT[0].Finc = -1;    // recalculate phase step
                 }
-                if (data != YM2612_Mode) {
-                    setTimers(data);
-                    YM2612_Mode = data;
-                }
+                setTimers(data);
+                YM2612_Mode = data;
                 break;
             case 0x28:
                 if ((nch = data & 3) == 3) return 1;
