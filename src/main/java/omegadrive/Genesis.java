@@ -387,6 +387,7 @@ public class Genesis implements GenesisProvider {
     private static long nsToMillis = 1_000_000;
     private long targetNs;
     private double microsPerTick = 1;
+    private VideoMode videoMode = VideoMode.PAL_H40_V30;
 
     void loop() {
         LOG.info("Starting game loop");
@@ -396,6 +397,7 @@ public class Genesis implements GenesisProvider {
         long startCycle = System.nanoTime();
         long lastRender = start;
         targetNs = (long) (region.getFrameIntervalMs() * nsToMillis);
+        updateVideoMode();
 
         do {
             try {
@@ -437,10 +439,14 @@ public class Genesis implements GenesisProvider {
 
 
     private void updateVideoMode() {
-        VideoMode vm = vdp.getVideoMode();
-        double frameTimeMicros = 1_000_000d / vm.getRegion().getFps();
-        VdpCounterMode vcm = VdpCounterMode.getCounterMode(vm);
-        microsPerTick = (FM_DIVIDER / VDP_DIVIDER) * frameTimeMicros / (vcm.slotsPerLine * vcm.vTotalCount);
+        if (videoMode != vdp.getVideoMode()) {
+            VideoMode vm = vdp.getVideoMode();
+            double frameTimeMicros = 1_000_000d / vm.getRegion().getFps();
+            VdpCounterMode vcm = VdpCounterMode.getCounterMode(vm);
+            microsPerTick = (FM_DIVIDER / VDP_DIVIDER) * frameTimeMicros / (vcm.slotsPerLine * vcm.vTotalCount);
+            LOG.info("Video mode changed: {}, microsPerTick: {}", vm, microsPerTick);
+            videoMode = vm;
+        }
     }
 
     private void pauseAndWait() {

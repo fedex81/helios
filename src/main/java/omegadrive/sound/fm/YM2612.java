@@ -500,16 +500,16 @@ public final class YM2612 implements FmProvider {
         }
 
         for (i = 0xB6; i >= 0xB4; i--) {
-            write0(i, 0xC0);
-            write1(i, 0xC0);
+            writeReg(FM_ADDRESS_PORT0, i, 0xC0);
+            writeReg(FM_ADDRESS_PORT1, i, 0xC0);
         }
 
         for (i = 0xB2; i >= 0x22; i--) {
-            write0(i, 0);
-            write1(i, 0);
+            writeReg(FM_ADDRESS_PORT0, i, 0);
+            writeReg(FM_ADDRESS_PORT1, i, 0);
         }
 
-        write0(0x2A, 0x80);
+        writeReg(FM_ADDRESS_PORT0, 0x2A, 0x80);
         dacQueue.clear();
 
         isResetting = false;
@@ -523,10 +523,15 @@ public final class YM2612 implements FmProvider {
         LOG.log(Level.WARN, msg);
     }
 
-    int busyCycles = BUSY_CYCLES;
-    static int BUSY_CYCLES = 45;
+    private void writeReg(int regPart, int regNumber, int data) {
+        write(regPart, regNumber);
+        write(regPart + 2, data);
+    }
 
-
+    // Note Maxim doc on YM2612 is wrong: overflowB is bit 1 and overflowA is bit 0
+//    Status
+//    D7	D6	D5	D4	D3	D2	 D1	        D0
+//    Busy		              Overflow B  Overflow A
     public final int read() {
 //        LOG.info("Read timer A/B: {}/{}, cntA/B: {}/{}",
 //                YM2612_Status & 2, YM2612_Status & 1, Long.toHexString(YM2612_TimerAcnt),
@@ -534,19 +539,19 @@ public final class YM2612 implements FmProvider {
         return (YM2612_Status);
     }
 
-    double acc = 0;
-    double microsPerTick = 0.598802395;
-    double totalAcc = 0;
+    double microsAcc = 0; //accumulator
+    long busyCycles = BUSY_CYCLES;
+    //busy last 90 Z80 cycles = 180 FM cycles @ 7.67Mhz = 45 cycles @ 1.67 Mhz
+    static int BUSY_CYCLES = 90;
 
     @Override
     public void tick(double microsPerTick) {
-        acc += microsPerTick;
-        totalAcc += microsPerTick;
-        if (acc > 1) {
+        microsAcc += microsPerTick;
+        //sync every microsecond
+        if (microsAcc > 1) {
             synchronizeTimers(1);
-            acc -= 1;
+            microsAcc -= 1;
         }
-        //busy last 90 Z80 cycles = 180 FM cycles @ 7.67Mhz = 45 cycles @ 1.67 Mhz
         busyCycles--;
         if (busyCycles <= 0) {
             YM2612_Status &= 0x7F;
@@ -561,41 +566,48 @@ public final class YM2612 implements FmProvider {
         double delta = ((now - lastEvent) / 1_000_000d);
         ParameterizedMessage pm = new ParameterizedMessage(
                 "{}, {}, {}, {}", delta, str, Integer.toHexString(addr), Integer.toHexString(data));
-//        LOG.info(pm.getFormattedMessage());
-        System.out.println(pm.getFormattedMessage());
+        LOG.info(pm.getFormattedMessage());
+//        System.out.println(pm.getFormattedMessage());
         lastEvent = now;
     }
 
-    public final void write0(int addr, int data) {
-        logEvent("write0", addr, data);
-        if (addr < 0x30) {
-            YM2612_REG[0][addr] = data;
-            setYM(addr, data);
-        } else if (YM2612_REG[0][addr] != data) {
-            YM2612_REG[0][addr] = data;
+    int addressLatch;
 
-            if (addr < 0xA0) {
-                setSlot(addr, data);
-            } else {
-                setChannel(addr, data);
-            }
+    @Override
+    public void write(int addr, int data) {
+        addr = addr & 0x3;
+        switch (addr) {
+            case FM_ADDRESS_PORT0:
+                addressLatch = data;
+                break;
+            case FM_ADDRESS_PORT1:
+                addressLatch = data + 0x100;
+                break;
+            default:
+                writeDataPort(data);
+                break;
         }
-        YM2612_Status |= 0x80;
-        busyCycles = BUSY_CYCLES;
     }
 
-    public final void write1(int addr, int data) {
-        logEvent("write1", addr, data);
-        if (addr >= 0x30 && YM2612_REG[1][addr] != data) {
-            YM2612_REG[1][addr] = data;
+    private void writeDataPort(int data) {
+        int realAddr = addressLatch;
+        int regPart = realAddr >= 0x100 ? 1 : 0;
+        int realAddrReg = regPart > 0 ? realAddr - 0x100 : realAddr;
 
-            if (addr < 0xA0)
-                setSlot(addr + 0x100, data);
-            else
-                setChannel(addr + 0x100, data);
-        } else if (addr < 0x30) {
-            LOG.debug("Invalid write to addr: {}, data: {}", Integer.toHexString(addr), data);
+        if (realAddr < 0x30) {
+            YM2612_REG[regPart][realAddrReg] = data;
+            setYM(realAddrReg, data);
+        } else {
+            if (realAddrReg < 0xA0) {
+                setSlot(realAddr, data);
+            } else {
+                setChannel(realAddr, data);
+            }
+            setBusyFlag();
         }
+    }
+
+    private void setBusyFlag() {
         YM2612_Status |= 0x80;
         busyCycles = BUSY_CYCLES;
     }
@@ -685,20 +697,12 @@ public final class YM2612 implements FmProvider {
 // D7	D6	  D5	  D4	        D3	      D2	      D1	D0
 //Ch3 mode	Reset B	Reset A	  Enable B	Enable A	Load B	Load A
 //
-//    Status
-//    D7	D6	D5	D4	D3	D2	 D1	        D0
-//    Busy		              Overflow A  Overflow B
-
-    //    none of them care about Timer A write order:
-//    counters are reinitialized each time the Timers values are changed (this is needed to fix Outrun music I think)
-
-    //    After some testing, it appears that the timer counter is only reloaded at the following times:
-//            1. When the counter underflows
+//After some testing, it appears that the timer counter is only reloaded at the following times:
+//1. When the counter underflows
 //2. When the load bit is switched from 0 to 1 (IE, the counter is changed from the stopped state to the running state).
-// The counter does not restart from the last point it was up to when it is re-enabled.
-//
-//    The timer counter is NOT reloaded when:
-//            1. The load bit is already 1, and reg $27 is written to setting the load bit as 1 again
+//The counter does not restart from the last point it was up to when it is re-enabled.
+//The timer counter is NOT reloaded when:
+//1. The load bit is already 1, and reg $27 is written to setting the load bit as 1 again
 //2. The reset or enable bits are changed
 //3. The timer counter registers are modified
     private void setTimers(int data) {
@@ -708,8 +712,6 @@ public final class YM2612 implements FmProvider {
         boolean resetB = (data & 32) == 32;
         boolean wasLoadA = (YM2612_Mode & 1) == 1;
         boolean wasLoadB = (YM2612_Mode & 2) == 2;
-        boolean wasResetA = (YM2612_Mode & 16) == 16;
-        boolean wasResetB = (YM2612_Mode & 32) == 32;
 
         if (!wasLoadA && loadA) { // loadA  0->1
             YM2612_TimerAcnt = YM2612_TimerAL;
@@ -717,14 +719,10 @@ public final class YM2612 implements FmProvider {
         if (!wasLoadB && loadB) { // loadB  0->1
             YM2612_TimerBcnt = YM2612_TimerBL;
         }
-
-        //TF4 intro
-        boolean doResetA = wasResetA != resetA;
-        boolean doResetB = wasResetB != resetB;
 //        LOG.info("Reset A/B: {}/{}, cntA/B: {}/{}",
 //                doResetA, doResetB, Long.toHexString(YM2612_TimerAcnt), Long.toHexString(YM2612_TimerBcnt));
-        YM2612_Status &= doResetA ? 0xFD : 0xFF;
-        YM2612_Status &= doResetB ? 0xFE : 0xFF;
+        YM2612_Status &= resetA ? 0xFE : 0xFF;
+        YM2612_Status &= resetB ? 0xFD : 0xFF;
         logTimersChange(data);
     }
 
@@ -779,7 +777,7 @@ public final class YM2612 implements FmProvider {
             YM2612_TimerAcnt -= i;
             if (YM2612_TimerAcnt <= 0) {
                 long val = YM2612_TimerAcnt;
-                YM2612_Status |= (YM2612_Mode & 4) > 0 ? 2 : 0; //overflow A, if enabled
+                YM2612_Status |= (YM2612_Mode & 4) > 0 ? 1 : 0; //overflow A, if enabled
                 do {
                     YM2612_TimerAcnt += YM2612_TimerAL;
                 } while (YM2612_TimerAcnt < 0);
@@ -795,7 +793,7 @@ public final class YM2612 implements FmProvider {
             YM2612_TimerBcnt -= i;
             if (YM2612_TimerBcnt <= 0) {
                 int val = YM2612_TimerBcnt;
-                YM2612_Status |= (YM2612_Mode & 8) > 0 ? 1 : 0; //overflow B, if enabled
+                YM2612_Status |= (YM2612_Mode & 8) > 0 ? 2 : 0; //overflow B, if enabled
                 do {
                     YM2612_TimerBcnt += YM2612_TimerBL;
                 } while (YM2612_TimerBcnt < 0);
@@ -946,7 +944,7 @@ public final class YM2612 implements FmProvider {
                 }
                 break;
             default:
-                LOG.warn("Invalid write to addr: {}, data: {}", Integer.toHexString(address), data);
+                LogHelper.printLevel(LOG, Level.WARN, "Invalid write to addr: {}, data: {}", address, data, !isResetting);
                 break;
         }
         return 0;
@@ -1025,7 +1023,7 @@ public final class YM2612 implements FmProvider {
                 else CH.SLOT[3].AMS = 31;
                 break;
             default:
-                LOG.warn("Invalid write to addr: {}, data: {}", Integer.toHexString(address), data);
+                LogHelper.printLevel(LOG, Level.WARN, "Invalid write to addr: {}, data: {}", address, data, !isResetting);
                 break;
         }
         return 0;
@@ -1099,7 +1097,15 @@ public final class YM2612 implements FmProvider {
                 else KEY_OFF(CH, S3);
                 break;
             case 0x2A:
+                //TODO rewrite DAC timing
+                //when busy just drop the sample - Sonic 2 intro sounds bad
+//                if((YM2612_Status & 0x80) > 1){
+//                    LOG.info("sample drop");
+////                    return 0;
+//                }
+
                 int dacValue = (data - 0x80) << 5;
+
                 //8 bit unsigned to 13 bit signed
                 if (dacValue != 0 && dacWritesCounter.get() < DAC_SAMPLE_LIMIT) {
 //                    String str = "DAC," + System.nanoTime() + "," + data;

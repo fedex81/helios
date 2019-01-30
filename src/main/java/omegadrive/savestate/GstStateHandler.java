@@ -113,9 +113,10 @@ public class GstStateHandler implements GenesisStateHandler {
         int limit = FM_DATA_SIZE / 2;
 
         for (i = 0; i < limit; i++) {
-            int address = i;
-            fm.write0(address, data[FM_REG_OFFSET + i]);
-            fm.write1(address, data[FM_REG_OFFSET + limit + i]);
+            fm.write(FmProvider.FM_ADDRESS_PORT0, i);
+            fm.write(FmProvider.FM_DATA_PORT0, data[FM_REG_OFFSET + i]);
+            fm.write(FmProvider.FM_ADDRESS_PORT1, i);
+            fm.write(FmProvider.FM_DATA_PORT1, data[FM_REG_OFFSET + limit + i]);
         }
     }
 

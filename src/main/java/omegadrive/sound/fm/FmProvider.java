@@ -14,6 +14,11 @@ import static omegadrive.sound.SoundProvider.getFmSoundClock;
  */
 public interface FmProvider {
 
+    int FM_ADDRESS_PORT0 = 0;
+    int FM_ADDRESS_PORT1 = 2;
+    int FM_DATA_PORT0 = 1;
+    int FM_DATA_PORT1 = 3;
+
     static FmProvider createInstance(RegionDetector.Region region, int sampleRate) {
         double clock = getFmSoundClock(region);
         FmProvider fmProvider = new YM2612();
@@ -29,9 +34,7 @@ public interface FmProvider {
 
     int init(int clock, int rate);
 
-    void write0(int addr, int data);
-
-    void write1(int addr, int data);
+    void write(int addr, int data);
 
     int readRegister(int type, int regNumber);
 
@@ -60,12 +63,7 @@ public interface FmProvider {
         }
 
         @Override
-        public void write0(int addr, int data) {
-
-        }
-
-        @Override
-        public void write1(int addr, int data) {
+        public void write(int addr, int data) {
 
         }
 

@@ -56,9 +56,10 @@ public class BusArbiterTest {
     private void setupZ80() {
         Z80Provider z80 = new Z80CoreWrapper() {
             @Override
-            public void interrupt() {
+            public boolean interrupt() {
                 hCounterRaise = vdp.getHCounter();
                 vCounterRaise = vdp.getVCounter();
+                return true;
             }
         };
         busArbiter = BusArbiter.createInstance(vdp, cpu, z80);

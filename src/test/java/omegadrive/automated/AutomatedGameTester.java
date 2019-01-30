@@ -91,6 +91,7 @@ public class AutomatedGameTester {
                 genesisProvider.handleCloseRom();
             }
             System.out.println(rom.getFileName().toString());
+            logFileLen = logFileLength(logFile);
             Util.sleep(500);
             if (tooManyErrors) {
                 break;

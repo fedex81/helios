@@ -1,6 +1,7 @@
 package omegadrive.z80;
 
 import omegadrive.bus.BusProvider;
+import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -118,17 +119,7 @@ public class Z80Memory implements IMemory {
                 LOG.warn("Illegal write to FM while Z80 reset");
                 return;
             }
-            if (address % 4 == 0) {        //	YM2612 A0
-                YMA0 = data;
-            } else if (address % 4 == 1) {        //	YM2612 D0
-                YMD0 = data;
-                busProvider.getFm().write0(YMA0, YMD0);
-            } else if (address % 4 == 2) {        //	YM2612 A1
-                YMA1 = data;
-            } else if (address % 4 == 3) {        //	YM2612 D1
-                YMD1 = data;
-                busProvider.getFm().write1(YMA1, YMD1);
-            }
+            writeFm(address, data);
         } else if (address >= ROM_BANK_ADDRESS && address <= 0x60FF) {        //	rom banking
             if (address == ROM_BANK_ADDRESS) {
                 romBanking(data);
@@ -152,6 +143,27 @@ public class Z80Memory implements IMemory {
         } else {
             LOG.error("Illegal Z80 memory write:  " + Integer.toHexString(address) + ", " + data);
         }
+    }
+
+    private void writeFm(int address, int data) {
+        //TODO
+        FmProvider fm = busProvider.getFm();
+//        if(!(fm instanceof YM2612)) {
+        busProvider.getFm().write(address, data);
+//        } else {
+//            //TODO NukeYM
+//            if (address % 4 == 0) {        //	YM2612 A0
+//                YMA0 = data;
+//            } else if (address % 4 == 1) {        //	YM2612 D0
+//                YMD0 = data;
+//                busProvider.getFm().write0(YMA0, YMD0);
+//            } else if (address % 4 == 2) {        //	YM2612 A1
+//                YMA1 = data;
+//            } else if (address % 4 == 3) {        //	YM2612 D1
+//                YMD1 = data;
+//                busProvider.getFm().write1(YMA1, YMD1);
+//            }
+//        }
     }
 
 
