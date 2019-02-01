@@ -457,10 +457,10 @@ public final class YM2612 implements FmProvider {
         YM2612_LFOcnt = 0;
         YM2612_TimerA = 0;
         YM2612_TimerAL = 1024;
-//        YM2612_TimerAcnt = 0;
+        YM2612_TimerAcnt = 0;
         YM2612_TimerB = 0;
         YM2612_TimerBL = 256;
-//        YM2612_TimerBcnt = 0;
+        YM2612_TimerBcnt = 0;
         YM2612_DAC = 0;
 
         YM2612_Status = 0;
