@@ -528,10 +528,6 @@ public final class YM2612 implements FmProvider {
         write(regPart + 2, data);
     }
 
-    // Note Maxim doc on YM2612 is wrong: overflowB is bit 1 and overflowA is bit 0
-//    Status
-//    D7	D6	D5	D4	D3	D2	 D1	        D0
-//    Busy		              Overflow B  Overflow A
     public final int read() {
 //        LOG.info("Read timer A/B: {}/{}, cntA/B: {}/{}",
 //                YM2612_Status & 2, YM2612_Status & 1, Long.toHexString(YM2612_TimerAcnt),
@@ -554,7 +550,8 @@ public final class YM2612 implements FmProvider {
         }
         busyCycles--;
         if (busyCycles <= 0) {
-            YM2612_Status &= 0x7F;
+            //clear flag
+            YM2612_Status &= ~FM_STATUS_BUSY_BIT_MASK;
         }
     }
 
@@ -608,7 +605,7 @@ public final class YM2612 implements FmProvider {
     }
 
     private void setBusyFlag() {
-        YM2612_Status |= 0x80;
+        YM2612_Status |= FM_STATUS_BUSY_BIT_MASK;
         busyCycles = BUSY_CYCLES;
     }
 
@@ -706,12 +703,12 @@ public final class YM2612 implements FmProvider {
 //2. The reset or enable bits are changed
 //3. The timer counter registers are modified
     private void setTimers(int data) {
-        boolean loadA = (data & 1) == 1;
-        boolean loadB = (data & 2) == 2;
-        boolean resetA = (data & 16) == 16;
-        boolean resetB = (data & 32) == 32;
-        boolean wasLoadA = (YM2612_Mode & 1) == 1;
-        boolean wasLoadB = (YM2612_Mode & 2) == 2;
+        boolean loadA = (data & FM_MODE_LOAD_A_MASK) > 0;
+        boolean loadB = (data & FM_MODE_LOAD_B_MASK) > 0;
+        boolean resetA = (data & FM_MODE_RESET_A_MASK) > 0;
+        boolean resetB = (data & FM_MODE_RESET_B_MASK) > 0;
+        boolean wasLoadA = (YM2612_Mode & FM_MODE_LOAD_A_MASK) > 0;
+        boolean wasLoadB = (YM2612_Mode & FM_MODE_LOAD_B_MASK) > 0;
 
         if (!wasLoadA && loadA) { // loadA  0->1
             YM2612_TimerAcnt = YM2612_TimerAL;
@@ -721,8 +718,8 @@ public final class YM2612 implements FmProvider {
         }
 //        LOG.info("Reset A/B: {}/{}, cntA/B: {}/{}",
 //                doResetA, doResetB, Long.toHexString(YM2612_TimerAcnt), Long.toHexString(YM2612_TimerBcnt));
-        YM2612_Status &= resetA ? 0xFE : 0xFF;
-        YM2612_Status &= resetB ? 0xFD : 0xFF;
+        YM2612_Status &= resetA ? ~FM_STATUS_TIMER_A_BIT_MASK : 0xFF;
+        YM2612_Status &= resetB ? ~FM_STATUS_TIMER_B_BIT_MASK : 0xFF;
         logTimersChange(data);
     }
 
@@ -730,19 +727,18 @@ public final class YM2612 implements FmProvider {
         if (!verbose) {
             return;
         }
-        boolean loadA = (data & 1) == 1;
-        boolean loadB = (data & 2) == 2;
-        boolean enableA = (data & 4) == 4;
-        boolean enableB = (data & 8) == 8;
-        boolean resetA = (data & 16) == 16;
-        boolean resetB = (data & 32) == 32;
-
-        boolean wasLoadA = (YM2612_Mode & 1) == 1;
-        boolean wasLoadB = (YM2612_Mode & 2) == 2;
-        boolean wasEnabledA = (YM2612_Mode & 4) == 4;
-        boolean wasEnabledB = (YM2612_Mode & 8) == 8;
-        boolean wasResetA = (YM2612_Mode & 16) == 16;
-        boolean wasResetB = (YM2612_Mode & 32) == 32;
+        boolean loadA = (data & FM_MODE_LOAD_A_MASK) > 0;
+        boolean loadB = (data & FM_MODE_LOAD_B_MASK) > 0;
+        boolean resetA = (data & FM_MODE_RESET_A_MASK) > 0;
+        boolean resetB = (data & FM_MODE_RESET_B_MASK) > 0;
+        boolean enableA = (data & FM_MODE_ENABLE_A_MASK) > 0;
+        boolean enableB = (data & FM_MODE_ENABLE_B_MASK) > 0;
+        boolean wasLoadA = (YM2612_Mode & FM_MODE_LOAD_A_MASK) > 0;
+        boolean wasLoadB = (YM2612_Mode & FM_MODE_LOAD_B_MASK) > 0;
+        boolean wasEnabledA = (YM2612_Mode & FM_MODE_ENABLE_A_MASK) > 0;
+        boolean wasEnabledB = (YM2612_Mode & FM_MODE_ENABLE_B_MASK) > 0;
+        boolean wasResetA = (YM2612_Mode & FM_MODE_RESET_A_MASK) > 0;
+        boolean wasResetB = (YM2612_Mode & FM_MODE_RESET_B_MASK) > 0;
 
         if (wasLoadA != loadA) {
             LogHelper.printLevel(LOG, Level.INFO, "Load Timer A: {}, count: {}, was: {}",
@@ -773,11 +769,12 @@ public final class YM2612 implements FmProvider {
 
         int i = YM2612_TimerBase * length;
 
-        if ((YM2612_Mode & 1) != 0) {   //TimerA ON
+        if ((YM2612_Mode & FM_MODE_LOAD_A_MASK) != 0) {   //TimerA ON
             YM2612_TimerAcnt -= i;
             if (YM2612_TimerAcnt <= 0) {
                 long val = YM2612_TimerAcnt;
-                YM2612_Status |= (YM2612_Mode & 4) > 0 ? 1 : 0; //overflow A, if enabled
+                //overflow A, if enabled
+                YM2612_Status |= (YM2612_Mode & FM_MODE_ENABLE_A_MASK) > 0 ? FM_STATUS_TIMER_A_BIT_MASK : 0;
                 do {
                     YM2612_TimerAcnt += YM2612_TimerAL;
                 } while (YM2612_TimerAcnt < 0);
@@ -789,11 +786,12 @@ public final class YM2612 implements FmProvider {
                 }
             }
         }
-        if ((YM2612_Mode & 2) > 0) { //TimerB ON
+        if ((YM2612_Mode & FM_MODE_LOAD_B_MASK) > 0) { //TimerB ON
             YM2612_TimerBcnt -= i;
             if (YM2612_TimerBcnt <= 0) {
                 int val = YM2612_TimerBcnt;
-                YM2612_Status |= (YM2612_Mode & 8) > 0 ? 2 : 0; //overflow B, if enabled
+                //overflow B, if enabled
+                YM2612_Status |= (YM2612_Mode & FM_MODE_ENABLE_B_MASK) > 0 ? FM_STATUS_TIMER_B_BIT_MASK : 0;
                 do {
                     YM2612_TimerBcnt += YM2612_TimerBL;
                 } while (YM2612_TimerBcnt < 0);

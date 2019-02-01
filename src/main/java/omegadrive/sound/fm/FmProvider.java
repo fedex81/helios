@@ -19,6 +19,24 @@ public interface FmProvider {
     int FM_DATA_PORT0 = 1;
     int FM_DATA_PORT1 = 3;
 
+    // Note Maxim doc on YM2612 is wrong: overflowB is bit 1 and overflowA is bit 0
+//    Status
+//    D7	D6	D5	D4	D3	D2	 D1	        D0
+//    Busy		              Overflow B  Overflow A
+    int FM_STATUS_TIMER_A_BIT_MASK = 0x1;
+    int FM_STATUS_TIMER_B_BIT_MASK = 0x2;
+    int FM_STATUS_BUSY_BIT_MASK = 0x80;
+
+    // 27H
+// D7	D6	  D5	  D4	        D3	      D2	      D1	D0
+//Ch3 mode	Reset B	Reset A	  Enable B	Enable A	Load B	Load A
+    int FM_MODE_LOAD_A_MASK = 0x1;
+    int FM_MODE_LOAD_B_MASK = 0x2;
+    int FM_MODE_ENABLE_A_MASK = 0x4;
+    int FM_MODE_ENABLE_B_MASK = 0x8;
+    int FM_MODE_RESET_A_MASK = 0x16;
+    int FM_MODE_RESET_B_MASK = 0x32;
+
     static FmProvider createInstance(RegionDetector.Region region, int sampleRate) {
         double clock = getFmSoundClock(region);
         FmProvider fmProvider = new YM2612();
