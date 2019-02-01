@@ -1,7 +1,7 @@
 package omegadrive.z80.disasm;
 
 import emulib.plugins.memory.AbstractMemoryContext;
-import omegadrive.z80.Z80Memory;
+import omegadrive.z80.IMemory;
 
 /**
  * ${FILE}
@@ -12,9 +12,9 @@ import omegadrive.z80.Z80Memory;
  */
 public class Z80MemContext extends AbstractMemoryContext<Integer> {
 
-    private Z80Memory memory;
+    private IMemory memory;
 
-    public static Z80MemContext createInstance(Z80Memory memory) {
+    public static Z80MemContext createInstance(IMemory memory) {
         Z80MemContext c = new Z80MemContext();
         c.memory = memory;
         return c;
@@ -52,6 +52,6 @@ public class Z80MemContext extends AbstractMemoryContext<Integer> {
 
     @Override
     public int getSize() {
-        return memory.getMemory().length;
+        return memory.getData().length;
     }
 }

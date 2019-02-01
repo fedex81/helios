@@ -8,11 +8,11 @@ package omegadrive.z80;
  * Copyright 2018
  */
 public interface IMemory {
-    int readByte(int address);
+    int MEMORY_SIZE = 0x2000;
 
-    int readWord(int address);
+    int readByte(int address);
 
     void writeByte(int address, int data);
 
-    void writeWord(int address, int data);
+    byte[] getData();
 }

@@ -511,13 +511,22 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         }
     }
 
-    private void z80MemoryWrite(long address, Size size, long data) {
+    private void z80MemoryWrite(long address, Size size, long dataL) {
         if (!z80.isBusRequested() || z80.isReset()) {
             LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
             return;
         }
+        //	https://emu-docs.org/Genesis/gen-hw.txt
+        //	When doing word-wide writes to Z80 RAM, only the MSB is written, and the LSB is ignored
+        int data = (int) dataL;
+        if (size == Size.WORD) {
+            data = data >> 8;
+        }
+        if (size == Size.LONG) {
+            LOG.error("Unexpected long write, addr: {}, data: {}", address, dataL);
+        }
         int addressZ = (int) (address & BusProvider.M68K_TO_Z80_MEMORY_MASK);
-        z80.writeMemory(addressZ, data, size);
+        z80.writeMemory(addressZ, data);
     }
 
     //    Byte-wide reads

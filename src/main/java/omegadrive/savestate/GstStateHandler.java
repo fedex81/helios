@@ -4,16 +4,15 @@ import m68k.cpu.MC68000;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.VdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import omegadrive.z80.Z80Memory;
+import omegadrive.z80.IMemory;
 import omegadrive.z80.Z80Provider;
-import omegadrive.z80.jsanchezv.Z80;
-import omegadrive.z80.jsanchezv.Z80State;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import z80core.Z80;
+import z80core.Z80State;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -146,8 +145,8 @@ public class GstStateHandler implements GenesisStateHandler {
     public void loadZ80(Z80Provider z80) {
         Z80State z80State = loadZ80State(data);
 
-        IntStream.range(0, Z80Memory.MEMORY_SIZE).forEach(
-                i -> z80.writeMemory(i, data[i + Z80_RAM_DATA_OFFSET], Size.BYTE));
+        IntStream.range(0, IMemory.MEMORY_SIZE).forEach(
+                i -> z80.writeMemory(i, data[i + Z80_RAM_DATA_OFFSET]));
         z80.unrequestBus();
         z80.disableReset();
 
@@ -161,7 +160,7 @@ public class GstStateHandler implements GenesisStateHandler {
 //            z80.reset();
         }
         int z80BankInt = getUInt32(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
-        z80.getZ80Memory().setRomBank68kSerial(z80BankInt);
+        z80.getZ80BusProvider().setRomBank68kSerial(z80BankInt);
         z80.loadZ80State(z80State);
 
     }
@@ -243,11 +242,11 @@ public class GstStateHandler implements GenesisStateHandler {
 
     @Override
     public void saveZ80(Z80Provider z80) {
-        IntStream.range(0, Z80Memory.MEMORY_SIZE).forEach(
+        IntStream.range(0, IMemory.MEMORY_SIZE).forEach(
                 i -> data[Z80_RAM_DATA_OFFSET + i] = z80.readMemory(i));
         data[0x438] = z80.isReset() ? 1 : 0;
         data[0x439] = z80.isBusRequested() ? 1 : 0;
-        Util.setUInt32(z80.getZ80Memory().getRomBank68kSerial(), data, 0x43C);
+        Util.setUInt32(z80.getZ80BusProvider().getRomBank68kSerial(), data, 0x43C);
         saveZ80State(z80.getZ80State());
     }
 

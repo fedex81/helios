@@ -4,16 +4,15 @@ import emulib.plugins.cpu.DisassembledInstruction;
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
 import omegadrive.z80.disasm.Z80Decoder;
 import omegadrive.z80.disasm.Z80Disasm;
 import omegadrive.z80.disasm.Z80MemContext;
-import omegadrive.z80.jsanchezv.MemIoOps;
-import omegadrive.z80.jsanchezv.Z80;
-import omegadrive.z80.jsanchezv.Z80State;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import z80core.MemIoOps;
+import z80core.Z80;
+import z80core.Z80State;
 
 import java.util.function.Function;
 
@@ -32,7 +31,7 @@ public class Z80CoreWrapper implements Z80Provider {
     public static boolean verbose = Genesis.verbose || false;
 
     private Z80 z80Core;
-    private Z80Memory memory;
+    private Z80BusProvider z80BusProvider;
     private MemIoOps memIoOps;
     private Z80Disasm z80Disasm;
 
@@ -44,18 +43,16 @@ public class Z80CoreWrapper implements Z80Provider {
     private static Logger LOG = LogManager.getLogger(Z80CoreWrapper.class.getSimpleName());
 
     public static Z80CoreWrapper createInstance(BusProvider busProvider) {
-        Z80Memory memory = new Z80Memory(busProvider);
-        Z80CoreWrapper w = createInstance(memory, null);
-        memory.setZ80Provider(w);
+        Z80CoreWrapper w = createInstance(busProvider, new Z80Memory(), null);
         return w;
     }
 
-    public static Z80CoreWrapper createInstance(Z80Memory z80Memory, Z80State z80State) {
+    public static Z80CoreWrapper createInstance(BusProvider busProvider, IMemory z80Memory, Z80State z80State) {
         Z80CoreWrapper w = new Z80CoreWrapper();
-        w.memIoOps = createGenesisIo(w);
-        w.memIoOps.setRam(z80Memory.getMemory());
+        w.z80BusProvider = new Z80BusProviderImpl(busProvider, w, z80Memory);
+        w.memIoOps = createGenesisIo(w.z80BusProvider, z80Memory);
+
         w.z80Core = new Z80(w.memIoOps, null);
-        w.memory = z80Memory;
         if (z80State != null) {
             w.z80Core.setZ80State(z80State);
         }
@@ -99,7 +96,7 @@ public class Z80CoreWrapper implements Z80Provider {
         if (!updateRunningFlag()) {
             return -1;
         }
-        int tstates = (int) memIoOps.getTstates();
+        memIoOps.reset();
         try {
             printVerbose();
             z80Core.execute();
@@ -112,7 +109,7 @@ public class Z80CoreWrapper implements Z80Provider {
             LOG.error("Halting Z80");
             z80Core.setHalted(true);
         }
-        return (int) (memIoOps.getTstates() - tstates);
+        return (int) (memIoOps.getTstates());
     }
 
     private static String toString(Z80State state) {
@@ -203,36 +200,18 @@ public class Z80CoreWrapper implements Z80Provider {
 
     @Override
     public int readMemory(int address) {
-        return memory.readByte(address);
-    }
-
-    private void writeByte(int addr, long data) {
-        memory.writeByte(addr, (int) data);
-    }
-
-    //	https://emu-docs.org/Genesis/gen-hw.txt
-    //	When doing word-wide writes to Z80 RAM, only the MSB is written, and the LSB is ignored
-    private void writeWord(int addr, long data) {
-        memory.writeByte(addr, (int) (data >> 8));
+        return z80BusProvider.readMemory(address);
     }
 
     @Override
-    public void writeMemory(int address, long data, Size size) {
-        if (size == Size.BYTE) {
-            writeByte(address, data);
-        } else if (size == Size.WORD) {
-            writeWord(address, data);
-        } else {
-            //TODO this sohuldnt happen?
-            writeWord(address, data >> 16);
-            writeWord(address + 2, data & 0xFFFF);
-        }
-        LogHelper.printLevel(LOG, Level.DEBUG, "Write Z80: {}, {}: {}", address, data, size, verbose);
+    public void writeMemory(int address, int data) {
+        z80BusProvider.writeMemory(address, data);
+        LogHelper.printLevel(LOG, Level.DEBUG, "Write Z80: {}, {}", address, data, verbose);
     }
 
     @Override
-    public Z80Memory getZ80Memory() {
-        return this.memory;
+    public Z80BusProvider getZ80BusProvider() {
+        return this.z80BusProvider;
     }
 
     @Override
@@ -250,13 +229,27 @@ public class Z80CoreWrapper implements Z80Provider {
      *
      * @return
      */
-    private static MemIoOps createGenesisIo(Z80CoreWrapper provider) {
+    public static MemIoOps createGenesisIo(Z80BusProvider z80BusProvider, IMemory z80Memory) {
 //        The Z80 runs in interrupt mode 1, where an interrupt causes a RST 38h.
 //        However, interrupt mode 0 can be used as well, since FFh will be read off the bus.
 
-        return new MemIoOps() {
+        MemIoOps memIoOps = new MemIoOps() {
+
+            @Override
+            public int peek8(int address) {
+                this.interruptHandlingTime(3); //TODO for lack of a better method ...
+                return z80BusProvider.readMemory(address);
+            }
+
+            @Override
+            public void poke8(int address, int value) {
+                this.interruptHandlingTime(3); //TODO for lack of a better method ...
+                z80BusProvider.writeMemory(address, value);
+            }
+
             @Override
             public int inPort(int port) {
+                super.inPort(port);
                 //TF4 calls this by mistake
                 LOG.debug("inPort: {}", port);
                 return 0xFF;
@@ -264,17 +257,8 @@ public class Z80CoreWrapper implements Z80Provider {
 
             @Override
             public void outPort(int port, int value) {
+                super.outPort(port, value);
                 LOG.warn("outPort: " + port + ", data: " + value);
-            }
-
-            @Override
-            public void poke8(int address, int value) {
-                provider.writeByte(address, value);
-            }
-
-            @Override
-            public int peek8(int address) {
-                return provider.readMemory(address);
             }
 
             @Override
@@ -284,9 +268,11 @@ public class Z80CoreWrapper implements Z80Provider {
                 return res;
             }
         };
+        memIoOps.setRam(z80Memory.getData());
+        return memIoOps;
     }
 
-    private static Function<DisassembledInstruction, String> disasmToString = d ->
+    public static Function<DisassembledInstruction, String> disasmToString = d ->
             String.format("%08x   %12s   %s", d.getAddress(), d.getOpCode(), d.getMnemo());
 
     private void printVerbose() {

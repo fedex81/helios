@@ -1,10 +1,13 @@
 package omegadrive.z80;
 
-import omegadrive.z80.jsanchezv.MemIoOps;
-import omegadrive.z80.jsanchezv.NotifyOps;
-import omegadrive.z80.jsanchezv.Z80;
+import omegadrive.z80.disasm.Z80Decoder;
+import omegadrive.z80.disasm.Z80Disasm;
+import omegadrive.z80.disasm.Z80MemContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import z80core.MemIoOps;
+import z80core.NotifyOps;
+import z80core.Z80;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,30 +25,24 @@ public class Z80Exerciser implements NotifyOps {
 
     private static String resourcesPath = "./src/test/java/omegadrive/z80/";
 
-    private final Z80 z80;
-    private Z80SimpleMemory memory = new Z80SimpleMemory();
+    public static final int MEMORY_SIZE = 0x10000;
+
+    private Z80 z80;
+    private IMemory memory;
     private MemIoOps memIo;
 
     private boolean finish = false;
 
     public Z80Exerciser() {
-        memIo = new MemIoOps() {
-            @Override
-            public int inPort(int port) {
-                LOG.warn("inPort: " + port);
-                return 0;
-            }
-
-            @Override
-            public void outPort(int port, int value) {
-                LOG.warn("outPort: " + port + ", data: " + value);
-            }
-        };
-        memIo.setRam(memory.getMemory());
+        memory = new Z80Memory(MEMORY_SIZE);
+        memIo = new MemIoOps();
+        memIo.setRam(memory.getData());
         z80 = new Z80(memIo, this);
     }
 
     private void runTest(String testName) {
+        Z80MemContext memContext = Z80MemContext.createInstance(memory);
+        Z80Disasm z80Disasm = new Z80Disasm(memContext, new Z80Decoder(memContext));
         byte[] fileBytes;
         Path file = Paths.get(".", resourcesPath + testName);
         try {
@@ -57,12 +54,10 @@ public class Z80Exerciser implements NotifyOps {
         }
 
         int k = 0;
-        for (int i = 0x100; i < Z80SimpleMemory.MEMORY_SIZE && k < fileBytes.length; i++) {
+        for (int i = 0x100; i < MEMORY_SIZE && k < fileBytes.length; i++) {
             memIo.poke8(i, fileBytes[k]);
             k++;
         }
-
-
         z80.reset();
         memIo.reset();
         finish = false;
@@ -77,12 +72,19 @@ public class Z80Exerciser implements NotifyOps {
         z80.setBreakpoint(0x0005, true);
         while (!finish) {
             counter++;
+//            String str = Z80CoreWrapper.disasmToString.apply(z80Disasm.disassemble(z80.getRegPC()));
+//            System.out.println(counter + ": " + str);
             z80.execute();
+
         }
         System.out.println("Test " + testName + " ended, #inst: " + counter);
     }
 
     public static void main(String[] args) {
+        exercise();
+    }
+
+    private static void exercise() {
         System.out.println(new File(".").getAbsolutePath());
         Z80Exerciser exerciser = new Z80Exerciser();
         long start = System.currentTimeMillis();

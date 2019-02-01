@@ -1,7 +1,6 @@
 package omegadrive.z80;
 
-import omegadrive.util.Size;
-import omegadrive.z80.jsanchezv.Z80State;
+import z80core.Z80State;
 
 /**
  * ${FILE}
@@ -36,9 +35,9 @@ public interface Z80Provider {
 
     int readMemory(int address);
 
-    void writeMemory(int address, long data, Size size);
+    void writeMemory(int address, int data);
 
-    Z80Memory getZ80Memory();
+    Z80BusProvider getZ80BusProvider();
 
     void loadZ80State(Z80State z80State);
 

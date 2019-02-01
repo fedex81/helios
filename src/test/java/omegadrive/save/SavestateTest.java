@@ -13,12 +13,12 @@ import omegadrive.util.FileLoader;
 import omegadrive.vdp.GenesisVdp;
 import omegadrive.vdp.VdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.z80.IMemory;
 import omegadrive.z80.Z80CoreWrapper;
-import omegadrive.z80.Z80Memory;
 import omegadrive.z80.Z80Provider;
-import omegadrive.z80.jsanchezv.Z80State;
 import org.junit.Assert;
 import org.junit.Test;
+import z80core.Z80State;
 
 import java.io.File;
 import java.io.IOException;
@@ -123,12 +123,12 @@ public class SavestateTest {
         Assert.assertEquals("IFF2", s1.isIFF2(), s2.isIFF2());
         Assert.assertEquals("IM", s1.getIM(), s2.getIM());
 
-        IntStream.range(0, Z80Memory.MEMORY_SIZE).forEach(
+        IntStream.range(0, IMemory.MEMORY_SIZE).forEach(
                 i -> Assert.assertEquals("Z80Ram:" + i, z80p1.readMemory(i), z80p2.readMemory(i))
         );
         Assert.assertEquals("z80Reset", z80p1.isReset(), z80p2.isReset());
         Assert.assertEquals("z80BusReq", z80p1.isBusRequested(), z80p2.isBusRequested());
-        Assert.assertEquals("z80Banking", z80p1.getZ80Memory().getRomBank68kSerial(), z80p2.getZ80Memory().getRomBank68kSerial());
+        Assert.assertEquals("z80Banking", z80p1.getZ80BusProvider().getRomBank68kSerial(), z80p2.getZ80BusProvider().getRomBank68kSerial());
     }
 
     private void compare68k(MC68000Wrapper cpu1w, MC68000Wrapper cpu2w, MemoryProvider mem1, MemoryProvider mem2) {
