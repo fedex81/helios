@@ -34,8 +34,8 @@ public interface FmProvider {
     int FM_MODE_LOAD_B_MASK = 0x2;
     int FM_MODE_ENABLE_A_MASK = 0x4;
     int FM_MODE_ENABLE_B_MASK = 0x8;
-    int FM_MODE_RESET_A_MASK = 0x16;
-    int FM_MODE_RESET_B_MASK = 0x32;
+    int FM_MODE_RESET_A_MASK = 0x10;
+    int FM_MODE_RESET_B_MASK = 0x20;
 
     static FmProvider createInstance(RegionDetector.Region region, int sampleRate) {
         double clock = getFmSoundClock(region);

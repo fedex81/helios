@@ -525,7 +525,7 @@ public final class YM2612 implements FmProvider {
 
     private void writeReg(int regPart, int regNumber, int data) {
         write(regPart, regNumber);
-        write(regPart + 2, data);
+        write(regPart + 1, data);
     }
 
     public final int read() {
@@ -537,8 +537,8 @@ public final class YM2612 implements FmProvider {
 
     double microsAcc = 0; //accumulator
     long busyCycles = BUSY_CYCLES;
-    //busy last 90 Z80 cycles = 180 FM cycles @ 7.67Mhz = 45 cycles @ 1.67 Mhz
-    static int BUSY_CYCLES = 90;
+    //busy last 90 Z80 cycles  @ 3.75 Mhz = 45 cycles @ 1.67 Mhz
+    static int BUSY_CYCLES = 45;
 
     @Override
     public void tick(double microsPerTick) {

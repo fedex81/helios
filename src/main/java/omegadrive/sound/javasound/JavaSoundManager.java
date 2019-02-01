@@ -85,14 +85,18 @@ public class JavaSoundManager implements SoundProvider {
 
             @Override
             public void run() {
-                do {
-                    if (playOncePerFrame) {
-                        playOncePerFrame();
-                    } else {
-                        playOnce();
-                    }
-                    Util.sleep(1);
-                } while (!close);
+                try {
+                    do {
+                        if (playOncePerFrame) {
+                            playOncePerFrame();
+                        } else {
+                            playOnce();
+                        }
+                        Util.sleep(1);
+                    } while (!close);
+                } catch (Exception e) {
+                    LOG.error("Unexpected sound error, stopping", e);
+                }
                 LOG.info("Stopping sound thread");
                 psg.reset();
                 fm.reset();

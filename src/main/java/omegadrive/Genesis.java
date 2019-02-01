@@ -377,12 +377,23 @@ public class Genesis implements GenesisProvider {
         return romRegion;
     }
 
-    //NTSC_MCLOCK_MHZ = 53693175;
-    //PAL_MCLOCK_MHZ = 53203424;
+    //TODO
+//    //NTSC_MCLOCK_MHZ = 53693175;
+//    //PAL_MCLOCK_MHZ = 53203424;
+//    //DIVIDER = 1 = MCLOCK_MHZ
+//    private static int VDP_DIVIDER = 16;  //3.325 Mhz PAL
+//    private static int M68K_DIVIDER = 7; //7.6 Mhz PAL  0.5714
+//    private static int Z80_DIVIDER = 14; //3.546 Mhz PAL 0.2666
+//    private static int FM_DIVIDER = 32; //1.67 Mhz PAL 0.2666
+
     private static int VDP_DIVIDER = 2;  //3.325 Mhz PAL
     private static int M68K_DIVIDER = 1; //7.6 Mhz PAL  0.5714
     private static int Z80_DIVIDER = 2; //3.546 Mhz PAL 0.2666
     private static int FM_DIVIDER = 4; //1.67 Mhz PAL 0.2666
+
+    int next68kCycle = M68K_DIVIDER;
+    int nextZ80Cycle = Z80_DIVIDER;
+    int nextVdpCycle = VDP_DIVIDER;
 
     private static long nsToMillis = 1_000_000;
     private long targetNs;
@@ -420,10 +431,7 @@ public class Genesis implements GenesisProvider {
                     processSaveState();
                     pauseAndWait();
                     lastRender = now;
-
-                    nextZ80Cycle -= counter;
-                    next68kCycle -= counter;
-                    nextVdpCycle -= counter;
+                    resetCycleCounters(counter);
                     counter = 0;
                     startCycle = System.nanoTime();
                     bus.newFrame();
@@ -435,6 +443,12 @@ public class Genesis implements GenesisProvider {
             }
         } while (!runningRomFuture.isDone());
         LOG.info("Exiting rom thread loop");
+    }
+
+    private void resetCycleCounters(int counter) {
+        nextZ80Cycle -= counter;
+        next68kCycle -= counter;
+        nextVdpCycle -= counter;
     }
 
 
@@ -470,10 +484,6 @@ public class Genesis implements GenesisProvider {
         }
         return elapsedNs;
     }
-
-    int next68kCycle = M68K_DIVIDER;
-    int nextZ80Cycle = Z80_DIVIDER;
-    int nextVdpCycle = VDP_DIVIDER;
 
 
     private void runVdp(long counter) {
