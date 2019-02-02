@@ -96,7 +96,7 @@ public class GamepadInputProvider implements InputProvider {
     public void setPlayers(int number) {
         LOG.info("Setting number of players to: " + number);
         this.playerNumber = number;
-        this.joypadNumber = P1.ordinal() == playerNumber ? P1 : P2;
+        this.joypadNumber = P1.ordinal() == playerNumber - 1 ? P1 : P2;
     }
 
     @Override
@@ -132,6 +132,7 @@ public class GamepadInputProvider implements InputProvider {
             joypadProvider.setButtonAction(joypadNumber, JoypadButton.S, action);
         }
         if (pov.equals(id.getName())) {
+            action = JoypadAction.PRESSED;
             if (value == Component.POV.OFF) {
                 setDirectionOff();
             }
