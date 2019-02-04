@@ -1,7 +1,7 @@
 package omegadrive.m68k;
 
-import m68k.cpu.Instruction;
 import m68k.cpu.MC68000;
+import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
@@ -28,10 +28,19 @@ public class MC68000Wrapper implements M68kProvider {
     private static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
 
     public static boolean verbose = Genesis.verbose || false;
-    public static boolean STOP_ON_EXCEPTION =
-            Boolean.valueOf(System.getProperty("68k.stop.on.exception", "false"));
+    public static boolean STOP_ON_EXCEPTION;
+    public static boolean GENESIS_TAS_BROKEN;
 
     private static int ILLEGAL_ACCESS_EXCEPTION = 4;
+
+    static {
+        STOP_ON_EXCEPTION =
+                Boolean.valueOf(System.getProperty("68k.stop.on.exception", "false"));
+        GENESIS_TAS_BROKEN = Boolean.valueOf(System.getProperty("68k.broken.tas", "true"));
+        if (GENESIS_TAS_BROKEN != TAS.EMULATE_BROKEN_TAS) {
+            LOG.info("Overriding 68k TAS broken setting: " + GENESIS_TAS_BROKEN);
+        }
+    }
 
     private MC68000 m68k;
     private AddressSpace addressSpace;
@@ -61,21 +70,11 @@ public class MC68000Wrapper implements M68kProvider {
                 super.reset();
                 resetExternal();
             }
-
-            @Override
-            public void addInstruction(int opcode, Instruction i) {
-                this.i_table[opcode] = i;
-            }
-
-            @Override
-            public void stop() {
-                MC68000Wrapper.this.setStop(true);
-            }
         };
-        new TasEx(m68k).register(m68k);
         this.busProvider = busProvider;
         this.addressSpace = getAddressSpace(this, busProvider);
         m68k.setAddressSpace(addressSpace);
+        TAS.EMULATE_BROKEN_TAS = GENESIS_TAS_BROKEN;
     }
 
     protected int memoryRead(int address, Size size) {
@@ -126,24 +125,7 @@ public class MC68000Wrapper implements M68kProvider {
 
             @Override
             public void writeLong(int addr, int value) {
-                long dstAddr = addr & 0xFF_FFFF;
-                boolean vdpWrite = dstAddr >= BusProvider.VDP_ADDRESS_SPACE_START &&
-                        dstAddr < BusProvider.VDP_ADDRESS_SPACE_END;
-                int lsw = value & 0xFFFF;
-                int msw = (value >> 16) & 0xFFFF;
-                if (vdpWrite) {
-                    String res = MC68000Monitor.dumpOp(wrapper.m68k, wrapper.currentPC);
-                    boolean swapWord = res.contains(",-(a");
-                    if (swapWord) {
-                        LOG.error("Vdp long write with predec address register: {} - {}",
-                                Long.toHexString(dstAddr), res);
-                        writeWord(addr + 2, lsw);
-                        writeWord(addr, msw);
-                        return;
-                    }
-                }
-                writeWord(addr, msw);
-                writeWord(addr + 2, lsw);
+                busProvider.write(addr, value, Size.LONG);
             }
 
             @Override
