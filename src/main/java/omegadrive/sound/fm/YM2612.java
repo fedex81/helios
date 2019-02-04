@@ -674,8 +674,10 @@ public final class YM2612 implements FmProvider {
         int i = offset;
         if (dacSampleToProcess) {
             while ((val = dacQueue.poll()) != null && i < end) {
-                buf_lr[i] += val;
-                buf_lr[i + 1] += val;
+                //8 bit unsigned to 13 bit signed
+                int dacValue = (val - 0x80) << 5;
+                buf_lr[i] += dacValue;
+                buf_lr[i + 1] += dacValue;
                 i += 2;
                 dacWritesCounter.decrementAndGet();
             }
@@ -1101,15 +1103,11 @@ public final class YM2612 implements FmProvider {
 //                    LOG.info("sample drop");
 ////                    return 0;
 //                }
-
-                int dacValue = (data - 0x80) << 5;
-
-                //8 bit unsigned to 13 bit signed
-                if (dacValue != 0 && dacWritesCounter.get() < DAC_SAMPLE_LIMIT) {
+                if (dacWritesCounter.get() < DAC_SAMPLE_LIMIT) {
 //                    String str = "DAC," + System.nanoTime() + "," + data;
 //                    LOG.info(str);
 //                    System.out.println(str);
-                    dacQueue.offer(dacValue);
+                    dacQueue.offer(data);
                     dacWritesCounter.incrementAndGet();
                 }
                 break;
