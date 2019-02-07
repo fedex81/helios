@@ -149,8 +149,9 @@ public class VdpInterruptHandler {
         if (hCounterInternal == vdpCounterMode.hBlankClear) {
             hBlankSet = false;
             eventFlag = true;
-            pixelNumber = 0;
-            slotNumber = 0;
+            //TODO in theory the line starts here, but it breaks counting
+//            pixelNumber = 0;
+//            slotNumber = 0;
         }
 
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
