@@ -92,6 +92,10 @@ public class EmuFrame implements GenesisWindow {
         }
     };
 
+    static {
+        initLookAndFeel();
+    }
+
     public void setTitle(String title) {
         jFrame.setTitle(FRAME_TITLE_HEAD + " - " + title);
     }
@@ -115,11 +119,24 @@ public class EmuFrame implements GenesisWindow {
         return res;
     }
 
-    public void init() {
+    public static void initLookAndFeel() {
+        String lfClassName = UIManager.getCrossPlatformLookAndFeelClassName();
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            //avoid GTK3 on Java11, it has issues
+            //https://bugs.java.com/bugdatabase/view_bug.do?bug_id=JDK-8203627
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("GTK+".equals(info.getName())) {
+//                    lfClassName = info.getClassName();
+                    break;
+                }
+            }
+            UIManager.setLookAndFeel(lfClassName);
         } catch (Exception e) {
+            LOG.error(e);
         }
+    }
+
+    public void init() {
         Util.registerJmx(this);
         graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
         LOG.info("Screen detected: " + graphicsDevices.length);

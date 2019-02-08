@@ -81,14 +81,22 @@ public class Z80Exerciser implements NotifyOps {
     }
 
     public static void main(String[] args) {
-        exercise();
+        exerciseZexAll();
+        exerciseZexDoc();
     }
 
-    private static void exercise() {
+    private static void exerciseZexDoc() {
+        exercise("zexdoc.bin");
+    }
+
+    private static void exerciseZexAll() {
+        exercise("zexall.bin");
+    }
+
+    private static void exercise(String fileName) {
         System.out.println(new File(".").getAbsolutePath());
         Z80Exerciser exerciser = new Z80Exerciser();
         long start = System.currentTimeMillis();
-        String fileName = "zexall.bin";
         exerciser.runTest(fileName);
         System.out.println(fileName + " executed in " + (System.currentTimeMillis() - start) + " ms.");
     }

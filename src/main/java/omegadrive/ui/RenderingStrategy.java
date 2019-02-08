@@ -1,11 +1,6 @@
 package omegadrive.ui;
 
-import sun.awt.image.ImagingLib;
-
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.image.AffineTransformOp;
-import java.awt.image.BufferedImage;
 
 /**
  * ${FILE}
@@ -52,12 +47,5 @@ public class RenderingStrategy {
                 pixels[pos] = color;
             }
         }
-    }
-
-    public static void renderAwt(BufferedImage src, BufferedImage dest, int scaleType) {
-        AffineTransform scaleTransform = AffineTransform.getScaleInstance(scaleType, scaleType);
-        AffineTransformOp scaleOp = new AffineTransformOp(scaleTransform,
-                AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-        ImagingLib.filter(scaleOp, src, dest);
     }
 }
