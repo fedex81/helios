@@ -500,7 +500,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             tileLocation = tileLocator + (tileLocation * 2);
             tileLocation += verticalScrollingOffset;
 
-            int tileNameTable = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VRAM, tileLocation);
+            int tileNameTable = memoryInterface.readVramWord(tileLocation);
 
             tileDataHolder = getTileData(tileNameTable, tileDataHolder);
 
@@ -537,13 +537,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     }
 
     private int getCramColorValue(int cramIndex) {
-        return memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.CRAM, cramIndex);
+        return memoryInterface.readCramWord(cramIndex);
     }
 
     private int getCramColorValue(int pixelIndexColor, int paletteLine) {
         //Each word has the following format:
         // ----bbb-ggg-rrr-
-        return memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.CRAM, paletteLine + (pixelIndexColor * 2));
+        return memoryInterface.readCramWord(paletteLine + (pixelIndexColor * 2));
     }
 
     // This value is effectively the address divided by $400; however, the low
@@ -608,7 +608,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         //VS == 1 -> 2 cell scroll
         int scrollLine = VS == 1 ? (pixel / 16) * 4 : 0;
         int vsramOffset = isPlaneA ? scrollLine : scrollLine + 2;
-        int scrollDataVer = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VSRAM, vsramOffset);
+        int scrollDataVer = memoryInterface.readVsramWord(vsramOffset);
 
         int verticalScrollMask = (verticalPlaneSize * 8) - 1;
         int scrollMap = (scrollDataVer + line) & verticalScrollMask;
@@ -647,7 +647,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
                 vramOffset = isPlaneA ? scrollLine1 : scrollLine1 + 2;
                 break;
         }
-        int scrollDataHor = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VRAM, vramOffset);
+        int scrollDataHor = memoryInterface.readVramWord(vramOffset);
         scrollDataHor &= horScrollMask;
         scrollDataHor = scrollDataShift - scrollDataHor;
         return scrollDataHor;
@@ -739,7 +739,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         TileDataHolder tileDataHolder = spriteDataHolder;
 
         for (int horTile = tileStart; horTile < tileEnd; horTile++) {
-            int nameTable = memoryInterface.readVideoRamWord(VdpProvider.VdpRamType.VRAM, vramLocation);
+            int nameTable = memoryInterface.readVramWord(vramLocation);
             vramLocation += 2;
 
             tileDataHolder = getTileData(nameTable, tileDataHolder);

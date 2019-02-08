@@ -2,6 +2,7 @@ package omegadrive.vdp;
 
 import omegadrive.Genesis;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.util.CramViewer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,12 +20,16 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     private static Logger LOG = LogManager.getLogger(GenesisVdpMemoryInterface.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
+    private static int EVEN_VALUE_MASK = ~1;
 
     private int[] vram;
     private int[] cram;
     private int[] vsram;
 
+    private CramViewer cramViewer;
+
     private GenesisVdpMemoryInterface() {
+//        cramViewer = CramViewer.createInstance(this);
     }
 
     public static GenesisVdpMemoryInterface createInstance() {
@@ -41,27 +46,6 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         i.cram = Arrays.copyOf(cram, cram.length);
         i.vsram = Arrays.copyOf(vsram, vsram.length);
         return i;
-    }
-
-    @Override
-    public int readVideoRamWord(VdpProvider.VdpRamType vramType, int address) {
-        int data = 0;
-        //ignore A0, always use an even address
-        address &= ~1;
-        switch (vramType) {
-            case VRAM:
-                data = readVramWord(address);
-                break;
-            case VSRAM:
-                data = readVsramWord(address);
-                break;
-            case CRAM:
-                data = readCramWord(address);
-                break;
-            default:
-                LOG.warn("Unexpected videoRam read: " + vramType);
-        }
-        return data;
     }
 
     //TODO: shouldnt this flip the byte like in readVramWord
@@ -125,9 +109,13 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     public void writeCramByte(int address, int data) {
         address &= (VdpProvider.VDP_CRAM_SIZE - 1);
         cram[address] = data & 0xFF;
+//        cramViewer.update();
     }
 
-    private int readVramWord(int address) {
+    @Override
+    public int readVramWord(int address) {
+        //ignore A0, always use an even address
+        address &= EVEN_VALUE_MASK;
         return readVramByte(address) << 8 | readVramByte(address + 1);
     }
 
@@ -137,7 +125,10 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         return cram[address];
     }
 
-    private int readCramWord(int address) {
+    @Override
+    public int readCramWord(int address) {
+        //ignore A0, always use an even address
+        address &= EVEN_VALUE_MASK;
         return readCramByte(address) << 8 | readCramByte(address + 1);
     }
 
@@ -150,7 +141,10 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         return vsram[address];
     }
 
-    private int readVsramWord(int address) {
+    @Override
+    public int readVsramWord(int address) {
+        //ignore A0, always use an even address
+        address &= EVEN_VALUE_MASK;
         return readVsramByte(address) << 8 | readVsramByte(address + 1);
     }
 }

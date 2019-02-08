@@ -28,9 +28,27 @@ public interface VdpMemoryInterface {
 
     int readVsramByte(int address);
 
+    int readVramWord(int address);
+
+    int readCramWord(int address);
+
+    int readVsramWord(int address);
+
     void writeVideoRamWord(VdpProvider.VdpRamType vramType, int data, int address);
 
-    int readVideoRamWord(VdpProvider.VdpRamType vramType, int address);
+    default int readVideoRamWord(VdpProvider.VdpRamType vramType, int address) {
+        switch (vramType) {
+            case VRAM:
+                return readVramWord(address);
+            case VSRAM:
+                return readVsramWord(address);
+            case CRAM:
+                return readCramWord(address);
+            default:
+                LOG.warn("Unexpected videoRam read: " + vramType);
+        }
+        return 0;
+    }
 
     default void writeVideoRamWord(VdpProvider.VramMode mode, int data, int address) {
         if (mode == null) {
