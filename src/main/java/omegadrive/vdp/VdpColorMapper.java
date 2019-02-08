@@ -10,6 +10,8 @@ import omegadrive.vdp.model.ShadowHighlightType;
  * Copyright 2018
  */
 public class VdpColorMapper {
+
+
     /**
      * http://gendev.spritesmind.net/forum/viewtopic.php?t=1389
      * <p>
@@ -44,16 +46,21 @@ public class VdpColorMapper {
     private final static double[] SHADOW_LEVELS = {0, 0.5, 0.9, 1.3, 1.6, 1.9, 2.2, 2.4};
     private final static double[] HIGHLIGHT_LEVELS = {2.4, 2.7, 2.9, 3.2, 3.5, 3.8, 4.2, 4.7};
 
-    public VdpColorMapper() {
+
+    private static VdpColorMapper INSTANCE = new VdpColorMapper();
+
+    private VdpColorMapper() {
         initColorsCache(colorsCache, NORMAL_LEVELS);
         initColorsCache(colorsCacheShadow, SHADOW_LEVELS);
         initColorsCache(colorsCacheHighLight, HIGHLIGHT_LEVELS);
     }
 
-    /**
-     * outputs 24bit RGB Colors
-     */
-    public int getColor(int red, int green, int blue, ShadowHighlightType shadowHighlightType) {
+    public static VdpColorMapper getInstance() {
+        return INSTANCE;
+    }
+
+
+    private int getColor(int red, int green, int blue, ShadowHighlightType shadowHighlightType) {
         switch (shadowHighlightType) {
             case NORMAL:
                 return colorsCache[red][green][blue];
@@ -65,10 +72,31 @@ public class VdpColorMapper {
         return colorsCache[red][green][blue];
     }
 
-    public int getColor(int red, int green, int blue) {
+    private int getColor(int red, int green, int blue) {
         return colorsCache[red][green][blue];
     }
 
+    /**
+     * outputs 24bit RGB Colors
+     */
+    public int getColor(int cramEncodedColor, ShadowHighlightType shadowHighlightType) {
+        int r = (cramEncodedColor >> 1) & 0x7;
+        int g = (cramEncodedColor >> 5) & 0x7;
+        int b = (cramEncodedColor >> 9) & 0x7;
+
+        return getColor(r, g, b, shadowHighlightType);
+    }
+
+    /**
+     * outputs 24bit RGB Colors
+     */
+    public int getColor(int cramEncodedColor) {
+        int r = (cramEncodedColor >> 1) & 0x7;
+        int g = (cramEncodedColor >> 5) & 0x7;
+        int b = (cramEncodedColor >> 9) & 0x7;
+
+        return getColor(r, g, b);
+    }
 
     private static void initColorsCache(int[][][] colorsCache, double[] levels) {
         double factor = (OUTPUT_TONES_PER_CHANNEL - 1) / VDP_MAX_COLOR_LEVEL;

@@ -88,7 +88,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     public VdpRenderHandlerImpl(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
         this.memoryInterface = memoryInterface;
-        this.colorMapper = new VdpColorMapper();
+        this.colorMapper = VdpColorMapper.getInstance();
         this.renderDump = new VdpRenderDump();
         clearData();
     }
@@ -783,19 +783,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     }
 
     private int getColorFromIndex(int cramEncodedColor, ShadowHighlightType shadowHighlightType) {
-        int r = (cramEncodedColor >> 1) & 0x7;
-        int g = (cramEncodedColor >> 5) & 0x7;
-        int b = (cramEncodedColor >> 9) & 0x7;
-
-        return colorMapper.getColor(r, g, b, shadowHighlightType);
+        return colorMapper.getColor(cramEncodedColor, shadowHighlightType);
     }
 
     private int getColorFromIndex(int cramEncodedColor) {
-        int r = (cramEncodedColor >> 1) & 0x7;
-        int g = (cramEncodedColor >> 5) & 0x7;
-        int b = (cramEncodedColor >> 9) & 0x7;
-
-        return colorMapper.getColor(r, g, b);
+        return colorMapper.getColor(cramEncodedColor);
     }
 
     private int[][] getPlaneData(RenderType type) {

@@ -239,7 +239,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     //TODO MKII dmaFill and 68kToVram still buggy
     private boolean dma68kToVram() {
-        printInfo("START slot");
+//        printInfo("START slot");
         //dmaLen is words
         int dmaLen = decreaseDmaLength();
         int sourceAddress = getSourceAddress() << 1; //needs to double it
@@ -249,7 +249,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         printInfo("IN PROGRESS: ", sourceAddress);
         //increase by 1, becomes 2 (bytes) when doubling
         postDmaRegisters();
-        printInfo("Done slot");
+//        printInfo("Done slot");
         return dmaLen == 0;
     }
 
