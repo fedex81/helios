@@ -135,9 +135,9 @@ public class VdpInterruptHandler {
     private int increaseHCounterInternal() {
         hCounterInternal = updateCounterValue(hCounterInternal, vdpCounterMode.hJumpTrigger,
                 vdpCounterMode.hTotalCount);
+
         pixelNumber = (pixelNumber + 1) % vdpCounterMode.hTotalCount;
         slotNumber = pixelNumber >> 1;
-
         if (hCounterInternal == vdpCounterMode.hBlankSet) {
             hBlankSet = true;
             eventFlag = true;
@@ -217,6 +217,7 @@ public class VdpInterruptHandler {
         this.hIntPending = hIntPending;
     }
 
+    //TODO: first slot after end of hblanking
     public boolean isFirstSlot() {
         return slotNumber == 0;
     }

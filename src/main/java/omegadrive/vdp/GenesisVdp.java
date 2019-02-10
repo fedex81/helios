@@ -586,7 +586,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private void logRegisterChange(int reg, int data) {
         int current = registers[reg];
         //&& reg < 0x13 && interruptHandler.isActiveScreen()
-        if (regVerbose && current != data) { //&& reg < 0x13) {
+        if (regVerbose && current != data && reg < 0x13) {
             String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- de{}",
                     VdpRegisterName.getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (disp ? 1 : 0)).getFormattedMessage();
             LOG.info(this.interruptHandler.getStateString(msg));
@@ -683,7 +683,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastSlot()) {
             //draw the line
-            drawScanline(line, displayEnable);
+//            drawScanline(line, displayEnable);
             line++;
             //draw the frame
             if (interruptHandler.isDrawFrameSlot()) {
@@ -696,6 +696,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         }
         if (interruptHandler.isFirstSlot()) {
             renderHandler.initLineData(line);
+            drawScanline(line, displayEnable);
         }
     }
 
