@@ -55,6 +55,8 @@ public class VdpDmaBandwidthTest {
     // 16 slots -> 8 read + 8 write
     static int ACTIVE_SCREEN_DMA_COPY_PER_LINE_H32 = ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32_WORDS / 2;
     static int ACTIVE_SCREEN_DMA_COPY_PER_LINE_H40 = ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40_WORDS / 2;
+    static int BLANKING_DMA_VRAM_PER_LINE_H32 = BLANKING_VRAM_DMA_PER_LINE_H32_WORDS / 2;
+    static int BLANKING_DMA_VRAM_PER_LINE_H40 = BLANKING_VRAM_DMA_PER_LINE_H40_WORDS / 2;
 
     @Before
     public void setup() {
@@ -209,13 +211,13 @@ public class VdpDmaBandwidthTest {
     @Test
     public void testDMACopyDuringVBlankH32() {
         VdpTestUtil.setH32(vdpProvider);
-        testDMACopyInternal(BLANKING_VRAM_DMA_PER_LINE_H32_WORDS + 1, true, true);
+        testDMACopyInternal(BLANKING_DMA_VRAM_PER_LINE_H32 + 1, true, true);
     }
 
     @Test
     public void testDMACopyDuringVBlankH40() {
         VdpTestUtil.setH40(vdpProvider);
-        testDMACopyInternal(BLANKING_VRAM_DMA_PER_LINE_H40_WORDS + 1, false, true);
+        testDMACopyInternal(BLANKING_DMA_VRAM_PER_LINE_H40 + 1, false, true);
     }
 
     @Test
@@ -267,7 +269,7 @@ public class VdpDmaBandwidthTest {
         if (!duringVBlank) {
             Assert.assertTrue(slots > slotsPerLine);
         } else {
-            Assert.assertEquals(dmaLen + refreshSlots, slots);
+            Assert.assertEquals(dmaLen * 2 + refreshSlots + 1, slots);
         }
     }
 

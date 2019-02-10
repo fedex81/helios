@@ -76,13 +76,10 @@ public class VdpInterruptHandler {
     }
 
     private void reset() {
-        if (vdpCounterMode != null) {
-            int hValue = (10 + rnd.nextInt(10)) << 1; //even, no blanking
-            int vValue = rnd.nextInt(10) << 1; //even
-            hCounterInternal = pixelNumber = hValue;
-            vCounterInternal = vValue;
-            slotNumber = pixelNumber >> 1;
-        }
+        hCounterInternal = 0;
+        vCounterInternal = 0;
+        pixelNumber = hCounterInternal;
+        slotNumber = pixelNumber >> 1;
         hBlankSet = false;
         vBlankSet = false;
         vIntPending = false;
@@ -149,9 +146,6 @@ public class VdpInterruptHandler {
         if (hCounterInternal == vdpCounterMode.hBlankClear) {
             hBlankSet = false;
             eventFlag = true;
-            //TODO in theory the line starts here, but it breaks counting
-//            pixelNumber = 0;
-//            slotNumber = 0;
         }
 
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {

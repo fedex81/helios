@@ -465,6 +465,10 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         if (fifo.isFull()) {
             LOG.warn("readDataPort with FIFO full, address: {}", addressRegister);
         }
+        if (!fifo.isEmpty()) {
+            //Bonkers
+            LOG.warn("readDataPort with FIFO not empty {}, address: {}", vramMode, addressRegister);
+        }
         this.writePendingControlPort = false;
         //TODO need to stop 68k until the result is available
 //        pendingReadEntry.addressRegister = addressRegister;

@@ -4,6 +4,7 @@ import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.IVdpFifo;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +36,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private int dmaFillData;
     private DmaMode dmaMode = null;
     private boolean dmaFillReady;
+
+    //TODO this should be in the VDP
+    private IVdpFifo.VdpFifoEntry pendingReadEntry = new IVdpFifo.VdpFifoEntry();
 
     public static VdpDmaHandler createInstance(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
                                                BusProvider busProvider) {
@@ -177,16 +181,19 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return done;
     }
 
-    public void dmaFillSingleByte() {
-        decreaseDmaLength();
-        int destAddress = getDestAddress();
-        printInfo("IN PROGRESS");
-        int msb = (dmaFillData >> 8) & 0xFF;
-        memoryInterface.writeVramByte(destAddress ^ 1, msb);
+    private void dmaFillSingleByte() {
+        dmaVramWriteByte((dmaFillData >> 8) & 0xFF);
+    }
+
+    private void dmaVramWriteByte(int data) {
+        int destAddress = getDestAddress() ^ 1;
+        printInfo("IN PROGRESS - WRITE");
+        memoryInterface.writeVramByte(destAddress, data);
         postDmaRegisters();
     }
 
     private void postDmaRegisters() {
+        decreaseDmaLength();
         increaseSourceAddress(1);
         increaseDestAddress();
     }
@@ -195,13 +202,18 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     //to internal address registers value. This does not matter for most VRAM Copy operations since
     //they are done on an even byte quantity but can be verified when doing a single byte copy for example.
     private void dmaCopySingleByte() {
-        decreaseDmaLength();
-        int sourceAddress = getSourceAddress() ^ 1;
-        int destAddress = getDestAddress() ^ 1;
-        printInfo("IN PROGRESS");
-        int data = memoryInterface.readVramByte(sourceAddress);
-        memoryInterface.writeVramByte(destAddress, data);
-        postDmaRegisters();
+        //needs two slots, first slot reads, second writes
+        if (pendingReadEntry.vdpRamMode == null) {
+            int sourceAddress = getSourceAddress() ^ 1;
+            int data = memoryInterface.readVramByte(sourceAddress);
+            pendingReadEntry.vdpRamMode = VdpProvider.VramMode.vramWrite;
+            pendingReadEntry.data = data;
+            printInfo("IN PROGRESS - READ");
+        } else {
+            dmaVramWriteByte(pendingReadEntry.data);
+            pendingReadEntry.vdpRamMode = null;
+            pendingReadEntry.data = 0;
+        }
     }
 
     //The VDP decrements the length before checking if it's equal to 0,
@@ -210,7 +222,6 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private int decreaseDmaLength() {
         int dmaLen = getDmaLength();
         dmaLen = (dmaLen - 1) & (VdpProvider.VDP_VRAM_SIZE - 1);
-        dmaLen = Math.max(dmaLen, 0);
         vdpProvider.updateRegisterData(DMA_LENGTH_LOW, dmaLen & 0xFF);
         vdpProvider.updateRegisterData(DMA_LENGTH_HIGH, dmaLen >> 8);
         return dmaLen;
@@ -238,10 +249,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     //TODO MKII dmaFill and 68kToVram still buggy
-    private boolean dma68kToVram() {
-//        printInfo("START slot");
-        //dmaLen is words
-        int dmaLen = decreaseDmaLength();
+    private void dma68kToVram() {
         int sourceAddress = getSourceAddress() << 1; //needs to double it
         int destAddress = getDestAddress();
         int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
@@ -249,8 +257,6 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         printInfo("IN PROGRESS: ", sourceAddress);
         //increase by 1, becomes 2 (bytes) when doubling
         postDmaRegisters();
-//        printInfo("Done slot");
-        return dmaLen == 0;
     }
 
     private DmaMode getDmaMode(int reg17, VdpProvider.VramMode vramMode) {

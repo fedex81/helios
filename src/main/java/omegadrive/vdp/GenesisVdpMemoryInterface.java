@@ -69,7 +69,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         int data1 = (word >> 8);
         int data2 = word & 0xFF;
         //ignore A0
-        int index = address & ~1;
+        int index = address & EVEN_VALUE_MASK;
 
         switch (vramType) {
             case VRAM:
@@ -112,12 +112,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 //        cramViewer.update();
     }
 
-    @Override
-    public int readVramWord(int address) {
-        //ignore A0, always use an even address
-        address &= EVEN_VALUE_MASK;
-        return readVramByte(address) << 8 | readVramByte(address + 1);
-    }
+
 
     @Override
     public int readCramByte(int address) {
@@ -125,12 +120,6 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         return cram[address];
     }
 
-    @Override
-    public int readCramWord(int address) {
-        //ignore A0, always use an even address
-        address &= EVEN_VALUE_MASK;
-        return readCramByte(address) << 8 | readCramByte(address + 1);
-    }
 
     @Override
     public int readVsramByte(int address) {
@@ -142,9 +131,23 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     }
 
     @Override
+    public int readVramWord(int address) {
+        //ignore A0, always use an even address
+        address &= EVEN_VALUE_MASK;
+        return readVramByte(address) << 8 | readVramByte(address + 1);
+    }
+
+    @Override
     public int readVsramWord(int address) {
         //ignore A0, always use an even address
         address &= EVEN_VALUE_MASK;
         return readVsramByte(address) << 8 | readVsramByte(address + 1);
+    }
+
+    @Override
+    public int readCramWord(int address) {
+        //ignore A0, always use an even address
+        address &= EVEN_VALUE_MASK;
+        return readCramByte(address) << 8 | readCramByte(address + 1);
     }
 }
