@@ -90,6 +90,15 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         }
     }
 
+    @Override
+    public int[] getCram() {
+        return cram;
+    }
+
+    @Override
+    public int[] getVram() {
+        return vram;
+    }
 
     //    Even though there are 40 words of VSRAM, the address register will wrap
 //    when it passes 7Fh. Writes to the addresses beyond 50h are ignored.

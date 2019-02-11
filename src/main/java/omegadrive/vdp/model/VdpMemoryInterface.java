@@ -36,6 +36,10 @@ public interface VdpMemoryInterface {
 
     void writeVideoRamWord(VdpProvider.VdpRamType vramType, int data, int address);
 
+    int[] getCram();
+
+    int[] getVram();
+
     default int readVideoRamWord(VdpProvider.VdpRamType vramType, int address) {
         switch (vramType) {
             case VRAM:

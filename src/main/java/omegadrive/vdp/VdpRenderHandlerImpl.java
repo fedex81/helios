@@ -1,7 +1,6 @@
 package omegadrive.vdp;
 
 import omegadrive.Genesis;
-import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.*;
 import org.apache.logging.log4j.LogManager;
@@ -85,11 +84,16 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     private int spriteTableLocation = 0;
     private int hScrollTableLocation = 0;
 
+    private int[] cram;
+    private int[] vram;
+
     public VdpRenderHandlerImpl(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
         this.memoryInterface = memoryInterface;
         this.colorMapper = VdpColorMapper.getInstance();
         this.renderDump = new VdpRenderDump();
+        this.cram = memoryInterface.getCram();
+        this.vram = memoryInterface.getVram();
         clearData();
     }
 
@@ -171,16 +175,20 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         return spriteTableLoc * 0x200;
     }
 
+    static int HOR_FLIP_MASK = 1 << 11;
+    static int VERT_FLIP_MASK = 1 << 12;
+    static int PRIORITY_MASK = 1 << 15;
+
     private TileDataHolder getTileData(int nameTable, TileDataHolder holder) {
         //				An entry in a name table is 16 bits, and works as follows:
 //				15			14 13	12				11		   			10 9 8 7 6 5 4 3 2 1 0
 //				Priority	Palette	Vertical Flip	Horizontal Flip		Tile Index
         holder.tileIndex = (nameTable & 0x07FF);    // each tile uses 32 bytes
 
-        holder.horFlip = Util.bitSetTest(nameTable, 11);
-        holder.vertFlip = Util.bitSetTest(nameTable, 12);
+        holder.horFlip = (nameTable & HOR_FLIP_MASK) > 0;
+        holder.vertFlip = (nameTable & VERT_FLIP_MASK) > 0;
         holder.paletteLineIndex = (nameTable >> 13) & 0x3;
-        holder.priority = Util.bitSetTest(nameTable, 15);
+        holder.priority = (nameTable & PRIORITY_MASK) > 0;
         return holder;
     }
 
@@ -500,7 +508,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             tileLocation = tileLocator + (tileLocation * 2);
             tileLocation += verticalScrollingOffset;
 
-            int tileNameTable = memoryInterface.readVramWord(tileLocation);
+            int tileNameTable = vram[tileLocation] << 8 | vram[tileLocation + 1];
 
             tileDataHolder = getTileData(tileNameTable, tileDataHolder);
 
@@ -531,19 +539,20 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
     private int getPixelIndexColor(int tileBytePointer, int pixelInTile, boolean isHorizontalFlip) {
         //1 byte represents 2 pixels, 1 pixel = 4 bit = 16 color gamut
-        int twoPixelsData = memoryInterface.readVramByte(tileBytePointer);
+        int twoPixelsData = vram[tileBytePointer];
         boolean isFirstPixel = (pixelInTile % 2) == (isHorizontalFlip ? 0 : 1);
         return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
     }
 
     private int getCramColorValue(int cramIndex) {
-        return memoryInterface.readCramWord(cramIndex);
+        return cram[cramIndex] << 8 | cram[cramIndex + 1];
     }
 
     private int getCramColorValue(int pixelIndexColor, int paletteLine) {
         //Each word has the following format:
         // ----bbb-ggg-rrr-
-        return memoryInterface.readCramWord(paletteLine + (pixelIndexColor * 2));
+//        return memoryInterface.readCramWord(paletteLine + (pixelIndexColor * 2));
+        return getCramColorValue(paletteLine + (pixelIndexColor * 2));
     }
 
     // This value is effectively the address divided by $400; however, the low
@@ -647,7 +656,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
                 vramOffset = isPlaneA ? scrollLine1 : scrollLine1 + 2;
                 break;
         }
-        int scrollDataHor = memoryInterface.readVramWord(vramOffset);
+        int scrollDataHor = vram[vramOffset] << 8 | vram[vramOffset + 1];
         scrollDataHor &= horScrollMask;
         scrollDataHor = scrollDataShift - scrollDataHor;
         return scrollDataHor;
@@ -692,11 +701,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     }
 
     private SpriteDataHolder getPhase1SpriteData(int baseAddress, SpriteDataHolder holder) {
-
-        int byte0 = memoryInterface.readVramByte(baseAddress);
-        int byte1 = memoryInterface.readVramByte(baseAddress + 1);
-        int byte2 = memoryInterface.readVramByte(baseAddress + 2);
-        int byte3 = memoryInterface.readVramByte(baseAddress + 3);
+        int byte0 = vram[baseAddress];
+        int byte1 = vram[baseAddress + 1];
+        int byte2 = vram[baseAddress + 2];
+        int byte3 = vram[baseAddress + 3];
 
         holder.linkData = byte3 & 0x7F;
         holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;
@@ -705,14 +713,14 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     }
 
     private SpriteDataHolder getSpriteData(int baseAddress, SpriteDataHolder holder) {
-        int byte0 = memoryInterface.readVramByte(baseAddress);
-        int byte1 = memoryInterface.readVramByte(baseAddress + 1);
-        int byte2 = memoryInterface.readVramByte(baseAddress + 2);
-        int byte3 = memoryInterface.readVramByte(baseAddress + 3);
-        int byte4 = memoryInterface.readVramByte(baseAddress + 4);
-        int byte5 = memoryInterface.readVramByte(baseAddress + 5);
-        int byte6 = memoryInterface.readVramByte(baseAddress + 6);
-        int byte7 = memoryInterface.readVramByte(baseAddress + 7);
+        int byte0 = vram[baseAddress];
+        int byte1 = vram[baseAddress + 1];
+        int byte2 = vram[baseAddress + 2];
+        int byte3 = vram[baseAddress + 3];
+        int byte4 = vram[baseAddress + 4];
+        int byte5 = vram[baseAddress + 5];
+        int byte6 = vram[baseAddress + 6];
+        int byte7 = vram[baseAddress + 7];
 
         holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;
         holder.horSize = (byte2 >> 2) & 0x3;
@@ -739,7 +747,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         TileDataHolder tileDataHolder = spriteDataHolder;
 
         for (int horTile = tileStart; horTile < tileEnd; horTile++) {
-            int nameTable = memoryInterface.readVramWord(vramLocation);
+            int nameTable = vram[vramLocation] << 8 | vram[vramLocation + 1];
             vramLocation += 2;
 
             tileDataHolder = getTileData(nameTable, tileDataHolder);
