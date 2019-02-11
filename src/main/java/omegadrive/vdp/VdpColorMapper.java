@@ -72,30 +72,19 @@ public class VdpColorMapper {
         return colorsCache[red][green][blue];
     }
 
-    private int getColor(int red, int green, int blue) {
-        return colorsCache[red][green][blue];
-    }
-
     /**
      * outputs 24bit RGB Colors
      */
     public int getColor(int cramEncodedColor, ShadowHighlightType shadowHighlightType) {
-        int r = (cramEncodedColor >> 1) & 0x7;
-        int g = (cramEncodedColor >> 5) & 0x7;
-        int b = (cramEncodedColor >> 9) & 0x7;
-
-        return getColor(r, g, b, shadowHighlightType);
+        return getColor((cramEncodedColor >> 1) & 0x7, (cramEncodedColor >> 5) & 0x7,
+                (cramEncodedColor >> 9) & 0x7, shadowHighlightType);
     }
 
     /**
      * outputs 24bit RGB Colors
      */
     public int getColor(int cramEncodedColor) {
-        int r = (cramEncodedColor >> 1) & 0x7;
-        int g = (cramEncodedColor >> 5) & 0x7;
-        int b = (cramEncodedColor >> 9) & 0x7;
-
-        return getColor(r, g, b);
+        return colorsCache[(cramEncodedColor >> 1) & 0x7][(cramEncodedColor >> 5) & 0x7][(cramEncodedColor >> 9) & 0x7];
     }
 
     private static void initColorsCache(int[][][] colorsCache, double[] levels) {
