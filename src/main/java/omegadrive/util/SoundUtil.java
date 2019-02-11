@@ -19,12 +19,26 @@ public class SoundUtil {
 
     private static Logger LOG = LogManager.getLogger(SoundUtil.class.getSimpleName());
 
-    public static byte[] EMPTY_SAMPLE = new byte[0];
     public static byte ZERO_BYTE = (byte) 0;
-    public static int[] EMPTY_SAMPLE_INT = new int[0];
-    public static byte[] ONE_STEREO_SAMPLE = {0, 0, 0, 0}; //16 bit Stereo
-
     public static long DEFAULT_BUFFER_SIZE_MS = 100;
+
+    private static int DEFAULT_PSG_SHIFT_BITS = 5;
+    public static double PSG_ATTENUATION = Double.valueOf(System.getProperty("sound.psg.attenuation", "1.0"));
+    private static int USER_PSG_ATT_BITS;
+    private static int PSG_SHIFT_BITS;
+
+    static {
+        double val = PSG_ATTENUATION;
+        double res = 4; // start from 2 bit volume increase
+        int shift = -2;
+        while (res > val && shift < 16) {
+            res /= 2;
+            shift++;
+        }
+        USER_PSG_ATT_BITS = shift;
+        PSG_SHIFT_BITS = DEFAULT_PSG_SHIFT_BITS - USER_PSG_ATT_BITS;
+        LOG.info("PSG attenuation: {}, in bits: {}", PSG_ATTENUATION, USER_PSG_ATT_BITS);
+    }
 
     public static void writeBufferInternal(SourceDataLine line, byte[] buffer, int samplesPerFrame) {
         try {
@@ -94,7 +108,8 @@ public class SoundUtil {
             // avg = (16 bit + 16 bit) >> (1 + 1) = 15 bit
             int fm = (input[i] + input[i + 1]) >> 2;
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg = ((int) psgMono8[j]) << 5;
+            int psg = ((int) psgMono8[j]);
+            psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
             //avg fm and psg
             int out16 = fm + psg;
             output[i] = (byte) (out16 & 0xFF); //lsb
