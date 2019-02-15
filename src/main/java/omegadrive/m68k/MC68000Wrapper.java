@@ -5,8 +5,6 @@ import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
 import omegadrive.Genesis;
 import omegadrive.bus.BusProvider;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -45,125 +43,31 @@ public class MC68000Wrapper implements M68kProvider {
     private MC68000 m68k;
     private AddressSpace addressSpace;
     private BusProvider busProvider;
-    private MC68000Monitor monitor;
     private boolean stop;
+    protected int currentPC;
 
     public MC68000Wrapper(BusProvider busProvider) {
-        m68k = new MC68000() {
-            @Override
-            public void raiseException(int vector) {
-                handleException(vector);
-                super.raiseException(vector);
-                handleException(vector);
-                setStop(false);
-            }
-
-            @Override
-            public void resetExternal() {
-                LOG.info("Reset External");
-                busProvider.resetFrom68k();
-            }
-
-            @Override
-            public void reset() {
-                LOG.info("Reset");
-                super.reset();
-                resetExternal();
-            }
-        };
+        this.m68k = createCpu();
         this.busProvider = busProvider;
-        this.addressSpace = getAddressSpace(this, busProvider);
+        this.addressSpace = MC68000AddressSpace.createInstance(busProvider);
         m68k.setAddressSpace(addressSpace);
         TAS.EMULATE_BROKEN_TAS = GENESIS_TAS_BROKEN;
     }
 
-    protected int memoryRead(int address, Size size) {
-        return (int) busProvider.read(address, size);
-    }
-
-    private static AddressSpace getAddressSpace(MC68000Wrapper wrapper, BusProvider busProvider) {
-        return new AddressSpace() {
-            @Override
-            public void reset() {
-                //TODO
-            }
-
-            @Override
-            public int getStartAddress() {
-                return 0;
-            }
-
-            @Override
-            public int getEndAddress() {
-                return MemoryProvider.M68K_RAM_SIZE / 1024;
-            }
-
-            @Override
-            public int readByte(int addr) {
-                return wrapper.memoryRead(addr, Size.BYTE);
-            }
-
-            @Override
-            public int readWord(int addr) {
-                return wrapper.memoryRead(addr, Size.WORD);
-            }
-
-            @Override
-            public int readLong(int addr) {
-                return wrapper.memoryRead(addr, Size.LONG);
-            }
-
-            @Override
-            public void writeByte(int addr, int value) {
-                busProvider.write(addr, value, Size.BYTE);
-            }
-
-            @Override
-            public void writeWord(int addr, int value) {
-                busProvider.write(addr, value, Size.WORD);
-            }
-
-            @Override
-            public void writeLong(int addr, int value) {
-                busProvider.write(addr, value, Size.LONG);
-            }
-
-            @Override
-            public int internalReadByte(int addr) {
-                return readByte(addr);
-            }
-
-            @Override
-            public int internalReadWord(int addr) {
-                return readWord(addr);
-            }
-
-            @Override
-            public int internalReadLong(int addr) {
-                return readLong(addr);
-            }
-
-            @Override
-            public void internalWriteByte(int addr, int value) {
-                writeByte(addr, value);
-            }
-
-            @Override
-            public void internalWriteWord(int addr, int value) {
-                writeWord(addr, value);
-            }
-
-            @Override
-            public void internalWriteLong(int addr, int value) {
-                writeLong(addr, value);
-            }
-
-            @Override
-            public int size() {
-                //NOTE: used for debugging
-                return BusProvider.ADDRESS_UPPER_LIMIT + 1;
-            }
-        };
+    @Override
+    public int runInstruction() {
+        int res = 0;
+        try {
+            printVerbose();
+            printCpuState("");
+            currentPC = m68k.getPC();
+            res = m68k.execute();
+        } catch (Exception e) {
+            LOG.error("68k error", e);
+            printVerbose();
+            handleException(ILLEGAL_ACCESS_EXCEPTION);
+        }
+        return res;
     }
 
     @Override
@@ -208,22 +112,29 @@ public class MC68000Wrapper implements M68kProvider {
         return m68k;
     }
 
-    protected int currentPC;
+    private MC68000 createCpu() {
+        return new MC68000() {
+            @Override
+            public void raiseException(int vector) {
+                handleException(vector);
+                super.raiseException(vector);
+                handleException(vector);
+                setStop(false);
+            }
 
-    @Override
-    public int runInstruction() {
-        int res = 0;
-        try {
-            printVerbose();
-            printCpuState("");
-            currentPC = m68k.getPC();
-            res = m68k.execute();
-        } catch (Exception e) {
-            LOG.error("68k error", e);
-            printVerbose();
-            handleException(ILLEGAL_ACCESS_EXCEPTION);
-        }
-        return res;
+            @Override
+            public void resetExternal() {
+                LOG.info("Reset External");
+                busProvider.resetFrom68k();
+            }
+
+            @Override
+            public void reset() {
+                LOG.info("Reset");
+                super.reset();
+                resetExternal();
+            }
+        };
     }
 
     private void printVerbose() {
@@ -231,10 +142,10 @@ public class MC68000Wrapper implements M68kProvider {
             return;
         }
         try {
-            String res = MC68000Monitor.dumpOp(m68k);
+            String res = MC68000Helper.dumpOp(m68k);
             LOG.info(res);
-            if (MC68000Monitor.addToInstructionSet(m68k)) {
-                LOG.info(MC68000Monitor.dumpInstructionSet());
+            if (MC68000Helper.addToInstructionSet(m68k)) {
+                LOG.info(MC68000Helper.dumpInstructionSet());
             }
         } catch (Exception e) {
             String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
@@ -256,34 +167,11 @@ public class MC68000Wrapper implements M68kProvider {
             return;
         }
         try {
-            String str = MC68000Monitor.dumpInfo(m68k, true, addressSpace.size());
+            String str = MC68000Helper.dumpInfo(m68k, true, addressSpace.size());
             LOG.info(head + str);
         } catch (Exception e) {
             String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
             LOG.warn("Unable to dump the state: " + pc, e);
         }
-    }
-
-    private void startMonitor() {
-        if (monitor == null) {
-            monitor = new MC68000Monitor(m68k, addressSpace);
-            monitor.running = true;
-            LOG.warn("Starting 68k instruction monitor");
-        }
-    }
-
-
-    private void printCpuStateLong() {
-        if (!verbose) {
-            return;
-        }
-        startMonitor();
-        String str = monitor.dumpInfo();
-        try {
-            str += monitor.handleDisassemble(new String[]{"d", "" + (m68k.getPC() - 8), "16"});
-        } catch (Exception e) {
-            LOG.error("Unable to disassemble", e);
-        }
-        LOG.info(str);
     }
 }
