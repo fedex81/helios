@@ -22,7 +22,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -52,11 +51,8 @@ public class EmuFrame implements GenesisWindow {
     private int[] pixelsDest;
     private double scale = DEFAULT_SCALE_FACTOR;
 
-    private static String QUICK_SAVE_FILENAME = "quick_save.gs0";
-
     private final JLabel screenLabel = new JLabel();
     private final JLabel fpsLabel = new JLabel("");
-    private final static String FRAME_TITLE_HEAD = "Omega Drive " + FileLoader.loadVersionFromManifest();
 
     private JFrame jFrame;
     private GenesisProvider mainEmu;
@@ -66,34 +62,12 @@ public class EmuFrame implements GenesisWindow {
     private JCheckBoxMenuItem fullScreenItem;
     private boolean showDebug = false;
 
-    private static FileFilter ROM_FILTER = new FileFilter() {
-        @Override
-        public String getDescription() {
-            return "md and bin files";
-        }
-
-        @Override
-        public boolean accept(File f) {
-            String name = f.getName().toLowerCase();
-            return f.isDirectory() || name.endsWith(".md") || name.endsWith(".bin");
-        }
-    };
-
-    private static FileFilter SAVE_STATE_FILTER = new FileFilter() {
-        @Override
-        public String getDescription() {
-            return "state files";
-        }
-
-        @Override
-        public boolean accept(File f) {
-            String name = f.getName().toLowerCase();
-            return f.isDirectory() || name.contains(".gs");
-        }
-    };
+    //when scaling is slow set this to FALSE
+    private static boolean UI_SCALE_ON_EDT;
 
     static {
         initLookAndFeel();
+        UI_SCALE_ON_EDT = Boolean.valueOf(System.getProperty("ui.scale.on.edt", "false"));
     }
 
     public void setTitle(String title) {
@@ -107,16 +81,6 @@ public class EmuFrame implements GenesisWindow {
     public static void main(String[] args) {
         EmuFrame frame = new EmuFrame(null);
         frame.init();
-    }
-
-    private String getAboutString() {
-        int year = LocalDate.now().getYear();
-        String yrString = year == 2018 ? "2018" : "2018-" + year;
-        String res = FRAME_TITLE_HEAD + "\nA Sega Megadrive (Genesis) emulator, written in Java";
-        res += "\n\nCopyright " + yrString + ", Federico Berti";
-        res += "\n\nSee CREDITS.TXT for more information";
-        res += "\n\nReleased under GPL v.3.0 license.";
-        return res;
     }
 
     public static void initLookAndFeel() {
@@ -207,6 +171,8 @@ public class EmuFrame implements GenesisWindow {
         loadStateItem.addActionListener(e -> handleLoadState());
         JMenuItem saveStateItem = new JMenuItem("Save State");
         saveStateItem.addActionListener(e -> handleSaveState());
+        JMenuItem saveStateTempItem = new JMenuItem("Save State to TEMP");
+        saveStateTempItem.addActionListener(e -> handleSaveStateTemp());
 
         JMenuItem quickSaveStateItem = new JMenuItem("Quick Save State");
         quickSaveStateItem.addActionListener(e -> handleQuickSaveState());
@@ -244,6 +210,7 @@ public class EmuFrame implements GenesisWindow {
         menu.add(closeRomItem);
         menu.add(loadStateItem);
         menu.add(saveStateItem);
+        menu.add(saveStateTempItem);
         menu.add(quickLoadStateItem);
         menu.add(quickSaveStateItem);
         menu.add(exitItem);
@@ -336,21 +303,28 @@ public class EmuFrame implements GenesisWindow {
         return regionOverride;
     }
 
+    @Override
     public void renderScreen(int[][] data, String label, VideoMode videoMode) {
-        SwingUtilities.invokeLater(() -> {
-            boolean changed = resizeScreen(videoMode);
-            if (scale > 1) {
-                Dimension ouput = new Dimension((int) (baseScreenSize.width * scale), (int) (baseScreenSize.height * scale));
-                RenderingStrategy.toLinear(pixelsSrc, data, baseScreenSize);
-                RenderingStrategy.renderNearest(pixelsSrc, pixelsDest, baseScreenSize, ouput);
-            } else {
-                RenderingStrategy.toLinear(pixelsDest, data, baseScreenSize);
-            }
-            if (!Strings.isNullOrEmpty(label)) {
-                getFpsLabel().setText(label);
-            }
-            screenLabel.repaint();
-        });
+        if (UI_SCALE_ON_EDT) {
+            SwingUtilities.invokeLater(() -> renderScreenInternal(data, label, videoMode));
+        } else {
+            renderScreenInternal(data, label, videoMode);
+        }
+    }
+
+    public void renderScreenInternal(int[][] data, String label, VideoMode videoMode) {
+        boolean changed = resizeScreen(videoMode);
+        if (scale > 1) {
+            Dimension ouput = new Dimension((int) (baseScreenSize.width * scale), (int) (baseScreenSize.height * scale));
+            RenderingStrategy.toLinear(pixelsSrc, data, baseScreenSize);
+            RenderingStrategy.renderNearest(pixelsSrc, pixelsDest, baseScreenSize, ouput);
+        } else {
+            RenderingStrategy.toLinear(pixelsDest, data, baseScreenSize);
+        }
+        if (!Strings.isNullOrEmpty(label)) {
+            getFpsLabel().setText(label);
+        }
+        screenLabel.repaint();
     }
 
     private boolean resizeScreen(VideoMode videoMode) {
@@ -410,10 +384,16 @@ public class EmuFrame implements GenesisWindow {
     }
 
     private Optional<File> loadFileDialog(Component parent, FileFilter filter) {
+        return fileDialog(parent, filter, true);
+    }
+
+    private Optional<File> fileDialog(Component parent, FileFilter filter, boolean load) {
+        int dialogType = load ? JFileChooser.OPEN_DIALOG : JFileChooser.SAVE_DIALOG;
         Optional<File> res = Optional.empty();
         JFileChooser fileChooser = new JFileChooser(FileLoader.basePath);
         fileChooser.setFileFilter(filter);
-        int result = fileChooser.showOpenDialog(parent);
+        fileChooser.setDialogType(dialogType);
+        int result = fileChooser.showDialog(parent, null);
         if (result == JFileChooser.APPROVE_OPTION) {
             res = Optional.ofNullable(fileChooser.getSelectedFile());
         }
@@ -421,11 +401,11 @@ public class EmuFrame implements GenesisWindow {
     }
 
     private Optional<File> loadRomDialog(Component parent) {
-        return loadFileDialog(parent, ROM_FILTER);
+        return loadFileDialog(parent, FileLoader.ROM_FILTER);
     }
 
     private Optional<File> loadStateFileDialog(Component parent) {
-        return loadFileDialog(parent, SAVE_STATE_FILTER);
+        return loadFileDialog(parent, FileLoader.SAVE_STATE_FILTER);
     }
 
     private void handleLoadState() {
@@ -437,18 +417,32 @@ public class EmuFrame implements GenesisWindow {
     }
 
     private void handleQuickLoadState() {
-        Path file = Paths.get(".", QUICK_SAVE_FILENAME);
+        Path file = Paths.get(".", FileLoader.QUICK_SAVE_FILENAME);
         mainEmu.handleLoadState(file);
     }
 
     private void handleQuickSaveState() {
-        Path p = Paths.get(".", QUICK_SAVE_FILENAME);
+        Path p = Paths.get(".", FileLoader.QUICK_SAVE_FILENAME);
         mainEmu.handleSaveState(p);
     }
 
     private void handleSaveState() {
+        Optional<File> optFile = fileDialog(jFrame, FileLoader.SAVE_STATE_FILTER, false);
+        if (optFile.isPresent()) {
+            File file = optFile.get();
+            Path path = file.toPath();
+            if (!FileLoader.SAVE_STATE_FILTER.accept(file)) {
+                path = Paths.get(file.getParentFile().getAbsolutePath(), file.getName() +
+                        FileLoader.DEFAULT_SAVE_STATE_EXTENSION);
+                LOG.info("File renamed to: " + path.toAbsolutePath().toString());
+            }
+            mainEmu.handleSaveState(path);
+        }
+    }
+
+    private void handleSaveStateTemp() {
         try {
-            Path p = Files.createTempFile("save_", ".gs0");
+            Path p = Files.createTempFile("save_", FileLoader.DEFAULT_SAVE_STATE_EXTENSION);
             mainEmu.handleSaveState(p);
         } catch (IOException e) {
             LOG.error("Unable to create save state file", e);

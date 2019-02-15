@@ -188,7 +188,8 @@ public class Z80CoreWrapper implements Z80Provider {
     //to occur, it will be missed, rather than made pending.
     @Override
     public boolean interrupt() {
-        //TODO this shouldnt be needed, as the check is already happening
+        //TODO improve interrupt handling,
+        //TODO needs to decide when an interrupt is taken by z80
 //        boolean interruptEnable = z80Core.isIFF1();
 //        if (interruptEnable) {
 //            activeInterrupt = true;

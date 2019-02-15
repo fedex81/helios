@@ -1,8 +1,10 @@
 package omegadrive.ui;
 
+import omegadrive.util.FileLoader;
 import omegadrive.util.VideoMode;
 
 import java.awt.event.KeyAdapter;
+import java.time.LocalDate;
 
 /**
  * ${FILE}
@@ -12,6 +14,8 @@ import java.awt.event.KeyAdapter;
  * Copyright 2018
  */
 public interface GenesisWindow {
+
+    String FRAME_TITLE_HEAD = "Omega Drive " + FileLoader.loadVersionFromManifest();
 
     void addKeyListener(KeyAdapter keyAdapter);
 
@@ -26,6 +30,16 @@ public interface GenesisWindow {
     void setFullScreen(boolean value);
 
     String getRegionOverride();
+
+    default String getAboutString() {
+        int year = LocalDate.now().getYear();
+        String yrString = year == 2018 ? "2018" : "2018-" + year;
+        String res = FRAME_TITLE_HEAD + "\nA Sega Megadrive (Genesis) emulator, written in Java";
+        res += "\n\nCopyright " + yrString + ", Federico Berti";
+        res += "\n\nSee CREDITS.TXT for more information";
+        res += "\n\nReleased under GPL v.3.0 license.";
+        return res;
+    }
 
     GenesisWindow HEADLESS_INSTANCE = new GenesisWindow() {
         @Override

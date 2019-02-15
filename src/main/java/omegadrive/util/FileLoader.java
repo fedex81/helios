@@ -3,11 +3,13 @@ package omegadrive.util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.swing.filechooser.FileFilter;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.jar.Attributes;
@@ -29,6 +31,36 @@ public class FileLoader {
 
     private static String SNAPSHOT_VERSION = "SNAPSHOT";
     private static String MANIFEST_RELATIVE_PATH = "/META-INF/MANIFEST.MF";
+    public static String DEFAULT_SAVE_STATE_EXTENSION = ".gs0";
+    public static String QUICK_SAVE_FILENAME = "quick_save" + DEFAULT_SAVE_STATE_EXTENSION;
+
+    public static String[] binaryTypes = {".md", ".bin"};
+
+    public static FileFilter ROM_FILTER = new FileFilter() {
+        @Override
+        public String getDescription() {
+            return Arrays.toString(FileLoader.binaryTypes) + " files";
+        }
+
+        @Override
+        public boolean accept(File f) {
+            String name = f.getName().toLowerCase();
+            return f.isDirectory() || Arrays.stream(FileLoader.binaryTypes).anyMatch(name::endsWith);
+        }
+    };
+
+    public static FileFilter SAVE_STATE_FILTER = new FileFilter() {
+        @Override
+        public String getDescription() {
+            return "state files";
+        }
+
+        @Override
+        public boolean accept(File f) {
+            String name = f.getName().toLowerCase();
+            return f.isDirectory() || name.contains(".gs");
+        }
+    };
 
     public static int[] readFile(Path file) throws IOException {
         byte[] bytes = Files.readAllBytes(file);
@@ -92,8 +124,7 @@ public class FileLoader {
         int[] data = new int[0];
         try {
             String fileName = file.toAbsolutePath().toString();
-            if (fileName.toLowerCase().endsWith(".md")
-                    || fileName.toLowerCase().endsWith(".bin")) {
+            if (ROM_FILTER.accept(file.toFile())) {
                 data = FileLoader.readFile(file);
                 if (data == null || data.length == 0) {
                     throw new RuntimeException("Empty file!");

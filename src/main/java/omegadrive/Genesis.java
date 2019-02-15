@@ -237,7 +237,7 @@ public class Genesis implements GenesisProvider {
         if (stateHandler == GenesisStateHandler.EMPTY_STATE) {
             return;
         }
-        LOG.info("Save state action detected: {}, using file: ", stateHandler.getType(), fileName);
+        LOG.info("Save state action detected: {}, using file: {}", stateHandler.getType(), fileName);
         this.saveStateFlag = true;
     }
 
