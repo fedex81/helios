@@ -477,12 +477,7 @@ public class Genesis implements GenesisProvider {
     }
 
     private long syncCycle(long startCycle) {
-        long elapsedNs = System.nanoTime() - startCycle;
-        if (targetNs - elapsedNs > nsToMillis) {
-            Util.sleep(((targetNs - elapsedNs) / nsToMillis));
-            elapsedNs = System.nanoTime() - startCycle;
-        }
-        return elapsedNs;
+        return Util.parkUntil(startCycle + targetNs);
     }
 
 

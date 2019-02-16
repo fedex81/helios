@@ -36,6 +36,8 @@ public class JavaSoundManager implements SoundProvider {
     private static ExecutorService executorService =
             Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
 
+    private static long nsToMillis = 1_000_000;
+
     private PsgProvider psg;
     private FmProvider fm;
 
@@ -92,7 +94,7 @@ public class JavaSoundManager implements SoundProvider {
                         } else {
                             playOnce();
                         }
-                        Util.sleep(1);
+                        Util.parkUntil(System.nanoTime() + nsToMillis);
                     } while (!close);
                 } catch (Exception e) {
                     LOG.error("Unexpected sound error, stopping", e);

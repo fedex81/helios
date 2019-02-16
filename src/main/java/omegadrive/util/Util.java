@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * ${FILE}
@@ -30,6 +31,23 @@ public class Util {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    public static long parkUntil(long targetNs) {
+        long start = System.nanoTime();
+        return parkFor(Math.max(0, targetNs - start), start);
+    }
+
+    private static long parkFor(long intervalNs, long startNs) {
+        boolean done;
+        long now;
+        do {
+            LockSupport.parkNanos(intervalNs);
+            now = System.nanoTime();
+            intervalNs -= now - startNs;
+            done = intervalNs < 500_000; //within half a millis
+        } while (!done);
+        return now;
     }
 
     public static void waitForever() {
