@@ -12,12 +12,11 @@ import java.awt.*;
 public class RenderingStrategy {
 
     public static void toLinear(int[] pixels, int[][] screenData, Dimension output) {
-        int scaleX = output.width;
+        int shiftX;
         for (int i = 0; i < output.height; i++) {
+            shiftX = i * output.width;
             for (int j = 0; j < output.width; j++) {
-                int color = screenData[j][i];
-                int pos = i * scaleX + j;
-                pixels[pos] = color;
+                pixels[shiftX + j] = screenData[j][i];
             }
         }
     }
@@ -34,17 +33,6 @@ public class RenderingStrategy {
             for (int j = 0; j < dest.width; j++) {
                 px = (j * xRatio) >> factor;
                 outputPixels[shiftDest + j] = srcPixels[shiftSrc + px];
-            }
-        }
-    }
-
-    public static void renderSimple(int[] pixels, int[][] screenData, Dimension viewport, Dimension output, int multiplier) {
-        int scaleX = viewport.width;
-        for (int i = 0; i < output.height; i++) {
-            for (int j = 0; j < output.width; j++) {
-                int color = screenData[j][i];
-                int pos = ((i * multiplier) * scaleX) + (j * multiplier);
-                pixels[pos] = color;
             }
         }
     }
