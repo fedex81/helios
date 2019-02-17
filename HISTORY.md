@@ -1,3 +1,15 @@
+## 19.0217
+* 68k: update 68k lib to latest and cleanup
+* emu: reduce gc and perf tweaks
+* emu: use better timers
+* fm: refactor timers, increase precision
+* psg: add attenuation property
+* ui: handle save state to file
+* ui: do not scale on EDT by default
+* vdp: draw line on first slot
+* vdp: fix dma copy bandwidth
+* z80: interrupt work
+
 ## 19.0121
 * 68k: fix buggy move.l
 * 68k: move.l with a pre-decremented address register writes lsw and then msw
