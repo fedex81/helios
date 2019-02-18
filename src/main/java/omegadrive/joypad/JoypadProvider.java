@@ -52,4 +52,8 @@ public interface JoypadProvider {
     void writeControlRegister3(long data);
 
     void setButtonAction(JoypadNumber number, JoypadButton button, JoypadAction action);
+
+    boolean hasDirectionPressed(JoypadNumber number);
+
+    String getState(JoypadNumber number);
 }

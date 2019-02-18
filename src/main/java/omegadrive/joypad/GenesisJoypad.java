@@ -8,8 +8,11 @@ import com.google.common.collect.Maps;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 
+import static omegadrive.joypad.JoypadProvider.JoypadAction.PRESSED;
 import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
@@ -58,6 +61,9 @@ public class GenesisJoypad implements JoypadProvider {
             put(Y, RELEASED).put(Z, RELEASED).build());
 
     private Map<JoypadButton, JoypadAction> stateMap2 = Maps.newHashMap(stateMap1);
+
+
+    private static JoypadButton[] directionButton = {D, L, R, U};
 
     public void initialize() {
         writeDataRegister1(0x40);
@@ -139,25 +145,12 @@ public class GenesisJoypad implements JoypadProvider {
     }
 
     private int getValue(JoypadNumber number, JoypadButton button) {
-        switch (number) {
-            case P1:
-                return stateMap1.get(button).ordinal();
-            case P2:
-                return stateMap2.get(button).ordinal();
-        }
-        return 0;
+        return getMap(number).get(button).ordinal();
     }
 
     @Override
     public void setButtonAction(JoypadNumber number, JoypadButton button, JoypadAction action) {
-        switch (number) {
-            case P1:
-                stateMap1.put(button, action);
-                break;
-            case P2:
-                stateMap2.put(button, action);
-                break;
-        }
+        getMap(number).put(button, action);
     }
 
     public long readControlRegister1() {
@@ -172,5 +165,25 @@ public class GenesisJoypad implements JoypadProvider {
         return control3;
     }
 
+    public boolean hasDirectionPressed(JoypadNumber number) {
+        return Arrays.stream(directionButton).anyMatch(b -> getMap(number).get(b) == PRESSED);
+    }
 
+    private Map<JoypadButton, JoypadAction> getMap(JoypadNumber number) {
+        switch (number) {
+            case P1:
+                return stateMap1;
+            case P2:
+                return stateMap2;
+            default:
+                LOG.error("Unexpected joypad number: {}", number);
+                break;
+        }
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public String getState(JoypadNumber number) {
+        return getMap(number).toString();
+    }
 }

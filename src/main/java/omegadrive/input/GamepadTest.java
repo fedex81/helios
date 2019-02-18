@@ -94,6 +94,16 @@ public class GamepadTest {
             public void setButtonAction(JoypadNumber number, JoypadButton button, JoypadAction action) {
                 System.out.println(number + "," + button + "," + action);
             }
+
+            @Override
+            public boolean hasDirectionPressed(JoypadNumber number) {
+                return false;
+            }
+
+            @Override
+            public String getState(JoypadNumber number) {
+                return null;
+            }
         };
     }
 

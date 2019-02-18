@@ -75,21 +75,29 @@ public class GamepadInputProvider implements InputProvider {
         };
     }
 
+    private boolean resetDirections = false;
+
     @Override
     public void handleEvents() {
         boolean ok = controller.poll();
         if (!ok) {
             return;
         }
+        int count = 0;
         EventQueue eventQueue = controller.getEventQueue();
+        resetDirections = joypadProvider.hasDirectionPressed(joypadNumber);
         boolean hasEvents;
         do {
             Event event = new Event();
             hasEvents = eventQueue.getNextEvent(event);
             if (hasEvents) {
                 handleEvent(event);
+                count++;
             }
         } while (hasEvents);
+        if (InputProvider.DEBUG_DETECTION && count > 0) {
+            LOG.info(joypadProvider.getState(joypadNumber));
+        }
     }
 
     @Override
@@ -133,8 +141,13 @@ public class GamepadInputProvider implements InputProvider {
         }
         if (pov.equals(id.getName())) {
             action = JoypadAction.PRESSED;
-            if (value == Component.POV.OFF) {
+            //release directions previously pressed - only on the first event
+            boolean off = resetDirections || value == Component.POV.OFF;
+            if (off) {
                 setDirectionOff();
+                if (resetDirections) {
+                    resetDirections = false;
+                }
             }
             if (value == Component.POV.DOWN) {
                 joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, action);
