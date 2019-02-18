@@ -139,6 +139,18 @@ public interface VdpProvider {
 
     enum VdpPortType {DATA, CONTROL}
 
+    enum InterlaceMode {
+        NONE,
+        MODE_1,
+        INVALID, MODE_2;
+        private static Map<Integer, InterlaceMode> lookup = ImmutableBiMap.copyOf(
+                Maps.toMap(EnumSet.allOf(InterlaceMode.class), InterlaceMode::ordinal)).inverse();
+
+        public static InterlaceMode getInterlaceMode(int index) {
+            return lookup.get(index);
+        }
+    }
+
     int MAX_SPRITES_PER_FRAME_H40 = 80;
     int MAX_SPRITES_PER_FRAME_H32 = 64;
     int MAX_SPRITES_PER_LINE_H40 = 20;
@@ -260,6 +272,8 @@ public interface VdpProvider {
     VdpMemoryInterface getVdpMemory();
 
     VramMode getVramMode();
+
+    InterlaceMode getInterlaceMode();
 
     default int getRegisterData(VdpRegisterName registerName) {
         return getRegisterData(registerName.ordinal());

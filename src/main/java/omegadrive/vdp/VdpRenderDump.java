@@ -50,18 +50,22 @@ public class VdpRenderDump {
             LOG.warn("Not supported in headless mode");
             return;
         }
-        Dimension d = videoMode.getDimension();
         long now = System.currentTimeMillis();
         String fileName = type.toString() + "_" + now + ".jpg";
+        bi = getImage(data, videoMode, type);
+        Path file = Paths.get(folder.toAbsolutePath().toString(), fileName);
+        LOG.info("Saving render to: " + file.toAbsolutePath().toString());
+        ImageUtil.saveImageToFile(bi, file.toFile());
+    }
 
+    public BufferedImage getImage(int[][] data, VideoMode videoMode, RenderType type) {
+        Dimension d = videoMode.getDimension();
         if (bi.getWidth() * bi.getHeight() != d.width * d.height) {
             bi = gd.getDefaultConfiguration().createCompatibleImage(d.width, d.height);
             pixels = getPixels(bi);
         }
         RenderingStrategy.toLinear(pixels, data, d);
-        Path file = Paths.get(folder.toAbsolutePath().toString(), fileName);
-        LOG.info("Saving render to: " + file.toAbsolutePath().toString());
-        ImageUtil.saveImageToFile(bi, file.toFile());
+        return bi;
     }
 
     private int[] getPixels(BufferedImage img) {

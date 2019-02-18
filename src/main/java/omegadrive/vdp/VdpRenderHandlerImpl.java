@@ -84,6 +84,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     private int spriteTableLocation = 0;
     private int hScrollTableLocation = 0;
 
+    private VdpProvider.InterlaceMode interlaceMode = VdpProvider.InterlaceMode.NONE;
+
     private int[] cram;
     private int[] vram;
 
@@ -196,6 +198,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     public void initLineData(int line) {
         if (line == 0) {
             LOG.debug("New Frame");
+            this.interlaceMode = vdpProvider.getInterlaceMode();
             //need to do this here so I can dump data just after rendering the frame
             clearData();
             spriteTableLocation = getSpriteTableLocation();
@@ -313,7 +316,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
                 int cellH = holder.horFlip ? (cellHor * -1) + holder.horSize : cellHor;
                 int horLining = vertLining + (cellH * ((holder.verSize + 1) * 32));
-                int tileBytePointerBase = (holder.tileIndex * 0x20) + horLining;
+//                int tileBytePointerBase = (holder.tileIndex * 0x20) + horLining;
+                int tileBytePointerBase = (holder.tileIndex << (interlaceMode.ordinal() == 3 ? 6 : 5)) + horLining;
                 renderSprite(line, holder, tileBytePointerBase, horOffset);
 
                 //8 pixels
@@ -514,7 +518,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
             int paletteLine = tileDataHolder.paletteLineIndex * 32;    //	16 colors per line, 2 bytes per color
 
-            int tileIndex = tileDataHolder.tileIndex * 0x20;
+//            int tileIndex = tileDataHolder.tileIndex * 0x20;
+            int tileIndex = tileDataHolder.tileIndex << (interlaceMode.ordinal() == 3 ? 6 : 5);
 
             int row = (scrollMap % 8);
             int pointVert = tileDataHolder.vertFlip ? (row - 7) * -1 : row;
@@ -619,6 +624,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         int vsramOffset = isPlaneA ? scrollLine : scrollLine + 2;
         int scrollDataVer = memoryInterface.readVsramWord(vsramOffset);
 
+        scrollDataVer = scrollDataVer >> (interlaceMode.ordinal() == 3 ? 1 : 0);
+
         int verticalScrollMask = (verticalPlaneSize * 8) - 1;
         int scrollMap = (scrollDataVer + line) & verticalScrollMask;
         int tileLocatorFactor = getHorizontalPlaneSize() * 2;
@@ -708,6 +715,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
         holder.linkData = byte3 & 0x7F;
         holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;
+        if (interlaceMode.ordinal() == 3) {
+            holder.verticalPos = ((byte0 & 0x3) << 7) | (byte1 >> 1);
+        }
         holder.verSize = byte2 & 0x3;
         return holder;
     }
@@ -723,6 +733,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         int byte7 = vram[baseAddress + 7];
 
         holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;
+        if (interlaceMode.ordinal() == 3) {
+            holder.verticalPos = ((byte0 & 0x3) << 7) | (byte1 >> 1);
+        }
         holder.horSize = (byte2 >> 2) & 0x3;
         holder.verSize = byte2 & 0x3;
         holder.linkData = byte3 & 0x7F;
@@ -754,7 +767,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
             int paletteLine = tileDataHolder.paletteLineIndex * 32;
 
-            int tileIndex = tileDataHolder.tileIndex * 0x20;
+//            int tileIndex = tileDataHolder.tileIndex * 0x20;
+            int tileIndex = tileDataHolder.tileIndex << (interlaceMode.ordinal() == 3 ? 6 : 5);
             int pointVert = tileDataHolder.vertFlip ? (rowInTile - 7) * -1 : rowInTile;
 
             //two pixels at a time as they share a tile

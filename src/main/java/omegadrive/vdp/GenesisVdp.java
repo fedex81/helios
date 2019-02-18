@@ -33,6 +33,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     private static boolean ENABLE_FIFO = Boolean.valueOf(System.getProperty("vdp.enable.fifo", "true"));
 
     private VramMode vramMode;
+    private InterlaceMode interlaceMode;
 
     int[] registers = new int[VDP_REGISTERS_SIZE];
 
@@ -109,7 +110,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     long all;
 
     private BusProvider bus;
-    private VdpInterruptHandler interruptHandler;
+    protected VdpInterruptHandler interruptHandler;
     private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
     private VdpRenderHandler renderHandler;
@@ -550,7 +551,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private void updateVariables(int reg, int data) {
         if (reg == 0x00) {
+            boolean prevLcb = lcb;
             lcb = ((data >> 5) & 1) == 1;
+            if (prevLcb != lcb) {
+                LOG.info("LCB enable: " + lcb);
+            }
             de = ((data >> 0) & 1) == 1;
             boolean newM3 = ((data >> 1) & 1) == 1;
             updateM3(newM3);
@@ -576,6 +581,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 LOG.info("Shadow highlight: " + val);
             }
             ste = val;
+            InterlaceMode prev = interlaceMode;
+            interlaceMode = InterlaceMode.getInterlaceMode((data & 0x7) >> 1);
+            if (prev != interlaceMode) {
+                LOG.info("InterlaceMode: {}", interlaceMode);
+            }
         } else if (reg == 0x0F) {
             autoIncrementData = data;
         } else if (reg == 0x0A) {
@@ -767,6 +777,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     @Override
     public VramMode getVramMode() {
         return vramMode;
+    }
+
+    @Override
+    public InterlaceMode getInterlaceMode() {
+        return interlaceMode;
     }
 
     @Override

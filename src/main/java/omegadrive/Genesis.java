@@ -125,10 +125,14 @@ public class Genesis implements GenesisProvider {
     }
 
     public static GenesisProvider createInstance() {
+        return createInstance(false);
+    }
+
+    public static GenesisProvider createInstance(boolean headless) {
         InputProvider.bootstrap();
         Genesis genesis = null;
         try {
-            genesis = new Genesis(false);
+            genesis = new Genesis(headless);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -136,7 +140,7 @@ public class Genesis implements GenesisProvider {
         return genesis;
     }
 
-    public Genesis(boolean isHeadless) throws InvocationTargetException, InterruptedException {
+    protected Genesis(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         Util.registerJmx(this);
         SwingUtilities.invokeAndWait(() -> createFrame(isHeadless));
         sound = SoundProvider.NO_SOUND;

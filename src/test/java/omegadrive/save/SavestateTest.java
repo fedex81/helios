@@ -41,16 +41,40 @@ public class SavestateTest {
     public static Path saveStateFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources", "savestate");
 
-    @Test
-    public void testLoadAndSave() throws IOException {
+    public static Set<Path> getSavestateList() throws IOException {
         System.out.println(new File(".").getAbsolutePath());
         Set<Path> files = Files.list(saveStateFolder).
                 filter(p -> p.getFileName().toString().contains(".gs")).collect(Collectors.toSet());
+        return files;
+    }
+
+    @Test
+    public void testLoadAndSave() throws IOException {
+        Set<Path> files = getSavestateList();
         Assert.assertFalse(files.isEmpty());
         for (Path saveFile : files) {
             System.out.println("Testing: " + saveFile.getFileName());
             testLoadSaveInternal(saveFile);
         }
+    }
+
+    public static BusProvider loadSaveState(Path saveFile) {
+        BusProvider busProvider = BusProvider.createBus();
+
+        int[] data = FileLoader.readFileSafe(saveFile);
+        GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), data);
+        VdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
+        MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
+        MemoryProvider cpuMem1 = new GenesisMemoryProvider();
+        Z80Provider z80p1 = Z80CoreWrapper.createInstance(busProvider);
+        FmProvider fm1 = new YM2612();
+        loadHandler.loadVdpState(vdpProvider1);
+        loadHandler.load68k(cpu1, cpuMem1);
+        loadHandler.loadZ80(z80p1);
+        loadHandler.loadFmState(fm1);
+
+        busProvider.attachDevice(vdpProvider1);
+        return busProvider;
     }
 
     private GenesisStateHandler testLoadSaveInternal(Path saveFile) {

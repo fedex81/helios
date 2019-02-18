@@ -2,6 +2,7 @@ package omegadrive.automated;
 
 import com.google.common.collect.ImmutableMap;
 import omegadrive.Genesis;
+import omegadrive.GenesisProvider;
 import omegadrive.save.SavestateTest;
 import omegadrive.util.Util;
 
@@ -71,7 +72,7 @@ public class SavestateGameLoader {
     }
 
     public static void loadOne() throws Exception {
-        Genesis genesis = new Genesis(false);
+        GenesisProvider genesis = Genesis.createInstance();
         load(genesis, saveStates.keySet().toArray()[saveStateTestNumber].toString(),
                 saveStates.values().toArray()[saveStateTestNumber].toString());
         Util.sleep(10_000);
@@ -79,7 +80,7 @@ public class SavestateGameLoader {
     }
 
     public static void loadAll(boolean loop) throws Exception {
-        Genesis genesis = new Genesis(false);
+        GenesisProvider genesis = Genesis.createInstance(false);
         do {
             for (Map.Entry<String, String> entry : saveStates.entrySet()) {
                 load(genesis, entry.getKey(), entry.getValue());
@@ -92,11 +93,11 @@ public class SavestateGameLoader {
     }
 
 
-    private static void load(Genesis genesis, String saveFileName, String romFile) {
+    public static void load(GenesisProvider genesis, String saveFileName, String romFile) {
         Path rom = Paths.get(romFolder, romFile);
         Path saveFile = Paths.get(saveStateFolder, saveFileName);
         System.out.println("Loading ROM: " + rom.toAbsolutePath().toString());
-        System.out.println("Loading state file: " + rom);
+        System.out.println("Loading state file: " + saveFileName);
 
         genesis.handleNewRom(rom);
         Util.sleep(1_000);

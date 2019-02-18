@@ -45,6 +45,7 @@ public class VdpTestUtil {
         boolean isStart;
         do {
             vdp.run(VDP_SLOT_CYCLES);
+            //TODO
             isStart = vdp.getHCounter() == 0 && vdp.getVCounter() == 0;
         } while (!isStart);
         vdp.setVip(false);
