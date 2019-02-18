@@ -1,6 +1,9 @@
 package omegadrive.ui;
 
+import org.junit.Assert;
+
 import java.awt.*;
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -15,8 +18,10 @@ public class RenderingStrategyTest {
     private static Random rnd = new Random();
     static int w = 320;
     static int h = 240;
-    static int ow = 1920;
-    static int oh = 1080;
+
+    static int ow = w * 6;  //1920
+    static int oh = (int) (h * 4.5); //1080
+
     static int[][] screenData = new int[w][h];
     static int[] linear = new int[w * h];
     static int[] output = new int[ow * oh];
@@ -24,8 +29,21 @@ public class RenderingStrategyTest {
     static Dimension outputD = new Dimension(ow, oh);
 
     public static void main(String[] args) {
-//        testNearest();
-        testLinear();
+        testNearest();
+        testNearestOld();
+    }
+
+    private static void testLinearCompare() {
+        int[] linearNew = Arrays.copyOf(linear, linear.length);
+
+        screenData = getData(screenData, inputD);
+        RenderingStrategy.toLinear(linear, screenData, inputD);
+
+//        RenderingStrategy.toLinearNew(linearNew, screenData, inputD);
+
+        Assert.assertTrue(Arrays.equals(linear, linearNew));
+
+
     }
 
     private static void testLinear() {
@@ -35,6 +53,16 @@ public class RenderingStrategyTest {
         System.out.println("testLinear");
         for (int i = 0; i < 6; i++) {
             testLinear(10000);
+        }
+    }
+
+    private static void testLinearNew() {
+        System.out.println("testLinearNew - Warmup");
+        //warm-up
+        testLinearNew(10000);
+        System.out.println("testLinearNew");
+        for (int i = 0; i < 6; i++) {
+            testLinearNew(10000);
         }
     }
 
@@ -48,6 +76,16 @@ public class RenderingStrategyTest {
         }
     }
 
+    private static void testNearestOld() {
+        System.out.println("testNearestOld - Warmup");
+        //warm-up
+        renderNearestOld(1000);
+        System.out.println("testNearestOld");
+        for (int i = 0; i < 6; i++) {
+            renderNearestOld(1000);
+        }
+    }
+
 
     private static void testNearest(int cycles) {
         long start = System.nanoTime();
@@ -57,7 +95,28 @@ public class RenderingStrategyTest {
             RenderingStrategy.toLinear(linear, screenData, inputD);
             RenderingStrategy.renderNearest(linear, output, inputD, outputD);
         }
-        System.out.println("Time ms: " + (System.nanoTime() - start) / 1_000_000d);
+        printPerf(System.nanoTime() - start, cycles);
+    }
+
+    private static void renderNearestOld(int cycles) {
+        long start = System.nanoTime();
+        //warm-up
+        for (int i = 0; i < cycles; i++) {
+            screenData = getData(screenData, inputD);
+            RenderingStrategy.toLinear(linear, screenData, inputD);
+            RenderingStrategy.renderNearestOld(linear, output, inputD, outputD);
+        }
+        printPerf(System.nanoTime() - start, cycles);
+    }
+
+    private static void testLinearNew(int cycles) {
+        long start = System.nanoTime();
+        //warm-up
+        for (int i = 0; i < cycles; i++) {
+            screenData = getData(screenData, inputD);
+//            RenderingStrategy.toLinearNew(linear, screenData, inputD);
+        }
+        printPerf(System.nanoTime() - start, cycles);
     }
 
     private static void testLinear(int cycles) {
@@ -67,7 +126,7 @@ public class RenderingStrategyTest {
             screenData = getData(screenData, inputD);
             RenderingStrategy.toLinear(linear, screenData, inputD);
         }
-        System.out.println("Time ms: " + (System.nanoTime() - start) / 1_000_000d);
+        printPerf(System.nanoTime() - start, cycles);
     }
 
     private static int[][] getData(int[][] screenData, Dimension input) {
@@ -79,5 +138,11 @@ public class RenderingStrategyTest {
             }
         }
         return screenData;
+    }
+
+    private static void printPerf(long intervalNs, int cycles) {
+        double timeMs = intervalNs / 1_000_000d;
+        double fps = cycles / (timeMs / 1000);
+        System.out.println("Time ms: " + timeMs + ", FPS: " + fps);
     }
 }
