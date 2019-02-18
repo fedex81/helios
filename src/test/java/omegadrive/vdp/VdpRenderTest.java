@@ -8,6 +8,7 @@ import omegadrive.input.InputProvider;
 import omegadrive.save.SavestateTest;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.RenderType;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.swing.*;
@@ -23,6 +24,7 @@ import java.util.Map;
  * <p>
  * Copyright 2019
  */
+@Ignore
 public class VdpRenderTest {
 
     private static int[][] screenData;
@@ -32,26 +34,33 @@ public class VdpRenderTest {
     private static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
     static int CYCLES = 1_000;
 
-    private void testSavestateViewerSingle(Path saveFile) throws Exception {
+    private void testSavestateViewerSingle(Path saveFile, String rom) throws Exception {
         VdpProvider vdpProvider = prepareVdp(saveFile);
-        //TODO check why the first render looks wrong
-        VdpTestUtil.runToStartFrame(vdpProvider);
         VdpTestUtil.runToStartFrame(vdpProvider);
 //            renderDump.saveRenderToFile(screenData, vdpProvider.getVideoMode(), RenderType.FULL);
         BufferedImage bi = renderDump.getImage(screenData, vdpProvider.getVideoMode(), RenderType.FULL);
-        showImage(bi);
+        String title = rom + " (" + saveFile.getFileName().toString() + ")";
+        showImage(bi, title);
     }
 
+
+    @Test
+    public void testInterlaced() throws Exception {
+        String saveName = "s2_int.gs0";
+        saveName = "cc_int.gs0";
+        Path saveFile = Paths.get(saveStateFolder, saveName);
+        testSavestateViewerSingle(saveFile, SavestateGameLoader.saveStates.get(saveName));
+        Util.waitForever();
+    }
 
     @Test
     public void testSavestateViewerAll() throws Exception {
         for (Map.Entry<String, String> e : SavestateGameLoader.saveStates.entrySet()) {
             String saveStateFile = e.getKey();
             Path saveFile = Paths.get(saveStateFolder, saveStateFile);
-            testSavestateViewerSingle(saveFile);
-            Util.sleep(500);
+            testSavestateViewerSingle(saveFile, e.getValue());
+            Util.sleep(2000);
         }
-//        Util.waitForever();
     }
 
     @Test
@@ -122,7 +131,7 @@ public class VdpRenderTest {
         return false;
     }
 
-    private void showImage(BufferedImage bi) {
+    private void showImage(BufferedImage bi, String title) {
         if (label == null) {
             label = new JLabel();
             JPanel panel = new JPanel();
@@ -132,6 +141,7 @@ public class VdpRenderTest {
             f.add(panel);
         }
         label.setIcon(new ImageIcon(bi));
+        f.setTitle(title);
         f.pack();
         f.setVisible(true);
     }

@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 /**
  * GenesisVdp
@@ -192,6 +193,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         region = Optional.ofNullable(bus.getEmulator()).map(GenesisProvider::getRegion).orElse(RegionDetector.Region.EUROPE);
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
         resetVideoMode(true);
+        reloadRegisters();
+    }
+
+    private void reloadRegisters() {
+        IntStream.range(0, VdpProvider.VDP_REGISTERS_SIZE).forEach(i -> updateVariables(i, registers[i]));
     }
 
     private int lastControl = -1;
@@ -787,5 +793,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     @Override
     public String getVdpStateString() {
         return interruptHandler.getStateString(" - ");
+    }
+
+    @Override
+    public void reload() {
+        initMode();
+        renderHandler.initLineData(0);
     }
 }

@@ -122,7 +122,8 @@ public class GstStateHandler implements GenesisStateHandler {
     @Override
     public void loadVdpState(VdpProvider vdp) {
         loadVdpMemory(vdp.getVdpMemory());
-        IntStream.range(0, 24).forEach(i -> vdp.updateRegisterData(i, data[i + VDP_REG_OFFSET] & 0xFF));
+        IntStream.range(0, VdpProvider.VDP_REGISTERS_SIZE).forEach(i -> vdp.updateRegisterData(i, data[i + VDP_REG_OFFSET] & 0xFF));
+        vdp.reload();
     }
 
     private void loadVdpMemory(VdpMemoryInterface vdpMemoryInterface) {

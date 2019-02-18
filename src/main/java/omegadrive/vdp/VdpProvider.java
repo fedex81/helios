@@ -283,6 +283,11 @@ public interface VdpProvider {
         updateRegisterData(registerName.ordinal(), data);
     }
 
+    //after loading a state
+    default void reload() {
+        //DO NOTHING
+    }
+
     default void dumpScreenData() {
         throw new UnsupportedOperationException("Not supported");
     }

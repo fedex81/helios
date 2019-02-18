@@ -24,6 +24,7 @@ public class SavestateGameLoader {
     private static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
 
     public static Map<String, String> saveStates = ImmutableMap.<String, String>builder().
+            put("s2_int.gs0", "Sonic The Hedgehog 2 (W) (REV01) [!].bin").
             put("test01.gs0", "Sonic The Hedgehog (W) (REV00) [!].bin").
             put("test02.gs0", "Sonic The Hedgehog 2 (W) (REV01) [!].bin").
             put("sor2.gs0", "Streets of Rage 2 (U) [!].bin").
