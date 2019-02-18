@@ -48,8 +48,6 @@ public interface InputProvider {
     };
 
     float ON = 1.0f;
-    int EMU_ON = 0;
-    int EMU_OFF = 1;
 
     static InputProvider createInstance(JoypadProvider joypadProvider) {
         Controller controller = detectController();
@@ -66,7 +64,7 @@ public interface InputProvider {
     static void bootstrap() {
         String lib = new File(".").getAbsolutePath() + File.separator + "privateLib"
                 + File.separator + NATIVE_SUBDIR;
-        System.out.println(lib);
+//        System.out.println(lib);
         System.setProperty("net.java.games.input.librarypath", lib);
         LOG.info("Loading system library from: " + lib);
     }
