@@ -426,7 +426,7 @@ public class Genesis implements GenesisProvider {
                     handleVdpDumpScreenData();
                     updateVideoMode();
                     canRenderScreen = false;
-                    int elapsedNs = (int) syncCycle(startCycle);
+                    int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
                     sound.output(elapsedNs);
                     if (Thread.currentThread().isInterrupted()) {
                         LOG.info("Game thread stopped");

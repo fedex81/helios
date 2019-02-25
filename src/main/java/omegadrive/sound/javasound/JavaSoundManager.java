@@ -179,7 +179,7 @@ public class JavaSoundManager implements SoundProvider {
             double sec = d * nanos;
             fmBufferLen = (int) (sec * SAMPLE_RATE);
             if (fmBufferLen > fmSize / 2) {
-                LOG.info("{} micros, bufLen: {}, maxLen: {}", sec, fmBufferLen, fmSize / 2);
+                LOG.info("{} secs, bufLen: {}, maxLen: {}", sec, fmBufferLen, fmSize / 2);
             }
             fmBufferLen = Math.min(fmBufferLen, fmSize / 2);
             hasOutput = true;
