@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import omegadrive.bus.BusProvider;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.IVdpFifo;
+import omegadrive.vdp.model.InterlaceMode;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -138,18 +139,6 @@ public interface VdpProvider {
     }
 
     enum VdpPortType {DATA, CONTROL}
-
-    enum InterlaceMode {
-        NONE,
-        MODE_1,
-        INVALID, MODE_2;
-        private static Map<Integer, InterlaceMode> lookup = ImmutableBiMap.copyOf(
-                Maps.toMap(EnumSet.allOf(InterlaceMode.class), InterlaceMode::ordinal)).inverse();
-
-        public static InterlaceMode getInterlaceMode(int index) {
-            return lookup.get(index);
-        }
-    }
 
     int MAX_SPRITES_PER_FRAME_H40 = 80;
     int MAX_SPRITES_PER_FRAME_H32 = 64;
