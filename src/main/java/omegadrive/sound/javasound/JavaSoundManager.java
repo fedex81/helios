@@ -43,7 +43,7 @@ public class JavaSoundManager implements SoundProvider {
 
     private static int OUTPUT_SAMPLE_SIZE = 16;
     private static int OUTPUT_CHANNELS = 1;
-    private AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
+    private AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
     private SourceDataLine dataLine;
     private SoundPersister soundPersister;
     private boolean mute = false;
@@ -57,8 +57,8 @@ public class JavaSoundManager implements SoundProvider {
     private final static boolean playOncePerFrame = false;
 
     public static JavaSoundManager createSoundProvider(RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.createInstance(region, SAMPLE_RATE);
-        FmProvider fmProvider = FmProvider.createInstance(region, SAMPLE_RATE);
+        PsgProvider psgProvider = PsgProvider.createInstance(region, SAMPLE_RATE_HZ);
+        FmProvider fmProvider = FmProvider.createInstance(region, SAMPLE_RATE_HZ);
         JavaSoundManager jsm = new JavaSoundManager();
         jsm.setFm(fmProvider);
         jsm.setPsg(psgProvider);
@@ -177,7 +177,7 @@ public class JavaSoundManager implements SoundProvider {
 //        LOG.info(micros + " micros");
         if (playOncePerFrame) {
             double sec = d * nanos;
-            fmBufferLen = (int) (sec * SAMPLE_RATE);
+            fmBufferLen = (int) (sec * SAMPLE_RATE_HZ);
             if (fmBufferLen > fmSize / 2) {
                 LOG.info("{} secs, bufLen: {}, maxLen: {}", sec, fmBufferLen, fmSize / 2);
             }

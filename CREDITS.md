@@ -13,5 +13,5 @@ YM2612 core:
 Stephan Dittrich (original): https://segaretro.org/JEnesis
 from here: https://github.com/fadookie/gme_p5
 	
-PSG core:
+PSG cores:
 Chris White: http://javagear.sourceforge.net/source-repository.html

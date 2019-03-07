@@ -18,8 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package omegadrive.sound.psg;
+package omegadrive.sound.psg.white1;
 
+import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

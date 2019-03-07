@@ -22,7 +22,8 @@ public interface SoundProvider {
     long NTSC_FM_CLOCK = GenesisProvider.NTSC_MCLOCK_MHZ / 7; //7670442;
     long PAL_FM_CLOCK = GenesisProvider.PAL_MCLOCK_MHZ / 7; //7600485;
 
-    int SAMPLE_RATE = 22050;
+    int SAMPLE_RATE_HZ = Integer.valueOf(System.getProperty("audio.sample.rate.hz", "44100"));
+    ;
 
     int OVERRIDE_AUDIO_BUFFER_SIZE = Integer.valueOf(System.getProperty("audio.buffer.size", "0"));
 
@@ -39,12 +40,16 @@ public interface SoundProvider {
         if (OVERRIDE_AUDIO_BUFFER_SIZE > 0) {
             return OVERRIDE_AUDIO_BUFFER_SIZE;
         }
-        int res = 2 * SAMPLE_RATE / fps;
+        int res = 2 * SAMPLE_RATE_HZ / fps;
         return res % 2 == 0 ? res : res + 1;
     }
 
-    static double getPsgSoundClock(RegionDetector.Region r) {
+    static double getPsgSoundClockScaled(RegionDetector.Region r) {
         return (RegionDetector.Region.USA == r ? NTSC_PSG_CLOCK : PAL_PSG_CLOCK) / 32d;
+    }
+
+    static double getPsgSoundClock(RegionDetector.Region r) {
+        return (RegionDetector.Region.USA == r ? NTSC_PSG_CLOCK : PAL_PSG_CLOCK);
     }
 
     static double getFmSoundClock(RegionDetector.Region r) {
@@ -62,10 +67,6 @@ public interface SoundProvider {
     }
 
     default void setRecording(boolean recording) {
-        //NO OP
-    }
-
-    default void updateElapsedMicros(int micros) {
         //NO OP
     }
 

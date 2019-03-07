@@ -256,7 +256,7 @@ public final class YM2612 implements FmProvider {
 
     //DAC
     volatile AtomicLong dacWritesCounter = new AtomicLong();
-    private int DAC_SAMPLE_LIMIT = SoundProvider.SAMPLE_RATE;
+    private int DAC_SAMPLE_LIMIT = SoundProvider.SAMPLE_RATE_HZ;
     private Queue<Integer> dacQueue;
     private long lastEvent = 0;
 

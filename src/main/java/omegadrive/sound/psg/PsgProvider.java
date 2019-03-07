@@ -1,9 +1,10 @@
 package omegadrive.sound.psg;
 
+import omegadrive.sound.psg.white1.SN76496;
+import omegadrive.sound.psg.white2.SN76489Psg;
 import omegadrive.util.RegionDetector;
 
-import static omegadrive.sound.SoundProvider.LOG;
-import static omegadrive.sound.SoundProvider.getPsgSoundClock;
+import static omegadrive.sound.SoundProvider.*;
 
 /**
  * ${FILE}
@@ -17,11 +18,16 @@ public interface PsgProvider {
     int PSG_OUTPUT_SAMPLE_SIZE = 8;
     int PSG_OUTPUT_CHANNELS = 1;
 
+    boolean USE_NEW_PSG = true;
+
     static PsgProvider createInstance(RegionDetector.Region region, int sampleRate) {
-        double clock = getPsgSoundClock(region);
-        LOG.info("PSG instance, clock: " + clock + ", sampleRate: " + sampleRate);
-        PsgProvider psgProvider = new SN76496(clock, sampleRate);
-        psgProvider.init();
+        int clockHz = (int) getPsgSoundClock(region);
+        LOG.info("PSG instance, clockHz: " + clockHz + ", sampleRate: " + sampleRate);
+        PsgProvider psgProvider = SN76489Psg.createInstance(clockHz, sampleRate);
+        if (!USE_NEW_PSG) {
+            psgProvider = new SN76496(getPsgSoundClockScaled(region), sampleRate);
+            psgProvider.init();
+        }
         return psgProvider;
     }
 

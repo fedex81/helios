@@ -345,6 +345,7 @@ public class Genesis implements GenesisProvider {
                 region = getRegionInternal(memory);
                 LOG.info("Running rom: " + romName + ", region: " + region);
                 sound = JavaSoundManager.createSoundProvider(region);
+//                sound = JavaSoundManager2.createSoundProvider(region);
                 bus.attachDevice(sound);
 
                 resetAfterRomLoad();
@@ -462,7 +463,7 @@ public class Genesis implements GenesisProvider {
             double frameTimeMicros = 1_000_000d / vm.getRegion().getFps();
             VdpCounterMode vcm = VdpCounterMode.getCounterMode(vm);
             microsPerTick = (FM_DIVIDER / VDP_DIVIDER) * frameTimeMicros / (vcm.slotsPerLine * vcm.vTotalCount);
-            LOG.info("Video mode changed: {}, microsPerTick: {}", vm, microsPerTick);
+            LOG.debug("Video mode changed: {}, microsPerTick: {}", vm, microsPerTick);
             videoMode = vm;
         }
     }

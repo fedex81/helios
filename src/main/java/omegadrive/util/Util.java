@@ -81,6 +81,16 @@ public class Util {
         }
     }
 
+    public static void waitOnObject(Object object) {
+        synchronized (object) {
+            try {
+                object.wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
     public static void registerJmx(Object object) {
         JmxBridge.registerJmx(object);
     }

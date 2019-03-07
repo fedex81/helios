@@ -92,7 +92,7 @@ public class FileSoundPersister implements SoundPersister {
     }
 
     public static void main(String[] args) {
-//        AudioFormat audioFormat = new AudioFormat(SAMPLE_RATE, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
+//        AudioFormat audioFormat = new AudioFormat(SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
 //        SoundUtil.convertToWav(audioFormat, "output_1523804269641.raw");
     }
 
