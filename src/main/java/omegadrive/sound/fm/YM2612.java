@@ -1,6 +1,5 @@
 package omegadrive.sound.fm;
 
-import omegadrive.sound.SoundProvider;
 import omegadrive.util.LogHelper;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -9,7 +8,6 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * ${FILE}
@@ -255,9 +253,8 @@ public final class YM2612 implements FmProvider {
     volatile int YM2612_Status;
 
     //DAC
-    volatile AtomicLong dacWritesCounter = new AtomicLong();
-    private int DAC_SAMPLE_LIMIT = SoundProvider.SAMPLE_RATE_HZ;
     private Queue<Integer> dacQueue;
+    private volatile int dacValue;
     private long lastEvent = 0;
 
     /**
@@ -536,17 +533,26 @@ public final class YM2612 implements FmProvider {
     }
 
     double microsAcc = 0; //accumulator
+    double pcmMicrosAcc = 0; //accumulator
     long busyCycles = BUSY_CYCLES;
     //busy last 90 Z80 cycles  @ 3.75 Mhz = 45 cycles @ 1.67 Mhz
     static int BUSY_CYCLES = 45;
+    static double MICROS_PER_PCM = 25; //TODO why?
 
     @Override
     public void tick(double microsPerTick) {
         microsAcc += microsPerTick;
+        pcmMicrosAcc += microsPerTick;
         //sync every microsecond
         if (microsAcc > 1) {
             synchronizeTimers(1);
             microsAcc -= 1;
+        }
+        if (pcmMicrosAcc > MICROS_PER_PCM) {
+            if (YM2612_DAC != 0) {
+                dacQueue.offer(dacValue);
+            }
+            pcmMicrosAcc -= MICROS_PER_PCM;
         }
         busyCycles--;
         if (busyCycles <= 0) {
@@ -679,7 +685,6 @@ public final class YM2612 implements FmProvider {
                 buf_lr[i] += dacValue;
                 buf_lr[i + 1] += dacValue;
                 i += 2;
-                dacWritesCounter.decrementAndGet();
             }
         } else {
             drainDacQueue();
@@ -687,7 +692,6 @@ public final class YM2612 implements FmProvider {
     }
 
     private void drainDacQueue() {
-        dacWritesCounter.set(0);
         dacQueue.clear();
     }
 
@@ -1097,19 +1101,15 @@ public final class YM2612 implements FmProvider {
                 else KEY_OFF(CH, S3);
                 break;
             case 0x2A:
-                //TODO rewrite DAC timing
                 //when busy just drop the sample - Sonic 2 intro sounds bad
 //                if((YM2612_Status & 0x80) > 1){
 //                    LOG.info("sample drop");
 ////                    return 0;
 //                }
-                if (dacWritesCounter.get() < DAC_SAMPLE_LIMIT) {
 //                    String str = "DAC," + System.nanoTime() + "," + data;
 //                    LOG.info(str);
 //                    System.out.println(str);
-                    dacQueue.offer(data);
-                    dacWritesCounter.incrementAndGet();
-                }
+                dacValue = data;
                 break;
             case 0x2B:
                 //enable/disable DAC
