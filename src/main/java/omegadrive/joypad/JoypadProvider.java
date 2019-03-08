@@ -56,4 +56,6 @@ public interface JoypadProvider {
     boolean hasDirectionPressed(JoypadNumber number);
 
     String getState(JoypadNumber number);
+
+    void newFrame();
 }

@@ -104,6 +104,11 @@ public class GamepadTest {
             public String getState(JoypadNumber number) {
                 return null;
             }
+
+            @Override
+            public void newFrame() {
+
+            }
         };
     }
 

@@ -27,8 +27,6 @@ import static omegadrive.joypad.JoypadProvider.JoypadNumber.P2;
  * <p>
  * Copyright 2018
  * <p>
- * TODO spurious resets shouldnt kill the polling thread
- * TODO save the current runnable anc cancel it
  */
 public class GamepadInputProvider implements InputProvider {
 
@@ -136,6 +134,20 @@ public class GamepadInputProvider implements InputProvider {
         if (B == id || _1 == id) {
             joypadProvider.setButtonAction(joypadNumber, JoypadButton.C, action);
         }
+        //TODO WIN
+        if (LEFT_THUMB == id) {
+            joypadProvider.setButtonAction(joypadNumber, JoypadButton.X, action);
+        }
+        if (RIGHT_THUMB == id) {
+            joypadProvider.setButtonAction(joypadNumber, JoypadButton.Y, action);
+        }
+        if (Y == id) {
+            joypadProvider.setButtonAction(joypadNumber, JoypadButton.Z, action);
+        }
+        if (SELECT == id) {
+            joypadProvider.setButtonAction(joypadNumber, JoypadButton.M, action);
+        }
+        //TODO WIN
         if (START == id || _7 == id) {
             joypadProvider.setButtonAction(joypadNumber, JoypadButton.S, action);
         }

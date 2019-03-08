@@ -700,5 +700,6 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     @Override
     public void newFrame() {
         busArbiter.newFrame();
+        joypad.newFrame();
     }
 }

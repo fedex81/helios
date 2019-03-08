@@ -23,7 +23,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
  * <p>
  * <p>
  * 6-button controller steps
- * Bit 5	Bit 4	Bit 3	Bit 2	Bit 1	Bit 0
+ *                      Bit 5	Bit 4	Bit 3	Bit 2	Bit 1	Bit 0
  * 1st step (write $40)	    C	B	    Right	Left	Down	Up
  * 2nd step (write $00)	Start	A	    0	    0	    Down	Up
  * 3rd step (write $40)	    C	B	    Right	Left	Down	Up
@@ -33,10 +33,16 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
  * 7th step (write $40)	    C	B	    Mode	X	    Y	    Z
  * <p>
  * https://www.plutiedev.com/controllers
+ *
+ * TODO sgdk_joytest
  */
 public class GenesisJoypad implements JoypadProvider {
 
     private static Logger LOG = LogManager.getLogger(GenesisJoypad.class.getSimpleName());
+
+    static int SIX_BUTTON_STEPS = 8;  //7+1
+    static int SIX_BUTTON_START_A_ONLY_STEP = 6;
+    static int SIX_BUTTON_XYZ_STEP = 7;
 
     //SGDK needs 0 here, otherwise it is considered a RESET
     long control1 = 0;
@@ -49,7 +55,7 @@ public class GenesisJoypad implements JoypadProvider {
     boolean asserted1;
     boolean asserted2;
 
-    JoypadType p1Type = JoypadType.BUTTON_3;
+    JoypadType p1Type = JoypadType.BUTTON_6;
     JoypadType p2Type = JoypadType.BUTTON_3;
 
     private Map<JoypadButton, JoypadAction> stateMap1 = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
@@ -73,15 +79,23 @@ public class GenesisJoypad implements JoypadProvider {
 
     public void writeDataRegister1(long data) {
         asserted1 = (data & 0x40) == 0;
+        boolean reset = data == 0 && readStep1 == 0;
+        readStep1 = reset ? 0 : (readStep1 + 1) % SIX_BUTTON_STEPS;
+//        LOG.info("write p1: asserted : {}, step : {}, data: {}", asserted1, readStep1, data);
+    }
+
+    public void writeDataRegister2(long data) {
+        asserted2 = (data & 0x40) == 0;
+        boolean reset = data == 0 && readStep2 == 0;
+        readStep2 = reset ? 0 : (readStep2 + 1) % SIX_BUTTON_STEPS;
     }
 
     public int readDataRegister1() {
-        readStep1 = (readStep1 + 1) % 7;
         return readDataRegister(JoypadNumber.P1, p1Type, asserted1, readStep1);
+//        LOG.info("read p1: asserted : {}, step : {}, result: {}", asserted1, readStep1, res);
     }
 
     public int readDataRegister2() {
-        readStep2 = (readStep2 + 1) % 7;
         return readDataRegister(JoypadNumber.P2, p2Type, asserted2, readStep2);
     }
 
@@ -89,15 +103,13 @@ public class GenesisJoypad implements JoypadProvider {
     private int readDataRegister(JoypadNumber n, JoypadType type, boolean asserted, int readStep) {
         boolean is6Button = type == JoypadType.BUTTON_6;
         if (asserted) {
-            return is6Button && readStep == 5 ? get00SA0000(n) : get00SA00DU(n);
+            return is6Button && readStep == SIX_BUTTON_START_A_ONLY_STEP ? get00SA0000(n) : get00SA00DU(n);
         } else {
-            return is6Button && readStep == 6 ? get11CBMXYZ(n) : get11CBRLDU(n);
+            return is6Button && readStep == SIX_BUTTON_XYZ_STEP ? get11CBMXYZ(n) : get11CBRLDU(n);
         }
     }
 
-    public void writeDataRegister2(long data) {
-        asserted2 = (data & 0x40) == 0;
-    }
+
 
     public int readDataRegister3() {
         return 0x3F;
@@ -141,7 +153,8 @@ public class GenesisJoypad implements JoypadProvider {
 
     //6 buttons
     private int get11CBMXYZ(JoypadNumber n) {
-        return (getValue(n, S) << 5) | (getValue(n, A) << 4);
+        return 0xC0 | (getValue(n, C) << 5) | (getValue(n, B) << 4) | (getValue(n, M) << 3) |
+                (getValue(n, X) << 2) | (getValue(n, Y) << 1) | (getValue(n, Z));
     }
 
     private int getValue(JoypadNumber number, JoypadButton button) {
@@ -185,5 +198,12 @@ public class GenesisJoypad implements JoypadProvider {
     @Override
     public String getState(JoypadNumber number) {
         return getMap(number).toString();
+    }
+
+    @Override
+    public void newFrame() {
+        readStep1 = 0;
+        readStep2 = 0;
+//        LOG.info("new frame");
     }
 }
