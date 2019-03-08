@@ -352,6 +352,10 @@ public class SN76489 {
                 // ie. if it is currently outputting -1 then it outputs +1, and vice versa.
                 if (counter <= 0) {
                     int tone = reg[i << 1];
+                    //NOTE: avoid java.lang.ArithmeticException: / by zero at line 378
+                    if (tone == 0) {
+                        continue;
+                    }
 
                     // In tests on an SMS2, the highest note that gave any audible output was 
                     // register value $006, giving frequency 18643Hz (MIDI note A12 -12 cents). 
@@ -370,7 +374,6 @@ public class SN76489 {
                         freqPolarity[i] = 1;
                         freqPos[i] = NO_ANTIALIAS;
                     }
-
                     // Reset to 10-bit value in corresponding tone register
                     freqCounter[i] += tone * (clockCycles / tone + 1);
                 } else {
