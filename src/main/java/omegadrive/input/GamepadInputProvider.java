@@ -44,6 +44,9 @@ public class GamepadInputProvider implements InputProvider {
     private String pov = Axis.POV.getName();
 
     private static InputProvider INSTANCE = NO_OP;
+    private static final int AXIS_p1 = 1;
+    private static final int AXIS_0 = 0;
+    private static final int AXIS_m1 = -1;
 
 
     public static InputProvider createOrGetInstance(Controller controller, JoypadProvider joypadProvider) {
@@ -123,6 +126,7 @@ public class GamepadInputProvider implements InputProvider {
         JoypadAction action = value == ON ? JoypadAction.PRESSED : JoypadAction.RELEASED;
         if (InputProvider.DEBUG_DETECTION) {
             LOG.info(id + ": " + value);
+            System.out.println(id + ": " + value);
         }
         // xbox360: linux || windows
         if (X == id || _2 == id) {
@@ -144,15 +148,51 @@ public class GamepadInputProvider implements InputProvider {
         if (Y == id) {
             joypadProvider.setButtonAction(joypadNumber, JoypadButton.Z, action);
         }
-        if (SELECT == id) {
+        if (SELECT == id || LEFT_THUMB2 == id) {
             joypadProvider.setButtonAction(joypadNumber, JoypadButton.M, action);
         }
         //TODO WIN
-        if (START == id || _7 == id) {
+        //TODO psClassis USB: start button = RIGHT_THUMB2
+        if (START == id || _7 == id || RIGHT_THUMB2 == id) {
             joypadProvider.setButtonAction(joypadNumber, JoypadButton.S, action);
         }
+        handleDPad(id, value);
+    }
+
+    private void handleDPad(Component.Identifier id, double value) {
+        if (Axis.X == id) {
+            int ival = (int) value;
+            switch (ival) {
+                case AXIS_0:
+                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, JoypadAction.RELEASED);
+                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, JoypadAction.RELEASED);
+                    break;
+                case AXIS_m1:
+                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, JoypadAction.PRESSED);
+                    break;
+                case AXIS_p1:
+                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, JoypadAction.PRESSED);
+                    break;
+            }
+        }
+        if (Axis.Y == id) {
+            int ival = (int) value;
+            switch (ival) {
+                case AXIS_0:
+                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, JoypadAction.RELEASED);
+                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, JoypadAction.RELEASED);
+                    break;
+                case AXIS_m1:
+                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, JoypadAction.PRESSED);
+                    break;
+                case AXIS_p1:
+                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, JoypadAction.PRESSED);
+                    break;
+            }
+        }
+
         if (pov.equals(id.getName())) {
-            action = JoypadAction.PRESSED;
+            JoypadAction action = JoypadAction.PRESSED;
             //release directions previously pressed - only on the first event
             boolean off = resetDirections || value == Component.POV.OFF;
             if (off) {
