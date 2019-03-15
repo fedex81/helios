@@ -27,8 +27,10 @@ public class RenderingStrategy {
 
     /**
      * Works only for resolutions up to 4500x4500
+     *
+     * TODO: T2, SSF2 crash
      */
-    public static void renderNearest(int[] srcPixels, int[] outputPixels, Dimension src, Dimension dest) {
+    public static void renderNearestBuggy(int[] srcPixels, int[] outputPixels, Dimension src, Dimension dest) {
         int factor = 16;
         int xRatio = ((src.width << factor) / dest.width) + 1;
         int yRatio = ((src.height << factor) / dest.height) + 1;
@@ -47,8 +49,7 @@ public class RenderingStrategy {
         }
     }
 
-    @Deprecated
-    protected static void renderNearestOld(int[] srcPixels, int[] outputPixels, Dimension src, Dimension dest) {
+    protected static void renderNearest(int[] srcPixels, int[] outputPixels, Dimension src, Dimension dest) {
         int factor = 16;
         int xRatio = ((src.width << factor) / dest.width) + 1;
         int yRatio = ((src.height << factor) / dest.height) + 1;
