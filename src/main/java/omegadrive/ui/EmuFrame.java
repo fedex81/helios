@@ -1,7 +1,7 @@
 package omegadrive.ui;
 
 import com.google.common.base.Strings;
-import omegadrive.GenesisProvider;
+import omegadrive.SystemProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.ScreenSizeHelper;
 import omegadrive.util.Util;
@@ -55,7 +55,7 @@ public class EmuFrame implements GenesisWindow {
     private final JLabel fpsLabel = new JLabel("");
 
     private JFrame jFrame;
-    private GenesisProvider mainEmu;
+    private SystemProvider mainEmu;
     private JCheckBoxMenuItem usaBios;
     private JCheckBoxMenuItem eurBios;
     private JCheckBoxMenuItem japBios;
@@ -74,7 +74,7 @@ public class EmuFrame implements GenesisWindow {
         jFrame.setTitle(FRAME_TITLE_HEAD + " - " + title);
     }
 
-    public EmuFrame(GenesisProvider mainEmu) {
+    public EmuFrame(SystemProvider mainEmu) {
         this.mainEmu = mainEmu;
     }
 
@@ -401,7 +401,7 @@ public class EmuFrame implements GenesisWindow {
     }
 
     private Optional<File> loadRomDialog(Component parent) {
-        return loadFileDialog(parent, FileLoader.ROM_FILTER);
+        return loadFileDialog(parent, FileLoader.ROM_FILTER); //TODO
     }
 
     private Optional<File> loadStateFileDialog(Component parent) {

@@ -254,6 +254,7 @@ public final class YM2612 implements FmProvider {
 
     //DAC
     private Queue<Integer> dacQueue;
+    private static int DAC_SILENCE = 0x80;
     private volatile int dacValue;
     private long lastEvent = 0;
 
@@ -675,13 +676,17 @@ public final class YM2612 implements FmProvider {
 
     }
 
+
     private void updateDac(int[] buf_lr, int offset, int end, boolean dacSampleToProcess) {
         Integer val;
         int i = offset;
         if (dacSampleToProcess) {
             while ((val = dacQueue.poll()) != null && i < end) {
+                if (val == DAC_SILENCE) {
+                    continue;
+                }
                 //8 bit unsigned to 13 bit signed
-                int dacValue = (val - 0x80) << 5;
+                int dacValue = (val - DAC_SILENCE) << 4;
                 buf_lr[i] += dacValue;
                 buf_lr[i + 1] += dacValue;
                 i += 2;

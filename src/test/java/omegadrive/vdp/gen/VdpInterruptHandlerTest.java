@@ -1,7 +1,9 @@
-package omegadrive.vdp;
+package omegadrive.vdp.gen;
 
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.VdpTestUtil;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -156,7 +158,7 @@ public class VdpInterruptHandlerTest {
         VdpInterruptHandler h = VdpInterruptHandler.createInstance(() -> hLinePassed);
         h.setMode(VideoMode.NTSCU_H40_V28);
 
-        int totalCount = VdpProvider.NTSC_SCANLINES * 10 + 5;
+        int totalCount = GenesisVdpProvider.NTSC_SCANLINES * 10 + 5;
         int count = 0;
         int line = 0;
         VdpTestUtil.runCounterToStartFrame(h);

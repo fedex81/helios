@@ -1,7 +1,9 @@
-package omegadrive.vdp;
+package omegadrive.vdp.gen;
 
-import omegadrive.bus.BusProvider;
+import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.util.RegionDetector;
+import omegadrive.vdp.VdpTestUtil;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
@@ -25,13 +27,13 @@ public class BaseVdpDmaHandlerTest {
 
     private static Logger LOG = LogManager.getLogger(BaseVdpDmaHandlerTest.class.getSimpleName());
 
-    VdpProvider vdpProvider;
+    GenesisVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
     VdpDmaHandler dmaHandler;
 
     @Before
     public void setup() {
-        BusProvider busProvider = BusProvider.createBus();
+        GenesisBusProvider busProvider = GenesisBusProvider.createBus();
         memoryInterface = GenesisVdpMemoryInterface.createInstance();
         dmaHandler = new VdpDmaHandlerImpl();
 
@@ -71,7 +73,7 @@ public class BaseVdpDmaHandlerTest {
         vdpProvider.writeDataPort(1216);
         VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
-        String str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        String str = VdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
         vdpProvider.writeControlPort(0x8F00 + increment);
@@ -91,12 +93,12 @@ public class BaseVdpDmaHandlerTest {
 
 //        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
 
-        str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        str = VdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
         VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
-        str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        str = VdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
         String[] actual = IntStream.range(0x8000, 0x8000 + expected.length).
@@ -142,10 +144,10 @@ public class BaseVdpDmaHandlerTest {
         vdpProvider.writeDataPort(0xff00);
         VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
-        String str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        String str = VdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
-        str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x9000, 0x9016);
+        str = VdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x9000, 0x9016);
         System.out.println(str);
 
         vdpProvider.writeControlPort(0x8F00 + increment);
@@ -165,7 +167,7 @@ public class BaseVdpDmaHandlerTest {
 
         VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
-        str = VdpTestUtil.printVdpMemory(memoryInterface, VdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        str = VdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
         String[] exp = Arrays.stream(expected).mapToObj(Integer::toHexString).toArray(String[]::new);

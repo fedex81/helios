@@ -2,11 +2,12 @@ package omegadrive.util;
 
 import com.google.common.collect.Range;
 import omegadrive.Genesis;
-import omegadrive.memory.MemoryProvider;
+import omegadrive.memory.IMemoryProvider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
@@ -24,6 +25,12 @@ public class Util {
     private static Logger LOG = LogManager.getLogger(Util.class.getSimpleName());
 
     public static boolean verbose = Genesis.verbose || false;
+
+    public static final int GEN_NTSC_MCLOCK_MHZ = 53693175;
+    public static final int GEN_PAL_MCLOCK_MHZ = 53203424;
+
+    public static final long SECOND_IN_NS = Duration.ofSeconds(1).toNanos();
+    public static final long MILLI_IN_NS = Duration.ofMillis(1).toNanos();
 
     public static void sleep(long ms) {
         try {
@@ -100,21 +107,24 @@ public class Util {
         return ((number & (1 << position)) != 0);
     }
 
-    public static long readRom(MemoryProvider memory, Size size, long address) {
+    public static long readRom(IMemoryProvider memory, Size size, int address) {
         long data;
         if (size == Size.BYTE) {
-            data = memory.readCartridgeByte(address);
+            data = memory.readRomByte(address);
         } else if (size == Size.WORD) {
-            data = memory.readCartridgeWord(address);
+            data = memory.readRomByte(address) << 8;
+            data |= memory.readRomByte(address + 1);
         } else {
-            data = memory.readCartridgeWord(address) << 16;
-            data |= memory.readCartridgeWord(address + 2);
+            data = memory.readRomByte(address) << 24;
+            data |= memory.readRomByte(address + 1) << 16;
+            data |= memory.readRomByte(address + 2) << 8;
+            data |= memory.readRomByte(address + 3);
         }
         LogHelper.printLevel(LOG, Level.DEBUG, "Read ROM: {}, {}: {}", address, data, size, verbose);
         return data;
     }
 
-    public static long readRam(MemoryProvider memory, Size size, long addressL) {
+    public static long readRam(IMemoryProvider memory, Size size, long addressL) {
         long data;
         int address = (int) (addressL & 0xFFFF);
 
@@ -150,7 +160,7 @@ public class Util {
         return data;
     }
 
-    public static void writeRam(MemoryProvider memory, Size size, long addressL, long data) {
+    public static void writeRam(IMemoryProvider memory, Size size, long addressL, int data) {
         int address = (int) (addressL & 0xFFFF);
         if (size == Size.BYTE) {
             memory.writeRamByte(address, data);
@@ -158,9 +168,9 @@ public class Util {
             memory.writeRamByte(address, (data >> 8));
             memory.writeRamByte(address + 1, (data & 0xFF));
         } else if (size == Size.LONG) {
-            memory.writeRamByte(address, (data >> 24) & 0xFF);
-            memory.writeRamByte(address + 1, (data >> 16) & 0xFF);
-            memory.writeRamByte(address + 2, (data >> 8) & 0xFF);
+            memory.writeRamByte(address, ((data >> 24) & 0xFF));
+            memory.writeRamByte(address + 1, ((data >> 16) & 0xFF));
+            memory.writeRamByte(address + 2, ((data >> 8) & 0xFF));
             memory.writeRamByte(address + 3, (data & 0xFF));
         }
         LogHelper.printLevel(LOG, Level.DEBUG, "Write RAM: {}, {}: {}", address, data, size, verbose);
@@ -189,17 +199,17 @@ public class Util {
         }
     }
 
-    public static long computeChecksum(MemoryProvider memoryProvider) {
+    public static long computeChecksum(IMemoryProvider memoryProvider) {
         long res = 0;
         //checksum is computed starting from byte 0x200
         int i = 0x200;
         int size = memoryProvider.getRomSize();
         for (; i < size - 1; i += 2) {
-            long val = memoryProvider.readCartridgeWord(i);
+            long val = Util.readRom(memoryProvider, Size.WORD, i);
             res = (res + val) & 0xFFFF;
         }
         //read final byte ??
-        res = size % 2 != 0 ? (res + memoryProvider.readCartridgeByte(i)) & 0xFFFF : res;
+        res = size % 2 != 0 ? (res + memoryProvider.readRomByte(i)) & 0xFFFF : res;
         return res;
     }
 

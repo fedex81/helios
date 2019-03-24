@@ -1,15 +1,18 @@
-package omegadrive.bus;
+package omegadrive.bus.gen;
 
 import omegadrive.Genesis;
-import omegadrive.GenesisProvider;
+import omegadrive.SystemProvider;
+import omegadrive.bus.mapper.BackupMemoryMapper;
+import omegadrive.bus.mapper.GenesisMapper;
+import omegadrive.bus.mapper.Ssf2Mapper;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.m68k.M68kProvider;
-import omegadrive.memory.MemoryProvider;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,17 +37,17 @@ import java.util.Objects;
  * Interrupts are know acknowleged based on what the VDP thinks its asserting rather than what the 68K actually is acking - Fixes Fatal Rewind
  *
  */
-public class GenesisBus implements BusProvider, GenesisMapper {
+public class GenesisBus implements GenesisBusProvider, GenesisMapper {
 
     private static Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
 
-    private GenesisProvider emu;
-    private MemoryProvider memory;
+    private SystemProvider emu;
+    private IMemoryProvider memory;
     private JoypadProvider joypad;
 
-    private VdpProvider vdp;
+    private GenesisVdpProvider vdp;
     private Z80Provider z80;
     private M68kProvider cpu;
     private SoundProvider sound;
@@ -106,18 +109,18 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     @Override
-    public BusProvider attachDevice(Object device) {
-        if (device instanceof MemoryProvider) {
-            this.memory = (MemoryProvider) device;
+    public GenesisBusProvider attachDevice(Object device) {
+        if (device instanceof IMemoryProvider) {
+            this.memory = (IMemoryProvider) device;
         }
-        if (device instanceof GenesisProvider) {
-            this.emu = (GenesisProvider) device;
+        if (device instanceof SystemProvider) {
+            this.emu = (SystemProvider) device;
         }
         if (device instanceof JoypadProvider) {
             this.joypad = (JoypadProvider) device;
         }
-        if (device instanceof VdpProvider) {
-            this.vdp = (VdpProvider) device;
+        if (device instanceof GenesisVdpProvider) {
+            this.vdp = (GenesisVdpProvider) device;
         }
         if (device instanceof Z80Provider) {
             this.z80 = (Z80Provider) device;
@@ -170,7 +173,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
                 return mapper.readData(address, size);
             }
-            return Util.readRom(memory, size, address);
+            return Util.readRom(memory, size, (int) address);
         } else if (address > CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
             LOG.warn("Read on reserved address: " + Integer.toHexString((int) address));
             return size.getMax();
@@ -226,7 +229,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             vdpWrite(addressL, size, data);
         } else if (addressL >= ADDRESS_RAM_MAP_START && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             long addressZ = addressL & 0xFFFF;
-            Util.writeRam(memory, size, addressZ, data);
+            Util.writeRam(memory, size, addressZ, (int) data);
         } else {
             LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) addressL) + " - PC: " + Integer.toHexString((int) cpu.getPC()));
         }
@@ -500,7 +503,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
             LOG.warn("Reading Z80 memory without busreq");
             return 0;
         }
-        int addressZ = (int) (address & BusProvider.M68K_TO_Z80_MEMORY_MASK);
+        int addressZ = (int) (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
         data = z80.readMemory(addressZ);
         if (size == Size.BYTE) {
             return data;
@@ -525,7 +528,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
         if (size == Size.LONG) {
             LOG.error("Unexpected long write, addr: {}, data: {}", address, dataL);
         }
-        int addressZ = (int) (address & BusProvider.M68K_TO_Z80_MEMORY_MASK);
+        int addressZ = (int) (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
         z80.writeMemory(addressZ, data);
     }
 
@@ -637,7 +640,7 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     @Override
-    public GenesisProvider getEmulator() {
+    public SystemProvider getEmulator() {
         return emu;
     }
 
@@ -655,12 +658,12 @@ public class GenesisBus implements BusProvider, GenesisMapper {
     }
 
     @Override
-    public MemoryProvider getMemory() {
+    public IMemoryProvider getMemory() {
         return memory;
     }
 
     @Override
-    public VdpProvider getVdp() {
+    public GenesisVdpProvider getVdp() {
         return vdp;
     }
 

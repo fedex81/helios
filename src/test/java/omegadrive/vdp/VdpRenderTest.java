@@ -1,12 +1,13 @@
 package omegadrive.vdp;
 
 import omegadrive.Genesis;
-import omegadrive.GenesisProvider;
+import omegadrive.SystemProvider;
 import omegadrive.automated.SavestateGameLoader;
-import omegadrive.bus.BusProvider;
+import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.save.SavestateTest;
 import omegadrive.util.Util;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.RenderType;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -35,7 +36,7 @@ public class VdpRenderTest {
     static int CYCLES = 1_000;
 
     private void testSavestateViewerSingle(Path saveFile, String rom) throws Exception {
-        VdpProvider vdpProvider = prepareVdp(saveFile);
+        GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
         VdpTestUtil.runToStartFrame(vdpProvider);
 //            renderDump.saveRenderToFile(screenData, vdpProvider.getVideoMode(), RenderType.FULL);
         BufferedImage bi = renderDump.getImage(screenData, vdpProvider.getVideoMode(), RenderType.FULL);
@@ -47,7 +48,7 @@ public class VdpRenderTest {
     @Test
     public void testInterlaced() throws Exception {
         String saveName = "s2_int.gs0";
-        saveName = "cc_int.gs0";
+//        saveName = "cc_int.gs0";
         Path saveFile = Paths.get(saveStateFolder, saveName);
         testSavestateViewerSingle(saveFile, SavestateGameLoader.saveStates.get(saveName));
         Util.waitForever();
@@ -73,8 +74,29 @@ public class VdpRenderTest {
         }
     }
 
+    @Test
+    @Ignore
+    public void testVpdPerformanceOne() throws Exception {
+        Map.Entry<String, String> entry = (Map.Entry) SavestateGameLoader.saveStates.entrySet().toArray()[0];
+        Path saveFile = Paths.get(saveStateFolder, entry.getKey());
+        GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
+        long start = System.nanoTime();
+        long cycle = 0;
+        System.out.println(entry.getValue());
+        do {
+            VdpTestUtil.runToStartFrame(vdpProvider);
+            cycle++;
+            if (cycle % CYCLES == 0) {
+                printPerf(System.nanoTime() - start, CYCLES);
+                start = System.nanoTime();
+            }
+        } while (true);
+    }
+
+
+
     private void testVpdPerformanceSingle(Path saveFile, String rom) throws Exception {
-        VdpProvider vdpProvider = prepareVdp(saveFile);
+        GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
         int cycle = CYCLES;
         long start = System.nanoTime();
         do {
@@ -91,15 +113,15 @@ public class VdpRenderTest {
         System.out.println("Time ms: " + timeMs + ", FPS: " + fps);
     }
 
-    private VdpProvider prepareVdp(Path saveFile) throws Exception {
-        GenesisProvider genesisProvider = createTestProvider();
-        BusProvider busProvider = SavestateTest.loadSaveState(saveFile);
+    private GenesisVdpProvider prepareVdp(Path saveFile) throws Exception {
+        SystemProvider genesisProvider = createTestProvider();
+        GenesisBusProvider busProvider = SavestateTest.loadSaveState(saveFile);
         busProvider.attachDevice(genesisProvider);
-        VdpProvider vdpProvider = busProvider.getVdp();
+        GenesisVdpProvider vdpProvider = (GenesisVdpProvider) busProvider.getVdp();
         return vdpProvider;
     }
 
-    private static GenesisProvider createTestProvider() throws Exception {
+    private static SystemProvider createTestProvider() throws Exception {
         InputProvider.bootstrap();
 
         Genesis g = new Genesis(true) {
@@ -116,7 +138,6 @@ public class VdpRenderTest {
                 count++;
             }
         };
-
         return g;
     }
 

@@ -1,5 +1,7 @@
 package omegadrive.z80;
 
+import omegadrive.memory.IMemoryRam;
+
 /**
  * ${FILE}
  * <p>
@@ -7,30 +9,32 @@ package omegadrive.z80;
  * <p>
  * Copyright 2019
  */
-public class Z80Memory implements IMemory {
+public class Z80Memory implements IMemoryRam {
 
-    private final byte[] memory;
+    public static int Z80_RAM_MEMORY_SIZE = 0x2000;
+
+    private final int[] memory;
 
     public Z80Memory(int size) {
-        memory = new byte[size];
+        memory = new int[size];
     }
 
     public Z80Memory() {
-        this(MEMORY_SIZE);
+        this(Z80_RAM_MEMORY_SIZE);
     }
 
     @Override
-    public int readByte(int address) {
+    public int readRamByte(int address) {
         return memory[address] & 0xFF;
     }
 
     @Override
-    public void writeByte(int address, int data) {
-        memory[address] = (byte) (data & 0xFF);
+    public void writeRamByte(int address, int data) {
+        memory[address] = data & 0xFF;
     }
 
     @Override
-    public byte[] getData() {
+    public int[] getRamData() {
         return memory;
     }
 }

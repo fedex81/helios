@@ -2,15 +2,17 @@ package omegadrive.z80;
 
 import emulib.plugins.cpu.DisassembledInstruction;
 import omegadrive.Genesis;
-import omegadrive.bus.BusProvider;
+import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.bus.gen.GenesisZ80BusProvider;
 import omegadrive.util.LogHelper;
+import omegadrive.util.Size;
 import omegadrive.z80.disasm.Z80Decoder;
 import omegadrive.z80.disasm.Z80Disasm;
 import omegadrive.z80.disasm.Z80MemContext;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import z80core.MemIoOps;
 import z80core.Z80;
 import z80core.Z80State;
 
@@ -25,39 +27,49 @@ import java.util.function.Function;
  * <p>
  *
  * TODO check interrupt handling vs halt
+ * TODO improve interrupt handling,
+ * TODO needs to decide when an interrupt is taken by z80
  */
 public class Z80CoreWrapper implements Z80Provider {
 
     public static boolean verbose = Genesis.verbose || false;
 
     private Z80 z80Core;
-    private Z80BusProvider z80BusProvider;
-    private MemIoOps memIoOps;
+    private BaseBusProvider z80BusProvider;
+    private Z80MemIoOps memIoOps;
     private Z80Disasm z80Disasm;
 
     private boolean resetState;
     private boolean busRequested;
     private boolean wasRunning;
-    public static boolean activeInterrupt;
 
     private static Logger LOG = LogManager.getLogger(Z80CoreWrapper.class.getSimpleName());
 
-    public static Z80CoreWrapper createInstance(BusProvider busProvider) {
-        Z80CoreWrapper w = createInstance(busProvider, new Z80Memory(), null);
-        return w;
+    public static Z80CoreWrapper createSg1000Instance(BaseBusProvider busProvider) {
+        Z80CoreWrapper w = new Z80CoreWrapper();
+        w.z80BusProvider = busProvider;
+        return createInstance(w, null);
     }
 
-    public static Z80CoreWrapper createInstance(BusProvider busProvider, IMemory z80Memory, Z80State z80State) {
+    public static Z80CoreWrapper createGenesisInstance(GenesisBusProvider busProvider) {
         Z80CoreWrapper w = new Z80CoreWrapper();
-        w.z80BusProvider = new Z80BusProviderImpl(busProvider, w, z80Memory);
-        w.memIoOps = createGenesisIo(w.z80BusProvider, z80Memory);
+        w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider, new Z80Memory());
+        return createInstance(w, null);
+    }
 
+    private static Z80CoreWrapper createInstance(Z80CoreWrapper w, Z80State z80State) {
+        w.memIoOps = Z80MemIoOps.createInstance(w.z80BusProvider);
         w.z80Core = new Z80(w.memIoOps, null);
+        w.z80BusProvider.attachDevice(w);
+        return initStateAndDisasm(w, z80State);
+    }
+
+    private static Z80CoreWrapper initStateAndDisasm(Z80CoreWrapper w, Z80State z80State) {
         if (z80State != null) {
             w.z80Core.setZ80State(z80State);
         }
 
-        Z80MemContext memContext = Z80MemContext.createInstance(z80Memory);
+        Z80MemContext memContext = Z80MemContext.createInstance(w.z80BusProvider);
         w.z80Disasm = new Z80Disasm(memContext, new Z80Decoder(memContext));
         return w;
     }
@@ -75,11 +87,6 @@ public class Z80CoreWrapper implements Z80Provider {
     }
 
     private boolean updateRunningFlag() {
-        //TODO check why this breaks Z80 WAV PLAYER
-        if (z80Core.isHalted()) {
-            wasRunning = false;
-            return false;
-        }
         boolean nowRunning = isRunning();
         if (wasRunning != nowRunning) {
 //            LOG.info("Z80: " + (nowRunning ? "ON" : "OFF"));
@@ -187,32 +194,26 @@ public class Z80CoreWrapper implements Z80Provider {
     //If the Z80 has interrupts disabled when the frame interrupt is supposed
     //to occur, it will be missed, rather than made pending.
     @Override
-    public boolean interrupt() {
-        //TODO improve interrupt handling,
-        //TODO needs to decide when an interrupt is taken by z80
-//        boolean interruptEnable = z80Core.isIFF1();
-//        if (interruptEnable) {
-//            activeInterrupt = true;
-//        }
-//        return interruptEnable;
-        activeInterrupt = true;
+    public boolean interrupt(boolean value) {
+        z80Core.setINTLine(value);
+        memIoOps.setActiveInterrupt(value);
         return true;
     }
 
     @Override
     public int readMemory(int address) {
-        return z80BusProvider.readMemory(address);
+        return (int) z80BusProvider.read(address, Size.BYTE);
     }
 
     @Override
     public void writeMemory(int address, int data) {
-        z80BusProvider.writeMemory(address, data);
+        z80BusProvider.write(address, data, Size.BYTE);
         LogHelper.printLevel(LOG, Level.DEBUG, "Write Z80: {}, {}", address, data, verbose);
     }
 
     @Override
-    public Z80BusProvider getZ80BusProvider() {
-        return this.z80BusProvider;
+    public BaseBusProvider getZ80BusProvider() {
+        return z80BusProvider;
     }
 
     @Override
@@ -225,60 +226,19 @@ public class Z80CoreWrapper implements Z80Provider {
         return z80Core.getZ80State();
     }
 
-    /**
-     * Z80 for genesis doesnt do IO
-     *
-     * @return
-     */
-    public static MemIoOps createGenesisIo(Z80BusProvider z80BusProvider, IMemory z80Memory) {
-//        The Z80 runs in interrupt mode 1, where an interrupt causes a RST 38h.
-//        However, interrupt mode 0 can be used as well, since FFh will be read off the bus.
-
-        MemIoOps memIoOps = new MemIoOps() {
-
-            @Override
-            public int peek8(int address) {
-                this.interruptHandlingTime(3); //TODO for lack of a better method ...
-                return z80BusProvider.readMemory(address);
-            }
-
-            @Override
-            public void poke8(int address, int value) {
-                this.interruptHandlingTime(3); //TODO for lack of a better method ...
-                z80BusProvider.writeMemory(address, value);
-            }
-
-            @Override
-            public int inPort(int port) {
-                super.inPort(port);
-                //TF4 calls this by mistake
-                LOG.debug("inPort: {}", port);
-                return 0xFF;
-            }
-
-            @Override
-            public void outPort(int port, int value) {
-                super.outPort(port, value);
-                LOG.warn("outPort: " + port + ", data: " + value);
-            }
-
-            @Override
-            public boolean isActiveINT() {
-                boolean res = activeInterrupt;
-                activeInterrupt = false;
-                return res;
-            }
-        };
-        memIoOps.setRam(z80Memory.getData());
-        return memIoOps;
-    }
-
     public static Function<DisassembledInstruction, String> disasmToString = d ->
             String.format("%08x   %12s   %s", d.getAddress(), d.getOpCode(), d.getMnemo());
 
     private void printVerbose() {
         if (verbose) {
-            String str = disasmToString.apply(z80Disasm.disassemble(z80Core.getRegPC()));
+            int address = z80Core.getRegPC();
+            String str = disasmToString.apply(z80Disasm.disassemble(address));
+            if (str.contains("nop")) {
+                int opcode = this.memIoOps.fetchOpcode(address);
+                if (opcode != 0) {
+                    System.out.println("oops");
+                }
+            }
             LOG.info(str);
         }
     }

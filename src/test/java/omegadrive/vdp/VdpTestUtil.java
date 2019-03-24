@@ -1,8 +1,10 @@
 package omegadrive.vdp;
 
-import omegadrive.GenesisProvider;
-import omegadrive.memory.MemoryProvider;
+import omegadrive.SystemProvider;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.RegionDetector;
+import omegadrive.vdp.gen.VdpInterruptHandler;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.IVdpFifo;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
@@ -34,7 +36,7 @@ public class VdpTestUtil {
         h.setvIntPending(false);
     }
 
-    public static void runToStartFrame(VdpProvider vdp) {
+    public static void runToStartFrame(GenesisVdpProvider vdp) {
         do {
             vdp.run(VDP_SLOT_CYCLES);
         } while (!isVBlank(vdp));
@@ -52,18 +54,18 @@ public class VdpTestUtil {
         vdp.setHip(false);
     }
 
-    public static void runVdpSlot(VdpProvider vdp) {
+    public static void runVdpSlot(GenesisVdpProvider vdp) {
         vdp.run(VDP_SLOT_CYCLES);
     }
 
-    public static void runVdpUntilFifoEmpty(VdpProvider vdp) {
+    public static void runVdpUntilFifoEmpty(GenesisVdpProvider vdp) {
         IVdpFifo fifo = vdp.getFifo();
         while (!fifo.isEmpty()) {
             vdp.run(VDP_SLOT_CYCLES);
         }
     }
 
-    public static int runVdpUntilDmaDone(VdpProvider vdp) {
+    public static int runVdpUntilDmaDone(GenesisVdpProvider vdp) {
         int slots = 0;
         boolean dmaDone;
         do {
@@ -74,7 +76,7 @@ public class VdpTestUtil {
         return slots;
     }
 
-    public static void runVdpUntilVBlank(VdpProvider vdp) {
+    public static void runVdpUntilVBlank(GenesisVdpProvider vdp) {
         //if we already are in vblank, run until vblank is over
         do {
             vdp.run(VDP_SLOT_CYCLES);
@@ -84,27 +86,27 @@ public class VdpTestUtil {
         } while (!isVBlank(vdp));
     }
 
-    public static boolean isVBlank(VdpProvider vdp) {
+    public static boolean isVBlank(GenesisVdpProvider vdp) {
         return (vdp.readControl() & 0x8) == 8;
     }
 
-    public static boolean isHBlank(VdpProvider vdp) {
+    public static boolean isHBlank(GenesisVdpProvider vdp) {
         return (vdp.readControl() & 0x4) == 4;
     }
 
-    public static void setH32(VdpProvider vdp) {
+    public static void setH32(GenesisVdpProvider vdp) {
         //        Set Video mode: PAL_H32_V28
         vdp.writeControlPort(0x8C00);
         vdp.resetVideoMode(true);
     }
 
-    public static void setH40(VdpProvider vdp) {
+    public static void setH40(GenesisVdpProvider vdp) {
         //        Set Video mode: PAL_H40_V28
         vdp.writeControlPort(0x8C81);
         vdp.resetVideoMode(true);
     }
 
-    public static String printVdpMemory(VdpMemoryInterface memoryInterface, VdpProvider.VdpRamType type, int from, int to) {
+    public static String printVdpMemory(VdpMemoryInterface memoryInterface, GenesisVdpProvider.VdpRamType type, int from, int to) {
         Function<Integer, Integer> getByteFn = addr -> {
             int word = memoryInterface.readVideoRamWord(type, addr);
             return addr % 2 == 0 ? word >> 8 : word & 0xFF;
@@ -117,7 +119,7 @@ public class VdpTestUtil {
                 collect(Collectors.joining(","));
     }
 
-    public static String print68kMemory(MemoryProvider memoryProvider, int from, int to) {
+    public static String print68kMemory(IMemoryProvider memoryProvider, int from, int to) {
         Function<Integer, String> toStringFn = v -> {
             String s = Integer.toHexString(memoryProvider.readRamByte(v)).toUpperCase();
             return s.length() < 2 ? '0' + s : s;
@@ -126,8 +128,8 @@ public class VdpTestUtil {
                 collect(Collectors.joining(","));
     }
 
-    public static GenesisProvider createTestGenesisProvider() {
-        return new GenesisProvider() {
+    public static SystemProvider createTestGenesisProvider() {
+        return new SystemProvider() {
             @Override
             public RegionDetector.Region getRegion() {
                 return null;

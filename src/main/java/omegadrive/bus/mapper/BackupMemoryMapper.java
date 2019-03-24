@@ -1,6 +1,7 @@
-package omegadrive.bus;
+package omegadrive.bus.mapper;
 
 import omegadrive.Genesis;
+import omegadrive.bus.gen.GenesisBus;
 import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.Size;

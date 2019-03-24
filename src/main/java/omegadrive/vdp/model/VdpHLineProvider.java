@@ -9,6 +9,8 @@ package omegadrive.vdp.model;
  */
 public interface VdpHLineProvider {
 
+    VdpHLineProvider NO_PROVIDER = () -> 0x1FF;
+
 //        The counter is loaded with the contents of register #10 in the following
 //        situations:
 //

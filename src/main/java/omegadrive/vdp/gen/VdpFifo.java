@@ -1,6 +1,7 @@
-package omegadrive.vdp;
+package omegadrive.vdp.gen;
 
 import omegadrive.util.LogHelper;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.IVdpFifo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,7 +37,7 @@ public class VdpFifo implements IVdpFifo {
     public static boolean printToSysOut = false || LogHelper.printToSytemOut;
 
     @Override
-    public void push(VdpProvider.VramMode vdpRamMode, int addressReg, int data) {
+    public void push(GenesisVdpProvider.VramMode vdpRamMode, int addressReg, int data) {
         if (isFull()) {
             LOG.info("FIFO full");
             return;

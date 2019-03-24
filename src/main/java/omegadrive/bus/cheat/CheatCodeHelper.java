@@ -1,6 +1,6 @@
 package omegadrive.bus.cheat;
 
-import omegadrive.bus.BusProvider;
+import omegadrive.bus.gen.GenesisBusProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,7 +50,7 @@ public class CheatCodeHelper {
     }
 
     public static boolean isRamPatch(BasicGenesisRawCode code) {
-        return code.getAddress() >= BusProvider.ADDRESS_RAM_MAP_START && code.getAddress() <= BusProvider.ADDRESS_UPPER_LIMIT;
+        return code.getAddress() >= GenesisBusProvider.ADDRESS_RAM_MAP_START && code.getAddress() <= GenesisBusProvider.ADDRESS_UPPER_LIMIT;
     }
 
     public static boolean isRomPatch(BasicGenesisRawCode code) {

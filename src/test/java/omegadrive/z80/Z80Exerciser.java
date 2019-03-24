@@ -1,8 +1,6 @@
 package omegadrive.z80;
 
-import omegadrive.z80.disasm.Z80Decoder;
-import omegadrive.z80.disasm.Z80Disasm;
-import omegadrive.z80.disasm.Z80MemContext;
+import omegadrive.memory.IMemoryRam;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import z80core.MemIoOps;
@@ -28,21 +26,28 @@ public class Z80Exerciser implements NotifyOps {
     public static final int MEMORY_SIZE = 0x10000;
 
     private Z80 z80;
-    private IMemory memory;
+    private IMemoryRam memory;
     private MemIoOps memIo;
+    private byte[] bram = new byte[MEMORY_SIZE];
 
     private boolean finish = false;
 
     public Z80Exerciser() {
         memory = new Z80Memory(MEMORY_SIZE);
         memIo = new MemIoOps();
-        memIo.setRam(memory.getData());
+        toByteArray(memory.getRamData(), bram);
+        memIo.setRam(bram);
         z80 = new Z80(memIo, this);
     }
 
+    private static byte[] toByteArray(int[] in, byte[] out) {
+        for (int i = 0; i < in.length; i++) {
+            out[i] = (byte) in[i];
+        }
+        return out;
+    }
+
     private void runTest(String testName) {
-        Z80MemContext memContext = Z80MemContext.createInstance(memory);
-        Z80Disasm z80Disasm = new Z80Disasm(memContext, new Z80Decoder(memContext));
         byte[] fileBytes;
         Path file = Paths.get(".", resourcesPath + testName);
         try {

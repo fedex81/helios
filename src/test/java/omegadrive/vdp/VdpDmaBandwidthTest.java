@@ -1,6 +1,7 @@
 package omegadrive.vdp;
 
 import omegadrive.util.LogHelper;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
@@ -23,73 +24,73 @@ public class VdpDmaBandwidthTest extends BaseVdpDmaBandwidthTest {
     @Test
     public void test68kToCramBlankingH40() {
         VdpTestUtil.setH40(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.CRAM, BLANKING_VRAM_DMA_PER_LINE_H40_WORDS + 1, false, true);
+        test68kDma(GenesisVdpProvider.VdpRamType.CRAM, BLANKING_VRAM_DMA_PER_LINE_H40_WORDS + 1, false, true);
     }
 
     @Test
     public void test68kToCramBlankingH32() {
         VdpTestUtil.setH32(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.CRAM, BLANKING_VRAM_DMA_PER_LINE_H32_WORDS + 1, true, true);
+        test68kDma(GenesisVdpProvider.VdpRamType.CRAM, BLANKING_VRAM_DMA_PER_LINE_H32_WORDS + 1, true, true);
     }
 
     @Test
     public void test68kToCramActiveScreenH32() {
         VdpTestUtil.setH32(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.CRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32_WORDS + 1, true, false);
+        test68kDma(GenesisVdpProvider.VdpRamType.CRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32_WORDS + 1, true, false);
     }
 
     @Test
     public void test68kToCramActiveScreenH40() {
         VdpTestUtil.setH40(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.CRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40_WORDS + 1, false, false);
+        test68kDma(GenesisVdpProvider.VdpRamType.CRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40_WORDS + 1, false, false);
     }
 
     @Test
     public void test68kToVsramBlankingH40() {
         VdpTestUtil.setH40(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.VSRAM, BLANKING_VRAM_DMA_PER_LINE_H40_WORDS + 1, false, true);
+        test68kDma(GenesisVdpProvider.VdpRamType.VSRAM, BLANKING_VRAM_DMA_PER_LINE_H40_WORDS + 1, false, true);
     }
 
     @Test
     public void test68kToVsramBlankingH32() {
         VdpTestUtil.setH32(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.VSRAM, BLANKING_VRAM_DMA_PER_LINE_H32_WORDS + 1, true, true);
+        test68kDma(GenesisVdpProvider.VdpRamType.VSRAM, BLANKING_VRAM_DMA_PER_LINE_H32_WORDS + 1, true, true);
     }
 
     @Test
     public void test68kToVsramActiveScreenH32() {
         VdpTestUtil.setH32(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.VSRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32_WORDS + 1, true, false);
+        test68kDma(GenesisVdpProvider.VdpRamType.VSRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32_WORDS + 1, true, false);
     }
 
     @Test
     public void test68kToVsramActiveScreenH40() {
         VdpTestUtil.setH40(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.VSRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40_WORDS + 1, false, false);
+        test68kDma(GenesisVdpProvider.VdpRamType.VSRAM, ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40_WORDS + 1, false, false);
     }
 
     @Test
     public void test68kToVramBlankingH40() {
         VdpTestUtil.setH40(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.VRAM, BLANKING_VRAM_DMA_PER_LINE_H40_WORDS / 2, false, true);
+        test68kDma(GenesisVdpProvider.VdpRamType.VRAM, BLANKING_VRAM_DMA_PER_LINE_H40_WORDS / 2, false, true);
     }
 
     @Test
     public void test68kToVramBlankingH32() {
         VdpTestUtil.setH32(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.VRAM, BLANKING_VRAM_DMA_PER_LINE_H32_WORDS / 2, true, true);
+        test68kDma(GenesisVdpProvider.VdpRamType.VRAM, BLANKING_VRAM_DMA_PER_LINE_H32_WORDS / 2, true, true);
     }
 
     @Test
     public void test68kToVramActiveScreenH32() {
         VdpTestUtil.setH32(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.VRAM, (ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32_WORDS + 3) / 2, true, false);
+        test68kDma(GenesisVdpProvider.VdpRamType.VRAM, (ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32_WORDS + 3) / 2, true, false);
     }
 
     @Test
     public void test68kToVramActiveScreenH40() {
         VdpTestUtil.setH40(vdpProvider);
-        test68kDma(VdpProvider.VdpRamType.VRAM, (ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40_WORDS + 3) / 2, false, false);
+        test68kDma(GenesisVdpProvider.VdpRamType.VRAM, (ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40_WORDS + 3) / 2, false, false);
     }
 
     @Test

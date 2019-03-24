@@ -19,6 +19,7 @@ public interface JoypadProvider {
     }
 
     enum JoypadType {
+        BUTTON_2,
         BUTTON_3,
         BUTTON_6
     }

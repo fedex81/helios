@@ -1,7 +1,6 @@
 package omegadrive.vdp.model;
 
 import omegadrive.util.Size;
-import omegadrive.vdp.VdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,13 +33,13 @@ public interface VdpMemoryInterface {
 
     int readVsramWord(int address);
 
-    void writeVideoRamWord(VdpProvider.VdpRamType vramType, int data, int address);
+    void writeVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int data, int address);
 
     int[] getCram();
 
     int[] getVram();
 
-    default int readVideoRamWord(VdpProvider.VdpRamType vramType, int address) {
+    default int readVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int address) {
         switch (vramType) {
             case VRAM:
                 return readVramWord(address);
@@ -54,7 +53,7 @@ public interface VdpMemoryInterface {
         return 0;
     }
 
-    default void writeVideoRamWord(VdpProvider.VramMode mode, int data, int address) {
+    default void writeVideoRamWord(GenesisVdpProvider.VramMode mode, int data, int address) {
         if (mode == null) {
             LOG.warn("writeDataPort when vramMode is not set, address {} , size {}", address, Size.WORD);
             return;
@@ -62,7 +61,7 @@ public interface VdpMemoryInterface {
         writeVideoRamWord(mode.getRamType(), data, address);
     }
 
-    default int readVideoRamWord(VdpProvider.VramMode mode, int address) {
+    default int readVideoRamWord(GenesisVdpProvider.VramMode mode, int address) {
         if (mode == null) {
             LOG.warn("readDataPort when vramMode is not set, address {} , size {}", address, Size.WORD);
             return 0;

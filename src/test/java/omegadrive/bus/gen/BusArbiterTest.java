@@ -1,10 +1,10 @@
-package omegadrive.bus;
+package omegadrive.bus.gen;
 
-import omegadrive.GenesisProvider;
+import omegadrive.SystemProvider;
 import omegadrive.m68k.M68kProvider;
 import omegadrive.m68k.MC68000Wrapper;
-import omegadrive.vdp.VdpProvider;
 import omegadrive.vdp.VdpTestUtil;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
@@ -22,8 +22,8 @@ import org.junit.Test;
 public class BusArbiterTest {
 
     private boolean verbose = false;
-    private VdpProvider vdp;
-    private BusProvider bus;
+    private GenesisVdpProvider vdp;
+    private GenesisBusProvider bus;
     private BusArbiter busArbiter;
     private M68kProvider cpu;
 
@@ -34,10 +34,10 @@ public class BusArbiterTest {
 
     @Before
     public void setup() {
-        GenesisProvider emu = VdpTestUtil.createTestGenesisProvider();
-        bus = BusProvider.createBus();
-        vdp = VdpProvider.createVdp(bus);
-        Z80Provider z80 = Z80CoreWrapper.createInstance(bus);
+        SystemProvider emu = VdpTestUtil.createTestGenesisProvider();
+        bus = GenesisBusProvider.createBus();
+        vdp = GenesisVdpProvider.createVdp(bus);
+        Z80Provider z80 = Z80CoreWrapper.createGenesisInstance(bus);
 
 
         cpu = new MC68000Wrapper(bus) {
@@ -56,7 +56,7 @@ public class BusArbiterTest {
     private void setupZ80() {
         Z80Provider z80 = new Z80CoreWrapper() {
             @Override
-            public boolean interrupt() {
+            public boolean interrupt(boolean value) {
                 hCounterRaise = vdp.getHCounter();
                 vCounterRaise = vdp.getVCounter();
                 return true;

@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static omegadrive.util.RegionDetector.Region.*;
-import static omegadrive.vdp.VdpProvider.*;
+import static omegadrive.vdp.model.GenesisVdpProvider.*;
 
 /**
  * ${FILE}
@@ -30,7 +30,9 @@ public enum VideoMode {
     NTSCU_H40_V28(USA, H40, V28_CELL),
     NTSCJ_H40_V28(JAPAN, H40, V28_CELL),
     NTSCU_H40_V30(USA, H40, V30_CELL),
-    NTSCJ_H40_V30(JAPAN, H40, V30_CELL),;
+    NTSCJ_H40_V30(JAPAN, H40, V30_CELL),
+
+    NTSCJ_H32_V24(JAPAN, H32, V24_CELL);
 
     private static Logger LOG = LogManager.getLogger(VideoMode.class.getSimpleName());
 
@@ -70,6 +72,14 @@ public enum VideoMode {
 
     public boolean isV28() {
         return v == V28_CELL;
+    }
+
+    public boolean isV30() {
+        return v == V30_CELL;
+    }
+
+    public boolean isV24() {
+        return v == V24_CELL;
     }
 
     public static VideoMode getVideoMode(RegionDetector.Region region, boolean isH40, boolean isV30,

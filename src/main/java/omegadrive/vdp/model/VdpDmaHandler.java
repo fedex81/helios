@@ -1,7 +1,6 @@
 package omegadrive.vdp.model;
 
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.VdpProvider;
 
 /**
  * ${FILE}
@@ -18,7 +17,7 @@ public interface VdpDmaHandler {
 
     DmaMode getDmaMode();
 
-    DmaMode setupDma(VdpProvider.VramMode vramMode, long data, boolean m1);
+    DmaMode setupDma(GenesisVdpProvider.VramMode vramMode, long data, boolean m1);
 
     boolean doDmaSlot(VideoMode videoMode);
 

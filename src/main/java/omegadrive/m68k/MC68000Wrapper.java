@@ -4,7 +4,7 @@ import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
 import omegadrive.Genesis;
-import omegadrive.bus.BusProvider;
+import omegadrive.bus.gen.GenesisBusProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,11 +42,11 @@ public class MC68000Wrapper implements M68kProvider {
 
     private MC68000 m68k;
     private AddressSpace addressSpace;
-    private BusProvider busProvider;
+    private GenesisBusProvider busProvider;
     private boolean stop;
     protected int currentPC;
 
-    public MC68000Wrapper(BusProvider busProvider) {
+    public MC68000Wrapper(GenesisBusProvider busProvider) {
         this.m68k = createCpu();
         this.busProvider = busProvider;
         this.addressSpace = MC68000AddressSpace.createInstance(busProvider);

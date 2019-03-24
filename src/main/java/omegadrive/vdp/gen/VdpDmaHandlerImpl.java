@@ -1,9 +1,10 @@
-package omegadrive.vdp;
+package omegadrive.vdp.gen;
 
 import omegadrive.Genesis;
-import omegadrive.bus.BusProvider;
+import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.IVdpFifo;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
@@ -12,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
 
-import static omegadrive.vdp.VdpProvider.VdpRegisterName.*;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 /**
  * ${FILE}
@@ -29,9 +30,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     public static boolean lessVerbose = false || verbose;
     public static boolean printToSysOut = false;
 
-    protected VdpProvider vdpProvider;
+    protected GenesisVdpProvider vdpProvider;
     protected VdpMemoryInterface memoryInterface;
-    protected BusProvider busProvider;
+    protected GenesisBusProvider busProvider;
 
     private int dmaFillData;
     private DmaMode dmaMode = null;
@@ -40,8 +41,8 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     //TODO this should be in the VDP
     private IVdpFifo.VdpFifoEntry pendingReadEntry = new IVdpFifo.VdpFifoEntry();
 
-    public static VdpDmaHandler createInstance(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
-                                               BusProvider busProvider) {
+    public static VdpDmaHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
+                                               GenesisBusProvider busProvider) {
         VdpDmaHandlerImpl d = new VdpDmaHandlerImpl();
         d.vdpProvider = vdpProvider;
         d.busProvider = busProvider;
@@ -57,7 +58,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return true;
     }
 
-    public DmaMode setupDma(VdpProvider.VramMode vramMode, long data, boolean m1) {
+    public DmaMode setupDma(GenesisVdpProvider.VramMode vramMode, long data, boolean m1) {
         if (!checkSetup(m1, data)) {
             return null;
         }
@@ -206,7 +207,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         if (pendingReadEntry.vdpRamMode == null) {
             int sourceAddress = getSourceAddress() ^ 1;
             int data = memoryInterface.readVramByte(sourceAddress);
-            pendingReadEntry.vdpRamMode = VdpProvider.VramMode.vramWrite;
+            pendingReadEntry.vdpRamMode = GenesisVdpProvider.VramMode.vramWrite;
             pendingReadEntry.data = data;
             printInfo("IN PROGRESS - READ");
         } else {
@@ -221,7 +222,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     //it will act like you set it to $10000.
     private int decreaseDmaLength() {
         int dmaLen = getDmaLength();
-        dmaLen = (dmaLen - 1) & (VdpProvider.VDP_VRAM_SIZE - 1);
+        dmaLen = (dmaLen - 1) & (GenesisVdpProvider.VDP_VRAM_SIZE - 1);
         vdpProvider.updateRegisterData(DMA_LENGTH_LOW, dmaLen & 0xFF);
         vdpProvider.updateRegisterData(DMA_LENGTH_HIGH, dmaLen >> 8);
         return dmaLen;
@@ -259,7 +260,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         postDmaRegisters();
     }
 
-    private DmaMode getDmaMode(int reg17, VdpProvider.VramMode vramMode) {
+    private DmaMode getDmaMode(int reg17, GenesisVdpProvider.VramMode vramMode) {
         int dmaBits = reg17 >> 6;
         DmaMode mode = null;
         switch (dmaBits) {
@@ -269,7 +270,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                 mode = DmaMode.VRAM_COPY;
                 break;
             case 2:
-                if (vramMode == VdpProvider.VramMode.vramWrite) {
+                if (vramMode == GenesisVdpProvider.VramMode.vramWrite) {
                     mode = DmaMode.VRAM_FILL;
                 }
                 break;

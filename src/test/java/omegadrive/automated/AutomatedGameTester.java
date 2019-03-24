@@ -1,7 +1,9 @@
 package omegadrive.automated;
 
 import omegadrive.Genesis;
-import omegadrive.GenesisProvider;
+import omegadrive.Sg1000;
+import omegadrive.SystemProvider;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.FileLoader;
@@ -29,7 +31,8 @@ import java.util.stream.Collectors;
 public class AutomatedGameTester {
 
     private static String romFolder =
-            "/data/emu/roms/genesis/nointro";
+            "/home/fede/roms/sg1000";
+    //            "/data/emu/roms/genesis/nointro";
     //            "/data/emu/roms/genesis/goodgen/unverified";
 //            "/home/fede/roms/issues";
 //            "/home/fede/roms/tricky";
@@ -44,6 +47,9 @@ public class AutomatedGameTester {
     private static Predicate<Path> testRomsPredicate = p ->
             (p.toString().endsWith("bin") || p.toString().endsWith("md"));
 
+    private static Predicate<Path> testSgRomsPredicate = p ->
+            (p.toString().endsWith("sg") || p.toString().endsWith("sc"));
+
     private static Predicate<Path> testVerifiedRomsPredicate = p ->
             testRomsPredicate.test(p) &&
                     (noIntro || p.getFileName().toString().contains("[!]"));
@@ -53,42 +59,55 @@ public class AutomatedGameTester {
 //        new AutomatedGameTester().testAll(false);
 //        new AutomatedGameTester().testCartridgeInfo();
 //        new AutomatedGameTester().testList();
-        new AutomatedGameTester().bootRoms(true);
+//        new AutomatedGameTester().bootRomsGenesis(true);
+        new AutomatedGameTester().bootRomsSg1000(true);
         System.exit(0);
     }
 
-    private void bootRoms(boolean shuffle) throws IOException {
+    private void bootRomsSg1000(boolean shuffle) throws IOException {
+        Path folder = Paths.get(romFolder);
+        List<Path> testRoms = Files.list(folder).filter(testSgRomsPredicate).sorted().collect(Collectors.toList());
+        if (shuffle) {
+            Collections.shuffle(testRoms, new Random());
+        }
+        bootRoms(Sg1000.createInstance(), testRoms);
+    }
+
+    private void bootRomsGenesis(boolean shuffle) throws IOException {
         Path folder = Paths.get(romFolder);
         List<Path> testRoms = Files.list(folder).filter(testVerifiedRomsPredicate).sorted().collect(Collectors.toList());
         if (shuffle) {
             Collections.shuffle(testRoms, new Random());
         }
-        GenesisProvider genesisProvider = Genesis.createInstance();
+        bootRoms(Genesis.createInstance(), testRoms);
+    }
+
+    private void bootRoms(SystemProvider system, List<Path> testRoms) {
         System.out.println("Roms to test: " + testRoms.size());
         System.out.println(header);
         File logFile = new File("./test_output.log");
         long logFileLen = 0;
         boolean skip = true;
-        long RUN_DELAY_MS = 60_000;
+        long RUN_DELAY_MS = 10_000;
 
         for (Path rom : testRoms) {
             skip &= shouldSkip(rom);
             if (skip) {
                 continue;
             }
-            genesisProvider.init();
-            genesisProvider.handleNewRom(rom);
+            system.init();
+            system.handleNewRom(rom);
 //            genesisProvider.setFullScreen(true);
             Util.sleep(BOOT_DELAY_MS);
             boolean tooManyErrors = false;
             int totalDelay = BOOT_DELAY_MS;
-            if (genesisProvider.isRomRunning()) {
+            if (system.isRomRunning()) {
                 do {
                     tooManyErrors = checkLogFileSize(logFile, rom.getFileName().toString(), logFileLen);
                     Util.sleep(BOOT_DELAY_MS);
                     totalDelay += BOOT_DELAY_MS;
                 } while (totalDelay < RUN_DELAY_MS && !tooManyErrors);
-                genesisProvider.handleCloseRom();
+                system.handleCloseRom();
             }
             System.out.println(rom.getFileName().toString());
             logFileLen = logFileLength(logFile);
@@ -120,7 +139,7 @@ public class AutomatedGameTester {
     }
 
     private void testRoms(List<Path> testRoms) {
-        GenesisProvider genesisProvider = Genesis.createInstance();
+        SystemProvider genesisProvider = Genesis.createInstance();
         System.out.println("Roms to test: " + testRoms.size());
         System.out.println(header);
         boolean skip = true;
@@ -194,7 +213,7 @@ public class AutomatedGameTester {
                 continue;
             }
             int[] data = FileLoader.readFile(rom);
-            MemoryProvider memoryProvider = MemoryProvider.createInstance(data);
+            IMemoryProvider memoryProvider = MemoryProvider.createInstance(data, 0);
             try {
                 CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,
                         rom.getFileName().toString());

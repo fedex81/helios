@@ -1,10 +1,15 @@
 package omegadrive.vdp;
 
-import omegadrive.GenesisProvider;
-import omegadrive.bus.BusProvider;
-import omegadrive.memory.GenesisMemoryProvider;
+import omegadrive.SystemProvider;
+import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.LogHelper;
+import omegadrive.vdp.gen.GenesisVdp;
+import omegadrive.vdp.gen.GenesisVdpMemoryInterface;
+import omegadrive.vdp.gen.VdpDmaHandlerImpl;
+import omegadrive.vdp.gen.VdpFifo;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpSlotType;
 import org.apache.logging.log4j.LogManager;
@@ -15,7 +20,7 @@ import org.junit.Ignore;
 
 import java.util.Arrays;
 
-import static omegadrive.vdp.VdpProvider.VdpRegisterName.*;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 /**
  * ${FILE}
@@ -32,9 +37,9 @@ public class BaseVdpDmaBandwidthTest {
 
     private static Logger LOG = LogManager.getLogger(BaseVdpDmaBandwidthTest.class.getSimpleName());
 
-    VdpProvider vdpProvider;
+    GenesisVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
-    MemoryProvider memoryProvider;
+    IMemoryProvider memoryProvider;
 
     static boolean verbose = true;
 
@@ -60,9 +65,9 @@ public class BaseVdpDmaBandwidthTest {
 
     @Before
     public void setup() {
-        memoryProvider = new GenesisMemoryProvider();
-        GenesisProvider emu = VdpTestUtil.createTestGenesisProvider();
-        BusProvider busProvider = BusProvider.createBus();
+        memoryProvider = MemoryProvider.createGenesisInstance();
+        SystemProvider emu = VdpTestUtil.createTestGenesisProvider();
+        GenesisBusProvider busProvider = GenesisBusProvider.createBus();
         memoryInterface = GenesisVdpMemoryInterface.createInstance();
         vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface);
         busProvider.attachDevice(emu).attachDevice(memoryProvider);
@@ -78,19 +83,19 @@ public class BaseVdpDmaBandwidthTest {
 
     private void setup68kRam() {
         int val = 0xFF;
-        for (int i = 0; i < VdpProvider.VDP_VRAM_SIZE; i++) {
+        for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i++) {
             memoryProvider.writeRamByte(i, val);
             val = (val - 1) & 0xFF;
         }
-        String str = VdpTestUtil.print68kMemory(memoryProvider, 0, VdpProvider.VDP_VRAM_SIZE);
+        String str = VdpTestUtil.print68kMemory(memoryProvider, 0, GenesisVdpProvider.VDP_VRAM_SIZE);
         System.out.println(str);
     }
 
     //CRAM words == vdp Slots
-    protected void test68kDma(VdpProvider.VdpRamType vdpRamType, int dmaLen, boolean h32, boolean blanking) {
+    protected void test68kDma(GenesisVdpProvider.VdpRamType vdpRamType, int dmaLen, boolean h32, boolean blanking) {
         setup68kRam();
         int refreshSlots = h32 ? REFRESH_SLOTS_H32 : REFRESH_SLOTS_H40;
-        int slotsPerLine = h32 ? VdpProvider.H32_SLOTS : VdpProvider.H40_SLOTS;
+        int slotsPerLine = h32 ? GenesisVdpProvider.H32_SLOTS : GenesisVdpProvider.H40_SLOTS;
         int mode2 = blanking ? 0x34 : 0x74; //dma enabled
         vdpProvider.updateRegisterData(MODE_2, mode2);
         vdpProvider.updateRegisterData(AUTO_INCREMENT, 2);
@@ -102,7 +107,7 @@ public class BaseVdpDmaBandwidthTest {
 
 //        VdpTestUtil.runToStartFrame(vdpProvider);
 
-        int commandLong = vdpRamType == VdpProvider.VdpRamType.CRAM ? 0xC000_0080 : (vdpRamType == VdpProvider.VdpRamType.VSRAM)
+        int commandLong = vdpRamType == GenesisVdpProvider.VdpRamType.CRAM ? 0xC000_0080 : (vdpRamType == GenesisVdpProvider.VdpRamType.VSRAM)
                 ? 0x4000_0090 : 0x4000_0080;
         vdpProvider.writeControlPort(commandLong >> 16);
         vdpProvider.writeControlPort(commandLong & 0xFFFF);
@@ -115,7 +120,7 @@ public class BaseVdpDmaBandwidthTest {
         System.out.println(vdpRamType + " after: " + VdpTestUtil.printVdpMemory(memoryInterface, vdpRamType, 0, 0xFF));
 
         if (blanking) {
-            int expected = vdpRamType == VdpProvider.VdpRamType.VRAM ? dmaLen * 2 + refreshSlots - 1 : dmaLen + refreshSlots;
+            int expected = vdpRamType == GenesisVdpProvider.VdpRamType.VRAM ? dmaLen * 2 + refreshSlots - 1 : dmaLen + refreshSlots;
             Assert.assertEquals(expected, slots);
         } else {
             Assert.assertTrue("Should be: " + slots + "> " + slotsPerLine, slots > slotsPerLine);
@@ -123,7 +128,7 @@ public class BaseVdpDmaBandwidthTest {
     }
 
     protected void testDMAFillDuringActiveScreen(int dmaLen, boolean h32) {
-        int slotsPerLine = h32 ? VdpProvider.H32_SLOTS : VdpProvider.H40_SLOTS;
+        int slotsPerLine = h32 ? GenesisVdpProvider.H32_SLOTS : GenesisVdpProvider.H40_SLOTS;
         long dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
         setupDMAFillInternal(dmaFillCommand, 2, dmaLen);
         int slots = startDmaFill(dmaLen, h32, false);
@@ -133,7 +138,7 @@ public class BaseVdpDmaBandwidthTest {
     }
 
     protected void testDMACopyInternal(int dmaLen, boolean h32, boolean duringVBlank) {
-        int slotsPerLine = h32 ? VdpProvider.H32_SLOTS : VdpProvider.H40_SLOTS;
+        int slotsPerLine = h32 ? GenesisVdpProvider.H32_SLOTS : GenesisVdpProvider.H40_SLOTS;
         int refreshSlots = h32 ? REFRESH_SLOTS_H32 : REFRESH_SLOTS_H40;
         int slots = startDMACopy(1, dmaLen, duringVBlank);
         // more than one line

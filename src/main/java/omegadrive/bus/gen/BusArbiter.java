@@ -1,7 +1,7 @@
-package omegadrive.bus;
+package omegadrive.bus.gen;
 
 import omegadrive.m68k.M68kProvider;
-import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +27,7 @@ public class BusArbiter {
 
     private static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
 
-    protected VdpProvider vdp;
+    protected GenesisVdpProvider vdp;
     protected M68kProvider m68k;
     protected Z80Provider z80;
 
@@ -48,7 +48,7 @@ public class BusArbiter {
     protected BusArbiter() {
     }
 
-    public static BusArbiter createInstance(VdpProvider vdp, M68kProvider m68k, Z80Provider z80) {
+    public static BusArbiter createInstance(GenesisVdpProvider vdp, M68kProvider m68k, Z80Provider z80) {
         BusArbiter b = new BusArbiter();
         b.vdp = vdp;
         b.m68k = m68k;
@@ -152,7 +152,7 @@ public class BusArbiter {
     }
 
     private boolean raiseInterruptsZ80() {
-        boolean res = z80.interrupt();
+        boolean res = z80.interrupt(true);
         if (res) {
             z80Int = IntState.ASSERTED;
             logInfo("Z80 INT: {}", z80Int);
@@ -185,7 +185,7 @@ public class BusArbiter {
 
     public void newFrame() {
         vIntFrameExpired = false;
-        vIntOnLine = vdp.getVideoMode().isV28() ? VdpProvider.V28_VBLANK_SET : VdpProvider.V30_VBLANK_SET;
+        vIntOnLine = vdp.getVideoMode().isV28() ? GenesisVdpProvider.V28_VBLANK_SET : GenesisVdpProvider.V30_VBLANK_SET;
         logInfo("NewFrame");
     }
 

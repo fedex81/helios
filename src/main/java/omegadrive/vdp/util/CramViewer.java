@@ -1,9 +1,9 @@
 package omegadrive.vdp.util;
 
 import omegadrive.util.Util;
-import omegadrive.vdp.GenesisVdpMemoryInterface;
-import omegadrive.vdp.VdpColorMapper;
-import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.gen.GenesisVdpMemoryInterface;
+import omegadrive.vdp.gen.VdpColorMapper;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
 import javax.swing.*;
@@ -19,7 +19,7 @@ import java.util.Arrays;
  */
 public class CramViewer {
 
-    private static final int CRAM_ENTRIES = VdpProvider.VDP_CRAM_SIZE / 2;
+    private static final int CRAM_ENTRIES = GenesisVdpProvider.VDP_CRAM_SIZE / 2;
     private static final int LABEL_HEIGHT = 200;
     private static final int LABEL_WIDTH = 10;
     private static final int FRAME_HEIGHT = LABEL_HEIGHT + 50;
@@ -51,7 +51,7 @@ public class CramViewer {
             this.cramPanel = new JPanel(new GridLayout(ROWS, CRAM_ENTRIES));
             cramPanel.setSize(FRAME_WIDTH - 25, FRAME_HEIGHT - 25);
             int k = 0;
-            for (int i = 0; i < VdpProvider.VDP_CRAM_SIZE; i += 2) {
+            for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
                 JPanel cpanel = new JPanel();
                 cpanel.setBackground(Color.BLACK);
                 cpanel.setForeground(Color.BLACK);
@@ -79,8 +79,8 @@ public class CramViewer {
     public void update() {
         SwingUtilities.invokeLater(() -> {
             int k = 0;
-            for (int i = 0; i < VdpProvider.VDP_CRAM_SIZE; i += 2) {
-                int cramColor = vdpMemoryInterface.readVideoRamWord(VdpProvider.VdpRamType.CRAM, i);
+            for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
+                int cramColor = vdpMemoryInterface.readVideoRamWord(GenesisVdpProvider.VdpRamType.CRAM, i);
                 int rgb = colorMapper.getColor(cramColor);
                 Color c = new Color(rgb);
                 JPanel label = panelList[k];

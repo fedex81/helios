@@ -1,8 +1,8 @@
-package omegadrive.vdp;
+package omegadrive.vdp.gen;
 
 import omegadrive.Genesis;
-import omegadrive.GenesisProvider;
-import omegadrive.bus.BusProvider;
+import omegadrive.SystemProvider;
+import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.util.*;
 import omegadrive.vdp.model.*;
 import org.apache.logging.log4j.Level;
@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
  * @author DarkMoe
  *
  */
-public class GenesisVdp implements VdpProvider, VdpHLineProvider {
+public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
 
     private static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
@@ -110,7 +110,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     long all;
 
-    private BusProvider bus;
+    private GenesisBusProvider bus;
     protected VdpInterruptHandler interruptHandler;
     private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
@@ -121,7 +121,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     private int line;
 
-    public static GenesisVdp createInstance(BusProvider bus, VdpMemoryInterface memoryInterface,
+    public static GenesisVdp createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface,
                                             VdpDmaHandler dmaHandler, RegionDetector.Region region) {
         GenesisVdp v = new GenesisVdp();
         v.bus = bus;
@@ -132,7 +132,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         return v;
     }
 
-    public static GenesisVdp createInstance(BusProvider bus, VdpMemoryInterface memoryInterface) {
+    public static GenesisVdp createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface) {
         GenesisVdp v = new GenesisVdp();
         v.bus = bus;
         v.memoryInterface = memoryInterface;
@@ -141,7 +141,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         return v;
     }
 
-    public static GenesisVdp createInstance(BusProvider bus) {
+    public static GenesisVdp createInstance(GenesisBusProvider bus) {
         return createInstance(bus, GenesisVdpMemoryInterface.createInstance());
     }
 
@@ -190,14 +190,14 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
 
     //TODO fix this
     private void initMode() {
-        region = Optional.ofNullable(bus.getEmulator()).map(GenesisProvider::getRegion).orElse(RegionDetector.Region.EUROPE);
+        region = Optional.ofNullable(bus.getEmulator()).map(SystemProvider::getRegion).orElse(RegionDetector.Region.EUROPE);
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
         resetVideoMode(true);
         reloadRegisters();
     }
 
     private void reloadRegisters() {
-        IntStream.range(0, VdpProvider.VDP_REGISTERS_SIZE).forEach(i -> updateVariables(i, registers[i]));
+        IntStream.range(0, GenesisVdpProvider.VDP_REGISTERS_SIZE).forEach(i -> updateVariables(i, registers[i]));
     }
 
     private int lastControl = -1;
@@ -523,7 +523,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
             if ((codeRegister & 0b10_0000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
                 if (dmaMode == VdpDmaHandler.DmaMode.MEM_TO_VRAM) {
-                    bus.setStop68k(BusProvider.DMA_IN_PROGRESS_MASK);
+                    bus.setStop68k(GenesisBusProvider.DMA_IN_PROGRESS_MASK);
                 }
                 LogHelper.printLevel(LOG, Level.INFO, "After DMA setup, writeAddr: {}, data: {}, firstWrite: {}"
                         , addressRegister, all, writePendingControlPort, verbose);
@@ -645,8 +645,8 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     private void evaluateStop68k() {
-        int value = fifo.isFull() ? BusProvider.FIFO_FULL_MASK : 0;
-        value |= (dma == 1 && dmaHandler.dmaInProgress()) ? BusProvider.DMA_IN_PROGRESS_MASK : value;
+        int value = fifo.isFull() ? GenesisBusProvider.FIFO_FULL_MASK : 0;
+        value |= (dma == 1 && dmaHandler.dmaInProgress()) ? GenesisBusProvider.DMA_IN_PROGRESS_MASK : value;
         bus.setStop68k(value);
     }
 
@@ -697,7 +697,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
         processExternalSlot();
 
         //draw on the last counter (use 9bit internal counter value)
-        if (interruptHandler.isLastSlot()) {
+        if (interruptHandler.isLastLineSlot()) {
             //draw the line
 //            drawScanline(line, displayEnable);
             line++;
@@ -710,7 +710,7 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
                 line = 0;
             }
         }
-        if (interruptHandler.isFirstSlot()) {
+        if (interruptHandler.isFirstLineSlot()) {
             renderHandler.initLineData(line);
             drawScanline(line, displayEnable);
         }
@@ -761,8 +761,9 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public void run(int cycles) {
+    public boolean run(int cycles) {
         runSlot();
+        return false;
     }
 
     @Override
@@ -778,6 +779,11 @@ public class GenesisVdp implements VdpProvider, VdpHLineProvider {
     @Override
     public VdpMemoryInterface getVdpMemory() {
         return memoryInterface;
+    }
+
+    @Override
+    public int[][] getScreenData() {
+        return null; //TODO
     }
 
     @Override

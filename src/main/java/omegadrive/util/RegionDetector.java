@@ -1,5 +1,6 @@
 package omegadrive.util;
 
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,14 +27,14 @@ public class RegionDetector {
     public static int PAL_FPS = 50;
     public static int NTSC_FPS = 60;
 
-    public static long FIRST_REGION_ADDRESS = 0x1f0;
-    public static long SECOND_REGION_ADDRESS = 0x1f1;
-    public static long THIRD_REGION_ADDRESS = 0x1f2;
+    public static int FIRST_REGION_ADDRESS = 0x1f0;
+    public static int SECOND_REGION_ADDRESS = 0x1f1;
+    public static int THIRD_REGION_ADDRESS = 0x1f2;
 
-    public static Region detectRegion(MemoryProvider memoryProvider, boolean verbose) {
-        char char1 = (char) memoryProvider.readCartridgeByte(FIRST_REGION_ADDRESS);
-        char char2 = (char) memoryProvider.readCartridgeByte(SECOND_REGION_ADDRESS);
-        char char3 = (char) memoryProvider.readCartridgeByte(THIRD_REGION_ADDRESS);
+    public static Region detectRegion(IMemoryProvider memoryProvider, boolean verbose) {
+        char char1 = (char) memoryProvider.readRomByte(FIRST_REGION_ADDRESS);
+        char char2 = (char) memoryProvider.readRomByte(SECOND_REGION_ADDRESS);
+        char char3 = (char) memoryProvider.readRomByte(THIRD_REGION_ADDRESS);
         String s = String.valueOf(char1) + String.valueOf(char2) + String.valueOf(char3);
 
         Region[] regions = new Region[3];
@@ -55,7 +56,7 @@ public class RegionDetector {
         return res;
     }
 
-    public static Region detectRegion(MemoryProvider memoryProvider) {
+    public static Region detectRegion(IMemoryProvider memoryProvider) {
         return detectRegion(memoryProvider, false);
     }
 
@@ -64,7 +65,7 @@ public class RegionDetector {
         Files.list(romFolder).
                 peek(System.out::print).
                 map(FileLoader::readFileSafe).
-                map(MemoryProvider::createInstance).
+                map(r -> MemoryProvider.createInstance(r, MemoryProvider.M68K_RAM_SIZE)).
                 forEach(RegionDetector::detectRegion);
     }
 

@@ -1,5 +1,6 @@
 package omegadrive.util;
 
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +26,7 @@ public class CartridgeInfoProvider {
     public static final long DEFAULT_SRAM_END_ADDRESS = 0x20_FFFF;
     public static final int DEFAULT_SRAM_BYTE_SIZE = (int) (DEFAULT_SRAM_END_ADDRESS - DEFAULT_SRAM_START_ADDRESS) + 1;
 
+
     public static final int ROM_START_ADDRESS = 0x1A0;
     public static final int ROM_END_ADDRESS = 0x1A4;
     public static final int RAM_START_ADDRESS = 0x1A8;
@@ -32,12 +34,13 @@ public class CartridgeInfoProvider {
     public static final int SRAM_FLAG_ADDRESS = 0x1B0;
     public static final int SRAM_START_ADDRESS = 0x1B4;
     public static final int SRAM_END_ADDRESS = 0x1B8;
+    public static final int CHECKSUM_START_ADDRESS = 0x18E;
 
     public static final String EXTERNAL_RAM_FLAG_VALUE = "RA";
 
     public static final boolean AUTOFIX_CHECKSUM = false;
 
-    private MemoryProvider memoryProvider;
+    private IMemoryProvider memoryProvider;
     private long romStart;
     private long romEnd;
     private long ramStart;
@@ -94,11 +97,11 @@ public class CartridgeInfoProvider {
         this.sramEnd = sramEnd;
     }
 
-    public static CartridgeInfoProvider createInstance(MemoryProvider memoryProvider) {
+    public static CartridgeInfoProvider createInstance(IMemoryProvider memoryProvider) {
         return createInstance(memoryProvider, null);
     }
 
-    public static CartridgeInfoProvider createInstance(MemoryProvider memoryProvider, String rom) {
+    public static CartridgeInfoProvider createInstance(IMemoryProvider memoryProvider, String rom) {
         CartridgeInfoProvider provider = new CartridgeInfoProvider();
         provider.memoryProvider = memoryProvider;
         provider.romName = rom;
@@ -112,7 +115,7 @@ public class CartridgeInfoProvider {
     }
 
     private void initChecksum() {
-        this.checksum = memoryProvider.readCartridgeWord(MemoryProvider.CHECKSUM_START_ADDRESS);
+        this.checksum = memoryProvider.readRomByte(CHECKSUM_START_ADDRESS);
         this.computedChecksum = Util.computeChecksum(memoryProvider);
 
         //defaults to false
@@ -143,37 +146,37 @@ public class CartridgeInfoProvider {
                 ";" + getSramSizeBytes();
     }
 
-    private void initMemoryLayout(MemoryProvider memoryProvider) {
-        romStart = memoryProvider.readCartridgeWord(ROM_START_ADDRESS) << 16;
-        romStart |= memoryProvider.readCartridgeWord(ROM_START_ADDRESS + 2);
-        romEnd = memoryProvider.readCartridgeWord(ROM_END_ADDRESS) << 16;
-        romEnd |= memoryProvider.readCartridgeWord(ROM_END_ADDRESS + 2);
+    private void initMemoryLayout(IMemoryProvider memoryProvider) {
+        romStart = Util.readRom(memoryProvider, Size.WORD, ROM_START_ADDRESS) << 16;
+        romStart |= Util.readRom(memoryProvider, Size.WORD, ROM_START_ADDRESS + 2);
+        romEnd = Util.readRom(memoryProvider, Size.WORD, ROM_END_ADDRESS) << 16;
+        romEnd |= Util.readRom(memoryProvider, Size.WORD, ROM_END_ADDRESS + 2);
 
-        ramStart = memoryProvider.readCartridgeWord(RAM_START_ADDRESS) << 16;
-        ramStart |= memoryProvider.readCartridgeWord(RAM_START_ADDRESS + 2);
-        ramEnd = memoryProvider.readCartridgeWord(RAM_END_ADDRESS) << 16;
-        ramEnd |= memoryProvider.readCartridgeWord(RAM_END_ADDRESS + 2);
+        ramStart = Util.readRom(memoryProvider, Size.WORD, RAM_START_ADDRESS) << 16;
+        ramStart |= Util.readRom(memoryProvider, Size.WORD, RAM_START_ADDRESS + 2);
+        ramEnd = Util.readRom(memoryProvider, Size.WORD, RAM_END_ADDRESS) << 16;
+        ramEnd |= Util.readRom(memoryProvider, Size.WORD, RAM_END_ADDRESS + 2);
         detectSram();
         checkLayout();
     }
 
 
     private void detectSram() {
-        String sramFlag = "" + (char) memoryProvider.readCartridgeByte(SRAM_FLAG_ADDRESS);
-        sramFlag += (char) memoryProvider.readCartridgeByte(SRAM_FLAG_ADDRESS + 1);
+        String sramFlag = "" + (char) memoryProvider.readRomByte(SRAM_FLAG_ADDRESS);
+        sramFlag += (char) memoryProvider.readRomByte(SRAM_FLAG_ADDRESS + 1);
         boolean externalRamEnabled = EXTERNAL_RAM_FLAG_VALUE.equals(sramFlag);
 
         if (externalRamEnabled) {
-            long byte1 = memoryProvider.readCartridgeByte(SRAM_FLAG_ADDRESS + 2);
-            long byte2 = memoryProvider.readCartridgeByte(SRAM_FLAG_ADDRESS + 3);
+            long byte1 = memoryProvider.readRomByte(SRAM_FLAG_ADDRESS + 2);
+            long byte2 = memoryProvider.readRomByte(SRAM_FLAG_ADDRESS + 3);
             boolean isBackup = Util.bitSetTest(byte1, 7); //backup vs volatile
             boolean isSramType = (byte2 & 0x20) == 0x20; //sram vs EEPROM
             if (isBackup) { //&& isSramType) {
                 sramEnabled = true;
-                sramStart = memoryProvider.readCartridgeWord(SRAM_START_ADDRESS) << 16;
-                sramStart |= memoryProvider.readCartridgeWord(SRAM_START_ADDRESS + 2);
-                sramEnd = memoryProvider.readCartridgeWord(SRAM_END_ADDRESS) << 16;
-                sramEnd |= memoryProvider.readCartridgeWord(SRAM_END_ADDRESS + 2);
+                sramStart = Util.readRom(memoryProvider, Size.WORD, SRAM_START_ADDRESS) << 16;
+                sramStart |= Util.readRom(memoryProvider, Size.WORD, SRAM_START_ADDRESS + 2);
+                sramEnd = Util.readRom(memoryProvider, Size.WORD, SRAM_END_ADDRESS) << 16;
+                sramEnd |= Util.readRom(memoryProvider, Size.WORD, SRAM_END_ADDRESS + 2);
                 if (sramEnd - sramStart < 0) {
                     LOG.error("Unexpected SRAM setup: " + toString());
                     sramStart = DEFAULT_SRAM_START_ADDRESS;

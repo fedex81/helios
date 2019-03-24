@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
  */
 public class GenesisMemoryProviderTest {
 
-    GenesisMemoryProvider provider = new GenesisMemoryProvider();
+    IMemoryProvider provider = MemoryProvider.createGenesisInstance();
 
     @Test
     public void testRomWrapping01() {
@@ -65,9 +65,9 @@ public class GenesisMemoryProviderTest {
     private void testRowWrappingInternal(int size, int address, int expected) {
         int[] data = new int[size];
         IntStream.range(0, size).forEach(i -> data[i] = i);
-        provider.setCartridge(data);
+        provider.setRomData(data);
 
-        long res = provider.readCartridgeByte(address);
+        long res = provider.readRomByte(address);
         Assert.assertEquals(expected, res);
     }
 }

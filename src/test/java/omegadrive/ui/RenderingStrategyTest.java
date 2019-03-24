@@ -104,7 +104,7 @@ public class RenderingStrategyTest {
         for (int i = 0; i < cycles; i++) {
             screenData = getData(screenData, inputD);
             RenderingStrategy.toLinear(linear, screenData, inputD);
-            RenderingStrategy.renderNearestOld(linear, output, inputD, outputD);
+//            RenderingStrategy.renderNearestOld(linear, output, inputD, outputD);
         }
         printPerf(System.nanoTime() - start, cycles);
     }

@@ -1,9 +1,13 @@
-package omegadrive.vdp;
+package omegadrive.vdp.gen;
 
-import omegadrive.bus.BusProvider;
-import omegadrive.memory.GenesisMemoryProvider;
+import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.memory.IMemoryProvider;
+import omegadrive.memory.MemoryProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
+import omegadrive.vdp.VdpDmaHandlerTest;
+import omegadrive.vdp.VdpTestUtil;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
@@ -12,7 +16,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static omegadrive.vdp.VdpProvider.VramMode.*;
+import static omegadrive.vdp.model.GenesisVdpProvider.VramMode.*;
 
 /**
  * ${FILE}
@@ -25,18 +29,18 @@ public class GenesisVdpTest2 {
 
     private static Logger LOG = LogManager.getLogger(VdpDmaHandlerTest.class.getSimpleName());
 
-    VdpProvider vdpProvider;
+    GenesisVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
     VdpDmaHandler dmaHandler;
-    BusProvider busProvider;
+    GenesisBusProvider busProvider;
 
     @Before
     public void setup() {
         LogHelper.printToSytemOut = true;
         VdpDmaHandlerImpl.printToSysOut = true;
         VdpDmaHandlerImpl.verbose = true;
-        GenesisMemoryProvider memory = new GenesisMemoryProvider();
-        busProvider = BusProvider.createBus();
+        IMemoryProvider memory = MemoryProvider.createGenesisInstance();
+        busProvider = GenesisBusProvider.createBus();
         busProvider.attachDevice(memory);
         memoryInterface = GenesisVdpMemoryInterface.createInstance();
         dmaHandler = new VdpDmaHandlerImpl();
@@ -88,12 +92,12 @@ public class GenesisVdpTest2 {
         VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         //autoInc has not been changed
-        Assert.assertEquals(dmaAutoInc, vdpProvider.getRegisterData(VdpProvider.VdpRegisterName.AUTO_INCREMENT));
+        Assert.assertEquals(dmaAutoInc, vdpProvider.getRegisterData(GenesisVdpProvider.VdpRegisterName.AUTO_INCREMENT));
 
         VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
         //autoInc has now been changed
-        Assert.assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(VdpProvider.VdpRegisterName.AUTO_INCREMENT));
+        Assert.assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(GenesisVdpProvider.VdpRegisterName.AUTO_INCREMENT));
     }
 
     /**
@@ -135,7 +139,7 @@ public class GenesisVdpTest2 {
         vdpProvider.writeControlPort(firstWord);
         vdpProvider.writeControlPort(secondWord);
 
-        VdpProvider.VramMode vramMode = vdpProvider.getVramMode();
-        Assert.assertEquals(VdpProvider.VramMode.getVramMode(expected), vramMode);
+        GenesisVdpProvider.VramMode vramMode = vdpProvider.getVramMode();
+        Assert.assertEquals(GenesisVdpProvider.VramMode.getVramMode(expected), vramMode);
     }
 }

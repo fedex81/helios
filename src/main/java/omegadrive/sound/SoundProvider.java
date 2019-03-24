@@ -1,9 +1,9 @@
 package omegadrive.sound;
 
-import omegadrive.GenesisProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,13 +17,12 @@ import org.apache.logging.log4j.Logger;
 public interface SoundProvider {
     Logger LOG = LogManager.getLogger(SoundProvider.class.getSimpleName());
 
-    long PAL_PSG_CLOCK = GenesisProvider.PAL_MCLOCK_MHZ / 15; // 3546893
-    long NTSC_PSG_CLOCK = GenesisProvider.NTSC_MCLOCK_MHZ / 15; //3579545;
-    long NTSC_FM_CLOCK = GenesisProvider.NTSC_MCLOCK_MHZ / 7; //7670442;
-    long PAL_FM_CLOCK = GenesisProvider.PAL_MCLOCK_MHZ / 7; //7600485;
+    long PAL_PSG_CLOCK = Util.GEN_PAL_MCLOCK_MHZ / 15; // 3546893
+    long NTSC_PSG_CLOCK = Util.GEN_NTSC_MCLOCK_MHZ / 15; //3579545;
+    long NTSC_FM_CLOCK = Util.GEN_NTSC_MCLOCK_MHZ / 7; //7670442;
+    long PAL_FM_CLOCK = Util.GEN_PAL_MCLOCK_MHZ / 7; //7600485;
 
     int SAMPLE_RATE_HZ = Integer.valueOf(System.getProperty("audio.sample.rate.hz", "44100"));
-    ;
 
     int OVERRIDE_AUDIO_BUFFER_SIZE = Integer.valueOf(System.getProperty("audio.buffer.size", "0"));
 

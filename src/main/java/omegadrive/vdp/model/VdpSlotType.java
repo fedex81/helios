@@ -3,7 +3,7 @@ package omegadrive.vdp.model;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static omegadrive.vdp.VdpProvider.*;
+import static omegadrive.vdp.model.GenesisVdpProvider.*;
 
 /**
  * ${FILE}

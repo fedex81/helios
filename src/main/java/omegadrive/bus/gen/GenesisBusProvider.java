@@ -1,13 +1,8 @@
-package omegadrive.bus;
+package omegadrive.bus.gen;
 
-import omegadrive.GenesisProvider;
-import omegadrive.joypad.JoypadProvider;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.sound.SoundProvider;
+import omegadrive.bus.BaseBusProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
-import omegadrive.util.Size;
-import omegadrive.vdp.VdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,7 +13,7 @@ import org.apache.logging.log4j.Logger;
  * <p>
  * Copyright 2018
  */
-public interface BusProvider {
+public interface GenesisBusProvider extends BaseBusProvider {
 
     int Z80_ADDRESS_SPACE_START = 0xA00000;
     int Z80_ADDRESS_SPACE_END = 0xA0FFFF;
@@ -35,7 +30,7 @@ public interface BusProvider {
     int FIFO_FULL_MASK = 0x01;
     int DMA_IN_PROGRESS_MASK = 0x02;
 
-    Logger LOG = LogManager.getLogger(BusProvider.class.getSimpleName());
+    Logger LOG = LogManager.getLogger(GenesisBusProvider.class.getSimpleName());
 
 
     enum VdpIntState {
@@ -45,31 +40,14 @@ public interface BusProvider {
         INT_DONE
     }
 
-    static BusProvider createBus() {
+    static GenesisBusProvider createBus() {
         return new GenesisBus();
     }
-
-    BusProvider attachDevice(Object device);
-
-    GenesisProvider getEmulator();
-
-    MemoryProvider getMemory();
-
-    VdpProvider getVdp();
-
-    JoypadProvider getJoypad();
-
-    SoundProvider getSound();
 
     void handleVdpInterrupts68k();
 
     void handleVdpInterruptsZ80();
 
-    long read(long address, Size size);
-
-    void write(long address, long data, Size size);
-
-    void reset();
 
     /**
      * VRES is fed to 68000 for 128 VCLKs (16.7us); ZRES is fed
@@ -83,10 +61,6 @@ public interface BusProvider {
     //VDP setting this
     void setStop68k(int mask);
 
-    void closeRom();
-
-    void newFrame();
-
     default PsgProvider getPsg() {
         return getSound().getPsg();
     }
@@ -95,5 +69,18 @@ public interface BusProvider {
         return getSound().getFm();
     }
 
+    //Z80 for genesis doesnt do IO
+    @Override
+    default int readIoPort(int port) {
+        //TF4 calls this by mistake
+        LOG.debug("inPort: {}", port);
+        return 0xFF;
+    }
 
+    //Z80 for genesis doesnt do IO
+    @Override
+    default void writeIoPort(int port, int value) {
+        LOG.warn("outPort: " + port + ", data: " + value);
+        return;
+    }
 }

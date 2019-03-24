@@ -1,13 +1,15 @@
 package omegadrive.savestate;
 
 import m68k.cpu.MC68000;
+import omegadrive.bus.gen.GenesisZ80BusProvider;
 import omegadrive.m68k.MC68000Wrapper;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.Util;
-import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import omegadrive.z80.IMemory;
+import omegadrive.z80.Z80Memory;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -120,23 +122,23 @@ public class GstStateHandler implements GenesisStateHandler {
     }
 
     @Override
-    public void loadVdpState(VdpProvider vdp) {
+    public void loadVdpState(BaseVdpProvider vdp) {
         loadVdpMemory(vdp.getVdpMemory());
-        IntStream.range(0, VdpProvider.VDP_REGISTERS_SIZE).forEach(i -> vdp.updateRegisterData(i, data[i + VDP_REG_OFFSET] & 0xFF));
+        IntStream.range(0, BaseVdpProvider.VDP_REGISTERS_SIZE).forEach(i -> vdp.updateRegisterData(i, data[i + VDP_REG_OFFSET] & 0xFF));
         vdp.reload();
     }
 
     private void loadVdpMemory(VdpMemoryInterface vdpMemoryInterface) {
-        for (int i = 0; i < VdpProvider.VDP_VRAM_SIZE; i += 2) {
+        for (int i = 0; i < BaseVdpProvider.VDP_VRAM_SIZE; i += 2) {
             vdpMemoryInterface.writeVramByte(i, data[i + VRAM_DATA_OFFSET]);
             vdpMemoryInterface.writeVramByte(i + 1, data[i + VRAM_DATA_OFFSET + 1]);
         }
-        for (int i = 0; i < VdpProvider.VDP_CRAM_SIZE; i += 2) {
+        for (int i = 0; i < BaseVdpProvider.VDP_CRAM_SIZE; i += 2) {
             vdpMemoryInterface.writeCramByte(i, data[i + CRAM_DATA_OFFSET + 1]);
             vdpMemoryInterface.writeCramByte(i + 1, data[i + CRAM_DATA_OFFSET]);
         }
 
-        for (int i = 0; i < VdpProvider.VDP_VSRAM_SIZE; i += 2) {
+        for (int i = 0; i < BaseVdpProvider.VDP_VSRAM_SIZE; i += 2) {
             vdpMemoryInterface.writeVsramByte(i, data[i + VSRAM_DATA_OFFSET]);
             vdpMemoryInterface.writeVsramByte(i + 1, data[i + VSRAM_DATA_OFFSET + 1]);
         }
@@ -146,7 +148,7 @@ public class GstStateHandler implements GenesisStateHandler {
     public void loadZ80(Z80Provider z80) {
         Z80State z80State = loadZ80State(data);
 
-        IntStream.range(0, IMemory.MEMORY_SIZE).forEach(
+        IntStream.range(0, Z80Memory.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> z80.writeMemory(i, data[i + Z80_RAM_DATA_OFFSET]));
         z80.unrequestBus();
         z80.disableReset();
@@ -161,9 +163,8 @@ public class GstStateHandler implements GenesisStateHandler {
 //            z80.reset();
         }
         int z80BankInt = getUInt32(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
-        z80.getZ80BusProvider().setRomBank68kSerial(z80BankInt);
+        GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
         z80.loadZ80State(z80State);
-
     }
 
     private static Z80State loadZ80State(int[] data) {
@@ -189,7 +190,7 @@ public class GstStateHandler implements GenesisStateHandler {
 
     //TODO should use M68kProvider
     @Override
-    public void load68k(MC68000Wrapper m68kProvider, MemoryProvider memoryProvider) {
+    public void load68k(MC68000Wrapper m68kProvider, IMemoryProvider memoryProvider) {
         for (int i = 0; i < MemoryProvider.M68K_RAM_SIZE; i += 2) {
             memoryProvider.writeRamByte(i, data[i + M68K_RAM_DATA_OFFSET]);
             memoryProvider.writeRamByte(i + 1, data[i + M68K_RAM_DATA_OFFSET + 1]);
@@ -223,18 +224,18 @@ public class GstStateHandler implements GenesisStateHandler {
     }
 
     @Override
-    public void saveVdp(VdpProvider vdp) {
+    public void saveVdp(BaseVdpProvider vdp) {
         VdpMemoryInterface vdpMemoryInterface = vdp.getVdpMemory();
-        for (int i = 0; i < VdpProvider.VDP_VRAM_SIZE; i += 2) {
+        for (int i = 0; i < BaseVdpProvider.VDP_VRAM_SIZE; i += 2) {
             data[i + VRAM_DATA_OFFSET] = vdpMemoryInterface.readVramByte(i);
             data[i + VRAM_DATA_OFFSET + 1] = vdpMemoryInterface.readVramByte(i + 1);
         }
-        for (int i = 0; i < VdpProvider.VDP_CRAM_SIZE; i += 2) {
+        for (int i = 0; i < BaseVdpProvider.VDP_CRAM_SIZE; i += 2) {
             data[i + CRAM_DATA_OFFSET + 1] = vdpMemoryInterface.readCramByte(i);
             data[i + CRAM_DATA_OFFSET] = vdpMemoryInterface.readCramByte(i + 1);
         }
 
-        for (int i = 0; i < VdpProvider.VDP_VSRAM_SIZE; i += 2) {
+        for (int i = 0; i < BaseVdpProvider.VDP_VSRAM_SIZE; i += 2) {
             data[i + VSRAM_DATA_OFFSET] = vdpMemoryInterface.readVsramByte(i);
             data[i + VSRAM_DATA_OFFSET + 1] = vdpMemoryInterface.readVsramByte(i + 1);
         }
@@ -243,11 +244,15 @@ public class GstStateHandler implements GenesisStateHandler {
 
     @Override
     public void saveZ80(Z80Provider z80) {
-        IntStream.range(0, IMemory.MEMORY_SIZE).forEach(
+        IntStream.range(0, Z80Memory.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> data[Z80_RAM_DATA_OFFSET + i] = z80.readMemory(i));
         data[0x438] = z80.isReset() ? 1 : 0;
         data[0x439] = z80.isBusRequested() ? 1 : 0;
-        Util.setUInt32(z80.getZ80BusProvider().getRomBank68kSerial(), data, 0x43C);
+
+        int romBankSerial = GenesisZ80BusProvider.getRomBank68kSerial(z80);
+        if (romBankSerial >= 0) {
+            Util.setUInt32(romBankSerial, data, 0x43C);
+        }
         saveZ80State(z80.getZ80State());
     }
 
@@ -270,7 +275,7 @@ public class GstStateHandler implements GenesisStateHandler {
     }
 
     @Override
-    public void save68k(MC68000Wrapper mc68000Wrapper, MemoryProvider memoryProvider) {
+    public void save68k(MC68000Wrapper mc68000Wrapper, IMemoryProvider memoryProvider) {
         for (int i = 0; i < MemoryProvider.M68K_RAM_SIZE; i += 2) {
             data[i + M68K_RAM_DATA_OFFSET] = memoryProvider.readRamByte(i);
             data[i + M68K_RAM_DATA_OFFSET + 1] = memoryProvider.readRamByte(i + 1);

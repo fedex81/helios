@@ -1,7 +1,8 @@
-package omegadrive.vdp;
+package omegadrive.vdp.gen;
 
 import omegadrive.Genesis;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.VdpRenderDump;
 import omegadrive.vdp.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,8 +10,8 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.function.Function;
 
-import static omegadrive.vdp.VdpProvider.*;
-import static omegadrive.vdp.VdpProvider.VdpRegisterName.*;
+import static omegadrive.vdp.model.GenesisVdpProvider.*;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 /**
  * ${FILE}
@@ -50,7 +51,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
     private static boolean verbose = Genesis.verbose || false;
 
-    private VdpProvider vdpProvider;
+    private GenesisVdpProvider vdpProvider;
     private VdpMemoryInterface memoryInterface;
     private VdpRenderDump renderDump;
 
@@ -98,7 +99,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     private int[] cram;
     private int[] vram;
 
-    public VdpRenderHandlerImpl(VdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
+    public VdpRenderHandlerImpl(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
         this.memoryInterface = memoryInterface;
         this.colorMapper = VdpColorMapper.getInstance();

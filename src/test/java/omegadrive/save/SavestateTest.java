@@ -1,20 +1,21 @@
 package omegadrive.save;
 
 import m68k.cpu.MC68000;
-import omegadrive.bus.BusProvider;
+import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.bus.gen.GenesisZ80BusProvider;
 import omegadrive.m68k.MC68000Wrapper;
-import omegadrive.memory.GenesisMemoryProvider;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.YM2612;
 import omegadrive.util.FileLoader;
-import omegadrive.vdp.GenesisVdp;
-import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.gen.GenesisVdp;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import omegadrive.z80.IMemory;
 import omegadrive.z80.Z80CoreWrapper;
+import omegadrive.z80.Z80Memory;
 import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Test;
@@ -58,15 +59,15 @@ public class SavestateTest {
         }
     }
 
-    public static BusProvider loadSaveState(Path saveFile) {
-        BusProvider busProvider = BusProvider.createBus();
+    public static GenesisBusProvider loadSaveState(Path saveFile) {
+        GenesisBusProvider busProvider = GenesisBusProvider.createBus();
 
         int[] data = FileLoader.readFileSafe(saveFile);
         GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), data);
-        VdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
+        GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
-        MemoryProvider cpuMem1 = new GenesisMemoryProvider();
-        Z80Provider z80p1 = Z80CoreWrapper.createInstance(busProvider);
+        IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
+        Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider);
         FmProvider fm1 = new YM2612();
         loadHandler.loadVdpState(vdpProvider1);
         loadHandler.load68k(cpu1, cpuMem1);
@@ -78,14 +79,14 @@ public class SavestateTest {
     }
 
     private GenesisStateHandler testLoadSaveInternal(Path saveFile) {
-        BusProvider busProvider = BusProvider.createBus();
+        GenesisBusProvider busProvider = GenesisBusProvider.createBus();
 
         int[] data = FileLoader.readFileSafe(saveFile);
         GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), data);
-        VdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
+        GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
-        MemoryProvider cpuMem1 = new GenesisMemoryProvider();
-        Z80Provider z80p1 = Z80CoreWrapper.createInstance(busProvider);
+        IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
+        Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider);
         FmProvider fm1 = new YM2612();
         loadHandler.loadVdpState(vdpProvider1);
         loadHandler.load68k(cpu1, cpuMem1);
@@ -101,10 +102,10 @@ public class SavestateTest {
 
         int[] savedData = saveHandler.getData();
         GenesisStateHandler loadHandler1 = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), savedData);
-        VdpProvider vdpProvider2 = GenesisVdp.createInstance(busProvider);
+        GenesisVdpProvider vdpProvider2 = GenesisVdp.createInstance(busProvider);
         MC68000Wrapper cpu2 = new MC68000Wrapper(busProvider);
-        MemoryProvider cpuMem2 = new GenesisMemoryProvider();
-        Z80Provider z80p2 = Z80CoreWrapper.createInstance(busProvider);
+        IMemoryProvider cpuMem2 = MemoryProvider.createGenesisInstance();
+        Z80Provider z80p2 = Z80CoreWrapper.createGenesisInstance(busProvider);
         FmProvider fm2 = new YM2612();
         loadHandler1.loadVdpState(vdpProvider2);
         loadHandler1.load68k(cpu2, cpuMem2);
@@ -147,15 +148,16 @@ public class SavestateTest {
         Assert.assertEquals("IFF2", s1.isIFF2(), s2.isIFF2());
         Assert.assertEquals("IM", s1.getIM(), s2.getIM());
 
-        IntStream.range(0, IMemory.MEMORY_SIZE).forEach(
+        IntStream.range(0, Z80Memory.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> Assert.assertEquals("Z80Ram:" + i, z80p1.readMemory(i), z80p2.readMemory(i))
         );
         Assert.assertEquals("z80Reset", z80p1.isReset(), z80p2.isReset());
         Assert.assertEquals("z80BusReq", z80p1.isBusRequested(), z80p2.isBusRequested());
-        Assert.assertEquals("z80Banking", z80p1.getZ80BusProvider().getRomBank68kSerial(), z80p2.getZ80BusProvider().getRomBank68kSerial());
+        Assert.assertEquals("z80Banking", GenesisZ80BusProvider.getRomBank68kSerial(z80p1),
+                GenesisZ80BusProvider.getRomBank68kSerial(z80p2));
     }
 
-    private void compare68k(MC68000Wrapper cpu1w, MC68000Wrapper cpu2w, MemoryProvider mem1, MemoryProvider mem2) {
+    private void compare68k(MC68000Wrapper cpu1w, MC68000Wrapper cpu2w, IMemoryProvider mem1, IMemoryProvider mem2) {
         MC68000 cpu1 = cpu1w.getM68k();
         MC68000 cpu2 = cpu2w.getM68k();
 
@@ -173,17 +175,17 @@ public class SavestateTest {
 
     }
 
-    private void compareVdp(VdpProvider vdp1, VdpProvider vdp2) {
+    private void compareVdp(GenesisVdpProvider vdp1, GenesisVdpProvider vdp2) {
         IntStream.range(0, 24).forEach(i ->
                 Assert.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
 
         VdpMemoryInterface vm1 = vdp1.getVdpMemory();
         VdpMemoryInterface vm2 = vdp2.getVdpMemory();
-        IntStream.range(0, VdpProvider.VDP_VRAM_SIZE).forEach(i ->
+        IntStream.range(0, GenesisVdpProvider.VDP_VRAM_SIZE).forEach(i ->
                 Assert.assertEquals("Vram" + i, vm1.readVramByte(i), vm2.readVramByte(i)));
-        IntStream.range(0, VdpProvider.VDP_VSRAM_SIZE).forEach(i ->
+        IntStream.range(0, GenesisVdpProvider.VDP_VSRAM_SIZE).forEach(i ->
                 Assert.assertEquals("Vsram" + i, vm1.readVsramByte(i), vm2.readVsramByte(i)));
-        IntStream.range(0, VdpProvider.VDP_VRAM_SIZE).forEach(i ->
+        IntStream.range(0, GenesisVdpProvider.VDP_VRAM_SIZE).forEach(i ->
                 Assert.assertEquals("Cram" + i, vm1.readCramByte(i), vm2.readCramByte(i)));
     }
 }

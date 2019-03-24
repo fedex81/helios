@@ -1,6 +1,6 @@
-package omegadrive.bus;
+package omegadrive.bus.mapper;
 
-import omegadrive.memory.MemoryProvider;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -51,11 +51,11 @@ public class Ssf2Mapper implements GenesisMapper {
 
     private int[] banks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
     private GenesisMapper baseMapper;
-    private MemoryProvider memory;
+    private IMemoryProvider memory;
     private boolean verbose = false;
 
     public static GenesisMapper getOrCreateInstance(GenesisMapper baseMapper, GenesisMapper currentMapper,
-                                                    MemoryProvider memoryProvider) {
+                                                    IMemoryProvider memoryProvider) {
         if (baseMapper != currentMapper) {
             return currentMapper;
         }
@@ -63,7 +63,7 @@ public class Ssf2Mapper implements GenesisMapper {
 
     }
 
-    private static Ssf2Mapper createInstance(GenesisMapper baseMapper, MemoryProvider memoryProvider) {
+    private static Ssf2Mapper createInstance(GenesisMapper baseMapper, IMemoryProvider memoryProvider) {
         Ssf2Mapper mapper = new Ssf2Mapper();
         mapper.baseMapper = baseMapper;
         mapper.memory = memoryProvider;
@@ -78,7 +78,7 @@ public class Ssf2Mapper implements GenesisMapper {
             LogHelper.printLevel(LOG, Level.INFO, "Bank read: {}", address, verbose);
             int bankSelector = (int) (address / BANK_SIZE);
             address = (banks[bankSelector] * BANK_SIZE) + (address - bankSelector * BANK_SIZE);
-            return Util.readRom(memory, size, address);
+            return Util.readRom(memory, size, (int) address);
         }
         return baseMapper.readData(address, size);
     }

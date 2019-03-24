@@ -1,6 +1,7 @@
-package omegadrive.vdp;
+package omegadrive.vdp.gen;
 
 import omegadrive.Genesis;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.util.CramViewer;
 import org.apache.logging.log4j.LogManager;
@@ -34,9 +35,9 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     public static GenesisVdpMemoryInterface createInstance() {
         GenesisVdpMemoryInterface i = new GenesisVdpMemoryInterface();
-        i.vram = new int[VdpProvider.VDP_VRAM_SIZE];
-        i.cram = new int[VdpProvider.VDP_CRAM_SIZE];
-        i.vsram = new int[VdpProvider.VDP_VSRAM_SIZE];
+        i.vram = new int[GenesisVdpProvider.VDP_VRAM_SIZE];
+        i.cram = new int[GenesisVdpProvider.VDP_CRAM_SIZE];
+        i.vsram = new int[GenesisVdpProvider.VDP_VSRAM_SIZE];
         return i;
     }
 
@@ -52,19 +53,19 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     //TODO: DMA is doing it but it should be done here
     @Override
     public int readVramByte(int address) {
-        address &= (VdpProvider.VDP_VRAM_SIZE - 1);
+        address &= (GenesisVdpProvider.VDP_VRAM_SIZE - 1);
         return vram[address];
     }
 
     //    The address register wraps past address FFFFh.
     @Override
     public void writeVramByte(int address, int data) {
-        address &= (VdpProvider.VDP_VRAM_SIZE - 1);
+        address &= (GenesisVdpProvider.VDP_VRAM_SIZE - 1);
         vram[address] = data & 0xFF;
     }
 
     @Override
-    public void writeVideoRamWord(VdpProvider.VdpRamType vramType, int data, int address) {
+    public void writeVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int data, int address) {
         int word = data;
         int data1 = (word >> 8);
         int data2 = word & 0xFF;
@@ -105,7 +106,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     @Override
     public void writeVsramByte(int address, int data) {
         address &= 0x7F;
-        if (address < VdpProvider.VDP_VSRAM_SIZE) {
+        if (address < GenesisVdpProvider.VDP_VSRAM_SIZE) {
             vsram[address] = data & 0xFF;
         } else {
             //Arrow Flash
@@ -116,7 +117,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     //    The address register wraps past address 7Fh.
     @Override
     public void writeCramByte(int address, int data) {
-        address &= (VdpProvider.VDP_CRAM_SIZE - 1);
+        address &= (GenesisVdpProvider.VDP_CRAM_SIZE - 1);
         cram[address] = data & 0xFF;
 //        cramViewer.update();
     }
@@ -125,7 +126,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     @Override
     public int readCramByte(int address) {
-        address &= (VdpProvider.VDP_CRAM_SIZE - 1);
+        address &= (GenesisVdpProvider.VDP_CRAM_SIZE - 1);
         return cram[address];
     }
 
@@ -133,7 +134,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     @Override
     public int readVsramByte(int address) {
         address &= 0x7F;
-        if (address >= VdpProvider.VDP_VSRAM_SIZE) {
+        if (address >= GenesisVdpProvider.VDP_VSRAM_SIZE) {
             address = 0;
         }
         return vsram[address];

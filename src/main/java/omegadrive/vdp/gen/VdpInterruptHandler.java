@@ -1,4 +1,4 @@
-package omegadrive.vdp;
+package omegadrive.vdp.gen;
 
 import omegadrive.Genesis;
 import omegadrive.util.VideoMode;
@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
+import java.util.function.Predicate;
 
 /**
  * ${FILE}
@@ -38,14 +39,14 @@ public class VdpInterruptHandler {
     public static int VBLANK_CLEAR = COUNTER_LIMIT;
     public static int VINT_SET_ON_HCOUNTER_VALUE = 1; //TODO setting this to 1 breaks Spot,
 
-    private int hCounterInternal;
-    private int vCounterInternal;
+    protected int hCounterInternal;
+    protected int vCounterInternal;
     protected int hLinePassed = 0;
     private int pixelNumber = 0;
     private int slotNumber = 0;
 
     private VideoMode videoMode;
-    private VdpCounterMode vdpCounterMode;
+    protected VdpCounterMode vdpCounterMode;
     private VdpHLineProvider vdpHLineProvider;
 
     private boolean vBlankSet;
@@ -59,6 +60,21 @@ public class VdpInterruptHandler {
     protected static boolean verbose = false || veryVerbose;
 
     private boolean eventFlag;
+
+    static private Predicate<VdpInterruptHandler> fn = h -> h.hCounterInternal == 0 && h.vCounterInternal == h.vdpCounterMode.vBlankSet;
+
+    //TODO fix
+    public static VdpInterruptHandler createSg1000Instance() {
+        VdpInterruptHandler handler = new VdpInterruptHandler() {
+            @Override
+            public boolean isDrawFrameSlot() {
+                return fn.test(this);
+            }
+        };
+        handler.vdpHLineProvider = VdpHLineProvider.NO_PROVIDER;
+        handler.reset();
+        return handler;
+    }
 
     public static VdpInterruptHandler createInstance(VdpHLineProvider vdpHLineProvider) {
         VdpInterruptHandler handler = new VdpInterruptHandler();
@@ -218,16 +234,24 @@ public class VdpInterruptHandler {
     }
 
     //TODO: first slot after end of hblanking
-    public boolean isFirstSlot() {
+    public boolean isFirstLineSlot() {
         return slotNumber == 0;
     }
 
-    public boolean isLastSlot() {
+    public boolean isLastLineSlot() {
         return slotNumber == vdpCounterMode.getSlotsPerLine() - 1;
     }
 
+    public boolean isLastLine() {
+        return vCounterInternal == COUNTER_LIMIT;
+    }
+
+    public boolean isEndOfFrameCounter() {
+        return isLastLine() && hCounterInternal == COUNTER_LIMIT;
+    }
+
     public boolean isDrawFrameSlot() {
-        return isLastSlot() && vCounterInternal == 0;
+        return isLastLineSlot() && vCounterInternal == 0;
     }
 
     public boolean isExternalSlot(boolean isBlanking) {

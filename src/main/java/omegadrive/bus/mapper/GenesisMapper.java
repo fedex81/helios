@@ -1,4 +1,4 @@
-package omegadrive.bus;
+package omegadrive.bus.mapper;
 
 import omegadrive.util.Size;
 

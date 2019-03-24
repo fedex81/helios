@@ -1,9 +1,9 @@
 package omegadrive.savestate;
 
 import omegadrive.m68k.MC68000Wrapper;
-import omegadrive.memory.MemoryProvider;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.z80.Z80Provider;
 
 /**
@@ -37,7 +37,7 @@ public interface GenesisStateHandler {
         }
 
         @Override
-        public void loadVdpState(VdpProvider vdp) {
+        public void loadVdpState(BaseVdpProvider vdp) {
 
         }
 
@@ -47,7 +47,7 @@ public interface GenesisStateHandler {
         }
 
         @Override
-        public void load68k(MC68000Wrapper m68kProvider, MemoryProvider memoryProvider) {
+        public void load68k(MC68000Wrapper m68kProvider, IMemoryProvider memoryProvider) {
 
         }
 
@@ -57,7 +57,7 @@ public interface GenesisStateHandler {
         }
 
         @Override
-        public void saveVdp(VdpProvider vdp) {
+        public void saveVdp(BaseVdpProvider vdp) {
 
         }
 
@@ -67,7 +67,7 @@ public interface GenesisStateHandler {
         }
 
         @Override
-        public void save68k(MC68000Wrapper mc68000Wrapper, MemoryProvider memoryProvider) {
+        public void save68k(MC68000Wrapper mc68000Wrapper, IMemoryProvider memoryProvider) {
 
         }
 
@@ -83,18 +83,18 @@ public interface GenesisStateHandler {
 
     void loadFmState(FmProvider fm);
 
-    void loadVdpState(VdpProvider vdp);
+    void loadVdpState(BaseVdpProvider vdp);
 
     void loadZ80(Z80Provider z80);
 
-    void load68k(MC68000Wrapper m68kProvider, MemoryProvider memoryProvider);
+    void load68k(MC68000Wrapper m68kProvider, IMemoryProvider memoryProvider);
 
     void saveFm(FmProvider fm);
 
-    void saveVdp(VdpProvider vdp);
+    void saveVdp(BaseVdpProvider vdp);
 
     void saveZ80(Z80Provider z80);
 
-    void save68k(MC68000Wrapper mc68000Wrapper, MemoryProvider memoryProvider);
+    void save68k(MC68000Wrapper mc68000Wrapper, IMemoryProvider memoryProvider);
 
 }

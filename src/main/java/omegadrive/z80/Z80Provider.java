@@ -1,5 +1,6 @@
 package omegadrive.z80;
 
+import omegadrive.bus.BaseBusProvider;
 import z80core.Z80State;
 
 /**
@@ -31,13 +32,13 @@ public interface Z80Provider {
 
     boolean isHalted();
 
-    boolean interrupt();
+    boolean interrupt(boolean value);
 
     int readMemory(int address);
 
     void writeMemory(int address, int data);
 
-    Z80BusProvider getZ80BusProvider();
+    BaseBusProvider getZ80BusProvider();
 
     void loadZ80State(Z80State z80State);
 

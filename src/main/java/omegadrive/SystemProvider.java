@@ -11,10 +11,7 @@ import java.nio.file.Path;
  * <p>
  * Copyright 2018
  */
-public interface GenesisProvider {
-
-    int NTSC_MCLOCK_MHZ = 53693175;
-    int PAL_MCLOCK_MHZ = 53203424;
+public interface SystemProvider {
 
     RegionDetector.Region getRegion();
 

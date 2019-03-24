@@ -1,11 +1,13 @@
 package omegadrive.bus;
 
+import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.m68k.MC68000Wrapper;
-import omegadrive.memory.GenesisMemoryProvider;
+import omegadrive.memory.IMemoryProvider;
+import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.util.Size;
-import omegadrive.vdp.VdpProvider;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.z80.Z80CoreWrapper;
 import org.junit.Assert;
 import org.junit.Before;
@@ -18,17 +20,17 @@ import org.junit.Test;
  */
 public class GenesisBusTest {
 
-    private BusProvider bus;
+    private GenesisBusProvider bus;
 
     @Before
     public void init() {
-        bus = BusProvider.createBus();
-        GenesisMemoryProvider memory = new GenesisMemoryProvider();
+        bus = GenesisBusProvider.createBus();
+        IMemoryProvider memory = MemoryProvider.createGenesisInstance();
         GenesisJoypad joypad = new GenesisJoypad();
 
-        VdpProvider vdp = VdpProvider.createVdp(bus);
+        GenesisVdpProvider vdp = GenesisVdpProvider.createVdp(bus);
         MC68000Wrapper cpu = new MC68000Wrapper(bus);
-        Z80CoreWrapper z80 = Z80CoreWrapper.createInstance(bus);
+        Z80CoreWrapper z80 = Z80CoreWrapper.createGenesisInstance(bus);
         //sound attached later
         SoundProvider sound = SoundProvider.NO_SOUND;
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
@@ -42,13 +44,13 @@ public class GenesisBusTest {
     public void test68kWriteToZ80() {
         int value = 1;
         bus.write(0xA11100, value, Size.BYTE);
-        bus.write(BusProvider.Z80_ADDRESS_SPACE_START, value, Size.BYTE);
-        long res = bus.read(BusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
+        bus.write(GenesisBusProvider.Z80_ADDRESS_SPACE_START, value, Size.BYTE);
+        long res = bus.read(GenesisBusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
         Assert.assertEquals(value, res);
 
         value = 2;
         bus.write(0xA08000, value, Size.BYTE);
-        res = bus.read(BusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
+        res = bus.read(GenesisBusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
         Assert.assertEquals(value, res);
 
         value = 3;
