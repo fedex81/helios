@@ -201,6 +201,11 @@ public class Z80CoreWrapper implements Z80Provider {
     }
 
     @Override
+    public void triggerNMI() {
+        z80Core.triggerNMI();
+    }
+
+    @Override
     public int readMemory(int address) {
         return (int) z80BusProvider.read(address, Size.BYTE);
     }

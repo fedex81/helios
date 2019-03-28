@@ -1,9 +1,10 @@
 package omegadrive;
 
 import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.sg1k.ColecoBus;
 import omegadrive.bus.sg1k.Sg1000BusProvider;
 import omegadrive.input.InputProvider;
-import omegadrive.joypad.TwoButtonsJoypad;
+import omegadrive.joypad.ColecoPad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.SoundProvider;
@@ -28,9 +29,9 @@ import java.nio.file.Paths;
  * @author Federico Berti
  * <p>
  */
-public class Sg1000 extends BaseSystem {
+public class Coleco extends BaseSystem {
 
-    private static Logger LOG = LogManager.getLogger(Sg1000.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(Coleco.class.getSimpleName());
 
     protected Z80Provider z80;
     private Sg1000BusProvider bus;
@@ -42,13 +43,13 @@ public class Sg1000 extends BaseSystem {
         InputProvider.bootstrap();
         boolean isHeadless = isHeadless();
         LOG.info("Headless mode: " + isHeadless);
-        Sg1000 sg1000 = new Sg1000(isHeadless);
+        Coleco coleco = new Coleco(isHeadless);
         if (args.length > 0) {
             //linux pulseaudio can crash if we start too quickly
             Util.sleep(250);
             String filePath = args[0];
             LOG.info("Launching file at: " + filePath);
-            sg1000.handleNewRom(Paths.get(filePath));
+            coleco.handleNewRom(Paths.get(filePath));
         }
         if (isHeadless) {
             Util.waitForever();
@@ -61,9 +62,9 @@ public class Sg1000 extends BaseSystem {
 
     public static SystemProvider createInstance(boolean headless) {
         InputProvider.bootstrap();
-        Sg1000 genesis = null;
+        Coleco genesis = null;
         try {
-            genesis = new Sg1000(headless);
+            genesis = new Coleco(headless);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -71,17 +72,17 @@ public class Sg1000 extends BaseSystem {
         return genesis;
     }
 
-    protected Sg1000(boolean isHeadless) throws InvocationTargetException, InterruptedException {
+    protected Coleco(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         super(isHeadless);
     }
 
     @Override
     public void init() {
-        joypad = new TwoButtonsJoypad();
+        joypad = new ColecoPad();
         inputProvider = InputProvider.createInstance(joypad);
 
         memory = MemoryProvider.createSg1000Instance();
-        bus = Sg1000BusProvider.createBus();
+        bus = new ColecoBus();
         vdp = new Sg1000Vdp();
 
         //z80, sound attached later
@@ -98,7 +99,7 @@ public class Sg1000 extends BaseSystem {
 
     @Override
     protected FileFilter getRomFileFilter() {
-        return FileLoader.SG_ROM_FILTER;
+        return FileLoader.ROM_FILTER;
     }
 
     private static int VDP_DIVIDER = 1;  //10.738635 Mhz
@@ -152,7 +153,7 @@ public class Sg1000 extends BaseSystem {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = JavaSoundManager.createPsgSoundProvider(region);
+        sound = JavaSoundManager.createSoundProvider(region);
         z80 = Z80CoreWrapper.createSg1000Instance(bus);
         bus.attachDevice(sound).attachDevice(z80);
 

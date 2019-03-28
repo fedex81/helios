@@ -56,6 +56,15 @@ public class JavaSoundManager implements SoundProvider {
 
     private final static boolean playOncePerFrame = false;
 
+    public static JavaSoundManager createPsgSoundProvider(RegionDetector.Region region) {
+        PsgProvider psgProvider = PsgProvider.createInstance(region, SAMPLE_RATE_HZ);
+        JavaSoundManager jsm = new JavaSoundManager();
+        jsm.setFm(FmProvider.NO_SOUND);
+        jsm.setPsg(psgProvider);
+        jsm.init(region);
+        return jsm;
+    }
+
     public static JavaSoundManager createSoundProvider(RegionDetector.Region region) {
         PsgProvider psgProvider = PsgProvider.createInstance(region, SAMPLE_RATE_HZ);
         FmProvider fmProvider = FmProvider.createInstance(region, SAMPLE_RATE_HZ);

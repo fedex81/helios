@@ -34,6 +34,8 @@ public interface Z80Provider {
 
     boolean interrupt(boolean value);
 
+    void triggerNMI();
+
     int readMemory(int address);
 
     void writeMemory(int address, int data);

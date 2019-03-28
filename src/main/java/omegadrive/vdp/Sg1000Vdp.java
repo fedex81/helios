@@ -43,7 +43,7 @@ public class Sg1000Vdp implements Tms9918a {
     public byte[] mem;
 
     /* Registers */
-    private byte[] registers = new byte[REGISTERS];
+    private int[] registers = new int[REGISTERS];
     private byte statusRegister = 0;
 
     /* I/O variables */
@@ -63,6 +63,7 @@ public class Sg1000Vdp implements Tms9918a {
     public void reset() {
         Arrays.fill(registers, (byte) 0);
         Arrays.fill(mem, (byte) 0);
+        registers[1] = 0x10;
 
         readWriteAddr = 0;
         secondByteFlag = false;
@@ -179,15 +180,19 @@ public class Sg1000Vdp implements Tms9918a {
         setStatusBit(5, v);
     }
 
-    public boolean getBit(int reg, int bit) {
+    public boolean getRegisterBit(int reg, int bit) {
         return getBit(registers[reg], bit);
     }
 
-    public void setBit(int reg, int bit, boolean value) {
+    public void setRegisterBit(int reg, int bit, boolean value) {
         registers[reg] = setBit(registers[reg], bit, value);
         if (reg < 2) {
             updateMode();
         }
+    }
+
+    public static int setBit(int in, int bit, boolean v) {
+        return v ? (in | (1 << bit)) : (in & ((~1) << bit));
     }
 
     public static byte setBit(byte in, int bit, boolean v) {
@@ -198,60 +203,64 @@ public class Sg1000Vdp implements Tms9918a {
         return (in & (1 << bit)) != 0;
     }
 
+    public static boolean getBit(int in, int bit) {
+        return (in & (1 << bit)) != 0;
+    }
+
     public boolean getEXTVID() {
-        return getBit(0, 0);
+        return getRegisterBit(0, 0);
     }
 
     public boolean getM2() {
-        return getBit(0, 1);
+        return getRegisterBit(0, 1);
     }
 
     public boolean getMAG() {
-        return getBit(1, 0);
+        return getRegisterBit(1, 0);
     }
 
     public boolean getSI() {
-        return getBit(1, 1);
+        return getRegisterBit(1, 1);
     }
 
     public boolean getM3() {
-        return getBit(1, 3);
+        return getRegisterBit(1, 3);
     }
 
     public boolean getM1() {
-        return getBit(1, 4);
+        return getRegisterBit(1, 4);
     }
 
     public boolean getGINT() {
-        return getBit(1, 5);
+        return getRegisterBit(1, 5);
     }
 
     public void setGINT(boolean b) {
-        setBit(1, 5, b);
+        setRegisterBit(1, 5, b);
     }
 
     public boolean getBL() {
-        return getBit(1, 6);
+        return getRegisterBit(1, 6);
     }
 
     public boolean get416K() {
-        return getBit(1, 7);
+        return getRegisterBit(1, 7);
     }
 
     public boolean getPG13() {
-        return getBit(4, 2);
+        return getRegisterBit(4, 2);
     }
 
     public boolean getCT13() {
-        return getBit(3, 7);
+        return getRegisterBit(3, 7);
     }
 
     public int getNameTableAddr() {
-        return (registers[TILEMAP_NAMETABLE.ordinal()] & 0xF) << 10;
+        return ((registers[TILEMAP_NAMETABLE.ordinal()] & 0xF) << 10) & 0xFFFF;
     }
 
     public int getColorTableAddr() {
-        return registers[COLORMAP_NAMETABLE.ordinal()] << 6;
+        return (registers[COLORMAP_NAMETABLE.ordinal()] << 6) & 0xFFFF;
     }
 
     public int getPatternTableAddr() {
@@ -354,7 +363,7 @@ public class Sg1000Vdp implements Tms9918a {
             /* If not, we're doing register i/o */
             else {
                 int regNum = ((int) ioByte1) & 0x07;
-                updateRegister(regNum, ioByte0);
+                updateRegister(regNum, ioByte0 & 0xFF);
             }
 
             secondByteFlag = false;
@@ -362,7 +371,7 @@ public class Sg1000Vdp implements Tms9918a {
 
     }
 
-    private void updateRegister(int regNum, byte value) {
+    private void updateRegister(int regNum, int value) {
         if (regNum < REGISTERS && registers[regNum] != value) {
             LogHelper.printLevel(LOG, Level.INFO, "vdpWriteReg {}, data: {}", regNum, value & 0xFF, verbose);
             registers[regNum] = value;
@@ -477,8 +486,8 @@ public class Sg1000Vdp implements Tms9918a {
         int nameTableBase = getNameTableAddr();
         int nameTableIdx = 0;
         short patternTableBase = getPG13() ? (short) 0x2000 : 0;
-        boolean bit0 = this.getBit(4, 0);
-        boolean bit1 = this.getBit(4, 1);
+        boolean bit0 = this.getRegisterBit(4, 0);
+        boolean bit1 = this.getRegisterBit(4, 1);
         int patternMask = ((bit0 ? 0 : (1 << 7)) | (bit1 ? 0 : (1 << 8)));
         short colorTableBase = getCT13() ? (short) 0x2000 : 0;
         // For all x/y positions
@@ -585,6 +594,8 @@ public class Sg1000Vdp implements Tms9918a {
         }
     }
 
+
+    //Smurf Paint 'n' Play Workshop - coleco
     public void drawMode3() {
         System.err.println("drawmode3 not implemented");
         drawMode0();

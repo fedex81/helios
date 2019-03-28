@@ -34,7 +34,7 @@ public class FileLoader {
     public static String DEFAULT_SAVE_STATE_EXTENSION = ".gs0";
     public static String QUICK_SAVE_FILENAME = "quick_save" + DEFAULT_SAVE_STATE_EXTENSION;
 
-    public static String[] binaryTypes = {".md", ".bin", ".sg", ".sc"};
+    public static String[] binaryTypes = {".md", ".bin", ".sg", ".sc", ".col"};
     public static String[] sgBinaryTypes = {".sg", ".sc"};
 
     public static FileFilter ROM_FILTER = new FileFilter() {
