@@ -190,7 +190,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
 
     //TODO fix this
     private void initMode() {
-        region = Optional.ofNullable(bus.getEmulator()).map(SystemProvider::getRegion).orElse(RegionDetector.Region.EUROPE);
+        region = Optional.ofNullable(bus.getSystem()).map(SystemProvider::getRegion).orElse(RegionDetector.Region.EUROPE);
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
         resetVideoMode(true);
         reloadRegisters();
@@ -705,7 +705,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
             if (interruptHandler.isDrawFrameSlot()) {
                 interruptHandler.logVerbose("Draw Screen");
                 int[][] screenData = renderHandler.renderFrame();
-                bus.getEmulator().renderScreen(screenData);
+                bus.getSystem().renderScreen(screenData);
                 resetVideoMode(false);
                 line = 0;
             }

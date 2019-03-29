@@ -103,7 +103,7 @@ public class JavaSoundManager implements SoundProvider {
                         } else {
                             playOnce();
                         }
-                        Util.parkUntil(System.nanoTime() + nsToMillis);
+                        Util.parkUntil(System.nanoTime() + nsToMillis / 2);
                     } while (!close);
                 } catch (Exception e) {
                     LOG.error("Unexpected sound error, stopping", e);

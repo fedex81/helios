@@ -101,13 +101,6 @@ public class MC68000Wrapper implements M68kProvider {
         m68k.reset();
     }
 
-
-    @Override
-    public void initialize() {
-        reset();
-    }
-
-
     public MC68000 getM68k() {
         return m68k;
     }
@@ -132,7 +125,7 @@ public class MC68000Wrapper implements M68kProvider {
             public void reset() {
                 LOG.info("Reset");
                 super.reset();
-                resetExternal();
+                resetExternal(); //TODO why?
             }
         };
     }

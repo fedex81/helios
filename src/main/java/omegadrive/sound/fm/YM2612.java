@@ -683,6 +683,7 @@ public final class YM2612 implements FmProvider {
         if (dacSampleToProcess) {
             while ((val = dacQueue.poll()) != null && i < end) {
                 if (val == DAC_SILENCE) {
+                    i += 2;
                     continue;
                 }
                 //8 bit unsigned to 13 bit signed

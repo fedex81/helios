@@ -43,7 +43,8 @@ public class TwoButtonsJoypad extends BasePadAdapter {
 
     private static Logger LOG = LogManager.getLogger(TwoButtonsJoypad.class.getSimpleName());
 
-    public void initialize() {
+    @Override
+    public void init() {
         p1Type = JoypadType.BUTTON_2;
         p2Type = JoypadType.BUTTON_2;
         LOG.info("Joypad1: {} - Joypad2: {}", p1Type, p2Type);

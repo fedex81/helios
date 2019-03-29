@@ -31,7 +31,7 @@ public class GamepadTest {
     private static JoypadProvider createTestJoypadProvider() {
         return new JoypadProvider() {
             @Override
-            public void initialize() {
+            public void init() {
 
             }
 

@@ -1,5 +1,6 @@
 package omegadrive.vdp.model;
 
+import omegadrive.Device;
 import omegadrive.util.VideoMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,7 +12,7 @@ import org.apache.logging.log4j.Logger;
  * <p>
  * Copyright 2018
  */
-public interface BaseVdpProvider {
+public interface BaseVdpProvider extends Device {
 
     Logger LOG = LogManager.getLogger(BaseVdpProvider.class.getSimpleName());
 

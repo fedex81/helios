@@ -1,9 +1,10 @@
 package omegadrive.bus.gen;
 
+import omegadrive.Device;
 import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.DeviceAwareBus;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.util.Size;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,7 +21,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Federico Berti
  */
-public class GenesisZ80BusProviderImpl implements GenesisZ80BusProvider {
+public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements GenesisZ80BusProvider {
     private static Logger LOG = LogManager.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
 
 //    public static int MEMORY_SIZE = 0x2000;
@@ -46,13 +47,12 @@ public class GenesisZ80BusProviderImpl implements GenesisZ80BusProvider {
     private int romBankPointer;
 
     private GenesisBusProvider mainBusProvider;
-    private Z80Provider z80Provider;
     private IMemoryRam z80Memory;
     private int[] ram;
     private int ramSize;
 
     @Override
-    public BaseBusProvider attachDevice(Object device) {
+    public BaseBusProvider attachDevice(Device device) {
         if (device instanceof GenesisBusProvider) {
             this.mainBusProvider = (GenesisBusProvider) device;
         }
@@ -61,9 +61,7 @@ public class GenesisZ80BusProviderImpl implements GenesisZ80BusProvider {
             this.ram = z80Memory.getRamData();
             this.ramSize = ram.length;
         }
-        if (device instanceof Z80Provider) {
-            this.z80Provider = (Z80Provider) device;
-        }
+        super.attachDevice(device);
         return this;
     }
 
@@ -74,7 +72,7 @@ public class GenesisZ80BusProviderImpl implements GenesisZ80BusProvider {
             address &= (ram.length - 1);
             return ram[address];
         } else if (address >= START_YM2612 && address <= END_YM2612) { //YM2612
-            if (z80Provider.isReset()) {
+            if (mainBusProvider.isZ80ResetState()) {
                 LOG.warn("FM read while Z80 reset");
                 return 1;
             }
@@ -112,7 +110,7 @@ public class GenesisZ80BusProviderImpl implements GenesisZ80BusProvider {
             ram[address] = dataInt;
         } else if (address >= START_YM2612 && address < END_YM2612) { //YM2612
             //LOG.info("Writing " + Integer.toHexString(address) + " data: " + data);
-            if (z80Provider.isReset()) {
+            if (mainBusProvider.isZ80ResetState()) {
                 LOG.warn("Illegal write to FM while Z80 reset");
                 return;
             }
@@ -144,6 +142,7 @@ public class GenesisZ80BusProviderImpl implements GenesisZ80BusProvider {
 
     @Override
     public void reset() {
+        super.reset();
         romBank68kSerial = 0;
         romBankPointer = 0;
     }

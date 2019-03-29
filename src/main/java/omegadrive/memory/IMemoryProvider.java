@@ -1,5 +1,7 @@
 package omegadrive.memory;
 
+import omegadrive.Device;
+
 /**
  * ${FILE}
  * <p>
@@ -7,17 +9,9 @@ package omegadrive.memory;
  * <p>
  * Copyright 2018
  */
-public interface IMemoryProvider extends IMemoryRam, IMemoryRom {
+public interface IMemoryProvider extends IMemoryRam, IMemoryRom, Device {
 
     void setChecksumRomValue(long value);
 
     void setRomData(int[] data);
-
-//    default void setRomData(int[] data){
-//        byte[] b = new byte[data.length];
-//        for (int i = 0; i < data.length; i++) {
-//           b[i] = (byte) data[i];
-//        }
-//        setRomData(b);
-//    }
 }

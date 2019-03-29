@@ -39,10 +39,6 @@ public class Z80CoreWrapper implements Z80Provider {
     private Z80MemIoOps memIoOps;
     private Z80Disasm z80Disasm;
 
-    private boolean resetState;
-    private boolean busRequested;
-    private boolean wasRunning;
-
     private static Logger LOG = LogManager.getLogger(Z80CoreWrapper.class.getSimpleName());
 
     public static Z80CoreWrapper createSg1000Instance(BaseBusProvider busProvider) {
@@ -79,33 +75,12 @@ public class Z80CoreWrapper implements Z80Provider {
     }
 
     @Override
-    public void initialize() {
-        reset();
-        unrequestBus();
-        wasRunning = false;
-        LOG.info("Z80 init, reset: " + resetState + ", busReq: " + busRequested);
-    }
-
-    private boolean updateRunningFlag() {
-        boolean nowRunning = isRunning();
-        if (wasRunning != nowRunning) {
-//            LOG.info("Z80: " + (nowRunning ? "ON" : "OFF"));
-            wasRunning = nowRunning;
-        }
-        if (!nowRunning) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
     public int executeInstruction() {
-        if (!updateRunningFlag()) {
-            return -1;
-        }
         memIoOps.reset();
         try {
             printVerbose();
+            //TODO check halt keeps running halt
+
             z80Core.execute();
             if (verbose) {
                 LOG.info("Z80State: " + toString(z80Core.getZ80State()));
@@ -140,21 +115,6 @@ public class Z80CoreWrapper implements Z80Provider {
         return str;
     }
 
-    @Override
-    public void requestBus() {
-        busRequested = true;
-    }
-
-    @Override
-    public void unrequestBus() {
-        busRequested = false;
-    }
-
-    @Override
-    public boolean isBusRequested() {
-        return busRequested;
-    }
-
     //From the Z80UM.PDF document, a reset clears the interrupt enable, PC and
     //registers I and R, then sets interrupt status to mode 0.
     @Override
@@ -168,27 +128,6 @@ public class Z80CoreWrapper implements Z80Provider {
         z80Core.setIFF1(false);
         z80Core.setIFF2(false);
         z80Core.setIM(Z80.IntMode.IM0);
-        resetState = true;
-    }
-
-    @Override
-    public boolean isReset() {
-        return resetState;
-    }
-
-    @Override
-    public void disableReset() {
-        resetState = false;
-    }
-
-    @Override
-    public boolean isRunning() {
-        return !busRequested && !resetState;
-    }
-
-    @Override
-    public boolean isHalted() {
-        return z80Core.isHalted();
     }
 
     //If the Z80 has interrupts disabled when the frame interrupt is supposed
@@ -203,6 +142,11 @@ public class Z80CoreWrapper implements Z80Provider {
     @Override
     public void triggerNMI() {
         z80Core.triggerNMI();
+    }
+
+    @Override
+    public boolean isHalted() {
+        return z80Core.isHalted();
     }
 
     @Override

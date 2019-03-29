@@ -271,7 +271,7 @@ public abstract class BaseSystem implements SystemProvider {
     }
 
 
-    protected VideoMode videoMode = VideoMode.PAL_H40_V30;
+    protected VideoMode videoMode = null;
     protected long targetNs;
 
 

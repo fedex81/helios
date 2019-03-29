@@ -1,5 +1,7 @@
 package omegadrive.m68k;
 
+import omegadrive.Device;
+
 /**
  * ${FILE}
  * <p>
@@ -7,7 +9,7 @@ package omegadrive.m68k;
  * <p>
  * Copyright 2018
  */
-public interface M68kProvider {
+public interface M68kProvider extends Device {
 
     int VBLANK_INTERRUPT_LEVEL = 6;
 
@@ -18,10 +20,6 @@ public interface M68kProvider {
     boolean isStopped();
 
     boolean raiseInterrupt(int level);
-
-    void reset();
-
-    void initialize();
 
     int runInstruction();
 }

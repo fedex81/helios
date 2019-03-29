@@ -8,7 +8,6 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.ColecoPad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
@@ -87,8 +86,7 @@ public class Coleco extends BaseSystem {
         vdp = new Sg1000Vdp();
 
         //z80, sound attached later
-        sound = SoundProvider.NO_SOUND;
-        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).attachDevice(sound).
+        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(vdp);
         reloadKeyListeners();
     }
@@ -117,10 +115,6 @@ public class Coleco extends BaseSystem {
         long startCycle = System.nanoTime();
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         updateVideoMode();
-        //TODO hack
-        z80.unrequestBus();
-        z80.disableReset();
-        //TODO hack
 
         do {
             try {
@@ -163,11 +157,9 @@ public class Coleco extends BaseSystem {
 
     private void resetAfterRomLoad() {
         //detect ROM first
-        bus.reset();
-        joypad.initialize();
+        joypad.init();
         vdp.init();
         z80.reset();
-        z80.initialize();
     }
 
     @Override

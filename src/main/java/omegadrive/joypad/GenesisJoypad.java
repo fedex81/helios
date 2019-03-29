@@ -50,7 +50,8 @@ public class GenesisJoypad extends BasePadAdapter {
     boolean asserted1;
     boolean asserted2;
 
-    public void initialize() {
+    @Override
+    public void init() {
         writeDataRegister1(0x40);
         writeDataRegister2(0x40);
         p1Type = JoypadType.BUTTON_6;

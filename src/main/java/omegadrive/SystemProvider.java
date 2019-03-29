@@ -11,7 +11,7 @@ import java.nio.file.Path;
  * <p>
  * Copyright 2018
  */
-public interface SystemProvider {
+public interface SystemProvider extends Device {
 
     RegionDetector.Region getRegion();
 
@@ -39,8 +39,6 @@ public interface SystemProvider {
 
     void setFullScreen(boolean value);
 
-    void init();
-
     void setPlayers(int i);
 
     void setDebug(boolean value);
@@ -50,6 +48,4 @@ public interface SystemProvider {
     void handleSaveState(Path file);
 
     void handlePause();
-
-    void reset();
 }

@@ -1,5 +1,6 @@
 package omegadrive.sound;
 
+import omegadrive.Device;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.RegionDetector;
@@ -14,7 +15,7 @@ import org.apache.logging.log4j.Logger;
  * <p>
  * Copyright 2018
  */
-public interface SoundProvider {
+public interface SoundProvider extends Device {
     Logger LOG = LogManager.getLogger(SoundProvider.class.getSimpleName());
 
     long PAL_PSG_CLOCK = Util.GEN_PAL_MCLOCK_MHZ / 15; // 3546893
@@ -56,8 +57,6 @@ public interface SoundProvider {
     }
 
     void output(int nanos);
-
-    void reset();
 
     void close();
 

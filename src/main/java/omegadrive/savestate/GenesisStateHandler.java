@@ -1,5 +1,6 @@
 package omegadrive.savestate;
 
+import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.sound.fm.FmProvider;
@@ -42,7 +43,7 @@ public interface GenesisStateHandler {
         }
 
         @Override
-        public void loadZ80(Z80Provider z80) {
+        public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
 
         }
 
@@ -62,7 +63,7 @@ public interface GenesisStateHandler {
         }
 
         @Override
-        public void saveZ80(Z80Provider z80) {
+        public void saveZ80(Z80Provider z80, GenesisBusProvider bus) {
 
         }
 
@@ -85,7 +86,7 @@ public interface GenesisStateHandler {
 
     void loadVdpState(BaseVdpProvider vdp);
 
-    void loadZ80(Z80Provider z80);
+    void loadZ80(Z80Provider z80, GenesisBusProvider bus);
 
     void load68k(MC68000Wrapper m68kProvider, IMemoryProvider memoryProvider);
 
@@ -93,7 +94,7 @@ public interface GenesisStateHandler {
 
     void saveVdp(BaseVdpProvider vdp);
 
-    void saveZ80(Z80Provider z80);
+    void saveZ80(Z80Provider z80, GenesisBusProvider bus);
 
     void save68k(MC68000Wrapper mc68000Wrapper, IMemoryProvider memoryProvider);
 

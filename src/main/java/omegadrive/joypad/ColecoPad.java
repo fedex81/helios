@@ -41,7 +41,8 @@ public class ColecoPad extends BasePadAdapter {
 
     private boolean mode80 = false;
 
-    public void initialize() {
+    @Override
+    public void init() {
         p1Type = JoypadType.BUTTON_2;
         p2Type = JoypadType.BUTTON_2;
         LOG.info("Joypad1: {} - Joypad2: {}", p1Type, p2Type);

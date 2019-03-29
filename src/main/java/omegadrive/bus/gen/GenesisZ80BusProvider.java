@@ -1,12 +1,7 @@
 package omegadrive.bus.gen;
 
-import omegadrive.SystemProvider;
 import omegadrive.bus.BaseBusProvider;
-import omegadrive.joypad.JoypadProvider;
-import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.IMemoryRam;
-import omegadrive.sound.SoundProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,30 +57,5 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
             GenesisZ80BusProvider genBus = (GenesisZ80BusProvider) bus;
             genBus.setRomBank68kSerial(romBank68kSerial);
         }
-    }
-
-    @Override
-    default GenesisVdpProvider getVdp() {
-        return null;
-    }
-
-    @Override
-    default IMemoryProvider getMemory() {
-        return null;
-    }
-
-    @Override
-    default JoypadProvider getJoypad() {
-        return null;
-    }
-
-    @Override
-    default SoundProvider getSound() {
-        return null;
-    }
-
-    @Override
-    default SystemProvider getEmulator() {
-        return null;
     }
 }

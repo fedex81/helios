@@ -1,11 +1,7 @@
 package omegadrive.bus;
 
-import omegadrive.SystemProvider;
-import omegadrive.joypad.JoypadProvider;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.sound.SoundProvider;
+import omegadrive.Device;
 import omegadrive.util.Size;
-import omegadrive.vdp.model.BaseVdpProvider;
 
 /**
  * ${FILE}
@@ -14,19 +10,7 @@ import omegadrive.vdp.model.BaseVdpProvider;
  * <p>
  * Copyright 2019
  */
-public interface BaseBusProvider {
-
-    BaseBusProvider attachDevice(Object device);
-
-    IMemoryProvider getMemory();
-
-    JoypadProvider getJoypad();
-
-    SoundProvider getSound();
-
-    SystemProvider getEmulator();
-
-    BaseVdpProvider getVdp();
+public interface BaseBusProvider extends Device {
 
     long read(long address, Size size);
 
@@ -36,9 +20,9 @@ public interface BaseBusProvider {
 
     int readIoPort(int port);
 
-    void reset();
-
     void closeRom();
 
     void newFrame();
+
+    BaseBusProvider attachDevice(Device device);
 }

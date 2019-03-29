@@ -1,5 +1,6 @@
 package omegadrive.z80;
 
+import omegadrive.Device;
 import omegadrive.bus.BaseBusProvider;
 import z80core.Z80State;
 
@@ -10,31 +11,15 @@ import z80core.Z80State;
  * <p>
  * Copyright 2018
  */
-public interface Z80Provider {
-
-    void initialize();
+public interface Z80Provider extends Device {
 
     int executeInstruction();
-
-    void requestBus();
-
-    void unrequestBus();
-
-    boolean isBusRequested();
-
-    void reset();
-
-    boolean isReset();
-
-    void disableReset();
-
-    boolean isRunning();
-
-    boolean isHalted();
 
     boolean interrupt(boolean value);
 
     void triggerNMI();
+
+    boolean isHalted();
 
     int readMemory(int address);
 

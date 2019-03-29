@@ -1,5 +1,6 @@
 package omegadrive.bus.gen;
 
+import omegadrive.SystemProvider;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
@@ -61,13 +62,21 @@ public interface GenesisBusProvider extends BaseBusProvider {
     //VDP setting this
     void setStop68k(int mask);
 
-    default PsgProvider getPsg() {
-        return getSound().getPsg();
-    }
+    boolean isZ80Running();
 
-    default FmProvider getFm() {
-        return getSound().getFm();
-    }
+    boolean isZ80ResetState();
+
+    boolean isZ80BusRequested();
+
+    void setZ80ResetState(boolean z80ResetState);
+
+    void setZ80BusRequested(boolean z80BusRequested);
+
+    PsgProvider getPsg();
+
+    FmProvider getFm();
+
+    SystemProvider getSystem();
 
     //Z80 for genesis doesnt do IO
     @Override

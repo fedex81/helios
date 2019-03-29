@@ -111,7 +111,7 @@ public class Genesis extends BaseSystem {
         sound = SoundProvider.NO_SOUND;
 
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
-                attachDevice(cpu).attachDevice(z80).attachDevice(sound);
+                attachDevice(cpu).attachDevice(z80);
         reloadKeyListeners();
     }
 
@@ -131,14 +131,14 @@ public class Genesis extends BaseSystem {
             if (stateHandler.getType() == GenesisStateHandler.Type.LOAD) {
                 stateHandler.loadFmState(sound.getFm());
                 stateHandler.loadVdpState(vdp);
-                stateHandler.loadZ80(z80);
-                stateHandler.load68k((MC68000Wrapper) cpu, bus.getMemory());
+                stateHandler.loadZ80(z80, bus);
+                stateHandler.load68k((MC68000Wrapper) cpu, memory);
                 bus.reset();
                 LOG.info("Savestate loaded from: " + stateHandler.getFileName());
             } else {
                 stateHandler.saveFm(sound.getFm());
-                stateHandler.saveZ80(z80);
-                stateHandler.save68k((MC68000Wrapper) cpu, bus.getMemory());
+                stateHandler.saveZ80(z80, bus);
+                stateHandler.save68k((MC68000Wrapper) cpu, memory);
                 stateHandler.saveVdp(vdp);
                 int[] data = stateHandler.getData();
                 try {
@@ -240,6 +240,7 @@ public class Genesis extends BaseSystem {
             microsPerTick = (FM_DIVIDER / VDP_DIVIDER) * frameTimeMicros / (vcm.slotsPerLine * vcm.vTotalCount);
             LOG.debug("Video mode changed: {}, microsPerTick: {}", vm, microsPerTick);
             videoMode = vm;
+            targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         }
     }
 
@@ -273,9 +274,12 @@ public class Genesis extends BaseSystem {
 
     private void runZ80(long counter) {
         if (counter == nextZ80Cycle) {
-            int cycleDelay = z80.executeInstruction();
-            //when halted it can still process interrupts
-            if (cycleDelay >= 0 || z80.isHalted()) {
+            int cycleDelay = 0;
+            boolean running = bus.isZ80Running();
+            if (running) {
+                //halt = nop = 4
+//                cycleDelay = z80.isHalted() ? 4 : z80.executeInstruction();
+                cycleDelay = z80.executeInstruction();
                 bus.handleVdpInterruptsZ80();
             }
             cycleDelay = Math.max(1, cycleDelay);
@@ -297,12 +301,10 @@ public class Genesis extends BaseSystem {
 
     private void resetAfterRomLoad() {
         //detect ROM first
-        bus.reset();
+        bus.init();
         cpu.reset();
-        cpu.initialize();
-        joypad.initialize();
+        joypad.init();
         vdp.init();
-        z80.reset();
-        z80.initialize();
+//        z80.reset();
     }
 }

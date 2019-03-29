@@ -1,14 +1,10 @@
 package omegadrive.bus.sg1k;
 
-import omegadrive.SystemProvider;
-import omegadrive.joypad.JoypadProvider;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.sound.SoundProvider;
+import omegadrive.Device;
+import omegadrive.bus.DeviceAwareBus;
 import omegadrive.util.FileLoader;
 import omegadrive.util.Size;
 import omegadrive.vdp.Sg1000Vdp;
-import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.z80.Z80Provider;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,7 +19,7 @@ import java.nio.file.Paths;
  * https://atarihq.com/danb/files/CV-Tech.txt
  * http://www.smspower.org/forums/9920-ColecoNMIEmulationWasMekaBugAndFix
  */
-public class ColecoBus implements Sg1000BusProvider {
+public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
 
     private static int BIOS_START = 0;
     private static int BIOS_END = 0x1FFF;
@@ -35,21 +31,14 @@ public class ColecoBus implements Sg1000BusProvider {
     private static int RAM_SIZE = 0x400;  //1Kb
     private static int ROM_SIZE = ROM_END + 1; //48kb
 
-    private SoundProvider sound;
-    private JoypadProvider joypadProvider;
-    private Z80Provider z80;
-    private IMemoryProvider memory;
-    private SystemProvider sg1000;
     public Sg1000Vdp vdp;
-
-    private boolean readPad;
-    private int[] rom;
-    private int[] ram;
     private int[] bios;
 
     private String biosPath = ".";
     private String biosName = "bios_coleco.col";
+
     private boolean isNmiSet = false;
+    private boolean frameTrigger = false;
 
 
     public ColecoBus() {
@@ -59,51 +48,12 @@ public class ColecoBus implements Sg1000BusProvider {
     }
 
     @Override
-    public ColecoBus attachDevice(Object device) {
-        if (device instanceof IMemoryProvider) {
-            this.memory = (IMemoryProvider) device;
-        }
-        if (device instanceof SystemProvider) {
-            this.sg1000 = (SystemProvider) device;
-        }
-        if (device instanceof JoypadProvider) {
-            this.joypadProvider = (JoypadProvider) device;
-        }
-        if (device instanceof Z80Provider) {
-            this.z80 = (Z80Provider) device;
-        }
-        if (device instanceof SoundProvider) {
-            this.sound = (SoundProvider) device;
-        }
+    public Sg1000BusProvider attachDevice(Device device) {
         if (device instanceof Sg1000Vdp) {
             this.vdp = (Sg1000Vdp) device;
         }
+        super.attachDevice(device);
         return this;
-    }
-
-    @Override
-    public IMemoryProvider getMemory() {
-        return memory;
-    }
-
-    @Override
-    public JoypadProvider getJoypad() {
-        return joypadProvider;
-    }
-
-    @Override
-    public SoundProvider getSound() {
-        return sound;
-    }
-
-    @Override
-    public SystemProvider getEmulator() {
-        return sg1000;
-    }
-
-    @Override
-    public GenesisVdpProvider getVdp() {
-        return null;
     }
 
     @Override
@@ -117,11 +67,11 @@ public class ColecoBus implements Sg1000BusProvider {
             return bios[address];
         } else if (address >= RAM_START && address <= RAM_END) {
             address &= RAM_SIZE - 1;
-            return memory.readRamByte(address);
+            return memoryProvider.readRamByte(address);
         } else if (address <= ROM_END) {
 //            address &= rom.length - 1;
             address = (address - ROM_START);// & (rom.length - 1);
-            return memory.readRomByte(address);
+            return memoryProvider.readRomByte(address);
         }
         LOG.error("Unexpected Z80 memory read: " + Long.toHexString(address));
         return 0xFF;
@@ -130,7 +80,7 @@ public class ColecoBus implements Sg1000BusProvider {
     @Override
     public void write(long address, long data, Size size) {
         address &= RAM_SIZE - 1;
-        memory.writeRamByte((int) address, (int) (data & 0xFF));
+        memoryProvider.writeRamByte((int) address, (int) (data & 0xFF));
     }
 
     @Override
@@ -151,7 +101,7 @@ public class ColecoBus implements Sg1000BusProvider {
                 vdp.writeRegister(byteVal);
                 break;
             case 0xE1:
-                sound.getPsg().write(byteVal);
+                soundProvider.getPsg().write(byteVal);
                 break;
             default:
                 LOG.warn("outPort: {} ,data {}", Integer.toHexString(port), Integer.toHexString(value));
@@ -185,8 +135,8 @@ public class ColecoBus implements Sg1000BusProvider {
 
     @Override
     public void reset() {
-        this.rom = memory.getRomData();
-        this.ram = memory.getRamData();
+        isNmiSet = false;
+        frameTrigger = false;
     }
 
     @Override
@@ -200,15 +150,12 @@ public class ColecoBus implements Sg1000BusProvider {
         frameTrigger = false;
     }
 
-
-    private boolean frameTrigger = false;
-
     @Override
     public void handleVdpInterruptsZ80() {
         boolean set = vdp.getStatusINT() && vdp.getGINT();
         //do not re-trigger
         if (set && !isNmiSet && !frameTrigger) {
-            z80.triggerNMI();
+            z80Provider.triggerNMI();
             frameTrigger = true;
         }
         isNmiSet = set;

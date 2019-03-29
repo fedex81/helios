@@ -1,19 +1,18 @@
 package omegadrive.bus.gen;
 
+import omegadrive.Device;
 import omegadrive.Genesis;
 import omegadrive.SystemProvider;
+import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.mapper.BackupMemoryMapper;
 import omegadrive.bus.mapper.GenesisMapper;
 import omegadrive.bus.mapper.Ssf2Mapper;
-import omegadrive.joypad.JoypadProvider;
-import omegadrive.m68k.M68kProvider;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.sound.SoundProvider;
+import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -37,20 +36,13 @@ import java.util.Objects;
  * Interrupts are know acknowleged based on what the VDP thinks its asserting rather than what the 68K actually is acking - Fixes Fatal Rewind
  *
  */
-public class GenesisBus implements GenesisBusProvider, GenesisMapper {
+public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, GenesisMapper {
 
     private static Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
 
-    private SystemProvider emu;
-    private IMemoryProvider memory;
-    private JoypadProvider joypad;
-
     private GenesisVdpProvider vdp;
-    private Z80Provider z80;
-    private M68kProvider cpu;
-    private SoundProvider sound;
 
     private CartridgeInfoProvider cartridgeInfoProvider;
     private GenesisMapper mapper;
@@ -66,10 +58,13 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
 
     private BusState busState = BusState.NOT_READY;
 
+    private boolean z80BusRequested;
+    private boolean z80ResetState;
+
     //TEST ONLY
     protected GenesisBus() {
         this.mapper = this;
-        this.busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
+        this.busArbiter = BusArbiter.createInstance(vdp, m68kProvider, z80Provider);
     }
 
     void initializeRomData() {
@@ -83,11 +78,13 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
     }
 
     @Override
-    public void reset() {
-        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memory, getEmulator().getRomName());
+    public void init() {
+        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
         initializeRomData();
         LOG.info(cartridgeInfoProvider.toString());
-        this.busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
+        this.busArbiter = BusArbiter.createInstance(vdp, m68kProvider, z80Provider);
+        this.z80BusRequested = false;
+        this.z80ResetState = true;
         detectState();
         LOG.info("Bus state: " + busState);
     }
@@ -95,7 +92,8 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
     @Override
     public void resetFrom68k() {
         this.getFm().reset();
-        this.z80.reset();
+        this.z80Provider.reset();
+        z80ResetState = true;
     }
 
     @Override
@@ -109,37 +107,17 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
     }
 
     @Override
-    public GenesisBusProvider attachDevice(Object device) {
-        if (device instanceof IMemoryProvider) {
-            this.memory = (IMemoryProvider) device;
-        }
-        if (device instanceof SystemProvider) {
-            this.emu = (SystemProvider) device;
-        }
-        if (device instanceof JoypadProvider) {
-            this.joypad = (JoypadProvider) device;
-        }
+    public GenesisBusProvider attachDevice(Device device) {
         if (device instanceof GenesisVdpProvider) {
             this.vdp = (GenesisVdpProvider) device;
         }
-        if (device instanceof Z80Provider) {
-            this.z80 = (Z80Provider) device;
-        }
-        if (device instanceof M68kProvider) {
-            this.cpu = (M68kProvider) device;
-        }
-        if (device instanceof SoundProvider) {
-            this.sound = (SoundProvider) device;
-        }
-        if (device instanceof BusArbiter) {
-            this.busArbiter = (BusArbiter) device;
-        }
+        super.attachDevice(device);
         return this;
     }
 
     private void detectState() {
-        boolean ok = Objects.nonNull(emu) && Objects.nonNull(cpu) && Objects.nonNull(joypad) && Objects.nonNull(vdp) &&
-                Objects.nonNull(memory) && Objects.nonNull(z80) && Objects.nonNull(sound) && Objects.nonNull(cartridgeInfoProvider)
+        boolean ok = Objects.nonNull(systemProvider) && Objects.nonNull(m68kProvider) && Objects.nonNull(joypadProvider) && Objects.nonNull(vdp) &&
+                Objects.nonNull(memoryProvider) && Objects.nonNull(z80Provider) && Objects.nonNull(soundProvider) && Objects.nonNull(cartridgeInfoProvider)
                 && Objects.nonNull(busArbiter);
         busState = ok ? BusState.READY : BusState.NOT_READY;
     }
@@ -173,7 +151,7 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
                 return mapper.readData(address, size);
             }
-            return Util.readRom(memory, size, (int) address);
+            return Util.readRom(memoryProvider, size, (int) address);
         } else if (address > CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
             LOG.warn("Read on reserved address: " + Integer.toHexString((int) address));
             return size.getMax();
@@ -186,9 +164,9 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
         } else if (address >= VDP_ADDRESS_SPACE_START && address <= VDP_ADDRESS_SPACE_END) { // VDP
             return vdpRead(address, size);
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            return Util.readRam(memory, size, address);
+            return Util.readRam(memoryProvider, size, address);
         } else {
-            LOG.warn("BUS READ NOT MAPPED: address: {}, PC: {}", Util.pad4(address), Util.pad4(cpu.getPC()));
+            LOG.warn("BUS READ NOT MAPPED: address: {}, PC: {}", Util.pad4(address), Util.pad4(m68kProvider.getPC()));
         }
         return 0;
     }
@@ -229,9 +207,9 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
             vdpWrite(addressL, size, data);
         } else if (addressL >= ADDRESS_RAM_MAP_START && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             long addressZ = addressL & 0xFFFF;
-            Util.writeRam(memory, size, addressZ, (int) data);
+            Util.writeRam(memoryProvider, size, addressZ, (int) data);
         } else {
-            LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) addressL) + " - PC: " + Integer.toHexString((int) cpu.getPC()));
+            LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) addressL) + " - PC: " + Integer.toHexString((int) m68kProvider.getPC()));
         }
     }
 
@@ -279,8 +257,8 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
             //TODO this shouldn't be here???
 //               || address == 0xA11200 || address == 0xA11201
                 ) {    //	Z80 bus request
-            value = z80.isBusRequested() ? 0 : 1;
-            value = z80.isReset() ? 1 : value;
+            value = z80BusRequested ? 0 : 1;
+            value = z80ResetState ? 1 : value;
 //            Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
 //            the Z80's /BUSREQ line.
             if (size == Size.WORD) {
@@ -315,18 +293,18 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
                 data = data & 0x0100;
             }
             if (data == 0x0100 || data == 0x1) {
-                boolean isReset = z80.isReset();
-                if (!z80.isBusRequested()) {
+                boolean isReset = z80ResetState;
+                if (!z80BusRequested) {
                     LOG.debug("busRequested, reset: {}", isReset);
-                    z80.requestBus();
+                    z80BusRequested = true;
                 } else {
                     LOG.debug("busRequested, ignored, reset: {}", isReset);
                 }
                 //	 #$0000 needs to be written to $A11100 to return the bus back to the Z80
             } else if (data == 0x0000) {
-                if (z80.isBusRequested()) {
-                    z80.unrequestBus();
-                    LOG.debug("busUnrequested, reset : {}", z80.isReset());
+                if (z80BusRequested) {
+                    z80BusRequested = false;
+                    LOG.debug("busUnrequested, reset : {}", z80ResetState);
                 } else {
                     LOG.debug("busUnrequested ignored");
                 }
@@ -338,8 +316,9 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
             //	if the Z80 is required to be reset (for example, to load a new program to it's memory)
             //	this may be done by writing #$0000 to $A11200, but only when the Z80 bus is requested
             if (data == 0x0000) {
-                if (z80.isBusRequested()) {
-                    z80.reset();
+                if (z80BusRequested) {
+                    z80Provider.reset();
+                    z80ResetState = true;
                     getFm().reset();
                     LOG.debug("Reset while busRequested");
                 } else {
@@ -349,9 +328,9 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
                 //	After returning the bus after loading the new program to it's memory,
                 //	the Z80 may be let go from reset by writing #$0100 to $A11200.
             } else if (data == 0x0100 || data == 0x1) {
-                z80.disableReset();
+                z80ResetState = false;
                 getFm().reset();
-                LOG.debug("Disable reset, busReq : {}", z80.isBusRequested());
+                LOG.debug("Disable reset, busReq : {}", z80BusRequested);
             } else {
                 LOG.warn("Unexpected data on busReset: " + Integer.toBinaryString((int) data));
             }
@@ -394,7 +373,7 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
     private long ioRead(long address, Size size) {
         long data = 0;
         if ((address & 0xFFF) <= 1) {    //	Version register (read-only word-long)
-            data = emu.getRegionCode();
+            data = systemProvider.getRegionCode();
             data = size == Size.WORD ? (data << 8) | data : data;
             return data;
         }
@@ -418,22 +397,22 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
         int address = (int) (addressL & 0xFFE);
         switch (address) {
             case 2:
-                data = joypad.readDataRegister1();
+                data = joypadProvider.readDataRegister1();
                 break;
             case 4:
-                data = joypad.readDataRegister2();
+                data = joypadProvider.readDataRegister2();
                 break;
             case 6:
-                data = joypad.readDataRegister3();
+                data = joypadProvider.readDataRegister3();
                 break;
             case 8:
-                data = joypad.readControlRegister1();
+                data = joypadProvider.readControlRegister1();
                 break;
             case 0xA:
-                data = joypad.readControlRegister2();
+                data = joypadProvider.readControlRegister2();
                 break;
             case 0xC:
-                data = joypad.readControlRegister3();
+                data = joypadProvider.readControlRegister3();
                 break;
             case 0x12:
             case 0x18:
@@ -456,23 +435,23 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
         int address = (int) (addressL & 0xFFE);
         switch (address) {
             case 2:
-                joypad.writeDataRegister1(data);
+                joypadProvider.writeDataRegister1(data);
                 break;
             case 4:
-                joypad.writeDataRegister2(data);
+                joypadProvider.writeDataRegister2(data);
                 break;
             case 6:
                 LOG.warn("Write to expansion port: " + Long.toHexString(address) +
                         ", data: " + Long.toHexString(data) + ", size: " + size);
                 break;
             case 8:
-                joypad.writeControlRegister1(data & 0xFF);
+                joypadProvider.writeControlRegister1(data & 0xFF);
                 break;
             case 0xA:
-                joypad.writeControlRegister2(data & 0xFF);
+                joypadProvider.writeControlRegister2(data & 0xFF);
                 break;
             case 0xC:
-                joypad.writeControlRegister3(data & 0xFF);
+                joypadProvider.writeControlRegister3(data & 0xFF);
                 break;
             case 0x12:
             case 0x18:
@@ -499,12 +478,12 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
 //            access it's own banked memory.
     private long z80MemoryRead(long address, Size size) {
         long data;
-        if (!z80.isBusRequested() || z80.isReset()) {
+        if (!z80BusRequested || z80ResetState) {
             LOG.warn("Reading Z80 memory without busreq");
             return 0;
         }
         int addressZ = (int) (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
-        data = z80.readMemory(addressZ);
+        data = z80Provider.readMemory(addressZ);
         if (size == Size.BYTE) {
             return data;
         } else {
@@ -515,7 +494,7 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
     }
 
     private void z80MemoryWrite(long address, Size size, long dataL) {
-        if (!z80.isBusRequested() || z80.isReset()) {
+        if (!z80BusRequested || z80ResetState) {
             LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
             return;
         }
@@ -529,7 +508,7 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
             LOG.error("Unexpected long write, addr: {}, data: {}", address, dataL);
         }
         int addressZ = (int) (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
-        z80.writeMemory(addressZ, data);
+        z80Provider.writeMemory(addressZ, data);
     }
 
     //    Byte-wide reads
@@ -625,7 +604,7 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
             if (size == Size.WORD) {
                 LOG.warn("PSG word write, address: " + Long.toHexString(addressL) + ", data: " + data);
             }
-            sound.getPsg().write(psgData);
+            soundProvider.getPsg().write(psgData);
         } else {
             LOG.warn("Unexpected vdpWrite, address: " + Long.toHexString(addressL) + ", data: " + data);
         }
@@ -639,13 +618,8 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
                         address <= CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS);
     }
 
-    @Override
-    public SystemProvider getEmulator() {
-        return emu;
-    }
-
     private void checkSsf2Mapper() {
-        this.mapper = Ssf2Mapper.getOrCreateInstance(this, mapper, memory);
+        this.mapper = Ssf2Mapper.getOrCreateInstance(this, mapper, memoryProvider);
     }
 
     private void checkBackupMemoryMapper(SramMode sramMode) {
@@ -658,23 +632,43 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
     }
 
     @Override
-    public IMemoryProvider getMemory() {
-        return memory;
+    public FmProvider getFm() {
+        return soundProvider.getFm();
     }
 
     @Override
-    public GenesisVdpProvider getVdp() {
-        return vdp;
+    public PsgProvider getPsg() {
+        return soundProvider.getPsg();
     }
 
     @Override
-    public JoypadProvider getJoypad() {
-        return joypad;
+    public SystemProvider getSystem() {
+        return systemProvider;
     }
 
     @Override
-    public SoundProvider getSound() {
-        return sound;
+    public boolean isZ80Running() {
+        return !z80ResetState && !z80BusRequested;
+    }
+
+    @Override
+    public void setZ80BusRequested(boolean z80BusRequested) {
+        this.z80BusRequested = z80BusRequested;
+    }
+
+    @Override
+    public void setZ80ResetState(boolean z80ResetState) {
+        this.z80ResetState = z80ResetState;
+    }
+
+    @Override
+    public boolean isZ80BusRequested() {
+        return z80BusRequested;
+    }
+
+    @Override
+    public boolean isZ80ResetState() {
+        return z80ResetState;
     }
 
     @Override
@@ -703,6 +697,6 @@ public class GenesisBus implements GenesisBusProvider, GenesisMapper {
     @Override
     public void newFrame() {
         busArbiter.newFrame();
-        joypad.newFrame();
+        joypadProvider.newFrame();
     }
 }

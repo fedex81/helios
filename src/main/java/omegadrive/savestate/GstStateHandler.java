@@ -1,6 +1,7 @@
 package omegadrive.savestate;
 
 import m68k.cpu.MC68000;
+import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
@@ -145,22 +146,26 @@ public class GstStateHandler implements GenesisStateHandler {
     }
 
     @Override
-    public void loadZ80(Z80Provider z80) {
+    public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
         Z80State z80State = loadZ80State(data);
 
         IntStream.range(0, Z80Memory.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> z80.writeMemory(i, data[i + Z80_RAM_DATA_OFFSET]));
-        z80.unrequestBus();
-        z80.disableReset();
+
+        bus.setZ80BusRequested(false);
+        bus.setZ80ResetState(false);
 
         boolean isReset = data[0x438] > 0;
         boolean isBusReq = data[0x439] > 0;
         if (isBusReq) {
-            z80.requestBus();
+            bus.setZ80BusRequested(true);
         }
         if (isReset) {
-            LOG.warn("Z80 should be reset, not doing it!");
+            //TODO check
+//            LOG.warn("Z80 should be reset, not doing it!");
 //            z80.reset();
+            bus.setZ80ResetState(true);
+            z80.reset();
         }
         int z80BankInt = getUInt32(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
         GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
@@ -243,11 +248,11 @@ public class GstStateHandler implements GenesisStateHandler {
     }
 
     @Override
-    public void saveZ80(Z80Provider z80) {
+    public void saveZ80(Z80Provider z80, GenesisBusProvider bus) {
         IntStream.range(0, Z80Memory.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> data[Z80_RAM_DATA_OFFSET + i] = z80.readMemory(i));
-        data[0x438] = z80.isReset() ? 1 : 0;
-        data[0x439] = z80.isBusRequested() ? 1 : 0;
+        data[0x438] = bus.isZ80ResetState() ? 1 : 0;
+        data[0x439] = bus.isZ80BusRequested() ? 1 : 0;
 
         int romBankSerial = GenesisZ80BusProvider.getRomBank68kSerial(z80);
         if (romBankSerial >= 0) {
