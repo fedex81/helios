@@ -71,7 +71,7 @@ public class SavestateTest {
         FmProvider fm1 = new YM2612();
         loadHandler.loadVdpState(vdpProvider1);
         loadHandler.load68k(cpu1, cpuMem1);
-        loadHandler.loadZ80(z80p1);
+        loadHandler.loadZ80(z80p1, busProvider);
         loadHandler.loadFmState(fm1);
 
         busProvider.attachDevice(vdpProvider1);
@@ -79,42 +79,43 @@ public class SavestateTest {
     }
 
     private GenesisStateHandler testLoadSaveInternal(Path saveFile) {
-        GenesisBusProvider busProvider = GenesisBusProvider.createBus();
+        GenesisBusProvider busProvider1 = GenesisBusProvider.createBus();
 
         int[] data = FileLoader.readFileSafe(saveFile);
         GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), data);
-        GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
-        MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
+        GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider1);
+        MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider1);
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
-        Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider);
+        Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider1);
         FmProvider fm1 = new YM2612();
         loadHandler.loadVdpState(vdpProvider1);
         loadHandler.load68k(cpu1, cpuMem1);
-        loadHandler.loadZ80(z80p1);
+        loadHandler.loadZ80(z80p1, busProvider1);
         loadHandler.loadFmState(fm1);
 
         String name = loadHandler.getFileName() + "_TEST_" + System.currentTimeMillis() + ".gs0";
         GenesisStateHandler saveHandler = GstStateHandler.createSaveInstance(name);
         saveHandler.saveVdp(vdpProvider1);
         saveHandler.save68k(cpu1, cpuMem1);
-        saveHandler.saveZ80(z80p1);
+        saveHandler.saveZ80(z80p1, busProvider1);
         saveHandler.saveFm(fm1);
 
+        GenesisBusProvider busProvider2 = GenesisBusProvider.createBus();
         int[] savedData = saveHandler.getData();
         GenesisStateHandler loadHandler1 = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), savedData);
-        GenesisVdpProvider vdpProvider2 = GenesisVdp.createInstance(busProvider);
-        MC68000Wrapper cpu2 = new MC68000Wrapper(busProvider);
+        GenesisVdpProvider vdpProvider2 = GenesisVdp.createInstance(busProvider2);
+        MC68000Wrapper cpu2 = new MC68000Wrapper(busProvider2);
         IMemoryProvider cpuMem2 = MemoryProvider.createGenesisInstance();
-        Z80Provider z80p2 = Z80CoreWrapper.createGenesisInstance(busProvider);
+        Z80Provider z80p2 = Z80CoreWrapper.createGenesisInstance(busProvider2);
         FmProvider fm2 = new YM2612();
         loadHandler1.loadVdpState(vdpProvider2);
         loadHandler1.load68k(cpu2, cpuMem2);
-        loadHandler.loadZ80(z80p2);
+        loadHandler.loadZ80(z80p2, busProvider2);
         loadHandler.loadFmState(fm2);
 
         compareVdp(vdpProvider1, vdpProvider2);
         compare68k(cpu1, cpu2, cpuMem1, cpuMem2);
-        compareZ80(z80p1, z80p2);
+        compareZ80(z80p1, z80p2, busProvider1, busProvider2);
         compareFm(fm1, fm2);
 
 //        Assert.assertArrayEquals("Data mismatch", data, savedData);
@@ -129,7 +130,7 @@ public class SavestateTest {
         }
     }
 
-    private void compareZ80(Z80Provider z80p1, Z80Provider z80p2) {
+    private void compareZ80(Z80Provider z80p1, Z80Provider z80p2, GenesisBusProvider bus1, GenesisBusProvider bus2) {
         Z80State s1 = z80p1.getZ80State();
         Z80State s2 = z80p2.getZ80State();
         Assert.assertEquals("AF", s1.getRegAF(), s2.getRegAF());
@@ -151,8 +152,8 @@ public class SavestateTest {
         IntStream.range(0, Z80Memory.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> Assert.assertEquals("Z80Ram:" + i, z80p1.readMemory(i), z80p2.readMemory(i))
         );
-        Assert.assertEquals("z80Reset", z80p1.isReset(), z80p2.isReset());
-        Assert.assertEquals("z80BusReq", z80p1.isBusRequested(), z80p2.isBusRequested());
+        Assert.assertEquals("z80Reset", bus1.isZ80ResetState(), bus2.isZ80ResetState());
+        Assert.assertEquals("z80BusReq", bus1.isZ80BusRequested(), bus2.isZ80BusRequested());
         Assert.assertEquals("z80Banking", GenesisZ80BusProvider.getRomBank68kSerial(z80p1),
                 GenesisZ80BusProvider.getRomBank68kSerial(z80p2));
     }

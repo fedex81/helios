@@ -1,5 +1,6 @@
 package omegadrive.bus.gen;
 
+import omegadrive.Device;
 import omegadrive.m68k.M68kProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.z80.Z80Provider;
@@ -23,7 +24,7 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
  * http://gendev.spritesmind.net/forum/viewtopic.php?t=787
  *
  */
-public class BusArbiter {
+public class BusArbiter implements Device {
 
     private static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
 

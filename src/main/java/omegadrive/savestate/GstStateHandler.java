@@ -161,11 +161,9 @@ public class GstStateHandler implements GenesisStateHandler {
             bus.setZ80BusRequested(true);
         }
         if (isReset) {
-            //TODO check
-//            LOG.warn("Z80 should be reset, not doing it!");
-//            z80.reset();
-            bus.setZ80ResetState(true);
-            z80.reset();
+            //TODO seems to break a lot of savestates
+            LOG.warn("Z80 should be reset, not doing it!");
+//            bus.setZ80ResetState(true);
         }
         int z80BankInt = getUInt32(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
         GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);

@@ -111,6 +111,9 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ge
         if (device instanceof GenesisVdpProvider) {
             this.vdp = (GenesisVdpProvider) device;
         }
+        if (device instanceof BusArbiter) {
+            this.busArbiter = (BusArbiter) device;
+        }
         super.attachDevice(device);
         return this;
     }
@@ -644,6 +647,11 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ge
     @Override
     public SystemProvider getSystem() {
         return systemProvider;
+    }
+
+    @Override
+    public GenesisVdpProvider getVdp() {
+        return vdp;
     }
 
     @Override

@@ -133,7 +133,6 @@ public class Genesis extends BaseSystem {
                 stateHandler.loadVdpState(vdp);
                 stateHandler.loadZ80(z80, bus);
                 stateHandler.load68k((MC68000Wrapper) cpu, memory);
-                bus.reset();
                 LOG.info("Savestate loaded from: " + stateHandler.getFileName());
             } else {
                 stateHandler.saveFm(sound.getFm());

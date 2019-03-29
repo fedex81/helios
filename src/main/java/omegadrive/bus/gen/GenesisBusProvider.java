@@ -4,6 +4,7 @@ import omegadrive.SystemProvider;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,14 +33,6 @@ public interface GenesisBusProvider extends BaseBusProvider {
     int DMA_IN_PROGRESS_MASK = 0x02;
 
     Logger LOG = LogManager.getLogger(GenesisBusProvider.class.getSimpleName());
-
-
-    enum VdpIntState {
-        NONE,
-        PROCESS_INT,
-        ACK_INT,
-        INT_DONE
-    }
 
     static GenesisBusProvider createBus() {
         return new GenesisBus();
@@ -77,6 +70,8 @@ public interface GenesisBusProvider extends BaseBusProvider {
     FmProvider getFm();
 
     SystemProvider getSystem();
+
+    GenesisVdpProvider getVdp();
 
     //Z80 for genesis doesnt do IO
     @Override

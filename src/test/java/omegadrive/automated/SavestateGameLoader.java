@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class SavestateGameLoader {
 
-    static String romFolder = "/home/fede/roms/savestate_test";
+    static String romFolder = "/home/fede/roms/test/savestate_test";
 
     private static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
 

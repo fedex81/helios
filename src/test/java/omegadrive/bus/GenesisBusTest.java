@@ -33,7 +33,7 @@ public class GenesisBusTest {
         Z80CoreWrapper z80 = Z80CoreWrapper.createGenesisInstance(bus);
         //sound attached later
         SoundProvider sound = SoundProvider.NO_SOUND;
-        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
+        bus.attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(cpu).attachDevice(z80).attachDevice(sound);
     }
 
