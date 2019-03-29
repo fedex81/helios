@@ -6,11 +6,6 @@ import com.google.common.collect.Maps;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-
-import static omegadrive.joypad.JoypadProvider.JoypadAction.PRESSED;
 import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
@@ -44,35 +39,34 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
  * <p>
  * /TODO reset button
  */
-public class TwoButtonsJoypad implements JoypadProvider {
+public class TwoButtonsJoypad extends BasePadAdapter {
 
     private static Logger LOG = LogManager.getLogger(TwoButtonsJoypad.class.getSimpleName());
 
-    JoypadType p1Type = JoypadType.BUTTON_2;
-    JoypadType p2Type = JoypadType.BUTTON_2;
-
-    private Map<JoypadButton, JoypadAction> stateMap1 = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
-            put(D, RELEASED).put(U, RELEASED).
-            put(L, RELEASED).put(R, RELEASED).
-            put(A, RELEASED).put(B, RELEASED).build());
-
-    private Map<JoypadButton, JoypadAction> stateMap2 = Maps.newHashMap(stateMap1);
-
-    private int value1 = 0xFF;
-    private int value2 = 0xFF;
-
-    private static JoypadButton[] directionButton = {D, L, R, U};
-
     public void initialize() {
+        p1Type = JoypadType.BUTTON_2;
+        p2Type = JoypadType.BUTTON_2;
         LOG.info("Joypad1: {} - Joypad2: {}", p1Type, p2Type);
+        stateMap1 = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
+                put(D, RELEASED).put(U, RELEASED).
+                put(L, RELEASED).put(R, RELEASED).
+                put(A, RELEASED).put(B, RELEASED).build());
+        stateMap2 = Maps.newHashMap(stateMap1);
     }
 
+    @Override
     public int readDataRegister1() {
         return value1;
     }
 
+    @Override
     public int readDataRegister2() {
         return value2;
+    }
+
+    @Override
+    public int readDataRegister3() {
+        return 0x3F;
     }
 
     private int get2D_2U_1B_1A_1R_1L_1D_1U() {
@@ -88,75 +82,9 @@ public class TwoButtonsJoypad implements JoypadProvider {
                 (getValue(JoypadNumber.P2, R) << 1) | (getValue(JoypadNumber.P2, L));
     }
 
-    private int getValue(JoypadNumber number, JoypadButton button) {
-        return getMap(number).get(button).ordinal();
-    }
-
-    @Override
-    public void setButtonAction(JoypadNumber number, JoypadButton button, JoypadAction action) {
-        getMap(number).put(button, action);
-    }
-
-    public boolean hasDirectionPressed(JoypadNumber number) {
-        return Arrays.stream(directionButton).anyMatch(b -> getMap(number).get(b) == PRESSED);
-    }
-
-    private Map<JoypadButton, JoypadAction> getMap(JoypadNumber number) {
-        switch (number) {
-            case P1:
-                return stateMap1;
-            case P2:
-                return stateMap2;
-            default:
-                LOG.error("Unexpected joypad number: {}", number);
-                break;
-        }
-        return Collections.emptyMap();
-    }
-
-    @Override
-    public String getState(JoypadNumber number) {
-        return getMap(number).toString();
-    }
-
-    //UNUSED
-
     @Override
     public void newFrame() {
         value1 = get2D_2U_1B_1A_1R_1L_1D_1U();
         value2 = getR_2B_2A_2R_2L();
-    }
-
-
-    public void writeDataRegister1(long data) {
-    }
-
-    public void writeDataRegister2(long data) {
-    }
-
-    public long readControlRegister1() {
-        return 0xFF;
-    }
-
-    public long readControlRegister2() {
-        return 0xFF;
-    }
-
-    public long readControlRegister3() {
-        return 0xFF;
-    }
-
-
-    public int readDataRegister3() {
-        return 0x3F;
-    }
-
-    public void writeControlRegister1(long data) {
-    }
-
-    public void writeControlRegister2(long data) {
-    }
-
-    public void writeControlRegister3(long data) {
     }
 }

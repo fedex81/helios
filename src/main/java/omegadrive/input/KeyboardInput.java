@@ -13,38 +13,32 @@ import java.util.Objects;
  * <p>
  * Copyright 2019
  */
-public class KeyboardInput {
+public class KeyboardInput extends KeyAdapter {
 
-    private static EmuKeyAdapter currentAdapter;
+    protected static KeyboardInput currentAdapter;
 
-    static class EmuKeyAdapter extends KeyAdapter {
-        private JoypadProvider provider;
+    protected JoypadProvider provider;
 
-        public void setProvider(JoypadProvider provider) {
-            this.provider = provider;
-        }
+    @Override
+    public void keyPressed(KeyEvent e) {
+        keyHandler(provider, e, true);
+    }
 
-        @Override
-        public void keyPressed(KeyEvent e) {
-            keyHandler(provider, e, true);
-        }
-
-        @Override
-        public void keyReleased(KeyEvent e) {
-            keyHandler(provider, e, false);
-        }
+    @Override
+    public void keyReleased(KeyEvent e) {
+        keyHandler(provider, e, false);
     }
 
     public static KeyAdapter createKeyAdapter(JoypadProvider provider) {
         Objects.requireNonNull(provider);
         if (currentAdapter == null) {
-            currentAdapter = new EmuKeyAdapter();
+            currentAdapter = new KeyboardInput();
         }
-        currentAdapter.setProvider(provider);
+        currentAdapter.provider = provider;
         return currentAdapter;
     }
 
-    private static void keyHandler(JoypadProvider joypad, KeyEvent e, boolean pressed) {
+    protected static void keyHandler(JoypadProvider joypad, KeyEvent e, boolean pressed) {
         JoypadProvider.JoypadAction action = pressed ? JoypadProvider.JoypadAction.PRESSED : JoypadProvider.JoypadAction.RELEASED;
         JoypadProvider.JoypadNumber number = null;
         JoypadProvider.JoypadButton button = null;

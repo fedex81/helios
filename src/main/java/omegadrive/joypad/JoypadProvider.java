@@ -1,5 +1,7 @@
 package omegadrive.joypad;
 
+import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
+
 /**
  * ${FILE}
  * <p>
@@ -8,6 +10,8 @@ package omegadrive.joypad;
  * Copyright 2018
  */
 public interface JoypadProvider {
+
+    JoypadButton[] directionButton = {D, L, R, U};
 
     enum JoypadAction {
         PRESSED,
@@ -25,7 +29,8 @@ public interface JoypadProvider {
     }
 
     enum JoypadButton {
-        A, B, C, X, Y, Z, M, S, U, D, L, R
+        A, B, C, X, Y, Z, M, S, U, D, L, R,
+        K0, K1, K2, K3, K4, K5, K6, K7, K8, K9, K_AST, K_HASH
     }
 
     void initialize();

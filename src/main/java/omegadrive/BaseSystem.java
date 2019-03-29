@@ -60,7 +60,7 @@ public abstract class BaseSystem implements SystemProvider {
 
     protected Future<Void> runningRomFuture;
     private Path romFile;
-    private GenesisWindow emuFrame;
+    protected GenesisWindow emuFrame;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 

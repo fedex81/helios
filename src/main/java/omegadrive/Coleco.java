@@ -3,6 +3,7 @@ package omegadrive;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.sg1k.ColecoBus;
 import omegadrive.bus.sg1k.Sg1000BusProvider;
+import omegadrive.input.ColecoKeyboardInput;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.ColecoPad;
 import omegadrive.memory.IMemoryProvider;
@@ -167,6 +168,11 @@ public class Coleco extends BaseSystem {
         vdp.init();
         z80.reset();
         z80.initialize();
+    }
+
+    @Override
+    protected void reloadKeyListeners() {
+        emuFrame.addKeyListener(ColecoKeyboardInput.createColecoKeyAdapter(joypad));
     }
 
     @Override
