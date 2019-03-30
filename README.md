@@ -6,10 +6,10 @@ A Java-based Sega Mega Drive/Genesis emulator.
 Requires java 8+ installed.
 
 Get the most recent jar file from the download section,  
-for example `omega-drive-19.0121.jar`
+for example `helios-19.0121.jar`
 
 Open a prompt/terminal and run:  
-`java -jar omega-drive-19.0121.jar`
+`java -jar helios-19.0121.jar`
 
 # Credits
 
