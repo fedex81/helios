@@ -1,5 +1,6 @@
 package omegadrive.automated;
 
+import omegadrive.Coleco;
 import omegadrive.Genesis;
 import omegadrive.Sg1000;
 import omegadrive.SystemProvider;
@@ -31,7 +32,8 @@ import java.util.stream.Collectors;
 public class AutomatedGameTester {
 
     private static String romFolder =
-            "/home/fede/roms/sg1000";
+//            "/home/fede/roms/sg1000";
+            "/home/fede/roms/coleco";
     //            "/data/emu/roms/genesis/nointro";
     //            "/data/emu/roms/genesis/goodgen/unverified";
 //            "/home/fede/roms/issues";
@@ -50,6 +52,9 @@ public class AutomatedGameTester {
     private static Predicate<Path> testSgRomsPredicate = p ->
             (p.toString().endsWith("sg") || p.toString().endsWith("sc"));
 
+    private static Predicate<Path> testColecoRomsPredicate = p ->
+            p.toString().endsWith("col");
+
     private static Predicate<Path> testVerifiedRomsPredicate = p ->
             testRomsPredicate.test(p) &&
                     (noIntro || p.getFileName().toString().contains("[!]"));
@@ -60,7 +65,8 @@ public class AutomatedGameTester {
 //        new AutomatedGameTester().testCartridgeInfo();
 //        new AutomatedGameTester().testList();
 //        new AutomatedGameTester().bootRomsGenesis(true);
-        new AutomatedGameTester().bootRomsSg1000(true);
+//        new AutomatedGameTester().bootRomsSg1000(true);
+        new AutomatedGameTester().bootRomsColeco(true);
         System.exit(0);
     }
 
@@ -71,6 +77,15 @@ public class AutomatedGameTester {
             Collections.shuffle(testRoms, new Random());
         }
         bootRoms(Sg1000.createInstance(), testRoms);
+    }
+
+    private void bootRomsColeco(boolean shuffle) throws IOException {
+        Path folder = Paths.get(romFolder);
+        List<Path> testRoms = Files.list(folder).filter(testColecoRomsPredicate).sorted().collect(Collectors.toList());
+        if (shuffle) {
+            Collections.shuffle(testRoms, new Random());
+        }
+        bootRoms(Coleco.createInstance(), testRoms);
     }
 
     private void bootRomsGenesis(boolean shuffle) throws IOException {
@@ -88,7 +103,7 @@ public class AutomatedGameTester {
         File logFile = new File("./test_output.log");
         long logFileLen = 0;
         boolean skip = true;
-        long RUN_DELAY_MS = 10_000;
+        long RUN_DELAY_MS = 30_000;
 
         for (Path rom : testRoms) {
             skip &= shouldSkip(rom);

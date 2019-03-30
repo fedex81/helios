@@ -256,11 +256,11 @@ public class Sg1000Vdp implements Tms9918a {
     }
 
     public int getNameTableAddr() {
-        return ((registers[TILEMAP_NAMETABLE.ordinal()] & 0xF) << 10) & 0xFFFF;
+        return (registers[TILEMAP_NAMETABLE.ordinal()] & 0xF) << 10;
     }
 
     public int getColorTableAddr() {
-        return (registers[COLORMAP_NAMETABLE.ordinal()] << 6) & 0xFFFF;
+        return (registers[COLORMAP_NAMETABLE.ordinal()] << 6);
     }
 
     public int getPatternTableAddr() {
@@ -276,15 +276,15 @@ public class Sg1000Vdp implements Tms9918a {
     }
 
     public int getOnBitColor() {
-        return (registers[BACKGROUND_COLOR.ordinal()] & 0xFF) >> 4;
+        return registers[BACKGROUND_COLOR.ordinal()] >> 4;
     }
 
     public int getOffBitColor() {
-        return (registers[BACKGROUND_COLOR.ordinal()] & 0x0F);
+        return registers[BACKGROUND_COLOR.ordinal()] & 0x0F;
     }
 
     public int getFifthSpriteNr() {
-        return (registers[BACKGROUND_COLOR.ordinal()] & 0x0F);
+        return registers[BACKGROUND_COLOR.ordinal()] & 0x0F;
     }
 
     public byte getSpriteX(int sprite) {
@@ -446,6 +446,9 @@ public class Sg1000Vdp implements Tms9918a {
 
     private final void setPixel(int px, int py, Color color) {
         screenData[px][py] = color.getRGB() & 0xFF_FFFF; //24 bit RGB
+        if (verbose) {
+            LOG.info("{},{}: {}", px, py, screenData[px][py]);
+        }
     }
 
     /**
@@ -594,11 +597,45 @@ public class Sg1000Vdp implements Tms9918a {
         }
     }
 
+    private void drawMode3() {
+        if (!getBL()) {
+            return;
+        }
+        int nameTableBase = getNameTableAddr();
+        int patternTableBase = getPatternTableAddr();
+        int nameTableAddr = nameTableBase;
+        int patternTableAddr;
 
-    //Smurf Paint 'n' Play Workshop - coleco
-    public void drawMode3() {
-        System.err.println("drawmode3 not implemented");
-        drawMode0();
+        for (int y = 0; y < 24; y++) {
+            int py = y << 3;
+            int ptShift = patternTableBase + ((y & 0x03) << 1);
+            for (int x = 0; x < 32; x++) {
+                int px = x << 3;
+                patternTableAddr = ptShift + ((mem[nameTableAddr] & 0xFF) << 3);
+
+                //top 2 blocks and bottom 2 blocks
+                for (int i = 0; i < 2; i++) {
+                    int byteColor = mem[patternTableAddr] & 0xFF;
+                    Color c1 = colors[(byteColor >> 4) & 0x0F];
+                    Color c2 = colors[byteColor & 0x0F];
+                    int by = py + i * 4;
+                    for (int blockIdx = 0; blockIdx < 4; blockIdx++) {
+                        int uy = by + blockIdx;
+                        setPixel(px, uy, c1);
+                        setPixel(px + 1, uy, c1);
+                        setPixel(px + 2, uy, c1);
+                        setPixel(px + 3, uy, c1);
+
+                        setPixel(px + 4, uy, c2);
+                        setPixel(px + 5, uy, c2);
+                        setPixel(px + 6, uy, c2);
+                        setPixel(px + 7, uy, c2);
+                    }
+                    patternTableAddr++;
+                }
+                nameTableAddr++;
+            }
+        }
     }
 
     public int[][] drawScreen() {
