@@ -1,4 +1,4 @@
-# OmegaDrive
+# Helios
 
 A Java-based Sega Mega Drive/Genesis emulator.
 
