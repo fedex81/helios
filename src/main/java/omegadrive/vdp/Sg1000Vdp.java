@@ -40,7 +40,7 @@ public class Sg1000Vdp implements Tms9918a {
     private int[][] screenData;
 
     /* VRAM */
-    public byte[] mem;
+    public int[] mem;
 
     /* Registers */
     private int[] registers = new int[REGISTERS];
@@ -61,8 +61,8 @@ public class Sg1000Vdp implements Tms9918a {
     }
 
     public void reset() {
-        Arrays.fill(registers, (byte) 0);
-        Arrays.fill(mem, (byte) 0);
+        Arrays.fill(registers, 0);
+        Arrays.fill(mem, 0);
         registers[1] = 0x10;
 
         readWriteAddr = 0;
@@ -77,7 +77,7 @@ public class Sg1000Vdp implements Tms9918a {
 
     @Override
     public void init() {
-        mem = new byte[RAM_SIZE];
+        mem = new int[RAM_SIZE];
         screenData = new int[VDP_WIDTH][VDP_HEIGHT];
         interruptHandler = VdpInterruptHandler.createSg1000Instance();
         reset();
@@ -136,6 +136,7 @@ public class Sg1000Vdp implements Tms9918a {
                 mode = TmsMode.MODE_0;
                 break;
             case 1:
+            case 3:
                 mode = TmsMode.MODE_1;
                 break;
             case 2:
@@ -287,24 +288,24 @@ public class Sg1000Vdp implements Tms9918a {
         return registers[BACKGROUND_COLOR.ordinal()] & 0x0F;
     }
 
-    public byte getSpriteX(int sprite) {
+    public int getSpriteX(int sprite) {
         int attrTable = getSpriteAttrTable();
-        return mem[(short) ((attrTable & 0xffff) + (sprite * 4) + 1)];
+        return mem[attrTable + (sprite * 4) + 1];
     }
 
-    public byte getSpriteY(int sprite) {
+    public int getSpriteY(int sprite) {
         int attrTable = getSpriteAttrTable();
-        return mem[(short) ((attrTable & 0xffff) + (sprite * 4) + 0)];
+        return mem[attrTable + (sprite * 4) + 0];
     }
 
-    public byte getSpritePattern(int sprite) {
+    public int getSpritePattern(int sprite) {
         int attrTable = getSpriteAttrTable();
-        return mem[(short) ((attrTable & 0xffff) + (sprite * 4) + 2)];
+        return mem[attrTable + (sprite * 4) + 2];
     }
 
-    public byte getSpriteColour(int sprite) {
+    public int getSpriteColour(int sprite) {
         int attrTable = getSpriteAttrTable();
-        return mem[(short) ((attrTable & 0xffff) + (sprite * 4) + 3)];
+        return mem[attrTable + (sprite * 4) + 3];
     }
 
     /**
@@ -314,7 +315,7 @@ public class Sg1000Vdp implements Tms9918a {
      */
     public final byte readVRAMData() {
         byte result = readAhead;
-        readAhead = mem[readWriteAddr];
+        readAhead = (byte) mem[readWriteAddr];
         LogHelper.printLevel(LOG, Level.INFO, "vdpRead addr: {}, data: {}", readWriteAddr, readAhead, verbose);
         increaseReadWriteAddr();
         secondByteFlag = false;
@@ -355,7 +356,7 @@ public class Sg1000Vdp implements Tms9918a {
 
                 /* In case of read: fill read ahead buffer and increase read/write address */
                 if (((ioByte1 & 0xC0) >> 6) == 0) {
-                    readAhead = mem[readWriteAddr];
+                    readAhead = (byte) mem[readWriteAddr];
                     increaseReadWriteAddr();
                 }
             }
@@ -420,26 +421,26 @@ public class Sg1000Vdp implements Tms9918a {
         for (int y = 0; y < 24; y++) {
             for (int x = 0; x < 32; x++) {
                 // Read index of pattern from name table address
-                byte patternIdx = mem[nameTablePtr];
-                int patternAddr = (patternTableBase & 0xffff) + ((patternIdx & 0xff) * 8);
+                int patternIdx = mem[nameTablePtr] & 0xFF;
+                int patternAddr = patternTableBase + (patternIdx << 3);
                 // For all lines of the character
                 for (int charLine = 0; charLine < 8; charLine++) {
-                    byte line = mem[(short) ((patternAddr & 0xFFFF) + charLine)];
+                    int line = mem[patternAddr + charLine] & 0xFF;
                     // For all pixels of the line
                     for (int linePos = 0; linePos < 8; linePos++) {
                         // Calculate location of pixel
                         int px = 7 + ((x * 8) - linePos);
                         int py = ((y * 8) + charLine);
                         // Get foreground/background
-                        int colorTableAddr = ((colorTableBase & 0xffff) + ((patternIdx & 0xff) / 8));
-                        byte color = mem[(short) colorTableAddr & 0xFFFF];
+                        int colorTableAddr = colorTableBase + (patternIdx >> 3);
+                        int color = mem[colorTableAddr] & 0xFF;
                         Color fg = colors[(color & 0xf0) >> 4];
                         Color bg = colors[(color & 0x0f)];
                         setPixel(px, py, getBit(line, linePos) ? fg : bg);
                     }
                 }
                 // Update name table pointer
-                nameTablePtr = (short) (nameTablePtr + 1);
+                nameTablePtr++;
             }
         }
     }
@@ -463,11 +464,11 @@ public class Sg1000Vdp implements Tms9918a {
         for (int y = 0; y < 24; y++) {
             for (int x = 0; x < 40; x++) {
                 // Read index of pattern from name table address
-                byte patternIdx = mem[nameTablePtr];
-                int patternAddr = (patternTableBase & 0xffff) + ((patternIdx & 0xff) * 8);
+                int patternIdx = mem[nameTablePtr] & 0xFF;
+                int patternAddr = patternTableBase + (patternIdx << 3);
                 // For all lines of the character
                 for (int charLine = 0; charLine < 8; charLine++) {
-                    byte line = mem[(short) ((patternAddr & 0xFFFF) + charLine)];
+                    int line = mem[patternAddr + charLine] & 0xFF;
                     // For all pixels of the line
                     for (int linePos = 0; linePos < 6; linePos++) {
                         // Calculate location of pixel
@@ -477,7 +478,7 @@ public class Sg1000Vdp implements Tms9918a {
                         setPixel(px + MODE0_OFFSET, py, getBit(line, linePos + 2) ? onBit : offBit);
                     }
                 }
-                nameTablePtr = (short) (nameTablePtr + 1);
+                nameTablePtr++;
             }
         }
     }
@@ -488,28 +489,27 @@ public class Sg1000Vdp implements Tms9918a {
     public void drawMode2() {
         int nameTableBase = getNameTableAddr();
         int nameTableIdx = 0;
-        short patternTableBase = getPG13() ? (short) 0x2000 : 0;
+        int patternTableBase = getPG13() ? 0x2000 : 0;
         boolean bit0 = this.getRegisterBit(4, 0);
         boolean bit1 = this.getRegisterBit(4, 1);
-        int patternMask = ((bit0 ? 0 : (1 << 7)) | (bit1 ? 0 : (1 << 8)));
-        short colorTableBase = getCT13() ? (short) 0x2000 : 0;
+        int colorTableBase = getCT13() ? 0x2000 : 0;
         // For all x/y positions
         for (int y = 0; y < 24; y++) {
             for (int x = 0; x < 32; x++) {
                 // Read index of pattern from name table address
-                byte patternIdx = mem[(short) ((nameTableBase & 0xffff) + nameTableIdx)];
-                int patternAddr = (patternTableBase & 0xffff) + ((patternIdx & 0xff) * 8);
+                int patternIdx = mem[nameTableBase + nameTableIdx] & 0xFF;
+                int patternAddr = patternTableBase + (patternIdx << 3);
                 //patternAddr += (2048 * (nameTableIdx / 256));
                 if (bit0 && (nameTableIdx / 256) == 1) patternAddr += 2048;
                 if (bit1 && (nameTableIdx / 256) == 2) patternAddr += 4096;
                 // For all lines of the character
                 for (int charLine = 0; charLine < 8; charLine++) {
-                    byte line = mem[(short) ((patternAddr & 0xffff) + charLine)];
-                    int colorTableAddr = (colorTableBase & 0xffff) + ((patternIdx & 0xff) * 8);
+                    int line = mem[patternAddr + charLine] & 0xFF;
+                    int colorTableAddr = colorTableBase + (patternIdx << 3);
                     //colorTableAddr += (2048 * (nameTableIdx / 256));
                     if (bit0 && (nameTableIdx / 256) == 1) colorTableAddr += 2048;
                     if (bit1 && (nameTableIdx / 256) == 2) colorTableAddr += 4096;
-                    byte lineColor = mem[(short) ((colorTableAddr & 0xFFFF) + charLine)];
+                    int lineColor = mem[colorTableAddr + charLine] & 0xFF;
                     Color fg = colors[(lineColor & 0xf0) >> 4];
                     Color bg = colors[(lineColor & 0x0f)];
                     // For all pixels of the line
@@ -520,7 +520,7 @@ public class Sg1000Vdp implements Tms9918a {
                         setPixel(px, py, getBit(line, linePos) ? fg : bg);
                     }
                 }
-                nameTableIdx += 1;
+                nameTableIdx++;
             }
         }
     }
@@ -548,7 +548,7 @@ public class Sg1000Vdp implements Tms9918a {
             int sx = getSpriteX(i) & 0xff;
             int sy = (getSpriteY(i) & 0xff) + 1;
             int patternIdx = getSpritePattern(i) & 0xff;
-            byte colour = getSpriteColour(i);
+            int colour = getSpriteColour(i);
 
             // If EC bit set: place sprite 32 pixels to the left
             if ((colour & 0x80) != 0) sx -= 32;

@@ -3,8 +3,10 @@ package omegadrive.bus.sg1k;
 import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.util.FileLoader;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.vdp.Sg1000Vdp;
+import org.apache.logging.log4j.Level;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,6 +22,8 @@ import java.nio.file.Paths;
  * http://www.smspower.org/forums/9920-ColecoNMIEmulationWasMekaBugAndFix
  */
 public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
+
+    static final boolean verbose = false;
 
     private static int BIOS_START = 0;
     private static int BIOS_END = 0x1FFF;
@@ -38,7 +42,6 @@ public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
     private String biosName = "bios_coleco.col";
 
     private boolean isNmiSet = false;
-    private boolean frameTrigger = false;
 
 
     public ColecoBus() {
@@ -68,8 +71,7 @@ public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
         } else if (address >= RAM_START && address <= RAM_END) {
             address &= RAM_SIZE - 1;
             return memoryProvider.readRamByte(address);
-        } else if (address <= ROM_END) {
-//            address &= rom.length - 1;
+        } else if (address >= ROM_START && address <= ROM_END) {
             address = (address - ROM_START);// & (rom.length - 1);
             return memoryProvider.readRomByte(address);
         }
@@ -87,6 +89,7 @@ public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
     public void writeIoPort(int port, int value) {
         port &= 0xFF;
         byte byteVal = (byte) (value & 0XFF);
+        LogHelper.printLevel(LOG, Level.INFO, "Write port: {}, value: {}", port, value, verbose);
         switch (port & 0xE1) {
             case 0x80:
             case 0xC0:
@@ -113,7 +116,7 @@ public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
     @Override
     public int readIoPort(int port) {
         port &= 0xFF;
-//        LOG.info("Read port: {}", Integer.toHexString(port));
+        LogHelper.printLevel(LOG, Level.INFO, "Read port: {}", port, verbose);
         switch (port & 0xE1) {
             case 0xA0:
                 //                LOG.warn("read: vdp vram");
@@ -136,7 +139,6 @@ public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
     @Override
     public void reset() {
         isNmiSet = false;
-        frameTrigger = false;
     }
 
     @Override
@@ -147,16 +149,14 @@ public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
     @Override
     public void newFrame() {
         joypadProvider.newFrame();
-        frameTrigger = false;
     }
 
     @Override
     public void handleVdpInterruptsZ80() {
         boolean set = vdp.getStatusINT() && vdp.getGINT();
         //do not re-trigger
-        if (set && !isNmiSet && !frameTrigger) {
+        if (set && !isNmiSet) {
             z80Provider.triggerNMI();
-            frameTrigger = true;
         }
         isNmiSet = set;
     }

@@ -94,6 +94,7 @@ public class Sg1000Bus extends DeviceAwareBus implements Sg1000BusProvider {
     public void writeIoPort(int port, int value) {
         port &= 0xFF;
         byte byteVal = (byte) (value & 0XFF);
+//        LOG.info("Write port: {}, value: {}", Integer.toHexString(port), Integer.toHexString(value));
         switch (port & 0xC1) {
             case 0x40:
             case 0x41:
