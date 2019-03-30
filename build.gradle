@@ -39,7 +39,7 @@ def getDate() {
 //create a single Jar with all dependencies
 task fatJar(type: Jar) {
     manifest {
-        attributes 'Implementation-Title': 'Omega Drive',
+        attributes 'Implementation-Title': 'Helios',
                 'Implementation-Version': version,
                 'Main-Class': 'omegadrive.Genesis'
     }
