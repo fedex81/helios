@@ -15,7 +15,7 @@ import java.time.LocalDate;
  */
 public interface GenesisWindow {
 
-    String FRAME_TITLE_HEAD = "Omega Drive " + FileLoader.loadVersionFromManifest();
+    String FRAME_TITLE_HEAD = "Helios " + FileLoader.loadVersionFromManifest();
 
     void addKeyListener(KeyAdapter keyAdapter);
 
