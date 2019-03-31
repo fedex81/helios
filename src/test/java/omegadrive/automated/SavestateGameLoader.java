@@ -1,14 +1,15 @@
 package omegadrive.automated;
 
 import com.google.common.collect.ImmutableMap;
-import omegadrive.Genesis;
-import omegadrive.SystemProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.save.SavestateTest;
+import omegadrive.SystemLoader;
 import omegadrive.util.Util;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * ${FILE}
@@ -66,6 +67,7 @@ public class SavestateGameLoader {
 
 
     static int saveStateTestNumber = 21;
+    static SystemLoader loader = SystemLoader.getInstance();
 
     public static void main(String[] args) throws Exception {
 //        loadOne();
@@ -73,35 +75,35 @@ public class SavestateGameLoader {
     }
 
     public static void loadOne() throws Exception {
-        SystemProvider genesis = Genesis.createInstance();
-        load(genesis, saveStates.keySet().toArray()[saveStateTestNumber].toString(),
+        SystemProvider genesis = load(loader, saveStates.keySet().toArray()[saveStateTestNumber].toString(),
                 saveStates.values().toArray()[saveStateTestNumber].toString());
         Util.sleep(10_000);
         genesis.handleCloseApp();
     }
 
     public static void loadAll(boolean loop) throws Exception {
-        SystemProvider genesis = Genesis.createInstance(false);
+        SystemProvider genesis = null;
         do {
             for (Map.Entry<String, String> entry : saveStates.entrySet()) {
-                load(genesis, entry.getKey(), entry.getValue());
+                genesis = load(loader, entry.getKey(), entry.getValue());
                 Util.sleep(10_000);
                 genesis.handleCloseRom();
                 Util.sleep(1_000);
             }
         } while (loop);
-        genesis.handleCloseApp();
+        Optional.ofNullable(genesis).ifPresent(SystemProvider::handleCloseApp);
     }
 
 
-    public static void load(SystemProvider genesis, String saveFileName, String romFile) {
+    public static SystemProvider load(SystemLoader loader, String saveFileName, String romFile) {
         Path rom = Paths.get(romFolder, romFile);
         Path saveFile = Paths.get(saveStateFolder, saveFileName);
         System.out.println("Loading ROM: " + rom.toAbsolutePath().toString());
         System.out.println("Loading state file: " + saveFileName);
-
+        SystemProvider genesis = loader.getSystemProvider(rom);
         genesis.handleNewRom(rom);
         Util.sleep(1_000);
         genesis.handleLoadState(saveFile);
+        return genesis;
     }
 }

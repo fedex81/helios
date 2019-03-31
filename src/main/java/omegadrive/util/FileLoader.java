@@ -1,5 +1,6 @@
 package omegadrive.util;
 
+import omegadrive.SystemLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,32 +35,16 @@ public class FileLoader {
     public static String DEFAULT_SAVE_STATE_EXTENSION = ".gs0";
     public static String QUICK_SAVE_FILENAME = "quick_save" + DEFAULT_SAVE_STATE_EXTENSION;
 
-    public static String[] binaryTypes = {".md", ".bin", ".sg", ".sc", ".col"};
-    public static String[] sgBinaryTypes = {".sg", ".sc"};
-
     public static FileFilter ROM_FILTER = new FileFilter() {
         @Override
         public String getDescription() {
-            return Arrays.toString(FileLoader.binaryTypes) + " files";
+            return Arrays.toString(SystemLoader.binaryTypes) + " files";
         }
 
         @Override
         public boolean accept(File f) {
             String name = f.getName().toLowerCase();
-            return f.isDirectory() || Arrays.stream(FileLoader.binaryTypes).anyMatch(name::endsWith);
-        }
-    };
-
-    public static FileFilter SG_ROM_FILTER = new FileFilter() {
-        @Override
-        public String getDescription() {
-            return Arrays.toString(FileLoader.sgBinaryTypes) + " files";
-        }
-
-        @Override
-        public boolean accept(File f) {
-            String name = f.getName().toLowerCase();
-            return f.isDirectory() || Arrays.stream(FileLoader.sgBinaryTypes).anyMatch(name::endsWith);
+            return f.isDirectory() || Arrays.stream(SystemLoader.binaryTypes).anyMatch(name::endsWith);
         }
     };
 

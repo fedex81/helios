@@ -1,6 +1,6 @@
 package omegadrive.vdp.gen;
 
-import omegadrive.Genesis;
+import omegadrive.system.Genesis;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;

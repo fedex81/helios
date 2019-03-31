@@ -1,7 +1,7 @@
 package omegadrive.util;
 
 import com.google.common.collect.Range;
-import omegadrive.Genesis;
+import omegadrive.system.Genesis;
 import omegadrive.memory.IMemoryProvider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;

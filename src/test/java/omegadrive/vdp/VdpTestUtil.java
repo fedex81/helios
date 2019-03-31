@@ -1,6 +1,7 @@
 package omegadrive.vdp;
 
-import omegadrive.SystemProvider;
+import omegadrive.SystemLoader;
+import omegadrive.system.SystemProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.vdp.gen.VdpInterruptHandler;
@@ -213,6 +214,11 @@ public class VdpTestUtil {
             @Override
             public void handlePause() {
 
+            }
+
+            @Override
+            public SystemLoader.SystemType getSystemType() {
+                return SystemLoader.SystemType.GENESIS;
             }
 
             @Override

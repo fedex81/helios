@@ -1,5 +1,6 @@
-package omegadrive;
+package omegadrive.system;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.sg1k.ColecoBus;
 import omegadrive.bus.sg1k.Sg1000BusProvider;
@@ -9,6 +10,7 @@ import omegadrive.joypad.ColecoPad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
+import omegadrive.ui.GenesisWindow;
 import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -21,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.filechooser.FileFilter;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Paths;
 
 /**
  * Sg1000 emulator main class
@@ -38,42 +39,16 @@ public class Coleco extends BaseSystem {
 
     public static boolean verbose = false;
 
-    public static void main(String[] args) throws Exception {
-        loadProperties();
-        InputProvider.bootstrap();
-        boolean isHeadless = isHeadless();
-        LOG.info("Headless mode: " + isHeadless);
-        Coleco coleco = new Coleco(isHeadless);
-        if (args.length > 0) {
-            //linux pulseaudio can crash if we start too quickly
-            Util.sleep(250);
-            String filePath = args[0];
-            LOG.info("Launching file at: " + filePath);
-            coleco.handleNewRom(Paths.get(filePath));
-        }
-        if (isHeadless) {
-            Util.waitForever();
-        }
-    }
-
-    public static SystemProvider createInstance() {
-        return createInstance(false);
-    }
-
-    public static SystemProvider createInstance(boolean headless) {
-        InputProvider.bootstrap();
-        Coleco genesis = null;
-        try {
-            genesis = new Coleco(headless);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-        return genesis;
+    public static SystemProvider createNewInstance(GenesisWindow emuFrame) {
+        return new Coleco(emuFrame);
     }
 
     protected Coleco(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         super(isHeadless);
+    }
+
+    protected Coleco(GenesisWindow emuFrame){
+        super(emuFrame);
     }
 
     @Override
@@ -234,5 +209,10 @@ public class Coleco extends BaseSystem {
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
         }
+    }
+
+    @Override
+    public SystemLoader.SystemType getSystemType() {
+        return SystemLoader.SystemType.COLECO;
     }
 }

@@ -1,11 +1,9 @@
 package omegadrive.ui;
 
 import com.google.common.base.Strings;
-import omegadrive.SystemProvider;
-import omegadrive.util.FileLoader;
-import omegadrive.util.ScreenSizeHelper;
-import omegadrive.util.Util;
-import omegadrive.util.VideoMode;
+import omegadrive.SystemLoader;
+import omegadrive.system.SystemProvider;
+import omegadrive.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -71,7 +69,7 @@ public class EmuFrame implements GenesisWindow {
     }
 
     public void setTitle(String title) {
-        jFrame.setTitle(FRAME_TITLE_HEAD + " - " + title);
+        jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() +  " " + VERSION + " - " + title);
     }
 
     public EmuFrame(SystemProvider mainEmu) {
@@ -181,6 +179,7 @@ public class EmuFrame implements GenesisWindow {
 
         JMenuItem exitItem = new JMenuItem("Exit");
         exitItem.addActionListener(e -> {
+            SystemProvider mainEmu = getMainEmu();
             mainEmu.handleCloseApp();
             System.exit(0);
         });
@@ -454,7 +453,7 @@ public class EmuFrame implements GenesisWindow {
         Optional<File> optFile = loadRomDialog(jFrame);
         if (optFile.isPresent()) {
             Path file = optFile.get().toPath();
-            mainEmu.handleNewRom(file);
+            SystemLoader.getInstance().handleNewRomFile(file);
         }
     }
 
@@ -463,6 +462,7 @@ public class EmuFrame implements GenesisWindow {
 
             @Override
             public void keyReleased(KeyEvent e) {
+                SystemProvider mainEmu = getMainEmu();
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_F:
                         toggleFullScreen();
@@ -489,6 +489,16 @@ public class EmuFrame implements GenesisWindow {
                 }
             }
         });
+    }
+
+    private SystemProvider getMainEmu() {
+        return mainEmu;
+    }
+
+    @Override
+    public void reloadSystem(SystemProvider systemProvider) {
+        this.mainEmu = systemProvider;
+        setTitle("");
     }
 
     @Override

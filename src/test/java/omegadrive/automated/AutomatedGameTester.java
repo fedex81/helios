@@ -1,13 +1,11 @@
 package omegadrive.automated;
 
-import omegadrive.Coleco;
-import omegadrive.Genesis;
-import omegadrive.Sg1000;
-import omegadrive.SystemProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.FileLoader;
+import omegadrive.SystemLoader;
 import omegadrive.util.Util;
 
 import java.io.File;
@@ -32,8 +30,8 @@ import java.util.stream.Collectors;
 public class AutomatedGameTester {
 
     private static String romFolder =
-//            "/home/fede/roms/sg1000";
-            "/home/fede/roms/coleco";
+            "/home/fede/roms/sg1000";
+//            "/data/emu/roms";
     //            "/data/emu/roms/genesis/nointro";
     //            "/data/emu/roms/genesis/goodgen/unverified";
 //            "/home/fede/roms/issues";
@@ -55,6 +53,9 @@ public class AutomatedGameTester {
     private static Predicate<Path> testColecoRomsPredicate = p ->
             p.toString().endsWith("col");
 
+    private static Predicate<Path> testAllRomsPredicate = p ->
+            Arrays.stream(SystemLoader.binaryTypes).anyMatch(p.toString()::endsWith);
+
     private static Predicate<Path> testVerifiedRomsPredicate = p ->
             testRomsPredicate.test(p) &&
                     (noIntro || p.getFileName().toString().contains("[!]"));
@@ -65,49 +66,66 @@ public class AutomatedGameTester {
 //        new AutomatedGameTester().testCartridgeInfo();
 //        new AutomatedGameTester().testList();
 //        new AutomatedGameTester().bootRomsGenesis(true);
-//        new AutomatedGameTester().bootRomsSg1000(true);
-        new AutomatedGameTester().bootRomsColeco(true);
+        new AutomatedGameTester().bootRomsSg1000(true);
+//        new AutomatedGameTester().bootRomsColeco(true);
+//        new AutomatedGameTester().bootRecursiveRoms(true);
         System.exit(0);
     }
 
-    private void bootRomsSg1000(boolean shuffle) throws IOException {
+    private void bootRecursiveRoms(boolean shuffle) throws IOException {
         Path folder = Paths.get(romFolder);
-        List<Path> testRoms = Files.list(folder).filter(testSgRomsPredicate).sorted().collect(Collectors.toList());
+        List<Path> testRoms = Files.walk(folder). //FileVisitOption.FOLLOW_LINKS).
+                filter(p -> p.toFile().isFile() && FileLoader.ROM_FILTER.accept(p.toFile())).collect(Collectors.toList());
+        System.out.println("Loaded files: " + testRoms.size());
         if (shuffle) {
             Collections.shuffle(testRoms, new Random());
         }
-        bootRoms(Sg1000.createInstance(), testRoms);
+        try {
+            SystemLoader.main(new String[0]);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        bootRoms(testRoms);
+    }
+
+    private void bootRomsSg1000(boolean shuffle) throws IOException {
+        filterAndBootRoms(testSgRomsPredicate, shuffle);
     }
 
     private void bootRomsColeco(boolean shuffle) throws IOException {
-        Path folder = Paths.get(romFolder);
-        List<Path> testRoms = Files.list(folder).filter(testColecoRomsPredicate).sorted().collect(Collectors.toList());
-        if (shuffle) {
-            Collections.shuffle(testRoms, new Random());
-        }
-        bootRoms(Coleco.createInstance(), testRoms);
+        filterAndBootRoms(testColecoRomsPredicate, shuffle);
     }
 
     private void bootRomsGenesis(boolean shuffle) throws IOException {
+        filterAndBootRoms(testVerifiedRomsPredicate, shuffle);
+    }
+
+    private void filterAndBootRoms(Predicate<Path> p, boolean shuffle) throws IOException {
         Path folder = Paths.get(romFolder);
-        List<Path> testRoms = Files.list(folder).filter(testVerifiedRomsPredicate).sorted().collect(Collectors.toList());
+        List<Path> testRoms = Files.list(folder).filter(p).sorted().collect(Collectors.toList());
         if (shuffle) {
             Collections.shuffle(testRoms, new Random());
         }
-        bootRoms(Genesis.createInstance(), testRoms);
+        bootRoms(testRoms);
     }
 
-    private void bootRoms(SystemProvider system, List<Path> testRoms) {
+    private void bootRoms(List<Path> testRoms) {
         System.out.println("Roms to test: " + testRoms.size());
         System.out.println(header);
         File logFile = new File("./test_output.log");
         long logFileLen = 0;
         boolean skip = true;
         long RUN_DELAY_MS = 30_000;
-
+        SystemProvider system;
         for (Path rom : testRoms) {
             skip &= shouldSkip(rom);
             if (skip) {
+                continue;
+            }
+            System.out.println(rom.getFileName().toString());
+            system = SystemLoader.getInstance().getSystemProvider(rom);
+            if(system == null){
+                System.out.print(" - SKIP");
                 continue;
             }
             system.init();
@@ -124,7 +142,7 @@ public class AutomatedGameTester {
                 } while (totalDelay < RUN_DELAY_MS && !tooManyErrors);
                 system.handleCloseRom();
             }
-            System.out.println(rom.getFileName().toString());
+
             logFileLen = logFileLength(logFile);
             Util.sleep(500);
             if (tooManyErrors) {
@@ -154,39 +172,39 @@ public class AutomatedGameTester {
     }
 
     private void testRoms(List<Path> testRoms) {
-        SystemProvider genesisProvider = Genesis.createInstance();
         System.out.println("Roms to test: " + testRoms.size());
         System.out.println(header);
         boolean skip = true;
         File logFile = new File("./test_output.log");
         long logFileLen = 0;
-
+        SystemProvider system;
         for (Path rom : testRoms) {
             skip &= shouldSkip(rom);
             if (skip) {
                 continue;
             }
+            system = SystemLoader.getInstance().getSystemProvider(rom);
 //            System.out.println("Testing: " + rom.getFileName().toString());
-            genesisProvider.init();
-            genesisProvider.handleNewRom(rom);
+            system.init();
+            system.handleNewRom(rom);
 //            genesisProvider.setFullScreen(true);
             Util.sleep(BOOT_DELAY_MS);
             boolean boots = false;
             boolean soundOk = false;
             boolean tooManyErrors = false;
             int totalDelay = BOOT_DELAY_MS;
-            if (genesisProvider.isRomRunning()) {
+            if (system.isRomRunning()) {
                 boots = true;
                 do {
                     tooManyErrors = checkLogFileSize(logFile, rom.getFileName().toString(), logFileLen);
-                    soundOk = genesisProvider.isSoundWorking();
+                    soundOk = system.isSoundWorking();
                     if (!soundOk) { //wait a bit longer
                         Util.sleep(BOOT_DELAY_MS);
                         totalDelay += BOOT_DELAY_MS;
-                        soundOk = genesisProvider.isSoundWorking();
+                        soundOk = system.isSoundWorking();
                     }
                 } while (!soundOk && totalDelay < AUDIO_DELAY_MS && !tooManyErrors);
-                genesisProvider.handleCloseRom();
+                system.handleCloseRom();
             }
             System.out.println(rom.getFileName().toString() + ";" + boots + ";" + soundOk);
             logFileLen = logFileLength(logFile);

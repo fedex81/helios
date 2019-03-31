@@ -1,5 +1,7 @@
-package omegadrive;
+package omegadrive.system;
 
+import omegadrive.Device;
+import omegadrive.SystemLoader;
 import omegadrive.util.RegionDetector;
 
 import java.nio.file.Path;
@@ -48,4 +50,6 @@ public interface SystemProvider extends Device {
     void handleSaveState(Path file);
 
     void handlePause();
+
+    SystemLoader.SystemType getSystemType();
 }

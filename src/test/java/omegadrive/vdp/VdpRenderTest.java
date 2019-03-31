@@ -1,7 +1,7 @@
 package omegadrive.vdp;
 
-import omegadrive.Genesis;
-import omegadrive.SystemProvider;
+import omegadrive.system.Genesis;
+import omegadrive.system.SystemProvider;
 import omegadrive.automated.SavestateGameLoader;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.input.InputProvider;

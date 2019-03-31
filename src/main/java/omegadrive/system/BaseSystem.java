@@ -1,4 +1,4 @@
-package omegadrive;
+package omegadrive.system;
 
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.gen.GenesisBus;
@@ -107,6 +107,22 @@ public abstract class BaseSystem implements SystemProvider {
         verbose = Boolean.valueOf(System.getProperty("emu.debug", "false"));
         showFps = Boolean.valueOf(System.getProperty("emu.fps", "false"));
         headless = Boolean.valueOf(System.getProperty("emu.headless", "false"));
+    }
+
+    protected BaseSystem(GenesisWindow emuFrame){
+        this.emuFrame = emuFrame;
+
+        this.emuFrame.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                keyPressedHandler(e);
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                keyReleasedHandler(e);
+            }
+        });
     }
 
     protected BaseSystem(boolean isHeadless) throws InvocationTargetException, InterruptedException {

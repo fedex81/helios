@@ -1,5 +1,6 @@
-package omegadrive;
+package omegadrive.system;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.sg1k.Sg1000BusProvider;
 import omegadrive.input.InputProvider;
@@ -7,6 +8,7 @@ import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
+import omegadrive.ui.GenesisWindow;
 import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -19,7 +21,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.filechooser.FileFilter;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Paths;
 
 /**
  * Sg1000 emulator main class
@@ -36,42 +37,17 @@ public class Sg1000 extends BaseSystem {
 
     public static boolean verbose = false;
 
-    public static void main(String[] args) throws Exception {
-        loadProperties();
-        InputProvider.bootstrap();
-        boolean isHeadless = isHeadless();
-        LOG.info("Headless mode: " + isHeadless);
-        Sg1000 sg1000 = new Sg1000(isHeadless);
-        if (args.length > 0) {
-            //linux pulseaudio can crash if we start too quickly
-            Util.sleep(250);
-            String filePath = args[0];
-            LOG.info("Launching file at: " + filePath);
-            sg1000.handleNewRom(Paths.get(filePath));
-        }
-        if (isHeadless) {
-            Util.waitForever();
-        }
-    }
-
-    public static SystemProvider createInstance() {
-        return createInstance(false);
-    }
-
-    public static SystemProvider createInstance(boolean headless) {
-        InputProvider.bootstrap();
-        Sg1000 genesis = null;
-        try {
-            genesis = new Sg1000(headless);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-        return genesis;
+    public static SystemProvider createNewInstance(GenesisWindow emuFrame) {
+        return new Sg1000(emuFrame);
     }
 
     protected Sg1000(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         super(isHeadless);
+    }
+
+
+    protected Sg1000(GenesisWindow emuFrame){
+        super(emuFrame);
     }
 
     @Override
@@ -96,7 +72,7 @@ public class Sg1000 extends BaseSystem {
 
     @Override
     protected FileFilter getRomFileFilter() {
-        return FileLoader.SG_ROM_FILTER;
+        return FileLoader.ROM_FILTER;
     }
 
     private static int VDP_DIVIDER = 1;  //10.738635 Mhz
@@ -227,5 +203,10 @@ public class Sg1000 extends BaseSystem {
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
         }
+    }
+
+    @Override
+    public SystemLoader.SystemType getSystemType() {
+        return SystemLoader.SystemType.SG_1000;
     }
 }

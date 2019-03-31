@@ -1,7 +1,7 @@
 package omegadrive.vdp.gen;
 
-import omegadrive.Genesis;
-import omegadrive.SystemProvider;
+import omegadrive.system.Genesis;
+import omegadrive.system.SystemProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.util.*;
 import omegadrive.vdp.model.*;

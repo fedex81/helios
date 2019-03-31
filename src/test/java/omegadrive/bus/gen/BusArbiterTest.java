@@ -1,6 +1,6 @@
 package omegadrive.bus.gen;
 
-import omegadrive.SystemProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.m68k.M68kProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.vdp.VdpTestUtil;

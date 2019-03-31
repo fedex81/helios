@@ -1,8 +1,8 @@
 package omegadrive.bus.gen;
 
 import omegadrive.Device;
-import omegadrive.Genesis;
-import omegadrive.SystemProvider;
+import omegadrive.system.Genesis;
+import omegadrive.system.SystemProvider;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.mapper.BackupMemoryMapper;
 import omegadrive.bus.mapper.GenesisMapper;

@@ -1,6 +1,6 @@
 package omegadrive.vdp;
 
-import omegadrive.SystemProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;

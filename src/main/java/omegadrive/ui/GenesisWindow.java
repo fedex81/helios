@@ -1,5 +1,6 @@
 package omegadrive.ui;
 
+import omegadrive.system.SystemProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.VideoMode;
 
@@ -15,7 +16,10 @@ import java.time.LocalDate;
  */
 public interface GenesisWindow {
 
-    String FRAME_TITLE_HEAD = "Helios " + FileLoader.loadVersionFromManifest();
+    String APP_NAME = "Helios";
+    String VERSION = FileLoader.loadVersionFromManifest();
+    String FRAME_TITLE_HEAD = APP_NAME + " " + VERSION;
+
 
     void addKeyListener(KeyAdapter keyAdapter);
 
@@ -30,6 +34,8 @@ public interface GenesisWindow {
     void setFullScreen(boolean value);
 
     String getRegionOverride();
+
+    void reloadSystem(SystemProvider systemProvider);
 
     default String getAboutString() {
         int year = LocalDate.now().getYear();
@@ -76,5 +82,12 @@ public interface GenesisWindow {
         public String getRegionOverride() {
             return null;
         }
+
+        @Override
+        public void reloadSystem(SystemProvider systemProvider) {
+
+        }
     };
+
+
 }

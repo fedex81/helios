@@ -1,5 +1,6 @@
-package omegadrive;
+package omegadrive.system;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.input.InputProvider;
@@ -12,10 +13,8 @@ import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
-import omegadrive.util.FileLoader;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.Util;
-import omegadrive.util.VideoMode;
+import omegadrive.ui.GenesisWindow;
+import omegadrive.util.*;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
@@ -48,43 +47,16 @@ public class Genesis extends BaseSystem {
     private volatile boolean saveStateFlag = false;
     private volatile GenesisStateHandler stateHandler = GenesisStateHandler.EMPTY_STATE;
 
-
-    public static void main(String[] args) throws Exception {
-        loadProperties();
-        InputProvider.bootstrap();
-        boolean isHeadless = isHeadless();
-        LOG.info("Headless mode: " + isHeadless);
-        Genesis genesis = new Genesis(isHeadless);
-        if (args.length > 0) {
-            //linux pulseaudio can crash if we start too quickly
-            Util.sleep(250);
-            String filePath = args[0];
-            LOG.info("Launching file at: " + filePath);
-            genesis.handleNewRom(Paths.get(filePath));
-        }
-        if (isHeadless) {
-            Util.waitForever();
-        }
-    }
-
-    public static SystemProvider createInstance() {
-        return createInstance(false);
-    }
-
-    public static SystemProvider createInstance(boolean headless) {
-        InputProvider.bootstrap();
-        Genesis genesis = null;
-        try {
-            genesis = new Genesis(headless);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-        return genesis;
+    public static SystemProvider createNewInstance(GenesisWindow emuFrame) {
+        return new Genesis(emuFrame);
     }
 
     protected Genesis(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         super(isHeadless);
+    }
+
+    protected Genesis(GenesisWindow emuFrame){
+        super(emuFrame);
     }
 
     @Override
@@ -305,5 +277,10 @@ public class Genesis extends BaseSystem {
         joypad.init();
         vdp.init();
 //        z80.reset();
+    }
+
+    @Override
+    public SystemLoader.SystemType getSystemType() {
+        return SystemLoader.SystemType.GENESIS;
     }
 }

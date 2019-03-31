@@ -3,7 +3,7 @@ package omegadrive.m68k;
 import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
-import omegadrive.Genesis;
+import omegadrive.system.Genesis;
 import omegadrive.bus.gen.GenesisBusProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

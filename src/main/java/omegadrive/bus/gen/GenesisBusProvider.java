@@ -1,6 +1,6 @@
 package omegadrive.bus.gen;
 
-import omegadrive.SystemProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;

@@ -1,6 +1,6 @@
 package omegadrive.vdp.gen;
 
-import omegadrive.Genesis;
+import omegadrive.system.Genesis;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.util.CramViewer;

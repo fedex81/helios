@@ -1,7 +1,7 @@
 package omegadrive.bus;
 
 import omegadrive.Device;
-import omegadrive.SystemProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.m68k.M68kProvider;
 import omegadrive.memory.IMemoryProvider;

@@ -1,7 +1,7 @@
 package omegadrive.z80;
 
 import emulib.plugins.cpu.DisassembledInstruction;
-import omegadrive.Genesis;
+import omegadrive.system.Genesis;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
