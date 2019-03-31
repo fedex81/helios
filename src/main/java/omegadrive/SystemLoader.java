@@ -144,26 +144,26 @@ public class SystemLoader {
     }
 
     public void handleNewRomFile(Path file) {
-        systemProvider = getSystemProvider(file);
+        systemProvider = createSystemProvider(file);
         emuFrame.reloadSystem(systemProvider);
         systemProvider.handleNewRom(file);
     }
 
-    public SystemProvider getSystemProvider(Path file){
+    public SystemProvider createSystemProvider(Path file){
         boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(file.toString()::endsWith);
         boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(file.toString()::endsWith);
         boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(file.toString()::endsWith);
         if(isGen){
-            systemProvider = getSystemProvider(SystemType.GENESIS);
+            systemProvider = createSystemProvider(SystemType.GENESIS);
         } else if(isSg){
-            systemProvider = getSystemProvider(SystemType.SG_1000);
+            systemProvider = createSystemProvider(SystemType.SG_1000);
         } else if(isCv){
-            systemProvider = getSystemProvider(SystemType.COLECO);
+            systemProvider = createSystemProvider(SystemType.COLECO);
         }
         return systemProvider;
     }
 
-    public SystemProvider getSystemProvider(SystemType system){
+    public SystemProvider createSystemProvider(SystemType system){
         switch (system){
             case GENESIS:
                 return Genesis.createNewInstance(emuFrame);
@@ -173,6 +173,10 @@ public class SystemLoader {
                 return Sg1000.createNewInstance(emuFrame);
         }
         return null;
+    }
+
+    public SystemProvider getSystemProvider() {
+        return systemProvider;
     }
 
     SystemProvider getSystemAdapter(){

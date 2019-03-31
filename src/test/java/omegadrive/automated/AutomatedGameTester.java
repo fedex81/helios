@@ -30,8 +30,8 @@ import java.util.stream.Collectors;
 public class AutomatedGameTester {
 
     private static String romFolder =
-            "/home/fede/roms/sg1000";
-//            "/data/emu/roms";
+//            "/home/fede/roms/sg1000";
+            "/data/emu/roms";
     //            "/data/emu/roms/genesis/nointro";
     //            "/data/emu/roms/genesis/goodgen/unverified";
 //            "/home/fede/roms/issues";
@@ -66,9 +66,9 @@ public class AutomatedGameTester {
 //        new AutomatedGameTester().testCartridgeInfo();
 //        new AutomatedGameTester().testList();
 //        new AutomatedGameTester().bootRomsGenesis(true);
-        new AutomatedGameTester().bootRomsSg1000(true);
+//        new AutomatedGameTester().bootRomsSg1000(true);
 //        new AutomatedGameTester().bootRomsColeco(true);
-//        new AutomatedGameTester().bootRecursiveRoms(true);
+        new AutomatedGameTester().bootRecursiveRoms(true);
         System.exit(0);
     }
 
@@ -123,7 +123,7 @@ public class AutomatedGameTester {
                 continue;
             }
             System.out.println(rom.getFileName().toString());
-            system = SystemLoader.getInstance().getSystemProvider(rom);
+            system = SystemLoader.getInstance().createSystemProvider(rom);
             if(system == null){
                 System.out.print(" - SKIP");
                 continue;
@@ -183,7 +183,7 @@ public class AutomatedGameTester {
             if (skip) {
                 continue;
             }
-            system = SystemLoader.getInstance().getSystemProvider(rom);
+            system = SystemLoader.getInstance().createSystemProvider(rom);
 //            System.out.println("Testing: " + rom.getFileName().toString());
             system.init();
             system.handleNewRom(rom);

@@ -100,7 +100,7 @@ public class SavestateGameLoader {
         Path saveFile = Paths.get(saveStateFolder, saveFileName);
         System.out.println("Loading ROM: " + rom.toAbsolutePath().toString());
         System.out.println("Loading state file: " + saveFileName);
-        SystemProvider genesis = loader.getSystemProvider(rom);
+        SystemProvider genesis = loader.createSystemProvider(rom);
         genesis.handleNewRom(rom);
         Util.sleep(1_000);
         genesis.handleLoadState(saveFile);

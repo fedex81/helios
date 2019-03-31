@@ -1,5 +1,6 @@
 package omegadrive.z80;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.util.Size;
 import z80core.MemIoOps;
@@ -55,7 +56,10 @@ public class Z80MemIoOps extends MemIoOps {
 
     @Override
     public boolean isActiveINT() {
-        return activeInterrupt;
+        boolean res = activeInterrupt;
+        //TODO this is needed for Gen .ie Sonic 2
+        activeInterrupt = false;
+        return res;
     }
 
     @Override
