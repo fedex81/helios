@@ -2,10 +2,7 @@ package omegadrive;
 
 import com.google.common.collect.ObjectArrays;
 import omegadrive.input.InputProvider;
-import omegadrive.system.Coleco;
-import omegadrive.system.Genesis;
-import omegadrive.system.Sg1000;
-import omegadrive.system.SystemProvider;
+import omegadrive.system.*;
 import omegadrive.ui.EmuFrame;
 import omegadrive.ui.GenesisWindow;
 import omegadrive.util.RegionDetector;
@@ -20,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 /**
  * ${FILE}
@@ -34,7 +32,9 @@ public class SystemLoader {
         NONE(""),
         GENESIS("MD"),
         SG_1000("SG"),
-        COLECO("CV");
+        COLECO("CV"),
+        MSX("MSX")
+        ;
 
         private String shortName;
 
@@ -56,9 +56,10 @@ public class SystemLoader {
     public static String[] mdBinaryTypes = {".md", ".bin"};
     public static String[] sgBinaryTypes = {".sg", ".sc"};
     public static String[] cvBinaryTypes = {".col"};
+    public static String[] msxBinaryTypes = {".rom"};
 
-    public static String[] binaryTypes =
-            ObjectArrays.concat(cvBinaryTypes, ObjectArrays.concat(mdBinaryTypes, sgBinaryTypes, String.class), String.class);
+    public static String[] binaryTypes = Stream.of(mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes).
+            flatMap(Stream::of).toArray(String[]::new);
 
     public static boolean verbose = false;
     public static boolean showFps = false;
@@ -153,12 +154,15 @@ public class SystemLoader {
         boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(file.toString()::endsWith);
         boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(file.toString()::endsWith);
         boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(file.toString()::endsWith);
+        boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(file.toString()::endsWith);
         if(isGen){
             systemProvider = createSystemProvider(SystemType.GENESIS);
         } else if(isSg){
             systemProvider = createSystemProvider(SystemType.SG_1000);
         } else if(isCv){
             systemProvider = createSystemProvider(SystemType.COLECO);
+        } else if(isMsx){
+            systemProvider = createSystemProvider(SystemType.MSX);
         }
         return systemProvider;
     }
@@ -171,6 +175,8 @@ public class SystemLoader {
                 return Coleco.createNewInstance(emuFrame);
             case SG_1000:
                 return Sg1000.createNewInstance(emuFrame);
+            case MSX:
+                return Msx.createNewInstance(emuFrame);
         }
         return null;
     }
