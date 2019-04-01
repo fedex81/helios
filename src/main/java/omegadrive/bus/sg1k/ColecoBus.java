@@ -38,7 +38,7 @@ public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
     public Sg1000Vdp vdp;
     private int[] bios;
 
-    private String biosPath = ".";
+    private String biosPath = "./bios";
     private String biosName = "bios_coleco.col";
 
     private boolean isNmiSet = false;

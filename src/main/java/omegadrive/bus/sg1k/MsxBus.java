@@ -38,7 +38,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
     public Sg1000Vdp vdp;
     private int[] bios;
 
-    private String biosPath = ".";
+    private String biosPath = "./bios";
     private String biosName = "cbios_main_msx1.rom";
 
     private boolean isNmiSet = false;
