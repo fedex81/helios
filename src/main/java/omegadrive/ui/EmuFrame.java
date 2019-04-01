@@ -463,6 +463,9 @@ public class EmuFrame implements GenesisWindow {
             @Override
             public void keyReleased(KeyEvent e) {
                 SystemProvider mainEmu = getMainEmu();
+                if(!e.isControlDown()){
+                    return;
+                }
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_F:
                         toggleFullScreen();
