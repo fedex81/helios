@@ -135,6 +135,7 @@ public class Msx extends BaseSystem {
         joypad.init();
         vdp.init();
         z80.reset();
+        bus.init();
     }
 
     @Override
