@@ -1,5 +1,6 @@
 package omegadrive.sound.fm;
 
+import omegadrive.Device;
 import omegadrive.util.RegionDetector;
 
 import static omegadrive.sound.SoundProvider.LOG;
@@ -12,7 +13,7 @@ import static omegadrive.sound.SoundProvider.getFmSoundClock;
  * <p>
  * Copyright 2018
  */
-public interface FmProvider {
+public interface FmProvider extends Device {
 
     int FM_ADDRESS_PORT0 = 0;
     int FM_ADDRESS_PORT1 = 2;
@@ -46,8 +47,6 @@ public interface FmProvider {
         return fmProvider;
     }
 
-    int reset();
-
     int read();
 
     int init(int clock, int rate);
@@ -65,10 +64,6 @@ public interface FmProvider {
     void tick(double microsPerTick);
 
     FmProvider NO_SOUND = new FmProvider() {
-        @Override
-        public int reset() {
-            return 0;
-        }
 
         @Override
         public int read() {

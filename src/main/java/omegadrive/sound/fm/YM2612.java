@@ -448,7 +448,7 @@ public final class YM2612 implements FmProvider {
 
     private static boolean isResetting;
 
-    public final int reset() {
+    public final void reset() {
         int i, j;
         isResetting = true;
 
@@ -511,7 +511,6 @@ public final class YM2612 implements FmProvider {
         dacQueue.clear();
 
         isResetting = false;
-        return 0;
     }
 
     private static void logWarn(String msg) {

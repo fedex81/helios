@@ -42,6 +42,6 @@ public class SN76489Psg implements PsgProvider {
 
     @Override
     public void reset() {
-        //DO NOTHING
+        psg.reset();
     }
 }

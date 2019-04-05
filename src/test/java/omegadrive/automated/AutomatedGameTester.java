@@ -34,7 +34,7 @@ public class AutomatedGameTester {
     static long RUN_DELAY_MS = 10_000;
 
     private static String romFolder =
-            "/home/fede/roms";
+            "/home/fede/roms/msx";
 //            "/data/emu/roms";
     //            "/data/emu/roms/genesis/nointro";
     //            "/data/emu/roms/genesis/goodgen/unverified";
@@ -51,20 +51,23 @@ public class AutomatedGameTester {
             new String[]{".md"}, SystemLoader.sgBinaryTypes//, SystemLoader.cvBinaryTypes
     ).flatMap(Stream::of).toArray(String[]::new);
 
-    private static Predicate<Path> testRomsPredicate = p ->
-            (p.toString().endsWith("bin") || p.toString().endsWith("md"));
+    private static Predicate<Path> testGenRomsPredicate = p ->
+            Arrays.stream(SystemLoader.mdBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testSgRomsPredicate = p ->
-            (p.toString().endsWith("sg") || p.toString().endsWith("sc"));
+            Arrays.stream(SystemLoader.sgBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testColecoRomsPredicate = p ->
-            p.toString().endsWith("col");
+            Arrays.stream(SystemLoader.cvBinaryTypes).anyMatch(p.toString()::endsWith);
+
+    private static Predicate<Path> testMsxRomsPredicate = p ->
+            Arrays.stream(SystemLoader.msxBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testAllRomsPredicate = p ->
             Arrays.stream(binaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testVerifiedRomsPredicate = p ->
-            testRomsPredicate.test(p) &&
+            testGenRomsPredicate.test(p) &&
                     (noIntro || p.getFileName().toString().contains("[!]"));
 
     public static void main(String[] args) throws Exception {
@@ -75,7 +78,8 @@ public class AutomatedGameTester {
 //        new AutomatedGameTester().bootRomsGenesis(true);
 //        new AutomatedGameTester().bootRomsSg1000(true);
 //        new AutomatedGameTester().bootRomsColeco(true);
-        new AutomatedGameTester().bootRecursiveRoms(true);
+        new AutomatedGameTester().bootRomsMsx(true);
+//        new AutomatedGameTester().bootRecursiveRoms(true);
         System.exit(0);
     }
 
@@ -105,6 +109,10 @@ public class AutomatedGameTester {
 
     private void bootRomsGenesis(boolean shuffle) throws IOException {
         filterAndBootRoms(testVerifiedRomsPredicate, shuffle);
+    }
+
+    private void bootRomsMsx(boolean shuffle) throws IOException {
+        filterAndBootRoms(testMsxRomsPredicate, shuffle);
     }
 
     private void filterAndBootRoms(Predicate<Path> p, boolean shuffle) throws IOException {
@@ -238,7 +246,7 @@ public class AutomatedGameTester {
     private void testCartridgeInfo() throws Exception {
         Path folder = Paths.get(romFolder);
         List<Path> testRoms = Files.list(folder).
-                filter(testRomsPredicate).
+                filter(testGenRomsPredicate).
                 sorted().collect(Collectors.toList());
         String str = testRoms.stream().map(p -> p.getFileName().toString()).sorted().collect(Collectors.joining("\n"));
 //        System.out.println(str);

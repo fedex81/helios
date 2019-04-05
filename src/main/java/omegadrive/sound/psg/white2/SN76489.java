@@ -180,7 +180,10 @@ public class SN76489 {
         // Master clock divided by 16 to get internal clock
         // e.g. 3579545 / 16 / 44100 = 5
         clock = (clockSpeed << SCALE) / 16 / sampleRate;
+        reset();
+    }
 
+    public void reset(){
         regLatch = 0;
         clockFrac = 0;
         noiseShiftReg = SHIFT_RESET;

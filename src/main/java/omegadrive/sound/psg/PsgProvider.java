@@ -1,5 +1,6 @@
 package omegadrive.sound.psg;
 
+import omegadrive.Device;
 import omegadrive.sound.psg.white1.SN76496;
 import omegadrive.sound.psg.white2.SN76489Psg;
 import omegadrive.util.RegionDetector;
@@ -13,7 +14,7 @@ import static omegadrive.sound.SoundProvider.*;
  * <p>
  * Copyright 2018
  */
-public interface PsgProvider {
+public interface PsgProvider extends Device {
 
     int PSG_OUTPUT_SAMPLE_SIZE = 8;
     int PSG_OUTPUT_CHANNELS = 1;
@@ -31,22 +32,13 @@ public interface PsgProvider {
         return psgProvider;
     }
 
-    void init();
-
     void write(int data);
 
     void output(byte[] output);
 
     void output(byte[] output, int offset, int end);
 
-    void reset();
-
     PsgProvider NO_SOUND = new PsgProvider() {
-
-        @Override
-        public void init() {
-
-        }
 
         @Override
         public void write(int data) {
@@ -60,11 +52,6 @@ public interface PsgProvider {
 
         @Override
         public void output(byte[] output, int offset, int end) {
-
-        }
-
-        @Override
-        public void reset() {
 
         }
     };

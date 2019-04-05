@@ -31,11 +31,10 @@ public class Ym2612Nuke implements FmProvider {
 
 
     @Override
-    public int reset() {
+    public void reset() {
         ym3438.OPN2_Reset(chip);
         count = 0;
         Arrays.fill(buffer, 0);
-        return 0;
     }
 
     @Override
