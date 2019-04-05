@@ -1,6 +1,7 @@
 package omegadrive.bus.sg1k;
 
 import omegadrive.Device;
+import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.FileLoader;
@@ -21,44 +22,33 @@ import java.util.Arrays;
  * Copyright 2019
  *
  * https://www.msx.org/forum/semi-msx-talk/emulation/primary-slots-and-secondary-slots
+ * http://msx.ebsoft.fr/roms/index.php?v=MSX1&Send=Send
  * <p>
  */
 public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
 
     static final boolean verbose = false;
 
-    private static int BIOS_START = 0;
-    private static int BIOS_END = 0x7FFF;
-    private static int RAM_START = 0xC000;
-    private static int RAM_END = 0xFFFF;
-    private static int ROM_START = 0x8000;
-    private static int ROM_END = 0xBFFF;
-
-    private static int RAM_SIZE = 0x4000;  //16Kb
-    private static int ROM_SIZE = ROM_END - ROM_START + 1; //32kb
-
     private static int PAGE_SIZE = 0x4000; //16kb
     private static int PAGE_MASK = PAGE_SIZE -1;
+
+    private static int SLOT_SIZE = 0x10000;
+    private static int SLOTS = 4;
 
     public Sg1000Vdp vdp;
     private int[] bios;
 
-    private String biosPath = "./bios";
-    private String biosName = "cbios_main_msx1.rom";
-
-    private boolean isNmiSet = false;
-
     private int slotSelect = 0;
-    private int[][] secondarySlot = new int[4][];
-    private boolean[] secondarySlotWritable = new boolean[4];
+    private int[][] secondarySlot = new int[SLOTS][];
+    private boolean[] secondarySlotWritable = new boolean[SLOTS];
     private int[] pageStartAdddress = {0, 0, 0, 0};
     private int[] pageSlotMapper = {0, 0, 0, 0};
 
-    private int[] emptySlot = new int[0x10000];
+    private int[] emptySlot = new int[SLOT_SIZE];
 
     public MsxBus() {
-        Path p = Paths.get(biosPath, biosName);
-        bios = FileLoader.readFileSafe(p);
+        Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
+        bios = FileLoader.loadBiosFile(p);
         LOG.info("Loading Msx bios from: " + p.toAbsolutePath().toString());
         Arrays.fill(emptySlot, 0xFF);
 
@@ -207,14 +197,26 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         pageSlotMapper[3] = (slotSelect & 0xC0) >> 6;
     }
 
+    /**
+     * TODO this only supports roms up to 32Kb
+     */
     @Override
     public void init() {
+        int len = memoryProvider.getRomSize();
+        if(len > PAGE_SIZE *2){
+            LOG.error("Unsupported ROM size: " + len);
+            return;
+        }
         secondarySlot[1] = memoryProvider.getRomData();
+        if(len > PAGE_SIZE){
+            secondarySlot[2] = memoryProvider.getRomData();
+            pageStartAdddress[2] = PAGE_SIZE;
+        }
+
     }
 
     @Override
     public void reset() {
-        isNmiSet = false;
     }
 
     @Override
@@ -230,10 +232,6 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
     @Override
     public void handleVdpInterruptsZ80() {
         boolean set = vdp.getStatusINT() && vdp.getGINT();
-        //do not re-trigger
-        if (set && !isNmiSet) {
-            z80Provider.triggerNMI();
-        }
-        isNmiSet = set;
+        z80Provider.interrupt(set);
     }
 }

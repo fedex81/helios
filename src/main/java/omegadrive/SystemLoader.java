@@ -65,6 +65,9 @@ public class SystemLoader {
     public static boolean verbose = false;
     public static boolean showFps = false;
     public static boolean headless = false;
+    public static String biosFolder = ".";
+    public static String biosNameMsx1 = "cbios_main_msx1.rom";
+    public static String biosNameColeco = "bios_coleco.col";
 
     private Path romFile;
     protected GenesisWindow emuFrame;
@@ -90,6 +93,9 @@ public class SystemLoader {
         verbose = Boolean.valueOf(java.lang.System.getProperty("emu.debug", "false"));
         showFps = Boolean.valueOf(java.lang.System.getProperty("emu.fps", "false"));
         headless = Boolean.valueOf(java.lang.System.getProperty("emu.headless", "false"));
+        biosFolder = String.valueOf(java.lang.System.getProperty("bios.folder", biosFolder));
+        biosNameMsx1 = String.valueOf(java.lang.System.getProperty("bios.name.msx1", biosNameMsx1));
+        biosNameColeco = String.valueOf(java.lang.System.getProperty("bios.name.coleco", biosNameColeco));
     }
 
     private SystemLoader(){

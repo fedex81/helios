@@ -36,18 +36,24 @@ def getDate() {
     date.substring(0,2) + "." + date.substring(2)
 }
 
+
+
 //create a single Jar with all dependencies
 task fatJar(type: Jar) {
     manifest {
         attributes 'Implementation-Title': 'Helios',
                 'Implementation-Version': version,
-                'Main-Class': 'omegadrive.Genesis'
+                'Main-Class': 'omegadrive.SystemLoader'
     }
     baseName = project.name //+ version
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     from {
         ["CREDITS.md", "README.md", "HISTORY.md", "LICENSE.md"]
     }
+    from("bios"){
+        include "*.rom"
+    }
+    
     with jar
 }
 

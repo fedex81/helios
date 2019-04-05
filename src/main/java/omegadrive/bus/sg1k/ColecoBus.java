@@ -1,6 +1,7 @@
 package omegadrive.bus.sg1k;
 
 import omegadrive.Device;
+import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
@@ -38,15 +39,12 @@ public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
     public Sg1000Vdp vdp;
     private int[] bios;
 
-    private String biosPath = "./bios";
-    private String biosName = "bios_coleco.col";
-
     private boolean isNmiSet = false;
 
 
     public ColecoBus() {
-        Path p = Paths.get(biosPath, biosName);
-        bios = FileLoader.readFileSafe(p);
+        Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameColeco);
+        bios = FileLoader.loadBiosFile(p);
         LOG.info("Loading Coleco bios from: " + p.toAbsolutePath().toString());
     }
 

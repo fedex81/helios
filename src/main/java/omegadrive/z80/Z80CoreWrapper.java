@@ -7,6 +7,7 @@ import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
+import omegadrive.util.Util;
 import omegadrive.z80.disasm.Z80Decoder;
 import omegadrive.z80.disasm.Z80Disasm;
 import omegadrive.z80.disasm.Z80MemContext;
@@ -32,6 +33,12 @@ import java.util.function.Function;
  */
 public class Z80CoreWrapper implements Z80Provider {
 
+    public static boolean STOP_ON_EXCEPTION;
+
+    static {
+        STOP_ON_EXCEPTION =
+            Boolean.valueOf(System.getProperty("z80.stop.on.exception", "false"));
+    }
     public static boolean verbose = Genesis.verbose || false;
 
     private Z80 z80Core;
@@ -90,6 +97,9 @@ public class Z80CoreWrapper implements Z80Provider {
             LOG.error("Z80State: " + toString(z80Core.getZ80State()));
             LOG.error("Halting Z80");
             z80Core.setHalted(true);
+            if(STOP_ON_EXCEPTION){
+                Util.waitForever();
+            }
         }
         return (int) (memIoOps.getTstates());
     }
