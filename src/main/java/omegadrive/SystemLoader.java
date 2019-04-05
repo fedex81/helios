@@ -58,8 +58,9 @@ public class SystemLoader {
     public static String[] cvBinaryTypes = {".col"};
     public static String[] msxBinaryTypes = {".rom"};
 
-    public static String[] binaryTypes = Stream.of(mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes).
-            flatMap(Stream::of).toArray(String[]::new);
+    public static String[] binaryTypes = Stream.of(
+            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes
+    ).flatMap(Stream::of).toArray(String[]::new);
 
     public static boolean verbose = false;
     public static boolean showFps = false;
@@ -144,10 +145,11 @@ public class SystemLoader {
         emuFrame.init();
     }
 
-    public void handleNewRomFile(Path file) {
+    public SystemProvider handleNewRomFile(Path file) {
         systemProvider = createSystemProvider(file);
         emuFrame.reloadSystem(systemProvider);
         systemProvider.handleNewRom(file);
+        return systemProvider;
     }
 
     public SystemProvider createSystemProvider(Path file){

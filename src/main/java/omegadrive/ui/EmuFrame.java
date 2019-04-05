@@ -219,8 +219,6 @@ public class EmuFrame implements GenesisWindow {
         helpMenu.add(historyItem);
         helpMenu.add(licenseItem);
 
-        setupFrameKeyListener();
-
         screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
         screenLabel.setVerticalAlignment(SwingConstants.CENTER);
 
@@ -501,6 +499,8 @@ public class EmuFrame implements GenesisWindow {
     @Override
     public void reloadSystem(SystemProvider systemProvider) {
         this.mainEmu = systemProvider;
+        Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);
+        setupFrameKeyListener();
         setTitle("");
     }
 

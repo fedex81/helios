@@ -10,6 +10,7 @@ import omegadrive.util.Util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * ${FILE}
@@ -29,9 +31,11 @@ import java.util.stream.Collectors;
  */
 public class AutomatedGameTester {
 
+    static long RUN_DELAY_MS = 10_000;
+
     private static String romFolder =
-//            "/home/fede/roms/sg1000";
-            "/data/emu/roms";
+            "/home/fede/roms";
+//            "/data/emu/roms";
     //            "/data/emu/roms/genesis/nointro";
     //            "/data/emu/roms/genesis/goodgen/unverified";
 //            "/home/fede/roms/issues";
@@ -43,6 +47,9 @@ public class AutomatedGameTester {
     private static int BOOT_DELAY_MS = 500;
     private static int AUDIO_DELAY_MS = 25000;
 
+    public static String[] binaryTypes = Stream.of(
+            new String[]{".md"}, SystemLoader.sgBinaryTypes//, SystemLoader.cvBinaryTypes
+    ).flatMap(Stream::of).toArray(String[]::new);
 
     private static Predicate<Path> testRomsPredicate = p ->
             (p.toString().endsWith("bin") || p.toString().endsWith("md"));
@@ -54,7 +61,7 @@ public class AutomatedGameTester {
             p.toString().endsWith("col");
 
     private static Predicate<Path> testAllRomsPredicate = p ->
-            Arrays.stream(SystemLoader.binaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(binaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testVerifiedRomsPredicate = p ->
             testRomsPredicate.test(p) &&
@@ -74,8 +81,8 @@ public class AutomatedGameTester {
 
     private void bootRecursiveRoms(boolean shuffle) throws IOException {
         Path folder = Paths.get(romFolder);
-        List<Path> testRoms = Files.walk(folder). //FileVisitOption.FOLLOW_LINKS).
-                filter(p -> p.toFile().isFile() && FileLoader.ROM_FILTER.accept(p.toFile())).collect(Collectors.toList());
+        List<Path> testRoms = Files.walk(folder, FileVisitOption.FOLLOW_LINKS).
+                filter(p -> testAllRomsPredicate.test(p)).collect(Collectors.toList());
         System.out.println("Loaded files: " + testRoms.size());
         if (shuffle) {
             Collections.shuffle(testRoms, new Random());
@@ -115,7 +122,8 @@ public class AutomatedGameTester {
         File logFile = new File("./test_output.log");
         long logFileLen = 0;
         boolean skip = true;
-        long RUN_DELAY_MS = 30_000;
+
+        SystemLoader systemLoader = SystemLoader.getInstance();
         SystemProvider system;
         for (Path rom : testRoms) {
             skip &= shouldSkip(rom);
@@ -123,13 +131,11 @@ public class AutomatedGameTester {
                 continue;
             }
             System.out.println(rom.getFileName().toString());
-            system = SystemLoader.getInstance().createSystemProvider(rom);
+            system = systemLoader.handleNewRomFile(rom);
             if(system == null){
                 System.out.print(" - SKIP");
                 continue;
             }
-            system.init();
-            system.handleNewRom(rom);
 //            genesisProvider.setFullScreen(true);
             Util.sleep(BOOT_DELAY_MS);
             boolean tooManyErrors = false;
