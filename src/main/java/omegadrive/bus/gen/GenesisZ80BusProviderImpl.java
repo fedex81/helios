@@ -1,3 +1,22 @@
+/*
+ * GenesisZ80BusProviderImpl
+ * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 07/04/19 16:01
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package omegadrive.bus.gen;
 
 import omegadrive.Device;
@@ -8,19 +27,6 @@ import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/**
- * Z80BusProviderImpl
- * <p>
- * 0000-1FFFh : RAM
- * 2000-3FFFh : RAM (mirror)
- * 4000-5FFFh : YM2612 (1)
- * 6000-60FFh : Bank address register (2)
- * 6100-7EFFh : Unused (3)
- * 7F00-7FFFh : VDP (4)
- * 8000-FFFFh : Bank area
- *
- * @author Federico Berti
- */
 public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements GenesisZ80BusProvider {
     private static Logger LOG = LogManager.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
 

@@ -1,3 +1,22 @@
+/*
+ * Sg1000
+ * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 07/04/19 16:01
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
@@ -22,12 +41,6 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.filechooser.FileFilter;
 import java.lang.reflect.InvocationTargetException;
 
-/**
- * Sg1000 emulator main class
- *
- * @author Federico Berti
- * <p>
- */
 public class Sg1000 extends BaseSystem {
 
     private static Logger LOG = LogManager.getLogger(Sg1000.class.getSimpleName());

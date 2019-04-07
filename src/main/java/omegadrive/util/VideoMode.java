@@ -1,3 +1,22 @@
+/*
+ * VideoMode
+ * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 07/04/19 16:01
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package omegadrive.util;
 
 import org.apache.logging.log4j.LogManager;
@@ -11,13 +30,6 @@ import java.util.Set;
 import static omegadrive.util.RegionDetector.Region.*;
 import static omegadrive.vdp.model.GenesisVdpProvider.*;
 
-/**
- * ${FILE}
- * <p>
- * Federico Berti
- * <p>
- * Copyright 2018
- */
 public enum VideoMode {
     PAL_H40_V30(EUROPE, H40, V30_CELL),
     PAL_H40_V28(EUROPE, H40, V28_CELL),

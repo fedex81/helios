@@ -1,3 +1,22 @@
+/*
+ * TwoButtonsJoypad
+ * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 07/04/19 16:01
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package omegadrive.joypad;
 
 
@@ -10,12 +29,6 @@ import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
 /**
- * TwoButtonsJoypad
- *
- * @author Federico Berti
- * <p>
- * <p>
- * **
  * * 0xDC / 0xC0 : Joypad Port 1 (read-only)
  * * bit 0 : Joypad 1 Up
  * * bit 1 : Joypad 1 Down

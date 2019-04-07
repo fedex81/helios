@@ -1,3 +1,22 @@
+/*
+ * GenesisVdp
+ * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 07/04/19 16:01
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package omegadrive.vdp.gen;
 
 import omegadrive.system.Genesis;
@@ -14,13 +33,11 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 
 /**
- * GenesisVdp
- *
- * @author Federico Berti
- * <p>
  * Based on genefusto GenVdp
  * https://github.com/DarkMoe/genefusto
  * @author DarkMoe
+ *
+ * TODO read-ahead
  *
  */
 public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
@@ -32,13 +49,13 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     public static boolean regVerbose = false || verbose || Genesis.verbose;
 
     private static boolean ENABLE_FIFO = Boolean.valueOf(System.getProperty("vdp.enable.fifo", "true"));
+    private static boolean ENABLE_READ_AHEAD = Boolean.valueOf(System.getProperty("vdp.enable.read.ahead", "false"));
 
     private VramMode vramMode;
     private InterlaceMode interlaceMode;
 
     int[] registers = new int[VDP_REGISTERS_SIZE];
 
-    //TODO
     IVdpFifo.VdpFifoEntry pendingReadEntry = new IVdpFifo.VdpFifoEntry();
     IVdpFifo.VdpFifoEntry pendingWriteEntry = new IVdpFifo.VdpFifoEntry();
 
@@ -478,10 +495,14 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         }
         this.writePendingControlPort = false;
         //TODO need to stop 68k until the result is available
-//        pendingReadEntry.addressRegister = addressRegister;
-//        pendingReadEntry.vdpRamMode = vramMode;
-//        pendingReadEntry.data = -1;
-        return readDataPortInternal();
+        int value = readDataPortInternal();
+        if(ENABLE_READ_AHEAD) {
+            int readAhead = pendingReadEntry.data;
+            pendingReadEntry.data = value;
+            pendingReadEntry.vdpRamMode = vramMode;
+            value = readAhead;
+        }
+        return value;
     }
 
     private int readDataPortInternal() {
@@ -527,6 +548,9 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
                 }
                 LogHelper.printLevel(LOG, Level.INFO, "After DMA setup, writeAddr: {}, data: {}, firstWrite: {}"
                         , addressRegister, all, writePendingControlPort, verbose);
+            } else if(ENABLE_READ_AHEAD && (codeRegister & 1) == 0){ //vdp read
+                pendingReadEntry.data = readDataPortInternal();
+                pendingReadEntry.vdpRamMode = vramMode;
             }
         }
     }

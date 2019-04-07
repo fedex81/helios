@@ -1,8 +1,28 @@
+/*
+ * MsxBus
+ * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 07/04/19 16:01
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package omegadrive.bus.sg1k;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
+import omegadrive.input.MsxKeyboardInput;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
@@ -15,15 +35,9 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 /**
- * ${FILE}
- * <p>
- * Federico Berti
- * <p>
- * Copyright 2019
- *
+ * see
  * https://www.msx.org/forum/semi-msx-talk/emulation/primary-slots-and-secondary-slots
  * http://msx.ebsoft.fr/roms/index.php?v=MSX1&Send=Send
- * <p>
  */
 public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
 
@@ -39,6 +53,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
     private int[] bios;
 
     private int slotSelect = 0;
+    private int ppiC_Keyboard = 0;
     private int[][] secondarySlot = new int[SLOTS][];
     private boolean[] secondarySlotWritable = new boolean[SLOTS];
     private int[] pageStartAdddress = {0, 0, 0, 0};
@@ -124,20 +139,21 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
                 vdp.writeRegister(byteVal);
                 break;
             case 0xA0:
-                LOG.info("Write PSG register select: " +  Integer.toHexString(value));
+                LOG.debug("Write PSG register select: " +  Integer.toHexString(value));
                 break;
             case 0xA1:
-                LOG.info("Write PSG: " +  Integer.toHexString(value));
+                LOG.debug("Write PSG: " +  Integer.toHexString(value));
                 break;
             case 0xA8:
 //                LOG.info("Write PPI register A (slot select) (port A8): " +  Integer.toHexString(value));
                 setSlotSelect(value);
                 break;
             case 0xAA:
-                LOG.info("Write PPI register C (keyboard and cassette interface) (port AA): " +  Integer.toHexString(value));
+                LOG.debug("Write PPI register C (keyboard and cassette interface) (port AA): " +  Integer.toHexString(value));
+                ppiC_Keyboard = value;
                 break;
             case 0xAB:
-                LOG.info("Write PPI command register (used for setting bit 4-7 of ppi_C) (port AB): " +  Integer.toHexString(value));
+                LOG.debug("Write PPI command register (used for setting bit 4-7 of ppi_C) (port AB): " +  Integer.toHexString(value));
                 break;
             default:
                 LOG.warn("outPort: {} ,data {}", Integer.toHexString(port), Integer.toHexString(value));
@@ -161,20 +177,23 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
                 res = vdp.readStatus();
                 break;
             case 0xA0:
-                LOG.info("Read PSG register select");
+                LOG.debug("Read PSG register select");
                 break;
             case 0xA2:
-                LOG.info("Read PSG register data");
+                LOG.debug("Read PSG register data");
                 break;
             case 0xA8:
 //                LOG.info("Read PPI register A (slot select) (port A8)");
                 res = slotSelect;
                 break;
             case 0xA9:
-                LOG.info("Read PPI register B (keyboard matrix row input register) (port A9)");
+                LOG.debug("Read PPI register B (keyboard matrix row input register) (port A9)");
+                res = MsxKeyboardInput.getMsxKeyAdapter().getRowValue(ppiC_Keyboard & 0xF);
+                res = ~((byte)res);
                 break;
             case 0xAA:
-                LOG.info("Read PPI register C (keyboard and cassette interface) (port AA)");
+                LOG.debug("Read PPI register C (keyboard and cassette interface) (port AA)");
+                res = ppiC_Keyboard;
                 break;
             default:
                 LOG.warn("inPort: {}", Integer.toHexString(port & 0xFF));

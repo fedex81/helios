@@ -1,5 +1,5 @@
 /*
- * ColecoPad
+ * MsxPad
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 07/04/19 16:01
  *
@@ -31,9 +31,12 @@ import java.util.Optional;
 import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
-public class ColecoPad extends BasePadAdapter {
+/**
+ * TODO
+ */
+public class MsxPad extends BasePadAdapter {
 
-    private static Logger LOG = LogManager.getLogger(ColecoPad.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(MsxPad.class.getSimpleName());
 
     private Map<JoypadButton, JoypadAction> stateMapKeypad = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
             put(K0, RELEASED).put(K1, RELEASED).

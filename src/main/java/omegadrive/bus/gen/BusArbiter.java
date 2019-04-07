@@ -1,3 +1,22 @@
+/*
+ * BusArbiter
+ * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 07/04/19 16:01
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package omegadrive.bus.gen;
 
 import omegadrive.Device;
@@ -8,24 +27,19 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 
-/**
- * ${FILE}
- * <p>
- * Federico Berti
- * <p>
- * Copyright 2018
- *
- * A very short Z80 interrupt routine would be triggered multiple times
- * if it finishes within 228 Z80 clock cycles. I think (but cannot recall the specifics)
- * that some games have delay loops in the interrupt handler for this very reason.
- * http://gendev.spritesmind.net/forum/viewtopic.php?t=740
- *
- * VDPTEST
- * http://gendev.spritesmind.net/forum/viewtopic.php?t=787
- *
- */
 public class BusArbiter implements Device {
 
+    /**
+     *
+     * A very short Z80 interrupt routine would be triggered multiple times
+     * if it finishes within 228 Z80 clock cycles. I think (but cannot recall the specifics)
+     * that some games have delay loops in the interrupt handler for this very reason.
+     * http://gendev.spritesmind.net/forum/viewtopic.php?t=740
+     *
+     * VDPTEST
+     * http://gendev.spritesmind.net/forum/viewtopic.php?t=787
+     *
+     */
     private static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
 
     protected GenesisVdpProvider vdp;
