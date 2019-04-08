@@ -33,7 +33,7 @@ public interface PsgProvider extends Device {
 
     boolean USE_NEW_PSG = true;
 
-    static PsgProvider createInstance(RegionDetector.Region region, int sampleRate) {
+    static PsgProvider createSnInstance(RegionDetector.Region region, int sampleRate) {
         int clockHz = (int) getPsgSoundClock(region);
         LOG.info("PSG instance, clockHz: " + clockHz + ", sampleRate: " + sampleRate);
         PsgProvider psgProvider = SN76489Psg.createInstance(clockHz, sampleRate);
@@ -44,7 +44,25 @@ public interface PsgProvider extends Device {
         return psgProvider;
     }
 
+    static PsgProvider createAyInstance(RegionDetector.Region region, int sampleRate) {
+        int clockHz = (int) getPsgSoundClock(region);
+        LOG.info("PSG instance, clockHz: " + clockHz + ", sampleRate: " + sampleRate);
+        PsgProvider psgProvider = Ay38910Psg.createInstance(clockHz, sampleRate);
+        return psgProvider;
+    }
+
+    //SN style PSG
     void write(int data);
+
+    //AY style psg
+    default void write(int register, int data){
+        write(data);
+    }
+
+    //AY style psg
+    default int read(int register){
+        return 0xFF;
+    }
 
     void output(byte[] output);
 

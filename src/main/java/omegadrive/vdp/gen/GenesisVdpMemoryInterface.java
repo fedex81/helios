@@ -42,7 +42,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     private CramViewer cramViewer;
 
     private GenesisVdpMemoryInterface() {
-//        cramViewer = CramViewer.createInstance(this);
+//        cramViewer = CramViewer.createSnInstance(this);
     }
 
     public static GenesisVdpMemoryInterface createInstance() {

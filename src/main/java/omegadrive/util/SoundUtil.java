@@ -121,12 +121,23 @@ public class SoundUtil {
             int fm = (input[i] + input[i + 1]) >> 2;
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
             int psg = ((int) psgMono8[j]);
+            //TODO check this
             psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
             //avg fm and psg
             int out16 = fm + psg;
             output[i] = (byte) (out16 & 0xFF); //lsb
             output[i + 1] = (byte) ((out16 >> 8) & 0xFF); //msb
             j++;
+        }
+    }
+
+    public static void byteMono8ToByteMono16Mix(byte[] psgMono8, byte[] output) {
+        int i = 0;
+        for (int j = 0; j < psgMono8.length; j++, i+=2) {
+            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
+            int psg16 = ((int) psgMono8[j]) << 7;
+            output[i] = (byte) (psg16 & 0xFF); //lsb
+            output[i + 1] = (byte) ((psg16 >> 8) & 0xFF); //msb
         }
     }
 

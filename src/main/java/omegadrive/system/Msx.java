@@ -137,7 +137,7 @@ public class Msx extends BaseSystem {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = JavaSoundManager.createPsgSoundProvider(region);
+        sound = JavaSoundManager.createPsgAySoundProvider(region);
         z80 = Z80CoreWrapper.createSg1000Instance(bus);
         bus.attachDevice(sound).attachDevice(z80);
 

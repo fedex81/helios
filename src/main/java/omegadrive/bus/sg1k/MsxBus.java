@@ -24,6 +24,7 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.input.MsxKeyboardInput;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.sound.psg.Ay38910;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -60,6 +61,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
     private int[] pageSlotMapper = {0, 0, 0, 0};
 
     private int[] emptySlot = new int[SLOT_SIZE];
+    private int psgAddressLatch = 0;
 
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
@@ -139,21 +141,24 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
                 vdp.writeRegister(byteVal);
                 break;
             case 0xA0:
-                LOG.debug("Write PSG register select: " +  Integer.toHexString(value));
+                LOG.debug("Write PSG register select: {}",  value);
+                psgAddressLatch = value;
                 break;
             case 0xA1:
-                LOG.debug("Write PSG: " +  Integer.toHexString(value));
+                LOG.debug("Write PSG: {}", value);
+                soundProvider.getPsg().write(psgAddressLatch , value);
                 break;
             case 0xA8:
-//                LOG.info("Write PPI register A (slot select) (port A8): " +  Integer.toHexString(value));
                 setSlotSelect(value);
                 break;
             case 0xAA:
-                LOG.debug("Write PPI register C (keyboard and cassette interface) (port AA): " +  Integer.toHexString(value));
+                LOG.debug("Write PPI register C (keyboard and cassette interface) (port AA): {}",
+                        value);
                 ppiC_Keyboard = value;
                 break;
             case 0xAB:
-                LOG.debug("Write PPI command register (used for setting bit 4-7 of ppi_C) (port AB): " +  Integer.toHexString(value));
+                LOG.debug("Write PPI command register (used for setting bit 4-7 of ppi_C) (port AB): {}",
+                        value);
                 break;
             default:
                 LOG.warn("outPort: {} ,data {}", Integer.toHexString(port), Integer.toHexString(value));
@@ -178,12 +183,13 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
                 break;
             case 0xA0:
                 LOG.debug("Read PSG register select");
+                res = psgAddressLatch;
                 break;
             case 0xA2:
                 LOG.debug("Read PSG register data");
+                soundProvider.getPsg().read(psgAddressLatch);
                 break;
             case 0xA8:
-//                LOG.info("Read PPI register A (slot select) (port A8)");
                 res = slotSelect;
                 break;
             case 0xA9:

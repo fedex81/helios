@@ -66,7 +66,7 @@ public class JavaSoundManager2 implements SoundProvider {
     private byte[] mixBuffer = new byte[0];
 
     public static JavaSoundManager2 createSoundProvider(RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.createInstance(region, SAMPLE_RATE_HZ);
+        PsgProvider psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
         FmProvider fmProvider = FmProvider.createInstance(region, SAMPLE_RATE_HZ);
         JavaSoundManager2 jsm = new JavaSoundManager2();
         jsm.setFm(fmProvider);

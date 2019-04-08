@@ -67,7 +67,16 @@ public class JavaSoundManager implements SoundProvider {
     private final static boolean playOncePerFrame = false;
 
     public static JavaSoundManager createPsgSoundProvider(RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.createInstance(region, SAMPLE_RATE_HZ);
+        PsgProvider psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
+        JavaSoundManager jsm = new JavaSoundManager();
+        jsm.setFm(FmProvider.NO_SOUND);
+        jsm.setPsg(psgProvider);
+        jsm.init(region);
+        return jsm;
+    }
+
+    public static JavaSoundManager createPsgAySoundProvider(RegionDetector.Region region) {
+        PsgProvider psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
         JavaSoundManager jsm = new JavaSoundManager();
         jsm.setFm(FmProvider.NO_SOUND);
         jsm.setPsg(psgProvider);
@@ -76,7 +85,7 @@ public class JavaSoundManager implements SoundProvider {
     }
 
     public static JavaSoundManager createSoundProvider(RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.createInstance(region, SAMPLE_RATE_HZ);
+        PsgProvider psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
         FmProvider fmProvider = FmProvider.createInstance(region, SAMPLE_RATE_HZ);
         JavaSoundManager jsm = new JavaSoundManager();
         jsm.setFm(fmProvider);
@@ -103,6 +112,7 @@ public class JavaSoundManager implements SoundProvider {
             byte[] mix_buf_bytes16 = new byte[fm_buf_ints.length];
             byte[] psg_buf_bytes = new byte[psgSize];
             int fmSizeMono = fmSize / 2;
+            boolean hasFm = getFm() != FmProvider.NO_SOUND;
 
             @Override
             public void run() {
@@ -138,12 +148,19 @@ public class JavaSoundManager implements SoundProvider {
 
             public void playOnce(int fmBufferLenMono) {
                 psg.output(psg_buf_bytes, 0, fmBufferLenMono);
-                fm.update(fm_buf_ints, 0, fmBufferLenMono);
+                if(hasFm) {
+                    fm.update(fm_buf_ints, 0, fmBufferLenMono);
+                }
 
                 try {
                     Arrays.fill(mix_buf_bytes16, SoundUtil.ZERO_BYTE);
-                    //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
-                    SoundUtil.intStereo14ToByteMono16Mix(fm_buf_ints, mix_buf_bytes16, psg_buf_bytes);
+                    if(hasFm) {
+                        //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
+                        SoundUtil.intStereo14ToByteMono16Mix(fm_buf_ints, mix_buf_bytes16, psg_buf_bytes);
+                    } else {
+                        SoundUtil.byteMono8ToByteMono16Mix(psg_buf_bytes, mix_buf_bytes16);
+                    }
+
                     updateSoundWorking(mix_buf_bytes16);
                     if (!isMute()) {
                         SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16, fmBufferLenMono * 2);
