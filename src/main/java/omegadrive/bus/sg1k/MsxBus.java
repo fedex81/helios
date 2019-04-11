@@ -23,6 +23,8 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.input.MsxKeyboardInput;
+import omegadrive.joypad.JoypadProvider;
+import omegadrive.joypad.JoypadProvider.JoypadNumber;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.sound.psg.Ay38910;
 import omegadrive.util.FileLoader;
@@ -35,10 +37,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
+import static omegadrive.joypad.JoypadProvider.JoypadNumber.*;
+
 /**
  * see
  * https://www.msx.org/forum/semi-msx-talk/emulation/primary-slots-and-secondary-slots
  * http://msx.ebsoft.fr/roms/index.php?v=MSX1&Send=Send
+ * http://fms.komkon.org/MSX/Docs/Portar.txt
  */
 public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
 
@@ -61,7 +66,9 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
     private int[] pageSlotMapper = {0, 0, 0, 0};
 
     private int[] emptySlot = new int[SLOT_SIZE];
+
     private int psgAddressLatch = 0;
+    private JoypadNumber joypadSelect = P1;
 
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
@@ -133,11 +140,9 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
                 joypadProvider.writeDataRegister1(port);
                 break;
             case 0x98:
-                //                LOG.warn("write vdp vram: {}", Integer.toHexString(value));
                 vdp.writeVRAMData(byteVal);
                 break;
             case 0x99:
-                //                LOG.warn("write: vdp address: {}", Integer.toHexString(value));
                 vdp.writeRegister(byteVal);
                 break;
             case 0xA0:
@@ -147,18 +152,18 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
             case 0xA1:
                 LOG.debug("Write PSG: {}", value);
                 soundProvider.getPsg().write(psgAddressLatch , value);
+                if(psgAddressLatch == 0xF){
+                    joypadSelect = (value & 0x40) == 0x40 ? P2 : P1;
+                    LOG.debug("Write PSG register {}, data {}", psgAddressLatch, value);
+                }
                 break;
             case 0xA8:
                 setSlotSelect(value);
                 break;
-            case 0xAA:
-                LOG.debug("Write PPI register C (keyboard and cassette interface) (port AA): {}",
-                        value);
+            case 0xAA: // Write PPI register C (keyboard and cassette interface) (port AA)
                 ppiC_Keyboard = value;
                 break;
-            case 0xAB:
-                LOG.debug("Write PPI command register (used for setting bit 4-7 of ppi_C) (port AB): {}",
-                        value);
+            case 0xAB: //Write PPI command register (used for setting bit 4-7 of ppi_C) (port AB)
                 break;
             default:
                 LOG.warn("outPort: {} ,data {}", Integer.toHexString(port), Integer.toHexString(value));
@@ -166,7 +171,6 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         }
     }
 
-    //see meka/coleco.cpp
     @Override
     public int readIoPort(int port) {
         port &= 0xFF;
@@ -174,11 +178,9 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
 
         switch (port) {
             case 0x98:
-                //                LOG.warn("read: vdp vram");
                 res = vdp.readVRAMData();
                 break;
             case 0x99:
-                //                LOG.warn("read: vdp status reg");
                 res = vdp.readStatus();
                 break;
             case 0xA0:
@@ -186,19 +188,20 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
                 res = psgAddressLatch;
                 break;
             case 0xA2:
-                LOG.debug("Read PSG register data");
-                soundProvider.getPsg().read(psgAddressLatch);
+                res = soundProvider.getPsg().read(psgAddressLatch);
+                if(psgAddressLatch == 0xE){
+                    res = readJoyData();
+                    LOG.debug("Read PSG register {}, data {}", psgAddressLatch, res);
+                }
                 break;
             case 0xA8:
                 res = slotSelect;
                 break;
-            case 0xA9:
-                LOG.debug("Read PPI register B (keyboard matrix row input register) (port A9)");
+            case 0xA9: //Read PPI register B (keyboard matrix row input register)
                 res = MsxKeyboardInput.getMsxKeyAdapter().getRowValue(ppiC_Keyboard & 0xF);
                 res = ~((byte)res);
                 break;
-            case 0xAA:
-                LOG.debug("Read PPI register C (keyboard and cassette interface) (port AA)");
+            case 0xAA: //Read PPI register C (keyboard and cassette interface) (port AA)
                 res = ppiC_Keyboard;
                 break;
             default:
@@ -206,6 +209,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
                 break;
 
         }
+        res &= 0xFF;
         LogHelper.printLevel(LOG, Level.INFO, "Read IO port: {}, value: {}", port, res, verbose);
         return res;
     }
@@ -220,6 +224,20 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         pageSlotMapper[1] = (slotSelect & 0xC) >> 2;
         pageSlotMapper[2] = (slotSelect & 0x30) >> 4;
         pageSlotMapper[3] = (slotSelect & 0xC0) >> 6;
+    }
+
+    private int readJoyData(){
+        int res = 0xFF;
+        switch (joypadSelect){
+            case P1:
+                res = joypadProvider.readDataRegister1();
+                break;
+            case P2:
+                res = joypadProvider.readDataRegister2();
+                break;
+        }
+        LOG.debug("Read joy {}, data: {}", joypadSelect, res);
+        return res;
     }
 
     /**
@@ -237,7 +255,6 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
             secondarySlot[2] = memoryProvider.getRomData();
             pageStartAdddress[2] = PAGE_SIZE;
         }
-
     }
 
     @Override

@@ -25,6 +25,7 @@ import omegadrive.bus.sg1k.MsxBus;
 import omegadrive.bus.sg1k.Sg1000BusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.input.MsxKeyboardInput;
+import omegadrive.joypad.MsxPad;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
@@ -67,7 +68,7 @@ public class Msx extends BaseSystem {
 
     @Override
     public void init() {
-        joypad = new TwoButtonsJoypad();
+        joypad = new MsxPad();
         inputProvider = InputProvider.createInstance(joypad);
 
         memory = MemoryProvider.createMsxInstance();
