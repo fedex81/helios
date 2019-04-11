@@ -23,10 +23,8 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.input.MsxKeyboardInput;
-import omegadrive.joypad.JoypadProvider;
 import omegadrive.joypad.JoypadProvider.JoypadNumber;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.sound.psg.Ay38910;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -62,7 +60,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
     private int ppiC_Keyboard = 0;
     private int[][] secondarySlot = new int[SLOTS][];
     private boolean[] secondarySlotWritable = new boolean[SLOTS];
-    private int[] pageStartAdddress = {0, 0, 0, 0};
+    private int[] pageStartAddress = {0, 0, 0, 0};
     private int[] pageSlotMapper = {0, 0, 0, 0};
 
     private int[] emptySlot = new int[SLOT_SIZE];
@@ -100,7 +98,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         int addressI = (int) (addressL & 0xFFFF);
         int page = addressI >> 14;
         int secSlotNumber = pageSlotMapper[page];
-        int address = (addressI & PAGE_MASK) + pageStartAdddress[page];
+        int address = (addressI & PAGE_MASK) + pageStartAddress[page];
         return readSlot(secondarySlot[secSlotNumber], address);
     }
 
@@ -124,7 +122,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         int res = 0xFF;
         int secSlotNumber = pageSlotMapper[page];
         if(secondarySlotWritable[secSlotNumber]){
-            int address = (addressI & PAGE_MASK) + pageStartAdddress[page];
+            int address = (addressI & PAGE_MASK) + pageStartAddress[page];
             writeSlot(secondarySlot[secSlotNumber], address, (int) data);
         }
     }
@@ -253,7 +251,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         secondarySlot[1] = memoryProvider.getRomData();
         if(len > PAGE_SIZE){
             secondarySlot[2] = memoryProvider.getRomData();
-            pageStartAdddress[2] = PAGE_SIZE;
+            pageStartAddress[2] = PAGE_SIZE;
         }
     }
 

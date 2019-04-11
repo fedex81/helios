@@ -77,6 +77,10 @@ public interface InputProvider {
 //        System.out.println(lib);
         System.setProperty("net.java.games.input.librarypath", lib);
         LOG.info("Loading system library from: " + lib);
+        //disable java.util.logging
+        java.util.logging.LogManager.getLogManager().reset();
+        LOG.info("Disabling java.util.logging");
+
     }
 
     static Controller detectController() {

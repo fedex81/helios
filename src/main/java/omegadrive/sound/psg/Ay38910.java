@@ -465,11 +465,10 @@ public class Ay38910 {
         return val;
     }
 
-    private static final int MAX_VOL_FACTOR = 3 ; //0x7F / (3 * MAX_CHANNEL_VOLUME);
+    private static final int MAX_VOL_FACTOR = 3 ;
 
     public int getSoundSigned() {
         int sound = getSound();
-        return (sound * 3) & 0xFF; //[0;127]
+        return Math.min(sound * MAX_VOL_FACTOR, Byte.MAX_VALUE); //[0;127]
     }
-
 }
