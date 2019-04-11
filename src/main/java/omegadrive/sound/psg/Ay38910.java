@@ -37,23 +37,9 @@ import javax.sound.sampled.*;
 public class Ay38910 {
 
     /**
-     * The sampling frequency for playing sounds with the speaker or AY chip.
-     */
-    public static final float SAMPLE_FREQ = 48000.0f;
-    /**
      * The size of the buffer used for generating sounds.
      */
     public static final int LINE_BUF_SIZE = 1024;
-
-    /**
-     * Source data line (audio output channel)
-     */
-    private SourceDataLine m_line;
-
-    /**
-     * The sound buffer as it is currently being filled and played.
-     */
-    protected byte[] m_buffer = new byte[LINE_BUF_SIZE];
 
     /**
      * The current index into the sound buffer.
@@ -61,7 +47,6 @@ public class Ay38910 {
     protected int m_index = 0;
 
     private static final int AY8912_FREQ = 221660;
-    private static final int FREQ_SCALE = (int) (AY8912_FREQ / SAMPLE_FREQ);
 
     private static int MAX_CHANNEL_VOLUME = 0x0f;
 
@@ -230,6 +215,17 @@ public class Ay38910 {
      */
     private int _envelopeState = 0;
 
+    /**
+     * The sampling frequency for playing sounds with the speaker or AY chip.
+     */
+    private float sampleFreq;
+    private int freqScale = 1;
+
+    public Ay38910(int sampleRateHz){
+        this.sampleFreq = sampleRateHz;
+        this.freqScale = (int) (AY8912_FREQ / sampleRateHz);
+    }
+
     public void reset() {
         _generatorA = _generatorB = _generatorC = _generatorN = false;
         m_amplitudeA = m_amplitudeB = m_amplitudeC = 0;
@@ -238,19 +234,6 @@ public class Ay38910 {
         m_pitchA = m_pitchB = m_pitchC = 0;
         m_periodE = m_periodN = 0;
         m_useEnvelopeA = m_useEnvelopeB = m_useEnvelopeC = false;
-
-//        periodA = periodB = periodC = periodN = 1;
-//        counterA = counterB = counterC = counterN = 0;
-//        amplitudeA = amplitudeB = amplitudeC = amplitudeEnv = 0;
-//        volumeA = volumeB = volumeC = 0;
-//        envelopePeriod = 0;
-//        addressLatch = 0;
-//        toneA = toneB = toneC = toneN = false;
-//        rng = 1;
-//        Arrays.fill(regAY, 0);
-//        regAY[Mixer] = 0xff;
-//        Continue = Attack = false;
-//        startPlay();
     }
 
     /**
@@ -367,7 +350,7 @@ public class Ay38910 {
         int samples = 1;
 
         if (m_pitchA > 0) {
-            _counterA += samples * FREQ_SCALE;
+            _counterA += samples * freqScale;
             if (_counterA >= m_pitchA) {
                 _generatorA = !_generatorA;
                 _counterA -= m_pitchA;
@@ -375,7 +358,7 @@ public class Ay38910 {
         }
 
         if (m_pitchB > 0) {
-            _counterB += samples * FREQ_SCALE;
+            _counterB += samples * freqScale;
             if (_counterB >= m_pitchB) {
                 _generatorB = !_generatorB;
                 _counterB -= m_pitchB;
@@ -383,7 +366,7 @@ public class Ay38910 {
         }
 
         if (m_pitchC > 0) {
-            _counterC += samples * FREQ_SCALE;
+            _counterC += samples * freqScale;
             if (_counterC >= m_pitchC) {
                 _generatorC = !_generatorC;
                 _counterC -= m_pitchC;
@@ -391,7 +374,7 @@ public class Ay38910 {
         }
 
         if (m_periodN > 0) {
-            _counterN += samples * FREQ_SCALE;
+            _counterN += samples * freqScale;
             // The noise counter runs at half the speed of the
             // tone counter, so double the noise period
             if (_counterN >= (m_periodN << 1)) {
@@ -406,7 +389,7 @@ public class Ay38910 {
         int amplitudeE = 0;
 
         if (m_periodE > 0) {
-            _counterE += samples * FREQ_SCALE;
+            _counterE += samples * freqScale;
             // The envelope counter runs at half the speed of the
             // tone counter, so double the envelope period
             if (_counterE >= (m_periodE << 1)) {

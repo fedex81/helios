@@ -26,9 +26,9 @@ public class Ay38910Psg implements PsgProvider {
 
     private Ay38910 psg;
 
-    public static Ay38910Psg createInstance(int clockSpeed, int sampleRate) {
+    public static Ay38910Psg createInstance(int sampleRate) {
         Ay38910Psg s = new Ay38910Psg();
-        s.psg = new Ay38910();
+        s.psg = new Ay38910(sampleRate);
         s.reset();
         return s;
     }

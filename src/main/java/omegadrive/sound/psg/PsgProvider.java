@@ -47,7 +47,7 @@ public interface PsgProvider extends Device {
     static PsgProvider createAyInstance(RegionDetector.Region region, int sampleRate) {
         int clockHz = (int) getPsgSoundClock(region);
         LOG.info("PSG instance, clockHz: " + clockHz + ", sampleRate: " + sampleRate);
-        PsgProvider psgProvider = Ay38910Psg.createInstance(clockHz, sampleRate);
+        PsgProvider psgProvider = Ay38910Psg.createInstance(sampleRate);
         return psgProvider;
     }
 
