@@ -171,10 +171,11 @@ public class SystemLoader {
     }
 
     public SystemProvider createSystemProvider(Path file){
-        boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(file.toString()::endsWith);
-        boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(file.toString()::endsWith);
-        boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(file.toString()::endsWith);
-        boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(file.toString()::endsWith);
+        String lowerCaseName = file.toString().toLowerCase();
+        boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if(isGen){
             systemProvider = createSystemProvider(SystemType.GENESIS);
         } else if(isSg){
@@ -183,6 +184,9 @@ public class SystemLoader {
             systemProvider = createSystemProvider(SystemType.COLECO);
         } else if(isMsx){
             systemProvider = createSystemProvider(SystemType.MSX);
+        }
+        if(systemProvider == null){
+            LOG.error("Unable to find a system to load: " + file.toAbsolutePath());
         }
         return systemProvider;
     }

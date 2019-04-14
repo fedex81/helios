@@ -68,6 +68,7 @@ public class EmuFrame implements GenesisWindow {
     private JCheckBoxMenuItem eurBios;
     private JCheckBoxMenuItem japBios;
     private JCheckBoxMenuItem fullScreenItem;
+    private JCheckBoxMenuItem muteItem;
     private boolean showDebug = false;
 
     //when scaling is slow set this to FALSE
@@ -165,6 +166,10 @@ public class EmuFrame implements GenesisWindow {
 
         fullScreenItem = new JCheckBoxMenuItem("Full Screen", false);
         menuView.add(fullScreenItem);
+
+        muteItem = new JCheckBoxMenuItem("Enable Sound", true);
+        muteItem.addActionListener(e -> mainEmu.toggleMute());
+        menuView.add(muteItem);
 
         JMenu helpMenu = new JMenu("Help");
         bar.add(helpMenu);
@@ -479,6 +484,7 @@ public class EmuFrame implements GenesisWindow {
                         toggleFullScreen();
                         break;
                     case KeyEvent.VK_M:
+                        muteItem.setState(!muteItem.getState());
                         mainEmu.toggleMute();
                         break;
                     case KeyEvent.VK_0:
