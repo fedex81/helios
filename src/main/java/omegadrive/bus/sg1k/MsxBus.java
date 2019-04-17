@@ -22,6 +22,8 @@ package omegadrive.bus.sg1k;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
+import omegadrive.bus.mapper.MsxAsciiMapper;
+import omegadrive.bus.mapper.RomMapper;
 import omegadrive.input.MsxKeyboardInput;
 import omegadrive.joypad.JoypadProvider.JoypadNumber;
 import omegadrive.memory.IMemoryProvider;
@@ -30,6 +32,8 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.vdp.Sg1000Vdp;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,6 +48,8 @@ import static omegadrive.joypad.JoypadProvider.JoypadNumber.*;
  * http://fms.komkon.org/MSX/Docs/Portar.txt
  */
 public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
+
+    private static Logger LOG = LogManager.getLogger(MsxBus.class);
 
     static final boolean verbose = false;
 
@@ -68,6 +74,8 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
     private int psgAddressLatch = 0;
     private JoypadNumber joypadSelect = P1;
 
+    private RomMapper mapper;
+
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
         bios = FileLoader.loadBiosFile(p);
@@ -78,6 +86,8 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         secondarySlot[1] = emptySlot;
         secondarySlot[2] = emptySlot;
         secondarySlot[3] = emptySlot;
+
+        mapper = RomMapper.NO_MAPPER;
     }
 
     @Override
@@ -98,15 +108,17 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         int addressI = (int) (addressL & 0xFFFF);
         int page = addressI >> 14;
         int secSlotNumber = pageSlotMapper[page];
+        int res = 0xFF;
         int address = (addressI & PAGE_MASK) + pageStartAddress[page];
-        return readSlot(secondarySlot[secSlotNumber], address);
-    }
 
-    private int readSlot(int[] data, int address){
-        if(address < data.length) {
-            return data[address];
+        if(mapper != RomMapper.NO_MAPPER && secSlotNumber > 0 && secSlotNumber < 3){
+            res = (int) mapper.readData(addressL, Size.BYTE);
+        } else if(address < secondarySlot[secSlotNumber].length) {
+            res = secondarySlot[secSlotNumber][address];
+        } else {
+            LOG.error("Unexpected read: {}, slot: {}", Long.toHexString(addressL), secSlotNumber);
         }
-        return 0xFF;
+        return res;
     }
 
     private void writeSlot(int[] data, int address, int value){
@@ -124,6 +136,11 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         if(secondarySlotWritable[secSlotNumber]){
             int address = (addressI & PAGE_MASK) + pageStartAddress[page];
             writeSlot(secondarySlot[secSlotNumber], address, (int) data);
+        } else if(mapper != RomMapper.NO_MAPPER && secSlotNumber > 0 && secSlotNumber < 3) {
+            mapper.writeData(addressL, data, size);
+        } else {
+            LOG.error("Unexpected write: {}, data: {}, slot: {}", Long.toHexString(addressL),
+                    Long.toHexString(data), secSlotNumber);
         }
     }
 
@@ -163,8 +180,15 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
                 break;
             case 0xAB: //Write PPI command register (used for setting bit 4-7 of ppi_C) (port AB)
                 break;
+            case 0xFC:
+            case 0xFD:
+            case 0xFE:
+            case 0xFF:
+                LOG.warn("Ignoring MSX2 memMapper write: {}, data {}",
+                        Integer.toHexString(port), Integer.toHexString(value));
+                break;
             default:
-                LOG.warn("outPort: {} ,data {}", Integer.toHexString(port), Integer.toHexString(value));
+                LOG.warn("outPort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
                 break;
         }
     }
@@ -238,21 +262,19 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         return res;
     }
 
-    /**
-     * TODO this only supports roms up to 32Kb
-     */
     @Override
     public void init() {
         int len = memoryProvider.getRomSize();
         if(len > PAGE_SIZE *2){
-            LOG.error("Unsupported ROM size: " + len);
-            return;
+            mapper = MsxAsciiMapper.createMapper(memoryProvider.getRomData(), MsxAsciiMapper.AsciiType.kb16);
+            LOG.info("ROM size: {}, using mapper: {}", len, MsxAsciiMapper.class.getSimpleName());
         }
         secondarySlot[1] = memoryProvider.getRomData();
         if(len > PAGE_SIZE){
             secondarySlot[2] = memoryProvider.getRomData();
             pageStartAddress[2] = PAGE_SIZE;
         }
+
     }
 
     @Override

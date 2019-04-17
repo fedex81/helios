@@ -33,7 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class BackupMemoryMapper implements GenesisMapper {
+public class BackupMemoryMapper implements RomMapper {
 
     /**
      * TODO
@@ -51,7 +51,7 @@ public class BackupMemoryMapper implements GenesisMapper {
     public static long SRAM_START_ADDRESS;
     public static long SRAM_END_ADDRESS;
 
-    private GenesisMapper baseMapper;
+    private RomMapper baseMapper;
     private CartridgeInfoProvider cartridgeInfoProvider;
     private SramMode sramMode = SramMode.DISABLE;
 
@@ -60,12 +60,12 @@ public class BackupMemoryMapper implements GenesisMapper {
 
     private int[] sram = new int[0];
 
-    public static GenesisMapper createInstance(GenesisMapper baseMapper, CartridgeInfoProvider cart) {
+    public static RomMapper createInstance(RomMapper baseMapper, CartridgeInfoProvider cart) {
         return createInstance(baseMapper, cart, SramMode.DISABLE);
     }
 
-    private static GenesisMapper createInstance(GenesisMapper baseMapper, CartridgeInfoProvider cart,
-                                                SramMode sramMode) {
+    private static RomMapper createInstance(RomMapper baseMapper, CartridgeInfoProvider cart,
+                                            SramMode sramMode) {
         BackupMemoryMapper mapper = new BackupMemoryMapper();
         mapper.baseMapper = baseMapper;
         mapper.sramMode = sramMode;
@@ -81,10 +81,10 @@ public class BackupMemoryMapper implements GenesisMapper {
         return mapper;
     }
 
-    public static GenesisMapper getOrCreateInstance(GenesisMapper baseMapper,
-                                                    GenesisMapper currentMapper,
-                                                    CartridgeInfoProvider cartridgeInfoProvider,
-                                                    SramMode sramMode) {
+    public static RomMapper getOrCreateInstance(RomMapper baseMapper,
+                                                RomMapper currentMapper,
+                                                CartridgeInfoProvider cartridgeInfoProvider,
+                                                SramMode sramMode) {
         if (baseMapper != currentMapper) {
             currentMapper.setSramMode(sramMode);
             return currentMapper;

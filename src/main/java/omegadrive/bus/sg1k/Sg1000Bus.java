@@ -24,8 +24,12 @@ import omegadrive.bus.DeviceAwareBus;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.Size;
 import omegadrive.vdp.Sg1000Vdp;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Sg1000Bus extends DeviceAwareBus implements Sg1000BusProvider {
+
+    private static Logger LOG = LogManager.getLogger(Sg1000Bus.class);
 
     private static int ROM_START = 0;
     private static int ROM_END = 0xBFFF;

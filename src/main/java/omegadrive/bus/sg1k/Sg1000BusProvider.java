@@ -25,8 +25,6 @@ import org.apache.logging.log4j.Logger;
 
 public interface Sg1000BusProvider extends BaseBusProvider {
 
-    Logger LOG = LogManager.getLogger(Sg1000BusProvider.class.getSimpleName());
-
     static Sg1000BusProvider createBus() {
         return new Sg1000Bus();
     }

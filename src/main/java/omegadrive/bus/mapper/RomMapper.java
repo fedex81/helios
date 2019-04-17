@@ -21,12 +21,12 @@ package omegadrive.bus.mapper;
 
 import omegadrive.util.Size;
 
-public interface GenesisMapper {
+public interface RomMapper {
 
-    GenesisMapper NO_MAPPER = new GenesisMapper() {
+    RomMapper NO_MAPPER = new RomMapper() {
         @Override
         public long readData(long address, Size size) {
-            return 0;
+            return -1;
         }
 
         @Override

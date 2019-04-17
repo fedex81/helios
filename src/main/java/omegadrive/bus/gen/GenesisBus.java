@@ -24,7 +24,7 @@ import omegadrive.system.Genesis;
 import omegadrive.system.SystemProvider;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.mapper.BackupMemoryMapper;
-import omegadrive.bus.mapper.GenesisMapper;
+import omegadrive.bus.mapper.RomMapper;
 import omegadrive.bus.mapper.Ssf2Mapper;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
@@ -51,7 +51,7 @@ import java.util.Objects;
  * Interrupts are know acknowleged based on what the VDP thinks its asserting rather than what the 68K actually is acking - Fixes Fatal Rewind
  *
  */
-public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, GenesisMapper {
+public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, RomMapper {
 
     private static Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
@@ -60,7 +60,7 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ge
     private GenesisVdpProvider vdp;
 
     private CartridgeInfoProvider cartridgeInfoProvider;
-    private GenesisMapper mapper;
+    private RomMapper mapper;
 
     private BusArbiter busArbiter;
 

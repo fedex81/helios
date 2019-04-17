@@ -50,7 +50,7 @@ import org.apache.logging.log4j.Logger;
  * <p>
  * https://github.com/Emu-Docs/Emu-Docs/blob/master/Genesis/ssf2.txt
  **/
-public class Ssf2Mapper implements GenesisMapper {
+public class Ssf2Mapper implements RomMapper {
 
     private static Logger LOG = LogManager.getLogger(Ssf2Mapper.class.getSimpleName());
 
@@ -61,12 +61,12 @@ public class Ssf2Mapper implements GenesisMapper {
     public static final int BANKABLE_START_ADDRESS = 0x80000;
 
     private int[] banks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
-    private GenesisMapper baseMapper;
+    private RomMapper baseMapper;
     private IMemoryProvider memory;
     private boolean verbose = false;
 
-    public static GenesisMapper getOrCreateInstance(GenesisMapper baseMapper, GenesisMapper currentMapper,
-                                                    IMemoryProvider memoryProvider) {
+    public static RomMapper getOrCreateInstance(RomMapper baseMapper, RomMapper currentMapper,
+                                                IMemoryProvider memoryProvider) {
         if (baseMapper != currentMapper) {
             return currentMapper;
         }
@@ -74,7 +74,7 @@ public class Ssf2Mapper implements GenesisMapper {
 
     }
 
-    private static Ssf2Mapper createInstance(GenesisMapper baseMapper, IMemoryProvider memoryProvider) {
+    private static Ssf2Mapper createInstance(RomMapper baseMapper, IMemoryProvider memoryProvider) {
         Ssf2Mapper mapper = new Ssf2Mapper();
         mapper.baseMapper = baseMapper;
         mapper.memory = memoryProvider;

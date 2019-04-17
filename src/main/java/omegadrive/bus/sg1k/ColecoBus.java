@@ -27,6 +27,8 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.vdp.Sg1000Vdp;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +39,8 @@ import java.nio.file.Paths;
  * http://www.smspower.org/forums/9920-ColecoNMIEmulationWasMekaBugAndFix
  */
 public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
+
+    private static Logger LOG = LogManager.getLogger(ColecoBus.class);
 
     static final boolean verbose = false;
 
