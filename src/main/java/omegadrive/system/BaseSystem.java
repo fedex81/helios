@@ -20,6 +20,7 @@
 package omegadrive.system;
 
 import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.gen.GenesisBus;
 import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInput;
@@ -66,6 +67,7 @@ public abstract class BaseSystem implements SystemProvider {
     protected JoypadProvider joypad;
     protected SoundProvider sound;
     protected InputProvider inputProvider;
+    protected DeviceAwareBus bus;
 
     protected RegionDetector.Region region = null;
     private String romName;
@@ -123,18 +125,6 @@ public abstract class BaseSystem implements SystemProvider {
 
     protected BaseSystem(GenesisWindow emuFrame){
         this.emuFrame = emuFrame;
-
-        this.emuFrame.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                keyPressedHandler(e);
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) {
-                keyReleasedHandler(e);
-            }
-        });
     }
 
     protected BaseSystem(boolean isHeadless) throws InvocationTargetException, InterruptedException {
@@ -169,22 +159,10 @@ public abstract class BaseSystem implements SystemProvider {
     protected void createFrame(boolean isHeadless) {
         emuFrame = isHeadless ? GenesisWindow.HEADLESS_INSTANCE : new EmuFrame(this);
         emuFrame.init();
-
-        emuFrame.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                keyPressedHandler(e);
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) {
-                keyReleasedHandler(e);
-            }
-        });
     }
 
     protected void reloadKeyListeners() {
-        emuFrame.addKeyListener(KeyboardInput.createKeyAdapter(joypad));
+        emuFrame.addKeyListener(KeyboardInput.createKeyAdapter(getSystemType(), joypad));
     }
 
     public void handleNewRom(Path file) {
@@ -359,30 +337,6 @@ public abstract class BaseSystem implements SystemProvider {
         emuFrame.renderScreen(vdpScreen, label, videoMode);
     }
 
-    private void keyPressedHandler(KeyEvent e) {
-        keyHandler(e, true);
-    }
-
-    private void keyHandler(KeyEvent e, boolean pressed) {
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_B:
-                if (!pressed) {
-                    vdpDumpScreenData = !vdpDumpScreenData;
-                }
-                break;
-            case KeyEvent.VK_P:
-                if (!pressed) {
-                    handlePause();
-                }
-                break;
-            case KeyEvent.VK_ESCAPE:
-                if (!pressed) {
-                    handleCloseRom();
-                }
-                break;
-        }
-    }
-
     @Override
     public void handlePause() {
         boolean isPausing = pauseFlag;
@@ -398,7 +352,10 @@ public abstract class BaseSystem implements SystemProvider {
         handleNewRom(romFile);
     }
 
-    private void keyReleasedHandler(KeyEvent e) {
-        keyHandler(e, false);
+    protected void resetAfterRomLoad() {
+        //detect ROM first
+        joypad.init();
+        vdp.init();
+        bus.init();
     }
 }

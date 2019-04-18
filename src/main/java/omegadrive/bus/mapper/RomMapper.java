@@ -23,7 +23,9 @@ import omegadrive.util.Size;
 
 public interface RomMapper {
 
-    RomMapper NO_MAPPER = new RomMapper() {
+    String NO_MAPPER_NAME = "NONE";
+
+    RomMapper NO_OP_MAPPER = new RomMapper() {
         @Override
         public long readData(long address, Size size) {
             return -1;

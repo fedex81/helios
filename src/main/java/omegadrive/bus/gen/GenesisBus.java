@@ -76,8 +76,7 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
     private boolean z80BusRequested;
     private boolean z80ResetState;
 
-    //TEST ONLY
-    protected GenesisBus() {
+    public GenesisBus() {
         this.mapper = this;
         this.busArbiter = BusArbiter.createInstance(vdp, m68kProvider, z80Provider);
     }

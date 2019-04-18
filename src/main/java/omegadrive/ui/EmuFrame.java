@@ -503,6 +503,17 @@ public class EmuFrame implements GenesisWindow {
                     case KeyEvent.VK_L:
                         loadRomDialog(jFrame);
                         break;
+                    case KeyEvent.VK_P:
+                        mainEmu.handlePause();
+                        break;
+                    case KeyEvent.VK_ESCAPE:
+                        mainEmu.handleCloseRom();
+                        break;
+                        //TODO debug stuff
+//                    case KeyEvent.VK_B:
+    //                  vdpDumpScreenData = !vdpDumpScreenData;
+//                      break;
+//        }
                 }
             }
         });
@@ -514,7 +525,9 @@ public class EmuFrame implements GenesisWindow {
 
     @Override
     public void reloadSystem(SystemProvider systemProvider) {
+        Optional.ofNullable(mainEmu).ifPresent(SystemProvider::handleCloseRom);
         this.mainEmu = systemProvider;
+
         Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);
         setupFrameKeyListener();
         setTitle("");

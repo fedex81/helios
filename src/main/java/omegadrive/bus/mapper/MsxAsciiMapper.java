@@ -20,8 +20,8 @@
 package omegadrive.bus.mapper;
 
 import omegadrive.util.Size;
-
-import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static omegadrive.bus.mapper.MsxAsciiMapper.*;
 
@@ -32,6 +32,8 @@ import static omegadrive.bus.mapper.MsxAsciiMapper.*;
  *
  */
 public class MsxAsciiMapper extends AsciiMapperImpl {
+
+    private static Logger LOG = LogManager.getLogger(MsxAsciiMapper.class.getSimpleName());
 
     public static final int BLOCK_NUM = 32;
     public static final int MAPPER_START_ADDRESS = 0x4000;
@@ -44,11 +46,34 @@ public class MsxAsciiMapper extends AsciiMapperImpl {
         super(rom, type);
     }
 
+    public static RomMapper createMapper(int[] rom, String type){
+        AsciiType t = getMapperType(type);
+        if(t == null){
+            LOG.error("Mapper not supported: " + type);
+            return NO_OP_MAPPER;
+        }
+        return createMapper(rom, t);
+    }
+
     public static RomMapper createMapper(int[] rom, AsciiType type){
         return new AsciiMapperImpl(rom, type);
     }
 
-    public enum AsciiType { kb8, kb16 }
+    private static AsciiType[] list = AsciiType.values();
+
+    //TODO fix ASCII16
+    public enum AsciiType { ASCII8,
+//        ASCII16
+    }
+
+    public static AsciiType getMapperType(String mapperName){
+        for (AsciiType t : list) {
+            if(mapperName.equalsIgnoreCase(t.toString())){
+                return t;
+            }
+        }
+        return null;
+    }
 }
 
 class AsciiMapperImpl implements RomMapper {
@@ -63,10 +88,10 @@ class AsciiMapperImpl implements RomMapper {
     protected AsciiMapperImpl(int[] rom, AsciiType type){
         this.rom = rom;
         this.type = type;
-        this.pageNum = type == AsciiType.kb8 ? PAGES_8KB : PAGES_16KB;
+        this.pageNum = type == AsciiType.ASCII8 ? PAGES_8KB : PAGES_16KB;
         this.pageSize = BLOCK_NUM*1024/pageNum;
         this.pageBlockMapper = new int[pageNum];
-        this.readShiftMask = type == AsciiType.kb8 ? 0xE000 : 0x8000;
+        this.readShiftMask = type == AsciiType.ASCII8 ? 0xE000 : 0x8000;
     }
 
     @Override

@@ -20,6 +20,10 @@
 package omegadrive.util;
 
 import com.google.common.collect.Range;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
+import omegadrive.memory.IMemoryRom;
 import omegadrive.system.Genesis;
 import omegadrive.memory.IMemoryProvider;
 import org.apache.logging.log4j.Level;
@@ -28,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.LockSupport;
@@ -223,6 +228,16 @@ public class Util {
         //read final byte ??
         res = size % 2 != 0 ? (res + memoryProvider.readRomByte(i)) & 0xFFFF : res;
         return res;
+    }
+
+    public static String computeSha1Sum(int[] data){
+        Hasher h = Hashing.sha1().newHasher();
+        Arrays.stream(data).forEach(d -> h.putByte((byte) d));
+        return BaseEncoding.base16().lowerCase().encode(h.hash().asBytes());
+    }
+
+    public static String computeSha1Sum(IMemoryRom rom){
+        return computeSha1Sum(rom.getRomData());
     }
 
     public static int log2(int n) {

@@ -22,11 +22,13 @@ package omegadrive.bus.sg1k;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
+import omegadrive.bus.mapper.MapperSelector;
 import omegadrive.bus.mapper.MsxAsciiMapper;
 import omegadrive.bus.mapper.RomMapper;
 import omegadrive.input.MsxKeyboardInput;
 import omegadrive.joypad.JoypadProvider.JoypadNumber;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -75,6 +77,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
     private JoypadNumber joypadSelect = P1;
 
     private RomMapper mapper;
+    private CartridgeInfoProvider cartridgeInfoProvider;
 
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
@@ -87,7 +90,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         secondarySlot[2] = emptySlot;
         secondarySlot[3] = emptySlot;
 
-        mapper = RomMapper.NO_MAPPER;
+        mapper = RomMapper.NO_OP_MAPPER;
     }
 
     @Override
@@ -111,7 +114,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         int res = 0xFF;
         int address = (addressI & PAGE_MASK) + pageStartAddress[page];
 
-        if(mapper != RomMapper.NO_MAPPER && secSlotNumber > 0 && secSlotNumber < 3){
+        if(mapper != RomMapper.NO_OP_MAPPER && secSlotNumber > 0 && secSlotNumber < 3){
             res = (int) mapper.readData(addressL, Size.BYTE);
         } else if(address < secondarySlot[secSlotNumber].length) {
             res = secondarySlot[secSlotNumber][address];
@@ -136,7 +139,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
         if(secondarySlotWritable[secSlotNumber]){
             int address = (addressI & PAGE_MASK) + pageStartAddress[page];
             writeSlot(secondarySlot[secSlotNumber], address, (int) data);
-        } else if(mapper != RomMapper.NO_MAPPER && secSlotNumber > 0 && secSlotNumber < 3) {
+        } else if(mapper != RomMapper.NO_OP_MAPPER && secSlotNumber > 0 && secSlotNumber < 3) {
             mapper.writeData(addressL, data, size);
         } else {
             LOG.error("Unexpected write: {}, data: {}, slot: {}", Long.toHexString(addressL),
@@ -264,17 +267,28 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
 
     @Override
     public void init() {
+        setupCartHw();
         int len = memoryProvider.getRomSize();
-        if(len > PAGE_SIZE *2){
-            mapper = MsxAsciiMapper.createMapper(memoryProvider.getRomData(), MsxAsciiMapper.AsciiType.kb16);
-            LOG.info("ROM size: {}, using mapper: {}", len, MsxAsciiMapper.class.getSimpleName());
-        }
         secondarySlot[1] = memoryProvider.getRomData();
         if(len > PAGE_SIZE){
             secondarySlot[2] = memoryProvider.getRomData();
             pageStartAddress[2] = PAGE_SIZE;
         }
+    }
 
+    private void setupCartHw(){
+        int len = memoryProvider.getRomSize();
+        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
+        MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(), cartridgeInfoProvider.getSha1());
+        if(e != MapperSelector.MISSING_DATA){
+            LOG.info("Cart Hw match:\n{}", e);
+            if(!RomMapper.NO_MAPPER_NAME.equalsIgnoreCase(e.mapperName)) {
+                mapper = MsxAsciiMapper.createMapper(memoryProvider.getRomData(), e.mapperName);
+                LOG.info("ROM size: {}, using mapper: {}", len, mapper.getClass().getSimpleName());
+            }
+        } else {
+            LOG.info("Unknown rom sha1: {}", cartridgeInfoProvider.getSha1());
+        }
     }
 
     @Override

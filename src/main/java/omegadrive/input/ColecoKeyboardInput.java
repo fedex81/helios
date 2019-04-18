@@ -37,15 +37,6 @@ public class ColecoKeyboardInput extends KeyboardInput {
         keyHandlerColeco(provider, e, false);
     }
 
-    public static KeyAdapter createColecoKeyAdapter(JoypadProvider provider) {
-        Objects.requireNonNull(provider);
-        if (currentAdapter == null) {
-            currentAdapter = new ColecoKeyboardInput();
-        }
-        currentAdapter.provider = provider;
-        return currentAdapter;
-    }
-
     private static void keyHandlerColeco(JoypadProvider joypad, KeyEvent e, boolean pressed) {
         KeyboardInput.keyHandler(joypad, e, pressed);
 

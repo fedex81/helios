@@ -19,6 +19,7 @@
 
 package omegadrive.sound.javasound;
 
+import omegadrive.SystemLoader;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.persist.FileSoundPersister;
@@ -66,27 +67,22 @@ public class JavaSoundManager implements SoundProvider {
 
     private final static boolean playOncePerFrame = false;
 
-    public static JavaSoundManager createPsgSoundProvider(RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
-        JavaSoundManager jsm = new JavaSoundManager();
-        jsm.setFm(FmProvider.NO_SOUND);
-        jsm.setPsg(psgProvider);
-        jsm.init(region);
-        return jsm;
-    }
+    public static JavaSoundManager createSoundProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
+        PsgProvider psgProvider;
+        FmProvider fmProvider = FmProvider.NO_SOUND;
+        switch (systemType){
+            case MSX:
+                psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
+                break;
+            case GENESIS:
+                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
+                fmProvider = FmProvider.createInstance(region, SAMPLE_RATE_HZ);
+                break;
+            default:
+                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
+                break;
 
-    public static JavaSoundManager createPsgAySoundProvider(RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
-        JavaSoundManager jsm = new JavaSoundManager();
-        jsm.setFm(FmProvider.NO_SOUND);
-        jsm.setPsg(psgProvider);
-        jsm.init(region);
-        return jsm;
-    }
-
-    public static JavaSoundManager createSoundProvider(RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
-        FmProvider fmProvider = FmProvider.createInstance(region, SAMPLE_RATE_HZ);
+        }
         JavaSoundManager jsm = new JavaSoundManager();
         jsm.setFm(fmProvider);
         jsm.setPsg(psgProvider);

@@ -19,7 +19,11 @@
 
 package omegadrive.input;
 
+import omegadrive.SystemLoader;
 import omegadrive.joypad.JoypadProvider;
+import omegadrive.system.BaseSystem;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -27,9 +31,10 @@ import java.util.Objects;
 
 public class KeyboardInput extends KeyAdapter {
 
-    protected static KeyboardInput currentAdapter;
+    protected static Logger LOG = LogManager.getLogger(KeyboardInput.class.getSimpleName());
 
     protected JoypadProvider provider;
+    protected SystemLoader.SystemType systemType;
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -41,13 +46,28 @@ public class KeyboardInput extends KeyAdapter {
         keyHandler(provider, e, false);
     }
 
-    public static KeyAdapter createKeyAdapter(JoypadProvider provider) {
+    public static KeyAdapter createKeyAdapter(SystemLoader.SystemType systemType, JoypadProvider provider) {
         Objects.requireNonNull(provider);
-        if (currentAdapter == null) {
-            currentAdapter = new KeyboardInput();
+        Objects.requireNonNull(systemType);
+        KeyboardInput res = null;
+        switch (systemType){
+            case COLECO:
+                res = new ColecoKeyboardInput();
+                break;
+            case MSX:
+                MsxKeyboardInput m = new MsxKeyboardInput();
+                MsxKeyboardInput.currentAdapter = m;
+                res = m;
+                break;
+            case SG_1000: //fall-through
+            case GENESIS://fall-through
+            default:
+               res = new KeyboardInput();
+               break;
         }
-        currentAdapter.provider = provider;
-        return currentAdapter;
+        res.provider = provider;
+        LOG.info("Setting keyAdapter for {}", systemType);
+        return res;
     }
 
     protected static void keyHandler(JoypadProvider joypad, KeyEvent e, boolean pressed) {

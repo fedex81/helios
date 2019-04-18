@@ -64,6 +64,7 @@ public class CartridgeInfoProvider {
     private boolean sramEnabled;
     private long checksum;
     private long computedChecksum;
+    private String sha1;
 
     private String romName;
 
@@ -103,6 +104,10 @@ public class CartridgeInfoProvider {
         return romName;
     }
 
+    public String getSha1() {
+        return sha1;
+    }
+
     public boolean hasCorrectChecksum() {
         return checksum == computedChecksum;
     }
@@ -131,6 +136,7 @@ public class CartridgeInfoProvider {
     private void initChecksum() {
         this.checksum = memoryProvider.readRomByte(CHECKSUM_START_ADDRESS);
         this.computedChecksum = Util.computeChecksum(memoryProvider);
+        this.sha1 = Util.computeSha1Sum(memoryProvider);
 
         //defaults to false
         if (AUTOFIX_CHECKSUM && checksum != computedChecksum) {
@@ -148,6 +154,7 @@ public class CartridgeInfoProvider {
                 Long.toHexString(ramEnd)).append("\n");
         sb.append("SRAM flag: " + sramEnabled).append("\n");
         sb.append("ROM header checksum: " + checksum + ", computed: " + computedChecksum + ", match: " + hasCorrectChecksum());
+        sb.append("\n").append("ROM sha1: " + sha1);
         if (sramEnabled) {
             sb.append("\nSRAM size: " + getSramSizeBytes() + " bytes, start-end: " + Long.toHexString(sramStart) + " - " +
                     Long.toHexString(sramEnd));

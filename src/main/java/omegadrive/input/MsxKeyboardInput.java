@@ -34,14 +34,8 @@ import java.util.Objects;
  */
 public class MsxKeyboardInput extends KeyboardInput {
 
-    public static KeyAdapter createMsxKeyAdapter(JoypadProvider provider) {
-        Objects.requireNonNull(provider);
-        if (currentAdapter == null) {
-            currentAdapter = new MsxKeyboardInput();
-        }
-        currentAdapter.provider = provider;
-        return currentAdapter;
-    }
+    //TODO fix
+    protected static MsxKeyboardInput currentAdapter;
 
     public static MsxKeyboardInput getMsxKeyAdapter(){
         return (MsxKeyboardInput) currentAdapter;

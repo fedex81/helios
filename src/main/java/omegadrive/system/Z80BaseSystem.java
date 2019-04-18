@@ -1,7 +1,7 @@
 /*
- * Sg1000
+ * Z80BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 07/04/19 16:18
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,14 @@ package omegadrive.system;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.sg1k.ColecoBus;
+import omegadrive.bus.sg1k.MsxBus;
+import omegadrive.bus.sg1k.Sg1000Bus;
 import omegadrive.bus.sg1k.Sg1000BusProvider;
 import omegadrive.input.InputProvider;
+import omegadrive.input.KeyboardInput;
+import omegadrive.joypad.ColecoPad;
+import omegadrive.joypad.MsxPad;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
@@ -41,37 +47,54 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.filechooser.FileFilter;
 import java.lang.reflect.InvocationTargetException;
 
-public class Sg1000 extends BaseSystem {
+public class Z80BaseSystem extends BaseSystem {
 
-    private static Logger LOG = LogManager.getLogger(Sg1000.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
 
     protected Z80Provider z80;
-    private Sg1000BusProvider bus;
+    private SystemLoader.SystemType systemType;
 
     public static boolean verbose = false;
 
-    public static SystemProvider createNewInstance(GenesisWindow emuFrame) {
-        return new Sg1000(emuFrame);
+    public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, GenesisWindow emuFrame) {
+        return new Z80BaseSystem(systemType, emuFrame);
     }
 
-    protected Sg1000(boolean isHeadless) throws InvocationTargetException, InterruptedException {
+    protected Z80BaseSystem(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         super(isHeadless);
     }
 
 
-    protected Sg1000(GenesisWindow emuFrame){
+    protected Z80BaseSystem(SystemLoader.SystemType systemType, GenesisWindow emuFrame){
         super(emuFrame);
+        this.systemType = systemType;
     }
 
     @Override
     public void init() {
-        joypad = new TwoButtonsJoypad();
+        switch (systemType){
+            case SG_1000:
+                joypad = new TwoButtonsJoypad();
+                memory = MemoryProvider.createSg1000Instance();
+                bus = new Sg1000Bus();
+                break;
+            case MSX:
+                joypad = new MsxPad();
+                memory = MemoryProvider.createMsxInstance();
+                bus = new MsxBus();
+                break;
+            case COLECO:
+                joypad = new ColecoPad();
+                memory = MemoryProvider.createSg1000Instance();
+                bus = new ColecoBus();
+                break;
+        }
+        initCommon();
+    }
+
+    private void initCommon() {
         inputProvider = InputProvider.createInstance(joypad);
-
-        memory = MemoryProvider.createSg1000Instance();
-        bus = Sg1000BusProvider.createBus();
         vdp = new Sg1000Vdp();
-
         //z80, sound attached later
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(vdp);
@@ -135,17 +158,15 @@ public class Sg1000 extends BaseSystem {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = JavaSoundManager.createPsgSoundProvider(region);
+        sound = JavaSoundManager.createSoundProvider(systemType, region);
         z80 = Z80CoreWrapper.createSg1000Instance(bus);
         bus.attachDevice(sound).attachDevice(z80);
 
         resetAfterRomLoad();
     }
 
-    private void resetAfterRomLoad() {
-        //detect ROM first
-        joypad.init();
-        vdp.init();
+    protected void resetAfterRomLoad() {
+        super.resetAfterRomLoad();
         z80.reset();
     }
 
@@ -212,14 +233,20 @@ public class Sg1000 extends BaseSystem {
     private void runZ80(long counter) {
         if (counter == nextZ80Cycle) {
             int cycleDelay = z80.executeInstruction();
-            bus.handleVdpInterruptsZ80();
+            handleInterrupt();
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
         }
     }
 
+    private void handleInterrupt(){
+        //TODO
+        Sg1000BusProvider sgBus = (Sg1000BusProvider) bus;
+        sgBus.handleVdpInterruptsZ80();
+    }
+
     @Override
     public SystemLoader.SystemType getSystemType() {
-        return SystemLoader.SystemType.SG_1000;
+        return systemType;
     }
 }

@@ -21,6 +21,7 @@ package omegadrive.system;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.gen.GenesisBus;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.GenesisJoypad;
@@ -55,7 +56,8 @@ public class Genesis extends BaseSystem {
 
     private static Logger LOG = LogManager.getLogger(Genesis.class.getSimpleName());
 
-    protected GenesisBusProvider bus;
+    //TODO
+    protected GenesisBusProvider genBus;
     protected Z80Provider z80;
     protected M68kProvider cpu;
 
@@ -92,14 +94,17 @@ public class Genesis extends BaseSystem {
         inputProvider = InputProvider.createInstance(joypad);
 
         memory = MemoryProvider.createGenesisInstance();
-        bus = GenesisBusProvider.createBus();
-        vdp = GenesisVdpProvider.createVdp(bus);
-        cpu = new MC68000Wrapper(bus);
-        z80 = Z80CoreWrapper.createGenesisInstance(bus);
+        //TODO
+        GenesisBus gb = new GenesisBus();
+        genBus = gb;
+        bus = gb;
+        vdp = GenesisVdpProvider.createVdp(genBus);
+        cpu = new MC68000Wrapper(genBus);
+        z80 = Z80CoreWrapper.createGenesisInstance(genBus);
         //sound attached later
         sound = SoundProvider.NO_SOUND;
 
-        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
+        genBus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(cpu).attachDevice(z80);
         reloadKeyListeners();
     }
@@ -120,12 +125,12 @@ public class Genesis extends BaseSystem {
             if (stateHandler.getType() == GenesisStateHandler.Type.LOAD) {
                 stateHandler.loadFmState(sound.getFm());
                 stateHandler.loadVdpState(vdp);
-                stateHandler.loadZ80(z80, bus);
+                stateHandler.loadZ80(z80, genBus);
                 stateHandler.load68k((MC68000Wrapper) cpu, memory);
                 LOG.info("Savestate loaded from: " + stateHandler.getFileName());
             } else {
                 stateHandler.saveFm(sound.getFm());
-                stateHandler.saveZ80(z80, bus);
+                stateHandler.saveZ80(z80, genBus);
                 stateHandler.save68k((MC68000Wrapper) cpu, memory);
                 stateHandler.saveVdp(vdp);
                 int[] data = stateHandler.getData();
@@ -202,7 +207,7 @@ public class Genesis extends BaseSystem {
                     resetCycleCounters(counter);
                     counter = 0;
                     startCycle = System.nanoTime();
-                    bus.newFrame();
+                    genBus.newFrame();
                 }
                 counter++;
             } catch (Exception e) {
@@ -245,7 +250,7 @@ public class Genesis extends BaseSystem {
     //TODO prcessed when 68k is stopped
     private void run68k(long counter) {
         if (counter == next68kCycle) {
-            boolean isFrozen = bus.shouldStop68k();
+            boolean isFrozen = genBus.shouldStop68k();
             boolean canRun = !cpu.isStopped() && !isFrozen;
             int cycleDelay = 1;
             if (canRun) {
@@ -253,7 +258,7 @@ public class Genesis extends BaseSystem {
             }
             //interrupts are processed after the current instruction
             if (!isFrozen) {
-                bus.handleVdpInterrupts68k();
+                genBus.handleVdpInterrupts68k();
             }
             cycleDelay = Math.max(1, cycleDelay);
             next68kCycle += M68K_DIVIDER * cycleDelay;
@@ -263,12 +268,12 @@ public class Genesis extends BaseSystem {
     private void runZ80(long counter) {
         if (counter == nextZ80Cycle) {
             int cycleDelay = 0;
-            boolean running = bus.isZ80Running();
+            boolean running = genBus.isZ80Running();
             if (running) {
                 //halt = nop = 4
 //                cycleDelay = z80.isHalted() ? 4 : z80.executeInstruction();
                 cycleDelay = z80.executeInstruction();
-                bus.handleVdpInterruptsZ80();
+                genBus.handleVdpInterruptsZ80();
             }
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
@@ -277,23 +282,23 @@ public class Genesis extends BaseSystem {
 
     private void runFM(int counter) {
         if (counter % FM_DIVIDER == 0) {
-            bus.getFm().tick(microsPerTick);
+            genBus.getFm().tick(microsPerTick);
         }
     }
 
     protected void initAfterRomLoad() {
-        sound = JavaSoundManager.createSoundProvider(region);
-        bus.attachDevice(sound);
+        sound = JavaSoundManager.createSoundProvider(getSystemType(), region);
+        genBus.attachDevice(sound);
         resetAfterRomLoad();
     }
 
-    private void resetAfterRomLoad() {
+    protected void resetAfterRomLoad() {
         //detect ROM first
-        bus.init();
-        cpu.reset();
         joypad.init();
         vdp.init();
-//        z80.reset();
+        genBus.init();
+        cpu.reset();
+//        z80.reset(); //TODO why?
     }
 
     @Override

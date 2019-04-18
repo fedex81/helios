@@ -177,32 +177,18 @@ public class SystemLoader {
         boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if(isGen){
-            systemProvider = createSystemProvider(SystemType.GENESIS);
+            systemProvider = Genesis.createNewInstance(emuFrame);
         } else if(isSg){
-            systemProvider = createSystemProvider(SystemType.SG_1000);
+            systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, emuFrame);
         } else if(isCv){
-            systemProvider = createSystemProvider(SystemType.COLECO);
+            systemProvider = Z80BaseSystem.createNewInstance(SystemType.COLECO, emuFrame);
         } else if(isMsx){
-            systemProvider = createSystemProvider(SystemType.MSX);
+            systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, emuFrame);
         }
         if(systemProvider == null){
             LOG.error("Unable to find a system to load: " + file.toAbsolutePath());
         }
         return systemProvider;
-    }
-
-    public SystemProvider createSystemProvider(SystemType system){
-        switch (system){
-            case GENESIS:
-                return Genesis.createNewInstance(emuFrame);
-            case COLECO:
-                return Coleco.createNewInstance(emuFrame);
-            case SG_1000:
-                return Sg1000.createNewInstance(emuFrame);
-            case MSX:
-                return Msx.createNewInstance(emuFrame);
-        }
-        return null;
     }
 
     public SystemProvider getSystemProvider() {
