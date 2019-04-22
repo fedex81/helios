@@ -298,7 +298,7 @@ public class Genesis extends BaseSystem {
         vdp.init();
         genBus.init();
         cpu.reset();
-//        z80.reset(); //TODO why?
+        z80.reset(); //TODO confirm this is needed
     }
 
     @Override

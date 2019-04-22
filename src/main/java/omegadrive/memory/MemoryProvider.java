@@ -30,6 +30,7 @@ public class MemoryProvider implements IMemoryProvider {
     public static final int M68K_RAM_SIZE = 0x10000;
     public static final int SG1K_Z80_RAM_SIZE = 0x400;
     public static final int MSX_Z80_RAM_SIZE = 0x4000;
+    public static final int SMS_Z80_RAM_SIZE = 0x2000;
     public static final int CHECKSUM_START_ADDRESS = 0x18E;
 
     private int[] rom;
@@ -53,6 +54,10 @@ public class MemoryProvider implements IMemoryProvider {
 
     public static IMemoryProvider createMsxInstance() {
         return createInstance(new int[1], MSX_Z80_RAM_SIZE);
+    }
+
+    public static IMemoryProvider createSmsInstance() {
+        return createInstance(new int[1], SMS_Z80_RAM_SIZE);
     }
 
 

@@ -45,7 +45,8 @@ public class SystemLoader {
         GENESIS("MD"),
         SG_1000("SG"),
         COLECO("CV"),
-        MSX("MSX")
+        MSX("MSX"),
+        SMS("SMS")
         ;
 
         private String shortName;
@@ -69,9 +70,10 @@ public class SystemLoader {
     public static String[] sgBinaryTypes = {".sg", ".sc"};
     public static String[] cvBinaryTypes = {".col"};
     public static String[] msxBinaryTypes = {".rom"};
+    public static String[] smsBinaryTypes = {".sms"};
 
     public static String[] binaryTypes = Stream.of(
-            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes
+            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes
     ).flatMap(Stream::of).toArray(String[]::new);
 
     public static boolean verbose = false;
@@ -176,6 +178,7 @@ public class SystemLoader {
         boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if(isGen){
             systemProvider = Genesis.createNewInstance(emuFrame);
         } else if(isSg){
@@ -184,6 +187,8 @@ public class SystemLoader {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.COLECO, emuFrame);
         } else if(isMsx){
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, emuFrame);
+        } else if(isSms){
+            systemProvider = Sms.createNewInstance(SystemType.SMS, emuFrame);
         }
         if(systemProvider == null){
             LOG.error("Unable to find a system to load: " + file.toAbsolutePath());

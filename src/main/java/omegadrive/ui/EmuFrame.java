@@ -315,6 +315,21 @@ public class EmuFrame implements GenesisWindow {
         return regionOverride;
     }
 
+    //TODO
+    @Override
+    public void renderScreenLinear(int[] data, String label, VideoMode videoMode) {
+        boolean changed = resizeScreen(videoMode);
+        System.arraycopy(data, 0, pixelsSrc,0, data.length);
+        if (scale > 1) {
+            Dimension ouput = new Dimension((int) (baseScreenSize.width * scale), (int) (baseScreenSize.height * scale));
+            RenderingStrategy.renderNearest(pixelsSrc, pixelsDest, baseScreenSize, ouput);
+        }
+        if (!Strings.isNullOrEmpty(label)) {
+            getFpsLabel().setText(label);
+        }
+        screenLabel.repaint();
+    }
+
     @Override
     public void renderScreen(int[][] data, String label, VideoMode videoMode) {
         if (UI_SCALE_ON_EDT) {

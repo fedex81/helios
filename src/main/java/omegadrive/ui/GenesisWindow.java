@@ -41,6 +41,8 @@ public interface GenesisWindow {
 
     void renderScreen(int[][] data, String label, VideoMode videoMode);
 
+    void renderScreenLinear(int[] data, String label, VideoMode videoMode);
+
     void resetScreen();
 
     void setFullScreen(boolean value);
@@ -77,6 +79,11 @@ public interface GenesisWindow {
 
         @Override
         public void renderScreen(int[][] data, String label, VideoMode videoMode) {
+
+        }
+
+        @Override
+        public void renderScreenLinear(int[] data, String label, VideoMode videoMode) {
 
         }
 

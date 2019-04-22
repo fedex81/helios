@@ -40,7 +40,7 @@ public class MsxAsciiMapper extends AsciiMapperImpl {
     public static final int MAPPER_END_ADDRESS = 0xBFFF;
 
     public static int PAGES_8KB = 4;
-    public static int PAGES_16KB = 4;
+    public static int PAGES_16KB = 2;
 
     private MsxAsciiMapper(int[] rom, AsciiType type) {
         super(rom, type);
@@ -63,7 +63,7 @@ public class MsxAsciiMapper extends AsciiMapperImpl {
 
     //TODO fix ASCII16
     public enum AsciiType { ASCII8,
-//        ASCII16
+        ASCII16
     }
 
     public static AsciiType getMapperType(String mapperName){
@@ -125,10 +125,10 @@ class AsciiMapperImpl implements RomMapper {
 
     private int getPageWrite(long addressL){
         int address = (int) (addressL & 0x7FFF);
-        return pageNum == 4 ? ((address & 0x7800) >> 11) & 3 : ((address & 0x7000) >> 12) & 1;
+        return type == AsciiType.ASCII8 ? ((address & 0x7800) >> 11) & 3 : ((address & 0x7000) >> 12) & 1;
     }
 
     private int getPageRead(int address){
-        return pageNum == 4 ? (address & 0x8000) >> 14 | (address & 0x2000) >> 13 : (address & 0x8000) >> 15;
+        return type == AsciiType.ASCII8 ? (address & 0x8000) >> 14 | (address & 0x2000) >> 13 : (address & 0x8000) >> 15;
     }
 }
