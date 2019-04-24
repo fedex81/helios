@@ -20,9 +20,9 @@ package omegadrive.vdp;
 
 import omegadrive.Device;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.Engine.Z80;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
+import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
  /*
@@ -85,7 +85,7 @@ import omegadrive.vdp.model.VdpMemoryInterface;
  * @author Federico Berti - 2019
  *
  */
-public final class SmsVdp implements BaseVdpProvider
+public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 {
     // --------------------------------------------------------------------------------------------
     // Screen Dimensions
@@ -141,7 +141,7 @@ public final class SmsVdp implements BaseVdpProvider
     /** Status Register */
     private int status;
 
-    private final static int
+    public final static int
             STATUS_VINT      = 0x80, // Frame Interrupt Pending
             STATUS_OVERFLOW  = 0x40, // Sprite Overflow
             STATUS_COLLISION = 0x20, // Sprite Collision
@@ -276,7 +276,7 @@ public final class SmsVdp implements BaseVdpProvider
 
         createCachedImages();
 
-        interruptHandler = VdpInterruptHandler.createSg1000Instance();
+        interruptHandler = VdpInterruptHandler.createInstance(this);
         interruptHandler.setMode(getVideoMode());
     }
 
@@ -307,9 +307,6 @@ public final class SmsVdp implements BaseVdpProvider
         vdpreg[10] = 0;
 
         vScrollLatch = 0;
-
-        Engine.setInterruptLine(false);
-
         isSatDirty = true;
 
         minDirty = TOTAL_TILES;
@@ -334,28 +331,16 @@ public final class SmsVdp implements BaseVdpProvider
         isSatDirty = true;
     }
 
-    /**
-     *  Read Vertical Port
-     *
-     *  @return             VCounter Value
-     */
+    public int getHCount(){
+        return interruptHandler.getHCounterExternal();
+    }
 
-    public final int getVCount()
-    {
-        if (videoMode == NTSC)
-        {
-            if (line > 0xDA) // Values from 00 to DA, then jump to D5-FF
-                return line-6;
-        }
+    public int getVCount(){
+        return interruptHandler.getVCounterExternal();
+    }
 
-        // PAL
-        else
-        {
-            if (line > 0xF2)
-                return line-0x39;
-        }
-
-        return line;
+    public int getStatus() {
+        return status;
     }
 
     /**
@@ -375,8 +360,8 @@ public final class SmsVdp implements BaseVdpProvider
         // Clear b7, b6, b5 when status register read
         status = 0; // other bits never used anyway
 
-        // Clear IRQ Line
-        Engine.setInterruptLine(false);
+        interruptHandler.setHIntPending(false);
+        interruptHandler.setvIntPending(false);
 
         return statuscopy;
     }
@@ -421,15 +406,9 @@ public final class SmsVdp implements BaseVdpProvider
                     // IRQ line if bit 4 of register $00 is set, and it will de-assert the IRQ line
                     // if the same bit is cleared.
                     case 0:
-                        if ((status & STATUS_HINT) != 0)
-                            Engine.setInterruptLine((commandByte & 0x10) != 0);
                         break;
-
                     // Interrupt Control 1
                     case 1:
-                        if (((status & STATUS_VINT) != 0) && (commandByte & 0x20) != 0)
-                            Engine.setInterruptLine(true);
-
                         // By writing here we've updated the height of the sprites and need to update
                         // the sprites on each line
                         if ((commandByte & 3) != (vdpreg[reg] & 3))
@@ -551,54 +530,29 @@ public final class SmsVdp implements BaseVdpProvider
      *
      *  @see http://www.smspower.org/forums/viewtopic.php?t=9366&highlight=chicago
      */
-
-    public final void interrupts(int lineno)
-    {
-        if (lineno <= 192)
-        {
-            // This can cause hangs as interrupts are only taken between instructions,
-            // if the IRQ status flag is set *during* the execution of an instruction the
-            // CPU will be able to read it without the interrupt occurring.
-            //
-            // e.g. Chicago Syndicate on GG
-
-//            if (!Setup.ACCURATE_INTERRUPT_EMULATION && lineno == 192)
-//                status |= STATUS_VINT;
-
-            // Counter Expired = Line Interrupt Pending
-            if (counter == 0)
-            {
-                // Reload Counter
-                counter = vdpreg[10];
-                status |= STATUS_HINT;
-            }
-            // Otherwise Decrement Counter
-            else counter--;
-
-            // Line Interrupts Enabled and Pending. Assert IRQ Line.
-            if (((status & STATUS_HINT) != 0) && ((vdpreg[0] & 0x10) != 0))
-                Engine.setInterruptLine(true);
-        }
-
-        // lineno >= 193
-        else
-        {
-            // Reload counter on every line outside active display + 1
-            counter = vdpreg[10];
-
-            // Frame Interrupts Enabled and Pending. Assert IRQ Line.
-            if (((status & STATUS_VINT) != 0) && ((vdpreg[1] & 0x20) != 0) && (lineno < 224))
-                Engine.setInterruptLine(true);
-
-            // Update the VSCROLL latch for the next active display period
-            if (lineno == Engine.no_of_scanlines - 1)
-                vScrollLatch = vdpreg[9];
-        }
+    public final void handleNewLine(int lineno){
+        status |= interruptHandler.isHIntPending() ? STATUS_HINT : 0;
+        //TODO
+        // Update the VSCROLL latch for the next active display period
+//        if (lineno == Engine.no_of_scanlines - 1)
+//            vScrollLatch = vdpreg[9];
     }
 
     public final void setVBlankFlag()
     {
         status |= STATUS_VINT;
+    }
+
+    public boolean isVINT(){
+        return (vdpreg[1] & 0x20) > 0 && (status & STATUS_VINT) > 0;
+    }
+
+    public boolean isHINT(){
+        return (vdpreg[0] & 0x10) > 0 && (status & STATUS_HINT) > 0;
+    }
+
+    public VdpInterruptHandler getInterruptHandler() {
+        return interruptHandler;
     }
 
     /**
@@ -1184,6 +1138,7 @@ public final class SmsVdp implements BaseVdpProvider
 
     }
 
+
     @Override
     public boolean run(int cycles) {
         line = interruptHandler.getvCounterInternal();
@@ -1198,15 +1153,10 @@ public final class SmsVdp implements BaseVdpProvider
             drawLine(line);
         }
         if (vBlankTrigger) {
-//            System.out.println("Vblank");
-//            setStatusINT(true);
-//            drawScreen();
             setVBlankFlag();
-            forceFullRedraw();
-            Engine.setInterruptLine(true);
-            return true;
         }
-        return false;
+        handleNewLine(line);
+        return vBlankTrigger;
     }
 
     @Override
@@ -1240,5 +1190,10 @@ public final class SmsVdp implements BaseVdpProvider
     public int[][] getScreenData() {
         screenData[0] = display;
         return screenData;
+    }
+
+    @Override
+    public int getHLinesCounter() {
+        return vdpreg[10];
     }
 }

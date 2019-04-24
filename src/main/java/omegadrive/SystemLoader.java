@@ -118,7 +118,6 @@ public class SystemLoader {
     public static SystemLoader getInstance(){
         if(init.compareAndSet(false, true)){
             init();
-            new Exception().printStackTrace();
         }
         return INSTANCE;
     }

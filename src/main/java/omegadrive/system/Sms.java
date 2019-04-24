@@ -151,8 +151,6 @@ public class Sms extends BaseSystem {
         bus.attachDevice(sound).attachDevice(z80);
 
         //TODO
-        Engine.smsBus = (SmsBus) bus;
-        Engine.z80Provider = z80;
         Engine.setSMS();
 
         resetAfterRomLoad();
@@ -193,26 +191,6 @@ public class Sms extends BaseSystem {
             videoMode = vm;
         }
     }
-
-    /**
-     * NTSC, 256x192
-     * -------------
-     * <p>
-     * Lines  Description
-     * <p>
-     * 192    Active display
-     * 24     Bottom border
-     * 3      Bottom blanking
-     * 3      Vertical blanking
-     * 13     Top blanking
-     * 27     Top border
-     * <p>
-     * V counter values
-     * 00-DA, D5-FF
-     * <p>
-     * vdpTicksPerFrame = (NTSC_SCANLINES = ) 262v * (H32_PIXELS =) 342 = 89604
-     * vdpTicksPerSec = 5376240
-     */
 
 
     private void runVdp(long counter) {

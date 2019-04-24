@@ -34,6 +34,8 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
 
     private static Logger LOG = LogManager.getLogger(SmsBus.class);
 
+    private static final boolean verbose = false;
+
     private static int ROM_START = 0;
     private static int ROM_END = 0xBFFF;
     private static int RAM_START = 0xC000;
@@ -114,6 +116,7 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
 
     @Override
     public void writeIoPort(int port, int value) {
+        port &= 0xFF;
         switch (port & 0xC1) {
             // 0x3F IO Port
             // D7 : Port B TH pin output level (1=high, 0=low)
@@ -134,18 +137,18 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
                 if (!oldTH && (getTH(PORT_A) != 0 || getTH(PORT_B) != 0)) {
                     hCounter = getHCount();
                 }
-//                // Rough emulation of Nationalisation bits
-//                else
-//                {
-//                    ioPorts[0] = (value & 0x20) << 1;
-//                    ioPorts[1] = (value & 0x80);
-//
-//                    if (europe == 0) // not european system
-//                    {
-//                        ioPorts[0] = ~ioPorts[0];
-//                        ioPorts[1] = ~ioPorts[1];
-//                    }
-//                }
+                // Rough emulation of Nationalisation bits
+                else
+                {
+                    ioPorts[0] = (value & 0x20) << 1;
+                    ioPorts[1] = (value & 0x80);
+
+                    if (europe == 0) // not european system
+                    {
+                        ioPorts[0] = ~ioPorts[0];
+                        ioPorts[1] = ~ioPorts[1];
+                    }
+                }
             }
             break;
 
@@ -164,12 +167,20 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
             case 0x41:
                 soundProvider.getPsg().write(value);
                 break;
+            default:
+                if(port == 0xDE || port == 0xDF){ //legacy SG1000/keyboard stuff
+                    LOG.info("Ignored writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
+                    return;
+                }
+                LOG.warn("writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
+                break;
         }
     }
 
     @Override
     public int readIoPort(int port)
     {
+        port &= 0xFF;
         // Game Gear Serial Ports (not fully emulated)
         if (Engine.is_gg && port < 0x07)
         {
@@ -234,6 +245,9 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
             // D0 : Port B LEFT pin input
             case 0xC1:
                 return (joypadProvider.readDataRegister2() & 0x3F) | ioPorts[0] | ioPorts[1];
+            default:
+                LOG.warn("readPort: {}", Integer.toHexString(port));
+                break;
         }
 
         // Default Value is 0xFF
@@ -258,16 +272,8 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
     //     13 : F9-FF : Left border
     // --------------------------------------------------------------------------------------------
 
-    private final int getHCount()
-    {
-        int v = 0;
-        //TODO
-//        int pixels = (Z80.getCycle() * Vdp.SMS_X_PIXELS) / Engine.cyclesPerLine;
-//        v = ((pixels - 8) >> 1);
-//        if (v > 0x93)
-//            v += 0xE9 - 0x94;
-
-        return v & 0xFF;
+    private final int getHCount() {
+        return vdp.getHCount();
     }
 
     // --------------------------------------------------------------------------------------------
@@ -311,12 +317,12 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
 
     @Override
     public void handleVdpInterruptsZ80() {
-        //tODO
-//        boolean set = vdp.getStatusINT() && vdp.getGINT();
-//        z80Provider.interrupt(set);
-//        if(prev != set){
-//            LOG.info(vdp.getInterruptHandler().getStateString("Vint: " + set));
-//            prev = set;
-//        }
+        boolean set = vdp.isVINT() || vdp.isHINT();
+        z80Provider.interrupt(set);
+        if(verbose && prev != set){
+            LOG.info(vdp.getInterruptHandler().getStateString("INT: " + set));
+            LOG.info("Vint: {}, Hint: {}", vdp.isVINT(), vdp.isHINT());
+            prev = set;
+        }
     }
 }

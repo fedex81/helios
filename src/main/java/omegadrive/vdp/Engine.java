@@ -32,20 +32,9 @@ public class Engine {
     public static boolean is_sms = true;
     public static int no_of_scanlines = BaseVdpProvider.NTSC_SCANLINES; //or PAL
 
-    public static SmsBus smsBus;
-    public static Z80Provider z80Provider;
-
     /** Game Gear Start Button */
     public static int ggstart;
 
-    static class Z80 {
-        private static boolean interruptLine;
-    }
-
-    public static void setInterruptLine(boolean value){
-        Z80.interruptLine = value;
-        z80Provider.interrupt(value);
-    }
 
     /**
      *  Set SMS Mode
