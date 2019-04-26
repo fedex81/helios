@@ -94,7 +94,7 @@ public class Sg1000Vdp implements Tms9918a {
     public void init() {
         mem = new int[RAM_SIZE];
         screenData = new int[VDP_WIDTH][VDP_HEIGHT];
-        interruptHandler = VdpInterruptHandler.createSg1000Instance();
+        interruptHandler = SmsVdpInterruptHandler.createSg1000Instance();
         reset();
     }
 

@@ -276,7 +276,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
         createCachedImages();
 
-        interruptHandler = VdpInterruptHandler.createInstance(this);
+        interruptHandler = SmsVdpInterruptHandler.createInstance(this);
         interruptHandler.setMode(getVideoMode());
     }
 

@@ -48,46 +48,31 @@ public class VdpInterruptHandler {
      */
     private static Logger LOG = LogManager.getLogger(VdpInterruptHandler.class.getSimpleName());
 
-    public static int COUNTER_LIMIT = 0x1FF;
-    public static int VBLANK_CLEAR = COUNTER_LIMIT;
-    public static int VINT_SET_ON_HCOUNTER_VALUE = 1; //TODO setting this to 1 breaks Spot,
+    public static final int COUNTER_LIMIT = 0x1FF;
+    public static final int VBLANK_CLEAR = COUNTER_LIMIT;
+    public static int VINT_SET_ON_HCOUNTER_VALUE = 1; // TODO SMS = 0x1EA??
 
     protected int hCounterInternal;
     protected int vCounterInternal;
-    protected int hLinePassed = 0;
+    public int hLinePassed = 0;
     private int pixelNumber = 0;
     private int slotNumber = 0;
 
     private VideoMode videoMode;
     protected VdpCounterMode vdpCounterMode;
-    private VdpHLineProvider vdpHLineProvider;
+    protected VdpHLineProvider vdpHLineProvider;
 
-    private boolean vBlankSet;
+    protected boolean vBlankSet;
     private boolean hBlankSet;
     private boolean vIntPending;
-    private boolean hIntPending;
+    protected boolean hIntPending;
 
     private Random rnd = new Random();
 
     protected static boolean veryVerbose = false || Genesis.verbose;
     protected static boolean verbose = false || veryVerbose;
 
-    private boolean eventFlag;
-
-    static private Predicate<VdpInterruptHandler> fn = h -> h.hCounterInternal == 0 && h.vCounterInternal == h.vdpCounterMode.vBlankSet;
-
-    //TODO fix
-    public static VdpInterruptHandler createSg1000Instance() {
-        VdpInterruptHandler handler = new VdpInterruptHandler() {
-            @Override
-            public boolean isDrawFrameSlot() {
-                return fn.test(this);
-            }
-        };
-        handler.vdpHLineProvider = VdpHLineProvider.NO_PROVIDER;
-        handler.reset();
-        return handler;
-    }
+    protected boolean eventFlag;
 
     public static VdpInterruptHandler createInstance(VdpHLineProvider vdpHLineProvider) {
         VdpInterruptHandler handler = new VdpInterruptHandler();
@@ -104,7 +89,7 @@ public class VdpInterruptHandler {
         }
     }
 
-    private void reset() {
+    protected void reset() {
         hCounterInternal = 0;
         vCounterInternal = 0;
         pixelNumber = hCounterInternal;
@@ -143,9 +128,9 @@ public class VdpInterruptHandler {
      * 7) if VINT is enabled and VINT flag is set, interrupt control asserts /IPL2 and /IPL1.
      */
     private int increaseVCounterInternal() {
+        handleHLinesCounterDecrement();
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
-        handleHLinesCounterDecrement();
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
             eventFlag = true;
@@ -190,7 +175,7 @@ public class VdpInterruptHandler {
         return hCounterInternal;
     }
 
-    private void handleHLinesCounterDecrement() {
+    protected void handleHLinesCounterDecrement() {
         hLinePassed = vBlankSet ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
         if (hLinePassed < 0) {
             hIntPending = true;

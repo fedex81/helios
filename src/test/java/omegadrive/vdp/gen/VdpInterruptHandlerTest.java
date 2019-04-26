@@ -111,7 +111,7 @@ public class VdpInterruptHandlerTest {
     }
 
 
-    private void hLinesCounterBasic(VdpInterruptHandler h, VideoMode mode) {
+    public static void hLinesCounterBasic(VdpInterruptHandler h, VideoMode mode) {
         h.setMode(mode);
         VdpCounterMode counterMode = VdpCounterMode.getCounterMode(mode);
 
@@ -203,7 +203,7 @@ public class VdpInterruptHandlerTest {
     }
 
 
-    private void printMsg(String msg) {
+    private static void printMsg(String msg) {
         if (verbose) {
             System.out.println(msg);
         }
