@@ -23,12 +23,16 @@ import afu.org.checkerframework.checker.oigj.qual.O;
 import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.vdp.Engine;
 import omegadrive.vdp.Sg1000Vdp;
 import omegadrive.vdp.SmsVdp;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Arrays;
 
 public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
 
@@ -36,19 +40,31 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
 
     private static final boolean verbose = false;
 
-    private static int ROM_START = 0;
-    private static int ROM_END = 0xBFFF;
-    private static int RAM_START = 0xC000;
-    private static int RAM_END = 0xFFFF;
+    private static final int ROM_START = 0;
+    private static final int ROM_END = 0xBFFF;
+    private static final int RAM_START = 0xC000;
+    private static final int RAM_END = 0xFFFF;
 
-    private static int RAM_SIZE = 0x2000;  //8Kb
-    private static int ROM_SIZE = ROM_END + 1; //48kb
+    private static final int RAM_SIZE = 0x2000;  //8Kb
+    private static final int RAM_MASK = RAM_SIZE - 1;
+    private static final int ROM_SIZE = ROM_END + 1; //48kb
+
+    private static final int MAPPING_CONTROL_ADDRESS = 0xFFFC;
 
     public SmsVdp vdp;
 
     private int lastDE;
     private int[] rom;
     private int[] ram;
+
+    /** Memory frame registers */
+    private int[] frameReg = new int[FRAME_REG_DEFAULT.length];
+    private int mappingControl = 0;
+    private int numPages = 2; //32kb default
+    private static final int[] FRAME_REG_DEFAULT = {0,1,0};
+
+    // 0 -> 0, 1 -> 24, 2 -> 16, 3 -> 8
+    private static final int[] bankShiftMap = {0, 24, 16, 8};
 
     /** European / Domestic System */
     private static int europe = 0x40;
@@ -75,15 +91,14 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
         ioPorts = new int[10];
         ioPorts[PORT_A + IO_TH_INPUT] = 1;
         ioPorts[PORT_B + IO_TH_INPUT] = 1;
+        frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
+        this.rom = memoryProvider.getRomData();
+        this.ram = memoryProvider.getRamData();
+        this.numPages = rom.length >> 14;
     }
 
     @Override
     public Sg1000BusProvider attachDevice(Device device) {
-        if (device instanceof IMemoryProvider) {
-            IMemoryProvider memory = (IMemoryProvider) device;
-            this.rom = memory.getRomData();
-            this.ram = memory.getRamData();
-        }
         if (device instanceof SmsVdp) {
             this.vdp = (SmsVdp) device;
         }
@@ -93,14 +108,17 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
 
     @Override
     public long read(long addressL, Size size) {
-        int address = (int) addressL;
+        int address = (int) (addressL & 0xFFFF);
         if (size != Size.BYTE) {
             LOG.error("Unexpected read, addr : {} , size: {}", address, size);
             return 0xFF;
         }
-        if (address <= ROM_END) {
-            return memoryProvider.readRomByte(address);
-        } else if (address >= RAM_START && address <= RAM_END) {
+        int page = (address >> 14);
+        if(page < FRAME_REG_DEFAULT.length) { //rom
+            int block16k = frameReg[page] << 14;
+            int newAddr = block16k + (address & 0x3FFF);
+            return memoryProvider.readRomByte(newAddr);
+        } else if (address >= RAM_START && address <= RAM_END) { //ram
             address &= RAM_SIZE - 1;
             return memoryProvider.readRamByte(address);
         }
@@ -109,9 +127,31 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
     }
 
     @Override
-    public void write(long address, long data, Size size) {
-        address &= RAM_SIZE - 1;
-        memoryProvider.writeRamByte((int) address, (int) (data & 0xFF));
+    public void write(long addressL, long dataL, Size size) {
+        int address = (int) (addressL & RAM_MASK);
+        int data = (int) (dataL & 0xFF);
+        memoryProvider.writeRamByte(address, data);
+        if (addressL >= MAPPING_CONTROL_ADDRESS) {
+            mappingRegisters(addressL, data);
+        }
+    }
+
+    private void mappingRegisters(long address, int data){
+        int val = (int) (address & 3);
+        switch (val){
+            case 0:
+                mappingControl = data;
+                break;
+            case 1:
+            case 2:
+            case 3:
+                int frameRegNum = val - 1;
+                int bankShift = bankShiftMap[mappingControl & 3];
+                data = (data + bankShift) % numPages;
+                frameReg[frameRegNum] = data;
+                break;
+        }
+        LogHelper.printLevel(LOG, Level.INFO,"writeMappingReg: {} , data: {}", address, data, verbose);
     }
 
     @Override
@@ -172,7 +212,7 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
                     LOG.info("Ignored writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
                     return;
                 }
-                LOG.warn("writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
+                LOG.warn("Unexpected writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
                 break;
         }
     }
@@ -246,7 +286,7 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
             case 0xC1:
                 return (joypadProvider.readDataRegister2() & 0x3F) | ioPorts[0] | ioPorts[1];
             default:
-                LOG.warn("readPort: {}", Integer.toHexString(port));
+                LOG.warn("Unexpected readPort: {}", Integer.toHexString(port));
                 break;
         }
 
