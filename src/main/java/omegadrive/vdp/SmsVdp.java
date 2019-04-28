@@ -522,27 +522,6 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         location++;
     }
 
-    /**
-     *  Generate VDP Interrupts.
-     *  Assert the IRQ line as necessary for a particular scanline.
-     *
-     *  @param  lineno  Line to check for interrupts
-     *
-     *  @see http://www.smspower.org/forums/viewtopic.php?t=9366&highlight=chicago
-     */
-    public final void handleNewLine(int lineno){
-        status |= interruptHandler.isHIntPending() ? STATUS_HINT : 0;
-        //TODO
-        // Update the VSCROLL latch for the next active display period
-//        if (lineno == Engine.no_of_scanlines - 1)
-//            vScrollLatch = vdpreg[9];
-    }
-
-    public final void setVBlankFlag()
-    {
-        status |= STATUS_VINT;
-    }
-
     public boolean isVINT(){
         return (vdpreg[1] & 0x20) > 0 && (status & STATUS_VINT) > 0;
     }
@@ -1150,12 +1129,14 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         int h = getVideoMode().getDimension().height;
         if(line != newLine && !vBlank && line < h){
 //            System.out.println("DrawLine: " + line);
+            if(line == 0){
+                vScrollLatch = vdpreg[9];
+            }
             drawLine(line);
         }
-        if (vBlankTrigger) {
-            setVBlankFlag();
-        }
-        handleNewLine(line);
+        //http://www.smspower.org/forums/viewtopic.php?t=9366&highlight=chicago
+        status |= vBlankTrigger ? STATUS_VINT : 0;
+        status |= interruptHandler.isHIntPending() ? STATUS_HINT : 0;
         return vBlankTrigger;
     }
 

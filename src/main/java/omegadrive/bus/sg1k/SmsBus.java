@@ -209,7 +209,7 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
                 break;
             default:
                 if(port == 0xDE || port == 0xDF){ //legacy SG1000/keyboard stuff
-                    LOG.info("Ignored writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
+//                    LOG.debug("Ignored writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
                     return;
                 }
                 LOG.warn("Unexpected writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
