@@ -1,3 +1,21 @@
+## 19.0429
+sg1000: add inital support + plenty of fixes
+coleco: add initial support + plenty of fixes
+msx: add initial support + plenty of fixes
+sms: add initial support + plenty of fixes
+
+emu: rename project to ... helios
+emu: big infra rewrite to accomodate new systems
+emu: load bios at startup if necessary
+
+68k: fix movep.l issue
+68k: fix flags for shift/rotate instructions when shift value = 0
+msx: add ay38910 psg
+msx: add carthw database
+sound: default to 44.1khz
+tms: add mode3
+
+
 ## 19.0217
 * 68k: update 68k lib to latest and cleanup
 * emu: reduce gc and perf tweaks
