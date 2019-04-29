@@ -21,9 +21,12 @@ Open a prompt/terminal and run:
 
 # Gallery
 
-<img src="site/super_uwol.png" width="300">
+<img src="site/super_uwol.png" width="300">    <img src="site/astro_force.png" width="300">
 
-[SG-1000 Super Uwol](http://www.mojontwins.com/juegos_mojonos/super-uwol-sg-1000)
+[SG-1000 Super Uwol](http://www.mojontwins.com/juegos_mojonos/super-uwol-sg-1000)  
+[SMS Astro Force](http://www.smspower.org/Homebrew/AstroForce-SMS) 
+
+
 
 
 # Credits
