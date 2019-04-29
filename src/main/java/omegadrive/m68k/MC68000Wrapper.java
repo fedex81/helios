@@ -141,6 +141,11 @@ public class MC68000Wrapper implements M68kProvider {
                 super.reset();
                 resetExternal(); //TODO why?
             }
+
+            @Override
+            public void stop() {
+                setStop(true);
+            }
         };
     }
 
