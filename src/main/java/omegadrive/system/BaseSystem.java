@@ -326,7 +326,13 @@ public abstract class BaseSystem implements SystemProvider {
         canRenderScreen = true;
     }
 
+    int counter = 0;
+
     protected void handleVdpDumpScreenData() {
+//        counter++;
+//        if(counter > 500 && counter % 60 == 0){
+//            vdpDumpScreenData = true;
+//        }
         if (vdpDumpScreenData) {
             vdp.dumpScreenData();
             vdpDumpScreenData = false;
