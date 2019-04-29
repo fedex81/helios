@@ -1,6 +1,14 @@
 # Helios
 
-A Java-based Sega Mega Drive/Genesis emulator.
+A Java-based multi-system emulator.
+
+Initially created as a Sega Megadrive/Genesis and then evolved to emulate
+the following systems are currently emulated:
+- Sega Megadrive/Genesis
+- Sega Sg-1000
+- Colecovision
+- MSX v1
+- Sega Master System
 
 # How to Run
 Requires java 8+ installed.
@@ -26,8 +34,13 @@ YM2612 core:
 Stephan Dittrich (original): https://segaretro.org/JEnesis  
 from here: https://github.com/fadookie/gme_p5
 	
-PSG core:  
+SN76489 core:
+SMS VDP:
 Chris White: http://javagear.sourceforge.net/source-repository.html
+
+AY38910 core:
+TMS9918a VDP:
+Tjitze Rienstra: https://github.com/tjitze/TMSX
 
 # License
 Released under GPL v3.0
