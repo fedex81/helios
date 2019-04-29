@@ -21,26 +21,21 @@ Open a prompt/terminal and run:
 
 # Credits
 
-Initially based on the Genefusto emulator by DarkMoe:  
-https://github.com/DarkMoe/genefusto
+Initially based on the [Genefusto](https://github.com/DarkMoe/genefusto) emulator by DarkMoe.
 
-M68k core:  
-https://github.com/tonyheadford/m68k
+Tony Headford for his [M68k](https://github.com/tonyheadford/m68k) core.
 
-Z80 core:  
-https://github.com/jsanchezv/Z80Core
+J. Sanchez for his [Z80](https://github.com/jsanchezv/Z80Core) core.
 
-YM2612 core:   
-Stephan Dittrich (original): https://segaretro.org/JEnesis  
-from here: https://github.com/fadookie/gme_p5
-	
-SN76489 core:
-SMS VDP:
-Chris White: http://javagear.sourceforge.net/source-repository.html
+S. Dallongeville for his [YM2612](https://github.com/rofl0r/gens) core from the Gens project.
 
-AY38910 core:
-TMS9918a VDP:
-Tjitze Rienstra: https://github.com/tjitze/TMSX
+Chris White for his JavaGear project and in particular:
+- [SN76489](http://javagear.sourceforge.net/source-repository.html)
+- [SMS VDP](http://javagear.sourceforge.net/source-repository.html)
+
+Tjitze Rienstra for his TMSX project and in particular:
+- [AY38910](https://github.com/tjitze/TMSX)
+- [TMS9918a VDP](https://github.com/tjitze/TMSX)
 
 # License
 Released under GPL v3.0
