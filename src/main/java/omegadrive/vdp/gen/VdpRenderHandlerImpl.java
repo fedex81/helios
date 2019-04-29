@@ -660,9 +660,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
                 vramOffset = isPlaneA ? hScrollBase : hScrollBase + 2;
                 break;
             case 0b10:
-//                every long scrolls 8 pixels
-                //((line / 8) * 32) = line >> 3 << 5
-                int scrollLine = hScrollBase + (line << 2);    // 32 bytes x 8 scanlines
+//                every long scrolls 8 pixels, 32 bytes x 8 scanlines
+                int scrollLine = hScrollBase + ((line >> 3) << 5); //do not simplify the shift
                 vramOffset = isPlaneA ? scrollLine : scrollLine + 2;
                 break;
             case 0b01:
