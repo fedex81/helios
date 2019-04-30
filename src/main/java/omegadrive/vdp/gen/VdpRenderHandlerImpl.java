@@ -633,8 +633,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             return fullScreenVerticalOffset;
         }
         //VS == 1 -> 2 cell scroll
-        //(pixels/16) * 4 = pixel >> 2
-        int scrollLine = VS == 1 ? pixel >> 2 : 0;
+        int scrollLine = VS == 1 ? (pixel >> 4) << 2 : 0; //do not reduce the shift
         int vsramOffset = isPlaneA ? scrollLine : scrollLine + 2;
         int scrollDataVer = memoryInterface.readVsramWord(vsramOffset);
 
