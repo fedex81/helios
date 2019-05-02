@@ -46,7 +46,7 @@ public class MC68000Helper {
         return sb;
     }
 
-    private static String dumpOp(Cpu cpu, int pc) {
+    public static String dumpOp(Cpu cpu, int pc) {
         return dumpOp(new StringBuilder(), cpu, pc).toString();
     }
 

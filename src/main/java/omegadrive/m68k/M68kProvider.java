@@ -34,4 +34,8 @@ public interface M68kProvider extends Device {
     boolean raiseInterrupt(int level);
 
     int runInstruction();
+
+    default String getInfo(){
+        return "NOT SUPPORTED";
+    }
 }

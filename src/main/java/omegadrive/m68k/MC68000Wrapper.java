@@ -115,6 +115,11 @@ public class MC68000Wrapper implements M68kProvider {
         m68k.reset();
     }
 
+    @Override
+    public String getInfo() {
+        return MC68000Helper.dumpOp(m68k, currentPC);
+    }
+
     public MC68000 getM68k() {
         return m68k;
     }
