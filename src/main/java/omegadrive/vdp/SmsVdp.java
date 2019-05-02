@@ -19,11 +19,17 @@
 package omegadrive.vdp;
 
 import omegadrive.Device;
+import omegadrive.system.SystemProvider;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
+
+import static omegadrive.util.RegionDetector.Region.EUROPE;
+import static omegadrive.util.RegionDetector.Region.JAPAN;
+import static omegadrive.util.RegionDetector.Region.USA;
 
  /*
     This file is part of JavaGear.
@@ -96,7 +102,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
             PAL = 1;
 
     /** NTSC / PAL Emulation */
-    public static int videoMode = NTSC;
+    public static int palFlag = NTSC;
 
     /** X Pixels, including blanking */
     public final static int SMS_X_PIXELS = 342;
@@ -248,6 +254,9 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     // --------------------------------------------------------------------------------------------
 
     private VdpInterruptHandler interruptHandler;
+    private SystemProvider systemProvider;
+    private VideoMode videoMode;
+    private RegionDetector.Region region;
 
     /**
      *  Vdp Constructor.
@@ -255,8 +264,9 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
      *  @param d    Pointer to Generated Display
      */
 
-    public SmsVdp(int[] d)
+    public SmsVdp(SystemProvider systemProvider, int[] d)
     {
+        this.systemProvider = systemProvider;
         this.display = d;
 
         // 16K of Video RAM
@@ -276,7 +286,9 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
         createCachedImages();
 
+        region = systemProvider.getRegion();
         interruptHandler = SmsVdpInterruptHandler.createInstance(this);
+        resetVideoMode(true);
         interruptHandler.setMode(getVideoMode());
     }
 
@@ -294,7 +306,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         counter = 0;
         status = 0;
         operation = 0;
-        vdpreg[0] = 0;
+        vdpreg[0] = 4;  //m2 = 0, m4 = 1
         vdpreg[1] = 0;
         vdpreg[2] = 0x0E;       // B1-B3 high on startup
         vdpreg[3] = 0;
@@ -312,7 +324,44 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         minDirty = TOTAL_TILES;
         maxDirty = -1;
 
+        region = systemProvider.getRegion();
+        resetVideoMode(true);
         interruptHandler.setMode(getVideoMode());
+    }
+
+    public void setRegion(RegionDetector.Region region) {
+        this.region = region;
+    }
+
+    public void resetVideoMode(boolean force) {
+        //m4 | m3 | m2 | m1
+        int data = (vdpreg[0] & 4) << 1 | (vdpreg[1] & 0x8) | (vdpreg[0] & 2) | (vdpreg[1] & 0xF) >> 4;
+        VideoMode newVideoMode;
+        switch (data){
+            case 8:
+            case 10:
+                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V24 :
+                        (region == USA ? VideoMode.NTSCU_H32_V24 : VideoMode.NTSCJ_H32_V24);
+                break;
+            case 14:
+                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V30 :
+                        (region == USA ? VideoMode.NTSCU_H32_V30 : VideoMode.NTSCJ_H32_V30);
+                break;
+            case 11:
+                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V28 :
+                        (region == USA ? VideoMode.NTSCU_H32_V28 : VideoMode.NTSCJ_H32_V30);
+                break;
+            default:
+                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V24 :
+                        (region == USA ? VideoMode.NTSCU_H32_V24 : VideoMode.NTSCJ_H32_V24);
+
+        }
+        if (videoMode != newVideoMode || force) {
+            this.videoMode = newVideoMode;
+            LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
+            interruptHandler.setMode(videoMode);
+            palFlag = videoMode.isPal() ? PAL : NTSC;
+        }
     }
 
     /**
@@ -1077,7 +1126,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     {
         int state[] = new int[3 + vdpreg.length + CRAM.length];
 
-        state[0] = videoMode | (status << 8) | (firstByte ? (1 << 16) : 0) | (commandByte << 24);
+        state[0] = palFlag | (status << 8) | (firstByte ? (1 << 16) : 0) | (commandByte << 24);
         state[1] = location | (operation << 16) | (readBuffer << 24);
         state[2] = counter | (vScrollLatch << 8) | (line << 16);
 
@@ -1090,7 +1139,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     public void setState(int[] state)
     {
         int temp = state[0];
-        videoMode = temp & 0xFF;
+        palFlag = temp & 0xFF;
         status = (temp >> 8) & 0xFF;
         firstByte = ((temp >> 16) & 0xFF) != 0;
         commandByte = (temp >> 24) & 0xFF;
@@ -1157,7 +1206,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
     @Override
     public VideoMode getVideoMode() {
-        return VideoMode.NTSCJ_H32_V24;
+        return videoMode;
     }
 
     @Override

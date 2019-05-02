@@ -45,6 +45,8 @@ public enum VdpCounterMode {
     NTSCU_H40_V30(VideoMode.NTSCU_H40_V30),
 
     NTSCJ_H32_V24(VideoMode.NTSCJ_H32_V24),
+    NTSCU_H32_V24(VideoMode.NTSCU_H32_V24),
+    PAL_H32_V24(VideoMode.PAL_H32_V24),
     ;
 
     private static EnumSet<VdpCounterMode> values = EnumSet.allOf(VdpCounterMode.class);

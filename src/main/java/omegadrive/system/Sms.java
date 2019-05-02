@@ -81,7 +81,7 @@ public class Sms extends BaseSystem {
 
     private void initCommon() {
         inputProvider = InputProvider.createInstance(joypad);
-        vdp = new SmsVdp(display);
+        vdp = new SmsVdp(this, display);
         //z80, sound attached later
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(vdp);
@@ -90,7 +90,13 @@ public class Sms extends BaseSystem {
 
     @Override
     protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOvr) {
-        return RegionDetector.Region.JAPAN;
+        RegionDetector.Region romRegion = RegionDetector.Region.JAPAN;
+        RegionDetector.Region ovrRegion = RegionDetector.getRegion(regionOvr);
+        if (ovrRegion != null && ovrRegion != romRegion) {
+            LOG.info("Setting region override from: " + romRegion + " to " + ovrRegion);
+            romRegion = ovrRegion;
+        }
+        return romRegion;
     }
 
     @Override

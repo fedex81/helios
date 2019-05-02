@@ -44,7 +44,11 @@ public enum VideoMode {
     NTSCU_H40_V30(USA, H40, V30_CELL),
     NTSCJ_H40_V30(JAPAN, H40, V30_CELL),
 
-    NTSCJ_H32_V24(JAPAN, H32, V24_CELL);
+    //SMS, SG-1000
+    NTSCJ_H32_V24(JAPAN, H32, V24_CELL),
+    NTSCU_H32_V24(USA, H32, V24_CELL),
+    PAL_H32_V24(EUROPE, H32, V24_CELL),
+    ;
 
     private static Logger LOG = LogManager.getLogger(VideoMode.class.getSimpleName());
 
