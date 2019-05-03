@@ -86,6 +86,9 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
     /** Horizontal Counter Latch */
     private int hCounter;
 
+    /** Game Gear Start Button */
+    public static int ggstart; //TODO
+
     @Override
     public void init() {
         ioPorts = new int[10];
@@ -228,7 +231,7 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
             {
                 // GameGear (Start Button and Nationalisation)
                 case 0x00:
-                    return (Engine.ggstart & 0xBF) | europe;
+                    return (ggstart & 0xBF) | europe;
 
                 // GG Serial Communication Ports  -
                 // Return 0 for now as "OutRun" gets stuck in a loop by returning 0xFF

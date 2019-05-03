@@ -30,11 +30,6 @@ public class Engine {
 
     public static boolean is_gg = false;
     public static boolean is_sms = true;
-    public static int no_of_scanlines = BaseVdpProvider.NTSC_SCANLINES; //or PAL
-
-    /** Game Gear Start Button */
-    public static int ggstart;
-
 
     /**
      *  Set SMS Mode
@@ -47,6 +42,25 @@ public class Engine {
 
         SmsVdp.h_start = 0;
         SmsVdp.h_end   = 32;
+
+//        emuWidth = 256;
+//        emuHeight = 192;
+    }
+
+    /**
+     *  Set GG Mode
+     */
+
+    public static void setGG()
+    {
+        is_gg  = true;
+        is_sms = false;
+
+        SmsVdp.h_start = 5;
+        SmsVdp.h_end   = 27;
+
+//        emuWidth = 160;
+//        emuHeight = 144;
     }
 
 

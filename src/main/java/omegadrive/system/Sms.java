@@ -158,6 +158,7 @@ public class Sms extends BaseSystem {
 
         //TODO
         Engine.setSMS();
+//        Engine.setGG();
 
         resetAfterRomLoad();
     }
