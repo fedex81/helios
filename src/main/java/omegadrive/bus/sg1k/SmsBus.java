@@ -19,22 +19,20 @@
 
 package omegadrive.bus.sg1k;
 
-import afu.org.checkerframework.checker.oigj.qual.O;
 import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.util.LogHelper;
+import omegadrive.bus.mapper.RomMapper;
+import omegadrive.bus.mapper.SmsMapper;
 import omegadrive.util.Size;
 import omegadrive.vdp.Engine;
-import omegadrive.vdp.Sg1000Vdp;
 import omegadrive.vdp.SmsVdp;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Arrays;
-
-public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
+/**
+ * //TODO default to SEGA, use a romList to detect korea and codies
+ */
+public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider, RomMapper {
 
     private static Logger LOG = LogManager.getLogger(SmsBus.class);
 
@@ -42,29 +40,19 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
 
     private static final int ROM_START = 0;
     private static final int ROM_END = 0xBFFF;
-    private static final int RAM_START = 0xC000;
-    private static final int RAM_END = 0xFFFF;
+    public static final int RAM_START = 0xC000;
+    public static final int RAM_END = 0xFFFF;
 
-    private static final int RAM_SIZE = 0x2000;  //8Kb
-    private static final int RAM_MASK = RAM_SIZE - 1;
+    public static final int RAM_SIZE = 0x2000;  //8Kb
+    public static final int RAM_MASK = RAM_SIZE - 1;
     private static final int ROM_SIZE = ROM_END + 1; //48kb
 
-    private static final int MAPPING_CONTROL_ADDRESS = 0xFFFC;
+    public static final int SEGA_MAPPING_CONTROL_ADDRESS = 0xFFFC;
+    public static final int KOREA_MAPPING_CONTROL_ADDRESS = 0xA000;
 
-    public SmsVdp vdp;
-
-    private int lastDE;
-    private int[] rom;
-    private int[] ram;
-
-    /** Memory frame registers */
-    private int[] frameReg = new int[FRAME_REG_DEFAULT.length];
-    private int mappingControl = 0;
-    private int numPages = 2; //32kb default
-    private static final int[] FRAME_REG_DEFAULT = {0,1,0};
-
-    // 0 -> 0, 1 -> 24, 2 -> 16, 3 -> 8
-    private static final int[] bankShiftMap = {0, 24, 16, 8};
+    private SmsVdp vdp;
+    private RomMapper mapper;
+    private SmsMapper smsMapper;
 
     /** European / Domestic System */
     private static int europe = 0x40;
@@ -94,10 +82,8 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
         ioPorts = new int[10];
         ioPorts[PORT_A + IO_TH_INPUT] = 1;
         ioPorts[PORT_B + IO_TH_INPUT] = 1;
-        frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
-        this.rom = memoryProvider.getRomData();
-        this.ram = memoryProvider.getRamData();
-        this.numPages = rom.length >> 14;
+        smsMapper = SmsMapper.createInstance(memoryProvider);
+        mapper = smsMapper.setupRomMapper(SmsMapper.Type.SEGA, mapper);
     }
 
     @Override
@@ -111,50 +97,33 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider {
 
     @Override
     public long read(long addressL, Size size) {
-        int address = (int) (addressL & 0xFFFF);
-        if (size != Size.BYTE) {
-            LOG.error("Unexpected read, addr : {} , size: {}", address, size);
-            return 0xFF;
-        }
-        int page = (address >> 14);
-        if(page < FRAME_REG_DEFAULT.length) { //rom
-            int block16k = frameReg[page] << 14;
-            int newAddr = block16k + (address & 0x3FFF);
-            return memoryProvider.readRomByte(newAddr);
-        } else if (address >= RAM_START && address <= RAM_END) { //ram
-            address &= RAM_SIZE - 1;
-            return memoryProvider.readRamByte(address);
-        }
-        LOG.error("Unexpected Z80 memory read: " + Long.toHexString(address));
-        return 0xFF;
+        return mapper.readData(addressL, size);
     }
 
     @Override
     public void write(long addressL, long dataL, Size size) {
-        int address = (int) (addressL & RAM_MASK);
-        int data = (int) (dataL & 0xFF);
-        memoryProvider.writeRamByte(address, data);
-        if (addressL >= MAPPING_CONTROL_ADDRESS) {
-            mappingRegisters(addressL, data);
-        }
+        //TODO default to SEGA, use a romList to detect korea and codies
+//        int address = (int) (addressL & 0xFFFF);
+//        int page = address >> 14;
+//        boolean isKorea = false; //KOREA_MAPPING_CONTROL_ADDRESS == address;
+//        boolean isCodem = false; //page > 0 && page < 3 && (address & 0x3FFF) == address;
+//        boolean isSega = false;// address >= SEGA_MAPPING_CONTROL_ADDRESS;
+//        if(isCodem || isKorea || isSega){
+//            mapper = isSega ? smsMapper.setupRomMapper(SmsMapper.Type.SEGA, mapper) : mapper;
+//            mapper = isCodem ? smsMapper.setupRomMapper(SmsMapper.Type.CODEM, mapper) : mapper;
+//            mapper = isKorea ? smsMapper.setupRomMapper(SmsMapper.Type.KOREA, mapper) : mapper;
+//        }
+        mapper.writeData(addressL, dataL, size);
     }
 
-    private void mappingRegisters(long address, int data){
-        int val = (int) (address & 3);
-        switch (val){
-            case 0:
-                mappingControl = data;
-                break;
-            case 1:
-            case 2:
-            case 3:
-                int frameRegNum = val - 1;
-                int bankShift = bankShiftMap[mappingControl & 3];
-                data = (data + bankShift) % numPages;
-                frameReg[frameRegNum] = data;
-                break;
-        }
-        LogHelper.printLevel(LOG, Level.INFO,"writeMappingReg: {} , data: {}", address, data, verbose);
+    @Override
+    public long readData(long addressL, Size size) {
+        return smsMapper.readDataMapper(addressL, size);
+    }
+
+    @Override
+    public void writeData(long address, long data, Size size) {
+        memoryProvider.writeRamByte((int)(address & RAM_MASK), (int)(data & 0xFF));
     }
 
     @Override
