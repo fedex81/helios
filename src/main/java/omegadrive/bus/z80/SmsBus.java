@@ -80,9 +80,6 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     /** Horizontal Counter Latch */
     private int hCounter;
 
-    /** Game Gear Start Button */
-    public static int ggstart; //TODO
-
     @Override
     public void init() {
         ioPorts = new int[10];
@@ -207,7 +204,9 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
             {
                 // GameGear (Start Button and Nationalisation)
                 case 0x00:
-                    return (ggstart & 0xBF) | countryValue;
+                    //0 -> pressed, 1 - not pressed
+                    int val = joypadProvider.readDataRegister3() == 2 ? 0x80 : 0;
+                    return (val & 0xBF) | countryValue;
 
                 // GG Serial Communication Ports  -
                 // Return 0 for now as "OutRun" gets stuck in a loop by returning 0xFF
