@@ -21,10 +21,10 @@ package omegadrive.system;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
-import omegadrive.bus.sg1k.ColecoBus;
-import omegadrive.bus.sg1k.MsxBus;
-import omegadrive.bus.sg1k.Sg1000Bus;
-import omegadrive.bus.sg1k.Z80BusProvider;
+import omegadrive.bus.z80.ColecoBus;
+import omegadrive.bus.z80.MsxBus;
+import omegadrive.bus.z80.Sg1000Bus;
+import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.ColecoPad;
 import omegadrive.joypad.MsxPad;

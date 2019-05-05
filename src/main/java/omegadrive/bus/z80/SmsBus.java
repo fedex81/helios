@@ -17,12 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.bus.sg1k;
+package omegadrive.bus.z80;
 
 import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.mapper.RomMapper;
 import omegadrive.bus.mapper.SmsMapper;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.vdp.Engine;
 import omegadrive.vdp.SmsVdp;
@@ -31,7 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * //TODO default to SEGA, use a romList to detect korea and codies
+ * TODO default to SEGA, use a romList to detect korea and codies
  */
 public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper {
 
@@ -51,15 +52,19 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     public static final int SEGA_MAPPING_CONTROL_ADDRESS = 0xFFFC;
     public static final int KOREA_MAPPING_CONTROL_ADDRESS = 0xA000;
 
+    private static final int EUROPE = 0x40;
+    private static final int DOMESTIC = 0;
+
     private SmsVdp vdp;
     private RomMapper mapper;
     private SmsMapper smsMapper;
 
-    /** European / Domestic System */
-    private static int europe = 0x40;
-
     /** I/O Ports A and B * (5 ints each) */
-    public int[] ioPorts;
+    private int[] ioPorts;
+
+    //0 - domestic (J/US)
+    //0x40 - europe
+    private int countryValue = DOMESTIC;
 
     private final static int
             IO_TR_DIRECTION = 0,
@@ -85,6 +90,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
         ioPorts[PORT_B + IO_TH_INPUT] = 1;
         smsMapper = SmsMapper.createInstance(memoryProvider);
         mapper = smsMapper.setupRomMapper(SmsMapper.Type.SEGA, mapper);
+        countryValue = RegionDetector.Region.EUROPE == systemProvider.getRegion() ? EUROPE : DOMESTIC;
     }
 
     @Override
@@ -156,7 +162,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
                     ioPorts[0] = (value & 0x20) << 1;
                     ioPorts[1] = (value & 0x80);
 
-                    if (europe == 0) // not european system
+                    if (countryValue == DOMESTIC) // not european system
                     {
                         ioPorts[0] = ~ioPorts[0];
                         ioPorts[1] = ~ioPorts[1];
@@ -201,7 +207,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
             {
                 // GameGear (Start Button and Nationalisation)
                 case 0x00:
-                    return (ggstart & 0xBF) | europe;
+                    return (ggstart & 0xBF) | countryValue;
 
                 // GG Serial Communication Ports  -
                 // Return 0 for now as "OutRun" gets stuck in a loop by returning 0xFF
@@ -298,7 +304,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
         ioPorts[index + IO_TR_DIRECTION] = value & 0x01;
         ioPorts[index + IO_TH_DIRECTION] = value & 0x02;
         ioPorts[index + IO_TR_OUTPUT] = value & 0x10;
-        ioPorts[index + IO_TH_OUTPUT] = europe == 0 ? (~value) & 0x20 : value & 0x20;
+        ioPorts[index + IO_TH_OUTPUT] = countryValue == DOMESTIC ? (~value) & 0x20 : value & 0x20;
     }
 
     private final int getTH(int index)

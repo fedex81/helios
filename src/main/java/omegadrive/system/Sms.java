@@ -21,7 +21,7 @@ package omegadrive.system;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
-import omegadrive.bus.sg1k.*;
+import omegadrive.bus.z80.*;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;

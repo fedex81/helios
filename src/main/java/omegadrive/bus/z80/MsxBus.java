@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.bus.sg1k;
+package omegadrive.bus.z80;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;

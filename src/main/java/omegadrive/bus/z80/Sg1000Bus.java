@@ -1,5 +1,5 @@
 /*
- * ColecoBus
+ * Sg1000Bus
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 07/04/19 16:01
  *
@@ -17,58 +17,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.bus.sg1k;
+package omegadrive.bus.z80;
 
 import omegadrive.Device;
-import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
-import omegadrive.util.FileLoader;
-import omegadrive.util.LogHelper;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.Size;
 import omegadrive.vdp.Sg1000Vdp;
 import omegadrive.z80.Z80Provider;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+public class Sg1000Bus extends DeviceAwareBus implements Z80BusProvider {
 
-/**
- * see
- * https://atarihq.com/danb/files/CV-Tech.txt
- * http://www.smspower.org/forums/9920-ColecoNMIEmulationWasMekaBugAndFix
- */
-public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
+    private static Logger LOG = LogManager.getLogger(Sg1000Bus.class);
 
-    private static Logger LOG = LogManager.getLogger(ColecoBus.class);
-
-    static final boolean verbose = false;
-
-    private static int BIOS_START = 0;
-    private static int BIOS_END = 0x1FFF;
-    private static int RAM_START = 0x6000;
-    private static int RAM_END = 0x7FFF;
-    private static int ROM_START = 0x8000;
-    private static int ROM_END = 0xFFFF;
+    private static int ROM_START = 0;
+    private static int ROM_END = 0xBFFF;
+    private static int RAM_START = 0xC000;
+    private static int RAM_END = 0xFFFF;
 
     private static int RAM_SIZE = 0x400;  //1Kb
     private static int ROM_SIZE = ROM_END + 1; //48kb
 
     public Sg1000Vdp vdp;
-    private int[] bios;
 
-    private boolean isNmiSet = false;
-
-
-    public ColecoBus() {
-        Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameColeco);
-        bios = FileLoader.loadBiosFile(p);
-        LOG.info("Loading Coleco bios from: " + p.toAbsolutePath().toString());
-    }
+    private int lastDE;
+    private int[] rom;
+    private int[] ram;
 
     @Override
     public Z80BusProvider attachDevice(Device device) {
+        if (device instanceof IMemoryProvider) {
+            IMemoryProvider memory = (IMemoryProvider) device;
+            this.rom = memory.getRomData();
+            this.ram = memory.getRamData();
+        }
         if (device instanceof Sg1000Vdp) {
             this.vdp = (Sg1000Vdp) device;
         }
@@ -83,14 +67,11 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
             LOG.error("Unexpected read, addr : {} , size: {}", address, size);
             return 0xFF;
         }
-        if (address <= BIOS_END) {
-            return bios[address];
+        if (address <= ROM_END) {
+            return memoryProvider.readRomByte(address);
         } else if (address >= RAM_START && address <= RAM_END) {
             address &= RAM_SIZE - 1;
             return memoryProvider.readRamByte(address);
-        } else if (address >= ROM_START && address <= ROM_END) {
-            address = (address - ROM_START);// & (rom.length - 1);
-            return memoryProvider.readRomByte(address);
         }
         LOG.error("Unexpected Z80 memory read: " + Long.toHexString(address));
         return 0xFF;
@@ -102,26 +83,58 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
         memoryProvider.writeRamByte((int) address, (int) (data & 0xFF));
     }
 
+    /**
+     * https://www.geeksforgeeks.org/programmable-peripheral-interface-8255/
+     * <p>
+     * $7E = V counter (read) / SN76489 data (write)
+     * $7F = H counter (read) / SN76489 data (write, mirror)
+     * $BE = Data port (r/w)
+     * $BF = Control port (r/w)
+     * <p>
+     * The address decoding for the I/O ports is done with A7, A6, and A0 of
+     * the Z80 address bus, so the VDP locations are mirrored:
+     * <p>
+     * $40-7F = Even locations are V counter/PSG, odd locations are H counter/PSG
+     * $80-BF = Even locations are data port, odd locations are control port.
+     * <p>
+     * A7 A6 A0
+     * 0  0  0 NONE ?
+     * 0  0  1 NONE ?
+     * 0  1  0 -> V counter (read) / SN76489 data (write)
+     * 0  1  1 -> H counter (read) / SN76489 data (write, mirror)
+     * 1  0  0 -> Data port (r/w)
+     * 1  0  1 -> Control port (r/w)
+     * 1  1  0 -> joy 1 (read)
+     * 1  1  1 -> joy 2 (read)
+     */
     @Override
     public void writeIoPort(int port, int value) {
         port &= 0xFF;
         byte byteVal = (byte) (value & 0XFF);
-        LogHelper.printLevel(LOG, Level.INFO, "Write port: {}, value: {}", port, value, verbose);
-        switch (port & 0xE1) {
-            case 0x80:
-            case 0xC0:
-                joypadProvider.writeDataRegister1(port);
+//        LOG.info("Write port: {}, value: {}", Integer.toHexString(port), Integer.toHexString(value));
+        switch (port & 0xC1) {
+            case 0x40:
+            case 0x41:
+                soundProvider.getPsg().write(byteVal);
                 break;
-            case 0xA0:
+            case 0x80:
                 //                LOG.warn("write vdp vram: {}", Integer.toHexString(value));
                 vdp.writeVRAMData(byteVal);
                 break;
-            case 0xA1:
+            case 0x81:
                 //                LOG.warn("write: vdp address: {}", Integer.toHexString(value));
                 vdp.writeRegister(byteVal);
                 break;
-            case 0xE1:
-                soundProvider.getPsg().write(byteVal);
+            case 0xC0: //aka $DE
+                if (port == 0xDE) {
+                    LOG.debug("write 0xDE: {}", Integer.toHexString(value & 0xFF));
+                    lastDE = value;
+                }
+                break;
+            case 0xC1: //aka $DF
+                if (port == 0xDF) {
+                    LOG.warn("write 0xDF: {}", Integer.toHexString(value & 0xFF));
+                }
                 break;
             default:
                 LOG.warn("outPort: {} ,data {}", Integer.toHexString(port), Integer.toHexString(value));
@@ -129,21 +142,38 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
         }
     }
 
-    //see meka/coleco.cpp
     @Override
     public int readIoPort(int port) {
         port &= 0xFF;
-        LogHelper.printLevel(LOG, Level.INFO, "Read port: {}", port, verbose);
-        switch (port & 0xE1) {
-            case 0xA0:
+//        LOG.info("Read port: {}", Integer.toHexString(port));
+        switch (port & 0xC1) {
+            case 0x40:
+                LOG.warn("VCounter read");
+                break;
+            case 0x41:
+                LOG.warn("HCounter read");
+                break;
+            case 0x80:
                 //                LOG.warn("read: vdp vram");
                 return vdp.readVRAMData();
-            case 0xA1:
+            case 0x81:
                 //                LOG.warn("read: vdp status reg");
                 return vdp.readStatus();
-            case 0xE0:
+            case 0xC0:
+                if (port == 0xDE) {
+                    LOG.warn("read 0xDE: {}", Integer.toHexString(lastDE));
+//                    return lastDE;
+                }
+                LOG.debug("read: joy1");
                 return joypadProvider.readDataRegister1();
-            case 0xE1:
+            case 0xC1:
+                // The PPI control register cannot be read, and always
+                // returns $FF.
+                if (port == 0xDF) {
+                    LOG.warn("read 0xDF");
+//                    return 0xFF;
+                }
+                LOG.debug("read: joy2");
                 return joypadProvider.readDataRegister2();
             default:
                 LOG.warn("inPort: {}", Integer.toHexString(port & 0xFF));
@@ -151,11 +181,6 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
 
         }
         return 0xFF;
-    }
-
-    @Override
-    public void reset() {
-        isNmiSet = false;
     }
 
     @Override
@@ -168,13 +193,15 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
         joypadProvider.newFrame();
     }
 
+    boolean prev = false;
+
     @Override
     public void handleInterrupts(Z80Provider.Interrupt type) {
         boolean set = vdp.getStatusINT() && vdp.getGINT();
-        //do not re-trigger
-        if (set && !isNmiSet) {
-            z80Provider.triggerNMI();
-        }
-        isNmiSet = set;
+        z80Provider.interrupt(set);
+//        if(prev != set){
+//            LOG.info(vdp.getInterruptHandler().getStateString("Vint: " + set));
+//            prev = set;
+//        }
     }
 }

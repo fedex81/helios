@@ -1,6 +1,6 @@
 package omegadrive.bus.mapper;
 
-import omegadrive.bus.sg1k.SmsBus;
+import omegadrive.bus.z80.SmsBus;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
