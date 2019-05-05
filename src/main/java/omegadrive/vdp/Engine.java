@@ -19,10 +19,6 @@
 
 package omegadrive.vdp;
 
-import omegadrive.bus.sg1k.SmsBus;
-import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.z80.Z80Provider;
-
 /**
  * TODO remove
  */
@@ -34,7 +30,7 @@ public class Engine {
     /**
      *  Set SMS Mode
      */
-
+    @Deprecated
     public static void setSMS()
     {
         is_sms = true;
@@ -50,7 +46,7 @@ public class Engine {
     /**
      *  Set GG Mode
      */
-
+    @Deprecated
     public static void setGG()
     {
         is_gg  = true;

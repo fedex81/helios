@@ -41,10 +41,12 @@ import java.util.stream.Stream;
 
 public class AutomatedGameTester {
 
-    static long RUN_DELAY_MS = 10_000;
+    static long RUN_DELAY_MS = 30_000;
 
     private static String romFolder =
-            "/home/fede/roms/msx";
+//            "/home/fede/roms/sms";
+    "/home/fede/roms/gg";
+//            "/home/fede/roms/msx";
 //            "/data/emu/roms";
     //            "/data/emu/roms/genesis/nointro";
     //            "/data/emu/roms/genesis/goodgen/unverified";
@@ -73,6 +75,12 @@ public class AutomatedGameTester {
     private static Predicate<Path> testMsxRomsPredicate = p ->
             Arrays.stream(SystemLoader.msxBinaryTypes).anyMatch(p.toString()::endsWith);
 
+    private static Predicate<Path> testSmsRomsPredicate = p ->
+            Arrays.stream(SystemLoader.smsBinaryTypes).anyMatch(p.toString()::endsWith);
+
+    private static Predicate<Path> testGgRomsPredicate = p ->
+            Arrays.stream(SystemLoader.ggBinaryTypes).anyMatch(p.toString()::endsWith);
+
     private static Predicate<Path> testAllRomsPredicate = p ->
             Arrays.stream(binaryTypes).anyMatch(p.toString()::endsWith);
 
@@ -88,7 +96,9 @@ public class AutomatedGameTester {
 //        new AutomatedGameTester().bootRomsGenesis(true);
 //        new AutomatedGameTester().bootRomsSg1000(true);
 //        new AutomatedGameTester().bootRomsColeco(true);
-        new AutomatedGameTester().bootRomsMsx(true);
+//        new AutomatedGameTester().bootRomsMsx(true);
+//        new AutomatedGameTester().bootRomsSms(true);
+        new AutomatedGameTester().bootRomsGg(true);
 //        new AutomatedGameTester().bootRecursiveRoms(true);
         System.exit(0);
     }
@@ -123,6 +133,14 @@ public class AutomatedGameTester {
 
     private void bootRomsMsx(boolean shuffle) throws IOException {
         filterAndBootRoms(testMsxRomsPredicate, shuffle);
+    }
+
+    private void bootRomsSms(boolean shuffle) throws IOException {
+        filterAndBootRoms(testSmsRomsPredicate, shuffle);
+    }
+
+    private void bootRomsGg(boolean shuffle) throws IOException {
+        filterAndBootRoms(testGgRomsPredicate, shuffle);
     }
 
     private void filterAndBootRoms(Predicate<Path> p, boolean shuffle) throws IOException {

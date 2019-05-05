@@ -47,11 +47,13 @@ public interface BaseVdpProvider extends Device {
 
     int VDP_REGISTERS_SIZE = 24;
 
+    int V18_CELL = 144;
     int V24_CELL = 192;
     int V28_CELL = 224;
     int V30_CELL = 240;
     int H40 = 320;
     int H32 = 256;
+    int H20 = 160;
     int H32_TILES = H32 / 8;
     int H40_TILES = H40 / 8;
 

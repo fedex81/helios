@@ -26,6 +26,7 @@ import omegadrive.ui.EmuFrame;
 import omegadrive.ui.GenesisWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
+import omegadrive.vdp.Engine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -46,7 +47,8 @@ public class SystemLoader {
         SG_1000("SG"),
         COLECO("CV"),
         MSX("MSX"),
-        SMS("SMS")
+        SMS("SMS"),
+        GG("GG")
         ;
 
         private String shortName;
@@ -71,9 +73,10 @@ public class SystemLoader {
     public static String[] cvBinaryTypes = {".col"};
     public static String[] msxBinaryTypes = {".rom"};
     public static String[] smsBinaryTypes = {".sms"};
+    public static String[] ggBinaryTypes = {".gg"};
 
     public static String[] binaryTypes = Stream.of(
-            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes
+            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes
     ).flatMap(Stream::of).toArray(String[]::new);
 
     public static boolean verbose = false;
@@ -178,6 +181,7 @@ public class SystemLoader {
         boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if(isGen){
             systemProvider = Genesis.createNewInstance(emuFrame);
         } else if(isSg){
@@ -188,6 +192,10 @@ public class SystemLoader {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, emuFrame);
         } else if(isSms){
             systemProvider = Sms.createNewInstance(SystemType.SMS, emuFrame);
+            Engine.setSMS();
+        } else if(isGg){
+            systemProvider = Sms.createNewInstance(SystemType.GG, emuFrame);
+            Engine.setGG();
         }
         if(systemProvider == null){
             LOG.error("Unable to find a system to load: " + file.toAbsolutePath());

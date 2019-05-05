@@ -77,9 +77,11 @@ public class Sms extends BaseSystem {
     }
 
     /** Emulated screen pixels */
-    public final static int display[] = new int[SmsVdp.SMS_WIDTH * SmsVdp.SMS_HEIGHT];
+    private int[] display;
 
     private void initCommon() {
+        int numPixels = VideoMode.NTSCJ_H32_V24.getDimension().width * VideoMode.NTSCJ_H32_V24.getDimension().height;
+        display = new int[numPixels];
         inputProvider = InputProvider.createInstance(joypad);
         vdp = new SmsVdp(this, display);
         //z80, sound attached later
@@ -155,11 +157,6 @@ public class Sms extends BaseSystem {
         sound = JavaSoundManager.createSoundProvider(systemType, region);
         z80 = Z80CoreWrapper.createSg1000Instance(bus);
         bus.attachDevice(sound).attachDevice(z80);
-
-        //TODO
-        Engine.setSMS();
-//        Engine.setGG();
-
         resetAfterRomLoad();
     }
 

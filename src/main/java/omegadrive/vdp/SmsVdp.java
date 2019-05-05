@@ -18,7 +18,6 @@
  */
 package omegadrive.vdp;
 
-import omegadrive.Device;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
@@ -28,7 +27,6 @@ import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
 import static omegadrive.util.RegionDetector.Region.EUROPE;
-import static omegadrive.util.RegionDetector.Region.JAPAN;
 import static omegadrive.util.RegionDetector.Region.USA;
 
  /*
@@ -86,7 +84,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
  *
  *  ---
  *
- *  Modify and add to the project
+ * Modify and add to the project
  *
  * @author Federico Berti - 2019
  *
@@ -104,20 +102,11 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     /** NTSC / PAL Emulation */
     public static int palFlag = NTSC;
 
-    /** X Pixels, including blanking */
-    public final static int SMS_X_PIXELS = 342;
-
-    /** Y Pixels (NTSC), including blanking */
-    public final static int SMS_Y_PIXELS_NTSC = 262;
-
-    /** Y Pixels (PAL), including blanking */
-    public final static int SMS_Y_PIXELS_PAL = 313;
-
     /** SMS Visible Screen Width */
-    public final static int SMS_WIDTH  = 256;
+    private final static int SMS_WIDTH  = VideoMode.NTSCJ_H32_V24.getDimension().width;
 
     /** SMS Visible Screen Height */
-    public final static int SMS_HEIGHT = 192;
+    private final static int SMS_HEIGHT = VideoMode.NTSCJ_H32_V24.getDimension().height;
 
     /** GG Visible Screen Width */
     public final static int GG_WIDTH   = 160;
