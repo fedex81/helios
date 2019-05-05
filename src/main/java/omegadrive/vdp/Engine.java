@@ -19,10 +19,15 @@
 
 package omegadrive.vdp;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * TODO remove
  */
 public class Engine {
+
+    private static Logger LOG = LogManager.getLogger(Engine.class.getSimpleName());
 
     public static boolean is_gg = false;
     public static boolean is_sms = true;
@@ -39,6 +44,7 @@ public class Engine {
         SmsVdp.h_start = 0;
         SmsVdp.h_end   = 32;
 
+        LOG.info("Setting SMS mode");
 //        emuWidth = 256;
 //        emuHeight = 192;
     }
@@ -55,6 +61,7 @@ public class Engine {
         SmsVdp.h_start = 5;
         SmsVdp.h_end   = 27;
 
+        LOG.info("Setting GG mode");
 //        emuWidth = 160;
 //        emuHeight = 144;
     }

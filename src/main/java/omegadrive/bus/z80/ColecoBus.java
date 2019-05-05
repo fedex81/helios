@@ -25,7 +25,7 @@ import omegadrive.bus.DeviceAwareBus;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import omegadrive.vdp.Sg1000Vdp;
+import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -55,7 +55,7 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
     private static int RAM_SIZE = 0x400;  //1Kb
     private static int ROM_SIZE = ROM_END + 1; //48kb
 
-    public Sg1000Vdp vdp;
+    public Tms9918aVdp vdp;
     private int[] bios;
 
     private boolean isNmiSet = false;
@@ -69,8 +69,8 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
 
     @Override
     public Z80BusProvider attachDevice(Device device) {
-        if (device instanceof Sg1000Vdp) {
-            this.vdp = (Sg1000Vdp) device;
+        if (device instanceof Tms9918aVdp) {
+            this.vdp = (Tms9918aVdp) device;
         }
         super.attachDevice(device);
         return this;

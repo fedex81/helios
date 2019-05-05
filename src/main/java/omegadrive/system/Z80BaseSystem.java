@@ -37,7 +37,7 @@ import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.Sg1000Vdp;
+import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
@@ -96,7 +96,7 @@ public class Z80BaseSystem extends BaseSystem {
 
     private void initCommon() {
         inputProvider = InputProvider.createInstance(joypad);
-        vdp = new Sg1000Vdp();
+        vdp = new Tms9918aVdp();
         //z80, sound attached later
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(vdp);

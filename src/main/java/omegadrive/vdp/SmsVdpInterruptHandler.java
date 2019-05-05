@@ -19,23 +19,13 @@
 
 package omegadrive.vdp;
 
-import omegadrive.system.Genesis;
-import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
-import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.vdp.model.VdpHLineProvider;
-import omegadrive.vdp.model.VdpSlotType;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.Random;
-import java.util.function.Predicate;
 
 public class SmsVdpInterruptHandler extends VdpInterruptHandler {
 
     //TODO fix
-    public static VdpInterruptHandler createSg1000Instance() {
+    public static VdpInterruptHandler createTmsInstance() {
         SmsVdpInterruptHandler handler = new SmsVdpInterruptHandler() {
             @Override
             public boolean isDrawFrameSlot() {

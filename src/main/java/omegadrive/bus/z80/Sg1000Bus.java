@@ -23,7 +23,7 @@ import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.Size;
-import omegadrive.vdp.Sg1000Vdp;
+import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +40,7 @@ public class Sg1000Bus extends DeviceAwareBus implements Z80BusProvider {
     private static int RAM_SIZE = 0x400;  //1Kb
     private static int ROM_SIZE = ROM_END + 1; //48kb
 
-    public Sg1000Vdp vdp;
+    public Tms9918aVdp vdp;
 
     private int lastDE;
     private int[] rom;
@@ -53,8 +53,8 @@ public class Sg1000Bus extends DeviceAwareBus implements Z80BusProvider {
             this.rom = memory.getRomData();
             this.ram = memory.getRamData();
         }
-        if (device instanceof Sg1000Vdp) {
-            this.vdp = (Sg1000Vdp) device;
+        if (device instanceof Tms9918aVdp) {
+            this.vdp = (Tms9918aVdp) device;
         }
         super.attachDevice(device);
         return this;

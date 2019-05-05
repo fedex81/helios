@@ -32,7 +32,7 @@ import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import omegadrive.vdp.Sg1000Vdp;
+import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -62,7 +62,7 @@ public class MsxBus extends DeviceAwareBus implements Z80BusProvider {
     private static int SLOT_SIZE = 0x10000;
     private static int SLOTS = 4;
 
-    public Sg1000Vdp vdp;
+    public Tms9918aVdp vdp;
     private int[] bios;
 
     private int slotSelect = 0;
@@ -96,8 +96,8 @@ public class MsxBus extends DeviceAwareBus implements Z80BusProvider {
 
     @Override
     public Z80BusProvider attachDevice(Device device) {
-        if (device instanceof Sg1000Vdp) {
-            this.vdp = (Sg1000Vdp) device;
+        if (device instanceof Tms9918aVdp) {
+            this.vdp = (Tms9918aVdp) device;
         }
         super.attachDevice(device);
         if(device instanceof IMemoryProvider){

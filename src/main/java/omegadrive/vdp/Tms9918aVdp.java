@@ -38,9 +38,9 @@ import static omegadrive.vdp.model.Tms9918a.TmsRegisterName.*;
  * https://github.com/jitze/TMSX/blob/master/MSXEMU/src/emu/TMS9918A.java
  * @author Tjitze Rienstra
  */
-public class Sg1000Vdp implements Tms9918a {
+public class Tms9918aVdp implements Tms9918a {
 
-    private static Logger LOG = LogManager.getLogger(Sg1000Vdp.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(Tms9918aVdp.class.getSimpleName());
 
     private static boolean verbose = false;
 
@@ -71,7 +71,7 @@ public class Sg1000Vdp implements Tms9918a {
     private boolean[][] spritePriorityMatrix = new boolean[VDP_WIDTH + 16][VDP_HEIGHT + 16];
     private boolean[][] spriteCollisionMatrix = new boolean[VDP_WIDTH + 16][VDP_HEIGHT + 16];
 
-    public Sg1000Vdp() {
+    public Tms9918aVdp() {
         init();
     }
 
@@ -94,7 +94,7 @@ public class Sg1000Vdp implements Tms9918a {
     public void init() {
         mem = new int[RAM_SIZE];
         screenData = new int[VDP_WIDTH][VDP_HEIGHT];
-        interruptHandler = SmsVdpInterruptHandler.createSg1000Instance();
+        interruptHandler = SmsVdpInterruptHandler.createTmsInstance();
         reset();
     }
 
