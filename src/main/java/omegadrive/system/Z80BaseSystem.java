@@ -24,9 +24,8 @@ import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.sg1k.ColecoBus;
 import omegadrive.bus.sg1k.MsxBus;
 import omegadrive.bus.sg1k.Sg1000Bus;
-import omegadrive.bus.sg1k.Sg1000BusProvider;
+import omegadrive.bus.sg1k.Z80BusProvider;
 import omegadrive.input.InputProvider;
-import omegadrive.input.KeyboardInput;
 import omegadrive.joypad.ColecoPad;
 import omegadrive.joypad.MsxPad;
 import omegadrive.joypad.TwoButtonsJoypad;
@@ -53,6 +52,7 @@ public class Z80BaseSystem extends BaseSystem {
 
     protected Z80Provider z80;
     private SystemLoader.SystemType systemType;
+    private Z80Provider.Interrupt vdpInterruptType;
 
     public static boolean verbose = false;
 
@@ -68,6 +68,8 @@ public class Z80BaseSystem extends BaseSystem {
     protected Z80BaseSystem(SystemLoader.SystemType systemType, GenesisWindow emuFrame){
         super(emuFrame);
         this.systemType = systemType;
+        vdpInterruptType = systemType == SystemLoader.SystemType.COLECO ? Z80Provider.Interrupt.NMI :
+                Z80Provider.Interrupt.IM1;
     }
 
     @Override
@@ -241,8 +243,8 @@ public class Z80BaseSystem extends BaseSystem {
 
     private void handleInterrupt(){
         //TODO
-        Sg1000BusProvider sgBus = (Sg1000BusProvider) bus;
-        sgBus.handleVdpInterruptsZ80();
+        Z80BusProvider sgBus = (Z80BusProvider) bus;
+        sgBus.handleInterrupts(vdpInterruptType);
     }
 
     @Override

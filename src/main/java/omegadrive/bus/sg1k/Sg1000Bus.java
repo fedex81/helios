@@ -24,10 +24,11 @@ import omegadrive.bus.DeviceAwareBus;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.Size;
 import omegadrive.vdp.Sg1000Vdp;
+import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Sg1000Bus extends DeviceAwareBus implements Sg1000BusProvider {
+public class Sg1000Bus extends DeviceAwareBus implements Z80BusProvider {
 
     private static Logger LOG = LogManager.getLogger(Sg1000Bus.class);
 
@@ -46,7 +47,7 @@ public class Sg1000Bus extends DeviceAwareBus implements Sg1000BusProvider {
     private int[] ram;
 
     @Override
-    public Sg1000BusProvider attachDevice(Device device) {
+    public Z80BusProvider attachDevice(Device device) {
         if (device instanceof IMemoryProvider) {
             IMemoryProvider memory = (IMemoryProvider) device;
             this.rom = memory.getRomData();
@@ -195,7 +196,7 @@ public class Sg1000Bus extends DeviceAwareBus implements Sg1000BusProvider {
     boolean prev = false;
 
     @Override
-    public void handleVdpInterruptsZ80() {
+    public void handleInterrupts(Z80Provider.Interrupt type) {
         boolean set = vdp.getStatusINT() && vdp.getGINT();
         z80Provider.interrupt(set);
 //        if(prev != set){

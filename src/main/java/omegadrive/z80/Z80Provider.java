@@ -25,6 +25,8 @@ import z80core.Z80State;
 
 public interface Z80Provider extends Device {
 
+    enum Interrupt {NMI, IM0, IM1, IM2}
+
     int executeInstruction();
 
     boolean interrupt(boolean value);

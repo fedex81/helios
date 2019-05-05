@@ -23,8 +23,6 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.sg1k.*;
 import omegadrive.input.InputProvider;
-import omegadrive.joypad.ColecoPad;
-import omegadrive.joypad.MsxPad;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
@@ -34,8 +32,6 @@ import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.Engine;
-import omegadrive.vdp.Sg1000Vdp;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
@@ -130,6 +126,7 @@ public class Sms extends BaseSystem {
                     emuFrame.renderScreenLinear(display, getStats(System.nanoTime()), videoMode);
                     handleVdpDumpScreenData();
                     updateVideoMode();
+                    handleNmi();
                     canRenderScreen = false;
                     int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
                     if (Thread.currentThread().isInterrupted()) {
@@ -209,16 +206,24 @@ public class Sms extends BaseSystem {
     private void runZ80(long counter) {
         if (counter == nextZ80Cycle) {
             int cycleDelay = z80.executeInstruction();
-            handleInterrupt();
+            handleMaskableInterrupts();
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
         }
     }
 
-    private void handleInterrupt(){
+
+
+    private void handleMaskableInterrupts(){
         //TODO
-        Sg1000BusProvider sgBus = (Sg1000BusProvider) bus;
-        sgBus.handleVdpInterruptsZ80();
+        Z80BusProvider sgBus = (Z80BusProvider) bus;
+        sgBus.handleInterrupts(Z80Provider.Interrupt.IM1);
+    }
+
+    private void handleNmi() {
+        //TODO
+        Z80BusProvider sgBus = (Z80BusProvider) bus;
+        sgBus.handleInterrupts(Z80Provider.Interrupt.NMI);
     }
 
     @Override

@@ -56,6 +56,10 @@ public class TwoButtonsJoypad extends BasePadAdapter {
 
     private static Logger LOG = LogManager.getLogger(TwoButtonsJoypad.class.getSimpleName());
 
+    //only for SMS, 1 - unpressed, 0 - pressed
+    private int pauseButton1 = 1;
+    private int pauseButton2 = 1;
+
     @Override
     public void init() {
         p1Type = JoypadType.BUTTON_2;
@@ -64,7 +68,8 @@ public class TwoButtonsJoypad extends BasePadAdapter {
         stateMap1 = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
                 put(D, RELEASED).put(U, RELEASED).
                 put(L, RELEASED).put(R, RELEASED).
-                put(A, RELEASED).put(B, RELEASED).build());
+                put(A, RELEASED).put(B, RELEASED).
+                put(S, RELEASED).build());
         stateMap2 = Maps.newHashMap(stateMap1);
     }
 
@@ -78,9 +83,10 @@ public class TwoButtonsJoypad extends BasePadAdapter {
         return value2;
     }
 
+    //only for SMS
     @Override
     public int readDataRegister3() {
-        return 0x3F;
+        return pauseButton1 + pauseButton2;
     }
 
     private int get2D_2U_1B_1A_1R_1L_1D_1U() {
@@ -100,5 +106,7 @@ public class TwoButtonsJoypad extends BasePadAdapter {
     public void newFrame() {
         value1 = get2D_2U_1B_1A_1R_1L_1D_1U();
         value2 = getR_2B_2A_2R_2L();
+        pauseButton1 = getValue(JoypadNumber.P1, S);
+        pauseButton2 = getValue(JoypadNumber.P2, S);
     }
 }

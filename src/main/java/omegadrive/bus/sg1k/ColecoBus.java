@@ -26,6 +26,7 @@ import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.vdp.Sg1000Vdp;
+import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,7 +39,7 @@ import java.nio.file.Paths;
  * https://atarihq.com/danb/files/CV-Tech.txt
  * http://www.smspower.org/forums/9920-ColecoNMIEmulationWasMekaBugAndFix
  */
-public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
+public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
 
     private static Logger LOG = LogManager.getLogger(ColecoBus.class);
 
@@ -67,7 +68,7 @@ public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
     }
 
     @Override
-    public Sg1000BusProvider attachDevice(Device device) {
+    public Z80BusProvider attachDevice(Device device) {
         if (device instanceof Sg1000Vdp) {
             this.vdp = (Sg1000Vdp) device;
         }
@@ -168,7 +169,7 @@ public class ColecoBus extends DeviceAwareBus implements Sg1000BusProvider {
     }
 
     @Override
-    public void handleVdpInterruptsZ80() {
+    public void handleInterrupts(Z80Provider.Interrupt type) {
         boolean set = vdp.getStatusINT() && vdp.getGINT();
         //do not re-trigger
         if (set && !isNmiSet) {

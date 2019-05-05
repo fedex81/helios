@@ -20,14 +20,9 @@
 package omegadrive.bus.sg1k;
 
 import omegadrive.bus.BaseBusProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.z80.Z80Provider;
 
-public interface Sg1000BusProvider extends BaseBusProvider {
+public interface Z80BusProvider extends BaseBusProvider {
 
-    static Sg1000BusProvider createBus() {
-        return new Sg1000Bus();
-    }
-
-    void handleVdpInterruptsZ80();
+    void handleInterrupts(Z80Provider.Interrupt type);
 }

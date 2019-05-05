@@ -26,13 +26,14 @@ import omegadrive.bus.mapper.SmsMapper;
 import omegadrive.util.Size;
 import omegadrive.vdp.Engine;
 import omegadrive.vdp.SmsVdp;
+import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
  * //TODO default to SEGA, use a romList to detect korea and codies
  */
-public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider, RomMapper {
+public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper {
 
     private static Logger LOG = LogManager.getLogger(SmsBus.class);
 
@@ -87,7 +88,7 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider, RomMapp
     }
 
     @Override
-    public Sg1000BusProvider attachDevice(Device device) {
+    public Z80BusProvider attachDevice(Device device) {
         if (device instanceof SmsVdp) {
             this.vdp = (SmsVdp) device;
         }
@@ -325,10 +326,19 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider, RomMapp
         joypadProvider.newFrame();
     }
 
-    boolean prev = false;
+    private boolean prev = false;
+    private boolean isNmiSet = false;
 
     @Override
-    public void handleVdpInterruptsZ80() {
+    public void handleInterrupts(Z80Provider.Interrupt type) {
+        if(type == Z80Provider.Interrupt.NMI){
+            handleNmi();
+            return;
+        }
+        handleIM();
+    }
+
+    private void handleIM(){
         boolean set = vdp.isVINT() || vdp.isHINT();
         z80Provider.interrupt(set);
         if(verbose && prev != set){
@@ -336,5 +346,13 @@ public class SmsBus extends DeviceAwareBus implements Sg1000BusProvider, RomMapp
             LOG.info("Vint: {}, Hint: {}", vdp.isVINT(), vdp.isHINT());
             prev = set;
         }
+    }
+
+    private void handleNmi() {
+        boolean set = joypadProvider.readDataRegister3() < 2;
+        if(set && !isNmiSet){
+            z80Provider.triggerNMI();
+        }
+        isNmiSet = set;
     }
 }

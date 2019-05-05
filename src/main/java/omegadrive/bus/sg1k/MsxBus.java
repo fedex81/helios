@@ -33,6 +33,7 @@ import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.vdp.Sg1000Vdp;
+import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,7 +50,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadNumber.*;
  * http://msx.ebsoft.fr/roms/index.php?v=MSX1&Send=Send
  * http://fms.komkon.org/MSX/Docs/Portar.txt
  */
-public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
+public class MsxBus extends DeviceAwareBus implements Z80BusProvider {
 
     private static Logger LOG = LogManager.getLogger(MsxBus.class);
 
@@ -94,7 +95,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
     }
 
     @Override
-    public Sg1000BusProvider attachDevice(Device device) {
+    public Z80BusProvider attachDevice(Device device) {
         if (device instanceof Sg1000Vdp) {
             this.vdp = (Sg1000Vdp) device;
         }
@@ -306,7 +307,7 @@ public class MsxBus extends DeviceAwareBus implements Sg1000BusProvider {
     }
 
     @Override
-    public void handleVdpInterruptsZ80() {
+    public void handleInterrupts(Z80Provider.Interrupt type) {
         boolean set = vdp.getStatusINT() && vdp.getGINT();
         z80Provider.interrupt(set);
     }
