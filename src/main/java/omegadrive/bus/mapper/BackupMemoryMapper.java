@@ -19,8 +19,8 @@
 
 package omegadrive.bus.mapper;
 
-import omegadrive.system.Genesis;
 import omegadrive.bus.gen.GenesisBus;
+import omegadrive.system.Genesis;
 import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.Size;
@@ -173,6 +173,7 @@ public class BackupMemoryMapper implements RomMapper {
                 long size = 0;
                 if (Files.isReadable(mapper.backupFile)) {
                     size = Files.size(mapper.backupFile);
+                    mapper.sram = FileLoader.readFileSafe(mapper.backupFile);
                 } else {
                     LOG.info("Creating backup memory file: " + mapper.backupFile);
                     mapper.sram = new int[CartridgeInfoProvider.DEFAULT_SRAM_BYTE_SIZE];
