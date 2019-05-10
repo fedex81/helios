@@ -42,8 +42,6 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.lang.reflect.InvocationTargetException;
-
 public class Z80BaseSystem extends BaseSystem {
 
     private static Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
@@ -57,11 +55,6 @@ public class Z80BaseSystem extends BaseSystem {
     public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, GenesisWindow emuFrame) {
         return new Z80BaseSystem(systemType, emuFrame);
     }
-
-    protected Z80BaseSystem(boolean isHeadless) throws InvocationTargetException, InterruptedException {
-        super(isHeadless);
-    }
-
 
     protected Z80BaseSystem(SystemLoader.SystemType systemType, GenesisWindow emuFrame){
         super(emuFrame);

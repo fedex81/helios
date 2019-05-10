@@ -17,15 +17,17 @@
 
 package omegadrive.vdp;
 
-import omegadrive.system.Genesis;
-import omegadrive.system.SystemProvider;
 import omegadrive.automated.SavestateGameLoader;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.save.SavestateTest;
+import omegadrive.system.Genesis;
+import omegadrive.system.SystemProvider;
+import omegadrive.ui.GenesisWindow;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.RenderType;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -44,6 +46,11 @@ public class VdpRenderTest {
     private JFrame f;
     private static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
     static int CYCLES = 1_000;
+
+    @Before
+    public void beforeTest(){
+        System.setProperty("emu.headless", "true");
+    }
 
     private void testSavestateViewerSingle(Path saveFile, String rom) throws Exception {
         GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
@@ -123,18 +130,18 @@ public class VdpRenderTest {
         System.out.println("Time ms: " + timeMs + ", FPS: " + fps);
     }
 
-    private GenesisVdpProvider prepareVdp(Path saveFile) throws Exception {
+    private GenesisVdpProvider prepareVdp(Path saveFile) {
         SystemProvider genesisProvider = createTestProvider();
         GenesisBusProvider busProvider = SavestateTest.loadSaveState(saveFile);
         busProvider.attachDevice(genesisProvider);
-        GenesisVdpProvider vdpProvider = (GenesisVdpProvider) busProvider.getVdp();
+        GenesisVdpProvider vdpProvider = busProvider.getVdp();
         return vdpProvider;
     }
 
-    private static SystemProvider createTestProvider() throws Exception {
+    private static SystemProvider createTestProvider() {
         InputProvider.bootstrap();
 
-        Genesis g = new Genesis(true) {
+        Genesis g = new Genesis(GenesisWindow.HEADLESS_INSTANCE) {
             int count = 0;
 
             @Override

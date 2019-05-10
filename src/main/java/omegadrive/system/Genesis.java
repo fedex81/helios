@@ -46,7 +46,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
 
 /**
@@ -70,10 +69,6 @@ public class Genesis extends BaseSystem {
 
     public static SystemProvider createNewInstance(GenesisWindow emuFrame) {
         return new Genesis(emuFrame);
-    }
-
-    protected Genesis(boolean isHeadless) throws InvocationTargetException, InterruptedException {
-        super(isHeadless);
     }
 
     protected Genesis(GenesisWindow emuFrame){

@@ -29,7 +29,6 @@ import omegadrive.joypad.JoypadProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.sound.SoundProvider;
-import omegadrive.ui.EmuFrame;
 import omegadrive.ui.GenesisWindow;
 import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
@@ -42,8 +41,6 @@ import omegadrive.z80.Z80CoreWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -102,13 +99,6 @@ public abstract class BaseSystem implements SystemProvider {
         this.emuFrame = emuFrame;
     }
 
-    @Deprecated
-    protected BaseSystem(boolean isHeadless) throws InvocationTargetException, InterruptedException {
-        Util.registerJmx(this);
-        SwingUtilities.invokeAndWait(() -> createFrame(isHeadless));
-        sound = SoundProvider.NO_SOUND;
-    }
-
     @Override
     public void setPlayers(int i) {
         inputProvider.setPlayers(i);
@@ -122,12 +112,6 @@ public abstract class BaseSystem implements SystemProvider {
         GenesisBus.verbose = value;
         MC68000Wrapper.verbose = value;
         Z80CoreWrapper.verbose = value;
-    }
-
-    // Create the frame on the event dispatching thread
-    protected void createFrame(boolean isHeadless) {
-        emuFrame = isHeadless ? GenesisWindow.HEADLESS_INSTANCE : new EmuFrame(this);
-        emuFrame.init();
     }
 
     protected void reloadKeyListeners() {

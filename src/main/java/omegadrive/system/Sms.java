@@ -38,8 +38,6 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.lang.reflect.InvocationTargetException;
-
 public class Sms extends BaseSystem {
 
     private static Logger LOG = LogManager.getLogger(Sms.class.getSimpleName());
@@ -52,11 +50,6 @@ public class Sms extends BaseSystem {
     public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, GenesisWindow emuFrame) {
         return new Sms(systemType, emuFrame);
     }
-
-    protected Sms(boolean isHeadless) throws InvocationTargetException, InterruptedException {
-        super(isHeadless);
-    }
-
 
     protected Sms(SystemLoader.SystemType systemType, GenesisWindow emuFrame){
         super(emuFrame);
