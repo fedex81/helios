@@ -21,14 +21,14 @@ package omegadrive.system;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
-import omegadrive.bus.z80.*;
+import omegadrive.bus.z80.SmsBus;
+import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.ui.GenesisWindow;
-import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
@@ -38,7 +38,6 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.swing.filechooser.FileFilter;
 import java.lang.reflect.InvocationTargetException;
 
 public class Sms extends BaseSystem {
@@ -95,11 +94,6 @@ public class Sms extends BaseSystem {
             romRegion = ovrRegion;
         }
         return romRegion;
-    }
-
-    @Override
-    protected FileFilter getRomFileFilter() {
-        return FileLoader.ROM_FILTER;
     }
 
     private static int VDP_DIVIDER = 1;  //10.738635 Mhz

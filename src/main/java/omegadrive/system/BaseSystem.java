@@ -19,6 +19,7 @@
 
 package omegadrive.system;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.gen.GenesisBus;
@@ -42,11 +43,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
-import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.io.FileReader;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -59,8 +55,6 @@ import java.util.concurrent.Future;
 public abstract class BaseSystem implements SystemProvider {
 
     private static Logger LOG = LogManager.getLogger(BaseSystem.class.getSimpleName());
-
-    private static final String PROPERTIES_FILENAME = "./emu.properties";
 
     protected IMemoryProvider memory;
     protected BaseVdpProvider vdp;
@@ -78,9 +72,6 @@ public abstract class BaseSystem implements SystemProvider {
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public static boolean verbose = false;
-    public static boolean showFps = false;
-    public static boolean headless = false;
 
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
@@ -107,38 +98,16 @@ public abstract class BaseSystem implements SystemProvider {
 
     protected abstract RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOverride);
 
-    protected abstract FileFilter getRomFileFilter();
-
-    protected static void loadProperties() throws Exception {
-        try (
-                FileReader reader = new FileReader(PROPERTIES_FILENAME)
-        ) {
-            System.getProperties().load(reader);
-        } catch (Exception e) {
-            LOG.error("Unable to load properties file: " + PROPERTIES_FILENAME);
-        }
-        System.getProperties().store(System.out, null);
-        verbose = Boolean.valueOf(System.getProperty("emu.debug", "false"));
-        showFps = Boolean.valueOf(System.getProperty("emu.fps", "false"));
-        headless = Boolean.valueOf(System.getProperty("emu.headless", "false"));
-    }
-
     protected BaseSystem(GenesisWindow emuFrame){
         this.emuFrame = emuFrame;
     }
 
+    @Deprecated
     protected BaseSystem(boolean isHeadless) throws InvocationTargetException, InterruptedException {
         Util.registerJmx(this);
         SwingUtilities.invokeAndWait(() -> createFrame(isHeadless));
         sound = SoundProvider.NO_SOUND;
     }
-
-    protected static boolean isHeadless() {
-        GraphicsEnvironment ge =
-                GraphicsEnvironment.getLocalGraphicsEnvironment();
-        return ge.isHeadlessInstance() || headless;
-    }
-
 
     @Override
     public void setPlayers(int i) {
@@ -147,7 +116,7 @@ public abstract class BaseSystem implements SystemProvider {
 
     @Override
     public void setDebug(boolean value) {
-        BaseSystem.verbose = value;
+        SystemLoader.verbose = value;
         GenesisVdp.verbose = value;
         GenesisVdpMemoryInterface.verbose = value;
         GenesisBus.verbose = value;
@@ -256,7 +225,7 @@ public abstract class BaseSystem implements SystemProvider {
         @Override
         public void run() {
             try {
-                int[] data = FileLoader.loadBinaryFile(file, getRomFileFilter());
+                int[] data = FileLoader.loadBinaryFile(file, getSystemType());
                 if (data.length == 0) {
                     return;
                 }
@@ -303,7 +272,7 @@ public abstract class BaseSystem implements SystemProvider {
     long lastFps = 0;
 
     protected String getStats(long nowNs) {
-        if (!showFps) {
+        if (!SystemLoader.showFps) {
             return "";
         }
         points++;

@@ -34,7 +34,10 @@ import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.ui.GenesisWindow;
-import omegadrive.util.*;
+import omegadrive.util.FileLoader;
+import omegadrive.util.RegionDetector;
+import omegadrive.util.Util;
+import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
@@ -42,7 +45,6 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.swing.filechooser.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
@@ -81,11 +83,6 @@ public class Genesis extends BaseSystem {
     @Override
     protected BaseBusProvider getBusProvider() {
         return bus;
-    }
-
-    @Override
-    public FileFilter getRomFileFilter() {
-        return FileLoader.ROM_FILTER;
     }
 
     @Override

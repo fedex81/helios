@@ -25,9 +25,8 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.filechooser.FileFilter;
 import java.io.*;
-import java.net.*;
+import java.net.URL;
 import java.nio.IntBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -169,7 +168,11 @@ public class FileLoader {
         return lines;
     }
 
-    public static int[] loadBinaryFile(Path file, FileFilter fileFilter) {
+    public static int[] loadBinaryFile(Path file, SystemLoader.SystemType systemType) {
+        return loadBinaryFile(file, ROM_FILTER);
+    }
+
+    private static int[] loadBinaryFile(Path file, FileFilter fileFilter) {
         int[] data = new int[0];
         try {
             String fileName = file.toAbsolutePath().toString();
