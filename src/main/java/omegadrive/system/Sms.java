@@ -32,6 +32,7 @@ import omegadrive.ui.GenesisWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.Engine;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
@@ -66,10 +67,16 @@ public class Sms extends BaseSystem {
 
     /** Emulated screen pixels */
     private int[] display;
+    private int[] ggPixel = new int[0];
+    protected VideoMode ggVideoMode = VideoMode.NTSCU_H20_V18;
 
     private void initCommon() {
         int numPixels = VideoMode.NTSCJ_H32_V24.getDimension().width * VideoMode.NTSCJ_H32_V24.getDimension().height;
         display = new int[numPixels];
+        if(Engine.is_gg){
+            int nump = ggVideoMode.getDimension().width * ggVideoMode.getDimension().height;
+            ggPixel = new int[nump];
+        }
         inputProvider = InputProvider.createInstance(joypad);
         vdp = new SmsVdp(this, display);
         //z80, sound attached later
@@ -103,14 +110,18 @@ public class Sms extends BaseSystem {
         long startCycle = System.nanoTime();
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         updateVideoMode();
+        int[] viewport = Engine.is_sms ? display : ggPixel;
+        VideoMode outputVideoMode = Engine.is_sms ? videoMode : ggVideoMode;
 
         do {
             try {
                 runZ80(counter);
                 runVdp(counter);
                 if (canRenderScreen) {
-//                    renderScreenInternal(getStats(System.nanoTime()));
-                    emuFrame.renderScreenLinear(display, getStats(System.nanoTime()), videoMode);
+                    if(Engine.is_gg){
+                        renderGG();
+                    }
+                    emuFrame.renderScreenLinear(viewport, getStats(System.nanoTime()), outputVideoMode);
                     handleVdpDumpScreenData();
                     updateVideoMode();
                     handleNmi();
@@ -134,6 +145,29 @@ public class Sms extends BaseSystem {
             }
         } while (!runningRomFuture.isDone());
         LOG.info("Exiting rom thread loop");
+    }
+
+    private void renderGG(){
+        int col = 0;
+        int row = 0;
+        int k = 0;
+        int startCol = SmsVdp.GG_Y_OFFSET;
+        int endCol = SmsVdp.GG_Y_OFFSET + ggVideoMode.getDimension().height;
+        int startRow = SmsVdp.GG_X_OFFSET;
+        int endRow = SmsVdp.GG_X_OFFSET + ggVideoMode.getDimension().width;
+        boolean process = false;
+        int sourceWidth = videoMode.getDimension().width;
+        for (int i = 0; i < display.length && k < ggPixel.length; i++) {
+            if(row == sourceWidth){
+                row = 0;
+                col++;
+                process = col > startCol && col <= endCol;
+            }
+            if(process && row > startRow && row <= endRow) {
+                ggPixel[k++] = display[i];
+            }
+            row++;
+        }
     }
 
     @Override

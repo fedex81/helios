@@ -20,10 +20,10 @@
 package omegadrive.z80;
 
 import emulib.plugins.cpu.DisassembledInstruction;
-import omegadrive.system.Genesis;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
+import omegadrive.system.Genesis;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -38,12 +38,6 @@ import z80core.Z80State;
 
 import java.util.function.Function;
 
-/**
- *
- * TODO check interrupt handling vs halt
- * TODO improve interrupt handling,
- * TODO needs to decide when an interrupt is taken by z80
- */
 public class Z80CoreWrapper implements Z80Provider {
 
     public static boolean STOP_ON_EXCEPTION;
@@ -94,13 +88,12 @@ public class Z80CoreWrapper implements Z80Provider {
     public Z80CoreWrapper() {
     }
 
+    //NOTE: halt sets PC = PC - 1
     @Override
     public int executeInstruction() {
         memIoOps.reset();
         try {
             printVerbose();
-            //TODO check halt keeps running halt
-
             z80Core.execute();
             if (verbose) {
                 LOG.info("Z80State: " + toString(z80Core.getZ80State()));

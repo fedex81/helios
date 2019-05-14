@@ -133,6 +133,10 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     @Override
     public void writeIoPort(int port, int value) {
         port &= 0xFF;
+        // Game Gear Serial Ports (do nothing for now)
+        if (Engine.is_gg && port < 0x07){
+            return;
+        }
         switch (port & 0xC1) {
             // 0x3F IO Port
             // D7 : Port B TH pin output level (1=high, 0=low)
