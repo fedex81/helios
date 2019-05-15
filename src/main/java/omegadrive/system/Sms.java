@@ -29,6 +29,7 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.ui.GenesisWindow;
+import omegadrive.ui.RenderingStrategy;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
@@ -67,7 +68,7 @@ public class Sms extends BaseSystem {
 
     /** Emulated screen pixels */
     private int[] display;
-    private int[] ggPixel = new int[0];
+    private int[] ggDisplay = new int[0];
     protected VideoMode ggVideoMode = VideoMode.NTSCU_H20_V18;
 
     private void initCommon() {
@@ -75,7 +76,7 @@ public class Sms extends BaseSystem {
         display = new int[numPixels];
         if(Engine.is_gg){
             int nump = ggVideoMode.getDimension().width * ggVideoMode.getDimension().height;
-            ggPixel = new int[nump];
+            ggDisplay = new int[nump];
         }
         inputProvider = InputProvider.createInstance(joypad);
         vdp = new SmsVdp(this, display);
@@ -110,7 +111,7 @@ public class Sms extends BaseSystem {
         long startCycle = System.nanoTime();
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         updateVideoMode();
-        int[] viewport = Engine.is_sms ? display : ggPixel;
+        int[] viewport = Engine.is_sms ? display : ggDisplay;
         VideoMode outputVideoMode = Engine.is_sms ? videoMode : ggVideoMode;
 
         do {
@@ -119,7 +120,9 @@ public class Sms extends BaseSystem {
                 runVdp(counter);
                 if (canRenderScreen) {
                     if(Engine.is_gg){
-                        renderGG();
+                        RenderingStrategy.subImageWithOffset(display, ggDisplay, videoMode.getDimension(),
+                                outputVideoMode.getDimension(), SmsVdp.GG_X_OFFSET,
+                                SmsVdp.GG_Y_OFFSET);
                     }
                     emuFrame.renderScreenLinear(viewport, getStats(System.nanoTime()), outputVideoMode);
                     handleVdpDumpScreenData();
@@ -145,29 +148,6 @@ public class Sms extends BaseSystem {
             }
         } while (!runningRomFuture.isDone());
         LOG.info("Exiting rom thread loop");
-    }
-
-    private void renderGG(){
-        int col = 0;
-        int row = 0;
-        int k = 0;
-        int startCol = SmsVdp.GG_Y_OFFSET;
-        int endCol = SmsVdp.GG_Y_OFFSET + ggVideoMode.getDimension().height;
-        int startRow = SmsVdp.GG_X_OFFSET;
-        int endRow = SmsVdp.GG_X_OFFSET + ggVideoMode.getDimension().width;
-        boolean process = false;
-        int sourceWidth = videoMode.getDimension().width;
-        for (int i = 0; i < display.length && k < ggPixel.length; i++) {
-            if(row == sourceWidth){
-                row = 0;
-                col++;
-                process = col > startCol && col <= endCol;
-            }
-            if(process && row > startRow && row <= endRow) {
-                ggPixel[k++] = display[i];
-            }
-            row++;
-        }
     }
 
     @Override

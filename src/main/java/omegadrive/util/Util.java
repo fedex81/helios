@@ -23,9 +23,9 @@ import com.google.common.collect.Range;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.IMemoryRom;
 import omegadrive.system.Genesis;
-import omegadrive.memory.IMemoryProvider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -210,9 +210,7 @@ public class Util {
 
     public static void arrayDataCopy(int[][] src, int[][] dest) {
         for (int i = 0; i < src.length; i++) {
-            for (int j = 0; j < src[i].length; j++) {
-                dest[i] = src[i];
-            }
+            System.arraycopy(src[i], 0, dest[i], 0, src[i].length);
         }
     }
 
