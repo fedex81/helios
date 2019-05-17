@@ -1,7 +1,7 @@
 /*
  * CartridgeInfoProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 17/05/19 11:58
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ public class CartridgeInfoProvider {
     private long checksum;
     private long computedChecksum;
     private String sha1;
+    private String crc32;
 
     protected String romName;
 
@@ -53,6 +54,10 @@ public class CartridgeInfoProvider {
         return sha1;
     }
 
+    public String getCrc32() {
+        return crc32;
+    }
+
     public boolean hasCorrectChecksum() {
         return checksum == computedChecksum;
     }
@@ -69,6 +74,7 @@ public class CartridgeInfoProvider {
         this.checksum = memoryProvider.readRomByte(getChecksumStartAddress());
         this.computedChecksum = Util.computeChecksum(memoryProvider);
         this.sha1 = Util.computeSha1Sum(memoryProvider);
+        this.crc32 = Util.computeCrc32(memoryProvider);
 
         //defaults to false
         if (AUTOFIX_CHECKSUM && checksum != computedChecksum) {
@@ -81,7 +87,7 @@ public class CartridgeInfoProvider {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("ROM header checksum: " + checksum + ", computed: " + computedChecksum + ", match: " + hasCorrectChecksum());
-        sb.append("\n").append("ROM sha1: " + sha1);
+        sb.append("\n").append("ROM sha1: " + sha1 + " - ROM CRC32: " + crc32);
         return sb.toString();
     }
 

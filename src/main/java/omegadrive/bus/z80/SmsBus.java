@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 15/04/19 21:36
+ * Last modified: 17/05/19 13:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,9 +33,6 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/**
- * TODO use a romList to detect korea and codies
- */
 public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper {
 
     private static Logger LOG = LogManager.getLogger(SmsBus.class);
@@ -52,6 +49,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     private static final int ROM_SIZE = ROM_END + 1; //48kb
 
     public static final int SEGA_MAPPING_CONTROL_ADDRESS = 0xFFFC;
+    public static final int CODEM_MAPPING_BASE_ADDRESS = 0x4000;
     public static final int KOREA_MAPPING_CONTROL_ADDRESS = 0xA000;
 
     private static final int OVERSEAS = 0x40;
@@ -93,24 +91,25 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
 
         countryValue = RegionDetector.Region.JAPAN != systemProvider.getRegion() ? OVERSEAS : DOMESTIC;
         isGG = systemProvider.getSystemType() == SystemLoader.SystemType.GG;
+        mapper = RomMapper.NO_OP_MAPPER;
+
         setupCartHw();
     }
 
     private void setupCartHw(){
-        int len = memoryProvider.getRomSize();
         this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
-        MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(), cartridgeInfoProvider.getSha1());
-        SmsMapper.Type mapperType = SmsMapper.Type.SEGA;
+        MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(),
+                cartridgeInfoProvider.getCrc32());
+        LOG.info(cartridgeInfoProvider.toString());
+        String mapperName = SmsMapper.Type.SEGA.name();
         if(e != MapperSelector.MISSING_DATA){
-            LOG.info("Cart Hw match:\n{}", e);
-            if(!RomMapper.NO_MAPPER_NAME.equalsIgnoreCase(e.mapperName)) {
-                LOG.info("ROM size: {}, using mapper: {}", len, mapper.getClass().getSimpleName());
-            }
+            LOG.info("Cart db match:\n{}", e);
+            mapperName = e.mapperName;
         } else {
-            LOG.info("Unknown rom sha1: {}", cartridgeInfoProvider.getSha1());
+            LOG.info("Unknown rom, assuming {} mapper, crc32: {}", mapperName, cartridgeInfoProvider.getCrc32());
         }
         smsMapper = SmsMapper.createInstance(memoryProvider);
-        mapper = smsMapper.setupRomMapper(mapperType, mapper);
+        mapper = smsMapper.setupRomMapper(mapperName, mapper);
     }
 
     @Override

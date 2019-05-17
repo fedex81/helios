@@ -1,3 +1,22 @@
+/*
+ * SmsMapper
+ * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 17/05/19 13:35
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package omegadrive.cart.mapper;
 
 import omegadrive.bus.z80.SmsBus;
@@ -10,18 +29,11 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 
-/**
- * ${FILE}
- * <p>
- * Federico Berti
- * <p>
- * Copyright 2019
- */
 public class SmsMapper {
 
     public enum Type{NONE, SEGA, CODEM, KOREA}
 
-    private static Type[] list = Type.values();
+    private static final Type[] list = Type.values();
 
     private static Logger LOG = LogManager.getLogger(SmsMapper.class);
 
@@ -75,8 +87,8 @@ public class SmsMapper {
             case KOREA:
                 activeMapper = new KoreaMapper();
                 break;
-                default:
-                    LOG.error("Invalid mapper type: {}", type);
+            default:
+                LOG.error("Invalid mapper type: {}", type);
         }
         LOG.info("Mapper set to: {}", currentType);
         return activeMapper;
@@ -155,7 +167,7 @@ public class SmsMapper {
         public void writeData(long addressL, long dataL, Size size) {
             int address = (int) (addressL & 0xFFFF);
             int page = address >> 14;
-            boolean isMappingControl = page < 3 && (address % 0x4000) == 0;
+            boolean isMappingControl = page < 3 && (address % SmsBus.CODEM_MAPPING_BASE_ADDRESS) == 0;
             if(isMappingControl){
                 writeBankData(page, dataL);
             } else {

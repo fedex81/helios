@@ -1,7 +1,7 @@
 /*
  * MapperSelector
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/04/19 14:33
+ * Last modified: 17/05/19 13:35
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,10 @@
 
 package omegadrive.cart.mapper;
 
+import com.google.common.base.Strings;
 import omegadrive.SystemLoader;
 import omegadrive.cart.loader.MsxXmlLoader;
+import omegadrive.cart.loader.SmsLoader;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,35 +32,41 @@ public class MapperSelector {
 
     public static final Entry MISSING_DATA = new Entry();
 
-    public static class Entry {
-        public String title;
-        public String mapperName;
-        public String sha1;
-
-        @Override
-        public String toString() {
-            return "Entry{" +
-                    "title='" + title + '\'' +
-                    ", mapperName='" + mapperName + '\'' +
-                    ", sha1='" + sha1 + '\'' +
-                    '}';
-        }
-    }
-
-    static Map<SystemLoader.SystemType, Map<String, Entry>> cache = new HashMap<>();
-
-    public static Entry getMapperData(SystemLoader.SystemType type, String sha1){
+    public static Entry getMapperData(SystemLoader.SystemType type, String code) {
         if(!cache.containsKey(type)){
             switch (type){
                 case MSX:
                     cache.put(type, MsxXmlLoader.loadData());
+                    break;
+                case SMS:
+                case GG:
+                    cache.put(type, SmsLoader.loadData(type));
                     break;
                 default:
                     cache.put(type, Collections.emptyMap());
                     break;
             }
         }
-        return cache.get(type).getOrDefault(sha1, MISSING_DATA);
+        return cache.get(type).getOrDefault(code, MISSING_DATA);
+    }
+
+    static Map<SystemLoader.SystemType, Map<String, Entry>> cache = new HashMap<>();
+
+    public static class Entry {
+        public String title;
+        public String mapperName;
+        public String sha1;
+        public String crc32;
+
+        @Override
+        public String toString() {
+            return "Entry{" +
+                    "title='" + title + '\'' +
+                    ", mapperName='" + mapperName + '\'' +
+                    (Strings.isNullOrEmpty(sha1) ? "" : ", sha1='" + sha1 + '\'') +
+                    (Strings.isNullOrEmpty(crc32) ? "" : ", crc32='" + crc32 + '\'') +
+                    '}';
+        }
     }
 
 

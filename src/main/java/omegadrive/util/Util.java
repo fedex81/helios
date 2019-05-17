@@ -1,7 +1,7 @@
 /*
  * Util
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 17/05/19 13:35
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.LockSupport;
+import java.util.zip.CRC32;
 
 public class Util {
 
@@ -236,6 +237,16 @@ public class Util {
 
     public static String computeSha1Sum(IMemoryRom rom){
         return computeSha1Sum(rom.getRomData());
+    }
+
+    public static String computeCrc32(int[] data) {
+        CRC32 crc32 = new CRC32();
+        Arrays.stream(data).forEach(d -> crc32.update(d));
+        return Long.toHexString(crc32.getValue());
+    }
+
+    public static String computeCrc32(IMemoryRom rom) {
+        return computeCrc32(rom.getRomData());
     }
 
     public static int log2(int n) {
