@@ -22,13 +22,13 @@ package omegadrive.bus.z80;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
-import omegadrive.bus.mapper.MapperSelector;
-import omegadrive.bus.mapper.MsxAsciiMapper;
-import omegadrive.bus.mapper.RomMapper;
+import omegadrive.cart.CartridgeInfoProvider;
+import omegadrive.cart.mapper.MapperSelector;
+import omegadrive.cart.mapper.MsxAsciiMapper;
+import omegadrive.cart.mapper.RomMapper;
 import omegadrive.input.MsxKeyboardInput;
 import omegadrive.joypad.JoypadProvider.JoypadNumber;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -42,7 +42,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import static omegadrive.joypad.JoypadProvider.JoypadNumber.*;
+import static omegadrive.joypad.JoypadProvider.JoypadNumber.P1;
+import static omegadrive.joypad.JoypadProvider.JoypadNumber.P2;
 
 /**
  * see

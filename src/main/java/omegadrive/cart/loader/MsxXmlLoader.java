@@ -17,11 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.util;
+package omegadrive.cart.loader;
 
-import omegadrive.bus.mapper.MapperSelector;
-import omegadrive.bus.mapper.RomMapper;
-import omegadrive.input.KeyboardInput;
+import omegadrive.cart.mapper.MapperSelector;
+import omegadrive.cart.mapper.RomMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
@@ -36,7 +35,6 @@ import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * MSX roms db from the openMsx project

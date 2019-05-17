@@ -17,10 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.bus.mapper;
+package omegadrive.cart.mapper;
 
 import omegadrive.SystemLoader;
-import omegadrive.util.MsxXmlLoader;
+import omegadrive.cart.loader.MsxXmlLoader;
 
 import java.util.Collections;
 import java.util.HashMap;

@@ -17,13 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.bus.mapper;
+package omegadrive.cart.mapper;
 
 import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static omegadrive.bus.mapper.MsxAsciiMapper.*;
+import static omegadrive.cart.mapper.MsxAsciiMapper.*;
 
 /**
  * MSX mapper Ascii8/16

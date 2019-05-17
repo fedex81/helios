@@ -21,14 +21,14 @@ package omegadrive.bus.gen;
 
 import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
-import omegadrive.bus.mapper.BackupMemoryMapper;
-import omegadrive.bus.mapper.RomMapper;
-import omegadrive.bus.mapper.Ssf2Mapper;
+import omegadrive.cart.GenesisCartInfoProvider;
+import omegadrive.cart.mapper.BackupMemoryMapper;
+import omegadrive.cart.mapper.RomMapper;
+import omegadrive.cart.mapper.Ssf2Mapper;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.Genesis;
 import omegadrive.system.SystemProvider;
-import omegadrive.util.GenesisCartInfoProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;

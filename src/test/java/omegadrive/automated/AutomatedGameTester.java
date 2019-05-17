@@ -17,12 +17,12 @@
 
 package omegadrive.automated;
 
-import omegadrive.system.SystemProvider;
+import omegadrive.SystemLoader;
+import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.util.CartridgeInfoProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.FileLoader;
-import omegadrive.SystemLoader;
 import omegadrive.util.Util;
 
 import java.io.File;

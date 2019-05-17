@@ -17,12 +17,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.util;
+package omegadrive.cart;
 
 import omegadrive.bus.gen.GenesisBus;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.util.Size;
+import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,7 +32,7 @@ import org.apache.logging.log4j.Logger;
  *
  * TODO support EEPROM, f1 world champ edition
  */
-public class GenesisCartInfoProvider extends CartridgeInfoProvider{
+public class GenesisCartInfoProvider extends CartridgeInfoProvider {
 
     private static Logger LOG = LogManager.getLogger(GenesisCartInfoProvider.class.getSimpleName());
 

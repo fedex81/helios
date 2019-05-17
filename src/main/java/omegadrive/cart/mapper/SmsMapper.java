@@ -1,4 +1,4 @@
-package omegadrive.bus.mapper;
+package omegadrive.cart.mapper;
 
 import omegadrive.bus.z80.SmsBus;
 import omegadrive.memory.IMemoryProvider;

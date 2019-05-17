@@ -17,9 +17,9 @@
 
 package omegadrive.cheat;
 
-import omegadrive.bus.cheat.BasicGenesisRawCode;
-import omegadrive.bus.cheat.CheatCodeHelper;
-import omegadrive.bus.cheat.GameGenieHelper;
+import omegadrive.cart.cheat.BasicGenesisRawCode;
+import omegadrive.cart.cheat.CheatCodeHelper;
+import omegadrive.cart.cheat.GameGenieHelper;
 import org.junit.Assert;
 import org.junit.Test;
 
