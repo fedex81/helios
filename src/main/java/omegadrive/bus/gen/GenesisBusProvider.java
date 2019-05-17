@@ -19,10 +19,10 @@
 
 package omegadrive.bus.gen;
 
-import omegadrive.system.SystemProvider;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,6 +40,8 @@ public interface GenesisBusProvider extends BaseBusProvider {
     int ADDRESS_UPPER_LIMIT = 0xFFFFFF;
     int ADDRESS_RAM_MAP_START = 0xE00000;
     int M68K_TO_Z80_MEMORY_MASK = 0x7FFF;
+
+    long DEFAULT_ROM_END_ADDRESS = 0x3F_FFFF;
 
     int FIFO_FULL_MASK = 0x01;
     int DMA_IN_PROGRESS_MASK = 0x02;

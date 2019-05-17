@@ -20,15 +20,15 @@
 package omegadrive.bus.gen;
 
 import omegadrive.Device;
-import omegadrive.system.Genesis;
-import omegadrive.system.SystemProvider;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.mapper.BackupMemoryMapper;
 import omegadrive.bus.mapper.RomMapper;
 import omegadrive.bus.mapper.Ssf2Mapper;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
-import omegadrive.util.CartridgeInfoProvider;
+import omegadrive.system.Genesis;
+import omegadrive.system.SystemProvider;
+import omegadrive.util.GenesisCartInfoProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -59,7 +59,7 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
 
     private GenesisVdpProvider vdp;
 
-    private CartridgeInfoProvider cartridgeInfoProvider;
+    private GenesisCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
 
     private BusArbiter busArbiter;
@@ -93,7 +93,7 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
 
     @Override
     public void init() {
-        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
+        this.cartridgeInfoProvider = GenesisCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
         initializeRomData();
         LOG.info(cartridgeInfoProvider.toString());
         this.busArbiter = BusArbiter.createInstance(vdp, m68kProvider, z80Provider);
@@ -162,14 +162,14 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
     @Override
     public long readData(long address, Size size) {
         address = address & 0xFF_FFFF;
-        if (address <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {  //ROM
+        if (address <= DEFAULT_ROM_END_ADDRESS) {  //ROM
 //            if(address <= cartridgeInfoProvider.getRomEnd()){ TODO Umk trilogy
-            if (isSramUsedWithBrokenHeader(address)) { // Buck Rogers
+            if (GenesisCartInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
                 return mapper.readData(address, size);
             }
             return Util.readRom(memoryProvider, size, (int) address);
-        } else if (address > CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
+        } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
             LOG.warn("Read on reserved address: " + Integer.toHexString((int) address));
             return size.getMax();
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
@@ -199,10 +199,10 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
             data = data & 0xFFFF_FFFFL;
         }
 
-        if (addressL <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
-            if (isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
+        if (addressL <= DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
+            if (GenesisCartInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
                 LOG.info("Unexpected Sram write: " + Long.toHexString(addressL) + ", value : " + data);
-                boolean adjust = adjustSramLimits(addressL);
+                boolean adjust = cartridgeInfoProvider.adjustSramLimits(addressL);
                 checkBackupMemoryMapper(SramMode.READ_WRITE, adjust);
                 mapper.writeData(addressL, data, size);
                 return;
@@ -228,18 +228,6 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
         } else {
             LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) addressL) + " - PC: " + Integer.toHexString((int) m68kProvider.getPC()));
         }
-    }
-
-    private boolean adjustSramLimits(long address) {
-        //FIFA 96
-        boolean adjust = cartridgeInfoProvider.getSramEnd() < CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS;
-        adjust &= address > cartridgeInfoProvider.getSramEnd() && address < CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS;
-        if (adjust) {
-            LOG.warn("Adjusting SRAM limit from: {} to: {}", Long.toHexString(cartridgeInfoProvider.getSramEnd()),
-                    Long.toHexString(CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS));
-            cartridgeInfoProvider.setSramEnd(CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS);
-        }
-        return adjust;
     }
 
     private void logVdpCounter(int v, int h) {
@@ -625,14 +613,6 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
         } else {
             LOG.warn("Unexpected vdpWrite, address: " + Long.toHexString(addressL) + ", data: " + data);
         }
-    }
-
-    private static boolean isSramUsedWithBrokenHeader(long address) {
-        boolean noOverlapBetweenRomAndSram =
-                CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS > GenesisBus.ROM_END_ADDRESS;
-        return noOverlapBetweenRomAndSram &&
-                (address >= CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS &&
-                        address <= CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS);
     }
 
     private void checkSsf2Mapper() {

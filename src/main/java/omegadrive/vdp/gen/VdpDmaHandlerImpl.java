@@ -19,14 +19,16 @@
 
 package omegadrive.vdp.gen;
 
-import omegadrive.system.Genesis;
 import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.system.Genesis;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.IVdpFifo;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -64,7 +66,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     private boolean checkSetup(boolean m1, long data) {
         if (!m1) {
-            LOG.warn("Attempting DMA but m1 not set: {}, data: {}", dmaMode, data);
+            LogHelper.printLevel(LOG, Level.WARN, "Attempting DMA but m1 not set: {}, data: {}", dmaMode, data, verbose);
             return false;
         }
         return true;

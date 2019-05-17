@@ -21,6 +21,8 @@ public class SmsMapper {
 
     public enum Type{NONE, SEGA, CODEM, KOREA}
 
+    private static Type[] list = Type.values();
+
     private static Logger LOG = LogManager.getLogger(SmsMapper.class);
 
     private static final boolean verbose = false;
@@ -43,6 +45,16 @@ public class SmsMapper {
         s.memoryProvider = memoryProvider;
         s.init();
         return s;
+    }
+
+    public RomMapper setupRomMapper(String name, RomMapper current){
+        Type type = Type.SEGA;
+        for (Type t : list) {
+            if(name.equalsIgnoreCase(t.name())){
+                type = t;
+            }
+        }
+        return setupRomMapper(type, current);
     }
 
     public RomMapper setupRomMapper(Type type, RomMapper current){

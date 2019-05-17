@@ -21,8 +21,8 @@ package omegadrive.bus.mapper;
 
 import omegadrive.bus.gen.GenesisBus;
 import omegadrive.system.Genesis;
-import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.FileLoader;
+import omegadrive.util.GenesisCartInfoProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
@@ -52,7 +52,7 @@ public class BackupMemoryMapper implements RomMapper {
     public static long SRAM_END_ADDRESS;
 
     private RomMapper baseMapper;
-    private CartridgeInfoProvider cartridgeInfoProvider;
+    private GenesisCartInfoProvider cartridgeInfoProvider;
     private SramMode sramMode = SramMode.DISABLE;
 
     private static String fileType = "srm";
@@ -60,22 +60,22 @@ public class BackupMemoryMapper implements RomMapper {
 
     private int[] sram = new int[0];
 
-    public static RomMapper createInstance(RomMapper baseMapper, CartridgeInfoProvider cart) {
+    public static RomMapper createInstance(RomMapper baseMapper, GenesisCartInfoProvider cart) {
         return createInstance(baseMapper, cart, SramMode.DISABLE);
     }
 
-    private static RomMapper createInstance(RomMapper baseMapper, CartridgeInfoProvider cart,
+    private static RomMapper createInstance(RomMapper baseMapper, GenesisCartInfoProvider cart,
                                             SramMode sramMode) {
         BackupMemoryMapper mapper = new BackupMemoryMapper();
         mapper.baseMapper = baseMapper;
         mapper.sramMode = sramMode;
         mapper.cartridgeInfoProvider = cart;
         SRAM_START_ADDRESS = mapper.cartridgeInfoProvider.getSramStart();
-        SRAM_START_ADDRESS = SRAM_START_ADDRESS > 0 ? SRAM_START_ADDRESS : CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS;
+        SRAM_START_ADDRESS = SRAM_START_ADDRESS > 0 ? SRAM_START_ADDRESS : GenesisCartInfoProvider.DEFAULT_SRAM_START_ADDRESS;
         SRAM_END_ADDRESS = mapper.cartridgeInfoProvider.getSramEnd();
-        SRAM_END_ADDRESS = SRAM_END_ADDRESS > 0 ? SRAM_END_ADDRESS : CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS;
+        SRAM_END_ADDRESS = SRAM_END_ADDRESS > 0 ? SRAM_END_ADDRESS : GenesisCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
         SRAM_AVAILABLE = true; //mapper.cartridgeInfoProvider.isSramEnabled();
-        mapper.sram = new int[CartridgeInfoProvider.DEFAULT_SRAM_BYTE_SIZE];
+        mapper.sram = new int[GenesisCartInfoProvider.DEFAULT_SRAM_BYTE_SIZE];
         LOG.info("BackupMemoryMapper created, using folder: " + DEFAULT_SRAM_FOLDER);
         initBackupFileIfNecessary(mapper);
         return mapper;
@@ -83,7 +83,7 @@ public class BackupMemoryMapper implements RomMapper {
 
     public static RomMapper getOrCreateInstance(RomMapper baseMapper,
                                                 RomMapper currentMapper,
-                                                CartridgeInfoProvider cartridgeInfoProvider,
+                                                GenesisCartInfoProvider cartridgeInfoProvider,
                                                 SramMode sramMode) {
         if (baseMapper != currentMapper) {
             currentMapper.setSramMode(sramMode);
@@ -103,13 +103,6 @@ public class BackupMemoryMapper implements RomMapper {
 
     private static boolean noOverlapBetweenRomAndSram() {
         return SRAM_START_ADDRESS > GenesisBus.ROM_END_ADDRESS;
-    }
-
-    private static boolean isBrokenSramHeader(long address) {
-        boolean shouldUseSram = !SRAM_AVAILABLE && noOverlapBetweenRomAndSram() &&
-                (address >= CartridgeInfoProvider.DEFAULT_SRAM_START_ADDRESS &&
-                        address <= CartridgeInfoProvider.DEFAULT_SRAM_END_ADDRESS);
-        return shouldUseSram;
     }
 
     @Override
@@ -176,7 +169,7 @@ public class BackupMemoryMapper implements RomMapper {
                     mapper.sram = FileLoader.readFileSafe(mapper.backupFile);
                 } else {
                     LOG.info("Creating backup memory file: " + mapper.backupFile);
-                    mapper.sram = new int[CartridgeInfoProvider.DEFAULT_SRAM_BYTE_SIZE];
+                    mapper.sram = new int[GenesisCartInfoProvider.DEFAULT_SRAM_BYTE_SIZE];
                     size = mapper.sram.length;
                     FileLoader.writeFile(mapper.backupFile, mapper.sram);
                 }

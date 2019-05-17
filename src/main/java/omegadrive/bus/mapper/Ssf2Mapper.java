@@ -19,8 +19,8 @@
 
 package omegadrive.bus.mapper;
 
+import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -85,7 +85,7 @@ public class Ssf2Mapper implements RomMapper {
     @Override
     public long readData(long address, Size size) {
         address = address & 0xFF_FFFF;
-        if (address >= BANKABLE_START_ADDRESS && address <= CartridgeInfoProvider.DEFAULT_ROM_END_ADDRESS) {
+        if (address >= BANKABLE_START_ADDRESS && address <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
             LogHelper.printLevel(LOG, Level.INFO, "Bank read: {}", address, verbose);
             int bankSelector = (int) (address / BANK_SIZE);
             address = (banks[bankSelector] * BANK_SIZE) + (address - bankSelector * BANK_SIZE);

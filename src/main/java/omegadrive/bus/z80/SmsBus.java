@@ -22,8 +22,10 @@ package omegadrive.bus.z80;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
+import omegadrive.bus.mapper.MapperSelector;
 import omegadrive.bus.mapper.RomMapper;
 import omegadrive.bus.mapper.SmsMapper;
+import omegadrive.util.CartridgeInfoProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.vdp.SmsVdp;
@@ -32,7 +34,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * TODO default to SEGA, use a romList to detect korea and codies
+ * TODO use a romList to detect korea and codies
  */
 public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper {
 
@@ -52,10 +54,11 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     public static final int SEGA_MAPPING_CONTROL_ADDRESS = 0xFFFC;
     public static final int KOREA_MAPPING_CONTROL_ADDRESS = 0xA000;
 
-    private static final int OVERSEA = 0x40;
+    private static final int OVERSEAS = 0x40;
     private static final int DOMESTIC = 0;
 
     private SmsVdp vdp;
+    private CartridgeInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private SmsMapper smsMapper;
 
@@ -63,7 +66,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     private int[] ioPorts;
 
     //0 - domestic (J)
-    //0x40 - oversea
+    //0x40 - overseas (U/E)
     private int countryValue = DOMESTIC;
 
     private boolean isGG = false;
@@ -87,10 +90,27 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
         ioPorts = new int[10];
         ioPorts[PORT_A + IO_TH_INPUT] = 1;
         ioPorts[PORT_B + IO_TH_INPUT] = 1;
-        smsMapper = SmsMapper.createInstance(memoryProvider);
-        mapper = smsMapper.setupRomMapper(SmsMapper.Type.SEGA, mapper);
-        countryValue = RegionDetector.Region.JAPAN != systemProvider.getRegion() ? OVERSEA : DOMESTIC;
+
+        countryValue = RegionDetector.Region.JAPAN != systemProvider.getRegion() ? OVERSEAS : DOMESTIC;
         isGG = systemProvider.getSystemType() == SystemLoader.SystemType.GG;
+        setupCartHw();
+    }
+
+    private void setupCartHw(){
+        int len = memoryProvider.getRomSize();
+        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
+        MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(), cartridgeInfoProvider.getSha1());
+        SmsMapper.Type mapperType = SmsMapper.Type.SEGA;
+        if(e != MapperSelector.MISSING_DATA){
+            LOG.info("Cart Hw match:\n{}", e);
+            if(!RomMapper.NO_MAPPER_NAME.equalsIgnoreCase(e.mapperName)) {
+                LOG.info("ROM size: {}, using mapper: {}", len, mapper.getClass().getSimpleName());
+            }
+        } else {
+            LOG.info("Unknown rom sha1: {}", cartridgeInfoProvider.getSha1());
+        }
+        smsMapper = SmsMapper.createInstance(memoryProvider);
+        mapper = smsMapper.setupRomMapper(mapperType, mapper);
     }
 
     @Override
@@ -109,17 +129,6 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
 
     @Override
     public void write(long addressL, long dataL, Size size) {
-        //TODO default to SEGA, use a romList to detect korea and codies
-//        int address = (int) (addressL & 0xFFFF);
-//        int page = address >> 14;
-//        boolean isKorea = false; //KOREA_MAPPING_CONTROL_ADDRESS == address;
-//        boolean isCodem = false; //page > 0 && page < 3 && (address & 0x3FFF) == address;
-//        boolean isSega = false;// address >= SEGA_MAPPING_CONTROL_ADDRESS;
-//        if(isCodem || isKorea || isSega){
-//            mapper = isSega ? smsMapper.setupRomMapper(SmsMapper.Type.SEGA, mapper) : mapper;
-//            mapper = isCodem ? smsMapper.setupRomMapper(SmsMapper.Type.CODEM, mapper) : mapper;
-//            mapper = isKorea ? smsMapper.setupRomMapper(SmsMapper.Type.KOREA, mapper) : mapper;
-//        }
         mapper.writeData(addressL, dataL, size);
     }
 

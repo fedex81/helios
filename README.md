@@ -52,5 +52,7 @@ Tjitze Rienstra for his TMSX project and in particular:
 - [AY38910](https://github.com/tjitze/TMSX)
 - [TMS9918a VDP](https://github.com/tjitze/TMSX)
 
+C-BIOS Association for their open source [MSX bios](http://cbios.sourceforge.net/)
+
 # License
 Released under GPL v3.0
