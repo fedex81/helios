@@ -143,18 +143,17 @@ public class SmsMapper {
         public void writeData(long addressL, long dataL, Size size) {
             int address = (int) (addressL & 0xFFFF);
             int page = address >> 14;
-            boolean isMappingControl = (address & 0x3FFF) == address && page < 3;
+            boolean isMappingControl = page < 3 && (address % 0x4000) == 0;
             if(isMappingControl){
-                writeBankData(addressL, dataL);
+                writeBankData(page, dataL);
             } else {
                 memoryProvider.writeRamByte(address & SmsBus.RAM_MASK, (int) (dataL & 0xFF));
             }
         }
 
         @Override
-        public void writeBankData(long addressL, long data) {
-            int val = (int) (addressL & 3);
-            frameReg[val] = (int) (data & 0xFF);
+        public void writeBankData(long page, long data) {
+            frameReg[(int) page] = (int) (data & 0xFF);
         }
     }
 

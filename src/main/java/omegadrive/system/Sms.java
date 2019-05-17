@@ -33,7 +33,6 @@ import omegadrive.ui.RenderingStrategy;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.Engine;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
@@ -46,6 +45,7 @@ public class Sms extends BaseSystem {
 
     protected Z80Provider z80;
     private SystemLoader.SystemType systemType;
+    private boolean isGG;
 
     public static boolean verbose = false;
 
@@ -56,6 +56,7 @@ public class Sms extends BaseSystem {
     protected Sms(SystemLoader.SystemType systemType, GenesisWindow emuFrame){
         super(emuFrame);
         this.systemType = systemType;
+        this.isGG = systemType == SystemLoader.SystemType.GG;
     }
 
     @Override
@@ -74,7 +75,7 @@ public class Sms extends BaseSystem {
     private void initCommon() {
         int numPixels = VideoMode.NTSCJ_H32_V24.getDimension().width * VideoMode.NTSCJ_H32_V24.getDimension().height;
         display = new int[numPixels];
-        if(Engine.is_gg){
+        if(isGG){
             int nump = ggVideoMode.getDimension().width * ggVideoMode.getDimension().height;
             ggDisplay = new int[nump];
         }
@@ -111,15 +112,15 @@ public class Sms extends BaseSystem {
         long startCycle = System.nanoTime();
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         updateVideoMode();
-        int[] viewport = Engine.is_sms ? display : ggDisplay;
-        VideoMode outputVideoMode = Engine.is_sms ? videoMode : ggVideoMode;
+        int[] viewport = isGG ? ggDisplay : display;
+        VideoMode outputVideoMode = isGG ? ggVideoMode : videoMode;
 
         do {
             try {
                 runZ80(counter);
                 runVdp(counter);
                 if (canRenderScreen) {
-                    if(Engine.is_gg){
+                    if(isGG){
                         RenderingStrategy.subImageWithOffset(display, ggDisplay, videoMode.getDimension(),
                                 outputVideoMode.getDimension(), SmsVdp.GG_X_OFFSET,
                                 SmsVdp.GG_Y_OFFSET);

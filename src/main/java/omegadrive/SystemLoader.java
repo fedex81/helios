@@ -19,14 +19,15 @@
 
 package omegadrive;
 
-import com.google.common.collect.ObjectArrays;
 import omegadrive.input.InputProvider;
-import omegadrive.system.*;
+import omegadrive.system.Genesis;
+import omegadrive.system.Sms;
+import omegadrive.system.SystemProvider;
+import omegadrive.system.Z80BaseSystem;
 import omegadrive.ui.EmuFrame;
 import omegadrive.ui.GenesisWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
-import omegadrive.vdp.Engine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -192,10 +193,8 @@ public class SystemLoader {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, emuFrame);
         } else if(isSms){
             systemProvider = Sms.createNewInstance(SystemType.SMS, emuFrame);
-            Engine.setSMS();
         } else if(isGg){
             systemProvider = Sms.createNewInstance(SystemType.GG, emuFrame);
-            Engine.setGG();
         }
         if(systemProvider == null){
             LOG.error("Unable to find a system to load: " + file.toAbsolutePath());

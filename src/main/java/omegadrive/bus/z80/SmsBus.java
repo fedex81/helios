@@ -20,12 +20,12 @@
 package omegadrive.bus.z80;
 
 import omegadrive.Device;
+import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.mapper.RomMapper;
 import omegadrive.bus.mapper.SmsMapper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
-import omegadrive.vdp.Engine;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
@@ -52,7 +52,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     public static final int SEGA_MAPPING_CONTROL_ADDRESS = 0xFFFC;
     public static final int KOREA_MAPPING_CONTROL_ADDRESS = 0xA000;
 
-    private static final int EUROPE = 0x40;
+    private static final int OVERSEA = 0x40;
     private static final int DOMESTIC = 0;
 
     private SmsVdp vdp;
@@ -62,9 +62,11 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     /** I/O Ports A and B * (5 ints each) */
     private int[] ioPorts;
 
-    //0 - domestic (J/US)
-    //0x40 - europe
+    //0 - domestic (J)
+    //0x40 - oversea
     private int countryValue = DOMESTIC;
+
+    private boolean isGG = false;
 
     private final static int
             IO_TR_DIRECTION = 0,
@@ -87,7 +89,8 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
         ioPorts[PORT_B + IO_TH_INPUT] = 1;
         smsMapper = SmsMapper.createInstance(memoryProvider);
         mapper = smsMapper.setupRomMapper(SmsMapper.Type.SEGA, mapper);
-        countryValue = RegionDetector.Region.EUROPE == systemProvider.getRegion() ? EUROPE : DOMESTIC;
+        countryValue = RegionDetector.Region.JAPAN != systemProvider.getRegion() ? OVERSEA : DOMESTIC;
+        isGG = systemProvider.getSystemType() == SystemLoader.SystemType.GG;
     }
 
     @Override
@@ -134,7 +137,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     public void writeIoPort(int port, int value) {
         port &= 0xFF;
         // Game Gear Serial Ports (do nothing for now)
-        if (Engine.is_gg && port < 0x07){
+        if (isGG && port < 0x07){
             return;
         }
         switch (port & 0xC1) {
@@ -202,7 +205,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     {
         port &= 0xFF;
         // Game Gear Serial Ports (not fully emulated)
-        if (Engine.is_gg && port < 0x07)
+        if (isGG && port < 0x07)
         {
             switch (port)
             {

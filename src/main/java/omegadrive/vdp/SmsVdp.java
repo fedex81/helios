@@ -18,6 +18,7 @@
  */
 package omegadrive.vdp;
 
+import omegadrive.SystemLoader;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
@@ -246,6 +247,8 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     private SystemProvider systemProvider;
     private VideoMode videoMode;
     private RegionDetector.Region region;
+    private SystemLoader.SystemType systemType;
+    private boolean isSms = true;
 
     /**
      *  Vdp Constructor.
@@ -256,6 +259,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     public SmsVdp(SystemProvider systemProvider, int[] d)
     {
         this.systemProvider = systemProvider;
+        setSystemType(systemProvider.getSystemType());
         this.display = d;
 
         // 16K of Video RAM
@@ -316,6 +320,18 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         region = systemProvider.getRegion();
         resetVideoMode(true);
         interruptHandler.setMode(getVideoMode());
+    }
+
+    /**
+     *  Set SMS/GG Mode
+     */
+    private void setSystemType(SystemLoader.SystemType type){
+        systemType = type;
+        isSms = type == SystemLoader.SystemType.SMS;
+        h_start = isSms ? 0 : 5;
+        h_end   = isSms ? 32 : 27;
+
+        LOG.info("Setting {} mode", type);
     }
 
     public void setRegion(RegionDetector.Region region) {
@@ -543,10 +559,9 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
             // Instead of writing real colour to CRAM, write converted Java palette colours for speed.
             // Slightly inaccurate, as CRAM doesn't contain real values, but it is never read by software.
             case 0x03:
-                if (Engine.is_sms)
+                if (isSms) {
                     CRAM[location & 0x1F] = SMS_JAVA[value & 0x3F];
-                else if (Engine.is_gg)
-                {
+                } else {
                     if ((location & 1) == 0) // first byte
                         CRAM[(location & 0x3F)>>1] = GG_JAVA1[value]; // GG
                     else
@@ -583,7 +598,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         // ----------------------------------------------------------------------------------------
         // Check we are in the visible drawing region
         // ----------------------------------------------------------------------------------------
-        if (Engine.is_gg)
+        if (!isSms)
         {
             if (lineno < GG_Y_OFFSET || lineno >= GG_Y_OFFSET + GG_HEIGHT)
                 return;
@@ -619,7 +634,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
             // ------------------------------------------------------------------------------------
             // Blank Leftmost Column (SMS Only)
             // ------------------------------------------------------------------------------------
-            if (Engine.is_sms && (vdpreg[0] & 0x20) != 0)
+            if (isSms && (vdpreg[0] & 0x20) != 0)
             {
                 int colour = CRAM[16 + (vdpreg[7] & 0x0F)];
                 int location = lineno << 8;
@@ -654,7 +669,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
         // Top Two Rows Not Affected by Horizontal Scrolling (SMS Only)
         // We don't actually need the SMS check here as we don't draw this line for GG now
-        if (lineno < 16 && ((vdpreg[0] & 0x40) != 0) /*&& Setup.is_sms*/)
+        if (lineno < 16 && ((vdpreg[0] & 0x40) != 0) /*&& isSms*/)
             hscroll = 0;
 
         // Lock Right eight columns
@@ -885,7 +900,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
     private final void generateConvertedPals()
     {
-        if (Engine.is_sms && SMS_JAVA == null)
+        if (isSms && SMS_JAVA == null)
         {
             SMS_JAVA = new int[0x40];
 
@@ -898,7 +913,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
                 SMS_JAVA[i] = ((r * 85) << 16) | ((g * 85) << 8) | (b * 85);
             }
         }
-        else if (Engine.is_gg && GG_JAVA1 == null)
+        else if (!isSms && GG_JAVA1 == null)
         {
             GG_JAVA1 = new int[0x100];
             GG_JAVA2 = new int[0x10];
