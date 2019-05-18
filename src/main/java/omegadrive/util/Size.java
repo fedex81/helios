@@ -1,7 +1,7 @@
 /*
  * Size
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/05/19 16:16
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,10 @@ public enum Size {
     }
 
     public long getMax() {
+        return this.max;
+    }
+
+    public long getMask() {
         return this.max;
     }
 

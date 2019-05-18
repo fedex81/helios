@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 17/05/19 22:46
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -191,13 +191,7 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
     @Override
     public void writeData(long address, long data, Size size) {
         long addressL = (address & 0xFF_FFFF);
-        if (size == Size.BYTE) {
-            data = data & 0xFF;
-        } else if (size == Size.WORD) {
-            data = data & 0xFFFF;
-        } else {
-            data = data & 0xFFFF_FFFFL;
-        }
+        data &= size.getMask();
 
         if (addressL <= DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
             if (GenesisCartInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
