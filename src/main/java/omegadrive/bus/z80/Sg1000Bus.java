@@ -1,7 +1,7 @@
 /*
  * Sg1000Bus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/05/19 16:46
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,16 +19,14 @@
 
 package omegadrive.bus.z80;
 
-import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
-import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.Size;
 import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Sg1000Bus extends DeviceAwareBus implements Z80BusProvider {
+public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvider {
 
     private static Logger LOG = LogManager.getLogger(Sg1000Bus.class);
 
@@ -40,25 +38,7 @@ public class Sg1000Bus extends DeviceAwareBus implements Z80BusProvider {
     private static int RAM_SIZE = 0x400;  //1Kb
     private static int ROM_SIZE = ROM_END + 1; //48kb
 
-    public Tms9918aVdp vdp;
-
     private int lastDE;
-    private int[] rom;
-    private int[] ram;
-
-    @Override
-    public Z80BusProvider attachDevice(Device device) {
-        if (device instanceof IMemoryProvider) {
-            IMemoryProvider memory = (IMemoryProvider) device;
-            this.rom = memory.getRomData();
-            this.ram = memory.getRamData();
-        }
-        if (device instanceof Tms9918aVdp) {
-            this.vdp = (Tms9918aVdp) device;
-        }
-        super.attachDevice(device);
-        return this;
-    }
 
     @Override
     public long read(long addressL, Size size) {
@@ -119,11 +99,11 @@ public class Sg1000Bus extends DeviceAwareBus implements Z80BusProvider {
                 break;
             case 0x80:
                 //                LOG.warn("write vdp vram: {}", Integer.toHexString(value));
-                vdp.writeVRAMData(byteVal);
+                vdpProvider.writeVRAMData(byteVal);
                 break;
             case 0x81:
                 //                LOG.warn("write: vdp address: {}", Integer.toHexString(value));
-                vdp.writeRegister(byteVal);
+                vdpProvider.writeRegister(byteVal);
                 break;
             case 0xC0: //aka $DE
                 if (port == 0xDE) {
@@ -155,10 +135,10 @@ public class Sg1000Bus extends DeviceAwareBus implements Z80BusProvider {
                 break;
             case 0x80:
                 //                LOG.warn("read: vdp vram");
-                return vdp.readVRAMData();
+                return vdpProvider.readVRAMData();
             case 0x81:
                 //                LOG.warn("read: vdp status reg");
-                return vdp.readStatus();
+                return vdpProvider.readStatus();
             case 0xC0:
                 if (port == 0xDE) {
                     LOG.warn("read 0xDE: {}", Integer.toHexString(lastDE));
@@ -197,7 +177,7 @@ public class Sg1000Bus extends DeviceAwareBus implements Z80BusProvider {
 
     @Override
     public void handleInterrupts(Z80Provider.Interrupt type) {
-        boolean set = vdp.getStatusINT() && vdp.getGINT();
+        boolean set = vdpProvider.getStatusINT() && vdpProvider.getGINT();
         z80Provider.interrupt(set);
 //        if(prev != set){
 //            LOG.info(vdp.getInterruptHandler().getStateString("Vint: " + set));

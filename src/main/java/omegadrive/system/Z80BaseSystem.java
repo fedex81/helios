@@ -1,7 +1,7 @@
 /*
  * Z80BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:18
+ * Last modified: 18/05/19 16:46
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.z80.ColecoBus;
 import omegadrive.bus.z80.MsxBus;
 import omegadrive.bus.z80.Sg1000Bus;
@@ -42,7 +41,7 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Z80BaseSystem extends BaseSystem {
+public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     private static Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
 
@@ -168,11 +167,6 @@ public class Z80BaseSystem extends BaseSystem {
         LOG.error("Not implemented!");
     }
 
-    @Override
-    protected BaseBusProvider getBusProvider() {
-        return bus;
-    }
-
     private void resetCycleCounters(int counter) {
         nextZ80Cycle -= counter;
         nextVdpCycle -= counter;
@@ -228,9 +222,7 @@ public class Z80BaseSystem extends BaseSystem {
     }
 
     private void handleInterrupt(){
-        //TODO
-        Z80BusProvider sgBus = (Z80BusProvider) bus;
-        sgBus.handleInterrupts(vdpInterruptType);
+        bus.handleInterrupts(vdpInterruptType);
     }
 
     @Override

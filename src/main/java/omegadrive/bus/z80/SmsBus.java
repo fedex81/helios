@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/05/19 13:15
+ * Last modified: 18/05/19 16:46
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 
 package omegadrive.bus.z80;
 
-import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.cart.CartridgeInfoProvider;
@@ -33,7 +32,7 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper {
+public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, RomMapper {
 
     private static Logger LOG = LogManager.getLogger(SmsBus.class);
 
@@ -55,7 +54,6 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     private static final int OVERSEAS = 0x40;
     private static final int DOMESTIC = 0;
 
-    private SmsVdp vdp;
     private CartridgeInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private SmsMapper smsMapper;
@@ -110,15 +108,6 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
         }
         smsMapper = SmsMapper.createInstance(memoryProvider);
         mapper = smsMapper.setupRomMapper(mapperName, mapper);
-    }
-
-    @Override
-    public Z80BusProvider attachDevice(Device device) {
-        if (device instanceof SmsVdp) {
-            this.vdp = (SmsVdp) device;
-        }
-        super.attachDevice(device);
-        return this;
     }
 
     @Override
@@ -185,12 +174,12 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
 
             // 0xBE VDP Data port
             case 0x80:
-                vdp.dataWrite(value);
+                vdpProvider.dataWrite(value);
                 break;
 
             // 0xBD / 0xBF VDP Control port (Mirrored at two locations)
             case 0x81:
-                vdp.controlWrite(value);
+                vdpProvider.controlWrite(value);
                 break;
 
             // 0x7F: PSG
@@ -241,7 +230,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
         {
             // 0x7E - Vertical Port
             case 0x40:
-                return vdp.getVCount();
+                return vdpProvider.getVCount();
 
             // 0x7F - Horizontal Port
             case 0x41:
@@ -249,11 +238,11 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
 
             // VDP Data port
             case 0x80:
-                return vdp.dataRead();
+                return vdpProvider.dataRead();
 
             // VDP Control port
             case 0x81:
-                return vdp.controlRead();
+                return vdpProvider.controlRead();
 
             // 0xC0 / 0xDC - I/O Port A
             // D7 : Port B DOWN pin input
@@ -306,7 +295,7 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     // --------------------------------------------------------------------------------------------
 
     private final int getHCount() {
-        return vdp.getHCount();
+        return vdpProvider.getHCount();
     }
 
     // --------------------------------------------------------------------------------------------
@@ -359,11 +348,11 @@ public class SmsBus extends DeviceAwareBus implements Z80BusProvider, RomMapper 
     }
 
     private void handleIM(){
-        boolean set = vdp.isVINT() || vdp.isHINT();
+        boolean set = vdpProvider.isVINT() || vdpProvider.isHINT();
         z80Provider.interrupt(set);
         if(verbose && prev != set){
-            LOG.info(vdp.getInterruptHandler().getStateString("INT: " + set));
-            LOG.info("Vint: {}, Hint: {}", vdp.isVINT(), vdp.isHINT());
+            LOG.info(vdpProvider.getInterruptHandler().getStateString("INT: " + set));
+            LOG.info("Vint: {}, Hint: {}", vdpProvider.isVINT(), vdpProvider.isHINT());
             prev = set;
         }
     }

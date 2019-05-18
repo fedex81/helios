@@ -1,7 +1,7 @@
 /*
  * DeviceAwareBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/05/19 16:46
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,18 +20,18 @@
 package omegadrive.bus;
 
 import omegadrive.Device;
-import omegadrive.system.SystemProvider;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.m68k.M68kProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.sound.SoundProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.z80.Z80Provider;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class DeviceAwareBus implements BaseBusProvider {
+public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseBusProvider {
 
     private Set<Device> deviceSet = new HashSet<>();
 
@@ -39,7 +39,7 @@ public abstract class DeviceAwareBus implements BaseBusProvider {
     protected JoypadProvider joypadProvider;
     protected SoundProvider soundProvider;
     protected SystemProvider systemProvider;
-    protected BaseVdpProvider vdpProvider;
+    protected V vdpProvider;
     protected Z80Provider z80Provider;
     protected M68kProvider m68kProvider;
 
@@ -72,7 +72,7 @@ public abstract class DeviceAwareBus implements BaseBusProvider {
             systemProvider = getDevice(getDeviceSet(), SystemProvider.class);
         }
         if (vdpProvider == null) {
-            vdpProvider = getDevice(getDeviceSet(), BaseVdpProvider.class);
+            vdpProvider = (V) getDevice(getDeviceSet(), BaseVdpProvider.class);
         }
         if (z80Provider == null) {
             z80Provider = getDevice(getDeviceSet(), Z80Provider.class);

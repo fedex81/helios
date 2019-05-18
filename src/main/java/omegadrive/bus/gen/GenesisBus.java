@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/05/19 22:46
+ * Last modified: 18/05/19 16:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,26 +38,11 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Objects;
 
-/**
- * Based on genefusto GenVdp
- * https://github.com/DarkMoe/genefusto
- * @author DarkMoe
- *
- * https://wiki.megadrive.org/index.php?title=IO_Registers
- * https://www.gamefaqs.com/genesis/916377-genesis/faqs/9755
- * http://darkdust.net/writings/megadrive/initializing
- *
- * TODO
- * Interrupts are know acknowleged based on what the VDP thinks its asserting rather than what the 68K actually is acking - Fixes Fatal Rewind
- *
- */
-public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, RomMapper {
+public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements GenesisBusProvider, RomMapper {
 
     private static Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
     public static boolean verbose = false || Genesis.verbose;
-
-    private GenesisVdpProvider vdp;
 
     private GenesisCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
@@ -78,7 +63,7 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
 
     public GenesisBus() {
         this.mapper = this;
-        this.busArbiter = BusArbiter.createInstance(vdp, m68kProvider, z80Provider);
+        this.busArbiter = BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider);
     }
 
     void initializeRomData() {
@@ -96,7 +81,7 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
         this.cartridgeInfoProvider = GenesisCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
         initializeRomData();
         LOG.info(cartridgeInfoProvider.toString());
-        this.busArbiter = BusArbiter.createInstance(vdp, m68kProvider, z80Provider);
+        this.busArbiter = BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider);
         this.z80BusRequested = false;
         this.z80ResetState = true;
         detectState();
@@ -122,9 +107,6 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
 
     @Override
     public GenesisBusProvider attachDevice(Device device) {
-        if (device instanceof GenesisVdpProvider) {
-            this.vdp = (GenesisVdpProvider) device;
-        }
         if (device instanceof BusArbiter) {
             this.busArbiter = (BusArbiter) device;
         }
@@ -133,7 +115,7 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
     }
 
     private void detectState() {
-        boolean ok = Objects.nonNull(systemProvider) && Objects.nonNull(m68kProvider) && Objects.nonNull(joypadProvider) && Objects.nonNull(vdp) &&
+        boolean ok = Objects.nonNull(systemProvider) && Objects.nonNull(m68kProvider) && Objects.nonNull(joypadProvider) && Objects.nonNull(vdpProvider) &&
                 Objects.nonNull(memoryProvider) && Objects.nonNull(z80Provider) && Objects.nonNull(soundProvider) && Objects.nonNull(cartridgeInfoProvider)
                 && Objects.nonNull(busArbiter);
         busState = ok ? BusState.READY : BusState.NOT_READY;
@@ -521,12 +503,12 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
             boolean even = address % 2 == 0;
             boolean isVdpData = address <= 0x03;
             //read word by default
-            data = isVdpData ? vdp.readDataPort() : vdp.readControl();
+            data = isVdpData ? vdpProvider.readDataPort() : vdpProvider.readControl();
             if (size == Size.BYTE) {
                 data = even ? data >> 8 : data & 0xFF;
             } else if (size == Size.LONG) {
                 data = data << 16;
-                long data2 = isVdpData ? vdp.readDataPort() : vdp.readControl();
+                long data2 = isVdpData ? vdpProvider.readDataPort() : vdpProvider.readControl();
                 data |= data2;
             }
         } else if (address >= 0x08 && address <= 0x0E) { //	VDP HV counter
@@ -542,8 +524,8 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
 //
 //            For 8-bit reads, the even byte (e.g. C00008h) returns the V counter, and
 //            the odd byte (e.g. C00009h) returns the H counter.
-            int v = vdp.getVCounter();
-            int h = vdp.getHCounter();
+            int v = vdpProvider.getVCounter();
+            int h = vdpProvider.getHCounter();
             logVdpCounter(v, h);
             if (size == Size.WORD) {
                 return (v << 8) | h;
@@ -571,22 +553,22 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
         if (addressL < 0x4) {    //DATA PORT
             if (size == Size.BYTE) {
                 data = data << 8 | data;
-                vdp.writeDataPort(data);
+                vdpProvider.writeDataPort(data);
             } else if (size == Size.WORD) {
-                vdp.writeDataPort(data);
+                vdpProvider.writeDataPort(data);
             } else {
-                vdp.writeDataPort(data >> 16);
-                vdp.writeDataPort(data & 0xFFFF);
+                vdpProvider.writeDataPort(data >> 16);
+                vdpProvider.writeDataPort(data & 0xFFFF);
             }
         } else if (addressL >= 0x4 && addressL < 0x8) {    //CONTROL PORT
             if (size == Size.BYTE) {
                 data = data << 8 | data;
-                vdp.writeControlPort(data);
+                vdpProvider.writeControlPort(data);
             } else if (size == Size.WORD) {
-                vdp.writeControlPort(data);
+                vdpProvider.writeControlPort(data);
             } else {
-                vdp.writeControlPort(data >> 16);
-                vdp.writeControlPort(data & 0xFFFF);
+                vdpProvider.writeControlPort(data >> 16);
+                vdpProvider.writeControlPort(data & 0xFFFF);
             }
         } else if (addressL >= 0x8 && addressL < 0x0F) {   //HV Counter
             LOG.warn("HV counter write");
@@ -639,7 +621,7 @@ public class GenesisBus extends DeviceAwareBus implements GenesisBusProvider, Ro
 
     @Override
     public GenesisVdpProvider getVdp() {
-        return vdp;
+        return vdpProvider;
     }
 
     @Override

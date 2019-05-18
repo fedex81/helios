@@ -1,7 +1,7 @@
 /*
  * MsxBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/05/19 16:25
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadNumber.P2;
  * http://msx.ebsoft.fr/roms/index.php?v=MSX1&Send=Send
  * http://fms.komkon.org/MSX/Docs/Portar.txt
  */
-public class MsxBus extends DeviceAwareBus implements Z80BusProvider {
+public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvider {
 
     private static Logger LOG = LogManager.getLogger(MsxBus.class);
 
@@ -63,7 +63,6 @@ public class MsxBus extends DeviceAwareBus implements Z80BusProvider {
     private static int SLOT_SIZE = 0x10000;
     private static int SLOTS = 4;
 
-    public Tms9918aVdp vdp;
     private int[] bios;
 
     private int slotSelect = 0;
@@ -97,9 +96,6 @@ public class MsxBus extends DeviceAwareBus implements Z80BusProvider {
 
     @Override
     public Z80BusProvider attachDevice(Device device) {
-        if (device instanceof Tms9918aVdp) {
-            this.vdp = (Tms9918aVdp) device;
-        }
         super.attachDevice(device);
         if(device instanceof IMemoryProvider){
             secondarySlot[3] = this.memoryProvider.getRamData();
@@ -160,10 +156,10 @@ public class MsxBus extends DeviceAwareBus implements Z80BusProvider {
                 joypadProvider.writeDataRegister1(port);
                 break;
             case 0x98:
-                vdp.writeVRAMData(byteVal);
+                vdpProvider.writeVRAMData(byteVal);
                 break;
             case 0x99:
-                vdp.writeRegister(byteVal);
+                vdpProvider.writeRegister(byteVal);
                 break;
             case 0xA0:
                 LOG.debug("Write PSG register select: {}",  value);
@@ -205,10 +201,10 @@ public class MsxBus extends DeviceAwareBus implements Z80BusProvider {
 
         switch (port) {
             case 0x98:
-                res = vdp.readVRAMData();
+                res = vdpProvider.readVRAMData();
                 break;
             case 0x99:
-                res = vdp.readStatus();
+                res = vdpProvider.readStatus();
                 break;
             case 0xA0:
                 LOG.debug("Read PSG register select");
@@ -309,7 +305,7 @@ public class MsxBus extends DeviceAwareBus implements Z80BusProvider {
 
     @Override
     public void handleInterrupts(Z80Provider.Interrupt type) {
-        boolean set = vdp.getStatusINT() && vdp.getGINT();
+        boolean set = vdpProvider.getStatusINT() && vdpProvider.getGINT();
         z80Provider.interrupt(set);
     }
 }

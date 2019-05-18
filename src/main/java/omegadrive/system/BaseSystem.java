@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/05/19 16:46
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ package omegadrive.system;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
-import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.gen.GenesisBus;
 import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInput;
@@ -49,7 +48,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public abstract class BaseSystem implements SystemProvider {
+public abstract class BaseSystem<B extends BaseBusProvider> implements SystemProvider {
 
     private static Logger LOG = LogManager.getLogger(BaseSystem.class.getSimpleName());
 
@@ -58,7 +57,7 @@ public abstract class BaseSystem implements SystemProvider {
     protected JoypadProvider joypad;
     protected SoundProvider sound;
     protected InputProvider inputProvider;
-    protected DeviceAwareBus bus;
+    protected B bus;
 
     protected RegionDetector.Region region = null;
     private String romName;
@@ -90,8 +89,6 @@ public abstract class BaseSystem implements SystemProvider {
     protected abstract void saveStateAction(String fileName, boolean load, int[] data);
 
     protected abstract void processSaveState();
-
-    protected abstract BaseBusProvider getBusProvider();
 
     protected abstract RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOverride);
 
@@ -159,7 +156,7 @@ public abstract class BaseSystem implements SystemProvider {
             LOG.info("Rom thread cancel");
             emuFrame.resetScreen();
             sound.reset();
-            getBusProvider().closeRom();
+            bus.closeRom();
         }
     }
 

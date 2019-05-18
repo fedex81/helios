@@ -1,7 +1,7 @@
 /*
  * ColecoBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/05/19 16:46
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 
 package omegadrive.bus.z80;
 
-import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.util.FileLoader;
@@ -39,7 +38,7 @@ import java.nio.file.Paths;
  * https://atarihq.com/danb/files/CV-Tech.txt
  * http://www.smspower.org/forums/9920-ColecoNMIEmulationWasMekaBugAndFix
  */
-public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
+public class ColecoBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvider {
 
     private static Logger LOG = LogManager.getLogger(ColecoBus.class);
 
@@ -55,25 +54,14 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
     private static int RAM_SIZE = 0x400;  //1Kb
     private static int ROM_SIZE = ROM_END + 1; //48kb
 
-    public Tms9918aVdp vdp;
     private int[] bios;
 
     private boolean isNmiSet = false;
-
 
     public ColecoBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameColeco);
         bios = FileLoader.loadBiosFile(p);
         LOG.info("Loading Coleco bios from: " + p.toAbsolutePath().toString());
-    }
-
-    @Override
-    public Z80BusProvider attachDevice(Device device) {
-        if (device instanceof Tms9918aVdp) {
-            this.vdp = (Tms9918aVdp) device;
-        }
-        super.attachDevice(device);
-        return this;
     }
 
     @Override
@@ -114,11 +102,11 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
                 break;
             case 0xA0:
                 //                LOG.warn("write vdp vram: {}", Integer.toHexString(value));
-                vdp.writeVRAMData(byteVal);
+                vdpProvider.writeVRAMData(byteVal);
                 break;
             case 0xA1:
                 //                LOG.warn("write: vdp address: {}", Integer.toHexString(value));
-                vdp.writeRegister(byteVal);
+                vdpProvider.writeRegister(byteVal);
                 break;
             case 0xE1:
                 soundProvider.getPsg().write(byteVal);
@@ -137,10 +125,10 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
         switch (port & 0xE1) {
             case 0xA0:
                 //                LOG.warn("read: vdp vram");
-                return vdp.readVRAMData();
+                return vdpProvider.readVRAMData();
             case 0xA1:
                 //                LOG.warn("read: vdp status reg");
-                return vdp.readStatus();
+                return vdpProvider.readStatus();
             case 0xE0:
                 return joypadProvider.readDataRegister1();
             case 0xE1:
@@ -170,7 +158,7 @@ public class ColecoBus extends DeviceAwareBus implements Z80BusProvider {
 
     @Override
     public void handleInterrupts(Z80Provider.Interrupt type) {
-        boolean set = vdp.getStatusINT() && vdp.getGINT();
+        boolean set = vdpProvider.getStatusINT() && vdpProvider.getGINT();
         //do not re-trigger
         if (set && !isNmiSet) {
             z80Provider.triggerNMI();

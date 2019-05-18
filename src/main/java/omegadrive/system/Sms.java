@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/04/19 10:59
+ * Last modified: 18/05/19 16:46
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.z80.SmsBus;
 import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.input.InputProvider;
@@ -39,7 +38,7 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Sms extends BaseSystem {
+public class Sms extends BaseSystem<Z80BusProvider> {
 
     private static Logger LOG = LogManager.getLogger(Sms.class.getSimpleName());
 
@@ -176,11 +175,6 @@ public class Sms extends BaseSystem {
         LOG.error("Not implemented!");
     }
 
-    @Override
-    protected BaseBusProvider getBusProvider() {
-        return bus;
-    }
-
     private void resetCycleCounters(int counter) {
         nextZ80Cycle -= counter;
         nextVdpCycle -= counter;
@@ -204,7 +198,6 @@ public class Sms extends BaseSystem {
         }
     }
 
-
     private void runZ80(long counter) {
         if (counter == nextZ80Cycle) {
             int cycleDelay = z80.executeInstruction();
@@ -214,18 +207,12 @@ public class Sms extends BaseSystem {
         }
     }
 
-
-
     private void handleMaskableInterrupts(){
-        //TODO
-        Z80BusProvider sgBus = (Z80BusProvider) bus;
-        sgBus.handleInterrupts(Z80Provider.Interrupt.IM1);
+        bus.handleInterrupts(Z80Provider.Interrupt.IM1);
     }
 
     private void handleNmi() {
-        //TODO
-        Z80BusProvider sgBus = (Z80BusProvider) bus;
-        sgBus.handleInterrupts(Z80Provider.Interrupt.NMI);
+        bus.handleInterrupts(Z80Provider.Interrupt.NMI);
     }
 
     @Override
