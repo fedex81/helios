@@ -1,7 +1,7 @@
 /*
  * CramViewer
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 20/05/19 19:57
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,12 +24,16 @@ import omegadrive.vdp.gen.GenesisVdpMemoryInterface;
 import omegadrive.vdp.gen.VdpColorMapper;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
 
-public class CramViewer {
+public class CramViewer implements VdpMemoryInterface.ICramViewer {
+
+    private static final Logger LOG = LogManager.getLogger(CramViewer.class.getSimpleName());
 
     private static final int CRAM_ENTRIES = GenesisVdpProvider.VDP_CRAM_SIZE / 2;
     private static final int LABEL_HEIGHT = 200;
@@ -37,6 +41,9 @@ public class CramViewer {
     private static final int FRAME_HEIGHT = LABEL_HEIGHT + 50;
     private static final int FRAME_WIDTH = LABEL_WIDTH * CRAM_ENTRIES + 50;
     private static final int ROWS = 4;
+    private static final VdpMemoryInterface.ICramViewer NO_OP_VIEWER = () -> {
+    };
+    private static boolean CRAM_VIEWER_ENABLED;
 
     private VdpMemoryInterface vdpMemoryInterface;
     private JPanel cramPanel;
@@ -44,8 +51,16 @@ public class CramViewer {
     private VdpColorMapper colorMapper;
     private JPanel[] panelList = new JPanel[CRAM_ENTRIES];
 
-    public static CramViewer createInstance(VdpMemoryInterface vdpMemoryInterface) {
-        return new CramViewer(vdpMemoryInterface);
+    static {
+        CRAM_VIEWER_ENABLED =
+                Boolean.valueOf(System.getProperty("md.show.cram.viewer", "true"));
+        if (CRAM_VIEWER_ENABLED) {
+            LOG.info("Cram viewer enabled");
+        }
+    }
+
+    public static VdpMemoryInterface.ICramViewer createInstance(VdpMemoryInterface vdpMemoryInterface) {
+        return CRAM_VIEWER_ENABLED ? new CramViewer(vdpMemoryInterface) : NO_OP_VIEWER;
     }
 
 
@@ -88,6 +103,7 @@ public class CramViewer {
         });
     }
 
+    @Override
     public void update() {
         SwingUtilities.invokeLater(() -> {
             int k = 0;

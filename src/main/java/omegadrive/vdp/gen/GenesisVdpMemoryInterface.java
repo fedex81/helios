@@ -1,7 +1,7 @@
 /*
  * GenesisVdpMemoryInterface
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 20/05/19 19:52
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,10 +39,10 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     private int[] cram;
     private int[] vsram;
 
-    private CramViewer cramViewer;
+    private ICramViewer cramViewer;
 
     private GenesisVdpMemoryInterface() {
-//        cramViewer = CramViewer.createSnInstance(this);
+        cramViewer = CramViewer.createInstance(this);
     }
 
     public static GenesisVdpMemoryInterface createInstance() {
@@ -131,7 +131,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     public void writeCramByte(int address, int data) {
         address &= (GenesisVdpProvider.VDP_CRAM_SIZE - 1);
         cram[address] = data & 0xFF;
-//        cramViewer.update();
+        cramViewer.update();
     }
 
 

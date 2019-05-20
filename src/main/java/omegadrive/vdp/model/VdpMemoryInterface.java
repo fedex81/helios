@@ -1,7 +1,7 @@
 /*
  * VdpMemoryInterface
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 20/05/19 19:48
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,10 @@ import org.apache.logging.log4j.Logger;
 public interface VdpMemoryInterface {
 
     Logger LOG = LogManager.getLogger(VdpMemoryInterface.class.getSimpleName());
+
+    interface ICramViewer {
+        void update();
+    }
 
     void writeVramByte(int address, int data);
 
