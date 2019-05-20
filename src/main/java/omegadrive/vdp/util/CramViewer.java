@@ -53,7 +53,7 @@ public class CramViewer implements VdpMemoryInterface.ICramViewer {
 
     static {
         CRAM_VIEWER_ENABLED =
-                Boolean.valueOf(System.getProperty("md.show.cram.viewer", "true"));
+                Boolean.valueOf(System.getProperty("md.show.cram.viewer", "false"));
         if (CRAM_VIEWER_ENABLED) {
             LOG.info("Cram viewer enabled");
         }
