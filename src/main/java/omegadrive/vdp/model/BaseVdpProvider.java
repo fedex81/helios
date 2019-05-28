@@ -1,7 +1,7 @@
 /*
  * BaseVdpProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 28/05/19 16:50
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,25 +27,6 @@ import org.apache.logging.log4j.Logger;
 public interface BaseVdpProvider extends Device {
 
     Logger LOG = LogManager.getLogger(BaseVdpProvider.class.getSimpleName());
-
-    int MAX_SPRITES_PER_FRAME_H40 = 80;
-    int MAX_SPRITES_PER_FRAME_H32 = 64;
-    int MAX_SPRITES_PER_LINE_H40 = 20;
-    int MAX_SPRITES_PER_LINE_H32 = 16;
-    int VERTICAL_LINES_V30 = 240;
-    int VERTICAL_LINES_V28 = 224;
-    int VDP_VIDEO_ROWS = 256;
-    int VDP_VIDEO_COLS = 320;
-
-    //	The CRAM contains 128 bytes, addresses 0 to 7F
-    int VDP_CRAM_SIZE = 0x80;
-
-    //	The VSRAM contains 80 bytes, addresses 0 to 4F
-    int VDP_VSRAM_SIZE = 0x50;
-
-    int VDP_VRAM_SIZE = 0x10000;
-
-    int VDP_REGISTERS_SIZE = 24;
 
     int V18_CELL = 144;
     int V24_CELL = 192;
@@ -73,6 +54,7 @@ public interface BaseVdpProvider extends Device {
     int V30_VBLANK_SET = 0xF0;
     int H32_VCOUNTER_INC_ON = 0x10A;
     int H40_VCOUNTER_INC_ON = 0x14A;
+    int V24_PAL_JUMP = 0xF2;
     int V24_NTSC_JUMP = 0xDA;
     int V28_PAL_JUMP = 0x102;
     int V28_NTSC_JUMP = 0xEA;

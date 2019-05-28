@@ -1,7 +1,7 @@
 /*
  * SmsVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 28/05/19 16:10
+ * Last modified: 28/05/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,8 @@ import omegadrive.vdp.model.VdpMemoryInterface;
 import static omegadrive.util.RegionDetector.Region.EUROPE;
 import static omegadrive.util.RegionDetector.Region.USA;
 
- public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
+//TODO SMS V30 changes
+public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 {
     // --------------------------------------------------------------------------------------------
     // Screen Dimensions
@@ -197,8 +198,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
     /**
      *  Vdp Constructor
      */
-    public SmsVdp(SystemProvider systemProvider)
-    {
+    public SmsVdp(SystemProvider systemProvider) {
         this.systemProvider = systemProvider;
         setSystemType(systemProvider.getSystemType());
 
@@ -228,8 +228,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
      *  Reset VDP.
      */
 
-    public final void reset()
-    {
+    public final void reset() {
         generateConvertedPals();
 
         firstByte = true;
@@ -292,15 +291,14 @@ import static omegadrive.util.RegionDetector.Region.USA;
                 newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V24 :
                         (region == USA ? VideoMode.NTSCU_H32_V24 : VideoMode.NTSCJ_H32_V24);
                 break;
-            //TODO SMS V30 vs MD V30
-//            case 14:
-//                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V30 :
-//                        (region == USA ? VideoMode.NTSCU_H32_V30 : VideoMode.NTSCJ_H32_V30);
-//                break;
-//            case 11:
-//                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V28 :
-//                        (region == USA ? VideoMode.NTSCU_H32_V28 : VideoMode.NTSCJ_H32_V30);
-//                break;
+            case 14:
+                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V30 :
+                        (region == USA ? VideoMode.NTSCU_H32_V30 : VideoMode.NTSCJ_H32_V30);
+                break;
+            case 11:
+                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V28 :
+                        (region == USA ? VideoMode.NTSCU_H32_V28 : VideoMode.NTSCJ_H32_V30);
+                break;
             default:
                 newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V24 :
                         (region == USA ? VideoMode.NTSCU_H32_V24 : VideoMode.NTSCJ_H32_V24);
@@ -313,6 +311,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
             palFlag = videoMode.isPal() ? PAL : NTSC;
             display = new int[videoMode.getDimension().width * videoMode.getDimension().height];
             screenData[0] = isSms ? display : ggDisplay;
+//            forceFullRedraw(); //TODO enable
         }
     }
 
@@ -320,9 +319,10 @@ import static omegadrive.util.RegionDetector.Region.USA;
      * Force full redraw of entire cache
      */
 
-    public final void forceFullRedraw()
-    {
-        bgt = (vdpreg[2] & 0x0f &~0x01) << 10;
+    public final void forceFullRedraw() {
+        bgt = videoMode.isV24() ?
+                (vdpreg[2] & 0x0f & ~0x01) << 10 :
+                0x700 + ((vdpreg[2] & 0xC) << 8);
         minDirty = 0;
         maxDirty = TOTAL_TILES - 1;
         for (int i = isTileDirty.length; i-- != 0;)
@@ -350,8 +350,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
      *  @return     Copy of Status Register
      */
 
-    public final int controlRead()
-    {
+    public final int controlRead() {
         // Reset flag
         firstByte = true;
 
@@ -373,33 +372,26 @@ import static omegadrive.util.RegionDetector.Region.USA;
      *  @param  value   Value to Write
      */
 
-    public final void controlWrite(int value)
-    {
+    public final void controlWrite(int value) {
         // Store First Byte of Command Word
-        if (firstByte)
-        {
+        if (firstByte) {
             firstByte = false;
             commandByte = value;
             location = (location & 0x3F00) | value;
-        }
-        else
-        {
+        } else {
             firstByte = true;
             operation = (value >> 6) & 3;
             location = commandByte | (value << 8);
 
             // Read value from VRAM
-            if (operation == 0)
-            {
+            if (operation == 0) {
                 readBuffer = VRAM[(location++) & 0x3FFF]&0xFF;
             }
             // Set VDP Register
-            else if (operation == 2)
-            {
+            else if (operation == 2) {
                 int reg = (value & 0x0F);
 
-                switch (reg)
-                {
+                switch (reg) {
                     // Interrupt Control 0 (Verified using Charles MacDonald test program)
                     // Bit 4 of register $00 acts like a on/off switch for the VDP's IRQ line.
 
@@ -423,14 +415,12 @@ import static omegadrive.util.RegionDetector.Region.USA;
                         break;
 
                     // SAT Written
-                    case 5:
-                    {
+                    case 5: {
                         int old = sat;
                         // Address of Sprite Attribute Table in RAM
                         sat = (commandByte &~ 0x01 &~ 0x80) << 7;
 
-                        if (old != sat)
-                        {
+                        if (old != sat) {
                             // Should also probably update tiles here?
                             isSatDirty = true;
                             //System.out.println("New address written to SAT: "+old + " -> " + sat);
@@ -469,29 +459,24 @@ import static omegadrive.util.RegionDetector.Region.USA;
      *  @param  value   Value to Write
      */
 
-    public final void dataWrite(int value)
-    {
+    public final void dataWrite(int value) {
         // Reset flag
         firstByte = true;
 
-        switch(operation)
-        {
+        switch(operation) {
             // VRAM Write
             case 0x00:
             case 0x01:
-            case 0x02:
-            {
+            case 0x02: {
                 int address = location & 0x3FFF;
                 // Check VRAM value has actually changed
-                if (value != (VRAM[address] & 0xFF))
-                {
+                if (value != (VRAM[address] & 0xFF)) {
                     //if (address >= bgt && address < bgt + BGT_LENGTH); // Don't write dirty to BGT
                     if (address >= sat && address < sat+64) // Don't write dirty to SAT
                         isSatDirty = true;
                     else if (address >= sat+128 && address < sat+256)
                         isSatDirty = true;
-                    else
-                    {
+                    else {
                         int tileIndex = address >> 5;
 
                         // Get tile number that's being written to (divide VRAM location by 32)
@@ -543,13 +528,11 @@ import static omegadrive.util.RegionDetector.Region.USA;
      *  @param  lineno  Line Number to Render
      */
 
-    public final void drawLine(int lineno)
-    {
+    public final void drawLine(int lineno) {
         // ----------------------------------------------------------------------------------------
         // Check we are in the visible drawing region
         // ----------------------------------------------------------------------------------------
-        if (!isSms)
-        {
+        if (!isSms) {
             if (lineno < GG_Y_OFFSET || lineno >= GG_Y_OFFSET + GG_HEIGHT)
                 return;
         }
@@ -558,12 +541,11 @@ import static omegadrive.util.RegionDetector.Region.USA;
         // Clear sprite collision array if enabled
         // ----------------------------------------------------------------------------------------
         for (int i = spriteCol.length; i-- != 0;)
-                spriteCol[i] = false;
+            spriteCol[i] = false;
         // ----------------------------------------------------------------------------------------
         // Check Screen is switched on
         // ----------------------------------------------------------------------------------------
-        if ((vdpreg[1] & 0x40) != 0)
-        {
+        if ((vdpreg[1] & 0x40) != 0) {
             // ------------------------------------------------------------------------------------
             // Draw Background Layer
             // ------------------------------------------------------------------------------------
@@ -584,8 +566,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
             // ------------------------------------------------------------------------------------
             // Blank Leftmost Column (SMS Only)
             // ------------------------------------------------------------------------------------
-            if (isSms && (vdpreg[0] & 0x20) != 0)
-            {
+            if (isSms && (vdpreg[0] & 0x20) != 0) {
                 int colour = CRAM[16 + (vdpreg[7] & 0x0F)];
                 int location = lineno << 8;
 
@@ -603,14 +584,12 @@ import static omegadrive.util.RegionDetector.Region.USA;
         // ----------------------------------------------------------------------------------------
         // Blank Display
         // ----------------------------------------------------------------------------------------
-        else
-        {
+        else {
             drawBGColour(lineno);
         }
     }
 
-    private final void drawBg(int lineno)
-    {
+    private final void drawBg(int lineno) {
         // Horizontal Scroll
         int hscroll = vdpreg[8];
 
@@ -641,8 +620,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
         int rowprecal = lineno << 8;
 
         // Cycle through background table
-        for (int tx = h_start; tx < h_end; tx++)
-        {
+        for (int tx = h_start; tx < h_end; tx++) {
             int tile_props = bgt + ((tile_column & 0x1F) << 1) + (tile_row << 6);
             int secondbyte = VRAM[tile_props+1];
 
@@ -661,10 +639,8 @@ import static omegadrive.util.RegionDetector.Region.USA;
             // -----------------------------------------------------------------------------------
             // Plot 8 Pixel Row (No H-Flip)
             // -----------------------------------------------------------------------------------
-            if ((secondbyte & 0x02) == 0)
-            {
-                for (int pixX = 0; pixX < 8 && sx < SMS_WIDTH; pixX++, sx++)
-                {
+            if ((secondbyte & 0x02) == 0) {
+                for (int pixX = 0; pixX < 8 && sx < SMS_WIDTH; pixX++, sx++) {
                     int colour = tile[pixX + pixY];
 
                     // Set Priority Array (Sprites over/under background tile)
@@ -675,10 +651,8 @@ import static omegadrive.util.RegionDetector.Region.USA;
             // -----------------------------------------------------------------------------------
             // Plot 8 Pixel Row (H-Flip)
             // -----------------------------------------------------------------------------------
-            else
-            {
-                for (int pixX = 7; pixX >= 0 && sx < SMS_WIDTH; pixX--, sx++)
-                {
+            else {
+                for (int pixX = 7; pixX >= 0 && sx < SMS_WIDTH; pixX--, sx++) {
                     int colour = tile[pixX + pixY];
 
                     // Set Priority Array (Sprites over/under background tile)
@@ -691,8 +665,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
             // ------------------------------------------------------------------------------------
             // Rightmost 8 columns Not Affected by Vertical Scrolling
             // ------------------------------------------------------------------------------------
-            if (lock != 0 && tx == 23)
-            {
+            if (lock != 0 && tx == 23) {
                 tile_row = lineno >> 3;
                 tile_y = (lineno & 7) << 3;
             }
@@ -707,8 +680,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
      *  @param  lineno  Line Number to Render
      */
 
-    private final void drawSprite(int lineno)
-    {
+    private final void drawSprite(int lineno) {
         // Reference to the sprites that should appear on this line
         int sprites[] = lineSprites[lineno];
 
@@ -724,8 +696,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
         int off = (count * 3);
 
         // Have to iterate backwards here as we've already cached tiles
-        for (int i = count; i-- != 0;)
-        {
+        for (int i = count; i-- != 0;) {
             // Sprite Pattern Index
             // Also mask on Pattern Index from 100 - 1FFh (if reg 6 bit 3 set)
             int n = sprites[off--] | ((vdpreg[6] & 0x04) << 6);
@@ -750,8 +721,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
             // If X Co-ordinate is negative, do a fix to draw from position 0
             int pix = 0;
 
-            if (x < 0)
-            {
+            if (x < 0) {
                 pix = (-x);
                 x = 0;
             }
@@ -762,59 +732,51 @@ import static omegadrive.util.RegionDetector.Region.USA;
             // --------------------------------------------------------------------------------
             // Plot Normal Sprites (Width = 8)
             // --------------------------------------------------------------------------------
-            if (zoomed == 0)
-            {
-                for (; pix < 8 && x < SMS_WIDTH; pix++, x++)
-                {
+            if (zoomed == 0) {
+                for (; pix < 8 && x < SMS_WIDTH; pix++, x++) {
                     int colour = tile[offset++];
 
-                    if (colour != 0 && !bgPriority[x])
-                    {
+                    if (colour != 0 && !bgPriority[x]) {
                         display[x + row_precal] = CRAM[colour+16];
 
                         // Emulate sprite collision (when two opaque pixels overlap)
-                            if (!spriteCol[x])
-                                spriteCol[x] = true;
-                            else
-                                status |= 0x20; // Bit 5 of status flag indicates collision
+                        if (!spriteCol[x])
+                            spriteCol[x] = true;
+                        else
+                            status |= 0x20; // Bit 5 of status flag indicates collision
                     }
                 }
             }
             // --------------------------------------------------------------------------------
             // Plot Zoomed Sprites (Width = 16)
             // --------------------------------------------------------------------------------
-            else
-            {
-                for (; pix < 8 && x < SMS_WIDTH; pix++, x += 2)
-                {
+            else {
+                for (; pix < 8 && x < SMS_WIDTH; pix++, x += 2) {
                     int colour = tile[offset++];
 
                     // Plot first pixel
-                    if (colour != 0 && !bgPriority[x])
-                    {
+                    if (colour != 0 && !bgPriority[x]) {
                         display[x + row_precal] = CRAM[colour+16];
-                            if (!spriteCol[x])
-                                spriteCol[x] = true;
-                            else
-                                status |= 0x20; // Bit 5 of status flag indicates collision
+                        if (!spriteCol[x])
+                            spriteCol[x] = true;
+                        else
+                            status |= 0x20; // Bit 5 of status flag indicates collision
                     }
 
                     // Plot second pixel
-                    if (colour != 0 && !bgPriority[x+1])
-                    {
+                    if (colour != 0 && !bgPriority[x+1]) {
                         display[x + row_precal + 1] = CRAM[colour+16];
-                            if (!spriteCol[x+1])
-                                spriteCol[x+1] = true;
-                            else
-                                status |= 0x20; // Bit 5 of status flag indicates collision
+                        if (!spriteCol[x+1])
+                            spriteCol[x+1] = true;
+                        else
+                            status |= 0x20; // Bit 5 of status flag indicates collision
                     }
                 }
             }
         }
 
         // Sprite Overflow (more than 8 sprites on line)
-        if (sprites[SPRITE_COUNT] >= SPRITES_PER_LINE)
-        {
+        if (sprites[SPRITE_COUNT] >= SPRITES_PER_LINE) {
             status |= 0x40;
         }
     }
@@ -826,8 +788,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
      *  @param  lineno  Line Number to Render
      */
 
-    private final void drawBGColour(int lineno)
-    {
+    private final void drawBGColour(int lineno) {
         int colour = CRAM[16 + (vdpreg[7]&0x0F)];
         int row_precal = lineno << 8;
 
@@ -848,29 +809,23 @@ import static omegadrive.util.RegionDetector.Region.USA;
     //       0000BBBB   (2nd byte)
     // --------------------------------------------------------------------------------------------
 
-    private final void generateConvertedPals()
-    {
-        if (isSms && SMS_JAVA == null)
-        {
+    private final void generateConvertedPals() {
+        if (isSms && SMS_JAVA == null) {
             SMS_JAVA = new int[0x40];
 
-            for (int i = 0; i < SMS_JAVA.length; i++)
-            {
+            for (int i = 0; i < SMS_JAVA.length; i++) {
                 int r = i & 0x03;
                 int g = (i >> 2) & 0x03;
                 int b = (i >> 4) & 0x03;
 
                 SMS_JAVA[i] = ((r * 85) << 16) | ((g * 85) << 8) | (b * 85);
             }
-        }
-        else if (!isSms && GG_JAVA1 == null)
-        {
+        } else if (!isSms && GG_JAVA1 == null) {
             GG_JAVA1 = new int[0x100];
             GG_JAVA2 = new int[0x10];
 
             // Green & Blue
-            for (int i = 0; i < GG_JAVA1.length; i++)
-            {
+            for (int i = 0; i < GG_JAVA1.length; i++) {
                 int g = i & 0x0F;
                 int b = (i >> 4) & 0x0F;
 
@@ -880,8 +835,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
             }
 
             // Red
-            for (int i = 0; i < GG_JAVA2.length; i++)
-            {
+            for (int i = 0; i < GG_JAVA2.length; i++) {
                 GG_JAVA2[i] = (i << 4) | i;
             }
         }
@@ -904,19 +858,16 @@ import static omegadrive.util.RegionDetector.Region.USA;
     // n = pattern index (0 - 512)
     // --------------------------------------------------------------------------------------------
 
-    private final void createCachedImages()
-    {
+    private final void createCachedImages() {
         tiles = new int[TOTAL_TILES][TILE_SIZE * TILE_SIZE];
         isTileDirty = new boolean[TOTAL_TILES];
     }
 
     // Note we should try not to update the bgt/sat locations?
-    private final void decodeTiles()
-    {
+    private final void decodeTiles() {
         //System.out.println("["+line+"]"+" min dirty:" +minDirty+" max: "+maxDirty);
 
-        for (int i = minDirty; i <= maxDirty; i++)
-        {
+        for (int i = minDirty; i <= maxDirty; i++) {
             // Only decode tiles that have changed since the last iteration
             if (!isTileDirty[i]) continue;
 
@@ -932,16 +883,14 @@ import static omegadrive.util.RegionDetector.Region.USA;
             int address = (i << 5);
 
             // Plot column of 8 pixels
-            for (int y = 0; y < TILE_SIZE; y++)
-            {
+            for (int y = 0; y < TILE_SIZE; y++) {
                 int address0 = VRAM[address++];
                 int address1 = VRAM[address++];
                 int address2 = VRAM[address++];
                 int address3 = VRAM[address++];
 
                 // Plot row of 8 pixels
-                for (int bit = 0x80; bit != 0; bit>>=1)
-                {
+                for (int bit = 0x80; bit != 0; bit>>=1) {
                     int colour = 0;
 
                     // Set Colour of Pixel (0-15)
@@ -995,8 +944,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
      * Creates a list of sprites per scanline
      */
 
-    private final void decodeSat()
-    {
+    private final void decodeSat() {
         isSatDirty = false;
 
         // ----------------------------------------------------------------------------------------
@@ -1010,22 +958,19 @@ import static omegadrive.util.RegionDetector.Region.USA;
         int height = (vdpreg[1] & 0x02) == 0 ? 8 : 16;
 
         // Enable Zoomed Sprites
-        if ((vdpreg[1] & 0x01) == 0x01)
-        {
+        if ((vdpreg[1] & 0x01) == 0x01) {
             height <<= 1;
         }
 
         // ----------------------------------------------------------------------------------------
         // Search Sprite Attribute Table (64 Bytes)
         // ----------------------------------------------------------------------------------------
-        for (int spriteno = 0; spriteno < 0x40; spriteno++)
-        {
+        for (int spriteno = 0; spriteno < 0x40; spriteno++) {
             // Sprite Y Position
             int y = VRAM[sat + spriteno]&0xFF;
 
             // VDP stops drawing if y == 208
-            if (y == 208)
-            {
+            if (y == 208) {
                 return;
             }
 
@@ -1033,22 +978,18 @@ import static omegadrive.util.RegionDetector.Region.USA;
             y++;
 
             // If off screen, draw from negative 16 onwards
-            if (y > 240)
-            {
+            if (y > 240) {
                 y -= 256;
             }
 
-            for (int lineno = 0; lineno < SMS_HEIGHT; lineno++)
-            {
+            for (int lineno = 0; lineno < SMS_HEIGHT; lineno++) {
                 // --------------------------------------------------------------------------------
                 // Does Sprite fall on this line?
                 // --------------------------------------------------------------------------------
-                if ((lineno >= y) && ((lineno-y) < height))
-                {
+                if ((lineno >= y) && ((lineno-y) < height)) {
                     int[] sprites = lineSprites[lineno];
 
-                    if (sprites[SPRITE_COUNT] < SPRITES_PER_LINE)
-                    {
+                    if (sprites[SPRITE_COUNT] < SPRITES_PER_LINE) {
                         // Get offset into array
                         int off = (sprites[SPRITE_COUNT] * 3) + SPRITE_X;
 
@@ -1076,8 +1017,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
     // VDP State Saving
     // --------------------------------------------------------------------------------------------
 
-    public int[] getState()
-    {
+    public int[] getState() {
         int state[] = new int[3 + vdpreg.length + CRAM.length];
 
         state[0] = palFlag | (status << 8) | (firstByte ? (1 << 16) : 0) | (commandByte << 24);
@@ -1090,8 +1030,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
         return state;
     }
 
-    public void setState(int[] state)
-    {
+    public void setState(int[] state) {
         int temp = state[0];
         palFlag = temp & 0xFF;
         status = (temp >> 8) & 0xFF;

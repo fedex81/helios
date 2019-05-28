@@ -1,7 +1,7 @@
 /*
  * GenesisVdpProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 28/05/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,10 +33,27 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
 
     Logger LOG = LogManager.getLogger(GenesisVdpProvider.class.getSimpleName());
 
+    int MAX_SPRITES_PER_FRAME_H40 = 80;
+    int MAX_SPRITES_PER_FRAME_H32 = 64;
+    int MAX_SPRITES_PER_LINE_H40 = 20;
+    int MAX_SPRITES_PER_LINE_H32 = 16;
+    int VDP_VIDEO_ROWS = 256;
+    int VDP_VIDEO_COLS = 320;
+
+    //	The CRAM contains 128 bytes, addresses 0 to 7F
+    int VDP_CRAM_SIZE = 0x80;
+
+    //	The VSRAM contains 80 bytes, addresses 0 to 4F
+    int VDP_VSRAM_SIZE = 0x50;
+
+    int VDP_VRAM_SIZE = 0x10000;
+
+    int VDP_REGISTERS_SIZE = 24;
+
     enum VdpRamType {
         VRAM,
         CRAM,
-        VSRAM;
+        VSRAM
     }
 
     //    Bits CD3-CD0

@@ -1,7 +1,7 @@
 /*
  * GstStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 28/05/19 16:50
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.z80.Z80Memory;
 import omegadrive.z80.Z80Provider;
@@ -137,21 +138,21 @@ public class GstStateHandler implements GenesisStateHandler {
     @Override
     public void loadVdpState(BaseVdpProvider vdp) {
         loadVdpMemory(vdp.getVdpMemory());
-        IntStream.range(0, BaseVdpProvider.VDP_REGISTERS_SIZE).forEach(i -> vdp.updateRegisterData(i, data[i + VDP_REG_OFFSET] & 0xFF));
+        IntStream.range(0, GenesisVdpProvider.VDP_REGISTERS_SIZE).forEach(i -> vdp.updateRegisterData(i, data[i + VDP_REG_OFFSET] & 0xFF));
         vdp.reload();
     }
 
     private void loadVdpMemory(VdpMemoryInterface vdpMemoryInterface) {
-        for (int i = 0; i < BaseVdpProvider.VDP_VRAM_SIZE; i += 2) {
+        for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i += 2) {
             vdpMemoryInterface.writeVramByte(i, data[i + VRAM_DATA_OFFSET]);
             vdpMemoryInterface.writeVramByte(i + 1, data[i + VRAM_DATA_OFFSET + 1]);
         }
-        for (int i = 0; i < BaseVdpProvider.VDP_CRAM_SIZE; i += 2) {
+        for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
             vdpMemoryInterface.writeCramByte(i, data[i + CRAM_DATA_OFFSET + 1]);
             vdpMemoryInterface.writeCramByte(i + 1, data[i + CRAM_DATA_OFFSET]);
         }
 
-        for (int i = 0; i < BaseVdpProvider.VDP_VSRAM_SIZE; i += 2) {
+        for (int i = 0; i < GenesisVdpProvider.VDP_VSRAM_SIZE; i += 2) {
             vdpMemoryInterface.writeVsramByte(i, data[i + VSRAM_DATA_OFFSET]);
             vdpMemoryInterface.writeVsramByte(i + 1, data[i + VSRAM_DATA_OFFSET + 1]);
         }
@@ -241,16 +242,16 @@ public class GstStateHandler implements GenesisStateHandler {
     @Override
     public void saveVdp(BaseVdpProvider vdp) {
         VdpMemoryInterface vdpMemoryInterface = vdp.getVdpMemory();
-        for (int i = 0; i < BaseVdpProvider.VDP_VRAM_SIZE; i += 2) {
+        for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i += 2) {
             data[i + VRAM_DATA_OFFSET] = vdpMemoryInterface.readVramByte(i);
             data[i + VRAM_DATA_OFFSET + 1] = vdpMemoryInterface.readVramByte(i + 1);
         }
-        for (int i = 0; i < BaseVdpProvider.VDP_CRAM_SIZE; i += 2) {
+        for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
             data[i + CRAM_DATA_OFFSET + 1] = vdpMemoryInterface.readCramByte(i);
             data[i + CRAM_DATA_OFFSET] = vdpMemoryInterface.readCramByte(i + 1);
         }
 
-        for (int i = 0; i < BaseVdpProvider.VDP_VSRAM_SIZE; i += 2) {
+        for (int i = 0; i < GenesisVdpProvider.VDP_VSRAM_SIZE; i += 2) {
             data[i + VSRAM_DATA_OFFSET] = vdpMemoryInterface.readVsramByte(i);
             data[i + VSRAM_DATA_OFFSET + 1] = vdpMemoryInterface.readVsramByte(i + 1);
         }

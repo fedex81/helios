@@ -1,7 +1,7 @@
 /*
  * VdpCounterMode
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 28/05/19 16:01
+ * Last modified: 28/05/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@ import java.util.EnumSet;
 
 import static omegadrive.vdp.model.GenesisVdpProvider.*;
 
-//TODO SMS V30 vs md v30
 public enum VdpCounterMode {
     PAL_H32_V28(VideoMode.PAL_H32_V28),
     PAL_H32_V30(VideoMode.PAL_H32_V30),
@@ -45,6 +44,7 @@ public enum VdpCounterMode {
     NTSCJ_H40_V30(VideoMode.NTSCJ_H40_V30),
     NTSCU_H40_V30(VideoMode.NTSCU_H40_V30),
 
+    //SMS/GG/TMS
     NTSCJ_H32_V24(VideoMode.NTSCJ_H32_V24),
     NTSCU_H32_V24(VideoMode.NTSCU_H32_V24),
     PAL_H32_V24(VideoMode.PAL_H32_V24),
@@ -80,7 +80,8 @@ public enum VdpCounterMode {
         this.videoMode = videoMode;
         this.slotTypes = isH32 ? VdpSlotType.h32Slots : VdpSlotType.h40Slots;
         this.slotsPerLine = isH32 ? H32_SLOTS : H40_SLOTS;
-        this.vJumpTrigger = isPal ? (isV30 ? V30_PAL_JUMP : V28_PAL_JUMP) :
+        this.vJumpTrigger = isPal ?
+                (isV30 ? V30_PAL_JUMP : (isV28 ? V28_PAL_JUMP : V24_PAL_JUMP)) :
                 (isV30 ? V30_NTSC_JUMP : (isV28 ? V28_NTSC_JUMP : V24_NTSC_JUMP));
         this.vBlankSet = isV30 ? V30_VBLANK_SET : (isV28 ? V28_VBLANK_SET : V24_VBLANK_SET);
     }
@@ -93,10 +94,6 @@ public enum VdpCounterMode {
         }
         LOG.error("Unable to find counter mode for videoMode: " + videoMode);
         return null;
-    }
-
-    public static int getNumberOfPixelsPerLine(VideoMode videoMode) {
-        return videoMode.isH32() ? H32_PIXELS : H40_PIXELS;
     }
 
     public VdpSlotType[] getSlotTypes() {
