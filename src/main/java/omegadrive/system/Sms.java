@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/05/19 16:46
+ * Last modified: 28/05/19 16:09
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,10 +28,8 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.ui.GenesisWindow;
-import omegadrive.ui.RenderingStrategy;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
-import omegadrive.util.VideoMode;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
@@ -44,7 +42,6 @@ public class Sms extends BaseSystem<Z80BusProvider> {
 
     protected Z80Provider z80;
     private SystemLoader.SystemType systemType;
-    private boolean isGG;
 
     public static boolean verbose = false;
 
@@ -55,7 +52,6 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     protected Sms(SystemLoader.SystemType systemType, GenesisWindow emuFrame){
         super(emuFrame);
         this.systemType = systemType;
-        this.isGG = systemType == SystemLoader.SystemType.GG;
     }
 
     @Override
@@ -66,20 +62,9 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         initCommon();
     }
 
-    /** Emulated screen pixels */
-    private int[] display;
-    private int[] ggDisplay = new int[0];
-    protected VideoMode ggVideoMode = VideoMode.NTSCU_H20_V18;
-
     private void initCommon() {
-        int numPixels = VideoMode.NTSCJ_H32_V24.getDimension().width * VideoMode.NTSCJ_H32_V24.getDimension().height;
-        display = new int[numPixels];
-        if(isGG){
-            int nump = ggVideoMode.getDimension().width * ggVideoMode.getDimension().height;
-            ggDisplay = new int[nump];
-        }
         inputProvider = InputProvider.createInstance(joypad);
-        vdp = new SmsVdp(this, display);
+        vdp = new SmsVdp(this);
         //z80, sound attached later
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(vdp);
@@ -110,23 +95,15 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         int counter = 1;
         long startCycle = System.nanoTime();
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
-        updateVideoMode();
-        int[] viewport = isGG ? ggDisplay : display;
-        VideoMode outputVideoMode = isGG ? ggVideoMode : videoMode;
 
         do {
             try {
                 runZ80(counter);
                 runVdp(counter);
                 if (canRenderScreen) {
-                    if(isGG){
-                        RenderingStrategy.subImageWithOffset(display, ggDisplay, videoMode.getDimension(),
-                                outputVideoMode.getDimension(), SmsVdp.GG_X_OFFSET,
-                                SmsVdp.GG_Y_OFFSET);
-                    }
-                    emuFrame.renderScreenLinear(viewport, getStats(System.nanoTime()), outputVideoMode);
+                    emuFrame.renderScreenLinear(vdp.getScreenData()[0],
+                            getStats(System.nanoTime()), vdp.getVideoMode());
                     handleVdpDumpScreenData();
-                    updateVideoMode();
                     handleNmi();
                     canRenderScreen = false;
                     int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
@@ -179,16 +156,6 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         nextZ80Cycle -= counter;
         nextVdpCycle -= counter;
     }
-
-
-    private void updateVideoMode() {
-        VideoMode vm = vdp.getVideoMode();
-        if (videoMode != vm) {
-            LOG.info("Video mode changed: {}", vm);
-            videoMode = vm;
-        }
-    }
-
 
     private void runVdp(long counter) {
         if (counter % 2 == 1) {

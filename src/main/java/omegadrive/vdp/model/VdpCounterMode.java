@@ -1,7 +1,7 @@
 /*
  * VdpCounterMode
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 28/05/19 16:01
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import java.util.EnumSet;
 
 import static omegadrive.vdp.model.GenesisVdpProvider.*;
 
+//TODO SMS V30 vs md v30
 public enum VdpCounterMode {
     PAL_H32_V28(VideoMode.PAL_H32_V28),
     PAL_H32_V30(VideoMode.PAL_H32_V30),

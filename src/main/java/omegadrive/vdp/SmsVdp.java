@@ -1,7 +1,7 @@
 /*
  * SmsVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 19/04/19 15:51
+ * Last modified: 28/05/19 16:10
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ package omegadrive.vdp;
 
 import omegadrive.SystemLoader;
 import omegadrive.system.SystemProvider;
+import omegadrive.ui.RenderingStrategy;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
@@ -30,67 +31,7 @@ import omegadrive.vdp.model.VdpMemoryInterface;
 import static omegadrive.util.RegionDetector.Region.EUROPE;
 import static omegadrive.util.RegionDetector.Region.USA;
 
- /*
-    This file is part of JavaGear.
-
-    Copyright (c) 2002-2008 Chris White
-    All rights reserved.
-
-    Redistribution and use of this code or any derivative works are permitted
-    provided that the following conditions are met:
-
-    * Redistributions may not be sold, nor may they be used in a commercial
-    product or activity.
-
-    * Redistributions that are modified from the original source must include the
-    complete source code, including the source code for all components used by a
-    binary built from the modified sources. However, as a special exception, the
-    source code distributed need not include anything that is normally distributed
-    (in either source or binary form) with the major components (compiler, kernel,
-    and so on) of the operating system on which the executable runs, unless that
-    component itself accompanies the executable.
-
-    * Redistributions must reproduce the above copyright notice, this list of
-    conditions and the following disclaimer in the documentation and/or other
-    materials provided with the distribution.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-    POSSIBILITY OF SUCH DAMAGE.
-*/
-/**
- * Vdp.java
- *
- * SMS and GG VDP Emulation.
- *
- * @author Copyright (c) 2002-2008 Chris White
- * @version 19th May 2008
- *
- * SMS uses 256x192 window (32x28)
- * GG  uses 160x140 window (20x17.5)
- *
- * What's emulated:
- * Passes Flubba's VDPTEST.SMS utility
- *
- * Notes:
- * - http://www.smspower.org/forums/viewtopic.php?p=44198
- *
- *  ---
- *
- * Modify and add to the project
- *
- * @author Federico Berti - 2019
- *
- */
-public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
+ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 {
     // --------------------------------------------------------------------------------------------
     // Screen Dimensions
@@ -104,10 +45,10 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     public static int palFlag = NTSC;
 
     /** SMS Visible Screen Width */
-    private final static int SMS_WIDTH  = VideoMode.NTSCJ_H32_V24.getDimension().width;
+    private final static int SMS_WIDTH = BaseVdpProvider.H32;
 
     /** SMS Visible Screen Height */
-    private final static int SMS_HEIGHT = VideoMode.NTSCJ_H32_V24.getDimension().height;
+    private final static int SMS_HEIGHT = BaseVdpProvider.V30_CELL;
 
     /** GG Visible Screen Width */
     public final static int GG_WIDTH   = 160;
@@ -184,7 +125,9 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     // --------------------------------------------------------------------------------------------
 
     /** Emulated display */
-    private final int display[];
+    private int display[];
+    private int ggDisplay[]; //only for GG mode
+    private int[][] screenData = new int[1][];
 
     /** SMS Colours converted to Java */
     private static int[] SMS_JAVA;
@@ -246,21 +189,18 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     private VdpInterruptHandler interruptHandler;
     private SystemProvider systemProvider;
     private VideoMode videoMode;
+    private VideoMode ggVideoMode = VideoMode.NTSCU_H20_V18;
     private RegionDetector.Region region;
     private SystemLoader.SystemType systemType;
     private boolean isSms = true;
 
     /**
-     *  Vdp Constructor.
-     *
-     *  @param d    Pointer to Generated Display
+     *  Vdp Constructor
      */
-
-    public SmsVdp(SystemProvider systemProvider, int[] d)
+    public SmsVdp(SystemProvider systemProvider)
     {
         this.systemProvider = systemProvider;
         setSystemType(systemProvider.getSystemType());
-        this.display = d;
 
         // 16K of Video RAM
         VRAM = new byte[0x4000];
@@ -282,7 +222,6 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         region = systemProvider.getRegion();
         interruptHandler = SmsVdpInterruptHandler.createInstance(this);
         resetVideoMode(true);
-        interruptHandler.setMode(getVideoMode());
     }
 
     /**
@@ -319,7 +258,6 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
         region = systemProvider.getRegion();
         resetVideoMode(true);
-        interruptHandler.setMode(getVideoMode());
     }
 
     /**
@@ -331,6 +269,12 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         h_start = isSms ? 0 : 5;
         h_end   = isSms ? 32 : 27;
 
+        if (!isSms) {
+            int nump = ggVideoMode.getDimension().width * ggVideoMode.getDimension().height;
+            ggDisplay = new int[nump];
+        }
+        ggVideoMode = isSms ? videoMode : VideoMode.NTSCU_H20_V18;
+
         LOG.info("Setting {} mode", type);
     }
 
@@ -340,7 +284,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
     public void resetVideoMode(boolean force) {
         //m4 | m3 | m2 | m1
-        int data = (vdpreg[0] & 4) << 1 | (vdpreg[1] & 0x8) | (vdpreg[0] & 2) | (vdpreg[1] & 0xF) >> 4;
+        int data = (vdpreg[0] & 4) << 1 | (vdpreg[1] & 0x8) >> 1 | (vdpreg[0] & 2) | (vdpreg[1] & 0x10) >> 4;
         VideoMode newVideoMode;
         switch (data){
             case 8:
@@ -348,14 +292,15 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
                 newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V24 :
                         (region == USA ? VideoMode.NTSCU_H32_V24 : VideoMode.NTSCJ_H32_V24);
                 break;
-            case 14:
-                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V30 :
-                        (region == USA ? VideoMode.NTSCU_H32_V30 : VideoMode.NTSCJ_H32_V30);
-                break;
-            case 11:
-                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V28 :
-                        (region == USA ? VideoMode.NTSCU_H32_V28 : VideoMode.NTSCJ_H32_V30);
-                break;
+            //TODO SMS V30 vs MD V30
+//            case 14:
+//                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V30 :
+//                        (region == USA ? VideoMode.NTSCU_H32_V30 : VideoMode.NTSCJ_H32_V30);
+//                break;
+//            case 11:
+//                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V28 :
+//                        (region == USA ? VideoMode.NTSCU_H32_V28 : VideoMode.NTSCJ_H32_V30);
+//                break;
             default:
                 newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V24 :
                         (region == USA ? VideoMode.NTSCU_H32_V24 : VideoMode.NTSCJ_H32_V24);
@@ -366,6 +311,8 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
             LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
             interruptHandler.setMode(videoMode);
             palFlag = videoMode.isPal() ? PAL : NTSC;
+            display = new int[videoMode.getDimension().width * videoMode.getDimension().height];
+            screenData[0] = isSms ? display : ggDisplay;
         }
     }
 
@@ -491,6 +438,9 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
                     }
                     break;
+                }
+                if (reg < 2 && commandByte != vdpreg[reg]) {
+                    resetVideoMode(false);
                 }
                 vdpreg[reg] = commandByte; // Set reg to previous byte
             }
@@ -1179,7 +1129,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         boolean vBlankTrigger = !vBlank && interruptHandler.isvBlankSet();
         int newLine = interruptHandler.getvCounterInternal();
 
-        int h = getVideoMode().getDimension().height;
+        int h = videoMode.getDimension().height;
         if(line != newLine && !vBlank && line < h){
 //            System.out.println("DrawLine: " + line);
             if(line == 0){
@@ -1190,6 +1140,13 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         //http://www.smspower.org/forums/viewtopic.php?t=9366&highlight=chicago
         status |= vBlankTrigger ? STATUS_VINT : 0;
         status |= interruptHandler.isHIntPending() ? STATUS_HINT : 0;
+        if (vBlankTrigger) {
+            if (!isSms) {
+                RenderingStrategy.subImageWithOffset(display, ggDisplay, videoMode.getDimension(),
+                        ggVideoMode.getDimension(), SmsVdp.GG_X_OFFSET,
+                        SmsVdp.GG_Y_OFFSET);
+            }
+        }
         return vBlankTrigger;
     }
 
@@ -1210,7 +1167,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
     @Override
     public VideoMode getVideoMode() {
-        return videoMode;
+        return isSms ? videoMode : ggVideoMode;
     }
 
     @Override
@@ -1218,11 +1175,8 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         return null;
     }
 
-    int[][] screenData = new int[1][];
-
     @Override
     public int[][] getScreenData() {
-        screenData[0] = display;
         return screenData;
     }
 
