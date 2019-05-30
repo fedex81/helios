@@ -1,7 +1,7 @@
 /*
  * BackupMemoryMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 30/05/19 19:09
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,7 +43,8 @@ public class BackupMemoryMapper implements RomMapper {
 
     private static Logger LOG = LogManager.getLogger(BackupMemoryMapper.class.getSimpleName());
 
-    private final static String DEFAULT_SRAM_FOLDER = System.getProperty("user.home") + "/.omgdrv/sram";
+    private final static String DEFAULT_SRAM_FOLDER = System.getProperty("user.home") + "/.helios/sram";
+    private final static String SRAM_FOLDER = System.getProperty("md.sram.folder", DEFAULT_SRAM_FOLDER);
 
     private static boolean verbose = false || Genesis.verbose;
 
@@ -76,7 +77,7 @@ public class BackupMemoryMapper implements RomMapper {
         SRAM_END_ADDRESS = SRAM_END_ADDRESS > 0 ? SRAM_END_ADDRESS : GenesisCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
         SRAM_AVAILABLE = true; //mapper.cartridgeInfoProvider.isSramEnabled();
         mapper.sram = new int[GenesisCartInfoProvider.DEFAULT_SRAM_BYTE_SIZE];
-        LOG.info("BackupMemoryMapper created, using folder: " + DEFAULT_SRAM_FOLDER);
+        LOG.info("BackupMemoryMapper created, using folder: " + SRAM_FOLDER);
         initBackupFileIfNecessary(mapper);
         return mapper;
     }
@@ -161,7 +162,7 @@ public class BackupMemoryMapper implements RomMapper {
     private static void initBackupFileIfNecessary(BackupMemoryMapper mapper) {
         if (mapper.backupFile == null) {
             try {
-                mapper.backupFile = Paths.get(DEFAULT_SRAM_FOLDER,
+                mapper.backupFile = Paths.get(SRAM_FOLDER,
                         mapper.cartridgeInfoProvider.getRomName() + "." + fileType);
                 long size = 0;
                 if (Files.isReadable(mapper.backupFile)) {
