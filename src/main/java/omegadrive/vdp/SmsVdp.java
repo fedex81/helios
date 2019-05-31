@@ -1,7 +1,7 @@
 /*
  * SmsVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 28/05/19 17:15
+ * Last modified: 31/05/19 11:31
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,10 +28,11 @@ import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
+import java.util.Arrays;
+
 import static omegadrive.util.RegionDetector.Region.EUROPE;
 import static omegadrive.util.RegionDetector.Region.USA;
 
-//TODO SMS V30 changes
 public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 {
     // --------------------------------------------------------------------------------------------
@@ -311,7 +312,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
             palFlag = videoMode.isPal() ? PAL : NTSC;
             display = new int[videoMode.getDimension().width * videoMode.getDimension().height];
             screenData[0] = isSms ? display : ggDisplay;
-//            forceFullRedraw(); //TODO enable
+            forceFullRedraw();
         }
     }
 
@@ -320,15 +321,11 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
      */
 
     public final void forceFullRedraw() {
-        bgt = videoMode.isV24() ?
-                (vdpreg[2] & 0x0f & ~0x01) << 10 :
-                0x700 + ((vdpreg[2] & 0xC) << 8);
+        refreshBgtAddress(vdpreg[2]);
         minDirty = 0;
         maxDirty = TOTAL_TILES - 1;
-        for (int i = isTileDirty.length; i-- != 0;)
-            isTileDirty[i] = true;
-
-        sat = (vdpreg[5] &~0x01 &~0x80) << 7;
+        Arrays.fill(isTileDirty, true);
+        refreshSatAddress(vdpreg[5]);
         isSatDirty = true;
     }
 
@@ -411,15 +408,14 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
                     // BGT Written
                     case 2:
                         // Address of Background Table in VRAM
-                        bgt = (commandByte &0x0f &~0x01) << 10;
+                        refreshBgtAddress(commandByte);
                         break;
 
                     // SAT Written
                     case 5: {
                         int old = sat;
                         // Address of Sprite Attribute Table in RAM
-                        sat = (commandByte &~ 0x01 &~ 0x80) << 7;
-
+                        refreshSatAddress(commandByte);
                         if (old != sat) {
                             // Should also probably update tiles here?
                             isSatDirty = true;
@@ -429,10 +425,11 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
                     }
                     break;
                 }
-                if (reg < 2 && commandByte != vdpreg[reg]) {
+                int prev = vdpreg[reg];
+                vdpreg[reg] = commandByte; // Set reg to previous byte
+                if (reg < 2 && prev != vdpreg[reg]) {
                     resetVideoMode(false);
                 }
-                vdpreg[reg] = commandByte; // Set reg to previous byte
             }
         }
     }
@@ -522,6 +519,14 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         return interruptHandler;
     }
 
+    private void refreshBgtAddress(int reg2) {
+        bgt = videoMode.isV24() ? (reg2 & 0xE) << 10 : 0x700 + ((reg2 & 0xC) << 10);
+    }
+
+    private void refreshSatAddress(int reg5) {
+        sat = (reg5 & 0x7E) << 7;
+    }
+
     /**
      *  Render Line of SMS/GG Display
      *
@@ -607,11 +612,10 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         // Column to start drawing at (0 - 31) [Add extra columns for GG]
         int tile_column = (32 - (hscroll >> 3)) + h_start;
 
-        // Row to start drawing at (0 - 27)
-        int tile_row = (lineno + vscroll) >> 3;
-
-        if (tile_row > 27)
-            tile_row -= 28;
+        // Row to start drawing at (0 - 27) for v24, (0 - 31) otherwise
+        int vscrollShift = videoMode.isV24() ? 0x1C : 0x20;
+        int tile_row = ((lineno + vscroll) >> 3);
+        tile_row = tile_row >= vscrollShift ? tile_row - vscrollShift : tile_row;
 
         // Actual y position in tile (0 - 7) (Also times by 8 here for quick access to pixel)
         int tile_y = ((lineno + (vscroll & 7)) & 7) << 3;
@@ -961,7 +965,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         if ((vdpreg[1] & 0x01) == 0x01) {
             height <<= 1;
         }
-
+        boolean isV24 = videoMode.isV24();
         // ----------------------------------------------------------------------------------------
         // Search Sprite Attribute Table (64 Bytes)
         // ----------------------------------------------------------------------------------------
@@ -969,14 +973,15 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
             // Sprite Y Position
             int y = VRAM[sat + spriteno]&0xFF;
 
-            // VDP stops drawing if y == 208
-            if (y == 208) {
+            // VDP stops drawing if y == 208, only for v24
+            if (isV24 && y == 208) {
                 return;
             }
 
             // y is actually at +1 of value
             y++;
 
+            //TODO check this
             // If off screen, draw from negative 16 onwards
             if (y > 240) {
                 y -= 256;
