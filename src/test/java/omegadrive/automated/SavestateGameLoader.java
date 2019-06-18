@@ -1,5 +1,7 @@
 /*
+ * SavestateGameLoader
  * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 18/06/19 17:25
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,15 +20,17 @@
 package omegadrive.automated;
 
 import com.google.common.collect.ImmutableMap;
-import omegadrive.system.SystemProvider;
-import omegadrive.save.SavestateTest;
 import omegadrive.SystemLoader;
+import omegadrive.save.SavestateTest;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
+
+import static omegadrive.system.SystemProvider.SystemEvent.*;
 
 public class SavestateGameLoader {
 
@@ -84,24 +88,24 @@ public class SavestateGameLoader {
         loadAll(false);
     }
 
-    public static void loadOne() throws Exception {
+    public static void loadOne() {
         SystemProvider genesis = load(loader, saveStates.keySet().toArray()[saveStateTestNumber].toString(),
                 saveStates.values().toArray()[saveStateTestNumber].toString());
         Util.sleep(10_000);
-        genesis.handleCloseApp();
+        genesis.handleSystemEvent(CLOSE_APP, null);
     }
 
-    public static void loadAll(boolean loop) throws Exception {
+    public static void loadAll(boolean loop) {
         SystemProvider genesis = null;
         do {
             for (Map.Entry<String, String> entry : saveStates.entrySet()) {
                 genesis = load(loader, entry.getKey(), entry.getValue());
                 Util.sleep(10_000);
-                genesis.handleCloseRom();
+                genesis.handleSystemEvent(CLOSE_ROM, null);
                 Util.sleep(1_000);
             }
         } while (loop);
-        Optional.ofNullable(genesis).ifPresent(SystemProvider::handleCloseApp);
+        Optional.ofNullable(genesis).ifPresent(g -> g.handleSystemEvent(CLOSE_APP, null));
     }
 
 
@@ -111,9 +115,9 @@ public class SavestateGameLoader {
         System.out.println("Loading ROM: " + rom.toAbsolutePath().toString());
         System.out.println("Loading state file: " + saveFileName);
         SystemProvider genesis = loader.createSystemProvider(rom);
-        genesis.handleNewRom(rom);
+        genesis.handleSystemEvent(NEW_ROM, rom);
         Util.sleep(1_000);
-        genesis.handleLoadState(saveFile);
+        genesis.handleSystemEvent(LOAD_STATE, saveFile);
         return genesis;
     }
 }

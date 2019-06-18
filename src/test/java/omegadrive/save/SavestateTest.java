@@ -1,5 +1,7 @@
 /*
+ * SavestateTest
  * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 18/06/19 17:25
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +34,6 @@ import omegadrive.vdp.gen.GenesisVdp;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.z80.Z80CoreWrapper;
-import omegadrive.z80.Z80Memory;
 import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Test;
@@ -159,7 +160,7 @@ public class SavestateTest {
         Assert.assertEquals("IFF2", s1.isIFF2(), s2.isIFF2());
         Assert.assertEquals("IM", s1.getIM(), s2.getIM());
 
-        IntStream.range(0, Z80Memory.Z80_RAM_MEMORY_SIZE).forEach(
+        IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> Assert.assertEquals("Z80Ram:" + i, z80p1.readMemory(i), z80p2.readMemory(i))
         );
         Assert.assertEquals("z80Reset", bus1.isZ80ResetState(), bus2.isZ80ResetState());

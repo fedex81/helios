@@ -1,5 +1,7 @@
 /*
+ * AutomatedGameTester
  * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 18/06/19 17:25
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +39,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_ROM;
+import static omegadrive.system.SystemProvider.SystemEvent.NEW_ROM;
 
 public class AutomatedGameTester {
 
@@ -59,10 +63,6 @@ public class AutomatedGameTester {
     private static int BOOT_DELAY_MS = 500;
     private static int AUDIO_DELAY_MS = 25000;
 
-    public static String[] binaryTypes = Stream.of(
-            new String[]{".md"}, SystemLoader.sgBinaryTypes//, SystemLoader.cvBinaryTypes
-    ).flatMap(Stream::of).toArray(String[]::new);
-
     private static Predicate<Path> testGenRomsPredicate = p ->
             Arrays.stream(SystemLoader.mdBinaryTypes).anyMatch(p.toString()::endsWith);
 
@@ -82,7 +82,7 @@ public class AutomatedGameTester {
             Arrays.stream(SystemLoader.ggBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testAllRomsPredicate = p ->
-            Arrays.stream(binaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(SystemLoader.binaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testVerifiedRomsPredicate = p ->
             testGenRomsPredicate.test(p) &&
@@ -98,8 +98,8 @@ public class AutomatedGameTester {
 //        new AutomatedGameTester().bootRomsColeco(true);
 //        new AutomatedGameTester().bootRomsMsx(true);
 //        new AutomatedGameTester().bootRomsSms(true);
-        new AutomatedGameTester().bootRomsGg(true);
-//        new AutomatedGameTester().bootRecursiveRoms(true);
+//        new AutomatedGameTester().bootRomsGg(true);
+        new AutomatedGameTester().bootRecursiveRoms(true);
         System.exit(0);
     }
 
@@ -182,7 +182,7 @@ public class AutomatedGameTester {
                     Util.sleep(BOOT_DELAY_MS);
                     totalDelay += BOOT_DELAY_MS;
                 } while (totalDelay < RUN_DELAY_MS && !tooManyErrors);
-                system.handleCloseRom();
+                system.handleSystemEvent(CLOSE_ROM, null);
             }
 
             logFileLen = logFileLength(logFile);
@@ -228,7 +228,7 @@ public class AutomatedGameTester {
             system = SystemLoader.getInstance().createSystemProvider(rom);
 //            System.out.println("Testing: " + rom.getFileName().toString());
             system.init();
-            system.handleNewRom(rom);
+            system.handleSystemEvent(NEW_ROM, rom);
 //            genesisProvider.setFullScreen(true);
             Util.sleep(BOOT_DELAY_MS);
             boolean boots = false;
@@ -246,7 +246,7 @@ public class AutomatedGameTester {
                         soundOk = system.isSoundWorking();
                     }
                 } while (!soundOk && totalDelay < AUDIO_DELAY_MS && !tooManyErrors);
-                system.handleCloseRom();
+                system.handleSystemEvent(CLOSE_ROM, null);
             }
             System.out.println(rom.getFileName().toString() + ";" + boots + ";" + soundOk);
             logFileLen = logFileLength(logFile);

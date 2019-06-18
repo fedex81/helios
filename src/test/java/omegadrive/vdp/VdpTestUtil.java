@@ -1,5 +1,7 @@
 /*
+ * VdpTestUtil
  * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 18/06/19 17:25
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,15 +20,14 @@
 package omegadrive.vdp;
 
 import omegadrive.SystemLoader;
-import omegadrive.system.SystemProvider;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.IVdpFifo;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
-import java.nio.file.Path;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -152,23 +153,18 @@ public class VdpTestUtil {
             }
 
             @Override
-            public void handleNewRom(Path file) {
+            public void handleSystemEvent(SystemEvent event, Object parameter) {
 
             }
 
             @Override
-            public void handleCloseRom() {
-
+            public boolean addFrameListener(VdpFrameListener l) {
+                return false;
             }
 
             @Override
-            public void handleCloseApp() {
-
-            }
-
-            @Override
-            public void handleLoadState(Path file) {
-
+            public boolean removeFrameListener(VdpFrameListener l) {
+                return false;
             }
 
             @Override
@@ -181,33 +177,9 @@ public class VdpTestUtil {
                 return false;
             }
 
-            @Override
-            public void toggleMute() {
-
-            }
-
-            @Override
-            public void toggleSoundRecord() {
-
-            }
-
-            @Override
-            public void setFullScreen(boolean value) {
-
-            }
 
             @Override
             public void init() {
-
-            }
-
-            @Override
-            public void setPlayers(int i) {
-
-            }
-
-            @Override
-            public void setDebug(boolean value) {
 
             }
 
@@ -216,15 +188,6 @@ public class VdpTestUtil {
                 return null;
             }
 
-            @Override
-            public void handleSaveState(Path p) {
-
-            }
-
-            @Override
-            public void handlePause() {
-
-            }
 
             @Override
             public SystemLoader.SystemType getSystemType() {

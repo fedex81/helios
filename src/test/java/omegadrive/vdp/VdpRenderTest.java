@@ -1,5 +1,7 @@
 /*
+ * VdpRenderTest
  * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 18/06/19 17:25
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,21 +25,23 @@ import omegadrive.input.InputProvider;
 import omegadrive.save.SavestateTest;
 import omegadrive.system.Genesis;
 import omegadrive.system.SystemProvider;
-import omegadrive.ui.GenesisWindow;
+import omegadrive.ui.DisplayWindow;
+import omegadrive.ui.RenderingStrategy;
 import omegadrive.util.Util;
+import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.RenderType;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.swing.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
-@Ignore
+//@Ignore
 public class VdpRenderTest {
 
     private static int[][] screenData;
@@ -52,15 +56,33 @@ public class VdpRenderTest {
         System.setProperty("emu.headless", "true");
     }
 
-    private void testSavestateViewerSingle(Path saveFile, String rom) throws Exception {
+    private static SystemProvider createTestProvider() {
+        InputProvider.bootstrap();
+
+        Genesis g = new Genesis(DisplayWindow.HEADLESS_INSTANCE) {
+            int count = 0;
+
+            @Override
+            public void renderScreen(int[][] sd) {
+                boolean isValid = isValidImage(sd);
+                if (isValid) {
+                    VdpRenderTest.screenData = sd;
+                } else {
+                    System.out.println("Skipping frame#" + count);
+                }
+                count++;
+            }
+        };
+        return g;
+    }
+
+    private void testSavestateViewerSingle(Path saveFile, String rom) {
         GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
         VdpTestUtil.runToStartFrame(vdpProvider);
-//            renderDump.saveRenderToFile(screenData, vdpProvider.getVideoMode(), RenderType.FULL);
-        BufferedImage bi = renderDump.getImage(screenData, vdpProvider.getVideoMode(), RenderType.FULL);
+        BufferedImage bi = saveRenderToImage(screenData, vdpProvider.getVideoMode());
         String title = rom + " (" + saveFile.getFileName().toString() + ")";
         showImage(bi, title);
     }
-
 
     @Test
     public void testInterlaced() throws Exception {
@@ -91,9 +113,16 @@ public class VdpRenderTest {
         }
     }
 
+    private BufferedImage saveRenderToImage(int[][] data, VideoMode videoMode) {
+        BufferedImage bi = renderDump.getImage(videoMode);
+        int[] linear = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
+        RenderingStrategy.toLinear(linear, data, videoMode.getDimension());
+        return bi;
+    }
+
     @Test
     @Ignore
-    public void testVpdPerformanceOne() throws Exception {
+    public void testVpdPerformanceOne() {
         Map.Entry<String, String> entry = (Map.Entry) SavestateGameLoader.saveStates.entrySet().toArray()[0];
         Path saveFile = Paths.get(saveStateFolder, entry.getKey());
         GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
@@ -110,20 +139,6 @@ public class VdpRenderTest {
         } while (true);
     }
 
-
-
-    private void testVpdPerformanceSingle(Path saveFile, String rom) throws Exception {
-        GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
-        int cycle = CYCLES;
-        long start = System.nanoTime();
-        do {
-            VdpTestUtil.runToStartFrame(vdpProvider);
-        } while (--cycle > 0);
-        System.out.println(rom);
-        printPerf(System.nanoTime() - start, CYCLES);
-
-    }
-
     private static void printPerf(long intervalNs, int cycles) {
         double timeMs = intervalNs / 1_000_000d;
         double fps = cycles / (timeMs / 1000);
@@ -138,24 +153,16 @@ public class VdpRenderTest {
         return vdpProvider;
     }
 
-    private static SystemProvider createTestProvider() {
-        InputProvider.bootstrap();
+    private void testVpdPerformanceSingle(Path saveFile, String rom) {
+        GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
+        int cycle = CYCLES;
+        long start = System.nanoTime();
+        do {
+            VdpTestUtil.runToStartFrame(vdpProvider);
+        } while (--cycle > 0);
+        System.out.println(rom);
+        printPerf(System.nanoTime() - start, CYCLES);
 
-        Genesis g = new Genesis(GenesisWindow.HEADLESS_INSTANCE) {
-            int count = 0;
-
-            @Override
-            public void renderScreen(int[][] sd) {
-                boolean isValid = isValidImage(sd);
-                if (isValid) {
-                    VdpRenderTest.screenData = sd;
-                } else {
-                    System.out.println("Skipping frame#" + count);
-                }
-                count++;
-            }
-        };
-        return g;
     }
 
     private static boolean isValidImage(int[][] screenData) {
