@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 18/06/19 17:38
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -108,6 +108,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
                 runZ80(counter);
                 runVdp(counter);
                 if (canRenderScreen) {
+                    videoMode = vdp.getVideoMode();
                     renderScreenLinearInternal(vdp.getScreenData()[0], getStats(System.nanoTime()));
                     handleVdpDumpScreenData();
                     handleNmi();
