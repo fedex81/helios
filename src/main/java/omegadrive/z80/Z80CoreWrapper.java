@@ -1,7 +1,7 @@
 /*
  * Z80CoreWrapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/06/19 13:56
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ public class Z80CoreWrapper implements Z80Provider {
 
     public static Z80CoreWrapper createGenesisInstance(GenesisBusProvider busProvider) {
         Z80CoreWrapper w = new Z80CoreWrapper();
-        w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider, new Z80Memory());
+        w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider);
         return createInstance(w, null);
     }
 

@@ -1,7 +1,7 @@
 /*
  * VdpRenderDump
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,19 +64,35 @@ public class VdpRenderDump {
         }
         long now = System.currentTimeMillis();
         String fileName = type.toString() + "_" + now + ".jpg";
-        bi = getImage(data, videoMode, type);
+        bi = getImage(videoMode);
+        RenderingStrategy.toLinear(pixels, data, videoMode.getDimension());
+        saveImageToFile(bi, fileName);
+    }
+
+    public void saveLinearRenderToFile(int[][] data, VideoMode videoMode, RenderType type) {
+        if (isHeadless) {
+            LOG.warn("Not supported in headless mode");
+            return;
+        }
+        long now = System.currentTimeMillis();
+        String fileName = type.toString() + "_" + now + ".jpg";
+        bi = getImage(videoMode);
+        System.arraycopy(data, 0, pixels, 0, data.length);
+        saveImageToFile(bi, fileName);
+    }
+
+    private void saveImageToFile(BufferedImage bi, String fileName) {
         Path file = Paths.get(folder.toAbsolutePath().toString(), fileName);
         LOG.info("Saving render to: " + file.toAbsolutePath().toString());
         ImageUtil.saveImageToFile(bi, file.toFile());
     }
 
-    public BufferedImage getImage(int[][] data, VideoMode videoMode, RenderType type) {
+    public BufferedImage getImage(VideoMode videoMode) {
         Dimension d = videoMode.getDimension();
         if (bi.getWidth() * bi.getHeight() != d.width * d.height) {
             bi = gd.getDefaultConfiguration().createCompatibleImage(d.width, d.height);
             pixels = getPixels(bi);
         }
-        RenderingStrategy.toLinear(pixels, data, d);
         return bi;
     }
 

@@ -1,7 +1,7 @@
 /*
- * EmuFrame
+ * SwingWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,24 +29,26 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
 
+import static omegadrive.system.SystemProvider.SystemEvent.*;
 import static omegadrive.util.ScreenSizeHelper.*;
 
-public class EmuFrame implements GenesisWindow {
+public class SwingWindow implements DisplayWindow {
 
-    private static Logger LOG = LogManager.getLogger(EmuFrame.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(SwingWindow.class.getSimpleName());
 
     private Dimension fullScreenSize;
     private GraphicsDevice[] graphicsDevices;
@@ -64,9 +66,8 @@ public class EmuFrame implements GenesisWindow {
 
     private JFrame jFrame;
     private SystemProvider mainEmu;
-    private JCheckBoxMenuItem usaBios;
-    private JCheckBoxMenuItem eurBios;
-    private JCheckBoxMenuItem japBios;
+
+    private java.util.List<JCheckBoxMenuItem> regionItems;
     private JCheckBoxMenuItem fullScreenItem;
     private JCheckBoxMenuItem muteItem;
     private boolean showDebug = false;
@@ -83,12 +84,12 @@ public class EmuFrame implements GenesisWindow {
         jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() +  " " + VERSION + " - " + title);
     }
 
-    public EmuFrame(SystemProvider mainEmu) {
+    public SwingWindow(SystemProvider mainEmu) {
         this.mainEmu = mainEmu;
     }
 
     public static void main(String[] args) {
-        EmuFrame frame = new EmuFrame(null);
+        SwingWindow frame = new SwingWindow(null);
         frame.init();
     }
 
@@ -142,11 +143,11 @@ public class EmuFrame implements GenesisWindow {
         bar.add(setting);
 
         JMenuItem pauseItem = new JMenuItem("Pause");
-        pauseItem.addActionListener(e -> mainEmu.handlePause());
+        addKeyAction(pauseItem, TOGGLE_PAUSE, e -> mainEmu.handleSystemEvent(TOGGLE_PAUSE, null));
         setting.add(pauseItem);
 
         JMenuItem resetItem = new JMenuItem("Reset");
-        resetItem.addActionListener(e -> mainEmu.reset());
+        addKeyAction(resetItem, RESET, e -> mainEmu.reset());
         setting.add(resetItem);
 
         JMenu menuBios = new JMenu("Region");
@@ -155,20 +156,15 @@ public class EmuFrame implements GenesisWindow {
         JMenu menuView = new JMenu("View");
         bar.add(menuView);
 
-        usaBios = new JCheckBoxMenuItem("USA", false);
-        menuBios.add(usaBios);
-
-        eurBios = new JCheckBoxMenuItem("Europe", false);
-        menuBios.add(eurBios);
-
-        japBios = new JCheckBoxMenuItem("Japan", false);
-        menuBios.add(japBios);
+        regionItems = createRegionItems();
+        regionItems.forEach(menuBios::add);
 
         fullScreenItem = new JCheckBoxMenuItem("Full Screen", false);
+        addKeyAction(fullScreenItem, TOGGLE_FULL_SCREEN, e -> toggleFullScreen());
         menuView.add(fullScreenItem);
 
         muteItem = new JCheckBoxMenuItem("Enable Sound", true);
-        muteItem.addActionListener(e -> mainEmu.toggleMute());
+        addKeyAction(muteItem, TOGGLE_MUTE, e -> mainEmu.handleSystemEvent(TOGGLE_MUTE, null));
         menuView.add(muteItem);
 
         JMenu helpMenu = new JMenu("Help");
@@ -176,59 +172,62 @@ public class EmuFrame implements GenesisWindow {
         bar.add(fpsLabel);
 
         JMenuItem loadRomItem = new JMenuItem("Load ROM");
-        loadRomItem.addActionListener(e -> handleNewRom());
+        addKeyAction(loadRomItem, NEW_ROM, e -> handleNewRom());
+
         JMenuItem closeRomItem = new JMenuItem("Close ROM");
-        closeRomItem.addActionListener(e -> mainEmu.handleCloseRom());
+        addKeyAction(closeRomItem, CLOSE_ROM, e -> mainEmu.handleSystemEvent(CLOSE_ROM, null));
 
         JMenuItem loadStateItem = new JMenuItem("Load State");
-        loadStateItem.addActionListener(e -> handleLoadState());
+        addKeyAction(loadStateItem, LOAD_STATE, e -> handleLoadState());
+
         JMenuItem saveStateItem = new JMenuItem("Save State");
-        saveStateItem.addActionListener(e -> handleSaveState());
-        JMenuItem saveStateTempItem = new JMenuItem("Save State to TEMP");
-        saveStateTempItem.addActionListener(e -> handleSaveStateTemp());
+        addKeyAction(saveStateItem, SAVE_STATE, e -> handleSaveState());
 
         JMenuItem quickSaveStateItem = new JMenuItem("Quick Save State");
-        quickSaveStateItem.addActionListener(e -> handleQuickSaveState());
+        addKeyAction(quickSaveStateItem, QUICK_SAVE, e -> handleQuickSaveState());
+
         JMenuItem quickLoadStateItem = new JMenuItem("Quick Load State");
-        quickLoadStateItem.addActionListener(e -> handleQuickLoadState());
+        addKeyAction(quickLoadStateItem, QUICK_LOAD, e -> handleQuickLoadState());
 
         JMenuItem exitItem = new JMenuItem("Exit");
-        exitItem.addActionListener(e -> {
+        addKeyAction(exitItem, CLOSE_APP, e -> {
             SystemProvider mainEmu = getMainEmu();
-            mainEmu.handleCloseApp();
+            mainEmu.handleSystemEvent(CLOSE_APP, null);
             System.exit(0);
         });
 
         JMenuItem aboutItem = new JMenuItem("About");
-        aboutItem.addActionListener(e -> showHelpMessage(aboutItem.getText(), getAboutString()));
+        addAction(aboutItem, e -> showHelpMessage(aboutItem.getText(), getAboutString()));
 
         JMenuItem creditsItem = new JMenuItem("Credits");
-        creditsItem.addActionListener(e ->
-                showHelpMessage(creditsItem.getText(), FileLoader.loadFileContentAsString("CREDITS.md"))
-        );
+        addAction(creditsItem, e -> showHelpMessage(creditsItem.getText(),
+                FileLoader.loadFileContentAsString("CREDITS.md")));
+
+        JMenuItem keyBindingsItem = new JMenuItem("Key Bindings");
+        addAction(keyBindingsItem, e -> showHelpMessage(keyBindingsItem.getText(),
+                FileLoader.loadFileContentAsString("key.config")));
+
         JMenuItem readmeItem = new JMenuItem("Readme");
-        readmeItem.addActionListener(e ->
-                showHelpMessage(readmeItem.getText(), FileLoader.loadFileContentAsString("README.md"))
-        );
+        addAction(readmeItem, e -> showHelpMessage(readmeItem.getText(),
+                FileLoader.loadFileContentAsString("README.md")));
+
         JMenuItem licenseItem = new JMenuItem("License");
-        licenseItem.addActionListener(e ->
-                showHelpMessage(licenseItem.getText(), FileLoader.loadFileContentAsString("LICENSE.md"))
-        );
+        addAction(licenseItem, e -> showHelpMessage(licenseItem.getText(),
+                FileLoader.loadFileContentAsString("LICENSE.md")));
 
         JMenuItem historyItem = new JMenuItem("History");
-        historyItem.addActionListener(e ->
-                showHelpMessage(historyItem.getText(), FileLoader.loadFileContentAsString("HISTORY.md"))
-        );
+        addAction(historyItem, e -> showHelpMessage(historyItem.getText(),
+                FileLoader.loadFileContentAsString("HISTORY.md")));
 
         menu.add(loadRomItem);
         menu.add(closeRomItem);
         menu.add(loadStateItem);
         menu.add(saveStateItem);
-        menu.add(saveStateTempItem);
         menu.add(quickLoadStateItem);
         menu.add(quickSaveStateItem);
         menu.add(exitItem);
         helpMenu.add(aboutItem);
+        helpMenu.add(keyBindingsItem);
         helpMenu.add(readmeItem);
         helpMenu.add(creditsItem);
         helpMenu.add(historyItem);
@@ -237,12 +236,13 @@ public class EmuFrame implements GenesisWindow {
         screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
         screenLabel.setVerticalAlignment(SwingConstants.CENTER);
 
+        setupFrameKeyListener();
+
         jFrame.setMinimumSize(DEFAULT_FRAME_SIZE);
-        jFrame.setDefaultCloseOperation(jFrame.EXIT_ON_CLOSE);
+        jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         jFrame.setResizable(true);
         jFrame.setJMenuBar(bar);
         jFrame.add(screenLabel, -1);
-//        jFrame.setIconImage(new ImageIcon(EmuFrame.class.getResource("/omega.png")).getImage());
 
         jFrame.pack();
 
@@ -253,6 +253,35 @@ public class EmuFrame implements GenesisWindow {
                 gd.getDefaultConfiguration().getBounds().y + centerPoint.y);
 
         jFrame.setVisible(true);
+    }
+
+    private java.util.List<JCheckBoxMenuItem> createRegionItems() {
+        java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
+        l.add(new JCheckBoxMenuItem("AutoDetect", true));
+        Arrays.stream(RegionDetector.Region.values()).sorted().
+                forEach(r -> l.add(new JCheckBoxMenuItem(r.name(), false)));
+        return l;
+    }
+
+    private void addKeyAction(JMenuItem component, SystemProvider.SystemEvent event, ActionListener l) {
+        AbstractAction action = toAbstractAction(component.getText(), l);
+        if (event != NONE) {
+            action.putValue(Action.ACCELERATOR_KEY, KeyBindingsHandler.getKeyStrokeForEvent(event));
+        }
+        component.setAction(action);
+    }
+
+    private void addAction(JMenuItem component, ActionListener act) {
+        addKeyAction(component, NONE, act);
+    }
+
+    private AbstractAction toAbstractAction(String name, ActionListener listener) {
+        return new AbstractAction(name) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                listener.actionPerformed(e);
+            }
+        };
     }
 
     private void showHelpMessage(String title, String msg) {
@@ -309,10 +338,8 @@ public class EmuFrame implements GenesisWindow {
 
     @Override
     public String getRegionOverride() {
-        String regionOverride = usaBios.getState() ? "USA" : null;
-        regionOverride = eurBios.getState() ? "EUROPE" : regionOverride;
-        regionOverride = japBios.getState() ? "JAPAN" : regionOverride;
-        return regionOverride;
+        return regionItems.stream().filter(i -> i.isSelected()).
+                map(JCheckBoxMenuItem::getText).findFirst().orElse(null);
     }
 
     //TODO
@@ -439,18 +466,18 @@ public class EmuFrame implements GenesisWindow {
         Optional<File> optFile = loadStateFileDialog(jFrame);
         if (optFile.isPresent()) {
             Path file = optFile.get().toPath();
-            mainEmu.handleLoadState(file);
+            mainEmu.handleSystemEvent(LOAD_STATE, file);
         }
     }
 
     private void handleQuickLoadState() {
         Path file = Paths.get(".", FileLoader.QUICK_SAVE_FILENAME);
-        mainEmu.handleLoadState(file);
+        mainEmu.handleSystemEvent(QUICK_LOAD, file);
     }
 
     private void handleQuickSaveState() {
         Path p = Paths.get(".", FileLoader.QUICK_SAVE_FILENAME);
-        mainEmu.handleSaveState(p);
+        mainEmu.handleSystemEvent(QUICK_SAVE, p);
     }
 
     private void handleSaveState() {
@@ -463,21 +490,12 @@ public class EmuFrame implements GenesisWindow {
                         FileLoader.DEFAULT_SAVE_STATE_EXTENSION);
                 LOG.info("File renamed to: " + path.toAbsolutePath().toString());
             }
-            mainEmu.handleSaveState(path);
-        }
-    }
-
-    private void handleSaveStateTemp() {
-        try {
-            Path p = Files.createTempFile("save_", FileLoader.DEFAULT_SAVE_STATE_EXTENSION);
-            mainEmu.handleSaveState(p);
-        } catch (IOException e) {
-            LOG.error("Unable to create save state file", e);
+            mainEmu.handleSystemEvent(SAVE_STATE, path);
         }
     }
 
     private void handleNewRom() {
-        mainEmu.handleCloseRom();
+        mainEmu.handleSystemEvent(CLOSE_ROM, null);
         Optional<File> optFile = loadRomDialog(jFrame);
         if (optFile.isPresent()) {
             Path file = optFile.get().toPath();
@@ -485,50 +503,40 @@ public class EmuFrame implements GenesisWindow {
         }
     }
 
+    //TODO check and remove
     private void setupFrameKeyListener() {
         jFrame.addKeyListener(new KeyAdapter() {
 
             @Override
             public void keyReleased(KeyEvent e) {
-                SystemProvider mainEmu = getMainEmu();
-                if(!e.isControlDown()){
+                KeyStroke ks = KeyStroke.getKeyStrokeForEvent(e);
+                SystemProvider.SystemEvent event = KeyBindingsHandler.getSystemEventIfAny(ks);
+                if (event == NONE) {
                     return;
                 }
-                switch (e.getKeyCode()) {
-                    case KeyEvent.VK_F:
+
+                boolean forwardEvent = true;
+                Object parameter = null;
+                switch (event) {
+                    case TOGGLE_FULL_SCREEN:
                         toggleFullScreen();
+                        forwardEvent = false;
                         break;
-                    case KeyEvent.VK_M:
+                    case TOGGLE_MUTE:
                         muteItem.setState(!muteItem.getState());
-                        mainEmu.toggleMute();
                         break;
-                    case KeyEvent.VK_0:
+                    case SET_DEBUG_UI:
                         showDebug = !showDebug;
                         showDebugInfo(showDebug);
+                        forwardEvent = false;
                         break;
-                    case KeyEvent.VK_R:
-                        mainEmu.toggleSoundRecord();
-                        break;
-                    case KeyEvent.VK_1:
-                        mainEmu.setPlayers(1);
-                        break;
-                    case KeyEvent.VK_2:
-                        mainEmu.setPlayers(2);
-                        break;
-                    case KeyEvent.VK_L:
+                    case NEW_ROM:
                         loadRomDialog(jFrame);
+                        forwardEvent = false;
                         break;
-                    case KeyEvent.VK_P:
-                        mainEmu.handlePause();
-                        break;
-                    case KeyEvent.VK_ESCAPE:
-                        mainEmu.handleCloseRom();
-                        break;
-                        //TODO debug stuff
-//                    case KeyEvent.VK_B:
-    //                  vdpDumpScreenData = !vdpDumpScreenData;
-//                      break;
-//        }
+                }
+                if (forwardEvent) {
+                    mainEmu.handleSystemEvent(event, parameter);
                 }
             }
         });
@@ -540,7 +548,7 @@ public class EmuFrame implements GenesisWindow {
 
     @Override
     public void reloadSystem(SystemProvider systemProvider) {
-        Optional.ofNullable(mainEmu).ifPresent(SystemProvider::handleCloseRom);
+        Optional.ofNullable(mainEmu).ifPresent(sys -> sys.handleSystemEvent(CLOSE_ROM, null));
         this.mainEmu = systemProvider;
 
         Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);

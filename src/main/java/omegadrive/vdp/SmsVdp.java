@@ -1,7 +1,7 @@
 /*
  * SmsVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 31/05/19 11:31
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@ import static omegadrive.util.RegionDetector.Region.USA;
 
 public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 {
+
+    public static final int VDP_VRAM_SIZE = 0x4000;
+    public static final int VDP_CRAM_SIZE = 0x20;
+    public static final int VDP_REGISTERS_SIZE = 16;
     // --------------------------------------------------------------------------------------------
     // Screen Dimensions
     // --------------------------------------------------------------------------------------------
@@ -72,7 +76,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     public final byte[] VRAM;
 
     /** Colour RAM */
-    private final int[] CRAM;
+    public final int[] CRAM;
 
     /** VDP Registers */
     private final int vdpreg[];
@@ -189,30 +193,35 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     // --------------------------------------------------------------------------------------------
 
     private VdpInterruptHandler interruptHandler;
-    private SystemProvider systemProvider;
-    private VideoMode videoMode;
+    private final boolean isSms;
     private VideoMode ggVideoMode = VideoMode.NTSCU_H20_V18;
     private RegionDetector.Region region;
     private SystemLoader.SystemType systemType;
-    private boolean isSms = true;
+    //    private SystemProvider systemProvider;
+    private VideoMode videoMode;
 
     /**
      *  Vdp Constructor
      */
+
     public SmsVdp(SystemProvider systemProvider) {
-        this.systemProvider = systemProvider;
-        setSystemType(systemProvider.getSystemType());
+        this(systemProvider.getSystemType(), systemProvider.getRegion());
+    }
+
+    public SmsVdp(SystemLoader.SystemType systemType, RegionDetector.Region region) {
+        isSms = systemType == SystemLoader.SystemType.SMS;
+        setSystemType(systemType);
 
         // 16K of Video RAM
-        VRAM = new byte[0x4000];
+        VRAM = new byte[VDP_VRAM_SIZE];
 
         // Note, we don't directly emulate CRAM but actually store the converted Java palette
         // in it. Therefore the length is different to on the real GameGear where it's actually
         // 64 bytes.
-        CRAM = new int[0x20];
+        CRAM = new int[VDP_CRAM_SIZE];
 
         // 15 Registers, (0-10) used by SMS, but some programs write > 10
-        vdpreg = new int[16];
+        vdpreg = new int[VDP_REGISTERS_SIZE];
 
         bgPriority = new boolean[SMS_WIDTH];
 
@@ -220,7 +229,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
         createCachedImages();
 
-        region = systemProvider.getRegion();
+        this.region = region;
         interruptHandler = SmsVdpInterruptHandler.createInstance(this);
         resetVideoMode(true);
     }
@@ -256,7 +265,6 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         minDirty = TOTAL_TILES;
         maxDirty = -1;
 
-        region = systemProvider.getRegion();
         resetVideoMode(true);
     }
 
@@ -265,7 +273,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
      */
     private void setSystemType(SystemLoader.SystemType type){
         systemType = type;
-        isSms = type == SystemLoader.SystemType.SMS;
+
         h_start = isSms ? 0 : 5;
         h_end   = isSms ? 32 : 27;
 
@@ -1084,14 +1092,24 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         //http://www.smspower.org/forums/viewtopic.php?t=9366&highlight=chicago
         status |= vBlankTrigger ? STATUS_VINT : 0;
         status |= interruptHandler.isHIntPending() ? STATUS_HINT : 0;
-        if (vBlankTrigger) {
-            if (!isSms) {
-                RenderingStrategy.subImageWithOffset(display, ggDisplay, videoMode.getDimension(),
-                        ggVideoMode.getDimension(), SmsVdp.GG_X_OFFSET,
-                        SmsVdp.GG_Y_OFFSET);
-            }
+        if (!isSms) {
+            resizeGG(vBlankTrigger);
         }
         return vBlankTrigger;
+    }
+
+    private void resizeGG(boolean doResize) {
+        if (!doResize) {
+            return;
+        }
+        RenderingStrategy.subImageWithOffset(display, ggDisplay, videoMode.getDimension(),
+                ggVideoMode.getDimension(), SmsVdp.GG_X_OFFSET,
+                SmsVdp.GG_Y_OFFSET);
+    }
+
+    @Override
+    public void dumpScreenData() {
+        //TODO
     }
 
     @Override

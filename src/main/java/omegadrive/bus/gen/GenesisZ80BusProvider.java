@@ -1,7 +1,7 @@
 /*
  * GenesisZ80BusProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/06/19 13:56
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ package omegadrive.bus.gen;
 
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.memory.IMemoryRam;
+import omegadrive.z80.Z80Memory;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,10 +30,13 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
 
     Logger LOG = LogManager.getLogger(GenesisZ80BusProvider.class.getSimpleName());
 
+    int Z80_RAM_MEMORY_SIZE = 0x2000;
 
-    static GenesisZ80BusProvider createInstance(GenesisBusProvider genesisBusProvider, IMemoryRam memory) {
+
+    static GenesisZ80BusProvider createInstance(GenesisBusProvider genesisBusProvider) {
+        IMemoryRam ram = new Z80Memory(Z80_RAM_MEMORY_SIZE);
         GenesisZ80BusProvider b = new GenesisZ80BusProviderImpl();
-        b.attachDevice(genesisBusProvider).attachDevice(memory);
+        b.attachDevice(genesisBusProvider).attachDevice(ram);
         return b;
     }
 

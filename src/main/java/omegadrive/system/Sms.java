@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 28/05/19 16:09
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,8 +26,12 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.savestate.BaseStateHandler;
+import omegadrive.savestate.MekaStateHandler;
+import omegadrive.savestate.SmsStateHandler;
 import omegadrive.sound.javasound.JavaSoundManager;
-import omegadrive.ui.GenesisWindow;
+import omegadrive.ui.DisplayWindow;
+import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
@@ -36,7 +40,9 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Sms extends BaseSystem<Z80BusProvider> {
+import java.nio.file.Path;
+
+public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     private static Logger LOG = LogManager.getLogger(Sms.class.getSimpleName());
 
@@ -45,17 +51,18 @@ public class Sms extends BaseSystem<Z80BusProvider> {
 
     public static boolean verbose = false;
 
-    public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, GenesisWindow emuFrame) {
-        return new Sms(systemType, emuFrame);
-    }
-
-    protected Sms(SystemLoader.SystemType systemType, GenesisWindow emuFrame){
+    protected Sms(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);
         this.systemType = systemType;
     }
 
+    public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
+        return new Sms(systemType, emuFrame);
+    }
+
     @Override
     public void init() {
+        stateHandler = SmsStateHandler.EMPTY_STATE;
         joypad = new TwoButtonsJoypad();
         memory = MemoryProvider.createSmsInstance();
         bus = new SmsBus();
@@ -101,8 +108,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
                 runZ80(counter);
                 runVdp(counter);
                 if (canRenderScreen) {
-                    emuFrame.renderScreenLinear(vdp.getScreenData()[0],
-                            getStats(System.nanoTime()), vdp.getVideoMode());
+                    renderScreenLinearInternal(vdp.getScreenData()[0], getStats(System.nanoTime()));
                     handleVdpDumpScreenData();
                     handleNmi();
                     canRenderScreen = false;
@@ -111,7 +117,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
                         LOG.info("Game thread stopped");
                         break;
                     }
-//                    processSaveState();
+                    processSaveState();
                     pauseAndWait();
                     resetCycleCounters(counter);
                     counter = 0;
@@ -143,13 +149,23 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     }
 
     @Override
-    protected void saveStateAction(String fileName, boolean load, int[] data) {
-        LOG.error("Not implemented!");
+    protected SmsStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
+        String fileName = file.toAbsolutePath().toString();
+        return type == BaseStateHandler.Type.LOAD ? MekaStateHandler.createLoadInstance(fileName, FileLoader.readFileSafe(file)) :
+                MekaStateHandler.createSaveInstance(fileName, systemType);
     }
+
 
     @Override
     protected void processSaveState() {
-        LOG.error("Not implemented!");
+        if (saveStateFlag) {
+            stateHandler.processState((SmsVdp) vdp, z80, bus, memory);
+            if (stateHandler.getType() == BaseStateHandler.Type.SAVE) {
+                stateHandler.storeData();
+            }
+            stateHandler = SmsStateHandler.EMPTY_STATE;
+            saveStateFlag = false;
+        }
     }
 
     private void resetCycleCounters(int counter) {

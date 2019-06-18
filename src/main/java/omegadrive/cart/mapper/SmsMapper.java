@@ -1,7 +1,7 @@
 /*
  * SmsMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/05/19 13:35
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -135,6 +135,18 @@ public class SmsMapper {
             }
         }
 
+        /**
+         * Write to a paging register
+         * <p>
+         * $FFFC - Control register
+         * <p>
+         * D7 : 1= /GWR disabled (write protect), 0= /GWR enabled (write enable)
+         * D4 : 1= SRAM mapped to $C000-$FFFF (*1)
+         * D3 : 1= SRAM mapped to $8000-$BFFF, 0= ROM mapped to $8000-$BFFF
+         * D2 : SRAM banking; BA14 state when $8000-$BFFF is accessed (1= high, 0= low)
+         * D1 : Bank shift, bit 1
+         * D0 : Bank shift, bit 0
+         */
         @Override
         public void writeBankData(long addressL, long dataL) {
             int val = (int) (addressL & 3);

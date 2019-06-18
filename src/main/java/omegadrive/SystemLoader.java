@@ -1,7 +1,7 @@
 /*
  * SystemLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@ import omegadrive.system.Genesis;
 import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.Z80BaseSystem;
-import omegadrive.ui.EmuFrame;
-import omegadrive.ui.GenesisWindow;
+import omegadrive.ui.DisplayWindow;
+import omegadrive.ui.SwingWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
@@ -37,31 +37,15 @@ import java.io.FileReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
+import static omegadrive.system.SystemProvider.SystemEvent.NEW_ROM;
+
 public class SystemLoader {
 
-    public enum SystemType {
-        NONE(""),
-        GENESIS("MD"),
-        SG_1000("SG"),
-        COLECO("CV"),
-        MSX("MSX"),
-        SMS("SMS"),
-        GG("GG")
-        ;
-
-        private String shortName;
-
-        private SystemType(String s){
-            this.shortName = s;
-        }
-
-        public String getShortName() {
-            return shortName;
-        }
-    }
+    protected DisplayWindow emuFrame;
 
     private static Logger LOG = LogManager.getLogger(SystemLoader.class.getSimpleName());
 
@@ -88,7 +72,26 @@ public class SystemLoader {
     public static String biosNameColeco = "bios_coleco.col";
 
     private Path romFile;
-    protected GenesisWindow emuFrame;
+
+    protected static void loadProperties() {
+        try (
+                FileReader reader = new FileReader(PROPERTIES_FILENAME)
+        ) {
+            System.getProperties().load(reader);
+            //java.lang.System.getProperties().store(java.lang.System.out, null);
+        } catch (Exception e) {
+            LOG.error("Unable to load properties file: " + PROPERTIES_FILENAME);
+        }
+        System.getProperties().list(System.out);
+        System.out.println("-- done listing properties --");
+        verbose = Boolean.valueOf(java.lang.System.getProperty("emu.debug", "false"));
+        showFps = Boolean.valueOf(java.lang.System.getProperty("emu.fps", "false"));
+        headless = Boolean.valueOf(java.lang.System.getProperty("emu.headless", "false"));
+        biosFolder = String.valueOf(java.lang.System.getProperty("bios.folder", biosFolder));
+        biosNameMsx1 = String.valueOf(java.lang.System.getProperty("bios.name.msx1", biosNameMsx1));
+        biosNameColeco = String.valueOf(java.lang.System.getProperty("bios.name.coleco", biosNameColeco));
+    }
+
     private SystemProvider systemProvider;
 
     private static AtomicBoolean init = new AtomicBoolean();
@@ -99,34 +102,7 @@ public class SystemLoader {
         return ge.isHeadlessInstance() || headless;
     }
 
-    protected static void loadProperties() {
-        try (
-                FileReader reader = new FileReader(PROPERTIES_FILENAME)
-        ) {
-            java.lang.System.getProperties().load(reader);
-            java.lang.System.getProperties().store(java.lang.System.out, null);
-        } catch (Exception e) {
-            LOG.error("Unable to load properties file: " + PROPERTIES_FILENAME);
-        }
-        verbose = Boolean.valueOf(java.lang.System.getProperty("emu.debug", "false"));
-        showFps = Boolean.valueOf(java.lang.System.getProperty("emu.fps", "false"));
-        headless = Boolean.valueOf(java.lang.System.getProperty("emu.headless", "false"));
-        biosFolder = String.valueOf(java.lang.System.getProperty("bios.folder", biosFolder));
-        biosNameMsx1 = String.valueOf(java.lang.System.getProperty("bios.name.msx1", biosNameMsx1));
-        biosNameColeco = String.valueOf(java.lang.System.getProperty("bios.name.coleco", biosNameColeco));
-    }
-
-    private SystemLoader(){
-    }
-
-    public static SystemLoader getInstance(){
-        if(init.compareAndSet(false, true)){
-            init();
-        }
-        return INSTANCE;
-    }
-
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         init();
         if (args.length > 0) {
             //linux pulseaudio can crash if we start too quickly
@@ -140,69 +116,52 @@ public class SystemLoader {
         }
     }
 
+    private SystemLoader() {
+    }
+
+    public static SystemLoader getInstance() {
+        if (init.compareAndSet(false, true)) {
+            init();
+        }
+        return INSTANCE;
+    }
+
      private static void init() {
          loadProperties();
          InputProvider.bootstrap();
          boolean isHeadless = isHeadless();
          LOG.info("Headless mode: " + isHeadless);
-         INSTANCE.setHeadless(isHeadless);
-         if (SwingUtilities.isEventDispatchThread()) {
-             INSTANCE.createFrame(headless);
-         } else {
-         try {
-             SwingUtilities.invokeAndWait(() -> INSTANCE.createFrame(headless));
-         } catch (Exception e) {
-             LOG.error(e);
-         }
+         SystemLoader.setHeadless(isHeadless);
+         INSTANCE.createFrame(isHeadless);
          init.set(true);
      }
-     }
+
+    // Create the frame on the event dispatching thread
+    protected void createFrame(boolean isHeadless) {
+        Runnable frameRunnable = () -> {
+            emuFrame = isHeadless ? DisplayWindow.HEADLESS_INSTANCE : new SwingWindow(getSystemAdapter());
+            emuFrame.init();
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            frameRunnable.run();
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(frameRunnable);
+            } catch (Exception e) {
+                LOG.error(e);
+            }
+        }
+
+    }
 
     private static void setHeadless(boolean headless) {
         SystemLoader.headless = headless;
     }
 
-    // Create the frame on the event dispatching thread
-    protected void createFrame(boolean isHeadless) {
-        emuFrame = isHeadless ? GenesisWindow.HEADLESS_INSTANCE : new EmuFrame(getSystemAdapter());
-        emuFrame.init();
-    }
-
     public SystemProvider handleNewRomFile(Path file) {
         systemProvider = createSystemProvider(file);
         emuFrame.reloadSystem(systemProvider);
-        systemProvider.handleNewRom(file);
-        return systemProvider;
-    }
-
-    public SystemProvider createSystemProvider(Path file){
-        String lowerCaseName = file.toString().toLowerCase();
-        boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        if(isGen){
-            systemProvider = Genesis.createNewInstance(emuFrame);
-        } else if(isSg){
-            systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, emuFrame);
-        } else if(isCv){
-            systemProvider = Z80BaseSystem.createNewInstance(SystemType.COLECO, emuFrame);
-        } else if(isMsx){
-            systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, emuFrame);
-        } else if(isSms){
-            systemProvider = Sms.createNewInstance(SystemType.SMS, emuFrame);
-        } else if(isGg){
-            systemProvider = Sms.createNewInstance(SystemType.GG, emuFrame);
-        }
-        if(systemProvider == null){
-            LOG.error("Unable to find a system to load: " + file.toAbsolutePath());
-        }
-        return systemProvider;
-    }
-
-    public SystemProvider getSystemProvider() {
+        systemProvider.handleSystemEvent(NEW_ROM, file);
         return systemProvider;
     }
 
@@ -219,23 +178,26 @@ public class SystemLoader {
             }
 
             @Override
-            public void handleNewRom(Path file) {
-                handleNewRomFile(file);
+            public void handleSystemEvent(SystemEvent event, Object parameter) {
+                LOG.info("Event: {}, with parameter: {}", event, Objects.toString(parameter));
+                switch (event) {
+                    case NEW_ROM:
+                        handleNewRomFile((Path) parameter);
+                        break;
+                    default:
+                        LOG.warn("Unabe to handle event: {}, with parameter: {}", event, Objects.toString(parameter));
+                        break;
+                }
             }
 
             @Override
-            public void handleCloseRom() {
-
+            public boolean addFrameListener(VdpFrameListener l) {
+                return false;
             }
 
             @Override
-            public void handleCloseApp() {
-
-            }
-
-            @Override
-            public void handleLoadState(Path file) {
-
+            public boolean removeFrameListener(VdpFrameListener l) {
+                return false;
             }
 
             @Override
@@ -249,43 +211,8 @@ public class SystemLoader {
             }
 
             @Override
-            public void toggleMute() {
-
-            }
-
-            @Override
-            public void toggleSoundRecord() {
-
-            }
-
-            @Override
-            public void setFullScreen(boolean value) {
-
-            }
-
-            @Override
-            public void setPlayers(int i) {
-
-            }
-
-            @Override
-            public void setDebug(boolean value) {
-
-            }
-
-            @Override
             public String getRomName() {
                 return null;
-            }
-
-            @Override
-            public void handleSaveState(Path file) {
-
-            }
-
-            @Override
-            public void handlePause() {
-
             }
 
             @Override
@@ -293,5 +220,56 @@ public class SystemLoader {
                 return SystemType.NONE;
             }
         };
+    }
+
+    public SystemProvider createSystemProvider(Path file) {
+        String lowerCaseName = file.toString().toLowerCase();
+        boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        if (isGen) {
+            systemProvider = Genesis.createNewInstance(emuFrame);
+        } else if (isSg) {
+            systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, emuFrame);
+        } else if (isCv) {
+            systemProvider = Z80BaseSystem.createNewInstance(SystemType.COLECO, emuFrame);
+        } else if (isMsx) {
+            systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, emuFrame);
+        } else if (isSms) {
+            systemProvider = Sms.createNewInstance(SystemType.SMS, emuFrame);
+        } else if (isGg) {
+            systemProvider = Sms.createNewInstance(SystemType.GG, emuFrame);
+        }
+        if (systemProvider == null) {
+            LOG.error("Unable to find a system to load: " + file.toAbsolutePath());
+        }
+        return systemProvider;
+    }
+
+    public SystemProvider getSystemProvider() {
+        return systemProvider;
+    }
+
+    public enum SystemType {
+        NONE(""),
+        GENESIS("MD"),
+        SG_1000("SG"),
+        COLECO("CV"),
+        MSX("MSX"),
+        SMS("SMS"),
+        GG("GG");
+
+        private String shortName;
+
+        SystemType(String s) {
+            this.shortName = s;
+        }
+
+        public String getShortName() {
+            return shortName;
+        }
     }
 }

@@ -1,7 +1,7 @@
 /*
  * Z80BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/05/19 16:46
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,8 +30,9 @@ import omegadrive.joypad.MsxPad;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.javasound.JavaSoundManager;
-import omegadrive.ui.GenesisWindow;
+import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
@@ -41,7 +42,9 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
+import java.nio.file.Path;
+
+public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> {
 
     private static Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
 
@@ -51,15 +54,15 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     public static boolean verbose = false;
 
-    public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, GenesisWindow emuFrame) {
-        return new Z80BaseSystem(systemType, emuFrame);
-    }
-
-    protected Z80BaseSystem(SystemLoader.SystemType systemType, GenesisWindow emuFrame){
+    protected Z80BaseSystem(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);
         this.systemType = systemType;
         vdpInterruptType = systemType == SystemLoader.SystemType.COLECO ? Z80Provider.Interrupt.NMI :
                 Z80Provider.Interrupt.IM1;
+    }
+
+    public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
+        return new Z80BaseSystem(systemType, emuFrame);
     }
 
     @Override
@@ -85,6 +88,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     }
 
     private void initCommon() {
+        stateHandler = BaseStateHandler.EMPTY_STATE;
         inputProvider = InputProvider.createInstance(joypad);
         vdp = new Tms9918aVdp();
         //z80, sound attached later
@@ -96,6 +100,12 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     @Override
     protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOvr) {
         return RegionDetector.Region.JAPAN;
+    }
+
+    @Override
+    protected BaseStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
+        LOG.error("Not implemented!");
+        return stateHandler;
     }
 
     private static int VDP_DIVIDER = 1;  //10.738635 Mhz
@@ -155,11 +165,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
         z80.reset();
-    }
-
-    @Override
-    protected void saveStateAction(String fileName, boolean load, int[] data) {
-        LOG.error("Not implemented!");
     }
 
     @Override

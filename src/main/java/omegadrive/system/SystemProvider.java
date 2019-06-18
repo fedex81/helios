@@ -1,7 +1,7 @@
 /*
  * SystemProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +23,24 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.util.RegionDetector;
 
-import java.nio.file.Path;
+import java.util.EventListener;
 
 public interface SystemProvider extends Device {
+
+    void handleSystemEvent(SystemEvent event, Object parameter);
+
+    boolean addFrameListener(VdpFrameListener l);
+
+
+    void renderScreen(int[][] screenData);
+
+    boolean removeFrameListener(VdpFrameListener l);
+
+    /**
+     * STATE
+     **/
+
+    boolean isRomRunning();
 
     RegionDetector.Region getRegion();
 
@@ -33,35 +48,33 @@ public interface SystemProvider extends Device {
         return getRegion().getVersionCode();
     }
 
-    void renderScreen(int[][] screenData);
-
-    void handleNewRom(Path file);
-
-    void handleCloseRom();
-
-    void handleCloseApp();
-
-    void handleLoadState(Path file);
-
-    boolean isRomRunning();
-
     boolean isSoundWorking();
-
-    void toggleMute();
-
-    void toggleSoundRecord();
-
-    void setFullScreen(boolean value);
-
-    void setPlayers(int i);
-
-    void setDebug(boolean value);
 
     String getRomName();
 
-    void handleSaveState(Path file);
-
-    void handlePause();
-
     SystemLoader.SystemType getSystemType();
+
+    enum SystemEvent {
+        NONE,
+        NEW_ROM,
+        CLOSE_ROM,
+        CLOSE_APP,
+        RESET,
+        LOAD_STATE,
+        SAVE_STATE,
+        QUICK_SAVE,
+        QUICK_LOAD,
+        TOGGLE_PAUSE,
+        TOGGLE_MUTE,
+        TOGGLE_FULL_SCREEN,
+        SET_PLAYERS_1,
+        SET_PLAYERS_2,
+        TOGGLE_DEBUG_LOGGING,
+        SET_DEBUG_UI,
+        TOGGLE_SOUND_RECORD
+    }
+
+    interface VdpFrameListener extends EventListener {
+        void onNewFrame();
+    }
 }

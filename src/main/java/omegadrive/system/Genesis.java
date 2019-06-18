@@ -1,7 +1,7 @@
 /*
  * Genesis
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/05/19 16:46
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,11 +28,12 @@ import omegadrive.m68k.M68kProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
-import omegadrive.ui.GenesisWindow;
+import omegadrive.ui.DisplayWindow;
 import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -44,15 +45,14 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 /**
  * Genesis emulator main class
  *
  * MEMORY MAP:	https://en.wikibooks.org/wiki/Genesis_Programming
  */
-public class Genesis extends BaseSystem<GenesisBusProvider> {
+public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler> {
 
     private static Logger LOG = LogManager.getLogger(Genesis.class.getSimpleName());
 
@@ -61,19 +61,17 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
 
     public static boolean verbose = false;
 
-    private volatile boolean saveStateFlag = false;
-    private volatile GenesisStateHandler stateHandler = GenesisStateHandler.EMPTY_STATE;
-
-    public static SystemProvider createNewInstance(GenesisWindow emuFrame) {
-        return new Genesis(emuFrame);
+    protected Genesis(DisplayWindow emuFrame) {
+        super(emuFrame);
     }
 
-    protected Genesis(GenesisWindow emuFrame){
-        super(emuFrame);
+    public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
+        return new Genesis(emuFrame);
     }
 
     @Override
     public void init() {
+        stateHandler = GenesisStateHandler.EMPTY_STATE;
         joypad = new GenesisJoypad();
         inputProvider = InputProvider.createInstance(joypad);
 
@@ -91,36 +89,18 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     }
 
     @Override
-    protected void saveStateAction(String fileName, boolean load, int[] data) {
-        stateHandler = load ? GstStateHandler.createLoadInstance(fileName, data) : GstStateHandler.createSaveInstance(fileName);
-        if (stateHandler == GenesisStateHandler.EMPTY_STATE) {
-            return;
-        }
-        LOG.info("Save state action detected: {}, using file: {}", stateHandler.getType(), fileName);
-        this.saveStateFlag = true;
+    protected GenesisStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
+        String fileName = file.toAbsolutePath().toString();
+        return type == BaseStateHandler.Type.LOAD ? GstStateHandler.createLoadInstance(fileName, FileLoader.readFileSafe(file)) :
+                GstStateHandler.createSaveInstance(fileName);
     }
 
     @Override
     protected void processSaveState() {
         if (saveStateFlag) {
-            if (stateHandler.getType() == GenesisStateHandler.Type.LOAD) {
-                stateHandler.loadFmState(sound.getFm());
-                stateHandler.loadVdpState(vdp);
-                stateHandler.loadZ80(z80, bus);
-                stateHandler.load68k((MC68000Wrapper) cpu, memory);
-                LOG.info("Savestate loaded from: " + stateHandler.getFileName());
-            } else {
-                stateHandler.saveFm(sound.getFm());
-                stateHandler.saveZ80(z80, bus);
-                stateHandler.save68k((MC68000Wrapper) cpu, memory);
-                stateHandler.saveVdp(vdp);
-                int[] data = stateHandler.getData();
-                try {
-                    FileLoader.writeFile(Paths.get(stateHandler.getFileName()), data);
-                    LOG.info("Savestate persisted to: " + stateHandler.getFileName());
-                } catch (IOException e) {
-                    LOG.error("Unable to write to file: " + stateHandler.getFileName(), e);
-                }
+            stateHandler.processState(vdp, z80, bus, sound, cpu, memory);
+            if (stateHandler.getType() == GenesisStateHandler.Type.SAVE) {
+                stateHandler.storeData();
             }
             stateHandler = GenesisStateHandler.EMPTY_STATE;
             saveStateFlag = false;

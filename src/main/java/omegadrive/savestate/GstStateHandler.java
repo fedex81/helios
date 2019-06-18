@@ -1,7 +1,7 @@
 /*
  * GstStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 28/05/19 16:50
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import omegadrive.z80.Z80Memory;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -162,7 +161,7 @@ public class GstStateHandler implements GenesisStateHandler {
     public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
         Z80State z80State = loadZ80State(data);
 
-        IntStream.range(0, Z80Memory.Z80_RAM_MEMORY_SIZE).forEach(
+        IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> z80.writeMemory(i, data[i + Z80_RAM_DATA_OFFSET]));
 
         bus.setZ80BusRequested(false);
@@ -260,7 +259,7 @@ public class GstStateHandler implements GenesisStateHandler {
 
     @Override
     public void saveZ80(Z80Provider z80, GenesisBusProvider bus) {
-        IntStream.range(0, Z80Memory.Z80_RAM_MEMORY_SIZE).forEach(
+        IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> data[Z80_RAM_DATA_OFFSET + i] = z80.readMemory(i));
         data[0x438] = bus.isZ80ResetState() ? 1 : 0;
         data[0x439] = bus.isZ80BusRequested() ? 1 : 0;

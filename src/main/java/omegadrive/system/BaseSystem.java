@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/05/19 16:46
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,8 +27,9 @@ import omegadrive.input.KeyboardInput;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
-import omegadrive.ui.GenesisWindow;
+import omegadrive.ui.DisplayWindow;
 import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -43,12 +44,15 @@ import org.apache.logging.log4j.Logger;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public abstract class BaseSystem<B extends BaseBusProvider> implements SystemProvider {
+public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseStateHandler> implements SystemProvider {
 
     private static Logger LOG = LogManager.getLogger(BaseSystem.class.getSimpleName());
 
@@ -57,22 +61,26 @@ public abstract class BaseSystem<B extends BaseBusProvider> implements SystemPro
     protected JoypadProvider joypad;
     protected SoundProvider sound;
     protected InputProvider inputProvider;
-    protected B bus;
+    protected BUS bus;
 
     protected RegionDetector.Region region = null;
     private String romName;
 
     protected Future<Void> runningRomFuture;
     private Path romFile;
-    protected GenesisWindow emuFrame;
+    protected DisplayWindow emuFrame;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
+    protected volatile boolean saveStateFlag = false;
+    protected volatile STH stateHandler;
 
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
 
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
+
+    private List<VdpFrameListener> listenerList = new ArrayList<>();
 
     private static NumberFormat df = DecimalFormat.getInstance();
 
@@ -86,23 +94,65 @@ public abstract class BaseSystem<B extends BaseBusProvider> implements SystemPro
 
     protected abstract void initAfterRomLoad();
 
-    protected abstract void saveStateAction(String fileName, boolean load, int[] data);
-
     protected abstract void processSaveState();
 
     protected abstract RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOverride);
 
-    protected BaseSystem(GenesisWindow emuFrame){
+    protected BaseSystem(DisplayWindow emuFrame) {
         this.emuFrame = emuFrame;
     }
 
-    @Override
-    public void setPlayers(int i) {
-        inputProvider.setPlayers(i);
-    }
+    protected abstract STH createStateHandler(Path file, BaseStateHandler.Type type);
 
     @Override
-    public void setDebug(boolean value) {
+    public void handleSystemEvent(SystemEvent event, Object parameter) {
+        LOG.info("Event: {}, with parameter: {}", event, Objects.toString(parameter));
+        switch (event) {
+            case NEW_ROM:
+                handleNewRom((Path) parameter);
+                break;
+            case CLOSE_ROM:
+                handleCloseRom();
+                break;
+            case LOAD_STATE:
+            case QUICK_LOAD:
+                handleLoadState((Path) parameter);
+                break;
+            case SAVE_STATE:
+            case QUICK_SAVE:
+                handleSaveState((Path) parameter);
+                break;
+            case SET_PLAYERS_1:
+                inputProvider.setPlayers(1);
+                break;
+            case SET_PLAYERS_2:
+                inputProvider.setPlayers(2);
+                break;
+            case TOGGLE_DEBUG_LOGGING:
+                setDebug((Boolean) parameter);
+                break;
+            case TOGGLE_FULL_SCREEN:
+                emuFrame.setFullScreen((Boolean) parameter);
+                break;
+            case TOGGLE_PAUSE:
+                handlePause();
+                break;
+            case TOGGLE_MUTE:
+                sound.setMute(!sound.isMute());
+                break;
+            case TOGGLE_SOUND_RECORD:
+                sound.setRecording(!sound.isRecording());
+                break;
+            case CLOSE_APP:
+                handleCloseApp();
+                break;
+            default:
+                LOG.warn("Unable to handle event: {}, with parameter: {}", event, Objects.toString(parameter));
+                break;
+        }
+    }
+
+    private void setDebug(boolean value) {
         SystemLoader.verbose = value;
         GenesisVdp.verbose = value;
         GenesisVdpMemoryInterface.verbose = value;
@@ -122,26 +172,27 @@ public abstract class BaseSystem<B extends BaseBusProvider> implements SystemPro
         runningRomFuture = executorService.submit(runnable, null);
     }
 
-    public void handleCloseRom() {
+    private void handleCloseRom() {
         handleRomInternal();
     }
 
-    @Override
-    public void handleCloseApp() {
+    private void handleCloseApp() {
         handleCloseRom();
         sound.close();
     }
 
-    @Override
-    public void handleLoadState(Path file) {
-        int[] data = FileLoader.readFileSafe(file);
-        saveStateAction(file.getFileName().toString(), true, data);
+    private void handleLoadState(Path file) {
+        stateHandler = createStateHandler(file, BaseStateHandler.Type.LOAD);
+        LOG.info("Savestate action detected: {} , using file: {}",
+                stateHandler.getType(), stateHandler.getFileName());
+        this.saveStateFlag = true;
     }
 
-    @Override
-    public void handleSaveState(Path file) {
-        String fileName = file.toAbsolutePath().toString();
-        saveStateAction(fileName, false, null);
+    private void handleSaveState(Path file) {
+        stateHandler = createStateHandler(file, BaseStateHandler.Type.SAVE);
+        LOG.info("Savestate action detected: {} , using file: {}",
+                stateHandler.getType(), stateHandler.getFileName());
+        this.saveStateFlag = true;
     }
 
     private void handleRomInternal() {
@@ -168,21 +219,6 @@ public abstract class BaseSystem<B extends BaseBusProvider> implements SystemPro
     @Override
     public boolean isSoundWorking() {
         return sound.isSoundWorking();
-    }
-
-    @Override
-    public void toggleMute() {
-        sound.setMute(!sound.isMute());
-    }
-
-    @Override
-    public void toggleSoundRecord() {
-        sound.setRecording(!sound.isRecording());
-    }
-
-    @Override
-    public void setFullScreen(boolean value) {
-        emuFrame.setFullScreen(value);
     }
 
     @Override
@@ -291,10 +327,15 @@ public abstract class BaseSystem<B extends BaseBusProvider> implements SystemPro
 
     protected void renderScreenInternal(String label) {
         emuFrame.renderScreen(vdpScreen, label, videoMode);
+        listenerList.forEach(VdpFrameListener::onNewFrame);
     }
 
-    @Override
-    public void handlePause() {
+    protected void renderScreenLinearInternal(int[] data, String label) {
+        emuFrame.renderScreenLinear(data, label, videoMode);
+        listenerList.forEach(VdpFrameListener::onNewFrame);
+    }
+
+    private void handlePause() {
         boolean isPausing = pauseFlag;
         pauseFlag = !pauseFlag;
         if (isPausing) {
@@ -313,5 +354,15 @@ public abstract class BaseSystem<B extends BaseBusProvider> implements SystemPro
         joypad.init();
         vdp.init();
         bus.init();
+    }
+
+    @Override
+    public boolean addFrameListener(VdpFrameListener l) {
+        return listenerList.add(l);
+    }
+
+    @Override
+    public boolean removeFrameListener(VdpFrameListener l) {
+        return listenerList.remove(l);
     }
 }

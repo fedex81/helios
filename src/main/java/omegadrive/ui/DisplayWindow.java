@@ -1,7 +1,7 @@
 /*
- * GenesisWindow
+ * DisplayWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/06/19 15:42
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ import omegadrive.util.VideoMode;
 import java.awt.event.KeyAdapter;
 import java.time.LocalDate;
 
-public interface GenesisWindow {
+public interface DisplayWindow {
 
     String APP_NAME = "Helios";
     String VERSION = FileLoader.loadVersionFromManifest();
@@ -61,7 +61,7 @@ public interface GenesisWindow {
         return res;
     }
 
-    GenesisWindow HEADLESS_INSTANCE = new GenesisWindow() {
+    DisplayWindow HEADLESS_INSTANCE = new DisplayWindow() {
         @Override
         public void addKeyListener(KeyAdapter keyAdapter) {
 

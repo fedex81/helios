@@ -1,7 +1,7 @@
 /*
  * GenesisStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/06/19 17:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,13 +20,15 @@
 package omegadrive.savestate;
 
 import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.m68k.M68kProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.z80.Z80Provider;
 
-public interface GenesisStateHandler {
+public interface GenesisStateHandler extends BaseStateHandler {
 
     GenesisStateHandler EMPTY_STATE = new GenesisStateHandler() {
         @Override
@@ -86,14 +88,6 @@ public interface GenesisStateHandler {
 
     };
 
-    enum Type {SAVE, LOAD}
-
-    Type getType();
-
-    String getFileName();
-
-    int[] getData();
-
     void loadFmState(FmProvider fm);
 
     void loadVdpState(BaseVdpProvider vdp);
@@ -109,5 +103,21 @@ public interface GenesisStateHandler {
     void saveZ80(Z80Provider z80, GenesisBusProvider bus);
 
     void save68k(MC68000Wrapper mc68000Wrapper, IMemoryProvider memoryProvider);
+
+    default void processState(BaseVdpProvider vdp, Z80Provider z80, GenesisBusProvider bus,
+                              SoundProvider sound, M68kProvider cpu, IMemoryProvider mem) {
+        if (getType() == Type.LOAD) {
+            loadFmState(sound.getFm());
+            loadVdpState(vdp);
+            loadZ80(z80, bus);
+            load68k((MC68000Wrapper) cpu, mem);
+            LOG.info("Savestate loaded from: {}", getFileName());
+        } else {
+            saveFm(sound.getFm());
+            saveZ80(z80, bus);
+            save68k((MC68000Wrapper) cpu, mem);
+            saveVdp(vdp);
+        }
+    }
 
 }

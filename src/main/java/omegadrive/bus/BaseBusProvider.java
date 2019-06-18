@@ -1,7 +1,7 @@
 /*
  * BaseBusProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 18/06/19 13:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ public interface BaseBusProvider extends Device {
 
     void closeRom();
 
+    //TODO use a listener
+    @Deprecated
     void newFrame();
 
     BaseBusProvider attachDevice(Device device);
