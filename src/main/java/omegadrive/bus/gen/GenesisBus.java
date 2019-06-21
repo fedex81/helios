@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/05/19 16:32
+ * Last modified: 21/06/19 17:12
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ package omegadrive.bus.gen;
 import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.cart.GenesisCartInfoProvider;
-import omegadrive.cart.mapper.BackupMemoryMapper;
+import omegadrive.cart.mapper.GenesisBackupMemoryMapper;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.Ssf2Mapper;
 import omegadrive.sound.fm.FmProvider;
@@ -72,7 +72,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         RAM_START_ADDRESS = cartridgeInfoProvider.getRamStart();
         RAM_END_ADDRESS = cartridgeInfoProvider.getRamEnd();
         if (cartridgeInfoProvider.isSramEnabled()) {
-            mapper = BackupMemoryMapper.createInstance(this, cartridgeInfoProvider);
+            mapper = GenesisBackupMemoryMapper.createInstance(this, cartridgeInfoProvider);
         }
     }
 
@@ -600,8 +600,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     private void checkBackupMemoryMapper(SramMode sramMode, boolean forceCreate) {
-        this.mapper = forceCreate ? BackupMemoryMapper.createInstance(this, cartridgeInfoProvider) :
-                BackupMemoryMapper.getOrCreateInstance(this, mapper, cartridgeInfoProvider, sramMode);
+        this.mapper = forceCreate ? GenesisBackupMemoryMapper.createInstance(this, cartridgeInfoProvider) :
+                GenesisBackupMemoryMapper.getOrCreateInstance(this, mapper, cartridgeInfoProvider, sramMode);
     }
 
     @Override

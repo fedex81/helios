@@ -1,7 +1,7 @@
 /*
  * SmsMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/06/19 14:16
+ * Last modified: 21/06/19 17:12
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 package omegadrive.cart.mapper;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.z80.SmsBus;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.LogHelper;
@@ -53,10 +54,13 @@ public class SmsMapper {
     private RomMapper activeMapper = RomMapper.NO_OP_MAPPER;
 
     private Type currentType = Type.NONE;
+    private static String sramFileType = "srm";
+    private String smsRomName;
 
-    public static SmsMapper createInstance(IMemoryProvider memoryProvider){
+    public static SmsMapper createInstance(String romName, IMemoryProvider memoryProvider) {
         SmsMapper s = new SmsMapper();
         s.memoryProvider = memoryProvider;
+        s.smsRomName = romName;
         s.init();
         return s;
     }
@@ -120,11 +124,15 @@ public class SmsMapper {
         return 0xFF;
     }
 
-    class SegaMapper implements RomMapper {
+
+    class SegaMapper extends BackupMemoryMapper implements RomMapper {
 
         private boolean sramWriteEnable = false;
         private boolean sramSlot2Enable = false;
-        private int[] sram = new int[0];
+
+        private SegaMapper() {
+            super(SystemLoader.SystemType.SMS, sramFileType, smsRomName, DEFAULT_SRAM_SIZE);
+        }
 
         @Override
         public long readData(long address, Size size) {
@@ -207,10 +215,14 @@ public class SmsMapper {
         private void handleSramState(int data) {
             sramWriteEnable = (data & 0x80) == 0;
             sramSlot2Enable = (data & 8) > 0;
-            if (sramSlot2Enable && sram.length == 0) {
-                sram = new int[DEFAULT_SRAM_SIZE];
-                LOG.info("Creating backup ram size: {}", sram.length);
+            if (sramSlot2Enable) {
+                initBackupFileIfNecessary();
             }
+        }
+
+        @Override
+        public void closeRom() {
+            writeFile();
         }
     }
 

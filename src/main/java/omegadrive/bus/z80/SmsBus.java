@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/06/19 14:16
+ * Last modified: 21/06/19 16:18
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
         } else {
             LOG.info("Unknown rom, assuming {} mapper, crc32: {}", mapperName, cartridgeInfoProvider.getCrc32());
         }
-        smsMapper = SmsMapper.createInstance(memoryProvider);
+        smsMapper = SmsMapper.createInstance(cartridgeInfoProvider.getRomName(), memoryProvider);
         mapper = smsMapper.setupRomMapper(mapperName, mapper);
     }
 
@@ -335,11 +335,9 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
         ioPorts[index + IO_TH_INPUT] = on ? 1 : 0;
     }
 
-
-
     @Override
     public void closeRom() {
-
+        mapper.closeRom();
     }
 
     @Override
