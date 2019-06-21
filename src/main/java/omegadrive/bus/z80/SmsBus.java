@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/05/19 16:46
+ * Last modified: 21/06/19 14:16
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -137,6 +137,12 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
         if (isGG && port < 0x07){
             return;
         }
+        //FM chip detection, defaults to false
+        //Port $F2 : Bit 0 can be read and written to detect if YM2413 is available.
+        if (port == 0xF2) {
+            LOG.info("FM chip detection write: {}", value);
+            return;
+        }
         switch (port & 0xC1) {
             // 0x3F IO Port
             // D7 : Port B TH pin output level (1=high, 0=low)
@@ -223,6 +229,12 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
                 case 0x06:
                     return 0xFF;
             }
+        }
+        //FM chip detection, defaults to false
+        //Port $F2 : Bit 0 can be read and written to detect if YM2413 is available.
+        if (port == 0xF2) {
+            LOG.info("FM chip detection read");
+            return 0xFF;
         }
 
 

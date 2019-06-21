@@ -1,7 +1,7 @@
 /*
  * SmsMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 21/06/19 14:16
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@ public class SmsMapper {
     private static Logger LOG = LogManager.getLogger(SmsMapper.class);
 
     private static final boolean verbose = false;
+
+    private static final int DEFAULT_SRAM_SIZE = 0x4000; //16kb
 
     private static final int[] FRAME_REG_DEFAULT = {0,1,0};
 
@@ -120,19 +122,50 @@ public class SmsMapper {
 
     class SegaMapper implements RomMapper {
 
+        private boolean sramWriteEnable = false;
+        private boolean sramSlot2Enable = false;
+        private int[] sram = new int[0];
+
         @Override
         public long readData(long address, Size size) {
+            if (sramSlot2Enable) {
+                return readSramDataMaybe(address, size);
+            }
             return readDataMapper(address, size);
         }
 
         @Override
         public void writeData(long addressL, long dataL, Size size) {
+            if (sramSlot2Enable && sramWriteEnable) {
+                if (writeSramDataMaybe(addressL, dataL, size)) {
+                    return;
+                }
+            }
             int address = (int) (addressL & SmsBus.RAM_MASK);
             int data = (int) (dataL & 0xFF);
             memoryProvider.writeRamByte(address, data);
             if (addressL >= SmsBus.SEGA_MAPPING_CONTROL_ADDRESS) {
                 writeBankData(addressL, data);
             }
+        }
+
+        private long readSramDataMaybe(long addressL, Size size) {
+            int address = (int) (addressL & 0xFFFF);
+            int page = address >> 14;
+            if (sramSlot2Enable && page == 2) {
+                return sram[address & 0x3FFF];
+            }
+            return readDataMapper(addressL, size);
+        }
+
+        private boolean writeSramDataMaybe(long addressL, long dataL, Size size) {
+            int address = (int) (addressL & 0xFFFF);
+            int page = address >> 14;
+            if (sramSlot2Enable && page == 2) {
+                sram[address & 0x3FFF] = (int) (dataL & 0xFF);
+                return true;
+            }
+            return false;
         }
 
         /**
@@ -153,7 +186,11 @@ public class SmsMapper {
             int data = (int) (dataL & 0xFF);
             switch (val){
                 case 0:
-                    mappingControl = data;
+                    if (mappingControl != data) {
+                        LOG.debug("Mapping control: {}", data);
+                        mappingControl = data;
+                        handleSramState(data);
+                    }
                     break;
                 case 1:
                 case 2:
@@ -165,6 +202,15 @@ public class SmsMapper {
                     break;
             }
             LogHelper.printLevel(LOG, Level.INFO,"writeMappingReg: {} , data: {}", addressL, data, verbose);
+        }
+
+        private void handleSramState(int data) {
+            sramWriteEnable = (data & 0x80) == 0;
+            sramSlot2Enable = (data & 8) > 0;
+            if (sramSlot2Enable && sram.length == 0) {
+                sram = new int[DEFAULT_SRAM_SIZE];
+                LOG.info("Creating backup ram size: {}", sram.length);
+            }
         }
     }
 
