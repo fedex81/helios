@@ -1,7 +1,7 @@
 /*
  * KeyBindingsHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 21/06/19 15:13
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ public class KeyBindingsHandler {
 
     static {
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_F, CTRL_DOWN_MASK), TOGGLE_FULL_SCREEN);
-        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_D, CTRL_DOWN_MASK), TOGGLE_DEBUG_LOGGING);
+        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_D, CTRL_DOWN_MASK), SET_DEBUG_UI);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_1, CTRL_DOWN_MASK), SET_PLAYERS_1);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_2, CTRL_DOWN_MASK), SET_PLAYERS_2);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_P, CTRL_DOWN_MASK), TOGGLE_PAUSE);
@@ -52,8 +52,8 @@ public class KeyBindingsHandler {
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_6, CTRL_DOWN_MASK), SAVE_STATE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_L, CTRL_DOWN_MASK), NEW_ROM);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_ESCAPE, CTRL_DOWN_MASK), CLOSE_ROM);
-        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_R, CTRL_DOWN_MASK | ALT_DOWN_MASK), TOGGLE_SOUND_RECORD);
-        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_ESCAPE, CTRL_DOWN_MASK | ALT_DOWN_MASK), CLOSE_APP);
+        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_R, CTRL_DOWN_MASK | SHIFT_DOWN_MASK), TOGGLE_SOUND_RECORD);
+        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_ESCAPE, CTRL_DOWN_MASK | SHIFT_DOWN_MASK), CLOSE_APP);
         loadKeyMap();
     }
 

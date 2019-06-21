@@ -1,7 +1,7 @@
 /*
  * SwingWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 21/06/19 15:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,9 +39,7 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.*;
 
 import static omegadrive.system.SystemProvider.SystemEvent.*;
 import static omegadrive.util.ScreenSizeHelper.*;
@@ -110,6 +108,16 @@ public class SwingWindow implements DisplayWindow {
         }
     }
 
+    private Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
+
+    private java.util.List<JCheckBoxMenuItem> createRegionItems() {
+        java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
+        l.add(new JCheckBoxMenuItem("AutoDetect", true));
+        Arrays.stream(RegionDetector.Region.values()).sorted().
+                forEach(r -> l.add(new JCheckBoxMenuItem(r.name(), false)));
+        return l;
+    }
+
     public void init() {
         Util.registerJmx(this);
         graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
@@ -160,7 +168,7 @@ public class SwingWindow implements DisplayWindow {
         regionItems.forEach(menuBios::add);
 
         fullScreenItem = new JCheckBoxMenuItem("Full Screen", false);
-        addKeyAction(fullScreenItem, TOGGLE_FULL_SCREEN, e -> toggleFullScreen());
+        addKeyAction(fullScreenItem, TOGGLE_FULL_SCREEN, e -> fullScreenAction(e));
         menuView.add(fullScreenItem);
 
         muteItem = new JCheckBoxMenuItem("Enable Sound", true);
@@ -236,6 +244,9 @@ public class SwingWindow implements DisplayWindow {
         screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
         screenLabel.setVerticalAlignment(SwingConstants.CENTER);
 
+        AbstractAction debugUiAction = toAbstractAction("debugUI", e -> showDebugInfo(!showDebug));
+        actionMap.put(SET_DEBUG_UI, debugUiAction);
+
         setupFrameKeyListener();
 
         jFrame.setMinimumSize(DEFAULT_FRAME_SIZE);
@@ -255,18 +266,11 @@ public class SwingWindow implements DisplayWindow {
         jFrame.setVisible(true);
     }
 
-    private java.util.List<JCheckBoxMenuItem> createRegionItems() {
-        java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
-        l.add(new JCheckBoxMenuItem("AutoDetect", true));
-        Arrays.stream(RegionDetector.Region.values()).sorted().
-                forEach(r -> l.add(new JCheckBoxMenuItem(r.name(), false)));
-        return l;
-    }
-
     private void addKeyAction(JMenuItem component, SystemProvider.SystemEvent event, ActionListener l) {
         AbstractAction action = toAbstractAction(component.getText(), l);
         if (event != NONE) {
             action.putValue(Action.ACCELERATOR_KEY, KeyBindingsHandler.getKeyStrokeForEvent(event));
+            actionMap.put(event, action);
         }
         component.setAction(action);
     }
@@ -281,6 +285,11 @@ public class SwingWindow implements DisplayWindow {
             public void actionPerformed(ActionEvent e) {
                 listener.actionPerformed(e);
             }
+
+            @Override
+            public void setEnabled(boolean newValue) {
+                super.setEnabled(true);
+            }
         };
     }
 
@@ -292,8 +301,11 @@ public class SwingWindow implements DisplayWindow {
                 scrollPane, "Help: " + title, JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void toggleFullScreen() {
-        fullScreenItem.setState(!fullScreenItem.getState());
+    private void fullScreenAction(ActionEvent doToggle) {
+        if (doToggle == null) {
+            fullScreenItem.setState(!fullScreenItem.getState());
+        }
+        LOG.info("Full screen: {}", fullScreenItem.isSelected());
     }
 
     private GraphicsDevice getGraphicsDevice() {
@@ -317,6 +329,7 @@ public class SwingWindow implements DisplayWindow {
             jFrame.getJMenuBar().setVisible(showDebug);
         }
         fpsLabel.setVisible(showDebug);
+        this.showDebug = showDebug;
     }
 
     public void resetScreen() {
@@ -503,45 +516,6 @@ public class SwingWindow implements DisplayWindow {
         }
     }
 
-    //TODO check and remove
-    private void setupFrameKeyListener() {
-        jFrame.addKeyListener(new KeyAdapter() {
-
-            @Override
-            public void keyReleased(KeyEvent e) {
-                KeyStroke ks = KeyStroke.getKeyStrokeForEvent(e);
-                SystemProvider.SystemEvent event = KeyBindingsHandler.getSystemEventIfAny(ks);
-                if (event == NONE) {
-                    return;
-                }
-
-                boolean forwardEvent = true;
-                Object parameter = null;
-                switch (event) {
-                    case TOGGLE_FULL_SCREEN:
-                        toggleFullScreen();
-                        forwardEvent = false;
-                        break;
-                    case TOGGLE_MUTE:
-                        muteItem.setState(!muteItem.getState());
-                        break;
-                    case SET_DEBUG_UI:
-                        showDebug = !showDebug;
-                        showDebugInfo(showDebug);
-                        forwardEvent = false;
-                        break;
-                    case NEW_ROM:
-                        loadRomDialog(jFrame);
-                        forwardEvent = false;
-                        break;
-                }
-                if (forwardEvent) {
-                    mainEmu.handleSystemEvent(event, parameter);
-                }
-            }
-        });
-    }
-
     private SystemProvider getMainEmu() {
         return mainEmu;
     }
@@ -567,5 +541,26 @@ public class SwingWindow implements DisplayWindow {
 
     private int[] getPixels(BufferedImage img) {
         return ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
+    }
+
+    //TODO this is necessary in fullScreenMode
+    private void setupFrameKeyListener() {
+        jFrame.addKeyListener(new KeyAdapter() {
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                //avoid double firing when not in fullScreen
+                if (!fullScreenItem.isSelected()) {
+                    return;
+                }
+                SystemProvider mainEmu = getMainEmu();
+                KeyStroke keyStroke = KeyStroke.getKeyStrokeForEvent(e);
+//                LOG.info(keyStroke.toString());
+                SystemProvider.SystemEvent event = KeyBindingsHandler.getSystemEventIfAny(keyStroke);
+                if (event != null && event != NONE) {
+                    Optional.ofNullable(actionMap.get(event)).ifPresent(act -> act.actionPerformed(null));
+                }
+            }
+        });
     }
 }
