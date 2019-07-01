@@ -1,7 +1,7 @@
 /*
  * MekaStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 01/07/19 15:13
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 package omegadrive.savestate;
 
 import omegadrive.SystemLoader;
+import omegadrive.bus.z80.SmsBus;
 import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
@@ -126,21 +127,18 @@ public class MekaStateHandler implements SmsStateHandler {
         buf.position(buf.position() + len);
     }
 
-    //TODO
-    private static void loadMappers(IntBuffer buffer) {
-        int m1 = Util.getUInt32(buffer.get());
-        int m2 = Util.getUInt32(buffer.get());
-        int m3 = Util.getUInt32(buffer.get());
-        int m4 = Util.getUInt32(buffer.get());
-        LOG.info("Mappers: {}, {}, {},{}", m1, m2, m3, m4);
+    private static void loadMappers(IntBuffer buffer, IMemoryProvider memory) {
+        memory.writeRamByte(0xFFFC & SmsBus.RAM_MASK, Util.getUInt32(buffer.get()));
+        memory.writeRamByte(0xFFFD & SmsBus.RAM_MASK, Util.getUInt32(buffer.get()));
+        memory.writeRamByte(0xFFFE & SmsBus.RAM_MASK, Util.getUInt32(buffer.get()));
+        memory.writeRamByte(0xFFFF & SmsBus.RAM_MASK, Util.getUInt32(buffer.get()));
     }
 
-    //TODO
-    private static void saveMappers(IntBuffer buffer) {
-        buffer.put(0);
-        buffer.put(0);
-        buffer.put(0);
-        buffer.put(0);
+    private static void saveMappers(IntBuffer buffer, IMemoryProvider memory) {
+        buffer.put(memory.readRamByte(0xFFFC & SmsBus.RAM_MASK));
+        buffer.put(memory.readRamByte(0xFFFD & SmsBus.RAM_MASK));
+        buffer.put(memory.readRamByte(0xFFFE & SmsBus.RAM_MASK));
+        buffer.put(memory.readRamByte(0xFFFF & SmsBus.RAM_MASK));
     }
 
     private static void setData(IntBuffer buf, int... data) {
@@ -200,10 +198,10 @@ public class MekaStateHandler implements SmsStateHandler {
     }
 
     @Override
-    public void loadVdp(BaseVdpProvider vdp) {
+    public void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory) {
         IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> vdp.updateRegisterData(i, buffer.get() & 0xFF));
         skip(buffer, VDP_MISC_LEN);
-        loadMappers(buffer);
+        loadMappers(buffer, memory);
         if (version >= 0xD) {
             int vdpLine = Util.getUInt32(buffer.get(), buffer.get());
             LOG.info("vdpLine: {}", vdpLine);
@@ -212,10 +210,10 @@ public class MekaStateHandler implements SmsStateHandler {
 
 
     @Override
-    public void saveVdp(BaseVdpProvider vdp) {
+    public void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory) {
         IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> buffer.put(vdp.getRegisterData(i)));
         skip(buffer, VDP_MISC_LEN);
-        saveMappers(buffer);
+        saveMappers(buffer, memory);
         buffer.put(0); //vdpLine
         buffer.put(0); //vdpLine
     }
@@ -250,7 +248,13 @@ public class MekaStateHandler implements SmsStateHandler {
         IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> mem.writeRamByte(i, buffer.get()));
         IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vdp.VRAM[i] = (byte) buffer.get());
         //TODO check SMS CRAM = 0x20, GG = 0x40
-        IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> vdp.CRAM[i] = (byte) buffer.get());
+        IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
+            int smsCol = buffer.get();
+            int r = smsCol & 0x03;
+            int g = (smsCol >> 2) & 0x03;
+            int b = (smsCol >> 4) & 0x03;
+            vdp.CRAM[i] = ((r * 85) << 16) | ((g * 85) << 8) | (b * 85);
+        });
     }
 
     @Override
@@ -258,8 +262,16 @@ public class MekaStateHandler implements SmsStateHandler {
         int[] ram = mem.getRamData();
         IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> buffer.put(ram[i]));
         IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> buffer.put(vdp.VRAM[i] & 0xFF));
-        IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> buffer.put(vdp.CRAM[i] & 0xFF));
-
+        IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
+            //0xAARRGGBB (4 bytes) Java colour
+            //SMS : 00BBGGRR   (1 byte)
+            int javaColor = vdp.CRAM[i];
+            int b = (javaColor & 0xFF) / 85;
+            int g = ((javaColor >> 8) & 0xFF) / 85;
+            int r = ((javaColor >> 16) & 0xFF) / 85;
+            int smsCol = b << 4 | g << 2 | r;
+            buffer.put(smsCol & 0xFF);
+        });
     }
 
     @Override

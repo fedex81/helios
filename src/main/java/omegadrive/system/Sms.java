@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:38
+ * Last modified: 01/07/19 15:26
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -144,6 +144,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
+        ((SmsVdp) vdp).setRegion(region);
         z80.reset();
         vdp.reset();
         joypad.init();
@@ -160,7 +161,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     @Override
     protected void processSaveState() {
         if (saveStateFlag) {
-            stateHandler.processState((SmsVdp) vdp, z80, bus, memory);
+            stateHandler.processState((SmsVdp) vdp, z80, (SmsBus) bus, memory);
             if (stateHandler.getType() == BaseStateHandler.Type.SAVE) {
                 stateHandler.storeData();
             }

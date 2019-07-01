@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/06/19 16:18
+ * Last modified: 01/07/19 15:26
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -333,6 +333,10 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
     {
         ioPorts[index + IO_TH_DIRECTION] = 1;
         ioPorts[index + IO_TH_INPUT] = on ? 1 : 0;
+    }
+
+    public void reloadBanking() {
+        smsMapper.reloadBanking();
     }
 
     @Override

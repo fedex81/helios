@@ -1,7 +1,7 @@
 /*
  * SmsMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/06/19 17:12
+ * Last modified: 01/07/19 15:26
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,6 +103,16 @@ public class SmsMapper {
     private void init(){
         numPages = memoryProvider.getRomSize() >> 14;
         frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
+    }
+
+    public void reloadBanking() {
+        frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
+        for (int i = 0xFFFC & SmsBus.RAM_MASK; i < 4; i++) {
+            int val = memoryProvider.readRamByte(i);
+            if (val > 0) {
+                activeMapper.writeBankData(i, val);
+            }
+        }
     }
 
     public long readDataMapper(long addressL, Size size) {

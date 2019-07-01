@@ -1,7 +1,7 @@
 /*
  * SmsStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 01/07/19 15:09
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 package omegadrive.savestate;
 
+import omegadrive.bus.z80.SmsBus;
 import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.vdp.SmsVdp;
@@ -29,7 +30,7 @@ public interface SmsStateHandler extends BaseStateHandler {
 
     SmsStateHandler EMPTY_STATE = new SmsStateHandler() {
         @Override
-        public void loadVdp(BaseVdpProvider vdp) {
+        public void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory) {
 
         }
 
@@ -39,7 +40,7 @@ public interface SmsStateHandler extends BaseStateHandler {
         }
 
         @Override
-        public void saveVdp(BaseVdpProvider vdp) {
+        public void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory) {
 
         }
 
@@ -74,24 +75,26 @@ public interface SmsStateHandler extends BaseStateHandler {
         }
     };
 
-    default void processState(SmsVdp vdp, Z80Provider z80, Z80BusProvider bus, IMemoryProvider mem) {
+    default void processState(SmsVdp vdp, Z80Provider z80, SmsBus bus, IMemoryProvider mem) {
         if (getType() == Type.LOAD) {
             loadZ80(z80, bus);
-            loadVdp(vdp);
+            loadVdp(vdp, mem);
             loadMemory(mem, vdp);
+            vdp.forceFullRedraw();
+            bus.reloadBanking();
             LOG.info("Savestate loaded from: {}", getFileName());
         } else {
             saveZ80(z80, bus);
-            saveVdp(vdp);
+            saveVdp(vdp, mem);
             saveMemory(mem, vdp);
         }
     }
 
-    void loadVdp(BaseVdpProvider vdp);
+    void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory);
 
     void loadZ80(Z80Provider z80, Z80BusProvider bus);
 
-    void saveVdp(BaseVdpProvider vdp);
+    void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory);
 
     void saveZ80(Z80Provider z80, Z80BusProvider bus);
 

@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:41
+ * Last modified: 01/07/19 15:20
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     protected InputProvider inputProvider;
     protected BUS bus;
 
-    protected RegionDetector.Region region = null;
+    protected RegionDetector.Region region = RegionDetector.Region.USA;
     private String romName;
 
     protected Future<Void> runningRomFuture;
