@@ -1,7 +1,7 @@
 /*
  * GstStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 01/07/19 16:01
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -36,6 +37,7 @@ import org.apache.logging.log4j.Logger;
 import z80core.Z80;
 import z80core.Z80State;
 
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
@@ -57,7 +59,8 @@ public class GstStateHandler implements GenesisStateHandler {
     private static int M68K_REGA_OFFSET = 0xA0;
     private static int FILE_SIZE = 0x22478;
 
-    private static String MAGIC_WORD = "GST";
+    private final static String MAGIC_WORD = "GST";
+    private final static String fileExtension = "gs0";
 
     private int[] data;
     private int version;
@@ -69,11 +72,11 @@ public class GstStateHandler implements GenesisStateHandler {
     private GstStateHandler() {
     }
 
-    public static GenesisStateHandler createLoadInstance(String fileName, int[] stateData) {
+    public static GenesisStateHandler createLoadInstance(String fileName) {
         GstStateHandler h = new GstStateHandler();
-        h.data = stateData;
-        h.fileName = fileName;
+        h.fileName = handleFileExtension(fileName);
         h.type = Type.LOAD;
+        h.data = FileLoader.readFileSafe(Paths.get(h.fileName));
         GenesisStateHandler res = h.detectStateFileType();
         return res;
     }
@@ -88,9 +91,13 @@ public class GstStateHandler implements GenesisStateHandler {
         //special Genecyst stuff
         h.data[6] = 0xE0;
         h.data[7] = 0x40;
-        h.fileName = fileName;
+        h.fileName = handleFileExtension(fileName);
         h.type = Type.SAVE;
         return h;
+    }
+
+    private static String handleFileExtension(String fileName) {
+        return fileName + (!fileName.toLowerCase().endsWith(fileExtension) ? "." + fileExtension : "");
     }
 
     private GenesisStateHandler detectStateFileType() {

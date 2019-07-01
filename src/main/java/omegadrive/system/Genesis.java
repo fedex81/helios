@@ -1,7 +1,7 @@
 /*
  * Genesis
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 01/07/19 16:01
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@ import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
@@ -91,7 +90,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     @Override
     protected GenesisStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
         String fileName = file.toAbsolutePath().toString();
-        return type == BaseStateHandler.Type.LOAD ? GstStateHandler.createLoadInstance(fileName, FileLoader.readFileSafe(file)) :
+        return type == BaseStateHandler.Type.LOAD ?
+                GstStateHandler.createLoadInstance(fileName) :
                 GstStateHandler.createSaveInstance(fileName);
     }
 

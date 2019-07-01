@@ -1,7 +1,7 @@
 /*
  * FileLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 01/07/19 16:01
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,8 +48,7 @@ public class FileLoader {
     private static String SNAPSHOT_VERSION = "SNAPSHOT";
     private static String MANIFEST_RELATIVE_PATH = "/META-INF/MANIFEST.MF";
     private static String BIOS_JAR_PATH = ".";
-    public static String DEFAULT_SAVE_STATE_EXTENSION = ".gs0";
-    public static String QUICK_SAVE_FILENAME = "quick_save" + DEFAULT_SAVE_STATE_EXTENSION;
+    public static String QUICK_SAVE_FILENAME = "quick_save";
 
     public static FileFilter ROM_FILTER = new FileFilter() {
         @Override
@@ -73,7 +72,7 @@ public class FileLoader {
         @Override
         public boolean accept(File f) {
             String name = f.getName().toLowerCase();
-            return f.isDirectory() || name.contains(".gs");
+            return f.isDirectory() || name.contains(".gs") || name.contains(".s0");
         }
     };
 
@@ -143,7 +142,7 @@ public class FileLoader {
     private static int[] readFileFromJar(String fileName){
         IntBuffer buffer = IntBuffer.allocate(0);
         try (
-                InputStream inputStream = FileLoader.class.getResourceAsStream("/" + fileName);
+                InputStream inputStream = FileLoader.class.getResourceAsStream("/" + fileName)
         ) {
             buffer = IntBuffer.allocate(inputStream.available());
             while(inputStream.available() > 0){
@@ -159,7 +158,7 @@ public class FileLoader {
         List<String> lines = Collections.emptyList();
         try (
                 InputStream inputStream = FileLoader.class.getResourceAsStream("/" + fileName);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))
         ) {
             lines = reader.lines().collect(Collectors.toList());
         } catch (IOException e) {

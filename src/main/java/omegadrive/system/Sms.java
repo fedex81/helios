@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 15:26
+ * Last modified: 01/07/19 16:01
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ import omegadrive.savestate.MekaStateHandler;
 import omegadrive.savestate.SmsStateHandler;
 import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
@@ -153,7 +152,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     @Override
     protected SmsStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
         String fileName = file.toAbsolutePath().toString();
-        return type == BaseStateHandler.Type.LOAD ? MekaStateHandler.createLoadInstance(fileName, FileLoader.readFileSafe(file)) :
+        return type == BaseStateHandler.Type.LOAD ? MekaStateHandler.createLoadInstance(fileName) :
                 MekaStateHandler.createSaveInstance(fileName, systemType);
     }
 

@@ -1,7 +1,7 @@
 /*
  * MekaStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 15:13
+ * Last modified: 01/07/19 16:01
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import omegadrive.bus.z80.SmsBus;
 import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -34,6 +35,7 @@ import z80core.Z80;
 import z80core.Z80State;
 
 import java.nio.IntBuffer;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -56,14 +58,15 @@ public class MekaStateHandler implements SmsStateHandler {
     private Type type;
     private SystemLoader.SystemType systemType;
     private MekaSavestateVersion mekaVersion;
+    private final static String fileExtension = "s00";
 
     private MekaStateHandler() {
     }
 
-    public static SmsStateHandler createLoadInstance(String fileName, int[] stateData) {
+    public static SmsStateHandler createLoadInstance(String fileName) {
         MekaStateHandler h = new MekaStateHandler();
-        h.buffer = IntBuffer.wrap(stateData);
-        h.fileName = fileName;
+        h.fileName = handleFileExtension(fileName);
+        h.buffer = IntBuffer.wrap(FileLoader.readFileSafe(Paths.get(h.fileName)));
         h.type = Type.LOAD;
         SmsStateHandler s = h.detectStateFileType();
         return s;
@@ -98,13 +101,17 @@ public class MekaStateHandler implements SmsStateHandler {
         h.mekaVersion = DEFAULT_SAVE_VERSION;
         h.systemType = systemType;
 
-        h.fileName = fileName;
+        h.fileName = handleFileExtension(fileName);
         h.type = Type.SAVE;
         return h;
     }
 
     public static SmsStateHandler createSaveInstance(String fileName, SystemLoader.SystemType systemType) {
         return createSaveInstance(fileName, systemType, "0");
+    }
+
+    private static String handleFileExtension(String fileName) {
+        return fileName + (!fileName.toLowerCase().endsWith(fileExtension) ? "." + fileExtension : "");
     }
 
     private static String decodeCrc32(MekaSavestateVersion version, IntBuffer data) {

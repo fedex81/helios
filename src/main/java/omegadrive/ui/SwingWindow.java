@@ -1,7 +1,7 @@
 /*
  * SwingWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/06/19 15:15
+ * Last modified: 01/07/19 16:00
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -496,14 +496,7 @@ public class SwingWindow implements DisplayWindow {
     private void handleSaveState() {
         Optional<File> optFile = fileDialog(jFrame, FileLoader.SAVE_STATE_FILTER, false);
         if (optFile.isPresent()) {
-            File file = optFile.get();
-            Path path = file.toPath();
-            if (!FileLoader.SAVE_STATE_FILTER.accept(file)) {
-                path = Paths.get(file.getParentFile().getAbsolutePath(), file.getName() +
-                        FileLoader.DEFAULT_SAVE_STATE_EXTENSION);
-                LOG.info("File renamed to: " + path.toAbsolutePath().toString());
-            }
-            mainEmu.handleSystemEvent(SAVE_STATE, path);
+            mainEmu.handleSystemEvent(SAVE_STATE, optFile.get().toPath());
         }
     }
 
