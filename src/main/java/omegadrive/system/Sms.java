@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 16:01
+ * Last modified: 01/07/19 17:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -163,6 +163,8 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
             stateHandler.processState((SmsVdp) vdp, z80, (SmsBus) bus, memory);
             if (stateHandler.getType() == BaseStateHandler.Type.SAVE) {
                 stateHandler.storeData();
+            } else {
+                sound.getPsg().reset();
             }
             stateHandler = SmsStateHandler.EMPTY_STATE;
             saveStateFlag = false;

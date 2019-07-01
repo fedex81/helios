@@ -1,7 +1,7 @@
 /*
  * MekaStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 16:01
+ * Last modified: 01/07/19 16:18
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,7 +111,7 @@ public class MekaStateHandler implements SmsStateHandler {
     }
 
     private static String handleFileExtension(String fileName) {
-        return fileName + (!fileName.toLowerCase().endsWith(fileExtension) ? "." + fileExtension : "");
+        return fileName + (!fileName.toLowerCase().contains(".s0") ? "." + fileExtension : "");
     }
 
     private static String decodeCrc32(MekaSavestateVersion version, IntBuffer data) {

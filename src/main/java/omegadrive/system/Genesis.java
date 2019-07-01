@@ -1,7 +1,7 @@
 /*
  * Genesis
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 16:01
+ * Last modified: 01/07/19 17:07
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,6 +101,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
             stateHandler.processState(vdp, z80, bus, sound, cpu, memory);
             if (stateHandler.getType() == GenesisStateHandler.Type.SAVE) {
                 stateHandler.storeData();
+            } else {
+                sound.getPsg().reset();
             }
             stateHandler = GenesisStateHandler.EMPTY_STATE;
             saveStateFlag = false;
