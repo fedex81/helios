@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/06/19 17:12
+ * Last modified: 04/07/19 19:31
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -172,7 +172,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     @Override
     public void writeData(long address, long data, Size size) {
-        long addressL = (address & 0xFF_FFFF);
+        long addressL = address & 0xFF_FFFF;
         data &= size.getMask();
 
         if (addressL <= DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
@@ -534,7 +534,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 return even ? v : h;
             }
         } else if (address == 0x1C) {
-            LOG.warn("Ignoring VDP debug register write, address : {}", Util.pad4(addressL));
+            LOG.warn("Ignoring VDP debug register read, address : {}", Util.pad4(addressL));
         } else if (address > 0x17) {
             LOG.info("vdpRead on unused address: " + Long.toHexString(addressL));
 //            return 0xFF;

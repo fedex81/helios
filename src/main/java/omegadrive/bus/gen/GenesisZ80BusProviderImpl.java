@@ -1,7 +1,7 @@
 /*
  * GenesisZ80BusProviderImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 04/07/19 19:42
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@ import org.apache.logging.log4j.Logger;
 
 public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements GenesisZ80BusProvider {
     private static Logger LOG = LogManager.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
-
-//    public static int MEMORY_SIZE = 0x2000;
 
     public static final int END_RAM = 0x3FFF;
     public static final int START_YM2612 = 0x4000;
@@ -74,7 +72,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
     @Override
     public long read(long addressL, Size size) {
         int address = (int) addressL;
-        if (address < END_RAM) { //RAM
+        if (address <= END_RAM) { //RAM
             address &= (ram.length - 1);
             return ram[address];
         } else if (address >= START_YM2612 && address <= END_YM2612) { //YM2612
@@ -87,7 +85,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             LOG.error("Z80 read bank switching: " + Integer.toHexString(address));
             return 0xFF;
         } else if (address >= START_VDP && address <= END_VDP) { //read VDP
-            int vdpAddress = (int) (VDP_BASE_ADDRESS + address);
+            int vdpAddress = (VDP_BASE_ADDRESS + address);
             LOG.warn("Z80 read VDP memory , address : " + address);
             return (int) mainBusProvider.read(vdpAddress, Size.BYTE);
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) { //M68k memory bank
@@ -111,10 +109,10 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
     public void write(long addressL, long data, Size size) {
         int dataInt = (int) data;
         int address = (int) addressL;
-        if (address < END_RAM) {  //RAM
+        if (address <= END_RAM) {  //RAM
             address &= (ram.length - 1);
             ram[address] = dataInt;
-        } else if (address >= START_YM2612 && address < END_YM2612) { //YM2612
+        } else if (address >= START_YM2612 && address <= END_YM2612) { //YM2612
             //LOG.info("Writing " + Integer.toHexString(address) + " data: " + data);
             if (mainBusProvider.isZ80ResetState()) {
                 LOG.warn("Illegal write to FM while Z80 reset");
