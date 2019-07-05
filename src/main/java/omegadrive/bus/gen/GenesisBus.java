@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/07/19 19:31
+ * Last modified: 05/07/19 10:58
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -151,6 +151,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 return mapper.readData(address, size);
             }
             return Util.readRom(memoryProvider, size, (int) address);
+        } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
+            return Util.readRam(memoryProvider, size, address & 0xFF_FFFE); //mask odd addresses
         } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
             LOG.warn("Read on reserved address: " + Integer.toHexString((int) address));
             return size.getMax();
@@ -162,8 +164,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             return internalRegRead(address, size);
         } else if (address >= VDP_ADDRESS_SPACE_START && address <= VDP_ADDRESS_SPACE_END) { // VDP
             return vdpRead(address, size);
-        } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            return Util.readRam(memoryProvider, size, address);
         } else {
             LOG.warn("BUS READ NOT MAPPED: address: {}, PC: {}", Util.pad4(address), Util.pad4(m68kProvider.getPC()));
         }
@@ -171,11 +171,21 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     @Override
-    public void writeData(long address, long data, Size size) {
-        long addressL = address & 0xFF_FFFF;
+    public void writeData(long addressL, long data, Size size) {
+        addressL &= 0xFF_FFFF;
         data &= size.getMask();
 
-        if (addressL <= DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
+        if (addressL >= ADDRESS_RAM_MAP_START && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
+            Util.writeRam(memoryProvider, size, addressL & 0xFF_FFFE, (int) data); //mask odd addresses
+        } else if (addressL >= Z80_ADDRESS_SPACE_START && addressL <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
+            z80MemoryWrite(addressL, size, data);
+        } else if (addressL >= IO_ADDRESS_SPACE_START && addressL <= IO_ADDRESS_SPACE_END) {    //	IO addressing space
+            ioWrite(addressL, size, data);
+        } else if (addressL >= INTERNAL_REG_ADDRESS_SPACE_START && addressL <= INTERNAL_REG_ADDRESS_SPACE_END) {
+            internalRegWrite(addressL, size, data);
+        } else if (addressL >= VDP_ADDRESS_SPACE_START && addressL < VDP_ADDRESS_SPACE_END) {  //VDP
+            vdpWrite(addressL, size, data);
+        } else if (addressL <= DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
             if (GenesisCartInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
                 LOG.info("Unexpected Sram write: " + Long.toHexString(addressL) + ", value : " + data);
                 boolean adjust = cartridgeInfoProvider.adjustSramLimits(addressL);
@@ -190,17 +200,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            if (addressL > 0) {
 //                throw new IllegalArgumentException(msg);
 //            }
-        } else if (addressL >= Z80_ADDRESS_SPACE_START && addressL <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
-            z80MemoryWrite(address, size, data);
-        } else if (addressL >= IO_ADDRESS_SPACE_START && addressL <= IO_ADDRESS_SPACE_END) {    //	IO addressing space
-            ioWrite(addressL, size, data);
-        } else if (addressL >= INTERNAL_REG_ADDRESS_SPACE_START && addressL <= INTERNAL_REG_ADDRESS_SPACE_END) {
-            internalRegWrite(addressL, size, data);
-        } else if (addressL >= VDP_ADDRESS_SPACE_START && addressL < VDP_ADDRESS_SPACE_END) {  //VDP
-            vdpWrite(addressL, size, data);
-        } else if (addressL >= ADDRESS_RAM_MAP_START && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            long addressZ = addressL & 0xFFFF;
-            Util.writeRam(memoryProvider, size, addressZ, (int) data);
         } else {
             LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) addressL) + " - PC: " + Integer.toHexString((int) m68kProvider.getPC()));
         }

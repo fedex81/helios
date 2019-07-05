@@ -1,7 +1,7 @@
 /*
  * Z80CoreWrapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 13:56
+ * Last modified: 05/07/19 12:42
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -198,12 +198,6 @@ public class Z80CoreWrapper implements Z80Provider {
         if (verbose) {
             int address = z80Core.getRegPC();
             String str = disasmToString.apply(z80Disasm.disassemble(address));
-            if (str.contains("nop")) {
-                int opcode = this.memIoOps.fetchOpcode(address);
-                if (opcode != 0) {
-                    System.out.println("oops");
-                }
-            }
             LOG.info(str);
         }
     }
