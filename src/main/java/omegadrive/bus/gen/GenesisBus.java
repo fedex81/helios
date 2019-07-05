@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/07/19 10:58
+ * Last modified: 05/07/19 14:36
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -152,7 +152,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             }
             return Util.readRom(memoryProvider, size, (int) address);
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            return Util.readRam(memoryProvider, size, address & 0xFF_FFFE); //mask odd addresses
+            return Util.readRam(memoryProvider, size, address);
         } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
             LOG.warn("Read on reserved address: " + Integer.toHexString((int) address));
             return size.getMax();
@@ -176,7 +176,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         data &= size.getMask();
 
         if (addressL >= ADDRESS_RAM_MAP_START && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            Util.writeRam(memoryProvider, size, addressL & 0xFF_FFFE, (int) data); //mask odd addresses
+            Util.writeRam(memoryProvider, size, addressL, (int) data);
         } else if (addressL >= Z80_ADDRESS_SPACE_START && addressL <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             z80MemoryWrite(addressL, size, data);
         } else if (addressL >= IO_ADDRESS_SPACE_START && addressL <= IO_ADDRESS_SPACE_END) {    //	IO addressing space
