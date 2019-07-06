@@ -1,7 +1,7 @@
 /*
  * KeyBindingsHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/06/19 15:13
+ * Last modified: 06/07/19 16:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@ package omegadrive.ui;
 
 import omegadrive.system.SystemProvider.SystemEvent;
 import omegadrive.util.FileLoader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.util.*;
@@ -31,6 +33,8 @@ import static javax.swing.KeyStroke.getKeyStroke;
 import static omegadrive.system.SystemProvider.SystemEvent.*;
 
 public class KeyBindingsHandler {
+
+    private static Logger LOG = LogManager.getLogger(KeyBindingsHandler.class.getSimpleName());
 
     public static final InputMap DEFAULT_INPUT_MAP = new InputMap();
 
@@ -58,7 +62,12 @@ public class KeyBindingsHandler {
     }
 
     private static void loadKeyMap() {
-        List<String> l = FileLoader.loadFileContent(configFile);
+        List<String> l = Collections.emptyList();
+        try {
+            l = FileLoader.loadFileContent(configFile);
+        } catch (Throwable t) {
+            LOG.warn("Unable to load key config file: " + configFile);
+        }
         keyMap = parseConfig(l);
     }
 
