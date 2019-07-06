@@ -1,3 +1,19 @@
+## 19.0706
+68k: MOVEM fix pre-decrement long-writes on
+gg: initial support and lots of fixes
+md: fix z80 mem bounds
+md: the path for sram files can now be changed via prop
+md: improve cram viewer
+sms: add support for MEKA rom db
+sms: support pause button
+sms: savestate and quicksave handling
+emu: reset psg on load state
+sms: support backup mapper
+sms: support codem and korea mappers
+sms: add support for V28-V30 video modes
+sms: add EU/US support
+ui: fix keyboard actions
+
 ## 19.0430
 sg1000: add inital support + plenty of fixes
 coleco: add initial support + plenty of fixes

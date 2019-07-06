@@ -3,12 +3,12 @@
 A Java-based multi-system emulator.
 
 Initially created as a Sega Megadrive/Genesis and then evolved to emulate
-the following systems are currently emulated:
+the following systems:
 - Sega Megadrive/Genesis
+- Sega Master System/Game Gear
 - Sega Sg-1000
 - Colecovision
 - MSX v1
-- Sega Master System
 
 # How to Run
 Requires java 8+ installed.
