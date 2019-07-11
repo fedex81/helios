@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/07/19 14:36
+ * Last modified: 11/07/19 22:03
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,10 +60,12 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     private boolean z80BusRequested;
     private boolean z80ResetState;
+    private boolean enableTmss;
 
     public GenesisBus() {
         this.mapper = this;
         this.busArbiter = BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider);
+        this.enableTmss = Boolean.valueOf(System.getProperty("md.enable.tmss", "false"));
     }
 
     void initializeRomData() {
@@ -352,8 +354,24 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     private long ioRead(long address, Size size) {
         long data = 0;
+        /**
+         * $A10001	REG_VERSION
+         * Bit	7
+         * 0 : Domestic (Japanese model)
+         * 1 : Oversea (US or European model)
+         * Bit	6
+         * 0 : NTSC Clock (7.67Mhz)
+         * 1 : PAL Clock (7.60Mhz)
+         * Bit	5
+         * 0 : Expansion unit connected
+         * 1 : Expansion unit not connected
+         * Bit 0-4
+         *  ?	Version number
+         *
+         * TMSS = REGION_CODE + 1
+         */
         if ((address & 0xFFF) <= 1) {    //	Version register (read-only word-long)
-            data = systemProvider.getRegionCode();
+            data = systemProvider.getRegionCode() | (enableTmss ? 1 : 0);
             data = size == Size.WORD ? (data << 8) | data : data;
             return data;
         }

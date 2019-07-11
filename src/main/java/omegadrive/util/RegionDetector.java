@@ -1,7 +1,7 @@
 /*
  * RegionDetector
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 11/07/19 21:58
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,10 +85,9 @@ public class RegionDetector {
     //REGION_JAPAN_PAL  0x40
     //REGION_USA        0x80
     //REGION_EUROPE     0xC0
-    // TMSS = REGION_CODE + 1
     public enum Region {
         JAPAN('J', 2, 0x00, NTSC_FPS),
-        USA('U', 0, 0xA0, NTSC_FPS),
+        USA('U', 0, 0x80, NTSC_FPS),
         EUROPE('E', 1, 0xC0, PAL_FPS);
 
         private static EnumSet<Region> values = EnumSet.allOf(Region.class);
@@ -122,15 +121,7 @@ public class RegionDetector {
         public double getFrameIntervalMs() {
             return frameIntervalMs;
         }
-        //	US:	A0A0 rev 0 o A1A1 rev 1
-        //	EU:	C1C1
-        //	JP: ????
-        //	US SEGA CD:	8181
 
-        //REGION_JAPAN_NTSC 0x00
-        //REGION_JAPAN_PAL  0x40
-        //REGION_USA        0x80
-        //REGION_EUROPE     0xC0
         public long getVersionCode() {
             return versionCode;
         }

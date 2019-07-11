@@ -1,7 +1,7 @@
 /*
  * SavestateTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:25
+ * Last modified: 08/07/19 14:30
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,7 +74,7 @@ public class SavestateTest {
         GenesisBusProvider busProvider = GenesisBusProvider.createBus();
 
         int[] data = FileLoader.readFileSafe(saveFile);
-        GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), data);
+        GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString());
         GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
@@ -93,7 +93,7 @@ public class SavestateTest {
         GenesisBusProvider busProvider1 = GenesisBusProvider.createBus();
 
         int[] data = FileLoader.readFileSafe(saveFile);
-        GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), data);
+        GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString());
         GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider1);
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider1);
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
@@ -113,7 +113,7 @@ public class SavestateTest {
 
         GenesisBusProvider busProvider2 = GenesisBusProvider.createBus();
         int[] savedData = saveHandler.getData();
-        GenesisStateHandler loadHandler1 = GstStateHandler.createLoadInstance(saveFile.getFileName().toString(), savedData);
+        GenesisStateHandler loadHandler1 = GstStateHandler.createLoadInstance(saveFile.getFileName().toString());
         GenesisVdpProvider vdpProvider2 = GenesisVdp.createInstance(busProvider2);
         MC68000Wrapper cpu2 = new MC68000Wrapper(busProvider2);
         IMemoryProvider cpuMem2 = MemoryProvider.createGenesisInstance();
