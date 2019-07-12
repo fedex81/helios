@@ -1,7 +1,7 @@
 /*
  * MC68000Wrapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 12/07/19 20:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@ package omegadrive.m68k;
 import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
-import omegadrive.system.Genesis;
 import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.system.Genesis;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -84,6 +84,7 @@ public class MC68000Wrapper implements M68kProvider {
         return res;
     }
 
+    //this is the next instr PC
     @Override
     public long getPC() {
         return m68k.getPC();
