@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 12/07/19 20:42
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -102,6 +102,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
     private SpriteDataHolder spriteDataHolder = new SpriteDataHolder();
     private int spriteTableLocation = 0;
     private int hScrollTableLocation = 0;
+    private boolean lineShowWindowPlane = false;
 
     private InterlaceMode interlaceMode = InterlaceMode.NONE;
 
@@ -232,9 +233,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             return;
         }
         shadowHighlightMode = vdpProvider.isShadowHighlight();
+        renderWindow(line);
         renderPlaneA(line);
         renderPlaneB(line);
-        renderWindow(line);
         renderSprites(line);
     }
 
@@ -475,6 +476,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 // which results in $30, the proper value for this register.
 //	SA16 is only valid if 128 KB mode is enabled, and allows for rebasing the Plane A nametable to the second 64 KB of VRAM.
     private void renderPlaneA(int line) {
+        if (lineShowWindowPlane) {
+            return;
+        }
         // TODO bit 3 for 128KB VRAM
         int nameTableLocation = (vdpProvider.getRegisterData(PLANE_A_NAMETABLE) & 0x38) << PLANE_A_SHIFT;
         renderPlane(line, nameTableLocation, true);
@@ -573,6 +577,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         return getCramColorValue(paletteLine + (pixelIndexColor << 1));
     }
 
+
     // This value is effectively the address divided by $400; however, the low
     // bit is ignored, so the Window nametable has to be located at a VRAM
     // address that's a multiple of $800. For example, if the Window nametable
@@ -620,6 +625,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             int tileEnd = legalHorizontal ? (right ? limitHorTiles : windowHorizontal << 1) : limitHorTiles;
             drawWindowPlane(line, tileStart, tileEnd, isH40);
         }
+        lineShowWindowPlane = drawWindow;
     }
 
     private int[] fullScreenVerticalScrolling(int line, int tileLocator, int verticalPlaneSize,

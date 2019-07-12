@@ -12,3 +12,9 @@ a work item might stop the worker thread
 it the worker thread is stopped 68k halts
 
 - Sonic & Knuckles mapper
+
+TODO
+hline issue:
+monaco gp2
+turbo outrun
+lotus 2
