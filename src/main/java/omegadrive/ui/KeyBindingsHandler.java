@@ -1,7 +1,7 @@
 /*
  * KeyBindingsHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 06/07/19 16:37
+ * Last modified: 13/07/19 20:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ public class KeyBindingsHandler {
 
     static {
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_F, CTRL_DOWN_MASK), TOGGLE_FULL_SCREEN);
+        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_T, CTRL_DOWN_MASK), TOGGLE_THROTTLE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_D, CTRL_DOWN_MASK), SET_DEBUG_UI);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_1, CTRL_DOWN_MASK), SET_PLAYERS_1);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_2, CTRL_DOWN_MASK), SET_PLAYERS_2);

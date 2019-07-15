@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 15/07/19 14:37
+ * Last modified: 15/07/19 15:48
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,6 +62,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
 
     private GenesisVdpProvider vdpProvider;
     private VdpMemoryInterface memoryInterface;
+    private VdpScrollHandler scrollHandler;
     private VdpRenderDump renderDump;
 
     private int spritesFrame = 0;
@@ -116,6 +117,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         this.memoryInterface = memoryInterface;
         this.colorMapper = VdpColorMapper.getInstance();
         this.renderDump = new VdpRenderDump();
+        this.scrollHandler = VdpScrollHandler.createInstance(memoryInterface);
         this.cram = memoryInterface.getCram();
         this.vram = memoryInterface.getVram();
         clearData();
@@ -634,8 +636,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         return verticalScrolling(line, 0, 0, tileLocator, verticalPlaneSize, isPlaneA, null);
     }
 
-    private int[] verticalScrolling(int line, int VS, int pixel, int tileLocator, int verticalPlaneSize,
-                                    boolean isPlaneA, int[] fullScreenVerticalOffset) {
+    public int[] verticalScrolling(int line, int VS, int pixel, int tileLocator, int verticalPlaneSize,
+                                   boolean isPlaneA, int[] fullScreenVerticalOffset) {
         if (VS == 0 && fullScreenVerticalOffset != null) {
             return fullScreenVerticalOffset;
         }
@@ -655,7 +657,14 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         return verticalScrollRes;
     }
 
-    private int horizontalScrolling(int line, int HS, int hScrollBase, int horizontalPlaneSize, boolean isPlaneA) {
+    //TODO
+    public int horizontalScrollingNew(int line, int HS, int hScrollBase, int horizontalPlaneSize, boolean isPlaneA) {
+        int[] res = scrollHandler.computeHorizontalScrolling(VdpScrollHandler.HSCROLL.getHScrollType(HS),
+                hScrollBase, horizontalPlaneSize, isPlaneA);
+        return res[line];
+    }
+
+    public int horizontalScrolling(int line, int HS, int hScrollBase, int horizontalPlaneSize, boolean isPlaneA) {
         int vramOffset = 0;
         int scrollDataShift = horizontalPlaneSize << 3;
         int horScrollMask = scrollDataShift - 1;

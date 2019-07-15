@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 15:20
+ * Last modified: 13/07/19 22:16
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,6 +77,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
+    private boolean fullThrottle = false;
 
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
 
@@ -281,7 +282,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     }
 
     protected long syncCycle(long startCycle) {
-        return Util.parkUntil(startCycle + targetNs);
+        return Util.parkUntil(startCycle + (fullThrottle ? 0 : targetNs));
     }
 
     int points = 0;
