@@ -1,7 +1,7 @@
 /*
  * InterlaceMode
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 13/07/19 19:02
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,17 +29,19 @@ public enum InterlaceMode {
     NONE,
     MODE_1,
     INVALID,
-    MODE_2(6, 1);
+    MODE_2(6, 1, 16);
 
     private int tileShift = 5;
     private int verticalScrollShift = 0;
+    private int verticalCellPixelSize = 8;
 
     InterlaceMode() {
     }
 
-    InterlaceMode(int tileShift, int verticalScrollShift) {
+    InterlaceMode(int tileShift, int verticalScrollShift, int verticalCellPixelSize) {
         this.tileShift = tileShift;
         this.verticalScrollShift = verticalScrollShift;
+        this.verticalCellPixelSize = verticalCellPixelSize;
     }
 
     private static Map<Integer, InterlaceMode> lookup = ImmutableBiMap.copyOf(
@@ -55,5 +57,9 @@ public enum InterlaceMode {
 
     public int verticalScrollShift() {
         return verticalScrollShift;
+    }
+
+    public int getVerticalCellPixelSize() {
+        return verticalCellPixelSize;
     }
 }
