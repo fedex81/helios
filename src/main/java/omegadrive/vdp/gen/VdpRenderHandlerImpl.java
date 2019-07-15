@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 15/07/19 15:48
+ * Last modified: 15/07/19 15:58
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -542,7 +542,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
             tileDataHolder = getTileData(tileNameTable, tileDataHolder);
 
             int row = scrollMap % vertCells;
-            int pointVert = tileDataHolder.vertFlip ? (row - vertCells) * -1 : row;
+            int pointVert = tileDataHolder.vertFlip ? (row - (vertCells - 1)) * -1 : row;
             int pixelInTile = (pixel + horizontalScrollingOffset) % 8;
 
             int point = tileDataHolder.horFlip ? (pixelInTile - 7) * -1 : pixelInTile;
