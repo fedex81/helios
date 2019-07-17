@@ -1,7 +1,7 @@
 /*
  * SwingWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 16:00
+ * Last modified: 17/07/19 18:44
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,10 +29,7 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.File;
@@ -40,6 +37,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.List;
 
 import static omegadrive.system.SystemProvider.SystemEvent.*;
 import static omegadrive.util.ScreenSizeHelper.*;
@@ -115,6 +113,13 @@ public class SwingWindow implements DisplayWindow {
         l.add(new JCheckBoxMenuItem("AutoDetect", true));
         Arrays.stream(RegionDetector.Region.values()).sorted().
                 forEach(r -> l.add(new JCheckBoxMenuItem(r.name(), false)));
+        //only allow one selection
+        final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
+        l.stream().forEach(i -> i.addItemListener(e -> {
+            if (ItemEvent.SELECTED == e.getStateChange()) {
+                list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
+            }
+        }));
         return l;
     }
 
