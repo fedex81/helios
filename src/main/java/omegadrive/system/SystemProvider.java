@@ -1,7 +1,7 @@
 /*
  * SystemProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 13/07/19 20:22
+ * Last modified: 17/07/19 18:24
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,18 +23,11 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.util.RegionDetector;
 
-import java.util.EventListener;
-
 public interface SystemProvider extends Device {
 
     void handleSystemEvent(SystemEvent event, Object parameter);
 
-    boolean addFrameListener(VdpFrameListener l);
-
-
     void renderScreen(int[][] screenData);
-
-    boolean removeFrameListener(VdpFrameListener l);
 
     /**
      * STATE
@@ -73,9 +66,5 @@ public interface SystemProvider extends Device {
         TOGGLE_DEBUG_LOGGING,
         SET_DEBUG_UI,
         TOGGLE_SOUND_RECORD
-    }
-
-    interface VdpFrameListener extends EventListener {
-        void onNewFrame();
     }
 }

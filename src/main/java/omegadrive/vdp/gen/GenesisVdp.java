@@ -1,7 +1,7 @@
 /*
  * GenesisVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 17/07/19 18:24
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 
 package omegadrive.vdp.gen;
 
+import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.system.Genesis;
 import omegadrive.system.SystemProvider;
-import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.util.*;
 import omegadrive.vdp.model.*;
 import org.apache.logging.log4j.Level;
@@ -777,6 +777,16 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         if (line < lineLimit) {
             renderHandler.renderLine(line);
         }
+    }
+
+    @Override
+    public boolean addVdpEventListener(VdpEventListener l) {
+        return false;
+    }
+
+    @Override
+    public boolean removeVdpEventListener(VdpEventListener l) {
+        return false;
     }
 
     @Override

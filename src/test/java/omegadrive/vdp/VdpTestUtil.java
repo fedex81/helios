@@ -1,7 +1,7 @@
 /*
  * VdpTestUtil
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:25
+ * Last modified: 15/07/19 17:10
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -155,16 +155,6 @@ public class VdpTestUtil {
             @Override
             public void handleSystemEvent(SystemEvent event, Object parameter) {
 
-            }
-
-            @Override
-            public boolean addFrameListener(VdpFrameListener l) {
-                return false;
-            }
-
-            @Override
-            public boolean removeFrameListener(VdpFrameListener l) {
-                return false;
             }
 
             @Override

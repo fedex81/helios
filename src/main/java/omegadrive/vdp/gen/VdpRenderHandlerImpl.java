@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 15/07/19 15:58
+ * Last modified: 15/07/19 17:13
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
  * I haven't yet confirmed whether a sprite count overflow on the previous line causes this behaviour,
  * or whether only a sprite dot overflow on the previous line triggers it.
  */
-public class VdpRenderHandlerImpl implements VdpRenderHandler {
+public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener {
 
     private static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
 
@@ -120,6 +120,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         this.scrollHandler = VdpScrollHandler.createInstance(memoryInterface);
         this.cram = memoryInterface.getCram();
         this.vram = memoryInterface.getVram();
+        vdpProvider.addVdpEventListener(this);
         clearData();
     }
 
@@ -696,6 +697,16 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler {
         scrollDataHor &= horScrollMask;
         scrollDataHor = scrollDataShift - scrollDataHor;
         return scrollDataHor;
+    }
+
+    @Override
+    public void onNewFrame() {
+
+    }
+
+    @Override
+    public void onRegisterChange(int reg, int value) {
+
     }
 
     static class TileDataHolder {

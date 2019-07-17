@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 13/07/19 22:16
+ * Last modified: 17/07/19 18:24
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,8 +44,6 @@ import org.apache.logging.log4j.Logger;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -80,8 +78,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private boolean fullThrottle = false;
 
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
-
-    private List<VdpFrameListener> listenerList = new ArrayList<>();
 
     private static NumberFormat df = DecimalFormat.getInstance();
 
@@ -313,13 +309,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         canRenderScreen = true;
     }
 
-    int counter = 0;
-
     protected void handleVdpDumpScreenData() {
-//        counter++;
-//        if(counter > 500 && counter % 60 == 0){
-//            vdpDumpScreenData = true;
-//        }
         if (vdpDumpScreenData) {
             vdp.dumpScreenData();
             vdpDumpScreenData = false;
@@ -328,12 +318,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     protected void renderScreenInternal(String label) {
         emuFrame.renderScreen(vdpScreen, label, videoMode);
-        listenerList.forEach(VdpFrameListener::onNewFrame);
     }
 
     protected void renderScreenLinearInternal(int[] data, String label) {
         emuFrame.renderScreenLinear(data, label, videoMode);
-        listenerList.forEach(VdpFrameListener::onNewFrame);
     }
 
     private void handlePause() {
@@ -356,15 +344,5 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         joypad.init();
         vdp.init();
         bus.init();
-    }
-
-    @Override
-    public boolean addFrameListener(VdpFrameListener l) {
-        return listenerList.add(l);
-    }
-
-    @Override
-    public boolean removeFrameListener(VdpFrameListener l) {
-        return listenerList.remove(l);
     }
 }

@@ -1,7 +1,7 @@
 /*
  * SystemLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 17/07/19 18:24
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -188,16 +188,6 @@ public class SystemLoader {
                         LOG.warn("Unabe to handle event: {}, with parameter: {}", event, Objects.toString(parameter));
                         break;
                 }
-            }
-
-            @Override
-            public boolean addFrameListener(VdpFrameListener l) {
-                return false;
-            }
-
-            @Override
-            public boolean removeFrameListener(VdpFrameListener l) {
-                return false;
             }
 
             @Override

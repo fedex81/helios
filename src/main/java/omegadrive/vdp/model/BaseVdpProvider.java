@@ -1,7 +1,7 @@
 /*
  * BaseVdpProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 28/05/19 16:50
+ * Last modified: 17/07/19 18:24
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,15 @@ import omegadrive.util.VideoMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.EventListener;
+
 public interface BaseVdpProvider extends Device {
 
     Logger LOG = LogManager.getLogger(BaseVdpProvider.class.getSimpleName());
+
+    default boolean addVdpEventListener(VdpEventListener l) {
+        throw new UnsupportedOperationException("Not supported");
+    }
 
     int V18_CELL = 144;
     int V24_CELL = 192;
@@ -96,4 +102,13 @@ public interface BaseVdpProvider extends Device {
         throw new UnsupportedOperationException("Not supported");
     }
 
+    default boolean removeVdpEventListener(VdpEventListener l) {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+    interface VdpEventListener extends EventListener {
+        void onNewFrame();
+
+        void onRegisterChange(int reg, int value);
+    }
 }
