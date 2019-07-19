@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 19/07/19 13:35
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,4 +32,37 @@ public interface VdpRenderHandler {
     void renderLine(int line);
 
     void initLineData(int line);
+
+    static int getVerticalPlaneSize(int reg10) {
+        int horScrollSize = reg10 & 3;
+        int vertScrollSize = (reg10 >> 4) & 3;
+        switch (vertScrollSize) {
+            case 0b00:
+                return horScrollSize == 0b10 ? 1 : 32;
+            case 0b01:
+            case 0b10:
+                return horScrollSize == 0b10 ? 1 : (horScrollSize == 0b11 ? 32 : 64);
+            case 0b11:
+                return horScrollSize == 0b10 ? 1 :
+                        (horScrollSize == 0b11 ? 32 : (horScrollSize == 0b01 ? 64 : 128));
+
+        }
+        return 0;
+    }
+
+    static int getHorizontalPlaneSize(int reg10) {
+        int horScrollSize = reg10 & 3;
+        switch (horScrollSize) {
+            case 0:
+                return 32;
+            case 0b01:
+                return 64;
+            case 0b10:
+                return 32;
+            case 0b11:
+                return 128;
+
+        }
+        return 0;
+    }
 }

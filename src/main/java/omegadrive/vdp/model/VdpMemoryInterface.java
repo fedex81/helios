@@ -1,7 +1,7 @@
 /*
  * VdpMemoryInterface
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 20/05/19 19:48
+ * Last modified: 19/07/19 11:07
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,6 +54,10 @@ public interface VdpMemoryInterface {
     int[] getCram();
 
     int[] getVram();
+
+    int[] getVsram();
+
+    int[] getJavaColorPalette();
 
     default int readVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int address) {
         switch (vramType) {

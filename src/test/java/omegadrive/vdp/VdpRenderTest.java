@@ -1,7 +1,7 @@
 /*
  * VdpRenderTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:25
+ * Last modified: 19/07/19 13:35
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
-//@Ignore
+@Ignore
 public class VdpRenderTest {
 
     private static int[][] screenData;
@@ -85,7 +85,7 @@ public class VdpRenderTest {
     }
 
     @Test
-    public void testInterlaced() throws Exception {
+    public void testInterlaced() {
         String saveName = "s2_int.gs0";
 //        saveName = "cc_int.gs0";
         Path saveFile = Paths.get(saveStateFolder, saveName);
@@ -94,7 +94,7 @@ public class VdpRenderTest {
     }
 
     @Test
-    public void testSavestateViewerAll() throws Exception {
+    public void testSavestateViewerAll() {
         for (Map.Entry<String, String> e : SavestateGameLoader.saveStates.entrySet()) {
             String saveStateFile = e.getKey();
             Path saveFile = Paths.get(saveStateFolder, saveStateFile);
@@ -104,7 +104,8 @@ public class VdpRenderTest {
     }
 
     @Test
-    public void testVpdPerformance() throws Exception {
+    @Ignore
+    public void testVpdPerformance() {
         for (Map.Entry<String, String> e : SavestateGameLoader.saveStates.entrySet()) {
             String saveStateFile = e.getKey();
             Path saveFile = Paths.get(saveStateFolder, saveStateFile);

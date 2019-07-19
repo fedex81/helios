@@ -1,7 +1,7 @@
 /*
  * GstStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 16:01
+ * Last modified: 19/07/19 13:02
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,7 +97,8 @@ public class GstStateHandler implements GenesisStateHandler {
     }
 
     private static String handleFileExtension(String fileName) {
-        return fileName + (!fileName.toLowerCase().endsWith(fileExtension) ? "." + fileExtension : "");
+        boolean hasExtension = fileName.toLowerCase().contains(".gs");
+        return fileName + (!hasExtension ? "." + fileExtension : "");
     }
 
     private GenesisStateHandler detectStateFileType() {

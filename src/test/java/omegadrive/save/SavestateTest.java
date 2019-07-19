@@ -1,7 +1,7 @@
 /*
  * SavestateTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 08/07/19 14:30
+ * Last modified: 19/07/19 13:35
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.YM2612;
-import omegadrive.util.FileLoader;
 import omegadrive.vdp.gen.GenesisVdp;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
@@ -72,9 +71,7 @@ public class SavestateTest {
 
     public static GenesisBusProvider loadSaveState(Path saveFile) {
         GenesisBusProvider busProvider = GenesisBusProvider.createBus();
-
-        int[] data = FileLoader.readFileSafe(saveFile);
-        GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString());
+        GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.toAbsolutePath().toString());
         GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
@@ -90,10 +87,10 @@ public class SavestateTest {
     }
 
     private GenesisStateHandler testLoadSaveInternal(Path saveFile) {
+        String filePath = saveFile.toAbsolutePath().toString();
         GenesisBusProvider busProvider1 = GenesisBusProvider.createBus();
 
-        int[] data = FileLoader.readFileSafe(saveFile);
-        GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(saveFile.getFileName().toString());
+        GenesisStateHandler loadHandler = GstStateHandler.createLoadInstance(filePath);
         GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider1);
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider1);
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
@@ -112,8 +109,7 @@ public class SavestateTest {
         saveHandler.saveFm(fm1);
 
         GenesisBusProvider busProvider2 = GenesisBusProvider.createBus();
-        int[] savedData = saveHandler.getData();
-        GenesisStateHandler loadHandler1 = GstStateHandler.createLoadInstance(saveFile.getFileName().toString());
+        GenesisStateHandler loadHandler1 = GstStateHandler.createLoadInstance(filePath);
         GenesisVdpProvider vdpProvider2 = GenesisVdp.createInstance(busProvider2);
         MC68000Wrapper cpu2 = new MC68000Wrapper(busProvider2);
         IMemoryProvider cpuMem2 = MemoryProvider.createGenesisInstance();

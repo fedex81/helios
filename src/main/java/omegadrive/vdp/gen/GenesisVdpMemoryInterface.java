@@ -1,7 +1,7 @@
 /*
  * GenesisVdpMemoryInterface
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 20/05/19 19:52
+ * Last modified: 19/07/19 13:35
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
@@ -38,11 +39,14 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     private int[] vram;
     private int[] cram;
     private int[] vsram;
+    private int[] javaPalette;
 
     private ICramViewer cramViewer;
+    private VdpColorMapper colorMapper;
 
     private GenesisVdpMemoryInterface() {
         cramViewer = CramViewer.createInstance(this);
+        colorMapper = VdpColorMapper.getInstance();
     }
 
     public static GenesisVdpMemoryInterface createInstance() {
@@ -50,6 +54,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         i.vram = new int[GenesisVdpProvider.VDP_VRAM_SIZE];
         i.cram = new int[GenesisVdpProvider.VDP_CRAM_SIZE];
         i.vsram = new int[GenesisVdpProvider.VDP_VSRAM_SIZE];
+        i.initPalette();
         return i;
     }
 
@@ -58,7 +63,17 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         i.vram = Arrays.copyOf(vram, vram.length);
         i.cram = Arrays.copyOf(cram, cram.length);
         i.vsram = Arrays.copyOf(vsram, vsram.length);
+        i.initPalette();
         return i;
+    }
+
+    private void paletteUpdate(int cramAddress) {
+        javaPalette[cramAddress >> 1] = colorMapper.getColor(cram[cramAddress] << 8 | cram[cramAddress + 1]);
+    }
+
+    private void initPalette() {
+        javaPalette = new int[cram.length / 2];
+        IntStream.range(0, javaPalette.length).forEach(i -> paletteUpdate(i << 1));
     }
 
     //TODO: shouldnt this flip the byte like in readVramWord
@@ -113,6 +128,16 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         return vram;
     }
 
+    @Override
+    public int[] getVsram() {
+        return vsram;
+    }
+
+    @Override
+    public int[] getJavaColorPalette() {
+        return javaPalette;
+    }
+
     //    Even though there are 40 words of VSRAM, the address register will wrap
 //    when it passes 7Fh. Writes to the addresses beyond 50h are ignored.
     @Override
@@ -132,8 +157,8 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         address &= (GenesisVdpProvider.VDP_CRAM_SIZE - 1);
         cram[address] = data & 0xFF;
         cramViewer.update();
+        paletteUpdate(address & EVEN_VALUE_MASK);
     }
-
 
 
     @Override

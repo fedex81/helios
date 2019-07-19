@@ -1,7 +1,7 @@
 /*
  * VdpColorMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 19/07/19 13:35
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,9 @@
 package omegadrive.vdp.gen;
 
 import omegadrive.vdp.model.ShadowHighlightType;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class VdpColorMapper {
 
@@ -46,20 +49,22 @@ public class VdpColorMapper {
      * (7) 4.7   4.7 (7)
      */
 
-    public static int VDP_TONES_PER_CHANNEL = 8;  // 3 bits per channel
-    public static int OUTPUT_TONES_PER_CHANNEL = 256; // 8 bits per channel
-    public static double VDP_MAX_COLOR_LEVEL = 4.7; //voltage ouput
+    public final static int VDP_TONES_PER_CHANNEL = 8;  // 3 bits per channel
+    public final static int OUTPUT_TONES_PER_CHANNEL = 256; // 8 bits per channel
+    public final static double VDP_MAX_COLOR_LEVEL = 4.7; //voltage ouput
 
-    private int[][][] colorsCache = new int[VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL];
-    private int[][][] colorsCacheShadow = new int[VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL];
-    private int[][][] colorsCacheHighLight = new int[VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL];
+    private final static int[][][] colorsCache = new int[VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL];
+    private final static int[][][] colorsCacheShadow = new int[VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL];
+    private final static int[][][] colorsCacheHighLight = new int[VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL];
 
     private final static double[] NORMAL_LEVELS = {0, 0.9, 1.6, 2.2, 2.7, 3.2, 3.8, 4.7};
     private final static double[] SHADOW_LEVELS = {0, 0.5, 0.9, 1.3, 1.6, 1.9, 2.2, 2.4};
     private final static double[] HIGHLIGHT_LEVELS = {2.4, 2.7, 2.9, 3.2, 3.5, 3.8, 4.2, 4.7};
 
+    private final static Map<Integer, Integer> normalToShadow = new HashMap<>();
+    private final static Map<Integer, Integer> normalToHighlight = new HashMap<>();
 
-    private static VdpColorMapper INSTANCE = new VdpColorMapper();
+    private final static VdpColorMapper INSTANCE = new VdpColorMapper();
 
     private VdpColorMapper() {
         initColorsCache(colorsCache, NORMAL_LEVELS);
@@ -82,6 +87,17 @@ public class VdpColorMapper {
                 return colorsCacheShadow[red][green][blue];
         }
         return colorsCache[red][green][blue];
+    }
+
+    private static void initColorsMappings() {
+        for (int i = 0; i < VDP_TONES_PER_CHANNEL; i++) {
+            for (int j = 0; j < VDP_TONES_PER_CHANNEL; j++) {
+                for (int k = 0; k < VDP_TONES_PER_CHANNEL; k++) {
+                    normalToShadow.put(colorsCache[i][j][k], colorsCacheShadow[i][j][k]);
+                    normalToHighlight.put(colorsCache[i][j][k], colorsCacheHighLight[i][j][k]);
+                }
+            }
+        }
     }
 
     /**
@@ -112,5 +128,17 @@ public class VdpColorMapper {
                 }
             }
         }
+    }
+
+    public int getJavaColor(int rgb, ShadowHighlightType shadowHighlightType) {
+        switch (shadowHighlightType) {
+            case NORMAL:
+                return rgb;
+            case HIGHLIGHT:
+                return normalToHighlight.getOrDefault(rgb, rgb);
+            case SHADOW:
+                return normalToShadow.getOrDefault(rgb, rgb);
+        }
+        return rgb;
     }
 }

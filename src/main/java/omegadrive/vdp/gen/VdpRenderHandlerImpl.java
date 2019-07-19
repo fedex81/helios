@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 15/07/19 17:13
+ * Last modified: 19/07/19 13:35
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +22,14 @@ package omegadrive.vdp.gen;
 import omegadrive.system.Genesis;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.VdpRenderDump;
+import omegadrive.vdp.gen.VdpScrollHandler.HSCROLL;
+import omegadrive.vdp.gen.VdpScrollHandler.ScrollContext;
+import omegadrive.vdp.gen.VdpScrollHandler.VSCROLL;
 import omegadrive.vdp.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
-import java.util.function.Function;
 
 import static omegadrive.vdp.model.GenesisVdpProvider.*;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
@@ -81,12 +83,12 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private final static int TILE_VERT_FLIP_MASK = 1 << 12;
     private final static int TILE_PRIORITY_MASK = 1 << 15;
     private final static int TILE_INDEX_MASK = 0x7FF;
+    private final static int CELL_WIDTH = 8; //in pixels
 
     private VideoMode videoMode;
     private VdpColorMapper colorMapper;
 
     private int[][] spritesPerLine = new int[INDEXES_NUM][MAX_SPRITES_PER_FRAME_H40];
-    private int[] verticalScrollRes = new int[2];
 
     private int[][] planeA = new int[COLS][ROWS];
     private int[][] planeB = new int[COLS][ROWS];
@@ -104,13 +106,14 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private SpriteDataHolder spriteDataHolder = new SpriteDataHolder();
     private int spriteTableLocation = 0;
-    private int hScrollTableLocation = 0;
     private boolean lineShowWindowPlane = false;
+    private ScrollContext scrollContextA;
+    private ScrollContext scrollContextB;
 
     private InterlaceMode interlaceMode = InterlaceMode.NONE;
 
-    private int[] cram;
     private int[] vram;
+    private int[] javaPalette;
 
     public VdpRenderHandlerImpl(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
@@ -118,9 +121,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         this.colorMapper = VdpColorMapper.getInstance();
         this.renderDump = new VdpRenderDump();
         this.scrollHandler = VdpScrollHandler.createInstance(memoryInterface);
-        this.cram = memoryInterface.getCram();
         this.vram = memoryInterface.getVram();
-        vdpProvider.addVdpEventListener(this);
+        this.javaPalette = memoryInterface.getJavaColorPalette();
+        this.scrollContextA = ScrollContext.createInstance(true);
+        this.scrollContextB = ScrollContext.createInstance(false);
+//        vdpProvider.addVdpEventListener(this);
         clearData();
     }
 
@@ -144,40 +149,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         return isH40 ? MAX_SPRITES_PER_LINE_H40 : MAX_SPRITES_PER_LINE_H32;
     }
 
-    private int getHorizontalPlaneSize() {
-        int reg10 = vdpProvider.getRegisterData(PLANE_SIZE);
-        int horScrollSize = reg10 & 3;
-        switch (horScrollSize) {
-            case 0:
-                return 32;
-            case 0b01:
-                return 64;
-            case 0b10:
-                return 32;
-            case 0b11:
-                return 128;
-
-        }
-        return 0;
-    }
-
-    private int getVerticalPlaneSize() {
-        int reg10 = vdpProvider.getRegisterData(PLANE_SIZE);
-        int horScrollSize = reg10 & 3;
-        int vertScrollSize = (reg10 >> 4) & 3;
-        switch (vertScrollSize) {
-            case 0b00:
-                return horScrollSize == 0b10 ? 1 : 32;
-            case 0b01:
-            case 0b10:
-                return horScrollSize == 0b10 ? 1 : (horScrollSize == 0b11 ? 32 : 64);
-            case 0b11:
-                return horScrollSize == 0b10 ? 1 :
-                        (horScrollSize == 0b11 ? 32 : (horScrollSize == 0b01 ? 64 : 128));
-
-        }
-        return 0;
-    }
 
     private int getHScrollDataLocation() {
         //	bit 6 = mode 128k
@@ -200,7 +171,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         int spriteTableLoc = vdpProvider.getRegisterData(SPRITE_TABLE_LOC) & 0x7F;
         return spriteTableLoc << SPRITE_TABLE_SHIFT;
     }
-
 
 
     private TileDataHolder getTileData(int nameTable, TileDataHolder holder) {
@@ -227,7 +197,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             phase1(0);
 //            phase1AllLines();
         }
-        hScrollTableLocation = getHScrollDataLocation(); //improves terminator2
+        //TODO review this - improves terminator2
+        scrollContextA.hScrollTableLocation = getHScrollDataLocation();
+        scrollContextB.hScrollTableLocation = scrollContextA.hScrollTableLocation;
     }
 
     public void renderLine(int line) {
@@ -258,8 +230,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         Arrays.stream(planeA).forEach(a -> Arrays.fill(a, 0));
         Arrays.stream(planeB).forEach(a -> Arrays.fill(a, 0));
         spritesFrame = 0;
-        verticalScrollRes[0] = 0;
-        verticalScrollRes[1] = 0;
     }
 
     private void phase1AllLines() {
@@ -323,7 +293,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 //            if(interlaceMode == InterlaceMode.MODE_2){
 //                spriteLine >>= 1;
 //            }
-            int pointVert = holder.vertFlip ? (spriteLine - (verSizePixels - 1)) * -1 : spriteLine;
+            int pointVert = holder.vertFlip ? verSizePixels - 1 - spriteLine : spriteLine;
 
             if (nonZeroSpriteOnLine && holder.horizontalPos == 0) {
                 return;
@@ -335,13 +305,12 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             int vertLining = (spriteVerticalCell << interlaceMode.tileShift())
                     + ((pointVert % interlaceMode.getVerticalCellPixelSize()) << 2);
             for (int cellX = 0; cellX <= holder.horizontalCellSize; cellX++) {
-                int spriteCellX = holder.horFlip ? (cellX * -1) + holder.horizontalCellSize : cellX;
+                int spriteCellX = holder.horFlip ? holder.horizontalCellSize - cellX : cellX;
                 int horLining = vertLining + (spriteCellX * ((holder.verticalCellSize + 1) << interlaceMode.tileShift()));
-                int tileBytePointerBase = holder.tileIndex + horLining;
-                renderSprite(line, holder, tileBytePointerBase, horOffset);
+                renderSprite(line, holder, holder.tileIndex + horLining, horOffset);
 
                 //8 pixels
-                horOffset += 8;
+                horOffset += CELL_WIDTH;
             }
             ind++;
             currSprite = spritesInLine[ind];
@@ -352,7 +321,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private boolean renderSprite(int line, SpriteDataHolder holder, int tileBytePointerBase,
                                  int horOffset) {
         for (int i = 0; i < 4; i++) {
-            int sliver = holder.horFlip ? (i * -1) + 3 : i;
+            int sliver = holder.horFlip ? 3 - i : i;
             int tileBytePointer = tileBytePointerBase + sliver;
             if (tileBytePointer < 0 || tileBytePointer > VDP_VRAM_SIZE - 1) {
                 //Ayrton Senna
@@ -361,11 +330,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             }
             int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, holder.horFlip);
             int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, holder.horFlip);
-            int colorIndex1 = getCramColorValue(pixelIndexColor1, holder.paletteLineIndex);
-            int colorIndex2 = getCramColorValue(pixelIndexColor2, holder.paletteLineIndex);
+            int javaColor1 = getJavaColorValue(pixelIndexColor1, holder.paletteLineIndex);
+            int javaColor2 = getJavaColorValue(pixelIndexColor2, holder.paletteLineIndex);
 
-            storeSpriteData(pixelIndexColor1, horOffset, line, holder.priority, colorIndex1);
-            storeSpriteData(pixelIndexColor2, horOffset + 1, line, holder.priority, colorIndex2);
+            storeSpriteData(pixelIndexColor1, horOffset, line, holder.priority, javaColor1);
+            storeSpriteData(pixelIndexColor2, horOffset + 1, line, holder.priority, javaColor2);
             horOffset += 2;
         }
         return true;
@@ -377,7 +346,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 //    Sprites earlier in the list show up on top of sprites later in the list (priority flag does nothing here).
 // Whichever sprite ends up on top in a given pixel is what will
 // end up in the sprite layer (and sorted against plane A and B).
-    private void storeSpriteData(int pixel, int horOffset, int line, boolean priority, int cramColorIndex) {
+    private void storeSpriteData(int pixel, int horOffset, int line, boolean priority, int javaColor) {
         if (horOffset < 0 || horOffset >= COLS) {
             return;
         }
@@ -385,8 +354,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         if (isSpriteAlreadyShown) {
             return;
         }
-        pixel = processShadowHighlightSprite(cramColorIndex, pixel, horOffset, line);
-        sprites[horOffset][line] = cramColorIndex;
+        pixel = processShadowHighlightSprite(javaColor, pixel, horOffset, line);
+        sprites[horOffset][line] = javaColor;
         spritesIndex[horOffset][line] = pixel;
         if (pixel > 0) {
             updatePriority(horOffset, line, priority ? RenderPriority.SPRITE_PRIO : RenderPriority.SPRITE_NO_PRIO);
@@ -406,54 +375,57 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     private int getPixelFromLayer(RenderPriority rp, int i, int j) {
-        int cramColorIndex = 0;
+        int javaColor = 0;
         switch (rp.getRenderType()) {
             case BACK_PLANE:
-                cramColorIndex = planeBack[i][j];
+                javaColor = planeBack[i][j];
                 break;
             case PLANE_A:
-                cramColorIndex = planeA[i][j];
+                javaColor = planeA[i][j];
                 break;
             case PLANE_B:
-                cramColorIndex = planeB[i][j];
+                javaColor = planeB[i][j];
                 break;
             case WINDOW_PLANE:
-                cramColorIndex = window[i][j];
+                javaColor = window[i][j];
                 break;
             case SPRITE:
-                cramColorIndex = sprites[i][j];
+                javaColor = sprites[i][j];
                 break;
         }
-        return processShadowHighlight(shadowHighlightMode, shadowHighlight[i][j], cramColorIndex, rp);
+        return processShadowHighlight(shadowHighlightMode, shadowHighlight[i][j], javaColor, rp);
     }
 
     private int processShadowHighlight(boolean shadowHighlightMode, ShadowHighlightType shadowHighlightType,
-                                       int cramColorIndex, RenderPriority rp) {
+                                       int javaColor, RenderPriority rp) {
         if (!shadowHighlightMode) {
-            return getColorFromIndex(cramColorIndex);
+            return javaColor;
         }
-        PriorityType priorityType = rp.getPriorityType();
-        RenderType renderType = rp.getRenderType();
-        boolean noChange = priorityType == PriorityType.YES ||
-                (renderType == RenderType.SPRITE && (cramColorIndex % 32) == 28);  //14*2
+        //TODO fix this
+        boolean noChange = rp.getPriorityType() == PriorityType.YES;
+//        boolean noChange = priorityType == PriorityType.YES ||
+//                (renderType == RenderType.SPRITE && (cramColorIndex % 32) == 28);  //14*2
+        //TODO fix this
         shadowHighlightType = noChange ? shadowHighlightType : shadowHighlightType.darker();
-        return getColorFromIndex(cramColorIndex, shadowHighlightType);
+        return colorMapper.getJavaColor(javaColor, shadowHighlightType);
     }
 
-    private int processShadowHighlightSprite(int colorIndex, int pixel, int x, int y) {
+    private int processShadowHighlightSprite(int javaColor, int pixel, int x, int y) {
         if (!shadowHighlightMode) {
             return pixel;
         }
-        switch (colorIndex) {
-            case 0x7C:  // palette (3 * 32) + color (14 *2) = 124
-                shadowHighlight[x][y] = shadowHighlight[x][y].brighter();
-                pixel = 0;
-                break;
-            case 0x7E: // palette (3 * 32) + color (15 *2) = 126
-                shadowHighlight[x][y] = shadowHighlight[x][y].darker();
-                pixel = 0;
-                break;
-        }
+        //TODO fix this
+//        switch (javaColor) {
+//            case 0x7C:  // palette (3 * 32) + color (14 *2) = 124
+//                shadowHighlight[x][y] = shadowHighlight[x][y].brighter();
+//                pixel = 0;
+//                break;
+//            case 0x7E: // palette (3 * 32) + color (15 *2) = 126
+//                shadowHighlight[x][y] = shadowHighlight[x][y].darker();
+//                pixel = 0;
+//                break;
+//        }
+        //TODO fix this
         return pixel;
     }
 
@@ -463,10 +435,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         int backLine = (reg7 >> 4) & 0x3;
         int backEntry = (reg7) & 0xF;
         int cramColorIndex = (backLine << 5) + (backEntry << 1);
-        int cramColor = getCramColorValue(cramColorIndex);
+        int javaColor = getJavaColorValue(cramColorIndex);
 
         for (int pixel = 0; pixel < (limitHorTiles << 3); pixel++) {
-            planeBack[pixel][line] = cramColor;
+            planeBack[pixel][line] = javaColor;
             pixelPriority[pixel][line] = RenderPriority.BACK_PLANE;
         }
     }
@@ -486,7 +458,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
         // TODO bit 3 for 128KB VRAM
         int nameTableLocation = (vdpProvider.getRegisterData(PLANE_A_NAMETABLE) & 0x38) << PLANE_A_SHIFT;
-        renderPlane(line, nameTableLocation, true);
+        renderPlane(line, nameTableLocation, scrollContextA);
     }
 
     //	$04 - Plane B Name Table Location
@@ -502,63 +474,60 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 // Plane B nametable to the second 64 KB of VRAM.
     private void renderPlaneB(int line) {
         int nameTableLocation = (vdpProvider.getRegisterData(PLANE_B_NAMETABLE) & 0x7) << PLANE_B_SHIFT;
-        renderPlane(line, nameTableLocation, false);
+        renderPlane(line, nameTableLocation, scrollContextB);
     }
 
-    private void renderPlane(int line, int nameTableLocation, boolean isPlaneA) {
-        int tileLocator = 0;
-        int horizontalPlaneSize = getHorizontalPlaneSize();
-        int verticalPlaneSize = getVerticalPlaneSize();
+    protected void renderPlane(int line, int nameTableLocation, ScrollContext sc) {
         int limitHorTiles = getHorizontalTiles();
-        final int vertCells = interlaceMode.getVerticalCellPixelSize();
-
-
+        final int cellHeight = interlaceMode.getVerticalCellPixelSize();
         int regB = vdpProvider.getRegisterData(MODE_3);
-        int HS = regB & 0x3;
-        int VS = (regB >> 2) & 0x1;
+        int reg10 = vdpProvider.getRegisterData(PLANE_SIZE);
 
-        //horizontal scrolling
-        int horizontalScrollingOffset = horizontalScrolling(line, HS, hScrollTableLocation, horizontalPlaneSize, isPlaneA);
+        sc.hScrollType = HSCROLL.getHScrollType(regB & 3);
+        sc.vScrollType = VSCROLL.getVScrollType((regB >> 2) & 0x1);
+        sc.interlaceMode = interlaceMode;
+        sc.planeWidth = VdpRenderHandler.getHorizontalPlaneSize(reg10);
+        sc.planeHeight = VdpRenderHandler.getVerticalPlaneSize(reg10);
 
-        int[][] plane = isPlaneA ? planeA : planeB;
+        int vScrollSizeMask = (sc.planeHeight << 3) - 1;
+        int hScrollPixelOffset = scrollHandler.getHorizontalScroll(line, sc);
+
+        int[][] plane = sc.planeA ? planeA : planeB;
         TileDataHolder tileDataHolder = spriteDataHolder;
 
-        RenderType renderType = isPlaneA ? RenderType.PLANE_A : RenderType.PLANE_B;
+        RenderType renderType = sc.planeA ? RenderType.PLANE_A : RenderType.PLANE_B;
         RenderPriority highPrio = RenderPriority.getRenderPriority(renderType, true);
         RenderPriority lowPrio = RenderPriority.getRenderPriority(renderType, false);
 
-        int[] fullScreenVerticalOffset = fullScreenVerticalScrolling(line, nameTableLocation, verticalPlaneSize, isPlaneA);
+        int vScrollLineOffset, planeCellVOffset, planeLine;
+        final int totalTwoCells = limitHorTiles >> 1;
 
-        for (int pixel = 0; pixel < (limitHorTiles << 3); pixel++) {
-            int tileLocation = (((pixel + horizontalScrollingOffset)) % (horizontalPlaneSize << 3)) >> 3;
+        for (int twoCell = 0; twoCell < totalTwoCells; twoCell++) {
+            vScrollLineOffset = scrollHandler.getVerticalScroll(twoCell, sc);
+            planeLine = (vScrollLineOffset + line) & vScrollSizeMask;
+            planeCellVOffset = (planeLine >> 3) * sc.planeWidth;
+            int startPixel = twoCell << 4;
+            for (int pixel = startPixel; pixel < startPixel + 16; pixel++) {
+                int planeCellHOffset = ((pixel + hScrollPixelOffset) % (sc.planeWidth << 3)) >> 3;
+                int tileLocatorVram = nameTableLocation + ((planeCellHOffset + planeCellVOffset) << 1);
+                //one word per 8x8 tile
+                int tileNameTable = vram[tileLocatorVram] << 8 | vram[tileLocatorVram + 1];
+                tileDataHolder = getTileData(tileNameTable, tileDataHolder);
 
-            int[] res = verticalScrolling(line, VS, pixel, nameTableLocation, verticalPlaneSize, isPlaneA, fullScreenVerticalOffset);
-            int verticalScrollingOffset = res[0];
-            int scrollMap = res[1];
-            tileLocation = tileLocator + (tileLocation << 1);
-            tileLocation += verticalScrollingOffset;
+                int rowCell = planeLine % cellHeight;
+                int xPosCell = (pixel + hScrollPixelOffset) % CELL_WIDTH;
 
-            int tileNameTable = vram[tileLocation] << 8 | vram[tileLocation + 1];
+                rowCell = tileDataHolder.vertFlip ? cellHeight - 1 - rowCell : rowCell;
+                int colCell = tileDataHolder.horFlip ? CELL_WIDTH - 1 - xPosCell : xPosCell;
 
-            tileDataHolder = getTileData(tileNameTable, tileDataHolder);
+                //two pixels per byte, 4 bytes per row
+                int tileBytePointer = tileDataHolder.tileIndex + (colCell >> 1) + (rowCell << 2);
+                int onePixelData = getPixelIndexColor(tileBytePointer, xPosCell, tileDataHolder.horFlip);
 
-            int row = scrollMap % vertCells;
-            int pointVert = tileDataHolder.vertFlip ? (row - (vertCells - 1)) * -1 : row;
-            int pixelInTile = (pixel + horizontalScrollingOffset) % 8;
-
-            int point = tileDataHolder.horFlip ? (pixelInTile - 7) * -1 : pixelInTile;
-
-            point >>= 1;
-
-            int tileBytePointer = (tileDataHolder.tileIndex + point) + (pointVert << 2);
-            int onePixelData = getPixelIndexColor(tileBytePointer, pixelInTile, tileDataHolder.horFlip);
-            int theColor = getCramColorValue(onePixelData, tileDataHolder.paletteLineIndex);
-
-            // index = 0 -> transparent pixel, but the color value could be any color
-            plane[pixel][line] = theColor;
-
-            if (onePixelData > 0) {
-                updatePriority(pixel, line, tileDataHolder.priority ? highPrio : lowPrio);
+                plane[pixel][line] = getJavaColorValue(tileDataHolder.paletteLineIndex + (onePixelData << 1));
+                if (onePixelData > 0) {
+                    updatePriority(pixel, line, tileDataHolder.priority ? highPrio : lowPrio);
+                }
             }
         }
     }
@@ -570,17 +539,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
     }
 
-    private int getCramColorValue(int cramIndex) {
-        return cram[cramIndex] << 8 | cram[cramIndex + 1];
+    private int getJavaColorValue(int cramIndex) {
+        return javaPalette[cramIndex >> 1];
     }
 
-    private int getCramColorValue(int pixelIndexColor, int paletteLine) {
-        //Each word has the following format:
-        // ----bbb-ggg-rrr-
-//        return memoryInterface.readCramWord(paletteLine + (pixelIndexColor * 2));
-        return getCramColorValue(paletteLine + (pixelIndexColor << 1));
+    private int getJavaColorValue(int pixelIndexColor, int paletteLine) {
+        return javaPalette[(paletteLine + (pixelIndexColor << 1)) >> 1];
     }
-
 
     // This value is effectively the address divided by $400; however, the low
     // bit is ignored, so the Window nametable has to be located at a VRAM
@@ -630,73 +595,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             drawWindowPlane(line, tileStart, tileEnd, isH40);
         }
         lineShowWindowPlane = drawWindow;
-    }
-
-    private int[] fullScreenVerticalScrolling(int line, int tileLocator, int verticalPlaneSize,
-                                              boolean isPlaneA) {
-        return verticalScrolling(line, 0, 0, tileLocator, verticalPlaneSize, isPlaneA, null);
-    }
-
-    public int[] verticalScrolling(int line, int VS, int pixel, int tileLocator, int verticalPlaneSize,
-                                   boolean isPlaneA, int[] fullScreenVerticalOffset) {
-        if (VS == 0 && fullScreenVerticalOffset != null) {
-            return fullScreenVerticalOffset;
-        }
-        //VS == 1 -> 2 cell scroll
-        int scrollLine = VS == 1 ? (pixel >> 4) << 2 : 0; //do not reduce the shift
-        int vsramOffset = isPlaneA ? scrollLine : scrollLine + 2;
-        int scrollDataVer = memoryInterface.readVsramWord(vsramOffset);
-
-        scrollDataVer = scrollDataVer >> interlaceMode.verticalScrollShift();
-
-        int verticalScrollMask = (verticalPlaneSize << 3) - 1;
-        int scrollMap = (scrollDataVer + line) & verticalScrollMask;
-        int tileLocatorFactor = getHorizontalPlaneSize() << 1;
-        tileLocator += (scrollMap >> 3) * tileLocatorFactor;
-        verticalScrollRes[0] = tileLocator;
-        verticalScrollRes[1] = scrollMap;
-        return verticalScrollRes;
-    }
-
-    //TODO
-    public int horizontalScrollingNew(int line, int HS, int hScrollBase, int horizontalPlaneSize, boolean isPlaneA) {
-        int[] res = scrollHandler.computeHorizontalScrolling(VdpScrollHandler.HSCROLL.getHScrollType(HS),
-                hScrollBase, horizontalPlaneSize, isPlaneA);
-        return res[line];
-    }
-
-    public int horizontalScrolling(int line, int HS, int hScrollBase, int horizontalPlaneSize, boolean isPlaneA) {
-        int vramOffset = 0;
-        int scrollDataShift = horizontalPlaneSize << 3;
-        int horScrollMask = scrollDataShift - 1;
-
-        switch (HS) {
-            case 0b00:
-                //	entire screen is scrolled at once by one longword in the horizontal scroll table
-                vramOffset = isPlaneA ? hScrollBase : hScrollBase + 2;
-                break;
-            case 0b10:
-//                every long scrolls 8 pixels, 32 bytes x 8 scanlines
-                int scrollLine = hScrollBase + ((line >> 3) << 5); //do not simplify the shift
-                vramOffset = isPlaneA ? scrollLine : scrollLine + 2;
-                break;
-            case 0b01:
-//                A scroll mode setting of 01b is not valid; however the unlicensed version
-//                of Populous uses it. This mode is identical to per-line scrolling, however
-//                the VDP will only read the first sixteen entries in the scroll table for
-//                every line of the display.
-                LOG.warn("Invalid horizontalScrolling value: " + 0b01);
-                //fall-through
-            case 0b11:
-//                every longword scrolls one scanline
-                int scrollLine1 = hScrollBase + (line << 2);    // 4 bytes x 1 scanline
-                vramOffset = isPlaneA ? scrollLine1 : scrollLine1 + 2;
-                break;
-        }
-        int scrollDataHor = vram[vramOffset] << 8 | vram[vramOffset + 1];
-        scrollDataHor &= horScrollMask;
-        scrollDataHor = scrollDataShift - scrollDataHor;
-        return scrollDataHor;
     }
 
     @Override
@@ -776,7 +674,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         int tileLocator = nameTableLocation + (tileShiftFactor * vertTile);
 
         int vramLocation = tileLocator;
-        int rowInTile = (line % 8);
+        int rowInTile = (line % CELL_WIDTH);
         TileDataHolder tileDataHolder = spriteDataHolder;
 
         for (int horTile = tileStart; horTile < tileEnd; horTile++) {
@@ -784,11 +682,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             vramLocation += 2;
 
             tileDataHolder = getTileData(nameTable, tileDataHolder);
-            int pointVert = tileDataHolder.vertFlip ? (rowInTile - 7) * -1 : rowInTile;
+            int pointVert = tileDataHolder.vertFlip ? CELL_WIDTH - 1 - rowInTile : rowInTile;
 
             //two pixels at a time as they share a tile
             for (int k = 0; k < 4; k++) {
-                int point = tileDataHolder.horFlip ? (k - 3) * -1 : k;
+                int point = tileDataHolder.horFlip ? 3 - k : k;
                 int po = (horTile << 3) + (k << 1);
 
                 int tileBytePointer = (tileDataHolder.tileIndex + point) + (pointVert << 2);
@@ -796,11 +694,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, tileDataHolder.horFlip);
                 int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, tileDataHolder.horFlip);
 
-                int cramColorIndex1 = getCramColorValue(pixelIndexColor1, tileDataHolder.paletteLineIndex);
-                int cramColorIndex2 = getCramColorValue(pixelIndexColor2, tileDataHolder.paletteLineIndex);
+                int javaColor1 = getJavaColorValue(pixelIndexColor1, tileDataHolder.paletteLineIndex);
+                int javaColor2 = getJavaColorValue(pixelIndexColor2, tileDataHolder.paletteLineIndex);
 
-                window[po][line] = cramColorIndex1;
-                window[po + 1][line] = cramColorIndex2;
+                window[po][line] = javaColor1;
+                window[po + 1][line] = javaColor2;
                 RenderPriority rp = tileDataHolder.priority ? RenderPriority.WINDOW_PLANE_PRIO :
                         RenderPriority.WINDOW_PLANE_NO_PRIO;
 
@@ -835,39 +733,27 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private void updatePriority(int x, int y, RenderPriority rp) {
         RenderPriority prev = pixelPriority[x][y];
-        pixelPriority[x][y] = prev.compareTo(rp) > 0 ? prev : rp;
+        pixelPriority[x][y] = rp.ordinal() > prev.ordinal() ? rp : prev;
     }
 
-    private int getColorFromIndex(int cramEncodedColor, ShadowHighlightType shadowHighlightType) {
-        return colorMapper.getColor(cramEncodedColor, shadowHighlightType);
-    }
-
-    private int getColorFromIndex(int cramEncodedColor) {
-        return colorMapper.getColor(cramEncodedColor);
-    }
-
-    private int[][] getPlaneData(RenderType type) {
-
-        Function<int[][], int[][]> toColorFn =
-                input -> Arrays.stream(input).
-                        map(a -> Arrays.stream(a).map(this::getColorFromIndex).toArray()).toArray(int[][]::new);
+    protected int[][] getPlaneData(RenderType type) {
 
         int[][] res = new int[COLS][ROWS];
         switch (type) {
             case BACK_PLANE:
-                res = toColorFn.apply(planeBack);
+                res = planeBack;
                 break;
             case WINDOW_PLANE:
-                res = toColorFn.apply(window);
+                res = window;
                 break;
             case PLANE_A:
-                res = toColorFn.apply(planeA);
+                res = planeA;
                 break;
             case PLANE_B:
-                res = toColorFn.apply(planeB);
+                res = planeB;
                 break;
             case SPRITE:
-                res = toColorFn.apply(sprites);
+                res = sprites;
                 break;
             case FULL:
                 res = screenData;
