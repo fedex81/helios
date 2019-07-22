@@ -329,6 +329,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                                  int horOffset, int spritePixelLineLimit) {
         for (int tileBytePos = 0; tileBytePos < BYTES_PER_TILE &&
                 spritePixelLineCount < spritePixelLineLimit; tileBytePos++, horOffset += 2) {
+            spritePixelLineCount += 2;
             if (horOffset < 0 || horOffset >= COLS) { //Ayrton Senna
                 continue;
             }
@@ -341,7 +342,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
             storeSpriteData(pixelIndexColor1, horOffset, line, holder.priority, javaColor1);
             storeSpriteData(pixelIndexColor2, horOffset + 1, line, holder.priority, javaColor2);
-            spritePixelLineCount += 2;
         }
         return true;
     }
