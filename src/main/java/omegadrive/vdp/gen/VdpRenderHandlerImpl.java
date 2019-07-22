@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 19/07/19 13:35
+ * Last modified: 22/07/19 14:02
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,6 +84,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private final static int TILE_PRIORITY_MASK = 1 << 15;
     private final static int TILE_INDEX_MASK = 0x7FF;
     private final static int CELL_WIDTH = 8; //in pixels
+    private final static int BYTES_PER_TILE = 4; //32 bit
 
     private VideoMode videoMode;
     private VdpColorMapper colorMapper;
@@ -107,6 +108,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private SpriteDataHolder spriteDataHolder = new SpriteDataHolder();
     private int spriteTableLocation = 0;
     private boolean lineShowWindowPlane = false;
+    private int spritePixelLineCount;
     private ScrollContext scrollContextA;
     private ScrollContext scrollContextB;
 
@@ -147,6 +149,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private int maxSpritesPerLine(boolean isH40) {
         return isH40 ? MAX_SPRITES_PER_LINE_H40 : MAX_SPRITES_PER_LINE_H32;
+    }
+
+    private int maxSpritesPixelPerLine(boolean isH40) {
+        return isH40 ? H40 : H32;
     }
 
 
@@ -197,7 +203,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             phase1(0);
 //            phase1AllLines();
         }
-        //TODO review this - improves terminator2
         scrollContextA.hScrollTableLocation = getHScrollDataLocation();
         scrollContextB.hScrollTableLocation = scrollContextA.hScrollTableLocation;
     }
@@ -279,6 +284,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         int[] spritesInLine = spritesPerLine[line];
         int currSprite = spritesInLine[0];
         SpriteDataHolder holder = spriteDataHolder;
+        //Sonic intro screen
+        int spritePixelLineLimit = maxSpritesPixelPerLine(videoMode.isH40());
+        spritePixelLineCount = 0;
 
         int ind = 0;
         int baseAddress;
@@ -290,12 +298,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             int realY = holder.verticalPos - 128;
             int realX = holder.horizontalPos - 128;
             int spriteLine = (line - realY) % verSizePixels;
-//            if(interlaceMode == InterlaceMode.MODE_2){
-//                spriteLine >>= 1;
-//            }
             int pointVert = holder.vertFlip ? verSizePixels - 1 - spriteLine : spriteLine;
 
-            if (nonZeroSpriteOnLine && holder.horizontalPos == 0) {
+            boolean stop = (nonZeroSpriteOnLine && holder.horizontalPos == 0) || spritePixelLineCount >= spritePixelLineLimit;
+            if (stop) {
                 return;
             }
 //            LOG.info("Line: " + line + ", sprite: "+currSprite +", lastSpriteNonZero: "
@@ -304,10 +310,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             int spriteVerticalCell = pointVert >> 3;
             int vertLining = (spriteVerticalCell << interlaceMode.tileShift())
                     + ((pointVert % interlaceMode.getVerticalCellPixelSize()) << 2);
-            for (int cellX = 0; cellX <= holder.horizontalCellSize; cellX++) {
+            for (int cellX = 0; cellX <= holder.horizontalCellSize &&
+                    spritePixelLineCount < spritePixelLineLimit; cellX++) {
                 int spriteCellX = holder.horFlip ? holder.horizontalCellSize - cellX : cellX;
                 int horLining = vertLining + (spriteCellX * ((holder.verticalCellSize + 1) << interlaceMode.tileShift()));
-                renderSprite(line, holder, holder.tileIndex + horLining, horOffset);
+                renderSprite(line, holder, holder.tileIndex + horLining, horOffset, spritePixelLineLimit);
 
                 //8 pixels
                 horOffset += CELL_WIDTH;
@@ -319,15 +326,14 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     private boolean renderSprite(int line, SpriteDataHolder holder, int tileBytePointerBase,
-                                 int horOffset) {
-        for (int i = 0; i < 4; i++) {
-            int sliver = holder.horFlip ? 3 - i : i;
-            int tileBytePointer = tileBytePointerBase + sliver;
-            if (tileBytePointer < 0 || tileBytePointer > VDP_VRAM_SIZE - 1) {
-                //Ayrton Senna
-                LOG.warn("Sprite tileBytePointer  not in range [0,0xFFF]: {}", tileBytePointer);
-                continue;    //	FIXME guardar en cache de sprites yPos y otros atrib
+                                 int horOffset, int spritePixelLineLimit) {
+        for (int tileBytePos = 0; tileBytePos < BYTES_PER_TILE &&
+                spritePixelLineCount < spritePixelLineLimit; tileBytePos++, horOffset += 2) {
+            if (horOffset < 0 || horOffset >= COLS) { //Ayrton Senna
+                continue;
             }
+            int tileShift = holder.horFlip ? BYTES_PER_TILE - 1 - tileBytePos : tileBytePos;
+            int tileBytePointer = tileBytePointerBase + tileShift;
             int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, holder.horFlip);
             int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, holder.horFlip);
             int javaColor1 = getJavaColorValue(pixelIndexColor1, holder.paletteLineIndex);
@@ -335,7 +341,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
             storeSpriteData(pixelIndexColor1, horOffset, line, holder.priority, javaColor1);
             storeSpriteData(pixelIndexColor2, horOffset + 1, line, holder.priority, javaColor2);
-            horOffset += 2;
+            spritePixelLineCount += 2;
         }
         return true;
     }
