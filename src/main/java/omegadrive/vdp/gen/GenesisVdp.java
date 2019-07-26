@@ -1,7 +1,7 @@
 /*
  * GenesisVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/07/19 18:24
+ * Last modified: 26/07/19 13:08
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -722,8 +722,6 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
 
         //draw on the last counter (use 9bit internal counter value)
         if (interruptHandler.isLastLineSlot()) {
-            //draw the line
-//            drawScanline(line, displayEnable);
             line++;
             //draw the frame
             if (interruptHandler.isDrawFrameSlot()) {

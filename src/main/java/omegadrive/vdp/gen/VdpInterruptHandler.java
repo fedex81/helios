@@ -1,7 +1,7 @@
 /*
  * VdpInterruptHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 26/07/19 13:26
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
-import java.util.function.Predicate;
 
 /**
  *
@@ -231,13 +230,12 @@ public class VdpInterruptHandler {
         this.hIntPending = hIntPending;
     }
 
-    //TODO: first slot after end of hblanking
     public boolean isFirstLineSlot() {
-        return slotNumber == 0;
+        return slotNumber == vdpCounterMode.hBlankClear >> 1;
     }
 
     public boolean isLastLineSlot() {
-        return slotNumber == vdpCounterMode.getSlotsPerLine() - 1;
+        return slotNumber == vdpCounterMode.slotsPerLine - 1;
     }
 
     public boolean isLastLine() {

@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 22/07/19 14:02
+ * Last modified: 26/07/19 13:26
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 
-import static omegadrive.vdp.model.GenesisVdpProvider.*;
+import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_FRAME_H40;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpEventListener;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 /**
@@ -69,22 +70,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private int spritesFrame = 0;
     private boolean shadowHighlightMode;
-
-    private final static int ROWS = VDP_VIDEO_ROWS;
-    private final static int COLS = VDP_VIDEO_COLS;
-    private final static int INDEXES_NUM = ROWS;
-    private final static int HOR_SCROLL_SHIFT = 10;
-    private final static int WINDOW_TABLE_SHIFT = 10;
-    private final static int SPRITE_TABLE_SHIFT = 9;
-    private final static int PLANE_A_SHIFT = 10;
-    private final static int PLANE_B_SHIFT = 13;
-    private final static int PALETTE_INDEX_SHIFT = 5;
-    private final static int TILE_HOR_FLIP_MASK = 1 << 11;
-    private final static int TILE_VERT_FLIP_MASK = 1 << 12;
-    private final static int TILE_PRIORITY_MASK = 1 << 15;
-    private final static int TILE_INDEX_MASK = 0x7FF;
-    private final static int CELL_WIDTH = 8; //in pixels
-    private final static int BYTES_PER_TILE = 4; //32 bit
 
     private VideoMode videoMode;
     private VdpColorMapper colorMapper;
@@ -135,50 +120,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         this.videoMode = videoMode;
     }
 
-    private int getHorizontalTiles(boolean isH40) {
-        return isH40 ? H40_TILES : H32_TILES;
-    }
-
-    private int getHorizontalTiles() {
-        return getHorizontalTiles(videoMode.isH40());
-    }
-
-    private int maxSpritesPerFrame(boolean isH40) {
-        return isH40 ? MAX_SPRITES_PER_FRAME_H40 : MAX_SPRITES_PER_FRAME_H32;
-    }
-
-    private int maxSpritesPerLine(boolean isH40) {
-        return isH40 ? MAX_SPRITES_PER_LINE_H40 : MAX_SPRITES_PER_LINE_H32;
-    }
-
-    private int maxSpritesPixelPerLine(boolean isH40) {
-        return isH40 ? H40 : H32;
-    }
-
-
-    private int getHScrollDataLocation() {
-        //	bit 6 = mode 128k
-        int regD = vdpProvider.getRegisterData(HORIZONTAL_SCROLL_DATA_LOC);
-        return (regD & 0x3F) << HOR_SCROLL_SHIFT;
-    }
-
-    private int getWindowPlaneNameTableLocation(boolean isH40) {
-        int reg3 = vdpProvider.getRegisterData(WINDOW_NAMETABLE);
-        //	WD11 is ignored if the display resolution is 320px wide (H40),
-        // which limits the Window nametable address to multiples of $1000.
-        // TODO bit 6 = 128k mode
-        int nameTableLocation = isH40 ? reg3 & 0x3C : reg3 & 0x3E;
-        return nameTableLocation << WINDOW_TABLE_SHIFT;
-    }
-
-    private int getSpriteTableLocation() {
-        //	AT16 is only valid if 128 KB mode is enabled,
-        // and allows for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
-        int spriteTableLoc = vdpProvider.getRegisterData(SPRITE_TABLE_LOC) & 0x7F;
-        return spriteTableLoc << SPRITE_TABLE_SHIFT;
-    }
-
-
     private TileDataHolder getTileData(int nameTable, TileDataHolder holder) {
         //				An entry in a name table is 16 bits, and works as follows:
 //				15			14 13	12				11		   			10 9 8 7 6 5 4 3 2 1 0
@@ -199,12 +140,17 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             this.interlaceMode = vdpProvider.getInterlaceMode();
             //need to do this here so I can dump data just after rendering the frame
             clearData();
-            spriteTableLocation = getSpriteTableLocation();
+            spriteTableLocation = VdpRenderHandler.getSpriteTableLocation(vdpProvider);
             phase1(0);
 //            phase1AllLines();
         }
-        scrollContextA.hScrollTableLocation = getHScrollDataLocation();
+        scrollContextA.hScrollTableLocation = VdpRenderHandler.getHScrollDataLocation(vdpProvider);
         scrollContextB.hScrollTableLocation = scrollContextA.hScrollTableLocation;
+    }
+
+    @Override
+    public void updateSatCache(int satLocation, int vramAddress) {
+
     }
 
     public void renderLine(int line) {
@@ -246,8 +192,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private void phase1(int line) {
         boolean isH40 = videoMode.isH40();
-        int maxSpritesPerFrame = maxSpritesPerFrame(isH40);
-        int maxSpritesPerLine = maxSpritesPerLine(isH40);
+        int maxSpritesPerFrame = VdpRenderHandler.maxSpritesPerFrame(isH40);
+        int maxSpritesPerLine = VdpRenderHandler.maxSpritesPerLine(isH40);
         int count = 0;
 
         if (spritesFrame >= maxSpritesPerFrame) {
@@ -285,7 +231,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         int currSprite = spritesInLine[0];
         SpriteDataHolder holder = spriteDataHolder;
         //Sonic intro screen
-        int spritePixelLineLimit = maxSpritesPixelPerLine(videoMode.isH40());
+        int spritePixelLineLimit = VdpRenderHandler.maxSpritesPixelPerLine(videoMode.isH40());
         spritePixelLineCount = 0;
 
         int ind = 0;
@@ -436,7 +382,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     private void renderBack(int line) {
-        int limitHorTiles = getHorizontalTiles();
+        int limitHorTiles = VdpRenderHandler.getHorizontalTiles(videoMode.isH40());
         int reg7 = vdpProvider.getRegisterData(BACKGROUND_COLOR);
         int backLine = (reg7 >> 4) & 0x3;
         int backEntry = (reg7) & 0xF;
@@ -484,7 +430,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     protected void renderPlane(int line, int nameTableLocation, ScrollContext sc) {
-        int limitHorTiles = getHorizontalTiles();
+        int limitHorTiles = VdpRenderHandler.getHorizontalTiles(videoMode.isH40());
         final int cellHeight = interlaceMode.getVerticalCellPixelSize();
         int regB = vdpProvider.getRegisterData(MODE_3);
         int reg10 = vdpProvider.getRegisterData(PLANE_SIZE);
@@ -590,7 +536,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         legalHorizontal &= legalRight;
 
         boolean isH40 = videoMode.isH40();
-        int limitHorTiles = getHorizontalTiles(isH40);
+        int limitHorTiles = VdpRenderHandler.getHorizontalTiles(isH40);
         boolean drawWindow = legalVertical || (!legalVertical && legalHorizontal);
 
         if (drawWindow) {
@@ -611,25 +557,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     @Override
     public void onRegisterChange(int reg, int value) {
 
-    }
-
-    static class TileDataHolder {
-        int tileIndex;
-        boolean horFlip;
-        boolean vertFlip;
-        int paletteLineIndex;
-        boolean priority;
-
-        @Override
-        public String toString() {
-            return "TileDataHolder{" +
-                    "tileIndex=" + tileIndex +
-                    ", horFlip=" + horFlip +
-                    ", vertFlip=" + vertFlip +
-                    ", paletteLineIndex=" + paletteLineIndex +
-                    ", priority=" + priority +
-                    '}';
-        }
     }
 
     private SpriteDataHolder getPhase1SpriteData(int baseAddress, SpriteDataHolder holder) {
@@ -675,7 +602,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private void drawWindowPlane(final int line, int tileStart, int tileEnd, boolean isH40) {
         int vertTile = line >> 3;
-        int nameTableLocation = getWindowPlaneNameTableLocation(isH40);
+        int nameTableLocation = VdpRenderHandler.getWindowPlaneNameTableLocation(vdpProvider, isH40);
         int tileShiftFactor = isH40 ? 128 : 64;
         int tileLocator = nameTableLocation + (tileShiftFactor * vertTile);
 
@@ -715,25 +642,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                     updatePriority(po + 1, line, rp);
                 }
             }
-        }
-    }
-
-    static class SpriteDataHolder extends TileDataHolder {
-        int verticalPos;
-        int horizontalPos;
-        int horizontalCellSize;
-        int verticalCellSize;
-        int linkData;
-
-        @Override
-        public String toString() {
-            return "SpriteDataHolder{" +
-                    "verticalPos=" + verticalPos +
-                    ", horizontalPos=" + horizontalPos +
-                    ", horizontalCellSize=" + horizontalCellSize +
-                    ", verticalCellSize=" + verticalCellSize +
-                    ", linkData=" + linkData +
-                    ", " + super.toString() + '}';
         }
     }
 
