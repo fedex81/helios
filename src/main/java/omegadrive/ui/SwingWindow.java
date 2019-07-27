@@ -1,7 +1,7 @@
 /*
  * SwingWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/07/19 18:44
+ * Last modified: 27/07/19 17:48
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static omegadrive.system.SystemProvider.SystemEvent.*;
 import static omegadrive.util.ScreenSizeHelper.*;
@@ -66,6 +67,9 @@ public class SwingWindow implements DisplayWindow {
     private java.util.List<JCheckBoxMenuItem> regionItems;
     private JCheckBoxMenuItem fullScreenItem;
     private JCheckBoxMenuItem muteItem;
+    private JMenu recentFilesMenu;
+    private JMenuItem[] recentFilesItems;
+    private int recentItemIndex = 0;
     private boolean showDebug = false;
 
     //when scaling is slow set this to FALSE
@@ -187,6 +191,15 @@ public class SwingWindow implements DisplayWindow {
         JMenuItem loadRomItem = new JMenuItem("Load ROM");
         addKeyAction(loadRomItem, NEW_ROM, e -> handleNewRom());
 
+        recentFilesMenu = new JMenu("Recent Files");
+        recentFilesItems = new JMenuItem[10];
+        IntStream.range(0, recentFilesItems.length).forEach(i -> {
+            recentFilesItems[i] = new JMenuItem();
+            addKeyAction(recentFilesItems[i], NONE, e -> handleNewRom(recentFilesItems[i].getText()));
+            recentFilesItems[i].setVisible(false);
+            recentFilesMenu.add(recentFilesItems[i]);
+        });
+
         JMenuItem closeRomItem = new JMenuItem("Close ROM");
         addKeyAction(closeRomItem, CLOSE_ROM, e -> mainEmu.handleSystemEvent(CLOSE_ROM, null));
 
@@ -233,6 +246,7 @@ public class SwingWindow implements DisplayWindow {
                 FileLoader.loadFileContentAsString("HISTORY.md")));
 
         menu.add(loadRomItem);
+        menu.add(recentFilesMenu);
         menu.add(closeRomItem);
         menu.add(loadStateItem);
         menu.add(saveStateItem);
@@ -511,7 +525,22 @@ public class SwingWindow implements DisplayWindow {
         if (optFile.isPresent()) {
             Path file = optFile.get().toPath();
             SystemLoader.getInstance().handleNewRomFile(file);
+            handleRecentMenuItem(file.toAbsolutePath().toString());
         }
+    }
+
+    private void handleRecentMenuItem(String name) {
+        Optional<JMenuItem> itemOpt = Arrays.stream(recentFilesItems).
+                filter(it -> name.equalsIgnoreCase(it.getText())).findAny();
+        if (!itemOpt.isPresent()) {
+            recentItemIndex = (recentItemIndex + 1) % recentFilesItems.length;
+            recentFilesItems[recentItemIndex].setText(name);
+            recentFilesItems[recentItemIndex].setVisible(true);
+        }
+    }
+
+    private void handleNewRom(String path) {
+        SystemLoader.getInstance().handleNewRomFile(Paths.get(path));
     }
 
     private SystemProvider getMainEmu() {
