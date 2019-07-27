@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/07/19 18:24
+ * Last modified: 27/07/19 13:53
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,8 +42,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.Objects;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -78,13 +76,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private boolean fullThrottle = false;
 
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
-
-    private static NumberFormat df = DecimalFormat.getInstance();
-
-    static {
-        df.setMinimumFractionDigits(3);
-        df.setMinimumFractionDigits(3);
-    }
 
 
     protected abstract void loop();

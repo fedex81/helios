@@ -1,7 +1,7 @@
 /*
  * YM2612
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 27/07/19 13:53
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,11 +28,6 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-/**
- * Test port of Gens YM2612 core.
- * @Copyright Stephan Dittrich, 2005
- * @Copyright Stephane Dallongeville
- */
 public final class YM2612 implements FmProvider {
 
     private static Logger LOG = LogManager.getLogger(YM2612.class.getSimpleName());
@@ -71,8 +66,6 @@ public final class YM2612 implements FmProvider {
         int AMSon;
     }
 
-    ;
-
     private final class cChannel {
         final int[] S0_OUT = new int[4];
         int Old_OUTd;
@@ -93,8 +86,6 @@ public final class YM2612 implements FmProvider {
             for (int i = 0; i < 4; i++) SLOT[i] = new cSlot();
         }
     }
-
-    ;
 
     private final class cYM2612 {
         int Clock;
@@ -121,8 +112,6 @@ public final class YM2612 implements FmProvider {
             for (int i = 0; i < 6; i++) CHANNEL[i] = new cChannel();
         }
     }
-
-    ;
 
     // Constants ( taken from MAME YM2612 core )
     private static final int UPD_SIZE = 4000;
@@ -294,6 +283,100 @@ public final class YM2612 implements FmProvider {
         return Math.log(x) / Math.log(10.0);
     }
 
+    //TODO FoxLand_demo requires < 45
+    //busy last 90 Z80 cycles  @ 3.75 Mhz = 45 cycles @ 1.67 Mhz
+    static int BUSY_CYCLES = 44;
+
+    private static boolean isResetting;
+
+    public final void reset() {
+        int i, j;
+        isResetting = true;
+
+        YM2612_LFOcnt = 0;
+        YM2612_TimerA = 0;
+        YM2612_TimerAL = 1024;
+        YM2612_TimerAcnt = 0;
+        YM2612_TimerB = 0;
+        YM2612_TimerBL = 256;
+        YM2612_TimerBcnt = 0;
+        YM2612_DAC = 0;
+
+        YM2612_Status = 0;
+
+        YM2612_Inter_Cnt = 0;
+
+        for (i = 0; i < 6; i++) {
+            YM2612_CHANNEL[i].Old_OUTd = 0;
+            YM2612_CHANNEL[i].OUTd = 0;
+            YM2612_CHANNEL[i].LEFT = 0xFFFFFFFF;
+            YM2612_CHANNEL[i].RIGHT = 0xFFFFFFFF;
+            YM2612_CHANNEL[i].ALGO = 0;
+            YM2612_CHANNEL[i].FB = 31;
+            YM2612_CHANNEL[i].FMS = 0;
+            YM2612_CHANNEL[i].AMS = 0;
+
+            for (j = 0; j < 4; j++) {
+                YM2612_CHANNEL[i].S0_OUT[j] = 0;
+                YM2612_CHANNEL[i].FNUM[j] = 0;
+                YM2612_CHANNEL[i].FOCT[j] = 0;
+                YM2612_CHANNEL[i].KC[j] = 0;
+
+                YM2612_CHANNEL[i].SLOT[j].Fcnt = 0;
+                YM2612_CHANNEL[i].SLOT[j].Finc = 0;
+                YM2612_CHANNEL[i].SLOT[j].Ecnt = ENV_END;     // Put it at the end of Decay phase...
+                YM2612_CHANNEL[i].SLOT[j].Einc = 0;
+                YM2612_CHANNEL[i].SLOT[j].Ecmp = 0;
+                YM2612_CHANNEL[i].SLOT[j].Ecurp = RELEASE;
+
+                YM2612_CHANNEL[i].SLOT[j].ChgEnM = 0;
+            }
+        }
+
+        for (i = 0; i < 0x100; i++) {
+            YM2612_REG[0][i] = -1;
+            YM2612_REG[1][i] = -1;
+        }
+
+        for (i = 0xB6; i >= 0xB4; i--) {
+            writeReg(FM_ADDRESS_PORT0, i, 0xC0);
+            writeReg(FM_ADDRESS_PORT1, i, 0xC0);
+        }
+
+        for (i = 0xB2; i >= 0x22; i--) {
+            writeReg(FM_ADDRESS_PORT0, i, 0);
+            writeReg(FM_ADDRESS_PORT1, i, 0);
+        }
+
+        writeReg(FM_ADDRESS_PORT0, 0x2A, 0x80);
+        dacQueue.clear();
+
+        isResetting = false;
+    }
+
+    private static void logWarn(String msg) {
+        if (isResetting) {
+            return;
+        }
+        LOG.log(Level.WARN, msg);
+    }
+
+    private void writeReg(int regPart, int regNumber, int data) {
+        write(regPart, regNumber);
+        write(regPart + 1, data);
+    }
+
+    public final int read() {
+//        LOG.info("Read timer A/B: {}/{}, cntA/B: {}/{}",
+//                YM2612_Status & 2, YM2612_Status & 1, Long.toHexString(YM2612_TimerAcnt),
+//                Long.toHexString(YM2612_TimerBcnt));
+        return (YM2612_Status);
+    }
+
+    double microsAcc = 0; //accumulator
+    double pcmMicrosAcc = 0; //accumulator
+    long busyCycles = BUSY_CYCLES;
+
     public final int init(int Clock, int Rate) {
         int i, j;
         double x;
@@ -340,7 +423,7 @@ public final class YM2612 implements FmProvider {
 
             j = (int) (x / ENV_STEP);             // Get TL range
 
-            if (j > PG_CUT_OFF) j = (int) PG_CUT_OFF;
+            if (j > PG_CUT_OFF) j = PG_CUT_OFF;
 
             SIN_TAB[i] = j;
             SIN_TAB[(SINLEN / 2) - i] = j;
@@ -461,98 +544,6 @@ public final class YM2612 implements FmProvider {
         reset();
         return 0;
     }
-
-    private static boolean isResetting;
-
-    public final void reset() {
-        int i, j;
-        isResetting = true;
-
-        YM2612_LFOcnt = 0;
-        YM2612_TimerA = 0;
-        YM2612_TimerAL = 1024;
-        YM2612_TimerAcnt = 0;
-        YM2612_TimerB = 0;
-        YM2612_TimerBL = 256;
-        YM2612_TimerBcnt = 0;
-        YM2612_DAC = 0;
-
-        YM2612_Status = 0;
-
-        YM2612_Inter_Cnt = 0;
-
-        for (i = 0; i < 6; i++) {
-            YM2612_CHANNEL[i].Old_OUTd = 0;
-            YM2612_CHANNEL[i].OUTd = 0;
-            YM2612_CHANNEL[i].LEFT = 0xFFFFFFFF;
-            YM2612_CHANNEL[i].RIGHT = 0xFFFFFFFF;
-            YM2612_CHANNEL[i].ALGO = 0;
-            YM2612_CHANNEL[i].FB = 31;
-            YM2612_CHANNEL[i].FMS = 0;
-            YM2612_CHANNEL[i].AMS = 0;
-
-            for (j = 0; j < 4; j++) {
-                YM2612_CHANNEL[i].S0_OUT[j] = 0;
-                YM2612_CHANNEL[i].FNUM[j] = 0;
-                YM2612_CHANNEL[i].FOCT[j] = 0;
-                YM2612_CHANNEL[i].KC[j] = 0;
-
-                YM2612_CHANNEL[i].SLOT[j].Fcnt = 0;
-                YM2612_CHANNEL[i].SLOT[j].Finc = 0;
-                YM2612_CHANNEL[i].SLOT[j].Ecnt = ENV_END;     // Put it at the end of Decay phase...
-                YM2612_CHANNEL[i].SLOT[j].Einc = 0;
-                YM2612_CHANNEL[i].SLOT[j].Ecmp = 0;
-                YM2612_CHANNEL[i].SLOT[j].Ecurp = RELEASE;
-
-                YM2612_CHANNEL[i].SLOT[j].ChgEnM = 0;
-            }
-        }
-
-        for (i = 0; i < 0x100; i++) {
-            YM2612_REG[0][i] = -1;
-            YM2612_REG[1][i] = -1;
-        }
-
-        for (i = 0xB6; i >= 0xB4; i--) {
-            writeReg(FM_ADDRESS_PORT0, i, 0xC0);
-            writeReg(FM_ADDRESS_PORT1, i, 0xC0);
-        }
-
-        for (i = 0xB2; i >= 0x22; i--) {
-            writeReg(FM_ADDRESS_PORT0, i, 0);
-            writeReg(FM_ADDRESS_PORT1, i, 0);
-        }
-
-        writeReg(FM_ADDRESS_PORT0, 0x2A, 0x80);
-        dacQueue.clear();
-
-        isResetting = false;
-    }
-
-    private static void logWarn(String msg) {
-        if (isResetting) {
-            return;
-        }
-        LOG.log(Level.WARN, msg);
-    }
-
-    private void writeReg(int regPart, int regNumber, int data) {
-        write(regPart, regNumber);
-        write(regPart + 1, data);
-    }
-
-    public final int read() {
-//        LOG.info("Read timer A/B: {}/{}, cntA/B: {}/{}",
-//                YM2612_Status & 2, YM2612_Status & 1, Long.toHexString(YM2612_TimerAcnt),
-//                Long.toHexString(YM2612_TimerBcnt));
-        return (YM2612_Status);
-    }
-
-    double microsAcc = 0; //accumulator
-    double pcmMicrosAcc = 0; //accumulator
-    long busyCycles = BUSY_CYCLES;
-    //busy last 90 Z80 cycles  @ 3.75 Mhz = 45 cycles @ 1.67 Mhz
-    static int BUSY_CYCLES = 45;
     static double MICROS_PER_PCM = 25; //TODO why?
 
     @Override
@@ -855,7 +846,7 @@ public final class YM2612 implements FmProvider {
 
     private final void calc_FINC_CH(cChannel CH) {
         int finc, kc;
-        finc = (int) (FINC_TAB[CH.FNUM[0]] >> (7 - CH.FOCT[0]));
+        finc = FINC_TAB[CH.FNUM[0]] >> (7 - CH.FOCT[0]);
         kc = CH.KC[0];
         calc_FINC_SL(CH.SLOT[0], finc, kc);
         calc_FINC_SL(CH.SLOT[1], finc, kc);
@@ -993,7 +984,7 @@ public final class YM2612 implements FmProvider {
             case 0xA4:
                 if ((address & 0x100) != 0) num += 3;
                 CH = YM2612_CHANNEL[num];
-                CH.FNUM[0] = (CH.FNUM[0] & 0x0FF) + ((int) (data & 0x07) << 8);
+                CH.FNUM[0] = (CH.FNUM[0] & 0x0FF) + ((data & 0x07) << 8);
                 CH.FOCT[0] = (data & 0x38) >> 3;
                 CH.KC[0] = (CH.FOCT[0] << 2) | FKEY_TAB[CH.FNUM[0] >> 7];
                 CH.SLOT[0].Finc = -1;
@@ -1009,7 +1000,7 @@ public final class YM2612 implements FmProvider {
             case 0xAC:
                 if (address < 0x100) {
                     num++;
-                    YM2612_CHANNEL[2].FNUM[num] = (YM2612_CHANNEL[2].FNUM[num] & 0x0FF) + ((int) (data & 0x07) << 8);
+                    YM2612_CHANNEL[2].FNUM[num] = (YM2612_CHANNEL[2].FNUM[num] & 0x0FF) + ((data & 0x07) << 8);
                     YM2612_CHANNEL[2].FOCT[num] = (data & 0x38) >> 3;
                     YM2612_CHANNEL[2].KC[num] = (YM2612_CHANNEL[2].FOCT[num] << 2) | FKEY_TAB[YM2612_CHANNEL[2].FNUM[num] >> 7];
                     YM2612_CHANNEL[2].SLOT[0].Finc = -1;

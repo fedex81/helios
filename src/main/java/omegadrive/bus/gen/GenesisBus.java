@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/07/19 22:03
+ * Last modified: 26/07/19 18:06
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -503,7 +503,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             data = data >> 8;
         }
         if (size == Size.LONG) {
-            LOG.error("Unexpected long write, addr: {}, data: {}", address, dataL);
+            LOG.warn("Unexpected long write, addr: {}, data: {}", address, dataL);
         }
         int addressZ = (int) (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
         z80Provider.writeMemory(addressZ, data);
