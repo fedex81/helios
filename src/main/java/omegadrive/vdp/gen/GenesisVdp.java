@@ -1,7 +1,7 @@
 /*
  * GenesisVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/07/19 13:08
+ * Last modified: 28/07/19 12:40
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -414,7 +414,8 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
             codeRegister = ((data >> 2) & 0xFF) | (codeRegister & 0x3);
             addressRegister = (addressRegister & 0x3FFF) | ((data & 0x3) << 14);
         } else if (isRegisterWrite) {
-//            codeRegister = ~0x3; //TODO fixes GoldenAxeII, breaks CLUE and VdpFifoTesting
+            //TODO fixes GoldenAxeII, MW4 intro -> breaks CLUE and VdpFifoTesting
+            codeRegister = ~0x3;
         } else if (!writePendingControlPort) {
             //It is perfectly valid to write the first half of the command word only.
 //            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
