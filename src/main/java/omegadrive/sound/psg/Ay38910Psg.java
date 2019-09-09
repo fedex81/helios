@@ -1,7 +1,7 @@
 /*
  * Ay38910Psg
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:06
+ * Last modified: 09/09/19 17:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,6 @@
 
 package omegadrive.sound.psg;
 
-
-import omegadrive.sound.psg.white2.SN76489;
 
 public class Ay38910Psg implements PsgProvider {
 

@@ -1,7 +1,7 @@
 /*
  * YM2612
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 27/07/19 13:53
+ * Last modified: 09/09/19 17:26
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,12 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * Test port of Gens YM2612 core.
+ *
+ * @author Stephan Dittrich, 2005
+ * @author Stephane Dallongeville
+ */
 public final class YM2612 implements FmProvider {
 
     private static Logger LOG = LogManager.getLogger(YM2612.class.getSimpleName());
@@ -544,6 +550,7 @@ public final class YM2612 implements FmProvider {
         reset();
         return 0;
     }
+
     static double MICROS_PER_PCM = 25; //TODO why?
 
     @Override
@@ -708,7 +715,7 @@ public final class YM2612 implements FmProvider {
     }
 
 
-// 27H
+    // 27H
 // D7	D6	  D5	  D4	        D3	      D2	      D1	D0
 //Ch3 mode	Reset B	Reset A	  Enable B	Enable A	Load B	Load A
 //

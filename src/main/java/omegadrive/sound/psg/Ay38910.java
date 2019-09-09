@@ -1,7 +1,7 @@
 /*
  * Ay38910
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 08/04/19 13:45
+ * Last modified: 09/09/19 17:26
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,22 +18,7 @@
  */
 package omegadrive.sound.psg;
 
-import javax.sound.sampled.*;
 
-
-/**
- * The AY-3-8912 sound chip emulator.
- * http://www.howell1964.freeserve.co.uk/parts/ay3891x_datasheet.htm
- *
- * @author <A HREF="mailto:razvan.surdulescu@post.harvard.edu">Razvan Surdulescu</A> (c) 2001 - 2006
- * @author <A HREF="mailto:erikduijs@yahoo.com">Erik Dujis</A> (c) 2001
- * @author <A HREF="mailto:ensjo@nautilus.com.br">Emerson JosÈ Silveira da Costa ("Ensjo")</a> (c) 2005
- * <BR>
- * You may use and distribute this software for free provided you include
- * this copyright notice. You may not sell this software, use the author
- * names for publicity reasons or modify the code without permission from
- * the authors.
- */
 public class Ay38910 {
 
     /**
@@ -223,7 +208,7 @@ public class Ay38910 {
 
     public Ay38910(int sampleRateHz){
         this.sampleFreq = sampleRateHz;
-        this.freqScale = (int) (AY8912_FREQ / sampleRateHz);
+        this.freqScale = AY8912_FREQ / sampleRateHz;
     }
 
     public void reset() {
@@ -379,7 +364,7 @@ public class Ay38910 {
             // tone counter, so double the noise period
             if (_counterN >= (m_periodN << 1)) {
                 _counterN -= (m_periodN << 1);
-                _generatorN = (Math.random() >= 0.5 ? true : false);
+                _generatorN = (Math.random() >= 0.5);
             }
         }
 
