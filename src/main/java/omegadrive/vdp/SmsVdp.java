@@ -1,7 +1,7 @@
 /*
  * SmsVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 09/09/19 17:29
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,23 @@ import java.util.Arrays;
 import static omegadrive.util.RegionDetector.Region.EUROPE;
 import static omegadrive.util.RegionDetector.Region.USA;
 
+/**
+ * Vdp.java
+ * <p>
+ * SMS and GG VDP Emulation.
+ *
+ * @author (c) 2002-2008 Chris White
+ * @version 19th May 2008
+ * <p>
+ * SMS uses 256x192 window (32x28)
+ * GG  uses 160x140 window (20x17.5)
+ * <p>
+ * What's emulated:
+ * Passes Flubba's VDPTEST.SMS utility
+ * <p>
+ * Notes:
+ * - http://www.smspower.org/forums/viewtopic.php?p=44198
+ */
 public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 {
 
