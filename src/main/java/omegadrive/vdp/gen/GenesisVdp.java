@@ -1,7 +1,7 @@
 /*
  * GenesisVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 28/07/19 12:40
+ * Last modified: 09/09/19 17:19
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -135,8 +135,6 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     private IVdpFifo fifo;
     private VideoMode videoMode;
     private RegionDetector.Region region;
-
-    private int line;
 
     public static GenesisVdp createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface,
                                             VdpDmaHandler dmaHandler, RegionDetector.Region region) {
@@ -414,8 +412,8 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
             codeRegister = ((data >> 2) & 0xFF) | (codeRegister & 0x3);
             addressRegister = (addressRegister & 0x3FFF) | ((data & 0x3) << 14);
         } else if (isRegisterWrite) {
-            //TODO fixes GoldenAxeII, MW4 intro -> breaks CLUE and VdpFifoTesting
-            codeRegister = ~0x3;
+            //TODO fixes GoldenAxeII, MW4 intro -> breaks EA intro, CLUE and VdpFifoTesting
+//            codeRegister = ~0x3;
         } else if (!writePendingControlPort) {
             //It is perfectly valid to write the first half of the command word only.
 //            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
@@ -721,21 +719,16 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
 
         processExternalSlot();
 
-        //draw on the last counter (use 9bit internal counter value)
-        if (interruptHandler.isLastLineSlot()) {
-            line++;
-            //draw the frame
-            if (interruptHandler.isDrawFrameSlot()) {
-                interruptHandler.logVerbose("Draw Screen");
-                int[][] screenData = renderHandler.renderFrame();
-                bus.getSystem().renderScreen(screenData);
-                resetVideoMode(false);
-                line = 0;
-            }
+        //draw the frame
+        if (interruptHandler.isDrawFrameSlot()) {
+            interruptHandler.logVerbose("Draw Screen");
+            int[][] screenData = renderHandler.renderFrame();
+            bus.getSystem().renderScreen(screenData);
+            resetVideoMode(false);
         }
         if (interruptHandler.isFirstLineSlot()) {
-            renderHandler.initLineData(line);
-            drawScanline(line, displayEnable);
+            renderHandler.initLineData(interruptHandler.vCounterInternal);
+            drawScanline(interruptHandler.vCounterInternal, displayEnable);
         }
     }
 
@@ -764,7 +757,6 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
             interruptHandler.setMode(videoMode);
             renderHandler.setVideoMode(videoMode);
             pal = videoMode.isPal() ? 1 : 0;
-            line = interruptHandler.getVCounterExternal();
         }
     }
 
