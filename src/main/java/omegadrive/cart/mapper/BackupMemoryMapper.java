@@ -1,7 +1,7 @@
 /*
  * BackupMemoryMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/06/19 17:12
+ * Last modified: 20/09/19 22:41
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,9 +85,13 @@ public abstract class BackupMemoryMapper {
 
     protected void writeFile() {
         initBackupFileIfNecessary();
+        if (sram.length == 0) {
+            LOG.error("Unexpected sram length: {}", sram.length);
+            return;
+        }
         try {
             if (Files.isWritable(backupFile)) {
-                LOG.info("Writing to sram file: " + this.backupFile);
+                LOG.info("Writing to sram file: {}, len: {}", this.backupFile, sram.length);
                 FileLoader.writeFile(backupFile, sram);
             }
         } catch (IOException e) {
