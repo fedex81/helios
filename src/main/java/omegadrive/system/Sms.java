@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 17:05
+ * Last modified: 21/09/19 00:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     private SystemLoader.SystemType systemType;
 
     public static boolean verbose = false;
+    public static final boolean ENABLE_FM = Boolean.valueOf(System.getProperty("sms.enable.fm", "false"));
 
     protected Sms(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);
@@ -59,14 +60,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         return new Sms(systemType, emuFrame);
     }
 
-    @Override
-    public void init() {
-        stateHandler = SmsStateHandler.EMPTY_STATE;
-        joypad = new TwoButtonsJoypad();
-        memory = MemoryProvider.createSmsInstance();
-        bus = new SmsBus();
-        initCommon();
-    }
+    private static int FM_DIVIDER = 6; //1.789 Mhz
 
     private void initCommon() {
         inputProvider = InputProvider.createInstance(joypad);
@@ -90,9 +84,20 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     private static int VDP_DIVIDER = 1;  //10.738635 Mhz
     private static int Z80_DIVIDER = 3; //3.579545 Mhz
+    double microsPerTick = 1.789d; //TODO
 
     int nextZ80Cycle = Z80_DIVIDER;
     int nextVdpCycle = VDP_DIVIDER;
+
+    @Override
+    public void init() {
+        stateHandler = SmsStateHandler.EMPTY_STATE;
+        joypad = new TwoButtonsJoypad();
+        memory = MemoryProvider.createSmsInstance();
+        bus = new SmsBus();
+        SmsBus.HW_ENABLE_FM = ENABLE_FM;
+        initCommon();
+    }
 
     @Override
     protected void loop() {
@@ -106,6 +111,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
             try {
                 runZ80(counter);
                 runVdp(counter);
+                runFM(counter);
                 if (canRenderScreen) {
                     videoMode = vdp.getVideoMode();
                     renderScreenLinearInternal(vdp.getScreenData()[0], getStats(System.nanoTime()));
@@ -190,6 +196,12 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
             handleMaskableInterrupts();
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
+        }
+    }
+
+    private void runFM(int counter) {
+        if (counter % FM_DIVIDER == 0) {
+            sound.getFm().tick(microsPerTick);
         }
     }
 

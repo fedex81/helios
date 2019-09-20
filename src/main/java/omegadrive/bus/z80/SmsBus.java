@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 06/07/19 15:54
+ * Last modified: 21/09/19 00:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
 
     private static final boolean verbose = false;
 
+    public static boolean HW_ENABLE_FM = false;
+
     private static final int ROM_START = 0;
     private static final int ROM_END = 0xBFFF;
     public static final int RAM_START = 0xC000;
@@ -64,8 +66,10 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
     //0 - domestic (J)
     //0x40 - overseas (U/E)
     private int countryValue = DOMESTIC;
+    int fmRegLatch;
 
     private boolean isGG = false;
+    int fmRegData;
 
     private final static int
             IO_TR_DIRECTION = 0,
@@ -130,6 +134,9 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
         memoryProvider.writeRamByte((int)(address & RAM_MASK), (int)(data & 0xFF));
     }
 
+    private int audioControl = 0;
+    private boolean ioEnable = true;
+
     @Override
     public void writeIoPort(int port, int value) {
         port &= 0xFF;
@@ -139,8 +146,22 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
         }
         //FM chip detection, defaults to false
         //Port $F2 : Bit 0 can be read and written to detect if YM2413 is available.
-        if (port == 0xF2) {
-            LOG.info("FM chip detection write: {}", value);
+        if (HW_ENABLE_FM && !ioEnable && port == 0xF2) {
+            audioControl = value;
+            boolean psgMute = (value & 3) == 1 || (value & 3) == 2;
+            boolean fmMute = (value & 3) == 0 || (value & 3) == 2;
+            LOG.info("PSG mute : {}, FM mute: {}", psgMute, fmMute);
+            return;
+        }
+
+        if (HW_ENABLE_FM && (port == 0xF0 || port == 0xF1)) {
+            fmRegLatch = port == 0xF0 ? value : fmRegLatch;
+            fmRegData = port == 0xF1 ? value : fmRegData;
+            if (port == 0xF1) {
+                LOG.info("FM write, reg {}, data: {}", Integer.toHexString(fmRegLatch),
+                        Integer.toHexString(fmRegData));
+                soundProvider.getFm().write(fmRegLatch, fmRegData);
+            }
             return;
         }
         switch (port & 0xC1) {
@@ -193,11 +214,17 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
             case 0x41:
                 soundProvider.getPsg().write(value);
                 break;
+
+            case 0x3E:
+                break;
             default:
                 if (port == 0xDE || port == 0xDF ||  //legacy SG1000/keyboard stuff
-                        port == 0xF0 || port == 0xF1     //fm module
-                ) {
+                        port == 0xF0 || port == 0xF1) {
 //                    LOG.debug("Ignored writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
+                    return;
+                }
+                if (port == 0x3E) {
+                    ioEnable = (value & 4) == 0;
                     return;
                 }
                 LOG.warn("Unexpected writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
@@ -235,10 +262,11 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
         //FM chip detection, defaults to false
         //Port $F2 : Bit 0 can be read and written to detect if YM2413 is available.
         if (port == 0xF2) {
-            LOG.info("FM chip detection read");
-            return 0xFF;
+            if (ioEnable) {
+                LOG.warn("FM chip detection read when io enabled");
+            }
+            return HW_ENABLE_FM ? audioControl & 3 : 0xFF;
         }
-
 
         switch (port & 0xC1)
         {

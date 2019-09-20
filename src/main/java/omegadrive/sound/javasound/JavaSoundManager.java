@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 21/09/19 00:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.persist.FileSoundPersister;
 import omegadrive.sound.persist.SoundPersister;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.system.Sms;
 import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
@@ -77,6 +78,13 @@ public class JavaSoundManager implements SoundProvider {
             case GENESIS:
                 psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
                 fmProvider = FmProvider.createInstance(region, SAMPLE_RATE_HZ);
+                break;
+            case SMS:
+                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
+                if (Sms.ENABLE_FM) {
+                    //TODO
+//                  fmProvider = new Ym2413Provider();
+                }
                 break;
             default:
                 psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
