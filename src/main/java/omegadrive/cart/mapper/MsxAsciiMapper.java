@@ -1,7 +1,7 @@
 /*
- * Ascii8Mapper
+ * MsxAsciiMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 14/04/19 18:17
+ * Last modified: 20/09/19 11:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,8 +39,8 @@ public class MsxAsciiMapper extends AsciiMapperImpl {
     public static final int MAPPER_START_ADDRESS = 0x4000;
     public static final int MAPPER_END_ADDRESS = 0xBFFF;
 
-    public static int PAGES_8KB = 4;
-    public static int PAGES_16KB = 2;
+    public static final int PAGES_8KB = 4;
+    public static final int PAGES_16KB = 2;
 
     private MsxAsciiMapper(int[] rom, AsciiType type) {
         super(rom, type);
@@ -91,7 +91,7 @@ class AsciiMapperImpl implements RomMapper {
         this.pageNum = type == AsciiType.ASCII8 ? PAGES_8KB : PAGES_16KB;
         this.pageSize = BLOCK_NUM*1024/pageNum;
         this.pageBlockMapper = new int[pageNum];
-        this.readShiftMask = type == AsciiType.ASCII8 ? 0xE000 : 0x8000;
+        this.readShiftMask = type == AsciiType.ASCII8 ? 0xE000 : 0xC000;
     }
 
     @Override
@@ -113,7 +113,7 @@ class AsciiMapperImpl implements RomMapper {
 
     @Override
     public void writeData(long addressL, long data, Size size) {
-        if(addressL > 0x8000 || addressL < 0x6000){
+        if (!isMapperWrite(addressL)) {
             return;
         }
         int pagePointer = getPageWrite(addressL);
@@ -121,6 +121,11 @@ class AsciiMapperImpl implements RomMapper {
             int blockPointer = (int) ((data & 0xFF) % BLOCK_NUM);
             pageBlockMapper[pagePointer] = blockPointer;
         }
+    }
+
+    private boolean isMapperWrite(long addressL) {
+        return type == AsciiType.ASCII8 ? (addressL >= 0x6000 && addressL < 0x8000) :
+                (addressL >= 0x6000 && addressL < 0x6800) || (addressL >= 0x7000 && addressL < 0x7800);
     }
 
     private int getPageWrite(long addressL){
