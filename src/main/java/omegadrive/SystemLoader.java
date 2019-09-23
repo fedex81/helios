@@ -1,7 +1,7 @@
 /*
  * SystemLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/07/19 18:24
+ * Last modified: 23/09/19 18:20
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ public class SystemLoader {
 
     public static final SystemLoader INSTANCE = new SystemLoader();
 
-    private static final String PROPERTIES_FILENAME = "./emu.properties";
+    private static final String PROPERTIES_FILENAME = "./helios.properties";
 
     public static String[] mdBinaryTypes = {".md", ".bin"};
     public static String[] sgBinaryTypes = {".sg", ".sc"};
