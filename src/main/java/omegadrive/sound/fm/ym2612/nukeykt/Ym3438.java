@@ -1,7 +1,7 @@
 /*
  * Ym3438
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:11
+ * Last modified: 04/10/19 11:17
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -210,15 +210,15 @@ public class Ym3438 implements IYm3438 {
         /* Write signal check */
         chip.write_a_en = (chip.write_a & 0x03) == 0x01;
         chip.write_d_en = (chip.write_d & 0x03) == 0x01;
-        chip.write_a <<= 1;
-        chip.write_d <<= 1;
+        chip.write_a = (chip.write_a << 1) & 0xFF;
+        chip.write_d = (chip.write_d << 1) & 0xFF;
 
         /* Busy counter */
         chip.busy = chip.write_busy;
         chip.write_busy_cnt += chip.write_busy;
-//        chip.write_busy = (chip.write_busy > 0 && ((chip.write_busy_cnt >> 5) == 0)) || chip.write_d_en;
-        boolean temp = (chip.write_busy > 0 && ((chip.write_busy_cnt >> 5) == 0)) || chip.write_d_en;
-        chip.write_busy = temp ? 1 : 0;
+        //chip.write_busy = (chip.write_busy > 0 && ((chip.write_busy_cnt >> 5) == 0)) || chip.write_d_en;
+        boolean stillBusy = (chip.write_busy > 0 && ((chip.write_busy_cnt >> 5) == 0)) || chip.write_d_en;
+        chip.write_busy = stillBusy ? 1 : 0;
         chip.write_busy_cnt &= 0x1f;
     }
 
@@ -246,7 +246,8 @@ public class Ym3438 implements IYm3438 {
                         if (chip.multi[slot] == 0) {
                             chip.multi[slot] = 1;
                         } else {
-                            chip.multi[slot] <<= 1;
+                            //chip.multi[slot] <<= 1;
+                            chip.multi[slot] = (chip.multi[slot] << 1) & 0xFF;
                         }
                         chip.dt[slot] = (chip.data >> 4) & 0x07;
                         break;
@@ -474,7 +475,7 @@ public class Ym3438 implements IYm3438 {
             block = kcode >> 2;
             note = kcode & 0x03;
 //            sum = block + 9 + ((dt_l == 3) | (dt_l & 0x02));
-            sum = block + 9 + ((dt_l == 3) ? 1 : 0) | ((dt_l & 0x02) > 0 ? 1 : 0);
+            sum = block + 9 + (((dt_l == 3) ? 1 : 0) | (dt_l & 0x02));
             sum_h = sum >> 1;
             sum_l = sum & 0x01;
             detune = pg_detune[(sum_l << 2) | note] >> (9 - sum_h);
@@ -1103,7 +1104,8 @@ public class Ym3438 implements IYm3438 {
         chip.lfo_inc = chip.mode_test_21[1];
         chip.pg_read >>= 1;
         chip.eg_read[1] >>= 1;
-        chip.eg_cycle++;
+//        chip.eg_cycle++;
+        chip.eg_cycle = (chip.eg_cycle + 1) & 0xFF;
         /* Lock envelope generator timer value */
         if (chip.cycles == 1 && chip.eg_quotient == 2) {
             if (chip.eg_cycle_stop > 0) {
@@ -1122,7 +1124,8 @@ public class Ym3438 implements IYm3438 {
                 } else {
                     chip.lfo_am = chip.lfo_cnt ^ 0x3f;
                 }
-                chip.lfo_am <<= 1;
+                //chip.lfo_am <<= 1;
+                chip.lfo_am = (chip.lfo_am << 1) & 0xFF;
                 break;
             case 1:
                 chip.eg_quotient++;

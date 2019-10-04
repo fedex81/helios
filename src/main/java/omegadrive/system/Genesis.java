@@ -1,7 +1,7 @@
 /*
  * Genesis
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 17:07
+ * Last modified: 04/10/19 11:19
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -127,12 +127,12 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
 //    private static int VDP_DIVIDER = 16;  //3.325 Mhz PAL
 //    private static int M68K_DIVIDER = 7; //7.6 Mhz PAL  0.5714
 //    private static int Z80_DIVIDER = 14; //3.546 Mhz PAL 0.2666
-//    private static int FM_DIVIDER = 32; //1.67 Mhz PAL 0.2666
+//    private static int FM_DIVIDER = 42; //1.267 Mhz PAL 0.2666
 
     private static int VDP_DIVIDER = 2;  //3.325 Mhz PAL
     private static int M68K_DIVIDER = 1; //7.6 Mhz PAL  0.5714
     private static int Z80_DIVIDER = 2; //3.546 Mhz PAL 0.2666
-    private static int FM_DIVIDER = 4; //1.67 Mhz PAL 0.2666
+    private static int FM_DIVIDER = 6; //1.267 Mhz PAL 0.2666
 
     int next68kCycle = M68K_DIVIDER;
     int nextZ80Cycle = Z80_DIVIDER;
