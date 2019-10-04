@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager2
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 04/10/19 11:03
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ package omegadrive.sound.javasound;
 
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.persist.FileSoundPersister;
 import omegadrive.sound.persist.SoundPersister;
 import omegadrive.sound.psg.PsgProvider;
@@ -67,7 +68,7 @@ public class JavaSoundManager2 implements SoundProvider {
 
     public static JavaSoundManager2 createSoundProvider(RegionDetector.Region region) {
         PsgProvider psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
-        FmProvider fmProvider = FmProvider.createInstance(region, SAMPLE_RATE_HZ);
+        FmProvider fmProvider = MdFmProvider.createInstance(region, SAMPLE_RATE_HZ);
         JavaSoundManager2 jsm = new JavaSoundManager2();
         jsm.setFm(fmProvider);
         jsm.setPsg(psgProvider);

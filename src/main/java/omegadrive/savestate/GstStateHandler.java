@@ -1,7 +1,7 @@
 /*
  * GstStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 19/07/19 13:02
+ * Last modified: 04/10/19 11:01
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -135,10 +136,10 @@ public class GstStateHandler implements GenesisStateHandler {
         int limit = FM_DATA_SIZE / 2;
 
         for (i = 0; i < limit; i++) {
-            fm.write(FmProvider.FM_ADDRESS_PORT0, i);
-            fm.write(FmProvider.FM_DATA_PORT0, data[FM_REG_OFFSET + i]);
-            fm.write(FmProvider.FM_ADDRESS_PORT1, i);
-            fm.write(FmProvider.FM_DATA_PORT1, data[FM_REG_OFFSET + limit + i]);
+            fm.write(MdFmProvider.FM_ADDRESS_PORT0, i);
+            fm.write(MdFmProvider.FM_DATA_PORT0, data[FM_REG_OFFSET + i]);
+            fm.write(MdFmProvider.FM_ADDRESS_PORT1, i);
+            fm.write(MdFmProvider.FM_DATA_PORT1, data[FM_REG_OFFSET + limit + i]);
         }
     }
 

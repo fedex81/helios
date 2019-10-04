@@ -1,7 +1,7 @@
 /*
  * SoundProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 04/10/19 10:58
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,15 +57,15 @@ public interface SoundProvider extends Device {
     }
 
     static double getPsgSoundClockScaled(RegionDetector.Region r) {
-        return (RegionDetector.Region.USA == r ? NTSC_PSG_CLOCK : PAL_PSG_CLOCK) / 32d;
+        return (RegionDetector.Region.EUROPE != r ? NTSC_PSG_CLOCK : PAL_PSG_CLOCK) / 32d;
     }
 
     static double getPsgSoundClock(RegionDetector.Region r) {
-        return (RegionDetector.Region.USA == r ? NTSC_PSG_CLOCK : PAL_PSG_CLOCK);
+        return (RegionDetector.Region.EUROPE != r ? NTSC_PSG_CLOCK : PAL_PSG_CLOCK);
     }
 
     static double getFmSoundClock(RegionDetector.Region r) {
-        return (RegionDetector.Region.USA == r ? NTSC_FM_CLOCK : PAL_FM_CLOCK);
+        return (RegionDetector.Region.EUROPE != r ? NTSC_FM_CLOCK : PAL_FM_CLOCK);
     }
 
     void output(int nanos);

@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/07/19 18:06
+ * Last modified: 16/09/19 18:17
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -332,7 +332,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 boolean rom = (data & 3) % 2 == 0;
                 //NOTE we dont support Ssf2Mapper and SRAM at the same time
                 if (rom) { //enable ROM
-                    checkSsf2Mapper();
+//                    checkSsf2Mapper(); //TODO comment this for s&k
                 } else {
                     checkBackupMemoryMapper(SramMode.READ_WRITE);
                 }

@@ -1,7 +1,7 @@
 /*
  * Ym2612Nuke
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 04/10/19 11:08
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,36 +19,35 @@
 
 package omegadrive.sound.fm.nukeykt;
 
-import omegadrive.sound.fm.FmProvider;
-
-import java.util.Arrays;
+import omegadrive.sound.fm.MdFmProvider;
 
 /**
  *
  * TODO check this:
  * https://github.com/nukeykt/Nuked-OPN2/issues/4
  */
-public class Ym2612Nuke implements FmProvider {
+public class Ym2612Nuke implements MdFmProvider {
     private IYm3438 ym3438;
-    private int count = 0;
     private IYm3438.IYm3438_Type chip;
-    private int[][] ym3438_accm = new int[24][2];
-    private int[] buffer = new int[65000];
 
-    private int CLOCK_HZ = 1_670_000;
-    private double CYCLE_PER_MICROS = CLOCK_HZ / 1_000_000d;
+    private int[][] ym3438_accm = new int[24][2];
+    int ym3438_cycles = 0;
+    int[] ym3438_sample = new int[2];
+    double cycleAccum = 0;
+
+    private int CLOCK_HZ = 0;
+    private double CYCLE_PER_MICROS = 0;
 
     public Ym2612Nuke() {
         ym3438 = new Ym3438();
         chip = new IYm3438.IYm3438_Type();
+        ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
     }
 
 
     @Override
     public void reset() {
         ym3438.OPN2_Reset(chip);
-        count = 0;
-        Arrays.fill(buffer, 0);
     }
 
     @Override
@@ -63,17 +62,12 @@ public class Ym2612Nuke implements FmProvider {
 
     @Override
     public void update(int[] buf_lr, int offset, int count) {
-        offset *= 2;
-        int end = count * 2 + offset;
-        int len = count * 2;
-        int readIdxEnd = (readIndex + len) % buffer.length;
-        if (readIdxEnd < readIndex) {
-            len = buffer.length - readIndex;
-            System.arraycopy(buffer, readIndex, buf_lr, offset, len);
-        } else {
-            System.arraycopy(buffer, readIndex, buf_lr, offset, len);
+        offset <<= 1;
+        int end = (count << 1) + offset;
+        for (int i = offset; i < end; i += 2) {
+            buf_lr[i] = ym3438_sample[0];
+            buf_lr[i + 1] = ym3438_sample[1];
         }
-        readIndex = readIdxEnd;
     }
 
     @Override
@@ -82,27 +76,23 @@ public class Ym2612Nuke implements FmProvider {
     }
 
     @Override
-    public int init(int clock, int rate) {
-        return 0; //TODO
+    public void init(int clock, int rate) {
+        CLOCK_HZ = clock / 6; //nuke runs at ~ 1.67 mhz
+        CYCLE_PER_MICROS = clock / 6_000_000.0;
     }
 
-    int ym3438_cycles = 0;
-    int[] ym3438_sample = new int[2];
-    int writeIndex = 0;
-    int readIndex = 0;
 
     @Override
     public void tick(double microsPerTick) {
-        int[] res = getSample();
-        if (res != null) {
-            writeIndex %= buffer.length;
-            buffer[writeIndex] = ym3438_sample[0] * 5;
-            buffer[writeIndex + 1] = ym3438_sample[1] * 5;
-            writeIndex += 2;
+        cycleAccum += microsPerTick * CYCLE_PER_MICROS;
+        while (cycleAccum > 1) {
+            spinOnce();
+            cycleAccum--;
         }
     }
 
-    private int[] getSample() {
+
+    private void spinOnce() {
         ym3438.OPN2_Clock(chip, ym3438_accm[ym3438_cycles]);
         ym3438_cycles = (ym3438_cycles + 1) % 24;
         if (ym3438_cycles == 0) {
@@ -112,8 +102,6 @@ public class Ym2612Nuke implements FmProvider {
                 ym3438_sample[0] += ym3438_accm[j][0];
                 ym3438_sample[1] += ym3438_accm[j][1];
             }
-            return ym3438_sample;
         }
-        return null;
     }
 }

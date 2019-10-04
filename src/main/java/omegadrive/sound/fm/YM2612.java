@@ -1,7 +1,7 @@
 /*
  * YM2612
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 09/09/19 17:26
+ * Last modified: 04/10/19 11:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author Stephan Dittrich, 2005
  * @author Stephane Dallongeville
  */
-public final class YM2612 implements FmProvider {
+public final class YM2612 implements MdFmProvider {
 
     private static Logger LOG = LogManager.getLogger(YM2612.class.getSimpleName());
 
@@ -383,11 +383,11 @@ public final class YM2612 implements FmProvider {
     double pcmMicrosAcc = 0; //accumulator
     long busyCycles = BUSY_CYCLES;
 
-    public final int init(int Clock, int Rate) {
+    public final void init(int Clock, int Rate) {
         int i, j;
         double x;
         LOG.info("Init");
-        if ((Rate == 0) || (Clock == 0)) return 1;
+        if ((Rate == 0) || (Clock == 0)) return;
 
         YM2612_Clock = Clock;
         YM2612_Rate = Rate;
@@ -548,7 +548,6 @@ public final class YM2612 implements FmProvider {
         LFO_INC_TAB[7] = (int) (72.2 * (double) (1 << (LFO_HBITS + LFO_LBITS)) / j);
 
         reset();
-        return 0;
     }
 
     static double MICROS_PER_PCM = 25; //TODO why?

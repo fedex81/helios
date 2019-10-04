@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/09/19 00:22
+ * Last modified: 04/10/19 11:08
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -155,11 +155,12 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
         }
 
         if (HW_ENABLE_FM && (port == 0xF0 || port == 0xF1)) {
-            fmRegLatch = port == 0xF0 ? value : fmRegLatch;
-            fmRegData = port == 0xF1 ? value : fmRegData;
-            if (port == 0xF1) {
-                LOG.info("FM write, reg {}, data: {}", Integer.toHexString(fmRegLatch),
-                        Integer.toHexString(fmRegData));
+            if (port == 0xF0) {
+                fmRegLatch = value;
+            } else {
+                fmRegData = value;
+//                LOG.info("FM write, reg {}, data: {}", Integer.toHexString(fmRegLatch),
+//                        Integer.toHexString(fmRegData));
                 soundProvider.getFm().write(fmRegLatch, fmRegData);
             }
             return;
