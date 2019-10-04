@@ -1,7 +1,7 @@
 /*
  * SavestateTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 19/07/19 13:35
+ * Last modified: 04/10/19 11:10
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.fm.YM2612;
+import omegadrive.sound.fm.ym2612.YM2612;
 import omegadrive.vdp.gen.GenesisVdp;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;

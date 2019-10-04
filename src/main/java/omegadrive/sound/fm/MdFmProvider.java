@@ -1,7 +1,7 @@
 /*
  * MdFmProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:08
+ * Last modified: 04/10/19 11:10
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 package omegadrive.sound.fm;
 
+import omegadrive.sound.fm.ym2612.YM2612;
 import omegadrive.util.RegionDetector;
 
 import static omegadrive.sound.SoundProvider.LOG;

@@ -1,7 +1,7 @@
 /*
  * Ym3438
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 04/10/19 11:11
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.sound.fm.nukeykt;
+package omegadrive.sound.fm.ym2612.nukeykt;
 
 public class Ym3438 implements IYm3438 {
 
@@ -581,7 +581,7 @@ public class Ym3438 implements IYm3438 {
         kon_event = (nkon > 0 && okon == 0) || (okon > 0 && chip.eg_ssg_repeat_latch[slot] > 0);
         koff_event = okon > 0 && nkon == 0;
 
-        ssg_level = level = (/* 16 bit signed */ int) chip.eg_level[slot];
+        ssg_level = level = chip.eg_level[slot];
 
         if (chip.eg_ssg_inv[slot] > 0) {
             /* Inverse */
@@ -653,7 +653,7 @@ public class Ym3438 implements IYm3438 {
         nextlevel += inc;
 
         chip.eg_kon[slot] = chip.eg_kon_latch[slot];
-        chip.eg_level[slot] = (/* 16 bit unsigned */ int) nextlevel & 0x3ff;
+        chip.eg_level[slot] = nextlevel & 0x3ff;
         chip.eg_state[slot] = nextstate;
     }
 
@@ -898,7 +898,7 @@ public class Ym3438 implements IYm3438 {
         }
         /* Ch 6 */
         if ((((cycles >> 2) == 1) && chip.dacen > 0) || test_dac > 0) {
-            out = (/* 16 bit signed */ int) chip.dacdata;
+            out = chip.dacdata;
             out <<= 7;
             out >>= 7;
         } else {

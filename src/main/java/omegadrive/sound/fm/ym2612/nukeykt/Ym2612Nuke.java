@@ -1,7 +1,7 @@
 /*
  * Ym2612Nuke
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:08
+ * Last modified: 04/10/19 11:10
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.sound.fm.nukeykt;
+package omegadrive.sound.fm.ym2612.nukeykt;
 
 import omegadrive.sound.fm.MdFmProvider;
 

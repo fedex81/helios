@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:08
+ * Last modified: 04/10/19 11:10
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import omegadrive.SystemLoader;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.MdFmProvider;
-import omegadrive.sound.fm.Ym2413Provider;
+import omegadrive.sound.fm.ym2413.Ym2413Provider;
 import omegadrive.sound.persist.FileSoundPersister;
 import omegadrive.sound.persist.SoundPersister;
 import omegadrive.sound.psg.PsgProvider;
