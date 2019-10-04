@@ -1,7 +1,7 @@
 /*
  * SmsMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 15:26
+ * Last modified: 04/10/19 14:09
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ public class SmsMapper {
 
     private static Logger LOG = LogManager.getLogger(SmsMapper.class);
 
-    private static final boolean verbose = false;
+    private static boolean verbose = false;
 
     private static final int DEFAULT_SRAM_SIZE = 0x4000; //16kb
 
@@ -137,7 +137,10 @@ public class SmsMapper {
 
     class SegaMapper extends BackupMemoryMapper implements RomMapper {
 
-        private boolean sramWriteEnable = false;
+        //This feature is not known to be used by any software.
+        //Ys need this
+        private boolean sramWriteEnable = true;
+
         private boolean sramSlot2Enable = false;
 
         private SegaMapper() {
@@ -146,6 +149,7 @@ public class SmsMapper {
 
         @Override
         public long readData(long address, Size size) {
+//            LogHelper.printLevel(LOG, Level.INFO,"readData: {}", address, verbose);
             if (sramSlot2Enable) {
                 return readSramDataMaybe(address, size);
             }
@@ -154,6 +158,7 @@ public class SmsMapper {
 
         @Override
         public void writeData(long addressL, long dataL, Size size) {
+//            LogHelper.printLevel(LOG, Level.INFO,"writeData: {} , data: {}", addressL, dataL, verbose);
             if (sramSlot2Enable && sramWriteEnable) {
                 if (writeSramDataMaybe(addressL, dataL, size)) {
                     return;
@@ -223,7 +228,8 @@ public class SmsMapper {
         }
 
         private void handleSramState(int data) {
-            sramWriteEnable = (data & 0x80) == 0;
+            //This feature is not known to be used by any software.
+//            sramWriteEnable = (data & 0x80) == 0;
             sramSlot2Enable = (data & 8) > 0;
             if (sramSlot2Enable) {
                 initBackupFileIfNecessary();

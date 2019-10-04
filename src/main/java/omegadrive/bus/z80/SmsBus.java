@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:08
+ * Last modified: 04/10/19 14:23
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -215,9 +215,6 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
             case 0x41:
                 soundProvider.getPsg().write(value);
                 break;
-
-            case 0x3E:
-                break;
             default:
                 if (port == 0xDE || port == 0xDF ||  //legacy SG1000/keyboard stuff
                         port == 0xF0 || port == 0xF1) {
@@ -226,6 +223,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
                 }
                 if (port == 0x3E) {
                     ioEnable = (value & 4) == 0;
+//                    LOG.debug("writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
                     return;
                 }
                 LOG.warn("Unexpected writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
