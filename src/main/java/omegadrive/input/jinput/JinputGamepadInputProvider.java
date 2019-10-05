@@ -1,7 +1,7 @@
 /*
- * GamepadInputProvider
+ * JinputGamepadInputProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 05/10/19 14:12
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,12 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.input;
+package omegadrive.input.jinput;
 
-import net.java.games.input.Component;
-import net.java.games.input.Controller;
-import net.java.games.input.Event;
-import net.java.games.input.EventQueue;
+import net.java.games.input.*;
+import omegadrive.input.InputProvider;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.joypad.JoypadProvider.JoypadAction;
 import omegadrive.joypad.JoypadProvider.JoypadButton;
@@ -32,6 +30,8 @@ import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,12 +39,12 @@ import static net.java.games.input.Component.Identifier.Button.*;
 import static omegadrive.joypad.JoypadProvider.JoypadNumber.P1;
 import static omegadrive.joypad.JoypadProvider.JoypadNumber.P2;
 
-public class GamepadInputProvider implements InputProvider {
+public class JinputGamepadInputProvider implements InputProvider {
 
-    private static Logger LOG = LogManager.getLogger(GamepadInputProvider.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(JinputGamepadInputProvider.class.getSimpleName());
 
     private static ExecutorService executorService =
-            Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY, GamepadInputProvider.class.getSimpleName()));
+            Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY, JinputGamepadInputProvider.class.getSimpleName()));
     private long POLLING_INTERVAL_MS = Long.valueOf(System.getProperty("jinput.polling.interval.ms", "5"));
 
     private volatile JoypadProvider joypadProvider;
@@ -59,21 +59,41 @@ public class GamepadInputProvider implements InputProvider {
     private static final int AXIS_0 = 0;
     private static final int AXIS_m1 = -1;
 
+    private JinputGamepadInputProvider() {
+    }
 
-    public static InputProvider createOrGetInstance(Controller controller, JoypadProvider joypadProvider) {
+    public static InputProvider getInstance(JoypadProvider joypadProvider) {
+        Controller controller = detectController();
+        InputProvider provider = NO_OP;
+        if (controller != null) {
+            provider = createOrGetInstance(controller, joypadProvider);
+            LOG.info("Using Controller: " + controller.getName());
+        } else {
+            LOG.info("Unable to find a controller");
+        }
+        return provider;
+    }
+
+    private static InputProvider createOrGetInstance(Controller controller, JoypadProvider joypadProvider) {
         if (INSTANCE == NO_OP) {
-            GamepadInputProvider g = new GamepadInputProvider();
+            JinputGamepadInputProvider g = new JinputGamepadInputProvider();
             g.joypadProvider = joypadProvider;
             g.controller = controller;
             g.setPlayers(1);
-            g.executorService.submit(g.inputRunnable());
+            executorService.submit(g.inputRunnable());
             INSTANCE = g;
         }
-        ((GamepadInputProvider) INSTANCE).joypadProvider = joypadProvider;
+        ((JinputGamepadInputProvider) INSTANCE).joypadProvider = joypadProvider;
         return INSTANCE;
     }
 
-    private GamepadInputProvider() {
+    static Controller detectController() {
+        Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
+        Optional<Controller> cntOpt = Optional.ofNullable(Arrays.stream(ca).filter(c -> c.getType() == Controller.Type.GAMEPAD).findFirst().orElse(null));
+        if (DEBUG_DETECTION || !cntOpt.isPresent()) {
+            LOG.info("Controller detection: " + detectControllerVerbose());
+        }
+        return cntOpt.orElse(null);
     }
 
     private Runnable inputRunnable() {
@@ -241,5 +261,40 @@ public class GamepadInputProvider implements InputProvider {
                 joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, action);
             }
         }
+    }
+
+    private static String detectControllerVerbose() {
+        Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < ca.length; i++) {
+            /* Get the name of the controller */
+            sb.append("\n" + ca[i].getName() + "\n");
+            sb.append("Position: [" + i + "]\n");
+            sb.append("Type: " + ca[i].getType().toString() + "\n");
+
+            /* Get this controllers components (buttons and axis) */
+            Component[] components = ca[i].getComponents();
+            sb.append("Component Count: " + components.length + "\n");
+            for (int j = 0; j < components.length; j++) {
+
+                /* Get the components name */
+                sb.append("Component " + j + ": " + components[j].getName() + "\n");
+                sb.append("    Identifier: " + components[j].getIdentifier().getName() + "\n");
+                sb.append("    ComponentType: ");
+                if (components[j].isRelative()) {
+                    sb.append("Relative");
+                } else {
+                    sb.append("Absolute");
+                }
+                if (components[j].isAnalog()) {
+                    sb.append(" Analog");
+                } else {
+                    sb.append(" Digital");
+                }
+                sb.append("\n");
+            }
+        }
+        return sb.toString();
     }
 }

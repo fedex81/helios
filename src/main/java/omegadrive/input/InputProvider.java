@@ -1,7 +1,7 @@
 /*
  * InputProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 05/10/19 13:45
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,15 +19,12 @@
 
 package omegadrive.input;
 
-import net.java.games.input.Controller;
-import net.java.games.input.ControllerEnvironment;
+import omegadrive.input.jinput.JinputGamepadInputProvider;
 import omegadrive.joypad.JoypadProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Optional;
 
 public interface InputProvider {
 
@@ -60,15 +57,7 @@ public interface InputProvider {
     float ON = 1.0f;
 
     static InputProvider createInstance(JoypadProvider joypadProvider) {
-        Controller controller = detectController();
-        InputProvider provider = NO_OP;
-        if (controller != null) {
-            provider = GamepadInputProvider.createOrGetInstance(controller, joypadProvider);
-            LOG.info("Using Controller: " + controller.getName());
-        } else {
-            LOG.info("Unable to find a controller");
-        }
-        return provider;
+        return JinputGamepadInputProvider.getInstance(joypadProvider);
     }
 
     static void bootstrap() {
@@ -80,17 +69,8 @@ public interface InputProvider {
         //disable java.util.logging
         java.util.logging.LogManager.getLogManager().reset();
         LOG.info("Disabling java.util.logging");
-
     }
 
-    static Controller detectController() {
-        Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
-        Optional<Controller> cntOpt = Optional.ofNullable(Arrays.stream(ca).filter(c -> c.getType() == Controller.Type.GAMEPAD).findFirst().orElse(null));
-        if (DEBUG_DETECTION || !cntOpt.isPresent()) {
-            LOG.info("Controller detection: " + GamepadTest.detectControllerVerbose());
-        }
-        return cntOpt.orElse(null);
-    }
 
     void handleEvents();
 

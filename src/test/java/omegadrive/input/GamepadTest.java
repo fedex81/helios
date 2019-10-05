@@ -1,7 +1,7 @@
 /*
  * GamepadTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 05/10/19 13:45
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,9 +19,7 @@
 
 package omegadrive.input;
 
-import net.java.games.input.Component;
 import net.java.games.input.Controller;
-import net.java.games.input.ControllerEnvironment;
 import omegadrive.joypad.JoypadProvider;
 
 import java.io.File;
@@ -134,40 +132,5 @@ public class GamepadTest {
                 e.printStackTrace();
             }
         }
-    }
-
-    public static String detectControllerVerbose() {
-        Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < ca.length; i++) {
-            /* Get the name of the controller */
-            sb.append("\n" + ca[i].getName() + "\n");
-            sb.append("Position: [" + i + "]\n");
-            sb.append("Type: " + ca[i].getType().toString() + "\n");
-
-            /* Get this controllers components (buttons and axis) */
-            Component[] components = ca[i].getComponents();
-            sb.append("Component Count: " + components.length + "\n");
-            for (int j = 0; j < components.length; j++) {
-
-                /* Get the components name */
-                sb.append("Component " + j + ": " + components[j].getName() + "\n");
-                sb.append("    Identifier: " + components[j].getIdentifier().getName() + "\n");
-                sb.append("    ComponentType: ");
-                if (components[j].isRelative()) {
-                    sb.append("Relative");
-                } else {
-                    sb.append("Absolute");
-                }
-                if (components[j].isAnalog()) {
-                    sb.append(" Analog");
-                } else {
-                    sb.append(" Digital");
-                }
-                sb.append("\n");
-            }
-        }
-        return sb.toString();
     }
 }
