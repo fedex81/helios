@@ -1,0 +1,66 @@
+I've confirmed that on every single mapping read slot for layers A and B, the current register state of the
+following registers are re-evaluated:
+-Layer mapping base address (reg 2/3/4)
+-Vertical and horizontal field size (reg 16)
+-Undocumented reg 1 bit 7 display mode
+
+I believe that the vertical scroll mode is also latched at every mapping read slot, and the vscroll data read
+from VSRAM at each mapping read slot for the NEXT slot, IE, so in the first two cells, the scroll data is actually
+latched for the following two cells, but I have yet to run tests to confirm this. That's on my list to do in this
+current round of timing tests.
+
+The following registers are tied to the analog render process, and are re-evaluated every pixel:
+-Palette depth (reg 0 bit 2)
+-Shadow highlight mode (reg 12 bit 3)
+-Display enable (reg 1 bit 6)
+-Mode 5 enable (reg 1 bit 2)
+-Background colour settings (reg 7)
+-RS0/RS1 bits for H32/H40 and EDCLK selection (reg 12, bits 7/0)
+
+The hscroll mode (reg 11, bit 1/0) is re-evaluated every time hscroll data is read
+
+The following registers are re-evaluated every frame, at the point where vblank is set in the status register:
+-V28/V30 screen mode (reg 1, bit 3)
+-Interlace mode (reg 12, bits 2/1)
+
+
+As a sidenote, because I don't think it's documented anywhere, and is kind of critical when
+you start talking about timing issues, RS0 (reg 12 bit 7) switches the VDP to use the EDCLK signal to drive
+the serial clock, while RS1 (reg 12 bit 0) enables the H40 cell mode, with an internal MCLK/4 clock divider.
+The EDCLK signal is only required on the Mega Drive in order to make H40 mode produce a valid PAL/NTSC video signal.
+It's possible to use EDCLK to drive a H32 mode display, or use a H40 mode display with the internal MCLK/4 divider,
+it just produces a video signal outside the specifications for PAL/NTSC video, but it's perfectly valid, and could
+be synched to with the right monitor.
+
+The VDP doesn't actually read the SAT cache entries when register 5 is set, it only ever updates the contents of the
+cache if it detects a VRAM write being made within the SAT cache "window" based on the current location of the
+SAT as set by register 5. This means, you can change register 5, and the cache will continue to use the cached data
+from the old memory location. CastleVania Bloodlines relies on this.
+
+As for when this list is traversed, that's a really tricky one isn't it? As you point out, there's no external
+access to indicate when this occurs. It seems logical to me that it occurs in sync with the sprite pattern reads,
+with two entries read per pattern slot (IE, it takes 2SC cycles to process an entry), but it's hard to confirm this.
+The best way might be in H32 mode to target a VRAM write to the cached portion of the SAT designed to be released
+in the access slot which comes immediately before the read of the hscroll data. There's still 6 sprite pattern read
+slots after this point. If you perform a write to the cached portion of the SAT at this time, while the list
+itself is still being traversed, you could determine which exact entry in the list the VDP is up to when that
+write is made by observing the effect it has on the way the VDP renders sprites on the following line.
+Remember that VRAM writes are 8-bit, so only half of the full 16-bit write would get through at that access slot,
+ but it should be possible to construct a test ROM which uses this method to determine the synchronization of the
+ external access slots to the traversal of the SAT cache data, relative to this one fixed point at least.
+ From there, it should be possible to infer the exact timing and progression of the rest of the reads.
+ I'm planning to perform this test myself, since this is one of the things I still need to determine for my emulator.
+
+ i remember some games ( i think road rash) updating vscroll during hint callback (during hblank)
+ and expects the scroll value to take effect on the next line only, not the coming line so you might want to try that.
+
+ I am also pretty sure vscroll mode makes some difference too: see my post in regen forum about batman & robin,
+ that game uses 2-cell scrolling and continuously updates vscroll entries during active display BUT expects
+ the writes to take effect on the next line only. The writes timing is made so that each writes occur after
+ the associated 2-cell column has already been rendered.
+
+ Also don't forget some VDP settings are latched during HBLANK, and especially Verticall Scroll RAM values that are
+ sometime written by games DURING active line but shouldn't be taken in account until next one, I know a few games
+ (Lotus 2 for example) that rely on this. I bet it is different when you enable 2-cell vertical scroll but those games
+ don't use this and I'm pretty sure horizontal & vertical scroll offsets for each plane are fetched/calculated once
+ before line rendering.

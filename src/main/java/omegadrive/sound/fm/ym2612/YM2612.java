@@ -1,7 +1,7 @@
 /*
  * YM2612
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:10
+ * Last modified: 04/10/19 16:14
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -634,9 +634,9 @@ public final class YM2612 implements MdFmProvider {
         return YM2612_REG[type][regNumber];
     }
 
-    public final void update(int[] buf_lr, int offset, int end) {
+    public final int update(int[] buf_lr, int offset, int count) {
         offset *= 2;
-        end = end * 2 + offset;
+        int end = count * 2 + offset;
         logEvent("update", offset, end);
 
         if (YM2612_CHANNEL[0].SLOT[0].Finc == -1) calc_FINC_CH(YM2612_CHANNEL[0]);
@@ -686,7 +686,7 @@ public final class YM2612 implements MdFmProvider {
             updateDac(buf_lr, offset, end, dacSampleToProcess);
         }
         YM2612_Inter_Cnt = int_cnt;
-
+        return count;
     }
 
 

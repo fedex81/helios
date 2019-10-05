@@ -1,7 +1,7 @@
 /*
  * Ym2413
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 14:12
+ * Last modified: 05/10/19 14:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ package omegadrive.sound.fm.ym2413.vrc7;
 
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.fm.ym2413.Ym2413Provider;
 
 /**
  *
@@ -88,7 +87,7 @@ public class Ym2413 extends VRC7SoundChip implements FmProvider {
     }
 
     @Override
-    public void update(int[] buf_lr, int offset, int count) {
+    public int update(int[] buf_lr, int offset, int count) {
         offset *= 2;
         count = count * 2 + offset;
 
@@ -98,6 +97,7 @@ public class Ym2413 extends VRC7SoundChip implements FmProvider {
             buf_lr[offset + 1] = sampleL;
             offset += 2;
         }
+        return count;
     }
 
     private int highpass_filter(int sample) {
@@ -119,7 +119,7 @@ public class Ym2413 extends VRC7SoundChip implements FmProvider {
         if (countOut > microsPerOutputSample) {
             sample = lowpass_filter(highpass_filter(getval()));
             countOut -= microsPerOutputSample;
-            Ym2413Provider.fmUpdates++;
+//            Ym2413Provider.fmUpdates++;
         }
     }
 }

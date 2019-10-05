@@ -1,7 +1,7 @@
 /*
  * SoundUtil
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 05/10/19 14:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -114,8 +114,12 @@ public class SoundUtil {
     }
 
     public static void intStereo14ToByteMono16Mix(int[] input, byte[] output, byte[] psgMono8) {
+        intStereo14ToByteMono16Mix(input, output, psgMono8, input.length);
+    }
+
+    public static void intStereo14ToByteMono16Mix(int[] input, byte[] output, byte[] psgMono8, int inputLen) {
         int j = 0;
-        for (int i = 0; i < input.length; i += 2) {
+        for (int i = 0; i < inputLen; i += 2) {
             //fm: avg 2 channels -> mono
             // avg = (16 bit + 16 bit) >> (1 + 1) = 15 bit
             int fm = (input[i] + input[i + 1]) >> 2;

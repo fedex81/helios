@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 14:23
+ * Last modified: 05/10/19 14:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,9 @@ import omegadrive.vdp.SmsVdp;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.ADDR_LATCH_REG;
+import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.DATA_REG;
 
 public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, RomMapper {
 
@@ -66,10 +69,8 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
     //0 - domestic (J)
     //0x40 - overseas (U/E)
     private int countryValue = DOMESTIC;
-    int fmRegLatch;
 
     private boolean isGG = false;
-    int fmRegData;
 
     private final static int
             IO_TR_DIRECTION = 0,
@@ -155,14 +156,8 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
         }
 
         if (HW_ENABLE_FM && (port == 0xF0 || port == 0xF1)) {
-            if (port == 0xF0) {
-                fmRegLatch = value;
-            } else {
-                fmRegData = value;
-//                LOG.info("FM write, reg {}, data: {}", Integer.toHexString(fmRegLatch),
-//                        Integer.toHexString(fmRegData));
-                soundProvider.getFm().write(fmRegLatch, fmRegData);
-            }
+            int fmPort = port == 0xF0 ? ADDR_LATCH_REG.ordinal() : DATA_REG.ordinal();
+            soundProvider.getFm().write(fmPort, value);
             return;
         }
         switch (port & 0xC1) {
@@ -217,7 +212,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
                 break;
             default:
                 if (port == 0xDE || port == 0xDF ||  //legacy SG1000/keyboard stuff
-                        port == 0xF0 || port == 0xF1) {
+                        port == 0xF0 || port == 0xF1 || port == 0xF2) {
 //                    LOG.debug("Ignored writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
                     return;
                 }

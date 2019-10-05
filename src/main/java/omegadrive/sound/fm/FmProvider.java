@@ -1,7 +1,7 @@
 /*
  * FmProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:08
+ * Last modified: 04/10/19 16:13
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,8 +55,8 @@ public interface FmProvider extends Device {
         }
 
         @Override
-        public void update(int[] buf_lr, int offset, int end) {
-
+        public int update(int[] buf_lr, int offset, int end) {
+            return 0;
         }
 
         @Override
@@ -72,7 +72,7 @@ public interface FmProvider extends Device {
 
     void reset();
 
-    void update(int[] buf_lr, int offset, int count);
+    int update(int[] buf_lr, int offset, int count);
 
     void init(int clock, int rate);
 

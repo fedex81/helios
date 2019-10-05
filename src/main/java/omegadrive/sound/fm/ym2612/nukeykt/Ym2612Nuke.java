@@ -1,7 +1,7 @@
 /*
  * Ym2612Nuke
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:10
+ * Last modified: 04/10/19 16:13
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,13 +61,14 @@ public class Ym2612Nuke implements MdFmProvider {
     }
 
     @Override
-    public void update(int[] buf_lr, int offset, int count) {
+    public int update(int[] buf_lr, int offset, int count) {
         offset <<= 1;
         int end = (count << 1) + offset;
         for (int i = offset; i < end; i += 2) {
             buf_lr[i] = ym3438_sample[0];
             buf_lr[i + 1] = ym3438_sample[1];
         }
+        return count; //TODO
     }
 
     @Override

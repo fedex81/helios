@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/09/19 00:22
+ * Last modified: 05/10/19 14:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         return new Sms(systemType, emuFrame);
     }
 
-    private static int FM_DIVIDER = 6; //1.789 Mhz
+
 
     private void initCommon() {
         inputProvider = InputProvider.createInstance(joypad);
@@ -82,9 +82,14 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         return romRegion;
     }
 
+    /**
+     * VDP clock for PAL is 53203424 / 5.
+     * Z80 and PSG clock is 53203424 / 15 or VDP clock / 3.
+     * NTSC Master clock is 53693175 Hz.
+     */
     private static int VDP_DIVIDER = 1;  //10.738635 Mhz
     private static int Z80_DIVIDER = 3; //3.579545 Mhz
-    double microsPerTick = 1.789d; //TODO
+    private static int FM_DIVIDER = Z80_DIVIDER * 72; //49716 hz
 
     int nextZ80Cycle = Z80_DIVIDER;
     int nextVdpCycle = VDP_DIVIDER;
@@ -201,7 +206,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     private void runFM(int counter) {
         if (counter % FM_DIVIDER == 0) {
-            sound.getFm().tick(microsPerTick);
+            sound.getFm().tick(0);
         }
     }
 

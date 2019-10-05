@@ -1,7 +1,7 @@
 /*
  * SystemLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 23/09/19 18:20
+ * Last modified: 23/09/19 18:29
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.Z80BaseSystem;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.ui.PrefStore;
 import omegadrive.ui.SwingWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -90,6 +91,7 @@ public class SystemLoader {
         biosFolder = String.valueOf(java.lang.System.getProperty("bios.folder", biosFolder));
         biosNameMsx1 = String.valueOf(java.lang.System.getProperty("bios.name.msx1", biosNameMsx1));
         biosNameColeco = String.valueOf(java.lang.System.getProperty("bios.name.coleco", biosNameColeco));
+        PrefStore.initPrefs();
     }
 
     private SystemProvider systemProvider;

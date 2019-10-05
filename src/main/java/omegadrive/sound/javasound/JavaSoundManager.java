@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:10
+ * Last modified: 05/10/19 14:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,8 +83,7 @@ public class JavaSoundManager implements SoundProvider {
                 break;
             case SMS:
                 if (Sms.ENABLE_FM) {
-                    //TODO
-                    fmProvider = new Ym2413Provider();
+                    fmProvider = Ym2413Provider.createInstance(region, SAMPLE_RATE_HZ);
                     psgProvider = PsgProvider.NO_SOUND;
                 } else {
                     psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
@@ -155,23 +154,24 @@ public class JavaSoundManager implements SoundProvider {
             }
 
             public void playOnce(int fmBufferLenMono) {
-                psg.output(psg_buf_bytes, 0, fmBufferLenMono);
                 if(hasFm) {
-                    fm.update(fm_buf_ints, 0, fmBufferLenMono);
+                    fmBufferLenMono = fm.update(fm_buf_ints, 0, fmBufferLenMono);
                 }
+                psg.output(psg_buf_bytes, 0, fmBufferLenMono);
+                int fmBufferLenStereo = fmBufferLenMono << 1;
 
                 try {
                     Arrays.fill(mix_buf_bytes16, SoundUtil.ZERO_BYTE);
                     if(hasFm) {
                         //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
-                        SoundUtil.intStereo14ToByteMono16Mix(fm_buf_ints, mix_buf_bytes16, psg_buf_bytes);
+                        SoundUtil.intStereo14ToByteMono16Mix(fm_buf_ints, mix_buf_bytes16, psg_buf_bytes, fmBufferLenStereo);
                     } else {
                         SoundUtil.byteMono8ToByteMono16Mix(psg_buf_bytes, mix_buf_bytes16);
                     }
 
                     updateSoundWorking(mix_buf_bytes16);
                     if (!isMute()) {
-                        SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16, fmBufferLenMono * 2);
+                        SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16, fmBufferLenStereo);
                     }
                     if (isRecording()) {
                         soundPersister.persistSound(DEFAULT_SOUND_TYPE, mix_buf_bytes16);

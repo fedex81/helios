@@ -1,7 +1,7 @@
 /*
  * Ym2413Provider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 14:25
+ * Last modified: 05/10/19 14:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,10 @@ package omegadrive.sound.fm.ym2413;
 
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.util.RegionDetector;
+
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 public class Ym2413Provider implements FmProvider {
 
@@ -31,29 +35,15 @@ public class Ym2413Provider implements FmProvider {
     private static final int CLOCK_HZ = 3579545;
     static double FM_CALCS_PER_MS = SoundProvider.SAMPLE_RATE_HZ / 1000.0;
     static int AUDIO_SCALE_BITS = 2;
-    static double ymRatePerMs = FM_RATE / 1000.0;
-    final static double rateRatio = FM_CALCS_PER_MS / ymRatePerMs;
-    double rateRatioAcc = 0;
-    double sampleRateCalcAcc = 0;
-    private OPLL opll;
 
-    //TODO
-    @Override
-    public void update(int[] buf_lr, int offset, int samples441) {
-        offset <<= 1; //stereo
-        sampleRateCalcAcc += samples441 / rateRatio;
-        int total = (int) sampleRateCalcAcc + 1; //needed to match the offsets
-        for (int i = 0; i < total; i++) {
-            int res = Emu2413.OPLL_calc(opll) << AUDIO_SCALE_BITS;
-            rateRatioAcc += rateRatio;
-            if (rateRatioAcc > 1) {
-                buf_lr[offset++] = res;
-                buf_lr[offset++] = res;
-                rateRatioAcc--;
-            }
-        }
-        sampleRateCalcAcc -= total;
-    }
+    double rateAccum = 0;
+    double ratio = SoundProvider.SAMPLE_RATE_HZ / FM_RATE;
+    //TODO review perf of locking
+    private Queue<Integer> sampleQueue = new ArrayDeque<>();
+
+    private OPLL opll;
+    private volatile long queueLen = 0;
+    private Object lock = new Object();
 
     @Override
     public void reset() {
@@ -65,10 +55,10 @@ public class Ym2413Provider implements FmProvider {
         Emu2413.OPLL_reset(opll);
     }
 
-    @Override
-    public void init(int clock, int rate) {
-        Emu2413.OPLL_init();
-        opll = Emu2413.OPLL_new();
+    public static FmProvider createInstance(RegionDetector.Region region, int sampleRate) {
+        Ym2413Provider p = new Ym2413Provider();
+        p.init(CLOCK_HZ, sampleRate);
+        return p;
     }
 
     @Override
@@ -88,12 +78,45 @@ public class Ym2413Provider implements FmProvider {
         }
     }
 
-    //TODO
+    //this should be called 49716 times per second
+
+    @Override
+    public int update(int[] buf_lr, int offset, int count) {
+        offset <<= 1;
+        int end = (count << 1) + offset;
+        int sampleNum;
+        synchronized (lock) {
+            long initialQueueSize = queueLen;
+            int sample = 0;
+            for (int i = offset; i < end && queueLen > 0; i += 2) {
+                sample = sampleQueue.poll();
+                queueLen--;
+                buf_lr[i] = sample;
+                buf_lr[i + 1] = sample;
+            }
+            sampleNum = (int) (initialQueueSize - queueLen);
+        }
+        return sampleNum;
+    }
+
+    @Override
+    public void init(int clock, int rate) {
+        FM_CALCS_PER_MS = rate / 1000.0;
+        Emu2413.OPLL_init();
+        opll = Emu2413.OPLL_new();
+    }
+
     @Override
     public void tick(double microsPerTick) {
+        rateAccum += ratio;
         int res = Emu2413.OPLL_calc(opll);
-//        lastSample.set(res);
-//        System.out.println(res);
+        if (rateAccum > 1) {
+            synchronized (lock) {
+                sampleQueue.offer(res << AUDIO_SCALE_BITS);
+                queueLen++;
+            }
+            rateAccum -= 1;
+        }
     }
 
     public enum FmReg {ADDR_LATCH_REG, DATA_REG}
