@@ -1,8 +1,14 @@
 out/
 .gradle/
+bios/
 build/
 docs/
+history/
 privateLib/
 roms/
 .idea/
 screencap/
+helios.prefs
+*.gs0
+test_roms/
+docs
