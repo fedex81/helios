@@ -1,7 +1,7 @@
 /*
  * SystemLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 23/09/19 18:29
+ * Last modified: 06/10/19 14:54
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -71,8 +71,6 @@ public class SystemLoader {
     public static String biosFolder = ".";
     public static String biosNameMsx1 = "cbios_main_msx1.rom";
     public static String biosNameColeco = "bios_coleco.col";
-
-    private Path romFile;
 
     protected static void loadProperties() {
         try (

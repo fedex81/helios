@@ -1,7 +1,7 @@
 /*
  * SwingWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 27/07/19 17:48
+ * Last modified: 06/10/19 14:54
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,7 +69,6 @@ public class SwingWindow implements DisplayWindow {
     private JCheckBoxMenuItem muteItem;
     private JMenu recentFilesMenu;
     private JMenuItem[] recentFilesItems;
-    private int recentItemIndex = 0;
     private boolean showDebug = false;
 
     //when scaling is slow set this to FALSE
@@ -192,13 +191,13 @@ public class SwingWindow implements DisplayWindow {
         addKeyAction(loadRomItem, NEW_ROM, e -> handleNewRom());
 
         recentFilesMenu = new JMenu("Recent Files");
-        recentFilesItems = new JMenuItem[10];
+        recentFilesItems = new JMenuItem[PrefStore.recentFileTotal];
         IntStream.range(0, recentFilesItems.length).forEach(i -> {
             recentFilesItems[i] = new JMenuItem();
             addKeyAction(recentFilesItems[i], NONE, e -> handleNewRom(recentFilesItems[i].getText()));
-            recentFilesItems[i].setVisible(false);
             recentFilesMenu.add(recentFilesItems[i]);
         });
+        reloadRecentFiles();
 
         JMenuItem closeRomItem = new JMenuItem("Close ROM");
         addKeyAction(closeRomItem, CLOSE_ROM, e -> mainEmu.handleSystemEvent(CLOSE_ROM, null));
@@ -525,17 +524,7 @@ public class SwingWindow implements DisplayWindow {
         if (optFile.isPresent()) {
             Path file = optFile.get().toPath();
             SystemLoader.getInstance().handleNewRomFile(file);
-            handleRecentMenuItem(file.toAbsolutePath().toString());
-        }
-    }
-
-    private void handleRecentMenuItem(String name) {
-        Optional<JMenuItem> itemOpt = Arrays.stream(recentFilesItems).
-                filter(it -> name.equalsIgnoreCase(it.getText())).findAny();
-        if (!itemOpt.isPresent()) {
-            recentItemIndex = (recentItemIndex + 1) % recentFilesItems.length;
-            recentFilesItems[recentItemIndex].setText(name);
-            recentFilesItems[recentItemIndex].setVisible(true);
+            reloadRecentFiles();
         }
     }
 
@@ -588,6 +577,16 @@ public class SwingWindow implements DisplayWindow {
                     Optional.ofNullable(actionMap.get(event)).ifPresent(act -> act.actionPerformed(null));
                 }
             }
+        });
+    }
+
+    private void reloadRecentFiles() {
+        IntStream.range(0, recentFilesItems.length).forEach(i -> {
+            String val = PrefStore.getRecentFilesList().get(i);
+            recentFilesItems[i].setVisible(true);
+            recentFilesItems[i].setEnabled(!Strings.isNullOrEmpty(val));
+            val = Strings.isNullOrEmpty(val) ? "<none>" : val;
+            recentFilesItems[i].setText(val);
         });
     }
 }

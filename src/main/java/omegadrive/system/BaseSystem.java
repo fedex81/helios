@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 27/07/19 13:53
+ * Last modified: 06/10/19 14:45
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.ui.PrefStore;
 import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -158,6 +159,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         this.romFile = file;
         Runnable runnable = new RomRunnable(file);
         runningRomFuture = executorService.submit(runnable, null);
+        PrefStore.addRecentFile(file.toAbsolutePath().toString());
     }
 
     private void handleCloseRom() {
@@ -167,6 +169,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private void handleCloseApp() {
         handleCloseRom();
         sound.close();
+        PrefStore.close();
     }
 
     private void handleLoadState(Path file) {
