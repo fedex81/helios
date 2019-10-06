@@ -1,7 +1,7 @@
 /*
  * MsxXmlLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/04/19 14:28
+ * Last modified: 06/10/19 17:42
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ public class MsxXmlLoader {
     static String typeEl = "type";
     static String hashEl = "hash";
 
-    static String fileName = "msx_sw_db.xml";
+    static String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "msx_sw_db.xml";
 
     static {
         dbf = DocumentBuilderFactory.newInstance();

@@ -1,7 +1,7 @@
 /*
  * SmsLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/05/19 17:20
+ * Last modified: 06/10/19 17:45
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  */
 public class SmsLoader {
 
-    static String fileName = "meka.nam";
+    static String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "meka.nam";
     static Map<String, String> mapperIdMap = ImmutableMap.of(
             SmsMapper.Type.CODEM.name(), "/EMU_MAPPER=3",
             SmsMapper.Type.KOREA.name(), "/EMU_MAPPER=9"

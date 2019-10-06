@@ -1,6 +1,5 @@
 out/
 .gradle/
-bios/
 build/
 docs/
 history/
@@ -12,3 +11,4 @@ helios.prefs
 *.gs0
 test_roms/
 docs
+*.col

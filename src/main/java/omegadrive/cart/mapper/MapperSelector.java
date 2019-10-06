@@ -1,7 +1,7 @@
 /*
  * MapperSelector
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/05/19 13:35
+ * Last modified: 06/10/19 17:41
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,8 @@ import java.util.Map;
 public class MapperSelector {
 
     public static final Entry MISSING_DATA = new Entry();
+
+    public static final String ROM_DB_BASE_FOLDER = "res/romdb/";
 
     public static Entry getMapperData(SystemLoader.SystemType type, String code) {
         if(!cache.containsKey(type)){

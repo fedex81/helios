@@ -1,7 +1,7 @@
 /*
  * InputProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/10/19 13:45
+ * Last modified: 06/10/19 17:50
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,7 +57,13 @@ public interface InputProvider {
     float ON = 1.0f;
 
     static InputProvider createInstance(JoypadProvider joypadProvider) {
-        return JinputGamepadInputProvider.getInstance(joypadProvider);
+        InputProvider ip = InputProvider.NO_OP;
+        try {
+            ip = JinputGamepadInputProvider.getInstance(joypadProvider);
+        } catch (Exception | Error e) {
+            LOG.warn("Unable to load jinput", e);
+        }
+        return ip;
     }
 
     static void bootstrap() {
