@@ -1,7 +1,7 @@
 /*
  * InputProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/10/19 12:02
+ * Last modified: 07/10/19 14:07
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,9 @@ public interface InputProvider {
 
 
     boolean DEBUG_DETECTION = Boolean.valueOf(System.getProperty("jinput.detect.debug", "false"));
+    boolean JINPUT_ENABLE = Boolean.valueOf(System.getProperty("jinput.enable", "false"));
+    String JINPUT_NATIVES_PATH = System.getProperty("jinput.native.location", "privateLib");
+
 
     InputProvider NO_OP = new InputProvider() {
         @Override
@@ -58,17 +61,19 @@ public interface InputProvider {
 
     static InputProvider createInstance(JoypadProvider joypadProvider) {
         InputProvider ip = InputProvider.NO_OP;
-        try {
-            ip = JinputGamepadInputProvider.getInstance(joypadProvider);
-            throw new UnsatisfiedLinkError();
-        } catch (Exception | Error e) {
-            LOG.warn("Unable to load jinput: {}: {}", e.getClass().getName(), e.getMessage());
+        if (JINPUT_ENABLE) {
+            try {
+                ip = JinputGamepadInputProvider.getInstance(joypadProvider);
+                throw new UnsatisfiedLinkError();
+            } catch (Exception | Error e) {
+                LOG.warn("Unable to load jinput: {}: {}", e.getClass().getName(), e.getMessage());
+            }
         }
         return ip;
     }
 
     static void bootstrap() {
-        String lib = new File(".").getAbsolutePath() + File.separator + "privateLib"
+        String lib = new File(".").getAbsolutePath() + File.separator + JINPUT_NATIVES_PATH
                 + File.separator + NATIVE_SUBDIR;
 //        System.out.println(lib);
         System.setProperty("net.java.games.input.librarypath", lib);

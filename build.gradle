@@ -7,7 +7,7 @@ def jarNameHead = rootProject.name + "-" + version
 /*
  * build
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/10/19 11:53
+ * Last modified: 07/10/19 13:09
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ task copyRes {
     copy {
         from {
             ["CREDITS.md", "README.md", "HISTORY.md",
-             "LICENSE.md"]
+             "LICENSE.md", "helios.properties"]
         }
         into "$buildDir/packageDir"
     }
@@ -101,6 +101,12 @@ task copyRes {
     }
     copy {
         from configurations.runtime
+        into "$buildDir/packageDir/lib"
+    }
+    copy {
+        from("privateLib") {
+            exclude "misc/**"
+        }
         into "$buildDir/packageDir/lib"
     }
     copy {
