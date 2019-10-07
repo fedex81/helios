@@ -2,10 +2,12 @@ def dateString = getDate()
 group 'com.fberti.genesis'
 
 version dateString + '-SNAPSHOT'
+def jarNameHead = rootProject.name + "-" + version
+
 /*
  * build
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 06/10/19 17:27
+ * Last modified: 07/10/19 11:53
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,15 +78,6 @@ task fatJar(type: Jar) {
     with jar
 }
 
-task packageDistribution(type: Zip) {
-    archiveName = rootProject.name + "-" + version + ".zip"
-    destinationDir = file("$buildDir/dist")
-
-    from "$buildDir/packageDir"
-    println("Creating package: " + archiveName +
-            ", folder: " + destinationDir)
-}
-
 task copyRes {
     copy {
         from (".") {
@@ -95,7 +88,8 @@ task copyRes {
     }
     copy {
         from {
-            ["CREDITS.md", "README.md", "HISTORY.md", "LICENSE.md"]
+            ["CREDITS.md", "README.md", "HISTORY.md",
+             "LICENSE.md"]
         }
         into "$buildDir/packageDir"
     }
@@ -109,16 +103,48 @@ task copyRes {
         from configurations.runtime
         into "$buildDir/packageDir/lib"
     }
+    copy {
+        from ("res")
+            include "*.properties"
+        into "$buildDir/packageDir"
+    }
 }
 
 jar {
     manifest {
         attributes 'Implementation-Title': 'Helios',
-                'Implementation-Version': version,
-                'Main-Class': 'omegadrive.SystemLoader',
-                'Class-Path': configurations.compile.collect { "lib/" + it.getName() }.join(' ')
+                   'Implementation-Version': version,
+                   'Main-Class': 'omegadrive.SystemLoader',
+                   'Class-Path': configurations.compile.collect { "lib/" + it.getName() }.join(' ')
     }
     archivesBaseName = rootProject.name
     destinationDir = file("$buildDir/packageDir")
     println("Creating jar: " + archivesBaseName)
+}
+
+
+task packageDistribution(type: Zip) {
+    dependsOn "jar", "copyRes", "writeToFile"
+    archiveName = jarNameHead + ".zip"
+    destinationDir = file("$buildDir/dist")
+
+    from "$buildDir/packageDir"
+    println("Creating package: " + archiveName +
+            ", folder: " + destinationDir)
+}
+
+task writeToFile {
+    String jarName = jarNameHead + ".jar"
+    // sample list.(you already have it as extra.files.collect { file -> file.name })
+    List<String> sample = [ "java", "-XX:AutoBoxCacheMax=65536",
+                            "-Dlog4j.configurationFile=./log4j2.properties",
+                            "-jar", "$jarName" , "\n"] as String[]
+    // create the folders if it does not exist.(otherwise it will throw exception)
+    File extraFolder = new File( "${buildDir}/packageDir")
+    if( !extraFolder.exists() ) {
+        extraFolder.mkdirs()
+    }
+    // create the file and write text to it.
+    new File("${buildDir}/packageDir/launcher.sh").text = sample.join (" ")
+    new File("${buildDir}/packageDir/launcher.bat").text = sample.join (" ")
 }
