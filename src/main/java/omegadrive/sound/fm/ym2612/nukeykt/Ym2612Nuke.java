@@ -1,7 +1,7 @@
 /*
  * Ym2612Nuke
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 10/10/19 19:51
+ * Last modified: 10/10/19 20:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -129,9 +129,9 @@ public class Ym2612Nuke implements MdFmProvider {
     }
 
     private void spinOnce() {
-        if (chipRate > 888) {
-            return;
-        }
+//        if (chipRate > 888) {
+//            return;
+//        }
         ym3438.OPN2_Clock(chip, ym3438_accm[ym3438_cycles]);
         ym3438_cycles = (ym3438_cycles + 1) % 24;
         if (ym3438_cycles == 0) {

@@ -1,7 +1,7 @@
 /*
  * Ym3438
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:17
+ * Last modified: 10/10/19 20:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -646,7 +646,7 @@ public class Ym3438 implements IYm3438 {
         }
 
         /* Envelope off */
-        if (kon_event && chip.eg_ssg_hold_up_latch[slot] == 0 && chip.eg_state[slot] != eg_num_attack && eg_off > 0) {
+        if (!kon_event && chip.eg_ssg_hold_up_latch[slot] == 0 && chip.eg_state[slot] != eg_num_attack && eg_off > 0) {
             nextstate = eg_num_release;
             nextlevel = 0x3ff;
         }
