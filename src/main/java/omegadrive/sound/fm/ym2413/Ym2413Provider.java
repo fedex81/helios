@@ -1,7 +1,7 @@
 /*
  * Ym2413Provider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/10/19 14:22
+ * Last modified: 06/10/19 13:57
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,16 +34,18 @@ public class Ym2413Provider implements FmProvider {
     // Input clock
     private static final int CLOCK_HZ = 3579545;
     static double FM_CALCS_PER_MS = SoundProvider.SAMPLE_RATE_HZ / 1000.0;
-    static int AUDIO_SCALE_BITS = 2;
+    static int AUDIO_SCALE_BITS = 4;
 
     double rateAccum = 0;
     double ratio = SoundProvider.SAMPLE_RATE_HZ / FM_RATE;
+
     //TODO review perf of locking
     private Queue<Integer> sampleQueue = new ArrayDeque<>();
-
-    private OPLL opll;
     private volatile long queueLen = 0;
     private Object lock = new Object();
+
+    private OPLL opll;
+
 
     @Override
     public void reset() {

@@ -1,7 +1,7 @@
 /*
  * PrefStore
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 06/10/19 14:54
+ * Last modified: 10/10/19 19:50
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ public class PrefStore {
     private static String RECENT_FILE = "recent";
     public static int recentFileTotal = 10;
     private static Properties uiProperties = new Properties();
+    private static int nextSlot;
 
     public static void initPrefs() {
         try (
@@ -53,8 +54,12 @@ public class PrefStore {
     private static void bootstrapIfNecessary() {
         for (int i = 0; i < recentFileTotal; i++) {
             String key = RECENT_FILE + "." + i;
-            uiProperties.putIfAbsent(key, "");
+            Object res = uiProperties.putIfAbsent(key, "");
+            if (res == null && nextSlot < 0) {
+                nextSlot = i;
+            }
         }
+        nextSlot = nextSlot < 0 ? 0 : nextSlot;
     }
 
     public static void addRecentFile(String path) {
@@ -66,9 +71,11 @@ public class PrefStore {
             boolean free = Strings.isNullOrEmpty(uiProperties.getProperty(key, ""));
             if (free) {
                 uiProperties.put(key, path);
-                break;
+                return;
             }
         }
+        uiProperties.put(RECENT_FILE + "." + nextSlot, path);
+        nextSlot = (nextSlot + 1) % recentFileTotal;
     }
 
     public static List<String> getRecentFilesList() {

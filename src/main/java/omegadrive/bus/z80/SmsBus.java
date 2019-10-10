@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/10/19 14:22
+ * Last modified: 10/10/19 01:40
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -171,7 +171,8 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
             // D1 : Port A TH pin direction (1=input, 0=output)
             // D0 : Port A TR pin direction (1=input, 0=output)
             case 0x01: {
-                boolean oldTH = getTH(PORT_A) != 0 || getTH(PORT_B) != 0;
+                //TODO fix at some point? or remove
+                boolean oldTH = true || getTH(PORT_A) != 0 || getTH(PORT_B) != 0;
 
                 writePort(PORT_A, value);
                 writePort(PORT_B, value >> 2);
@@ -181,16 +182,11 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
                     hCounter = getHCount();
                 }
                 // Rough emulation of Nationalisation bits
-                else
-                {
-                    ioPorts[0] = (value & 0x20) << 1;
-                    ioPorts[1] = (value & 0x80);
-
-                    if (countryValue == DOMESTIC) // not european system
-                    {
-                        ioPorts[0] = ~ioPorts[0];
-                        ioPorts[1] = ~ioPorts[1];
-                    }
+                else {
+                    int valA = (value & 0x20) << 1;
+                    int valB = (value & 0x80);
+                    ioPorts[0] = (countryValue == DOMESTIC ? ~valA : valA) & 0x40;
+                    ioPorts[1] = (countryValue == DOMESTIC ? ~valB : valB) & 0x80;
                 }
             }
             break;

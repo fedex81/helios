@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/10/19 14:15
+ * Last modified: 05/10/19 14:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,10 +84,9 @@ public class JavaSoundManager implements SoundProvider {
             case SMS:
                 if (Sms.ENABLE_FM) {
                     fmProvider = Ym2413Provider.createInstance(region, SAMPLE_RATE_HZ);
-                    psgProvider = PsgProvider.NO_SOUND;
-                } else {
-                    psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
                 }
+                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
+
                 break;
             default:
                 psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
