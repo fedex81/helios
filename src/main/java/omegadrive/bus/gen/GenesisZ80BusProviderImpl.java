@@ -1,7 +1,7 @@
 /*
  * GenesisZ80BusProviderImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/07/19 19:42
+ * Last modified: 11/10/19 11:06
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,16 +149,6 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
         super.reset();
         romBank68kSerial = 0;
         romBankPointer = 0;
-    }
-
-    @Override
-    public void closeRom() {
-
-    }
-
-    @Override
-    public void newFrame() {
-
     }
 
     private void writeFm(int address, int data) {

@@ -1,7 +1,7 @@
 /*
  * DeviceAwareBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/05/19 16:46
+ * Last modified: 11/10/19 11:12
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ import omegadrive.z80.Z80Provider;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseBusProvider {
+public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseBusProvider, BaseVdpProvider.VdpEventListener {
 
     private Set<Device> deviceSet = new HashSet<>();
 
@@ -80,7 +80,16 @@ public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseB
         if (m68kProvider == null) {
             m68kProvider = getDevice(getDeviceSet(), M68kProvider.class);
         }
+    }
 
+    @Override
+    public void onNewFrame() {
+        //do nothing
+    }
+
+    @Override
+    public void onRegisterChange(int reg, int value) {
+        //do nothing
     }
 
     @Override

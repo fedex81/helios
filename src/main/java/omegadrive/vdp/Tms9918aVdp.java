@@ -1,7 +1,7 @@
 /*
- * Sg1000Vdp
+ * Tms9918aVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 11/10/19 11:20
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 package omegadrive.vdp;
 
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.Tms9918a;
@@ -99,7 +100,7 @@ public class Tms9918aVdp implements Tms9918a {
     }
 
     @Override
-    public boolean run(int cycles) {
+    public int run(int cycles) {
         boolean vBlank = interruptHandler.isvBlankSet();
         interruptHandler.increaseHCounter();
         boolean vBlankTrigger = !vBlank && interruptHandler.isvBlankSet();
@@ -107,7 +108,7 @@ public class Tms9918aVdp implements Tms9918a {
             setStatusINT(true);
             drawScreen();
         }
-        return interruptHandler.isEndOfFrameCounter();
+        return interruptHandler.isEndOfFrameCounter() ? 1 : 0;
     }
 
     @Override
@@ -130,8 +131,14 @@ public class Tms9918aVdp implements Tms9918a {
         return true;
     }
 
+    @Override
     public VideoMode getVideoMode() {
         return VideoMode.NTSCJ_H32_V24;
+    }
+
+    @Override
+    public void setRegion(RegionDetector.Region region) {
+        //do nothing
     }
 
     @Override

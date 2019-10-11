@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/07/19 13:26
+ * Last modified: 11/10/19 11:49
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -674,6 +674,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 break;
         }
         return res;
+    }
+
+    @Override
+    public int[][] getScreenData() {
+        return screenData;
     }
 
     @Override

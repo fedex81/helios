@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/10/19 14:22
+ * Last modified: 11/10/19 11:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
+import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.z80.SmsBus;
 import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.input.InputProvider;
@@ -132,7 +133,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
                     pauseAndWait();
                     resetCycleCounters(counter);
                     counter = 0;
-                    bus.newFrame();
+                    ((DeviceAwareBus) bus).onNewFrame();
                     startCycle = System.nanoTime();
                 }
                 counter++;
@@ -154,7 +155,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
-        ((SmsVdp) vdp).setRegion(region);
+        vdp.setRegion(region);
         z80.reset();
         vdp.reset();
         joypad.init();
@@ -189,7 +190,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     private void runVdp(long counter) {
         if (counter % 2 == 1) {
-            if (vdp.run(1)) {
+            if (vdp.run(1) > 0) {
                 canRenderScreen = true;
             }
         }

@@ -1,7 +1,7 @@
 /*
  * VdpInterruptHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/07/19 13:26
+ * Last modified: 11/10/19 11:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,16 +19,14 @@
 
 package omegadrive.vdp.gen;
 
-import omegadrive.system.Genesis;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpSlotType;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.Random;
 
 /**
  *
@@ -66,9 +64,7 @@ public class VdpInterruptHandler {
     private boolean vIntPending;
     protected boolean hIntPending;
 
-    private Random rnd = new Random();
-
-    protected static boolean veryVerbose = false || Genesis.verbose;
+    protected static boolean veryVerbose = false;
     protected static boolean verbose = false || veryVerbose;
 
     protected boolean eventFlag;
@@ -238,12 +234,13 @@ public class VdpInterruptHandler {
         return slotNumber == vdpCounterMode.slotsPerLine - 1;
     }
 
-    public boolean isLastLine() {
-        return vCounterInternal == COUNTER_LIMIT;
+    public int getVdpClockSpeed() {
+        return videoMode.isH40() && hCounterInternal > BaseVdpProvider.H40_SLOW_CLOCK ?
+                BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP : BaseVdpProvider.MCLK_DIVIDER_FAST_VDP;
     }
 
     public boolean isEndOfFrameCounter() {
-        return isLastLine() && hCounterInternal == COUNTER_LIMIT;
+        return vCounterInternal == COUNTER_LIMIT && hCounterInternal == COUNTER_LIMIT;
     }
 
     public boolean isDrawFrameSlot() {

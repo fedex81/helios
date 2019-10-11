@@ -1,7 +1,7 @@
 /*
  * BaseVdpProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/07/19 18:24
+ * Last modified: 11/10/19 11:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 package omegadrive.vdp.model;
 
 import omegadrive.Device;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,9 +31,8 @@ public interface BaseVdpProvider extends Device {
 
     Logger LOG = LogManager.getLogger(BaseVdpProvider.class.getSimpleName());
 
-    default boolean addVdpEventListener(VdpEventListener l) {
-        throw new UnsupportedOperationException("Not supported");
-    }
+    int MCLK_DIVIDER_FAST_VDP = 4;
+    int MCLK_DIVIDER_SLOW_VDP = 5;
 
     int V18_CELL = 144;
     int V24_CELL = 192;
@@ -68,10 +68,11 @@ public interface BaseVdpProvider extends Device {
     int V30_NTSC_JUMP = -1; //never
     int H32_SLOTS = H32_PIXELS / 2;
     int H40_SLOTS = H40_PIXELS / 2;
+    int H40_SLOW_CLOCK = 0x1E2;
 
     void init();
 
-    boolean run(int cycles);
+    int run(int cycles);
 
     int getRegisterData(int reg);
 
@@ -84,6 +85,8 @@ public interface BaseVdpProvider extends Device {
     VdpMemoryInterface getVdpMemory();
 
     int[][] getScreenData();
+
+    void setRegion(RegionDetector.Region region);
 
     //after loading a state
     default void reload() {
@@ -106,9 +109,23 @@ public interface BaseVdpProvider extends Device {
         throw new UnsupportedOperationException("Not supported");
     }
 
+    default boolean addVdpEventListener(VdpEventListener l) {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
     interface VdpEventListener extends EventListener {
         void onNewFrame();
 
         void onRegisterChange(int reg, int value);
+    }
+
+    abstract class VdpEventAdapter implements VdpEventListener {
+        @Override
+        public void onNewFrame() {
+        }
+
+        @Override
+        public void onRegisterChange(int reg, int value) {
+        }
     }
 }

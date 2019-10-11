@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/07/19 13:26
+ * Last modified: 11/10/19 11:48
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,6 +57,8 @@ public interface VdpRenderHandler {
     void renderLine(int line);
 
     void initLineData(int line);
+
+    int[][] getScreenData();
 
     static int getHorizontalTiles(boolean isH40) {
         return isH40 ? H40_TILES : H32_TILES;

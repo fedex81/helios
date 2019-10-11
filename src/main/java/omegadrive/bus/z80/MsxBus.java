@@ -1,7 +1,7 @@
 /*
  * MsxBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/05/19 16:25
+ * Last modified: 11/10/19 11:06
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -294,12 +294,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvide
     }
 
     @Override
-    public void closeRom() {
-
-    }
-
-    @Override
-    public void newFrame() {
+    public void onNewFrame() {
         joypadProvider.newFrame();
     }
 

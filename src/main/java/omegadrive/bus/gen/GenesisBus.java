@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 16/09/19 18:17
+ * Last modified: 11/10/19 11:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -690,7 +690,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     @Override
-    public void newFrame() {
+    public void onNewFrame() {
         busArbiter.newFrame();
         joypadProvider.newFrame();
     }

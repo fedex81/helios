@@ -1,7 +1,7 @@
 /*
  * Z80BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:15
+ * Last modified: 11/10/19 11:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
+import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.z80.ColecoBus;
 import omegadrive.bus.z80.MsxBus;
 import omegadrive.bus.z80.Sg1000Bus;
@@ -141,7 +142,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
                     pauseAndWait();
                     resetCycleCounters(counter);
                     counter = 0;
-                    bus.newFrame();
+                    ((DeviceAwareBus) bus).onNewFrame(); //TODO fix
                     startCycle = System.nanoTime();
                 }
                 counter++;
@@ -209,7 +210,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
 
     private void runVdp(long counter) {
         if (counter % 2 == 1) {
-            if (vdp.run(1)) {
+            if (vdp.run(1) > 0) {
                 canRenderScreen = true;
                 vdpScreen = vdp.getScreenData();
             }

@@ -1,7 +1,7 @@
 /*
  * Genesis
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:19
+ * Last modified: 11/10/19 11:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
+import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.gen.GenesisBus;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.input.InputProvider;
@@ -32,11 +33,13 @@ import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
+import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
@@ -68,24 +71,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         return new Genesis(emuFrame);
     }
 
-    @Override
-    public void init() {
-        stateHandler = GenesisStateHandler.EMPTY_STATE;
-        joypad = new GenesisJoypad();
-        inputProvider = InputProvider.createInstance(joypad);
-
-        memory = MemoryProvider.createGenesisInstance();
-        bus = new GenesisBus();
-        vdp = GenesisVdpProvider.createVdp(bus);
-        cpu = new MC68000Wrapper(bus);
-        z80 = Z80CoreWrapper.createGenesisInstance(bus);
-        //sound attached later
-        sound = SoundProvider.NO_SOUND;
-
-        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
-                attachDevice(cpu).attachDevice(z80);
-        reloadKeyListeners();
-    }
+    private static int M68K_DIVIDER = 1; //7.67 Mhz PAL  0.5714
 
     @Override
     protected GenesisStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
@@ -130,7 +116,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
 //    private static int FM_DIVIDER = 42; //1.267 Mhz PAL 0.2666
 
     private static int VDP_DIVIDER = 2;  //3.325 Mhz PAL
-    private static int M68K_DIVIDER = 1; //7.6 Mhz PAL  0.5714
+    int tick = 0;
     private static int Z80_DIVIDER = 2; //3.546 Mhz PAL 0.2666
     private static int FM_DIVIDER = 6; //1.267 Mhz PAL 0.2666
 
@@ -140,45 +126,25 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
 
     private double microsPerTick = 1;
 
-    protected void loop() {
-        LOG.info("Starting game loop");
+    @Override
+    public void init() {
+        stateHandler = GenesisStateHandler.EMPTY_STATE;
+        joypad = new GenesisJoypad();
+        inputProvider = InputProvider.createInstance(joypad);
 
-        int counter = 1;
-        long startCycle = System.nanoTime();
-        targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
-        updateVideoMode();
+        memory = MemoryProvider.createGenesisInstance();
+        bus = new GenesisBus();
+        vdp = GenesisVdpProvider.createVdp(bus);
+        cpu = new MC68000Wrapper(bus);
+        z80 = Z80CoreWrapper.createGenesisInstance(bus);
+        //sound attached later
+        sound = SoundProvider.NO_SOUND;
 
-        do {
-            try {
-                run68k(counter);
-                runZ80(counter);
-                runFM(counter);
-                runVdp(counter);
-                if (canRenderScreen) {
-                    renderScreenInternal(getStats(startCycle));
-                    handleVdpDumpScreenData();
-                    updateVideoMode();
-                    canRenderScreen = false;
-                    int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
-                    sound.output(elapsedNs);
-                    if (Thread.currentThread().isInterrupted()) {
-                        LOG.info("Game thread stopped");
-                        break;
-                    }
-                    processSaveState();
-                    pauseAndWait();
-                    resetCycleCounters(counter);
-                    counter = 0;
-                    startCycle = System.nanoTime();
-                    bus.newFrame();
-                }
-                counter++;
-            } catch (Exception e) {
-                LOG.error("Error main cycle", e);
-                break;
-            }
-        } while (!runningRomFuture.isDone());
-        LOG.info("Exiting rom thread loop");
+        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
+                attachDevice(cpu).attachDevice(z80);
+        vdp.addVdpEventListener(((DeviceAwareBus) bus));
+        reloadKeyListeners();
+        createAndAddVdpEventListener();
     }
 
     private void resetCycleCounters(int counter) {
@@ -241,10 +207,64 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         }
     }
 
+    protected void loop() {
+        LOG.info("Starting game loop");
+
+        int counter = 1;
+        long startCycle = System.nanoTime();
+        targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
+        updateVideoMode();
+
+        do {
+            try {
+                run68k(counter);
+                runZ80(counter);
+                runFM(counter);
+                runVdp(counter);
+                if (canRenderScreen) {
+                    renderScreen(vdp.getScreenData());
+                    renderScreenInternal(getStats(startCycle));
+                    handleVdpDumpScreenData();
+                    updateVideoMode();
+                    canRenderScreen = false;
+                    int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
+                    sound.output(elapsedNs);
+                    if (Thread.currentThread().isInterrupted()) {
+                        LOG.info("Game thread stopped");
+                        break;
+                    }
+                    processSaveState();
+                    pauseAndWait();
+                    resetCycleCounters(counter);
+                    counter = 0;
+                    startCycle = System.nanoTime();
+//                    ((DeviceAwareBus)bus).onNewFrame();
+//                    System.out.println("ticks: "+ tick +", chipRate: "+ Ym2612Nuke.chipRate + ", sampleRate: " + Ym2612Nuke.sampleRate);
+                    tick = Ym2612Nuke.chipRate = Ym2612Nuke.sampleRate = 0;
+                }
+                counter++;
+            } catch (Exception e) {
+                LOG.error("Error main cycle", e);
+                break;
+            }
+        } while (!runningRomFuture.isDone());
+        LOG.info("Exiting rom thread loop");
+    }
+
     private void runFM(int counter) {
         if (counter % FM_DIVIDER == 0) {
             bus.getFm().tick(microsPerTick);
+//            tick++;
         }
+    }
+
+    private void createAndAddVdpEventListener() {
+        vdp.addVdpEventListener(new BaseVdpProvider.VdpEventAdapter() {
+            @Override
+            public void onNewFrame() {
+                canRenderScreen = true;
+            }
+        });
     }
 
     protected void initAfterRomLoad() {

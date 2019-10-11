@@ -1,7 +1,7 @@
 /*
  * GenesisVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 09/09/19 17:19
+ * Last modified: 11/10/19 11:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
 package omegadrive.vdp.gen;
 
 import omegadrive.bus.gen.GenesisBusProvider;
-import omegadrive.system.Genesis;
-import omegadrive.system.SystemProvider;
 import omegadrive.util.*;
 import omegadrive.vdp.model.*;
 import org.apache.logging.log4j.Level;
@@ -29,7 +27,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -44,9 +43,9 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
 
     private static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
-    public static boolean verbose = false || Genesis.verbose;
-    public static boolean fifoVerbose = false || Genesis.verbose;
-    public static boolean regVerbose = false || verbose || Genesis.verbose;
+    public static boolean verbose = false;
+    public static boolean fifoVerbose = false;
+    public static boolean regVerbose = false;
 
     private static boolean ENABLE_FIFO = Boolean.valueOf(System.getProperty("vdp.enable.fifo", "true"));
     private static boolean ENABLE_READ_AHEAD = Boolean.valueOf(System.getProperty("vdp.enable.read.ahead", "false"));
@@ -135,6 +134,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     private IVdpFifo fifo;
     private VideoMode videoMode;
     private RegionDetector.Region region;
+    private List<VdpEventListener> list;
 
     public static GenesisVdp createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface,
                                             VdpDmaHandler dmaHandler, RegionDetector.Region region) {
@@ -152,6 +152,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         v.bus = bus;
         v.memoryInterface = memoryInterface;
         v.dmaHandler = VdpDmaHandlerImpl.createInstance(v, v.memoryInterface, bus);
+        v.region = RegionDetector.Region.EUROPE;
         v.setupVdp();
         return v;
     }
@@ -167,6 +168,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
         this.fifo = ENABLE_FIFO ? new VdpFifo() : IVdpFifo.createNoFifo(memoryInterface);
+        this.list = new ArrayList<>();
         this.initMode();
     }
 
@@ -203,9 +205,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         initMode();
     }
 
-    //TODO fix this
     private void initMode() {
-        region = Optional.ofNullable(bus.getSystem()).map(SystemProvider::getRegion).orElse(RegionDetector.Region.EUROPE);
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
         resetVideoMode(true);
         reloadRegisters();
@@ -521,6 +521,9 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
             case vsramRead:
                 res = (fifoData & 0xF800) | (res & 0x7FF);
                 break;
+            default:
+                LOG.error("Unexpected vramMode: {}", vramMode);
+                break;
         }
         LogHelper.printLevel(LOG, Level.INFO, "readDataPort, address {} , result {}, size {}", addressRegister, res,
                 Size.WORD, verbose);
@@ -704,7 +707,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         return false;
     }
 
-    private void runSlot() {
+    private int runSlot() {
 //        LogHelper.printLevel(LOG, Level.INFO, "Start slot: {}", interruptHandler.getSlotNumber(), verbose);
         boolean displayEnable = disp;
         //slot granularity -> 2 H counter increases per cycle
@@ -722,14 +725,15 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         //draw the frame
         if (interruptHandler.isDrawFrameSlot()) {
             interruptHandler.logVerbose("Draw Screen");
-            int[][] screenData = renderHandler.renderFrame();
-            bus.getSystem().renderScreen(screenData);
+            renderHandler.renderFrame();
+            list.forEach(VdpEventListener::onNewFrame);
             resetVideoMode(false);
         }
         if (interruptHandler.isFirstLineSlot()) {
             renderHandler.initLineData(interruptHandler.vCounterInternal);
             drawScanline(interruptHandler.vCounterInternal, displayEnable);
         }
+        return interruptHandler.getVdpClockSpeed();
     }
 
 
@@ -772,12 +776,12 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
 
     @Override
     public boolean addVdpEventListener(VdpEventListener l) {
-        return false;
+        return list.add(l);
     }
 
     @Override
     public boolean removeVdpEventListener(VdpEventListener l) {
-        return false;
+        return list.remove(l);
     }
 
     @Override
@@ -786,9 +790,8 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public boolean run(int cycles) {
-        runSlot();
-        return false;
+    public int run(int cycles) {
+        return runSlot();
     }
 
     @Override
@@ -808,7 +811,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
 
     @Override
     public int[][] getScreenData() {
-        return null; //TODO
+        return renderHandler.getScreenData();
     }
 
     @Override
@@ -824,6 +827,11 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     @Override
     public String getVdpStateString() {
         return interruptHandler.getStateString(" - ");
+    }
+
+    @Override
+    public void setRegion(RegionDetector.Region region) {
+        this.region = region;
     }
 
     @Override

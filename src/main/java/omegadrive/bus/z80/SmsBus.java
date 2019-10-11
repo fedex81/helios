@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 10/10/19 01:40
+ * Last modified: 11/10/19 11:07
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -365,7 +365,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
     }
 
     @Override
-    public void newFrame() {
+    public void onNewFrame() {
         joypadProvider.newFrame();
     }
 
