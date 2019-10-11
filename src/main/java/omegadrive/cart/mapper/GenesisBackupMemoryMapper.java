@@ -1,7 +1,7 @@
 /*
  * GenesisBackupMemoryMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/06/19 17:12
+ * Last modified: 11/10/19 15:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@ package omegadrive.cart.mapper;
 import omegadrive.SystemLoader;
 import omegadrive.bus.gen.GenesisBus;
 import omegadrive.cart.GenesisCartInfoProvider;
-import omegadrive.system.Genesis;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
@@ -39,7 +38,7 @@ public class GenesisBackupMemoryMapper extends BackupMemoryMapper implements Rom
      */
 
     private static Logger LOG = LogManager.getLogger(GenesisBackupMemoryMapper.class.getSimpleName());
-    private static boolean verbose = false || Genesis.verbose;
+    private static boolean verbose = false;
     private static String fileType = "srm";
     private RomMapper baseMapper;
     private GenesisCartInfoProvider cartridgeInfoProvider;

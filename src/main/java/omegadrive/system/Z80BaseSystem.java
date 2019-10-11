@@ -1,7 +1,7 @@
 /*
  * Z80BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:51
+ * Last modified: 11/10/19 15:00
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -115,12 +115,12 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
     int nextZ80Cycle = Z80_DIVIDER;
     int nextVdpCycle = VDP_DIVIDER;
 
+    int counter = 1;
+    long startCycle = System.nanoTime();
+
     @Override
     protected void loop() {
         LOG.info("Starting game loop");
-
-        int counter = 1;
-        long startCycle = System.nanoTime();
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         updateVideoMode();
 
@@ -128,23 +128,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
             try {
                 runZ80(counter);
                 runVdp(counter);
-                if (canRenderScreen) {
-                    renderScreenInternal(getStats(System.nanoTime()));
-                    handleVdpDumpScreenData();
-                    updateVideoMode();
-                    canRenderScreen = false;
-                    int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
-                    if (Thread.currentThread().isInterrupted()) {
-                        LOG.info("Game thread stopped");
-                        break;
-                    }
-//                    processSaveState();
-                    pauseAndWait();
-                    resetCycleCounters(counter);
-                    counter = 0;
-                    ((DeviceAwareBus) bus).onNewFrame(); //TODO fix
-                    startCycle = System.nanoTime();
-                }
                 counter++;
             } catch (Exception e) {
                 LOG.error("Error main cycle", e);
@@ -152,6 +135,25 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
             }
         } while (!runningRomFuture.isDone());
         LOG.info("Exiting rom thread loop");
+    }
+
+    @Override
+    protected void newFrame() {
+        vdpScreen = vdp.getScreenData();
+        renderScreenInternal(getStats(System.nanoTime()));
+        handleVdpDumpScreenData();
+        updateVideoMode();
+        int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
+        if (Thread.currentThread().isInterrupted()) {
+            LOG.info("Game thread stopped");
+            runningRomFuture.cancel(true);
+        }
+//                    processSaveState();
+        pauseAndWait();
+        resetCycleCounters(counter);
+        counter = 0;
+
+        startCycle = System.nanoTime();
     }
 
     @Override
@@ -211,8 +213,8 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
     private void runVdp(long counter) {
         if (counter % 2 == 1) {
             if (vdp.run(1) > 0) {
-                canRenderScreen = true;
-                vdpScreen = vdp.getScreenData();
+                newFrame();
+                ((DeviceAwareBus) bus).onNewFrame(); //TODO fix
             }
         }
     }

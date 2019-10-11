@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:05
+ * Last modified: 11/10/19 15:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@ import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.Ssf2Mapper;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
-import omegadrive.system.Genesis;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -42,7 +41,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     private static Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
-    public static boolean verbose = false || Genesis.verbose;
+    public static boolean verbose = false;
 
     private GenesisCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
@@ -208,7 +207,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     private void logVdpCounter(int v, int h) {
-        if (Genesis.verbose) {
+        if (verbose) {
             LOG.info("Read HV counter, hce={}, vce={}", Long.toHexString(h), Long.toHexString(v));
         }
     }

@@ -1,7 +1,7 @@
 /*
  * SystemProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/07/19 18:24
+ * Last modified: 11/10/19 14:30
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ public interface SystemProvider extends Device {
 
     void handleSystemEvent(SystemEvent event, Object parameter);
 
-    void renderScreen(int[][] screenData);
+    void copyScreenData(int[][] screenData);
 
     /**
      * STATE

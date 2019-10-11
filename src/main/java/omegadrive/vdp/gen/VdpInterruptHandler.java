@@ -1,7 +1,7 @@
 /*
  * VdpInterruptHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:51
+ * Last modified: 11/10/19 15:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@ public class VdpInterruptHandler {
     private VideoMode videoMode;
     protected VdpCounterMode vdpCounterMode;
     protected VdpHLineProvider vdpHLineProvider;
+    protected boolean h40;
 
     protected boolean vBlankSet;
     private boolean hBlankSet;
@@ -80,6 +81,7 @@ public class VdpInterruptHandler {
         if (this.videoMode != videoMode) {
             this.videoMode = videoMode;
             this.vdpCounterMode = VdpCounterMode.getCounterMode(videoMode);
+            this.h40 = videoMode.isH40();
             reset();
         }
     }
@@ -234,9 +236,15 @@ public class VdpInterruptHandler {
         return slotNumber == vdpCounterMode.slotsPerLine - 1;
     }
 
+    /**
+     * H32 = 171 slots = 171/5 = 42.75
+     * H40 = 210 slots = 195/4 + 15/5 = 42.75
+     *
+     * @return
+     */
     public int getVdpClockSpeed() {
-        return videoMode.isH40() && hCounterInternal > BaseVdpProvider.H40_SLOW_CLOCK ?
-                BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP : BaseVdpProvider.MCLK_DIVIDER_FAST_VDP;
+        return h40 && hCounterInternal < BaseVdpProvider.H40_SLOW_CLOCK ?
+                BaseVdpProvider.MCLK_DIVIDER_FAST_VDP : BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP;
     }
 
     public boolean isEndOfFrameCounter() {

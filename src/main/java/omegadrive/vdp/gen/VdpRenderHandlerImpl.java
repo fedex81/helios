@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:49
+ * Last modified: 11/10/19 15:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 
 package omegadrive.vdp.gen;
 
-import omegadrive.system.Genesis;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.VdpRenderDump;
 import omegadrive.vdp.gen.VdpScrollHandler.HSCROLL;
@@ -61,7 +60,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
 
-    private static boolean verbose = Genesis.verbose || false;
+    private static boolean verbose = false;
 
     private GenesisVdpProvider vdpProvider;
     private VdpMemoryInterface memoryInterface;

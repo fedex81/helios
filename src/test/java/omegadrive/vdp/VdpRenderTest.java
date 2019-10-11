@@ -1,7 +1,7 @@
 /*
  * VdpRenderTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 19/07/19 13:35
+ * Last modified: 11/10/19 14:30
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ public class VdpRenderTest {
             int count = 0;
 
             @Override
-            public void renderScreen(int[][] sd) {
+            public void copyScreenData(int[][] sd) {
                 boolean isValid = isValidImage(sd);
                 if (isValid) {
                     VdpRenderTest.screenData = sd;

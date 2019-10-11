@@ -1,7 +1,7 @@
 /*
  * Util
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/05/19 13:35
+ * Last modified: 11/10/19 15:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.IMemoryRom;
-import omegadrive.system.Genesis;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,7 +41,7 @@ public class Util {
 
     private static Logger LOG = LogManager.getLogger(Util.class.getSimpleName());
 
-    public static boolean verbose = Genesis.verbose || false;
+    public static boolean verbose = false;
 
     public static final int GEN_NTSC_MCLOCK_MHZ = 53693175;
     public static final int GEN_PAL_MCLOCK_MHZ = 53203424;

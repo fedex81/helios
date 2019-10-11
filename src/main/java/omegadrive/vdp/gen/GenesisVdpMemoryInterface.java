@@ -1,7 +1,7 @@
 /*
  * GenesisVdpMemoryInterface
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 19/07/19 13:35
+ * Last modified: 11/10/19 15:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 
 package omegadrive.vdp.gen;
 
-import omegadrive.system.Genesis;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.util.CramViewer;
@@ -33,7 +32,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     private static Logger LOG = LogManager.getLogger(GenesisVdpMemoryInterface.class.getSimpleName());
 
-    public static boolean verbose = false || Genesis.verbose;
+    public static boolean verbose = false;
     private static int EVEN_VALUE_MASK = ~1;
 
     private int[] vram;

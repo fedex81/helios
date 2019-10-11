@@ -1,7 +1,7 @@
 /*
  * VdpTestUtil
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 15/07/19 17:10
+ * Last modified: 11/10/19 14:30
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -148,7 +148,7 @@ public class VdpTestUtil {
             }
 
             @Override
-            public void renderScreen(int[][] screenData) {
+            public void copyScreenData(int[][] screenData) {
 
             }
 

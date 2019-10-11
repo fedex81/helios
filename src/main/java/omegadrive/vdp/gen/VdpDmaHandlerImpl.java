@@ -1,7 +1,7 @@
 /*
  * VdpDmaHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 11/10/19 15:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 package omegadrive.vdp.gen;
 
 import omegadrive.bus.gen.GenesisBusProvider;
-import omegadrive.system.Genesis;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
@@ -40,7 +39,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     private static Logger LOG = LogManager.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
 
-    public static boolean verbose = false || Genesis.verbose;
+    public static boolean verbose = false;
     public static boolean lessVerbose = false || verbose;
     public static boolean printToSysOut = false;
 

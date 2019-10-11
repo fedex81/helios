@@ -1,7 +1,7 @@
 /*
  * MC68000Wrapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 12/07/19 20:51
+ * Last modified: 11/10/19 15:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
 import omegadrive.bus.gen.GenesisBusProvider;
-import omegadrive.system.Genesis;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,7 +38,7 @@ public class MC68000Wrapper implements M68kProvider {
 
     private static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
 
-    public static boolean verbose = Genesis.verbose || false;
+    public static boolean verbose = false;
     public static boolean STOP_ON_EXCEPTION;
     public static boolean GENESIS_TAS_BROKEN;
 

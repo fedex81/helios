@@ -1,7 +1,7 @@
 /*
  * Z80CoreWrapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/07/19 12:42
+ * Last modified: 11/10/19 15:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ import emulib.plugins.cpu.DisassembledInstruction;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
-import omegadrive.system.Genesis;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -46,7 +45,8 @@ public class Z80CoreWrapper implements Z80Provider {
         STOP_ON_EXCEPTION =
             Boolean.valueOf(System.getProperty("z80.stop.on.exception", "false"));
     }
-    public static boolean verbose = Genesis.verbose || false;
+
+    public static boolean verbose = false;
 
     private Z80 z80Core;
     private BaseBusProvider z80BusProvider;

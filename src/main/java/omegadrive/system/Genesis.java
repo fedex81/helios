@@ -1,7 +1,7 @@
 /*
  * Genesis
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:51
+ * Last modified: 11/10/19 15:05
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,6 @@ import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
@@ -54,6 +53,7 @@ import java.nio.file.Path;
  *
  * MEMORY MAP:	https://en.wikibooks.org/wiki/Genesis_Programming
  */
+@Deprecated
 public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler> {
 
     private static Logger LOG = LogManager.getLogger(Genesis.class.getSimpleName());
@@ -207,11 +207,11 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         }
     }
 
+    int counter = 1;
+    long startCycle = System.nanoTime();
+
     protected void loop() {
         LOG.info("Starting game loop");
-
-        int counter = 1;
-        long startCycle = System.nanoTime();
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         updateVideoMode();
 
@@ -221,27 +221,6 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
                 runZ80(counter);
                 runFM(counter);
                 runVdp(counter);
-                if (canRenderScreen) {
-                    renderScreen(vdp.getScreenData());
-                    renderScreenInternal(getStats(startCycle));
-                    handleVdpDumpScreenData();
-                    updateVideoMode();
-                    canRenderScreen = false;
-                    int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
-                    sound.output(elapsedNs);
-                    if (Thread.currentThread().isInterrupted()) {
-                        LOG.info("Game thread stopped");
-                        break;
-                    }
-                    processSaveState();
-                    pauseAndWait();
-                    resetCycleCounters(counter);
-                    counter = 0;
-                    startCycle = System.nanoTime();
-//                    ((DeviceAwareBus)bus).onNewFrame();
-//                    System.out.println("ticks: "+ tick +", chipRate: "+ Ym2612Nuke.chipRate + ", sampleRate: " + Ym2612Nuke.sampleRate);
-                    tick = Ym2612Nuke.chipRate = Ym2612Nuke.sampleRate = 0;
-                }
                 counter++;
             } catch (Exception e) {
                 LOG.error("Error main cycle", e);
@@ -251,20 +230,33 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         LOG.info("Exiting rom thread loop");
     }
 
+    @Override
+    protected void newFrame() {
+        copyScreenData(vdp.getScreenData());
+        renderScreenInternal(getStats(startCycle));
+        handleVdpDumpScreenData();
+        updateVideoMode();
+        int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
+        sound.output(elapsedNs);
+        if (Thread.currentThread().isInterrupted()) {
+            LOG.info("Game thread stopped");
+            runningRomFuture.cancel(true);
+        }
+        processSaveState();
+        pauseAndWait();
+        resetCycleCounters(counter);
+        counter = 0;
+        startCycle = System.nanoTime();
+//                    ((DeviceAwareBus)bus).onNewFrame();
+//                    System.out.println("ticks: "+ tick +", chipRate: "+ Ym2612Nuke.chipRate + ", sampleRate: " + Ym2612Nuke.sampleRate);
+        tick = Ym2612Nuke.chipRate = Ym2612Nuke.sampleRate = 0;
+    }
+
     private void runFM(int counter) {
         if (counter % FM_DIVIDER == 0) {
             bus.getFm().tick(microsPerTick);
 //            tick++;
         }
-    }
-
-    private void createAndAddVdpEventListener() {
-        vdp.addVdpEventListener(new BaseVdpProvider.VdpEventAdapter() {
-            @Override
-            public void onNewFrame() {
-                canRenderScreen = true;
-            }
-        });
     }
 
     protected void initAfterRomLoad() {

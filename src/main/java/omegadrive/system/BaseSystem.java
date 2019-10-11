@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 06/10/19 14:45
+ * Last modified: 11/10/19 15:00
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -92,6 +92,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     }
 
     protected abstract STH createStateHandler(Path file, BaseStateHandler.Type type);
+
+    protected abstract void newFrame();
 
     @Override
     public void handleSystemEvent(SystemEvent event, Object parameter) {
@@ -202,6 +204,15 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
     }
 
+    protected void createAndAddVdpEventListener() {
+        vdp.addVdpEventListener(new BaseVdpProvider.VdpEventAdapter() {
+            @Override
+            public void onNewFrame() {
+                newFrame();
+            }
+        });
+    }
+
     @Override
     public boolean isRomRunning() {
         return runningRomFuture != null && !runningRomFuture.isDone();
@@ -292,15 +303,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         return lastFps + "fps";
     }
 
-    protected boolean canRenderScreen = false;
     int[][] vdpScreen = new int[0][];
 
-    public void renderScreen(int[][] screenData) {
+    public void copyScreenData(int[][] screenData) {
         if (screenData.length != vdpScreen.length) {
             vdpScreen = screenData.clone();
         }
         Util.arrayDataCopy(screenData, vdpScreen);
-        canRenderScreen = true;
     }
 
     protected void handleVdpDumpScreenData() {
