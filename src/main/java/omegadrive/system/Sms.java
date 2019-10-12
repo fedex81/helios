@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:03
+ * Last modified: 12/10/19 16:58
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,6 +52,9 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     public static boolean verbose = false;
     public static final boolean ENABLE_FM = Boolean.valueOf(System.getProperty("sms.enable.fm", "false"));
 
+    public static int MCLK_PAL = 53203424;
+    public static int MCLK_NTSC = 53693175;
+
     protected Sms(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);
         this.systemType = systemType;
@@ -60,8 +63,6 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         return new Sms(systemType, emuFrame);
     }
-
-
 
     private void initCommon() {
         inputProvider = InputProvider.createInstance(joypad);
@@ -88,9 +89,9 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
      * Z80 and PSG clock is 53203424 / 15 or VDP clock / 3.
      * NTSC Master clock is 53693175 Hz.
      */
-    private static int VDP_DIVIDER = 1;  //10.738635 Mhz
-    private static int Z80_DIVIDER = 3; //3.579545 Mhz
-    private static int FM_DIVIDER = Z80_DIVIDER * 72; //49716 hz
+    protected static int VDP_DIVIDER = 2;  //10.738635 Mhz
+    protected static int Z80_DIVIDER = 3; //3.579545 Mhz
+    protected static int FM_DIVIDER = Z80_DIVIDER * 72; //49716 hz
 
     int nextZ80Cycle = Z80_DIVIDER;
     int nextVdpCycle = VDP_DIVIDER;
@@ -106,8 +107,9 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     }
 
 
-    int counter = 1;
-    long startCycle = System.nanoTime();
+    protected int counter = 1;
+    protected long startCycle = System.nanoTime();
+    protected int elapsedNs;
 
     @Override
     protected void loop() {
@@ -134,7 +136,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         renderScreenLinearInternal(vdp.getScreenData()[0], getStats(System.nanoTime()));
         handleVdpDumpScreenData();
         handleNmi();
-        int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
+        elapsedNs = (int) (syncCycle(startCycle) - startCycle);
         if (Thread.currentThread().isInterrupted()) {
             LOG.info("Game thread stopped");
             runningRomFuture.cancel(true);
@@ -185,13 +187,13 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         }
     }
 
-    private void resetCycleCounters(int counter) {
+    protected void resetCycleCounters(int counter) {
         nextZ80Cycle -= counter;
         nextVdpCycle -= counter;
     }
 
-    private void runVdp(long counter) {
-        if (counter % 2 == 1) {
+    protected void runVdp(long counter) {
+        if (counter % VDP_DIVIDER == 0) {
             if (vdp.run(1) > 0) {
                 newFrame();
                 ((DeviceAwareBus) bus).onNewFrame(); //TODO
@@ -199,7 +201,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         }
     }
 
-    private void runZ80(long counter) {
+    protected void runZ80(long counter) {
         if (counter == nextZ80Cycle) {
             int cycleDelay = z80.executeInstruction();
             handleMaskableInterrupts();
@@ -208,7 +210,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         }
     }
 
-    private void runFM(int counter) {
+    protected void runFM(int counter) {
         if (counter % FM_DIVIDER == 0) {
             sound.getFm().tick(0);
         }
