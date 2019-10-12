@@ -1,7 +1,7 @@
 /*
  * VdpScrollHandlerTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 19/07/19 13:35
+ * Last modified: 12/10/19 17:06
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 package omegadrive.vdp.gen;
 
+import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpScrollHandler.ScrollContext;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -215,8 +216,8 @@ public class VdpScrollHandlerTest {
         }
 
         @Override
-        public boolean run(int cycles) {
-            return false;
+        public int run(int cycles) {
+            return 0;
         }
 
         @Override
@@ -247,6 +248,11 @@ public class VdpScrollHandlerTest {
         @Override
         public int[][] getScreenData() {
             return new int[0][];
+        }
+
+        @Override
+        public void setRegion(RegionDetector.Region region) {
+
         }
     }
 }

@@ -1,7 +1,7 @@
 /*
  * JoypadProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 12/10/19 18:12
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,6 +45,26 @@ public interface JoypadProvider extends Device {
     enum JoypadButton {
         A, B, C, X, Y, Z, M, S, U, D, L, R,
         K0, K1, K2, K3, K4, K5, K6, K7, K8, K9, K_AST, K_HASH
+    }
+
+    enum JoypadDirection {
+        UP_DOWN(U, D),
+        LEFT_RIGHT(L, R);
+
+        JoypadButton b1, b2;
+
+        JoypadDirection(JoypadButton b1, JoypadButton b2) {
+            this.b1 = b1;
+            this.b2 = b2;
+        }
+
+        public JoypadButton getB1() {
+            return b1;
+        }
+
+        public JoypadButton getB2() {
+            return b2;
+        }
     }
 
     int readDataRegister1();

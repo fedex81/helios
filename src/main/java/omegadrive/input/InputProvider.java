@@ -1,7 +1,7 @@
 /*
  * InputProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/10/19 14:07
+ * Last modified: 12/10/19 17:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.List;
 
 public interface InputProvider {
 
@@ -55,6 +57,11 @@ public interface InputProvider {
         public void reset() {
 
         }
+
+        @Override
+        public List<String> getAvailableControllers() {
+            return Collections.emptyList();
+        }
     };
 
     float ON = 1.0f;
@@ -64,7 +71,6 @@ public interface InputProvider {
         if (JINPUT_ENABLE) {
             try {
                 ip = JinputGamepadInputProvider.getInstance(joypadProvider);
-                throw new UnsatisfiedLinkError();
             } catch (Exception | Error e) {
                 LOG.warn("Unable to load jinput: {}: {}", e.getClass().getName(), e.getMessage());
             }
@@ -89,4 +95,6 @@ public interface InputProvider {
     void setPlayers(int number);
 
     void reset();
+
+    List<String> getAvailableControllers();
 }

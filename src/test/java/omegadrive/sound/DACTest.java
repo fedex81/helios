@@ -1,5 +1,7 @@
 /*
+ * DACTest
  * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 12/10/19 18:12
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +20,7 @@
 package omegadrive.sound;
 
 import omegadrive.SystemLoader;
-import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -65,12 +67,12 @@ public class DACTest {
     }
 
     private static void setDacEnable(boolean value) {
-        sp.getFm().write(FmProvider.FM_ADDRESS_PORT0, 0x2B);
-        sp.getFm().write(FmProvider.FM_DATA_PORT0, value ? 0x80 : 0);
+        sp.getFm().write(MdFmProvider.FM_ADDRESS_PORT0, 0x2B);
+        sp.getFm().write(MdFmProvider.FM_DATA_PORT0, value ? 0x80 : 0);
     }
 
     private static void writeDacSample(int data) {
-        sp.getFm().write(FmProvider.FM_ADDRESS_PORT0, 0x2A);
-        sp.getFm().write(FmProvider.FM_DATA_PORT0, data);
+        sp.getFm().write(MdFmProvider.FM_ADDRESS_PORT0, 0x2A);
+        sp.getFm().write(MdFmProvider.FM_DATA_PORT0, data);
     }
 }

@@ -1,7 +1,7 @@
 /*
  * SwingWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 06/10/19 14:54
+ * Last modified: 12/10/19 18:08
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -126,6 +126,22 @@ public class SwingWindow implements DisplayWindow {
         return l;
     }
 
+    private java.util.List<JCheckBoxMenuItem> createInputItems() {
+        java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
+        l.add(new JCheckBoxMenuItem("Disable", false));
+        l.add(new JCheckBoxMenuItem("Default (Keyboard)", true));
+//        Arrays.stream(JoypadProvider).sorted().
+//                forEach(r -> l.add(new JCheckBoxMenuItem(r.name(), false)));
+        //only allow one selection
+        final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
+        l.stream().forEach(i -> i.addItemListener(e -> {
+            if (ItemEvent.SELECTED == e.getStateChange()) {
+                list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
+            }
+        }));
+        return l;
+    }
+
     public void init() {
         Util.registerJmx(this);
         graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
@@ -166,14 +182,23 @@ public class SwingWindow implements DisplayWindow {
         addKeyAction(resetItem, RESET, e -> mainEmu.reset());
         setting.add(resetItem);
 
-        JMenu menuBios = new JMenu("Region");
-        setting.add(menuBios);
+        JMenu regionMenu = new JMenu("Region");
+        setting.add(regionMenu);
+
+        JMenu inputMenu = new JMenu("Input");
+        setting.add(inputMenu);
+        JMenu inputP1Menu = new JMenu("Player1");
+        createInputItems().forEach(inputP1Menu::add);
+        inputMenu.add(inputP1Menu);
+        JMenu inputP2Menu = new JMenu("Player2");
+        createInputItems().forEach(inputP2Menu::add);
+        inputMenu.add(inputP2Menu);
 
         JMenu menuView = new JMenu("View");
         bar.add(menuView);
 
         regionItems = createRegionItems();
-        regionItems.forEach(menuBios::add);
+        regionItems.forEach(regionMenu::add);
 
         fullScreenItem = new JCheckBoxMenuItem("Full Screen", false);
         addKeyAction(fullScreenItem, TOGGLE_FULL_SCREEN, e -> fullScreenAction(e));

@@ -1,7 +1,7 @@
 /*
  * GamepadTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/10/19 13:45
+ * Last modified: 12/10/19 17:12
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,9 @@ public class GamepadTest {
         String lib = new File(".").getAbsolutePath() + File.separator + "privateLib"
                 + File.separator + "linux";
         System.out.println(lib);
+        System.setProperty("log4j.configurationFile", "./res/log4j2-info.properties");
+        System.setProperty("jinput.enable", "true");
+        System.setProperty("jinput.detect.debug", "true");
         System.setProperty("net.java.games.input.librarypath", lib);
         InputProvider inputProvider = InputProvider.createInstance(createTestJoypadProvider());
         pollInputs(inputProvider);

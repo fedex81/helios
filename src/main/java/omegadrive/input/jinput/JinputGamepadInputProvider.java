@@ -1,7 +1,7 @@
 /*
  * JinputGamepadInputProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/10/19 14:12
+ * Last modified: 12/10/19 18:12
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,12 +30,14 @@ import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Optional;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
-import static net.java.games.input.Component.Identifier.Button.*;
+import static net.java.games.input.Component.Identifier.Button.Axis;
 import static omegadrive.joypad.JoypadProvider.JoypadNumber.P1;
 import static omegadrive.joypad.JoypadProvider.JoypadNumber.P2;
 
@@ -59,41 +61,45 @@ public class JinputGamepadInputProvider implements InputProvider {
     private static final int AXIS_0 = 0;
     private static final int AXIS_m1 = -1;
 
+    private List<String> controllers;
+
     private JinputGamepadInputProvider() {
+        controllers = new ArrayList<>();
     }
 
     public static InputProvider getInstance(JoypadProvider joypadProvider) {
-        Controller controller = detectController();
+        List<Controller> list = detectControllers();
         InputProvider provider = NO_OP;
-        if (controller != null) {
-            provider = createOrGetInstance(controller, joypadProvider);
-            LOG.info("Using Controller: " + controller.getName());
+        if (!list.isEmpty()) {
+            provider = createOrGetInstance(list, joypadProvider);
         } else {
             LOG.info("Unable to find a controller");
         }
         return provider;
     }
 
-    private static InputProvider createOrGetInstance(Controller controller, JoypadProvider joypadProvider) {
+    private static InputProvider createOrGetInstance(List<Controller> controllers, JoypadProvider joypadProvider) {
         if (INSTANCE == NO_OP) {
             JinputGamepadInputProvider g = new JinputGamepadInputProvider();
             g.joypadProvider = joypadProvider;
-            g.controller = controller;
+            g.controller = controllers.iterator().next();
+            g.controllers = controllers.stream().map(Controller::getName).collect(Collectors.toList());
             g.setPlayers(1);
             executorService.submit(g.inputRunnable());
             INSTANCE = g;
+            LOG.info("Using Controller: " + g.controller.getName());
         }
         ((JinputGamepadInputProvider) INSTANCE).joypadProvider = joypadProvider;
         return INSTANCE;
     }
 
-    static Controller detectController() {
+    static List<Controller> detectControllers() {
         Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
-        Optional<Controller> cntOpt = Optional.ofNullable(Arrays.stream(ca).filter(c -> c.getType() == Controller.Type.GAMEPAD).findFirst().orElse(null));
-        if (DEBUG_DETECTION || !cntOpt.isPresent()) {
+        List<Controller> l = Arrays.stream(ca).filter(c -> c.getType() == Controller.Type.GAMEPAD).collect(Collectors.toList());
+        if (DEBUG_DETECTION || l.isEmpty()) {
             LOG.info("Controller detection: " + detectControllerVerbose());
         }
-        return cntOpt.orElse(null);
+        return l;
     }
 
     private Runnable inputRunnable() {
@@ -144,6 +150,11 @@ public class JinputGamepadInputProvider implements InputProvider {
 //        stop = true;
     }
 
+    @Override
+    public List<String> getAvailableControllers() {
+        return controllers;
+    }
+
     private void setDirectionOff() {
         joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, JoypadAction.RELEASED);
         joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, JoypadAction.RELEASED);
@@ -159,35 +170,14 @@ public class JinputGamepadInputProvider implements InputProvider {
             LOG.info(id + ": " + value);
             System.out.println(id + ": " + value);
         }
-        // xbox360: linux || windows
-        if (X == id || _2 == id) {
-            joypadProvider.setButtonAction(joypadNumber, JoypadButton.A, action);
+        Object res = JinputGamepadMapping.deviceMappings.row(controller.getName()).getOrDefault(id, null);
+        if (res != null && res instanceof JoypadButton) {
+            joypadProvider.setButtonAction(joypadNumber, (JoypadButton) res, action);
+        } else if (res != null && res instanceof JoypadProvider.JoypadDirection) {
+            handleDPad(id, value);
+        } else {
+            LOG.debug("Unhandled event: {}", event);
         }
-        if (A == id || _0 == id) {
-            joypadProvider.setButtonAction(joypadNumber, JoypadButton.B, action);
-        }
-        if (B == id || _1 == id) {
-            joypadProvider.setButtonAction(joypadNumber, JoypadButton.C, action);
-        }
-        //TODO WIN
-        if (LEFT_THUMB == id) {
-            joypadProvider.setButtonAction(joypadNumber, JoypadButton.X, action);
-        }
-        if (RIGHT_THUMB == id) {
-            joypadProvider.setButtonAction(joypadNumber, JoypadButton.Y, action);
-        }
-        if (Y == id) {
-            joypadProvider.setButtonAction(joypadNumber, JoypadButton.Z, action);
-        }
-        if (SELECT == id || LEFT_THUMB2 == id) {
-            joypadProvider.setButtonAction(joypadNumber, JoypadButton.M, action);
-        }
-        //TODO WIN
-        //TODO psClassis USB: start button = RIGHT_THUMB2
-        if (START == id || _7 == id || RIGHT_THUMB2 == id) {
-            joypadProvider.setButtonAction(joypadNumber, JoypadButton.S, action);
-        }
-        handleDPad(id, value);
     }
 
     private void handleDPad(Component.Identifier id, double value) {
