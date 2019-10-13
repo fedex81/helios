@@ -1,7 +1,7 @@
 /*
  * GamepadTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 13/10/19 16:17
+ * Last modified: 13/10/19 17:33
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,9 @@ import omegadrive.joypad.JoypadProvider;
 
 import java.io.File;
 
+import static omegadrive.input.InputProvider.PlayerNumber;
+import static omegadrive.input.InputProvider.createInstance;
+
 public class GamepadTest {
 
     private static Controller controller;
@@ -37,7 +40,7 @@ public class GamepadTest {
         System.setProperty("jinput.enable", "true");
         System.setProperty("jinput.detect.debug", "true");
         System.setProperty("net.java.games.input.librarypath", lib);
-        InputProvider inputProvider = InputProvider.createInstance(createTestJoypadProvider());
+        InputProvider inputProvider = createInstance(createTestJoypadProvider());
         pollInputs(inputProvider);
     }
 
