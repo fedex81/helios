@@ -1,7 +1,7 @@
 /*
  * KeyboardInput
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 13/10/19 17:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,13 +21,14 @@ package omegadrive.input;
 
 import omegadrive.SystemLoader;
 import omegadrive.joypad.JoypadProvider;
-import omegadrive.system.BaseSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Objects;
+
+import static omegadrive.input.InputProvider.PlayerNumber;
 
 public class KeyboardInput extends KeyAdapter {
 
@@ -72,51 +73,51 @@ public class KeyboardInput extends KeyAdapter {
 
     protected static void keyHandler(JoypadProvider joypad, KeyEvent e, boolean pressed) {
         JoypadProvider.JoypadAction action = pressed ? JoypadProvider.JoypadAction.PRESSED : JoypadProvider.JoypadAction.RELEASED;
-        JoypadProvider.JoypadNumber number = null;
+        PlayerNumber number = null;
         JoypadProvider.JoypadButton button = null;
         switch (e.getKeyCode()) {
             case KeyEvent.VK_UP:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.U;
                 break;
             case KeyEvent.VK_LEFT:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.L;
                 break;
             case KeyEvent.VK_RIGHT:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.R;
                 break;
             case KeyEvent.VK_DOWN:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.D;
                 break;
             case KeyEvent.VK_ENTER:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.S;
                 break;
             case KeyEvent.VK_A:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.A;
                 break;
             case KeyEvent.VK_S:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.B;
                 break;
             case KeyEvent.VK_D:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.C;
                 break;
             case KeyEvent.VK_Q:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.X;
                 break;
             case KeyEvent.VK_W:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.Y;
                 break;
             case KeyEvent.VK_E:
-                number = JoypadProvider.JoypadNumber.P1;
+                number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.Z;
                 break;
         }

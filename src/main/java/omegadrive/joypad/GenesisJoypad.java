@@ -1,7 +1,7 @@
 /*
  * GenesisJoypad
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 13/10/19 17:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ package omegadrive.joypad;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import omegadrive.input.InputProvider.PlayerNumber;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -95,16 +96,16 @@ public class GenesisJoypad extends BasePadAdapter {
     }
 
     public int readDataRegister1() {
-        return readDataRegister(JoypadNumber.P1, p1Type, asserted1, readStep1);
+        return readDataRegister(PlayerNumber.P1, p1Type, asserted1, readStep1);
 //        LOG.info("read p1: asserted : {}, step : {}, result: {}", asserted1, readStep1, res);
     }
 
     public int readDataRegister2() {
-        return readDataRegister(JoypadNumber.P2, p2Type, asserted2, readStep2);
+        return readDataRegister(PlayerNumber.P2, p2Type, asserted2, readStep2);
     }
 
 
-    private int readDataRegister(JoypadNumber n, JoypadType type, boolean asserted, int readStep) {
+    private int readDataRegister(PlayerNumber n, JoypadType type, boolean asserted, int readStep) {
         boolean is6Button = type == JoypadType.BUTTON_6;
         if (asserted) {
             return is6Button && readStep == SIX_BUTTON_START_A_ONLY_STEP ? get00SA0000(n) : get00SA00DU(n);
@@ -135,22 +136,22 @@ public class GenesisJoypad extends BasePadAdapter {
     }
 
 
-    private int get00SA0000(JoypadNumber n) {
+    private int get00SA0000(PlayerNumber n) {
         return (getValue(n, S) << 5) | (getValue(n, A) << 4);
     }
 
     //6 buttons
-    private int get00SA00DU(JoypadNumber n) {
+    private int get00SA00DU(PlayerNumber n) {
         return (getValue(n, S) << 5) | (getValue(n, A) << 4) | (getValue(n, D) << 1) | (getValue(n, U));
     }
 
-    private int get11CBRLDU(JoypadNumber n) {
+    private int get11CBRLDU(PlayerNumber n) {
         return 0xC0 | (getValue(n, C) << 5) | (getValue(n, B) << 4) | (getValue(n, R) << 3) |
                 (getValue(n, L) << 2) | (getValue(n, D) << 1) | (getValue(n, U));
     }
 
     //6 buttons
-    private int get11CBMXYZ(JoypadNumber n) {
+    private int get11CBMXYZ(PlayerNumber n) {
         return 0xC0 | (getValue(n, C) << 5) | (getValue(n, B) << 4) | (getValue(n, M) << 3) |
                 (getValue(n, X) << 2) | (getValue(n, Y) << 1) | (getValue(n, Z));
     }

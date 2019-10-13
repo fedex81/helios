@@ -1,7 +1,7 @@
 /*
  * BasePadAdapter
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 13/10/19 17:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 
 package omegadrive.joypad;
 
+import com.google.common.collect.ImmutableMap;
+import omegadrive.input.InputProvider.PlayerNumber;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,6 +29,8 @@ import java.util.Collections;
 import java.util.Map;
 
 import static omegadrive.joypad.JoypadProvider.JoypadAction.PRESSED;
+import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
+import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
 public abstract class BasePadAdapter implements JoypadProvider {
 
@@ -39,7 +43,13 @@ public abstract class BasePadAdapter implements JoypadProvider {
     int value1 = 0xFF;
     int value2 = 0xFF;
 
-    protected Map<JoypadButton, JoypadAction> getMap(JoypadNumber number) {
+    static Map<JoypadButton, JoypadAction> releasedMap = ImmutableMap.<JoypadButton, JoypadAction>builder().
+            put(D, RELEASED).put(U, RELEASED).
+            put(L, RELEASED).put(R, RELEASED).
+            put(A, RELEASED).put(B, RELEASED).
+            put(S, RELEASED).build();
+
+    protected Map<JoypadButton, JoypadAction> getMap(PlayerNumber number) {
         switch (number) {
             case P1:
                 return stateMap1;
@@ -52,21 +62,21 @@ public abstract class BasePadAdapter implements JoypadProvider {
         return Collections.emptyMap();
     }
 
-    protected int getValue(JoypadNumber number, JoypadButton button) {
+    protected int getValue(PlayerNumber number, JoypadButton button) {
         return getMap(number).get(button).ordinal();
     }
 
     @Override
-    public void setButtonAction(JoypadNumber number, JoypadButton button, JoypadAction action) {
+    public void setButtonAction(PlayerNumber number, JoypadButton button, JoypadAction action) {
         getMap(number).put(button, action);
     }
 
-    public boolean hasDirectionPressed(JoypadNumber number) {
+    public boolean hasDirectionPressed(PlayerNumber number) {
         return Arrays.stream(directionButton).anyMatch(b -> getMap(number).get(b) == PRESSED);
     }
 
     @Override
-    public String getState(JoypadNumber number) {
+    public String getState(PlayerNumber number) {
         return getMap(number).toString();
     }
 

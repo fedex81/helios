@@ -1,7 +1,7 @@
 /*
  * InputProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 12/10/19 17:51
+ * Last modified: 13/10/19 17:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 package omegadrive.input;
 
+import com.google.common.collect.Lists;
 import omegadrive.input.jinput.JinputGamepadInputProvider;
 import omegadrive.joypad.JoypadProvider;
 import org.apache.logging.log4j.LogManager;
@@ -32,6 +33,11 @@ public interface InputProvider {
 
     Logger LOG = LogManager.getLogger(InputProvider.class.getSimpleName());
 
+    String KEYBOARD_CONTROLLER = "Default (Keyboard)";
+    String NO_CONTROLLER = "Disable";
+
+    List<String> DEFAULT_CONTROLLERS = Lists.newArrayList(NO_CONTROLLER, KEYBOARD_CONTROLLER);
+
     String OS_NAME = System.getProperty("os.name").toLowerCase();
     String NATIVE_SUBDIR = OS_NAME.contains("win") ? "windows" :
             (OS_NAME.contains("mac") ? "osx" : "linux");
@@ -40,8 +46,6 @@ public interface InputProvider {
     boolean DEBUG_DETECTION = Boolean.valueOf(System.getProperty("jinput.detect.debug", "false"));
     boolean JINPUT_ENABLE = Boolean.valueOf(System.getProperty("jinput.enable", "false"));
     String JINPUT_NATIVES_PATH = System.getProperty("jinput.native.location", "privateLib");
-
-
     InputProvider NO_OP = new InputProvider() {
         @Override
         public void handleEvents() {
@@ -50,6 +54,11 @@ public interface InputProvider {
 
         @Override
         public void setPlayers(int number) {
+
+        }
+
+        @Override
+        public void setPlayerController(PlayerNumber player, String controllerName) {
 
         }
 
@@ -63,6 +72,9 @@ public interface InputProvider {
             return Collections.emptyList();
         }
     };
+
+    @Deprecated
+    void setPlayers(int number);
 
     float ON = 1.0f;
 
@@ -92,7 +104,11 @@ public interface InputProvider {
 
     void handleEvents();
 
-    void setPlayers(int number);
+    void setPlayerController(PlayerNumber player, String controllerName);
+
+    enum PlayerNumber {
+        P1, P2
+    }
 
     void reset();
 

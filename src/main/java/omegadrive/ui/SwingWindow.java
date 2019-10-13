@@ -1,7 +1,7 @@
 /*
  * SwingWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 12/10/19 18:08
+ * Last modified: 13/10/19 17:03
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ package omegadrive.ui;
 
 import com.google.common.base.Strings;
 import omegadrive.SystemLoader;
+import omegadrive.input.InputProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.*;
 import org.apache.logging.log4j.LogManager;
@@ -75,7 +76,6 @@ public class SwingWindow implements DisplayWindow {
     private static boolean UI_SCALE_ON_EDT;
 
     static {
-        initLookAndFeel();
         UI_SCALE_ON_EDT = Boolean.valueOf(System.getProperty("ui.scale.on.edt", "false"));
     }
 
@@ -90,23 +90,6 @@ public class SwingWindow implements DisplayWindow {
     public static void main(String[] args) {
         SwingWindow frame = new SwingWindow(null);
         frame.init();
-    }
-
-    public static void initLookAndFeel() {
-        String lfClassName = UIManager.getCrossPlatformLookAndFeelClassName();
-        try {
-            //avoid GTK3 on Java11, it has issues
-            //https://bugs.java.com/bugdatabase/view_bug.do?bug_id=JDK-8203627
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("GTK+".equals(info.getName())) {
-//                    lfClassName = info.getClassName();
-                    break;
-                }
-            }
-            UIManager.setLookAndFeel(lfClassName);
-        } catch (Exception e) {
-            LOG.error(e);
-        }
     }
 
     private Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
@@ -126,12 +109,13 @@ public class SwingWindow implements DisplayWindow {
         return l;
     }
 
-    private java.util.List<JCheckBoxMenuItem> createInputItems() {
+    private java.util.List<JCheckBoxMenuItem> createInputItems(String playerName) {
         java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
-        l.add(new JCheckBoxMenuItem("Disable", false));
-        l.add(new JCheckBoxMenuItem("Default (Keyboard)", true));
-//        Arrays.stream(JoypadProvider).sorted().
-//                forEach(r -> l.add(new JCheckBoxMenuItem(r.name(), false)));
+        getAvailableControllers().forEach(c -> {
+            JCheckBoxMenuItem item = new JCheckBoxMenuItem(c, c.startsWith("Default"));
+            addAction(item, e -> mainEmu.handleSystemEvent(CONTROLLER_CHANGE, playerName + ":" + c));
+            l.add(item);
+        });
         //only allow one selection
         final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
         l.stream().forEach(i -> i.addItemListener(e -> {
@@ -187,11 +171,11 @@ public class SwingWindow implements DisplayWindow {
 
         JMenu inputMenu = new JMenu("Input");
         setting.add(inputMenu);
-        JMenu inputP1Menu = new JMenu("Player1");
-        createInputItems().forEach(inputP1Menu::add);
+        JMenu inputP1Menu = new JMenu(InputProvider.PlayerNumber.P1.name());
+        createInputItems(inputP1Menu.getText()).forEach(inputP1Menu::add);
         inputMenu.add(inputP1Menu);
-        JMenu inputP2Menu = new JMenu("Player2");
-        createInputItems().forEach(inputP2Menu::add);
+        JMenu inputP2Menu = new JMenu(InputProvider.PlayerNumber.P2.name());
+        createInputItems(inputP2Menu.getText()).forEach(inputP2Menu::add);
         inputMenu.add(inputP2Menu);
 
         JMenu menuView = new JMenu("View");

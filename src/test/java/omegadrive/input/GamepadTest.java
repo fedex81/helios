@@ -1,7 +1,7 @@
 /*
  * GamepadTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 12/10/19 17:12
+ * Last modified: 13/10/19 16:17
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -104,17 +104,17 @@ public class GamepadTest {
             }
 
             @Override
-            public void setButtonAction(JoypadNumber number, JoypadButton button, JoypadAction action) {
+            public void setButtonAction(PlayerNumber number, JoypadButton button, JoypadAction action) {
                 System.out.println(number + "," + button + "," + action);
             }
 
             @Override
-            public boolean hasDirectionPressed(JoypadNumber number) {
+            public boolean hasDirectionPressed(PlayerNumber number) {
                 return false;
             }
 
             @Override
-            public String getState(JoypadNumber number) {
+            public String getState(PlayerNumber number) {
                 return null;
             }
 

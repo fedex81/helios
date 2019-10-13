@@ -1,7 +1,7 @@
 /*
  * MsxPad
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 13/10/19 17:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,9 +25,7 @@ import com.google.common.collect.Maps;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Map;
-import java.util.Optional;
-
+import static omegadrive.input.InputProvider.PlayerNumber;
 import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
@@ -51,7 +49,7 @@ public class MsxPad extends BasePadAdapter {
         stateMap2 = Maps.newHashMap(stateMap1);
     }
 
-    private int getData(JoypadNumber number){
+    private int getData(PlayerNumber number) {
         return 0x40 | (getValue(number, B) << 5) | (getValue(number, A) << 4) | (getValue(number, R) << 3) |
                 (getValue(number, L) << 2) | (getValue(number, D) << 1) | (getValue(number, U));
     }
@@ -68,7 +66,7 @@ public class MsxPad extends BasePadAdapter {
 
     @Override
     public void newFrame() {
-        value1 = getData(JoypadNumber.P1);
-        value2 = getData(JoypadNumber.P2);
+        value1 = getData(PlayerNumber.P1);
+        value2 = getData(PlayerNumber.P2);
     }
 }

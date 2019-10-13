@@ -1,7 +1,7 @@
 /*
  * MsxBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:06
+ * Last modified: 13/10/19 17:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.cart.mapper.MsxAsciiMapper;
 import omegadrive.cart.mapper.RomMapper;
+import omegadrive.input.InputProvider;
 import omegadrive.input.MsxKeyboardInput;
-import omegadrive.joypad.JoypadProvider.JoypadNumber;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
@@ -42,8 +42,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import static omegadrive.joypad.JoypadProvider.JoypadNumber.P1;
-import static omegadrive.joypad.JoypadProvider.JoypadNumber.P2;
+import static omegadrive.input.InputProvider.PlayerNumber.P1;
+import static omegadrive.input.InputProvider.PlayerNumber.P2;
 
 /**
  * see
@@ -75,7 +75,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvide
     private int[] emptySlot = new int[SLOT_SIZE];
 
     private int psgAddressLatch = 0;
-    private JoypadNumber joypadSelect = P1;
+    private InputProvider.PlayerNumber joypadSelect = P1;
 
     private RomMapper mapper;
     private CartridgeInfoProvider cartridgeInfoProvider;

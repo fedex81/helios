@@ -1,7 +1,7 @@
 /*
  * ColecoKeyboardInput
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 13/10/19 16:24
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,9 +21,7 @@ package omegadrive.input;
 
 import omegadrive.joypad.JoypadProvider;
 
-import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.Objects;
 
 public class ColecoKeyboardInput extends KeyboardInput {
 
@@ -41,7 +39,7 @@ public class ColecoKeyboardInput extends KeyboardInput {
         KeyboardInput.keyHandler(joypad, e, pressed);
 
         JoypadProvider.JoypadAction action = pressed ? JoypadProvider.JoypadAction.PRESSED : JoypadProvider.JoypadAction.RELEASED;
-        JoypadProvider.JoypadNumber number = JoypadProvider.JoypadNumber.P1;
+        InputProvider.PlayerNumber number = InputProvider.PlayerNumber.P1;
         JoypadProvider.JoypadButton button = null;
         switch (e.getKeyCode()) {
             case KeyEvent.VK_0:

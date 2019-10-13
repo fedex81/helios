@@ -1,7 +1,7 @@
 /*
  * ColecoPad
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 13/10/19 17:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Map;
 import java.util.Optional;
 
+import static omegadrive.input.InputProvider.PlayerNumber;
 import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
@@ -74,18 +75,18 @@ public class ColecoPad extends BasePadAdapter {
 
     @Override
     public int readDataRegister1() {
-        return mode80 ? getMode80(JoypadNumber.P1) : getModeC0(JoypadNumber.P1);
+        return mode80 ? getMode80(PlayerNumber.P1) : getModeC0(PlayerNumber.P1);
     }
 
     @Override
     public int readDataRegister2() {
-        return mode80 ? getMode80(JoypadNumber.P2) : getModeC0(JoypadNumber.P2);
+        return mode80 ? getMode80(PlayerNumber.P2) : getModeC0(PlayerNumber.P2);
     }
 
     @Override
-    public void setButtonAction(JoypadNumber number, JoypadButton button, JoypadAction action) {
+    public void setButtonAction(PlayerNumber number, JoypadButton button, JoypadAction action) {
         JoypadAction res = getMap(number).computeIfPresent(button, (k, v) -> action);
-        if (res == null && JoypadNumber.P1 == number) {
+        if (res == null && PlayerNumber.P1 == number) {
             stateMapKeypad.computeIfPresent(button, (k, v) -> action);
         }
     }
@@ -96,7 +97,7 @@ public class ColecoPad extends BasePadAdapter {
      * <p>
      * This mode allows you to read the stick and left button:
      */
-    private int getModeC0(JoypadNumber number) {
+    private int getModeC0(PlayerNumber number) {
         return 0x30 | (getValue(number, A) << 6) | (getValue(number, L) << 3) |
                 (getValue(number, D) << 2) | (getValue(number, R) << 1) | (getValue(number, U));
     }
@@ -109,9 +110,9 @@ public class ColecoPad extends BasePadAdapter {
      * <p>
      * The keypad returns a 4-bit binary word for a button pressed:
      */
-    private int getMode80(JoypadNumber number) {
+    private int getMode80(PlayerNumber number) {
         int res = 0x30 | (getValue(number, B) << 6);
-        if (number == JoypadNumber.P1) {
+        if (number == PlayerNumber.P1) {
             Optional<JoypadButton> pressedBtn = stateMapKeypad.entrySet().stream().
                     filter(e -> e.getValue() == JoypadAction.PRESSED).map(Map.Entry::getKey).findFirst();
             res |= pressedBtn.map(valueMapKeypad::get).orElse(0xF);

@@ -1,7 +1,7 @@
 /*
  * JinputGamepadInputProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 12/10/19 18:12
+ * Last modified: 13/10/19 17:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,13 @@
 
 package omegadrive.input.jinput;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import net.java.games.input.*;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.joypad.JoypadProvider.JoypadAction;
 import omegadrive.joypad.JoypadProvider.JoypadButton;
-import omegadrive.joypad.JoypadProvider.JoypadNumber;
 import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
@@ -33,13 +34,12 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static net.java.games.input.Component.Identifier.Button.Axis;
-import static omegadrive.joypad.JoypadProvider.JoypadNumber.P1;
-import static omegadrive.joypad.JoypadProvider.JoypadNumber.P2;
 
 public class JinputGamepadInputProvider implements InputProvider {
 
@@ -50,10 +50,8 @@ public class JinputGamepadInputProvider implements InputProvider {
     private long POLLING_INTERVAL_MS = Long.valueOf(System.getProperty("jinput.polling.interval.ms", "5"));
 
     private volatile JoypadProvider joypadProvider;
-    private Controller controller;
+    //    private Controller controller;
     private volatile boolean stop = false;
-    private volatile int playerNumber = 1;
-    private volatile JoypadNumber joypadNumber = P1;
     private String pov = Axis.POV.getName();
 
     private static InputProvider INSTANCE = NO_OP;
@@ -61,9 +59,16 @@ public class JinputGamepadInputProvider implements InputProvider {
     private static final int AXIS_0 = 0;
     private static final int AXIS_m1 = -1;
 
-    private List<String> controllers;
+    private List<String> controllerNames;
+    private List<Controller> controllers;
+
+    private Map<PlayerNumber, String> playerControllerMap = Maps.newHashMap(
+            ImmutableMap.of(PlayerNumber.P1, KEYBOARD_CONTROLLER,
+                    PlayerNumber.P2, KEYBOARD_CONTROLLER
+            ));
 
     private JinputGamepadInputProvider() {
+        controllerNames = new ArrayList<>();
         controllers = new ArrayList<>();
     }
 
@@ -82,15 +87,23 @@ public class JinputGamepadInputProvider implements InputProvider {
         if (INSTANCE == NO_OP) {
             JinputGamepadInputProvider g = new JinputGamepadInputProvider();
             g.joypadProvider = joypadProvider;
-            g.controller = controllers.iterator().next();
-            g.controllers = controllers.stream().map(Controller::getName).collect(Collectors.toList());
+            g.controllerNames = controllers.stream().map(Controller::getName).collect(Collectors.toList());
+            g.controllers = controllers;
             g.setPlayers(1);
             executorService.submit(g.inputRunnable());
             INSTANCE = g;
-            LOG.info("Using Controller: " + g.controller.getName());
+            fudgePlayer1Using1stController(g);
         }
         ((JinputGamepadInputProvider) INSTANCE).joypadProvider = joypadProvider;
         return INSTANCE;
+    }
+
+    //TODO remove
+    static void fudgePlayer1Using1stController(JinputGamepadInputProvider g) {
+        if (!g.getAvailableControllers().isEmpty()) {
+            g.setPlayerController(PlayerNumber.P1, g.getAvailableControllers().get(0));
+            LOG.info("Using Controller: " + g.getAvailableControllers().get(0));
+        }
     }
 
     static List<Controller> detectControllers() {
@@ -117,32 +130,46 @@ public class JinputGamepadInputProvider implements InputProvider {
 
     @Override
     public void handleEvents() {
-        boolean ok = controller.poll();
-        if (!ok) {
-            return;
-        }
-        int count = 0;
-        EventQueue eventQueue = controller.getEventQueue();
-        resetDirections = joypadProvider.hasDirectionPressed(joypadNumber);
-        boolean hasEvents;
-        do {
-            Event event = new Event();
-            hasEvents = eventQueue.getNextEvent(event);
-            if (hasEvents) {
-                handleEvent(event);
-                count++;
+        for (Controller controller : controllers) {
+            String ctrlName = controller.getName();
+            boolean ok = controller.poll();
+            if (!ok) {
+                return;
             }
-        } while (hasEvents);
-        if (InputProvider.DEBUG_DETECTION && count > 0) {
-            LOG.info(joypadProvider.getState(joypadNumber));
+            int count = 0;
+            //TODO perf
+            PlayerNumber[] players = playerControllerMap.entrySet().stream().
+                    filter(e -> ctrlName.equalsIgnoreCase(e.getValue())).map(Map.Entry::getKey).toArray(PlayerNumber[]::new);
+            for (PlayerNumber player : players) {
+                resetDirections = joypadProvider.hasDirectionPressed(player);
+                EventQueue eventQueue = controller.getEventQueue();
+
+                boolean hasEvents;
+                do {
+                    Event event = new Event();
+                    hasEvents = eventQueue.getNextEvent(event);
+                    if (player != null && hasEvents) {
+                        handleEvent(player, ctrlName, event);
+                        count++;
+                    }
+                } while (hasEvents);
+                if (InputProvider.DEBUG_DETECTION && count > 0) {
+                    LOG.info(joypadProvider.getState(player));
+                }
+            }
         }
     }
 
     @Override
     public void setPlayers(int number) {
         LOG.info("Setting number of players to: " + number);
-        this.playerNumber = number;
-        this.joypadNumber = P1.ordinal() == playerNumber - 1 ? P1 : P2;
+        String p2Ctrl = number > 1 ? KEYBOARD_CONTROLLER : NO_CONTROLLER;
+        playerControllerMap.put(PlayerNumber.P2, p2Ctrl);
+    }
+
+    @Override
+    public void setPlayerController(PlayerNumber player, String controllerName) {
+        playerControllerMap.put(player, controllerName);
     }
 
     @Override
@@ -152,17 +179,17 @@ public class JinputGamepadInputProvider implements InputProvider {
 
     @Override
     public List<String> getAvailableControllers() {
-        return controllers;
+        return controllerNames;
     }
 
-    private void setDirectionOff() {
-        joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, JoypadAction.RELEASED);
-        joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, JoypadAction.RELEASED);
-        joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, JoypadAction.RELEASED);
-        joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, JoypadAction.RELEASED);
+    private void setDirectionOff(PlayerNumber playerNumber) {
+        joypadProvider.setButtonAction(playerNumber, JoypadButton.D, JoypadAction.RELEASED);
+        joypadProvider.setButtonAction(playerNumber, JoypadButton.U, JoypadAction.RELEASED);
+        joypadProvider.setButtonAction(playerNumber, JoypadButton.L, JoypadAction.RELEASED);
+        joypadProvider.setButtonAction(playerNumber, JoypadButton.R, JoypadAction.RELEASED);
     }
 
-    private void handleEvent(Event event) {
+    private void handleEvent(PlayerNumber playerNumber, String ctrlName, Event event) {
         Component.Identifier id = event.getComponent().getIdentifier();
         double value = event.getValue();
         JoypadAction action = value == ON ? JoypadAction.PRESSED : JoypadAction.RELEASED;
@@ -170,29 +197,29 @@ public class JinputGamepadInputProvider implements InputProvider {
             LOG.info(id + ": " + value);
             System.out.println(id + ": " + value);
         }
-        Object res = JinputGamepadMapping.deviceMappings.row(controller.getName()).getOrDefault(id, null);
+        Object res = JinputGamepadMapping.deviceMappings.row(ctrlName).getOrDefault(id, null);
         if (res != null && res instanceof JoypadButton) {
-            joypadProvider.setButtonAction(joypadNumber, (JoypadButton) res, action);
+            joypadProvider.setButtonAction(playerNumber, (JoypadButton) res, action);
         } else if (res != null && res instanceof JoypadProvider.JoypadDirection) {
-            handleDPad(id, value);
+            handleDPad(playerNumber, id, value);
         } else {
             LOG.debug("Unhandled event: {}", event);
         }
     }
 
-    private void handleDPad(Component.Identifier id, double value) {
+    private void handleDPad(PlayerNumber playerNumber, Component.Identifier id, double value) {
         if (Axis.X == id) {
             int ival = (int) value;
             switch (ival) {
                 case AXIS_0:
-                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, JoypadAction.RELEASED);
-                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, JoypadAction.RELEASED);
+                    joypadProvider.setButtonAction(playerNumber, JoypadButton.R, JoypadAction.RELEASED);
+                    joypadProvider.setButtonAction(playerNumber, JoypadButton.L, JoypadAction.RELEASED);
                     break;
                 case AXIS_m1:
-                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, JoypadAction.PRESSED);
+                    joypadProvider.setButtonAction(playerNumber, JoypadButton.L, JoypadAction.PRESSED);
                     break;
                 case AXIS_p1:
-                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, JoypadAction.PRESSED);
+                    joypadProvider.setButtonAction(playerNumber, JoypadButton.R, JoypadAction.PRESSED);
                     break;
             }
         }
@@ -200,14 +227,14 @@ public class JinputGamepadInputProvider implements InputProvider {
             int ival = (int) value;
             switch (ival) {
                 case AXIS_0:
-                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, JoypadAction.RELEASED);
-                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, JoypadAction.RELEASED);
+                    joypadProvider.setButtonAction(playerNumber, JoypadButton.U, JoypadAction.RELEASED);
+                    joypadProvider.setButtonAction(playerNumber, JoypadButton.D, JoypadAction.RELEASED);
                     break;
                 case AXIS_m1:
-                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, JoypadAction.PRESSED);
+                    joypadProvider.setButtonAction(playerNumber, JoypadButton.U, JoypadAction.PRESSED);
                     break;
                 case AXIS_p1:
-                    joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, JoypadAction.PRESSED);
+                    joypadProvider.setButtonAction(playerNumber, JoypadButton.D, JoypadAction.PRESSED);
                     break;
             }
         }
@@ -217,38 +244,38 @@ public class JinputGamepadInputProvider implements InputProvider {
             //release directions previously pressed - only on the first event
             boolean off = resetDirections || value == Component.POV.OFF;
             if (off) {
-                setDirectionOff();
+                setDirectionOff(playerNumber);
                 if (resetDirections) {
                     resetDirections = false;
                 }
             }
             if (value == Component.POV.DOWN) {
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.D, action);
             }
             if (value == Component.POV.UP) {
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.U, action);
             }
             if (value == Component.POV.LEFT) {
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.L, action);
             }
             if (value == Component.POV.RIGHT) {
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.R, action);
             }
             if (value == Component.POV.DOWN_LEFT) {
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, action);
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.D, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.L, action);
             }
             if (value == Component.POV.DOWN_RIGHT) {
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.D, action);
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.D, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.R, action);
             }
             if (value == Component.POV.UP_LEFT) {
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, action);
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.L, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.U, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.L, action);
             }
             if (value == Component.POV.UP_RIGHT) {
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.U, action);
-                joypadProvider.setButtonAction(joypadNumber, JoypadButton.R, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.U, action);
+                joypadProvider.setButtonAction(playerNumber, JoypadButton.R, action);
             }
         }
     }

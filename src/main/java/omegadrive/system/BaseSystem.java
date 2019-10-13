@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:00
+ * Last modified: 13/10/19 17:01
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -136,6 +136,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
                 break;
             case CLOSE_APP:
                 handleCloseApp();
+                break;
+            case CONTROLLER_CHANGE:
+                String str = parameter.toString();
+                String[] s = str.split(":");
+                inputProvider.setPlayerController(InputProvider.PlayerNumber.valueOf(s[0]), s[1]);
                 break;
             default:
                 LOG.warn("Unable to handle event: {}, with parameter: {}", event, Objects.toString(parameter));

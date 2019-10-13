@@ -1,7 +1,7 @@
 /*
  * SystemProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 14:30
+ * Last modified: 13/10/19 15:41
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,6 +61,7 @@ public interface SystemProvider extends Device {
         TOGGLE_MUTE,
         TOGGLE_FULL_SCREEN,
         TOGGLE_THROTTLE,
+        CONTROLLER_CHANGE,
         SET_PLAYERS_1,
         SET_PLAYERS_2,
         TOGGLE_DEBUG_LOGGING,

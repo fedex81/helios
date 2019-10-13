@@ -1,7 +1,7 @@
 /*
  * JoypadProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 12/10/19 18:12
+ * Last modified: 13/10/19 16:20
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 package omegadrive.joypad;
 
 import omegadrive.Device;
+import omegadrive.input.InputProvider;
 
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
@@ -30,10 +31,6 @@ public interface JoypadProvider extends Device {
     enum JoypadAction {
         PRESSED,
         RELEASED
-    }
-
-    enum JoypadNumber {
-        P1, P2
     }
 
     enum JoypadType {
@@ -89,11 +86,11 @@ public interface JoypadProvider extends Device {
 
     void writeControlRegister3(long data);
 
-    void setButtonAction(JoypadNumber number, JoypadButton button, JoypadAction action);
+    void setButtonAction(InputProvider.PlayerNumber number, JoypadButton button, JoypadAction action);
 
-    boolean hasDirectionPressed(JoypadNumber number);
+    boolean hasDirectionPressed(InputProvider.PlayerNumber number);
 
-    String getState(JoypadNumber number);
+    String getState(InputProvider.PlayerNumber number);
 
     void newFrame();
 }

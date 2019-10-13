@@ -1,7 +1,7 @@
 /*
  * DisplayWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 15:42
+ * Last modified: 13/10/19 17:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,14 @@
 
 package omegadrive.ui;
 
+import omegadrive.input.InputProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.VideoMode;
 
 import java.awt.event.KeyAdapter;
 import java.time.LocalDate;
+import java.util.List;
 
 public interface DisplayWindow {
 
@@ -50,6 +52,10 @@ public interface DisplayWindow {
     String getRegionOverride();
 
     void reloadSystem(SystemProvider systemProvider);
+
+    default List<String> getAvailableControllers() {
+        return InputProvider.DEFAULT_CONTROLLERS;
+    }
 
     default String getAboutString() {
         int year = LocalDate.now().getYear();

@@ -1,7 +1,7 @@
 /*
  * TwoButtonsJoypad
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 13/10/19 17:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,12 +20,11 @@
 package omegadrive.joypad;
 
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
+import static omegadrive.input.InputProvider.PlayerNumber;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
 /**
@@ -65,12 +64,8 @@ public class TwoButtonsJoypad extends BasePadAdapter {
         p1Type = JoypadType.BUTTON_2;
         p2Type = JoypadType.BUTTON_2;
         LOG.info("Joypad1: {} - Joypad2: {}", p1Type, p2Type);
-        stateMap1 = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
-                put(D, RELEASED).put(U, RELEASED).
-                put(L, RELEASED).put(R, RELEASED).
-                put(A, RELEASED).put(B, RELEASED).
-                put(S, RELEASED).build());
-        stateMap2 = Maps.newHashMap(stateMap1);
+        stateMap1 = Maps.newHashMap(releasedMap);
+        stateMap2 = Maps.newHashMap(releasedMap);
     }
 
     @Override
@@ -90,23 +85,23 @@ public class TwoButtonsJoypad extends BasePadAdapter {
     }
 
     private int get2D_2U_1B_1A_1R_1L_1D_1U() {
-        return (getValue(JoypadNumber.P2, D) << 7) | (getValue(JoypadNumber.P2, U) << 6) |
-                (getValue(JoypadNumber.P1, B) << 5) | (getValue(JoypadNumber.P1, A) << 4) | (getValue(JoypadNumber.P1, R) << 3) |
-                (getValue(JoypadNumber.P1, L) << 2) | (getValue(JoypadNumber.P1, D) << 1) | (getValue(JoypadNumber.P1, U));
+        return (getValue(PlayerNumber.P2, D) << 7) | (getValue(PlayerNumber.P2, U) << 6) |
+                (getValue(PlayerNumber.P1, B) << 5) | (getValue(PlayerNumber.P1, A) << 4) | (getValue(PlayerNumber.P1, R) << 3) |
+                (getValue(PlayerNumber.P1, L) << 2) | (getValue(PlayerNumber.P1, D) << 1) | (getValue(PlayerNumber.P1, U));
     }
 
     //TODO reset
     //011 RESET 2B 2A 2R 2L
     private int getR_2B_2A_2R_2L() {
-        return 0xE0 | 1 << 4 | (getValue(JoypadNumber.P2, B) << 3) | (getValue(JoypadNumber.P2, A) << 2) |
-                (getValue(JoypadNumber.P2, R) << 1) | (getValue(JoypadNumber.P2, L));
+        return 0xE0 | 1 << 4 | (getValue(PlayerNumber.P2, B) << 3) | (getValue(PlayerNumber.P2, A) << 2) |
+                (getValue(PlayerNumber.P2, R) << 1) | (getValue(PlayerNumber.P2, L));
     }
 
     @Override
     public void newFrame() {
         value1 = get2D_2U_1B_1A_1R_1L_1D_1U();
         value2 = getR_2B_2A_2R_2L();
-        pauseButton1 = getValue(JoypadNumber.P1, S);
-        pauseButton2 = getValue(JoypadNumber.P2, S);
+        pauseButton1 = getValue(PlayerNumber.P1, S);
+        pauseButton2 = getValue(PlayerNumber.P2, S);
     }
 }
