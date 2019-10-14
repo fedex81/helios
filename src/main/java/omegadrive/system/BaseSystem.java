@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 13/10/19 17:01
+ * Last modified: 14/10/19 14:57
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -157,8 +157,9 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         Z80CoreWrapper.verbose = value;
     }
 
-    protected void reloadKeyListeners() {
+    protected void reloadWindowState() {
         emuFrame.addKeyListener(KeyboardInput.createKeyAdapter(getSystemType(), joypad));
+        emuFrame.reloadControllers(inputProvider.getAvailableControllers());
     }
 
     public void handleNewRom(Path file) {

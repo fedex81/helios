@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 12/10/19 16:58
+ * Last modified: 14/10/19 14:57
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         //z80, sound attached later
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(vdp);
-        reloadKeyListeners();
+        reloadWindowState();
     }
 
     @Override

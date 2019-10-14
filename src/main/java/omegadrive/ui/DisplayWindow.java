@@ -1,7 +1,7 @@
 /*
  * DisplayWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 13/10/19 17:32
+ * Last modified: 14/10/19 15:26
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,14 +19,13 @@
 
 package omegadrive.ui;
 
-import omegadrive.input.InputProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.VideoMode;
 
 import java.awt.event.KeyAdapter;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.Collection;
 
 public interface DisplayWindow {
 
@@ -53,8 +52,8 @@ public interface DisplayWindow {
 
     void reloadSystem(SystemProvider systemProvider);
 
-    default List<String> getAvailableControllers() {
-        return InputProvider.DEFAULT_CONTROLLERS;
+    default void reloadControllers(Collection<String> list) {
+        //DO NOTHING
     }
 
     default String getAboutString() {

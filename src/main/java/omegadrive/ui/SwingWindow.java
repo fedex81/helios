@@ -1,7 +1,7 @@
 /*
  * SwingWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 13/10/19 17:03
+ * Last modified: 14/10/19 15:26
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ package omegadrive.ui;
 import com.google.common.base.Strings;
 import omegadrive.SystemLoader;
 import omegadrive.input.InputProvider;
+import omegadrive.input.InputProvider.PlayerNumber;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.*;
 import org.apache.logging.log4j.LogManager;
@@ -70,6 +71,7 @@ public class SwingWindow implements DisplayWindow {
     private JCheckBoxMenuItem muteItem;
     private JMenu recentFilesMenu;
     private JMenuItem[] recentFilesItems;
+    private Map<PlayerNumber, JMenu> inputMenusMap;
     private boolean showDebug = false;
 
     //when scaling is slow set this to FALSE
@@ -85,6 +87,9 @@ public class SwingWindow implements DisplayWindow {
 
     public SwingWindow(SystemProvider mainEmu) {
         this.mainEmu = mainEmu;
+        this.inputMenusMap = new LinkedHashMap<>();
+        Arrays.stream(PlayerNumber.values()).
+                forEach(pn -> inputMenusMap.put(pn, new JMenu(pn.name())));
     }
 
     public static void main(String[] args) {
@@ -93,38 +98,6 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
-
-    private java.util.List<JCheckBoxMenuItem> createRegionItems() {
-        java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
-        l.add(new JCheckBoxMenuItem("AutoDetect", true));
-        Arrays.stream(RegionDetector.Region.values()).sorted().
-                forEach(r -> l.add(new JCheckBoxMenuItem(r.name(), false)));
-        //only allow one selection
-        final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
-        l.stream().forEach(i -> i.addItemListener(e -> {
-            if (ItemEvent.SELECTED == e.getStateChange()) {
-                list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
-            }
-        }));
-        return l;
-    }
-
-    private java.util.List<JCheckBoxMenuItem> createInputItems(String playerName) {
-        java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
-        getAvailableControllers().forEach(c -> {
-            JCheckBoxMenuItem item = new JCheckBoxMenuItem(c, c.startsWith("Default"));
-            addAction(item, e -> mainEmu.handleSystemEvent(CONTROLLER_CHANGE, playerName + ":" + c));
-            l.add(item);
-        });
-        //only allow one selection
-        final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
-        l.stream().forEach(i -> i.addItemListener(e -> {
-            if (ItemEvent.SELECTED == e.getStateChange()) {
-                list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
-            }
-        }));
-        return l;
-    }
 
     public void init() {
         Util.registerJmx(this);
@@ -170,13 +143,9 @@ public class SwingWindow implements DisplayWindow {
         setting.add(regionMenu);
 
         JMenu inputMenu = new JMenu("Input");
+        reloadControllers(InputProvider.DEFAULT_CONTROLLERS);
+        inputMenusMap.values().forEach(inputMenu::add);
         setting.add(inputMenu);
-        JMenu inputP1Menu = new JMenu(InputProvider.PlayerNumber.P1.name());
-        createInputItems(inputP1Menu.getText()).forEach(inputP1Menu::add);
-        inputMenu.add(inputP1Menu);
-        JMenu inputP2Menu = new JMenu(InputProvider.PlayerNumber.P2.name());
-        createInputItems(inputP2Menu.getText()).forEach(inputP2Menu::add);
-        inputMenu.add(inputP2Menu);
 
         JMenu menuView = new JMenu("View");
         bar.add(menuView);
@@ -589,6 +558,21 @@ public class SwingWindow implements DisplayWindow {
         });
     }
 
+    private java.util.List<JCheckBoxMenuItem> createRegionItems() {
+        java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
+        l.add(new JCheckBoxMenuItem("AutoDetect", true));
+        Arrays.stream(RegionDetector.Region.values()).sorted().
+                forEach(r -> l.add(new JCheckBoxMenuItem(r.name(), false)));
+        //only allow one selection
+        final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
+        l.stream().forEach(i -> i.addItemListener(e -> {
+            if (ItemEvent.SELECTED == e.getStateChange()) {
+                list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
+            }
+        }));
+        return l;
+    }
+
     private void reloadRecentFiles() {
         IntStream.range(0, recentFilesItems.length).forEach(i -> {
             String val = PrefStore.getRecentFilesList().get(i);
@@ -597,5 +581,32 @@ public class SwingWindow implements DisplayWindow {
             val = Strings.isNullOrEmpty(val) ? "<none>" : val;
             recentFilesItems[i].setText(val);
         });
+    }
+
+    @Override
+    public void reloadControllers(Collection<String> list) {
+        for (PlayerNumber pn : inputMenusMap.keySet()) {
+            JMenu menu = inputMenusMap.get(pn);
+            menu.removeAll();
+            java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
+            list.forEach(c -> {
+                JCheckBoxMenuItem item = new JCheckBoxMenuItem(c, InputProvider.KEYBOARD_CONTROLLER.equalsIgnoreCase(c));
+                addAction(item, e -> mainEmu.handleSystemEvent(CONTROLLER_CHANGE, pn.name() + ":" + c));
+                l.add(item);
+            });
+            //only allow one selection
+            final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
+            l.stream().forEach(i -> i.addItemListener(e -> {
+                if (ItemEvent.SELECTED == e.getStateChange()) {
+                    list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
+                }
+            }));
+            l.stream().forEach(menu::add);
+            //fudgePlayer1Using1stController
+            if (list.size() > 2 && pn == PlayerNumber.P1) {
+                LOG.info("Auto-selecting {} using Controller: {}", pn, l.get(2).getText());
+                l.get(2).doClick();
+            }
+        }
     }
 }

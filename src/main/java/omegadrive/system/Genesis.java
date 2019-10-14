@@ -1,7 +1,7 @@
 /*
  * Genesis
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 14/10/19 14:57
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -143,7 +143,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(cpu).attachDevice(z80);
         vdp.addVdpEventListener(((DeviceAwareBus) bus));
-        reloadKeyListeners();
+        reloadWindowState();
         createAndAddVdpEventListener();
     }
 

@@ -1,7 +1,7 @@
 /*
  * JinputGamepadInputProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 13/10/19 17:32
+ * Last modified: 14/10/19 15:19
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,6 @@ public class JinputGamepadInputProvider implements InputProvider {
     private long POLLING_INTERVAL_MS = Long.valueOf(System.getProperty("jinput.polling.interval.ms", "5"));
 
     private volatile JoypadProvider joypadProvider;
-    //    private Controller controller;
     private volatile boolean stop = false;
     private String pov = Axis.POV.getName();
 
@@ -68,7 +67,7 @@ public class JinputGamepadInputProvider implements InputProvider {
             ));
 
     private JinputGamepadInputProvider() {
-        controllerNames = new ArrayList<>();
+        controllerNames = new ArrayList<>(DEFAULT_CONTROLLERS);
         controllers = new ArrayList<>();
     }
 
@@ -87,23 +86,14 @@ public class JinputGamepadInputProvider implements InputProvider {
         if (INSTANCE == NO_OP) {
             JinputGamepadInputProvider g = new JinputGamepadInputProvider();
             g.joypadProvider = joypadProvider;
-            g.controllerNames = controllers.stream().map(Controller::getName).collect(Collectors.toList());
+            g.controllerNames.addAll(controllers.stream().map(Controller::getName).collect(Collectors.toList()));
             g.controllers = controllers;
             g.setPlayers(1);
             executorService.submit(g.inputRunnable());
             INSTANCE = g;
-            fudgePlayer1Using1stController(g);
         }
         ((JinputGamepadInputProvider) INSTANCE).joypadProvider = joypadProvider;
         return INSTANCE;
-    }
-
-    //TODO remove
-    static void fudgePlayer1Using1stController(JinputGamepadInputProvider g) {
-        if (!g.getAvailableControllers().isEmpty()) {
-            g.setPlayerController(PlayerNumber.P1, g.getAvailableControllers().get(0));
-            LOG.info("Using Controller: " + g.getAvailableControllers().get(0));
-        }
     }
 
     static List<Controller> detectControllers() {
