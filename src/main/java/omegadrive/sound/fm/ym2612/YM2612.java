@@ -1,7 +1,7 @@
 /*
  * YM2612
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 11:30
+ * Last modified: 17/10/19 16:39
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1069,6 +1069,7 @@ public final class YM2612 implements MdFmProvider {
         switch (address) {
             case 0x21:
                 logWarn("Test register write: " + data);
+                break;
             case 0x22:
                 if ((data & 8) != 0) {
                     // Cool Spot music 1, LFO modified severals time which
@@ -1121,14 +1122,6 @@ public final class YM2612 implements MdFmProvider {
                 else KEY_OFF(CH, S3);
                 break;
             case 0x2A:
-                //when busy just drop the sample - Sonic 2 intro sounds bad
-//                if((YM2612_Status & 0x80) > 1){
-//                    LOG.info("sample drop");
-////                    return 0;
-//                }
-//                    String str = "DAC," + System.nanoTime() + "," + data;
-//                    LOG.info(str);
-//                    System.out.println(str);
                 dacValue = data;
                 break;
             case 0x2B:
