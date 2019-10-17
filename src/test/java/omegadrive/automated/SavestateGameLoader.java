@@ -1,7 +1,7 @@
 /*
  * SavestateGameLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/06/19 17:25
+ * Last modified: 17/10/19 14:04
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ import static omegadrive.system.SystemProvider.SystemEvent.*;
 
 public class SavestateGameLoader {
 
-    static String romFolder = "/home/fede/roms/test/savestate_test";
+    public static String romFolder = "/home/fede/roms/test/savestate_test";
 
     private static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
 
@@ -81,9 +81,10 @@ public class SavestateGameLoader {
 
 
     static int saveStateTestNumber = 21;
-    static SystemLoader loader = SystemLoader.getInstance();
+    static SystemLoader loader;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
+        loader = SystemLoader.getInstance();
 //        loadOne();
         loadAll(false);
     }

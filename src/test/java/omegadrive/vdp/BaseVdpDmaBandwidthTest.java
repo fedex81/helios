@@ -1,5 +1,7 @@
 /*
+ * BaseVdpDmaBandwidthTest
  * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 17/10/19 14:04
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,15 +19,12 @@
 
 package omegadrive.vdp;
 
-import omegadrive.system.SystemProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.util.LogHelper;
+import omegadrive.system.SystemProvider;
 import omegadrive.vdp.gen.GenesisVdp;
 import omegadrive.vdp.gen.GenesisVdpMemoryInterface;
-import omegadrive.vdp.gen.VdpDmaHandlerImpl;
-import omegadrive.vdp.gen.VdpFifo;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpSlotType;
@@ -55,10 +54,6 @@ public class BaseVdpDmaBandwidthTest {
 
     static boolean verbose = true;
 
-    static {
-        LogHelper.printToSytemOut = verbose;
-    }
-
     static int ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H32_WORDS = (int) Arrays.stream(VdpSlotType.h32Slots).filter(t -> t == VdpSlotType.EXTERNAL).count();
     static int ACTIVE_SCREEN_VRAM_DMA_PER_LINE_H40_WORDS = (int) Arrays.stream(VdpSlotType.h40Slots).filter(t -> t == VdpSlotType.EXTERNAL).count();
 
@@ -85,12 +80,6 @@ public class BaseVdpDmaBandwidthTest {
         busProvider.attachDevice(emu).attachDevice(memoryProvider);
 
         vdpProvider.updateRegisterData(1, 4); //mode5
-
-        VdpDmaHandlerImpl.verbose = verbose;
-        VdpDmaHandlerImpl.printToSysOut = verbose;
-        GenesisVdp.verbose = verbose;
-        VdpFifo.logEnable = verbose;
-        VdpFifo.printToSysOut = verbose;
     }
 
     private void setup68kRam() {

@@ -1,5 +1,7 @@
 /*
+ * GenesisVdpTest2
  * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 17/10/19 14:04
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +22,6 @@ package omegadrive.vdp.gen;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.vdp.VdpDmaHandlerTest;
 import omegadrive.vdp.VdpTestUtil;
@@ -46,9 +47,6 @@ public class GenesisVdpTest2 {
 
     @Before
     public void setup() {
-        LogHelper.printToSytemOut = true;
-        VdpDmaHandlerImpl.printToSysOut = true;
-        VdpDmaHandlerImpl.verbose = true;
         IMemoryProvider memory = MemoryProvider.createGenesisInstance();
         busProvider = GenesisBusProvider.createBus();
         busProvider.attachDevice(memory);
@@ -95,7 +93,7 @@ public class GenesisVdpTest2 {
         vdpProvider.writeControlPort(0x4400);
         //move.l, first word
         vdpProvider.writeControlPort(0x81);
-        Assert.assertTrue(busProvider.shouldStop68k());
+        Assert.assertFalse(busProvider.is68kRunning());
 
         //move.l second word, this changes the autoInc value -> needs to happen after DMA!
         vdpProvider.writeControlPort(0x8F00 + afterDmaAutoInc);

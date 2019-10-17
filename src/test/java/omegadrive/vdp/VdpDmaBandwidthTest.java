@@ -1,5 +1,7 @@
 /*
+ * VdpDmaBandwidthTest
  * Copyright (c) 2018-2019 Federico Berti
+ * Last modified: 17/10/19 14:04
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +19,6 @@
 
 package omegadrive.vdp;
 
-import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,10 +27,6 @@ import org.junit.Test;
 public class VdpDmaBandwidthTest extends BaseVdpDmaBandwidthTest {
 
     private static Logger LOG = LogManager.getLogger(VdpDmaBandwidthTest.class.getSimpleName());
-
-    static {
-        LogHelper.printToSytemOut = verbose;
-    }
 
     @Test
     public void test68kToCramBlankingH40() {

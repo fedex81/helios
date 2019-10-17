@@ -1,7 +1,7 @@
 /*
  * GenesisVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 11:37
+ * Last modified: 17/10/19 13:04
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -519,6 +519,8 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
             case vsramRead:
                 res = (fifoData & 0xF800) | (res & 0x7FF);
                 break;
+            case vramRead:
+                break; //do nothing
             default:
                 LOG.error("Unexpected vramMode: {}", vramMode);
                 break;

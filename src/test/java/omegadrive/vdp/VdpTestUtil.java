@@ -1,7 +1,7 @@
 /*
  * VdpTestUtil
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 14:30
+ * Last modified: 17/10/19 12:47
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,10 +34,6 @@ import java.util.stream.IntStream;
 
 public class VdpTestUtil {
 
-
-    static int VDP_SLOT_CYCLES = 2;
-
-
     public static void runCounterToStartFrame(VdpInterruptHandler h) {
         boolean isStart;
         do {
@@ -50,15 +46,15 @@ public class VdpTestUtil {
 
     public static void runToStartFrame(GenesisVdpProvider vdp) {
         do {
-            vdp.run(VDP_SLOT_CYCLES);
+            vdp.runSlot();
         } while (!isVBlank(vdp));
         do {
-            vdp.run(VDP_SLOT_CYCLES);
+            vdp.runSlot();
         } while (isVBlank(vdp));
 
         boolean isStart;
         do {
-            vdp.run(VDP_SLOT_CYCLES);
+            vdp.runSlot();
             //TODO
             isStart = vdp.getHCounter() == 0 && vdp.getVCounter() == 0;
         } while (!isStart);
@@ -67,13 +63,13 @@ public class VdpTestUtil {
     }
 
     public static void runVdpSlot(GenesisVdpProvider vdp) {
-        vdp.run(VDP_SLOT_CYCLES);
+        vdp.runSlot();
     }
 
     public static void runVdpUntilFifoEmpty(GenesisVdpProvider vdp) {
         IVdpFifo fifo = vdp.getFifo();
         while (!fifo.isEmpty()) {
-            vdp.run(VDP_SLOT_CYCLES);
+            vdp.runSlot();
         }
     }
 
@@ -82,7 +78,7 @@ public class VdpTestUtil {
         boolean dmaDone;
         do {
             slots++;
-            vdp.run(VDP_SLOT_CYCLES);
+            vdp.runSlot();
             dmaDone = (vdp.readControl() & 0x2) == 0;
         } while (!dmaDone);
         return slots;
@@ -91,10 +87,10 @@ public class VdpTestUtil {
     public static void runVdpUntilVBlank(GenesisVdpProvider vdp) {
         //if we already are in vblank, run until vblank is over
         do {
-            vdp.run(VDP_SLOT_CYCLES);
+            vdp.runSlot();
         } while (isVBlank(vdp));
         do {
-            vdp.run(VDP_SLOT_CYCLES);
+            vdp.runSlot();
         } while (!isVBlank(vdp));
     }
 

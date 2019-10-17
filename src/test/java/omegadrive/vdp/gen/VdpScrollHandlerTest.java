@@ -1,7 +1,7 @@
 /*
  * VdpScrollHandlerTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 12/10/19 17:06
+ * Last modified: 17/10/19 12:48
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -216,7 +216,7 @@ public class VdpScrollHandlerTest {
         }
 
         @Override
-        public int run(int cycles) {
+        public int runSlot() {
             return 0;
         }
 
