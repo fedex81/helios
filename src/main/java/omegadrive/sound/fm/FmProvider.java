@@ -1,7 +1,7 @@
 /*
  * FmProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 16:13
+ * Last modified: 17/10/19 20:41
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,6 +77,10 @@ public interface FmProvider extends Device {
     void init(int clock, int rate);
 
     int readRegister(int type, int regNumber);
+
+    default void writeRegister(int type, int regNumber, int data) {
+
+    }
 
     void tick(double microsPerTick);
 

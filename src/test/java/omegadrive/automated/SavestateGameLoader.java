@@ -1,7 +1,7 @@
 /*
  * SavestateGameLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 14:04
+ * Last modified: 17/10/19 17:02
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,12 +53,12 @@ public class SavestateGameLoader {
             put("D_HEDD_T.gs0", "Dynamite Headdy (J) [c][!].bin").
             put("FANTASI.gs0", "Fantasia (E) [!].bin").
             put("FANTASI.gs9", "Fantasia (E) [!].bin").
-            put("G-AXE.GS0", "Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE.GS1", "Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE.GS2", "Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE.GS4", "Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE.GS8", "Golden Axe (W) (REV00) [!].bin").
-            put("G-AXE.GS9", "Golden Axe (W) (REV00) [!].bin").
+            put("G-AXE.GS0", "Golden Axe (W) (REV01) [!].bin").
+            put("G-AXE.GS1", "Golden Axe (W) (REV01) [!].bin").
+            put("G-AXE.GS2", "Golden Axe (W) (REV01) [!].bin").
+            put("G-AXE.GS4", "Golden Axe (W) (REV01) [!].bin").
+            put("G-AXE.GS8", "Golden Axe (W) (REV01) [!].bin").
+            put("G-AXE.GS9", "Golden Axe (W) (REV01) [!].bin").
             put("G-AXE2.GS1", "Golden Axe II (W) [!].bin").
             put("G-AXE2.GS2", "Golden Axe II (W) [!].bin").
             put("mickeym.gs0", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").

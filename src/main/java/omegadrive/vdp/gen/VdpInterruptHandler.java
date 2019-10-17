@@ -1,7 +1,7 @@
 /*
  * VdpInterruptHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 10:58
+ * Last modified: 17/10/19 15:27
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -190,10 +190,6 @@ public class VdpInterruptHandler {
         return hBlankSet;
     }
 
-    public boolean isActiveScreen() {
-        return !hBlankSet && !vBlankSet;
-    }
-
     public int getvCounterInternal() {
         return vCounterInternal;
     }
@@ -248,9 +244,7 @@ public class VdpInterruptHandler {
     }
 
     public boolean isDrawFrameSlot() {
-        //TODO check, should it be?
-//        return hCounterInternal == 0 && vCounterInternal == 0;
-        return vCounterInternal == 0 && slotNumber == vdpCounterMode.slotsPerLine - 1;
+        return hCounterInternal == 0 && vCounterInternal == 0;
     }
 
     public boolean isExternalSlot(boolean isBlanking) {

@@ -1,7 +1,7 @@
 /*
  * GstStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:01
+ * Last modified: 17/10/19 20:41
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -68,9 +67,19 @@ public class GstStateHandler implements GenesisStateHandler {
     private int softwareId;
     private String fileName;
     private Type type;
+    private boolean runAhead;
 
 
     private GstStateHandler() {
+    }
+
+    public static GenesisStateHandler createLoadInstance(String fileName, int[] data) {
+        GstStateHandler h = new GstStateHandler();
+        h.fileName = handleFileExtension(fileName);
+        h.type = Type.LOAD;
+        h.data = data;
+        h.runAhead = true;
+        return h;
     }
 
     public static GenesisStateHandler createLoadInstance(String fileName) {
@@ -131,15 +140,14 @@ public class GstStateHandler implements GenesisStateHandler {
 
     @Override
     public void loadFmState(FmProvider fm) {
-        int i;
-        fm.reset();
+        int reg;
         int limit = FM_DATA_SIZE / 2;
-
-        for (i = 0; i < limit; i++) {
-            fm.write(MdFmProvider.FM_ADDRESS_PORT0, i);
-            fm.write(MdFmProvider.FM_DATA_PORT0, data[FM_REG_OFFSET + i]);
-            fm.write(MdFmProvider.FM_ADDRESS_PORT1, i);
-            fm.write(MdFmProvider.FM_DATA_PORT1, data[FM_REG_OFFSET + limit + i]);
+        if (!runAhead) {
+            fm.reset();
+        }
+        for (reg = 0; reg < limit; reg++) {
+            fm.writeRegister(0, reg, data[FM_REG_OFFSET + reg]);
+            fm.writeRegister(1, reg, data[FM_REG_OFFSET + limit + reg]);
         }
     }
 
@@ -173,18 +181,15 @@ public class GstStateHandler implements GenesisStateHandler {
         IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> z80.writeMemory(i, data[i + Z80_RAM_DATA_OFFSET]));
 
-        bus.setZ80BusRequested(false);
+        bus.setZ80BusRequested(data[0x439] > 0);
         bus.setZ80ResetState(false);
 
         boolean isReset = data[0x438] > 0;
-        boolean isBusReq = data[0x439] > 0;
-        if (isBusReq) {
-            bus.setZ80BusRequested(true);
-        }
-        if (isReset) {
-            //TODO seems to break a lot of savestates
+        if (isReset && runAhead) {
             LOG.warn("Z80 should be reset, not doing it!");
-//            bus.setZ80ResetState(true);
+            bus.setZ80ResetState(true);
+            //TODO dont think this is needed?
+//            z80.reset();
         }
         int z80BankInt = getUInt32(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
         GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
@@ -293,9 +298,7 @@ public class GstStateHandler implements GenesisStateHandler {
         Util.setUInt32(z80State.getRegBCx(), data, 0x428);
         Util.setUInt32(z80State.getRegDEx(), data, 0x42C);
         Util.setUInt32(z80State.getRegHLx(), data, 0x430);
-
-        //TODO
-        Util.setUInt32(z80State.isIFF1() ? 1 : 0, data, 0x436);
+        data[0x436] = z80State.isIFF1() ? 1 : 0;
     }
 
     @Override

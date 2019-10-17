@@ -1,7 +1,7 @@
 /*
  * YM2612
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 16:39
+ * Last modified: 17/10/19 20:29
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -633,6 +633,11 @@ public final class YM2612 implements MdFmProvider {
     @Override
     public int readRegister(int type, int regNumber) {
         return YM2612_REG[type][regNumber];
+    }
+
+    @Override
+    public void writeRegister(int type, int regNumber, int data) {
+        YM2612_REG[type][regNumber] = data;
     }
 
     public final int update(int[] buf_lr, int offset, int count) {
