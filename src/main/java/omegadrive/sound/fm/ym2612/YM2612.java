@@ -1,7 +1,7 @@
 /*
  * YM2612
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 16:14
+ * Last modified: 17/10/19 11:30
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,11 +37,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public final class YM2612 implements MdFmProvider {
 
-    private static Logger LOG = LogManager.getLogger(YM2612.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(YM2612.class.getSimpleName());
 
     static final int NULL_RATE_SIZE = 32;
 
-    private static boolean verbose = false;
+    private final static boolean verbose = false;
 
     // YM2612 Hardware
     private final class cSlot {
@@ -290,9 +290,9 @@ public final class YM2612 implements MdFmProvider {
         return Math.log(x) / Math.log(10.0);
     }
 
-    //TODO FoxLand_demo requires < 45
+    //NOTE FoxLand_demo requires < 45
     //busy last 90 Z80 cycles  @ 3.75 Mhz = 45 cycles @ 1.67 Mhz
-    static int BUSY_CYCLES = 44;
+    static int BUSY_MICROS = 24; //was 44
 
     private static boolean isResetting;
 
@@ -382,7 +382,7 @@ public final class YM2612 implements MdFmProvider {
 
     double microsAcc = 0; //accumulator
     double pcmMicrosAcc = 0; //accumulator
-    long busyCycles = BUSY_CYCLES;
+    long busyCyclesMicros = BUSY_MICROS;
 
     public final void init(int Clock, int Rate) {
         int i, j;
@@ -562,14 +562,15 @@ public final class YM2612 implements MdFmProvider {
             synchronizeTimers(1);
             microsAcc -= 1;
         }
+        //TODO check this, MICROS_PER_PCM ~ BUSY_CYCLES_MICROS
         if (pcmMicrosAcc > MICROS_PER_PCM) {
             if (YM2612_DAC != 0) {
                 dacQueue.offer(dacValue);
             }
             pcmMicrosAcc -= MICROS_PER_PCM;
         }
-        busyCycles--;
-        if (busyCycles <= 0) {
+        busyCyclesMicros -= microsPerTick;
+        if (busyCyclesMicros <= 0) {
             //clear flag
             YM2612_Status &= ~FM_STATUS_BUSY_BIT_MASK;
         }
@@ -626,7 +627,7 @@ public final class YM2612 implements MdFmProvider {
 
     private void setBusyFlag() {
         YM2612_Status |= FM_STATUS_BUSY_BIT_MASK;
-        busyCycles = BUSY_CYCLES;
+        busyCyclesMicros = BUSY_MICROS;
     }
 
     @Override

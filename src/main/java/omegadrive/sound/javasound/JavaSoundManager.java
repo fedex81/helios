@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 05/10/19 14:22
+ * Last modified: 17/10/19 11:32
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,14 +43,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class JavaSoundManager implements SoundProvider {
-    private static Logger LOG = LogManager.getLogger(JavaSoundManager.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(JavaSoundManager.class.getSimpleName());
 
     private static SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
 
     private static ExecutorService executorService =
             Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
 
-    private static long nsToMillis = 1_000_000;
+//    private static long nsToMillis = 1_000_000;
 
     private PsgProvider psg;
     private FmProvider fm;
@@ -123,13 +123,14 @@ public class JavaSoundManager implements SoundProvider {
             @Override
             public void run() {
                 try {
+                    long sleepNs = Util.MILLI_IN_NS / 2;
                     do {
                         if (playOncePerFrame) {
                             playOncePerFrame();
                         } else {
                             playOnce();
                         }
-                        Util.parkUntil(System.nanoTime() + nsToMillis / 2);
+                        Util.parkUntil(System.nanoTime() + sleepNs);
                     } while (!close);
                 } catch (Exception e) {
                     LOG.error("Unexpected sound error, stopping", e);
@@ -216,7 +217,7 @@ public class JavaSoundManager implements SoundProvider {
     int fmBufferLen = 0;
 
     @Override
-    public void output(int nanos) {
+    public void output(long nanos) {
 //        LOG.info(micros + " micros");
         if (playOncePerFrame) {
             double sec = d * nanos;

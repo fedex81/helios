@@ -1,7 +1,7 @@
 /*
  * GenesisBusProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 17/10/19 11:16
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
      */
     void resetFrom68k();
 
-    boolean shouldStop68k();
+    boolean is68kRunning();
 
     //VDP setting this
     void setStop68k(int mask);

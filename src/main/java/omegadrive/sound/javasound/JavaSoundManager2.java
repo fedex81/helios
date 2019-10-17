@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager2
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:03
+ * Last modified: 17/10/19 11:10
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -124,7 +124,7 @@ public class JavaSoundManager2 implements SoundProvider {
     }
 
     @Override
-    public void output(int oneFrame) {
+    public void output(long oneFrame) {
         psg.output(psgBuffer, 0, samplesPerFrame);
         fm.update(fmBuffer, 0, samplesPerFrame);
         synchronized (blocker) {

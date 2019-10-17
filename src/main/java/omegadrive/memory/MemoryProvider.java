@@ -1,7 +1,7 @@
 /*
  * MemoryProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 17/10/19 11:25
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 
 public class MemoryProvider implements IMemoryProvider {
 
-    private static Logger LOG = LogManager.getLogger(MemoryProvider.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(MemoryProvider.class.getSimpleName());
 
     public static final int M68K_RAM_SIZE = 0x10000;
     public static final int SG1K_Z80_RAM_SIZE = 0x400;

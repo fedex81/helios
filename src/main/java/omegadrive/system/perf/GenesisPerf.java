@@ -1,7 +1,7 @@
 /*
- * GenesisNewCnt
+ * GenesisPerf
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 17/10/19 11:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,19 +35,19 @@ import java.util.stream.IntStream;
  * <p>
  * MEMORY MAP:	https://en.wikibooks.org/wiki/Genesis_Programming
  */
-public class GenesisNewCnt extends GenesisNew {
+public class GenesisPerf extends GenesisNew {
 
     static int mclkHz, m68kRef, vdpRef, z80Ref, fmRef;
-    private static Logger LOG = LogManager.getLogger(GenesisNewCnt.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(GenesisPerf.class.getSimpleName());
     int[] cycleVdpFrame = new int[RegionDetector.Region.USA.getFps()];
     int[] cycle68kFrame = new int[RegionDetector.Region.USA.getFps()];
     int[] cycleZ80Frame = new int[RegionDetector.Region.USA.getFps()];
     int[] cycleFmFrame = new int[RegionDetector.Region.USA.getFps()];
     int cycleVdpCnt, cycle68kCnt, cycleZ80cnt, cycleFmCnt;
-    long frameWaitNs, lastSecTimeNs;
+    long frameWaitNs, lastSecTimeNs, frameProcessingNs;
     int totalCycles, frameCnt;
 
-    protected GenesisNewCnt(DisplayWindow emuFrame) {
+    protected GenesisPerf(DisplayWindow emuFrame) {
         super(emuFrame);
     }
 
@@ -57,7 +57,8 @@ public class GenesisNewCnt extends GenesisNew {
         cycleZ80Frame[frameCnt] = cycleZ80cnt;
         cycleFmFrame[frameCnt] = cycleFmCnt;
 
-        frameWaitNs += elapsedNs;
+        frameWaitNs += elapsedWaitNs;
+        frameProcessingNs += frameProcessingDelayNs;
         frameCnt++;
         totalCycles += counter;
 
@@ -69,9 +70,10 @@ public class GenesisNewCnt extends GenesisNew {
             double z80Avg = IntStream.range(0, frameCnt).mapToDouble(i -> cycleZ80Frame[i]).sum();
             double fmAvg = IntStream.range(0, frameCnt).mapToDouble(i -> cycleFmFrame[i]).sum();
             long waitMs = 1000 - Duration.ofNanos(frameWaitNs).toMillis();
+            long frameProcMs = 1000 - Duration.ofNanos(frameProcessingNs).toMillis();
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("Last 1s duration in ms %d, errorPerc %f%n", lastSecLenMs, 100 - (100 * lastSecLenMs / 1000.0)));
-            sb.append(String.format("helios cycles: %d, waitMs %d%n", totalCycles, waitMs));
+            sb.append(String.format("helios cycles: %d, frameProcMs: %d, sleepMs %d%n", totalCycles, frameProcMs, waitMs));
             sb.append(String.format("68k cycles: %f, ref %d, errorPerc %f%n", m68kAvg, m68kRef, 100 - (100 * m68kRef / m68kAvg)));
             sb.append(String.format("Z80 cycles: %f, ref: %d, errorPerc: %f%n", z80Avg, z80Ref, 100 - (100 * z80Ref / z80Avg)));
             sb.append(String.format("FM cycles: %f, ref: %d, errorPerc: %f%n", fmAvg, fmRef, 100 - (100 * fmRef / fmAvg)));
@@ -82,7 +84,42 @@ public class GenesisNewCnt extends GenesisNew {
             frameCnt = 0;
             frameWaitNs = 0;
             totalCycles = 0;
+            frameProcessingNs = 0;
             lastSecTimeNs = nowNs;
+        }
+    }
+
+    @Override
+    protected void loop() {
+        LOG.info("Starting game loop");
+        updateVideoMode(true);
+
+        do {
+            try {
+                run68k(counter);
+                runZ80(counter);
+                runFM(counter);
+                runVdp(counter);
+                doCounting();
+                counter++;
+            } catch (Exception e) {
+                LOG.error("Error main cycle", e);
+                break;
+            }
+        } while (!runningRomFuture.isDone());
+        LOG.info("Exiting rom thread loop");
+    }
+
+    private void doCounting() {
+        cycleVdpCnt += counter >= nextVdpCycle ? 1 : 0;
+        if (counter % M68K_DIVIDER == 0) {
+            cycle68kCnt++;
+        }
+        if (counter % Z80_DIVIDER == 0) {
+            cycleZ80cnt++;
+        }
+        if (counter % FM_DIVIDER == 0) {
+            cycleFmCnt++;
         }
     }
 
@@ -108,35 +145,5 @@ public class GenesisNewCnt extends GenesisNew {
     protected void resetCycleCounters(int counter) {
         super.resetCycleCounters(counter);
         cycleVdpCnt = cycleFmCnt = cycle68kCnt = cycleZ80cnt = 0;
-    }
-
-    @Override
-    protected void runVdp(long counter) {
-        cycleVdpCnt += counter >= nextVdpCycle ? 1 : 0;
-        super.runVdp(counter);
-    }
-
-    @Override
-    protected void run68k(long counter) {
-        super.run68k(counter);
-        if (counter % M68K_DIVIDER == 0) {
-            cycle68kCnt++;
-        }
-    }
-
-    @Override
-    protected void runZ80(long counter) {
-        super.runZ80(counter);
-        if (counter % Z80_DIVIDER == 0) {
-            cycleZ80cnt++;
-        }
-    }
-
-    @Override
-    protected void runFM(int counter) {
-        super.runFM(counter);
-        if (counter % FM_DIVIDER == 0) {
-            cycleFmCnt++;
-        }
     }
 }

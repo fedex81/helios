@@ -1,7 +1,7 @@
 /*
  * VdpDmaHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 17/10/19 11:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,11 +37,10 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
-    private static Logger LOG = LogManager.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
-
-    public static boolean verbose = false;
-    public static boolean lessVerbose = false || verbose;
-    public static boolean printToSysOut = false;
+    public static final boolean verbose = false;
+    public static final boolean lessVerbose = false || verbose;
+    public static final boolean printToSysOut = false;
+    private final static Logger LOG = LogManager.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
 
     protected GenesisVdpProvider vdpProvider;
     protected VdpMemoryInterface memoryInterface;
@@ -129,16 +128,17 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         if (!lessVerbose) {
             return;
         }
-        boolean v = verbose;
-        verbose = true;
-        printInfo(head, Long.MIN_VALUE);
-        verbose = v;
+        printInfoLess(head, Long.MIN_VALUE);
     }
 
     private void printInfo(String head, long srcAddress) {
         if (!verbose) {
             return;
         }
+        printInfoLess(head, srcAddress);
+    }
+
+    private void printInfoLess(String head, long srcAddress) {
         String str = getDmaStateString(head, srcAddress);
         LOG.info(str);
         if (printToSysOut) {

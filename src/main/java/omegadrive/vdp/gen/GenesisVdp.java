@@ -1,7 +1,7 @@
 /*
  * GenesisVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:51
+ * Last modified: 17/10/19 11:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,13 +41,11 @@ import java.util.stream.IntStream;
  */
 public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
 
-    private static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
+    public final static boolean verbose = false;
+    public final static boolean fifoVerbose = false;
+    public final static boolean regVerbose = false;
+    private final static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
-    public static boolean verbose = false;
-    public static boolean fifoVerbose = false;
-    public static boolean regVerbose = false;
-
-    private static boolean ENABLE_FIFO = Boolean.valueOf(System.getProperty("vdp.enable.fifo", "true"));
     private static boolean ENABLE_READ_AHEAD = Boolean.valueOf(System.getProperty("vdp.enable.read.ahead", "false"));
 
     private VramMode vramMode;
@@ -167,7 +165,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     private void setupVdp() {
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
-        this.fifo = ENABLE_FIFO ? new VdpFifo() : IVdpFifo.createNoFifo(memoryInterface);
+        this.fifo = new VdpFifo();
         this.list = new ArrayList<>();
         this.initMode();
     }
@@ -219,7 +217,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
 
     @Override
     public int readControl() {
-        if (bus.shouldStop68k()) {
+        if (!bus.is68kRunning()) {
             LOG.warn("readControl with 68k stopped, address: {}", addressRegister, verbose);
         }
         // The value assigned to these bits will be whatever value these bits were set to from the
@@ -370,7 +368,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     }
 
     private void writeVdpPort(VdpPortType type, long dataL) {
-        if (bus.shouldStop68k()) {
+        if (!bus.is68kRunning()) {
             handlePendingWrite(type, dataL);
             return;
         }
@@ -482,7 +480,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
 
     @Override
     public int readDataPort() {
-        if (bus.shouldStop68k()) {
+        if (!bus.is68kRunning()) {
             LOG.warn("readDataPort with 68k stopped, address: {}", addressRegister);
         }
         if (fifo.isFull()) {
@@ -707,7 +705,8 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         return false;
     }
 
-    private int runSlot() {
+    @Override
+    public int runSlot() {
 //        LogHelper.printLevel(LOG, Level.INFO, "Start slot: {}", interruptHandler.getSlotNumber(), verbose);
         boolean displayEnable = disp;
         //slot granularity -> 2 H counter increases per cycle
@@ -730,7 +729,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
             resetVideoMode(false);
         }
         if (interruptHandler.isFirstLineSlot()) {
-            renderHandler.initLineData(interruptHandler.vCounterInternal);
+//            renderHandler.initLineData(interruptHandler.vCounterInternal);
             drawScanline(interruptHandler.vCounterInternal, displayEnable);
         }
         return interruptHandler.getVdpClockSpeed();
@@ -770,6 +769,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         interruptHandler.logVeryVerbose("Draw Scanline: %s", line);
         int lineLimit = videoMode.getDimension().height;
         if (line < lineLimit) {
+            renderHandler.initLineData(line);
             renderHandler.renderLine(line);
         }
     }
@@ -787,11 +787,6 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     @Override
     public void dumpScreenData() {
         renderHandler.dumpScreenData();
-    }
-
-    @Override
-    public int run(int cycles) {
-        return runSlot();
     }
 
     @Override

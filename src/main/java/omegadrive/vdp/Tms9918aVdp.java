@@ -1,7 +1,7 @@
 /*
  * Tms9918aVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:20
+ * Last modified: 17/10/19 10:56
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,7 +100,7 @@ public class Tms9918aVdp implements Tms9918a {
     }
 
     @Override
-    public int run(int cycles) {
+    public int runSlot() {
         boolean vBlank = interruptHandler.isvBlankSet();
         interruptHandler.increaseHCounter();
         boolean vBlankTrigger = !vBlank && interruptHandler.isvBlankSet();

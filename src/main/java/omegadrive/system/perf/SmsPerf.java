@@ -1,7 +1,7 @@
 /*
  * SmsPerf
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 12/10/19 16:58
+ * Last modified: 17/10/19 11:34
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ import java.util.stream.IntStream;
 public class SmsPerf extends Sms {
 
     static int mclkHz, vdpHz, vdpRef, z80Ref, fmRef;
-    private static Logger LOG = LogManager.getLogger(GenesisNewCnt.class.getSimpleName());
+    private static Logger LOG = LogManager.getLogger(GenesisPerf.class.getSimpleName());
     int[] cycleVdpFrame = new int[RegionDetector.Region.USA.getFps()];
     int[] cycleZ80Frame = new int[RegionDetector.Region.USA.getFps()];
     int[] cycleFmFrame = new int[RegionDetector.Region.USA.getFps()];

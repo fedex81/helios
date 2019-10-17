@@ -1,7 +1,7 @@
 /*
  * GenesisVdpMemoryInterface
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 17/10/19 11:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,9 +30,8 @@ import java.util.stream.IntStream;
 
 public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
-    private static Logger LOG = LogManager.getLogger(GenesisVdpMemoryInterface.class.getSimpleName());
-
-    public static boolean verbose = false;
+    public final static boolean verbose = false;
+    private final static Logger LOG = LogManager.getLogger(GenesisVdpMemoryInterface.class.getSimpleName());
     private static int EVEN_VALUE_MASK = ~1;
 
     private int[] vram;

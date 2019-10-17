@@ -1,7 +1,7 @@
 /*
  * Util
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 17/10/19 10:50
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ public class Util {
 
     public static final long SECOND_IN_NS = Duration.ofSeconds(1).toNanos();
     public static final long MILLI_IN_NS = Duration.ofMillis(1).toNanos();
+    public static final long SLEEP_LIMIT_NS = 100_000;
 
     public static void sleep(long ms) {
         try {
@@ -62,14 +63,14 @@ public class Util {
         return parkFor(Math.max(0, targetNs - start), start);
     }
 
-    private static long parkFor(long intervalNs, long startNs) {
+    public static long parkFor(long intervalNs, long startWaitNs) {
         boolean done;
         long now;
         do {
-            LockSupport.parkNanos(intervalNs);
+            LockSupport.parkNanos(intervalNs - SLEEP_LIMIT_NS);
             now = System.nanoTime();
-            intervalNs -= now - startNs;
-            done = intervalNs < 500_000; //within half a millis
+            intervalNs -= now - startWaitNs;
+            done = intervalNs < SLEEP_LIMIT_NS;
         } while (!done);
         return now;
     }

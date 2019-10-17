@@ -1,7 +1,7 @@
 /*
  * LogHelper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 17/10/19 11:02
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import java.util.Objects;
 
 public class LogHelper {
 
-    public static boolean printToSytemOut = false;
+    public final static boolean printToSytemOut = false;
 
 
     public static void printLevel(Logger LOG, Level level, String str, long arg1, long arg2, long arg3, boolean verbose) {

@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 17/10/19 11:19
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,8 +97,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     @Override
-    public boolean shouldStop68k() {
-        return busArbiter.shouldStop68k();
+    public boolean is68kRunning() {
+        return busArbiter.is68kRunning();
     }
 
     @Override

@@ -1,7 +1,7 @@
 /*
  * SoundProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 10:58
+ * Last modified: 17/10/19 11:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,22 +68,6 @@ public interface SoundProvider extends Device {
         return (RegionDetector.Region.EUROPE != r ? NTSC_FM_CLOCK : PAL_FM_CLOCK);
     }
 
-    void output(int nanos);
-
-    void close();
-
-    default boolean isRecording() {
-        return false;
-    }
-
-    default void setRecording(boolean recording) {
-        //NO OP
-    }
-
-    boolean isMute();
-
-    void setMute(boolean mute);
-
     SoundProvider NO_SOUND = new SoundProvider() {
         @Override
         public PsgProvider getPsg() {
@@ -96,7 +80,7 @@ public interface SoundProvider extends Device {
         }
 
         @Override
-        public void output(int fps) {
+        public void output(long fps) {
 
         }
 
@@ -119,6 +103,22 @@ public interface SoundProvider extends Device {
         public void setMute(boolean mute) {
         }
     };
+
+    void close();
+
+    default boolean isRecording() {
+        return false;
+    }
+
+    default void setRecording(boolean recording) {
+        //NO OP
+    }
+
+    boolean isMute();
+
+    void setMute(boolean mute);
+
+    void output(long nanos);
 
     default boolean isSoundWorking() {
         return false;

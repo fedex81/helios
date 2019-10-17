@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 14/10/19 14:57
+ * Last modified: 17/10/19 11:03
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -194,7 +194,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     protected void runVdp(long counter) {
         if (counter % VDP_DIVIDER == 0) {
-            if (vdp.run(1) > 0) {
+            if (vdp.runSlot() > 0) {
                 newFrame();
                 ((DeviceAwareBus) bus).onNewFrame(); //TODO
             }

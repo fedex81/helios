@@ -1,7 +1,7 @@
 /*
  * VdpFifo
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 17/10/19 11:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 
 package omegadrive.vdp.gen;
 
-import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.IVdpFifo;
 import org.apache.logging.log4j.LogManager;
@@ -31,11 +30,10 @@ import java.util.stream.IntStream;
 
 public class VdpFifo implements IVdpFifo {
 
-    private static Logger LOG = LogManager.getLogger(VdpFifo.class.getSimpleName());
+    public static final boolean logEnable = false;
 
     public static final int FIFO_SIZE = 4;
-
-    private VdpFifoEntry[] fifo = new VdpFifoEntry[FIFO_SIZE];
+    public static final boolean printToSysOut = false;
     private int popPointer;
     private int pushPointer;
     private int fifoSize;
@@ -44,8 +42,8 @@ public class VdpFifo implements IVdpFifo {
         IntStream.range(0, FIFO_SIZE).forEach(i -> fifo[i] = new VdpFifoEntry());
     }
 
-    public static boolean logEnable = false || GenesisVdp.fifoVerbose;
-    public static boolean printToSysOut = false || LogHelper.printToSytemOut;
+    private final static Logger LOG = LogManager.getLogger(VdpFifo.class.getSimpleName());
+    private final VdpFifoEntry[] fifo = new VdpFifoEntry[FIFO_SIZE];
 
     @Override
     public void push(GenesisVdpProvider.VramMode vdpRamMode, int addressReg, int data) {

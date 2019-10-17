@@ -1,7 +1,7 @@
 /*
  * VdpInterruptHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 17/10/19 10:58
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ public class VdpInterruptHandler {
      * Lotus II
      * Legend of Galahad
      */
-    private static Logger LOG = LogManager.getLogger(VdpInterruptHandler.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(VdpInterruptHandler.class.getSimpleName());
 
     public static final int COUNTER_LIMIT = 0x1FF;
     public static final int VBLANK_CLEAR = COUNTER_LIMIT;
@@ -229,11 +229,7 @@ public class VdpInterruptHandler {
     }
 
     public boolean isFirstLineSlot() {
-        return slotNumber == vdpCounterMode.hBlankClear >> 1;
-    }
-
-    public boolean isLastLineSlot() {
-        return slotNumber == vdpCounterMode.slotsPerLine - 1;
+        return slotNumber == vdpCounterMode.hBlankClearSlot;
     }
 
     /**
@@ -252,7 +248,9 @@ public class VdpInterruptHandler {
     }
 
     public boolean isDrawFrameSlot() {
-        return isLastLineSlot() && vCounterInternal == 0;
+        //TODO check, should it be?
+//        return hCounterInternal == 0 && vCounterInternal == 0;
+        return vCounterInternal == 0 && slotNumber == vdpCounterMode.slotsPerLine - 1;
     }
 
     public boolean isExternalSlot(boolean isBlanking) {

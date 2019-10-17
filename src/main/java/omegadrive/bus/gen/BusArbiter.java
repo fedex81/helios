@@ -1,7 +1,7 @@
 /*
  * BusArbiter
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 07/04/19 16:01
+ * Last modified: 17/10/19 11:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,23 +40,35 @@ public class BusArbiter implements Device {
      * http://gendev.spritesmind.net/forum/viewtopic.php?t=787
      *
      */
-    private static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
+    private static final VdpState[] stateVdpVals = VdpState.values();
+    public static boolean verbose = false;
+    private VdpState stateVdp = VdpState.NORMAL;
+
+    public void setStop68k(int mask) {
+        if (mask != mask68kState) {
+            mask68kState = mask;
+            stateVdp = stateVdpVals[mask];
+            state68k = stateVdp != VdpState.NORMAL ? M68kState.HALTED : M68kState.RUNNING;
+//            LOG.info("68k State{} , {}", mask, state68k);
+        }
+    }
+
+    public boolean is68kRunning() {
+        return state68k == M68kState.RUNNING;
+    }
 
     protected GenesisVdpProvider vdp;
     protected M68kProvider m68k;
     protected Z80Provider z80;
 
-    public static boolean verbose = false;
-
     private IntState int68k = IntState.ACKED;
     private M68kState state68k = M68kState.RUNNING;
+
+    enum IntState {NONE, PENDING, ASSERTED, ACKED}
     private int mask68kState = 0;
     private boolean vIntFrameExpired;
     private int vIntOnLine;
-
-    enum IntState {NONE, PENDING, ASSERTED, ACKED}
-
-    enum M68kState {RUNNING, HALTED}
 
     private IntState z80Int = IntState.ACKED;
 
@@ -186,16 +198,12 @@ public class BusArbiter implements Device {
         }
     }
 
-    public void setStop68k(int mask) {
-        if (mask != mask68kState) {
-            mask68kState = mask;
-            state68k = mask == 0 ? M68kState.RUNNING : M68kState.HALTED;
-//            LOG.info("68k State{} , {}", mask, state68k);
-        }
-    }
+    enum M68kState {RUNNING, HALTED}
 
-    public boolean shouldStop68k() {
-        return state68k != M68kState.RUNNING;
+    //TODO fifo full shoud not stop 68k
+    //TODO fifo full and 68k uses vdp -> stop 68k
+    enum VdpState {
+        NORMAL, DMA_IN_PROGRESS, FIFO_FULL
     }
 
     public void newFrame() {

@@ -1,7 +1,7 @@
 /*
  * SystemLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 17/10/19 11:34
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import omegadrive.input.InputProvider;
 import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.Z80BaseSystem;
-import omegadrive.system.perf.GenesisNewCnt;
+import omegadrive.system.perf.GenesisPerf;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.ui.SwingWindow;
@@ -221,7 +221,7 @@ public class SystemLoader {
         boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if (isGen) {
-            systemProvider = GenesisNewCnt.createNewInstance(emuFrame);
+            systemProvider = GenesisPerf.createNewInstance(emuFrame);
         } else if (isSg) {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, emuFrame);
         } else if (isCv) {

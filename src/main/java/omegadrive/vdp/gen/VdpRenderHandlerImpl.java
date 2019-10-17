@@ -1,7 +1,7 @@
 /*
  * VdpRenderHandlerImpl
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 17/10/19 10:56
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,9 +58,7 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
  */
 public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener {
 
-    private static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
-
-    private static boolean verbose = false;
+    private final static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
 
     private GenesisVdpProvider vdpProvider;
     private VdpMemoryInterface memoryInterface;

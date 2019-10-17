@@ -1,7 +1,7 @@
 /*
  * MC68000Wrapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 17/10/19 11:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,13 +36,11 @@ import org.apache.logging.log4j.Logger;
  */
 public class MC68000Wrapper implements M68kProvider {
 
-    private static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
-
-    public static boolean verbose = false;
+    public final static boolean verbose = false;
+    private final static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
     public static boolean STOP_ON_EXCEPTION;
     public static boolean GENESIS_TAS_BROKEN;
-
-    private static int ILLEGAL_ACCESS_EXCEPTION = 4;
+    private final static int ILLEGAL_ACCESS_EXCEPTION = 4;
 
     static {
         STOP_ON_EXCEPTION =

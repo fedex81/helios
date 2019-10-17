@@ -1,7 +1,7 @@
 /*
  * GenesisNew
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 14/10/19 14:57
+ * Last modified: 17/10/19 11:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,22 +53,23 @@ import java.nio.file.Path;
  */
 public class GenesisNew extends BaseSystem<GenesisBusProvider, GenesisStateHandler> {
 
-    public static boolean verbose = false;
+    public final static boolean verbose = false;
     //NTSC_MCLOCK_MHZ = 53693175;
     //PAL_MCLOCK_MHZ = 53203424;
     //the emulation runs at MCLOCK_MHZ/MCLK_DIVIDER
-    protected static int MCLK_DIVIDER = 7;
-    protected static double VDP_RATIO = 4.0 / MCLK_DIVIDER;  //16 -> MCLK/4, 20 -> MCLK/5
+    protected final static int MCLK_DIVIDER = 7;
+    protected final static double VDP_RATIO = 4.0 / MCLK_DIVIDER;  //16 -> MCLK/4, 20 -> MCLK/5
+    protected final static int M68K_DIVIDER = 7 / MCLK_DIVIDER;
     final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
-    protected static int M68K_DIVIDER = 7 / MCLK_DIVIDER;
-    protected static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
-    protected static int FM_DIVIDER = 42 / MCLK_DIVIDER;
-    private static Logger LOG = LogManager.getLogger(GenesisNew.class.getSimpleName());
+    protected final static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
+    protected final static int FM_DIVIDER = 42 / MCLK_DIVIDER;
+    private final static Logger LOG = LogManager.getLogger(GenesisNew.class.getSimpleName());
+
     protected Z80Provider z80;
     protected M68kProvider cpu;
     protected double nextVdpCycle = vdpVals[0];
     protected int counter = 1;
-    protected int elapsedNs;
+    protected long elapsedWaitNs, frameProcessingDelayNs;
     int next68kCycle = M68K_DIVIDER;
     int nextZ80Cycle = Z80_DIVIDER;
     long startCycle = System.nanoTime();
@@ -126,12 +127,14 @@ public class GenesisNew extends BaseSystem<GenesisBusProvider, GenesisStateHandl
 
     @Override
     protected void newFrame() {
+        long tstamp = System.nanoTime();
         copyScreenData(vdp.getScreenData());
         renderScreenInternal(getStats(startCycle));
         handleVdpDumpScreenData();
         updateVideoMode(false);
-        elapsedNs = (int) (syncCycle(startCycle) - startCycle);
-        sound.output(elapsedNs);
+        long startWaitNs = System.nanoTime();
+        elapsedWaitNs = syncCycle(startCycle) - startWaitNs;
+        sound.output(elapsedWaitNs);
         if (thread.isInterrupted()) {
             LOG.info("Game thread stopped");
             runningRomFuture.cancel(true);
@@ -141,30 +144,29 @@ public class GenesisNew extends BaseSystem<GenesisBusProvider, GenesisStateHandl
         resetCycleCounters(counter);
         counter = 0;
         startCycle = System.nanoTime();
+        frameProcessingDelayNs = startCycle - tstamp;
     }
 
 
-    protected void runVdp(long counter) {
+    protected final void runVdp(long counter) {
         if (counter >= nextVdpCycle) {
-            int vdpMclk = vdp.run(1);
+            int vdpMclk = vdp.runSlot();
             nextVdpCycle += vdpVals[vdpMclk - 4];
         }
     }
 
-    //TODO fifo full shoud not stop 68k
-    //TODO fifo full and 68k uses vdp -> stop 68k
-    //TODO check: interrupt shouldnt be processed when 68k is frozen but are
-    //TODO prcessed when 68k is stopped
-    protected void run68k(long counter) {
+    protected final void run68k(long counter) {
         if (counter == next68kCycle) {
-            boolean isFrozen = bus.shouldStop68k();
-            boolean canRun = !cpu.isStopped() && !isFrozen;
+            boolean isRunning = bus.is68kRunning();
+            boolean canRun = !cpu.isStopped() && isRunning;
             int cycleDelay = 1;
             if (canRun) {
                 cycleDelay = cpu.runInstruction();
             }
             //interrupts are processed after the current instruction
-            if (!isFrozen) {
+            //TODO check: interrupt shouldnt be processed when 68k is frozen but are
+            //TODO prcessed when 68k is stopped
+            if (isRunning) {
                 bus.handleVdpInterrupts68k();
             }
             cycleDelay = Math.max(1, cycleDelay);
@@ -172,7 +174,7 @@ public class GenesisNew extends BaseSystem<GenesisBusProvider, GenesisStateHandl
         }
     }
 
-    protected void runZ80(long counter) {
+    protected final void runZ80(long counter) {
         if (counter == nextZ80Cycle) {
             int cycleDelay = 0;
             boolean running = bus.isZ80Running();
@@ -185,7 +187,7 @@ public class GenesisNew extends BaseSystem<GenesisBusProvider, GenesisStateHandl
         }
     }
 
-    protected void runFM(int counter) {
+    protected final void runFM(int counter) {
         if (counter % FM_DIVIDER == 0) {
             bus.getFm().tick(microsPerTick);
         }
@@ -200,7 +202,7 @@ public class GenesisNew extends BaseSystem<GenesisBusProvider, GenesisStateHandl
         }
     }
 
-    private double getMicrosPerTick() {
+    private final double getMicrosPerTick() {
         double mclkhz = videoMode.isPal() ? Util.GEN_PAL_MCLOCK_MHZ : Util.GEN_NTSC_MCLOCK_MHZ;
         return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
     }

@@ -1,7 +1,7 @@
 /*
  * SmsVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:51
+ * Last modified: 17/10/19 10:55
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1096,7 +1096,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
      * @return 1 - vblank has been triggered, 0 - otherwise
      */
     @Override
-    public int run(int cycles) {
+    public int runSlot() {
         line = interruptHandler.getvCounterInternal();
         boolean vBlank = interruptHandler.isvBlankSet();
         interruptHandler.increaseHCounter();

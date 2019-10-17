@@ -1,7 +1,7 @@
 /*
  * BaseVdpProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:51
+ * Last modified: 17/10/19 10:54
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ public interface BaseVdpProvider extends Device {
 
     void init();
 
-    int run(int cycles);
+    int runSlot();
 
     int getRegisterData(int reg);
 

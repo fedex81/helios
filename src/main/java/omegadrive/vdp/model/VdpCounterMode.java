@@ -1,7 +1,7 @@
 /*
  * VdpCounterMode
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 28/05/19 17:15
+ * Last modified: 17/10/19 10:55
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,13 +50,14 @@ public enum VdpCounterMode {
     PAL_H32_V24(VideoMode.PAL_H32_V24),
     ;
 
-    private static EnumSet<VdpCounterMode> values = EnumSet.allOf(VdpCounterMode.class);
-    private static Logger LOG = LogManager.getLogger(VdpCounterMode.class.getSimpleName());
+    private final static EnumSet<VdpCounterMode> values = EnumSet.allOf(VdpCounterMode.class);
+    private final static Logger LOG = LogManager.getLogger(VdpCounterMode.class.getSimpleName());
 
     public int hTotalCount;
     public int hJumpTrigger;
     public int hBlankSet;
     public int hBlankClear;
+    public int hBlankClearSlot;
     public int vTotalCount;
     public int vJumpTrigger;
     public int vBlankSet;
@@ -75,6 +76,7 @@ public enum VdpCounterMode {
         this.hJumpTrigger = isH32 ? H32_JUMP : H40_JUMP;
         this.hBlankSet = isH32 ? H32_HBLANK_SET : H40_HBLANK_SET;
         this.hBlankClear = isH32 ? H32_HBLANK_CLEAR : H40_HBLANK_CLEAR;
+        this.hBlankClearSlot = hBlankClear >> 1;
         this.vTotalCount = videoMode.isPal() ? PAL_SCANLINES : NTSC_SCANLINES;
         this.vCounterIncrementOn = isH32 ? H32_VCOUNTER_INC_ON : H40_VCOUNTER_INC_ON;
         this.videoMode = videoMode;

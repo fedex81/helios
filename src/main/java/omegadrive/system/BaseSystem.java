@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 14/10/19 14:57
+ * Last modified: 17/10/19 11:37
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,11 +21,9 @@ package omegadrive.system;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
-import omegadrive.bus.gen.GenesisBus;
 import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInput;
 import omegadrive.joypad.JoypadProvider;
-import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
@@ -35,10 +33,7 @@ import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.gen.GenesisVdp;
-import omegadrive.vdp.gen.GenesisVdpMemoryInterface;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.z80.Z80CoreWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -51,7 +46,7 @@ import java.util.concurrent.Future;
 
 public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseStateHandler> implements SystemProvider {
 
-    private static Logger LOG = LogManager.getLogger(BaseSystem.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(BaseSystem.class.getSimpleName());
 
     protected IMemoryProvider memory;
     protected BaseVdpProvider vdp;
@@ -74,7 +69,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
-    private boolean fullThrottle = false;
+    private static final boolean fullThrottle = false;
 
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
 
@@ -148,13 +143,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
     }
 
+    @Deprecated
     private void setDebug(boolean value) {
-        SystemLoader.verbose = value;
-        GenesisVdp.verbose = value;
-        GenesisVdpMemoryInterface.verbose = value;
-        GenesisBus.verbose = value;
-        MC68000Wrapper.verbose = value;
-        Z80CoreWrapper.verbose = value;
     }
 
     protected void reloadWindowState() {
@@ -288,8 +278,18 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
     }
 
+    /**
+     * syncCycle
+     *
+     * @return now
+     */
     protected long syncCycle(long startCycle) {
-        return Util.parkUntil(startCycle + (fullThrottle ? 0 : targetNs));
+        long now = System.nanoTime();
+        long remainingNs = startCycle + targetNs - now;
+        if (fullThrottle || remainingNs < Util.SLEEP_LIMIT_NS) {
+            return now;
+        }
+        return Util.parkFor(remainingNs, now);
     }
 
     int points = 0;
