@@ -1,7 +1,7 @@
 /*
  * SwingWindow
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 14/10/19 15:26
+ * Last modified: 17/10/19 11:55
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ public class SwingWindow implements DisplayWindow {
     private static boolean UI_SCALE_ON_EDT;
 
     static {
-        UI_SCALE_ON_EDT = Boolean.valueOf(System.getProperty("ui.scale.on.edt", "false"));
+        UI_SCALE_ON_EDT = Boolean.valueOf(System.getProperty("ui.scale.on.edt", "true"));
     }
 
     public void setTitle(String title) {

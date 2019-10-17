@@ -1,7 +1,7 @@
 /*
  * GenesisPerf
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 11:37
+ * Last modified: 17/10/19 12:15
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 package omegadrive.system.perf;
 
-import omegadrive.system.GenesisNew;
+import omegadrive.system.Genesis;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -35,7 +35,7 @@ import java.util.stream.IntStream;
  * <p>
  * MEMORY MAP:	https://en.wikibooks.org/wiki/Genesis_Programming
  */
-public class GenesisPerf extends GenesisNew {
+public class GenesisPerf extends Genesis {
 
     static int mclkHz, m68kRef, vdpRef, z80Ref, fmRef;
     private static Logger LOG = LogManager.getLogger(GenesisPerf.class.getSimpleName());
@@ -47,7 +47,7 @@ public class GenesisPerf extends GenesisNew {
     long frameWaitNs, lastSecTimeNs, frameProcessingNs;
     int totalCycles, frameCnt;
 
-    protected GenesisPerf(DisplayWindow emuFrame) {
+    public GenesisPerf(DisplayWindow emuFrame) {
         super(emuFrame);
     }
 
@@ -69,8 +69,8 @@ public class GenesisPerf extends GenesisNew {
             double m68kAvg = IntStream.range(0, frameCnt).mapToDouble(i -> cycle68kFrame[i]).sum();
             double z80Avg = IntStream.range(0, frameCnt).mapToDouble(i -> cycleZ80Frame[i]).sum();
             double fmAvg = IntStream.range(0, frameCnt).mapToDouble(i -> cycleFmFrame[i]).sum();
-            long waitMs = 1000 - Duration.ofNanos(frameWaitNs).toMillis();
-            long frameProcMs = 1000 - Duration.ofNanos(frameProcessingNs).toMillis();
+            long waitMs = Duration.ofNanos(frameWaitNs).toMillis();
+            long frameProcMs = Duration.ofNanos(frameProcessingNs).toMillis();
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("Last 1s duration in ms %d, errorPerc %f%n", lastSecLenMs, 100 - (100 * lastSecLenMs / 1000.0)));
             sb.append(String.format("helios cycles: %d, frameProcMs: %d, sleepMs %d%n", totalCycles, frameProcMs, waitMs));
