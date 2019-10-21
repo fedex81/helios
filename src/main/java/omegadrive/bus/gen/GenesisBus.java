@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 11:19
+ * Last modified: 18/10/19 10:42
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -424,6 +424,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         return data;
     }
 
+    //TODO
+//    2019-10-17 21:50:12.363 ERROR [cycle-Flink (Europe).md]: Unexpected sized write: LONG, a10008, 40404040
+//            2019-10-17 21:50:12.363 ERROR [cycle-Flink (Europe).md]: Unexpected sized write: WORD, a1000c, 4040
     private void ioWrite(long addressL, Size size, long data) {
         if (size != Size.BYTE && data > 0xFF) {
             LOG.error("Unexpected sized write: {}, {}, {}", size, Long.toHexString(addressL), Long.toHexString(data));

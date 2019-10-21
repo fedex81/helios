@@ -1,7 +1,7 @@
 /*
- * MsxAsciiMapper
+ * KonamiMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/10/19 10:42
+ * Last modified: 21/10/19 13:49
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,84 +23,87 @@ import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static omegadrive.cart.mapper.MsxAsciiMapper.*;
+import java.util.function.Predicate;
+
+import static omegadrive.cart.mapper.KonamiMapper.*;
 
 /**
- * MSX mapper Ascii8/16
- *
+ * Konami4 and Konami5
+ * Konami5 does not support SCC
  */
-public class MsxAsciiMapper extends AsciiMapperImpl {
-
-    private static Logger LOG = LogManager.getLogger(MsxAsciiMapper.class.getSimpleName());
+public class KonamiMapper extends KonamiMapperImpl {
 
     public static final int BLOCK_NUM = 32;
     public static final int MAPPER_START_ADDRESS = 0x4000;
     public static final int MAPPER_END_ADDRESS = 0xBFFF;
-
     public static final int PAGES_8KB = 4;
-    public static final int PAGES_16KB = 2;
+    private static final KonamiType[] list = KonamiType.values();
+    private static Logger LOG = LogManager.getLogger(KonamiMapper.class.getSimpleName());
 
-    private MsxAsciiMapper(int[] rom, AsciiType type) {
+    private KonamiMapper(int[] rom, KonamiType type) {
         super(rom, type);
     }
 
-    public static RomMapper createMapper(int[] rom, String type){
-        AsciiType t = getMapperType(type);
-        if(t == null){
+    public static RomMapper createMapper(int[] rom, String type) {
+        KonamiType t = getMapperType(type);
+        if (t == null) {
             LOG.error("Mapper not supported: " + type);
             return NO_OP_MAPPER;
         }
         return createMapper(rom, t);
     }
 
-    public static RomMapper createMapper(int[] rom, AsciiType type){
-        return new AsciiMapperImpl(rom, type);
+    public static RomMapper createMapper(int[] rom, KonamiType type) {
+        return new KonamiMapperImpl(rom, type);
     }
 
-    private static AsciiType[] list = AsciiType.values();
-
-    //TODO fix ASCII16
-    public enum AsciiType { ASCII8,
-        ASCII16
-    }
-
-    public static AsciiType getMapperType(String mapperName){
-        for (AsciiType t : list) {
-            if(mapperName.equalsIgnoreCase(t.toString())){
+    public static KonamiType getMapperType(String mapperName) {
+        for (KonamiType t : list) {
+            if (mapperName.equalsIgnoreCase(t.toString())) {
                 return t;
             }
         }
         return null;
     }
+
+    public enum KonamiType {
+        KONAMI, //Konami4
+        KONAMISCC  //Konami5 (SCC)
+    }
 }
 
-class AsciiMapperImpl implements RomMapper {
+class KonamiMapperImpl implements RomMapper {
 
+    final static Predicate<Long> isMapperWriteKonami = add -> add >= 0x6000 && add < 0xC000;
+    final static Predicate<Long> isMapperWriteKonamiScc = add -> add >= 0x5000 && add < 0xB800;
+    final Predicate<Long> isMapperWrite;
     int pageNum;
     int pageSize;
     int readShiftMask;
     int[] pageBlockMapper;
     int[] rom;
-    AsciiType type;
+    KonamiMapper.KonamiType type;
 
-    protected AsciiMapperImpl(int[] rom, AsciiType type){
+
+    protected KonamiMapperImpl(int[] rom, KonamiMapper.KonamiType type) {
         this.rom = rom;
         this.type = type;
-        this.pageNum = type == AsciiType.ASCII8 ? PAGES_8KB : PAGES_16KB;
-        this.pageSize = BLOCK_NUM*1024/pageNum;
+        this.pageNum = PAGES_8KB;
+        this.pageSize = BLOCK_NUM * 1024 / pageNum;
         this.pageBlockMapper = new int[pageNum];
-        this.readShiftMask = type == AsciiType.ASCII8 ? 0xE000 : 0xC000;
+        this.readShiftMask = 0xE000;
+        this.isMapperWrite = type == KonamiMapper.KonamiType.KONAMI ? isMapperWriteKonami : isMapperWriteKonamiScc;
     }
 
     @Override
     public long readData(long addressL, Size size) {
         int res = 0xFF;
         int address = (int) (addressL & 0xFFFF);
-        if(address < MAPPER_START_ADDRESS || address > MAPPER_END_ADDRESS){
+        if (address < MAPPER_START_ADDRESS || address > MAPPER_END_ADDRESS) {
             return -1;
         }
         int pagePointer = getPageRead(address);
-        if(pagePointer >= 0 && pagePointer < pageNum) {
+        if (pagePointer >= 0 && pagePointer < pageNum) {
             int shift = address & readShiftMask;
             int blockPointer = pageBlockMapper[pagePointer];
             int index = (address - shift) + blockPointer * pageSize;
@@ -111,27 +114,23 @@ class AsciiMapperImpl implements RomMapper {
 
     @Override
     public void writeData(long addressL, long data, Size size) {
-        if (!isMapperWrite(addressL)) {
+        if (!isMapperWrite.test(addressL)) {
             return;
         }
         int pagePointer = getPageWrite(addressL);
-        if(pagePointer >= 0 && pagePointer < pageNum) {
+        if (pagePointer >= 0 && pagePointer < pageNum) {
             int blockPointer = (int) ((data & 0xFF) % BLOCK_NUM);
             pageBlockMapper[pagePointer] = blockPointer;
         }
     }
 
-    private boolean isMapperWrite(long addressL) {
-        return type == AsciiType.ASCII8 ? (addressL >= 0x6000 && addressL < 0x8000) :
-                (addressL >= 0x6000 && addressL < 0x6800) || (addressL >= 0x7000 && addressL < 0x7800);
+    private int getPageWrite(long addressL) {
+        int address = (int) (addressL & readShiftMask) >> 13;
+        return address - 2;
     }
 
-    private int getPageWrite(long addressL){
-        int address = (int) (addressL & 0x7FFF);
-        return type == AsciiType.ASCII8 ? ((address & 0x7800) >> 11) & 3 : ((address & 0x7000) >> 12) & 1;
-    }
-
-    private int getPageRead(int address){
-        return type == AsciiType.ASCII8 ? (address & 0x8000) >> 14 | (address & 0x2000) >> 13 : (address & 0x8000) >> 15;
+    private int getPageRead(int address) {
+        address = (address & readShiftMask) >> 13;
+        return address - 2;
     }
 }

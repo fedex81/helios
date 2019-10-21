@@ -1,7 +1,7 @@
 /*
  * MsxBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 13/10/19 17:32
+ * Last modified: 21/10/19 13:49
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.cart.mapper.MapperSelector;
-import omegadrive.cart.mapper.MsxAsciiMapper;
+import omegadrive.cart.mapper.MsxMapper;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.input.InputProvider;
 import omegadrive.input.MsxKeyboardInput;
@@ -132,7 +132,6 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvide
     public void write(long addressL, long data, Size size) {
         int addressI = (int) (addressL & 0xFFFF);
         int page = addressI >> 14;
-        int res = 0xFF;
         int secSlotNumber = pageSlotMapper[page];
         if(secondarySlotWritable[secSlotNumber]){
             int address = (addressI & PAGE_MASK) + pageStartAddress[page];
@@ -280,10 +279,8 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvide
         MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(), cartridgeInfoProvider.getSha1());
         if(e != MapperSelector.MISSING_DATA){
             LOG.info("Cart Hw match:\n{}", e);
-            if(!RomMapper.NO_MAPPER_NAME.equalsIgnoreCase(e.mapperName)) {
-                mapper = MsxAsciiMapper.createMapper(memoryProvider.getRomData(), e.mapperName);
-                LOG.info("ROM size: {}, using mapper: {}", len, mapper.getClass().getSimpleName());
-            }
+            mapper = MsxMapper.getMapper(e.mapperName, memoryProvider);
+            LOG.info("ROM size: {}, using mapper: {}", len, mapper.getClass().getSimpleName());
         } else {
             LOG.info("Unknown rom sha1: {}", cartridgeInfoProvider.getSha1());
         }
