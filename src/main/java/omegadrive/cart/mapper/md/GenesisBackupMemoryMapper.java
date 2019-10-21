@@ -1,7 +1,7 @@
 /*
  * GenesisBackupMemoryMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 15:05
+ * Last modified: 21/10/19 13:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.cart.mapper;
+package omegadrive.cart.mapper.md;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.gen.GenesisBus;
 import omegadrive.cart.GenesisCartInfoProvider;
+import omegadrive.cart.mapper.BackupMemoryMapper;
+import omegadrive.cart.mapper.RomMapper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;

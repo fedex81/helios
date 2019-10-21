@@ -1,7 +1,7 @@
 /*
  * GenesisBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/10/19 10:42
+ * Last modified: 21/10/19 13:52
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@ package omegadrive.bus.gen;
 import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.cart.GenesisCartInfoProvider;
-import omegadrive.cart.mapper.GenesisBackupMemoryMapper;
 import omegadrive.cart.mapper.RomMapper;
-import omegadrive.cart.mapper.Ssf2Mapper;
+import omegadrive.cart.mapper.md.GenesisBackupMemoryMapper;
+import omegadrive.cart.mapper.md.Ssf2Mapper;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;

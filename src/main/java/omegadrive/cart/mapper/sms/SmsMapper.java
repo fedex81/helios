@@ -1,7 +1,7 @@
 /*
  * SmsMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 14:09
+ * Last modified: 21/10/19 13:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,10 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.cart.mapper;
+package omegadrive.cart.mapper.sms;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.z80.SmsBus;
+import omegadrive.cart.mapper.BackupMemoryMapper;
+import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;

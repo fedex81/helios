@@ -1,7 +1,7 @@
 /*
  * SmsLoader
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 06/10/19 17:45
+ * Last modified: 21/10/19 13:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ package omegadrive.cart.loader;
 import com.google.common.collect.ImmutableMap;
 import omegadrive.SystemLoader;
 import omegadrive.cart.mapper.MapperSelector;
-import omegadrive.cart.mapper.SmsMapper;
+import omegadrive.cart.mapper.sms.SmsMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

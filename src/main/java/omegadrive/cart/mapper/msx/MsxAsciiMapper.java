@@ -1,7 +1,7 @@
 /*
  * MsxAsciiMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 18/10/19 10:42
+ * Last modified: 21/10/19 13:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,13 +17,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.cart.mapper;
+package omegadrive.cart.mapper.msx;
 
+import omegadrive.cart.mapper.RomMapper;
 import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static omegadrive.cart.mapper.MsxAsciiMapper.*;
+import static omegadrive.cart.mapper.msx.MsxAsciiMapper.*;
 
 /**
  * MSX mapper Ascii8/16

@@ -1,7 +1,7 @@
 /*
  * MsxBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/10/19 13:49
+ * Last modified: 21/10/19 13:52
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.cart.mapper.MapperSelector;
-import omegadrive.cart.mapper.MsxMapper;
 import omegadrive.cart.mapper.RomMapper;
+import omegadrive.cart.mapper.msx.MsxMapper;
 import omegadrive.input.InputProvider;
 import omegadrive.input.MsxKeyboardInput;
 import omegadrive.memory.IMemoryProvider;

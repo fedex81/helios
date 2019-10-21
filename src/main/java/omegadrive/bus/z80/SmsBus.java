@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 11/10/19 11:07
+ * Last modified: 21/10/19 13:51
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import omegadrive.bus.DeviceAwareBus;
 import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.cart.mapper.RomMapper;
-import omegadrive.cart.mapper.SmsMapper;
+import omegadrive.cart.mapper.sms.SmsMapper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.vdp.SmsVdp;

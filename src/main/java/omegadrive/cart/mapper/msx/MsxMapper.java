@@ -1,7 +1,7 @@
 /*
  * MsxMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/10/19 13:49
+ * Last modified: 21/10/19 13:52
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.cart.mapper;
+package omegadrive.cart.mapper.msx;
 
+import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
 
 public class MsxMapper {
