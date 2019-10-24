@@ -1,7 +1,7 @@
 /*
  * SmsMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/10/19 13:51
+ * Last modified: 24/10/19 18:49
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -102,19 +102,26 @@ public class SmsMapper {
         return activeMapper;
     }
 
+    public int getMapperControl() {
+        return mappingControl;
+    }
+
+    public int[] getFrameReg() {
+        return frameReg;
+    }
+
     private void init(){
         numPages = memoryProvider.getRomSize() >> 14;
         frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
     }
 
     public void reloadBanking() {
-        frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
-        for (int i = 0xFFFC & SmsBus.RAM_MASK; i < 4; i++) {
-            int val = memoryProvider.readRamByte(i);
-            if (val > 0) {
-                activeMapper.writeBankData(i, val);
-            }
-        }
+//        frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
+//        for (int i = 0; i < 4; i++) {
+//            int memAddr = i + 0xFFFC;
+//            int val = memoryProvider.readRamByte(memAddr & SmsBus.RAM_MASK);
+//            activeMapper.writeBankData(i, val);
+//        }
     }
 
     public long readDataMapper(long addressL, Size size) {
@@ -212,7 +219,7 @@ public class SmsMapper {
             switch (val){
                 case 0:
                     if (mappingControl != data) {
-                        LOG.debug("Mapping control: {}", data);
+                        LOG.info("Mapping control: {}", data);
                         mappingControl = data;
                         handleSramState(data);
                     }

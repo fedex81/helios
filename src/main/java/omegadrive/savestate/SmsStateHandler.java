@@ -1,7 +1,7 @@
 /*
  * SmsStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 15:09
+ * Last modified: 21/10/19 18:30
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ public interface SmsStateHandler extends BaseStateHandler {
 
     SmsStateHandler EMPTY_STATE = new SmsStateHandler() {
         @Override
-        public void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory) {
+        public void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory, SmsBus bus) {
 
         }
 
@@ -40,7 +40,7 @@ public interface SmsStateHandler extends BaseStateHandler {
         }
 
         @Override
-        public void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory) {
+        public void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory, Z80BusProvider bus) {
 
         }
 
@@ -77,24 +77,25 @@ public interface SmsStateHandler extends BaseStateHandler {
 
     default void processState(SmsVdp vdp, Z80Provider z80, SmsBus bus, IMemoryProvider mem) {
         if (getType() == Type.LOAD) {
+//            vdp.reset();
             loadZ80(z80, bus);
-            loadVdp(vdp, mem);
+            loadVdp(vdp, mem, bus);
             loadMemory(mem, vdp);
             vdp.forceFullRedraw();
             bus.reloadBanking();
             LOG.info("Savestate loaded from: {}", getFileName());
         } else {
             saveZ80(z80, bus);
-            saveVdp(vdp, mem);
+            saveVdp(vdp, mem, bus);
             saveMemory(mem, vdp);
         }
     }
 
-    void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory);
+    void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory, SmsBus bus);
 
     void loadZ80(Z80Provider z80, Z80BusProvider bus);
 
-    void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory);
+    void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory, Z80BusProvider bus);
 
     void saveZ80(Z80Provider z80, Z80BusProvider bus);
 

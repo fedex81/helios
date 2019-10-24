@@ -1,7 +1,7 @@
 /*
  * SavestateTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:10
+ * Last modified: 21/10/19 18:48
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ import java.util.stream.IntStream;
 public class SavestateTest {
 
     public static Path saveStateFolder = Paths.get(new File(".").getAbsolutePath(),
-            "src", "test", "resources", "savestate");
+            "src", "test", "resources", "savestate", "md");
 
     public static Set<Path> getSavestateList() throws IOException {
         System.out.println(new File(".").getAbsolutePath());

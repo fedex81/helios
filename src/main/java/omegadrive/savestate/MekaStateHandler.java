@@ -1,7 +1,7 @@
 /*
  * MekaStateHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 01/07/19 16:18
+ * Last modified: 21/10/19 18:42
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.FileLoader;
+import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -121,31 +122,24 @@ public class MekaStateHandler implements SmsStateHandler {
                 toCrcStringFn.apply(data.get(index + 1)) + toCrcStringFn.apply(data.get(index));
     }
 
-    private static String decodeCrc32(MekaSavestateVersion version, int[] data) {
-        if (version.compareTo(MekaSavestateVersion.VER_B_OR_EARLIER) > 0) {
-            int index = MekaSavestateVersion.CRC_POS;
-            return toCrcStringFn.apply(data[index + 3]) + toCrcStringFn.apply(data[index + 2]) +
-                    toCrcStringFn.apply(data[index + 1]) + toCrcStringFn.apply(data[index]);
-        }
-        return "0";
-    }
-
     private static void skip(IntBuffer buf, int len) {
         buf.position(buf.position() + len);
     }
 
-    private static void loadMappers(IntBuffer buffer, IMemoryProvider memory) {
-        memory.writeRamByte(0xFFFC & SmsBus.RAM_MASK, Util.getUInt32(buffer.get()));
-        memory.writeRamByte(0xFFFD & SmsBus.RAM_MASK, Util.getUInt32(buffer.get()));
-        memory.writeRamByte(0xFFFE & SmsBus.RAM_MASK, Util.getUInt32(buffer.get()));
-        memory.writeRamByte(0xFFFF & SmsBus.RAM_MASK, Util.getUInt32(buffer.get()));
+    private static void loadMappers(IntBuffer buffer, Z80BusProvider bus) {
+        bus.write(0xFFFC, buffer.get(), Size.BYTE);
+        bus.write(0xFFFD, buffer.get(), Size.BYTE);
+        bus.write(0xFFFE, buffer.get(), Size.BYTE);
+        bus.write(0xFFFF, buffer.get(), Size.BYTE);
     }
 
-    private static void saveMappers(IntBuffer buffer, IMemoryProvider memory) {
-        buffer.put(memory.readRamByte(0xFFFC & SmsBus.RAM_MASK));
-        buffer.put(memory.readRamByte(0xFFFD & SmsBus.RAM_MASK));
-        buffer.put(memory.readRamByte(0xFFFE & SmsBus.RAM_MASK));
-        buffer.put(memory.readRamByte(0xFFFF & SmsBus.RAM_MASK));
+    private static void saveMappers(IntBuffer buffer, Z80BusProvider bus) {
+        SmsBus smsbus = (SmsBus) bus;
+        int[] frameReg = smsbus.getFrameReg();
+        int control = smsbus.getMapperControl();
+        LOG.info("mapperControl: {}, frameReg: {}", control, Arrays.toString(frameReg));
+        buffer.put(control);
+        buffer.put(frameReg);
     }
 
     private static void setData(IntBuffer buf, int... data) {
@@ -194,7 +188,7 @@ public class MekaStateHandler implements SmsStateHandler {
         z80State.setRegHLx(Util.getUInt32(data.get(), data.get()));
 
         int val = data.get();
-        Z80.IntMode im = ((val & 2) == 0) ? Z80.IntMode.IM1 : Z80.IntMode.IM0;
+        Z80.IntMode im = ((val & 2) > 0) ? Z80.IntMode.IM1 : Z80.IntMode.IM0;
         z80State.setIM(im);
         z80State.setIFF1((val & 1) > 0);
         z80State.setIFF2((val & 8) > 0);
@@ -205,10 +199,10 @@ public class MekaStateHandler implements SmsStateHandler {
     }
 
     @Override
-    public void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory) {
+    public void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory, SmsBus bus) {
         IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> vdp.updateRegisterData(i, buffer.get() & 0xFF));
         skip(buffer, VDP_MISC_LEN);
-        loadMappers(buffer, memory);
+        loadMappers(buffer, bus);
         if (version >= 0xD) {
             int vdpLine = Util.getUInt32(buffer.get(), buffer.get());
             LOG.info("vdpLine: {}", vdpLine);
@@ -217,10 +211,10 @@ public class MekaStateHandler implements SmsStateHandler {
 
 
     @Override
-    public void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory) {
+    public void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory, Z80BusProvider bus) {
         IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> buffer.put(vdp.getRegisterData(i)));
         skip(buffer, VDP_MISC_LEN);
-        saveMappers(buffer, memory);
+        saveMappers(buffer, bus);
         buffer.put(0); //vdpLine
         buffer.put(0); //vdpLine
     }
@@ -253,7 +247,7 @@ public class MekaStateHandler implements SmsStateHandler {
     @Override
     public void loadMemory(IMemoryProvider mem, SmsVdp vdp) {
         IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> mem.writeRamByte(i, buffer.get()));
-        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vdp.VRAM[i] = (byte) buffer.get());
+        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vdp.VRAM[i] = (byte) (buffer.get() & 0xFF));
         //TODO check SMS CRAM = 0x20, GG = 0x40
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
             int smsCol = buffer.get();

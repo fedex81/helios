@@ -1,7 +1,7 @@
 /*
  * MemoryProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 11:25
+ * Last modified: 21/10/19 17:41
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,6 +65,7 @@ public class MemoryProvider implements IMemoryProvider {
         MemoryProvider memory = new MemoryProvider();
         memory.setRomData(rom);
         memory.ram = new int[ramSize];
+        memory.ramSize = ramSize;
         return memory;
     }
 

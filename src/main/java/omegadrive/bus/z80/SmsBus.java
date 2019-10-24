@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 21/10/19 13:51
+ * Last modified: 24/10/19 18:49
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -398,4 +398,13 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
         }
         isNmiSet = set;
     }
+
+    public int getMapperControl() {
+        return smsMapper.getMapperControl();
+    }
+
+    public int[] getFrameReg() {
+        return smsMapper.getFrameReg();
+    }
+
 }
