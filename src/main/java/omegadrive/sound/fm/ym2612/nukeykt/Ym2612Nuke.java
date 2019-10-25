@@ -1,7 +1,7 @@
 /*
  * Ym2612Nuke
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 25/10/19 14:47
+ * Last modified: 25/10/19 16:39
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -118,9 +118,9 @@ public class Ym2612Nuke implements MdFmProvider {
             }
             sampleNum = (int) (initialQueueSize - queueLen);
         }
-        if (queueLen > 0) {
+//        if (queueLen > 0) {
 //            System.out.println(queueLen);
-        }
+//        }
         return sampleNum;
     }
 

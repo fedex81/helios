@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 25/10/19 14:47
+ * Last modified: 25/10/19 16:39
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,10 +84,15 @@ public class JavaSoundManager implements SoundProvider {
             @Override
             public void run() {
                 try {
-                    long sleepNs = Util.MILLI_IN_NS / 2;
+                    long sleepNs = Util.MILLI_IN_NS >> 1;
+                    int count = 0;
                     do {
                         playOnce();
-                        Util.parkUntil(System.nanoTime() + sleepNs);
+                        count = 0;
+                        do {
+//                            System.out.println("wait " + count++);
+                            Util.parkUntil(System.nanoTime() + sleepNs);
+                        } while (dataLine.available() < fmSizeMono); //half buffer
                     } while (!close);
                 } catch (Exception e) {
                     LOG.error("Unexpected sound error, stopping", e);
