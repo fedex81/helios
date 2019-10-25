@@ -1,7 +1,7 @@
 /*
  * SmsMapper
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 24/10/19 18:49
+ * Last modified: 25/10/19 16:41
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -219,7 +219,7 @@ public class SmsMapper {
             switch (val){
                 case 0:
                     if (mappingControl != data) {
-                        LOG.info("Mapping control: {}", data);
+                        LOG.debug("Mapping control: {}", data);
                         mappingControl = data;
                         handleSramState(data);
                     }
