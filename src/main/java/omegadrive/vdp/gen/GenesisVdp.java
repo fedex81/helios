@@ -1,7 +1,7 @@
 /*
  * GenesisVdp
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 13:04
+ * Last modified: 25/10/19 14:10
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -731,7 +731,6 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
             resetVideoMode(false);
         }
         if (interruptHandler.isFirstLineSlot()) {
-//            renderHandler.initLineData(interruptHandler.vCounterInternal);
             drawScanline(interruptHandler.vCounterInternal, displayEnable);
         }
         return interruptHandler.getVdpClockSpeed();

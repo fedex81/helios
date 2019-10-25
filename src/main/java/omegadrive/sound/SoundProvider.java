@@ -1,7 +1,7 @@
 /*
  * SoundProvider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 11:37
+ * Last modified: 25/10/19 14:47
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,13 @@
 package omegadrive.sound;
 
 import omegadrive.Device;
+import omegadrive.SystemLoader;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.fm.MdFmProvider;
+import omegadrive.sound.fm.ym2413.Ym2413Provider;
+import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.system.Sms;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
@@ -43,6 +48,36 @@ public interface SoundProvider extends Device {
     PsgProvider getPsg();
 
     FmProvider getFm();
+
+    static SoundProvider createSoundProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
+        PsgProvider psgProvider;
+        FmProvider fmProvider = FmProvider.NO_SOUND;
+        switch (systemType) {
+            case MSX:
+                psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
+                break;
+            case GENESIS:
+                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
+                fmProvider = MdFmProvider.createInstance(region, SAMPLE_RATE_HZ);
+                break;
+            case SMS:
+                if (Sms.ENABLE_FM) {
+                    fmProvider = Ym2413Provider.createInstance(region, SAMPLE_RATE_HZ);
+                }
+                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
+
+                break;
+            default:
+                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
+                break;
+
+        }
+        JavaSoundManager jsm = new JavaSoundManager();
+        jsm.setFm(fmProvider);
+        jsm.setPsg(psgProvider);
+        jsm.init(region);
+        return jsm;
+    }
 
     static int getPsgBufferByteSize(int fps) {
         return getFmBufferIntSize(fps) / 2;

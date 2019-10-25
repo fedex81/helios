@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager2
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 11:10
+ * Last modified: 25/10/19 14:47
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ package omegadrive.sound.javasound;
 
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.persist.FileSoundPersister;
 import omegadrive.sound.persist.SoundPersister;
 import omegadrive.sound.psg.PsgProvider;
@@ -65,16 +64,6 @@ public class JavaSoundManager2 implements SoundProvider {
     private byte[] psgBuffer = new byte[0];
     private int[] fmBuffer = new int[0];
     private byte[] mixBuffer = new byte[0];
-
-    public static JavaSoundManager2 createSoundProvider(RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
-        FmProvider fmProvider = MdFmProvider.createInstance(region, SAMPLE_RATE_HZ);
-        JavaSoundManager2 jsm = new JavaSoundManager2();
-        jsm.setFm(fmProvider);
-        jsm.setPsg(psgProvider);
-        jsm.init(region);
-        return jsm;
-    }
 
     private void init(RegionDetector.Region region) {
         dataLine = SoundUtil.createDataLine(audioFormat);
@@ -125,8 +114,14 @@ public class JavaSoundManager2 implements SoundProvider {
 
     @Override
     public void output(long oneFrame) {
+        int availSamples = fm.update(fmBuffer, 0, samplesPerFrame);
         psg.output(psgBuffer, 0, samplesPerFrame);
-        fm.update(fmBuffer, 0, samplesPerFrame);
+        if (availSamples != samplesPerFrame) {
+            LOG.info((availSamples < samplesPerFrame ? "U" : "O") + ": {}, {}", availSamples, samplesPerFrame);
+            int lastIdx = (availSamples << 1) - 1;
+            int lastVal = (fmBuffer[lastIdx] + fmBuffer[lastIdx - 1]) >> 1;
+            Arrays.fill(fmBuffer, lastIdx, fmBuffer.length, lastVal);
+        }
         synchronized (blocker) {
             hasOutput = true;
             blocker.notifyAll();

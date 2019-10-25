@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 11:03
+ * Last modified: 25/10/19 14:47
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.MekaStateHandler;
 import omegadrive.savestate.SmsStateHandler;
-import omegadrive.sound.javasound.JavaSoundManager;
+import omegadrive.sound.SoundProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -136,6 +136,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         renderScreenLinearInternal(vdp.getScreenData()[0], getStats(System.nanoTime()));
         handleVdpDumpScreenData();
         handleNmi();
+//        sound.output(0);
         elapsedNs = (int) (syncCycle(startCycle) - startCycle);
         if (Thread.currentThread().isInterrupted()) {
             LOG.info("Game thread stopped");
@@ -151,7 +152,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = JavaSoundManager.createSoundProvider(systemType, region);
+        sound = SoundProvider.createSoundProvider(systemType, region);
         z80 = Z80CoreWrapper.createSg1000Instance(bus);
         bus.attachDevice(sound).attachDevice(z80);
         resetAfterRomLoad();

@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 11:32
+ * Last modified: 25/10/19 14:47
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,15 +19,11 @@
 
 package omegadrive.sound.javasound;
 
-import omegadrive.SystemLoader;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.fm.MdFmProvider;
-import omegadrive.sound.fm.ym2413.Ym2413Provider;
 import omegadrive.sound.persist.FileSoundPersister;
 import omegadrive.sound.persist.SoundPersister;
 import omegadrive.sound.psg.PsgProvider;
-import omegadrive.system.Sms;
 import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
@@ -50,8 +46,6 @@ public class JavaSoundManager implements SoundProvider {
     private static ExecutorService executorService =
             Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
 
-//    private static long nsToMillis = 1_000_000;
-
     private PsgProvider psg;
     private FmProvider fm;
 
@@ -62,45 +56,12 @@ public class JavaSoundManager implements SoundProvider {
     private SoundPersister soundPersister;
     private boolean mute = false;
     public volatile boolean close;
-    public volatile boolean hasOutput = false;
     private volatile boolean isSoundWorking = false;
     private SoundHandler.AudioRunnable playSoundRunnable;
     int fmSize;
     int psgSize;
 
-    private final static boolean playOncePerFrame = false;
-
-    public static JavaSoundManager createSoundProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
-        PsgProvider psgProvider;
-        FmProvider fmProvider = FmProvider.NO_SOUND;
-        switch (systemType){
-            case MSX:
-                psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
-                break;
-            case GENESIS:
-                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
-                fmProvider = MdFmProvider.createInstance(region, SAMPLE_RATE_HZ);
-                break;
-            case SMS:
-                if (Sms.ENABLE_FM) {
-                    fmProvider = Ym2413Provider.createInstance(region, SAMPLE_RATE_HZ);
-                }
-                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
-
-                break;
-            default:
-                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
-                break;
-
-        }
-        JavaSoundManager jsm = new JavaSoundManager();
-        jsm.setFm(fmProvider);
-        jsm.setPsg(psgProvider);
-        jsm.init(region);
-        return jsm;
-    }
-
-    private void init(RegionDetector.Region region) {
+    public void init(RegionDetector.Region region) {
         dataLine = SoundUtil.createDataLine(audioFormat);
         soundPersister = new FileSoundPersister();
         fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
@@ -125,11 +86,7 @@ public class JavaSoundManager implements SoundProvider {
                 try {
                     long sleepNs = Util.MILLI_IN_NS / 2;
                     do {
-                        if (playOncePerFrame) {
-                            playOncePerFrame();
-                        } else {
-                            playOnce();
-                        }
+                        playOnce();
                         Util.parkUntil(System.nanoTime() + sleepNs);
                     } while (!close);
                 } catch (Exception e) {
@@ -138,14 +95,6 @@ public class JavaSoundManager implements SoundProvider {
                 LOG.info("Stopping sound thread");
                 psg.reset();
                 fm.reset();
-            }
-
-            private void playOncePerFrame() {
-                if (hasOutput) {
-                    playOnce(fmBufferLen);
-                    hasOutput = false;
-//                    Util.sleep((long) (region.getFrameIntervalMs() - 2));
-                }
             }
 
             @Override
@@ -213,21 +162,9 @@ public class JavaSoundManager implements SoundProvider {
         return fm;
     }
 
-    double d = 1d / 1_000_000_000;
-    int fmBufferLen = 0;
-
     @Override
     public void output(long nanos) {
 //        LOG.info(micros + " micros");
-        if (playOncePerFrame) {
-            double sec = d * nanos;
-            fmBufferLen = (int) (sec * SAMPLE_RATE_HZ);
-            if (fmBufferLen > fmSize / 2) {
-                LOG.info("{} secs, bufLen: {}, maxLen: {}", sec, fmBufferLen, fmSize / 2);
-            }
-            fmBufferLen = Math.min(fmBufferLen, fmSize / 2);
-            hasOutput = true;
-        }
     }
 
     @Override

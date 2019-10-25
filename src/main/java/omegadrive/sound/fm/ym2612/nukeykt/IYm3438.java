@@ -1,7 +1,7 @@
 /*
  * IYm3438
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 04/10/19 11:10
+ * Last modified: 25/10/19 11:59
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,14 @@ public interface IYm3438 {
     boolean OPN2_ReadIRQPin(IYm3438_Type chip);
 
     int OPN2_Read(IYm3438_Type chip, int port);
+
+    default boolean isWriteAddrEn(IYm3438_Type chip) {
+        return chip.write_a_en;
+    }
+
+    default boolean isWriteDataEn(IYm3438_Type chip) {
+        return chip.write_d_en;
+    }
 
 
     int ym3438_mode_ym2612 = 0x01;      /* Enables YM2612 emulation (MD1, MD2 VA2) */

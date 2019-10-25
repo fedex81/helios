@@ -1,7 +1,7 @@
 /*
  * Ym2612Nuke
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 10/10/19 20:05
+ * Last modified: 25/10/19 14:47
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,27 +42,40 @@ public class Ym2612Nuke implements MdFmProvider {
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
 
-    private int[][] ym3438_accm = new int[24][2];
+    static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ) + 0.03;
     int ym3438_cycles = 0;
     double cycleAccum = 0;
 
-    private int CLOCK_HZ = 0;
-    private double CYCLE_PER_MICROS = 0;
     public static int sampleRate = 0;
     public static int chipRate = 0;
-    static double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ) + 4.5;
-    int bufLen = 2;
+    static final int VOLUME_SHIFT = 3;
+    private final int[][] ym3438_accm = new int[24][2];
 
     public Ym2612Nuke() {
-        ym3438 = new Ym3438();
-        chip = new IYm3438.IYm3438_Type();
-        ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
+        this(new IYm3438.IYm3438_Type());
+//        this(new Ym3438Jna());
+    }
+
+    public Ym2612Nuke(IYm3438.IYm3438_Type chip) {
+        this.ym3438 = new Ym3438();
+        this.chip = chip;
+        this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
+    }
+
+    public Ym2612Nuke(IYm3438 impl) {
+        this.ym3438 = impl;
+        this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
     }
 
 
     @Override
     public void reset() {
+        chip = new IYm3438.IYm3438_Type();
         ym3438.OPN2_Reset(chip);
+    }
+
+    public IYm3438.IYm3438_Type getChip() {
+        return chip;
     }
 
     @Override
@@ -75,8 +88,6 @@ public class Ym2612Nuke implements MdFmProvider {
         return 0;
     }
 
-    int[] sampleBuf = new int[bufLen];
-
     @Override
     public int read() {
         return ym3438.OPN2_Read(chip, 0x4000);
@@ -84,11 +95,8 @@ public class Ym2612Nuke implements MdFmProvider {
 
     @Override
     public void init(int clock, int rate) {
-        CLOCK_HZ = clock / 6; //nuke runs at ~ 1.67 mhz
-        CYCLE_PER_MICROS = clock / 6_000_000.0;
     }
 
-    int pos = 0;
     int sample = 0;
     private Queue<Integer> sampleQueue = new ArrayDeque<>();
     private volatile long queueLen = 0;
@@ -103,12 +111,15 @@ public class Ym2612Nuke implements MdFmProvider {
             long initialQueueSize = queueLen;
             int sample = 0;
             for (int i = offset; i < end && queueLen > 0; i += 2) {
-                sample = sampleQueue.poll();
+                sample = sampleQueue.poll() << VOLUME_SHIFT;
                 queueLen--;
                 buf_lr[i] = sample;
                 buf_lr[i + 1] = sample;
             }
             sampleNum = (int) (initialQueueSize - queueLen);
+        }
+        if (queueLen > 0) {
+//            System.out.println(queueLen);
         }
         return sampleNum;
     }
@@ -129,9 +140,6 @@ public class Ym2612Nuke implements MdFmProvider {
     }
 
     private void spinOnce() {
-//        if (chipRate > 888) {
-//            return;
-//        }
         ym3438.OPN2_Clock(chip, ym3438_accm[ym3438_cycles]);
         ym3438_cycles = (ym3438_cycles + 1) % 24;
         if (ym3438_cycles == 0) {
@@ -142,11 +150,8 @@ public class Ym2612Nuke implements MdFmProvider {
                 sampleL += ym3438_accm[j][0];
                 sampleR += ym3438_accm[j][1];
             }
-            sampleBuf[pos] = (sampleL + sampleR) >> 1;
-            pos = (pos + 1) % bufLen;
-            if (pos == 0) {
-                sample = (sampleBuf[0] + sampleBuf[1]) >> 1;
-            }
+            //mono
+            sample = (sampleL + sampleR) >> 1;
         }
     }
 }

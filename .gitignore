@@ -12,3 +12,4 @@ helios.prefs
 test_roms/
 docs
 *.col
+**/ym3438/*
