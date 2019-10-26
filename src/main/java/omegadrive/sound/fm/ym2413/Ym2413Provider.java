@@ -1,7 +1,7 @@
 /*
  * Ym2413Provider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 13/10/19 17:32
+ * Last modified: 26/10/19 17:40
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.stream.IntStream;
 
 public class Ym2413Provider implements FmProvider {
 
@@ -86,7 +87,18 @@ public class Ym2413Provider implements FmProvider {
 
     private int lastSample = 0;
 
-    //this should be called 49716 times per second
+
+    public static int cnt = 0;
+
+    @Override
+    public void init(int clock, int rate) {
+        FM_CALCS_PER_MS = rate / 1000.0;
+        Emu2413.OPLL_init();
+        opll = Emu2413.OPLL_new();
+    }
+
+    boolean isDroppingSamples = false;
+
     @Override
     public int update(int[] buf_lr, int offset, int count) {
         offset <<= 1;
@@ -102,29 +114,24 @@ public class Ym2413Provider implements FmProvider {
                 buf_lr[i + 1] = sample;
             }
             sampleNum = (int) (initialQueueSize - queueLen);
-        }
-        if (sampleNum < count) {
-            sample = lastSample;
-//            LOG.info("Count {}, num {}, lastSample {}", count, sampleNum, sample);
-            for (int i = offset + (sampleNum << 1); i < end; i += 2) {
-                buf_lr[i] = sample;
-                buf_lr[i + 1] = sample;
+            if (queueLen > 1000) { //TODO drop samples, fix
+                int num = (int) queueLen;
+                IntStream.range(0, (int) queueLen >> 1).forEach(i -> {
+                    sampleQueue.remove();
+                    queueLen--;
+                });
+                LOG.info("{} -> {}", num, queueLen);
             }
         }
         return sampleNum;
     }
 
-    @Override
-    public void init(int clock, int rate) {
-        FM_CALCS_PER_MS = rate / 1000.0;
-        Emu2413.OPLL_init();
-        opll = Emu2413.OPLL_new();
-    }
-
+    //this should be called 49716 times per second
     @Override
     public void tick(double microsPerTick) {
         rateAccum += ratio;
         int res = Emu2413.OPLL_calc(opll);
+        cnt++;
         if (rateAccum > 1) {
             synchronized (lock) {
                 lastSample = res << AUDIO_SCALE_BITS;

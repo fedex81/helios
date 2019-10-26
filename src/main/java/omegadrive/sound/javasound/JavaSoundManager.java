@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/10/19 15:49
+ * Last modified: 26/10/19 17:40
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ public class JavaSoundManager extends AbstractSoundManager {
     @Override
     protected Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
 
-        return new SoundHandler.AudioRunnable() {
+        return new AudioRunnable() {
 
             int[] fm_buf_ints = new int[fmSize];
             byte[] mix_buf_bytes16 = new byte[fm_buf_ints.length];
@@ -101,6 +101,11 @@ public class JavaSoundManager extends AbstractSoundManager {
 
             }
         };
+    }
+
+    interface AudioRunnable extends Runnable {
+
+        void playOnce();
     }
 
 }

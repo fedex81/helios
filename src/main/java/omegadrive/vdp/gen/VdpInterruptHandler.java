@@ -1,7 +1,7 @@
 /*
  * VdpInterruptHandler
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 15:27
+ * Last modified: 26/10/19 14:53
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -173,7 +173,8 @@ public class VdpInterruptHandler {
     }
 
     protected void handleHLinesCounterDecrement() {
-        hLinePassed = vBlankSet ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
+        boolean reset = vCounterInternal > vdpCounterMode.vBlankSet; //fixes LotusII
+        hLinePassed = reset ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
         if (hLinePassed < 0) {
             hIntPending = true;
             logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);

@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/10/19 15:49
+ * Last modified: 26/10/19 16:39
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.MekaStateHandler;
 import omegadrive.savestate.SmsStateHandler;
+import omegadrive.sound.fm.ym2413.Ym2413Provider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
@@ -91,7 +92,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
      */
     protected static int VDP_DIVIDER = 2;  //10.738635 Mhz
     protected static int Z80_DIVIDER = 3; //3.579545 Mhz
-    protected static int FM_DIVIDER = Z80_DIVIDER * 72; //49716 hz
+    protected static int FM_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
 
     int nextZ80Cycle = Z80_DIVIDER;
     int nextVdpCycle = VDP_DIVIDER;
@@ -198,6 +199,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
             if (vdp.runSlot() > 0) {
                 newFrame();
                 ((DeviceAwareBus) bus).onNewFrame(); //TODO
+                Ym2413Provider.cnt = 0;
             }
         }
     }
