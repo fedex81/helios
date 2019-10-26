@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 25/10/19 16:39
+ * Last modified: 26/10/19 15:49
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,59 +19,22 @@
 
 package omegadrive.sound.javasound;
 
-import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.persist.FileSoundPersister;
-import omegadrive.sound.persist.SoundPersister;
-import omegadrive.sound.psg.PsgProvider;
-import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-public class JavaSoundManager implements SoundProvider {
+public class JavaSoundManager extends AbstractSoundManager {
+
     private static final Logger LOG = LogManager.getLogger(JavaSoundManager.class.getSimpleName());
 
-    private static SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
-
-    private static ExecutorService executorService =
-            Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
-
-    private PsgProvider psg;
-    private FmProvider fm;
-
-    private static int OUTPUT_SAMPLE_SIZE = 16;
-    private static int OUTPUT_CHANNELS = 1;
-    private AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
-    private SourceDataLine dataLine;
-    private SoundPersister soundPersister;
-    private boolean mute = false;
-    public volatile boolean close;
-    private volatile boolean isSoundWorking = false;
-    private SoundHandler.AudioRunnable playSoundRunnable;
-    int fmSize;
-    int psgSize;
-
-    public void init(RegionDetector.Region region) {
-        dataLine = SoundUtil.createDataLine(audioFormat);
-        soundPersister = new FileSoundPersister();
-        fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
-        psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
-        this.playSoundRunnable = getRunnable(dataLine, region);
-        executorService.submit(playSoundRunnable);
-        LOG.info("Output audioFormat: " + audioFormat);
-    }
-
-    private SoundHandler.AudioRunnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
+    @Override
+    protected Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
 
         return new SoundHandler.AudioRunnable() {
 
@@ -140,82 +103,4 @@ public class JavaSoundManager implements SoundProvider {
         };
     }
 
-    protected void updateSoundWorking(byte[] b) {
-        if (isSoundWorking) {
-            return;
-        }
-        for (int i = 0; i < b.length; i++) {
-            isSoundWorking |= b[i] != 0;
-        }
-    }
-
-    public void setPsg(PsgProvider psg) {
-        this.psg = psg;
-    }
-
-    public void setFm(FmProvider fm) {
-        this.fm = fm;
-    }
-
-    @Override
-    public PsgProvider getPsg() {
-        return psg;
-    }
-
-    @Override
-    public FmProvider getFm() {
-        return fm;
-    }
-
-    @Override
-    public void output(long nanos) {
-//        LOG.info(micros + " micros");
-    }
-
-    @Override
-    public void reset() {
-        LOG.info("Resetting sound");
-        close = true;
-        if (dataLine != null) {
-            dataLine.drain();
-            dataLine.close();
-        }
-    }
-
-    @Override
-    public void close() {
-        reset();
-        List<Runnable> list = executorService.shutdownNow();
-        LOG.info("Closing sound, stopping background tasks: #" + list.size());
-    }
-
-    @Override
-    public boolean isRecording() {
-        return soundPersister.isRecording();
-    }
-
-    @Override
-    public void setRecording(boolean recording) {
-        if (isRecording() && !recording) {
-            soundPersister.stopRecording();
-        } else if (!isRecording() && recording) {
-            soundPersister.startRecording(DEFAULT_SOUND_TYPE);
-        }
-    }
-
-    @Override
-    public boolean isMute() {
-        return mute;
-    }
-
-    @Override
-    public void setMute(boolean mute) {
-        this.mute = mute;
-        LOG.info("Set mute: " + mute);
-    }
-
-    @Override
-    public boolean isSoundWorking() {
-        return isSoundWorking;
-    }
 }

@@ -1,7 +1,7 @@
 /*
  * BaseSystem
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 11:37
+ * Last modified: 26/10/19 15:21
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -124,7 +124,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
                 handlePause();
                 break;
             case TOGGLE_MUTE:
-                sound.setMute(!sound.isMute());
+                sound.setEnabled(!sound.isMute());
                 break;
             case TOGGLE_SOUND_RECORD:
                 sound.setRecording(!sound.isRecording());
@@ -336,7 +336,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private void handlePause() {
         boolean isPausing = pauseFlag;
         pauseFlag = !pauseFlag;
-        sound.setMute(pauseFlag);
+        sound.setEnabled(pauseFlag);
         if (isPausing) {
             Util.waitOnBarrier(pauseBarrier);
         }

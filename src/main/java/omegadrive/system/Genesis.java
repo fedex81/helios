@@ -1,7 +1,7 @@
 /*
  * Genesis
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 25/10/19 14:47
+ * Last modified: 26/10/19 15:29
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
+import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -247,7 +248,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     }
 
     protected void initAfterRomLoad() {
-        sound = SoundProvider.createSoundProvider(getSystemType(), region);
+        sound = AbstractSoundManager.createSoundProvider(getSystemType(), region);
         bus.attachDevice(sound);
         resetAfterRomLoad();
     }

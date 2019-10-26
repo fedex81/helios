@@ -1,7 +1,7 @@
 /*
  * SmsBus
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 24/10/19 18:49
+ * Last modified: 26/10/19 15:22
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,9 +149,10 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
         //Port $F2 : Bit 0 can be read and written to detect if YM2413 is available.
         if (HW_ENABLE_FM && !ioEnable && port == 0xF2) {
             audioControl = value;
-            boolean psgMute = (value & 3) == 1 || (value & 3) == 2;
-            boolean fmMute = (value & 3) == 0 || (value & 3) == 2;
-            LOG.info("PSG mute : {}, FM mute: {}", psgMute, fmMute);
+            boolean psgDisable = (value & 3) == 1 || (value & 3) == 2;
+            boolean fmDisable = (value & 3) == 0 || (value & 3) == 2;
+            soundProvider.setEnabled(soundProvider.getPsg(), !psgDisable);
+            soundProvider.setEnabled(soundProvider.getFm(), !fmDisable);
             return;
         }
 

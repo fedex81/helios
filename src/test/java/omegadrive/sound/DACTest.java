@@ -1,7 +1,7 @@
 /*
  * DACTest
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 25/10/19 14:47
+ * Last modified: 26/10/19 15:33
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ package omegadrive.sound;
 
 import omegadrive.SystemLoader;
 import omegadrive.sound.fm.MdFmProvider;
+import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 
@@ -38,7 +39,7 @@ public class DACTest {
     private static Path fileFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources", "dac");
 
-    static SoundProvider sp = SoundProvider.createSoundProvider(SystemLoader.SystemType.GENESIS, RegionDetector.Region.EUROPE);
+    static SoundProvider sp = AbstractSoundManager.createSoundProvider(SystemLoader.SystemType.GENESIS, RegionDetector.Region.EUROPE);
 
     public static void main(String[] args) throws IOException {
         System.out.println(new File(".").getAbsolutePath());
