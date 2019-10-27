@@ -1,7 +1,7 @@
 /*
  * AutomatedGameTester
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 17/10/19 20:51
+ * Last modified: 26/10/19 14:14
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,13 +48,13 @@ public class AutomatedGameTester {
     static long RUN_DELAY_MS = 30_000;
 
     private static String romFolder =
-            "/home/fede/roms/md";
+//            "/home/fede/roms/md";
 //    "/home/fede/roms/gg";
 //            "/home/fede/roms/msx";
 //            "/data/emu/roms";
     //            "/data/emu/roms/genesis/nointro";
     //            "/data/emu/roms/genesis/goodgen/unverified";
-//            "/home/fede/roms/issues";
+            "/home/fede/roms/md/issues";
 //            "/home/fede/roms/md/tricky";
     private static String romList = "";
     private static boolean noIntro = true;

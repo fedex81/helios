@@ -1,7 +1,7 @@
 /*
  * Sms
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/10/19 16:39
+ * Last modified: 27/10/19 13:09
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -137,7 +137,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         renderScreenLinearInternal(vdp.getScreenData()[0], getStats(System.nanoTime()));
         handleVdpDumpScreenData();
         handleNmi();
-//        sound.output(0);
+        sound.output(0);
         elapsedNs = (int) (syncCycle(startCycle) - startCycle);
         if (Thread.currentThread().isInterrupted()) {
             LOG.info("Game thread stopped");
@@ -147,7 +147,6 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         pauseAndWait();
         resetCycleCounters(counter);
         counter = 0;
-
         startCycle = System.nanoTime();
     }
 

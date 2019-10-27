@@ -1,7 +1,7 @@
 /*
  * JavaSoundManager2
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/10/19 15:44
+ * Last modified: 27/10/19 13:04
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,8 @@ public class JavaSoundManager2 extends AbstractSoundManager {
     private final Object blocker = new Object();
     private volatile boolean hasOutput;
 
-    int samplesPerFrame = 0;
+    private int samplesPerFrameMono;
+    private int samplesPerFrameStereo;
     private byte[] psgBuffer = new byte[0];
     private int[] fmBuffer = new int[0];
     private byte[] mixBuffer = new byte[0];
@@ -59,11 +60,22 @@ public class JavaSoundManager2 extends AbstractSoundManager {
     }
 
     @Override
+    protected void init(RegionDetector.Region region) {
+        super.init(region);
+        samplesPerFrameMono = (int) (region.getFrameIntervalMs() * (SAMPLE_RATE_HZ / 1000d));
+        samplesPerFrameStereo = samplesPerFrameMono << 1;
+        psgBuffer = new byte[samplesPerFrameMono];  //8 bit mono
+        fmBuffer = new int[samplesPerFrameStereo];  //16 bit stereo
+        mixBuffer = new byte[samplesPerFrameStereo];  //16 bit mono
+    }
+
+    @Override
     public void output(long oneFrame) {
-        int availSamples = fm.update(fmBuffer, 0, samplesPerFrame);
-        psg.output(psgBuffer, 0, samplesPerFrame);
-        if (availSamples != samplesPerFrame) {
-            LOG.info((availSamples < samplesPerFrame ? "U" : "O") + ": {}, {}", availSamples, samplesPerFrame);
+        int availSamples = fm.update(fmBuffer, 0, samplesPerFrameMono);
+        psg.output(psgBuffer, 0, samplesPerFrameMono);
+        if (availSamples != samplesPerFrameMono) {
+            LOG.info((availSamples < samplesPerFrameMono ? "U" : "O") + ": {}, {}",
+                    availSamples, samplesPerFrameMono);
             int lastIdx = (availSamples << 1) - 1;
             int lastVal = (fmBuffer[lastIdx] + fmBuffer[lastIdx - 1]) >> 1;
             Arrays.fill(fmBuffer, lastIdx, fmBuffer.length, lastVal);

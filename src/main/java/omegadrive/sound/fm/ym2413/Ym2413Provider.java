@@ -1,7 +1,7 @@
 /*
  * Ym2413Provider
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/10/19 17:40
+ * Last modified: 27/10/19 13:13
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -96,8 +96,6 @@ public class Ym2413Provider implements FmProvider {
         Emu2413.OPLL_init();
         opll = Emu2413.OPLL_new();
     }
-
-    boolean isDroppingSamples = false;
 
     @Override
     public int update(int[] buf_lr, int offset, int count) {

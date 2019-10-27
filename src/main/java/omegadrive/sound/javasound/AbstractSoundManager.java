@@ -1,7 +1,7 @@
 /*
  * AbstractSoundManager
  * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 26/10/19 15:49
+ * Last modified: 27/10/19 13:12
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     private volatile boolean isSoundWorking = false;
     private Runnable playSoundRunnable;
     private SystemLoader.SystemType type;
-    private RegionDetector.Region region;
+    protected RegionDetector.Region region;
 
     static PsgProvider getPsgProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
         PsgProvider psgProvider = PsgProvider.NO_SOUND;
@@ -111,7 +111,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     protected abstract Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region);
 
-    public void init(RegionDetector.Region region) {
+    protected void init(RegionDetector.Region region) {
         this.region = region;
         dataLine = SoundUtil.createDataLine(audioFormat);
         soundPersister = new FileSoundPersister();
