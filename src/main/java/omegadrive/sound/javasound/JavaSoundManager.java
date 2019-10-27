@@ -47,15 +47,16 @@ public class JavaSoundManager extends AbstractSoundManager {
             @Override
             public void run() {
                 try {
-                    long sleepNs = Util.MILLI_IN_NS >> 1;
+                    //sleeps for 1/10 of the buffer length
+                    long sleepNs = Math.max(OVERRIDE_AUDIO_BUFFER_LEN_MS * Util.MILLI_IN_NS / 10, Util.MILLI_IN_NS);
                     int count = 0;
+                    long until = 0;
                     do {
-                        playOnce();
-                        count = 0;
+                        count = playOnce();
+                        until = count > 0 ? sleepNs : Util.MILLI_IN_NS;
                         do {
-//                            System.out.println("wait " + count++);
-                            Util.parkUntil(System.nanoTime() + sleepNs);
-                        } while (dataLine.available() < fmSizeMono); //half buffer
+                            Util.parkUntil(System.nanoTime() + until);
+                        } while (dataLine.available() == 0); //half buffer
                     } while (!close);
                 } catch (Exception e) {
                     LOG.error("Unexpected sound error, stopping", e);
@@ -66,13 +67,16 @@ public class JavaSoundManager extends AbstractSoundManager {
             }
 
             @Override
-            public void playOnce() {
-                playOnce(fmSizeMono);
+            public int playOnce() {
+                return playOnce(fmSizeMono);
             }
 
-            public void playOnce(int fmBufferLenMono) {
+            public int playOnce(int fmBufferLenMono) {
                 if(hasFm) {
                     fmBufferLenMono = fm.update(fm_buf_ints, 0, fmBufferLenMono);
+                    if (fmBufferLenMono == 0) {
+                        return 0;
+                    }
                 }
                 psg.output(psg_buf_bytes, 0, fmBufferLenMono);
                 int fmBufferLenStereo = fmBufferLenMono << 1;
@@ -93,19 +97,20 @@ public class JavaSoundManager extends AbstractSoundManager {
                     if (isRecording()) {
                         soundPersister.persistSound(DEFAULT_SOUND_TYPE, mix_buf_bytes16);
                     }
+
                 } catch (Exception e) {
                     LOG.error("Unexpected sound error", e);
                 }
                 Arrays.fill(fm_buf_ints, 0);
                 Arrays.fill(psg_buf_bytes, SoundUtil.ZERO_BYTE);
-
+                return fmBufferLenStereo;
             }
         };
     }
 
     interface AudioRunnable extends Runnable {
 
-        void playOnce();
+        int playOnce();
     }
 
 }

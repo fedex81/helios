@@ -28,7 +28,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.stream.IntStream;
 
 public class Ym2413Provider implements FmProvider {
 
@@ -85,17 +84,14 @@ public class Ym2413Provider implements FmProvider {
         }
     }
 
-    private int lastSample = 0;
-
-
-    public static int cnt = 0;
-
     @Override
     public void init(int clock, int rate) {
         FM_CALCS_PER_MS = rate / 1000.0;
         Emu2413.OPLL_init();
         opll = Emu2413.OPLL_new();
     }
+
+    public static int cnt = 0, fmCnt = 0;
 
     @Override
     public int update(int[] buf_lr, int offset, int count) {
@@ -106,19 +102,16 @@ public class Ym2413Provider implements FmProvider {
         synchronized (lock) {
             long initialQueueSize = queueLen;
             for (int i = offset; i < end && queueLen > 0; i += 2) {
-                sample = sampleQueue.poll();
+                sample = sampleQueue.poll() << AUDIO_SCALE_BITS;
                 queueLen--;
                 buf_lr[i] = sample;
                 buf_lr[i + 1] = sample;
             }
             sampleNum = (int) (initialQueueSize - queueLen);
-            if (queueLen > 1000) { //TODO drop samples, fix
-                int num = (int) queueLen;
-                IntStream.range(0, (int) queueLen >> 1).forEach(i -> {
-                    sampleQueue.remove();
-                    queueLen--;
-                });
-                LOG.info("{} -> {}", num, queueLen);
+            if (queueLen > 0) {
+                LOG.info("Dropping {} samples", queueLen);
+                sampleQueue.clear();
+                queueLen = 0;
             }
         }
         return sampleNum;
@@ -132,10 +125,10 @@ public class Ym2413Provider implements FmProvider {
         cnt++;
         if (rateAccum > 1) {
             synchronized (lock) {
-                lastSample = res << AUDIO_SCALE_BITS;
-                sampleQueue.offer(lastSample);
+                sampleQueue.offer(res);
                 queueLen++;
             }
+            fmCnt++;
             rateAccum -= 1;
         }
     }

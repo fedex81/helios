@@ -37,8 +37,11 @@ public interface SoundProvider extends Device {
 
     int SAMPLE_RATE_HZ = Integer.valueOf(System.getProperty("audio.sample.rate.hz", "44100"));
 
-    int OVERRIDE_AUDIO_BUFFER_SIZE = Integer.valueOf(System.getProperty("audio.buffer.size", "0"));
+    int OVERRIDE_AUDIO_BUFFER_LEN_MS = Integer.valueOf(System.getProperty("audio.buffer.length.ms", "0"));
 
+    int OVERRIDE_AUDIO_BUFFER_SIZE = OVERRIDE_AUDIO_BUFFER_LEN_MS > 0 ?
+            (int) (SAMPLE_RATE_HZ / 1000d * OVERRIDE_AUDIO_BUFFER_LEN_MS)
+            : 0;
 
     PsgProvider getPsg();
 
@@ -50,7 +53,9 @@ public interface SoundProvider extends Device {
 
     static int getFmBufferIntSize(int fps) {
         if (OVERRIDE_AUDIO_BUFFER_SIZE > 0) {
-            return OVERRIDE_AUDIO_BUFFER_SIZE;
+            int size = OVERRIDE_AUDIO_BUFFER_SIZE;
+            size += size % 2 == 1 ? 1 : 0;
+            return size;
         }
         int res = 2 * SAMPLE_RATE_HZ / fps;
         return res % 2 == 0 ? res : res + 1;

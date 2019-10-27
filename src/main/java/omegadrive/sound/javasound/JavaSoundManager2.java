@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.sound.sampled.SourceDataLine;
+import java.time.Duration;
 import java.util.Arrays;
 
 public class JavaSoundManager2 extends AbstractSoundManager {
@@ -40,6 +41,8 @@ public class JavaSoundManager2 extends AbstractSoundManager {
     private int[] fmBuffer = new int[0];
     private byte[] mixBuffer = new byte[0];
 
+    long lastWrite = 0;
+
     @Override
     protected Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
         return new Runnable() {
@@ -50,10 +53,16 @@ public class JavaSoundManager2 extends AbstractSoundManager {
                         Util.waitOnObject(blocker);
                     } while (!hasOutput);
                     hasOutput = false;
+                    Arrays.fill(mixBuffer, (byte) 0);
                     //FM: stereo 16 bit, PSG: mono 8 bit, OUT: mono 16 bit
                     SoundUtil.intStereo14ToByteMono16Mix(fmBuffer, mixBuffer, psgBuffer);
-                    Arrays.fill(fmBuffer, 0);
+                    long now = System.nanoTime();
+                    LOG.info("latestRun: " + Duration.ofNanos(now - lastWrite).toMillis());
+                    lastWrite = now;
                     SoundUtil.writeBufferInternal(dataLine, mixBuffer, mixBuffer.length);
+                    now = System.nanoTime();
+                    LOG.info("writeSound: " + Duration.ofNanos(now - lastWrite).toMillis());
+                    lastWrite = now;
                 } while (!close);
             }
         };

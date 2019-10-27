@@ -194,12 +194,14 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     }
 
     protected void runVdp(long counter) {
-        if (counter % VDP_DIVIDER == 0) {
+        if (counter == nextVdpCycle) {
             if (vdp.runSlot() > 0) {
                 newFrame();
                 ((DeviceAwareBus) bus).onNewFrame(); //TODO
                 Ym2413Provider.cnt = 0;
+                Ym2413Provider.fmCnt = 0;
             }
+            nextVdpCycle += VDP_DIVIDER;
         }
     }
 
@@ -213,7 +215,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     }
 
     protected void runFM(int counter) {
-        if (counter % FM_DIVIDER == 0) {
+        if ((counter + 1) % FM_DIVIDER == 0) {
             sound.getFm().tick(0);
         }
     }
