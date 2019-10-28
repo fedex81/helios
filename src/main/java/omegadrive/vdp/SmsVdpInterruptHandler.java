@@ -22,6 +22,9 @@ package omegadrive.vdp;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.VdpHLineProvider;
 
+/**
+ * http://www.smspower.org/forums/8161-SMSDisplayTiming
+ */
 public class SmsVdpInterruptHandler extends VdpInterruptHandler {
 
     //TODO fix
@@ -46,7 +49,7 @@ public class SmsVdpInterruptHandler extends VdpInterruptHandler {
 
     @Override
     protected void handleHLinesCounterDecrement() {
-        boolean reset = vBlankSet || vCounterInternal == 0 || vCounterInternal == VBLANK_CLEAR;
+        boolean reset = vBlankSet; //OutRun sms
         hLinePassed = reset ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
         if (hLinePassed < 0) {
             hIntPending = true;
