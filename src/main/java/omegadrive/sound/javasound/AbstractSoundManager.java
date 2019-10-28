@@ -46,8 +46,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     protected static SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
 
-    private static ExecutorService executorService =
-            Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
+    private ExecutorService executorService;
+
     private static int OUTPUT_SAMPLE_SIZE = 16;
     private static int OUTPUT_CHANNELS = 1;
     public volatile boolean close;
@@ -60,7 +60,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
     private SourceDataLine dataLine;
     private boolean mute = false;
     private volatile boolean isSoundWorking = false;
-    private Runnable playSoundRunnable;
     private SystemLoader.SystemType type;
     protected RegionDetector.Region region;
 
@@ -117,8 +116,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
         soundPersister = new FileSoundPersister();
         fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
         psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
-        this.playSoundRunnable = getRunnable(dataLine, region);
-        executorService.submit(playSoundRunnable);
+        executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
+        executorService.submit(getRunnable(dataLine, region));
         LOG.info("Output audioFormat: " + audioFormat);
     }
 
@@ -162,17 +161,17 @@ public abstract class AbstractSoundManager implements SoundProvider {
     public void reset() {
         LOG.info("Resetting sound");
         close = true;
+        List<Runnable> list = executorService.shutdownNow();
         if (dataLine != null) {
-            dataLine.drain();
+            dataLine.flush();
             dataLine.close();
         }
+        LOG.info("Closing sound, stopping background tasks: #" + list.size());
     }
 
     @Override
     public void close() {
         reset();
-        List<Runnable> list = executorService.shutdownNow();
-        LOG.info("Closing sound, stopping background tasks: #" + list.size());
     }
 
     @Override

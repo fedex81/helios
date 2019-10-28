@@ -56,7 +56,7 @@ public class JavaSoundManager extends AbstractSoundManager {
                         until = count > 0 ? sleepNs : Util.MILLI_IN_NS;
                         do {
                             Util.parkUntil(System.nanoTime() + until);
-                        } while (dataLine.available() == 0); //half buffer
+                        } while (!close && dataLine.available() == 0); //half buffer
                     } while (!close);
                 } catch (Exception e) {
                     LOG.error("Unexpected sound error, stopping", e);

@@ -172,7 +172,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
             // D1 : Port A TH pin direction (1=input, 0=output)
             // D0 : Port A TR pin direction (1=input, 0=output)
             case 0x01: {
-                //TODO fix at some point? or remove
+                //TODO fix: smsvdptest is broken
                 boolean oldTH = true || getTH(PORT_A) != 0 || getTH(PORT_B) != 0;
 
                 writePort(PORT_A, value);

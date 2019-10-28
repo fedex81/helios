@@ -122,7 +122,7 @@ public class FileLoader {
         if (isRunningInJar(classPath)) {
             return loadFileContentFromJar(fileName);
         }
-        LOG.error("Unable to load: " + fileName);
+        LOG.warn("Unable to load: " + fileName);
         return lines;
     }
 
