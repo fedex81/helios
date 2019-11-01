@@ -424,13 +424,21 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         return data;
     }
 
-    //TODO
-//    2019-10-17 21:50:12.363 ERROR [cycle-Flink (Europe).md]: Unexpected sized write: LONG, a10008, 40404040
-//            2019-10-17 21:50:12.363 ERROR [cycle-Flink (Europe).md]: Unexpected sized write: WORD, a1000c, 4040
     private void ioWrite(long addressL, Size size, long data) {
-        if (size != Size.BYTE && data > 0xFF) {
-            LOG.error("Unexpected sized write: {}, {}, {}", size, Long.toHexString(addressL), Long.toHexString(data));
+        switch (size) {
+            case BYTE:
+            case WORD:
+                ioWriteInternal(addressL, data);
+                break;
+            case LONG:
+                //Flink
+                ioWriteInternal(addressL, data >> 16);
+                ioWriteInternal(addressL + 2, data & 0xFFFF);
+                break;
         }
+    }
+
+    private void ioWriteInternal(long addressL, long data) {
         //both even and odd addresses
         int address = (int) (addressL & 0xFFE);
         switch (address) {
@@ -442,7 +450,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 break;
             case 6:
                 LOG.warn("Write to expansion port: " + Long.toHexString(address) +
-                        ", data: " + Long.toHexString(data) + ", size: " + size);
+                        ", data: " + Long.toHexString(data));
                 break;
             case 8:
                 joypadProvider.writeControlRegister1(data & 0xFF);
