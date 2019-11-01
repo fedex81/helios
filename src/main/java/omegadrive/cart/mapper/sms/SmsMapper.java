@@ -111,7 +111,7 @@ public class SmsMapper {
     }
 
     private void init(){
-        numPages = memoryProvider.getRomSize() >> 14;
+        numPages = Math.max(1, memoryProvider.getRomSize() >> 14);
         frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
     }
 

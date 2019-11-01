@@ -1,21 +1,3 @@
-- TODO
-Monster World IV does
-movem_long_r2m: 00c00004   48e1 0208                movem.l  d6/a4,-(a1)
-
-Jim Power does
-move.l   -(a1),(a6)
-looks like readLong(a1) should invert the words? check
-http://www.atari-forum.com/viewtopic.php?f=115&t=31029&start=375
-
-
-
-- Vdp read data port
--- vdp makes the read pending and performs it during the next external slot
--- 68k should be stopped waiting
--- TODO
-68k should use a thread to do bus operations, submitting work items to it
-a work item might stop the worker thread
-it the worker thread is stopped 68k halts
 
 - Sonic & Knuckles mapper
 
