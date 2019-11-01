@@ -31,7 +31,7 @@ import java.util.Queue;
 
 public class Ym2413Provider implements FmProvider {
 
-    private static Logger LOG = LogManager.getLogger(Ym2413Provider.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(Ym2413Provider.class.getSimpleName());
 
     public static final double FM_RATE = 49716.0;
 

@@ -2,6 +2,12 @@
 Monster World IV does
 movem_long_r2m: 00c00004   48e1 0208                movem.l  d6/a4,-(a1)
 
+Jim Power does
+move.l   -(a1),(a6)
+looks like readLong(a1) should invert the words? check
+http://www.atari-forum.com/viewtopic.php?f=115&t=31029&start=375
+
+
 
 - Vdp read data port
 -- vdp makes the read pending and performs it during the next external slot
@@ -18,3 +24,7 @@ hline issue:
 monaco gp2
 turbo outrun
 lotus 2
+
+GG
+2019-10-27 17:51:59.118 ERROR [cycle-[BIOS] Sega Game Gear (USA) (Majesco).gg]: z80 exception
+java.lang.ArithmeticException: / by zero

@@ -1,3 +1,7 @@
 <component name="CopyrightManager">
-  <settings default="c1" />
+  <settings>
+    <module2copyright>
+      <element module="ExternalJava" copyright="none" />
+    </module2copyright>
+  </settings>
 </component>

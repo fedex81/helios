@@ -23,6 +23,7 @@ import omegadrive.Device;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.memory.IMemoryRam;
+import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,6 +52,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
     private int romBankPointer;
 
     private GenesisBusProvider mainBusProvider;
+    private FmProvider fmProvider;
     private IMemoryRam z80Memory;
     private int[] ram;
     private int ramSize;
@@ -80,7 +82,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
                 LOG.warn("FM read while Z80 reset");
                 return 1;
             }
-            return mainBusProvider.getFm().read();
+            return getFm().read();
         } else if (address >= ROM_BANK_ADDRESS && address <= 0x7EFF) {        //	BankSwitching and Reserved
             LOG.error("Z80 read bank switching: " + Integer.toHexString(address));
             return 0xFF;
@@ -118,7 +120,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
                 LOG.warn("Illegal write to FM while Z80 reset");
                 return;
             }
-            writeFm(address, dataInt);
+            getFm().write(address, dataInt);
         } else if (address >= ROM_BANK_ADDRESS && address <= 0x60FF) {        //	rom banking
             if (address == ROM_BANK_ADDRESS) {
                 romBanking(dataInt);
@@ -144,15 +146,18 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
         }
     }
 
+    private FmProvider getFm() {
+        if (fmProvider == null) {
+            fmProvider = mainBusProvider.getFm();
+        }
+        return fmProvider;
+    }
+
     @Override
     public void reset() {
         super.reset();
         romBank68kSerial = 0;
         romBankPointer = 0;
-    }
-
-    private void writeFm(int address, int data) {
-        mainBusProvider.getFm().write(address, data);
     }
 
     //	 From 8000H - FFFFH is window of 68K memory.
