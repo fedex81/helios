@@ -78,7 +78,7 @@ public class VdpRenderTest {
 
     private void testSavestateViewerSingle(Path saveFile, String rom) {
         GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
-        VdpTestUtil.runToStartFrame(vdpProvider);
+        MdVdpTestUtil.runToStartFrame(vdpProvider);
         BufferedImage bi = saveRenderToImage(screenData, vdpProvider.getVideoMode());
         String title = rom + " (" + saveFile.getFileName().toString() + ")";
         showImage(bi, title);
@@ -131,7 +131,7 @@ public class VdpRenderTest {
         long cycle = 0;
         System.out.println(entry.getValue());
         do {
-            VdpTestUtil.runToStartFrame(vdpProvider);
+            MdVdpTestUtil.runToStartFrame(vdpProvider);
             cycle++;
             if (cycle % CYCLES == 0) {
                 printPerf(System.nanoTime() - start, CYCLES);
@@ -159,7 +159,7 @@ public class VdpRenderTest {
         int cycle = CYCLES;
         long start = System.nanoTime();
         do {
-            VdpTestUtil.runToStartFrame(vdpProvider);
+            MdVdpTestUtil.runToStartFrame(vdpProvider);
         } while (--cycle > 0);
         System.out.println(rom);
         printPerf(System.nanoTime() - start, CYCLES);

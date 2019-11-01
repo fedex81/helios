@@ -92,14 +92,16 @@ public class SmsSavestateTest {
         SmsStateHandler saveHandler = MekaStateHandler.createSaveInstance(name, SystemLoader.SystemType.SMS);
 
         saveHandler.processState(vdp1, z80p1, busProvider1, cpuMem1);
-        saveHandler.storeData();
+//        saveHandler.storeData();
+
+        int[] saveData = saveHandler.getData();
 
         SmsBus busProvider2 = new SmsBus();
         IMemoryProvider cpuMem2 = MemoryProvider.createSmsInstance();
         cpuMem2.setRomData(new int[0xFFFF]);
         busProvider2.attachDevice(sp).attachDevice(cpuMem2);
         busProvider2.init();
-        SmsStateHandler loadHandler2 = MekaStateHandler.createLoadInstance(name);
+        SmsStateHandler loadHandler2 = MekaStateHandler.createLoadInstance(name, saveData);
         SmsVdp vdp2 = new SmsVdp(SystemLoader.SystemType.SMS, RegionDetector.Region.USA);
         Z80Provider z80p2 = Z80CoreWrapper.createSg1000Instance(busProvider2);
 
@@ -148,8 +150,8 @@ public class SmsSavestateTest {
         IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i ->
                 Assert.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
         IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vram" + i, vdp1.VRAM[i], vdp2.VRAM[i]));
+                Assert.assertEquals("Vram" + i, vdp1.getVdpMemory().getVram()[i], vdp2.getVdpMemory().getVram()[i]));
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Cram" + i, vdp1.CRAM[i], vdp2.CRAM[i]));
+                Assert.assertEquals("Cram" + i, vdp1.getVdpMemory().getCram()[i], vdp2.getVdpMemory().getCram()[i]));
     }
 }

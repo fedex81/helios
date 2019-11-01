@@ -26,7 +26,7 @@ import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpHLineProvider;
-import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpMemory;
 
 import java.util.Arrays;
 
@@ -90,10 +90,10 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     // --------------------------------------------------------------------------------------------
 
     /** Video RAM */
-    public final byte[] VRAM;
+    private int[] VRAM;
 
     /** Colour RAM */
-    public final int[] CRAM;
+    private int[] CRAM;
 
     /** VDP Registers */
     private final int vdpreg[];
@@ -210,11 +210,11 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     // --------------------------------------------------------------------------------------------
 
     private VdpInterruptHandler interruptHandler;
+    private VdpMemory memory;
     private final boolean isSms;
     private VideoMode ggVideoMode = VideoMode.NTSCU_H20_V18;
     private RegionDetector.Region region;
     private SystemLoader.SystemType systemType;
-    //    private SystemProvider systemProvider;
     private VideoMode videoMode;
 
     /**
@@ -229,14 +229,6 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         isSms = systemType == SystemLoader.SystemType.SMS;
         setSystemType(systemType);
 
-        // 16K of Video RAM
-        VRAM = new byte[VDP_VRAM_SIZE];
-
-        // Note, we don't directly emulate CRAM but actually store the converted Java palette
-        // in it. Therefore the length is different to on the real GameGear where it's actually
-        // 64 bytes.
-        CRAM = new int[VDP_CRAM_SIZE];
-
         // 15 Registers, (0-10) used by SMS, but some programs write > 10
         vdpreg = new int[VDP_REGISTERS_SIZE];
 
@@ -248,6 +240,13 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
         this.region = region;
         interruptHandler = SmsVdpInterruptHandler.createInstance(this);
+
+        // Note, we don't directly emulate CRAM but actually store the converted Java palette
+        // in it. Therefore the length is different to on the real GameGear where it's actually
+        // 64 bytes.
+        memory = SimpleVdpMemoryInterface.createInstance(VDP_VRAM_SIZE, VDP_CRAM_SIZE);
+        VRAM = memory.getVram();
+        CRAM = memory.getCram();
         resetVideoMode(true);
     }
 
@@ -407,7 +406,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
             // Read value from VRAM
             if (operation == 0) {
-                readBuffer = VRAM[(location++) & 0x3FFF]&0xFF;
+                readBuffer = VRAM[(location++) & 0x3FFF];
             }
             // Set VDP Register
             else if (operation == 2) {
@@ -470,7 +469,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         firstByte = true; // Reset flag
 
         int value = readBuffer; // Stores value to be returned
-        readBuffer = VRAM[(location++) & 0x3FFF] & 0xFF;
+        readBuffer = VRAM[(location++) & 0x3FFF];
 
         return value;
     }
@@ -484,6 +483,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     public final void dataWrite(int value) {
         // Reset flag
         firstByte = true;
+        value &= 0xFF;
 
         switch(operation) {
             // VRAM Write
@@ -492,7 +492,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
             case 0x02: {
                 int address = location & 0x3FFF;
                 // Check VRAM value has actually changed
-                if (value != (VRAM[address] & 0xFF)) {
+                if (value != VRAM[address]) {
                     //if (address >= bgt && address < bgt + BGT_LENGTH); // Don't write dirty to BGT
                     if (address >= sat && address < sat+64) // Don't write dirty to SAT
                         isSatDirty = true;
@@ -507,7 +507,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
                         if (tileIndex > maxDirty) maxDirty = tileIndex;
                     }
 
-                    VRAM[address] = (byte) value;
+                    VRAM[address] = value;
                 }
             }
 
@@ -663,7 +663,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
             int pixY = ((secondbyte & 0x04) == 0) ? tile_y : ((7 << 3) - tile_y);
 
             // Pattern Number (0 - 512)
-            int[] tile = tiles[(VRAM[tile_props] & 0xFF) + ((secondbyte & 0x01) << 8)];
+            int[] tile = tiles[VRAM[tile_props] + ((secondbyte & 0x01) << 8)];
 
             // -----------------------------------------------------------------------------------
             // Plot 8 Pixel Row (No H-Flip)
@@ -996,7 +996,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         // ----------------------------------------------------------------------------------------
         for (int spriteno = 0; spriteno < 0x40; spriteno++) {
             // Sprite Y Position
-            int y = VRAM[sat + spriteno]&0xFF;
+            int y = VRAM[sat + spriteno];
 
             // VDP stops drawing if y == 208, only for v24
             if (isV24 && y == 208) {
@@ -1027,13 +1027,13 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
                         int address = sat + (spriteno<<1) + 0x80;
 
                         // Sprite X Position
-                        sprites[off++] = (VRAM[address++] & 0xFF);
+                        sprites[off++] = VRAM[address++];
 
                         // Sprite Y Position
                         sprites[off++] = y;
 
                         // Sprite Pattern Index
-                        sprites[off++] = (VRAM[address] & 0xFF);
+                        sprites[off++] = VRAM[address];
 
                         // Increment number of sprites on this scanline
                         sprites[SPRITE_COUNT]++;
@@ -1155,8 +1155,8 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     }
 
     @Override
-    public VdpMemoryInterface getVdpMemory() {
-        return null;
+    public VdpMemory getVdpMemory() {
+        return memory;
     }
 
     @Override

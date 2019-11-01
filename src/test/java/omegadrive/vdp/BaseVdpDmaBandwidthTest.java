@@ -73,7 +73,7 @@ public class BaseVdpDmaBandwidthTest {
     @Before
     public void setup() {
         memoryProvider = MemoryProvider.createGenesisInstance();
-        SystemProvider emu = VdpTestUtil.createTestGenesisProvider();
+        SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
         GenesisBusProvider busProvider = GenesisBusProvider.createBus();
         memoryInterface = GenesisVdpMemoryInterface.createInstance();
         vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface);
@@ -88,7 +88,7 @@ public class BaseVdpDmaBandwidthTest {
             memoryProvider.writeRamByte(i, val);
             val = (val - 1) & 0xFF;
         }
-        String str = VdpTestUtil.print68kMemory(memoryProvider, 0, GenesisVdpProvider.VDP_VRAM_SIZE);
+        String str = MdVdpTestUtil.print68kMemory(memoryProvider, 0, GenesisVdpProvider.VDP_VRAM_SIZE);
         System.out.println(str);
     }
 
@@ -104,7 +104,7 @@ public class BaseVdpDmaBandwidthTest {
         vdpProvider.updateRegisterData(DMA_SOURCE_LOW, 0x80);
         vdpProvider.updateRegisterData(DMA_SOURCE_MID, 0xfd);
         vdpProvider.updateRegisterData(DMA_SOURCE_HIGH, 0x7f);
-        System.out.println(vdpRamType + " before: " + VdpTestUtil.printVdpMemory(memoryInterface, vdpRamType, 0, 0xFF));
+        System.out.println(vdpRamType + " before: " + MdVdpTestUtil.printVdpMemory(memoryInterface, vdpRamType, 0, 0xFF));
 
 //        VdpTestUtil.runToStartFrame(vdpProvider);
 
@@ -112,13 +112,13 @@ public class BaseVdpDmaBandwidthTest {
                 ? 0x4000_0090 : 0x4000_0080;
         vdpProvider.writeControlPort(commandLong >> 16);
         vdpProvider.writeControlPort(commandLong & 0xFFFF);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         System.out.println(vdpProvider.getVdpStateString());
-        int slots = VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
+        int slots = MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
         System.out.println("Slots: " + slots);
         System.out.println(vdpProvider.getVdpStateString());
-        System.out.println(vdpRamType + " after: " + VdpTestUtil.printVdpMemory(memoryInterface, vdpRamType, 0, 0xFF));
+        System.out.println(vdpRamType + " after: " + MdVdpTestUtil.printVdpMemory(memoryInterface, vdpRamType, 0, 0xFF));
 
         if (blanking) {
             int expected = vdpRamType == GenesisVdpProvider.VdpRamType.VRAM ? dmaLen * 2 + refreshSlots - 1 : dmaLen + refreshSlots;
@@ -152,7 +152,7 @@ public class BaseVdpDmaBandwidthTest {
     }
 
     protected void setupDMAFillInternal(long dmaFillLong, int increment, int dmaLength) {
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
         vdpProvider.updateRegisterData(MODE_2, 0x54); //display enable + dma enable
 
         vdpProvider.writeControlPort(0x8F00 + increment);
@@ -165,25 +165,25 @@ public class BaseVdpDmaBandwidthTest {
         vdpProvider.writeControlPort(dmaFillLong >> 16);
         vdpProvider.writeControlPort(dmaFillLong & 0xFFFF);
 
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
     }
 
     protected int startDmaFill(int dmaLen, boolean h32, boolean waitVBlank) {
 //        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
         int refreshSlots = h32 ? REFRESH_SLOTS_H32 : REFRESH_SLOTS_H40;
         if (waitVBlank) {
-            VdpTestUtil.runVdpUntilVBlank(vdpProvider);
+            MdVdpTestUtil.runVdpUntilVBlank(vdpProvider);
             System.out.println("VBlank start" + vdpProvider.getVdpStateString());
         } else {
-            VdpTestUtil.runToStartFrame(vdpProvider);
+            MdVdpTestUtil.runToStartFrame(vdpProvider);
             System.out.println("Active Screen start" + vdpProvider.getVdpStateString());
         }
 
         vdpProvider.writeDataPort(0x68ac);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
         System.out.println("After data write, fifo empty" + vdpProvider.getVdpStateString());
 
-        int slots = VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
+        int slots = MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
         System.out.println("Dma done" + vdpProvider.getVdpStateString());
 
         if (waitVBlank) {
@@ -196,28 +196,28 @@ public class BaseVdpDmaBandwidthTest {
     protected int startDMACopy(int increment, int dmaLen, boolean waitVBlank) {
         vdpProvider.writeControlPort(0x8154); //display enable + dma enable
         if (waitVBlank) {
-            VdpTestUtil.runVdpUntilVBlank(vdpProvider);
+            MdVdpTestUtil.runVdpUntilVBlank(vdpProvider);
             System.out.println("VBlank start" + vdpProvider.getVdpStateString());
         } else {
-            VdpTestUtil.runToStartFrame(vdpProvider);
+            MdVdpTestUtil.runToStartFrame(vdpProvider);
             System.out.println("Active Screen start" + vdpProvider.getVdpStateString());
         }
         vdpProvider.writeControlPort(0x8F00 + increment);
 
         vdpProvider.writeControlPort(0x9300 + dmaLen);
         vdpProvider.writeControlPort(0x9400);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         vdpProvider.writeControlPort(0x9500);
         vdpProvider.writeControlPort(0x9690);
         vdpProvider.writeControlPort(0x97C0);
 
         vdpProvider.writeControlPort(0);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         vdpProvider.writeControlPort(0xc2);
         System.out.println("Dma started" + vdpProvider.getVdpStateString());
-        int slots = VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
+        int slots = MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
         System.out.println("Dma done" + vdpProvider.getVdpStateString());
         return slots;
     }

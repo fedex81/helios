@@ -23,8 +23,8 @@ import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.RegionDetector;
+import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.VdpDmaHandlerTest;
-import omegadrive.vdp.VdpTestUtil;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
@@ -72,7 +72,7 @@ public class GenesisVdpTest2 {
      */
     @Test
     public void testWriteControlPortLongWordAndDMA() {
-        VdpTestUtil.setH32(vdpProvider);
+        MdVdpTestUtil.setH32(vdpProvider);
 
         int dmaAutoInc = 2;
         int afterDmaAutoInc = 0x20;
@@ -81,13 +81,13 @@ public class GenesisVdpTest2 {
         vdpProvider.writeControlPort(0x8134);
         vdpProvider.writeControlPort(0x8F00 + dmaAutoInc);
         vdpProvider.writeControlPort(0x93E8);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         vdpProvider.writeControlPort(0x9400);
         vdpProvider.writeControlPort(0x951F);
         vdpProvider.writeControlPort(0x9683);
         vdpProvider.writeControlPort(0x977F);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         //setup DMA
         vdpProvider.writeControlPort(0x4400);
@@ -97,12 +97,12 @@ public class GenesisVdpTest2 {
 
         //move.l second word, this changes the autoInc value -> needs to happen after DMA!
         vdpProvider.writeControlPort(0x8F00 + afterDmaAutoInc);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         //autoInc has not been changed
         Assert.assertEquals(dmaAutoInc, vdpProvider.getRegisterData(GenesisVdpProvider.VdpRegisterName.AUTO_INCREMENT));
 
-        VdpTestUtil.runVdpUntilDmaDone(vdpProvider);
+        MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
         //autoInc has now been changed
         Assert.assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(GenesisVdpProvider.VdpRegisterName.AUTO_INCREMENT));
@@ -119,7 +119,7 @@ public class GenesisVdpTest2 {
      */
     @Test
     public void testCodeRegisterUpdate() {
-        VdpTestUtil.setH32(vdpProvider);
+        MdVdpTestUtil.setH32(vdpProvider);
 
         //set vramRead
         testCodeRegisterUpdateInternal(vramRead.getAddressMode(), 0, 1280);

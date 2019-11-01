@@ -73,6 +73,15 @@ public class MekaStateHandler implements SmsStateHandler {
         return s;
     }
 
+    public static SmsStateHandler createLoadInstance(String fileName, int[] data) {
+        MekaStateHandler h = new MekaStateHandler();
+        h.fileName = handleFileExtension(fileName);
+        h.buffer = IntBuffer.wrap(data);
+        h.type = Type.LOAD;
+        SmsStateHandler s = h.detectStateFileType();
+        return s;
+    }
+
     public static SmsStateHandler createSaveInstance(String fileName, SystemLoader.SystemType systemType,
                                                      String romCrc32) {
         MekaStateHandler h = new MekaStateHandler();
@@ -246,27 +255,31 @@ public class MekaStateHandler implements SmsStateHandler {
 
     @Override
     public void loadMemory(IMemoryProvider mem, SmsVdp vdp) {
+        int[] vram = vdp.getVdpMemory().getVram();
+        int[] cram = vdp.getVdpMemory().getCram();
         IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> mem.writeRamByte(i, buffer.get()));
-        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vdp.VRAM[i] = (byte) (buffer.get() & 0xFF));
+        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vram[i] = (buffer.get() & 0xFF));
         //TODO check SMS CRAM = 0x20, GG = 0x40
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
             int smsCol = buffer.get();
             int r = smsCol & 0x03;
             int g = (smsCol >> 2) & 0x03;
             int b = (smsCol >> 4) & 0x03;
-            vdp.CRAM[i] = ((r * 85) << 16) | ((g * 85) << 8) | (b * 85);
+            cram[i] = ((r * 85) << 16) | ((g * 85) << 8) | (b * 85);
         });
     }
 
     @Override
     public void saveMemory(IMemoryProvider mem, SmsVdp vdp) {
         int[] ram = mem.getRamData();
+        int[] vram = vdp.getVdpMemory().getVram();
+        int[] cram = vdp.getVdpMemory().getCram();
         IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> buffer.put(ram[i]));
-        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> buffer.put(vdp.VRAM[i] & 0xFF));
+        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> buffer.put(vram[i] & 0xFF));
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
             //0xAARRGGBB (4 bytes) Java colour
             //SMS : 00BBGGRR   (1 byte)
-            int javaColor = vdp.CRAM[i];
+            int javaColor = cram[i];
             int b = (javaColor & 0xFF) / 85;
             int g = ((javaColor >> 8) & 0xFF) / 85;
             int r = ((javaColor >> 16) & 0xFF) / 85;

@@ -19,20 +19,14 @@
 
 package omegadrive.vdp;
 
-import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.gen.VdpInterruptHandlerTest;
-import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.stream.IntStream;
 
 public class SmsVdpInterruptHandlerTest {
 
@@ -71,18 +65,6 @@ public class SmsVdpInterruptHandlerTest {
         testSmsHLinesCounterInternal(0xFF);
     }
 
-    private void testSmsHLinesCounterInternal(final int lineCounter){
-        VideoMode vm = VideoMode.NTSCJ_H32_V24;
-        boolean[] exp = new boolean[0xFF];
-        int height = vm.getDimension().height;
-
-        VdpInterruptHandler h = SmsVdpInterruptHandler.createInstance(() -> lineCounter);
-        for (int i = lineCounter+1; i < exp.length ; i++) {
-            exp[i] = (i < height) ? (i % (lineCounter+1)) == 0 : false;
-        }
-        hLinesCounterBasic(h, vm, exp);
-    }
-
     public static void hLinesCounterBasic(VdpInterruptHandler h, VideoMode mode, boolean[] expectedLineInt) {
         boolean[] actualLineInt = new boolean[expectedLineInt.length];
         h.setMode(mode);
@@ -92,7 +74,7 @@ public class SmsVdpInterruptHandlerTest {
         int count = 0;
         int line = 0;
         System.out.println("STARTING: " + mode);
-        VdpTestUtil.runCounterToStartFrame(h);
+        MdVdpTestUtil.runCounterToStartFrame(h);
         printMsg(h.getStateString("Start frame: "));
         do {
             int hLine = h.hLinePassed;
@@ -122,6 +104,18 @@ public class SmsVdpInterruptHandlerTest {
 
         } while (count < totalCount);
         Assert.assertArrayEquals(expectedLineInt, actualLineInt);
+    }
+
+    private void testSmsHLinesCounterInternal(final int lineCounter) {
+        VideoMode vm = VideoMode.NTSCJ_H32_V24;
+        boolean[] exp = new boolean[0xFF];
+        int height = vm.getDimension().height;
+
+        VdpInterruptHandler h = SmsVdpInterruptHandler.createInstance(() -> lineCounter);
+        for (int i = lineCounter + 1; i < exp.length; i++) {
+            exp[i] = (i < height) && (i % (lineCounter + 1)) == 0;
+        }
+        hLinesCounterBasic(h, vm, exp);
     }
 
 

@@ -23,7 +23,7 @@ import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public interface VdpMemoryInterface {
+public interface VdpMemoryInterface extends VdpMemory {
 
     Logger LOG = LogManager.getLogger(VdpMemoryInterface.class.getSimpleName());
 
@@ -50,12 +50,6 @@ public interface VdpMemoryInterface {
     int readVsramWord(int address);
 
     void writeVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int data, int address);
-
-    int[] getCram();
-
-    int[] getVram();
-
-    int[] getVsram();
 
     int[] getJavaColorPalette();
 

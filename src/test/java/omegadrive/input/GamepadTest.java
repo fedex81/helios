@@ -41,6 +41,7 @@ public class GamepadTest {
         System.setProperty("jinput.detect.debug", "true");
         System.setProperty("net.java.games.input.librarypath", lib);
         InputProvider inputProvider = createInstance(createTestJoypadProvider());
+        inputProvider.setPlayerController(PlayerNumber.P1, inputProvider.getAvailableControllers().get(2));
         pollInputs(inputProvider);
     }
 

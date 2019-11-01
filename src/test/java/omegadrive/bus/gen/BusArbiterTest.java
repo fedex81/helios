@@ -17,10 +17,10 @@
 
 package omegadrive.bus.gen;
 
-import omegadrive.system.SystemProvider;
 import omegadrive.m68k.M68kProvider;
 import omegadrive.m68k.MC68000Wrapper;
-import omegadrive.vdp.VdpTestUtil;
+import omegadrive.system.SystemProvider;
+import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.z80.Z80CoreWrapper;
@@ -44,7 +44,7 @@ public class BusArbiterTest {
 
     @Before
     public void setup() {
-        SystemProvider emu = VdpTestUtil.createTestGenesisProvider();
+        SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
         bus = GenesisBusProvider.createBus();
         vdp = GenesisVdpProvider.createVdp(bus);
         Z80Provider z80 = Z80CoreWrapper.createGenesisInstance(bus);
@@ -85,7 +85,7 @@ public class BusArbiterTest {
         vdp.writeControlPort(0x8174);
         vdp.resetVideoMode(true);
         do {
-            VdpTestUtil.runVdpSlot(vdp);
+            MdVdpTestUtil.runVdpSlot(vdp);
             if (busArbiter.isVdpVInt() && hCounterPending < 0) {
                 hCounterPending = vdp.getHCounter();
                 vCounterPending = vdp.getVCounter();
@@ -117,19 +117,19 @@ public class BusArbiterTest {
         vdp.writeControlPort(0x8AFF);
         vdp.writeControlPort(0x8004);
         vdp.writeControlPort(0x8144); //enable display
-        VdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         do {
-            boolean wasVblank = VdpTestUtil.isVBlank(vdp);
-            VdpTestUtil.runVdpSlot(vdp);
-            boolean vBlankTrigger = !wasVblank && VdpTestUtil.isVBlank(vdp);
+            boolean wasVblank = MdVdpTestUtil.isVBlank(vdp);
+            MdVdpTestUtil.runVdpSlot(vdp);
+            boolean vBlankTrigger = !wasVblank && MdVdpTestUtil.isVBlank(vdp);
             if (vBlankTrigger) {
                 vdp.setHip(false);
                 vdp.setVip(false);
                 //enable hint after vblank period
                 vdp.writeControlPort(0x8A00);
                 vdp.writeControlPort(0x8014);
-                VdpTestUtil.runVdpUntilFifoEmpty(vdp);
+                MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
                 Assert.assertFalse("HINT should not be pending", vdp.getHip());
             }
             bus.handleVdpInterrupts68k();
@@ -147,17 +147,17 @@ public class BusArbiterTest {
         vdp.writeControlPort(0x8004);
         //enable VINT
         vdp.writeControlPort(0x8164);
-        VdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         VdpCounterMode mode = VdpCounterMode.getCounterMode(vdp.getVideoMode());
         do {
-            VdpTestUtil.runVdpSlot(vdp);
+            MdVdpTestUtil.runVdpSlot(vdp);
             bus.handleVdpInterrupts68k();
         } while (vCounterRaise < 0);
         Assert.assertEquals(mode.vBlankSet, vCounterRaise);
         vCounterRaise = -1;
         do {
-            VdpTestUtil.runVdpSlot(vdp);
+            MdVdpTestUtil.runVdpSlot(vdp);
             bus.handleVdpInterrupts68k();
         } while (vCounterRaise < 0);
         Assert.assertEquals(mode.vBlankSet, vCounterRaise);
@@ -168,21 +168,21 @@ public class BusArbiterTest {
         vdp.writeControlPort(0x8AFF);
         vdp.writeControlPort(0x8004);
         vdp.writeControlPort(0x8144); //enable display
-        VdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         do {
-            VdpTestUtil.runVdpSlot(vdp);
-        } while (VdpTestUtil.isVBlank(vdp));
+            MdVdpTestUtil.runVdpSlot(vdp);
+        } while (MdVdpTestUtil.isVBlank(vdp));
 
         //disable display -> vblank on
         vdp.writeControlPort(0x8104);
-        VdpTestUtil.runVdpSlot(vdp);
-        Assert.assertTrue(VdpTestUtil.isVBlank(vdp));
+        MdVdpTestUtil.runVdpSlot(vdp);
+        Assert.assertTrue(MdVdpTestUtil.isVBlank(vdp));
 
         //enable display
         vdp.writeControlPort(0x8144);
-        VdpTestUtil.runVdpSlot(vdp);
-        Assert.assertFalse(VdpTestUtil.isVBlank(vdp));
+        MdVdpTestUtil.runVdpSlot(vdp);
+        Assert.assertFalse(MdVdpTestUtil.isVBlank(vdp));
     }
 
     @Test
@@ -190,16 +190,16 @@ public class BusArbiterTest {
         vdp.writeControlPort(0x8AFF);
         vdp.writeControlPort(0x8004);
         vdp.writeControlPort(0x8144); //enable display
-        VdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         do {
-            VdpTestUtil.runVdpSlot(vdp);
-        } while (VdpTestUtil.isHBlank(vdp));
+            MdVdpTestUtil.runVdpSlot(vdp);
+        } while (MdVdpTestUtil.isHBlank(vdp));
 
         //disable display -> hblank doesnt change
         vdp.writeControlPort(0x8104);
-        VdpTestUtil.runVdpSlot(vdp);
-        Assert.assertFalse(VdpTestUtil.isHBlank(vdp));
+        MdVdpTestUtil.runVdpSlot(vdp);
+        Assert.assertFalse(MdVdpTestUtil.isHBlank(vdp));
     }
 
     /**

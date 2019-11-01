@@ -801,7 +801,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public VdpMemoryInterface getVdpMemory() {
+    public VdpMemory getVdpMemory() {
         return memoryInterface;
     }
 

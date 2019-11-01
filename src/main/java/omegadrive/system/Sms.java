@@ -53,8 +53,11 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     public static boolean verbose = false;
     public static final boolean ENABLE_FM = Boolean.valueOf(System.getProperty("sms.enable.fm", "false"));
 
-    public static int MCLK_PAL = 53203424;
-    public static int MCLK_NTSC = 53693175;
+    public static final int MCLK_PAL = 53203424;
+    public static final int MCLK_NTSC = 53693175;
+    public static final int VDP_CLK_NTSC = MCLK_NTSC / 5;
+    public static final int VDP_CLK_PAL = MCLK_PAL / 5;
+
 
     protected Sms(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);

@@ -82,7 +82,7 @@ public interface BaseVdpProvider extends Device {
 
     VideoMode getVideoMode();
 
-    VdpMemoryInterface getVdpMemory();
+    VdpMemory getVdpMemory();
 
     int[][] getScreenData();
 
