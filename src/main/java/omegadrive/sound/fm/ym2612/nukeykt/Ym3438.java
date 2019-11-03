@@ -1078,6 +1078,7 @@ public class Ym3438 implements IYm3438 {
 
     @Override
     public void OPN2_Reset(IYm3438.IYm3438_Type chip) {
+        chip.reset();
         /* 32 bit unsigned */
         int i;
         for (i = 0; i < 24; i++) {
@@ -1104,7 +1105,6 @@ public class Ym3438 implements IYm3438 {
         chip.lfo_inc = chip.mode_test_21[1];
         chip.pg_read >>= 1;
         chip.eg_read[1] >>= 1;
-//        chip.eg_cycle++;
         chip.eg_cycle = (chip.eg_cycle + 1) & 0xFF;
         /* Lock envelope generator timer value */
         if (chip.cycles == 1 && chip.eg_quotient == 2) {

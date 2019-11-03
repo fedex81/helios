@@ -19,6 +19,9 @@
 
 package omegadrive.sound.fm.ym2612.nukeykt;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+
 public interface IYm3438 {
 
     void OPN2_Reset(IYm3438_Type chip);
@@ -197,5 +200,31 @@ public interface IYm3438 {
         /* 8 bit unsigned */ int[] pms = new int[6];
         /* 8 bit unsigned */ int status;
         /*32 bit unsigned */ int status_time;
+
+        public void reset() {
+            try {
+                Field[] fields = getClass().getDeclaredFields();
+                for (Field field : fields) {
+                    field.setAccessible(true);
+                    Object value = field.get(this);
+                    if (value instanceof Integer) {
+                        field.set(this, 0);
+                    } else if (value instanceof Boolean) {
+                        field.set(this, false);
+                    } else if (value instanceof int[]) {
+                        Arrays.fill((int[]) value, 0);
+                    } else if (value instanceof boolean[]) {
+                        Arrays.fill((boolean[]) value, false);
+                    } else if (value instanceof int[][]) {
+                        Arrays.stream((int[][]) value).forEach(row -> Arrays.fill(row, 0));
+                    } else {
+                        System.out.println(field.getName());
+                    }
+                }
+            } catch (IllegalAccessException iae) {
+                iae.printStackTrace();
+            }
+
+        }
     }
 }

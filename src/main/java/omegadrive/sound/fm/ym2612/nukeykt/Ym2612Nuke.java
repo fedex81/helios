@@ -21,8 +21,11 @@ package omegadrive.sound.fm.ym2612.nukeykt;
 
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.MdFmProvider;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Queue;
 
 /**
@@ -39,10 +42,11 @@ import java.util.Queue;
  * CHIP_OUTPUT_RATE = NUKE_CLOCK/24 = 53267
  */
 public class Ym2612Nuke implements MdFmProvider {
+    static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);// + 0.03;
+
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
-
-    static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ) + 0.03;
+    private static final Logger LOG = LogManager.getLogger(Ym2612Nuke.class.getSimpleName());
     int ym3438_cycles = 0;
     double cycleAccum = 0;
 
@@ -67,11 +71,15 @@ public class Ym2612Nuke implements MdFmProvider {
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
     }
 
-
     @Override
     public void reset() {
-        chip = new IYm3438.IYm3438_Type();
-        ym3438.OPN2_Reset(chip);
+        synchronized (lock) {
+            ym3438.OPN2_Reset(chip);
+            sampleQueue.clear();
+            queueLen = 0;
+            ym3438_cycles = 0;
+            Arrays.stream(ym3438_accm).forEach(row -> Arrays.fill(row, 0));
+        }
     }
 
     public IYm3438.IYm3438_Type getChip() {
@@ -117,10 +125,12 @@ public class Ym2612Nuke implements MdFmProvider {
                 buf_lr[i + 1] = sample;
             }
             sampleNum = (int) (initialQueueSize - queueLen);
+            if (queueLen > 0) {
+                LOG.info("Dropping {} samples", queueLen);
+                sampleQueue.clear();
+                queueLen = 0;
+            }
         }
-//        if (queueLen > 0) {
-//            System.out.println(queueLen);
-//        }
         return sampleNum;
     }
 

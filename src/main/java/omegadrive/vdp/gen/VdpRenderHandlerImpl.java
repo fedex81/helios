@@ -346,6 +346,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             return javaColor;
         }
         //TODO fix this
+        //http://gendev.spritesmind.net/forum/viewtopic.php?t=2692
+//        https://segaretro.org/Sega_Mega_Drive/Shadow_and_highlight
         boolean noChange = rp.getPriorityType() == PriorityType.YES;
 //        boolean noChange = priorityType == PriorityType.YES ||
 //                (renderType == RenderType.SPRITE && (cramColorIndex % 32) == 28);  //14*2

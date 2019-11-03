@@ -7,6 +7,7 @@ monaco gp2
 turbo outrun
 lotus 2
 
-GG
-2019-10-27 17:51:59.118 ERROR [cycle-[BIOS] Sega Game Gear (USA) (Majesco).gg]: z80 exception
-java.lang.ArithmeticException: / by zero
+2019-11-02 13:08:48.815 ERROR [cycle-Zeta Overdrive EHZ Beta (S2 Hack).bin]: Error main cycle
+java.lang.ArrayIndexOutOfBoundsException: Index 124512 out of bounds for length 65536
+	at omegadrive.vdp.gen.VdpRenderHandlerImpl.getPixelIndexColor(VdpRenderHandlerImpl.java:494) ~[classes/:?]
+	at omegadrive.vdp.gen.VdpRenderHandlerImpl.renderPlane(VdpRenderHandlerImpl.java:482) ~[classes/:?]
