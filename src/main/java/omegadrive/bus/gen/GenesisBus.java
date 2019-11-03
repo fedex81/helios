@@ -39,6 +39,16 @@ import java.util.Objects;
 
 public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements GenesisBusProvider, RomMapper {
 
+    /**
+     * TODO wait states on 68k accessing z80
+     * BlastEm: Access to Z80 memory incurs a one 68K cycle wait state
+     * (memory as addressSpace)
+     * <p>
+     * Gx Plus:
+     * only on ZRAM writes
+     * m68k.cycles += 2 * 7; // ZRAM access latency (fixes Pacman 2: New Adventures & Puyo Puyo 2)
+     * // (fixes Puyo Puyo 2 option menu exit).
+     */
     private static Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
     public static boolean verbose = false;
@@ -310,7 +320,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 //	the Z80 may be let go from reset by writing #$0100 to $A11200.
             } else if (data == 0x0100 || data == 0x1) {
                 z80ResetState = false;
-                getFm().reset();
                 LOG.debug("Disable reset, busReq : {}", z80BusRequested);
             } else {
                 LOG.warn("Unexpected data on busReset: " + Integer.toBinaryString((int) data));
@@ -485,6 +494,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            Addresses A08000-A0FFFFh mirror A00000-A07FFFh, so the 68000 cannot
 //            access it's own banked memory.
     private long z80MemoryRead(long address, Size size) {
+        //((Genesis) getSystem()).next68kCycle++;
         long data;
         if (!z80BusRequested || z80ResetState) {
             LOG.warn("Reading Z80 memory without busreq");
@@ -502,6 +512,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     private void z80MemoryWrite(long address, Size size, long dataL) {
+        //((Genesis) getSystem()).next68kCycle++;
         if (!z80BusRequested || z80ResetState) {
             LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
             return;
