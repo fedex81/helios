@@ -48,6 +48,7 @@ dependencies {
     //include local jars
     compile fileTree(dir: 'lib', include: ['*.jar'])
     testCompile fileTree(dir: 'lib', include: ['*.jar'])
+    testCompile fileTree(dir: 'privateLib', include: ['*.jar'])
 }
 
 

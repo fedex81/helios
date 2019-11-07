@@ -57,7 +57,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     int fmSize;
     int psgSize;
     private AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
-    private SourceDataLine dataLine;
+    protected SourceDataLine dataLine;
     private boolean mute = false;
     private volatile boolean isSoundWorking = false;
     private SystemLoader.SystemType type;
@@ -70,11 +70,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
                 psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
                 break;
             case GENESIS:
-                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
-                break;
             case SMS:
-                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
-                break;
             default:
                 psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
                 break;
@@ -118,7 +114,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
         executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
         executorService.submit(getRunnable(dataLine, region));
-        LOG.info("Output audioFormat: " + audioFormat);
+        LOG.info("Output audioFormat: " + audioFormat + ", bufferSize: " + fmSize);
     }
 
     protected void updateSoundWorking(byte[] b) {

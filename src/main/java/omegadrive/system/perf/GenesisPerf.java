@@ -19,6 +19,7 @@
 
 package omegadrive.system.perf;
 
+import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.system.Genesis;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
@@ -46,6 +47,7 @@ public class GenesisPerf extends Genesis {
     int cycleVdpCnt, cycle68kCnt, cycleZ80cnt, cycleFmCnt;
     long frameWaitNs, lastSecTimeNs, frameProcessingNs;
     int totalCycles, frameCnt;
+    long samplesAudioProd, samplesAudioCons;
 
     public GenesisPerf(DisplayWindow emuFrame) {
         super(emuFrame);
@@ -71,6 +73,10 @@ public class GenesisPerf extends Genesis {
             double fmAvg = IntStream.range(0, frameCnt).mapToDouble(i -> cycleFmFrame[i]).sum();
             long waitMs = Duration.ofNanos(frameWaitNs).toMillis();
             long frameProcMs = Duration.ofNanos(frameProcessingNs).toMillis();
+            long prevP = samplesAudioProd;
+            long prevC = samplesAudioCons;
+            samplesAudioProd = JavaSoundManager.samplesProducedCount;
+            samplesAudioCons = JavaSoundManager.samplesConsumedCount;
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("Last 1s duration in ms %d, errorPerc %f%n", lastSecLenMs, 100 - (100 * lastSecLenMs / 1000.0)));
             sb.append(String.format("helios cycles: %d, frameProcMs: %d, sleepMs %d%n", totalCycles, frameProcMs, waitMs));
@@ -78,6 +84,8 @@ public class GenesisPerf extends Genesis {
             sb.append(String.format("Z80 cycles: %f, ref: %d, errorPerc: %f%n", z80Avg, z80Ref, 100 - (100 * z80Ref / z80Avg)));
             sb.append(String.format("FM cycles: %f, ref: %d, errorPerc: %f%n", fmAvg, fmRef, 100 - (100 * fmRef / fmAvg)));
             sb.append(String.format("VDP cycles: %f%n", vdpAvg));
+            sb.append(String.format("Sound samples, produced: %d, consumed %d%n",
+                    (samplesAudioProd - prevP) >> 1, (samplesAudioCons - prevC) >> 1));
 //            sb.append(String.format("VDP cycles: %f, ref: %d, errorPerc: %f%n", vdpAvg,vdpRef, 100 - (100*vdpRef/vdpAvg)));
 
             LOG.info(sb.toString());
@@ -93,14 +101,15 @@ public class GenesisPerf extends Genesis {
     protected void loop() {
         LOG.info("Starting game loop");
         updateVideoMode(true);
-
+        double prevVdpCycle = 0;
         do {
             try {
+                prevVdpCycle = nextVdpCycle;
                 run68k(counter);
                 runZ80(counter);
                 runFM(counter);
                 runVdp(counter);
-                doCounting();
+                doCounting(prevVdpCycle);
                 counter++;
             } catch (Exception e) {
                 LOG.error("Error main cycle", e);
@@ -110,8 +119,8 @@ public class GenesisPerf extends Genesis {
         LOG.info("Exiting rom thread loop");
     }
 
-    private void doCounting() {
-        cycleVdpCnt += counter >= nextVdpCycle ? 1 : 0;
+    private void doCounting(double prevVdpCycle) {
+        cycleVdpCnt += nextVdpCycle > prevVdpCycle ? 1 : 0;
         if (counter % M68K_DIVIDER == 0) {
             cycle68kCnt++;
         }

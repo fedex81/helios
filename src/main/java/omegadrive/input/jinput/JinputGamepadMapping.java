@@ -58,7 +58,7 @@ public class JinputGamepadMapping {
 
         deviceMappings.put(XBOX360_COMPAT_PAD_NAME, Button.A, JoypadButton.A);
         deviceMappings.put(XBOX360_COMPAT_PAD_NAME, Button.B, JoypadButton.B);
-        deviceMappings.put(XBOX360_COMPAT_PAD_NAME, Button.C, JoypadButton.C);
+        deviceMappings.put(XBOX360_COMPAT_PAD_NAME, Button.LEFT_THUMB, JoypadButton.C);
         deviceMappings.put(XBOX360_COMPAT_PAD_NAME, Button.X, JoypadButton.X);
         deviceMappings.put(XBOX360_COMPAT_PAD_NAME, Button.Y, JoypadButton.Y);
         deviceMappings.put(XBOX360_COMPAT_PAD_NAME, Button.RIGHT_THUMB, JoypadButton.Z);

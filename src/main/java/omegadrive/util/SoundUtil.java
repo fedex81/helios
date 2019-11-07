@@ -106,6 +106,7 @@ public class SoundUtil {
                 line = (SourceDataLine) AudioSystem.getLine(info);
                 line.open(audioFormat, getAudioLineBufferSize(audioFormat, RegionDetector.Region.EUROPE));
                 line.start();
+                LOG.info("SourceDataLine buffer: " + line.getBufferSize());
             } catch (LineUnavailableException lue) {
                 LOG.error("Unable to open audio line.");
             }
@@ -124,7 +125,7 @@ public class SoundUtil {
             // avg = (16 bit + 16 bit) >> (1 + 1) = 15 bit
             int fm = (input[i] + input[i + 1]) >> 2;
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg = ((int) psgMono8[j]);
+            int psg = psgMono8[j];
             //TODO check this
             psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
             //avg fm and psg
