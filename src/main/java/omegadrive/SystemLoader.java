@@ -65,7 +65,7 @@ public class SystemLoader {
             mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes
     ).flatMap(Stream::of).toArray(String[]::new);
 
-    public static boolean verbose = false;
+    public static boolean debugPerf = false;
     public static boolean showFps = false;
     public static boolean headless = false;
     public static String biosFolder = "./res/bios";
@@ -83,7 +83,7 @@ public class SystemLoader {
         }
         System.getProperties().list(System.out);
         System.out.println("-- done listing properties --");
-        verbose = Boolean.valueOf(java.lang.System.getProperty("emu.debug", "false"));
+        debugPerf = Boolean.valueOf(java.lang.System.getProperty("emu.debug", "false"));
         showFps = Boolean.valueOf(java.lang.System.getProperty("emu.fps", "false"));
         headless = Boolean.valueOf(java.lang.System.getProperty("emu.headless", "false"));
         biosFolder = String.valueOf(java.lang.System.getProperty("bios.folder", biosFolder));
@@ -159,7 +159,7 @@ public class SystemLoader {
     }
 
     public SystemProvider handleNewRomFile(Path file) {
-        systemProvider = createSystemProvider(file);
+        systemProvider = createSystemProvider(file, debugPerf);
         emuFrame.reloadSystem(systemProvider);
         systemProvider.handleSystemEvent(NEW_ROM, file);
         return systemProvider;
@@ -213,6 +213,10 @@ public class SystemLoader {
     }
 
     public SystemProvider createSystemProvider(Path file) {
+        return createSystemProvider(file, false);
+    }
+
+    public SystemProvider createSystemProvider(Path file, boolean debugPerf) {
         String lowerCaseName = file.toString().toLowerCase();
         boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
@@ -221,7 +225,7 @@ public class SystemLoader {
         boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if (isGen) {
-            systemProvider = Genesis.createNewInstance(emuFrame);
+            systemProvider = Genesis.createNewInstance(emuFrame, debugPerf);
         } else if (isSg) {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, emuFrame);
         } else if (isCv) {
@@ -229,9 +233,9 @@ public class SystemLoader {
         } else if (isMsx) {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, emuFrame);
         } else if (isSms) {
-            systemProvider = Sms.createNewInstance(SystemType.SMS, emuFrame);
+            systemProvider = Sms.createNewInstance(SystemType.SMS, emuFrame, debugPerf);
         } else if (isGg) {
-            systemProvider = Sms.createNewInstance(SystemType.GG, emuFrame);
+            systemProvider = Sms.createNewInstance(SystemType.GG, emuFrame, debugPerf);
         }
         if (systemProvider == null) {
             LOG.error("Unable to find a system to load: " + file.toAbsolutePath());

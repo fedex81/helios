@@ -32,6 +32,7 @@ import omegadrive.savestate.MekaStateHandler;
 import omegadrive.savestate.SmsStateHandler;
 import omegadrive.sound.fm.ym2413.Ym2413Provider;
 import omegadrive.sound.javasound.AbstractSoundManager;
+import omegadrive.system.perf.SmsPerf;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -64,8 +65,12 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         this.systemType = systemType;
     }
 
+    public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, DisplayWindow emuFrame, boolean debugPerf) {
+        return debugPerf ? new SmsPerf(systemType, emuFrame) : new Sms(systemType, emuFrame);
+    }
+
     public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
-        return new Sms(systemType, emuFrame);
+        return createNewInstance(systemType, emuFrame, false);
     }
 
     private void initCommon() {

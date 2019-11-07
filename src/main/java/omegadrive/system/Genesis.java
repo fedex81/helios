@@ -34,6 +34,7 @@ import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
+import omegadrive.system.perf.GenesisPerf;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -82,7 +83,11 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     }
 
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
-        return new Genesis(emuFrame);
+        return createNewInstance(emuFrame, false);
+    }
+
+    public static SystemProvider createNewInstance(DisplayWindow emuFrame, boolean debugPerf) {
+        return debugPerf ? new GenesisPerf(emuFrame) : new Genesis(emuFrame);
     }
 
     @Override
