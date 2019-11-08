@@ -68,7 +68,9 @@ public abstract class BasePadAdapter implements JoypadProvider {
 
     @Override
     public void setButtonAction(PlayerNumber number, JoypadButton button, JoypadAction action) {
-        getMap(number).put(button, action);
+        if (getMap(number).containsKey(button)) {
+            getMap(number).replace(button, action);
+        }
     }
 
     public boolean hasDirectionPressed(PlayerNumber number) {

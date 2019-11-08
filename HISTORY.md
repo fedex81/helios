@@ -1,3 +1,17 @@
+## next
+helios: update z80 lib
+md: do not reset fm on z80 un-reset
+md: for a given line, window plane hides planeA
+md: improve interlace mode
+md: tweak fm busy time
+md: fix shadowHighlight
+msx: add ASCII16, Konami mappers
+ui: region selector, recent files
+sms: support fm detection + infra
+sms: fix mapper
+sms: hint fix
+sram: do not write an empty file
+
 ## 19.0706
 68k: MOVEM fix pre-decrement long-writes on
 gg: initial support and lots of fixes

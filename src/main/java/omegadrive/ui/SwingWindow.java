@@ -38,8 +38,8 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.stream.IntStream;
 
 import static omegadrive.system.SystemProvider.SystemEvent.*;
@@ -299,9 +299,8 @@ public class SwingWindow implements DisplayWindow {
 
     private void fullScreenAction(ActionEvent doToggle) {
         if (doToggle == null) {
-            fullScreenItem.setState(!fullScreenItem.getState());
+            setFullScreen(!fullScreenItem.getState());
         }
-        LOG.info("Full screen: {}", fullScreenItem.isSelected());
     }
 
     private GraphicsDevice getGraphicsDevice() {
@@ -343,6 +342,7 @@ public class SwingWindow implements DisplayWindow {
     @Override
     public void setFullScreen(boolean value) {
         fullScreenItem.setState(value);
+        LOG.info("Full screen: {}", fullScreenItem.isSelected());
     }
 
     @Override

@@ -107,6 +107,8 @@ task copyRes {
     copy {
         from("privateLib") {
             exclude "misc/**"
+            exclude "src/**"
+            exclude "jna*.jar"
         }
         into "$buildDir/packageDir/lib"
     }
