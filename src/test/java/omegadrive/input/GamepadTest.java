@@ -23,6 +23,7 @@ import net.java.games.input.Controller;
 import omegadrive.joypad.JoypadProvider;
 
 import java.io.File;
+import java.util.List;
 
 import static omegadrive.input.InputProvider.PlayerNumber;
 import static omegadrive.input.InputProvider.createInstance;
@@ -41,8 +42,11 @@ public class GamepadTest {
         System.setProperty("jinput.detect.debug", "true");
         System.setProperty("net.java.games.input.librarypath", lib);
         InputProvider inputProvider = createInstance(createTestJoypadProvider());
-        inputProvider.setPlayerController(PlayerNumber.P1, inputProvider.getAvailableControllers().get(2));
-        pollInputs(inputProvider);
+        List<String> l = inputProvider.getAvailableControllers();
+        if (l.size() > 1) {
+            inputProvider.setPlayerController(PlayerNumber.P1, inputProvider.getAvailableControllers().get(2));
+            pollInputs(inputProvider);
+        }
     }
 
     private static JoypadProvider createTestJoypadProvider() {
