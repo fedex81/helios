@@ -273,11 +273,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         for (int tileBytePos = 0; tileBytePos < BYTES_PER_TILE &&
                 spritePixelLineCount < spritePixelLineLimit; tileBytePos++, horOffset += 2) {
             spritePixelLineCount += 2;
-            if (horOffset < 0 || horOffset >= COLS || //Ayrton Senna
-                    pixelPriority[horOffset][line].getRenderType() == RenderType.SPRITE //isSpriteAlreadyShown
-            ) {
-                continue;
-            }
             int tileShift = holder.horFlip ? BYTES_PER_TILE - 1 - tileBytePos : tileBytePos;
             int tileBytePointer = tileBytePointerBase + tileShift;
             storeSpriteData(tileBytePointer, horOffset, line, holder, 0);
@@ -293,7 +288,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 // Whichever sprite ends up on top in a given pixel is what will
 // end up in the sprite layer (and sorted against plane A and B).
     private void storeSpriteData(int tileBytePointer, int horOffset, int line, SpriteDataHolder holder, int pixelInTile) {
-        if (horOffset >= COLS) {
+        if (horOffset < 0 || horOffset >= COLS || //Ayrton Senna
+                pixelPriority[horOffset][line].getRenderType() == RenderType.SPRITE) { //isSpriteAlreadyShown)
             return;
         }
         int cramIndexColor = getPixelIndexColor(tileBytePointer, pixelInTile, holder.horFlip);
