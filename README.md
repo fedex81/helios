@@ -13,11 +13,16 @@ the following systems:
 # How to Run
 Requires java 8+ installed.
 
-Get the most recent jar file from the download section,  
-for example `helios-19.0121.jar`
+Get the most recent zip file from the download section,  
+for example `helios-19.1108.zip` and extract to a folder.
 
-Open a prompt/terminal and run:  
-`java -jar helios-19.0121.jar`
+## Windows
+Double click on `launcher.bat`
+
+## Linux
+Open a terminal and run:  
+`chmod +x launcher.sh`  
+`./lanucher.sh`
 
 # Gallery
 
