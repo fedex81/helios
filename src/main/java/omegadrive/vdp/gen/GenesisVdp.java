@@ -833,6 +833,8 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     @Override
     public void reload() {
         initMode();
+        //force javaPalette update
+        IntStream.range(0, VDP_CRAM_SIZE).forEach(i -> memoryInterface.writeCramByte(i, memoryInterface.readCramByte(i)));
         renderHandler.initLineData(0);
     }
 }
