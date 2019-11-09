@@ -448,6 +448,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             planeCellVOffset = (planeLine >> 3) * sc.planeWidth;
             int startPixel = twoCell << 4;
             int currentPrio = 0;
+            int rowCell = planeLine % cellHeight;
             for (int pixel = startPixel; pixel < startPixel + 16; pixel++) {
                 currentPrio = pixelPriority[pixel][line].ordinal();
                 if (currentPrio >= RenderPriority.PLANE_A_PRIO.ordinal()) {
@@ -463,9 +464,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 if (currentPrio >= rp.ordinal()) {
                     continue;
                 }
-                int rowCell = planeLine % cellHeight;
                 int xPosCell = (pixel + hScrollPixelOffset) % CELL_WIDTH;
-
                 rowCell = tileDataHolder.vertFlip ? cellHeight - 1 - rowCell : rowCell;
                 int colCell = tileDataHolder.horFlip ? CELL_WIDTH - 1 - xPosCell : xPosCell;
 

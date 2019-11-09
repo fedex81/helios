@@ -24,8 +24,10 @@ import omegadrive.Device;
 public interface M68kProvider extends Device {
 
     int VBLANK_INTERRUPT_LEVEL = 6;
-
     int HBLANK_INTERRUPT_LEVEL = 4;
+    int ILLEGAL_ACCESS_EXCEPTION = 4;
+    int LEV4_EXCEPTION = 24 + HBLANK_INTERRUPT_LEVEL;
+    int LEV6_EXCEPTION = 24 + VBLANK_INTERRUPT_LEVEL;
 
     long getPC();
 

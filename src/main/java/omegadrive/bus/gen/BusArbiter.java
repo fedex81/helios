@@ -188,6 +188,7 @@ public class BusArbiter implements Device {
     }
 
     private int getLevel68k() {
+        //TODO titan2 this can return 0, why investigate
         return isVdpVInt() ? M68kProvider.VBLANK_INTERRUPT_LEVEL : (isVdpHInt() ? M68kProvider.HBLANK_INTERRUPT_LEVEL : 0);
     }
 

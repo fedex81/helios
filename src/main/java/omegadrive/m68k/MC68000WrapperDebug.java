@@ -42,6 +42,8 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
     public int runInstruction() {
         int res = 0;
         try {
+            printVerbose();
+            printCpuStateIfVerbose("");
             res = super.runInstruction();
             //TODO partial fix JimPower
 //            if(currentPC == 0x3f8e && getM68k().getAddrRegisterLong(6) == 0xffffec7e){
@@ -52,6 +54,28 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
             LOG.error("68k error", e);
         }
         return res;
+    }
+
+    protected void handleException(int vector) {
+        if (vector == LEV4_EXCEPTION && vector == LEV6_EXCEPTION) {
+            return;
+        }
+        printCpuState("Exception: " + vector);
+        if (vector == ILLEGAL_ACCESS_EXCEPTION) {
+            if (STOP_ON_EXCEPTION) {
+                setStop(true);
+            }
+        }
+    }
+
+    @Override
+    public boolean raiseInterrupt(int level) {
+        m68k.raiseInterrupt(level);
+        boolean raise = m68k.getInterruptLevel() == level;
+        if (raise) {
+            LOG.info("M68K before INT, level: {}, newLevel: {}", m68k.getInterruptLevel(), level);
+        }
+        return raise;
     }
 
     public void doStep() {

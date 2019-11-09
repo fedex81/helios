@@ -40,7 +40,6 @@ public class MC68000Wrapper implements M68kProvider {
     private final static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
     public static boolean STOP_ON_EXCEPTION;
     public static boolean GENESIS_TAS_BROKEN;
-    private final static int ILLEGAL_ACCESS_EXCEPTION = 4;
 
     static {
         STOP_ON_EXCEPTION =
@@ -51,7 +50,7 @@ public class MC68000Wrapper implements M68kProvider {
         }
     }
 
-    private MC68000 m68k;
+    protected MC68000 m68k;
     private AddressSpace addressSpace;
     private GenesisBusProvider busProvider;
     private boolean stop;
@@ -69,8 +68,6 @@ public class MC68000Wrapper implements M68kProvider {
     public int runInstruction() {
         int res = 0;
         try {
-            printVerbose();
-            printCpuState("");
             currentPC = m68k.getPC();
             res = m68k.execute();
         } catch (Exception e) {
@@ -87,9 +84,8 @@ public class MC68000Wrapper implements M68kProvider {
         return m68k.getPC();
     }
 
-
-    private void setStop(boolean value) {
-        LOG.debug("M68K stop: {}", value);
+    protected void setStop(boolean value) {
+//        LOG.debug("M68K stop: {}", value);
         this.stop = value;
     }
 
@@ -101,11 +97,7 @@ public class MC68000Wrapper implements M68kProvider {
     @Override
     public boolean raiseInterrupt(int level) {
         m68k.raiseInterrupt(level);
-        boolean raise = m68k.getInterruptLevel() == level;
-        if (raise) {
-//            LOG.info("M68K before INT, level: {}, newLevel: {}", m68k.getInterruptLevel(),  level);
-        }
-        return raise;
+        return m68k.getInterruptLevel() == level;
     }
 
     @Override
@@ -152,7 +144,7 @@ public class MC68000Wrapper implements M68kProvider {
         };
     }
 
-    private void printVerbose() {
+    protected void printVerbose() {
         if (!verbose) {
             return;
         }
@@ -168,19 +160,10 @@ public class MC68000Wrapper implements M68kProvider {
         }
     }
 
-    private void handleException(int vector) {
-        if (vector == ILLEGAL_ACCESS_EXCEPTION) {
-            printCpuState("Exception: " + vector);
-            if (STOP_ON_EXCEPTION) {
-                setStop(true);
-            }
-        }
+    protected void handleException(int vector) {
     }
 
-    private void printCpuState(String head) {
-        if (!verbose) {
-            return;
-        }
+    protected void printCpuState(String head) {
         try {
             String str = MC68000Helper.dumpInfo(m68k, true, addressSpace.size());
             LOG.info(head + str);
@@ -188,5 +171,12 @@ public class MC68000Wrapper implements M68kProvider {
             String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
             LOG.warn("Unable to dump the state: " + pc, e);
         }
+    }
+
+    protected void printCpuStateIfVerbose(String head) {
+        if (!verbose) {
+            return;
+        }
+        printCpuState(head);
     }
 }
