@@ -24,6 +24,7 @@ import omegadrive.vdp.gen.GenesisVdpMemoryInterface;
 import omegadrive.vdp.gen.VdpColorMapper;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -117,6 +118,27 @@ public class CramViewer implements VdpMemoryInterface.ICramViewer {
                 k++;
             }
         });
+    }
+
+    public static void dumpVram(int[] vram) {
+        VdpRenderHandler.TileDataHolder tileDataHolder = new VdpRenderHandler.TileDataHolder();
+        for (int i = 0; i < vram.length; i += 2) {
+            int tileNameTable = vram[i] << 8 | vram[i + 1];
+//            tileDataHolder = getTileData(tileNameTable, tileDataHolder); //TODO
+            if (tileDataHolder.tileIndex > 0) {
+                System.out.println(Integer.toHexString(i) + "," + tileDataHolder);
+                for (int j = 0; j < 64; j++) {
+                    if (j > 0 && j % 4 == 0) {
+                        System.out.println();
+                    }
+                    System.out.print(Integer.toHexString(vram[tileDataHolder.tileIndex + j]) + ",");
+                }
+                System.out.println("\n");
+            }
+        }
+//        for (int i = 0; i < VDP_CRAM_SIZE; i++) {
+//            System.out.println(i + "," + getJavaColorValue(i));
+//        }
     }
 
     static int[] cram = {

@@ -37,12 +37,27 @@ public class ImageUtil {
         return bi;
     }
 
-
-    public static void saveImageToFile(RenderedImage image, File file) {
+    public static BufferedImage loadImageFromFile(File file) {
         try {
-            ImageIO.write(image, "jpg", file);
+            return ImageIO.read(file);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return null;
+    }
+
+    public static void saveImageToFile(RenderedImage image, File file, String ext) {
+        try {
+            boolean res = ImageIO.write(image, ext, file);
+            if (!res) {
+                throw new IOException("Unable to find an image writer");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void saveImageToFile(RenderedImage image, File file) {
+        saveImageToFile(image, file, "jpg");
     }
 }

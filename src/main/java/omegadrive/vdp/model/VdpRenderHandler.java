@@ -23,10 +23,7 @@ import omegadrive.util.VideoMode;
 
 import java.util.Objects;
 
-import static omegadrive.vdp.model.BaseVdpProvider.H32;
-import static omegadrive.vdp.model.BaseVdpProvider.H32_TILES;
-import static omegadrive.vdp.model.BaseVdpProvider.H40;
-import static omegadrive.vdp.model.BaseVdpProvider.H40_TILES;
+import static omegadrive.vdp.model.BaseVdpProvider.*;
 import static omegadrive.vdp.model.GenesisVdpProvider.*;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
@@ -137,6 +134,8 @@ public interface VdpRenderHandler {
         public boolean vertFlip;
         public int paletteLineIndex;
         public boolean priority;
+        public int horFlipAmount;
+        public int vertFlipAmount;
 
         @Override
         public String toString() {

@@ -84,7 +84,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             }
             return getFm().read();
         } else if (address >= ROM_BANK_ADDRESS && address <= 0x7EFF) {        //	BankSwitching and Reserved
-            LOG.error("Z80 read bank switching: " + Integer.toHexString(address));
+            LOG.warn("Z80 read bank switching: " + Integer.toHexString(address));
             return 0xFF;
         } else if (address >= START_VDP && address <= END_VDP) { //read VDP
             int vdpAddress = (VDP_BASE_ADDRESS + address);

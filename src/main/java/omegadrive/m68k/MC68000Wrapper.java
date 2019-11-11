@@ -43,7 +43,7 @@ public class MC68000Wrapper implements M68kProvider {
 
     static {
         STOP_ON_EXCEPTION =
-                Boolean.valueOf(System.getProperty("68k.stop.on.exception", "false"));
+                Boolean.valueOf(System.getProperty("68k.stop.on.exception", "true"));
         GENESIS_TAS_BROKEN = Boolean.valueOf(System.getProperty("68k.broken.tas", "true"));
         if (GENESIS_TAS_BROKEN != TAS.EMULATE_BROKEN_TAS) {
             LOG.info("Overriding 68k TAS broken setting: " + GENESIS_TAS_BROKEN);
@@ -72,8 +72,11 @@ public class MC68000Wrapper implements M68kProvider {
             res = m68k.execute();
         } catch (Exception e) {
             LOG.error("68k error", e);
-            printVerbose();
             handleException(ILLEGAL_ACCESS_EXCEPTION);
+            if (STOP_ON_EXCEPTION) {
+                printCpuState("");
+                throw e;
+            }
         }
         return res;
     }

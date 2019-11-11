@@ -29,12 +29,14 @@ import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.RenderingStrategy;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.nio.file.Path;
@@ -42,13 +44,14 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 @Ignore
-public class VdpRenderTest {
+public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
 
     private static int[][] screenData;
     private VdpRenderDump renderDump = new VdpRenderDump();
+    protected static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
     private JLabel label;
     private JFrame f;
-    private static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
+    int count = 0;
     static int CYCLES = 1_000;
 
     @Before
@@ -56,51 +59,35 @@ public class VdpRenderTest {
         System.setProperty("emu.headless", "true");
     }
 
+    private GenesisVdpProvider vdpProvider;
+
     private static SystemProvider createTestProvider() {
         InputProvider.bootstrap();
-
-        Genesis g = new Genesis(DisplayWindow.HEADLESS_INSTANCE) {
-            int count = 0;
-
-            @Override
-            public void copyScreenData(int[][] sd) {
-                boolean isValid = isValidImage(sd);
-                if (isValid) {
-                    VdpRenderTest.screenData = sd;
-                } else {
-                    System.out.println("Skipping frame#" + count);
-                }
-                count++;
-            }
-        };
-        return g;
+        return Genesis.createNewInstance(DisplayWindow.HEADLESS_INSTANCE);
     }
 
-    private void testSavestateViewerSingle(Path saveFile, String rom) {
+    protected static Image scaleImage(Image i, int factor) {
+        return i.getScaledInstance(i.getWidth(null) * factor, i.getHeight(null) * factor, 0);
+    }
+
+    public static JFrame showImageFrame(Image bi, String title) {
+        JLabel label = new JLabel();
+        JPanel panel = new JPanel();
+        panel.add(label);
+        JFrame f = new JFrame();
+        f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        f.add(panel);
+        label.setIcon(new ImageIcon(bi));
+        f.setTitle(title);
+        f.pack();
+        f.setVisible(true);
+        return f;
+    }
+
+    protected Image testSavestateViewerSingle(Path saveFile, String rom) {
         GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
         MdVdpTestUtil.runToStartFrame(vdpProvider);
-        BufferedImage bi = saveRenderToImage(screenData, vdpProvider.getVideoMode());
-        String title = rom + " (" + saveFile.getFileName().toString() + ")";
-        showImage(bi, title);
-    }
-
-    @Test
-    public void testInterlaced() {
-        String saveName = "s2_int.gs0";
-//        saveName = "cc_int.gs0";
-        Path saveFile = Paths.get(saveStateFolder, saveName);
-        testSavestateViewerSingle(saveFile, SavestateGameLoader.saveStates.get(saveName));
-        Util.waitForever();
-    }
-
-    @Test
-    public void testSavestateViewerAll() {
-        for (Map.Entry<String, String> e : SavestateGameLoader.saveStates.entrySet()) {
-            String saveStateFile = e.getKey();
-            Path saveFile = Paths.get(saveStateFolder, saveStateFile);
-            testSavestateViewerSingle(saveFile, e.getValue());
-            Util.sleep(2000);
-        }
+        return saveRenderToImage(screenData, vdpProvider.getVideoMode());
     }
 
     @Test
@@ -146,12 +133,14 @@ public class VdpRenderTest {
         System.out.println("Time ms: " + timeMs + ", FPS: " + fps);
     }
 
-    private GenesisVdpProvider prepareVdp(Path saveFile) {
-        SystemProvider genesisProvider = createTestProvider();
-        GenesisBusProvider busProvider = SavestateTest.loadSaveState(saveFile);
-        busProvider.attachDevice(genesisProvider);
-        GenesisVdpProvider vdpProvider = busProvider.getVdp();
-        return vdpProvider;
+    @Test
+    public void testInterlaced() {
+        String saveName = "gen_interlace_test.gs0";
+//        saveName = "cc_int.gs0";
+        Path saveFile = Paths.get(saveStateFolder, saveName);
+        Image i = testSavestateViewerSingle(saveFile, SavestateGameLoader.saveStates.get(saveName));
+        showImage(scaleImage(i, 4), saveName);
+        Util.waitForever();
     }
 
     private void testVpdPerformanceSingle(Path saveFile, String rom) {
@@ -177,7 +166,27 @@ public class VdpRenderTest {
         return false;
     }
 
-    private void showImage(BufferedImage bi, String title) {
+    @Test
+    public void testSavestateViewerAll() {
+        for (Map.Entry<String, String> e : SavestateGameLoader.saveStates.entrySet()) {
+            String saveStateFile = e.getKey();
+            Path saveFile = Paths.get(saveStateFolder, saveStateFile);
+            Image i = testSavestateViewerSingle(saveFile, e.getValue());
+            showImage(i, saveStateFile);
+            Util.sleep(2000);
+        }
+    }
+
+    private GenesisVdpProvider prepareVdp(Path saveFile) {
+        SystemProvider genesisProvider = createTestProvider();
+        GenesisBusProvider busProvider = SavestateTest.loadSaveState(saveFile);
+        busProvider.attachDevice(genesisProvider);
+        vdpProvider = busProvider.getVdp();
+        vdpProvider.addVdpEventListener(this);
+        return vdpProvider;
+    }
+
+    protected void showImage(Image bi, String title) {
         if (label == null) {
             label = new JLabel();
             JPanel panel = new JPanel();
@@ -190,5 +199,17 @@ public class VdpRenderTest {
         f.setTitle(title);
         f.pack();
         f.setVisible(true);
+    }
+
+    @Override
+    public void onNewFrame() {
+        int[][] sd = vdpProvider.getScreenData();
+        boolean isValid = isValidImage(sd);
+        if (isValid) {
+            VdpRenderTest.screenData = sd;
+        } else {
+            System.out.println("Skipping frame#" + count);
+        }
+        count++;
     }
 }

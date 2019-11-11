@@ -127,6 +127,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         holder.vertFlip = (nameTable & TILE_VERT_FLIP_MASK) > 0;
         holder.paletteLineIndex = ((nameTable >> 13) & 0x3) << PALETTE_INDEX_SHIFT;
         holder.priority = (nameTable & TILE_PRIORITY_MASK) > 0;
+        holder.horFlipAmount = holder.horFlip ? CELL_WIDTH - 1 : 0;
+        holder.vertFlipAmount = holder.vertFlip ? interlaceMode.getVerticalCellPixelSize() - 1 : 0;
         return holder;
     }
 
@@ -241,7 +243,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             int realY = holder.verticalPos - 128;
             int realX = holder.horizontalPos - 128;
             int spriteLine = (line - realY) % verSizePixels;
-            int pointVert = holder.vertFlip ? verSizePixels - 1 - spriteLine : spriteLine;
+            int pointVert = holder.vertFlip ? verSizePixels - 1 - spriteLine : spriteLine; //8,16,24
 
             boolean stop = (nonZeroSpriteOnLine && holder.horizontalPos == 0) || spritePixelLineCount >= spritePixelLineLimit;
             if (stop) {
@@ -253,12 +255,12 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             int spriteVerticalCell = pointVert >> 3;
             int vertLining = (spriteVerticalCell << interlaceMode.tileShift())
                     + ((pointVert % interlaceMode.getVerticalCellPixelSize()) << 2);
+            vertLining = interlaceMode == InterlaceMode.MODE_2 ? vertLining << 1 : vertLining;
             for (int cellX = 0; cellX <= holder.horizontalCellSize &&
                     spritePixelLineCount < spritePixelLineLimit; cellX++) {
                 int spriteCellX = holder.horFlip ? holder.horizontalCellSize - cellX : cellX;
                 int horLining = vertLining + (spriteCellX * ((holder.verticalCellSize + 1) << interlaceMode.tileShift()));
                 renderSprite(line, holder, holder.tileIndex + horLining, horOffset, spritePixelLineLimit);
-
                 //8 pixels
                 horOffset += CELL_WIDTH;
             }
@@ -273,7 +275,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         for (int tileBytePos = 0; tileBytePos < BYTES_PER_TILE &&
                 spritePixelLineCount < spritePixelLineLimit; tileBytePos++, horOffset += 2) {
             spritePixelLineCount += 2;
-            int tileShift = holder.horFlip ? BYTES_PER_TILE - 1 - tileBytePos : tileBytePos;
+            int tileShift = tileBytePos ^ (holder.horFlipAmount & 3); //[0,4]
             int tileBytePointer = tileBytePointerBase + tileShift;
             storeSpriteData(tileBytePointer, horOffset, line, holder, 0);
             storeSpriteData(tileBytePointer, horOffset + 1, line, holder, 1);
@@ -292,7 +294,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 pixelPriority[horOffset][line].getRenderType() == RenderType.SPRITE) { //isSpriteAlreadyShown)
             return;
         }
-        int cramIndexColor = getPixelIndexColor(tileBytePointer, pixelInTile, holder.horFlip);
+        int cramIndexColor = getPixelIndexColor(tileBytePointer, pixelInTile, holder.horFlipAmount);
         int javaColor = getJavaColorValue(cramIndexColor, holder.paletteLineIndex);
         cramIndexColor = processShadowHighlightSprite(holder.paletteLineIndex + cramIndexColor
                 , cramIndexColor, horOffset, line);
@@ -448,7 +450,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             planeCellVOffset = (planeLine >> 3) * sc.planeWidth;
             int startPixel = twoCell << 4;
             int currentPrio = 0;
-            int rowCellBase = planeLine % cellHeight;
+            int rowCellBase = planeLine % 8; //cellHeight;
             for (int pixel = startPixel; pixel < startPixel + 16; pixel++) {
                 currentPrio = pixelPriority[pixel][line].ordinal();
                 if (currentPrio >= RenderPriority.PLANE_A_PRIO.ordinal()) {
@@ -459,18 +461,22 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 int tileLocatorVram = nameTableLocation + ((planeCellHOffset + planeCellVOffset) << 1);
                 //one word per 8x8 tile
                 int tileNameTable = vram[tileLocatorVram] << 8 | vram[tileLocatorVram + 1];
+
                 tileDataHolder = getTileData(tileNameTable, tileDataHolder);
                 RenderPriority rp = tileDataHolder.priority ? highPrio : lowPrio;
                 if (currentPrio >= rp.ordinal()) {
                     continue;
                 }
                 int xPosCell = (pixel + hScrollPixelOffset) % CELL_WIDTH;
-                int rowCell = tileDataHolder.vertFlip ? cellHeight - 1 - rowCellBase : rowCellBase;
-                int colCell = tileDataHolder.horFlip ? CELL_WIDTH - 1 - xPosCell : xPosCell;
+
+                int colCell = xPosCell ^ (spriteDataHolder.horFlipAmount & 7); //[0,7]
+                int rowCell = rowCellBase ^ (spriteDataHolder.vertFlipAmount & (cellHeight - 1)); //[0,7] or [0,15] IM2
 
                 //two pixels per byte, 4 bytes per row
-                int tileBytePointer = tileDataHolder.tileIndex + (colCell >> 1) + (rowCell << 2);
-                int onePixelData = getPixelIndexColor(tileBytePointer, xPosCell, tileDataHolder.horFlip);
+                //TODO
+                int rowCellShift = interlaceMode == InterlaceMode.MODE_2 ? rowCell << 3 : rowCell << 2;
+                int tileBytePointer = tileDataHolder.tileIndex + (colCell >> 1) + rowCellShift;
+                int onePixelData = getPixelIndexColor(tileBytePointer, xPosCell, tileDataHolder.horFlipAmount);
 
                 plane[pixel][line] = getJavaColorValue(tileDataHolder.paletteLineIndex + (onePixelData << 1));
                 if (onePixelData > 0) {
@@ -480,10 +486,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
     }
 
-    private int getPixelIndexColor(int tileBytePointer, int pixelInTile, boolean isHorizontalFlip) {
+    private int getPixelIndexColor(int tileBytePointer, int pixelInTile, int horFlipAmount) {
         //1 byte represents 2 pixels, 1 pixel = 4 bit = 16 color gamut
         int twoPixelsData = vram[tileBytePointer];
-        boolean isFirstPixel = (pixelInTile % 2) == (isHorizontalFlip ? 0 : 1);
+        boolean isFirstPixel = (pixelInTile % 2) == (~horFlipAmount & 1);
         return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
     }
 
@@ -593,6 +599,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         holder.vertFlip = ((byte4 >> 4) & 0x1) == 1;
         holder.horFlip = ((byte4 >> 3) & 0x1) == 1;
         holder.horizontalPos = ((byte6 & 0x1) << 8) | byte7;
+        holder.horFlipAmount = holder.horFlip ? (holder.horizontalCellSize << 3) - 1 : 0;
+        holder.vertFlipAmount = holder.vertFlip ? (holder.verticalCellSize << 3) - 1 : 0;
         return holder;
     }
 
@@ -615,13 +623,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
             //two pixels at a time as they share a tile
             for (int k = 0; k < 4; k++) {
-                int point = tileDataHolder.horFlip ? 3 - k : k;
+                int point = k ^ (tileDataHolder.horFlipAmount & 3); //[0,4]
                 int po = (horTile << 3) + (k << 1);
 
                 int tileBytePointer = (tileDataHolder.tileIndex + point) + (pointVert << 2);
 
-                int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, tileDataHolder.horFlip);
-                int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, tileDataHolder.horFlip);
+                int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, tileDataHolder.horFlipAmount);
+                int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, tileDataHolder.horFlipAmount);
 
                 int javaColor1 = getJavaColorValue(pixelIndexColor1, tileDataHolder.paletteLineIndex);
                 int javaColor2 = getJavaColorValue(pixelIndexColor2, tileDataHolder.paletteLineIndex);
