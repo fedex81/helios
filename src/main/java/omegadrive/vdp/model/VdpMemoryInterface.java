@@ -27,10 +27,6 @@ public interface VdpMemoryInterface extends VdpMemory {
 
     Logger LOG = LogManager.getLogger(VdpMemoryInterface.class.getSimpleName());
 
-    interface ICramViewer {
-        void update();
-    }
-
     void writeVramByte(int address, int data);
 
     void writeVsramByte(int address, int data);

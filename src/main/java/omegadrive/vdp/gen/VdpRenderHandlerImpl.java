@@ -652,9 +652,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         pixelPriority[line][col] = rp.ordinal() > prev.ordinal() ? rp : prev;
     }
 
-    protected int[][] getPlaneData(RenderType type) {
+    public VideoMode getVideoMode() {
+        return videoMode;
+    }
 
-        int[][] res = new int[COLS][ROWS];
+    public int[][] getPlaneData(RenderType type) {
+
+        int[][] res = new int[ROWS][COLS];
         switch (type) {
             case BACK_PLANE:
                 res = planeBack;

@@ -22,6 +22,8 @@ package omegadrive.vdp.gen;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.util.*;
 import omegadrive.vdp.model.*;
+import omegadrive.vdp.util.UpdatableViewer;
+import omegadrive.vdp.util.VdpDebugView;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -133,6 +135,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     private VideoMode videoMode;
     private RegionDetector.Region region;
     private List<VdpEventListener> list;
+    private UpdatableViewer debugViewer;
 
     public static GenesisVdp createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface,
                                             VdpDmaHandler dmaHandler, RegionDetector.Region region) {
@@ -165,6 +168,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     private void setupVdp() {
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
+        this.debugViewer = VdpDebugView.createInstance(memoryInterface, (VdpRenderHandlerImpl) renderHandler);
         this.fifo = new VdpFifo();
         this.list = new ArrayList<>();
         this.initMode();
@@ -727,6 +731,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         if (interruptHandler.isDrawFrameSlot()) {
             interruptHandler.logVerbose("Draw Screen");
             renderHandler.renderFrame();
+            debugViewer.update();
             list.forEach(VdpEventListener::onNewFrame);
             resetVideoMode(false);
         }
@@ -836,5 +841,11 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         //force javaPalette update
         IntStream.range(0, VDP_CRAM_SIZE).forEach(i -> memoryInterface.writeCramByte(i, memoryInterface.readCramByte(i)));
         renderHandler.initLineData(0);
+    }
+
+    @Override
+    public void reset() {
+        this.debugViewer.reset();
+        this.list.clear();
     }
 }

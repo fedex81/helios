@@ -57,34 +57,27 @@ public class VdpRenderDump {
     }
 
 
-    public void saveRenderToFile(int[][] data, VideoMode videoMode, RenderType type) {
-        if (isHeadless) {
-            LOG.warn("Not supported in headless mode");
-            return;
+    public static BufferedImage writeDataToImage(BufferedImage bi, RenderType type, Dimension d, int[][] data) {
+        if (bi == null || bi.getWidth(null) * bi.getHeight(null) != d.width * d.height) {
+            bi = gd.getDefaultConfiguration().createCompatibleImage(d.width, d.height);
         }
-        long now = System.currentTimeMillis();
-        String fileName = type.toString() + "_" + now + ".jpg";
-        bi = getImage(videoMode);
-        RenderingStrategy.toLinear(pixels, data, videoMode.getDimension());
-        saveImageToFile(bi, fileName);
-    }
-
-    public void saveLinearRenderToFile(int[][] data, VideoMode videoMode, RenderType type) {
-        if (isHeadless) {
-            LOG.warn("Not supported in headless mode");
-            return;
+        int[] pixels = getPixels(bi);
+        if (type == RenderType.FULL) {
+            RenderingStrategy.toLinear(pixels, data, d);
+        } else {
+            RenderingStrategy.toLinearLine(pixels, data, d);
         }
-        long now = System.currentTimeMillis();
-        String fileName = type.toString() + "_" + now + ".jpg";
-        bi = getImage(videoMode);
-        System.arraycopy(data, 0, pixels, 0, data.length);
-        saveImageToFile(bi, fileName);
+        return bi;
     }
 
     private void saveImageToFile(BufferedImage bi, String fileName) {
         Path file = Paths.get(folder.toAbsolutePath().toString(), fileName);
         LOG.info("Saving render to: " + file.toAbsolutePath().toString());
         ImageUtil.saveImageToFile(bi, file.toFile());
+    }
+
+    private static int[] getPixels(BufferedImage img) {
+        return ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
     }
 
     public BufferedImage getImage(VideoMode videoMode) {
@@ -96,7 +89,19 @@ public class VdpRenderDump {
         return bi;
     }
 
-    private int[] getPixels(BufferedImage img) {
-        return ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
+    public void saveRenderToFile(int[][] data, VideoMode videoMode, RenderType type) {
+        if (isHeadless) {
+            LOG.warn("Not supported in headless mode");
+            return;
+        }
+        long now = System.currentTimeMillis();
+        String fileName = type.toString() + "_" + now + ".jpg";
+        bi = getImage(videoMode);
+        if (type == RenderType.FULL) {
+            RenderingStrategy.toLinear(pixels, data, videoMode.getDimension());
+        } else {
+            RenderingStrategy.toLinearLine(pixels, data, videoMode.getDimension());
+        }
+        saveImageToFile(bi, fileName);
     }
 }

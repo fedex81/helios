@@ -21,7 +21,6 @@ package omegadrive.vdp.gen;
 
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import omegadrive.vdp.util.CramViewer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,11 +38,9 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     private int[] vsram;
     private int[] javaPalette;
 
-    private ICramViewer cramViewer;
     private VdpColorMapper colorMapper;
 
     private GenesisVdpMemoryInterface() {
-        cramViewer = CramViewer.createInstance(this);
         colorMapper = VdpColorMapper.getInstance();
     }
 
@@ -154,7 +151,6 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     public void writeCramByte(int address, int data) {
         address &= (GenesisVdpProvider.VDP_CRAM_SIZE - 1);
         cram[address] = data & 0xFF;
-        cramViewer.update();
         paletteUpdate(address & EVEN_VALUE_MASK);
     }
 

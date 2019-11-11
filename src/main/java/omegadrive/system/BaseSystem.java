@@ -197,6 +197,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
             emuFrame.resetScreen();
             sound.reset();
             bus.closeRom();
+            vdp.reset();
         }
     }
 
