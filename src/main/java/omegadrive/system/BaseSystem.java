@@ -69,10 +69,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
-    private static final boolean fullThrottle = false;
+    private static final boolean fullThrottle;
 
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
 
+    static {
+        fullThrottle = Boolean.valueOf(java.lang.System.getProperty("helios.fullSpeed", "false"));
+    }
 
     protected abstract void loop();
 

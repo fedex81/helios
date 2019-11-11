@@ -28,9 +28,9 @@ public class ScreenSizeHelper {
 
     public static final int DEFAULT_SCREEN = 1;
     public static final int DEFAULT_SCALE_FACTOR =
-            Integer.valueOf(System.getProperty("emu.ui.scale", "2"));
+            Integer.valueOf(System.getProperty("helios.ui.scale", "2"));
     public static final double FULL_SCREEN_WITH_TITLE_BAR_FACTOR =
-            Double.valueOf(System.getProperty("emu.ui.fsTitle.factor", "1"));
+            Double.valueOf(System.getProperty("helios.ui.fsTitle.factor", "1"));
 
     public static Dimension DEFAULT_SCALED_SCREEN_SIZE = new Dimension(ScreenSizeHelper.DEFAULT_X * DEFAULT_SCALE_FACTOR,
             ScreenSizeHelper.DEFAULT_Y * DEFAULT_SCALE_FACTOR);

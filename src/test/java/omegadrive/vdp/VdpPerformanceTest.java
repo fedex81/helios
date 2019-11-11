@@ -20,7 +20,6 @@
 package omegadrive.vdp;
 
 import omegadrive.SystemLoader;
-import omegadrive.automated.SavestateGameLoader;
 import omegadrive.input.InputProvider;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
@@ -39,7 +38,7 @@ import java.time.Duration;
 @Ignore
 public class VdpPerformanceTest {
 
-    static Path testFilePath = Paths.get(SavestateGameLoader.romFolder, "Sonic The Hedgehog (W) (REV00) [!].bin");
+    static Path testFilePath = Paths.get("./test_roms", "s1.bin");
     static int fps = 60;
     int frameCnt = 0;
     int sampleCnt = 0;
@@ -49,7 +48,10 @@ public class VdpPerformanceTest {
 
     @BeforeClass
     public static void beforeTest() {
-        System.setProperty("emu.headless", "true");
+        System.setProperty("helios.headless", "true");
+        System.setProperty("helios.fullSpeed", "true");
+        System.setProperty("helios.enable.sound", "false");
+//        System.setProperty("md.show.vdp.debug.viewer", "true");
     }
 
     private static SystemProvider createTestProvider() {

@@ -55,24 +55,32 @@ public class VdpRenderCompareTest extends VdpRenderTest {
 
     @Before
     public void beforeTest() {
-        System.setProperty("emu.headless", "true");
+        System.setProperty("helios.headless", "true");
     }
 
     @Test
     public void testCompareAll() {
         File[] files = Paths.get(saveStateFolder).toFile().listFiles();
+        boolean showingFailures = false;
 //        for (Map.Entry<String, String> e : SavestateGameLoader.saveStates.entrySet()) {
         for (File file : files) {
             if (file.isDirectory()) {
                 continue;
             }
             //TODO investigate
-            if (file.getName().endsWith("mickeym.gs0")) {
+            if (file.getName().endsWith("mickeym.gs0") || file.getName().endsWith("cc_int.gs0") ||
+                    file.getName().contains("s2_int") || file.getName().contains("s2_im2")) {
                 continue;
             }
-//            testOverwriteBaselineImage(file.getName());
+//            if(file.getName().contains("smgp2")) {
+//                testOverwriteBaselineImage(file.getName());
+//            }
             System.out.println("Testing: " + file);
-            testCompareOne(file.getName());
+            showingFailures |= testCompareOne(file.getName());
+
+        }
+        if (showingFailures) {
+            Util.waitForever();
         }
     }
 
@@ -81,7 +89,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
         testCompareOne("s2_int.gs0");
     }
 
-    private void testCompareOne(String saveName) {
+    private boolean testCompareOne(String saveName) {
         Path saveFile = Paths.get(saveStateFolder, saveName);
         Path baselineImageFile = Paths.get(compareFolder, saveName + DOT_EXT);
         Image i = testSavestateViewerSingle(saveFile, SavestateGameLoader.saveStates.get(saveName));
@@ -94,9 +102,10 @@ public class VdpRenderCompareTest extends VdpRenderTest {
                 JFrame f1 = showImageFrame(scaleImage(baseLine, 4), "BASELINE_" + saveName + DOT_EXT);
                 JFrame f2 = showImageFrame(scaleImage(actual, 4), saveName);
                 JFrame f3 = showImageFrame(scaleImage(diffImage, 4), "DIFF_" + saveName + " (Diffs are non white pixels)");
-                Util.waitForever();
+                return true;
             }
         }
+        return false;
     }
 
     private boolean compareImage(BufferedImage baseline, BufferedImage actual) {

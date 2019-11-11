@@ -56,7 +56,7 @@ public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
 
     @Before
     public void beforeTest(){
-        System.setProperty("emu.headless", "true");
+        System.setProperty("helios.headless", "true");
     }
 
     private GenesisVdpProvider vdpProvider;

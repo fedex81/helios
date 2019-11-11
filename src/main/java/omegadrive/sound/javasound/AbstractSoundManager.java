@@ -96,6 +96,10 @@ public abstract class AbstractSoundManager implements SoundProvider {
     }
 
     public static SoundProvider createSoundProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
+        if (!ENABLE_SOUND) {
+            LOG.warn("Sound disabled");
+            return NO_SOUND;
+        }
         JavaSoundManager jsm = new JavaSoundManager();
         jsm.setFm(getFmProvider(systemType, region));
         jsm.setPsg(getPsgProvider(systemType, region));

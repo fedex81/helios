@@ -83,9 +83,9 @@ public class SystemLoader {
         }
         System.getProperties().list(System.out);
         System.out.println("-- done listing properties --");
-        debugPerf = Boolean.valueOf(java.lang.System.getProperty("emu.debug", "false"));
-        showFps = Boolean.valueOf(java.lang.System.getProperty("emu.fps", "false"));
-        headless = Boolean.valueOf(java.lang.System.getProperty("emu.headless", "false"));
+        debugPerf = Boolean.valueOf(java.lang.System.getProperty("helios.debug", "false"));
+        showFps = Boolean.valueOf(java.lang.System.getProperty("helios.fps", "false"));
+        headless = Boolean.valueOf(java.lang.System.getProperty("helios.headless", "false"));
         biosFolder = String.valueOf(java.lang.System.getProperty("bios.folder", biosFolder));
         biosNameMsx1 = String.valueOf(java.lang.System.getProperty("bios.name.msx1", biosNameMsx1));
         biosNameColeco = String.valueOf(java.lang.System.getProperty("bios.name.coleco", biosNameColeco));

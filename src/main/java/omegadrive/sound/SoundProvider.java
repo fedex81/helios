@@ -39,6 +39,8 @@ public interface SoundProvider extends Device {
 
     int OVERRIDE_AUDIO_BUFFER_LEN_MS = Integer.valueOf(System.getProperty("audio.buffer.length.ms", "0"));
 
+    boolean ENABLE_SOUND = Boolean.valueOf(System.getProperty("helios.enable.sound", "false"));
+
     int OVERRIDE_AUDIO_BUFFER_SIZE = OVERRIDE_AUDIO_BUFFER_LEN_MS > 0 ?
             (int) (SAMPLE_RATE_HZ / 1000d * OVERRIDE_AUDIO_BUFFER_LEN_MS)
             : 0;
