@@ -24,6 +24,7 @@ import omegadrive.util.ImageUtil;
 import omegadrive.util.Util;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.swing.*;
@@ -34,6 +35,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+@Ignore
 public class VdpRenderCompareTest extends VdpRenderTest {
 
     private static final boolean SHOW_IMAGES_ON_FAILURE = true;
@@ -62,19 +64,10 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     public void testCompareAll() {
         File[] files = Paths.get(saveStateFolder).toFile().listFiles();
         boolean showingFailures = false;
-//        for (Map.Entry<String, String> e : SavestateGameLoader.saveStates.entrySet()) {
         for (File file : files) {
             if (file.isDirectory()) {
                 continue;
             }
-            //TODO investigate
-            if (file.getName().endsWith("mickeym.gs0") || file.getName().endsWith("cc_int.gs0") ||
-                    file.getName().contains("s2_int") || file.getName().contains("s2_im2")) {
-                continue;
-            }
-//            if(file.getName().contains("smgp2")) {
-//                testOverwriteBaselineImage(file.getName());
-//            }
             System.out.println("Testing: " + file);
             showingFailures |= testCompareOne(file.getName());
 
@@ -86,7 +79,14 @@ public class VdpRenderCompareTest extends VdpRenderTest {
 
     @Test
     public void testCompare() {
-        testCompareOne("s2_int.gs0");
+        boolean overwrite = false;
+        if (overwrite) {
+            testOverwriteBaselineImage("herzog_window_01.gs0");
+        }
+        boolean showingFailures = testCompareOne("herzog_window_01.gs0");
+        if (showingFailures) {
+            Util.waitForever();
+        }
     }
 
     private boolean testCompareOne(String saveName) {

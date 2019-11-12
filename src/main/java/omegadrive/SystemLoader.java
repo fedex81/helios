@@ -110,6 +110,7 @@ public class SystemLoader {
             String filePath = args[0];
             LOG.info("Launching file at: " + filePath);
             INSTANCE.handleNewRomFile(Paths.get(filePath));
+            Util.sleep(1_000); //give the game thread a chance
         }
         if (headless) {
             Util.waitForever();

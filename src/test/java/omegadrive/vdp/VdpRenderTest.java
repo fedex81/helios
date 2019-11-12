@@ -85,6 +85,7 @@ public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
     }
 
     protected Image testSavestateViewerSingle(Path saveFile, String rom) {
+        screenData = null;
         GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
         MdVdpTestUtil.runToStartFrame(vdpProvider);
         return saveRenderToImage(screenData, vdpProvider.getVideoMode());
@@ -203,12 +204,10 @@ public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
 
     @Override
     public void onNewFrame() {
-        int[][] sd = vdpProvider.getScreenData();
-        boolean isValid = isValidImage(sd);
-        if (isValid) {
-            VdpRenderTest.screenData = sd;
-        } else {
-            System.out.println("Skipping frame#" + count);
+        VdpRenderTest.screenData = vdpProvider.getScreenData();
+        boolean isValid = isValidImage(VdpRenderTest.screenData);
+        if (!isValid) {
+            System.out.println("Empty render #" + count);
         }
         count++;
     }

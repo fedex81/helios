@@ -509,45 +509,44 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         int reg11 = vdpProvider.getRegisterData(WINDOW_PLANE_HOR_POS);
         int reg12 = vdpProvider.getRegisterData(WINDOW_PLANE_VERT_POS);
 
-        int windowVert = reg12 & 0x1F;
-        boolean down = (reg12 & 0x80) == 0x80;
+        boolean isH40 = videoMode.isH40();
+        int hCellTotal = VdpRenderHandler.getHorizontalTiles(isH40);
 
-        int windowHorizontal = reg11 & 0x1F;
+        boolean down = (reg12 & 0x80) == 0x80;
         boolean right = (reg11 & 0x80) == 0x80;
 
-        int horizontalLimit = windowHorizontal << 4; //2-cell = 2*8 pixels
-        int vertLimit = windowVert << 3;
+        int hCell = (reg11 & 0x1F) << 1; //2-cell = 2*8 pixels
+        int vCell = (reg12 & 0x1F); // unit of 8 lines
+        int lineCell = line >> 3;
 
-        boolean legalVertical = down || (!down && windowVert != 0);
 //        When DOWN=0, the window is shown from line zero to the line specified
 //        by the WVP field.
 //        When DOWN=1, the window is shown from the line specified in the WVP
 //        field up to the last line in the display.
-        boolean legalDown = (down && line >= vertLimit);
-        boolean legalUp = (!down && line < vertLimit);
-        legalVertical &= (legalDown || legalUp);
+//        boolean legalVertical = vCellRange != 0;
+        boolean legalDown = (down && lineCell >= vCell);
+        boolean legalUp = (!down && lineCell < vCell);
+        boolean legalVertical = (legalDown || legalUp);
 
-        boolean legalHorizontal = right || (!right && windowHorizontal != 0);
+        int hStartCell = right ? Math.min(hCell, hCellTotal) : 0;
+        int hEndCell = right ? hCellTotal : Math.min(hCell, hCellTotal);
+        //if the line belongs to the window, the entire line becomes window
+        hStartCell = legalVertical ? 0 : hStartCell;
+        hEndCell = legalVertical ? hCellTotal : hEndCell;
+
 //        When RIGT=0, the window is shown from column zero to the column
 //        specified by the WHP field.
 //        When RIGHT=1, the window is shown from the column specified in the WHP
 //        field up to the last column in the display meaning column 31 or 39
 //        depending on the screen width setting.
-        boolean legalRight = right && horizontalLimit < videoMode.getDimension().width;
-        legalHorizontal &= legalRight;
-
-        boolean isH40 = videoMode.isH40();
-        int limitHorTiles = VdpRenderHandler.getHorizontalTiles(isH40);
-        boolean drawWindow = legalVertical || (!legalVertical && legalHorizontal);
+        boolean legalHorizontal = hStartCell < hEndCell;
+        boolean drawWindow = legalVertical || legalHorizontal;
 
         if (drawWindow) {
-            //Ayrton Senna -> vertical
-            //Bad Omen -> horizontal
-            int tileStart = legalHorizontal ? (right ? windowHorizontal << 1 : 0) : 0;
-            int tileEnd = legalHorizontal ? (right ? limitHorTiles : windowHorizontal << 1) : limitHorTiles;
-            drawWindowPlane(line, tileStart, tileEnd, isH40);
+            drawWindowPlane(line, hStartCell, hEndCell, isH40);
         }
-        lineShowWindowPlane = drawWindow;
+        //if the line belongs to the window, do not show planeA
+        lineShowWindowPlane = legalVertical;
     }
 
     @Override
