@@ -39,6 +39,11 @@ import java.util.Objects;
 
 public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements GenesisBusProvider, RomMapper {
 
+
+    private static final Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
+
+    public static boolean verbose = false;
+
     /**
      * TODO wait states on 68k accessing z80
      * BlastEm: Access to Z80 memory incurs a one 68K cycle wait state
@@ -49,9 +54,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
      * m68k.cycles += 2 * 7; // ZRAM access latency (fixes Pacman 2: New Adventures & Puyo Puyo 2)
      * // (fixes Puyo Puyo 2 option menu exit).
      */
-    private static final Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
-
-    public static boolean verbose = false;
+    public static final int M68K_CYCLE_PENALTY = 3;
 
     private GenesisCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
@@ -496,7 +499,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            Addresses A08000-A0FFFFh mirror A00000-A07FFFh, so the 68000 cannot
 //            access it's own banked memory.
     private long z80MemoryRead(long address, Size size) {
-        busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, 3);
+        busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
         if (!z80BusRequested || z80ResetState) {
             LOG.warn("Reading Z80 memory without busreq");
             return 0;
@@ -509,8 +512,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else {
             //TODO: used longword access to Z80 like "Stuck Somewhere In Time" does
             //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
-            LOG.error("long read, addr: {}", address);
-            busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, 3);
+            LOG.debug("long read, addr: {}", address);
+            busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
             long dataHigh = z80MemoryReadWord(addressZ);
             long dataLow = z80MemoryReadWord(addressZ + 2);
             return dataHigh << 16 | dataLow;
@@ -518,7 +521,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     private void z80MemoryWrite(long address, Size size, long dataL) {
-        busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, 3);
+        busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
         if (!z80BusRequested || z80ResetState) {
             LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
             return;
@@ -532,8 +535,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else {
             //TODO: used longword access to Z80 like "Stuck Somewhere In Time" does
             //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
-            LOG.warn("Unexpected long write, addr: {}, data: {}", address, dataL);
-            busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, 3);
+            LOG.debug("Unexpected long write, addr: {}, data: {}", address, dataL);
+            busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
             z80MemoryWriteWord(addressZ, data >> 16);
             z80MemoryWriteWord(addressZ + 2, data & 0xFFFF);
         }
@@ -542,13 +545,13 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     //	https://emu-docs.org/Genesis/gen-hw.txt
     //	When doing word-wide writes to Z80 RAM, only the MSB is written, and the LSB is ignored
     private final void z80MemoryWriteWord(int address, int data) {
-        LOG.info("word-wide write to ZRAM");
+        LOG.debug("word-wide write to ZRAM");
         z80Provider.writeMemory(address, (data & 0xFFFF) >> 8);
     }
 
     //    A word-wide read from Z80 RAM has the LSB of the data duplicated in the MSB
     private final int z80MemoryReadWord(int address) {
-        LOG.info("word-wide read from ZRAM");
+        LOG.debug("word-wide read from ZRAM");
         int data = z80Provider.readMemory(address);
         return data << 8 | data;
     }

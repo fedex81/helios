@@ -354,8 +354,16 @@ public class SwingWindow implements DisplayWindow {
     //NOTE: this will copy the input array
     @Override
     public void renderScreenLinear(int[] data, String label, VideoMode videoMode) {
+        if (UI_SCALE_ON_EDT) {
+            SwingUtilities.invokeLater(() -> renderScreenLinearInternal(data, label, videoMode));
+        } else {
+            renderScreenLinearInternal(data, label, videoMode);
+        }
+    }
+
+    private void renderScreenLinearInternal(int[] data, String label, VideoMode videoMode) {
         boolean changed = resizeScreen(videoMode);
-        System.arraycopy(data, 0, pixelsSrc,0, data.length);
+        System.arraycopy(data, 0, pixelsSrc, 0, data.length);
         if (scale > 1) {
             Dimension ouput = new Dimension((int) (baseScreenSize.width * scale), (int) (baseScreenSize.height * scale));
             RenderingStrategy.renderNearest(pixelsSrc, pixelsDest, baseScreenSize, ouput);
@@ -408,7 +416,6 @@ public class SwingWindow implements DisplayWindow {
             src = createImage(getGraphicsDevice(), baseScreenSize, true);
             Dimension d = new Dimension((int) (src.getWidth() * scale), (int) (src.getHeight() * scale));
             dest = createImage(getGraphicsDevice(), d, false);
-
             screenLabel.setIcon(new ImageIcon(dest));
             jFrame.setPreferredSize(isFullScreen ? fullScreenSize : baseScreenSize);
             jFrame.getJMenuBar().setVisible(!isFullScreen);

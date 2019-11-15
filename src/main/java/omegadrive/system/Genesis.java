@@ -133,9 +133,9 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     @Override
     protected void newFrame() {
         long tstamp = System.nanoTime();
+        updateVideoMode(false);
         renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(startCycle));
         handleVdpDumpScreenData();
-        updateVideoMode(false);
         sound.output(elapsedWaitNs);
         long startWaitNs = System.nanoTime();
         elapsedWaitNs = syncCycle(startCycle) - startWaitNs;

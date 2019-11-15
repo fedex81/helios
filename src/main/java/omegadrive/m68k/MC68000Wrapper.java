@@ -67,10 +67,11 @@ public class MC68000Wrapper implements M68kProvider {
 
     @Override
     public int runInstruction() {
-        instCycles = 0;
+        int res = 0;
         try {
             currentPC = m68k.getPC();
-            instCycles += m68k.execute();
+            res = m68k.execute() + instCycles;
+            instCycles = 0;
         } catch (Exception e) {
             LOG.error("68k error", e);
             handleException(ILLEGAL_ACCESS_EXCEPTION);
@@ -79,7 +80,7 @@ public class MC68000Wrapper implements M68kProvider {
                 throw e;
             }
         }
-        return instCycles;
+        return res;
     }
 
     @Override
