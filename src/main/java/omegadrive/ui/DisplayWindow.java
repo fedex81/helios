@@ -40,8 +40,6 @@ public interface DisplayWindow {
 
     void init();
 
-    void renderScreen(int[][] data, String label, VideoMode videoMode);
-
     void renderScreenLinear(int[] data, String label, VideoMode videoMode);
 
     void resetScreen();
@@ -79,11 +77,6 @@ public interface DisplayWindow {
 
         @Override
         public void init() {
-
-        }
-
-        @Override
-        public void renderScreen(int[][] data, String label, VideoMode videoMode) {
 
         }
 

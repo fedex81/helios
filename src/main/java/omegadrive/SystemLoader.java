@@ -174,11 +174,6 @@ public class SystemLoader {
             }
 
             @Override
-            public void copyScreenData(int[][] screenData) {
-
-            }
-
-            @Override
             public void handleSystemEvent(SystemEvent event, Object parameter) {
                 LOG.info("Event: {}, with parameter: {}", event, Objects.toString(parameter));
                 switch (event) {

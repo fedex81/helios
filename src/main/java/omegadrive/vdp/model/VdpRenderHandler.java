@@ -47,7 +47,7 @@ public interface VdpRenderHandler {
 
     void dumpScreenData();
 
-    int[][] renderFrame();
+    void renderFrame();
 
     void setVideoMode(VideoMode videoMode);
 
@@ -55,7 +55,7 @@ public interface VdpRenderHandler {
 
     void initLineData(int line);
 
-    int[][] getScreenData();
+    int[] getScreenDataLinear();
 
     static int getHorizontalTiles(boolean isH40) {
         return isH40 ? H40_TILES : H32_TILES;

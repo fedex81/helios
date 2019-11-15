@@ -28,6 +28,7 @@ import omegadrive.vdp.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.awt.*;
 import java.util.Arrays;
 
 import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_FRAME_H40;
@@ -69,6 +70,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private boolean shadowHighlightMode;
 
     private VideoMode videoMode;
+    private VideoMode newVideoMode;
     private VdpColorMapper colorMapper;
 
     private int[][] spritesPerLine = new int[INDEXES_NUM][MAX_SPRITES_PER_FRAME_H40];
@@ -84,8 +86,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private RenderPriority[][] pixelPriority = new RenderPriority[ROWS][COLS];
     private ShadowHighlightType[][] shadowHighlight = new ShadowHighlightType[ROWS][COLS];
-
-    private int[][] screenData = new int[COLS][ROWS];
+    private int[] linearScreen;
 
     private SpriteDataHolder spriteDataHolder = new SpriteDataHolder();
     private int spriteTableLocation = 0;
@@ -114,7 +115,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     public void setVideoMode(VideoMode videoMode) {
-        this.videoMode = videoMode;
+        this.newVideoMode = videoMode;
     }
 
     private TileDataHolder getTileData(int nameTable, TileDataHolder holder) {
@@ -137,6 +138,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         if (line == 0) {
             LOG.debug("New Frame");
             this.interlaceMode = vdpProvider.getInterlaceMode();
+            if (newVideoMode != videoMode) {
+                Dimension d = newVideoMode.getDimension();
+                linearScreen = new int[d.width * d.height];
+                videoMode = newVideoMode;
+            }
             //need to do this here so I can dump data just after rendering the frame
             clearData();
             spriteTableLocation = VdpRenderHandler.getSpriteTableLocation(vdpProvider);
@@ -166,8 +172,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         renderPlaneB(line);
     }
 
-    public int[][] renderFrame() {
-        return composeImage();
+    public void renderFrame() {
+        composeImageLinear();
     }
 
     private void clearData() {
@@ -305,34 +311,37 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
     }
 
-    private int[][] composeImage() {
+    private int[] composeImageLinear() {
         int height = videoMode.getDimension().height;
         int width = videoMode.getDimension().width;
+        int k = 0;
         for (int line = 0; line < height; line++) {
             for (int col = 0; col < width; col++) {
-                screenData[col][line] = getPixelFromLayer(pixelPriority[line][col], col, line);
+                linearScreen[k++] = getPixelFromLayer(pixelPriority[line][col], col, line);
             }
         }
-        return screenData;
+        return linearScreen;
     }
 
     private int getPixelFromLayer(RenderPriority rp, int col, int line) {
         int javaColor = 0;
         switch (rp.getRenderType()) {
-            case BACK_PLANE:
-                javaColor = planeBack[line][col];
-                break;
             case PLANE_A:
                 javaColor = planeA[line][col];
                 break;
             case PLANE_B:
                 javaColor = planeB[line][col];
                 break;
+            case SPRITE:
+                javaColor = sprites[line][col];
+                break;
+            case BACK_PLANE:
+                javaColor = planeBack[line][col];
+                break;
             case WINDOW_PLANE:
                 javaColor = window[line][col];
                 break;
-            case SPRITE:
-                javaColor = sprites[line][col];
+            default:
                 break;
         }
         return processShadowHighlight(shadowHighlightMode, shadowHighlight[line][col], javaColor, rp);
@@ -655,9 +664,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         return videoMode;
     }
 
-    public int[][] getPlaneData(RenderType type) {
-
-        int[][] res = new int[ROWS][COLS];
+    public Object getPlaneData(RenderType type) {
+        Object res = null;
         switch (type) {
             case BACK_PLANE:
                 res = planeBack;
@@ -675,19 +683,19 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 res = sprites;
                 break;
             case FULL:
-                res = screenData;
+                res = linearScreen;
                 break;
         }
         return res;
     }
 
     @Override
-    public int[][] getScreenData() {
-        return screenData;
+    public int[] getScreenDataLinear() {
+        return linearScreen;
     }
 
     @Override
     public void dumpScreenData() {
-        Arrays.stream(RenderType.values()).forEach(r -> renderDump.saveRenderToFile(getPlaneData(r), videoMode, r));
+        Arrays.stream(RenderType.values()).forEach(r -> renderDump.saveRenderObjectToFile(getPlaneData(r), videoMode, r));
     }
 }

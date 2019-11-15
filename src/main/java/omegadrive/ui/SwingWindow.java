@@ -351,7 +351,7 @@ public class SwingWindow implements DisplayWindow {
                 map(JCheckBoxMenuItem::getText).findFirst().orElse(null);
     }
 
-    //TODO
+    //NOTE: this will copy the input array
     @Override
     public void renderScreenLinear(int[] data, String label, VideoMode videoMode) {
         boolean changed = resizeScreen(videoMode);
@@ -359,30 +359,6 @@ public class SwingWindow implements DisplayWindow {
         if (scale > 1) {
             Dimension ouput = new Dimension((int) (baseScreenSize.width * scale), (int) (baseScreenSize.height * scale));
             RenderingStrategy.renderNearest(pixelsSrc, pixelsDest, baseScreenSize, ouput);
-        }
-        if (!Strings.isNullOrEmpty(label)) {
-            getFpsLabel().setText(label);
-        }
-        screenLabel.repaint();
-    }
-
-    @Override
-    public void renderScreen(int[][] data, String label, VideoMode videoMode) {
-        if (UI_SCALE_ON_EDT) {
-            SwingUtilities.invokeLater(() -> renderScreenInternal(data, label, videoMode));
-        } else {
-            renderScreenInternal(data, label, videoMode);
-        }
-    }
-
-    public void renderScreenInternal(int[][] data, String label, VideoMode videoMode) {
-        boolean changed = resizeScreen(videoMode);
-        if (scale > 1) {
-            Dimension ouput = new Dimension((int) (baseScreenSize.width * scale), (int) (baseScreenSize.height * scale));
-            RenderingStrategy.toLinear(pixelsSrc, data, baseScreenSize);
-            RenderingStrategy.renderNearest(pixelsSrc, pixelsDest, baseScreenSize, ouput);
-        } else {
-            RenderingStrategy.toLinear(pixelsDest, data, baseScreenSize);
         }
         if (!Strings.isNullOrEmpty(label)) {
             getFpsLabel().setText(label);

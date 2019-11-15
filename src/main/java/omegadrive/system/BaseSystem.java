@@ -313,24 +313,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         return lastFps + "fps";
     }
 
-    int[][] vdpScreen = new int[0][];
-
-    public void copyScreenData(int[][] screenData) {
-        if (screenData.length != vdpScreen.length) {
-            vdpScreen = screenData.clone();
-        }
-        Util.arrayDataCopy(screenData, vdpScreen);
-    }
-
     protected void handleVdpDumpScreenData() {
         if (vdpDumpScreenData) {
             vdp.dumpScreenData();
             vdpDumpScreenData = false;
         }
-    }
-
-    protected void renderScreenInternal(String label) {
-        emuFrame.renderScreen(vdpScreen, label, videoMode);
     }
 
     protected void renderScreenLinearInternal(int[] data, String label) {

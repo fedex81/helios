@@ -52,6 +52,7 @@ public class Z80CoreWrapper implements Z80Provider {
     private BaseBusProvider z80BusProvider;
     private Z80MemIoOps memIoOps;
     private Z80Disasm z80Disasm;
+    protected int instCyclesPenalty = 0;
 
     private static Logger LOG = LogManager.getLogger(Z80CoreWrapper.class.getSimpleName());
 
@@ -92,6 +93,7 @@ public class Z80CoreWrapper implements Z80Provider {
     @Override
     public int executeInstruction() {
         memIoOps.reset();
+        instCyclesPenalty = 0;
         try {
             printVerbose();
             z80Core.execute();
@@ -107,7 +109,7 @@ public class Z80CoreWrapper implements Z80Provider {
                 Util.waitForever();
             }
         }
-        return (int) (memIoOps.getTstates());
+        return (int) (memIoOps.getTstates()) + instCyclesPenalty;
     }
 
     private static String toString(Z80State state) {
@@ -179,6 +181,11 @@ public class Z80CoreWrapper implements Z80Provider {
     @Override
     public BaseBusProvider getZ80BusProvider() {
         return z80BusProvider;
+    }
+
+    @Override
+    public void addCyclePenalty(int value) {
+        instCyclesPenalty += value;
     }
 
     @Override

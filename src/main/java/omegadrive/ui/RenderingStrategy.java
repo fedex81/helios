@@ -23,15 +23,6 @@ import java.awt.*;
 
 public class RenderingStrategy {
 
-    public static void toLinear(int[] pixels, int[][] screenData, Dimension output) {
-        int k = 0;
-        for (int i = 0; i < output.height; i++) {
-            for (int j = 0; j < output.width; j++) {
-                pixels[k++] = screenData[j][i];
-            }
-        }
-    }
-
     public static void toLinearLine(int[] pixels, int[][] screenData, Dimension output) {
         int k = 0;
         for (int line = 0; line < output.height; line++) {

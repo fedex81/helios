@@ -43,7 +43,21 @@ public class BusArbiter implements Device {
     private final static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
     private static final VdpState[] stateVdpVals = VdpState.values();
     public static boolean verbose = false;
+    public static final BusArbiter NO_OP = new BusArbiter();
+    private int z80CyclePenalty = 0;
+    private int m68kCyclePenalty = 0;
+
     private VdpState stateVdp = VdpState.NORMAL;
+    private IntState int68k = IntState.ACKED;
+    private M68kState state68k = M68kState.RUNNING;
+
+    protected GenesisVdpProvider vdp;
+    protected M68kProvider m68k;
+    protected Z80Provider z80;
+
+    private int mask68kState = 0;
+    private boolean vIntFrameExpired;
+    private int vIntOnLine;
 
     public void setStop68k(int mask) {
         if (mask != mask68kState) {
@@ -57,19 +71,6 @@ public class BusArbiter implements Device {
     public boolean is68kRunning() {
         return state68k == M68kState.RUNNING;
     }
-
-    protected GenesisVdpProvider vdp;
-    protected M68kProvider m68k;
-    protected Z80Provider z80;
-
-    private IntState int68k = IntState.ACKED;
-    private M68kState state68k = M68kState.RUNNING;
-
-    enum IntState {NONE, PENDING, ASSERTED, ACKED}
-    private int mask68kState = 0;
-    private boolean vIntFrameExpired;
-    private int vIntOnLine;
-
     private IntState z80Int = IntState.ACKED;
 
     protected BusArbiter() {
@@ -82,6 +83,21 @@ public class BusArbiter implements Device {
         b.z80 = z80;
         return b;
     }
+
+    public void addCyclePenalty(CpuType cpuType, int value) {
+        switch (cpuType) {
+            case M68K:
+                m68k.addCyclePenalty(value);
+                break;
+            case Z80:
+                z80.addCyclePenalty(value);
+                break;
+            default:
+                break;
+        }
+    }
+
+    enum IntState {NONE, PENDING, ASSERTED, ACKED}
 
     public void handleInterruptZ80() {
         checkInterruptZ80();
@@ -152,6 +168,8 @@ public class BusArbiter implements Device {
         int68k = IntState.ACKED;
         logInfo("68k int{}: {}", level, int68k);
     }
+
+    enum CpuType {M68K, Z80}
 
     private void ackVdpInt(int level) {
         if (level == M68kProvider.VBLANK_INTERRUPT_LEVEL) {

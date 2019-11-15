@@ -84,7 +84,7 @@ public interface BaseVdpProvider extends Device {
 
     VdpMemory getVdpMemory();
 
-    int[][] getScreenData();
+    int[] getScreenDataLinear();
 
     void setRegion(RegionDetector.Region region);
 

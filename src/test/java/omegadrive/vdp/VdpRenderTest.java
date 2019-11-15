@@ -26,7 +26,6 @@ import omegadrive.save.SavestateTest;
 import omegadrive.system.Genesis;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.ui.RenderingStrategy;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -46,7 +45,7 @@ import java.util.Map;
 @Ignore
 public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
 
-    private static int[][] screenData;
+    private static int[] screenData;
     private VdpRenderDump renderDump = new VdpRenderDump();
     protected static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
     private JLabel label;
@@ -85,7 +84,6 @@ public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
     }
 
     protected Image testSavestateViewerSingle(Path saveFile, String rom) {
-        screenData = null;
         GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
         MdVdpTestUtil.runToStartFrame(vdpProvider);
         return saveRenderToImage(screenData, vdpProvider.getVideoMode());
@@ -102,11 +100,13 @@ public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
         }
     }
 
-    private BufferedImage saveRenderToImage(int[][] data, VideoMode videoMode) {
-        BufferedImage bi = renderDump.getImage(videoMode);
-        int[] linear = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
-        RenderingStrategy.toLinear(linear, data, videoMode.getDimension());
-        return bi;
+    private static boolean isValidImage(int[] screenData) {
+        for (int i = 0; i < screenData.length; i++) {
+            if (screenData[i] > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Test
@@ -156,15 +156,11 @@ public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
 
     }
 
-    private static boolean isValidImage(int[][] screenData) {
-        for (int i = 0; i < screenData.length; i++) {
-            for (int j = 0; j < screenData[i].length; j++) {
-                if (screenData[i][j] > 0) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    private BufferedImage saveRenderToImage(int[] data, VideoMode videoMode) {
+        BufferedImage bi = renderDump.getImage(videoMode);
+        int[] linear = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
+        System.arraycopy(data, 0, linear, 0, linear.length);
+        return bi;
     }
 
     @Test
@@ -204,10 +200,12 @@ public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
 
     @Override
     public void onNewFrame() {
-        VdpRenderTest.screenData = vdpProvider.getScreenData();
-        boolean isValid = isValidImage(VdpRenderTest.screenData);
+        int[] sd = vdpProvider.getScreenDataLinear();
+        boolean isValid = isValidImage(sd);
         if (!isValid) {
             System.out.println("Empty render #" + count);
+        } else {
+            VdpRenderTest.screenData = sd;
         }
         count++;
     }

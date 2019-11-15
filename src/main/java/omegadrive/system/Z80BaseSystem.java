@@ -139,15 +139,10 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
 
     @Override
     protected void newFrame() {
-        vdpScreen = vdp.getScreenData();
-        renderScreenInternal(getStats(System.nanoTime()));
+        renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(System.nanoTime()));
         handleVdpDumpScreenData();
         updateVideoMode();
         int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
-        if (Thread.currentThread().isInterrupted()) {
-            LOG.info("Game thread stopped");
-            runningRomFuture.cancel(true);
-        }
 //                    processSaveState();
         pauseAndWait();
         resetCycleCounters(counter);

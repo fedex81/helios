@@ -71,7 +71,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     protected double nextVdpCycle = vdpVals[0];
     protected int counter = 1;
     protected long elapsedWaitNs, frameProcessingDelayNs;
-    int next68kCycle = M68K_DIVIDER;
+    public int next68kCycle = M68K_DIVIDER;
     int nextZ80Cycle = Z80_DIVIDER;
     long startCycle = System.nanoTime();
     Thread thread = Thread.currentThread();
@@ -133,17 +133,12 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     @Override
     protected void newFrame() {
         long tstamp = System.nanoTime();
-        copyScreenData(vdp.getScreenData());
-        renderScreenInternal(getStats(startCycle));
+        renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(startCycle));
         handleVdpDumpScreenData();
         updateVideoMode(false);
         sound.output(elapsedWaitNs);
         long startWaitNs = System.nanoTime();
         elapsedWaitNs = syncCycle(startCycle) - startWaitNs;
-        if (thread.isInterrupted()) {
-            LOG.info("Game thread stopped");
-            runningRomFuture.cancel(true);
-        }
         processSaveState();
         pauseAndWait();
         resetCycleCounters(counter);

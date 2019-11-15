@@ -781,6 +781,11 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     }
 
     @Override
+    public int[] getScreenDataLinear() {
+        return renderHandler.getScreenDataLinear();
+    }
+
+    @Override
     public boolean addVdpEventListener(VdpEventListener l) {
         return list.add(l);
     }
@@ -808,11 +813,6 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     @Override
     public VdpMemory getVdpMemory() {
         return memoryInterface;
-    }
-
-    @Override
-    public int[][] getScreenData() {
-        return renderHandler.getScreenData();
     }
 
     @Override

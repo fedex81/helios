@@ -7,15 +7,15 @@ monaco gp2
 turbo outrun
 lotus 2
 
+check:
+Dashin' Desperadoes (Beta).bin   (hint?)
+Pac Man 2 - no  after pressing start ingame
+
+
 2019-11-02 13:08:48.815 ERROR [cycle-Zeta Overdrive EHZ Beta (S2 Hack).bin]: Error main cycle
 java.lang.ArrayIndexOutOfBoundsException: Index 124512 out of bounds for length 65536
 	at omegadrive.vdp.gen.VdpRenderHandlerImpl.getPixelIndexColor(VdpRenderHandlerImpl.java:494) ~[classes/:?]
 	at omegadrive.vdp.gen.VdpRenderHandlerImpl.renderPlane(VdpRenderHandlerImpl.java:482) ~[classes/:?]
-
-check:
-Valis
-Dashin' Desperadoes (Beta).bin
-
 
 2019-11-10 22:00:40.913 ERROR [cycle-NFL Prime Time (U) [b2].bin]: 68k error
 m68k.cpu.CpuException: Interrupt vector not set for uninitialised interrupt vector while trapping uninitialised vector 11
@@ -24,6 +24,22 @@ m68k.cpu.CpuException: Interrupt vector not set for uninitialised interrupt vect
 	at m68k.cpu.instructions.UNKNOWN.execute(UNKNOWN.java:58) ~[headford68k-1.04.jar:?]
 	at m68k.cpu.MC68000.execute(MC68000.java:71) ~[headford68k-1.04.jar:?]
 	at omegadrive.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:72) [classes/:?]
+	at omegadrive.system.Genesis.run68k(Genesis.java:170) [classes/:?]
+	at omegadrive.system.Genesis.loop(Genesis.java:120) [classes/:?]
+	at omegadrive.system.BaseSystem$RomRunnable.run(BaseSystem.java:254) [classes/:?]
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515) [?:?]
+	at java.util.concurrent.FutureTask.run(FutureTask.java:264) [?:?]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128) [?:?]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628) [?:?]
+	at java.lang.Thread.run(Thread.java:834) [?:?]
+
+2019-11-10 22:23:16.966 ERROR [cycle-Rolling Thunder 3 (U) [b2].bin]: 68k error
+m68k.cpu.CpuException: Interrupt vector not set for uninitialised interrupt vector while trapping uninitialised vector 11
+	at m68k.cpu.CpuCore.raiseException(CpuCore.java:978) ~[headford68k-1.04.jar:?]
+	at omegadrive.m68k.MC68000Wrapper$1.raiseException(MC68000Wrapper.java:126) ~[classes/:?]
+	at m68k.cpu.instructions.UNKNOWN.execute(UNKNOWN.java:58) ~[headford68k-1.04.jar:?]
+	at m68k.cpu.MC68000.execute(MC68000.java:71) ~[headford68k-1.04.jar:?]
+	at omegadrive.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:73) [classes/:?]
 	at omegadrive.system.Genesis.run68k(Genesis.java:170) [classes/:?]
 	at omegadrive.system.Genesis.loop(Genesis.java:120) [classes/:?]
 	at omegadrive.system.BaseSystem$RomRunnable.run(BaseSystem.java:254) [classes/:?]

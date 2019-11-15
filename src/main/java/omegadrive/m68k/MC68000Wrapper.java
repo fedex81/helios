@@ -55,6 +55,7 @@ public class MC68000Wrapper implements M68kProvider {
     private GenesisBusProvider busProvider;
     private boolean stop;
     protected int currentPC;
+    protected int instCycles = 0;
 
     public MC68000Wrapper(GenesisBusProvider busProvider) {
         this.m68k = createCpu();
@@ -66,10 +67,10 @@ public class MC68000Wrapper implements M68kProvider {
 
     @Override
     public int runInstruction() {
-        int res = 0;
+        instCycles = 0;
         try {
             currentPC = m68k.getPC();
-            res = m68k.execute();
+            instCycles += m68k.execute();
         } catch (Exception e) {
             LOG.error("68k error", e);
             handleException(ILLEGAL_ACCESS_EXCEPTION);
@@ -78,7 +79,12 @@ public class MC68000Wrapper implements M68kProvider {
                 throw e;
             }
         }
-        return res;
+        return instCycles;
+    }
+
+    @Override
+    public void addCyclePenalty(int value) {
+        instCycles += value;
     }
 
     //this is the next instr PC

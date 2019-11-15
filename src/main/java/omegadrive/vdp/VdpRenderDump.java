@@ -57,17 +57,67 @@ public class VdpRenderDump {
     }
 
 
-    public static BufferedImage writeDataToImage(BufferedImage bi, RenderType type, Dimension d, int[][] data) {
+    public static BufferedImage writeDataToImage(BufferedImage bi, RenderType type, Dimension d, Object data) {
+        if (data instanceof int[][]) {
+            return writeDataToImage(bi, type, d, (int[][]) data);
+        } else if (data instanceof int[]) {
+            return writeDataToImage(bi, type, d, (int[]) data);
+        } else {
+            LOG.error("Error");
+        }
+        return null;
+    }
+
+    private static BufferedImage writeDataToImage(BufferedImage bi, RenderType type, Dimension d, int[] data) {
         if (bi == null || bi.getWidth(null) * bi.getHeight(null) != d.width * d.height) {
             bi = gd.getDefaultConfiguration().createCompatibleImage(d.width, d.height);
         }
         int[] pixels = getPixels(bi);
-        if (type == RenderType.FULL) {
-            RenderingStrategy.toLinear(pixels, data, d);
-        } else {
-            RenderingStrategy.toLinearLine(pixels, data, d);
-        }
+        System.arraycopy(data, 0, pixels, 0, data.length);
         return bi;
+    }
+
+    private static BufferedImage writeDataToImage(BufferedImage bi, RenderType type, Dimension d, int[][] data) {
+        if (bi == null || bi.getWidth(null) * bi.getHeight(null) != d.width * d.height) {
+            bi = gd.getDefaultConfiguration().createCompatibleImage(d.width, d.height);
+        }
+        int[] pixels = getPixels(bi);
+        RenderingStrategy.toLinearLine(pixels, data, d);
+        return bi;
+    }
+
+    public void saveRenderObjectToFile(Object data, VideoMode videoMode, RenderType renderType) {
+        if (data instanceof int[]) {
+            saveRenderToFile((int[]) data, videoMode, renderType);
+        } else if (data instanceof int[][]) {
+            saveRenderToFile((int[][]) data, videoMode, renderType);
+        } else {
+            LOG.error("Error");
+        }
+    }
+
+    public void saveRenderToFile(int[] data, VideoMode videoMode, RenderType type) {
+        if (isHeadless) {
+            LOG.warn("Not supported in headless mode");
+            return;
+        }
+        long now = System.currentTimeMillis();
+        String fileName = type.toString() + "_" + now + ".jpg";
+        bi = getImage(videoMode);
+        System.arraycopy(data, 0, pixels, 0, data.length);
+        saveImageToFile(bi, fileName);
+    }
+
+    private void saveRenderToFile(int[][] data, VideoMode videoMode, RenderType type) {
+        if (isHeadless) {
+            LOG.warn("Not supported in headless mode");
+            return;
+        }
+        long now = System.currentTimeMillis();
+        String fileName = type.toString() + "_" + now + ".jpg";
+        bi = getImage(videoMode);
+        RenderingStrategy.toLinearLine(pixels, data, videoMode.getDimension());
+        saveImageToFile(bi, fileName);
     }
 
     private void saveImageToFile(BufferedImage bi, String fileName) {
@@ -89,19 +139,4 @@ public class VdpRenderDump {
         return bi;
     }
 
-    public void saveRenderToFile(int[][] data, VideoMode videoMode, RenderType type) {
-        if (isHeadless) {
-            LOG.warn("Not supported in headless mode");
-            return;
-        }
-        long now = System.currentTimeMillis();
-        String fileName = type.toString() + "_" + now + ".jpg";
-        bi = getImage(videoMode);
-        if (type == RenderType.FULL) {
-            RenderingStrategy.toLinear(pixels, data, videoMode.getDimension());
-        } else {
-            RenderingStrategy.toLinearLine(pixels, data, videoMode.getDimension());
-        }
-        saveImageToFile(bi, fileName);
-    }
 }

@@ -96,7 +96,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     private int[] CRAM;
 
     /** VDP Registers */
-    private final int vdpreg[];
+    private final int[] vdpreg;
 
     /** Status Register */
     private int status;
@@ -129,10 +129,11 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     private int counter;
 
     /** Background Priorities */
-    private final boolean bgPriority[];
-
-    /** Sprite Collisions */
-    private boolean spriteCol[];
+    private final boolean[] bgPriority;
+    /**
+     * Decoded SAT by each scanline
+     */
+    private final int[][] lineSprites = new int[SMS_HEIGHT][1 + (3 * SPRITES_PER_LINE)];
 
     /** Address of background table (32x28x2 = 0x700 bytes) */
     private int bgt;
@@ -146,11 +147,15 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     // --------------------------------------------------------------------------------------------
     // Emulation Related
     // --------------------------------------------------------------------------------------------
-
-    /** Emulated display */
-    private int display[];
-    private int ggDisplay[]; //only for GG mode
-    private int[][] screenData = new int[1][];
+    /**
+     * Sprite Collisions
+     */
+    private boolean[] spriteCol;
+    /**
+     * Emulated display
+     */
+    private int[] display;
+    private int[] ggDisplay; //only for GG mode
 
     /** SMS Colours converted to Java */
     private static int[] SMS_JAVA;
@@ -176,9 +181,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
     /** Max number of sprites hardware can handle per scanline */
     private final static int SPRITES_PER_LINE = 8;
-
-    /** Decoded SAT by each scanline */
-    private final int lineSprites[][] = new int[SMS_HEIGHT][1 + (3 * SPRITES_PER_LINE)];
+    private int[] screenData = new int[0];
 
     /** References into lineSprites table */
     private final static int
@@ -335,7 +338,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
             interruptHandler.setMode(videoMode);
             palFlag = videoMode.isPal() ? PAL : NTSC;
             display = new int[videoMode.getDimension().width * videoMode.getDimension().height];
-            screenData[0] = isSms ? display : ggDisplay;
+            screenData = isSms ? display : ggDisplay;
             forceFullRedraw();
         }
     }
@@ -711,7 +714,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
     private final void drawSprite(int lineno) {
         // Reference to the sprites that should appear on this line
-        int sprites[] = lineSprites[lineno];
+        int[] sprites = lineSprites[lineno];
 
         // Number of sprites to draw on this scanline
         int count = Math.min(SPRITES_PER_LINE, sprites[SPRITE_COUNT]);
@@ -904,7 +907,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
             isTileDirty[i] = false;
 
             //System.out.println("tile "+i+" is dirty");
-            int tile[] = tiles[i];
+            int[] tile = tiles[i];
 
             int pixel_index = 0;
 
@@ -1048,7 +1051,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     // --------------------------------------------------------------------------------------------
 
     public int[] getState() {
-        int state[] = new int[3 + vdpreg.length + CRAM.length];
+        int[] state = new int[3 + vdpreg.length + CRAM.length];
 
         state[0] = palFlag | (status << 8) | (firstByte ? (1 << 16) : 0) | (commandByte << 24);
         state[1] = location | (operation << 16) | (readBuffer << 24);
@@ -1160,7 +1163,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     }
 
     @Override
-    public int[][] getScreenData() {
+    public int[] getScreenDataLinear() {
         return screenData;
     }
 

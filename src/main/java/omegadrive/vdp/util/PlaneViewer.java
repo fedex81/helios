@@ -1,6 +1,5 @@
 package omegadrive.vdp.util;
 
-import omegadrive.util.VideoMode;
 import omegadrive.vdp.VdpRenderDump;
 import omegadrive.vdp.gen.VdpRenderHandlerImpl;
 import omegadrive.vdp.model.RenderType;
@@ -98,11 +97,10 @@ public class PlaneViewer implements UpdatableViewer {
 
     @Override
     public void update() {
-        Dimension d = VideoMode.PAL_H40_V30.getDimension();
+        Dimension d = renderHandler.getVideoMode().getDimension();
         for (RenderType type : RenderType.values()) {
-            int[][] data = renderHandler.getPlaneData(type);
             BufferedImage img = imageList[type.ordinal()];
-            imageList[type.ordinal()] = VdpRenderDump.writeDataToImage(img, type, d, data);
+            imageList[type.ordinal()] = VdpRenderDump.writeDataToImage(img, type, d, renderHandler.getPlaneData(type));
         }
         panel.repaint();
     }

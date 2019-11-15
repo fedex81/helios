@@ -41,6 +41,8 @@ public interface Z80Provider extends Device {
 
     BaseBusProvider getZ80BusProvider();
 
+    void addCyclePenalty(int value);
+
     void loadZ80State(Z80State z80State);
 
     Z80State getZ80State();

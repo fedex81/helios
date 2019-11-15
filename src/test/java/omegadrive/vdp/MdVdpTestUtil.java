@@ -23,9 +23,11 @@ import omegadrive.SystemLoader;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.IVdpFifo;
+import omegadrive.vdp.model.InterlaceMode;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
 import java.util.function.Function;
@@ -144,11 +146,6 @@ public class MdVdpTestUtil {
             }
 
             @Override
-            public void copyScreenData(int[][] screenData) {
-
-            }
-
-            @Override
             public void handleSystemEvent(SystemEvent event, Object parameter) {
 
             }
@@ -185,5 +182,147 @@ public class MdVdpTestUtil {
 
             }
         };
+    }
+
+    public static class VdpAdaptor implements GenesisVdpProvider {
+
+        @Override
+        public int readDataPort() {
+            return 0;
+        }
+
+        @Override
+        public void writeDataPort(long data) {
+
+        }
+
+        @Override
+        public int readControl() {
+            return 0;
+        }
+
+        @Override
+        public void writeControlPort(long data) {
+
+        }
+
+        @Override
+        public int getVCounter() {
+            return 0;
+        }
+
+        @Override
+        public int getHCounter() {
+            return 0;
+        }
+
+        @Override
+        public int getAddressRegister() {
+            return 0;
+        }
+
+        @Override
+        public void setAddressRegister(int value) {
+
+        }
+
+        @Override
+        public boolean isIe0() {
+            return false;
+        }
+
+        @Override
+        public boolean isIe1() {
+            return false;
+        }
+
+        @Override
+        public void setDmaFlag(int value) {
+
+        }
+
+        @Override
+        public boolean getVip() {
+            return false;
+        }
+
+        @Override
+        public void setVip(boolean value) {
+
+        }
+
+        @Override
+        public boolean getHip() {
+            return false;
+        }
+
+        @Override
+        public void setHip(boolean value) {
+
+        }
+
+        @Override
+        public boolean isShadowHighlight() {
+            return false;
+        }
+
+        @Override
+        public IVdpFifo getFifo() {
+            return null;
+        }
+
+        @Override
+        public VramMode getVramMode() {
+            return null;
+        }
+
+        @Override
+        public InterlaceMode getInterlaceMode() {
+            return null;
+        }
+
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public int runSlot() {
+            return 0;
+        }
+
+        @Override
+        public int getRegisterData(int reg) {
+            return 0;
+        }
+
+        @Override
+        public void updateRegisterData(int reg, int data) {
+
+        }
+
+        @Override
+        public boolean isDisplayEnabled() {
+            return false;
+        }
+
+        @Override
+        public VideoMode getVideoMode() {
+            return null;
+        }
+
+        @Override
+        public VdpMemoryInterface getVdpMemory() {
+            return null;
+        }
+
+        @Override
+        public void setRegion(RegionDetector.Region region) {
+        }
+
+        @Override
+        public int[] getScreenDataLinear() {
+            return new int[0];
+        }
     }
 }

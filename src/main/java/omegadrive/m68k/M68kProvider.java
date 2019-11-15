@@ -37,6 +37,8 @@ public interface M68kProvider extends Device {
 
     int runInstruction();
 
+    void addCyclePenalty(int value);
+
     default String getInfo(){
         return "NOT SUPPORTED";
     }

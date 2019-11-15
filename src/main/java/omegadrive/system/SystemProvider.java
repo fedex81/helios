@@ -27,8 +27,6 @@ public interface SystemProvider extends Device {
 
     void handleSystemEvent(SystemEvent event, Object parameter);
 
-    void copyScreenData(int[][] screenData);
-
     /**
      * STATE
      **/

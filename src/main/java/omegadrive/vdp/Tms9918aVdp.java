@@ -23,6 +23,7 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
+import omegadrive.vdp.model.RenderType;
 import omegadrive.vdp.model.Tms9918a;
 import omegadrive.vdp.model.VdpMemory;
 import org.apache.logging.log4j.Level;
@@ -53,8 +54,8 @@ public class Tms9918aVdp implements Tms9918a {
     private TmsMode vdpMode;
     private VdpInterruptHandler interruptHandler;
     private VdpMemory memory;
-
-    private int[][] screenData;
+    private VdpRenderDump renderDump;
+    private int[] screenDataLinear;
 
     /* VRAM */
     public int[] mem;
@@ -95,9 +96,10 @@ public class Tms9918aVdp implements Tms9918a {
     @Override
     public void init() {
         memory = SimpleVdpMemoryInterface.createInstance(RAM_SIZE);
-        screenData = new int[VDP_WIDTH][VDP_HEIGHT];
+        screenDataLinear = new int[VDP_WIDTH * VDP_HEIGHT];
         interruptHandler = SmsVdpInterruptHandler.createTmsInstance();
         mem = memory.getVram();
+        renderDump = new VdpRenderDump();
         reset();
     }
 
@@ -114,8 +116,8 @@ public class Tms9918aVdp implements Tms9918a {
     }
 
     @Override
-    public int[][] getScreenData() {
-        return screenData;
+    public int[] getScreenDataLinear() {
+        return screenDataLinear;
     }
 
     @Override
@@ -470,9 +472,9 @@ public class Tms9918aVdp implements Tms9918a {
     }
 
     private final void setPixel(int px, int py, Color color) {
-        screenData[px][py] = color.getRGB() & 0xFF_FFFF; //24 bit RGB
+        screenDataLinear[py * VDP_WIDTH + px] = color.getRGB() & 0xFF_FFFF; //24 bit RGB
         if (verbose) {
-            LOG.info("{},{}: {}", px, py, screenData[px][py]);
+            LOG.info("{},{}: {}", px, py, screenDataLinear[py * VDP_WIDTH + px]);
         }
     }
 
@@ -662,7 +664,7 @@ public class Tms9918aVdp implements Tms9918a {
         }
     }
 
-    public int[][] drawScreen() {
+    private void drawScreen() {
         // Draw backdrop
         drawBackDrop();
 
@@ -685,6 +687,10 @@ public class Tms9918aVdp implements Tms9918a {
         if (!getM1() && getBL()) {
             drawSprites();
         }
-        return screenData;
+    }
+
+    @Override
+    public void dumpScreenData() {
+        renderDump.saveRenderObjectToFile(screenDataLinear, getVideoMode(), RenderType.FULL);
     }
 }

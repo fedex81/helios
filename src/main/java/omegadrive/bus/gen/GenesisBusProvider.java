@@ -87,6 +87,8 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     GenesisVdpProvider getVdp();
 
+    BusArbiter getBusArbiter();
+
     //Z80 for genesis doesnt do IO
     @Override
     default int readIoPort(int port) {

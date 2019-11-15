@@ -166,6 +166,7 @@ public class GstStateHandler implements GenesisStateHandler {
             vram[i] = data[i + VRAM_DATA_OFFSET];
             vram[i + 1] = data[i + VRAM_DATA_OFFSET + 1];
         }
+        //cram is swapped
         int[] cram = vdpMemoryInterface.getCram();
         for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
             cram[i] = data[i + CRAM_DATA_OFFSET + 1];
@@ -266,6 +267,7 @@ public class GstStateHandler implements GenesisStateHandler {
             data[i + VRAM_DATA_OFFSET + 1] = vram[i + 1];
         }
         int[] cram = vdpMemoryInterface.getCram();
+        //cram is swapped
         for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
             data[i + CRAM_DATA_OFFSET + 1] = cram[i];
             data[i + CRAM_DATA_OFFSET] = cram[i + 1];

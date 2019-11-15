@@ -81,12 +81,13 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     public void testCompare() {
         boolean overwrite = false;
         if (overwrite) {
-            testOverwriteBaselineImage("herzog_window_01.gs0");
+            testOverwriteBaselineImage("truxton_window_01.gs0");
         }
-        boolean showingFailures = testCompareOne("herzog_window_01.gs0");
+        boolean showingFailures = testCompareOne("sor2.gs0");
         if (showingFailures) {
             Util.waitForever();
         }
+        Util.waitForever();
     }
 
     private boolean testCompareOne(String saveName) {

@@ -142,15 +142,11 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     @Override
     protected void newFrame() {
         videoMode = vdp.getVideoMode();
-        renderScreenLinearInternal(vdp.getScreenData()[0], getStats(System.nanoTime()));
+        renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(System.nanoTime()));
         handleVdpDumpScreenData();
         handleNmi();
         sound.output(0);
         elapsedNs = (int) (syncCycle(startCycle) - startCycle);
-        if (Thread.currentThread().isInterrupted()) {
-            LOG.info("Game thread stopped");
-            runningRomFuture.cancel(true);
-        }
         processSaveState();
         pauseAndWait();
         resetCycleCounters(counter);

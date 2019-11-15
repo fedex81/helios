@@ -49,7 +49,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
      * m68k.cycles += 2 * 7; // ZRAM access latency (fixes Pacman 2: New Adventures & Puyo Puyo 2)
      * // (fixes Puyo Puyo 2 option menu exit).
      */
-    private static Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
     public static boolean verbose = false;
 
@@ -73,7 +73,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     public GenesisBus() {
         this.mapper = this;
-        this.busArbiter = BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider);
         this.enableTmss = Boolean.valueOf(System.getProperty("md.enable.tmss", "false"));
     }
 
@@ -92,7 +91,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         this.cartridgeInfoProvider = GenesisCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
         initializeRomData();
         LOG.info(cartridgeInfoProvider.toString());
-        this.busArbiter = BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider);
+        attachDevice(BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider));
         this.z80BusRequested = false;
         this.z80ResetState = true;
         detectState();
@@ -120,6 +119,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     public GenesisBusProvider attachDevice(Device device) {
         if (device instanceof BusArbiter) {
             this.busArbiter = (BusArbiter) device;
+            if (this.z80Provider != null) {
+                this.z80Provider.getZ80BusProvider().attachDevice(device);
+            }
         }
         super.attachDevice(device);
         return this;
@@ -494,40 +496,61 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            Addresses A08000-A0FFFFh mirror A00000-A07FFFh, so the 68000 cannot
 //            access it's own banked memory.
     private long z80MemoryRead(long address, Size size) {
-        //((Genesis) getSystem()).next68kCycle++;
-        long data;
+        busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, 3);
         if (!z80BusRequested || z80ResetState) {
             LOG.warn("Reading Z80 memory without busreq");
             return 0;
         }
         int addressZ = (int) (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
-        data = z80Provider.readMemory(addressZ);
         if (size == Size.BYTE) {
-            return data;
+            return z80Provider.readMemory(addressZ);
+        } else if (size == Size.WORD) {
+            return z80MemoryReadWord(addressZ);
         } else {
-            //    A word-wide read from Z80 RAM has the LSB of the data duplicated in the MSB
-            LOG.info("Word-wide read from Z80 ram");
-            return data << 8 | data;
+            //TODO: used longword access to Z80 like "Stuck Somewhere In Time" does
+            //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
+            LOG.error("long read, addr: {}", address);
+            busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, 3);
+            long dataHigh = z80MemoryReadWord(addressZ);
+            long dataLow = z80MemoryReadWord(addressZ + 2);
+            return dataHigh << 16 | dataLow;
         }
     }
 
     private void z80MemoryWrite(long address, Size size, long dataL) {
-        //((Genesis) getSystem()).next68kCycle++;
+        busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, 3);
         if (!z80BusRequested || z80ResetState) {
             LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
             return;
         }
-        //	https://emu-docs.org/Genesis/gen-hw.txt
-        //	When doing word-wide writes to Z80 RAM, only the MSB is written, and the LSB is ignored
-        int data = (int) dataL;
-        if (size == Size.WORD) {
-            data = data >> 8;
-        }
-        if (size == Size.LONG) {
-            LOG.warn("Unexpected long write, addr: {}, data: {}", address, dataL);
-        }
         int addressZ = (int) (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
-        z80Provider.writeMemory(addressZ, data);
+        int data = (int) dataL;
+        if (size == Size.BYTE) {
+            z80Provider.writeMemory(addressZ, data);
+        } else if (size == Size.WORD) {
+            z80MemoryWriteWord(addressZ, data);
+        } else {
+            //TODO: used longword access to Z80 like "Stuck Somewhere In Time" does
+            //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
+            LOG.warn("Unexpected long write, addr: {}, data: {}", address, dataL);
+            busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, 3);
+            z80MemoryWriteWord(addressZ, data >> 16);
+            z80MemoryWriteWord(addressZ + 2, data & 0xFFFF);
+        }
+    }
+
+    //	https://emu-docs.org/Genesis/gen-hw.txt
+    //	When doing word-wide writes to Z80 RAM, only the MSB is written, and the LSB is ignored
+    private final void z80MemoryWriteWord(int address, int data) {
+        LOG.info("word-wide write to ZRAM");
+        z80Provider.writeMemory(address, (data & 0xFFFF) >> 8);
+    }
+
+    //    A word-wide read from Z80 RAM has the LSB of the data duplicated in the MSB
+    private final int z80MemoryReadWord(int address) {
+        LOG.info("word-wide read from ZRAM");
+        int data = z80Provider.readMemory(address);
+        return data << 8 | data;
     }
 
     //    Byte-wide reads
@@ -660,6 +683,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     @Override
     public GenesisVdpProvider getVdp() {
         return vdpProvider;
+    }
+
+    @Override
+    public BusArbiter getBusArbiter() {
+        return busArbiter;
     }
 
     @Override
