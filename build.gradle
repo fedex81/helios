@@ -147,7 +147,7 @@ task writeToFile {
     // sample list.(you already have it as extra.files.collect { file -> file.name })
     List<String> sample = [ "java", "-XX:AutoBoxCacheMax=65536",
                             "-Dlog4j.configurationFile=./log4j2.properties",
-                            "-jar", "$jarName" , "\n"] as String[]
+                            "-jar", "$jarName" , "\"\$@\"", "\n"] as String[]
     // create the folders if it does not exist.(otherwise it will throw exception)
     File extraFolder = new File( "${buildDir}/packageDir")
     if( !extraFolder.exists() ) {

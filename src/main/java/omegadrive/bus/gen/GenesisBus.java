@@ -59,7 +59,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     private GenesisCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
 
-    private BusArbiter busArbiter;
+    private BusArbiter busArbiter = BusArbiter.NO_OP;
 
     public static long ROM_START_ADDRESS;
     public static long ROM_END_ADDRESS;
@@ -508,7 +508,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         if (size == Size.BYTE) {
             return z80Provider.readMemory(addressZ);
         } else if (size == Size.WORD) {
-            return z80MemoryReadWord(addressZ);
+            return z80MemoryReadWord(addressZ); //Mario Lemieux Hockey
         } else {
             //TODO: used longword access to Z80 like "Stuck Somewhere In Time" does
             //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
@@ -545,13 +545,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     //	https://emu-docs.org/Genesis/gen-hw.txt
     //	When doing word-wide writes to Z80 RAM, only the MSB is written, and the LSB is ignored
     private final void z80MemoryWriteWord(int address, int data) {
-        LOG.debug("word-wide write to ZRAM");
         z80Provider.writeMemory(address, (data & 0xFFFF) >> 8);
     }
 
     //    A word-wide read from Z80 RAM has the LSB of the data duplicated in the MSB
     private final int z80MemoryReadWord(int address) {
-        LOG.debug("word-wide read from ZRAM");
         int data = z80Provider.readMemory(address);
         return data << 8 | data;
     }

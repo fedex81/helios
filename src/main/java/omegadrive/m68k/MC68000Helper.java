@@ -23,12 +23,17 @@ import m68k.cpu.Cpu;
 import m68k.cpu.DisassembledInstruction;
 import m68k.cpu.Instruction;
 import m68k.cpu.MC68000;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 
 public class MC68000Helper {
+
+    private final static Logger LOG = LogManager.getLogger(MC68000Helper.class.getSimpleName());
 
     private static Set<String> instSet = new TreeSet<>();
 
@@ -88,11 +93,11 @@ public class MC68000Helper {
 
     protected static String makeFlagView(Cpu cpu) {
         StringBuilder sb = new StringBuilder(5);
-        sb.append((char) (cpu.isFlagSet(16) ? 'X' : '-'));
-        sb.append((char) (cpu.isFlagSet(8) ? 'N' : '-'));
-        sb.append((char) (cpu.isFlagSet(4) ? 'Z' : '-'));
-        sb.append((char) (cpu.isFlagSet(2) ? 'V' : '-'));
-        sb.append((char) (cpu.isFlagSet(1) ? 'C' : '-'));
+        sb.append(cpu.isFlagSet(16) ? 'X' : '-');
+        sb.append(cpu.isFlagSet(8) ? 'N' : '-');
+        sb.append(cpu.isFlagSet(4) ? 'Z' : '-');
+        sb.append(cpu.isFlagSet(2) ? 'V' : '-');
+        sb.append(cpu.isFlagSet(1) ? 'C' : '-');
         return sb.toString();
     }
 
@@ -109,5 +114,15 @@ public class MC68000Helper {
         StringBuilder sb = new StringBuilder();
         sb.append("Instruction set: " + instSet.size() + "\n").append(Arrays.toString(instSet.toArray()));
         return sb.toString();
+    }
+
+    public static void printCpuState(Cpu cpu, Level level, String head, int memorySize) {
+        try {
+            String str = MC68000Helper.dumpInfo(cpu, true, memorySize);
+            LOG.log(level, head + str);
+        } catch (Exception e) {
+            String pc = Long.toHexString(cpu.getPC() & 0xFF_FFFF);
+            LOG.warn("Unable to dump the state: " + pc, e);
+        }
     }
 }

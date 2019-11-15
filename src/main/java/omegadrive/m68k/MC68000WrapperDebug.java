@@ -20,6 +20,7 @@
 package omegadrive.m68k;
 
 import omegadrive.bus.gen.GenesisBusProvider;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -83,6 +84,33 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
             stepBarrier.await();
         } catch (Exception e) {
             LOG.error("barrier error", e);
+        }
+    }
+
+    protected void printCpuState(String head) {
+        MC68000Helper.printCpuState(m68k, Level.INFO, head, addressSpace.size());
+    }
+
+    protected void printCpuStateIfVerbose(String head) {
+        if (!verbose) {
+            return;
+        }
+        MC68000Helper.printCpuState(m68k, Level.INFO, head, addressSpace.size());
+    }
+
+    protected void printVerbose() {
+        if (!verbose) {
+            return;
+        }
+        try {
+            String res = MC68000Helper.dumpOp(m68k);
+            LOG.info(res);
+            if (MC68000Helper.addToInstructionSet(m68k)) {
+                LOG.info(MC68000Helper.dumpInstructionSet());
+            }
+        } catch (Exception e) {
+            String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
+            LOG.warn("Unable to dump the instruction: " + pc, e);
         }
     }
 }

@@ -23,6 +23,7 @@ import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
 import omegadrive.bus.gen.GenesisBusProvider;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -51,7 +52,7 @@ public class MC68000Wrapper implements M68kProvider {
     }
 
     protected MC68000 m68k;
-    private AddressSpace addressSpace;
+    protected AddressSpace addressSpace;
     private GenesisBusProvider busProvider;
     private boolean stop;
     protected int currentPC;
@@ -76,7 +77,7 @@ public class MC68000Wrapper implements M68kProvider {
             LOG.error("68k error", e);
             handleException(ILLEGAL_ACCESS_EXCEPTION);
             if (STOP_ON_EXCEPTION) {
-                printCpuState("");
+                MC68000Helper.printCpuState(m68k, Level.ERROR, "", addressSpace.size());
                 throw e;
             }
         }
@@ -154,39 +155,6 @@ public class MC68000Wrapper implements M68kProvider {
         };
     }
 
-    protected void printVerbose() {
-        if (!verbose) {
-            return;
-        }
-        try {
-            String res = MC68000Helper.dumpOp(m68k);
-            LOG.info(res);
-            if (MC68000Helper.addToInstructionSet(m68k)) {
-                LOG.info(MC68000Helper.dumpInstructionSet());
-            }
-        } catch (Exception e) {
-            String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
-            LOG.warn("Unable to dump the instruction: " + pc, e);
-        }
-    }
-
     protected void handleException(int vector) {
-    }
-
-    protected void printCpuState(String head) {
-        try {
-            String str = MC68000Helper.dumpInfo(m68k, true, addressSpace.size());
-            LOG.info(head + str);
-        } catch (Exception e) {
-            String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
-            LOG.warn("Unable to dump the state: " + pc, e);
-        }
-    }
-
-    protected void printCpuStateIfVerbose(String head) {
-        if (!verbose) {
-            return;
-        }
-        printCpuState(head);
     }
 }

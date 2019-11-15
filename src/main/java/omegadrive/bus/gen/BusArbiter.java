@@ -43,9 +43,7 @@ public class BusArbiter implements Device {
     private final static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
     private static final VdpState[] stateVdpVals = VdpState.values();
     public static boolean verbose = false;
-    public static final BusArbiter NO_OP = new BusArbiter();
-    private int z80CyclePenalty = 0;
-    private int m68kCyclePenalty = 0;
+    public static final BusArbiter NO_OP = createNoOp();
 
     private VdpState stateVdp = VdpState.NORMAL;
     private IntState int68k = IntState.ACKED;
@@ -229,6 +227,15 @@ public class BusArbiter implements Device {
         vIntFrameExpired = false;
         vIntOnLine = vdp.getVideoMode().isV28() ? GenesisVdpProvider.V28_VBLANK_SET : GenesisVdpProvider.V30_VBLANK_SET;
         logInfo("NewFrame");
+    }
+
+    private static BusArbiter createNoOp() {
+        return new BusArbiter() {
+            @Override
+            public void addCyclePenalty(CpuType cpuType, int value) {
+
+            }
+        };
     }
 
 }

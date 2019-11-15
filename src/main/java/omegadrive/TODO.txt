@@ -12,6 +12,15 @@ Dashin' Desperadoes (Beta).bin   (hint?)
 Pac Man 2 - no  after pressing start ingame
 
 
+2019-11-15 19:00:13.167 ERROR [cycle-The_Spiral_by_Resistance_2019.bin]: Unexpected vramMode: vramWri
+2019-11-15 17:46:35.158 ERROR [cycle-BadApple.bin]: 68k error
+java.lang.ArrayIndexOutOfBoundsException: Index 14 out of bounds for length 12
+	at m68k.cpu.CpuCore.resolveDstEA(CpuCore.java:1105) ~[headford68k-1.04.jar:?]
+	at m68k.cpu.instructions.ORI.ori_byte(ORI.java:109) ~[headford68k-1.04.jar:?]
+	at m68k.cpu.instructions.ORI$1.execute(ORI.java:52) ~[headford68k-1.04.jar:?]
+	at m68k.cpu.MC68000.execute(MC68000.java:66) ~[headford68k-1.04.jar:?]
+	at omegadrive.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:73) [classes/:?]
+
 2019-11-02 13:08:48.815 ERROR [cycle-Zeta Overdrive EHZ Beta (S2 Hack).bin]: Error main cycle
 java.lang.ArrayIndexOutOfBoundsException: Index 124512 out of bounds for length 65536
 	at omegadrive.vdp.gen.VdpRenderHandlerImpl.getPixelIndexColor(VdpRenderHandlerImpl.java:494) ~[classes/:?]
@@ -48,3 +57,37 @@ m68k.cpu.CpuException: Interrupt vector not set for uninitialised interrupt vect
 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128) [?:?]
 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628) [?:?]
 	at java.lang.Thread.run(Thread.java:834) [?:?]
+
+	2019-11-15 23:26:04.213 ERROR [cycle-X-Men 2 - Clone Wars (Prototype - Dec 06, 1994).bin] [Genesis]: Error main cycle
+    java.lang.ArrayIndexOutOfBoundsException: 66015
+    	at omegadrive.vdp.gen.VdpRenderHandlerImpl.getPixelIndexColor(VdpRenderHandlerImpl.java:499) ~[classes/:?]
+    	at omegadrive.vdp.gen.VdpRenderHandlerImpl.storeSpriteData(VdpRenderHandlerImpl.java:303) ~[classes/:?]
+    	at omegadrive.vdp.gen.VdpRenderHandlerImpl.renderSprite(VdpRenderHandlerImpl.java:286) ~[classes/:?]
+    	at omegadrive.vdp.gen.VdpRenderHandlerImpl.renderSprites(VdpRenderHandlerImpl.java:269) ~[classes/:?]
+    	at omegadrive.vdp.gen.VdpRenderHandlerImpl.renderLine(VdpRenderHandlerImpl.java:169) ~[classes/:?]
+    	at omegadrive.vdp.gen.GenesisVdp.drawScanline(GenesisVdp.java:779) ~[classes/:?]
+    	at omegadrive.vdp.gen.GenesisVdp.runSlot(GenesisVdp.java:739) ~[classes/:?]
+
+    	2019-11-15 20:44:12.896 ERROR [cycle-Pirates of Dark Water, The (UE) [b1].bin]: 68k error
+        java.lang.ArrayIndexOutOfBoundsException: Index 14 out of bounds for length 12
+        	at m68k.cpu.CpuCore.resolveDstEA(CpuCore.java:1105) ~[headford68k-1.04.jar:?]
+        	at m68k.cpu.instructions.ORI.ori_byte(ORI.java:109) ~[headford68k-1.04.jar:?]
+        	at m68k.cpu.instructions.ORI$1.execute(ORI.java:52) ~[headford68k-1.04.jar:?]
+        	at m68k.cpu.MC68000.execute(MC68000.java:66) ~[headford68k-1.04.jar:?]
+        	at omegadrive.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:74) [classes/:?]
+        	at omegadrive.system.Genesis.run68k(Genesis.java:165) [classes/:?]
+        	at omegadrive.system.Genesis.loop(Genesis.java:120) [classes/:?]
+        	at omegadrive.system.BaseSystem$RomRunnable.run(BaseSystem.java:258) [classes/:?]
+        	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515) [?:?]
+        	at java.util.concurrent.FutureTask.run(FutureTask.java:264) [?:?]
+        	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128) [?:?]
+        	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628) [?:?]
+        	at java.lang.Thread.run(Thread.java:834) [?:?]
+        2019-11-15 20:44:12.910 ERROR [cycle-Pirates of Dark Water, The (UE) [b1].bin]:
+        D0: 000000ff   D4: 00000000   A0: 00ffd7d4   A4: 00000000     PC:  001f8994
+        D1: 0000000f   D5: 00000000   A1: 00000000   A5: 00000000     SR:  2700 -----
+        D2: 00000000   D6: 00009300   A2: 00000000   A6: 00c00004     USP: 00000000
+        D3: 00000000   D7: 0000ffff   A3: 00000000   A7: 00ffffea     SSP: 00fffffa
+
+
+        ==> 001f8994   0036 0001 0008           ori.b    #$01,$08(a6,d0.w)
