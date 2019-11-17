@@ -88,7 +88,7 @@ public class VdpInterruptHandler {
 
     protected void reset() {
         hCounterInternal = 0;
-        vCounterInternal = 0;
+        vCounterInternal = COUNTER_LIMIT;
         pixelNumber = hCounterInternal;
         slotNumber = pixelNumber >> 1;
         hBlankSet = false;
@@ -125,17 +125,18 @@ public class VdpInterruptHandler {
      * 7) if VINT is enabled and VINT flag is set, interrupt control asserts /IPL2 and /IPL1.
      */
     private int increaseVCounterInternal() {
-        handleHLinesCounterDecrement();
+
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
+        hLinePassed = vBlankSet ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
             eventFlag = true;
-        }
-        if (vCounterInternal == VBLANK_CLEAR) {
+        } else if (vCounterInternal == VBLANK_CLEAR) {
             vBlankSet = false;
             eventFlag = true;
         }
+        handleHLinesCounterDecrement();
         return vCounterInternal;
     }
 
@@ -173,8 +174,8 @@ public class VdpInterruptHandler {
     }
 
     protected void handleHLinesCounterDecrement() {
-        boolean reset = vCounterInternal > vdpCounterMode.vBlankSet; //fixes LotusII
-        hLinePassed = reset ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
+//        boolean reset = vCounterInternal > vdpCounterMode.vBlankSet; //fixes LotusII
+//        hLinePassed = vBlankSet ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
         if (hLinePassed < 0) {
             hIntPending = true;
             logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
@@ -225,8 +226,8 @@ public class VdpInterruptHandler {
         this.hIntPending = hIntPending;
     }
 
-    public boolean isFirstLineSlot() {
-        return slotNumber == vdpCounterMode.hBlankClearSlot;
+    public boolean isDrawLineSlot() {
+        return slotNumber == vdpCounterMode.hBlankSet >> 1;
     }
 
     /**
@@ -245,7 +246,7 @@ public class VdpInterruptHandler {
     }
 
     public boolean isDrawFrameSlot() {
-        return hCounterInternal == 0 && vCounterInternal == 0;
+        return hCounterInternal == 0 && vCounterInternal == COUNTER_LIMIT;
     }
 
     public boolean isExternalSlot(boolean isBlanking) {

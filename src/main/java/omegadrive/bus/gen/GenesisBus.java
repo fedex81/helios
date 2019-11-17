@@ -510,9 +510,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else if (size == Size.WORD) {
             return z80MemoryReadWord(addressZ); //Mario Lemieux Hockey
         } else {
-            //TODO: used longword access to Z80 like "Stuck Somewhere In Time" does
-            //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
-            LOG.debug("long read, addr: {}", address);
+            //Mahjong Cop Ryuu - Shiro Ookami no Yabou (J) [h1C]
+            LOG.error("long read, addr: {}", address);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
             long dataHigh = z80MemoryReadWord(addressZ);
             long dataLow = z80MemoryReadWord(addressZ + 2);
@@ -533,7 +532,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else if (size == Size.WORD) {
             z80MemoryWriteWord(addressZ, data);
         } else {
-            //TODO: used longword access to Z80 like "Stuck Somewhere In Time" does
+            //longword access to Z80 like "Stuck Somewhere In Time" does
             //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
             LOG.debug("Unexpected long write, addr: {}, data: {}", address, dataL);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);

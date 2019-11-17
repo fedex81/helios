@@ -118,7 +118,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         this.newVideoMode = videoMode;
     }
 
-    private TileDataHolder getTileData(int nameTable, TileDataHolder holder) {
+    public static TileDataHolder getTileData(int nameTable, InterlaceMode interlaceMode, TileDataHolder holder) {
         //				An entry in a name table is 16 bits, and works as follows:
 //				15			14 13	12				11		   			10 9 8 7 6 5 4 3 2 1 0
 //				Priority	Palette	Vertical Flip	Horizontal Flip		Tile Index
@@ -131,6 +131,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         holder.horFlipAmount = holder.horFlip ? CELL_WIDTH - 1 : 0;
         holder.vertFlipAmount = holder.vertFlip ? interlaceMode.getVerticalCellPixelSize() - 1 : 0;
         return holder;
+    }
+
+    private TileDataHolder getTileData(int nameTable, TileDataHolder holder) {
+        return getTileData(nameTable, interlaceMode, holder);
     }
 
     @Override
@@ -496,7 +500,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private int getPixelIndexColor(int tileBytePointer, int pixelInTile, int horFlipAmount) {
         //1 byte represents 2 pixels, 1 pixel = 4 bit = 16 color gamut
-        int twoPixelsData = vram[tileBytePointer];
+        int twoPixelsData = vram[tileBytePointer & 0xFFFF];
         boolean isFirstPixel = (pixelInTile % 2) == (~horFlipAmount & 1);
         return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
     }

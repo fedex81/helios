@@ -735,7 +735,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
             list.forEach(VdpEventListener::onNewFrame);
             resetVideoMode(false);
         }
-        if (interruptHandler.isFirstLineSlot()) {
+        if (interruptHandler.isDrawLineSlot()) {
             drawScanline(interruptHandler.vCounterInternal, displayEnable);
         }
         return interruptHandler.getVdpClockSpeed();

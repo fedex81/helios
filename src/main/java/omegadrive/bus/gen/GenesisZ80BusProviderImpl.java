@@ -145,7 +145,9 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             int vdpAddress = VDP_BASE_ADDRESS + address;
             mainBusProvider.write(vdpAddress, dataInt, Size.BYTE);
         } else if (address >= 0x7F20 && address <= END_VDP) {        //	VDP Illegal
-            LOG.warn("Illegal Write to VDP: " + Integer.toHexString(address));
+            //Rambo III (W) (REV01) [h1C]
+//            LOG.warn("Illegal Write to VDP {}, value: {}",
+//                    Integer.toHexString(address), Integer.toHexString(dataInt));
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             address = address - START_68K_BANK + (romBank68kSerial << 15);

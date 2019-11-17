@@ -11,6 +11,13 @@ check:
 Dashin' Desperadoes (Beta).bin   (hint?)
 Pac Man 2 - no  after pressing start ingame
 
+2019-11-16 11:40:41.289 ERROR [cycle-Ultimate Mortal Kombat Trilogy v4643 (Hack).bin]: Invalid RAM write, address : 10000, data: 51
+
+2019-11-16 15:58:55.183 WARN  [cycle-Rambo III (W) (REV01) [h1C].bin] [GenesisZ80BusProviderImpl]: Illegal Write to VDP: 7f44
+2019-11-16 14:23:11.500 ERROR [cycle-Rambo III (W) (REV01) [h1C].bin]: Unexpected vramMode: cramWrite
+
+2019-11-16 16:09:32.644 WARN  [cycle-Mighty The Armadillo V4.16 by Yuski (S1 Hack).bin] [GenesisBus]: Unexpected write to ROM: 23cc, value : 24302
+2019-11-16 16:09:41.741 ERROR [cycle-Mighty The Armadillo V4.16 by Yuski (S1 Hack).bin] [VdpDmaHandlerImpl]: Unexpected setup: 1, vramDestination: null
 
 2019-11-15 19:00:13.167 ERROR [cycle-The_Spiral_by_Resistance_2019.bin]: Unexpected vramMode: vramWri
 2019-11-15 17:46:35.158 ERROR [cycle-BadApple.bin]: 68k error
@@ -26,39 +33,7 @@ java.lang.ArrayIndexOutOfBoundsException: Index 124512 out of bounds for length 
 	at omegadrive.vdp.gen.VdpRenderHandlerImpl.getPixelIndexColor(VdpRenderHandlerImpl.java:494) ~[classes/:?]
 	at omegadrive.vdp.gen.VdpRenderHandlerImpl.renderPlane(VdpRenderHandlerImpl.java:482) ~[classes/:?]
 
-2019-11-10 22:00:40.913 ERROR [cycle-NFL Prime Time (U) [b2].bin]: 68k error
-m68k.cpu.CpuException: Interrupt vector not set for uninitialised interrupt vector while trapping uninitialised vector 11
-	at m68k.cpu.CpuCore.raiseException(CpuCore.java:978) ~[headford68k-1.04.jar:?]
-	at omegadrive.m68k.MC68000Wrapper$1.raiseException(MC68000Wrapper.java:122) ~[classes/:?]
-	at m68k.cpu.instructions.UNKNOWN.execute(UNKNOWN.java:58) ~[headford68k-1.04.jar:?]
-	at m68k.cpu.MC68000.execute(MC68000.java:71) ~[headford68k-1.04.jar:?]
-	at omegadrive.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:72) [classes/:?]
-	at omegadrive.system.Genesis.run68k(Genesis.java:170) [classes/:?]
-	at omegadrive.system.Genesis.loop(Genesis.java:120) [classes/:?]
-	at omegadrive.system.BaseSystem$RomRunnable.run(BaseSystem.java:254) [classes/:?]
-	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515) [?:?]
-	at java.util.concurrent.FutureTask.run(FutureTask.java:264) [?:?]
-	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128) [?:?]
-	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628) [?:?]
-	at java.lang.Thread.run(Thread.java:834) [?:?]
-
-2019-11-10 22:23:16.966 ERROR [cycle-Rolling Thunder 3 (U) [b2].bin]: 68k error
-m68k.cpu.CpuException: Interrupt vector not set for uninitialised interrupt vector while trapping uninitialised vector 11
-	at m68k.cpu.CpuCore.raiseException(CpuCore.java:978) ~[headford68k-1.04.jar:?]
-	at omegadrive.m68k.MC68000Wrapper$1.raiseException(MC68000Wrapper.java:126) ~[classes/:?]
-	at m68k.cpu.instructions.UNKNOWN.execute(UNKNOWN.java:58) ~[headford68k-1.04.jar:?]
-	at m68k.cpu.MC68000.execute(MC68000.java:71) ~[headford68k-1.04.jar:?]
-	at omegadrive.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:73) [classes/:?]
-	at omegadrive.system.Genesis.run68k(Genesis.java:170) [classes/:?]
-	at omegadrive.system.Genesis.loop(Genesis.java:120) [classes/:?]
-	at omegadrive.system.BaseSystem$RomRunnable.run(BaseSystem.java:254) [classes/:?]
-	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515) [?:?]
-	at java.util.concurrent.FutureTask.run(FutureTask.java:264) [?:?]
-	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128) [?:?]
-	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628) [?:?]
-	at java.lang.Thread.run(Thread.java:834) [?:?]
-
-	2019-11-15 23:26:04.213 ERROR [cycle-X-Men 2 - Clone Wars (Prototype - Dec 06, 1994).bin] [Genesis]: Error main cycle
+2019-11-15 23:26:04.213 ERROR [cycle-X-Men 2 - Clone Wars (Prototype - Dec 06, 1994).bin] [Genesis]: Error main cycle
     java.lang.ArrayIndexOutOfBoundsException: 66015
     	at omegadrive.vdp.gen.VdpRenderHandlerImpl.getPixelIndexColor(VdpRenderHandlerImpl.java:499) ~[classes/:?]
     	at omegadrive.vdp.gen.VdpRenderHandlerImpl.storeSpriteData(VdpRenderHandlerImpl.java:303) ~[classes/:?]
@@ -68,26 +43,6 @@ m68k.cpu.CpuException: Interrupt vector not set for uninitialised interrupt vect
     	at omegadrive.vdp.gen.GenesisVdp.drawScanline(GenesisVdp.java:779) ~[classes/:?]
     	at omegadrive.vdp.gen.GenesisVdp.runSlot(GenesisVdp.java:739) ~[classes/:?]
 
-    	2019-11-15 20:44:12.896 ERROR [cycle-Pirates of Dark Water, The (UE) [b1].bin]: 68k error
-        java.lang.ArrayIndexOutOfBoundsException: Index 14 out of bounds for length 12
-        	at m68k.cpu.CpuCore.resolveDstEA(CpuCore.java:1105) ~[headford68k-1.04.jar:?]
-        	at m68k.cpu.instructions.ORI.ori_byte(ORI.java:109) ~[headford68k-1.04.jar:?]
-        	at m68k.cpu.instructions.ORI$1.execute(ORI.java:52) ~[headford68k-1.04.jar:?]
-        	at m68k.cpu.MC68000.execute(MC68000.java:66) ~[headford68k-1.04.jar:?]
-        	at omegadrive.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:74) [classes/:?]
-        	at omegadrive.system.Genesis.run68k(Genesis.java:165) [classes/:?]
-        	at omegadrive.system.Genesis.loop(Genesis.java:120) [classes/:?]
-        	at omegadrive.system.BaseSystem$RomRunnable.run(BaseSystem.java:258) [classes/:?]
-        	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515) [?:?]
-        	at java.util.concurrent.FutureTask.run(FutureTask.java:264) [?:?]
-        	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128) [?:?]
-        	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628) [?:?]
-        	at java.lang.Thread.run(Thread.java:834) [?:?]
-        2019-11-15 20:44:12.910 ERROR [cycle-Pirates of Dark Water, The (UE) [b1].bin]:
-        D0: 000000ff   D4: 00000000   A0: 00ffd7d4   A4: 00000000     PC:  001f8994
-        D1: 0000000f   D5: 00000000   A1: 00000000   A5: 00000000     SR:  2700 -----
-        D2: 00000000   D6: 00009300   A2: 00000000   A6: 00c00004     USP: 00000000
-        D3: 00000000   D7: 0000ffff   A3: 00000000   A7: 00ffffea     SSP: 00fffffa
+    	2019-11-16 16:17:29.859 ERROR [cycle-Insane Paradise (Ch) [a1].bin]: Unexpected setup: 2, vramDestination: cramWrite
 
-
-        ==> 001f8994   0036 0001 0008           ori.b    #$01,$08(a6,d0.w)
+    	2019-11-17 11:36:32.480 ERROR [cycle-Langrisser II (J) (REV00) [T+Chi][b1].bin]: Illegal Z80 memory read: 10000

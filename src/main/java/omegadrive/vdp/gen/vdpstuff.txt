@@ -64,3 +64,45 @@ Remember that VRAM writes are 8-bit, so only half of the full 16-bit write would
  (Lotus 2 for example) that rely on this. I bet it is different when you enable 2-cell vertical scroll but those games
  don't use this and I'm pretty sure horizontal & vertical scroll offsets for each plane are fetched/calculated once
  before line rendering.
+
+ Hardware testing has shown some interesting results. What we've seen from monitoring the interrupt lines during
+ Lemmings execution is that a HINT is triggered sometime before the VINT, but the HINT isn't processed in time,
+ instead it's left pending, presumably because the previous HINT handler is still executing for some reason.
+ What happens then is that VINT is triggered by the VDP, and the VINT now becomes the pending interrupt, because
+ IPL2 is now asserted as well as IPL1. Shortly after the VINT is assetrted the M68000 now accepts and auto-vectors it,
+ meaning the VINT handler is now triggered, even though the last HINT handler still hasn't been taken yet.
+ When the VINT is auto-vectored however and the interrupt acknowledge cycle is completed and INTAK asserted,
+ the VDP doesn't forget about the HINT, it merely clears IPL2, and leaves IPL1 asserted, waiting for a second
+ INTAK to occur to clear the horizontal interrupt. When the M68000 finishes executing the VINT handler,
+ it now processes the pending HINT interrupt and autovectors it, causing INTAK to be set and IPL1 to be negated,
+ but the HINT handler is now running after VINT rather than before it. We obviously aren't doing this exactly the
+ same way in our emulator, which is why the status bar is broken.
+
+ "Bram stoker's dracula: freezes at the beginning of the first level"
+ Investigation has shown this is due to 68000->VDP timing issues. There is a VDP HV counter read at 0x19D48
+ in the VINT handler, which needs the VCounter to read as 0xE1, but it currently reads as 0xE0,
+ with the HCounter around 0x50 steps short of the VCounter increment point.
+ At this point, we believe this is most likely caused by exception processing times being too
+ short in our M68000 core. We haven't confirmed exception handling times, so this should be done on the hardware.
+
+ Problem preventing a number of games from booting.
+ On the real system, it's quite possible for a pending interrupt to be observed by examining the F flag in
+ the VDP status register, even outside the interrupt handler when interrupts are not masked.
+ Since hardware tests have shown that the F flag is asserted exactly at the time an interrupt is raised,
+ this indicates these loops work because of microcode-level instruction timing, where an interrupt is
+ raised after the opcode to read the status register begins executing. We need to simulate the timing here,
+ for the move instruction in particular.
+ The following user report is related to this bug: "Marvel Land - freezes on pause"
+ (http://gendev.spritesmind.net/forum/viewtopic.php?p=19474#19474)
+ "Bugs Bunny in Double Trouble - freezes on title screen" (http://gendev.spritesmind.net/forum/viewtopic.php?p=19484#19484)
+ in this case, there's actually a bug in the code. At 0x46E, there's a check for the Z80 bus request state.
+ If the bus is not ready, due to a code bug (invalid branch), the game crashes.
+ The bus must always be ready at this point in order for the game to work. This check occurs at numerous
+ points during the startup and in-game process. Note that in this case, the Z80 yielding the bus between bus
+ access operations within an opcode may also be required.
+
+ "Olympic Winter Games: Lillehammer '94 does not boot (black screen)"
+
+ Sonic 3D special states are currently corrupted. This occurred when we started latching the vscroll mode at the
+ start of each line in order to fix Panorama Cotton. Hardware tests need to be carried out
+ to determine the correct behaviour.
