@@ -35,7 +35,7 @@ public class VdpScrollHandlerTest {
     static Random r = new Random(1981);
 
     private static GenesisVdpProvider createVdpProvider() {
-        return new MdVdpTestUtil.VdpAdaptor() {
+        GenesisVdpProvider g = new MdVdpTestUtil.VdpAdaptor() {
 
             private int[] vdpReg = new int[24];
 
@@ -49,6 +49,8 @@ public class VdpScrollHandlerTest {
                 return vdpReg[reg];
             }
         };
+        g.init();
+        return g;
     }
 
     public void testLooping() {
@@ -73,7 +75,9 @@ public class VdpScrollHandlerTest {
         vdp.updateRegisterData(PLANE_B_NAMETABLE, planeANameTable / 0x2000);
 
         VdpRenderHandlerImpl renderHandler = new VdpRenderHandlerImpl(vdp, v);
+
         renderHandler.setVideoMode(vm);
+        renderHandler.initLineData(0);
 
         ScrollContext sca = new ScrollContext();
         ScrollContext scb = new ScrollContext();

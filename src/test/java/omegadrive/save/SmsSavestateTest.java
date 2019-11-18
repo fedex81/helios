@@ -33,6 +33,7 @@ import omegadrive.vdp.SmsVdp;
 import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import z80core.Z80State;
 
@@ -70,6 +71,7 @@ public class SmsSavestateTest {
     }
 
     @Test
+    @Ignore
     public void test1() {
         testLoadSaveInternal(Paths.get(".", "quick_save.s00"));
     }

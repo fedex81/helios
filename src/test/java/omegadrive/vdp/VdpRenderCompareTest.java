@@ -20,6 +20,7 @@
 package omegadrive.vdp;
 
 import omegadrive.automated.SavestateGameLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.util.ImageUtil;
 import omegadrive.util.Util;
 import org.junit.Assert;
@@ -30,7 +31,6 @@ import org.junit.Test;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,8 +39,8 @@ import java.nio.file.Paths;
 public class VdpRenderCompareTest extends VdpRenderTest {
 
     private static final boolean SHOW_IMAGES_ON_FAILURE = true;
-    public static String EXT = "bmp";
-    public static String DOT_EXT = "." + EXT;
+    public static String IMG_EXT = "bmp";
+    public static String DOT_EXT = "." + IMG_EXT + ".zip";
     private static Path compareFolderPath = Paths.get(saveStateFolder, "compare");
     protected static String compareFolder = compareFolderPath.toAbsolutePath().toString();
     private BufferedImage diffImage;
@@ -55,9 +55,23 @@ public class VdpRenderCompareTest extends VdpRenderTest {
         return newImage;
     }
 
+    public static void main(String[] args) {
+        File[] files = compareFolderPath.toFile().listFiles();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                continue;
+            }
+            System.out.println("Testing: " + file);
+            Image img = ImageUtil.loadImageFromFile(file);
+            Path zipFilePath = FileUtil.compressAndSaveToZipFile(file.toPath(), img, "bmp");
+            System.out.println("Written: " + zipFilePath);
+        }
+    }
+
     @Before
     public void beforeTest() {
         System.setProperty("helios.headless", "true");
+        System.setProperty("md.show.vdp.debug.viewer", "false");
     }
 
     @Test
@@ -69,8 +83,11 @@ public class VdpRenderCompareTest extends VdpRenderTest {
                 continue;
             }
             System.out.println("Testing: " + file);
-            showingFailures |= testCompareOne(file.getName());
-
+            boolean res = testCompareOne(file.getName());
+            if (res) {
+                System.out.println("Error: " + file);
+            }
+            showingFailures |= res;
         }
         if (showingFailures) {
             Util.waitForever();
@@ -80,33 +97,15 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     @Test
     public void testCompare() {
         boolean overwrite = false;
+        String name = "mickeym";
         if (overwrite) {
-            testOverwriteBaselineImage("truxton_window_01.gs0");
+            testOverwriteBaselineImage(name + ".gs0");
         }
-        boolean showingFailures = testCompareOne("sor2.gs0");
+        boolean showingFailures = testCompareOne(name + ".gs0");
         if (showingFailures) {
             Util.waitForever();
         }
         Util.waitForever();
-    }
-
-    private boolean testCompareOne(String saveName) {
-        Path saveFile = Paths.get(saveStateFolder, saveName);
-        Path baselineImageFile = Paths.get(compareFolder, saveName + DOT_EXT);
-        Image i = testSavestateViewerSingle(saveFile, SavestateGameLoader.saveStates.get(saveName));
-        BufferedImage actual = convertToBufferedImage(i);
-        BufferedImage base = ImageUtil.loadImageFromFile(baselineImageFile.toFile());
-        BufferedImage baseLine = convertToBufferedImage(base);
-        boolean match = compareImage(baseLine, actual);
-        if (!match) {
-            if (SHOW_IMAGES_ON_FAILURE) {
-                JFrame f1 = showImageFrame(scaleImage(baseLine, 4), "BASELINE_" + saveName + DOT_EXT);
-                JFrame f2 = showImageFrame(scaleImage(actual, 4), saveName);
-                JFrame f3 = showImageFrame(scaleImage(diffImage, 4), "DIFF_" + saveName + " (Diffs are non white pixels)");
-                return true;
-            }
-        }
-        return false;
     }
 
     private boolean compareImage(BufferedImage baseline, BufferedImage actual) {
@@ -143,13 +142,28 @@ public class VdpRenderCompareTest extends VdpRenderTest {
         saveToFile(saveName, i);
     }
 
-    private void saveToFile(String saveName, Image i) {
-        if (!(i instanceof RenderedImage)) {
-            i = convertToBufferedImage(i);
+    private boolean testCompareOne(String saveName) {
+        Path saveFile = Paths.get(saveStateFolder, saveName);
+        Path baselineZipImageFile = Paths.get(compareFolder, saveName + DOT_EXT);
+        Image i = testSavestateViewerSingle(saveFile, SavestateGameLoader.saveStates.get(saveName));
+        BufferedImage actual = convertToBufferedImage(i);
+        Image base = FileUtil.decompressAndLoadFromZipFile(baselineZipImageFile, saveName + "." + IMG_EXT, IMG_EXT);
+        BufferedImage baseLine = convertToBufferedImage(base);
+        boolean match = compareImage(baseLine, actual);
+        if (!match) {
+            if (SHOW_IMAGES_ON_FAILURE) {
+                JFrame f1 = showImageFrame(scaleImage(baseLine, 4), "BASELINE_" + saveName + DOT_EXT);
+                JFrame f2 = showImageFrame(scaleImage(actual, 4), saveName);
+                JFrame f3 = showImageFrame(scaleImage(diffImage, 4), "DIFF_" + saveName + " (Diffs are non white pixels)");
+                return true;
+            }
         }
-        RenderedImage ri = (RenderedImage) i;
-        Path file = Paths.get(compareFolder, saveName + DOT_EXT);
-        ImageUtil.saveImageToFile(ri, file.toFile(), EXT);
-        System.out.println("Image saved: " + file.toAbsolutePath().toString());
+        return false;
+    }
+
+    private void saveToFile(String saveName, Image i) {
+        Path folder = Paths.get(compareFolder);
+        Path res = FileUtil.compressAndSaveToZipFile(saveName + "." + IMG_EXT, folder, i, IMG_EXT);
+        System.out.println("Image saved: " + res.toAbsolutePath().toString());
     }
 }

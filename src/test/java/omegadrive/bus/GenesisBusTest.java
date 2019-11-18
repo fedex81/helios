@@ -52,7 +52,7 @@ public class GenesisBusTest {
         SoundProvider sound = SoundProvider.NO_SOUND;
         bus.attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(cpu).attachDevice(z80).attachDevice(sound);
-        bus.init();
+//        bus.init();
     }
 
     /**

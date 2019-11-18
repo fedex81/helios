@@ -278,7 +278,7 @@ public class MdVdpTestUtil {
 
         @Override
         public InterlaceMode getInterlaceMode() {
-            return null;
+            return InterlaceMode.NONE;
         }
 
         @Override

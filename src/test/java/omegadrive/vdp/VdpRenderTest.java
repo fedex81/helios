@@ -74,7 +74,7 @@ public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
         JPanel panel = new JPanel();
         panel.add(label);
         JFrame f = new JFrame();
-        f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        f.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         f.add(panel);
         label.setIcon(new ImageIcon(bi));
         f.setTitle(title);
@@ -204,9 +204,8 @@ public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
         boolean isValid = isValidImage(sd);
         if (!isValid) {
             System.out.println("Empty render #" + count);
-        } else {
-            VdpRenderTest.screenData = sd;
         }
+        VdpRenderTest.screenData = sd;
         count++;
     }
 }
