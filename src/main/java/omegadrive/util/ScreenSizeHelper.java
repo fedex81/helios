@@ -23,6 +23,8 @@ import java.awt.*;
 
 public class ScreenSizeHelper {
 
+    public static final double FOUR_BY_THREE = 4.0 / 3.0;
+
     public static int DEFAULT_X = 320;
     public static int DEFAULT_Y = 240;
 
@@ -32,6 +34,9 @@ public class ScreenSizeHelper {
     public static final double FULL_SCREEN_WITH_TITLE_BAR_FACTOR =
             Double.valueOf(System.getProperty("helios.ui.fsTitle.factor", "1"));
 
+    public static final boolean FIX_ASPECT_RATIO =
+            Boolean.valueOf(System.getProperty("ui.fix.aspect.ratio", "true"));
+
     public static Dimension DEFAULT_SCALED_SCREEN_SIZE = new Dimension(ScreenSizeHelper.DEFAULT_X * DEFAULT_SCALE_FACTOR,
             ScreenSizeHelper.DEFAULT_Y * DEFAULT_SCALE_FACTOR);
     public static Dimension DEFAULT_BASE_SCREEN_SIZE = new Dimension(ScreenSizeHelper.DEFAULT_X,
@@ -39,11 +44,26 @@ public class ScreenSizeHelper {
     public static Dimension DEFAULT_FRAME_SIZE = new Dimension((int) (DEFAULT_SCALED_SCREEN_SIZE.width * 1.02),
             (int) (DEFAULT_SCALED_SCREEN_SIZE.height * 1.10));
 
-    public static Dimension getScreenSize(VideoMode videoMode, double multiplier) {
-        Dimension dim = videoMode.getDimension();
-        if (multiplier != 1.0) {
-            dim = new Dimension((int) (dim.width * multiplier), (int) (dim.height * multiplier));
+    public static Dimension getScreenSize(VideoMode videoMode, double multiplier, boolean mantainAspectRatio) {
+        return getScreenSize(videoMode.getDimension(), multiplier, mantainAspectRatio);
+    }
+
+    public static Dimension getScreenSize(Dimension src, double multiplier, boolean mantainAspectRatio) {
+        Dimension dim = src;
+        if (mantainAspectRatio || multiplier != 1.0) {
+            double w = src.width * multiplier;
+            double h = w / FOUR_BY_THREE;
+            dim = new Dimension((int) w, (int) h);
         }
         return dim;
+    }
+
+    public static double getFullScreenScaleFactor(Dimension fullScreenSize, Dimension nativeScreenSize) {
+        double scaleW = fullScreenSize.getWidth() / nativeScreenSize.getWidth();
+        double baseH = nativeScreenSize.getHeight();
+        baseH = FIX_ASPECT_RATIO ? nativeScreenSize.getWidth() / FOUR_BY_THREE : baseH;
+        double scaleH = fullScreenSize.getHeight() * FULL_SCREEN_WITH_TITLE_BAR_FACTOR / baseH;
+        double scale = Math.min(scaleW, scaleH);
+        return scale;
     }
 }

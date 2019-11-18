@@ -1,6 +1,6 @@
 
 - Sonic & Knuckles mapper
-
+- EEPROM mapper
 TODO
 hline issue:
 monaco gp2

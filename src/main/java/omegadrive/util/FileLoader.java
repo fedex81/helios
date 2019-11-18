@@ -109,7 +109,12 @@ public class FileLoader {
 
     public static List<String> loadFileContent(String fileName) {
         Path pathObj = Paths.get(".", fileName);
+        return loadFileContent(pathObj);
+    }
+
+    public static List<String> loadFileContent(Path pathObj) {
         List<String> lines = Collections.emptyList();
+        String fileName = pathObj.getFileName().toString();
         if(pathObj.toFile().exists()) {
             try {
                 lines = Files.readAllLines(pathObj);

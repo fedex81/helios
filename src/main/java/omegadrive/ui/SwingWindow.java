@@ -51,10 +51,12 @@ public class SwingWindow implements DisplayWindow {
 
     private Dimension fullScreenSize;
     private GraphicsDevice[] graphicsDevices;
-    private Dimension screenSize = DEFAULT_SCALED_SCREEN_SIZE;
-    private Dimension baseScreenSize = DEFAULT_BASE_SCREEN_SIZE;
+    //when scaling is slow set this to FALSE
+    private static final boolean UI_SCALE_ON_EDT
+            = Boolean.valueOf(System.getProperty("ui.scale.on.edt", "true"));
+    private Dimension outputNonScaledScreenSize = DEFAULT_SCALED_SCREEN_SIZE;
+    private Dimension outputScreenSize = DEFAULT_SCALED_SCREEN_SIZE;
 
-    private BufferedImage src;
     private BufferedImage dest;
     private int[] pixelsSrc;
     private int[] pixelsDest;
@@ -73,17 +75,10 @@ public class SwingWindow implements DisplayWindow {
     private JMenuItem[] recentFilesItems;
     private Map<PlayerNumber, JMenu> inputMenusMap;
     private boolean showDebug = false;
+    private Dimension nativeScreenSize = DEFAULT_BASE_SCREEN_SIZE;
+    private Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
 
-    //when scaling is slow set this to FALSE
-    private static boolean UI_SCALE_ON_EDT;
 
-    static {
-        UI_SCALE_ON_EDT = Boolean.valueOf(System.getProperty("ui.scale.on.edt", "true"));
-    }
-
-    public void setTitle(String title) {
-        jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() +  " " + VERSION + " - " + title);
-    }
 
     public SwingWindow(SystemProvider mainEmu) {
         this.mainEmu = mainEmu;
@@ -97,7 +92,9 @@ public class SwingWindow implements DisplayWindow {
         frame.init();
     }
 
-    private Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
+    public void setTitle(String title) {
+        jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() + " " + VERSION + " - " + title);
+    }
 
     public void init() {
         Util.registerJmx(this);
@@ -114,8 +111,8 @@ public class SwingWindow implements DisplayWindow {
         LOG.info("Emulation viewport size: " + ScreenSizeHelper.DEFAULT_SCALED_SCREEN_SIZE);
         LOG.info("Application size: " + DEFAULT_FRAME_SIZE);
 
-        src = createImage(gd, screenSize, true);
-        dest = createImage(gd, screenSize, false);
+        pixelsSrc = new int[0];
+        dest = createImage(gd, outputNonScaledScreenSize);
         screenLabel.setIcon(new ImageIcon(dest));
 
         jFrame = new JFrame(FRAME_TITLE_HEAD, gd.getDefaultConfiguration());
@@ -307,15 +304,13 @@ public class SwingWindow implements DisplayWindow {
         return jFrame.getGraphicsConfiguration().getDevice();
     }
 
-    private BufferedImage createImage(GraphicsDevice gd, Dimension d, boolean src) {
-
+    private BufferedImage createImage(GraphicsDevice gd, Dimension d) {
         BufferedImage bi = gd.getDefaultConfiguration().createCompatibleImage(d.width, d.height);
         if (bi.getType() != BufferedImage.TYPE_INT_RGB) {
             //mmh we need INT_RGB here
             bi = new BufferedImage(d.width, d.height, BufferedImage.TYPE_INT_RGB);
         }
-        pixelsSrc = src ? getPixels(bi) : pixelsSrc;
-        pixelsDest = src ? pixelsDest : getPixels(bi);
+        pixelsDest = getPixels(bi);
         return bi;
     }
 
@@ -363,11 +358,11 @@ public class SwingWindow implements DisplayWindow {
 
     private void renderScreenLinearInternal(int[] data, String label, VideoMode videoMode) {
         boolean changed = resizeScreen(videoMode);
-        System.arraycopy(data, 0, pixelsSrc, 0, data.length);
-        if (scale > 1) {
-            Dimension ouput = new Dimension((int) (baseScreenSize.width * scale), (int) (baseScreenSize.height * scale));
-            RenderingStrategy.renderNearest(pixelsSrc, pixelsDest, baseScreenSize, ouput);
+        if (data.length != pixelsSrc.length) {
+            pixelsSrc = data.clone();
         }
+        System.arraycopy(data, 0, pixelsSrc, 0, data.length);
+        RenderingStrategy.renderNearest(pixelsSrc, pixelsDest, nativeScreenSize, outputScreenSize);
         if (!Strings.isNullOrEmpty(label)) {
             getFpsLabel().setText(label);
         }
@@ -376,25 +371,23 @@ public class SwingWindow implements DisplayWindow {
 
     private boolean resizeScreen(VideoMode videoMode) {
         boolean goFullScreen = fullScreenItem.getState();
-        Dimension newBaseScreenSize = getScreenSize(videoMode, 1);
-        if (!newBaseScreenSize.equals(baseScreenSize)) {
-            baseScreenSize = newBaseScreenSize;
+        Dimension newBaseScreenSize = getScreenSize(videoMode, 1, false);
+        if (!newBaseScreenSize.equals(nativeScreenSize)) {
+            nativeScreenSize = newBaseScreenSize;
         }
         double scale = DEFAULT_SCALE_FACTOR;
         if (goFullScreen) {
-            double scaleW = fullScreenSize.getWidth() / baseScreenSize.getWidth();
-            double scaleH = fullScreenSize.getHeight() * FULL_SCREEN_WITH_TITLE_BAR_FACTOR / baseScreenSize.getHeight();
-            scale = Math.min(scaleW, scaleH);
+            scale = ScreenSizeHelper.getFullScreenScaleFactor(fullScreenSize, nativeScreenSize);
         }
         return resizeScreenInternal(newBaseScreenSize, scale, goFullScreen);
     }
 
     private boolean resizeScreenInternal(Dimension newScreenSize, double scale, boolean isFullScreen) {
         boolean scaleChanged = this.scale != scale;
-        boolean baseResize = !newScreenSize.equals(screenSize);
+        boolean baseResize = !newScreenSize.equals(outputNonScaledScreenSize);
         if (baseResize || scaleChanged) {
 
-            screenSize = newScreenSize;
+            outputNonScaledScreenSize = newScreenSize;
             this.scale = scale;
             try {
                 Runnable resizeRunnable = getResizeRunnable(isFullScreen);
@@ -413,18 +406,17 @@ public class SwingWindow implements DisplayWindow {
 
     private Runnable getResizeRunnable(boolean isFullScreen) {
         return () -> {
-            src = createImage(getGraphicsDevice(), baseScreenSize, true);
-            Dimension d = new Dimension((int) (src.getWidth() * scale), (int) (src.getHeight() * scale));
-            dest = createImage(getGraphicsDevice(), d, false);
+            outputScreenSize = ScreenSizeHelper.getScreenSize(nativeScreenSize, scale, FIX_ASPECT_RATIO);
+            dest = createImage(getGraphicsDevice(), outputScreenSize);
             screenLabel.setIcon(new ImageIcon(dest));
-            jFrame.setPreferredSize(isFullScreen ? fullScreenSize : baseScreenSize);
+            jFrame.setPreferredSize(isFullScreen ? fullScreenSize : nativeScreenSize);
             jFrame.getJMenuBar().setVisible(!isFullScreen);
             if (!isFullScreen) {
                 //TODO this breaks multi-monitor
                 jFrame.setLocationRelativeTo(null); //center
             }
             jFrame.pack();
-            LOG.info("Emulation Viewport size: " + d);
+            LOG.info("Emulation Viewport size: " + outputScreenSize);
             LOG.info("Application size: " + jFrame.getSize());
         };
     }
