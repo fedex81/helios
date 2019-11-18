@@ -28,7 +28,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Arrays;
 
 public class CramViewer implements UpdatableViewer {
 
@@ -61,27 +60,39 @@ public class CramViewer implements UpdatableViewer {
 
     private void initPanel() {
         SwingUtilities.invokeLater(() -> {
-
-            this.cramPanel = new JPanel(new GridLayout(ROWS, CRAM_ENTRIES));
+            int labelPerLine = CRAM_ENTRIES / ROWS;
+            this.cramPanel = new JPanel(new GridLayout(ROWS + 1, labelPerLine));
+            cramPanel.setBackground(Color.GRAY);
             cramPanel.setSize(FRAME_WIDTH - 25, FRAME_HEIGHT - 25);
+            cramPanel.add(new JLabel());
+            for (int i = 0; i < labelPerLine; i++) {
+                JLabel label = new JLabel(Integer.toHexString(i));
+                label.setHorizontalAlignment(SwingConstants.CENTER);
+                label.setBackground(Color.WHITE);
+                label.setForeground(Color.BLACK);
+                cramPanel.add(label);
+            }
             int k = 0;
+            int rowCnt = 0;
             for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
+                if (k % labelPerLine == 0) {
+                    JLabel label = new JLabel(Integer.toHexString(rowCnt * labelPerLine));
+                    label.setHorizontalAlignment(SwingConstants.CENTER);
+                    label.setBackground(Color.WHITE);
+                    label.setForeground(Color.BLACK);
+                    cramPanel.add(label);
+                    rowCnt++;
+                }
                 JPanel cpanel = new JPanel();
                 cpanel.setBackground(Color.BLACK);
                 cpanel.setForeground(Color.BLACK);
                 cpanel.setName("CRAM" + k);
-                JLabel cLabelWhite = new JLabel("" + k);
-                JLabel cLabelBlack = new JLabel("" + k);
-                cLabelWhite.setMaximumSize(new Dimension(LABEL_WIDTH, LABEL_HEIGHT));
-                cLabelBlack.setMaximumSize(new Dimension(LABEL_WIDTH, LABEL_HEIGHT));
-                cLabelWhite.setForeground(Color.WHITE);
-                cLabelBlack.setForeground(Color.BLACK);
-                cpanel.add(cLabelBlack);
-                cpanel.add(cLabelWhite);
+                cpanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+                cpanel.setMaximumSize(new Dimension(LABEL_WIDTH, LABEL_WIDTH));
                 panelList[k] = cpanel;
+                cramPanel.add(cpanel);
                 k++;
             }
-            Arrays.stream(panelList).forEach(cramPanel::add);
         });
     }
 

@@ -348,23 +348,25 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             default:
                 break;
         }
-        return processShadowHighlight(shadowHighlightMode, shadowHighlight[line][col], javaColor, rp);
+        return processShadowHighlight(shadowHighlightMode, col, line, javaColor, rp);
     }
 
-    private int processShadowHighlight(boolean shadowHighlightMode, ShadowHighlightType shadowHighlightType,
-                                       int javaColor, RenderPriority rp) {
-        if (!shadowHighlightMode) {
-            return javaColor;
-        }
-        //TODO fix this
-        //http://gendev.spritesmind.net/forum/viewtopic.php?t=2692
+    //TODO fix this
+    //http://gendev.spritesmind.net/forum/viewtopic.php?t=2692
 //        https://segaretro.org/Sega_Mega_Drive/Shadow_and_highlight
-        boolean noChange = rp.getPriorityType() == PriorityType.YES;
-//        boolean noChange = priorityType == PriorityType.YES ||
-//                (renderType == RenderType.SPRITE && (cramColorIndex % 32) == 28);  //14*2
-        //TODO fix this
-        shadowHighlightType = noChange ? shadowHighlightType : shadowHighlightType.darker();
-        return colorMapper.getJavaColor(javaColor, shadowHighlightType);
+    private int processShadowHighlight(boolean shadowHighlightMode, int col, int line, int javaColor, RenderPriority rp) {
+        return javaColor;
+//        if (!shadowHighlightMode) {
+//            return javaColor;
+//        }
+//        int colorIndex = spritesIndex[line][col];
+////        System.out.println(line + "," + col + ": " + colorIndex);
+//        boolean noChange = rp.getPriorityType() == PriorityType.YES ||
+//                (rp.getRenderType() == RenderType.SPRITE && (colorIndex % 14) == 0);
+//        if(noChange){
+//            return javaColor;
+//        }
+//        return colorMapper.getJavaColor(colorIndex, shadowHighlight[line][col].darker());
     }
 
     private int processShadowHighlightSprite(int paletteColorIndex, int indexColor, int col, int line) {

@@ -97,9 +97,11 @@ public class PlaneViewer implements UpdatableViewer {
 
     @Override
     public void update() {
-        Dimension d = renderHandler.getVideoMode().getDimension();
+        Dimension finalDim = renderHandler.getVideoMode().getDimension();
+        Dimension layerDim = new Dimension(320, 256);
         for (RenderType type : RenderType.values()) {
             BufferedImage img = imageList[type.ordinal()];
+            Dimension d = type == RenderType.FULL ? finalDim : layerDim;
             imageList[type.ordinal()] = VdpRenderDump.writeDataToImage(img, type, d, renderHandler.getPlaneData(type));
         }
         panel.repaint();

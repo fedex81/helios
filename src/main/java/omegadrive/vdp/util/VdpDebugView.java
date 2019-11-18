@@ -53,6 +53,7 @@ public class VdpDebugView implements UpdatableViewer {
             this.frame = new JFrame();
             this.panel = new JPanel();
             this.panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+            panel.setBackground(Color.GRAY);
             JPanel planePanel = planeViewer.getPanel();
             JPanel cramPanel = cramViewer.getPanel();
             this.panel.add(planePanel);
