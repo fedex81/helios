@@ -85,6 +85,11 @@ public class MC68000Wrapper implements M68kProvider {
     }
 
     @Override
+    public int getPrefetchWord() {
+        return addressSpace.readWord(m68k.getPC()); //TODO do it properly
+    }
+
+    @Override
     public void addCyclePenalty(int value) {
         instCycles += value;
     }

@@ -249,28 +249,28 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            busy accessing memory or not.
     private long internalRegRead(long address, Size size) {
         int value = 0;
-        if (address == 0xA11100 || address == 0xA11101
-            //TODO this shouldn't be here???
-//               || address == 0xA11200 || address == 0xA11201
-                ) {    //	Z80 bus request
+        if (address == 0xA11100 || address == 0xA11101) {    //	Z80 bus request
             value = z80BusRequested ? 0 : 1;
             value = z80ResetState ? 1 : value;
 //            Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
 //            the Z80's /BUSREQ line.
             if (size == Size.WORD) {
-                value = value << 8;
+                //NOTE: Time Killers is buggy and needs bit0 !=0
+                value = (value << 8) | (m68kProvider.getPrefetchWord() & 0xFF);
             }
-            LOG.debug("Read Z80 busReq: {}", value);
+            LOG.debug("Read Z80 busReq: {} {}", size, value);
             return value;
-        } else if (address == 0xA11200 || address == 0xA11201) {
-            LOG.warn("Unexpected Z80 read at: " + Long.toHexString(address));
+        } else if (address > 0xA11101 && address < 0xA12000) {
+            LOG.error("Unexpected Z80 read at: " + Long.toHexString(address));
+        } else if (address >= 0xA12000 && address < 0xA13000) {
+            LOG.warn("Unexpected MegaCD address range read at: " + Long.toHexString(address));
         } else if (address >= 0xA13000 && address <= 0xA130FF) {
             //NOTE genTest does: cmpi.l #'MARS',$A130EC  ;32X
             LOG.warn("Unexpected /TIME or mapper read at: " + Long.toHexString(address));
         } else if (address == 0xA14100 || address == 0xA14101) {
             LOG.warn("TMSS read enable cart");
         } else {
-            LOG.warn("Unexpected internalRegRead: " + address);
+            LOG.error("Unexpected internalRegRead: {}", Long.toHexString(address));
         }
         return value;
     }
@@ -283,6 +283,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            1: D-RAM MODE
             LOG.info("Setting memory mode to: " + data);
         } else if (addressL == 0xA11100 || addressL == 0xA11101) {    //	Z80 bus request
+            LOG.debug("Write Z80 busReq: {} {}", size, data);
             //	To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
             if (size == Size.WORD) {
                 // Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF
