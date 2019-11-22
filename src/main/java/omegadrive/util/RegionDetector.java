@@ -20,14 +20,9 @@
 package omegadrive.util;
 
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 public class RegionDetector {
@@ -47,7 +42,7 @@ public class RegionDetector {
         char char1 = (char) memoryProvider.readRomByte(FIRST_REGION_ADDRESS);
         char char2 = (char) memoryProvider.readRomByte(SECOND_REGION_ADDRESS);
         char char3 = (char) memoryProvider.readRomByte(THIRD_REGION_ADDRESS);
-        String s = String.valueOf(char1) + String.valueOf(char2) + String.valueOf(char3);
+        String s = String.valueOf(char1) + char2 + char3;
 
         Region[] regions = new Region[3];
         regions[0] = Region.getRegion(char1);
@@ -56,8 +51,8 @@ public class RegionDetector {
 
         Optional<Region> optRegion = Arrays.stream(regions).filter(Objects::nonNull).sorted(REGION_COMPARATOR).findFirst();
 
-        Region res = optRegion.orElse(null);
-        if (!optRegion.isPresent()) {
+        Region res = optRegion.orElse(detectRegionFallBack(memoryProvider).orElse(null));
+        if (res == null) {
             LOG.warn("Unable to find a region, defaulting to USA");
             res = Region.USA;
         }
@@ -72,13 +67,22 @@ public class RegionDetector {
         return detectRegion(memoryProvider, false);
     }
 
-    public static void main(String[] args) throws IOException {
-        Path romFolder = Paths.get(FileLoader.basePath);
-        Files.list(romFolder).
-                peek(System.out::print).
-                map(FileLoader::readFileSafe).
-                map(r -> MemoryProvider.createInstance(r, MemoryProvider.M68K_RAM_SIZE)).
-                forEach(RegionDetector::detectRegion);
+    /**
+     * Bit 0: Domestic, NTSC (Japan)
+     * Bit 1: Domestic, PAL (Invalid?)
+     * Bit 2: Overseas, NTSC (America)
+     * Bit 3: Overseas, PAL (Europe)
+     */
+    private static Optional<Region> detectRegionFallBack(IMemoryProvider memoryProvider) {
+        char cval = (char) memoryProvider.readRomByte(FIRST_REGION_ADDRESS);
+        int val = Character.getNumericValue(cval);
+        Region region = null;
+        if (val < 0x10) {
+            region = (val & 4) > 0 ? Region.USA : region;
+            region = region == null ? ((val & 1) > 0 ? Region.JAPAN : region) : region;
+            region = region == null ? ((val & 8) > 0 ? Region.EUROPE : region) : region;
+        }
+        return Optional.ofNullable(region);
     }
 
     //REGION_JAPAN_NTSC 0x00

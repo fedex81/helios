@@ -11,47 +11,5 @@ check:
 Dashin' Desperadoes (Beta).bin   (hint?)
 Pac Man 2 - no  after pressing start ingame
 
-2019-11-21 20:55:37.771 ERROR [cycle-Beast Wrestler (U) [b1].bin]: Illegal VDP write, address c4c646, data 8100, size WORD
-
+//region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin
-Exception in thread "AWT-EventQueue-0" java.lang.ArrayIndexOutOfBoundsException: Index 71680 out of bounds for length 71680
-	at omegadrive.ui.RenderingStrategy.renderNearest(RenderingStrategy.java:55)
-	at omegadrive.ui.SwingWindow.renderScreenLinearInternal(SwingWindow.java:365)
-	at omegadrive.ui.SwingWindow.lambda$renderScreenLinear$23(SwingWindow.java:353)
-
-
-2019-11-16 11:40:41.289 ERROR [cycle-Ultimate Mortal Kombat Trilogy v4643 (Hack).bin]: Invalid RAM write, address : 10000, data: 51
-
-2019-11-16 15:58:55.183 WARN  [cycle-Rambo III (W) (REV01) [h1C].bin] [GenesisZ80BusProviderImpl]: Illegal Write to VDP: 7f44
-2019-11-16 14:23:11.500 ERROR [cycle-Rambo III (W) (REV01) [h1C].bin]: Unexpected vramMode: cramWrite
-
-2019-11-16 16:09:32.644 WARN  [cycle-Mighty The Armadillo V4.16 by Yuski (S1 Hack).bin] [GenesisBus]: Unexpected write to ROM: 23cc, value : 24302
-2019-11-16 16:09:41.741 ERROR [cycle-Mighty The Armadillo V4.16 by Yuski (S1 Hack).bin] [VdpDmaHandlerImpl]: Unexpected setup: 1, vramDestination: null
-
-2019-11-15 19:00:13.167 ERROR [cycle-The_Spiral_by_Resistance_2019.bin]: Unexpected vramMode: vramWri
-2019-11-15 17:46:35.158 ERROR [cycle-BadApple.bin]: 68k error
-java.lang.ArrayIndexOutOfBoundsException: Index 14 out of bounds for length 12
-	at m68k.cpu.CpuCore.resolveDstEA(CpuCore.java:1105) ~[headford68k-1.04.jar:?]
-	at m68k.cpu.instructions.ORI.ori_byte(ORI.java:109) ~[headford68k-1.04.jar:?]
-	at m68k.cpu.instructions.ORI$1.execute(ORI.java:52) ~[headford68k-1.04.jar:?]
-	at m68k.cpu.MC68000.execute(MC68000.java:66) ~[headford68k-1.04.jar:?]
-	at omegadrive.m68k.MC68000Wrapper.runInstruction(MC68000Wrapper.java:73) [classes/:?]
-
-2019-11-02 13:08:48.815 ERROR [cycle-Zeta Overdrive EHZ Beta (S2 Hack).bin]: Error main cycle
-java.lang.ArrayIndexOutOfBoundsException: Index 124512 out of bounds for length 65536
-	at omegadrive.vdp.gen.VdpRenderHandlerImpl.getPixelIndexColor(VdpRenderHandlerImpl.java:494) ~[classes/:?]
-	at omegadrive.vdp.gen.VdpRenderHandlerImpl.renderPlane(VdpRenderHandlerImpl.java:482) ~[classes/:?]
-
-2019-11-15 23:26:04.213 ERROR [cycle-X-Men 2 - Clone Wars (Prototype - Dec 06, 1994).bin] [Genesis]: Error main cycle
-    java.lang.ArrayIndexOutOfBoundsException: 66015
-    	at omegadrive.vdp.gen.VdpRenderHandlerImpl.getPixelIndexColor(VdpRenderHandlerImpl.java:499) ~[classes/:?]
-    	at omegadrive.vdp.gen.VdpRenderHandlerImpl.storeSpriteData(VdpRenderHandlerImpl.java:303) ~[classes/:?]
-    	at omegadrive.vdp.gen.VdpRenderHandlerImpl.renderSprite(VdpRenderHandlerImpl.java:286) ~[classes/:?]
-    	at omegadrive.vdp.gen.VdpRenderHandlerImpl.renderSprites(VdpRenderHandlerImpl.java:269) ~[classes/:?]
-    	at omegadrive.vdp.gen.VdpRenderHandlerImpl.renderLine(VdpRenderHandlerImpl.java:169) ~[classes/:?]
-    	at omegadrive.vdp.gen.GenesisVdp.drawScanline(GenesisVdp.java:779) ~[classes/:?]
-    	at omegadrive.vdp.gen.GenesisVdp.runSlot(GenesisVdp.java:739) ~[classes/:?]
-
-    	2019-11-16 16:17:29.859 ERROR [cycle-Insane Paradise (Ch) [a1].bin]: Unexpected setup: 2, vramDestination: cramWrite
-
-    	2019-11-17 11:36:32.480 ERROR [cycle-Langrisser II (J) (REV00) [T+Chi][b1].bin]: Illegal Z80 memory read: 10000
