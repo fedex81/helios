@@ -1,6 +1,6 @@
 
 - Sonic & Knuckles mapper
-- EEPROM mapper
+- EEPROM mapper (take list from blastem)
 TODO
 hline issue:
 monaco gp2
@@ -10,6 +10,15 @@ lotus 2
 check:
 Dashin' Desperadoes (Beta).bin   (hint?)
 Pac Man 2 - no  after pressing start ingame
+
+2019-11-21 20:55:37.771 ERROR [cycle-Beast Wrestler (U) [b1].bin]: Illegal VDP write, address c4c646, data 8100, size WORD
+
+120: Toejam & Earl in Panic on Funkotron (E) [f2].bin
+Exception in thread "AWT-EventQueue-0" java.lang.ArrayIndexOutOfBoundsException: Index 71680 out of bounds for length 71680
+	at omegadrive.ui.RenderingStrategy.renderNearest(RenderingStrategy.java:55)
+	at omegadrive.ui.SwingWindow.renderScreenLinearInternal(SwingWindow.java:365)
+	at omegadrive.ui.SwingWindow.lambda$renderScreenLinear$23(SwingWindow.java:353)
+
 
 2019-11-16 11:40:41.289 ERROR [cycle-Ultimate Mortal Kombat Trilogy v4643 (Hack).bin]: Invalid RAM write, address : 10000, data: 51
 

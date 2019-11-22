@@ -157,7 +157,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     @Override
     protected void initAfterRomLoad() {
         sound = AbstractSoundManager.createSoundProvider(systemType, region);
-        z80 = Z80CoreWrapper.createSg1000Instance(bus);
+        z80 = Z80CoreWrapper.createInstance(bus);
         bus.attachDevice(sound).attachDevice(z80);
         resetAfterRomLoad();
     }

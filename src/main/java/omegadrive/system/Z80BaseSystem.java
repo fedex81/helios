@@ -154,7 +154,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
     @Override
     protected void initAfterRomLoad() {
         sound = AbstractSoundManager.createSoundProvider(systemType, region);
-        z80 = Z80CoreWrapper.createSg1000Instance(bus);
+        z80 = Z80CoreWrapper.createInstance(bus);
         bus.attachDevice(sound).attachDevice(z80);
 
         resetAfterRomLoad();

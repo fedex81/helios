@@ -26,17 +26,18 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.CyclicBarrier;
 
-/**
- * TODO shouldnt be a separate class
- */
 public class MC68000WrapperDebug extends MC68000Wrapper {
 
     private static Logger LOG = LogManager.getLogger(MC68000WrapperDebug.class.getSimpleName());
 
+    public final static boolean verbose = false;
+
     private CyclicBarrier stepBarrier = new CyclicBarrier(1);
+    protected int[] pcList;
 
     public MC68000WrapperDebug(GenesisBusProvider busProvider) {
         super(busProvider);
+        pcList = new int[0xFF_FFFF]; //PC is 24 bits]
     }
 
     @Override
@@ -46,6 +47,10 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
             printVerbose();
             printCpuStateIfVerbose("");
             res = super.runInstruction();
+            pcList[currentPC & 0xFF_FFFF]++;
+            if (pcList[currentPC & 0xFF_FFFF] == 1) {
+//                LOG.info(this::getInfo);
+            }
             //TODO partial fix JimPower
 //            if(currentPC == 0x3f8e && getM68k().getAddrRegisterLong(6) == 0xffffec7e){
 //                getM68k().setAddrRegisterLong(6, 0xffffec80);
@@ -61,8 +66,8 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
         if (vector == LEV4_EXCEPTION && vector == LEV6_EXCEPTION) {
             return;
         }
-        printCpuState("Exception: " + vector);
         if (vector == ILLEGAL_ACCESS_EXCEPTION) {
+            printCpuState("Exception: " + vector);
             if (STOP_ON_EXCEPTION) {
                 setStop(true);
             }

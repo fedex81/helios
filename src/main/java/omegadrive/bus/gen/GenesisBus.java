@@ -31,6 +31,7 @@ import omegadrive.system.SystemProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -122,9 +123,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     public GenesisBusProvider attachDevice(Device device) {
         if (device instanceof BusArbiter) {
             this.busArbiter = (BusArbiter) device;
-            if (this.z80Provider != null) {
-                this.z80Provider.getZ80BusProvider().attachDevice(device);
-            }
+            getDeviceIfAny(Z80Provider.class).ifPresent(zp -> zp.getZ80BusProvider().attachDevice(device));
         }
         super.attachDevice(device);
         return this;
@@ -560,6 +559,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //    and reading from odd address returns the LSB:
     private long vdpRead(long addressL, Size size) {
         long data = 0;
+        boolean valid = (addressL & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
+        if (!valid) {
+            LOG.error("Illegal VDP read, address {}, size {}", Long.toHexString(addressL), size);
+            return 0xFF;
+        }
         long address = addressL & 0x1F; //low 5 bits
         if (address <= 0x07) {
             boolean even = address % 2 == 0;
@@ -611,6 +615,12 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //                the VDP as a 16-bit word, with the data written used for both halfs
 //                of the word.
     private void vdpWrite(long addressL, Size size, long data) {
+        boolean valid = (addressL & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
+        if (!valid) {
+            LOG.error("Illegal VDP write, address {}, data {}, size {}",
+                    Long.toHexString(addressL), Long.toHexString(data), size);
+            return;
+        }
         addressL = addressL & 0x1F; //low 5 bits
         if (addressL < 0x4) {    //DATA PORT
             if (size == Size.BYTE) {

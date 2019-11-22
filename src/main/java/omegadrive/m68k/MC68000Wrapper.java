@@ -37,10 +37,10 @@ import org.apache.logging.log4j.Logger;
  */
 public class MC68000Wrapper implements M68kProvider {
 
-    public final static boolean verbose = false;
+
     private final static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
-    public static boolean STOP_ON_EXCEPTION;
-    public static boolean GENESIS_TAS_BROKEN;
+    public static final boolean STOP_ON_EXCEPTION;
+    public static final boolean GENESIS_TAS_BROKEN;
 
     static {
         STOP_ON_EXCEPTION =
@@ -161,5 +161,6 @@ public class MC68000Wrapper implements M68kProvider {
     }
 
     protected void handleException(int vector) {
+        //DO NOTHING
     }
 }

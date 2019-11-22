@@ -22,6 +22,8 @@ package omegadrive.bus;
 import omegadrive.Device;
 import omegadrive.util.Size;
 
+import java.util.Optional;
+
 public interface BaseBusProvider extends Device {
 
     long read(long address, Size size);
@@ -37,4 +39,6 @@ public interface BaseBusProvider extends Device {
     }
 
     BaseBusProvider attachDevice(Device device);
+
+    <T extends Device> Optional<T> getDeviceIfAny(Class<T> clazz);
 }

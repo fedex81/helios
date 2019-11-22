@@ -19,8 +19,8 @@
 
 package omegadrive.z80;
 
-import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
+import omegadrive.memory.IMemoryRam;
 import omegadrive.util.Size;
 import z80core.MemIoOps;
 
@@ -29,17 +29,40 @@ public class Z80MemIoOps extends MemIoOps {
     private BaseBusProvider z80BusProvider;
     private long tstatesCount = 0;
     private boolean activeInterrupt;
+    private int[] ram;
+    private int ramSizeMask;
 
-    public static Z80MemIoOps createInstance(BaseBusProvider z80BusProvider) {
+    public static Z80MemIoOps createGenesisInstance(BaseBusProvider z80BusProvider) {
         Z80MemIoOps m = new Z80MemIoOps();
         m.z80BusProvider = z80BusProvider;
+        IMemoryRam mem = z80BusProvider.getDeviceIfAny(IMemoryRam.class).
+                orElseThrow(() -> new RuntimeException("Invalid setup"));
+        m.ram = mem.getRamData();
+        m.ramSizeMask = m.ram.length - 1;
         return m;
+    }
+
+    public static Z80MemIoOps createInstance(BaseBusProvider z80BusProvider) {
+        Z80MemIoOps m = new Z80MemIoOps() {
+            @Override
+            public int fetchOpcode(int address) {
+                return fetchOpcodeBus(address);
+            }
+        };
+        m.z80BusProvider = z80BusProvider;
+        return m;
+    }
+
+    protected final int fetchOpcodeBus(int address) {
+        tstatesCount += 4;
+        return (int) z80BusProvider.read(address, Size.BYTE) & 0xFF;
     }
 
     @Override
     public int fetchOpcode(int address) {
         tstatesCount += 4;
-        return (int) z80BusProvider.read(address, Size.BYTE) & 0xFF;
+        address &= ramSizeMask;
+        return ram[address];
     }
 
     @Override

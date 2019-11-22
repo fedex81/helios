@@ -29,6 +29,7 @@ import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.z80.Z80Provider;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseBusProvider, BaseVdpProvider.VdpEventListener {
@@ -50,35 +51,32 @@ public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseB
         return this;
     }
 
-    private static <T extends Device> T getDevice(Set<Device> deviceSet, Class<T> clazz) {
-        return deviceSet.stream().filter(t -> clazz.isAssignableFrom(t.getClass())).findFirst().map(clazz::cast).orElse(null);
-    }
-
-    protected Set<Device> getDeviceSet() {
-        return deviceSet;
+    @Override
+    public <T extends Device> Optional<T> getDeviceIfAny(Class<T> clazz) {
+        return deviceSet.stream().filter(t -> clazz.isAssignableFrom(t.getClass())).findFirst().map(clazz::cast);
     }
 
     private void loadMappings() {
         if (memoryProvider == null) {
-            memoryProvider = getDevice(getDeviceSet(), IMemoryProvider.class);
+            memoryProvider = getDeviceIfAny(IMemoryProvider.class).orElse(null);
         }
         if (joypadProvider == null) {
-            joypadProvider = getDevice(getDeviceSet(), JoypadProvider.class);
+            joypadProvider = getDeviceIfAny(JoypadProvider.class).orElse(null);
         }
         if (soundProvider == null) {
-            soundProvider = getDevice(getDeviceSet(), SoundProvider.class);
+            soundProvider = getDeviceIfAny(SoundProvider.class).orElse(null);
         }
         if (systemProvider == null) {
-            systemProvider = getDevice(getDeviceSet(), SystemProvider.class);
+            systemProvider = getDeviceIfAny(SystemProvider.class).orElse(null);
         }
         if (vdpProvider == null) {
-            vdpProvider = (V) getDevice(getDeviceSet(), BaseVdpProvider.class);
+            vdpProvider = (V) getDeviceIfAny(BaseVdpProvider.class).orElse(null);
         }
         if (z80Provider == null) {
-            z80Provider = getDevice(getDeviceSet(), Z80Provider.class);
+            z80Provider = getDeviceIfAny(Z80Provider.class).orElse(null);
         }
         if (m68kProvider == null) {
-            m68kProvider = getDevice(getDeviceSet(), M68kProvider.class);
+            m68kProvider = getDeviceIfAny(M68kProvider.class).orElse(null);
         }
     }
 

@@ -19,10 +19,10 @@
 
 package omegadrive.z80;
 
-import emulib.plugins.cpu.DisassembledInstruction;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
+import omegadrive.bus.gen.GenesisZ80BusProviderImpl;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -35,11 +35,10 @@ import org.apache.logging.log4j.Logger;
 import z80core.Z80;
 import z80core.Z80State;
 
-import java.util.function.Function;
-
 public class Z80CoreWrapper implements Z80Provider {
 
-    public static boolean STOP_ON_EXCEPTION;
+    public final static boolean STOP_ON_EXCEPTION;
+    private final static Logger LOG = LogManager.getLogger(Z80CoreWrapper.class.getSimpleName());
 
     static {
         STOP_ON_EXCEPTION =
@@ -54,22 +53,21 @@ public class Z80CoreWrapper implements Z80Provider {
     private Z80Disasm z80Disasm;
     protected int instCyclesPenalty = 0;
 
-    private static Logger LOG = LogManager.getLogger(Z80CoreWrapper.class.getSimpleName());
-
-    public static Z80CoreWrapper createSg1000Instance(BaseBusProvider busProvider) {
+    public static Z80CoreWrapper createInstance(BaseBusProvider busProvider) {
         Z80CoreWrapper w = new Z80CoreWrapper();
         w.z80BusProvider = busProvider;
-        return createInstance(w, null);
+        w.memIoOps = Z80MemIoOps.createInstance(w.z80BusProvider);
+        return setupInternal(w, null);
     }
 
     public static Z80CoreWrapper createGenesisInstance(GenesisBusProvider busProvider) {
         Z80CoreWrapper w = new Z80CoreWrapper();
         w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider);
-        return createInstance(w, null);
+        w.memIoOps = Z80MemIoOps.createGenesisInstance(w.z80BusProvider);
+        return setupInternal(w, null);
     }
 
-    private static Z80CoreWrapper createInstance(Z80CoreWrapper w, Z80State z80State) {
-        w.memIoOps = Z80MemIoOps.createInstance(w.z80BusProvider);
+    private static Z80CoreWrapper setupInternal(Z80CoreWrapper w, Z80State z80State) {
         w.z80Core = new Z80(w.memIoOps, null);
         w.z80BusProvider.attachDevice(w);
         return initStateAndDisasm(w, z80State);
@@ -95,14 +93,10 @@ public class Z80CoreWrapper implements Z80Provider {
         memIoOps.reset();
         instCyclesPenalty = 0;
         try {
-            printVerbose();
             z80Core.execute();
-            if (verbose) {
-                LOG.info("Z80State: " + toString(z80Core.getZ80State()));
-            }
         } catch (Exception e) {
             LOG.error("z80 exception", e);
-            LOG.error("Z80State: " + toString(z80Core.getZ80State()));
+            LOG.error("Z80State: " + Z80Helper.toString(z80Core.getZ80State()));
             LOG.error("Halting Z80");
             z80Core.setHalted(true);
             if(STOP_ON_EXCEPTION){
@@ -112,34 +106,19 @@ public class Z80CoreWrapper implements Z80Provider {
         return (int) (memIoOps.getTstates()) + instCyclesPenalty;
     }
 
-    private static String toString(Z80State state) {
-        String str = "\n";
-        str += String.format("SP: %04x   PC: %04x  I : %02x   R : %02x  IX: %04x  IY: %04x\n",
-                state.getRegSP(), state.getRegPC(), state.getRegI(), state.getRegR(), state.getRegIX(), state.getRegIY());
-        str += String.format("A : %02x   B : %02x  C : %02x   D : %02x  E : %02x  F : %02x   L : %02x   H : %02x\n",
-                state.getRegA(), state.getRegB(),
-                state.getRegC(), state.getRegD(), state.getRegE(), state.getRegF(), state.getRegL(), state.getRegH());
-        str += String.format("Ax: %02x   Bx: %02x  Cx: %02x   Dx: %02x  Ex: %02x  Fx: %02x   Lx: %02x   Hx: %02x\n",
-                state.getRegAx(), state.getRegBx(),
-                state.getRegCx(), state.getRegDx(), state.getRegEx(), state.getRegFx(), state.getRegLx(), state.getRegHx());
-        str += String.format("AF : %04x   BC : %04x  DE : %04x   HL : %04x\n",
-                state.getRegAF(), state.getRegBC(), state.getRegDE(), state.getRegHL());
-        str += String.format("AFx: %04x   BCx: %04x  DEx: %04x   HLx: %04x\n",
-                state.getRegAFx(), state.getRegBCx(), state.getRegDEx(), state.getRegHLx());
-        str += String.format("IM: %s  iff1: %s  iff2: %s  memPtr: %04x  flagQ: %s\n",
-                state.getIM().name(), state.isIFF1(), state.isIFF2(), state.getMemPtr(), state.isFlagQ());
-        str += String.format("NMI: %s  INTLine: %s  pendingE1: %s\n", state.isNMI(), state.isINTLine(),
-                state.isPendingEI());
-        return str;
-    }
-
     //From the Z80UM.PDF document, a reset clears the interrupt enable, PC and
     //registers I and R, then sets interrupt status to mode 0.
     @Override
     public void reset() {
-        //from Exodus
-        z80Core.setRegSP(0xFFFF);
-        z80Core.setRegAF(0xFFFF);
+        z80Core.setHalted(false);
+        z80Core.setINTLine(false);
+        z80Core.setNMI(false);
+        z80Core.setPendingEI(false);
+        z80Core.setMemPtr(GenesisZ80BusProviderImpl.END_RAM);
+
+        memIoOps.setActiveInterrupt(false);
+
+        //from GenPlusGx
         z80Core.setRegPC(0);
         z80Core.setRegI(0);
         z80Core.setRegR(0);
@@ -196,16 +175,5 @@ public class Z80CoreWrapper implements Z80Provider {
     @Override
     public Z80State getZ80State() {
         return z80Core.getZ80State();
-    }
-
-    public static Function<DisassembledInstruction, String> disasmToString = d ->
-            String.format("%08x   %12s   %s", d.getAddress(), d.getOpCode(), d.getMnemo());
-
-    private void printVerbose() {
-        if (verbose) {
-            int address = z80Core.getRegPC();
-            String str = disasmToString.apply(z80Disasm.disassemble(address));
-            LOG.info(str);
-        }
     }
 }
