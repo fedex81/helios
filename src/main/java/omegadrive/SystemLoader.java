@@ -29,6 +29,7 @@ import omegadrive.ui.PrefStore;
 import omegadrive.ui.SwingWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
+import omegadrive.util.ZipUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,8 +40,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
 
 import static omegadrive.system.SystemProvider.SystemEvent.NEW_ROM;
 
@@ -54,7 +57,7 @@ public class SystemLoader {
 
     private static final String PROPERTIES_FILENAME = "./helios.properties";
 
-    public static String[] mdBinaryTypes = {".md", ".bin"};
+    public static String[] mdBinaryTypes = {".md", ".bin", ".zip"};
     public static String[] sgBinaryTypes = {".sg", ".sc"};
     public static String[] cvBinaryTypes = {".col"};
     public static String[] msxBinaryTypes = {".rom"};
@@ -161,8 +164,10 @@ public class SystemLoader {
 
     public SystemProvider handleNewRomFile(Path file) {
         systemProvider = createSystemProvider(file, debugPerf);
-        emuFrame.reloadSystem(systemProvider);
-        systemProvider.handleSystemEvent(NEW_ROM, file);
+        if (systemProvider != null) {
+            emuFrame.reloadSystem(systemProvider);
+            systemProvider.handleSystemEvent(NEW_ROM, file);
+        }
         return systemProvider;
     }
 
@@ -214,6 +219,15 @@ public class SystemLoader {
 
     public SystemProvider createSystemProvider(Path file, boolean debugPerf) {
         String lowerCaseName = file.toString().toLowerCase();
+        if (lowerCaseName.endsWith(".zip")) {
+            Optional<ZipEntry> optEntry = ZipUtil.getSupportedZipEntryIfAny(file);
+            if (!optEntry.isPresent()) {
+                LOG.error("Unable to find a system to load: " + file.toAbsolutePath());
+                return null;
+            }
+            LOG.info("Valid zipEntry detected: {}", optEntry.get().getName());
+            lowerCaseName = optEntry.get().getName().toLowerCase();
+        }
         boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);

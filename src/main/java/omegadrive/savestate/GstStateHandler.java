@@ -26,6 +26,7 @@ import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -148,8 +149,10 @@ public class GstStateHandler implements GenesisStateHandler {
             fm.reset();
         }
         for (reg = 0; reg < limit; reg++) {
-            fm.writeRegister(0, reg, data[FM_REG_OFFSET + reg]);
-            fm.writeRegister(1, reg, data[FM_REG_OFFSET + limit + reg]);
+            fm.write(MdFmProvider.FM_ADDRESS_PORT0, reg);
+            fm.write(MdFmProvider.FM_DATA_PORT0, data[FM_REG_OFFSET + reg]);
+            fm.write(MdFmProvider.FM_ADDRESS_PORT1, reg);
+            fm.write(MdFmProvider.FM_DATA_PORT1, data[FM_REG_OFFSET + limit + reg]);
         }
     }
 
@@ -182,10 +185,8 @@ public class GstStateHandler implements GenesisStateHandler {
 
     @Override
     public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
-        Z80State z80State = loadZ80State(data);
-
-        IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
-                i -> z80.writeMemory(i, data[i + Z80_RAM_DATA_OFFSET]));
+        int z80BankInt = getUInt32(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
+        GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
 
         bus.setZ80BusRequested(data[0x439] > 0);
         bus.setZ80ResetState(false);
@@ -197,8 +198,11 @@ public class GstStateHandler implements GenesisStateHandler {
             //TODO dont think this is needed?
 //            z80.reset();
         }
-        int z80BankInt = getUInt32(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
-        GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
+
+        IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
+                i -> z80.writeMemory(i, data[i + Z80_RAM_DATA_OFFSET]));
+
+        Z80State z80State = loadZ80State(data);
         z80.loadZ80State(z80State);
     }
 

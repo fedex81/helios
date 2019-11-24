@@ -13,3 +13,4 @@ Pac Man 2 - no  after pressing start ingame
 
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin
+Robocop Versus The Terminator (U) [T+Rus].bin

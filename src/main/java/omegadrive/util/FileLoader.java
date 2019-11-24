@@ -76,13 +76,16 @@ public class FileLoader {
         }
     };
 
-    public static int[] readFile(Path file) throws IOException {
-        byte[] bytes = Files.readAllBytes(file);
-        int[] rom = new int[bytes.length];
+    public static int[] toIntArray(byte[] bytes) {
+        int[] data = new int[bytes.length];
         for (int i = 0; i < bytes.length; i++) {
-            rom[i] = bytes[i] & 0xFF;
+            data[i] = bytes[i] & 0xFF;
         }
-        return rom;
+        return data;
+    }
+
+    public static int[] readFile(Path file) throws IOException {
+        return toIntArray(Files.readAllBytes(file));
     }
 
     public static void writeFile(Path file, int[] data) throws IOException {
@@ -181,7 +184,11 @@ public class FileLoader {
         try {
             String fileName = file.toAbsolutePath().toString();
             if (fileFilter.accept(file.toFile())) {
-                data = FileLoader.readFile(file);
+                if (fileName.endsWith(".zip")) {
+                    data = ZipUtil.loadZipFileContents(file);
+                } else {
+                    data = FileLoader.readFile(file);
+                }
                 if (data == null || data.length == 0) {
                     throw new RuntimeException("Empty file!");
                 }

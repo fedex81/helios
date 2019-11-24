@@ -21,9 +21,10 @@ package omegadrive.bus.gen;
 
 import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
-import omegadrive.cart.GenesisCartInfoProvider;
+import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.mapper.RomMapper;
-import omegadrive.cart.mapper.md.GenesisBackupMemoryMapper;
+import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
@@ -44,21 +45,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     private static final Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
     public static boolean verbose = false;
-
-    /**
-     * TODO wait states on 68k accessing z80
-     * BlastEm: Access to Z80 memory incurs a one 68K cycle wait state
-     * (memory as addressSpace)
-     * <p>
-     * Gx Plus:
-     * only on ZRAM writes
-     * m68k.cycles += 2 * 7; // ZRAM access latency (fixes Pacman 2: New Adventures & Puyo Puyo 2)
-     * // (fixes Puyo Puyo 2 option menu exit).
-     */
     public static final int M68K_CYCLE_PENALTY = 3;
 
-    private GenesisCartInfoProvider cartridgeInfoProvider;
+    private MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
+    private MdLoader.Entry entry;
 
     private BusArbiter busArbiter = BusArbiter.NO_OP;
 
@@ -75,6 +66,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     private boolean z80ResetState;
     private boolean enableTmss;
 
+
     public GenesisBus() {
         this.mapper = this;
         this.enableTmss = Boolean.valueOf(System.getProperty("md.enable.tmss", "false"));
@@ -85,14 +77,15 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         ROM_END_ADDRESS = cartridgeInfoProvider.getRomEnd();
         RAM_START_ADDRESS = cartridgeInfoProvider.getRamStart();
         RAM_END_ADDRESS = cartridgeInfoProvider.getRamEnd();
-        if (cartridgeInfoProvider.isSramEnabled()) {
-            mapper = GenesisBackupMemoryMapper.createInstance(this, cartridgeInfoProvider);
+        entry = MdLoader.getEntry(cartridgeInfoProvider.getSerial());
+        if (cartridgeInfoProvider.isSramEnabled() || entry.eeprom != null) {
+            mapper = MdBackupMemoryMapper.createInstance(this, cartridgeInfoProvider, entry);
         }
     }
 
     @Override
     public void init() {
-        this.cartridgeInfoProvider = GenesisCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
+        this.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
         initializeRomData();
         LOG.info(cartridgeInfoProvider.toString());
         attachDevice(BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider));
@@ -161,7 +154,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         address = address & 0xFF_FFFF;
         if (address <= DEFAULT_ROM_END_ADDRESS) {  //ROM
 //            if(address <= cartridgeInfoProvider.getRomEnd()){ TODO Umk trilogy
-            if (GenesisCartInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
+            if (MdCartInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
                 return mapper.readData(address, size);
             }
@@ -201,7 +194,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else if (addressL >= VDP_ADDRESS_SPACE_START && addressL < VDP_ADDRESS_SPACE_END) {  //VDP
             vdpWrite(addressL, size, data);
         } else if (addressL <= DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
-            if (GenesisCartInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
+            if (MdCartInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
                 LOG.info("Unexpected Sram write: " + Long.toHexString(addressL) + ", value : " + data);
                 boolean adjust = cartridgeInfoProvider.adjustSramLimits(addressL);
                 checkBackupMemoryMapper(SramMode.READ_WRITE, adjust);
@@ -483,7 +476,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                         scNumber, Long.toHexString(addressL), Long.toHexString(data));
                 break;
             default:
-                LOG.warn("Unexpected ioWrite: " + Long.toHexString(address) + ", " + data);
+                if (address >= 0x20) { //Reserved
+                    LOG.warn("Unexpected ioWrite {}, data {} {}",
+                            Long.toHexString(address), Long.toHexString(data));
+                }
                 break;
         }
     }
@@ -511,7 +507,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             return z80MemoryReadWord(addressZ); //Mario Lemieux Hockey
         } else {
             //Mahjong Cop Ryuu - Shiro Ookami no Yabou (J) [h1C]
-            LOG.error("long read, addr: {}", address);
+            LOG.error("long read, addr: {}", address); //TODO remove after testing
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
             long dataHigh = z80MemoryReadWord(addressZ);
             long dataLow = z80MemoryReadWord(addressZ + 2);
@@ -619,7 +615,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         if (!valid) {
             LOG.error("Illegal VDP write, address {}, data {}, size {}",
                     Long.toHexString(addressL), Long.toHexString(data), size);
-            return;
+            throw new RuntimeException("Illegal VDP write");
         }
         addressL = addressL & 0x1F; //low 5 bits
         if (addressL < 0x4) {    //DATA PORT
@@ -672,8 +668,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     private void checkBackupMemoryMapper(SramMode sramMode, boolean forceCreate) {
-        this.mapper = forceCreate ? GenesisBackupMemoryMapper.createInstance(this, cartridgeInfoProvider) :
-                GenesisBackupMemoryMapper.getOrCreateInstance(this, mapper, cartridgeInfoProvider, sramMode);
+        this.mapper = forceCreate ? MdBackupMemoryMapper.createInstance(this, cartridgeInfoProvider, entry) :
+                MdBackupMemoryMapper.getOrCreateInstance(this, mapper, cartridgeInfoProvider, sramMode);
     }
 
     @Override

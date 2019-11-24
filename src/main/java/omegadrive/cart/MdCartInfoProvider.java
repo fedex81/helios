@@ -28,13 +28,11 @@ import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/**
- *
- * TODO support EEPROM, f1 world champ edition
- */
-public class GenesisCartInfoProvider extends CartridgeInfoProvider {
+import java.util.Arrays;
 
-    private static Logger LOG = LogManager.getLogger(GenesisCartInfoProvider.class.getSimpleName());
+public class MdCartInfoProvider extends CartridgeInfoProvider {
+
+    static int SERIAL_NUMBER_START = 0x180;
 
     public static final long DEFAULT_ROM_START_ADDRESS = 0x00_0000;
     public static final long DEFAULT_RAM_END_ADDRESS = GenesisBusProvider.ADDRESS_UPPER_LIMIT;
@@ -62,6 +60,7 @@ public class GenesisCartInfoProvider extends CartridgeInfoProvider {
     private long sramStart;
     private long sramEnd;
     private boolean sramEnabled;
+    static int SERIAL_NUMBER_END = SERIAL_NUMBER_START + 14;
 
     public long getRomStart() {
         return romStart;
@@ -99,13 +98,8 @@ public class GenesisCartInfoProvider extends CartridgeInfoProvider {
         this.sramEnd = sramEnd;
     }
 
-    public static GenesisCartInfoProvider createInstance(IMemoryProvider memoryProvider, String rom) {
-        GenesisCartInfoProvider provider = new GenesisCartInfoProvider();
-        provider.memoryProvider = memoryProvider;
-        provider.romName = rom;
-        provider.init();
-        return provider;
-    }
+    private static Logger LOG = LogManager.getLogger(MdCartInfoProvider.class.getSimpleName());
+    private String serial;
 
     @Override
     public int getChecksumStartAddress() {
@@ -139,6 +133,26 @@ public class GenesisCartInfoProvider extends CartridgeInfoProvider {
                 ";" + getSramSizeBytes();
     }
 
+    public static MdCartInfoProvider createInstance(IMemoryProvider memoryProvider, String rom) {
+        MdCartInfoProvider provider = new MdCartInfoProvider();
+        provider.memoryProvider = memoryProvider;
+        provider.romName = rom;
+        provider.init();
+        return provider;
+    }
+
+    public static boolean isSramUsedWithBrokenHeader(long address) {
+        boolean noOverlapBetweenRomAndSram =
+                MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS > GenesisBus.ROM_END_ADDRESS;
+        return noOverlapBetweenRomAndSram &&
+                (address >= MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS &&
+                        address <= MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS);
+    }
+
+    public String getSerial() {
+        return serial;
+    }
+
     private void initMemoryLayout(IMemoryProvider memoryProvider) {
         romStart = Util.readRom(memoryProvider, Size.WORD, ROM_START_ADDRESS) << 16;
         romStart |= Util.readRom(memoryProvider, Size.WORD, ROM_START_ADDRESS + 2);
@@ -150,6 +164,7 @@ public class GenesisCartInfoProvider extends CartridgeInfoProvider {
         ramEnd = Util.readRom(memoryProvider, Size.WORD, RAM_END_ADDRESS) << 16;
         ramEnd |= Util.readRom(memoryProvider, Size.WORD, RAM_END_ADDRESS + 2);
         detectSram();
+        detectHeaderMetadata();
         checkLayout();
     }
 
@@ -213,22 +228,21 @@ public class GenesisCartInfoProvider extends CartridgeInfoProvider {
         }
     }
 
-    public static boolean isSramUsedWithBrokenHeader(long address) {
-        boolean noOverlapBetweenRomAndSram =
-                GenesisCartInfoProvider.DEFAULT_SRAM_START_ADDRESS > GenesisBus.ROM_END_ADDRESS;
-        return noOverlapBetweenRomAndSram &&
-                (address >= GenesisCartInfoProvider.DEFAULT_SRAM_START_ADDRESS &&
-                        address <= GenesisCartInfoProvider.DEFAULT_SRAM_END_ADDRESS);
+    private void detectHeaderMetadata() {
+        int[] serialArray = Arrays.copyOfRange(memoryProvider.getRomData(), SERIAL_NUMBER_START, SERIAL_NUMBER_END);
+        this.serial = Util.toStringValue(serialArray);
+//        System.out.println(serial);
+//        MdLoader.testLoading(this);
     }
 
     public boolean adjustSramLimits(long address) {
         //FIFA 96
-        boolean adjust = getSramEnd() < GenesisCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
-        adjust &= address > getSramEnd() && address < GenesisCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
+        boolean adjust = getSramEnd() < MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
+        adjust &= address > getSramEnd() && address < MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
         if (adjust) {
             LOG.warn("Adjusting SRAM limit from: {} to: {}", Long.toHexString(getSramEnd()),
-                    Long.toHexString(GenesisCartInfoProvider.DEFAULT_SRAM_END_ADDRESS));
-            setSramEnd(GenesisCartInfoProvider.DEFAULT_SRAM_END_ADDRESS);
+                    Long.toHexString(MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS));
+            setSramEnd(MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS);
         }
         return adjust;
     }

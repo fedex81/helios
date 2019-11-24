@@ -496,7 +496,7 @@ public class SwingWindow implements DisplayWindow {
 
         Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);
         setupFrameKeyListener();
-        setTitle("");
+        Optional.ofNullable(mainEmu).ifPresent(sp -> setTitle(""));
     }
 
     @Override

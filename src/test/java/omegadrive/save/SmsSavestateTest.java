@@ -86,7 +86,7 @@ public class SmsSavestateTest {
         busProvider1.init();
         SmsStateHandler loadHandler = MekaStateHandler.createLoadInstance(filePath);
         SmsVdp vdp1 = new SmsVdp(SystemLoader.SystemType.SMS, RegionDetector.Region.USA);
-        Z80Provider z80p1 = Z80CoreWrapper.createSg1000Instance(busProvider1);
+        Z80Provider z80p1 = Z80CoreWrapper.createInstance(busProvider1);
 
         loadHandler.processState(vdp1, z80p1, busProvider1, cpuMem1);
 
@@ -105,7 +105,7 @@ public class SmsSavestateTest {
         busProvider2.init();
         SmsStateHandler loadHandler2 = MekaStateHandler.createLoadInstance(name, saveData);
         SmsVdp vdp2 = new SmsVdp(SystemLoader.SystemType.SMS, RegionDetector.Region.USA);
-        Z80Provider z80p2 = Z80CoreWrapper.createSg1000Instance(busProvider2);
+        Z80Provider z80p2 = Z80CoreWrapper.createInstance(busProvider2);
 
         loadHandler2.processState(vdp2, z80p2, busProvider2, cpuMem2);
 

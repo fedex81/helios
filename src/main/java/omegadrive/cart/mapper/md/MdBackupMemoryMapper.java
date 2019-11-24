@@ -21,7 +21,8 @@ package omegadrive.cart.mapper.md;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.gen.GenesisBus;
-import omegadrive.cart.GenesisCartInfoProvider;
+import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.mapper.BackupMemoryMapper;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.util.Size;
@@ -29,41 +30,43 @@ import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class GenesisBackupMemoryMapper extends BackupMemoryMapper implements RomMapper {
+public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMapper {
+
+    private static Logger LOG = LogManager.getLogger(MdBackupMemoryMapper.class.getSimpleName());
 
     public static boolean SRAM_AVAILABLE;
     public static long SRAM_START_ADDRESS;
     public static long SRAM_END_ADDRESS;
-    /**
-     * TODO
-     * http://gendev.spritesmind.net/forum/viewtopic.php?f=2&t=2476&p=29985&hilit=sram#p29985
-     */
 
-    private static Logger LOG = LogManager.getLogger(GenesisBackupMemoryMapper.class.getSimpleName());
     private static boolean verbose = false;
     private static String fileType = "srm";
     private RomMapper baseMapper;
-    private GenesisCartInfoProvider cartridgeInfoProvider;
+    private MdCartInfoProvider cartridgeInfoProvider;
     private SramMode sramMode = SramMode.DISABLE;
+    private MdLoader.Entry entry = MdLoader.NO_EEPROM;
+    private I2cEeprom i2c = I2cEeprom.NO_OP;
 
-    private GenesisBackupMemoryMapper(String romName) {
-        super(SystemLoader.SystemType.GENESIS, fileType, romName, GenesisCartInfoProvider.DEFAULT_SRAM_BYTE_SIZE);
+    private MdBackupMemoryMapper(String romName, int size) {
+        super(SystemLoader.SystemType.GENESIS, fileType, romName, size);
     }
 
-    public static RomMapper createInstance(RomMapper baseMapper, GenesisCartInfoProvider cart) {
-        return createInstance(baseMapper, cart, SramMode.DISABLE);
+    public static RomMapper createInstance(RomMapper baseMapper, MdCartInfoProvider cart, MdLoader.Entry entry) {
+        return createInstance(baseMapper, cart, SramMode.DISABLE, entry);
     }
 
-    private static RomMapper createInstance(RomMapper baseMapper, GenesisCartInfoProvider cart,
-                                            SramMode sramMode) {
-        GenesisBackupMemoryMapper mapper = new GenesisBackupMemoryMapper(cart.getRomName());
+    private static RomMapper createInstance(RomMapper baseMapper, MdCartInfoProvider cart,
+                                            SramMode sramMode, MdLoader.Entry entry) {
+        int size = entry.eeprom == null ? MdCartInfoProvider.DEFAULT_SRAM_BYTE_SIZE : entry.eeprom.size;
+        MdBackupMemoryMapper mapper = new MdBackupMemoryMapper(cart.getRomName(), size);
         mapper.baseMapper = baseMapper;
         mapper.sramMode = sramMode;
         mapper.cartridgeInfoProvider = cart;
+        mapper.entry = entry;
+        mapper.i2c = I2cEeprom.createInstance(entry);
         SRAM_START_ADDRESS = mapper.cartridgeInfoProvider.getSramStart();
-        SRAM_START_ADDRESS = SRAM_START_ADDRESS > 0 ? SRAM_START_ADDRESS : GenesisCartInfoProvider.DEFAULT_SRAM_START_ADDRESS;
+        SRAM_START_ADDRESS = SRAM_START_ADDRESS > 0 ? SRAM_START_ADDRESS : MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS;
         SRAM_END_ADDRESS = mapper.cartridgeInfoProvider.getSramEnd();
-        SRAM_END_ADDRESS = SRAM_END_ADDRESS > 0 ? SRAM_END_ADDRESS : GenesisCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
+        SRAM_END_ADDRESS = SRAM_END_ADDRESS > 0 ? SRAM_END_ADDRESS : MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
         SRAM_AVAILABLE = true; //mapper.cartridgeInfoProvider.isSramEnabled();
         LOG.info("BackupMemoryMapper created, using folder: " + mapper.sramFolder);
         mapper.initBackupFileIfNecessary();
@@ -72,14 +75,13 @@ public class GenesisBackupMemoryMapper extends BackupMemoryMapper implements Rom
 
     public static RomMapper getOrCreateInstance(RomMapper baseMapper,
                                                 RomMapper currentMapper,
-                                                GenesisCartInfoProvider cartridgeInfoProvider,
+                                                MdCartInfoProvider cartridgeInfoProvider,
                                                 SramMode sramMode) {
         if (baseMapper != currentMapper) {
             currentMapper.setSramMode(sramMode);
             return currentMapper;
         }
-        return createInstance(baseMapper, cartridgeInfoProvider, sramMode);
-
+        return createInstance(baseMapper, cartridgeInfoProvider, sramMode, MdLoader.NO_EEPROM);
     }
 
     private static boolean noOverlapBetweenRomAndSram() {
@@ -102,14 +104,24 @@ public class GenesisBackupMemoryMapper extends BackupMemoryMapper implements Rom
 
     @Override
     public long readData(long address, Size size) {
+        return entry.eeprom == null ? readDataSram(address, size) : readDataEeprom(address, size);
+    }
+
+
+    @Override
+    public void writeData(long address, long data, Size size) {
+        if (entry.eeprom == null) {
+            writeDataSram(address, data, size);
+        } else {
+            writeDataEeprom(address, data, size);
+        }
+    }
+
+    private long readDataSram(long address, Size size) {
         address = address & 0xFF_FFFF;
         boolean noOverlap = noOverlapBetweenRomAndSram();
         boolean sramRead = sramMode != SramMode.DISABLE;
         sramRead |= noOverlap; //if no overlap allow to read
-        //TODO EEPROM reads serially
-        if (sramRead && address == (SRAM_START_ADDRESS - 1) && size == Size.WORD) {
-            address = SRAM_START_ADDRESS;
-        }
         sramRead &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (sramRead) {
             initBackupFileIfNecessary();
@@ -121,22 +133,45 @@ public class GenesisBackupMemoryMapper extends BackupMemoryMapper implements Rom
         return baseMapper.readData(address, size);
     }
 
-    @Override
-    public void writeData(long address, long data, Size size) {
+    private void writeDataSram(long address, long data, Size size) {
         address = address & 0xFF_FFFF;
         boolean sramWrite = sramMode == SramMode.READ_WRITE;
         sramWrite |= noOverlapBetweenRomAndSram();  //if no overlap allow to write
-        //TODO EEPROM, writes serially NBA Jam
-        if (sramWrite && address == (SRAM_START_ADDRESS - 1) && size == Size.WORD) {
-            address = SRAM_START_ADDRESS;
-            data = data << 8 | data;
-        }
         sramWrite &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (sramWrite) {
             initBackupFileIfNecessary();
             address = (address & 0xFFFF);
             logInfo("SRAM write at: {} {}, data: {} ", address, size, data);
             Util.writeSram(sram, size, (int) address, data);
+        } else {
+            baseMapper.writeData(address, data, size);
+        }
+    }
+
+    private long readDataEeprom(long address, Size size) {
+        address = address & 0xFF_FFFF;
+        boolean noOverlap = noOverlapBetweenRomAndSram();
+        boolean eepromRead = sramMode != SramMode.DISABLE;
+        eepromRead |= noOverlap; //if no overlap allow to read
+        eepromRead &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
+        if (eepromRead) {
+            initBackupFileIfNecessary();
+            long res = i2c.eeprom_i2c_out();
+            logInfo("EEPROM read at: {} {}, result: {} ", address, size, res);
+            return res;
+        }
+        return baseMapper.readData(address, size);
+    }
+
+    private void writeDataEeprom(long address, long data, Size size) {
+        address = address & 0xFF_FFFF;
+        boolean eepromWrite = sramMode == SramMode.READ_WRITE;
+        eepromWrite |= noOverlapBetweenRomAndSram();  //if no overlap allow to write
+        eepromWrite &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
+        if (eepromWrite) {
+            initBackupFileIfNecessary();
+            i2c.eeprom_i2c_in((int) (data & 0xFF));
+            logInfo("EEPROM write at: {} {}, data: {} ", address, size, data);
         } else {
             baseMapper.writeData(address, data, size);
         }

@@ -357,6 +357,7 @@ public final class YM2612 implements MdFmProvider {
 
         writeReg(FM_ADDRESS_PORT0, 0x2A, 0x80);
         dacQueue.clear();
+        dacValue = DAC_SILENCE;
 
         isResetting = false;
     }
@@ -447,7 +448,7 @@ public final class YM2612 implements MdFmProvider {
             x *= 11.8 / ENV_STEP;
             LFO_ENV_TAB[i] = (int) x;
             x = Math.sin(2.0 * PI * (double) (i) / (double) (LFOLEN));    // Sinus
-            x *= (double) ((1 << (LFO_HBITS - 1)) - 1);
+            x *= (1 << (LFO_HBITS - 1)) - 1;
             LFO_FREQ_TAB[i] = (int) x;
         }
 
@@ -491,9 +492,9 @@ public final class YM2612 implements MdFmProvider {
             x = (double) i * YM2612_Frequency;
 
             if ((SIN_LBITS + SIN_HBITS - (21 - 7)) < 0) {
-                x /= (double) (1 << ((21 - 7) - SIN_LBITS - SIN_HBITS));
+                x /= 1 << ((21 - 7) - SIN_LBITS - SIN_HBITS);
             } else {
-                x *= (double) (1 << (SIN_LBITS + SIN_HBITS - (21 - 7)));
+                x *= 1 << (SIN_LBITS + SIN_HBITS - (21 - 7));
             }
             x /= 2.0;  // because MUL = value * 2
             FINC_TAB[i] = (int) x;    // (unsigned int) x;
@@ -509,8 +510,8 @@ public final class YM2612 implements MdFmProvider {
         for (i = 0; i < 60; i++) {
             x = YM2612_Frequency;
             x *= 1.0 + ((i & 3) * 0.25);          // bits 0-1 : x1.00, x1.25, x1.50, x1.75
-            x *= (double) (1 << ((i >> 2)));        // bits 2-5 : shift bits (x2^0 - x2^15)
-            x *= (double) (ENVLEN << ENV_LBITS);    // on ajuste pour le tableau ENV_TAB
+            x *= 1 << ((i >> 2));        // bits 2-5 : shift bits (x2^0 - x2^15)
+            x *= ENVLEN << ENV_LBITS;    // on ajuste pour le tableau ENV_TAB
 
             AR_TAB[i + 4] = (int) (x / AR_RATE);   // (unsigned int) (x / AR_RATE);
             DR_TAB[i + 4] = (int) (x / DR_RATE);   // (unsigned int) (x / DR_RATE);
@@ -694,7 +695,6 @@ public final class YM2612 implements MdFmProvider {
         YM2612_Inter_Cnt = int_cnt;
         return count;
     }
-
 
     private void updateDac(int[] buf_lr, int offset, int end, boolean dacSampleToProcess) {
         Integer val;
