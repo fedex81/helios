@@ -532,7 +532,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             return z80MemoryReadWord(addressZ); //Mario Lemieux Hockey
         } else {
             //Mahjong Cop Ryuu - Shiro Ookami no Yabou (J) [h1C]
-            LOG.error("long read, addr: {}", address); //TODO remove after testing
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
             long dataHigh = z80MemoryReadWord(addressZ);
             long dataLow = z80MemoryReadWord(addressZ + 2);

@@ -58,8 +58,6 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
     //    register, which is at 6000h (Z80) or A06000h (68000), starting with
     //    bit 15 and ending with bit 23.
     private int romBank68kSerial;
-    private int romBankPointer;
-    private int romBank68kSerialMask;
 
     private GenesisBusProvider mainBusProvider;
     private BusArbiter busArbiter;
@@ -109,11 +107,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-            if (romBankPointer % ROM_BANK_POINTER_SIZE != 0) {
-                //NOTE: not illegal, but indicates a Z80 timing issue
-                LOG.info("Reading 68k memory, but pointer: {}", romBankPointer);
-            }
-            address = romBank68kSerialMask | (address & M68K_BANK_MASK);
+            address = romBank68kSerial | (address & M68K_BANK_MASK);
             //this seems to be not allowed
             if (address >= GenesisBusProvider.ADDRESS_RAM_MAP_START && address < GenesisBusProvider.ADDRESS_UPPER_LIMIT) {
                 LOG.warn("Z80 reading from 68k RAM");
@@ -153,7 +147,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-            address = romBank68kSerialMask | (address & M68K_BANK_MASK);
+            address = romBank68kSerial | (address & M68K_BANK_MASK);
             //NOTE: Z80 write to 68k RAM - this seems to be allowed (Mamono)
             mainBusProvider.write(address, dataInt, Size.BYTE);
         } else {
@@ -171,9 +165,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
     @Override
     public void reset() {
         super.reset();
-        romBank68kSerial = 0;
-        romBankPointer = 0;
-        romBank68kSerialMask = 0;
+        romBank68kSerial = 0; //TODO needed?
     }
 
     //	 From 8000H - FFFFH is window of 68K memory.
@@ -186,18 +178,11 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
 //    register, which is at 6000h (Z80) or A06000h (68000), starting with
 //    bit 15 and ending with bit 23.
     private void romBanking(int data) {
-        if (romBankPointer == ROM_BANK_POINTER_SIZE) {
-            romBank68kSerial = 0;
-            romBankPointer = 0;
-        }
-        romBank68kSerial = ((data & 1) << romBankPointer) | romBank68kSerial;
-        romBank68kSerialMask = romBank68kSerial << 15;
-        romBankPointer++;
+        romBank68kSerial = ((romBank68kSerial >> 1) | ((data & 1) << 23)) & 0xFF8000;
     }
 
     public void setRomBank68kSerial(int romBank68kSerial) {
         this.romBank68kSerial = romBank68kSerial;
-        romBank68kSerialMask = romBank68kSerial << 15;
     }
 
     public int getRomBank68kSerial() {

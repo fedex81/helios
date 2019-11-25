@@ -38,45 +38,64 @@ public class SavestateGameLoader {
 
     private static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
 
+    private static final String s2_rom = "Sonic The Hedgehog 2 (World) (Rev A).zip";
+    private static final String s1_rom = "Sonic The Hedgehog (USA, Europe).zip";
+    private static final String sor2_rom = "Streets of Rage 2 (USA).zip";
+    private static final String batr_rom = "Adventures of Batman & Robin, The (USA).zip";
+    private static final String cmx_rom = "Comix Zone (USA).zip";
+    private static final String fant_rom = "Fantasia (World) (Rev A).zip";
+    private static final String gaxe_rom = "Golden Axe (World) (Rev A).zip";
+    private static final String gaxe2_rom = "Golden Axe II (World).zip";
+    private static final String micMania_rom = "Mickey Mania - The Timeless Adventures of Mickey Mouse (USA).zip";
+    private static final String mk2_rom = "Mortal Kombat II (World).zip";
+    private static final String spark_rom = "Sparkster (USA).zip";
+    private static final String s3d_rom = "Sonic 3D Blast ~ Sonic 3D Flickies' Island (USA, Europe, Korea).zip";
+    private static final String tf4_rom = "Lightening Force - Quest for the Darkstar (USA).zip";
+    private static final String vec_rom = "Vectorman (USA, Europe).zip";
+    private static final String vec2_rom = "Vectorman 2 (USA).zip";
+
+    private static final String contra_rom = "Contra - The Hard Corps (J) [!].bin.zip";
+    private static final String dynhead_rom = "Dynamite Headdy (J) [c][!].bin.zip";
+
     public static Map<String, String> saveStates = ImmutableMap.<String, String>builder().
-            put("s2_int.gs0", "Sonic The Hedgehog 2 (W) (REV01) [!].bin").
-            put("test01.gs0", "Sonic The Hedgehog (W) (REV00) [!].bin").
-            put("test02.gs0", "Sonic The Hedgehog 2 (W) (REV01) [!].bin").
-            put("sor2.gs0", "Streets of Rage 2 (U) [!].bin").
-            put("sor2.gs1", "Streets of Rage 2 (U) [!].bin").
-            put("sor2.gs2", "Streets of Rage 2 (U) [!].bin").
-            put("sor2.gs3", "Streets of Rage 2 (U) [!].bin").
-            put("BATROB.gs0", "Adventures of Batman and Robin, The (U) [!].bin").
-            put("BATROB.gs9", "Adventures of Batman and Robin, The (U) [!].bin").
-            put("COMIX_ZN.GS0", "Comix Zone (U) [!].bin").
-            put("CONTRA4.GS0", "Contra - The Hard Corps (J) [!].bin"). //broken
-            put("D_HEDD_T.gs0", "Dynamite Headdy (J) [c][!].bin").
-            put("FANTASI.gs0", "Fantasia (E) [!].bin").
-            put("FANTASI.gs9", "Fantasia (E) [!].bin").
-            put("G-AXE.GS0", "Golden Axe (W) (REV01) [!].bin").
-            put("G-AXE.GS1", "Golden Axe (W) (REV01) [!].bin").
-            put("G-AXE.GS2", "Golden Axe (W) (REV01) [!].bin").
-            put("G-AXE.GS4", "Golden Axe (W) (REV01) [!].bin").
-            put("G-AXE.GS8", "Golden Axe (W) (REV01) [!].bin").
-            put("G-AXE.GS9", "Golden Axe (W) (REV01) [!].bin").
-            put("G-AXE2.GS1", "Golden Axe II (W) [!].bin").
-            put("G-AXE2.GS2", "Golden Axe II (W) [!].bin").
-            put("mickeym.gs0", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
-            put("mickeym.gs1", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
-            put("mickeym.gs2", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
-            put("mickeym.gs3", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
-            put("mickeym.gs9", "Mickey Mania - Timeless Adventures of Mickey Mouse (E) [!].bin").
-            put("MORTAL2.GS0", "Mortal Kombat II (W) [!].bin").
-            put("Rocket2.gs0", "Sparkster (U) [!].bin").
-            put("Rocket2.gs8", "Sparkster (U) [!].bin").
-            put("Rocket2.gs9", "Sparkster (U) [!].bin").
-            put("SONIC3D.GS0", "Sonic 3D Blast (UE) [!].bin").
-            put("SONIC3D.GS1", "Sonic 3D Blast (UE) [!].bin").
-            put("Thunder4.gs0", "Thunder Force IV (E) [c][!].bin").
-            put("Vector2.gs5", "Vectorman 2 (U) [!].bin").
-            put("Vector2.gs6", "Vectorman 2 (U) [!].bin").
-            put("Vector2.gs7", "Vectorman 2 (U) [!].bin").
-            put("VECTORMA.GS0", "Vectorman (UE) [!].bin").
+            put("SONIC3D.GS0", s3d_rom).
+            put("SONIC3D.GS1", s3d_rom).
+            put("Thunder4.gs0", tf4_rom).
+            put("Vector2.gs5", vec2_rom).
+            put("Vector2.gs6", vec2_rom).
+            put("Vector2.gs7", vec2_rom).
+            put("VECTORMA.GS0", vec_rom).
+            put("sor2.gs0", sor2_rom).
+            put("sor2.gs1", sor2_rom).
+            put("sor2.gs2", sor2_rom).
+            put("sor2.gs3", sor2_rom).
+            put("s2_int.gs0", s2_rom).
+            put("test01.gs0", s1_rom).
+            put("test02.gs0", s2_rom).
+            put("BATROB.gs0", batr_rom).
+            put("BATROB.gs9", batr_rom).
+            put("COMIX_ZN.GS0", cmx_rom).
+            put("FANTASI.gs0", fant_rom).
+            put("FANTASI.gs9", fant_rom).
+            put("G-AXE.GS0", gaxe_rom).
+            put("G-AXE.GS1", gaxe_rom).
+            put("G-AXE.GS2", gaxe_rom).
+            put("G-AXE.GS4", gaxe_rom).
+            put("G-AXE.GS8", gaxe_rom).
+            put("G-AXE.GS9", gaxe_rom).
+            put("G-AXE2.GS1", gaxe2_rom).
+            put("G-AXE2.GS2", gaxe2_rom).
+            put("mickeym.gs0", micMania_rom).
+            put("mickeym.gs1", micMania_rom).
+            put("mickeym.gs2", micMania_rom).
+            put("mickeym.gs3", micMania_rom).
+            put("mickeym.gs9", micMania_rom).
+            put("MORTAL2.GS0", mk2_rom).
+            put("Rocket2.gs0", spark_rom).
+            put("Rocket2.gs8", spark_rom).
+            put("Rocket2.gs9", spark_rom).
+            put("CONTRA4.GS0", contra_rom).
+            put("D_HEDD_T.gs0", dynhead_rom).
             build();
 
 
