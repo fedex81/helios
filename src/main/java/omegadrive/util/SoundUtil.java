@@ -129,7 +129,7 @@ public class SoundUtil {
             //TODO check this
             psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
             //avg fm and psg
-            int out16 = fm + psg;
+            int out16 = Math.min(Math.max(fm + psg, Short.MIN_VALUE), Short.MAX_VALUE);
             output[i] = (byte) (out16 & 0xFF); //lsb
             output[i + 1] = (byte) ((out16 >> 8) & 0xFF); //msb
             j++;

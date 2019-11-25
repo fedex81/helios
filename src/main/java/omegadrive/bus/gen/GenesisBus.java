@@ -150,19 +150,19 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     @Override
-    public long readData(long address, Size size) {
-        address = address & 0xFF_FFFF;
+    public long readData(long addressL, Size size) {
+        int address = (int) (addressL & 0xFF_FFFF);
         if (address <= DEFAULT_ROM_END_ADDRESS) {  //ROM
 //            if(address <= cartridgeInfoProvider.getRomEnd()){ TODO Umk trilogy
             if (MdCartInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
                 return mapper.readData(address, size);
             }
-            return Util.readRom(memoryProvider, size, (int) address);
+            return Util.readRom(memoryProvider, size, address);
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            return Util.readRam(memoryProvider, size, address);
+            return Util.readRam(memoryProvider, size, address & M68K_RAM_MASK);
         } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
-            LOG.warn("Read on reserved address: " + Integer.toHexString((int) address));
+            LOG.warn("Read on reserved address: " + Integer.toHexString(address));
             return size.getMax();
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             return z80MemoryRead(address, size);
@@ -173,44 +173,49 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else if (address >= VDP_ADDRESS_SPACE_START && address <= VDP_ADDRESS_SPACE_END) { // VDP
             return vdpRead(address, size);
         } else {
-            LOG.warn("BUS READ NOT MAPPED: address: {}, PC: {}", Util.pad4(address), Util.pad4(m68kProvider.getPC()));
+            LOG.error("Unexpected bus read: {}, 68k PC: {}",
+                    Long.toHexString(address), Long.toHexString(m68kProvider.getPC()));
         }
-        return 0;
+        return 0xFF;
     }
 
     @Override
     public void writeData(long addressL, long data, Size size) {
-        addressL &= 0xFF_FFFF;
+        int address = (int) (addressL & 0xFF_FFFF);
         data &= size.getMask();
+        if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
+            Util.writeRam(memoryProvider, size, address & M68K_RAM_MASK, data);
+        } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
+            z80MemoryWrite(address, size, data);
+        } else if (address >= IO_ADDRESS_SPACE_START && address <= IO_ADDRESS_SPACE_END) {    //	IO addressing space
+            ioWrite(address, size, data);
+        } else if (address >= INTERNAL_REG_ADDRESS_SPACE_START && address <= INTERNAL_REG_ADDRESS_SPACE_END) {
+            internalRegWrite(address, size, data);
+        } else if (address >= VDP_ADDRESS_SPACE_START && address < VDP_ADDRESS_SPACE_END) {  //VDP
+            vdpWrite(address, size, data);
+        } else if (address <= DEFAULT_ROM_END_ADDRESS) {
+            cartWrite(address, data, size);
+        } else {
+            LOG.error("Unexpected bus write: {}, 68k PC: {}",
+                    Long.toHexString(addressL), Long.toHexString(m68kProvider.getPC()));
+        }
+    }
 
-        if (addressL >= ADDRESS_RAM_MAP_START && addressL <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            Util.writeRam(memoryProvider, size, addressL, (int) data);
-        } else if (addressL >= Z80_ADDRESS_SPACE_START && addressL <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
-            z80MemoryWrite(addressL, size, data);
-        } else if (addressL >= IO_ADDRESS_SPACE_START && addressL <= IO_ADDRESS_SPACE_END) {    //	IO addressing space
-            ioWrite(addressL, size, data);
-        } else if (addressL >= INTERNAL_REG_ADDRESS_SPACE_START && addressL <= INTERNAL_REG_ADDRESS_SPACE_END) {
-            internalRegWrite(addressL, size, data);
-        } else if (addressL >= VDP_ADDRESS_SPACE_START && addressL < VDP_ADDRESS_SPACE_END) {  //VDP
-            vdpWrite(addressL, size, data);
-        } else if (addressL <= DEFAULT_ROM_END_ADDRESS) {    //	Cartridge ROM/RAM
-            if (MdCartInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
-                LOG.info("Unexpected Sram write: " + Long.toHexString(addressL) + ", value : " + data);
-                boolean adjust = cartridgeInfoProvider.adjustSramLimits(addressL);
-                checkBackupMemoryMapper(SramMode.READ_WRITE, adjust);
-                mapper.writeData(addressL, data, size);
-                return;
-            }
-            //Batman&Robin writes to address 0 - tries to enable debug mode?
-            String msg = "Unexpected write to ROM: " + Long.toHexString(addressL) + ", value : " + data;
-            LOG.warn(msg);
-            //TODO Micro Machines, Fantastic Dizzy write to ROM
+    private void cartWrite(long addressL, long data, Size size) {
+        if (MdCartInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
+            LOG.info("Unexpected Sram write: " + Long.toHexString(addressL) + ", value : " + data);
+            boolean adjust = cartridgeInfoProvider.adjustSramLimits(addressL);
+            checkBackupMemoryMapper(SramMode.READ_WRITE, adjust);
+            mapper.writeData(addressL, data, size);
+            return;
+        }
+        //Batman&Robin writes to address 0 - tries to enable debug mode?
+        String msg = "Unexpected write to ROM: " + Long.toHexString(addressL) + ", value : " + data;
+        LOG.warn(msg);
+        //TODO Micro Machines, Fantastic Dizzy write to ROM
 //            if (addressL > 0) {
 //                throw new IllegalArgumentException(msg);
 //            }
-        } else {
-            LOG.warn("WRITE NOT SUPPORTED ! " + Integer.toHexString((int) addressL) + " - PC: " + Integer.toHexString((int) m68kProvider.getPC()));
-        }
     }
 
     private void logVdpCounter(int v, int h) {
@@ -240,121 +245,141 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            1 to 0 is right after the bus is requested, and if the Z80 is still
 //            busy accessing memory or not.
     private long internalRegRead(long address, Size size) {
-        int value = 0;
-        if (address == 0xA11100 || address == 0xA11101) {    //	Z80 bus request
-            value = z80BusRequested ? 0 : 1;
-            value = z80ResetState ? 1 : value;
-//            Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
-//            the Z80's /BUSREQ line.
-            if (size == Size.WORD) {
-                //NOTE: Time Killers is buggy and needs bit0 !=0
-                value = (value << 8) | (m68kProvider.getPrefetchWord() & 0xFF);
-            }
-            LOG.debug("Read Z80 busReq: {} {}", size, value);
-            return value;
-        } else if (address > 0xA11101 && address < 0xA12000) {
-            LOG.error("Unexpected Z80 read at: " + Long.toHexString(address));
-        } else if (address >= 0xA12000 && address < 0xA13000) {
+        if (address >= Z80_BUS_REQ_CONTROL_START && address <= Z80_BUS_REQ_CONTROL_END) {
+            return z80BusReqRead(size);
+        } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
+            //NOTE few roms read a11200
+            LOG.warn("Unexpected Z80 read at: " + Long.toHexString(address));
+        } else if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
             LOG.warn("Unexpected MegaCD address range read at: " + Long.toHexString(address));
-        } else if (address >= 0xA13000 && address <= 0xA130FF) {
+        } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {
             //NOTE genTest does: cmpi.l #'MARS',$A130EC  ;32X
             LOG.warn("Unexpected /TIME or mapper read at: " + Long.toHexString(address));
-        } else if (address == 0xA14100 || address == 0xA14101) {
+        } else if (address >= TMSS_AREA1_START && address <= TMSS_AREA1_END) {
             LOG.warn("TMSS read enable cart");
+        } else if (address >= TMSS_AREA2_START && address <= TMSS_AREA2_END) {
+            LOG.warn("TMSS read enable cart");
+        } else if (address >= MEMORY_MODE_START && address <= MEMORY_MODE_END) {
+            LOG.warn("Memory mode reg read");
         } else {
             LOG.error("Unexpected internalRegRead: {}", Long.toHexString(address));
         }
-        return value;
+        return 0xFF;
     }
 
-    private void internalRegWrite(long addressL, Size size, long data) {
-        if (addressL == 0xA11000 || addressL == 0xA11001) {    //	Memory mode register
+    private void internalRegWrite(int addressL, Size size, long data) {
+        if (addressL >= MEMORY_MODE_START && addressL <= MEMORY_MODE_END) {
 //            Only D8 of address $A11OO0 is effective and for WRITE ONLY.
 //            $A11OO0 D8 ( W)
 //            O: ROM MODE
 //            1: D-RAM MODE
             LOG.info("Setting memory mode to: " + data);
-        } else if (addressL == 0xA11100 || addressL == 0xA11101) {    //	Z80 bus request
-            LOG.debug("Write Z80 busReq: {} {}", size, data);
-            //	To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
-            if (size == Size.WORD) {
-                // Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF
-                data = data & 0x0100;
-            }
-            if (data == 0x0100 || data == 0x1) {
-                boolean isReset = z80ResetState;
-                if (!z80BusRequested) {
-                    LOG.debug("busRequested, reset: {}", isReset);
-                    z80BusRequested = true;
-                } else {
-                    LOG.debug("busRequested, ignored, reset: {}", isReset);
-                }
-                //	 #$0000 needs to be written to $A11100 to return the bus back to the Z80
-            } else if (data == 0x0000) {
-                if (z80BusRequested) {
-                    z80BusRequested = false;
-                    LOG.debug("busUnrequested, reset : {}", z80ResetState);
-                } else {
-                    LOG.debug("busUnrequested ignored");
-                }
-            } else {
-                LOG.warn("Unexpected data on busRequest, address: {} , {}",
-                        Long.toHexString(addressL), Integer.toBinaryString((int) data));
-            }
-        } else if (addressL == 0xA11200 || addressL == 0xA11201) {    //	Z80 bus reset
-            //	if the Z80 is required to be reset (for example, to load a new program to it's memory)
-            //	this may be done by writing #$0000 to $A11200, but only when the Z80 bus is requested
-            if (data == 0x0000) {
-                if (z80BusRequested) {
-                    z80Provider.reset();
-                    z80ResetState = true;
-                    getFm().reset();
-                    LOG.debug("Reset while busRequested");
-                } else {
-                    LOG.debug("Reset while busUnrequested, ignoring");
-                }
-
-                //	After returning the bus after loading the new program to it's memory,
-                //	the Z80 may be let go from reset by writing #$0100 to $A11200.
-            } else if (data == 0x0100 || data == 0x1) {
-                z80ResetState = false;
-                LOG.debug("Disable reset, busReq : {}", z80BusRequested);
-            } else {
-                LOG.warn("Unexpected data on busReset: " + Integer.toBinaryString((int) data));
-            }
-
-        } else if (addressL >= 0xA13000 && addressL <= 0xA130FF) {
-            //	Sonic 3 will write to this register to enable and disable writing to its save game memory
-            //$A130F1 (what you'd officially write to if you had a full blown mapper) has this format: ??????WE,
-            //where W = allow writing and E = enable SRAM (it needs to be 00 to make SRAM hidden
-            // and 11 to make SRAM writeable).
-            //These games generally just look at the /TIME signal (the entire $A130xx range)
-            // unless they feature a full-blown mapper).
-            if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= Ssf2Mapper.BANK_SET_END_ADDRESS) {
-                LOG.info("Mapper bank set, address: " + Long.toHexString(addressL) + ", data: " + Integer.toHexString((int) data));
-                checkSsf2Mapper();
-                mapper.writeBankData(addressL, data);
-            } else if (addressL == 0xA130F1) {
-                boolean rom = (data & 3) % 2 == 0;
-                //NOTE we dont support Ssf2Mapper and SRAM at the same time
-                if (rom) { //enable ROM
-//                    checkSsf2Mapper(); //TODO comment this for s&k
-                } else {
-                    checkBackupMemoryMapper(SramMode.READ_WRITE);
-                }
-                LOG.info("Mapper register set: " + data);
-            } else {
-                LOG.warn("Unexpected mapper set, address: " + Long.toHexString(addressL) + ", data: " + Integer.toHexString((int) data));
-            }
-        } else if (addressL >= 0xA14000 || addressL <= 0xA14003) {
-            //          used to lock/unlock the VDP by writing either "SEGA" to unlock it or anything else to lock it.
+        } else if (addressL >= Z80_BUS_REQ_CONTROL_START && addressL <= Z80_BUS_REQ_CONTROL_END) {
+            z80BusReqWrite(addressL, data, size);
+        } else if (addressL >= Z80_RESET_CONTROL_START && addressL <= Z80_RESET_CONTROL_END) {
+            z80ResetControlWrite(data);
+        } else if (addressL >= TIME_LINE_START && addressL <= TIME_LINE_END) {
+            timeLineControlWrite(addressL, data);
+        } else if (TMSS_AREA1_START >= 0xA14000 || TMSS_AREA1_END <= 0xA14003) {
+            // used to lock/unlock the VDP by writing either "SEGA" to unlock it or anything else to lock it.
             LOG.warn("TMSS write, vdp lock: " + Integer.toHexString((int) data));
-        } else if (addressL == 0xA14100 || addressL == 0xA14101) {    //	VDP TMSS
+        } else if (addressL == TMSS_AREA2_START || addressL == TMSS_AREA2_END) {
 //            control the bankswitching between the cart and the TMSS rom.
 //            Setting the first bit to 1 enable the cart, and setting it to 0 enable the TMSS.
             LOG.warn("TMSS write enable cart: " + (data == 1));
         } else {
             LOG.warn("Unexpected internalRegWrite: " + addressL + ", " + data);
+        }
+    }
+
+    private int z80BusReqRead(Size size) {
+        int value = z80BusRequested ? 0 : 1;
+        value = z80ResetState ? 1 : value;
+//            Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
+//            the Z80's /BUSREQ line.
+        if (size == Size.WORD) {
+            //NOTE: Time Killers is buggy and needs bit0 !=0
+            value = (value << 8) | (m68kProvider.getPrefetchWord() & 0xFF);
+        }
+        LOG.debug("Read Z80 busReq: {} {}", size, value);
+        return value;
+    }
+
+    private void timeLineControlWrite(int addressL, long data) {
+        //	Sonic 3 will write to this register to enable and disable writing to its save game memory
+        //$A130F1 (what you'd officially write to if you had a full blown mapper) has this format: ??????WE,
+        //where W = allow writing and E = enable SRAM (it needs to be 00 to make SRAM hidden
+        // and 11 to make SRAM writeable).
+        //These games generally just look at the /TIME signal (the entire $A130xx range)
+        // unless they feature a full-blown mapper).
+        if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= Ssf2Mapper.BANK_SET_END_ADDRESS) {
+            LOG.info("Mapper bank set, address: " + Long.toHexString(addressL) + ", data: " + Integer.toHexString((int) data));
+            checkSsf2Mapper();
+            mapper.writeBankData(addressL, data);
+        } else if (addressL == 0xA130F1) {
+            boolean rom = (data & 3) % 2 == 0;
+            //NOTE we dont support Ssf2Mapper and SRAM at the same time
+            if (rom) { //enable ROM
+//                    checkSsf2Mapper(); //TODO comment this for s&k
+            } else {
+                checkBackupMemoryMapper(SramMode.READ_WRITE);
+            }
+            LOG.info("Mapper register set: {}", data);
+        } else {
+            LOG.warn("Unexpected mapper set, address: {}, data: {}", Long.toHexString(addressL),
+                    Integer.toHexString((int) data));
+        }
+    }
+
+    private void z80ResetControlWrite(long data) {
+        //	if the Z80 is required to be reset (for example, to load a new program to it's memory)
+        //	this may be done by writing #$0000 to $A11200, but only when the Z80 bus is requested
+        if (data == 0x0000) {
+            if (z80BusRequested) {
+                z80Provider.reset();
+                z80ResetState = true;
+                getFm().reset();
+                LOG.debug("Reset while busRequested");
+            } else {
+                LOG.debug("Reset while busUnrequested, ignoring");
+            }
+
+            //	After returning the bus after loading the new program to it's memory,
+            //	the Z80 may be let go from reset by writing #$0100 to $A11200.
+        } else if (data == 0x0100 || data == 0x1) {
+            z80ResetState = false;
+            LOG.debug("Disable reset, busReq : {}", z80BusRequested);
+        } else {
+            LOG.warn("Unexpected data on busReset: " + Integer.toBinaryString((int) data));
+        }
+    }
+
+    private void z80BusReqWrite(int addressL, long data, Size size) {
+        LOG.debug("Write Z80 busReq: {} {}", size, data);
+        //	To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
+        if (size == Size.WORD) {
+            // Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF
+            data = data & 0x0100;
+        }
+        if (data == 0x0100 || data == 0x1) {
+            boolean isReset = z80ResetState;
+            if (!z80BusRequested) {
+                LOG.debug("busRequested, reset: {}", isReset);
+                z80BusRequested = true;
+            } else {
+                LOG.debug("busRequested, ignored, reset: {}", isReset);
+            }
+            //	 #$0000 needs to be written to $A11100 to return the bus back to the Z80
+        } else if (data == 0x0000) {
+            if (z80BusRequested) {
+                z80BusRequested = false;
+                LOG.debug("busUnrequested, reset : {}", z80ResetState);
+            } else {
+                LOG.debug("busUnrequested ignored");
+            }
+        } else {
+            LOG.warn("Unexpected data on busRequest, address: {} , {}",
+                    Integer.toHexString(addressL), Long.toHexString(data));
         }
     }
 
@@ -431,23 +456,23 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         return data;
     }
 
-    private void ioWrite(long addressL, Size size, long data) {
+    private void ioWrite(int address, Size size, long data) {
         switch (size) {
             case BYTE:
             case WORD:
-                ioWriteInternal(addressL, data);
+                ioWriteInternal(address, data);
                 break;
             case LONG:
                 //Flink
-                ioWriteInternal(addressL, data >> 16);
-                ioWriteInternal(addressL + 2, data & 0xFFFF);
+                ioWriteInternal(address, data >> 16);
+                ioWriteInternal(address + 2, data & 0xFFFF);
                 break;
         }
     }
 
-    private void ioWriteInternal(long addressL, long data) {
+    private void ioWriteInternal(int addressL, long data) {
         //both even and odd addresses
-        int address = (int) (addressL & 0xFFE);
+        int address = addressL & 0xFFE;
         switch (address) {
             case 2:
                 joypadProvider.writeDataRegister1(data);
@@ -515,25 +540,25 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         }
     }
 
-    private void z80MemoryWrite(long address, Size size, long dataL) {
+    private void z80MemoryWrite(int address, Size size, long dataL) {
         busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
         if (!z80BusRequested || z80ResetState) {
             LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
             return;
         }
-        int addressZ = (int) (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
+        address &= GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK;
         int data = (int) dataL;
         if (size == Size.BYTE) {
-            z80Provider.writeMemory(addressZ, data);
+            z80Provider.writeMemory(address, data);
         } else if (size == Size.WORD) {
-            z80MemoryWriteWord(addressZ, data);
+            z80MemoryWriteWord(address, data);
         } else {
             //longword access to Z80 like "Stuck Somewhere In Time" does
             //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
             LOG.debug("Unexpected long write, addr: {}, data: {}", address, dataL);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-            z80MemoryWriteWord(addressZ, data >> 16);
-            z80MemoryWriteWord(addressZ + 2, data & 0xFFFF);
+            z80MemoryWriteWord(address, data >> 16);
+            z80MemoryWriteWord(address + 2, data & 0xFFFF);
         }
     }
 
@@ -610,7 +635,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     //      Doing an 8-bit write to the control or data port is interpreted by
 //                the VDP as a 16-bit word, with the data written used for both halfs
 //                of the word.
-    private void vdpWrite(long addressL, Size size, long data) {
+    private void vdpWrite(int addressL, Size size, long data) {
         boolean valid = (addressL & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
         if (!valid) {
             LOG.error("Illegal VDP write, address {}, data {}, size {}",

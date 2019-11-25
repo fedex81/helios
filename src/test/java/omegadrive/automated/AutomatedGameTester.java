@@ -47,21 +47,25 @@ public class AutomatedGameTester {
 
     static long RUN_DELAY_MS = 30_000;
 
+    public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
+            "src", "test", "resources");
     private static String romFolder =
-//            "/home/fede/roms/md";
-//    "/home/fede/roms/gg";
+//            "/home/fede/roms/md/nointro";
+//            "/home/fede/roms/smsgg";
 //            "/home/fede/roms/msx";
 //            "/data/emu/roms";
-    //            "/data/emu/roms/genesis/nointro";
-    //            "/data/emu/roms/genesis/goodgen/unverified";
-            "/home/fede/roms/md/issues";
-//            "/home/fede/roms/md/tricky";
-    private static String romList = "";
+//                "/data/emu/roms/genesis/nointro";
+            "/data/emu/roms/genesis/goodgen/unverified";
     private static boolean noIntro = true;
-    private static String startRom = null;
     private static String header = "rom;boot;sound";
     private static int BOOT_DELAY_MS = 500;
     private static int AUDIO_DELAY_MS = 25000;
+    //"/home/fede/roms/md/issues";
+//            "/home/fede/roms/md/tricky";
+//            "/home/fede/roms/md/homebrew/retrobrews";
+    private static String romList = "";
+    private static List<String> blackList = FileLoader.loadFileContent(Paths.get(resFolder.toAbsolutePath().toString()
+            , "blacklist.txt"));
 
     private static Predicate<Path> testGenRomsPredicate = p ->
             Arrays.stream(SystemLoader.mdBinaryTypes).anyMatch(p.toString()::endsWith);
@@ -88,8 +92,13 @@ public class AutomatedGameTester {
             testGenRomsPredicate.test(p) &&
                     (noIntro || p.getFileName().toString().contains("[!]"));
 
+    static {
+        System.setProperty("helios.headless", "true");
+    }
+
     public static void main(String[] args) throws Exception {
         System.out.println("Current folder: " + new File(".").getAbsolutePath());
+        System.out.println("Blacklist entries: " + blackList.size());
 //        new AutomatedGameTester().testAll(false);
 //        new AutomatedGameTester().testCartridgeInfo();
 //        new AutomatedGameTester().testList();
@@ -152,45 +161,14 @@ public class AutomatedGameTester {
         bootRoms(testRoms);
     }
 
-    private void bootRoms(List<Path> testRoms) {
-        System.out.println("Roms to test: " + testRoms.size());
-        System.out.println(header);
-        File logFile = new File("./test_output.log");
-        long logFileLen = 0;
-        boolean skip = true;
-
-        SystemLoader systemLoader = SystemLoader.getInstance();
-        SystemProvider system;
-        for (Path rom : testRoms) {
-            skip &= shouldSkip(rom);
-            if (skip) {
-                continue;
-            }
-            System.out.println(rom.getFileName().toString());
-            system = systemLoader.handleNewRomFile(rom);
-            if(system == null){
-                System.out.print(" - SKIP");
-                continue;
-            }
-//            genesisProvider.setFullScreen(true);
-            Util.sleep(BOOT_DELAY_MS);
-            boolean tooManyErrors = false;
-            int totalDelay = BOOT_DELAY_MS;
-            if (system.isRomRunning()) {
-                do {
-                    tooManyErrors = checkLogFileSize(logFile, rom.getFileName().toString(), logFileLen);
-                    Util.sleep(BOOT_DELAY_MS);
-                    totalDelay += BOOT_DELAY_MS;
-                } while (totalDelay < RUN_DELAY_MS && !tooManyErrors);
-                system.handleSystemEvent(CLOSE_ROM, null);
-            }
-
-            logFileLen = logFileLength(logFile);
-            Util.sleep(500);
-            if (tooManyErrors) {
-                break;
-            }
+    private static boolean shouldSkip(Path rom) {
+        String str = rom.getFileName().toString();
+        boolean skip = blackList.stream().anyMatch(l -> str.startsWith(l));
+        skip |= str.contains("[b");
+        if (skip) {
+            System.out.println("Skipping: " + str);
         }
+        return skip;
     }
 
     private void testAll(boolean random) throws Exception {
@@ -261,14 +239,46 @@ public class AutomatedGameTester {
         return file.exists() ? file.length() : 0;
     }
 
-    private boolean checkLogFileSize(File logFile, String rom, long previousLen) {
-        int limit = 100 * 1024; //100 Kbytes
-        long len = logFileLength(logFile);
-        boolean tooManyErrors = len - previousLen > limit;
-        if (tooManyErrors) {
-            System.out.println(rom + ": stopping, log file too big, bytes: " + len);
+    private void bootRoms(List<Path> testRoms) {
+        System.out.println("Total roms: " + testRoms.size());
+        testRoms = testRoms.stream().filter(r -> !shouldSkip(r)).collect(Collectors.toList());
+        System.out.println("Testable Roms: " + testRoms.size());
+        System.out.println(header);
+        File logFile = new File("./test_output.log");
+        long logFileLen = 0;
+        int count = 1;
+        SystemLoader systemLoader = SystemLoader.getInstance();
+        SystemProvider system;
+        for (Path rom : testRoms) {
+            String name = rom.getFileName().toString();
+            System.out.println(count++ + ": " + name);
+            system = systemLoader.handleNewRomFile(rom);
+            if (system == null) {
+                System.out.print(" - SKIP");
+                continue;
+            }
+//            genesisProvider.setFullScreen(true);
+            Util.sleep(BOOT_DELAY_MS);
+            boolean tooManyErrors = false;
+            int totalDelay = BOOT_DELAY_MS;
+
+            if (system.isRomRunning()) {
+                do {
+                    tooManyErrors = checkLogFileSize(logFile, name, logFileLen);
+                    Util.sleep(BOOT_DELAY_MS);
+                    totalDelay += BOOT_DELAY_MS;
+                } while (totalDelay < RUN_DELAY_MS && !tooManyErrors);
+                system.handleSystemEvent(CLOSE_ROM, null);
+            }
+
+            logFileLen = logFileLength(logFile);
+            Util.sleep(500);
+            long lenByte = logFileLength(logFile);
+            if (lenByte > 10 * 1024 * 1024) { //10Mbytes
+                System.out.println("Log file too big: " + lenByte);
+                break;
+            }
         }
-        return tooManyErrors;
     }
 
     private void testCartridgeInfo() throws Exception {
@@ -301,14 +311,13 @@ public class AutomatedGameTester {
         }
     }
 
-    private static boolean shouldSkip(Path rom) {
-        boolean skip = true;
-        if (startRom == null) {
-            return false;
-        } else if (rom.getFileName().toString().startsWith(startRom)) {
-            skip = false;
-            System.out.println("Starting from: " + rom.getFileName().toString());
+    private boolean checkLogFileSize(File logFile, String rom, long previousLen) {
+        int limit = 50 * 1024; //50 Kbytes
+        long len = logFileLength(logFile);
+        boolean tooManyErrors = len - previousLen > limit;
+        if (tooManyErrors) {
+            System.out.println(rom + ": stopping, log file too big, bytes: " + len);
         }
-        return skip;
+        return tooManyErrors;
     }
 }

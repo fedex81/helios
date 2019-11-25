@@ -178,18 +178,17 @@ public class Util {
         return data;
     }
 
-    public static void writeRam(IMemoryProvider memory, Size size, long addressL, int data) {
-        int address = (int) (addressL & 0xFFFF);
+    public static void writeRam(IMemoryProvider memory, Size size, int address, long data) {
         if (size == Size.BYTE) {
-            memory.writeRamByte(address, data);
+            memory.writeRamByte(address, (int) data);
         } else if (size == Size.WORD) {
-            memory.writeRamByte(address, (data >> 8));
-            memory.writeRamByte(address + 1, (data & 0xFF));
+            memory.writeRamByte(address, (int) (data >> 8));
+            memory.writeRamByte(address + 1, (int) (data & 0xFF));
         } else if (size == Size.LONG) {
-            memory.writeRamByte(address, ((data >> 24) & 0xFF));
-            memory.writeRamByte(address + 1, ((data >> 16) & 0xFF));
-            memory.writeRamByte(address + 2, ((data >> 8) & 0xFF));
-            memory.writeRamByte(address + 3, (data & 0xFF));
+            memory.writeRamByte(address, (int) ((data >> 24) & 0xFF));
+            memory.writeRamByte(address + 1, (int) ((data >> 16) & 0xFF));
+            memory.writeRamByte(address + 2, (int) ((data >> 8) & 0xFF));
+            memory.writeRamByte(address + 3, (int) (data & 0xFF));
         }
         LogHelper.printLevel(LOG, Level.DEBUG, "Write RAM: {}, {}: {}", address, data, size, verbose);
     }
