@@ -23,13 +23,8 @@ import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProviderImpl;
-import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import omegadrive.z80.disasm.Z80Decoder;
-import omegadrive.z80.disasm.Z80Disasm;
-import omegadrive.z80.disasm.Z80MemContext;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import z80core.Z80;
@@ -47,10 +42,9 @@ public class Z80CoreWrapper implements Z80Provider {
 
     public static boolean verbose = false;
 
-    private Z80 z80Core;
-    private BaseBusProvider z80BusProvider;
-    private Z80MemIoOps memIoOps;
-    private Z80Disasm z80Disasm;
+    protected Z80 z80Core;
+    protected BaseBusProvider z80BusProvider;
+    protected Z80MemIoOps memIoOps;
     protected int instCyclesPenalty = 0;
 
     public static Z80CoreWrapper createInstance(BaseBusProvider busProvider) {
@@ -60,26 +54,27 @@ public class Z80CoreWrapper implements Z80Provider {
         return setupInternal(w, null);
     }
 
+    public static Z80CoreWrapper createGenesisInstance(GenesisBusProvider busProvider, boolean debug) {
+        return debug ? Z80CoreWrapperDebug.createGenesisInstance(busProvider) : createGenesisInstanceInternal(busProvider);
+    }
+
     public static Z80CoreWrapper createGenesisInstance(GenesisBusProvider busProvider) {
+        return createGenesisInstanceInternal(busProvider);
+    }
+
+    private static Z80CoreWrapper createGenesisInstanceInternal(GenesisBusProvider busProvider) {
         Z80CoreWrapper w = new Z80CoreWrapper();
         w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider);
         w.memIoOps = Z80MemIoOps.createGenesisInstance(w.z80BusProvider);
         return setupInternal(w, null);
     }
 
-    private static Z80CoreWrapper setupInternal(Z80CoreWrapper w, Z80State z80State) {
+    protected static Z80CoreWrapper setupInternal(Z80CoreWrapper w, Z80State z80State) {
         w.z80Core = new Z80(w.memIoOps, null);
         w.z80BusProvider.attachDevice(w);
-        return initStateAndDisasm(w, z80State);
-    }
-
-    private static Z80CoreWrapper initStateAndDisasm(Z80CoreWrapper w, Z80State z80State) {
         if (z80State != null) {
             w.z80Core.setZ80State(z80State);
         }
-
-        Z80MemContext memContext = Z80MemContext.createInstance(w.z80BusProvider);
-        w.z80Disasm = new Z80Disasm(memContext, new Z80Decoder(memContext));
         return w;
     }
 
@@ -154,7 +149,6 @@ public class Z80CoreWrapper implements Z80Provider {
     @Override
     public void writeMemory(int address, int data) {
         z80BusProvider.write(address, data, Size.BYTE);
-        LogHelper.printLevel(LOG, Level.DEBUG, "Write Z80: {}, {}", address, data, verbose);
     }
 
     @Override

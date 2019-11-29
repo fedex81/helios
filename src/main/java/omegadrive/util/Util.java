@@ -19,6 +19,7 @@
 
 package omegadrive.util;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Range;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
@@ -276,12 +277,12 @@ public class Util {
         return value;
     }
 
-    public static final String pad4(long reg) {
-        String s = Long.toHexString(reg).toUpperCase();
-        while (s.length() < 4) {
-            s = "0" + s;
-        }
-        return s;
+    public static final String toHex(long val) {
+        return Strings.padStart(Long.toHexString(val & 0xFF_FFFF), 8, '0');
+    }
+
+    public static final String toHex(long val, int digits) {
+        return Strings.padStart(Long.toHexString(val & 0xFF_FFFF), digits, '0');
     }
 
     public static List<Range<Integer>> getRangeList(int... values) {

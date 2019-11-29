@@ -4,6 +4,7 @@ import emulib.plugins.cpu.DisassembledInstruction;
 import omegadrive.z80.disasm.Z80Disasm;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import z80core.Z80;
 import z80core.Z80State;
 
 import java.util.function.Function;
@@ -21,6 +22,14 @@ public class Z80Helper {
             String.format("%08x   %12s   %s", d.getAddress(), d.getOpCode(), d.getMnemo());
     private final static Logger LOG = LogManager.getLogger(Z80Helper.class.getSimpleName());
     public static boolean verbose = false;
+
+    public static String toStringExt(Z80StateExt state, Z80Disasm disasm) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(toString(state)).append("\n\n");
+        sb.append(dumpInfo(disasm, state.getRegPC())).append("\n");
+        sb.append(state.memAccess);
+        return sb.toString();
+    }
 
     public static String toString(Z80State state) {
         String str = "\n";
@@ -41,6 +50,79 @@ public class Z80Helper {
         str += String.format("NMI: %s  INTLine: %s  pendingE1: %s\n", state.isNMI(), state.isINTLine(),
                 state.isPendingEI());
         return str;
+    }
+
+    public static Z80State copyState(Z80State z, Z80State state) {
+        state.setRegA(z.getRegA());
+        state.setRegF(z.getRegF());
+        state.setRegB(z.getRegB());
+        state.setRegC(z.getRegC());
+        state.setRegD(z.getRegD());
+        state.setRegE(z.getRegE());
+        state.setRegH(z.getRegH());
+        state.setRegL(z.getRegL());
+        state.setRegAx(z.getRegAx());
+        state.setRegFx(z.getRegFx());
+        state.setRegBx(z.getRegBx());
+        state.setRegCx(z.getRegCx());
+        state.setRegDx(z.getRegDx());
+        state.setRegEx(z.getRegEx());
+        state.setRegHx(z.getRegHx());
+        state.setRegLx(z.getRegLx());
+        state.setRegIX(z.getRegIX());
+        state.setRegIY(z.getRegIY());
+        state.setRegSP(z.getRegSP());
+        state.setRegPC(z.getRegPC());
+        state.setRegI(z.getRegI());
+        state.setRegR(z.getRegR());
+        state.setMemPtr(z.getMemPtr());
+        state.setHalted(z.isHalted());
+        state.setIFF1(z.isIFF1());
+        state.setIFF2(z.isIFF2());
+        state.setIM(z.getIM());
+        state.setINTLine(z.isINTLine());
+        state.setPendingEI(z.isPendingEI());
+        state.setNMI(z.isNMI());
+        return state;
+    }
+
+    public static Z80State getZ80State(Z80 z, Z80State state) {
+        state.setRegA(z.getRegA());
+        state.setRegF(z.getFlags());
+        state.setRegB(z.getRegB());
+        state.setRegC(z.getRegC());
+        state.setRegD(z.getRegD());
+        state.setRegE(z.getRegE());
+        state.setRegH(z.getRegH());
+        state.setRegL(z.getRegL());
+        state.setRegAx(z.getRegAx());
+        state.setRegFx(z.getRegFx());
+        state.setRegBx(z.getRegBx());
+        state.setRegCx(z.getRegCx());
+        state.setRegDx(z.getRegDx());
+        state.setRegEx(z.getRegEx());
+        state.setRegHx(z.getRegHx());
+        state.setRegLx(z.getRegLx());
+        state.setRegIX(z.getRegIX());
+        state.setRegIY(z.getRegIY());
+        state.setRegSP(z.getRegSP());
+        state.setRegPC(z.getRegPC());
+        state.setRegI(z.getRegI());
+        state.setRegR(z.getRegR());
+        state.setMemPtr(z.getMemPtr());
+        state.setHalted(z.isHalted());
+        state.setIFF1(z.isIFF1());
+        state.setIFF2(z.isIFF2());
+        state.setIM(z.getIM());
+        state.setINTLine(z.isINTLine());
+        state.setPendingEI(z.isPendingEI());
+        state.setNMI(z.isNMI());
+//        state.setFlagQ(lastFlagQ);
+        return state;
+    }
+
+    static class Z80StateExt extends Z80State {
+        public String memAccess;
     }
 
     public static String dumpInfo(Z80Disasm z80Disasm, int pc) {

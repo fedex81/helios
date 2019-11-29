@@ -280,7 +280,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             z80ResetControlWrite(data);
         } else if (addressL >= TIME_LINE_START && addressL <= TIME_LINE_END) {
             timeLineControlWrite(addressL, data);
-        } else if (TMSS_AREA1_START >= 0xA14000 || TMSS_AREA1_END <= 0xA14003) {
+        } else if (addressL >= TMSS_AREA1_START && addressL <= TMSS_AREA1_END) {
             // used to lock/unlock the VDP by writing either "SEGA" to unlock it or anything else to lock it.
             LOG.warn("TMSS write, vdp lock: " + Integer.toHexString((int) data));
         } else if (addressL == TMSS_AREA2_START || addressL == TMSS_AREA2_END) {
@@ -447,7 +447,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             case 0x18:
             case 0x1E:
                 int scNumber = address == 0x12 ? 1 : ((address == 0x18) ? 2 : 3);
-                LOG.info("Reading serial control{}, {}", scNumber, Util.pad4(address));
+                LOG.info("Reading serial control{}, {}", scNumber, Long.toHexString(address));
                 break;
             default:
                 LOG.warn("Unexpected ioRead: {}", Long.toHexString(addressL));
@@ -620,7 +620,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 return even ? v : h;
             }
         } else if (address == 0x1C) {
-            LOG.warn("Ignoring VDP debug register read, address : {}", Util.pad4(addressL));
+            LOG.warn("Ignoring VDP debug register read, address : {}", Long.toHexString(addressL));
         } else if (address > 0x17) {
             LOG.info("vdpRead on unused address: " + Long.toHexString(addressL));
 //            return 0xFF;

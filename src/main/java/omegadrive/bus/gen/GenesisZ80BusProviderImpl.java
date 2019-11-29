@@ -117,7 +117,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
         } else {
             LOG.error("Illegal Z80 memory read: " + Integer.toHexString(address));
         }
-        return 0; //TODO 0xFF ??
+        return 0xFF;
     }
 
     @Override

@@ -53,7 +53,7 @@ public class MC68000Wrapper implements M68kProvider {
 
     protected MC68000 m68k;
     protected AddressSpace addressSpace;
-    private GenesisBusProvider busProvider;
+    protected GenesisBusProvider busProvider;
     private boolean stop;
     protected int currentPC;
     protected int instCycles = 0;
@@ -61,9 +61,13 @@ public class MC68000Wrapper implements M68kProvider {
     public MC68000Wrapper(GenesisBusProvider busProvider) {
         this.m68k = createCpu();
         this.busProvider = busProvider;
-        this.addressSpace = MC68000AddressSpace.createInstance(busProvider);
+        this.addressSpace = createAddressSpace();
         m68k.setAddressSpace(addressSpace);
         TAS.EMULATE_BROKEN_TAS = GENESIS_TAS_BROKEN;
+    }
+
+    public static MC68000Wrapper createInstance(GenesisBusProvider busProvider, boolean debug) {
+        return debug ? new MC68000WrapperDebug(busProvider) : new MC68000Wrapper(busProvider);
     }
 
     @Override
@@ -82,6 +86,10 @@ public class MC68000Wrapper implements M68kProvider {
             }
         }
         return res;
+    }
+
+    protected AddressSpace createAddressSpace() {
+        return MC68000AddressSpace.createInstance(busProvider);
     }
 
     @Override

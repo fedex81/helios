@@ -23,6 +23,7 @@ import m68k.cpu.Cpu;
 import m68k.cpu.DisassembledInstruction;
 import m68k.cpu.Instruction;
 import m68k.cpu.MC68000;
+import omegadrive.util.Util;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -89,6 +90,41 @@ public class MC68000Helper {
             sb2.append(String.format("%08x   ????", wrapPc));
         }
         return sb.append(String.format("\n==> %s\n\n", sb2.toString())).toString();
+    }
+
+    public static String dumpInfo(Cpu cpu, MC68000WrapperDebug.M68kState state, int memorySize) {
+        StringBuilder sb = new StringBuilder("\n");
+        int wrapPc = state.pc & 0xFF_FFFF;
+        sb.append("D0: " + Util.toHex(state.dr[0]) +
+                "   D4: " + Util.toHex(state.dr[4]) +
+                "   A0: " + Util.toHex(state.ar[0]) +
+                "   A4: " + Util.toHex(state.ar[4]) +
+                "     PC: " + Util.toHex(wrapPc) + "\n");
+        sb.append("D1: " + Util.toHex(state.dr[1]) +
+                "   D5: " + Util.toHex(state.dr[5]) +
+                "   A1: " + Util.toHex(state.ar[1]) +
+                "   A5: " + Util.toHex(state.ar[5]) +
+                "     SR: " + Util.toHex(state.sr, 4) + " " + makeFlagView(cpu) + "\n");
+        sb.append("D2: " + Util.toHex(state.dr[2]) +
+                "   D6: " + Util.toHex(state.dr[6]) +
+                "   A2: " + Util.toHex(state.ar[2]) +
+                "   A6: " + Util.toHex(state.ar[6]) +
+                "    USP: " + Util.toHex(state.usp) + "\n");
+        sb.append("D3: " + Util.toHex(state.dr[3]) +
+                "   D7: " + Util.toHex(state.dr[7]) +
+                "   A3: " + Util.toHex(state.ar[3]) +
+                "   A7: " + Util.toHex(state.ar[7]) +
+                "    SSP: " + Util.toHex(state.ssp) + "\n");
+        StringBuilder sb2 = new StringBuilder();
+        if (wrapPc >= 0 && wrapPc < memorySize) {
+            int opcode = cpu.readMemoryWord(wrapPc);
+            Instruction i = cpu.getInstructionFor(opcode);
+            DisassembledInstruction di = i.disassemble(wrapPc, opcode);
+            di.formatInstruction(sb2);
+        }
+        sb.append("\n==> " + sb2.toString() + "\n\n");
+        sb.append(state.memAccess);
+        return sb.toString();
     }
 
     protected static String makeFlagView(Cpu cpu) {
