@@ -48,7 +48,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     public final static boolean regVerbose = false;
     private final static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
-    private static boolean ENABLE_READ_AHEAD = Boolean.valueOf(System.getProperty("vdp.enable.read.ahead", "false"));
+    private static boolean ENABLE_READ_AHEAD = Boolean.valueOf(System.getProperty("vdp.enable.read.ahead", "true"));
 
     private VramMode vramMode;
     private InterlaceMode interlaceMode;
@@ -387,15 +387,11 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         evaluateStop68k();
     }
 
-    //TODO check Clue vs GoldenAxe II
     private void writeControlPortInternal(long dataL) {
         long mode = (dataL >> 14);
         int data = (int) dataL;
-
-        //TODO: check this: writePendingControlPort has precedence,
-        //TODO: a register write could be treated as 2nd part - fixes test #10
+        //genvdp.txt writePendingControlPort has precedence,
         boolean isRegisterWrite = !writePendingControlPort && mode == 0b10;
-
         updateStateFromControlPortWrite(isRegisterWrite, data);
         if (isRegisterWrite) {
             writeRegister(data);
@@ -404,19 +400,17 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         }
     }
 
+    //TODO write test, Clue broken
+    //Clue breaks when CD is cleared
+    //GoldenAxeII expects CD to be cleared
+    //see Sonic3d intro wrong colors
+    //check GoldenAxeII, MW4 intro, EA intro, CLUE and VdpFifoTesting
+    //http://gendev.spritesmind.net/forum/viewtopic.php?f=15&t=627&p=10854&hilit=golden+axe#p10854
     private void updateStateFromControlPortWrite(boolean isRegisterWrite, int data) {
-        //TODO write test
-        //Clue breaks when CD is cleared
-        //GoldenAxeII expects CD to be cleared
-        //writing a register clears the 1st command word
-        //see Sonic3d intro wrong colors
         if (writePendingControlPort) {
             codeRegister = ((data >> 2) & 0xFF) | (codeRegister & 0x3);
             addressRegister = (addressRegister & 0x3FFF) | ((data & 0x3) << 14);
-        } else if (isRegisterWrite) {
-            //TODO fixes GoldenAxeII, MW4 intro -> breaks EA intro, CLUE and VdpFifoTesting
-//            codeRegister = ~0x3;
-        } else if (!writePendingControlPort) {
+        } else {
             //It is perfectly valid to write the first half of the command word only.
 //            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
 //            values, while the remaining address and code bits _retain_ their former value.
@@ -564,11 +558,6 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     private void writeRegister(int data) {
         int dataControl = data & 0x00FF;
         int reg = (data >> 8) & 0x1F;
-        //TODO needed?
-//        //writing a register clears the 1st command word
-//        //see Sonic3d intro wrong colors
-//        codeRegister &= ~0x3;
-//        addressRegister &= ~0x3FFF;
         writeRegister(reg, dataControl);
     }
 
