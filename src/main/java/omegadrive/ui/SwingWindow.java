@@ -315,11 +315,13 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private void showDebugInfo(boolean showDebug) {
-        if (fullScreenItem.getState()) {
-            jFrame.getJMenuBar().setVisible(showDebug);
-        }
-        fpsLabel.setVisible(showDebug);
         this.showDebug = showDebug;
+        SwingUtilities.invokeLater(() -> {
+            if (fullScreenItem.getState()) {
+                jFrame.getJMenuBar().setVisible(showDebug);
+            }
+            fpsLabel.setVisible(showDebug);
+        });
     }
 
     public void resetScreen() {
@@ -336,8 +338,10 @@ public class SwingWindow implements DisplayWindow {
 
     @Override
     public void setFullScreen(boolean value) {
-        fullScreenItem.setState(value);
-        LOG.info("Full screen: {}", fullScreenItem.isSelected());
+        SwingUtilities.invokeLater(() -> {
+            fullScreenItem.setState(value);
+            LOG.info("Full screen: {}", fullScreenItem.isSelected());
+        });
     }
 
     @Override
@@ -518,15 +522,15 @@ public class SwingWindow implements DisplayWindow {
 
             @Override
             public void keyPressed(KeyEvent e) {
-                //avoid double firing when not in fullScreen
-                if (!fullScreenItem.isSelected()) {
-                    return;
-                }
                 SystemProvider mainEmu = getMainEmu();
                 KeyStroke keyStroke = KeyStroke.getKeyStrokeForEvent(e);
 //                LOG.info(keyStroke.toString());
                 SystemProvider.SystemEvent event = KeyBindingsHandler.getSystemEventIfAny(keyStroke);
                 if (event != null && event != NONE) {
+                    //avoid double firing when not in fullScreen
+                    if (event == TOGGLE_FULL_SCREEN && !fullScreenItem.isSelected()) {
+                        return;
+                    }
                     Optional.ofNullable(actionMap.get(event)).ifPresent(act -> act.actionPerformed(null));
                 }
             }
