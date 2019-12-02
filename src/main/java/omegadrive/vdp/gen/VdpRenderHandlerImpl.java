@@ -78,9 +78,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private int[][] planeA = new int[ROWS][COLS];
     private int[][] planeB = new int[ROWS][COLS];
     private int[][] planeBack = new int[ROWS][COLS];
-
     private int[][] sprites = new int[ROWS][COLS];
-    private int[][] spritesIndex = new int[ROWS][COLS];
 
     private int[][] window = new int[ROWS][COLS];
 
@@ -98,6 +96,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private InterlaceMode interlaceMode = InterlaceMode.NONE;
 
     private int[] vram;
+    private int[] cram;
     private int[] javaPalette;
 
     public VdpRenderHandlerImpl(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
@@ -107,6 +106,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         this.renderDump = new VdpRenderDump();
         this.scrollHandler = VdpScrollHandler.createInstance(memoryInterface);
         this.vram = memoryInterface.getVram();
+        this.cram = memoryInterface.getCram();
         this.javaPalette = memoryInterface.getJavaColorPalette();
         this.scrollContextA = ScrollContext.createInstance(true);
         this.scrollContextB = ScrollContext.createInstance(false);
@@ -182,7 +182,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private void clearData() {
         Arrays.stream(sprites).forEach(a -> Arrays.fill(a, 0));
-        Arrays.stream(spritesIndex).forEach(a -> Arrays.fill(a, 0));
         Arrays.stream(spritesPerLine).forEach(a -> Arrays.fill(a, -1));
         Arrays.stream(pixelPriority).forEach(a -> Arrays.fill(a, RenderPriority.BACK_PLANE));
         Arrays.stream(shadowHighlight).forEach(a -> Arrays.fill(a, ShadowHighlightType.NORMAL));
@@ -304,13 +303,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 pixelPriority[line][horOffset].getRenderType() == RenderType.SPRITE) { //isSpriteAlreadyShown)
             return;
         }
-        int cramIndexColor = getPixelIndexColor(tileBytePointer, pixelInTile, holder.horFlipAmount);
-        int javaColor = getJavaColorValue(cramIndexColor, holder.paletteLineIndex);
-        cramIndexColor = processShadowHighlightSprite(holder.paletteLineIndex + cramIndexColor
-                , cramIndexColor, horOffset, line);
-        sprites[line][horOffset] = javaColor;
-        spritesIndex[line][horOffset] = cramIndexColor;
-        if (cramIndexColor > 0) {
+        int pixelIndex = getPixelIndexColor(tileBytePointer, pixelInTile, holder.horFlipAmount);
+        int cramIndexColor = holder.paletteLineIndex + (pixelIndex << 1);
+        cramIndexColor = processShadowHighlightSprite(cramIndexColor, horOffset, line);
+        sprites[line][horOffset] = cramIndexColor;
+        if (pixelIndex > 0 && cramIndexColor > 0) {
             updatePriority(horOffset, line, holder.priority ? RenderPriority.SPRITE_PRIO : RenderPriority.SPRITE_NO_PRIO);
         }
     }
@@ -328,62 +325,54 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     private int getPixelFromLayer(RenderPriority rp, int col, int line) {
-        int javaColor = 0;
+        int cramIndex = 0;
         switch (rp.getRenderType()) {
             case PLANE_A:
-                javaColor = planeA[line][col];
+                cramIndex = planeA[line][col];
                 break;
             case PLANE_B:
-                javaColor = planeB[line][col];
+                cramIndex = planeB[line][col];
                 break;
             case SPRITE:
-                javaColor = sprites[line][col];
+                cramIndex = sprites[line][col];
                 break;
             case BACK_PLANE:
-                javaColor = planeBack[line][col];
+                cramIndex = planeBack[line][col];
                 break;
             case WINDOW_PLANE:
-                javaColor = window[line][col];
+                cramIndex = window[line][col];
                 break;
             default:
                 break;
         }
-        return processShadowHighlight(shadowHighlightMode, col, line, javaColor, rp);
+        return processShadowHighlight(shadowHighlightMode, col, line, cramIndex, rp);
     }
 
-    //TODO fix this
-    //http://gendev.spritesmind.net/forum/viewtopic.php?t=2692
-//        https://segaretro.org/Sega_Mega_Drive/Shadow_and_highlight
-    private int processShadowHighlight(boolean shadowHighlightMode, int col, int line, int javaColor, RenderPriority rp) {
-        return javaColor;
-//        if (!shadowHighlightMode) {
-//            return javaColor;
-//        }
-//        int colorIndex = spritesIndex[line][col];
-////        System.out.println(line + "," + col + ": " + colorIndex);
-//        boolean noChange = rp.getPriorityType() == PriorityType.YES ||
-//                (rp.getRenderType() == RenderType.SPRITE && (colorIndex % 14) == 0);
-//        if(noChange){
-//            return javaColor;
-//        }
-//        return colorMapper.getJavaColor(colorIndex, shadowHighlight[line][col].darker());
-    }
-
-    private int processShadowHighlightSprite(int paletteColorIndex, int indexColor, int col, int line) {
+    private int processShadowHighlight(boolean shadowHighlightMode, int col, int line, int cramIndex, RenderPriority rp) {
         if (!shadowHighlightMode) {
-            return indexColor;
+            return getJavaColorValue(cramIndex);
         }
-        switch (paletteColorIndex) {
-            case 0x6E: // palette (3 * 32) + color (14) = 110
+        ShadowHighlightType type = shadowHighlight[line][col];
+        shadowHighlight[line][col] = rp.getPriorityType() == PriorityType.YES ? type.brighter() : type;
+        return colorMapper.getColor(cram[cramIndex] << 8 | cram[cramIndex + 1],
+                shadowHighlight[line][col].darker());
+    }
+
+    private int processShadowHighlightSprite(int cramIndexColor, int col, int line) {
+        if (!shadowHighlightMode) {
+            return cramIndexColor;
+        }
+        switch (cramIndexColor) {
+            case 0x7C: // palette 3, color E (14) = 3*0x10+E << 1
                 shadowHighlight[line][col] = shadowHighlight[line][col].brighter();
-                indexColor = 0;
+                cramIndexColor = 0;
                 break;
-            case 0x6F:  // palette (3 * 32) + color (15) = 111
+            case 0x7E:  // palette 3, color F (15)
                 shadowHighlight[line][col] = shadowHighlight[line][col].darker();
-                indexColor = 0;
+                cramIndexColor = 0;
                 break;
         }
-        return indexColor;
+        return cramIndexColor;
     }
 
     private void renderBack(int line) {
@@ -392,10 +381,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         int backLine = (reg7 >> 4) & 0x3;
         int backEntry = (reg7) & 0xF;
         int cramColorIndex = (backLine << 5) + (backEntry << 1);
-        int javaColor = getJavaColorValue(cramColorIndex);
 
-        if (planeBack[line][0] != javaColor) {
-            Arrays.fill(planeBack[line], 0, limitHorTiles << 3, javaColor);
+        if (planeBack[line][0] != cramColorIndex) {
+            Arrays.fill(planeBack[line], 0, limitHorTiles << 3, cramColorIndex);
         }
     }
 
@@ -492,7 +480,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 int tileBytePointer = tileDataHolder.tileIndex + (colCell >> 1) + rowCellShift;
                 int onePixelData = getPixelIndexColor(tileBytePointer, xPosCell, tileDataHolder.horFlipAmount);
 
-                plane[line][pixel] = getJavaColorValue(tileDataHolder.paletteLineIndex + (onePixelData << 1));
+                plane[line][pixel] = tileDataHolder.paletteLineIndex + (onePixelData << 1);
                 if (onePixelData > 0) {
                     updatePriority(pixel, line, rp);
                 }
@@ -507,12 +495,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
     }
 
-    private int getJavaColorValue(int cramIndex) {
+    public int getJavaColorValue(int cramIndex) {
         return javaPalette[cramIndex >> 1];
-    }
-
-    private int getJavaColorValue(int pixelIndexColor, int paletteLine) {
-        return javaPalette[(paletteLine + (pixelIndexColor << 1)) >> 1];
     }
 
     // This value is effectively the address divided by $400; however, the low
@@ -646,11 +630,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, tileDataHolder.horFlipAmount);
                 int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, tileDataHolder.horFlipAmount);
 
-                int javaColor1 = getJavaColorValue(pixelIndexColor1, tileDataHolder.paletteLineIndex);
-                int javaColor2 = getJavaColorValue(pixelIndexColor2, tileDataHolder.paletteLineIndex);
-
-                window[line][po] = javaColor1;
-                window[line][po + 1] = javaColor2;
+                window[line][po] = tileDataHolder.paletteLineIndex + (pixelIndexColor1 << 1);
+                window[line][po + 1] = tileDataHolder.paletteLineIndex + (pixelIndexColor2 << 1);
                 if (pixelIndexColor1 > 0) {
                     updatePriority(po, line, rp);
                 }

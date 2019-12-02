@@ -21,7 +21,6 @@ package omegadrive.vdp;
 
 import omegadrive.automated.SavestateGameLoader;
 import omegadrive.util.FileUtil;
-import omegadrive.util.ImageUtil;
 import omegadrive.util.Util;
 import org.junit.Assert;
 import org.junit.Before;
@@ -56,15 +55,13 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     }
 
     public static void main(String[] args) {
-        File[] files = compareFolderPath.toFile().listFiles();
+        File[] files = compareFolderPath.getParent().toFile().listFiles();
         for (File file : files) {
             if (file.isDirectory()) {
                 continue;
             }
             System.out.println("Testing: " + file);
-            Image img = ImageUtil.loadImageFromFile(file);
-            Path zipFilePath = FileUtil.compressAndSaveToZipFile(file.toPath(), img, "bmp");
-            System.out.println("Written: " + zipFilePath);
+//            FileUtil.compressAndSaveToZipFile(file.toPath());
         }
     }
 
@@ -89,6 +86,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
             }
             showingFailures |= res;
         }
+        System.out.println("Done");
         if (showingFailures) {
             Util.waitForever();
         }
@@ -96,16 +94,17 @@ public class VdpRenderCompareTest extends VdpRenderTest {
 
     @Test
     public void testCompare() {
-        boolean overwrite = false;
-        String name = "mickeym";
+        boolean overwrite = true;
+        String name = "VECTORMA";
+        String ext = ".GS0".toLowerCase();
         if (overwrite) {
-            testOverwriteBaselineImage(name + ".gs0");
+            testOverwriteBaselineImage(name + ext);
         }
-        boolean showingFailures = testCompareOne(name + ".gs0");
+        boolean showingFailures = testCompareOne(name + ext);
         if (showingFailures) {
             Util.waitForever();
         }
-        Util.waitForever();
+//        Util.waitForever();
     }
 
     private boolean compareImage(BufferedImage baseline, BufferedImage actual) {

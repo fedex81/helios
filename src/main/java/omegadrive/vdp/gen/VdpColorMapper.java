@@ -21,9 +21,6 @@ package omegadrive.vdp.gen;
 
 import omegadrive.vdp.model.ShadowHighlightType;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class VdpColorMapper {
 
 
@@ -61,9 +58,6 @@ public class VdpColorMapper {
     private final static double[] SHADOW_LEVELS = {0, 0.5, 0.9, 1.3, 1.6, 1.9, 2.2, 2.4};
     private final static double[] HIGHLIGHT_LEVELS = {2.4, 2.7, 2.9, 3.2, 3.5, 3.8, 4.2, 4.7};
 
-    private final static Map<Integer, Integer> normalToShadow = new HashMap<>();
-    private final static Map<Integer, Integer> normalToHighlight = new HashMap<>();
-
     private final static VdpColorMapper INSTANCE = new VdpColorMapper();
 
     private VdpColorMapper() {
@@ -87,17 +81,6 @@ public class VdpColorMapper {
                 return colorsCacheShadow[red][green][blue];
         }
         return colorsCache[red][green][blue];
-    }
-
-    private static void initColorsMappings() {
-        for (int i = 0; i < VDP_TONES_PER_CHANNEL; i++) {
-            for (int j = 0; j < VDP_TONES_PER_CHANNEL; j++) {
-                for (int k = 0; k < VDP_TONES_PER_CHANNEL; k++) {
-                    normalToShadow.put(colorsCache[i][j][k], colorsCacheShadow[i][j][k]);
-                    normalToHighlight.put(colorsCache[i][j][k], colorsCacheHighLight[i][j][k]);
-                }
-            }
-        }
     }
 
     /**
@@ -128,17 +111,5 @@ public class VdpColorMapper {
                 }
             }
         }
-    }
-
-    public int getJavaColor(int rgb, ShadowHighlightType shadowHighlightType) {
-        switch (shadowHighlightType) {
-            case NORMAL:
-                return rgb;
-            case HIGHLIGHT:
-                return normalToHighlight.getOrDefault(rgb, rgb);
-            case SHADOW:
-                return normalToShadow.getOrDefault(rgb, rgb);
-        }
-        return rgb;
     }
 }

@@ -7,6 +7,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.RenderedImage;
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
@@ -24,7 +25,32 @@ public class FileUtil {
 
     private static Logger LOG = LogManager.getLogger(FileUtil.class.getSimpleName());
 
+    public static Path compressAndSaveToZipFile(Path srcFilePath) {
+        String fileName = srcFilePath.getFileName().toString();
+        Path folder = srcFilePath.getParent();
+        String zipFileName = fileName + ".zip";
+        File zipFile = Paths.get(folder.toAbsolutePath().toString(), zipFileName).toFile();
+        ZipOutputStream zos = null;
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(zipFile);
+            BufferedOutputStream bos = new BufferedOutputStream(fos);
+            byte[] data = Files.readAllBytes(srcFilePath);
+            zos = new ZipOutputStream(bos);
+            zos.putNextEntry(new ZipEntry(fileName));
+            zos.write(data);
+            zos.closeEntry();
+        } catch (Exception e) {
+            LOG.error("Unable to save source file: " + fileName, e);
+        } finally {
+            closeQuietly(zos);
+            closeQuietly(fos);
+        }
+        return zipFile.toPath();
+    }
+
     public static Path compressAndSaveToZipFile(String fileName, Path folder, Image img, String imgType) {
+
         String zipFileName = fileName + ".zip";
         File zipFile = Paths.get(folder.toAbsolutePath().toString(), zipFileName).toFile();
 

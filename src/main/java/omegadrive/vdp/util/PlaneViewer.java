@@ -2,6 +2,7 @@ package omegadrive.vdp.util;
 
 import omegadrive.vdp.VdpRenderDump;
 import omegadrive.vdp.gen.VdpRenderHandlerImpl;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.RenderType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,6 +11,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * PlaneViewer
@@ -27,6 +30,7 @@ public class PlaneViewer implements UpdatableViewer {
     private static final int PANEL_WIDTH = 320;
 
     private VdpRenderHandlerImpl renderHandler;
+    private static final int CRAM_MASK = GenesisVdpProvider.VDP_CRAM_SIZE - 1;
     private JPanel panel;
     private JFrame frame;
     private JPanel[] panelList = new JPanel[RenderType.values().length];
@@ -95,6 +99,9 @@ public class PlaneViewer implements UpdatableViewer {
         return panel;
     }
 
+    Map<RenderType, Object> javaColorRes = new HashMap<>();
+    private int[] javaPalette;
+
     @Override
     public void update() {
         Dimension finalDim = renderHandler.getVideoMode().getDimension();
@@ -102,8 +109,37 @@ public class PlaneViewer implements UpdatableViewer {
         for (RenderType type : RenderType.values()) {
             BufferedImage img = imageList[type.ordinal()];
             Dimension d = type == RenderType.FULL ? finalDim : layerDim;
-            imageList[type.ordinal()] = VdpRenderDump.writeDataToImage(img, type, d, renderHandler.getPlaneData(type));
+            Object data = toJavaColor(type, renderHandler.getPlaneData(type));
+            imageList[type.ordinal()] = VdpRenderDump.writeDataToImage(img, type, d, data);
         }
         panel.repaint();
+    }
+
+    private Object toJavaColor(RenderType type, final Object data) {
+        Object out = null;
+        if (data instanceof int[][]) {
+            int[][] in = (int[][]) data;
+            int[][] out1 = getHolder(type, in);
+            for (int i = 0; i < in.length; i++) {
+                for (int j = 0; j < in[i].length; j++) {
+                    out1[i][j] = renderHandler.getJavaColorValue(in[i][j] & CRAM_MASK);
+                }
+            }
+            out = out1;
+        } else if (data instanceof int[]) {
+            out = data;
+        } else {
+            LOG.error("Error");
+        }
+        return out;
+    }
+
+    private int[][] getHolder(RenderType type, final int[][] data) {
+        int[][] res = (int[][]) javaColorRes.get(type);
+        if (res == null || data.length != res.length) {
+            res = data.clone();
+            javaColorRes.put(type, res);
+        }
+        return res;
     }
 }
