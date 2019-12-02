@@ -527,11 +527,11 @@ public class SwingWindow implements DisplayWindow {
 //                LOG.info(keyStroke.toString());
                 SystemProvider.SystemEvent event = KeyBindingsHandler.getSystemEventIfAny(keyStroke);
                 if (event != null && event != NONE) {
-                    //avoid double firing when not in fullScreen
-                    if (event == TOGGLE_FULL_SCREEN && !fullScreenItem.isSelected()) {
-                        return;
+                    //if the menuBar is visible it will handle the event, otherwise we need to perform the action here
+                    boolean menuVisible = jFrame.getJMenuBar().isVisible();
+                    if (!menuVisible) {
+                        Optional.ofNullable(actionMap.get(event)).ifPresent(act -> act.actionPerformed(null));
                     }
-                    Optional.ofNullable(actionMap.get(event)).ifPresent(act -> act.actionPerformed(null));
                 }
             }
         });
