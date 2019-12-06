@@ -25,7 +25,6 @@ import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -38,7 +37,8 @@ import java.time.Duration;
 @Ignore
 public class VdpPerformanceTest {
 
-    static Path testFilePath = Paths.get("./test_roms", "stuck.bin");
+    static Path testFilePath = Paths.get("./test_roms", "s1.zip");
+    //    static Path testFilePath = Paths.get("./test_roms", "zax.col");
     static int fps = 60;
     int frameCnt = 0;
     int sampleCnt = 0;
@@ -48,7 +48,7 @@ public class VdpPerformanceTest {
 
     @BeforeClass
     public static void beforeTest() {
-        System.setProperty("helios.headless", "true");
+        System.setProperty("helios.headless", "false");
         System.setProperty("helios.fullSpeed", "true");
         System.setProperty("helios.enable.sound", "true");
 //        System.setProperty("md.show.vdp.debug.viewer", "true");
@@ -68,18 +68,10 @@ public class VdpPerformanceTest {
     }
 
     @Test
-    public void testVdpPerf() throws Exception {
-        BaseSystem system = (BaseSystem) createTestProvider();
+    public void testVdpPerf() {
+        SystemProvider system = createTestProvider();
         fps = system.getRegion().getFps();
-        Field f = BaseSystem.class.getDeclaredField("vdp");
-        f.setAccessible(true);
-        GenesisVdpProvider vdpProvider = (GenesisVdpProvider) f.get(system);
-        vdpProvider.addVdpEventListener(new BaseVdpProvider.VdpEventAdapter() {
-            @Override
-            public void onNewFrame() {
-                doStats();
-            }
-        });
+        createAndAddVdpListener(system);
         Util.waitForever();
     }
 
@@ -95,6 +87,24 @@ public class VdpPerformanceTest {
             printFramePerf(sampleCnt, now, last, start, frameCnt);
             last = now;
             sampleCnt++;
+        }
+    }
+
+    private void createAndAddVdpListener(SystemProvider systemProvider) {
+        try {
+            BaseSystem system = (BaseSystem) systemProvider;
+            Field f = BaseSystem.class.getDeclaredField("vdp");
+            f.setAccessible(true);
+            BaseVdpProvider vdpProvider = (BaseVdpProvider) f.get(system);
+            vdpProvider.addVdpEventListener(new BaseVdpProvider.VdpEventAdapter() {
+                @Override
+                public void onNewFrame() {
+                    doStats();
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("Unable to collect stats");
+            e.printStackTrace();
         }
     }
 

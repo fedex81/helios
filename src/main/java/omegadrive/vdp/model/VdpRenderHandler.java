@@ -47,15 +47,23 @@ public interface VdpRenderHandler {
 
     void dumpScreenData();
 
+    @Deprecated
     void renderFrame();
 
-    void setVideoMode(VideoMode videoMode);
+    @Deprecated
+    VideoMode getVideoMode();
 
     void renderLine(int line);
 
     void initLineData(int line);
 
     int[] getScreenDataLinear();
+
+    void updateSatCache(int satLocation, int vramAddress);
+
+    default Object getPlaneData(RenderType type) {
+        throw new RuntimeException("not implemented");
+    }
 
     static int getHorizontalTiles(boolean isH40) {
         return isH40 ? H40_TILES : H32_TILES;
@@ -126,7 +134,6 @@ public interface VdpRenderHandler {
         return (vdp.getRegisterData(SPRITE_TABLE_LOC) & 0x7F) << SPRITE_TABLE_SHIFT;
     }
 
-    void updateSatCache(int satLocation, int vramAddress);
 
     class TileDataHolder {
         public int tileIndex;

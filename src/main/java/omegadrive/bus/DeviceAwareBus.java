@@ -71,6 +71,7 @@ public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseB
         }
         if (vdpProvider == null) {
             vdpProvider = (V) getDeviceIfAny(BaseVdpProvider.class).orElse(null);
+            Optional.ofNullable(vdpProvider).ifPresent(v -> v.addVdpEventListener(this));
         }
         if (z80Provider == null) {
             z80Provider = getDeviceIfAny(Z80Provider.class).orElse(null);
@@ -81,7 +82,7 @@ public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseB
     }
 
     @Override
-    public void onNewFrame() {
+    public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
         //do nothing
     }
 

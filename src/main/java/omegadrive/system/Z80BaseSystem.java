@@ -20,7 +20,6 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.z80.ColecoBus;
 import omegadrive.bus.z80.MsxBus;
 import omegadrive.bus.z80.Sg1000Bus;
@@ -96,6 +95,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(vdp);
         reloadWindowState();
+        createAndAddVdpEventListener();
     }
 
     @Override
@@ -207,10 +207,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
 
     private void runVdp(long counter) {
         if (counter % 2 == 1) {
-            if (vdp.runSlot() > 0) {
-                newFrame();
-                ((DeviceAwareBus) bus).onNewFrame(); //TODO fix
-            }
+            vdp.runSlot();
         }
     }
 

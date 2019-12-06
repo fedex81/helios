@@ -31,7 +31,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static omegadrive.vdp.model.Tms9918a.TmsRegisterName.*;
 
@@ -55,6 +57,7 @@ public class Tms9918aVdp implements Tms9918a {
     private VdpInterruptHandler interruptHandler;
     private VdpMemory memory;
     private VdpRenderDump renderDump;
+    private java.util.List<VdpEventListener> list;
     private int[] screenDataLinear;
 
     /* VRAM */
@@ -75,6 +78,7 @@ public class Tms9918aVdp implements Tms9918a {
     private boolean[][] spriteCollisionMatrix = new boolean[VDP_WIDTH + 16][VDP_HEIGHT + 16];
 
     public Tms9918aVdp() {
+        setupVdp();
         init();
     }
 
@@ -89,18 +93,21 @@ public class Tms9918aVdp implements Tms9918a {
         ioByte1 = 0;
         statusRegister = 0;
 
-        updateMode();
-        interruptHandler.setMode(getVideoMode());
+        updateTmsMode();
     }
 
     @Override
     public void init() {
+        reset();
+    }
+
+    private void setupVdp() {
+        this.list = new ArrayList<>();
         memory = SimpleVdpMemoryInterface.createInstance(RAM_SIZE);
         screenDataLinear = new int[VDP_WIDTH * VDP_HEIGHT];
-        interruptHandler = SmsVdpInterruptHandler.createTmsInstance();
+        interruptHandler = SmsVdpInterruptHandler.createTmsInstance(getVideoMode());
         mem = memory.getVram();
         renderDump = new VdpRenderDump();
-        reset();
     }
 
     @Override
@@ -112,7 +119,10 @@ public class Tms9918aVdp implements Tms9918a {
             setStatusINT(true);
             drawScreen();
         }
-        return interruptHandler.isEndOfFrameCounter() ? 1 : 0;
+        if (interruptHandler.isEndOfFrameCounter()) {
+            list.forEach(VdpEventListener::onNewFrame);
+        }
+        return 0;
     }
 
     @Override
@@ -154,7 +164,7 @@ public class Tms9918aVdp implements Tms9918a {
         return interruptHandler;
     }
 
-    private void updateMode() {
+    private void updateTmsMode() {
         TmsMode mode = null;
         int val = (getM1() ? 1 : 0) << 0 | (getM2() ? 1 : 0) << 1 | (getM3() ? 1 : 0) << 2;
         switch (val) {
@@ -214,7 +224,7 @@ public class Tms9918aVdp implements Tms9918a {
     public void setRegisterBit(int reg, int bit, boolean value) {
         registers[reg] = setBit(registers[reg], bit, value);
         if (reg < 2) {
-            updateMode();
+            updateTmsMode();
         }
     }
 
@@ -403,7 +413,7 @@ public class Tms9918aVdp implements Tms9918a {
             LogHelper.printLevel(LOG, Level.INFO, "vdpWriteReg {}, data: {}", regNum, value & 0xFF, verbose);
             registers[regNum] = value;
             if (regNum < 2) {
-                updateMode();
+                updateTmsMode();
             }
         }
     }
@@ -687,6 +697,11 @@ public class Tms9918aVdp implements Tms9918a {
         if (!getM1() && getBL()) {
             drawSprites();
         }
+    }
+
+    @Override
+    public List<VdpEventListener> getVdpEventListenerList() {
+        return list;
     }
 
     @Override

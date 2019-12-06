@@ -34,14 +34,13 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 /**
- * Based on genefusto GenVdp
+ * Initially Based on genefusto GenVdp
  * https://github.com/DarkMoe/genefusto
- * @author DarkMoe
  *
- * TODO read-ahead
+ * @author Federico Berti
  *
  */
-public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
+public class GenesisVdp implements GenesisVdpProvider {
 
     public final static boolean verbose = false;
     public final static boolean fifoVerbose = false;
@@ -165,12 +164,16 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     private GenesisVdp() {
     }
 
+    private UpdatableViewer tileViewer;
+
     private void setupVdp() {
+        this.list = new ArrayList<>();
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = new VdpRenderHandlerImpl(this, memoryInterface);
-        this.debugViewer = VdpDebugView.createInstance(memoryInterface, (VdpRenderHandlerImpl) renderHandler);
+        this.debugViewer = VdpDebugView.createInstance(memoryInterface, renderHandler);
+        this.tileViewer = UpdatableViewer.NO_OP_VIEWER; //
+        // new TileViewer(this, memoryInterface, (VdpRenderHandlerImpl) renderHandler);
         this.fifo = new VdpFifo();
-        this.list = new ArrayList<>();
         this.initMode();
     }
 
@@ -631,6 +634,7 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     private void updateReg10(long data) {
         if (data != registers[0x0A]) {
             interruptHandler.logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
+            list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, data));
         }
     }
 
@@ -719,13 +723,15 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
         //draw the frame
         if (interruptHandler.isDrawFrameSlot()) {
             interruptHandler.logVerbose("Draw Screen");
-            renderHandler.renderFrame();
             debugViewer.update();
+//            tileViewer.update();
             list.forEach(VdpEventListener::onNewFrame);
             resetVideoMode(false);
         }
         if (interruptHandler.isDrawLineSlot()) {
-            drawScanline(interruptHandler.vCounterInternal, displayEnable);
+            //draw line
+            interruptHandler.logVeryVerbose("Draw Scanline: %s", interruptHandler.vCounterInternal);
+            renderHandler.renderLine(interruptHandler.vCounterInternal);
         }
         return interruptHandler.getVdpClockSpeed();
     }
@@ -742,30 +748,13 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public int getHLinesCounter() {
-        return registers[0xA];
-    }
-
-    @Override
     public void resetVideoMode(boolean force) {
         VideoMode newVideoMode = getVideoMode(region, isH40(), isV30());
         if (videoMode != newVideoMode || force) {
             this.videoMode = newVideoMode;
             LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
-            interruptHandler.setMode(videoMode);
-            renderHandler.setVideoMode(videoMode);
             pal = videoMode.isPal() ? 1 : 0;
-        }
-    }
-
-
-    private void drawScanline(int line, boolean displayEnable) {
-        //draw line
-        interruptHandler.logVeryVerbose("Draw Scanline: %s", line);
-        int lineLimit = videoMode.getDimension().height;
-        if (line < lineLimit) {
-            renderHandler.initLineData(line);
-            renderHandler.renderLine(line);
+            list.forEach(l -> l.onVdpEvent(VdpEvent.VIDEO_MODE, newVideoMode));
         }
     }
 
@@ -775,13 +764,8 @@ public class GenesisVdp implements GenesisVdpProvider, VdpHLineProvider {
     }
 
     @Override
-    public boolean addVdpEventListener(VdpEventListener l) {
-        return list.add(l);
-    }
-
-    @Override
-    public boolean removeVdpEventListener(VdpEventListener l) {
-        return list.remove(l);
+    public List<VdpEventListener> getVdpEventListenerList() {
+        return list;
     }
 
     @Override

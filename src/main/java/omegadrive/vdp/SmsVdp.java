@@ -25,10 +25,11 @@ import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpMemory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static omegadrive.util.RegionDetector.Region.EUROPE;
 import static omegadrive.util.RegionDetector.Region.USA;
@@ -50,7 +51,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
  * Notes:
  * - http://www.smspower.org/forums/viewtopic.php?p=44198
  */
-public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
+public final class SmsVdp implements BaseVdpProvider
 {
 
     public static final int VDP_VRAM_SIZE = 0x4000;
@@ -219,6 +220,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     private RegionDetector.Region region;
     private SystemLoader.SystemType systemType;
     private VideoMode videoMode;
+    private List<VdpEventListener> list;
 
     /**
      *  Vdp Constructor
@@ -242,7 +244,8 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         createCachedImages();
 
         this.region = region;
-        interruptHandler = SmsVdpInterruptHandler.createInstance(this);
+        this.list = new ArrayList<>();
+        interruptHandler = SmsVdpInterruptHandler.createSmsInstance(this);
 
         // Note, we don't directly emulate CRAM but actually store the converted Java palette
         // in it. Therefore the length is different to on the real GameGear where it's actually
@@ -256,7 +259,7 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     /**
      *  Reset VDP.
      */
-
+    @Override
     public final void reset() {
         generateConvertedPals();
 
@@ -285,6 +288,11 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         maxDirty = -1;
 
         resetVideoMode(true);
+    }
+
+    @Override
+    public void init() {
+        reset();
     }
 
     /**
@@ -334,12 +342,12 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         }
         if (videoMode != newVideoMode || force) {
             this.videoMode = newVideoMode;
-            LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
-            interruptHandler.setMode(videoMode);
             palFlag = videoMode.isPal() ? PAL : NTSC;
             display = new int[videoMode.getDimension().width * videoMode.getDimension().height];
             screenData = isSms ? display : ggDisplay;
             forceFullRedraw();
+            LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
+            list.forEach(l -> l.onVdpEvent(VdpEvent.VIDEO_MODE, newVideoMode));
         }
     }
 
@@ -451,6 +459,12 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
 
                     }
                     break;
+                    //hLine counter
+                    case 0xA:
+                        if (value != vdpreg[reg]) {
+                            list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, value));
+                        }
+                        break;
                 }
                 int prev = vdpreg[reg];
                 vdpreg[reg] = commandByte; // Set reg to previous byte
@@ -1087,12 +1101,6 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         forceFullRedraw();
     }
 
-    @Override
-    public void init() {
-
-    }
-
-
     /**
      * Run
      *
@@ -1117,10 +1125,11 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         //http://www.smspower.org/forums/viewtopic.php?t=9366&highlight=chicago
         status |= vBlankTrigger ? STATUS_VINT : 0;
         status |= interruptHandler.isHIntPending() ? STATUS_HINT : 0;
-        if (!isSms) {
-            resizeGG(vBlankTrigger);
+        if (vBlankTrigger) {
+            resizeGG(!isSms);
+            list.forEach(VdpEventListener::onNewFrame);
         }
-        return vBlankTrigger ? 1 : 0;
+        return 0;
     }
 
     private void resizeGG(boolean doResize) {
@@ -1130,6 +1139,11 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
         RenderingStrategy.subImageWithOffset(display, ggDisplay, videoMode.getDimension(),
                 ggVideoMode.getDimension(), SmsVdp.GG_X_OFFSET,
                 SmsVdp.GG_Y_OFFSET);
+    }
+
+    @Override
+    public List<VdpEventListener> getVdpEventListenerList() {
+        return list;
     }
 
     @Override
@@ -1165,10 +1179,5 @@ public final class SmsVdp implements BaseVdpProvider, VdpHLineProvider
     @Override
     public int[] getScreenDataLinear() {
         return screenData;
-    }
-
-    @Override
-    public int getHLinesCounter() {
-        return vdpreg[10];
     }
 }

@@ -22,7 +22,6 @@ package omegadrive.vdp.gen;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
-import omegadrive.vdp.model.VdpHLineProvider;
 import omegadrive.vdp.model.VdpSlotType;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -33,7 +32,7 @@ import org.apache.logging.log4j.Logger;
  *  VDPTEST - needs NTSC
  *  http://gendev.spritesmind.net/forum/viewtopic.php?t=787
  */
-public class VdpInterruptHandler {
+public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
 
     /**
      * Relevant Games:
@@ -54,10 +53,10 @@ public class VdpInterruptHandler {
     public int hLinePassed = 0;
     private int pixelNumber = 0;
     private int slotNumber = 0;
+    private int hLinesCounter = 0;
 
     private VideoMode videoMode;
     protected VdpCounterMode vdpCounterMode;
-    protected VdpHLineProvider vdpHLineProvider;
     protected boolean h40;
 
     protected boolean vBlankSet;
@@ -70,14 +69,16 @@ public class VdpInterruptHandler {
 
     protected boolean eventFlag;
 
-    public static VdpInterruptHandler createInstance(VdpHLineProvider vdpHLineProvider) {
+    public static VdpInterruptHandler createInstance(BaseVdpProvider vdp) {
         VdpInterruptHandler handler = new VdpInterruptHandler();
-        handler.vdpHLineProvider = vdpHLineProvider;
         handler.reset();
+        if (vdp != null) {
+            vdp.addVdpEventListener(handler);
+        }
         return handler;
     }
 
-    public void setMode(VideoMode videoMode) {
+    protected void setMode(VideoMode videoMode) {
         if (this.videoMode != videoMode) {
             this.videoMode = videoMode;
             this.vdpCounterMode = VdpCounterMode.getCounterMode(videoMode);
@@ -95,10 +96,10 @@ public class VdpInterruptHandler {
         vBlankSet = false;
         vIntPending = false;
         hIntPending = false;
-        resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
+        resetHLinesCounter();
     }
 
-    private int updateCounterValue(int counterInternal, int jumpTrigger, int totalCount) {
+    protected int updateCounterValue(int counterInternal, int jumpTrigger, int totalCount) {
         counterInternal++;
         counterInternal &= COUNTER_LIMIT;
 
@@ -124,11 +125,10 @@ public class VdpInterruptHandler {
      * 6) if VCounter=$E0($F0), wait for Hcounter $00->$01 then set VINT flag.
      * 7) if VINT is enabled and VINT flag is set, interrupt control asserts /IPL2 and /IPL1.
      */
-    private int increaseVCounterInternal() {
-
+    protected int increaseVCounterInternal() {
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
-        hLinePassed = vBlankSet ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
+        hLinePassed = vBlankSet ? resetHLinesCounter() : hLinePassed - 1;
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
             eventFlag = true;
@@ -180,7 +180,7 @@ public class VdpInterruptHandler {
             hIntPending = true;
             logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
             eventFlag = true;
-            resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
+            resetHLinesCounter();
         }
     }
 
@@ -259,10 +259,29 @@ public class VdpInterruptHandler {
         return type != VdpSlotType.REFRESH;
     }
 
-    public int resetHLinesCounter(int value) {
-        this.hLinePassed = value;
-        logVeryVerbose("Reset hLinePassed: %s", value);
+    public int resetHLinesCounter() {
+        this.hLinePassed = hLinesCounter;
+        logVeryVerbose("Reset hLinePassed: %s", hLinePassed);
         return hLinePassed;
+    }
+
+    @Override
+    public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
+        switch (event) {
+            case VIDEO_MODE:
+                setMode((VideoMode) value);
+                break;
+            case H_LINE_COUNTER:
+                hLinesCounter = (int) value;
+                break;
+            default:
+                break;
+        }
+    }
+
+    @Override
+    public void onRegisterChange(int reg, int value) {
+        //do nothing
     }
 
     public void logVerbose(String str) {

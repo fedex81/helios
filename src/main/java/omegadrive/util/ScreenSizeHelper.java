@@ -26,7 +26,7 @@ public class ScreenSizeHelper {
     public static final double FOUR_BY_THREE = 4.0 / 3.0;
 
     public static int DEFAULT_X = 320;
-    public static int DEFAULT_Y = 240;
+    public static int DEFAULT_Y = 256; //TODO check this
 
     public static final int DEFAULT_SCREEN = 1;
     public static final int DEFAULT_SCALE_FACTOR =

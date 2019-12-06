@@ -20,7 +20,6 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.z80.SmsBus;
 import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.input.InputProvider;
@@ -30,7 +29,6 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.MekaStateHandler;
 import omegadrive.savestate.SmsStateHandler;
-import omegadrive.sound.fm.ym2413.Ym2413Provider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.perf.SmsPerf;
 import omegadrive.ui.DisplayWindow;
@@ -80,6 +78,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(vdp);
         reloadWindowState();
+        createAndAddVdpEventListener();
     }
 
     @Override
@@ -199,12 +198,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     protected void runVdp(long counter) {
         if (counter == nextVdpCycle) {
-            if (vdp.runSlot() > 0) {
-                newFrame();
-                ((DeviceAwareBus) bus).onNewFrame(); //TODO
-                Ym2413Provider.cnt = 0;
-                Ym2413Provider.fmCnt = 0;
-            }
+            vdp.runSlot();
             nextVdpCycle += VDP_DIVIDER;
         }
     }

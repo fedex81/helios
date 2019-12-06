@@ -35,28 +35,6 @@ import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_FRAME_H40;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpEventListener;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
-/**
- *
- * TODO Sprite Masking
- * Not quite. My notes from testing:
- * -Sprite masks at x=0 only work correctly when there's at least one higher priority sprite
- * on the same line which is not at x=0. (This is what Galaxy Force II relies on)
- * -Sprite masks at x=0 are never effective when not proceeded by a higher priority sprite
- * not at x=0 on the same line, unless the previous line ended with a sprite pixel overflow,
- * in which case, the mask becomes effective for that line only. If that line also causes a dot overflow,
- * the mask will also be effective on the following line, and so on.
- * -A sprite mask does contribute to the pixel overflow count for a line according to its given dimensions
- * just like any other sprite. Note that sprite masks still count towards the pixel count for a line
- * when sprite masks are the first sprites on a line and are ignored. (This is what Mickey Mania relies on)
- * -A sprite mask at x=0 does NOT stop the VDP from parsing the remainder of sprites for that line,
- * it just prevents it from displaying any more pixels as a result of the sprites it locates on that line.
- * As a result, a sprite pixel overflow can still occur on a line where all sprites were masked,
- * but there were enough dots in the sprites given after the masking sprite on that line to cause a dot overflow.
- *
- * Note point number 2. Nothing emulates that, and my test ROM will be checking for it.
- * I haven't yet confirmed whether a sprite count overflow on the previous line causes this behaviour,
- * or whether only a sprite dot overflow on the previous line triggers it.
- */
 public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener {
 
     private final static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
@@ -68,6 +46,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private int spritesFrame = 0;
     private boolean shadowHighlightMode;
+    int[] res = new int[0];
 
     private VideoMode videoMode;
     private VideoMode newVideoMode;
@@ -98,6 +77,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private int[] vram;
     private int[] cram;
     private int[] javaPalette;
+    private int activeLines = 0;
 
     public VdpRenderHandlerImpl(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
@@ -110,12 +90,15 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         this.javaPalette = memoryInterface.getJavaColorPalette();
         this.scrollContextA = ScrollContext.createInstance(true);
         this.scrollContextB = ScrollContext.createInstance(false);
-//        vdpProvider.addVdpEventListener(this);
+        vdpProvider.addVdpEventListener(this);
         clearData();
     }
 
-    public void setVideoMode(VideoMode videoMode) {
+    protected void setVideoMode(VideoMode videoMode) {
         this.newVideoMode = videoMode;
+        if (this.videoMode == null) {
+            initVideoMode(); //force init
+        }
     }
 
     public static TileDataHolder getTileData(int nameTable, InterlaceMode interlaceMode, TileDataHolder holder) {
@@ -137,16 +120,26 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         return getTileData(nameTable, interlaceMode, holder);
     }
 
+    private void initVideoMode() {
+        if (newVideoMode != videoMode) {
+            Dimension d = newVideoMode.getDimension();
+            linearScreen = new int[d.width * d.height];
+            videoMode = newVideoMode;
+            activeLines = d.height;
+        }
+    }
+
+    @Override
+    public void updateSatCache(int satLocation, int vramAddress) {
+
+    }
+
     @Override
     public void initLineData(int line) {
         if (line == 0) {
             LOG.debug("New Frame");
             this.interlaceMode = vdpProvider.getInterlaceMode();
-            if (newVideoMode != videoMode) {
-                Dimension d = newVideoMode.getDimension();
-                linearScreen = new int[d.width * d.height];
-                videoMode = newVideoMode;
-            }
+            initVideoMode();
             //need to do this here so I can dump data just after rendering the frame
             clearData();
             spriteTableLocation = VdpRenderHandler.getSpriteTableLocation(vdpProvider);
@@ -155,25 +148,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
         scrollContextA.hScrollTableLocation = VdpRenderHandler.getHScrollDataLocation(vdpProvider);
         scrollContextB.hScrollTableLocation = scrollContextA.hScrollTableLocation;
-    }
-
-    @Override
-    public void updateSatCache(int satLocation, int vramAddress) {
-
-    }
-
-    public void renderLine(int line) {
-        renderBack(line);
-        phase1(line + 1);
-        boolean disp = vdpProvider.isDisplayEnabled();
-        if (!disp) {
-            return;
-        }
-        shadowHighlightMode = vdpProvider.isShadowHighlight();
-        renderSprites(line);
-        renderWindow(line);
-        renderPlaneA(line);
-        renderPlaneB(line);
     }
 
     public void renderFrame() {
@@ -322,6 +296,36 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             }
         }
         return linearScreen;
+    }
+
+    public void renderLine(int line) {
+        if (line >= activeLines) {
+            return;
+        }
+        initLineData(line);
+        renderBack(line);
+        phase1(line + 1);
+        boolean disp = vdpProvider.isDisplayEnabled();
+        if (!disp) {
+            return;
+        }
+        shadowHighlightMode = vdpProvider.isShadowHighlight();
+        renderSprites(line);
+        renderWindow(line);
+        renderPlaneA(line);
+        renderPlaneB(line);
+    }
+
+    protected int[] composeImageLinearLine(int line) {
+        int width = videoMode.getDimension().width;
+        if (res.length != width) {
+            res = new int[width];
+        }
+        int k = 0;
+        for (int col = 0; col < width; col++) {
+            res[k++] = getPixelFromLayer(pixelPriority[line][col], col, line);
+        }
+        return res;
     }
 
     private int getPixelFromLayer(RenderPriority rp, int col, int line) {
@@ -495,7 +499,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
     }
 
-    public int getJavaColorValue(int cramIndex) {
+    private int getJavaColorValue(int cramIndex) {
         return javaPalette[cramIndex >> 1];
     }
 
@@ -549,8 +553,17 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     @Override
-    public void onNewFrame() {
-
+    public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
+        switch (event) {
+            case VIDEO_MODE:
+                setVideoMode((VideoMode) value);
+                break;
+            case NEW_FRAME:
+                renderFrame();
+                break;
+            default:
+                break;
+        }
     }
 
     @Override

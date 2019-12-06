@@ -20,7 +20,6 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.gen.GenesisBus;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.input.InputProvider;
@@ -106,7 +105,6 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
 
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(cpu).attachDevice(z80);
-        vdp.addVdpEventListener(((DeviceAwareBus) bus));
         reloadWindowState();
         createAndAddVdpEventListener();
     }

@@ -19,8 +19,9 @@
 
 package omegadrive.vdp;
 
+import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
-import omegadrive.vdp.model.VdpHLineProvider;
+import omegadrive.vdp.model.BaseVdpProvider;
 
 /**
  * http://www.smspower.org/forums/8161-SMSDisplayTiming
@@ -28,34 +29,51 @@ import omegadrive.vdp.model.VdpHLineProvider;
 public class SmsVdpInterruptHandler extends VdpInterruptHandler {
 
     //TODO fix
-    public static VdpInterruptHandler createTmsInstance() {
+    public static VdpInterruptHandler createTmsInstance(VideoMode videoMode) {
         SmsVdpInterruptHandler handler = new SmsVdpInterruptHandler() {
             @Override
             public boolean isDrawFrameSlot() {
                 return hCounterInternal == 0 && vCounterInternal == vdpCounterMode.vBlankSet;
             }
         };
-        handler.vdpHLineProvider = VdpHLineProvider.NO_PROVIDER;
+        handler.setMode(videoMode);
         handler.reset();
         return handler;
     }
 
-    public static VdpInterruptHandler createInstance(VdpHLineProvider vdpHLineProvider) {
+    public static VdpInterruptHandler createSmsInstance(BaseVdpProvider vdp) {
         SmsVdpInterruptHandler handler = new SmsVdpInterruptHandler();
-        handler.vdpHLineProvider = vdpHLineProvider;
         handler.reset();
+        if (vdp != null) {
+            vdp.addVdpEventListener(handler);
+        }
         return handler;
     }
 
+    //TODO outrun sms
     @Override
     protected void handleHLinesCounterDecrement() {
         boolean reset = vBlankSet; //OutRun sms
-        hLinePassed = reset ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
+        hLinePassed = reset ? resetHLinesCounter() : hLinePassed - 1;
         if (hLinePassed < 0) {
             hIntPending = true;
             logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
             eventFlag = true;
-            resetHLinesCounter(vdpHLineProvider.getHLinesCounter());
+            resetHLinesCounter();
         }
+    }
+
+    protected int increaseVCounterInternal() {
+        vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
+                vdpCounterMode.vTotalCount);
+        if (vCounterInternal == vdpCounterMode.vBlankSet) {
+            vBlankSet = true;
+            eventFlag = true;
+        } else if (vCounterInternal == VBLANK_CLEAR) {
+            vBlankSet = false;
+            eventFlag = true;
+        }
+        handleHLinesCounterDecrement();
+        return vCounterInternal;
     }
 }

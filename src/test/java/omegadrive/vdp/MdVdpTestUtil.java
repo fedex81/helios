@@ -25,11 +25,10 @@ import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
-import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.IVdpFifo;
-import omegadrive.vdp.model.InterlaceMode;
-import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -136,6 +135,51 @@ public class MdVdpTestUtil {
         };
         return IntStream.range(from, to).mapToObj(addr -> toStringFn.apply(addr)).
                 collect(Collectors.joining(","));
+    }
+
+    public final static VideoMode[] holder = {null};
+
+    public static void updateHCounter(BaseVdpProvider vdp, int hLineCounter) {
+        vdp.updateRegisterData(GenesisVdpProvider.VdpRegisterName.HCOUNTER_VALUE.ordinal(), hLineCounter);
+    }
+
+    public static void updateVideoMode(BaseVdpProvider vdp, VideoMode videoMode) {
+        MdVdpTestUtil.holder[0] = videoMode;
+        vdp.updateRegisterData(0, 0);
+    }
+
+    public static BaseVdpProvider createBaseTestVdp() {
+        BaseVdpProvider vdp = new MdVdpTestUtil.VdpAdaptor() {
+
+            private List<VdpEventListener> list = new ArrayList<>();
+            private int[] vdpReg = new int[24];
+
+            @Override
+            public List<VdpEventListener> getVdpEventListenerList() {
+                return list;
+            }
+
+            @Override
+            public VideoMode getVideoMode() {
+                return holder[0];
+            }
+
+            @Override
+            public int getRegisterData(int reg) {
+                return vdpReg[reg];
+            }
+
+            @Override
+            public void updateRegisterData(int reg, int data) {
+                if (reg == VdpRegisterName.HCOUNTER_VALUE.ordinal()) {
+                    list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, data));
+                } else if (reg < 2) {
+                    list.forEach(l -> l.onVdpEvent(VdpEvent.VIDEO_MODE, holder[0]));
+                }
+                vdpReg[reg] = data;
+            }
+        };
+        return vdp;
     }
 
     public static SystemProvider createTestGenesisProvider() {

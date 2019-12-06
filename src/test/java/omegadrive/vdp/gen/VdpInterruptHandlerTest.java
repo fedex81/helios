@@ -20,6 +20,7 @@ package omegadrive.vdp.gen;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.MdVdpTestUtil;
+import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import org.apache.logging.log4j.LogManager;
@@ -45,32 +46,8 @@ public class VdpInterruptHandlerTest {
         } while (true);
     }
 
-    /**
-     * GunstarHeroes intro
-     * Outrun
-     * hCounterLinePassed = 0
-     * <p>
-     * Basic test really:
-     * 1. hint triggers every line (when hlinePassed = 0)
-     * 2. hint doenst trigger during vblank
-     * 3. hint gets reloaded correctly
-     */
-    @Test
-    public void testHLinesCounter_01() {
-        int hLinePassed = 0;
-        VdpInterruptHandler h = VdpInterruptHandler.createInstance(() -> hLinePassed);
-        hLinesCounterBasic(h, VideoMode.PAL_H40_V28);
-        hLinesCounterBasic(h, VideoMode.PAL_H40_V30);
-        hLinesCounterBasic(h, VideoMode.PAL_H32_V28);
-        hLinesCounterBasic(h, VideoMode.PAL_H32_V30);
-        hLinesCounterBasic(h, VideoMode.NTSCU_H32_V28);
-        hLinesCounterBasic(h, VideoMode.NTSCU_H40_V28);
-        hLinesCounterBasic(h, VideoMode.NTSCJ_H32_V28);
-        hLinesCounterBasic(h, VideoMode.NTSCJ_H40_V28);
-    }
-
-    public static void hLinesCounterBasic(VdpInterruptHandler h, VideoMode mode) {
-        h.setMode(mode);
+    public static void hLinesCounterBasic(BaseVdpProvider vdp, VdpInterruptHandler h, VideoMode mode) {
+        MdVdpTestUtil.updateVideoMode(vdp, mode);
         VdpCounterMode counterMode = VdpCounterMode.getCounterMode(mode);
 
         int totalCount = counterMode.vTotalCount * 3 + 5;
@@ -112,11 +89,39 @@ public class VdpInterruptHandlerTest {
         Assert.assertEquals(expectedNumberOfHint, numberOfHint);
     }
 
+    /**
+     * GunstarHeroes intro
+     * Outrun
+     * hCounterLinePassed = 0
+     * <p>
+     * Basic test really:
+     * 1. hint triggers every line (when hlinePassed = 0)
+     * 2. hint doenst trigger during vblank
+     * 3. hint gets reloaded correctly
+     */
+    @Test
+    public void testHLinesCounter_01() {
+        int hLinePassed = 0;
+        BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
+        VdpInterruptHandler h = VdpInterruptHandler.createInstance(vdp);
+        MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
+        hLinesCounterBasic(vdp, h, VideoMode.PAL_H40_V28);
+        hLinesCounterBasic(vdp, h, VideoMode.PAL_H40_V30);
+        hLinesCounterBasic(vdp, h, VideoMode.PAL_H32_V28);
+        hLinesCounterBasic(vdp, h, VideoMode.PAL_H32_V30);
+        hLinesCounterBasic(vdp, h, VideoMode.NTSCU_H32_V28);
+        hLinesCounterBasic(vdp, h, VideoMode.NTSCU_H40_V28);
+        hLinesCounterBasic(vdp, h, VideoMode.NTSCJ_H32_V28);
+        hLinesCounterBasic(vdp, h, VideoMode.NTSCJ_H40_V28);
+    }
+
     @Test
     public void testHLinesCounterPending() {
         int hLinePassed = 0x80;
-        VdpInterruptHandler h = VdpInterruptHandler.createInstance(() -> hLinePassed);
-        h.setMode(VideoMode.PAL_H40_V28);
+        BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
+        VdpInterruptHandler h = VdpInterruptHandler.createInstance(vdp);
+        MdVdpTestUtil.updateVideoMode(vdp, VideoMode.PAL_H40_V28);
+        MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
         VdpCounterMode counterMode = VdpCounterMode.getCounterMode(VideoMode.PAL_H40_V28);
         int totalCount = counterMode.vTotalCount * 3 + 5;
         int count = 0;
@@ -163,8 +168,10 @@ public class VdpInterruptHandlerTest {
         int hLinePassed = 0xb0;
         int hIntOnLine = hLinePassed - 1; //0 based
 
-        VdpInterruptHandler h = VdpInterruptHandler.createInstance(() -> hLinePassed);
-        h.setMode(VideoMode.NTSCU_H40_V28);
+        BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
+        VdpInterruptHandler h = VdpInterruptHandler.createInstance(vdp);
+        MdVdpTestUtil.updateVideoMode(vdp, VideoMode.NTSCU_H40_V28);
+        MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
 
         int totalCount = GenesisVdpProvider.NTSC_SCANLINES * 10 + 5;
         int count = 0;

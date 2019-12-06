@@ -22,6 +22,7 @@ package omegadrive.vdp;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.gen.VdpInterruptHandlerTest;
+import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,41 +34,9 @@ public class SmsVdpInterruptHandlerTest {
     private static Logger LOG = LogManager.getLogger(SmsVdpInterruptHandlerTest.class.getSimpleName());
     static boolean verbose = true;
 
-    //TODO fix
-    @Test
-    public void testHLinesCounter() {
-        int hLinePassed = 0;
-        VdpInterruptHandler h = SmsVdpInterruptHandler.createInstance(() -> hLinePassed);
-        VdpInterruptHandlerTest.hLinesCounterBasic(h, VideoMode.NTSCJ_H32_V24);
-    }
-
-    /**
-     * According to http://www.smspower.org/Development/SMSOfficialDocs
-     *
-     * R10 Value	Interrupt Requests at these HBLANK times
-     * $C0-$FF	None
-     * $00	1,2,3,4,5,...191
-     * $01	2,4,6,8,10,..190
-     * $02	3,6,9,12,....189
-     * $03	4,8,12,16,...188
-     * (etc)	(etc)
-     */
-    @Test
-    public void testSmsHLinesCounter(){
-        testSmsHLinesCounterInternal(0);
-        testSmsHLinesCounterInternal(1);
-        testSmsHLinesCounterInternal(2);
-        testSmsHLinesCounterInternal(3);
-        testSmsHLinesCounterInternal(0xBE);
-        //TODO should this generate on line #192 ? with [0...192]
-        testSmsHLinesCounterInternal(0xBF);
-        testSmsHLinesCounterInternal(0xC0);
-        testSmsHLinesCounterInternal(0xFF);
-    }
-
-    public static void hLinesCounterBasic(VdpInterruptHandler h, VideoMode mode, boolean[] expectedLineInt) {
+    public static void hLinesCounterBasic(BaseVdpProvider vdp, VdpInterruptHandler h, VideoMode mode, boolean[] expectedLineInt) {
         boolean[] actualLineInt = new boolean[expectedLineInt.length];
-        h.setMode(mode);
+        MdVdpTestUtil.updateVideoMode(vdp, mode);
         VdpCounterMode counterMode = VdpCounterMode.getCounterMode(mode);
 
         int totalCount = counterMode.vTotalCount * 3 + 5;
@@ -106,16 +75,52 @@ public class SmsVdpInterruptHandlerTest {
         Assert.assertArrayEquals(expectedLineInt, actualLineInt);
     }
 
+    /**
+     * According to http://www.smspower.org/Development/SMSOfficialDocs
+     * <p>
+     * R10 Value	Interrupt Requests at these HBLANK times
+     * $C0-$FF	None
+     * $00	1,2,3,4,5,...191
+     * $01	2,4,6,8,10,..190
+     * $02	3,6,9,12,....189
+     * $03	4,8,12,16,...188
+     * (etc)	(etc)
+     */
+    @Test
+    public void testSmsHLinesCounter() {
+        testSmsHLinesCounterInternal(0);
+        testSmsHLinesCounterInternal(1);
+        testSmsHLinesCounterInternal(2);
+        testSmsHLinesCounterInternal(3);
+        testSmsHLinesCounterInternal(0xBE);
+        //TODO should this generate on line #192 ? with [0...192]
+        testSmsHLinesCounterInternal(0xBF);
+        testSmsHLinesCounterInternal(0xC0);
+        testSmsHLinesCounterInternal(0xFF);
+    }
+
+    //TODO fix
+    @Test
+    public void testHLinesCounter() {
+        int hLinePassed = 0;
+        BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
+        VdpInterruptHandler h = SmsVdpInterruptHandler.createSmsInstance(vdp);
+        MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
+        VdpInterruptHandlerTest.hLinesCounterBasic(vdp, h, VideoMode.NTSCJ_H32_V24);
+    }
+
     private void testSmsHLinesCounterInternal(final int lineCounter) {
         VideoMode vm = VideoMode.NTSCJ_H32_V24;
         boolean[] exp = new boolean[0xFF];
         int height = vm.getDimension().height;
+        BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
 
-        VdpInterruptHandler h = SmsVdpInterruptHandler.createInstance(() -> lineCounter);
+        VdpInterruptHandler h = SmsVdpInterruptHandler.createSmsInstance(vdp);
+        MdVdpTestUtil.updateHCounter(vdp, lineCounter);
         for (int i = lineCounter + 1; i < exp.length; i++) {
             exp[i] = (i < height) && (i % (lineCounter + 1)) == 0;
         }
-        hLinesCounterBasic(h, vm, exp);
+        hLinesCounterBasic(vdp, h, vm, exp);
     }
 
 

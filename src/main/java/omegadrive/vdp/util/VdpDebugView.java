@@ -1,7 +1,7 @@
 package omegadrive.vdp.util;
 
-import omegadrive.vdp.gen.VdpRenderHandlerImpl;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,14 +29,14 @@ public class VdpDebugView implements UpdatableViewer {
         }
     }
 
-    private VdpRenderHandlerImpl renderHandler;
+    private VdpRenderHandler renderHandler;
     private VdpMemoryInterface memoryInterface;
     private CramViewer cramViewer;
     private PlaneViewer planeViewer;
     private JFrame frame;
     private JPanel panel;
 
-    private VdpDebugView(VdpMemoryInterface memoryInterface, VdpRenderHandlerImpl renderHandler) {
+    private VdpDebugView(VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.memoryInterface = memoryInterface;
         this.renderHandler = renderHandler;
         this.cramViewer = CramViewer.createInstance(memoryInterface);
@@ -44,7 +44,7 @@ public class VdpDebugView implements UpdatableViewer {
         init();
     }
 
-    public static UpdatableViewer createInstance(VdpMemoryInterface memoryInterface, VdpRenderHandlerImpl renderHandler) {
+    public static UpdatableViewer createInstance(VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         return DEBUG_VIEWER_ENABLED ? new VdpDebugView(memoryInterface, renderHandler) : UpdatableViewer.NO_OP_VIEWER;
     }
 

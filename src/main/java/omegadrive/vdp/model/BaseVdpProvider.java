@@ -25,7 +25,9 @@ import omegadrive.util.VideoMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collections;
 import java.util.EventListener;
+import java.util.List;
 
 public interface BaseVdpProvider extends Device {
 
@@ -105,23 +107,34 @@ public interface BaseVdpProvider extends Device {
         throw new UnsupportedOperationException("Not supported");
     }
 
-    default boolean removeVdpEventListener(VdpEventListener l) {
-        throw new UnsupportedOperationException("Not supported");
+    default List<VdpEventListener> getVdpEventListenerList() {
+        return Collections.emptyList();
     }
 
     default boolean addVdpEventListener(VdpEventListener l) {
-        throw new UnsupportedOperationException("Not supported");
+        return getVdpEventListenerList().add(l);
     }
 
+    default boolean removeVdpEventListener(VdpEventListener l) {
+        return getVdpEventListenerList().remove(l);
+    }
+
+    enum VdpEvent {NEW_FRAME, VIDEO_MODE, H_LINE_COUNTER}
+
     interface VdpEventListener extends EventListener {
-        void onNewFrame();
+
+        void onVdpEvent(VdpEvent event, Object value);
 
         void onRegisterChange(int reg, int value);
+
+        default void onNewFrame() {
+            onVdpEvent(VdpEvent.NEW_FRAME, null);
+        }
     }
 
     abstract class VdpEventAdapter implements VdpEventListener {
         @Override
-        public void onNewFrame() {
+        public void onVdpEvent(VdpEvent event, Object value) {
         }
 
         @Override

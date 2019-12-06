@@ -1,9 +1,9 @@
 package omegadrive.vdp.util;
 
 import omegadrive.vdp.VdpRenderDump;
-import omegadrive.vdp.gen.VdpRenderHandlerImpl;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.RenderType;
+import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,21 +29,21 @@ public class PlaneViewer implements UpdatableViewer {
     private static final int PANEL_HEIGHT = 256 + PANEL_TEXT_HEIGHT;
     private static final int PANEL_WIDTH = 320;
 
-    private VdpRenderHandlerImpl renderHandler;
+    private VdpRenderHandler renderHandler;
     private static final int CRAM_MASK = GenesisVdpProvider.VDP_CRAM_SIZE - 1;
     private JPanel panel;
     private JFrame frame;
     private JPanel[] panelList = new JPanel[RenderType.values().length];
     private BufferedImage[] imageList = new BufferedImage[RenderType.values().length];
 
-    private PlaneViewer(VdpRenderHandlerImpl renderHandler) {
+    private PlaneViewer(VdpRenderHandler renderHandler) {
         this.renderHandler = renderHandler;
         this.frame = new JFrame();
         this.panel = new JPanel();
         initPanel();
     }
 
-    public static PlaneViewer createInstance(VdpRenderHandlerImpl renderHandler) {
+    public static PlaneViewer createInstance(VdpRenderHandler renderHandler) {
         return new PlaneViewer(renderHandler);
     }
 
@@ -122,7 +122,7 @@ public class PlaneViewer implements UpdatableViewer {
             int[][] out1 = getHolder(type, in);
             for (int i = 0; i < in.length; i++) {
                 for (int j = 0; j < in[i].length; j++) {
-                    out1[i][j] = renderHandler.getJavaColorValue(in[i][j] & CRAM_MASK);
+                    out1[i][j] = getJavaColorValue(in[i][j] & CRAM_MASK);
                 }
             }
             out = out1;
@@ -141,5 +141,9 @@ public class PlaneViewer implements UpdatableViewer {
             javaColorRes.put(type, res);
         }
         return res;
+    }
+
+    public int getJavaColorValue(int cramIndex) {
+        return javaPalette[cramIndex >> 1];
     }
 }

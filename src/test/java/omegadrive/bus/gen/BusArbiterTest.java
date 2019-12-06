@@ -17,6 +17,7 @@
 
 package omegadrive.bus.gen;
 
+import omegadrive.input.GamepadTest;
 import omegadrive.m68k.M68kProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.system.SystemProvider;
@@ -60,7 +61,9 @@ public class BusArbiterTest {
         };
         busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
 
-        bus.attachDevice(vdp).attachDevice(cpu).attachDevice(busArbiter).attachDevice(emu);
+        bus.attachDevice(vdp).attachDevice(cpu).attachDevice(busArbiter).
+                attachDevice(GamepadTest.createTestJoypadProvider()).
+                attachDevice(emu);
     }
 
     private void setupZ80() {
