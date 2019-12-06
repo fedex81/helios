@@ -24,6 +24,7 @@ import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.gen.VdpScrollHandler.ScrollContext;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpRenderHandler;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -77,7 +78,7 @@ public class VdpScrollHandlerTest {
         vdp.updateRegisterData(PLANE_A_NAMETABLE, planeANameTable / 0x400);
         vdp.updateRegisterData(PLANE_B_NAMETABLE, planeANameTable / 0x2000);
 
-        VdpRenderHandlerImpl renderHandler = new VdpRenderHandlerImpl(vdp, v);
+        VdpRenderHandler renderHandler = new VdpRenderHandlerImpl2(vdp, v);
 
 //        renderHandler.setVideoMode(vm);
 //        renderHandler.initLineData(0);
@@ -97,7 +98,7 @@ public class VdpScrollHandlerTest {
                         boolean isPlaneA = sc.planeA;
                         int nameTable = isPlaneA ? planeANameTable : planeBNameTable;
                         for (int line = 0; line < vm.getDimension().height; line++) {
-                            renderHandler.renderPlane(line, nameTable, sc);
+//                            renderHandler.renderPlane(line, nameTable, sc);
                         }
                     }
                 }

@@ -1,9 +1,7 @@
 package omegadrive.vdp.util;
 
 import omegadrive.util.ImageUtil;
-import omegadrive.vdp.gen.VdpRenderHandlerImpl;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.InterlaceMode;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpRenderHandler;
 
@@ -25,7 +23,7 @@ public class TileViewer implements UpdatableViewer {
     private static final int PANEL_HEIGHT = 600 + PANEL_TEXT_HEIGHT;
     private static final int PANEL_WIDTH = 800;
 
-    private VdpRenderHandlerImpl renderHandler;
+    private VdpRenderHandler renderHandler;
     private VdpMemoryInterface memoryInterface;
     private GenesisVdpProvider vdp;
     private int[] javaPalette;
@@ -35,7 +33,7 @@ public class TileViewer implements UpdatableViewer {
     private int[] pixels;
     private VdpRenderHandler.TileDataHolder tileDataHolder = new VdpRenderHandler.TileDataHolder();
 
-    public TileViewer(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandlerImpl renderHandler) {
+    public TileViewer(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.vdp = vdp;
         this.renderHandler = renderHandler;
         this.memoryInterface = memoryInterface;
@@ -118,7 +116,8 @@ public class TileViewer implements UpdatableViewer {
         try {
             for (int i = nameTableLocation; i < nameTableLocation + maxMemory && i < vram.length; i += 2, tileNumber++) {
                 int vramPointer = vram[i] << 8 | vram[i + 1];
-                tileDataHolder = VdpRenderHandlerImpl.getTileData(vramPointer, InterlaceMode.NONE, tileDataHolder);
+                //TODO
+//                tileDataHolder = VdpRenderHandler.getTileData(vramPointer, InterlaceMode.NONE, tileDataHolder);
                 for (int j = 0; j < 8; j++) { //for each tile row
                     for (int k = 0; k < 4; k++) { //for each two pixels
                         int rowData = vram[tileDataHolder.tileIndex + (j << 2) + k]; //2 pixels
