@@ -235,6 +235,10 @@ public class BusArbiter implements Device {
             public void addCyclePenalty(CpuType cpuType, int value) {
 
             }
+
+            @Override
+            public void newFrame() {
+            }
         };
     }
 

@@ -457,6 +457,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             int startPixel = twoCell << 4;
             int currentPrio = 0;
             int rowCellBase = planeLine % 8; //cellHeight;
+            int latestTileLocatorVram = -1;
             for (int pixel = startPixel; pixel < startPixel + 16; pixel++) {
                 currentPrio = pixelPriority[line][pixel].ordinal();
                 if (currentPrio >= RenderPriority.PLANE_A_PRIO.ordinal()) {
@@ -465,10 +466,12 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
                 int planeCellHOffset = ((pixel + hScrollPixelOffset) % (sc.planeWidth << 3)) >> 3;
                 int tileLocatorVram = nameTableLocation + ((planeCellHOffset + planeCellVOffset) << 1);
-                //one word per 8x8 tile
-                int tileNameTable = vram[tileLocatorVram] << 8 | vram[tileLocatorVram + 1];
-
-                tileDataHolder = getTileData(tileNameTable, tileDataHolder);
+                if (tileLocatorVram != latestTileLocatorVram) {
+                    //one word per 8x8 tile
+                    int tileNameTable = vram[tileLocatorVram] << 8 | vram[tileLocatorVram + 1];
+                    tileDataHolder = getTileData(tileNameTable, tileDataHolder);
+                    latestTileLocatorVram = tileLocatorVram;
+                }
                 RenderPriority rp = tileDataHolder.priority ? highPrio : lowPrio;
                 if (currentPrio >= rp.ordinal()) {
                     continue;

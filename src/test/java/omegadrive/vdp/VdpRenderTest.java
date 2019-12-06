@@ -21,6 +21,7 @@ package omegadrive.vdp;
 
 import omegadrive.automated.SavestateGameLoader;
 import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.input.GamepadTest;
 import omegadrive.input.InputProvider;
 import omegadrive.save.SavestateTest;
 import omegadrive.system.Genesis;
@@ -177,7 +178,7 @@ public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
     private GenesisVdpProvider prepareVdp(Path saveFile) {
         SystemProvider genesisProvider = createTestProvider();
         GenesisBusProvider busProvider = SavestateTest.loadSaveState(saveFile);
-        busProvider.attachDevice(genesisProvider);
+        busProvider.attachDevice(genesisProvider).attachDevice(GamepadTest.createTestJoypadProvider());
         vdpProvider = busProvider.getVdp();
         vdpProvider.addVdpEventListener(this);
         return vdpProvider;
