@@ -47,7 +47,7 @@ public class RenderingStrategyTest {
         int[] linearNew = Arrays.copyOf(linear, linear.length);
 
         screenData = getData(screenData, inputD);
-        RenderingStrategy.toLinearLine(linear, screenData, inputD);
+        RenderingStrategyTest.toLinearLine(linear, screenData, inputD);
 
 //        RenderingStrategy.toLinearNew(linearNew, screenData, inputD);
 
@@ -102,7 +102,7 @@ public class RenderingStrategyTest {
         //warm-up
         for (int i = 0; i < cycles; i++) {
             screenData = getData(screenData, inputD);
-            RenderingStrategy.toLinearLine(linear, screenData, inputD);
+            RenderingStrategyTest.toLinearLine(linear, screenData, inputD);
             RenderingStrategy.renderNearest(linear, output, inputD, outputD);
         }
         printPerf(System.nanoTime() - start, cycles);
@@ -113,7 +113,7 @@ public class RenderingStrategyTest {
         //warm-up
         for (int i = 0; i < cycles; i++) {
             screenData = getData(screenData, inputD);
-            RenderingStrategy.toLinearLine(linear, screenData, inputD);
+            RenderingStrategyTest.toLinearLine(linear, screenData, inputD);
 //            RenderingStrategy.renderNearestOld(linear, output, inputD, outputD);
         }
         printPerf(System.nanoTime() - start, cycles);
@@ -134,7 +134,7 @@ public class RenderingStrategyTest {
         //warm-up
         for (int i = 0; i < cycles; i++) {
             screenData = getData(screenData, inputD);
-            RenderingStrategy.toLinearLine(linear, screenData, inputD);
+            RenderingStrategyTest.toLinearLine(linear, screenData, inputD);
         }
         printPerf(System.nanoTime() - start, cycles);
     }
@@ -148,6 +148,14 @@ public class RenderingStrategyTest {
             }
         }
         return screenData;
+    }
+
+    public static void toLinearLine(int[] pixels, int[][] screenData, Dimension output) {
+        int k = 0;
+        for (int line = 0; line < output.height; line++) {
+            System.arraycopy(screenData[line], 0, pixels, k, screenData[line].length);
+            k += screenData[line].length;
+        }
     }
 
     private static void printPerf(long intervalNs, int cycles) {

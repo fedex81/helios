@@ -13,6 +13,10 @@ public interface UpdatableViewer {
 
     void update();
 
+    default void updateLine(int line) {
+        //NO OP
+    }
+
     default void reset() {
         //NO_OP
     }

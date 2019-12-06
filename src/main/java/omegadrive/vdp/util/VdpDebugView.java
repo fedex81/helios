@@ -40,7 +40,7 @@ public class VdpDebugView implements UpdatableViewer {
         this.memoryInterface = memoryInterface;
         this.renderHandler = renderHandler;
         this.cramViewer = CramViewer.createInstance(memoryInterface);
-        this.planeViewer = PlaneViewer.createInstance(renderHandler);
+        this.planeViewer = PlaneViewer.createInstance(memoryInterface, renderHandler);
         init();
     }
 
@@ -74,6 +74,11 @@ public class VdpDebugView implements UpdatableViewer {
     public void update() {
         cramViewer.update();
         planeViewer.update();
+    }
+
+    @Override
+    public void updateLine(int line) {
+        planeViewer.updateLine(line);
     }
 
     @Override

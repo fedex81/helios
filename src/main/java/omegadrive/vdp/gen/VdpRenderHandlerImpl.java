@@ -674,31 +674,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         return videoMode;
     }
 
-    public Object getPlaneData(RenderType type) {
-        Object res = null;
-        switch (type) {
-            case BACK_PLANE:
-                res = planeBack;
-                break;
-            case WINDOW_PLANE:
-                res = window;
-                break;
-            case PLANE_A:
-                res = planeA;
-                break;
-            case PLANE_B:
-                res = planeB;
-                break;
-            case SPRITE:
-                res = sprites;
-                break;
-            case FULL:
-                res = linearScreen;
-                break;
-        }
-        return res;
-    }
-
     @Override
     public int[] getScreenDataLinear() {
         return linearScreen;
@@ -706,6 +681,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     @Override
     public void dumpScreenData() {
-        Arrays.stream(RenderType.values()).forEach(r -> renderDump.saveRenderObjectToFile(getPlaneData(r), videoMode, r));
+//        Arrays.stream(RenderType.values()).forEach(r -> renderDump.saveRenderObjectToFile(getPlaneData(r), videoMode, r));
     }
 }

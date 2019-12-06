@@ -732,6 +732,7 @@ public class GenesisVdp implements GenesisVdpProvider {
             //draw line
             interruptHandler.logVeryVerbose("Draw Scanline: %s", interruptHandler.vCounterInternal);
             renderHandler.renderLine(interruptHandler.vCounterInternal);
+            debugViewer.updateLine(interruptHandler.vCounterInternal);
         }
         return interruptHandler.getVdpClockSpeed();
     }

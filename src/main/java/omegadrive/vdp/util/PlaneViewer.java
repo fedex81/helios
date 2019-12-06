@@ -1,8 +1,10 @@
 package omegadrive.vdp.util;
 
+import omegadrive.util.ImageUtil;
 import omegadrive.vdp.VdpRenderDump;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.RenderType;
+import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,9 +12,8 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * PlaneViewer
@@ -23,11 +24,13 @@ import java.util.Map;
  */
 public class PlaneViewer implements UpdatableViewer {
 
-    private static final Logger LOG = LogManager.getLogger(CramViewer.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(PlaneViewer.class.getSimpleName());
 
     private static final int PANEL_TEXT_HEIGHT = 20;
     private static final int PANEL_HEIGHT = 256 + PANEL_TEXT_HEIGHT;
     private static final int PANEL_WIDTH = 320;
+
+    private static final Dimension layerDim = new Dimension(320, 256);
 
     private VdpRenderHandler renderHandler;
     private static final int CRAM_MASK = GenesisVdpProvider.VDP_CRAM_SIZE - 1;
@@ -35,16 +38,42 @@ public class PlaneViewer implements UpdatableViewer {
     private JFrame frame;
     private JPanel[] panelList = new JPanel[RenderType.values().length];
     private BufferedImage[] imageList = new BufferedImage[RenderType.values().length];
+    private int[] javaPalette;
+    private Dimension fullFrameDimension = layerDim;
+    private int[] colorData = new int[0];
 
-    private PlaneViewer(VdpRenderHandler renderHandler) {
+    private PlaneViewer(VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.renderHandler = renderHandler;
         this.frame = new JFrame();
         this.panel = new JPanel();
+        this.javaPalette = memoryInterface.getJavaColorPalette();
         initPanel();
     }
 
-    public static PlaneViewer createInstance(VdpRenderHandler renderHandler) {
-        return new PlaneViewer(renderHandler);
+    public static PlaneViewer createInstance(VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
+        return new PlaneViewer(memoryInterface, renderHandler);
+    }
+
+    private static int[] getPixels(BufferedImage img) {
+        return ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
+    }
+
+    private void initFrame() {
+        int numCols = 3;
+        int numRows = 2;
+        initPanel();
+        SwingUtilities.invokeLater(() -> {
+            this.frame = new JFrame();
+            frame.add(panel);
+            frame.setMinimumSize(new Dimension(PANEL_WIDTH * numCols, PANEL_HEIGHT * numRows));
+            frame.setTitle("Plane Viewer");
+            frame.pack();
+            frame.setVisible(true);
+        });
+    }
+
+    public JPanel getPanel() {
+        return panel;
     }
 
     private void initPanel() {
@@ -79,71 +108,53 @@ public class PlaneViewer implements UpdatableViewer {
             Arrays.stream(panelList).forEach(panel::add);
             panel.setSize(new Dimension(PANEL_WIDTH * numCols, PANEL_HEIGHT * numRows));
         });
+        Arrays.stream(RenderType.values()).forEach(t -> imageList[t.ordinal()] = ImageUtil.createImage(VdpRenderDump.gd, layerDim));
     }
-
-    private void initFrame() {
-        int numCols = 3;
-        int numRows = 2;
-        initPanel();
-        SwingUtilities.invokeLater(() -> {
-            this.frame = new JFrame();
-            frame.add(panel);
-            frame.setMinimumSize(new Dimension(PANEL_WIDTH * numCols, PANEL_HEIGHT * numRows));
-            frame.setTitle("Plane Viewer");
-            frame.pack();
-            frame.setVisible(true);
-        });
-    }
-
-    public JPanel getPanel() {
-        return panel;
-    }
-
-    Map<RenderType, Object> javaColorRes = new HashMap<>();
-    private int[] javaPalette;
 
     @Override
     public void update() {
-        Dimension finalDim = renderHandler.getVideoMode().getDimension();
-        Dimension layerDim = new Dimension(320, 256);
-        for (RenderType type : RenderType.values()) {
-            BufferedImage img = imageList[type.ordinal()];
-            Dimension d = type == RenderType.FULL ? finalDim : layerDim;
-            Object data = toJavaColor(type, renderHandler.getPlaneData(type));
-            imageList[type.ordinal()] = VdpRenderDump.writeDataToImage(img, type, d, data);
-        }
+        adjustFullFrameSize();
+        BufferedImage img = imageList[RenderType.FULL.ordinal()];
+        int[] imgData = getPixels(img);
+        int[] data = renderHandler.getScreenDataLinear();
+        System.arraycopy(data, 0, imgData, 0, data.length);
         panel.repaint();
     }
 
-    private Object toJavaColor(RenderType type, final Object data) {
-        Object out = null;
-        if (data instanceof int[][]) {
-            int[][] in = (int[][]) data;
-            int[][] out1 = getHolder(type, in);
-            for (int i = 0; i < in.length; i++) {
-                for (int j = 0; j < in[i].length; j++) {
-                    out1[i][j] = getJavaColorValue(in[i][j] & CRAM_MASK);
-                }
+    private void adjustFullFrameSize() {
+        Dimension d = renderHandler.getVideoMode().getDimension();
+        if (!d.equals(fullFrameDimension)) {
+            imageList[RenderType.FULL.ordinal()] = ImageUtil.createImage(VdpRenderDump.gd, d);
+            fullFrameDimension = d;
+        }
+    }
+
+    @Override
+    public void updateLine(int line) {
+        if (line >= layerDim.height) {
+            return;
+        }
+        int pos = layerDim.width * line;
+
+        for (RenderType type : RenderType.values()) {
+            if (type == RenderType.FULL) {
+                continue;
             }
-            out = out1;
-        } else if (data instanceof int[]) {
-            out = data;
-        } else {
-            LOG.error("Error");
+            int[] data = renderHandler.getPlaneData(type);
+            if (colorData.length != data.length) {
+                colorData = new int[data.length];
+            }
+            toJavaColor(data, colorData);
+            BufferedImage img = imageList[type.ordinal()];
+            int[] imgData = getPixels(img);
+            System.arraycopy(colorData, 0, imgData, pos, colorData.length);
+        }
+    }
+
+    private int[] toJavaColor(final int[] in, int[] out) {
+        for (int i = 0; i < in.length; i++) {
+            out[i] = javaPalette[(in[i] & CRAM_MASK) >> 1];
         }
         return out;
-    }
-
-    private int[][] getHolder(RenderType type, final int[][] data) {
-        int[][] res = (int[][]) javaColorRes.get(type);
-        if (res == null || data.length != res.length) {
-            res = data.clone();
-            javaColorRes.put(type, res);
-        }
-        return res;
-    }
-
-    public int getJavaColorValue(int cramIndex) {
-        return javaPalette[cramIndex >> 1];
     }
 }

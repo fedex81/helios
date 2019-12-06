@@ -706,6 +706,6 @@ public class Tms9918aVdp implements Tms9918a {
 
     @Override
     public void dumpScreenData() {
-        renderDump.saveRenderObjectToFile(screenDataLinear, getVideoMode(), RenderType.FULL);
+        renderDump.saveRenderToFile(screenDataLinear, getVideoMode(), RenderType.FULL);
     }
 }

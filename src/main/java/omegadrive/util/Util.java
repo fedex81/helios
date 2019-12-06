@@ -209,12 +209,6 @@ public class Util {
         LogHelper.printLevel(LOG, Level.DEBUG, "Write SRAM: {}, {}: {}", address, data, size, verbose);
     }
 
-    public static void arrayDataCopy(int[][] src, int[][] dest) {
-        for (int i = 0; i < src.length; i++) {
-            System.arraycopy(src[i], 0, dest[i], 0, src[i].length);
-        }
-    }
-
     public static long computeChecksum(IMemoryProvider memoryProvider) {
         long res = 0;
         //checksum is computed starting from byte 0x200

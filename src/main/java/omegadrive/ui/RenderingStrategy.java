@@ -23,14 +23,6 @@ import java.awt.*;
 
 public class RenderingStrategy {
 
-    public static void toLinearLine(int[] pixels, int[][] screenData, Dimension output) {
-        int k = 0;
-        for (int line = 0; line < output.height; line++) {
-            System.arraycopy(screenData[line], 0, pixels, k, screenData[line].length);
-            k += screenData[line].length;
-        }
-    }
-
     public static void subImageWithOffset(int[] src, int[] dest, Dimension srcDim, Dimension destDim,
                                           int xOffset, int yOffset){
         int start = ((yOffset+1) * srcDim.width) + xOffset + 1;

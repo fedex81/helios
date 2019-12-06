@@ -61,7 +61,7 @@ public interface VdpRenderHandler {
 
     void updateSatCache(int satLocation, int vramAddress);
 
-    default Object getPlaneData(RenderType type) {
+    default int[] getPlaneData(RenderType type) {
         throw new RuntimeException("not implemented");
     }
 

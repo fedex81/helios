@@ -175,8 +175,8 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
     }
 
     public void renderFrame() {
-        if (doCompare && false) {
-            System.out.println("renderFrame");
+        if (doCompare) {
+//            System.out.println("renderFrame");
             compare.renderFrame();
             int[] ref = compare.getScreenDataLinear();
             if (!Arrays.equals(ref, linearScreen)) {
@@ -676,8 +676,8 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
         }
     }
 
-    public Object getPlaneData(RenderType type) {
-        Object res = null;
+    public int[] getPlaneData(RenderType type) {
+        int[] res = null;
         switch (type) {
             case BACK_PLANE:
                 res = planeBack;
@@ -708,6 +708,6 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
 
     @Override
     public void dumpScreenData() {
-        Arrays.stream(RenderType.values()).forEach(r -> renderDump.saveRenderObjectToFile(getPlaneData(r), videoMode, r));
+        Arrays.stream(RenderType.values()).forEach(r -> renderDump.saveRenderToFile(getPlaneData(r), videoMode, r));
     }
 }
