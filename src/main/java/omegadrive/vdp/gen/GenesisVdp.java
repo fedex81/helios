@@ -169,7 +169,7 @@ public class GenesisVdp implements GenesisVdpProvider {
     private void setupVdp() {
         this.list = new ArrayList<>();
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
-        this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);
+        this.renderHandler = VdpRenderHandlerImpl2.createInstance(this, memoryInterface);
         this.debugViewer = VdpDebugView.createInstance(memoryInterface, renderHandler);
         this.tileViewer = UpdatableViewer.NO_OP_VIEWER; //
         // new TileViewer(this, memoryInterface, (VdpRenderHandlerImpl) renderHandler);
@@ -632,10 +632,8 @@ public class GenesisVdp implements GenesisVdpProvider {
     }
 
     private void updateReg10(long data) {
-        if (data != registers[0x0A]) {
-            interruptHandler.logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
-            list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, data));
-        }
+        interruptHandler.logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
+        list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, (int) data));
     }
 
     private void updateM3(boolean newM3) {

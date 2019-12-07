@@ -38,8 +38,6 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener {
 
     private final static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl2.class.getSimpleName());
-    //TODO remove
-    int[] res = new int[0];
     private GenesisVdpProvider vdpProvider;
     private VdpMemoryInterface memoryInterface;
     private VdpScrollHandler scrollHandler;
@@ -69,8 +67,11 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
     private int[] cram;
     private int[] javaPalette;
     private int activeLines = 0;
-    private boolean doCompare = false;
-    private VdpRenderHandlerImpl compare;
+
+    public static VdpRenderHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
+        VdpRenderHandler v = new VdpRenderHandlerImpl2(vdpProvider, memoryInterface);
+        return v;
+    }
 
     public VdpRenderHandlerImpl2(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
@@ -86,9 +87,6 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
         vdpProvider.addVdpEventListener(this);
         clearDataLine();
         clearDataFrame();
-        if (doCompare) {
-            compare = new VdpRenderHandlerImpl(vdpProvider, memoryInterface);
-        }
     }
 
     public static TileDataHolder getTileData(int nameTable, InterlaceMode interlaceMode, TileDataHolder holder) {
@@ -138,9 +136,6 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
         scrollContextA.hScrollTableLocation = VdpRenderHandler.getHScrollDataLocation(vdpProvider);
         scrollContextB.hScrollTableLocation = scrollContextA.hScrollTableLocation;
         clearDataLine();
-        if (doCompare) {
-            compare.initLineData(line);
-        }
     }
 
     @Override
@@ -160,29 +155,7 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
         renderWindow(line);
         renderPlaneA(line);
         renderPlaneB(line);
-        int[] actual = composeImageLinearLine(line);
-        if (doCompare) {
-            doCompare(line, actual);
-        }
-    }
-
-    private void doCompare(int line, int[] actual) {
-        compare.renderLine(line);
-        int[] ref = compare.composeImageLinearLine(line);
-        if (!Arrays.equals(ref, actual)) {
-            LOG.error("Line: " + line);
-        }
-    }
-
-    public void renderFrame() {
-        if (doCompare) {
-//            System.out.println("renderFrame");
-            compare.renderFrame();
-            int[] ref = compare.getScreenDataLinear();
-            if (!Arrays.equals(ref, linearScreen)) {
-                LOG.error("Frame data different");
-            }
-        }
+        composeImageLinearLine(line);
     }
 
     private void clearDataLine() {
@@ -313,18 +286,12 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
         }
     }
 
-    protected int[] composeImageLinearLine(int line) {
+    protected void composeImageLinearLine(int line) {
         int width = videoMode.getDimension().width;
-        if (res.length != width) {
-            res = new int[width];
-        }
         int k = width * line;
         for (int col = 0; col < width; col++) {
-            int val = getPixelFromLayer(pixelPriority[col], col);
-            linearScreen[k++] = val;
-            res[col] = val;
+            linearScreen[k++] = getPixelFromLayer(pixelPriority[col], col);
         }
-        return res;
     }
 
     private int getPixelFromLayer(RenderPriority rp, int col) {
@@ -560,9 +527,6 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
             case VIDEO_MODE:
                 setVideoMode((VideoMode) value);
                 break;
-            case NEW_FRAME:
-                renderFrame();
-                break;
             default:
                 break;
         }
@@ -670,9 +634,6 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
         this.newVideoMode = videoMode;
         if (this.videoMode == null) {
             initVideoMode(); //force init
-        }
-        if (doCompare) {
-            compare.setVideoMode(videoMode);
         }
     }
 

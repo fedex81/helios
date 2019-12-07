@@ -48,9 +48,6 @@ public interface VdpRenderHandler {
     void dumpScreenData();
 
     @Deprecated
-    void renderFrame();
-
-    @Deprecated
     VideoMode getVideoMode();
 
     void renderLine(int line);

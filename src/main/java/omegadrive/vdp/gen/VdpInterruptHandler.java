@@ -319,7 +319,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
                 "(" + Integer.toHexString(this.hCounterInternal) + ")h, vce=" + Integer.toHexString(vCounterInternal & 0xFF)
                 + "(" + Integer.toHexString(this.vCounterInternal) + ")" +
                 "h, hb" + (hBlankSet ? "1" : "0") + ",vb" + (vBlankSet ? "1" : "0")
-                + ", VINTPen" + (vIntPending ? "1" : "0") + ", HINTPend" + (hIntPending ? "1" : "0") + ", hLines=" + hLinePassed;
+                + ", VINTPen" + (vIntPending ? "1" : "0") + ", HINTPend" + (hIntPending ? "1" : "0") + ", hLines=" + hLinesCounter;
     }
 
     private void printStateString(String head) {
