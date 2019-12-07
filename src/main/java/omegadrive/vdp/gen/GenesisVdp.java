@@ -169,7 +169,7 @@ public class GenesisVdp implements GenesisVdpProvider {
     private void setupVdp() {
         this.list = new ArrayList<>();
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
-        this.renderHandler = VdpRenderHandlerImpl2.createInstance(this, memoryInterface);
+        this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);
         this.debugViewer = VdpDebugView.createInstance(memoryInterface, renderHandler);
         this.tileViewer = UpdatableViewer.NO_OP_VIEWER; //
         // new TileViewer(this, memoryInterface, (VdpRenderHandlerImpl) renderHandler);

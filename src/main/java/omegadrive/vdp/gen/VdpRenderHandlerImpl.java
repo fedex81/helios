@@ -31,13 +31,13 @@ import org.apache.logging.log4j.Logger;
 import java.awt.*;
 import java.util.Arrays;
 
+import static omegadrive.vdp.model.BaseVdpProvider.VdpEventListener;
 import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_FRAME_H40;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpEventListener;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
-public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener {
+public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener {
 
-    private final static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl2.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
     private GenesisVdpProvider vdpProvider;
     private VdpMemoryInterface memoryInterface;
     private VdpScrollHandler scrollHandler;
@@ -68,12 +68,7 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
     private int[] javaPalette;
     private int activeLines = 0;
 
-    public static VdpRenderHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
-        VdpRenderHandler v = new VdpRenderHandlerImpl2(vdpProvider, memoryInterface);
-        return v;
-    }
-
-    public VdpRenderHandlerImpl2(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
+    public VdpRenderHandlerImpl(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
         this.memoryInterface = memoryInterface;
         this.colorMapper = VdpColorMapper.getInstance();
@@ -87,6 +82,11 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
         vdpProvider.addVdpEventListener(this);
         clearDataLine();
         clearDataFrame();
+    }
+
+    public static VdpRenderHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
+        VdpRenderHandler v = new VdpRenderHandlerImpl(vdpProvider, memoryInterface);
+        return v;
     }
 
     public static TileDataHolder getTileData(int nameTable, InterlaceMode interlaceMode, TileDataHolder holder) {
@@ -320,7 +320,7 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
 
     private int processShadowHighlight(boolean shadowHighlightMode, int col, int cramIndex, RenderPriority rp) {
         if (!shadowHighlightMode) {
-            return getJavaColorValue(cramIndex);
+            return javaPalette[cramIndex >> 1];
         }
         ShadowHighlightType type = shadowHighlight[col];
         shadowHighlight[col] = rp.getPriorityType() == PriorityType.YES ? type.brighter() : type;
@@ -466,10 +466,6 @@ public class VdpRenderHandlerImpl2 implements VdpRenderHandler, VdpEventListener
         int twoPixelsData = vram[tileBytePointer & 0xFFFF];
         boolean isFirstPixel = (pixelInTile % 2) == (~horFlipAmount & 1);
         return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
-    }
-
-    private int getJavaColorValue(int cramIndex) {
-        return javaPalette[cramIndex >> 1];
     }
 
     // This value is effectively the address divided by $400; however, the low
