@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
@@ -41,12 +42,12 @@ import java.util.Queue;
  * NUKE_CLOCK = FM_CLOCK/6 = 1278409
  * CHIP_OUTPUT_RATE = NUKE_CLOCK/24 = 53267
  */
-public class Ym2612Nuke implements MdFmProvider {
-    static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);// + 0.03;
+public class Ym2612Nuke2 implements MdFmProvider {
+    static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ) + 0.03;
 
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
-    private static final Logger LOG = LogManager.getLogger(Ym2612Nuke.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(Ym2612Nuke2.class.getSimpleName());
     int ym3438_cycles = 0;
     double cycleAccum = 0;
 
@@ -54,32 +55,22 @@ public class Ym2612Nuke implements MdFmProvider {
     public static int chipRate = 0;
     static final int VOLUME_SHIFT = 3;
     private final int[][] ym3438_accm = new int[24][2];
+    private AtomicLong queueLen = new AtomicLong();
 
-    public Ym2612Nuke() {
+    public Ym2612Nuke2() {
         this(new IYm3438.IYm3438_Type());
 //        this(new Ym3438Jna());
     }
 
-    public Ym2612Nuke(IYm3438.IYm3438_Type chip) {
+    public Ym2612Nuke2(IYm3438.IYm3438_Type chip) {
         this.ym3438 = new Ym3438();
         this.chip = chip;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
     }
 
-    public Ym2612Nuke(IYm3438 impl) {
+    public Ym2612Nuke2(IYm3438 impl) {
         this.ym3438 = impl;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
-    }
-
-    @Override
-    public void reset() {
-        synchronized (lock) {
-            ym3438.OPN2_Reset(chip);
-            sampleQueue.clear();
-            queueLen = 0;
-            ym3438_cycles = 0;
-            Arrays.stream(ym3438_accm).forEach(row -> Arrays.fill(row, 0));
-        }
     }
 
     public IYm3438.IYm3438_Type getChip() {
@@ -107,44 +98,59 @@ public class Ym2612Nuke implements MdFmProvider {
 
     int sample = 0;
     private Queue<Integer> sampleQueue = new ArrayDeque<>();
-    private volatile long queueLen = 0;
-    private Object lock = new Object();
+
+    @Override
+    public void reset() {
+        ym3438.OPN2_Reset(chip);
+        sampleQueue.clear();
+        queueLen.set(0);
+        ym3438_cycles = 0;
+        sample = 0;
+        Arrays.stream(ym3438_accm).forEach(row -> Arrays.fill(row, 0));
+    }
 
     @Override
     public int update(int[] buf_lr, int offset, int count) {
         offset <<= 1;
         int end = (count << 1) + offset;
         int sampleNum;
-        synchronized (lock) {
-            long initialQueueSize = queueLen;
-            int sample = 0;
-            for (int i = offset; i < end && queueLen > 0; i += 2) {
-                sample = sampleQueue.poll() << VOLUME_SHIFT;
-                queueLen--;
-                buf_lr[i] = sample;
-                buf_lr[i + 1] = sample;
+        long initialQueueSize = queueLen.get();
+        long queueIndicativeLen = initialQueueSize;
+
+        Integer sample;
+        for (int i = offset; i < end && queueIndicativeLen > 0; i += 2) {
+            sample = sampleQueue.poll();
+            if (sample == null) {
+                break;
             }
-            sampleNum = (int) (initialQueueSize - queueLen);
-            if (queueLen > 0) {
-                LOG.info("Dropping {} samples", queueLen);
-                sampleQueue.clear();
-                queueLen = 0;
-            }
+            sample <<= VOLUME_SHIFT;
+            queueIndicativeLen = queueLen.decrementAndGet();
+            buf_lr[i] = sample;
+            buf_lr[i + 1] = sample;
+        }
+        sampleNum = (int) (initialQueueSize - queueIndicativeLen);
+        if (queueIndicativeLen > 0) {
+            LOG.info("Leaving {} samples", queueIndicativeLen);
+//            sampleQueue.clear();
+//            queueLen.set(0);
         }
         return sampleNum;
     }
+
 
     //Output frequency: 53.267 kHz (NTSC), 52.781 kHz (PAL)
     @Override
     public void tick(double microsPerTick) {
         cycleAccum += microsPerTick;
         spinOnce();
+        addSample();
+    }
+
+    private void addSample() {
         if (cycleAccum > FM_CALCS_PER_MICROS) {
             sampleRate++;
-            synchronized (lock) {
-                sampleQueue.offer(sample);
-                queueLen++;
-            }
+            sampleQueue.offer(sample);
+            queueLen.addAndGet(1);
             cycleAccum -= FM_CALCS_PER_MICROS;
         }
     }

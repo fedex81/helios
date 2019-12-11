@@ -37,7 +37,8 @@ import java.time.Duration;
 @Ignore
 public class VdpPerformanceTest {
 
-    static Path testFilePath = Paths.get("./test_roms", "s1.zip");
+    static Path testFilePath = Paths.get("./test_roms", "titan2.bin");
+    //    static Path testFilePath = Paths.get("./test_roms", "s1.zip");
     //    static Path testFilePath = Paths.get("./test_roms", "zax.col");
     static int fps = 60;
     int frameCnt = 0;
@@ -70,7 +71,7 @@ public class VdpPerformanceTest {
     @Test
     public void testVdpPerf() {
         SystemProvider system = createTestProvider();
-        fps = system.getRegion().getFps();
+
         createAndAddVdpListener(system);
         Util.waitForever();
     }
@@ -99,6 +100,7 @@ public class VdpPerformanceTest {
             vdpProvider.addVdpEventListener(new BaseVdpProvider.VdpEventAdapter() {
                 @Override
                 public void onNewFrame() {
+                    fps = system.getRegion().getFps();
                     doStats();
                 }
             });

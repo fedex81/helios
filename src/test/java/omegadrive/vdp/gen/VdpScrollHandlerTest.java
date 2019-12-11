@@ -78,7 +78,7 @@ public class VdpScrollHandlerTest {
         vdp.updateRegisterData(PLANE_A_NAMETABLE, planeANameTable / 0x400);
         vdp.updateRegisterData(PLANE_B_NAMETABLE, planeANameTable / 0x2000);
 
-        VdpRenderHandler renderHandler = new VdpRenderHandlerImpl2(vdp, v);
+        VdpRenderHandler renderHandler = new VdpRenderHandlerImpl(vdp, v);
 
 //        renderHandler.setVideoMode(vm);
 //        renderHandler.initLineData(0);

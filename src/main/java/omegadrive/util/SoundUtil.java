@@ -26,6 +26,7 @@ import javax.sound.sampled.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 
 public class SoundUtil {
 
@@ -52,13 +53,14 @@ public class SoundUtil {
         LOG.info("PSG attenuation: {}, in bits: {}", PSG_ATTENUATION, USER_PSG_ATT_BITS);
     }
 
-    public static void writeBufferInternal(SourceDataLine line, byte[] buffer, int samplesPerFrame) {
+    public static int writeBufferInternal(SourceDataLine line, byte[] buffer, int start, int end) {
+        int res = 0;
         try {
             // Output Stream write(byte[] b, int off, int len)
             // Small buffer to avoid latency, but more intensive CPU usage
-            int res = line.write(buffer, 0, samplesPerFrame);
-            if (res < samplesPerFrame) {
-                LOG.warn("bytes written: " + res + "/" + samplesPerFrame);
+            res = line.write(buffer, start, end);
+            if (res < (end - start)) {
+                LOG.warn("bytes written: " + res + "/" + (end - start));
             }
         } catch (IllegalArgumentException iae) {
             LOG.error("Error writing to the audio line. "
@@ -68,6 +70,11 @@ public class SoundUtil {
                     + "The buffer does not contain the number of bytes specified.");
 
         }
+        return res;
+    }
+
+    public static int writeBufferInternal(SourceDataLine line, byte[] buffer, int samplesPerFrame) {
+        return writeBufferInternal(line, buffer, 0, samplesPerFrame);
     }
 
     /*
@@ -104,7 +111,8 @@ public class SoundUtil {
         } else {
             try {
                 line = (SourceDataLine) AudioSystem.getLine(info);
-                line.open(audioFormat, getAudioLineBufferSize(audioFormat, RegionDetector.Region.EUROPE));
+                line.open(audioFormat, getAudioLineBufferSize(audioFormat, RegionDetector.Region.USA));
+                lowerLatencyHack(line);
                 line.start();
                 LOG.info("SourceDataLine buffer: " + line.getBufferSize());
             } catch (LineUnavailableException lue) {
@@ -112,6 +120,20 @@ public class SoundUtil {
             }
         }
         return line;
+    }
+
+    private static void lowerLatencyHack(SourceDataLine line) {
+        String sname = line.getClass().getSuperclass().getCanonicalName();
+        if ("com.sun.media.sound.DirectAudioDevice.DirectDL".equalsIgnoreCase(sname)) {
+            try {
+                Field f = line.getClass().getSuperclass().getDeclaredField("waitTime");
+                f.setAccessible(true);
+                f.set(line, 1);
+                LOG.info("Setting waitTime to 1ms for SourceDataLine: {}", line.getClass().getCanonicalName());
+            } catch (Exception e) {
+                LOG.warn("Unable to set waitTime for SourceDataLine: {}", line.getClass().getCanonicalName());
+            }
+        }
     }
 
     public static void intStereo14ToByteMono16Mix(int[] input, byte[] output, byte[] psgMono8) {
@@ -150,15 +172,16 @@ public class SoundUtil {
         File input = new File(fileName);
         File output = new File(fileName + ".wav");
 
-        try {
+        try (
             FileInputStream fileInputStream = new FileInputStream(input);
             AudioInputStream audioInputStream = new AudioInputStream(fileInputStream, audioFormat
                     , input.length());
+        ) {
             AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, output);
             audioInputStream.close();
-            System.out.println("OUTPUT.WAV recorded");
+            LOG.info(output.getAbsolutePath() + " saved");
         } catch (IOException ioe) {
-            LOG.error("Error writing WAV file.");
+            LOG.error("Error writing WAV file: " + output.getAbsolutePath());
             ioe.printStackTrace();
             System.out.println("Error writing WAV file");
         }

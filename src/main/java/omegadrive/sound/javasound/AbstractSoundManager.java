@@ -56,7 +56,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     protected SoundPersister soundPersister;
     int fmSize;
     int psgSize;
-    private AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
+    public static AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
     protected SourceDataLine dataLine;
     private boolean mute = false;
     private volatile boolean isSoundWorking = false;
@@ -100,7 +100,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
             LOG.warn("Sound disabled");
             return NO_SOUND;
         }
-        JavaSoundManager jsm = new JavaSoundManager();
+        AbstractSoundManager jsm = MD_NUKE_AUDIO ? new JavaSoundManager2() : new JavaSoundManager();
         jsm.setFm(getFmProvider(systemType, region));
         jsm.setPsg(getPsgProvider(systemType, region));
         jsm.setSystemType(systemType);
@@ -166,6 +166,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
             dataLine.flush();
             dataLine.close();
         }
+        setRecording(false);
         LOG.info("Closing sound, stopping background tasks: #" + list.size());
     }
 

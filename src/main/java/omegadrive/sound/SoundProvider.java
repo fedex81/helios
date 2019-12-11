@@ -41,6 +41,8 @@ public interface SoundProvider extends Device {
 
     boolean ENABLE_SOUND = Boolean.valueOf(System.getProperty("helios.enable.sound", "true"));
 
+    boolean MD_NUKE_AUDIO = Boolean.valueOf(System.getProperty("md.nuke.audio", "false"));
+
     int OVERRIDE_AUDIO_BUFFER_SIZE = OVERRIDE_AUDIO_BUFFER_LEN_MS > 0 ?
             (int) (SAMPLE_RATE_HZ / 1000d * OVERRIDE_AUDIO_BUFFER_LEN_MS)
             : 0;
