@@ -251,6 +251,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
                 memory.setRomData(data);
                 romName = file.getFileName().toString();
                 Thread.currentThread().setName(threadNamePrefix + romName);
+                Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
                 emuFrame.setTitle(romName);
                 region = getRegionInternal(memory, emuFrame.getRegionOverride());
                 LOG.info("Running rom: " + romName + ", region: " + region);

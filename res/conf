@@ -1,0 +1,10 @@
+sudo usermod -a -G audio <user>
+sudo usermod -a -G pulse-rt <user>
+
+see /etc/pulse/daemon.conf
+; default-sample-format = s16le
+; default-sample-rate = 44100
+; alternate-sample-rate = 48000
+; default-sample-channels = 2
+; default-channel-map = front-left,front-right
+; resample-method = speex-float-3

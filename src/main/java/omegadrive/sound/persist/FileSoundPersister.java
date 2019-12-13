@@ -20,12 +20,14 @@
 package omegadrive.sound.persist;
 
 import com.google.common.io.Files;
+import omegadrive.sound.javasound.AbstractSoundManager;
+import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class FileSoundPersister implements SoundPersister {
@@ -36,6 +38,7 @@ public class FileSoundPersister implements SoundPersister {
      * For Recording Sound to Disk.
      */
     private OutputStream fileStream;
+    private File rawFile;
     private boolean recording;
 
     @Override
@@ -65,8 +68,8 @@ public class FileSoundPersister implements SoundPersister {
     private void startRecordingInternal(SoundType type) {
         String name = "output_" + type.name() + "_" + System.currentTimeMillis() + ".raw";
         try {
-            Path file = Paths.get(".", name);
-            fileStream = Files.asByteSink(file.toFile()).openBufferedStream();
+            rawFile = Paths.get(".", name).toFile();
+            fileStream = Files.asByteSink(rawFile).openBufferedStream();
             LOG.info("Started recording file: " + name);
             recording = true;
         } catch (IOException ioe) {
@@ -90,6 +93,7 @@ public class FileSoundPersister implements SoundPersister {
                 fileStream.close();
                 LOG.info("Stopped recording");
                 recording = false;
+                SoundUtil.convertToWav(AbstractSoundManager.audioFormat, rawFile.toString());
             } catch (IOException ioe) {
                 LOG.error("Failed whilst closing output.raw");
             }

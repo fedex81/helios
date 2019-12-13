@@ -144,7 +144,7 @@ public class JavaSoundManager2 extends AbstractSoundManager {
         lineAvailable = dataLine.available(); //need to do it twice!
         if (lineAvailable <= 0) {
             do {
-                Util.parkFor(250_000, System.nanoTime());
+                Util.sleep(1);
                 dataLine.available();
                 lineAvailable = dataLine.available();
                 LogHelper.printLevel(LOG, Level.INFO, "Sleep", verbose);

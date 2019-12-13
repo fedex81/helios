@@ -103,5 +103,10 @@ public class JavaSoundManager extends AbstractSoundManager {
             }
         };
     }
+
+    @Override
+    public void output(long nanos) {
+        //do nothing
+    }
 }
 

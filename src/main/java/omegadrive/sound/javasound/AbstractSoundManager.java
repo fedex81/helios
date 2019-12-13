@@ -153,11 +153,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
     }
 
     @Override
-    public void output(long nanos) {
-//        LOG.info(micros + " micros");
-    }
-
-    @Override
     public void reset() {
         LOG.info("Resetting sound");
         close = true;
