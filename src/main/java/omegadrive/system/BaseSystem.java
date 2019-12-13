@@ -244,7 +244,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         @Override
         public void run() {
             try {
-                int[] data = FileLoader.loadBinaryFile(file, getSystemType());
+                int[] data = FileLoader.readBinaryFile(file, getSystemType());
                 if (data.length == 0) {
                     return;
                 }

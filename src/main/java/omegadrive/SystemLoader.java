@@ -51,21 +51,23 @@ public class SystemLoader {
 
     protected DisplayWindow emuFrame;
 
-    private static Logger LOG = LogManager.getLogger(SystemLoader.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(SystemLoader.class.getSimpleName());
 
     public static final SystemLoader INSTANCE = new SystemLoader();
 
     private static final String PROPERTIES_FILENAME = "./helios.properties";
 
-    public static String[] mdBinaryTypes = {".md", ".bin", ".zip"};
+    public static String[] mdBinaryTypes = {".md", ".bin"};
     public static String[] sgBinaryTypes = {".sg", ".sc"};
     public static String[] cvBinaryTypes = {".col"};
     public static String[] msxBinaryTypes = {".rom"};
     public static String[] smsBinaryTypes = {".sms"};
     public static String[] ggBinaryTypes = {".gg"};
+    public static String[] compressedBinaryTypes = {".gz", ".zip"};
 
     public static String[] binaryTypes = Stream.of(
-            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes
+            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes,
+            compressedBinaryTypes
     ).flatMap(Stream::of).toArray(String[]::new);
 
     public static boolean debugPerf = false;
@@ -217,16 +219,26 @@ public class SystemLoader {
         return createSystemProvider(file, false);
     }
 
-    public SystemProvider createSystemProvider(Path file, boolean debugPerf) {
-        String lowerCaseName = file.toString().toLowerCase();
-        if (lowerCaseName.endsWith(".zip")) {
-            Optional<ZipEntry> optEntry = ZipUtil.getSupportedZipEntryIfAny(file);
+    private static String handleCompressedFiles(Path file, String lowerCaseName) {
+        if (ZipUtil.isZipArchiveByteStream(file)) {
+            Optional<? extends ZipEntry> optEntry = ZipUtil.getSupportedZipEntryIfAny(file);
             if (!optEntry.isPresent()) {
                 LOG.error("Unable to find a system to load: " + file.toAbsolutePath());
                 return null;
             }
             LOG.info("Valid zipEntry detected: {}", optEntry.get().getName());
             lowerCaseName = optEntry.get().getName().toLowerCase();
+        } else if (ZipUtil.isGZipByteStream(file)) {
+            lowerCaseName = ZipUtil.getGZipFileName(file);
+            LOG.info("GZip file detected, assuming name: {}", lowerCaseName);
+        }
+        return lowerCaseName;
+    }
+
+    public SystemProvider createSystemProvider(Path file, boolean debugPerf) {
+        String lowerCaseName = handleCompressedFiles(file, file.toString().toLowerCase());
+        if (lowerCaseName == null) {
+            return null;
         }
         boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);

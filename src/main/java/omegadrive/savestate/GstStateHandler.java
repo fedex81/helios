@@ -42,7 +42,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static omegadrive.util.Util.getUInt32;
+import static omegadrive.util.Util.getUInt32LE;
 
 //import omegadrive.vdp.model.VdpMemoryInterface;
 
@@ -89,7 +89,7 @@ public class GstStateHandler implements GenesisStateHandler {
         GstStateHandler h = new GstStateHandler();
         h.fileName = handleFileExtension(fileName);
         h.type = Type.LOAD;
-        h.data = FileLoader.readFileSafe(Paths.get(h.fileName));
+        h.data = FileLoader.readBinaryFile(Paths.get(h.fileName), fileExtension);
         GenesisStateHandler res = h.detectStateFileType();
         return res;
     }
@@ -183,9 +183,30 @@ public class GstStateHandler implements GenesisStateHandler {
         }
     }
 
+    private static Z80State loadZ80State(int[] data) {
+        Z80State z80State = new Z80State();
+        z80State.setRegAF(getUInt32LE(data[0x404], data[0x405]));
+        z80State.setRegBC(getUInt32LE(data[0x408], data[0x409]));
+        z80State.setRegDE(getUInt32LE(data[0x40C], data[0x40D]));
+        z80State.setRegHL(getUInt32LE(data[0x410], data[0x411]));
+        z80State.setRegIX(getUInt32LE(data[0x414], data[0x415]));
+        z80State.setRegIY(getUInt32LE(data[0x418], data[0x419]));
+        z80State.setRegPC(getUInt32LE(data[0x41C], data[0x41D]));
+        z80State.setRegSP(getUInt32LE(data[0x420], data[0x421]));
+        z80State.setRegAFx(getUInt32LE(data[0x424], data[0x424]));
+        z80State.setRegBCx(getUInt32LE(data[0x428], data[0x428]));
+        z80State.setRegDEx(getUInt32LE(data[0x42C], data[0x42D]));
+        z80State.setRegHLx(getUInt32LE(data[0x430], data[0x431]));
+        z80State.setIM(Z80.IntMode.IM1);
+        boolean iffN = data[0x436] > 0;
+        z80State.setIFF1(iffN);
+        z80State.setIFF2(iffN);
+        return z80State;
+    }
+
     @Override
     public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
-        int z80BankInt = getUInt32(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
+        int z80BankInt = getUInt32LE(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
         GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
 
         bus.setZ80BusRequested(data[0x439] > 0);
@@ -206,27 +227,6 @@ public class GstStateHandler implements GenesisStateHandler {
         z80.loadZ80State(z80State);
     }
 
-    private static Z80State loadZ80State(int[] data) {
-        Z80State z80State = new Z80State();
-        z80State.setRegAF(getUInt32(data[0x404], data[0x405]));
-        z80State.setRegBC(getUInt32(data[0x408], data[0x409]));
-        z80State.setRegDE(getUInt32(data[0x40C], data[0x40D]));
-        z80State.setRegHL(getUInt32(data[0x410], data[0x411]));
-        z80State.setRegIX(getUInt32(data[0x414], data[0x415]));
-        z80State.setRegIY(getUInt32(data[0x418], data[0x419]));
-        z80State.setRegPC(getUInt32(data[0x41C], data[0x41D]));
-        z80State.setRegSP(getUInt32(data[0x420], data[0x421]));
-        z80State.setRegAFx(getUInt32(data[0x424], data[0x424]));
-        z80State.setRegBCx(getUInt32(data[0x428], data[0x428]));
-        z80State.setRegDEx(getUInt32(data[0x42C], data[0x42D]));
-        z80State.setRegHLx(getUInt32(data[0x430], data[0x431]));
-        z80State.setIM(Z80.IntMode.IM1);
-        boolean iffN = data[0x436] > 0;
-        z80State.setIFF1(iffN);
-        z80State.setIFF2(iffN);
-        return z80State;
-    }
-
     //TODO should use M68kProvider
     @Override
     public void load68k(MC68000Wrapper m68kProvider, IMemoryProvider memoryProvider) {
@@ -236,15 +236,15 @@ public class GstStateHandler implements GenesisStateHandler {
         }
 
         MC68000 m68k = m68kProvider.getM68k();
-        m68k.setSR(getUInt32(Arrays.copyOfRange(data, 0xD0, 0xD0 + 2)));
+        m68k.setSR(getUInt32LE(Arrays.copyOfRange(data, 0xD0, 0xD0 + 2)));
         IntStream.range(0, 8).forEach(i -> m68k.setDataRegisterLong(i,
-                getUInt32(Arrays.copyOfRange(data, M68K_REGD_OFFSET + i * 4, M68K_REGD_OFFSET + (1 + i) * 4))));
+                getUInt32LE(Arrays.copyOfRange(data, M68K_REGD_OFFSET + i * 4, M68K_REGD_OFFSET + (1 + i) * 4))));
         IntStream.range(0, 8).forEach(i -> m68k.setAddrRegisterLong(i,
-                getUInt32(Arrays.copyOfRange(data, M68K_REGA_OFFSET + i * 4, M68K_REGA_OFFSET + (1 + i) * 4))));
-        m68k.setPC(getUInt32(Arrays.copyOfRange(data, 0xC8, 0xC8 + 4)));
+                getUInt32LE(Arrays.copyOfRange(data, M68K_REGA_OFFSET + i * 4, M68K_REGA_OFFSET + (1 + i) * 4))));
+        m68k.setPC(getUInt32LE(Arrays.copyOfRange(data, 0xC8, 0xC8 + 4)));
 
-        int ssp = getUInt32(Arrays.copyOfRange(data, 0xD2, 0xD2 + 2));
-        int usp = getUInt32(Arrays.copyOfRange(data, 0xD6, 0xD6 + 2));
+        int ssp = getUInt32LE(Arrays.copyOfRange(data, 0xD2, 0xD2 + 2));
+        int usp = getUInt32LE(Arrays.copyOfRange(data, 0xD6, 0xD6 + 2));
         if (usp > 0) {
             LOG.warn("USP is not 0: " + usp);
         }
@@ -294,24 +294,24 @@ public class GstStateHandler implements GenesisStateHandler {
 
         int romBankSerial = GenesisZ80BusProvider.getRomBank68kSerial(z80);
         if (romBankSerial >= 0) {
-            Util.setUInt32(romBankSerial, data, 0x43C);
+            Util.setUInt32LE(romBankSerial, data, 0x43C);
         }
         saveZ80State(z80.getZ80State());
     }
 
     private void saveZ80State(Z80State z80State) {
-        Util.setUInt32(z80State.getRegAF(), data, 0x404);
-        Util.setUInt32(z80State.getRegBC(), data, 0x408);
-        Util.setUInt32(z80State.getRegDE(), data, 0x40C);
-        Util.setUInt32(z80State.getRegHL(), data, 0x410);
-        Util.setUInt32(z80State.getRegIX(), data, 0x414);
-        Util.setUInt32(z80State.getRegIY(), data, 0x418);
-        Util.setUInt32(z80State.getRegPC(), data, 0x41C);
-        Util.setUInt32(z80State.getRegSP(), data, 0x420);
-        Util.setUInt32(z80State.getRegAFx(), data, 0x424);
-        Util.setUInt32(z80State.getRegBCx(), data, 0x428);
-        Util.setUInt32(z80State.getRegDEx(), data, 0x42C);
-        Util.setUInt32(z80State.getRegHLx(), data, 0x430);
+        Util.setUInt32LE(z80State.getRegAF(), data, 0x404);
+        Util.setUInt32LE(z80State.getRegBC(), data, 0x408);
+        Util.setUInt32LE(z80State.getRegDE(), data, 0x40C);
+        Util.setUInt32LE(z80State.getRegHL(), data, 0x410);
+        Util.setUInt32LE(z80State.getRegIX(), data, 0x414);
+        Util.setUInt32LE(z80State.getRegIY(), data, 0x418);
+        Util.setUInt32LE(z80State.getRegPC(), data, 0x41C);
+        Util.setUInt32LE(z80State.getRegSP(), data, 0x420);
+        Util.setUInt32LE(z80State.getRegAFx(), data, 0x424);
+        Util.setUInt32LE(z80State.getRegBCx(), data, 0x428);
+        Util.setUInt32LE(z80State.getRegDEx(), data, 0x42C);
+        Util.setUInt32LE(z80State.getRegHLx(), data, 0x430);
         data[0x436] = z80State.isIFF1() ? 1 : 0;
     }
 
@@ -323,12 +323,12 @@ public class GstStateHandler implements GenesisStateHandler {
         }
 
         MC68000 m68k = mc68000Wrapper.getM68k();
-        Util.setUInt32(m68k.getSR(), data, 0xD0);
-        Util.setUInt32(m68k.getPC(), data, 0xC8);
-        Util.setUInt32(m68k.getSSP(), data, 0xD2);
-        Util.setUInt32(m68k.getUSP(), data, 0xD6);
-        IntStream.range(0, 8).forEach(i -> Util.setUInt32(m68k.getDataRegisterLong(i), data, M68K_REGD_OFFSET + i * 4));
-        IntStream.range(0, 8).forEach(i -> Util.setUInt32(m68k.getAddrRegisterLong(i), data, M68K_REGA_OFFSET + i * 4));
+        Util.setUInt32LE(m68k.getSR(), data, 0xD0);
+        Util.setUInt32LE(m68k.getPC(), data, 0xC8);
+        Util.setUInt32LE(m68k.getSSP(), data, 0xD2);
+        Util.setUInt32LE(m68k.getUSP(), data, 0xD6);
+        IntStream.range(0, 8).forEach(i -> Util.setUInt32LE(m68k.getDataRegisterLong(i), data, M68K_REGD_OFFSET + i * 4));
+        IntStream.range(0, 8).forEach(i -> Util.setUInt32LE(m68k.getAddrRegisterLong(i), data, M68K_REGA_OFFSET + i * 4));
     }
 
     /*

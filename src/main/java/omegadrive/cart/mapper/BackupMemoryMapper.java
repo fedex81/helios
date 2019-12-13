@@ -25,14 +25,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public abstract class BackupMemoryMapper {
 
-    private static Logger LOG = LogManager.getLogger(BackupMemoryMapper.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(BackupMemoryMapper.class.getSimpleName());
 
     protected String defaultSramFolder;
 
@@ -69,12 +68,12 @@ public abstract class BackupMemoryMapper {
                 long size = 0;
                 if (Files.isReadable(backupFile)) {
                     size = Files.size(backupFile);
-                    sram = FileLoader.readFileSafe(backupFile);
+                    sram = FileLoader.readBinaryFile(backupFile);
                 } else {
                     LOG.info("Creating backup memory file: " + backupFile);
                     sram = new int[sramSize];
                     size = sram.length;
-                    FileLoader.writeFile(backupFile, sram);
+                    FileLoader.writeFileSafe(backupFile, sram);
                 }
                 LOG.info("Using sram file: " + backupFile + " size: " + size + " bytes");
             } catch (Exception e) {
@@ -89,13 +88,9 @@ public abstract class BackupMemoryMapper {
             LOG.error("Unexpected sram length: {}", sram.length);
             return;
         }
-        try {
-            if (Files.isWritable(backupFile)) {
-                LOG.info("Writing to sram file: {}, len: {}", this.backupFile, sram.length);
-                FileLoader.writeFile(backupFile, sram);
-            }
-        } catch (IOException e) {
-            LOG.error("Unable to write to file: " + backupFile, e);
+        if (Files.isWritable(backupFile)) {
+            LOG.info("Writing to sram file: {}, len: {}", this.backupFile, sram.length);
+            FileLoader.writeFileSafe(backupFile, sram);
         }
     }
 }

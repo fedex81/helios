@@ -57,7 +57,7 @@ public class MdLoader {
     }
 
     private static void init() {
-        List<String> lines = FileLoader.loadFileContent(fileName);
+        List<String> lines = FileLoader.readFileContent(fileName);
         processData(lines);
         map.clear();
         entrySet.forEach(e -> map.put(e.id, e));

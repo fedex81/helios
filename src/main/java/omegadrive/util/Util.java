@@ -40,7 +40,7 @@ import java.util.zip.CRC32;
 
 public class Util {
 
-    private static Logger LOG = LogManager.getLogger(Util.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(Util.class.getSimpleName());
 
     public static boolean verbose = false;
 
@@ -248,7 +248,7 @@ public class Util {
         return 31 - Integer.numberOfLeadingZeros(n);
     }
 
-    public static int getUInt32(int... bytes) {
+    public static int getUInt32LE(byte... bytes) {
         int value = (bytes[0] & 0xFF) << 0;
         value = bytes.length > 1 ? value | ((bytes[1] & 0xFF) << 8) : value;
         value = bytes.length > 2 ? value | ((bytes[2] & 0xFF) << 16) : value;
@@ -256,7 +256,15 @@ public class Util {
         return value;
     }
 
-    public static void setUInt32(int value, int[] data, int startIndex) {
+    public static int getUInt32LE(int... bytes) {
+        int value = (bytes[0] & 0xFF) << 0;
+        value = bytes.length > 1 ? value | ((bytes[1] & 0xFF) << 8) : value;
+        value = bytes.length > 2 ? value | ((bytes[2] & 0xFF) << 16) : value;
+        value = bytes.length > 3 ? value | ((bytes[3] & 0xFF) << 24) : value;
+        return value;
+    }
+
+    public static void setUInt32LE(int value, int[] data, int startIndex) {
         data[startIndex + 3] = (value >> 24) & 0xFF;
         data[startIndex + 2] = (value >> 16) & 0xFF;
         data[startIndex + 1] = (value >> 8) & 0xFF;
@@ -269,6 +277,22 @@ public class Util {
             value += (char) (data[i] & 0xFF);
         }
         return value;
+    }
+
+    public static int[] toIntArray(byte[] bytes) {
+        int[] data = new int[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            data[i] = bytes[i] & 0xFF;
+        }
+        return data;
+    }
+
+    public static byte[] toByteArray(int[] bytes) {
+        byte[] data = new byte[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            data[i] = (byte) (bytes[i] & 0xFF);
+        }
+        return data;
     }
 
     public static final String toHex(long val) {

@@ -201,23 +201,23 @@ public class SwingWindow implements DisplayWindow {
 
         JMenuItem creditsItem = new JMenuItem("Credits");
         addAction(creditsItem, e -> showHelpMessage(creditsItem.getText(),
-                FileLoader.loadFileContentAsString("CREDITS.md")));
+                FileLoader.readFileContentAsString("CREDITS.md")));
 
         JMenuItem keyBindingsItem = new JMenuItem("Key Bindings");
         addAction(keyBindingsItem, e -> showHelpMessage(keyBindingsItem.getText(),
-                FileLoader.loadFileContentAsString("key.config")));
+                FileLoader.readFileContentAsString("key.config")));
 
         JMenuItem readmeItem = new JMenuItem("Readme");
         addAction(readmeItem, e -> showHelpMessage(readmeItem.getText(),
-                FileLoader.loadFileContentAsString("README.md")));
+                FileLoader.readFileContentAsString("README.md")));
 
         JMenuItem licenseItem = new JMenuItem("License");
         addAction(licenseItem, e -> showHelpMessage(licenseItem.getText(),
-                FileLoader.loadFileContentAsString("LICENSE.md")));
+                FileLoader.readFileContentAsString("LICENSE.md")));
 
         JMenuItem historyItem = new JMenuItem("History");
         addAction(historyItem, e -> showHelpMessage(historyItem.getText(),
-                FileLoader.loadFileContentAsString("HISTORY.md")));
+                FileLoader.readFileContentAsString("HISTORY.md")));
 
         menu.add(loadRomItem);
         menu.add(recentFilesMenu);

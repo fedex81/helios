@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 
 public class FileLoader {
 
-    private static Logger LOG = LogManager.getLogger(FileLoader.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(FileLoader.class.getSimpleName());
 
     private static int[] EMPTY = new int[0];
 
@@ -76,46 +76,34 @@ public class FileLoader {
         }
     };
 
-    public static int[] toIntArray(byte[] bytes) {
-        int[] data = new int[bytes.length];
-        for (int i = 0; i < bytes.length; i++) {
-            data[i] = bytes[i] & 0xFF;
+    public static void writeFileSafe(Path file, int[] data) {
+        try {
+            Files.write(file, Util.toByteArray(data));
+        } catch (IOException e) {
+            LOG.error("Unable to write file {}, #data {}", file.toAbsolutePath().toString(), data.length);
         }
-        return data;
-    }
-
-    public static int[] readFile(Path file) throws IOException {
-        return toIntArray(Files.readAllBytes(file));
-    }
-
-    public static void writeFile(Path file, int[] data) throws IOException {
-        byte[] bytes = new byte[data.length];
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = (byte) (data[i] & 0xFF);
-        }
-        Files.write(file, bytes);
     }
 
     public static int[] readFileSafe(Path file) {
         int[] rom = EMPTY;
         try {
-            rom = readFile(file);
+            rom = Util.toIntArray(Files.readAllBytes(file));
         } catch (IOException e) {
             LOG.error("Unable to load file: " + file.getFileName());
         }
         return rom;
     }
 
-    public static String loadFileContentAsString(String fileName) {
-        return loadFileContent(fileName).stream().collect(Collectors.joining("\n"));
+    public static String readFileContentAsString(String fileName) {
+        return readFileContent(fileName).stream().collect(Collectors.joining("\n"));
     }
 
-    public static List<String> loadFileContent(String fileName) {
+    public static List<String> readFileContent(String fileName) {
         Path pathObj = Paths.get(".", fileName);
-        return loadFileContent(pathObj);
+        return readFileContent(pathObj);
     }
 
-    public static List<String> loadFileContent(Path pathObj) {
+    public static List<String> readFileContent(Path pathObj) {
         List<String> lines = Collections.emptyList();
         String fileName = pathObj.getFileName().toString();
         if(pathObj.toFile().exists()) {
@@ -175,28 +163,34 @@ public class FileLoader {
         return lines;
     }
 
-    public static int[] loadBinaryFile(Path file, SystemLoader.SystemType systemType) {
-        return loadBinaryFile(file, ROM_FILTER);
+    public static int[] readBinaryFile(Path file, SystemLoader.SystemType systemType) {
+        return readBinaryFile(file, ROM_FILTER);
     }
 
-    private static int[] loadBinaryFile(Path file, FileFilter fileFilter) {
+    private static int[] readBinaryFile(Path file, FileFilter fileFilter) {
         int[] data = new int[0];
+        String fileName = file.toAbsolutePath().toString();
         try {
-            String fileName = file.toAbsolutePath().toString();
             if (fileFilter.accept(file.toFile())) {
-                if (fileName.endsWith(".zip")) {
-                    data = ZipUtil.loadZipFileContents(file);
-                } else {
-                    data = FileLoader.readFile(file);
-                }
-                if (data == null || data.length == 0) {
-                    throw new RuntimeException("Empty file!");
-                }
+                data = readBinaryFile(file);
             } else {
                 throw new RuntimeException("Unexpected file: " + fileName);
             }
         } catch (Exception e) {
-            LOG.error("Unable to load: " + file.toAbsolutePath().toString(), e);
+            LOG.error("Unable to load: " + fileName, e);
+        }
+        return data;
+    }
+
+    public static int[] readBinaryFile(Path file, String... ext) {
+        String fileName = file.toAbsolutePath().toString();
+        int[] data = new int[0];
+        if (ZipUtil.isZipFile.test(fileName)) {
+            data = ZipUtil.readZipFileContents(file, ext);
+        } else if (ZipUtil.isGZipFile.test(fileName)) {
+            data = ZipUtil.readGZipFileContents(file);
+        } else {
+            data = readFileSafe(file);
         }
         return data;
     }
@@ -223,7 +217,7 @@ public class FileLoader {
     }
 
     private static String getCurrentClasspath(){
-        Class clazz = FileLoader.class;
+        Class<?> clazz = FileLoader.class;
         String className = clazz.getSimpleName() + ".class";
         return clazz.getResource(className).toString();
     }

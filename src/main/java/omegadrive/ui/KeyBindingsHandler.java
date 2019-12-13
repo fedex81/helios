@@ -65,7 +65,7 @@ public class KeyBindingsHandler {
     private static void loadKeyMap() {
         List<String> l = Collections.emptyList();
         try {
-            l = FileLoader.loadFileContent(configFile);
+            l = FileLoader.readFileContent(configFile);
         } catch (Throwable t) {
             LOG.warn("Unable to load key config file: " + configFile);
         }

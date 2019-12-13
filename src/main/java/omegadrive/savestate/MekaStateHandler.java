@@ -67,7 +67,7 @@ public class MekaStateHandler implements SmsStateHandler {
     public static SmsStateHandler createLoadInstance(String fileName) {
         MekaStateHandler h = new MekaStateHandler();
         h.fileName = handleFileExtension(fileName);
-        h.buffer = IntBuffer.wrap(FileLoader.readFileSafe(Paths.get(h.fileName)));
+        h.buffer = IntBuffer.wrap(FileLoader.readBinaryFile(Paths.get(h.fileName)));
         h.type = Type.LOAD;
         SmsStateHandler s = h.detectStateFileType();
         return s;
@@ -183,18 +183,18 @@ public class MekaStateHandler implements SmsStateHandler {
 
     private Z80State loadZ80State(IntBuffer data) {
         Z80State z80State = new Z80State();
-        z80State.setRegAF(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegBC(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegDE(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegHL(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegIX(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegIY(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegPC(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegSP(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegAFx(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegBCx(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegDEx(Util.getUInt32(data.get(), data.get()));
-        z80State.setRegHLx(Util.getUInt32(data.get(), data.get()));
+        z80State.setRegAF(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegBC(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegDE(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegHL(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegIX(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegIY(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegPC(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegSP(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegAFx(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegBCx(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegDEx(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegHLx(Util.getUInt32LE(data.get(), data.get()));
 
         int val = data.get();
         Z80.IntMode im = ((val & 2) > 0) ? Z80.IntMode.IM1 : Z80.IntMode.IM0;
@@ -213,7 +213,7 @@ public class MekaStateHandler implements SmsStateHandler {
         skip(buffer, VDP_MISC_LEN);
         loadMappers(buffer, bus);
         if (version >= 0xD) {
-            int vdpLine = Util.getUInt32(buffer.get(), buffer.get());
+            int vdpLine = Util.getUInt32LE(buffer.get(), buffer.get());
             LOG.info("vdpLine: {}", vdpLine);
         }
     }

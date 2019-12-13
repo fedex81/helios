@@ -23,7 +23,6 @@ import omegadrive.util.FileLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 
 public interface BaseStateHandler {
@@ -53,13 +52,8 @@ public interface BaseStateHandler {
     int[] getData();
 
     default void storeData() {
-        int[] data = getData();
-        try {
-            FileLoader.writeFile(Paths.get(getFileName()), data);
-            LOG.info("Savestate persisted to: {}", getFileName());
-        } catch (IOException e) {
-            LOG.error("Unable to write file: {}", getFileName(), e);
-        }
+        LOG.info("Persisting savestate to: {}", getFileName());
+        FileLoader.writeFileSafe(Paths.get(getFileName()), getData());
     }
 
     enum Type {SAVE, LOAD}
