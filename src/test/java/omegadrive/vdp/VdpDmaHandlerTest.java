@@ -18,9 +18,12 @@
 package omegadrive.vdp;
 
 import omegadrive.vdp.gen.BaseVdpDmaHandlerTest;
+import omegadrive.vdp.model.GenesisVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
+
+import java.util.Arrays;
 
 public class VdpDmaHandlerTest extends BaseVdpDmaHandlerTest {
 
@@ -126,5 +129,22 @@ public class VdpDmaHandlerTest extends BaseVdpDmaHandlerTest {
                 0x68, 0xE4, 0x0E, 0xE2, 0x68, 0xE0,
                 0x04, 0xCE, 0x68, 0xCC, 0x08, 0xCA, 0x68, 0xC8, 0x0C, 0xC6};
         testDMAFillInternal(dmaFillCommand, 4, expected);
+    }
+
+    /**
+     * SGDK
+     * - sets up a dmaFill with len =0
+     * - waits a few slots
+     * - sends the fill value
+     */
+    @Test
+    public void testDMA_Fill_Len_0() {
+        long dmaFillCommand = 0x4000_0080; //DMA fill entire VRAM
+        int[] expected = new int[GenesisVdpProvider.VDP_VRAM_SIZE];
+        Arrays.fill(expected, 1);
+        testDMAFillInternal2(dmaFillCommand, 0, 1, 0x100, expected);
+
+        Arrays.fill(expected, 0);
+        testDMAFillInternal2(dmaFillCommand, 0, 1, 0, expected);
     }
 }

@@ -171,11 +171,13 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     public boolean doDmaSlot(VideoMode videoMode) {
+        boolean done = true;
         switch (dmaMode) {
             case VRAM_FILL:
                 if (dmaFillReady) {
                     dmaFillSingleByte();
                 }
+                done = dmaFillReady;
                 break;
             case VRAM_COPY:
                 dmaCopySingleByte();
@@ -186,7 +188,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             default:
                 LOG.error("Unexpected dma setting: {}", dmaMode);
         }
-        boolean done = getDmaLength() == 0;
+        done &= getDmaLength() == 0;
         if (done) {
             printLessVerboseInfo("DONE");
             dmaMode = null; //Bug Hunt

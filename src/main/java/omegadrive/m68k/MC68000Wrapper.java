@@ -148,17 +148,20 @@ public class MC68000Wrapper implements M68kProvider {
                 setStop(false);
             }
 
+            //http://gendev.spritesmind.net/forum/viewtopic.php?t=1262
             @Override
             public void resetExternal() {
+                //m68k asserts ZRES that cause z80, fm to be reset
                 LOG.info("Reset External");
                 busProvider.resetFrom68k();
             }
+
 
             @Override
             public void reset() {
                 LOG.info("Reset");
                 super.reset();
-                resetExternal(); //TODO why?
+                resetExternal();
             }
 
             @Override

@@ -55,7 +55,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private int[] window = new int[COLS];
     private RenderPriority[] pixelPriority = new RenderPriority[COLS];
     private ShadowHighlightType[] shadowHighlight = new ShadowHighlightType[COLS];
-    private int[] linearScreen;
+    private int[] linearScreen = new int[0];
     private SpriteDataHolder spriteDataHolder = new SpriteDataHolder();
     private int spriteTableLocation = 0;
     private boolean lineShowWindowPlane = false;

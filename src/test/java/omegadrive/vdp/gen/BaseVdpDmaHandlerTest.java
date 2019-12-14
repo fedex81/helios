@@ -56,6 +56,44 @@ public class BaseVdpDmaHandlerTest {
 
     protected void testDMAFillInternal(long dmaFillLong, int increment,
                                        int[] expected) {
+        testDMAFillInternal(dmaFillLong, 0x8000, increment, 0x68ac, expected);
+    }
+
+    protected void testDMAFillInternal2(long dmaFillLong, int baseAddress, int increment, int fillValueWord,
+                                        int[] expected) {
+        int toAddress = baseAddress + expected.length;
+
+        vdpProvider.writeControlPort(0x8F00 + increment);
+        vdpProvider.writeControlPort(0x8154);
+        vdpProvider.writeControlPort(0x9300);
+        vdpProvider.writeControlPort(0x9400);
+        vdpProvider.writeControlPort(0x9780);
+
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+
+        vdpProvider.writeControlPort(dmaFillLong >> 16);
+        vdpProvider.writeControlPort(dmaFillLong & 0xFFFF);
+
+        MdVdpTestUtil.runVdpSlot(vdpProvider);
+
+        vdpProvider.writeDataPort(fillValueWord);
+
+        MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
+
+        String[] actual = IntStream.range(baseAddress, toAddress).
+                mapToObj(memoryInterface::readVramByte).map(Integer::toHexString).toArray(String[]::new);
+
+        String[] exp = Arrays.stream(expected).mapToObj(Integer::toHexString).toArray(String[]::new);
+
+//        System.out.println("Expected: " + Arrays.toString(exp));
+//        System.out.println("Actual: " + Arrays.toString(actual));
+
+        Assert.assertArrayEquals(exp, actual);
+    }
+
+    protected void testDMAFillInternal(long dmaFillLong, int baseAddress, int increment, int fillValueWord,
+                                       int[] expected) {
+        int toAddress = baseAddress + expected.length;
         vdpProvider.writeControlPort(0x8F02);
         vdpProvider.writeControlPort(16384);
         vdpProvider.writeControlPort(2);
@@ -83,7 +121,7 @@ public class BaseVdpDmaHandlerTest {
         vdpProvider.writeDataPort(1216);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
-        String str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        String str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, baseAddress, toAddress);
         System.out.println(str);
 
         vdpProvider.writeControlPort(0x8F00 + increment);
@@ -99,19 +137,19 @@ public class BaseVdpDmaHandlerTest {
 
 //        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
 
-        vdpProvider.writeDataPort(0x68ac);
+        vdpProvider.writeDataPort(fillValueWord);
 
 //        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
 
-        str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, baseAddress, toAddress);
         System.out.println(str);
 
         MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
-        str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, baseAddress, toAddress);
         System.out.println(str);
 
-        String[] actual = IntStream.range(0x8000, 0x8000 + expected.length).
+        String[] actual = IntStream.range(baseAddress, toAddress).
                 mapToObj(memoryInterface::readVramByte).map(Integer::toHexString).toArray(String[]::new);
 
         String[] exp = Arrays.stream(expected).mapToObj(Integer::toHexString).toArray(String[]::new);
