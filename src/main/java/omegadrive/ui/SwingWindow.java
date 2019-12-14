@@ -353,20 +353,20 @@ public class SwingWindow implements DisplayWindow {
     //NOTE: this will copy the input array
     @Override
     public void renderScreenLinear(int[] data, String label, VideoMode videoMode) {
+        if (data.length != pixelsSrc.length) {
+            pixelsSrc = data.clone();
+        }
+        System.arraycopy(data, 0, pixelsSrc, 0, data.length);
         if (UI_SCALE_ON_EDT) {
-            SwingUtilities.invokeLater(() -> renderScreenLinearInternal(data, label, videoMode));
+            SwingUtilities.invokeLater(() -> renderScreenLinearInternal(pixelsSrc, label, videoMode));
         } else {
-            renderScreenLinearInternal(data, label, videoMode);
+            renderScreenLinearInternal(pixelsSrc, label, videoMode);
         }
     }
 
     private void renderScreenLinearInternal(int[] data, String label, VideoMode videoMode) {
         boolean changed = resizeScreen(videoMode);
-        if (data.length != pixelsSrc.length) {
-            pixelsSrc = data.clone();
-        }
-        System.arraycopy(data, 0, pixelsSrc, 0, data.length);
-        RenderingStrategy.renderNearest(pixelsSrc, pixelsDest, nativeScreenSize, outputScreenSize);
+        RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
         if (!Strings.isNullOrEmpty(label)) {
             getFpsLabel().setText(label);
         }
