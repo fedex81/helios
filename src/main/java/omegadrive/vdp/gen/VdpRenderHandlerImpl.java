@@ -357,6 +357,34 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
     }
 
+    public static SpriteDataHolder getSpriteData(int[] vram, int baseAddress, InterlaceMode interlaceMode, SpriteDataHolder holder) {
+        int byte0 = vram[baseAddress];
+        int byte1 = vram[baseAddress + 1];
+        int byte2 = vram[baseAddress + 2];
+        int byte3 = vram[baseAddress + 3];
+        int byte4 = vram[baseAddress + 4];
+        int byte5 = vram[baseAddress + 5];
+        int byte6 = vram[baseAddress + 6];
+        int byte7 = vram[baseAddress + 7];
+
+        holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;
+        if (interlaceMode == InterlaceMode.MODE_2) {
+            holder.verticalPos = ((byte0 & 0x3) << 7) | (byte1 >> 1);
+        }
+        holder.horizontalCellSize = (byte2 >> 2) & 0x3;
+        holder.verticalCellSize = byte2 & 0x3;
+        holder.linkData = byte3 & 0x7F;
+        holder.tileIndex = (((byte4 & 0x7) << 8) | byte5) << interlaceMode.tileShift();
+        holder.paletteLineIndex = ((byte4 >> 5) & 0x3) << PALETTE_INDEX_SHIFT;
+        holder.priority = ((byte4 >> 7) & 0x1) == 1;
+        holder.vertFlip = ((byte4 >> 4) & 0x1) == 1;
+        holder.horFlip = ((byte4 >> 3) & 0x1) == 1;
+        holder.horizontalPos = ((byte6 & 0x1) << 8) | byte7;
+        holder.horFlipAmount = holder.horFlip ? (holder.horizontalCellSize << 3) - 1 : 0;
+        holder.vertFlipAmount = holder.vertFlip ? (holder.verticalCellSize << 3) - 1 : 0;
+        return holder;
+    }
+
     //Register 02 - Plane A Name Table Location
 //7	6		5		4		3		2	1	0
 //x	SA16	SA15	SA14	SA13	x	x	x
@@ -371,24 +399,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             return;
         }
         // TODO bit 3 for 128KB VRAM
-        int nameTableLocation = (vdpProvider.getRegisterData(PLANE_A_NAMETABLE) & 0x38) << PLANE_A_SHIFT;
-        renderPlane(line, nameTableLocation, scrollContextA);
-    }
-
-    //	$04 - Plane B Name Table Location
-//	Register 04 - Plane B Name Table Location
-//	7	6	5	4	3		2		1		0
-//	x	x	x	x	SB16	SB15	SB14	SB13
-//	SB15-SB13 defines the upper three bits of the VRAM location of Plane B's nametable.
-// This value is effectively the address divided by $2000, meaning that the Plane B nametable
-// has to be located at a VRAM address that's a multiple of $2000.
-// For example, if the Plane A nametable was to be located at $E000 in VRAM,
-// it would be divided by $2000, which results in $07, the proper value for this register.
-//	SB16 is only valid if 128 KB mode is enabled, and allows for rebasing the
-// Plane B nametable to the second 64 KB of VRAM.
-    private void renderPlaneB(int line) {
-        int nameTableLocation = (vdpProvider.getRegisterData(PLANE_B_NAMETABLE) & 0x7) << PLANE_B_SHIFT;
-        renderPlane(line, nameTableLocation, scrollContextB);
+        renderPlane(line, VdpRenderHandler.getPlaneANameTableLocation(vdpProvider), scrollContextA);
     }
 
     protected void renderPlane(int line, int nameTableLocation, ScrollContext sc) {
@@ -548,32 +559,12 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         return holder;
     }
 
-    private SpriteDataHolder getSpriteData(int baseAddress, SpriteDataHolder holder) {
-        int byte0 = vram[baseAddress];
-        int byte1 = vram[baseAddress + 1];
-        int byte2 = vram[baseAddress + 2];
-        int byte3 = vram[baseAddress + 3];
-        int byte4 = vram[baseAddress + 4];
-        int byte5 = vram[baseAddress + 5];
-        int byte6 = vram[baseAddress + 6];
-        int byte7 = vram[baseAddress + 7];
+    private void renderPlaneB(int line) {
+        renderPlane(line, VdpRenderHandler.getPlaneBNameTableLocation(vdpProvider), scrollContextB);
+    }
 
-        holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;
-        if (interlaceMode == InterlaceMode.MODE_2) {
-            holder.verticalPos = ((byte0 & 0x3) << 7) | (byte1 >> 1);
-        }
-        holder.horizontalCellSize = (byte2 >> 2) & 0x3;
-        holder.verticalCellSize = byte2 & 0x3;
-        holder.linkData = byte3 & 0x7F;
-        holder.tileIndex = (((byte4 & 0x7) << 8) | byte5) << interlaceMode.tileShift();
-        holder.paletteLineIndex = ((byte4 >> 5) & 0x3) << PALETTE_INDEX_SHIFT;
-        holder.priority = ((byte4 >> 7) & 0x1) == 1;
-        holder.vertFlip = ((byte4 >> 4) & 0x1) == 1;
-        holder.horFlip = ((byte4 >> 3) & 0x1) == 1;
-        holder.horizontalPos = ((byte6 & 0x1) << 8) | byte7;
-        holder.horFlipAmount = holder.horFlip ? (holder.horizontalCellSize << 3) - 1 : 0;
-        holder.vertFlipAmount = holder.vertFlip ? (holder.verticalCellSize << 3) - 1 : 0;
-        return holder;
+    private SpriteDataHolder getSpriteData(int baseAddress, SpriteDataHolder holder) {
+        return getSpriteData(vram, baseAddress, interlaceMode, holder);
     }
 
     private void drawWindowPlane(final int line, int tileStart, int tileEnd, boolean isH40) {

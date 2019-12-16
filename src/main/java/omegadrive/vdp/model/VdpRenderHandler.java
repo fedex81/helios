@@ -125,6 +125,25 @@ public interface VdpRenderHandler {
         return nameTableLocation << WINDOW_TABLE_SHIFT;
     }
 
+    //	$04 - Plane B Name Table Location
+//	Register 04 - Plane B Name Table Location
+//	7	6	5	4	3		2		1		0
+//	x	x	x	x	SB16	SB15	SB14	SB13
+//	SB15-SB13 defines the upper three bits of the VRAM location of Plane B's nametable.
+// This value is effectively the address divided by $2000, meaning that the Plane B nametable
+// has to be located at a VRAM address that's a multiple of $2000.
+// For example, if the Plane A nametable was to be located at $E000 in VRAM,
+// it would be divided by $2000, which results in $07, the proper value for this register.
+//	SB16 is only valid if 128 KB mode is enabled, and allows for rebasing the
+// Plane B nametable to the second 64 KB of VRAM.
+    static int getPlaneBNameTableLocation(GenesisVdpProvider vdpProvider) {
+        return (vdpProvider.getRegisterData(PLANE_B_NAMETABLE) & 0x7) << PLANE_B_SHIFT;
+    }
+
+    static int getPlaneANameTableLocation(GenesisVdpProvider vdpProvider) {
+        return (vdpProvider.getRegisterData(PLANE_A_NAMETABLE) & 0x38) << PLANE_A_SHIFT;
+    }
+
     static int getSpriteTableLocation(GenesisVdpProvider vdp) {
         //	AT16 is only valid if 128 KB mode is enabled,
         // and allows for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.

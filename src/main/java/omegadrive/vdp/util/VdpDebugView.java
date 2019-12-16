@@ -1,5 +1,6 @@
 package omegadrive.vdp.util;
 
+import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.LogManager;
@@ -33,19 +34,21 @@ public class VdpDebugView implements UpdatableViewer {
     private VdpMemoryInterface memoryInterface;
     private CramViewer cramViewer;
     private PlaneViewer planeViewer;
+    private TileViewer tileViewer;
     private JFrame frame;
     private JPanel panel;
 
-    private VdpDebugView(VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
+    private VdpDebugView(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.memoryInterface = memoryInterface;
         this.renderHandler = renderHandler;
         this.cramViewer = CramViewer.createInstance(memoryInterface);
         this.planeViewer = PlaneViewer.createInstance(memoryInterface, renderHandler);
+        this.tileViewer = TileViewer.createInstance(vdp, memoryInterface, renderHandler);
         init();
     }
 
-    public static UpdatableViewer createInstance(VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
-        return DEBUG_VIEWER_ENABLED ? new VdpDebugView(memoryInterface, renderHandler) : UpdatableViewer.NO_OP_VIEWER;
+    public static UpdatableViewer createInstance(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
+        return DEBUG_VIEWER_ENABLED ? new VdpDebugView(vdp, memoryInterface, renderHandler) : UpdatableViewer.NO_OP_VIEWER;
     }
 
     private void init() {
@@ -56,7 +59,9 @@ public class VdpDebugView implements UpdatableViewer {
             panel.setBackground(Color.GRAY);
             JPanel planePanel = planeViewer.getPanel();
             JPanel cramPanel = cramViewer.getPanel();
+            JPanel tilePanel = tileViewer.getPanel();
             this.panel.add(planePanel);
+            this.panel.add(tilePanel);
             this.panel.add(cramPanel);
             int w = planePanel.getWidth();
             int h = planePanel.getHeight() + cramPanel.getHeight();
@@ -74,6 +79,7 @@ public class VdpDebugView implements UpdatableViewer {
     public void update() {
         cramViewer.update();
         planeViewer.update();
+        tileViewer.update();
     }
 
     @Override

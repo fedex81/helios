@@ -164,15 +164,11 @@ public class GenesisVdp implements GenesisVdpProvider {
     private GenesisVdp() {
     }
 
-    private UpdatableViewer tileViewer;
-
     private void setupVdp() {
         this.list = new ArrayList<>();
         this.interruptHandler = VdpInterruptHandler.createInstance(this);
         this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);
-        this.debugViewer = VdpDebugView.createInstance(memoryInterface, renderHandler);
-        this.tileViewer = UpdatableViewer.NO_OP_VIEWER; //
-        // new TileViewer(this, memoryInterface, (VdpRenderHandlerImpl) renderHandler);
+        this.debugViewer = VdpDebugView.createInstance(this, memoryInterface, renderHandler);
         this.fifo = new VdpFifo();
         this.initMode();
     }
@@ -420,7 +416,8 @@ public class GenesisVdp implements GenesisVdpProvider {
             codeRegister = (codeRegister & 0x3C) | ((data >> 14) & 3);
             addressRegister = (addressRegister & 0xC000) | (data & 0x3FFF);
         }
-        vramMode = VramMode.getVramMode(codeRegister & 0xF);
+        boolean verbose = !isRegisterWrite && writePendingControlPort;
+        vramMode = VramMode.getVramMode(codeRegister & 0xF, verbose);
     }
 
     private void handlePendingWrite(VdpPortType type, long data) {
@@ -439,7 +436,9 @@ public class GenesisVdp implements GenesisVdpProvider {
     private void writeDataPortInternal(long dataL) {
         int data = (int) dataL;
         writePendingControlPort = false;
-        LogHelper.printLevel(LOG, Level.INFO, "writeDataPort, data: {}, address: {}", data, addressRegister, verbose);
+        if (vramMode == null) {
+            LogHelper.printLevel(LOG, Level.WARN, "writeDataPort, data: {}, address: {}", data, addressRegister, true);
+        }
         fifo.push(vramMode, addressRegister, data);
         addressRegister += autoIncrementData;
         setupDmaFillMaybe(data);
@@ -653,12 +652,11 @@ public class GenesisVdp implements GenesisVdpProvider {
 
     private void doDma(boolean externalSlot) {
         if (externalSlot && dma == 1) {
-            boolean dmaDone;
-            VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
-            dmaDone = dmaHandler.doDmaSlot(videoMode);
+            VdpDmaHandler.DmaMode dmaMode = dmaHandler.getDmaMode();
+            boolean dmaDone = dmaHandler.doDmaSlot(videoMode);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
-                LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", mode, verbose);
+                LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", dmaMode, verbose);
                 processPendingWrites();
                 evaluateStop68k();
             }
@@ -722,7 +720,6 @@ public class GenesisVdp implements GenesisVdpProvider {
         if (interruptHandler.isDrawFrameSlot()) {
             interruptHandler.logVerbose("Draw Screen");
             debugViewer.update();
-//            tileViewer.update();
             list.forEach(VdpEventListener::onNewFrame);
             resetVideoMode(false);
         }
