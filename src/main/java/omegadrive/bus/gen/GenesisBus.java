@@ -212,10 +212,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         //Batman&Robin writes to address 0 - tries to enable debug mode?
         String msg = "Unexpected write to ROM: " + Long.toHexString(addressL) + ", value : " + data;
         LOG.warn(msg);
-        //TODO Micro Machines, Fantastic Dizzy write to ROM
-//            if (addressL > 0) {
-//                throw new IllegalArgumentException(msg);
-//            }
     }
 
     private void logVdpCounter(int v, int h) {

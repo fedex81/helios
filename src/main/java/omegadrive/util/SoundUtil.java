@@ -33,7 +33,7 @@ public class SoundUtil {
     private static Logger LOG = LogManager.getLogger(SoundUtil.class.getSimpleName());
 
     public static byte ZERO_BYTE = (byte) 0;
-    public static long DEFAULT_BUFFER_SIZE_MS = 100;
+    public static long DEFAULT_BUFFER_SIZE_MS = 50; //was 100 check
 
     private static int DEFAULT_PSG_SHIFT_BITS = 5;
     public static double PSG_ATTENUATION = Double.valueOf(System.getProperty("sound.psg.attenuation", "1.0"));

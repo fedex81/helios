@@ -95,12 +95,16 @@ public abstract class AbstractSoundManager implements SoundProvider {
         return fmProvider;
     }
 
+    public static double FACTOR = 1;
+
+    protected abstract Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region);
+
     public static SoundProvider createSoundProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
         if (!ENABLE_SOUND) {
             LOG.warn("Sound disabled");
             return NO_SOUND;
         }
-        AbstractSoundManager jsm = MD_NUKE_AUDIO ? new JavaSoundManager2() : new JavaSoundManager();
+        AbstractSoundManager jsm = new JavaSoundManager();
         jsm.setFm(getFmProvider(systemType, region));
         jsm.setPsg(getPsgProvider(systemType, region));
         jsm.setSystemType(systemType);
@@ -108,14 +112,12 @@ public abstract class AbstractSoundManager implements SoundProvider {
         return jsm;
     }
 
-    protected abstract Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region);
-
     protected void init(RegionDetector.Region region) {
         this.region = region;
         dataLine = SoundUtil.createDataLine(audioFormat);
         soundPersister = new FileSoundPersister();
-        fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
-        psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
+        fmSize = (int) (SoundProvider.getFmBufferIntSize(region.getFps()) * FACTOR);
+        psgSize = (int) (SoundProvider.getPsgBufferByteSize(region.getFps()) * FACTOR);
         executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
         executorService.submit(getRunnable(dataLine, region));
         LOG.info("Output audioFormat: " + audioFormat + ", bufferSize: " + fmSize);

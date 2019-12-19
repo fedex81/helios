@@ -24,51 +24,51 @@ import omegadrive.sound.fm.MdFmProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- *
- * TODO check this:
- * https://github.com/nukeykt/Nuked-OPN2/issues/4
- *
- * //NTSC_MCLOCK_MHZ = 53693175;
- * //    //PAL_MCLOCK_MHZ = 53203424;
- *
+ * NTSC_MCLOCK_MHZ = 53693175;
+ * PAL_MCLOCK_MHZ = 53203424;
+ * <p>
  * NTSC:
  * FM CLOCK = MCLOCK/7 = 7670453
  * NUKE_CLOCK = FM_CLOCK/6 = 1278409
  * CHIP_OUTPUT_RATE = NUKE_CLOCK/24 = 53267
+ * <p>
+ * TODO check with no-audio, the buffer keeps growing
  */
-public class Ym2612Nuke2 implements MdFmProvider {
-    static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ) + 0.03;
-
-    private IYm3438 ym3438;
-    private IYm3438.IYm3438_Type chip;
-    private static final Logger LOG = LogManager.getLogger(Ym2612Nuke2.class.getSimpleName());
-    int ym3438_cycles = 0;
-    double cycleAccum = 0;
-
+public class Ym2612Nuke3 implements MdFmProvider {
+    static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);
+    static final int VOLUME_SHIFT = 3;
+    private static final Logger LOG = LogManager.getLogger(Ym2612Nuke3.class.getSimpleName());
     public static int sampleRate = 0;
     public static int chipRate = 0;
-    static final int VOLUME_SHIFT = 3;
     private final int[][] ym3438_accm = new int[24][2];
+    int ym3438_cycles = 0;
+    double cycleAccum = 0;
+    int sample = 0;
+    int lastSample = 0;
+    long maxQueueLen = 0;
+    private IYm3438 ym3438;
+    private IYm3438.IYm3438_Type chip;
     private AtomicLong queueLen = new AtomicLong();
+    private Queue<Integer> sampleQueue = new ConcurrentLinkedQueue<>();
 
-    public Ym2612Nuke2() {
+    public Ym2612Nuke3() {
         this(new IYm3438.IYm3438_Type());
 //        this(new Ym3438Jna());
     }
 
-    public Ym2612Nuke2(IYm3438.IYm3438_Type chip) {
+    public Ym2612Nuke3(IYm3438.IYm3438_Type chip) {
         this.ym3438 = new Ym3438();
         this.chip = chip;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
     }
 
-    public Ym2612Nuke2(IYm3438 impl) {
+    public Ym2612Nuke3(IYm3438 impl) {
         this.ym3438 = impl;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
     }
@@ -96,9 +96,6 @@ public class Ym2612Nuke2 implements MdFmProvider {
     public void init(int clock, int rate) {
     }
 
-    int sample = 0;
-    private Queue<Integer> sampleQueue = new ArrayDeque<>();
-
     @Override
     public void reset() {
         ym3438.OPN2_Reset(chip);
@@ -109,11 +106,12 @@ public class Ym2612Nuke2 implements MdFmProvider {
         Arrays.stream(ym3438_accm).forEach(row -> Arrays.fill(row, 0));
     }
 
+
     @Override
     public int update(int[] buf_lr, int offset, int count) {
         offset <<= 1;
         int end = (count << 1) + offset;
-        int sampleNum;
+        int sampleNumMono;
         long initialQueueSize = queueLen.get();
         long queueIndicativeLen = initialQueueSize;
 
@@ -121,20 +119,57 @@ public class Ym2612Nuke2 implements MdFmProvider {
         for (int i = offset; i < end && queueIndicativeLen > 0; i += 2) {
             sample = sampleQueue.poll();
             if (sample == null) {
+                LOG.warn("Null sample QL{} P{}", queueIndicativeLen, i);
                 break;
             }
             sample <<= VOLUME_SHIFT;
             queueIndicativeLen = queueLen.decrementAndGet();
             buf_lr[i] = sample;
             buf_lr[i + 1] = sample;
+            lastSample = sample;
         }
-        sampleNum = (int) (initialQueueSize - queueIndicativeLen);
-        if (queueIndicativeLen > 0) {
-            LOG.info("Leaving {} samples", queueIndicativeLen);
-//            sampleQueue.clear();
-//            queueLen.set(0);
+        sampleNumMono = (int) (initialQueueSize - queueIndicativeLen);
+        if (queueIndicativeLen > maxQueueLen) {
+            maxQueueLen = queueIndicativeLen;
+            LOG.info("Len {}-{}, Prod {}, Req {}", initialQueueSize, maxQueueLen, sampleNumMono, count);
         }
-        return sampleNum;
+//        sampleNumMono = addSamples(buf_lr, offset, 6);
+//        sampleNumMono = resample(buf_lr, offset, sampleNumMono, count, lastSample);
+        return sampleNumMono;
+    }
+
+    private int addSamples(int[] buf_lr, int sampleNumStereo, int numSamplesMax) {
+        int sampleNumMono = sampleNumStereo >> 1;
+        int qlen = (int) queueLen.get();
+        if (qlen > 0) {
+            int limit = Math.min(numSamplesMax, qlen);
+            for (int i = 0; i < limit; i++) {
+                Integer val = sampleQueue.poll();
+                queueLen.decrementAndGet();
+                if (val == null) {
+                    break;
+                }
+                buf_lr[sampleNumStereo] = val;
+                buf_lr[sampleNumStereo + 1] = val;
+                sampleNumStereo += 2;
+            }
+            sampleNumMono = sampleNumStereo >> 1;
+//            LOG.info("Add QL{}, P{}, C{}, FQ{}", qlen, sampleNumMono, sampleNumStereo, qlen);
+        }
+        return sampleNumMono;
+    }
+
+    private int fillBuffer(int[] buf_lr, int offset, int sampleNumMono, int sampleCountMono, int lastSample) {
+        //just fills with the lastSample
+        if (sampleNumMono < sampleCountMono) {
+            int sampleNumStereo = sampleNumMono << 1;
+            int newCount = (int) Math.min(sampleNumMono * 1.1, sampleCountMono);
+            int end = (newCount << 1) + offset;
+            Arrays.fill(buf_lr, sampleNumStereo, end, lastSample);
+//            LOG.info("Fill P{}, C{}, Fill{}", sampleNumMono, sampleCountMono, newCount);
+            sampleNumMono = sampleCountMono;
+        }
+        return sampleNumMono;
     }
 
 

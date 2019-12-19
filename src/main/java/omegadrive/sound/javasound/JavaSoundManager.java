@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.sound.sampled.SourceDataLine;
 import java.util.Arrays;
+import java.util.concurrent.locks.LockSupport;
 
 public class JavaSoundManager extends AbstractSoundManager {
 
@@ -43,7 +44,6 @@ public class JavaSoundManager extends AbstractSoundManager {
     volatile boolean hasFm = getFm() != FmProvider.NO_SOUND;
 
     private int playOnce(int fmBufferLenMono) {
-//        fmBufferLenMono = Math.min(fmBufferLenMono, dataLine.available());
         if (hasFm) {
             fmBufferLenMono = fm.update(fm_buf_ints, 0, fmBufferLenMono);
             if (fmBufferLenMono == 0) {
@@ -88,11 +88,15 @@ public class JavaSoundManager extends AbstractSoundManager {
                 fm_buf_ints = new int[fmSize];
                 mix_buf_bytes16 = new byte[fm_buf_ints.length];
                 psg_buf_bytes = new byte[psgSize];
-                fmSizeMono = fmSize / 2;
+                fmSizeMono = (int) Math.round(fmSize / (2 * FACTOR));
                 hasFm = getFm() != FmProvider.NO_SOUND;
                 try {
                     do {
-                        samplesConsumedCount += playOnce(fmSizeMono);
+                        int res = playOnce(fmSizeMono);
+                        samplesConsumedCount += res;
+                        if (res == 0) {
+                            LockSupport.parkNanos(500_000);
+                        }
                     } while (!close);
                 } catch (Exception e) {
                     LOG.error("Unexpected sound error, stopping", e);
