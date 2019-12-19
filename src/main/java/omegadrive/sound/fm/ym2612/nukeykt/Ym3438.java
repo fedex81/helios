@@ -407,7 +407,7 @@ public class Ym3438 implements IYm3438 {
 
             /* Address */
             if (chip.write_a_en) {
-                chip.write_fm_mode_a = chip.write_data & 0xff;
+                chip.write_fm_mode_a = chip.write_data & 0x1ff;
             }
         }
 

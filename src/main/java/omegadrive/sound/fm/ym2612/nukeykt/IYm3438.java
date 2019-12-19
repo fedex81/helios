@@ -73,7 +73,7 @@ public interface IYm3438 {
         /* 8 bit unsigned */ int write_busy_cnt;
         /* 8 bit unsigned */ boolean write_fm_address;
         /* 8 bit unsigned */ int write_fm_data;
-        /* 8 bit unsigned */ int write_fm_mode_a;
+        /* 16 bit unsigned */ int write_fm_mode_a;
         /* 16 bit unsigned */ int address;
         /* 8 bit unsigned */ int data;
         /* 8 bit unsigned */ int pin_test_in;
