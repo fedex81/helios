@@ -19,6 +19,7 @@
 
 package omegadrive.system.nes;
 
+import com.grapeshot.halfnes.ui.ControllerImpl;
 import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.input.InputProvider;
@@ -39,8 +40,15 @@ import java.nio.file.Path;
 
 public class Nes extends BaseSystem<BaseBusProvider, BaseStateHandler> {
 
-    public static boolean verbose = false;
     private static Logger LOG = LogManager.getLogger(Nes.class.getSimpleName());
+
+    static {
+        ControllerImpl.JINPUT_ENABLE = false;
+        LOG.info("Disabling halfNes jinput");
+    }
+
+    public static boolean verbose = false;
+
     protected long startCycle = System.nanoTime();
     protected int elapsedNs;
     private SystemLoader.SystemType systemType;

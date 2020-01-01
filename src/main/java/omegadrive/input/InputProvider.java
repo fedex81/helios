@@ -45,7 +45,7 @@ public interface InputProvider {
 
     boolean DEBUG_DETECTION = Boolean.valueOf(System.getProperty("jinput.detect.debug", "false"));
     boolean JINPUT_ENABLE = Boolean.valueOf(System.getProperty("jinput.enable", "false"));
-    String JINPUT_NATIVES_PATH = System.getProperty("jinput.native.location", "privateLib");
+    String JINPUT_NATIVES_PATH = System.getProperty("jinput.native.location", "lib");
 
     enum PlayerNumber {
         P1, P2

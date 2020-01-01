@@ -104,10 +104,6 @@ public class NesHelper {
         }
     };
 
-    static {
-        ControllerImpl.JINPUT_ENABLE = false;
-    }
-
     //blocking
     public static NesHelper.NesGUIInterface createNes(Path romFile, Nes nesSys) {
         NES nes = new NES();
