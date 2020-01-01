@@ -24,6 +24,7 @@ import omegadrive.system.Genesis;
 import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.Z80BaseSystem;
+import omegadrive.system.nes.Nes;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.ui.SwingWindow;
@@ -63,10 +64,11 @@ public class SystemLoader {
     public static String[] msxBinaryTypes = {".rom"};
     public static String[] smsBinaryTypes = {".sms"};
     public static String[] ggBinaryTypes = {".gg"};
+    public static String[] nesBinaryTypes = {".nes"};
     public static String[] compressedBinaryTypes = {".gz", ".zip"};
 
     public static String[] binaryTypes = Stream.of(
-            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes,
+            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes, nesBinaryTypes,
             compressedBinaryTypes
     ).flatMap(Stream::of).toArray(String[]::new);
 
@@ -246,6 +248,7 @@ public class SystemLoader {
         boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isNes = Arrays.stream(nesBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if (isGen) {
             systemProvider = Genesis.createNewInstance(emuFrame, debugPerf);
         } else if (isSg) {
@@ -258,6 +261,8 @@ public class SystemLoader {
             systemProvider = Sms.createNewInstance(SystemType.SMS, emuFrame, debugPerf);
         } else if (isGg) {
             systemProvider = Sms.createNewInstance(SystemType.GG, emuFrame, debugPerf);
+        } else if (isNes) {
+            systemProvider = Nes.createNewInstance(SystemType.NES, emuFrame);
         }
         if (systemProvider == null) {
             LOG.error("Unable to find a system to load: " + file.toAbsolutePath());
@@ -276,7 +281,8 @@ public class SystemLoader {
         COLECO("CV"),
         MSX("MSX"),
         SMS("SMS"),
-        GG("GG");
+        GG("GG"),
+        NES("NES");
 
         private String shortName;
 

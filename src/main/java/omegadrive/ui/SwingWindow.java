@@ -504,7 +504,7 @@ public class SwingWindow implements DisplayWindow {
     }
 
     @Override
-    public void addKeyListener(KeyAdapter keyAdapter) {
+    public void addKeyListener(KeyListener keyAdapter) {
         jFrame.addKeyListener(keyAdapter);
     }
 

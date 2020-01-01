@@ -75,8 +75,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         inputProvider = InputProvider.createInstance(joypad);
         vdp = new SmsVdp(this);
         //z80, sound attached later
-        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
-                attachDevice(vdp);
+        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp);
         reloadWindowState();
         createAndAddVdpEventListener();
     }

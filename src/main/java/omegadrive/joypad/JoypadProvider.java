@@ -22,6 +22,8 @@ package omegadrive.joypad;
 import omegadrive.Device;
 import omegadrive.input.InputProvider;
 
+import java.awt.event.KeyEvent;
+
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
 public interface JoypadProvider extends Device {
@@ -93,4 +95,8 @@ public interface JoypadProvider extends Device {
     String getState(InputProvider.PlayerNumber number);
 
     void newFrame();
+
+    default void setButtonAction(InputProvider.PlayerNumber number, JoypadButton button, JoypadAction action, KeyEvent event) {
+        setButtonAction(number, button, action);
+    }
 }

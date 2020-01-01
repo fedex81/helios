@@ -122,7 +122,7 @@ public class KeyboardInput extends KeyAdapter {
                 break;
         }
         if (number != null && button != null) {
-            joypad.setButtonAction(number, button, action);
+            joypad.setButtonAction(number, button, action, e);
         }
     }
 

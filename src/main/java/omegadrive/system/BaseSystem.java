@@ -19,6 +19,7 @@
 
 package omegadrive.system;
 
+import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.input.InputProvider;
@@ -39,6 +40,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,7 +61,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private String romName;
 
     protected Future<Void> runningRomFuture;
-    private Path romFile;
+    protected Path romFile;
     protected DisplayWindow emuFrame;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -163,9 +165,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         PrefStore.addRecentFile(file.toAbsolutePath().toString());
     }
 
-    private void handleCloseRom() {
-        handleRomInternal();
-    }
+    double lastFps = 0;
 
     private void handleCloseApp() {
         handleCloseRom();
@@ -187,21 +187,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         this.saveStateFlag = true;
     }
 
-    private void handleRomInternal() {
-        if (pauseFlag) {
-            handlePause();
-        }
-        if (isRomRunning()) {
-            runningRomFuture.cancel(true);
-            while (isRomRunning()) {
-                Util.sleep(100);
-            }
-            LOG.info("Rom thread cancel");
-            emuFrame.resetScreen();
-            sound.reset();
-            bus.closeRom();
-            vdp.reset();
-        }
+    protected void handleCloseRom() {
+        handleRomInternal();
     }
 
     protected void createAndAddVdpEventListener() {
@@ -299,7 +286,23 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     int points = 0;
     long startNs = 0;
-    long lastFps = 0;
+
+    private void handleRomInternal() {
+        if (pauseFlag) {
+            handlePause();
+        }
+        if (isRomRunning()) {
+            runningRomFuture.cancel(true);
+            while (isRomRunning()) {
+                Util.sleep(100);
+            }
+            LOG.info("Rom thread cancel");
+            emuFrame.resetScreen();
+            sound.reset();
+            bus.closeRom();
+            Optional.ofNullable(vdp).ifPresent(Device::reset);
+        }
+    }
 
     protected String getStats(long nowNs) {
         if (!SystemLoader.showFps) {
@@ -307,7 +310,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
         points++;
         if (points % 25 == 0) {
-            lastFps = Util.SECOND_IN_NS / ((nowNs - startNs) / points);
+            lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - startNs) / points);
+            lastFps = ((int) (lastFps * 100)) / 100d;
             points = 0;
             startNs = nowNs;
         }

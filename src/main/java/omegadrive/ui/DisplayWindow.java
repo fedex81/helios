@@ -23,7 +23,7 @@ import omegadrive.system.SystemProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.VideoMode;
 
-import java.awt.event.KeyAdapter;
+import java.awt.event.KeyListener;
 import java.time.LocalDate;
 import java.util.Collection;
 
@@ -34,39 +34,9 @@ public interface DisplayWindow {
     String FRAME_TITLE_HEAD = APP_NAME + " " + VERSION;
 
 
-    void addKeyListener(KeyAdapter keyAdapter);
-
-    void setTitle(String rom);
-
-    void init();
-
-    void renderScreenLinear(int[] data, String label, VideoMode videoMode);
-
-    void resetScreen();
-
-    void setFullScreen(boolean value);
-
-    String getRegionOverride();
-
-    void reloadSystem(SystemProvider systemProvider);
-
-    default void reloadControllers(Collection<String> list) {
-        //DO NOTHING
-    }
-
-    default String getAboutString() {
-        int year = LocalDate.now().getYear();
-        String yrString = year == 2018 ? "2018" : "2018-" + year;
-        String res = FRAME_TITLE_HEAD + "\nA Sega Megadrive (Genesis) emulator, written in Java";
-        res += "\n\nCopyright " + yrString + ", Federico Berti";
-        res += "\n\nSee CREDITS.TXT for more information";
-        res += "\n\nReleased under GPL v.3.0 license.";
-        return res;
-    }
-
     DisplayWindow HEADLESS_INSTANCE = new DisplayWindow() {
         @Override
-        public void addKeyListener(KeyAdapter keyAdapter) {
+        public void addKeyListener(KeyListener keyAdapter) {
 
         }
 
@@ -105,6 +75,36 @@ public interface DisplayWindow {
 
         }
     };
+
+    void setTitle(String rom);
+
+    void init();
+
+    void renderScreenLinear(int[] data, String label, VideoMode videoMode);
+
+    void resetScreen();
+
+    void setFullScreen(boolean value);
+
+    String getRegionOverride();
+
+    void reloadSystem(SystemProvider systemProvider);
+
+    default void reloadControllers(Collection<String> list) {
+        //DO NOTHING
+    }
+
+    default String getAboutString() {
+        int year = LocalDate.now().getYear();
+        String yrString = year == 2018 ? "2018" : "2018-" + year;
+        String res = FRAME_TITLE_HEAD + "\nA Sega Megadrive (Genesis) emulator, written in Java";
+        res += "\n\nCopyright " + yrString + ", Federico Berti";
+        res += "\n\nSee CREDITS.TXT for more information";
+        res += "\n\nReleased under GPL v.3.0 license.";
+        return res;
+    }
+
+    void addKeyListener(KeyListener keyAdapter);
 
 
 }
