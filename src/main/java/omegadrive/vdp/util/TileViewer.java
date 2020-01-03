@@ -22,8 +22,8 @@ import java.util.Arrays;
  */
 public class TileViewer implements UpdatableViewer {
 
-    private static final int PANEL_HEIGHT = 300 + PANEL_TEXT_HEIGHT;
     private static final int PANEL_TEXT_HEIGHT = 20;
+    private static final int PANEL_HEIGHT = 300 + PANEL_TEXT_HEIGHT;
     private static final int PLANE_IMG_HEIGHT = 128;
     private static final int PANEL_WIDTH = PLANE_IMG_WIDTH;
     private static final int PLANE_IMG_WIDTH = MAX_TILES_PER_LINE * 8;

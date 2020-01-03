@@ -41,28 +41,25 @@ public class JavaSoundManager extends AbstractSoundManager {
     volatile byte[] mix_buf_bytes16 = new byte[fm_buf_ints.length];
     volatile byte[] psg_buf_bytes = new byte[psgSize];
     volatile int fmSizeMono = fmSize / 2;
-    volatile boolean hasFm = getFm() != FmProvider.NO_SOUND;
+
+    @Override
+    public void init() {
+        fm_buf_ints = hasFm ? fm_buf_ints : EMPTY_FM;
+        psg_buf_bytes = hasPsg ? psg_buf_bytes : EMPTY_PSG;
+    }
 
     private int playOnce(int fmBufferLenMono) {
-        if (hasFm) {
-            fmBufferLenMono = fm.update(fm_buf_ints, 0, fmBufferLenMono);
-            if (fmBufferLenMono == 0) {
-                return 0;
-            }
-        }
+        int fmMonoActual = fm.update(fm_buf_ints, 0, fmBufferLenMono);
+        //if FM is present load a matching number of psg samples
+        fmBufferLenMono = hasFm ? fmMonoActual : fmBufferLenMono;
         psg.output(psg_buf_bytes, 0, fmBufferLenMono);
         int fmBufferLenStereo = fmBufferLenMono << 1;
         samplesProducedCount += fmBufferLenStereo;
 
         try {
             Arrays.fill(mix_buf_bytes16, SoundUtil.ZERO_BYTE);
-            if (hasFm) {
-                //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
-                SoundUtil.intStereo14ToByteMono16Mix(fm_buf_ints, mix_buf_bytes16, psg_buf_bytes, fmBufferLenStereo);
-            } else {
-                SoundUtil.byteMono8ToByteMono16Mix(psg_buf_bytes, mix_buf_bytes16);
-            }
-
+            //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
+            SoundUtil.mixFmPsg(fm_buf_ints, mix_buf_bytes16, psg_buf_bytes, fmBufferLenStereo);
             updateSoundWorking(mix_buf_bytes16);
             if (!isMute()) {
                 SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16, fmBufferLenStereo);

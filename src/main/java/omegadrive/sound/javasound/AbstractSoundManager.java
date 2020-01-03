@@ -64,11 +64,30 @@ public abstract class AbstractSoundManager implements SoundProvider {
     private SystemLoader.SystemType type;
     protected RegionDetector.Region region;
 
-    static PsgProvider getPsgProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
+    protected volatile boolean hasFm;
+    protected volatile boolean hasPsg;
+
+    public static SoundProvider createSoundProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
+        if (!ENABLE_SOUND) {
+            LOG.warn("Sound disabled");
+            return NO_SOUND;
+        }
+        AbstractSoundManager jsm = new JavaSoundManager();
+        jsm.setFm(jsm.getFmProvider(systemType, region));
+        jsm.setPsg(jsm.getPsgProvider(systemType, region));
+        jsm.setSystemType(systemType);
+        jsm.init(region);
+        return jsm;
+    }
+
+    PsgProvider getPsgProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
         PsgProvider psgProvider = PsgProvider.NO_SOUND;
         switch (systemType) {
             case MSX:
                 psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
+                break;
+            case NES:
+                //no PSG, external audio set as FM
                 break;
             case GENESIS:
             case SMS:
@@ -76,10 +95,15 @@ public abstract class AbstractSoundManager implements SoundProvider {
                 psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
                 break;
         }
+        hasPsg = getPsg() != PsgProvider.NO_SOUND;
         return psgProvider;
     }
 
-    static FmProvider getFmProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
+    public static double FACTOR = 1;
+
+    protected abstract Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region);
+
+    FmProvider getFmProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
         FmProvider fmProvider = FmProvider.NO_SOUND;
         switch (systemType) {
             case GENESIS:
@@ -96,24 +120,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
             default:
                 break;
         }
+        hasFm = getFm() != FmProvider.NO_SOUND;
         return fmProvider;
-    }
-
-    public static double FACTOR = 1;
-
-    protected abstract Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region);
-
-    public static SoundProvider createSoundProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
-        if (!ENABLE_SOUND) {
-            LOG.warn("Sound disabled");
-            return NO_SOUND;
-        }
-        AbstractSoundManager jsm = new JavaSoundManager();
-        jsm.setFm(getFmProvider(systemType, region));
-        jsm.setPsg(getPsgProvider(systemType, region));
-        jsm.setSystemType(systemType);
-        jsm.init(region);
-        return jsm;
     }
 
     protected void init(RegionDetector.Region region) {

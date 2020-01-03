@@ -47,6 +47,9 @@ public interface SoundProvider extends Device {
             (int) (SAMPLE_RATE_HZ / 1000d * OVERRIDE_AUDIO_BUFFER_LEN_MS)
             : 0;
 
+    int[] EMPTY_FM = new int[0];
+    byte[] EMPTY_PSG = new byte[0];
+
     PsgProvider getPsg();
 
     FmProvider getFm();
