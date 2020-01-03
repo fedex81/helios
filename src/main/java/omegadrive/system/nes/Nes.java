@@ -19,6 +19,7 @@
 
 package omegadrive.system.nes;
 
+import com.grapeshot.halfnes.audio.AudioOutInterface;
 import com.grapeshot.halfnes.ui.ControllerImpl;
 import omegadrive.SystemLoader;
 import omegadrive.bus.BaseBusProvider;
@@ -103,7 +104,7 @@ public class Nes extends BaseSystem<BaseBusProvider, BaseStateHandler> {
         LOG.info("Starting game loop");
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         videoMode = vdp.getVideoMode();
-        gui = NesHelper.createNes(romFile, this);
+        gui = NesHelper.createNes(romFile, this, (AudioOutInterface) sound.getFm());
         gui.run(); //blocking
         LOG.info("Exiting rom thread loop");
     }

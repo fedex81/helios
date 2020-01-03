@@ -168,9 +168,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     double lastFps = 0;
 
     private void handleCloseApp() {
-        handleCloseRom();
-        sound.close();
-        PrefStore.close();
+        try {
+            handleCloseRom();
+            sound.close();
+            PrefStore.close();
+        } catch (Exception e) {
+            LOG.error("Error while closing app", e);
+        }
     }
 
     private void handleLoadState(Path file) {

@@ -1,6 +1,7 @@
 package omegadrive.system.nes;
 
 import com.grapeshot.halfnes.NES;
+import com.grapeshot.halfnes.audio.AudioOutInterface;
 import com.grapeshot.halfnes.ui.ControllerImpl;
 import com.grapeshot.halfnes.ui.GUIInterface;
 import com.grapeshot.halfnes.video.RGBRenderer;
@@ -104,9 +105,8 @@ public class NesHelper {
         }
     };
 
-    //blocking
-    public static NesHelper.NesGUIInterface createNes(Path romFile, Nes nesSys) {
-        NES nes = new NES();
+    public static NesHelper.NesGUIInterface createNes(Path romFile, Nes nesSys, AudioOutInterface audio) {
+        NES nes = new NES(audio);
         NesHelper.NesGUIInterface gui = NesHelper.createGuiWrapper(nes, nesSys);
         nes.setControllers(cnt1, cnt2);
         nes.setGui(gui);
