@@ -30,16 +30,18 @@ import java.util.List;
 import java.util.Properties;
 
 public class PrefStore {
-    private static final String PREF_FILENAME = "./helios.prefs";
+    protected static String PREF_FILENAME = "./helios.prefs";
 
     private static Logger LOG = LogManager.getLogger(PrefStore.class.getSimpleName());
 
     private static String RECENT_FILE = "recent";
+    private static String NEXT_SLOT = "nextslot";
     public static int recentFileTotal = 10;
     private static Properties uiProperties = new Properties();
     private static int nextSlot;
 
     public static void initPrefs() {
+        uiProperties.clear();
         try (
                 FileReader reader = new FileReader(PREF_FILENAME)
         ) {
@@ -59,23 +61,28 @@ public class PrefStore {
                 nextSlot = i;
             }
         }
-        nextSlot = nextSlot < 0 ? 0 : nextSlot;
+        uiProperties.putIfAbsent(NEXT_SLOT, String.valueOf(0));
+        nextSlot = Integer.valueOf(uiProperties.getProperty(NEXT_SLOT, "0"));
     }
 
     public static void addRecentFile(String path) {
         if (uiProperties.contains(path)) {
             return;
         }
-        for (int i = 0; i < recentFileTotal; i++) {
-            String key = RECENT_FILE + "." + i;
-            boolean free = Strings.isNullOrEmpty(uiProperties.getProperty(key, ""));
-            if (free) {
-                uiProperties.put(key, path);
-                return;
+        try {
+            for (int i = 0; i < recentFileTotal; i++) {
+                String key = RECENT_FILE + "." + i;
+                boolean free = Strings.isNullOrEmpty(uiProperties.getProperty(key, ""));
+                if (free) {
+                    uiProperties.put(key, path);
+                    return;
+                }
             }
+            uiProperties.put(RECENT_FILE + "." + nextSlot, path);
+        } finally {
+            nextSlot = (nextSlot + 1) % recentFileTotal;
+            uiProperties.put(NEXT_SLOT, String.valueOf(nextSlot));
         }
-        uiProperties.put(RECENT_FILE + "." + nextSlot, path);
-        nextSlot = (nextSlot + 1) % recentFileTotal;
     }
 
     public static List<String> getRecentFilesList() {
@@ -94,8 +101,7 @@ public class PrefStore {
             uiProperties.store(writer, "");
             writer.flush();
         } catch (Exception e) {
-            LOG.error("Unable to load properties file: " + PREF_FILENAME);
+            LOG.error("Unable to store to properties file: " + PREF_FILENAME, e);
         }
     }
-
 }
