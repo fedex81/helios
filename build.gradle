@@ -39,9 +39,9 @@ dependencies {
     // https://mvnrepository.com/artifact/net.java.jinput/jinput
     compile group: 'net.java.jinput', name: 'jinput', version: '2.0.9'
     // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.10.0'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.12.1'
     // https://mvnrepository.com/artifact/com.google.guava/guava
-    compile group: 'com.google.guava', name: 'guava', version: '25.1-jre'
+    compile group: 'com.google.guava', name: 'guava', version: '28.1-jre'
     // https://mvnrepository.com/artifact/net.sf.emustudio/emuLib
     compile group: 'net.sf.emustudio', name: 'emuLib', version: '9.0.1'
 
