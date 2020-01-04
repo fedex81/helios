@@ -28,6 +28,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import z80core.Z80State;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 public class Z80CoreWrapperDebug extends Z80CoreWrapper {
@@ -42,6 +44,7 @@ public class Z80CoreWrapperDebug extends Z80CoreWrapper {
     private int index = 0;
     private Z80Helper.Z80StateExt current = new Z80Helper.Z80StateExt();
     private Z80Helper.Z80StateExt[] traceArray = new Z80Helper.Z80StateExt[lastN];
+    private Map<Integer, String> disasmMap = new HashMap<>();
     private Z80MemIoOps.Z80MemIoOpsDbg memIoOpsDbg;
     private boolean m68kActivity = false;
 
@@ -73,9 +76,11 @@ public class Z80CoreWrapperDebug extends Z80CoreWrapper {
     //NOTE: halt sets PC = PC - 1
     @Override
     public int executeInstruction() {
-        handlePreRunState();
+//        handlePreRunState();
         //      dumpHistory();
         // dumpCurrent()
+        sb.setLength(0); //avoid mem leak
+        LOG.info(disasmMap.computeIfAbsent(z80Core.getRegPC(), k -> Z80Helper.dumpInfo(z80Disasm, memIoOps, k)));
         int res = super.executeInstruction();
         handlePostRunState();
         return res;
@@ -99,12 +104,12 @@ public class Z80CoreWrapperDebug extends Z80CoreWrapper {
     private void dumpHistory() {
         IntStream.range(0, lastN).forEach(i -> {
             int idx = (lastN + (index - i)) % lastN;
-            System.out.println(idx + ":" + Z80Helper.toStringExt(traceArray[idx], z80Disasm));
+            System.out.println(idx + ":" + Z80Helper.toStringExt(traceArray[idx], z80Disasm, memIoOps));
         });
     }
 
     private void dumpCurrent() {
-        System.out.println(index + "\n" + Z80Helper.toStringExt(traceArray[index], z80Disasm));
+        System.out.println(index + "\n" + Z80Helper.toStringExt(traceArray[index], z80Disasm, memIoOps));
     }
 
     @Override

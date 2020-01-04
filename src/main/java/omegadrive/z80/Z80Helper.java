@@ -1,9 +1,11 @@
 package omegadrive.z80;
 
 import emulib.plugins.cpu.DisassembledInstruction;
+import omegadrive.z80.disasm.Z80DecoderExt;
 import omegadrive.z80.disasm.Z80Disasm;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import z80core.MemIoOps;
 import z80core.Z80;
 import z80core.Z80State;
 
@@ -20,13 +22,14 @@ public class Z80Helper {
 
     public static final Function<DisassembledInstruction, String> disasmToString = d ->
             String.format("%08x   %12s   %s", d.getAddress(), d.getOpCode(), d.getMnemo());
+
     private final static Logger LOG = LogManager.getLogger(Z80Helper.class.getSimpleName());
     public static boolean verbose = false;
 
-    public static String toStringExt(Z80StateExt state, Z80Disasm disasm) {
+    public static String toStringExt(Z80StateExt state, Z80Disasm disasm, MemIoOps memIoOps) {
         StringBuilder sb = new StringBuilder();
         sb.append(toString(state)).append("\n\n");
-        sb.append(dumpInfo(disasm, state.getRegPC())).append("\n");
+        sb.append(dumpInfo(disasm, memIoOps, state.getRegPC())).append("\n");
         sb.append(state.memAccess);
         return sb.toString();
     }
@@ -125,19 +128,21 @@ public class Z80Helper {
         public String memAccess;
     }
 
-    public static String dumpInfo(Z80Disasm z80Disasm, int pc) {
-        return disasmToString.apply(z80Disasm.disassemble(pc));
-    }
-
-    private void printVerbose(Z80Disasm z80Disasm, int pc) {
-        if (verbose) {
-            LOG.info(Z80Helper.dumpInfo(z80Disasm, pc));
+    public static String dumpInfo(Z80Disasm z80Disasm, MemIoOps memIoOps, int pc) {
+        DisassembledInstruction di = z80Disasm.disassemble(pc);
+        String res = disasmToString.apply(di);
+        if (Z80DecoderExt.UNKNOWN.equalsIgnoreCase(di.getMnemo())) {
+            int w = (memIoOps.peek8(pc) << 8) | memIoOps.peek8(pc + 1);
+            res = Z80DecoderExt.getMnemonic(w);
+            if (Z80DecoderExt.UNKNOWN.equalsIgnoreCase(res)) {
+                int mapOp = Z80DecoderExt.getMappingOpcode(w);
+                if (mapOp != w) {
+                    di = z80Disasm.disassemble(pc + 1);
+                    res = disasmToString.apply(di) + " [" + Integer.toHexString(w) + "]";
+                }
+            }
         }
-    }
-
-    private void printState(Z80State state) {
-        if (verbose) {
-            LOG.info("Z80State: " + Z80Helper.toString(state));
-        }
+//        LOG.info(res);
+        return res;
     }
 }

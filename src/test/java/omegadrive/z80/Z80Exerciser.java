@@ -18,6 +18,11 @@
 package omegadrive.z80;
 
 import omegadrive.memory.IMemoryRam;
+import omegadrive.util.Util;
+import omegadrive.z80.disasm.Z80Decoder;
+import omegadrive.z80.disasm.Z80DecoderExt;
+import omegadrive.z80.disasm.Z80Disasm;
+import omegadrive.z80.disasm.Z80MemContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import z80core.MemIoOps;
@@ -29,6 +34,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 /**
@@ -45,23 +53,34 @@ public class Z80Exerciser implements NotifyOps {
     private Z80 z80;
     private IMemoryRam memory;
     private MemIoOps memIo;
+    private Z80Disasm z80Disasm;
     private byte[] bram = new byte[MEMORY_SIZE];
+    private Set<String> unknownCodes = new HashSet<>();
 
     private boolean finish = false;
 
     public Z80Exerciser() {
         memory = new Z80Memory(MEMORY_SIZE);
         memIo = new MemIoOps();
-        toByteArray(memory.getRamData(), bram);
+        bram = Util.toByteArray(memory.getRamData());
         memIo.setRam(bram);
         z80 = new Z80(memIo, this);
+        Z80MemContext context = createContext(memIo);
+        z80Disasm = new Z80Disasm(context, new Z80Decoder(context));
     }
 
-    private static byte[] toByteArray(int[] in, byte[] out) {
-        for (int i = 0; i < in.length; i++) {
-            out[i] = (byte) in[i];
-        }
-        return out;
+    public static Z80MemContext createContext(MemIoOps memIoOps) {
+        return new Z80MemContext() {
+            @Override
+            public Integer read(int memoryPosition) {
+                return memIoOps.peek8(memoryPosition);
+            }
+
+            @Override
+            public Integer[] readWord(int memoryPosition) {
+                return new Integer[]{read(memoryPosition), read(memoryPosition + 1)};
+            }
+        };
     }
 
     private void runTest(String testName) {
@@ -92,14 +111,16 @@ public class Z80Exerciser implements NotifyOps {
         System.out.println("Starting test " + testName);
         long counter = 0;
         z80.setBreakpoint(0x0005, true);
+        String str;
         while (!finish) {
             counter++;
-//            String str = Z80CoreWrapper.disasmToString.apply(z80Disasm.disassemble(z80.getRegPC()));
-//            System.out.println(counter + ": " + str);
+//            int opcode = memIo.peek8(z80.getRegPC());
+//            checkOpcode(opcode);
             z80.execute();
 
         }
         System.out.println("Test " + testName + " ended, #inst: " + counter);
+        System.out.println(unknownCodes.stream().collect(Collectors.joining("\n")));
     }
 
     public static void main(String[] args) {
@@ -145,6 +166,19 @@ public class Z80Exerciser implements NotifyOps {
                 finish = true;
         }
         return opcode;
+    }
+
+    private void checkOpcode(int opcode) {
+        if (opcode == 0xDD || opcode == 0xFD) {
+            String str = Z80Helper.dumpInfo(z80Disasm, memIo, z80.getRegPC());
+            if (str.contains(Z80DecoderExt.UNKNOWN)) {
+                int codePart2 = memIo.peek8(z80.getRegPC() + 1);
+                String icode = Integer.toHexString((opcode << 8) | codePart2);
+                if (unknownCodes.add(icode)) {
+                    System.out.println("ERR: " + icode + ":" + Integer.toHexString(codePart2));
+                }
+            }
+        }
     }
 
     @Override

@@ -89,7 +89,7 @@ public class Z80CoreWrapper implements Z80Provider {
         instCyclesPenalty = 0;
         try {
             z80Core.execute();
-        } catch (Exception e) {
+        } catch (Exception | Error e) {
             LOG.error("z80 exception", e);
             LOG.error("Z80State: " + Z80Helper.toString(z80Core.getZ80State()));
             LOG.error("Halting Z80");
