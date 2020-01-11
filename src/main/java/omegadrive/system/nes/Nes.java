@@ -28,6 +28,7 @@ import omegadrive.joypad.NesPad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
+import omegadrive.savestate.NesStateHandler;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
@@ -39,7 +40,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 
-public class Nes extends BaseSystem<BaseBusProvider, BaseStateHandler> {
+public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
 
     private static Logger LOG = LogManager.getLogger(Nes.class.getSimpleName());
 
@@ -85,13 +86,16 @@ public class Nes extends BaseSystem<BaseBusProvider, BaseStateHandler> {
     }
 
     @Override
-    protected BaseStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
-        return null;
+    protected NesStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
+        String fileName = file.toAbsolutePath().toString();
+        return type == BaseStateHandler.Type.LOAD ?
+                NesStateHandler.createLoadInstance(fileName) :
+                NesStateHandler.createSaveInstance(fileName);
     }
 
     @Override
     public void init() {
-        stateHandler = BaseStateHandler.EMPTY_STATE;
+        stateHandler = NesStateHandler.EMPTY_STATE;
         bus = NesHelper.NO_OP_BUS;
         vdp = NesHelper.VDP_PROVIDER;
         memory = MemoryProvider.createSmsInstance();
@@ -122,7 +126,7 @@ public class Nes extends BaseSystem<BaseBusProvider, BaseStateHandler> {
         handleVdpDumpScreenData();
         sound.output(0);
         elapsedNs = (int) (syncCycle(startCycle) - startCycle);
-//        processSaveState();
+        processSaveState();
         pauseAndWait();
         startCycle = System.nanoTime();
     }
@@ -135,7 +139,16 @@ public class Nes extends BaseSystem<BaseBusProvider, BaseStateHandler> {
 
     @Override
     protected void processSaveState() {
-        throw new RuntimeException("Not implemented!");
+        if (saveStateFlag) {
+            stateHandler.processState(gui.getNes());
+            if (stateHandler.getType() == BaseStateHandler.Type.SAVE) {
+                stateHandler.storeData();
+            } else {
+                sound.getPsg().reset();
+            }
+            stateHandler = NesStateHandler.EMPTY_STATE;
+            saveStateFlag = false;
+        }
     }
 
     @Override

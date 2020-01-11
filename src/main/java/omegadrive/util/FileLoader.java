@@ -84,14 +84,18 @@ public class FileLoader {
         }
     }
 
-    public static int[] readFileSafe(Path file) {
-        int[] rom = EMPTY;
+    public static byte[] readFileSafeByte(Path file) {
+        byte[] rom = new byte[0];
         try {
-            rom = Util.toIntArray(Files.readAllBytes(file));
+            rom = Files.readAllBytes(file);
         } catch (IOException e) {
             LOG.error("Unable to load file: " + file.getFileName());
         }
         return rom;
+    }
+
+    public static int[] readFileSafe(Path file) {
+        return Util.toIntArray(readFileSafeByte(file));
     }
 
     public static String readFileContentAsString(String fileName) {
@@ -183,14 +187,18 @@ public class FileLoader {
     }
 
     public static int[] readBinaryFile(Path file, String... ext) {
+        return Util.toIntArray(readBinaryFileByte(file, ext));
+    }
+
+    public static byte[] readBinaryFileByte(Path file, String... ext) {
         String fileName = file.toAbsolutePath().toString();
-        int[] data = new int[0];
+        byte[] data = new byte[0];
         if (ZipUtil.isZipFile.test(fileName)) {
             data = ZipUtil.readZipFileContents(file, ext);
         } else if (ZipUtil.isGZipFile.test(fileName)) {
             data = ZipUtil.readGZipFileContents(file);
         } else {
-            data = readFileSafe(file);
+            data = readFileSafeByte(file);
         }
         return data;
     }

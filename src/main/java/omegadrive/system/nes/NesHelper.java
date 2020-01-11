@@ -133,7 +133,7 @@ public class NesHelper {
 
             @Override
             public void setFrame(int[] frame, int[] bgcolor, boolean dotcrawl) {
-                renderer.render(frame, bgcolor, dotcrawl);
+                renderer.renderData(frame, bgcolor, dotcrawl);
                 screen = frame;
                 nesSystem.newFrame();
             }

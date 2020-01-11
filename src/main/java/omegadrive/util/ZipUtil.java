@@ -58,16 +58,16 @@ public class ZipUtil {
         return path.getFileName().toString().replace(GZIP_EXT, ""); //just a convention
     }
 
-    public static int[] readZipFileContents(Path path, String... ext) {
+    public static byte[] readZipFileContents(Path path, String... ext) {
         Optional<? extends ZipEntry> entry = getSupportedZipEntryIfAny(path, ext);
-        return entry.map(e -> readZipFileImpl(path, e)).orElse(new int[0]);
+        return entry.map(e -> readZipFileImpl(path, e)).orElse(new byte[0]);
     }
 
-    private static int[] readZipFileImpl(Path path, ZipEntry entry) {
-        int[] res = new int[0];
+    private static byte[] readZipFileImpl(Path path, ZipEntry entry) {
+        byte[] res = new byte[0];
         try (ZipFile zipFile = new ZipFile(path.toFile());
              InputStream is = zipFile.getInputStream(entry)) {
-            res = Util.toIntArray(ByteStreams.toByteArray(is));
+            res = ByteStreams.toByteArray(is);
             LOG.info("Using zipEntry: {}", entry.getName());
         } catch (Exception e) {
             LOG.error("Unable to parse contents {}", path.toAbsolutePath().toString(), e);
@@ -75,11 +75,11 @@ public class ZipUtil {
         return res;
     }
 
-    public static int[] readGZipFileContents(Path path) {
-        int[] res = new int[0];
+    public static byte[] readGZipFileContents(Path path) {
+        byte[] res = new byte[0];
         try (InputStream fis = Files.newInputStream(path);
              InputStream zis = new GZIPInputStream(fis)) {
-            res = Util.toIntArray(ByteStreams.toByteArray(zis));
+            res = ByteStreams.toByteArray(zis);
         } catch (Exception e) {
             LOG.error("Unable to parse contents {}", path.toAbsolutePath().toString(), e);
         }
