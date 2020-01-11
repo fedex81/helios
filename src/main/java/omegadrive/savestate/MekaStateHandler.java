@@ -209,7 +209,8 @@ public class MekaStateHandler implements SmsStateHandler {
 
     @Override
     public void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory, SmsBus bus) {
-        IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> vdp.updateRegisterData(i, buffer.get() & 0xFF));
+        SmsVdp smsVdp = (SmsVdp) vdp;
+        IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> smsVdp.registerWrite(i, buffer.get() & 0xFF));
         skip(buffer, VDP_MISC_LEN);
         loadMappers(buffer, bus);
         if (version >= 0xD) {

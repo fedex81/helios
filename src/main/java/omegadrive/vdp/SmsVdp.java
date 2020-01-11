@@ -421,57 +421,61 @@ public final class SmsVdp implements BaseVdpProvider
             }
             // Set VDP Register
             else if (operation == 2) {
-                int reg = (value & 0x0F);
-
-                switch (reg) {
-                    // Interrupt Control 0 (Verified using Charles MacDonald test program)
-                    // Bit 4 of register $00 acts like a on/off switch for the VDP's IRQ line.
-
-                    // As long as the line interrupt pending flag is set, the VDP will assert the
-                    // IRQ line if bit 4 of register $00 is set, and it will de-assert the IRQ line
-                    // if the same bit is cleared.
-                    case 0:
-                        break;
-                    // Interrupt Control 1
-                    case 1:
-                        // By writing here we've updated the height of the sprites and need to update
-                        // the sprites on each line
-                        if ((commandByte & 3) != (vdpreg[reg] & 3))
-                            isSatDirty = true;
-                        break;
-
-                    // BGT Written
-                    case 2:
-                        // Address of Background Table in VRAM
-                        refreshBgtAddress(commandByte);
-                        break;
-
-                    // SAT Written
-                    case 5: {
-                        int old = sat;
-                        // Address of Sprite Attribute Table in RAM
-                        refreshSatAddress(commandByte);
-                        if (old != sat) {
-                            // Should also probably update tiles here?
-                            isSatDirty = true;
-                            //System.out.println("New address written to SAT: "+old + " -> " + sat);
-                        }
-
-                    }
-                    break;
-                    //hLine counter
-                    case 0xA:
-                        if (value != vdpreg[reg]) {
-                            list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, value));
-                        }
-                        break;
-                }
-                int prev = vdpreg[reg];
-                vdpreg[reg] = commandByte; // Set reg to previous byte
-                if (reg < 2 && prev != vdpreg[reg]) {
-                    resetVideoMode(false);
-                }
+                registerWrite(value, commandByte);
             }
+        }
+    }
+
+    public void registerWrite(int value, int commandByte) {
+        int reg = (value & 0x0F);
+
+        switch (reg) {
+            // Interrupt Control 0 (Verified using Charles MacDonald test program)
+            // Bit 4 of register $00 acts like a on/off switch for the VDP's IRQ line.
+
+            // As long as the line interrupt pending flag is set, the VDP will assert the
+            // IRQ line if bit 4 of register $00 is set, and it will de-assert the IRQ line
+            // if the same bit is cleared.
+            case 0:
+                break;
+            // Interrupt Control 1
+            case 1:
+                // By writing here we've updated the height of the sprites and need to update
+                // the sprites on each line
+                if ((commandByte & 3) != (vdpreg[reg] & 3))
+                    isSatDirty = true;
+                break;
+
+            // BGT Written
+            case 2:
+                // Address of Background Table in VRAM
+                refreshBgtAddress(commandByte);
+                break;
+
+            // SAT Written
+            case 5: {
+                int old = sat;
+                // Address of Sprite Attribute Table in RAM
+                refreshSatAddress(commandByte);
+                if (old != sat) {
+                    // Should also probably update tiles here?
+                    isSatDirty = true;
+                    //System.out.println("New address written to SAT: "+old + " -> " + sat);
+                }
+
+            }
+            break;
+            //hLine counter
+            case 0xA:
+                if (commandByte != vdpreg[reg]) {
+                    list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, commandByte));
+                }
+                break;
+        }
+        int prev = vdpreg[reg];
+        vdpreg[reg] = commandByte; // Set reg to previous byte
+        if (reg < 2 && prev != vdpreg[reg]) {
+            resetVideoMode(false);
         }
     }
 
