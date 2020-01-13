@@ -77,6 +77,12 @@ public class SwingWindow implements DisplayWindow {
     private Dimension nativeScreenSize = DEFAULT_BASE_SCREEN_SIZE;
     private Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
 
+    // Transparent 16 x 16 pixel cursor image.
+    private BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+
+    // Create a new blank cursor.
+    private Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+            cursorImg, new Point(0, 0), "blank cursor");
 
 
     public SwingWindow(SystemProvider mainEmu) {
@@ -232,6 +238,7 @@ public class SwingWindow implements DisplayWindow {
 
         screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
         screenLabel.setVerticalAlignment(SwingConstants.CENTER);
+        screenLabel.setCursor(blankCursor);
 
         AbstractAction debugUiAction = toAbstractAction("debugUI", e -> showDebugInfo(!showDebug));
         actionMap.put(SET_DEBUG_UI, debugUiAction);
