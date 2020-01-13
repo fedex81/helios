@@ -28,7 +28,6 @@ public class ScreenSizeHelper {
     public static int DEFAULT_X = 320;
     public static int DEFAULT_Y = 256; //TODO check this
 
-    public static final int DEFAULT_SCREEN = 1;
     public static final int DEFAULT_SCALE_FACTOR =
             Integer.valueOf(System.getProperty("helios.ui.scale", "2"));
     public static final double FULL_SCREEN_WITH_TITLE_BAR_FACTOR =

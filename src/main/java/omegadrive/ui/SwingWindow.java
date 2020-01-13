@@ -50,7 +50,6 @@ public class SwingWindow implements DisplayWindow {
     private static Logger LOG = LogManager.getLogger(SwingWindow.class.getSimpleName());
 
     private Dimension fullScreenSize;
-    private GraphicsDevice[] graphicsDevices;
     //when scaling is slow set this to FALSE
     private static final boolean UI_SCALE_ON_EDT
             = Boolean.valueOf(System.getProperty("ui.scale.on.edt", "true"));
@@ -98,14 +97,7 @@ public class SwingWindow implements DisplayWindow {
 
     public void init() {
         Util.registerJmx(this);
-        graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
-        LOG.info("Screen detected: " + graphicsDevices.length);
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        if (graphicsDevices.length > 1) {
-            int screenNumber = Math.min(DEFAULT_SCREEN, graphicsDevices.length - 1);
-            gd = graphicsDevices[screenNumber];
-        }
-        LOG.info("Using screen: " + gd.getIDstring());
+        GraphicsDevice gd = SwingScreenSupport.setupScreens();
         fullScreenSize = gd.getDefaultConfiguration().getBounds().getSize();
         LOG.info("Full screen size: " + fullScreenSize);
         LOG.info("Emulation viewport size: " + ScreenSizeHelper.DEFAULT_SCALED_SCREEN_SIZE);
@@ -138,6 +130,10 @@ public class SwingWindow implements DisplayWindow {
 
         JMenu regionMenu = new JMenu("Region");
         setting.add(regionMenu);
+
+        JMenu screensMenu = new JMenu("Screens");
+        createAddScreenItems(screensMenu);
+        setting.add(screensMenu);
 
         JMenu inputMenu = new JMenu("Input");
         reloadControllers(InputProvider.DEFAULT_CONTROLLERS);
@@ -415,10 +411,6 @@ public class SwingWindow implements DisplayWindow {
             screenLabel.setIcon(new ImageIcon(dest));
             jFrame.setPreferredSize(isFullScreen ? fullScreenSize : nativeScreenSize);
             jFrame.getJMenuBar().setVisible(!isFullScreen);
-            if (!isFullScreen) {
-                //TODO this breaks multi-monitor
-                jFrame.setLocationRelativeTo(null); //center
-            }
             jFrame.pack();
             LOG.info("Emulation Viewport size: " + outputScreenSize);
             LOG.info("Application size: " + jFrame.getSize());
@@ -550,6 +542,35 @@ public class SwingWindow implements DisplayWindow {
             }
         }));
         return l;
+    }
+
+    private java.util.List<JCheckBoxMenuItem> createAddScreenItems(JMenu screensMenu) {
+        List<String> l = SwingScreenSupport.detectScreens();
+        List<JCheckBoxMenuItem> items = new ArrayList<>();
+        for (int i = 0; i < l.size(); i++) {
+            String s = l.get(i);
+            JCheckBoxMenuItem it = new JCheckBoxMenuItem(s);
+            it.setState(i == SwingScreenSupport.getCurrentScreen());
+            items.add(it);
+            screensMenu.add(it);
+        }
+        for (int i = 0; i < items.size(); i++) {
+            final int num = i;
+            addKeyAction(items.get(i), NONE, e -> handleScreenChange(items, num));
+        }
+        return items;
+    }
+
+    private void handleScreenChange(List<JCheckBoxMenuItem> items, int newScreen) {
+        int cs = SwingScreenSupport.getCurrentScreen();
+        if (cs != newScreen) {
+            SwingScreenSupport.showOnScreen(newScreen, jFrame);
+        }
+        for (int i = 0; i < items.size(); i++) {
+            if (i != newScreen) {
+                items.get(i).setSelected(false);
+            }
+        }
     }
 
     private void reloadRecentFiles() {
