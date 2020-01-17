@@ -50,21 +50,25 @@ public class AutomatedGameTester {
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
     private static String romFolder =
+            "/home/fede/roms/nes";
+//            "/home/fede/roms/md";
 //            "/home/fede/roms/md/nointro";
 //            "/home/fede/roms/smsgg";
 //            "/home/fede/roms/msx";
 //            "/data/emu/roms";
 //                "/data/emu/roms/genesis/nointro";
-            "/data/emu/roms/genesis/goodgen/unverified";
+//            "/home/fede/roms/md/issues";
+//            "/home/fede/roms/md/tricky";
+//            "/home/fede/roms/md/homebrew/retrobrews";
+//            "/data/emu/roms/genesis/goodgen/unverified";
+
     private static boolean noIntro = true;
     private static String header = "rom;boot;sound";
     private static int BOOT_DELAY_MS = 500;
     private static int AUDIO_DELAY_MS = 25000;
-    //"/home/fede/roms/md/issues";
-//            "/home/fede/roms/md/tricky";
-//            "/home/fede/roms/md/homebrew/retrobrews";
+
     private static String romList = "";
-    private static List<String> blackList = FileLoader.loadFileContent(Paths.get(resFolder.toAbsolutePath().toString()
+    private static List<String> blackList = FileLoader.readFileContent(Paths.get(resFolder.toAbsolutePath().toString()
             , "blacklist.txt"));
 
     private static Predicate<Path> testGenRomsPredicate = p ->
@@ -93,7 +97,7 @@ public class AutomatedGameTester {
                     (noIntro || p.getFileName().toString().contains("[!]"));
 
     static {
-        System.setProperty("helios.headless", "true");
+        System.setProperty("helios.headless", "false");
     }
 
     public static void main(String[] args) throws Exception {
@@ -297,7 +301,7 @@ public class AutomatedGameTester {
             if (skip) {
                 continue;
             }
-            int[] data = FileLoader.readFile(rom);
+            int[] data = FileLoader.readBinaryFile(rom);
             IMemoryProvider memoryProvider = MemoryProvider.createInstance(data, 0);
             try {
                 CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,
