@@ -1081,7 +1081,14 @@ public final class SmsVdp implements BaseVdpProvider
         return state;
     }
 
-    public void setState(int[] state) {
+    public int[] getStateSimple(int[] state) {
+        state[0] = palFlag | (status << 8) | (firstByte ? (1 << 16) : 0) | (commandByte << 24);
+        state[1] = location | (operation << 16) | (readBuffer << 24);
+        state[2] = counter | (vScrollLatch << 8) | (line << 16);
+        return state;
+    }
+
+    public void setStateSimple(int[] state) {
         int temp = state[0];
         palFlag = temp & 0xFF;
         status = (temp >> 8) & 0xFF;
@@ -1097,6 +1104,10 @@ public final class SmsVdp implements BaseVdpProvider
         counter = temp & 0xFF;
         vScrollLatch = (temp >> 8) & 0xFF;
         line = (temp >> 16) & 0xFFFF;
+    }
+
+    public void setState(int[] state) {
+        setStateSimple(state);
 
         System.arraycopy(state, 3, vdpreg, 0, vdpreg.length);
         System.arraycopy(state, 3 + vdpreg.length, CRAM, 0, CRAM.length);

@@ -77,12 +77,9 @@ public interface SmsStateHandler extends BaseStateHandler {
 
     default void processState(SmsVdp vdp, Z80Provider z80, SmsBus bus, IMemoryProvider mem) {
         if (getType() == Type.LOAD) {
-//            vdp.reset();
             loadZ80(z80, bus);
             loadVdp(vdp, mem, bus);
             loadMemory(mem, vdp);
-            vdp.forceFullRedraw();
-            bus.reloadBanking();
             LOG.info("Savestate loaded from: {}", getFileName());
         } else {
             saveZ80(z80, bus);

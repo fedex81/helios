@@ -72,7 +72,7 @@ public class FileLoader {
         @Override
         public boolean accept(File f) {
             String name = f.getName().toLowerCase();
-            return f.isDirectory() || name.contains(".gs") || name.contains(".s0");
+            return f.isDirectory() || name.contains(".gs") || name.contains(".s0") || name.contains(".n0");
         }
     };
 

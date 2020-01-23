@@ -27,7 +27,7 @@ import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.savestate.MekaStateHandler;
+import omegadrive.savestate.MekaStateHandler2;
 import omegadrive.savestate.SmsStateHandler;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.perf.SmsPerf;
@@ -171,8 +171,8 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     @Override
     protected SmsStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
         String fileName = file.toAbsolutePath().toString();
-        return type == BaseStateHandler.Type.LOAD ? MekaStateHandler.createLoadInstance(fileName) :
-                MekaStateHandler.createSaveInstance(fileName, systemType);
+        return type == BaseStateHandler.Type.LOAD ? MekaStateHandler2.createLoadInstance(fileName) :
+                MekaStateHandler2.createSaveInstance(fileName, systemType);
     }
 
 
