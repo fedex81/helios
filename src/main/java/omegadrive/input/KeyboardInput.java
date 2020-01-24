@@ -96,6 +96,10 @@ public class KeyboardInput extends KeyAdapter {
                 number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.S;
                 break;
+            case KeyEvent.VK_SHIFT:
+                number = PlayerNumber.P1;
+                button = JoypadProvider.JoypadButton.M;
+                break;
             case KeyEvent.VK_A:
                 number = PlayerNumber.P1;
                 button = JoypadProvider.JoypadButton.A;
