@@ -1,6 +1,6 @@
 package omegadrive.cart.mapper.md;
 
-import omegadrive.cart.loader.MdLoader;
+import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.util.LogHelper;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -41,13 +41,14 @@ public class I2cEeprom {
     private int sizeMask = 0;
     private EepromState state = EepromState.STANDBY;
 
-    public static I2cEeprom createInstance(MdLoader.Entry entry) {
+    public static I2cEeprom createInstance(MdRomDbModel.Entry entry) {
         I2cEeprom e = NO_OP;
-        if (entry.eeprom != null) {
+        if (entry.hasEeprom()) {
             e = new I2cEeprom();
-            e.sram = new int[entry.eeprom.size];
+            MdRomDbModel.EEPROM eeprom = entry.getEeprom();
+            e.sram = new int[eeprom.getSize()];
             e.sizeMask = e.sram.length - 1;
-            LOG.info("Init EEPROM type {}, size {}", entry.eeprom.type, entry.eeprom.size);
+            LOG.info("Init " + eeprom);
         }
         return e;
     }

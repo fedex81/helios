@@ -19,7 +19,6 @@
 
 package omegadrive.cart.loader;
 
-import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.util.FileLoader;
 import org.apache.logging.log4j.LogManager;
@@ -33,22 +32,22 @@ import java.util.*;
  */
 public class MdLoader {
 
-    public static final Entry NO_EEPROM = new Entry();
+    public static final MdRomDbModel.Entry NO_ENTRY = new MdRomDbModel.Entry();
+    private static final Logger LOG = LogManager.getLogger(MdLoader.class.getSimpleName());
     static String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "rom.db";
-    private static Logger LOG = LogManager.getLogger(MdLoader.class.getSimpleName());
-    private static Set<Entry> entrySet = new HashSet<>();
-    private static Map<String, Entry> map = new HashMap<>();
+    private static Set<MdRomDbModel.Entry> entrySet = new HashSet<>();
+    private static Map<String, MdRomDbModel.Entry> map = new HashMap<>();
 
-    private static Map<String, Entry> getMap() {
+    private static Map<String, MdRomDbModel.Entry> getMap() {
         if (map.isEmpty()) {
             init();
         }
         return map;
     }
 
-    public static Entry getEntry(String serial) {
+    public static MdRomDbModel.Entry getEntry(String serial) {
         final String sn = serial.substring(3, serial.length() - 3).trim();
-        return getMap().getOrDefault(sn, NO_EEPROM);
+        return getMap().getOrDefault(sn, NO_ENTRY);
     }
 
     public static void main(String[] args) {
@@ -60,18 +59,7 @@ public class MdLoader {
         List<String> lines = FileLoader.readFileContent(fileName);
         processData(lines);
         map.clear();
-        entrySet.forEach(e -> map.put(e.id, e));
-    }
-
-    public static void testLoading(MdCartInfoProvider cart) {
-        init();
-        String s = cart.getSerial();
-        final String sn = s.substring(3, s.length() - 3).trim();
-        entrySet.forEach(e -> {
-            if (e.id.equalsIgnoreCase(sn)) {
-                LOG.info("Matching entry: {}", e);
-            }
-        });
+        entrySet.forEach(e -> map.put(e.getId(), e));
     }
 
     private static void processData(List<String> lines) {
@@ -79,79 +67,54 @@ public class MdLoader {
             String s = lines.get(i);
             boolean start = s.length() > 0 && Character.isLetterOrDigit(s.charAt(0));
             if (start) {
-                i = processEntry(lines, i);
+                try {
+                    i = processEntry(lines, i);
+                } catch (Exception e) {
+                    LOG.error("Unable to process entry " + s + ", at line: " + i, e);
+                }
             }
         }
     }
 
     private static int processEntry(List<String> lines, int start) {
-        String id = lines.get(start).replace("{", "").trim();
-        Entry e = new Entry();
-        e.id = id;
+        String id = lines.get(start).replace(MdRomDbModel.START_OBJ_TOKEN, "").trim();
+        MdRomDbModel.Entry e = new MdRomDbModel.Entry();
+        e.data.put("id", id);
+        entrySet.add(e);
+        return processLine(lines, e.data, start);
+    }
+
+    private static int processLine(List<String> lines, Map<String, Object> map, int start) {
         boolean stop = false;
         int i = start + 1;
         for (; !stop; i++) {
-            String line = lines.get(i);
-            if (line.contains("name ")) {
-                String s = lines.get(i).replace("name ", "").trim();
-                e.name = s;
-            } else if (line.trim().startsWith("EEPROM")) {
-                i = processEEPROM(e, lines, i);
-            } else if (line.startsWith("}")) {
+            String line = lines.get(i).trim();
+            if (line.startsWith(MdRomDbModel.COMMENT_TOKEN) || line.isEmpty()) {
+                continue;
+            }
+            if (line.contains(MdRomDbModel.START_OBJ_TOKEN)) {
+                String id = line.replace(MdRomDbModel.START_OBJ_TOKEN, "").trim();
+                i = processObject(lines, map, id, i);
+            } else if (line.startsWith(MdRomDbModel.END_OBJ_TOKEN)) {
                 stop = true;
-                entrySet.add(e);
+            } else {
+                int idx = line.indexOf(MdRomDbModel.FIELD_SEP_TOKEN);
+                if (idx > 0) {
+                    String key = line.substring(0, idx).trim();
+                    String value = line.substring(idx).trim();
+                    map.put(key, value);
+                } else {
+                    LOG.warn("Unable to parse line: " + line);
+                }
             }
         }
         return i - 1;
     }
 
-    private static int processEEPROM(Entry e, List<String> lines, int start) {
-        EEPROM eeprom = null;
-        boolean stop = false;
-        int i = start + 1;
-        for (; !stop; i++) {
-            String line = lines.get(i);
-            if (line.contains("type ")) {
-                eeprom = new EEPROM();
-                String s = line.replace("type ", "").trim();
-                eeprom.type = s;
-            } else if (line.contains("size ")) {
-                String s = line.replace("size ", "").trim();
-                eeprom.size = Integer.valueOf(s);
-            } else if (line.trim().startsWith("}")) {
-                stop = true;
-                e.eeprom = eeprom;
-            }
-        }
-        return i - 1;
+    private static int processObject(List<String> lines, Map<String, Object> parentMap, String id, int start) {
+        Map<String, Object> childMap = new HashMap<>();
+        parentMap.put(id.toUpperCase(), childMap);
+        start = processLine(lines, childMap, start);
+        return start;
     }
-
-    public static class Entry {
-        public String id;
-        public String name;
-        public EEPROM eeprom;
-
-        @Override
-        public String toString() {
-            return "Entry{" +
-                    "id='" + id + '\'' +
-                    ", name='" + name + '\'' +
-                    ", eeprom=" + eeprom +
-                    '}';
-        }
-    }
-
-    public static class EEPROM {
-        public String type;
-        public int size;
-
-        @Override
-        public String toString() {
-            return "EEPROM{" +
-                    "type='" + type + '\'' +
-                    ", size=" + size +
-                    '}';
-        }
-    }
-
 }

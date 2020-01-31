@@ -23,6 +23,7 @@ import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.loader.MdLoader;
+import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
@@ -49,7 +50,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     private MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
-    private MdLoader.Entry entry;
+    private MdRomDbModel.Entry entry;
 
     private BusArbiter busArbiter = BusArbiter.NO_OP;
 
@@ -78,7 +79,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         RAM_START_ADDRESS = cartridgeInfoProvider.getRamStart();
         RAM_END_ADDRESS = cartridgeInfoProvider.getRamEnd();
         entry = MdLoader.getEntry(cartridgeInfoProvider.getSerial());
-        if (cartridgeInfoProvider.isSramEnabled() || entry.eeprom != null) {
+        if (cartridgeInfoProvider.isSramEnabled() || entry.hasEeprom()) {
             mapper = MdBackupMemoryMapper.createInstance(this, cartridgeInfoProvider, entry);
         }
     }
