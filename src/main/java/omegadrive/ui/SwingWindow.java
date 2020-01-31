@@ -171,7 +171,7 @@ public class SwingWindow implements DisplayWindow {
         recentFilesItems = new JMenuItem[PrefStore.recentFileTotal];
         IntStream.range(0, recentFilesItems.length).forEach(i -> {
             recentFilesItems[i] = new JMenuItem();
-            addKeyAction(recentFilesItems[i], NONE, e -> handleNewRom(recentFilesItems[i].getText()));
+            addKeyAction(recentFilesItems[i], NONE, e -> handleNewRom(recentFilesItems[i].getToolTipText()));
             recentFilesMenu.add(recentFilesItems[i]);
         });
         reloadRecentFiles();
@@ -581,12 +581,16 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private void reloadRecentFiles() {
+        List<String> l = PrefStore.getRecentFilesList();
         IntStream.range(0, recentFilesItems.length).forEach(i -> {
-            String val = PrefStore.getRecentFilesList().get(i);
+            String val = l.get(i);
+            val = Strings.isNullOrEmpty(val) ? "<none>" : val;
+            int idx = val.lastIndexOf(File.separatorChar);
+            String text = i + ". " + (idx > 0 ? val.substring(idx + 1) : val);
             recentFilesItems[i].setVisible(true);
             recentFilesItems[i].setEnabled(!Strings.isNullOrEmpty(val));
-            val = Strings.isNullOrEmpty(val) ? "<none>" : val;
-            recentFilesItems[i].setText(val);
+            recentFilesItems[i].setText(text);
+            recentFilesItems[i].setToolTipText(val);
         });
     }
 
