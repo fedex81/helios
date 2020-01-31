@@ -1,3 +1,5 @@
+![Java CI](https://github.com/fedex81/helios/workflows/Java%20CI/badge.svg)
+
 # Helios
 
 A Java-based multi-system emulator.
