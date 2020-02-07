@@ -40,28 +40,29 @@ public class KeyBindingsHandler {
     protected static final String DIV = "=";
     protected static final String PLAYER_DIV = "\\.";
     protected static final String PLAYER_LINE_HEAD = "P.";
-    private static final String configFile = "key.config";
+    public static final String configFile = String.valueOf(java.lang.System.getProperty("key.config.file", "key.config"));
     protected static InputMap keyMap;
 
-    static {
-        init();
-    }
+    private static KeyBindingsHandler instance;
 
-    public static void init() {
-        loadKeyMap();
+    public static KeyBindingsHandler getInstance() {
+        if (instance == null) {
+            instance = new KeyBindingsHandler();
+            instance.init();
+        }
+        return instance;
     }
 
     private static void loadKeyMap() {
-        List<String> l = Collections.emptyList();
-        try {
-            l = FileLoader.readFileContent(configFile);
-            LOG.info("Loading key config file: " + configFile);
-        } catch (Throwable t) {
-            LOG.warn("Unable to load key config file: " + configFile);
-        }
+        LOG.info("Loading key config file: " + configFile);
+        List<String> l = FileLoader.readFileContent(configFile);
         keyMap = parseConfig(l);
         final List<String> l1 = l;
         Arrays.stream(InputProvider.PlayerNumber.values()).forEach(p -> parsePlayerConfig(l1, p));
+    }
+
+    private void init() {
+        loadKeyMap();
     }
 
     protected static InputMap parseConfig(List<String> str) {
@@ -123,11 +124,11 @@ public class KeyBindingsHandler {
         return Optional.ofNullable(btn);
     }
 
-    public static SystemEvent getSystemEventIfAny(KeyStroke keyStroke) {
+    public SystemEvent getSystemEventIfAny(KeyStroke keyStroke) {
         return (SystemEvent) Optional.ofNullable(keyMap.get(keyStroke)).orElse(SystemEvent.NONE);
     }
 
-    public static KeyStroke getKeyStrokeForEvent(SystemEvent event) {
+    public KeyStroke getKeyStrokeForEvent(SystemEvent event) {
         return Arrays.stream(keyMap.allKeys()).filter(ks -> event == getSystemEventIfAny(ks)).
                 findFirst().orElse(null);
     }

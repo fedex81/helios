@@ -86,7 +86,7 @@ public class KeyboardInputHelper {
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_ESCAPE, CTRL_DOWN_MASK | SHIFT_DOWN_MASK), CLOSE_APP);
         updatePlayerMappings(PlayerNumber.P1, DEFAULT_P1_KEY_BINDINGS);
         updatePlayerMappings(PlayerNumber.P2, DEFAULT_P2_KEY_BINDINGS);
-        KeyBindingsHandler.init();
+        KeyBindingsHandler.getInstance(); //force init
     }
 
     public static void updatePlayerMappings(PlayerNumber number, Map<String, Integer> map) {

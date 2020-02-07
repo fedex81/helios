@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * CHIP_OUTPUT_RATE = NUKE_CLOCK/24 = 53267
  * <p>
  * TODO check with no-audio, the buffer keeps growing
+ * TODO check 50hz, buffer keeps growing
  */
 public class Ym2612Nuke3 implements MdFmProvider {
     static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);
@@ -116,7 +117,8 @@ public class Ym2612Nuke3 implements MdFmProvider {
         long queueIndicativeLen = initialQueueSize;
 
         Integer sample;
-        for (int i = offset; i < end && queueIndicativeLen > 0; i += 2) {
+        int i = offset;
+        for (; i < end && queueIndicativeLen > 0; i += 2) {
             sample = sampleQueue.poll();
             if (sample == null) {
                 LOG.warn("Null sample QL{} P{}", queueIndicativeLen, i);
@@ -132,6 +134,14 @@ public class Ym2612Nuke3 implements MdFmProvider {
         if (queueIndicativeLen > maxQueueLen) {
             maxQueueLen = queueIndicativeLen;
             LOG.info("Len {}-{}, Prod {}, Req {}", initialQueueSize, maxQueueLen, sampleNumMono, count);
+        }
+        if (queueIndicativeLen > 1000 && sampleNumMono < count) {
+            sampleNumMono++;
+            queueLen.decrementAndGet();
+            sample = sampleQueue.poll();
+            buf_lr[i + 1] = sample != null ? sample : lastSample;
+            buf_lr[i + 2] = buf_lr[i + 1];
+            LOG.info("Adding one sample: {}", sampleNumMono);
         }
 //        sampleNumMono = addSamples(buf_lr, offset, 6);
 //        sampleNumMono = resample(buf_lr, offset, sampleNumMono, count, lastSample);
@@ -202,7 +212,7 @@ public class Ym2612Nuke3 implements MdFmProvider {
                 sampleR += ym3438_accm[j][1];
             }
             //mono
-            sample = (sampleL + sampleR) >> 1;
+            sample = (sampleL + sampleR) << 3;// >> 1;
         }
     }
 }

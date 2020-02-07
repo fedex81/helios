@@ -207,7 +207,7 @@ public class SwingWindow implements DisplayWindow {
 
         JMenuItem keyBindingsItem = new JMenuItem("Key Bindings");
         addAction(keyBindingsItem, e -> showHelpMessage(keyBindingsItem.getText(),
-                FileLoader.readFileContentAsString("key.config")));
+                FileLoader.readFileContentAsString(KeyBindingsHandler.configFile)));
 
         JMenuItem readmeItem = new JMenuItem("Readme");
         addAction(readmeItem, e -> showHelpMessage(readmeItem.getText(),
@@ -265,7 +265,7 @@ public class SwingWindow implements DisplayWindow {
     private void addKeyAction(JMenuItem component, SystemProvider.SystemEvent event, ActionListener l) {
         AbstractAction action = toAbstractAction(component.getText(), l);
         if (event != NONE) {
-            action.putValue(Action.ACCELERATOR_KEY, KeyBindingsHandler.getKeyStrokeForEvent(event));
+            action.putValue(Action.ACCELERATOR_KEY, KeyBindingsHandler.getInstance().getKeyStrokeForEvent(event));
             actionMap.put(event, action);
         }
         component.setAction(action);
@@ -524,7 +524,7 @@ public class SwingWindow implements DisplayWindow {
                 SystemProvider mainEmu = getMainEmu();
                 KeyStroke keyStroke = KeyStroke.getKeyStrokeForEvent(e);
 //                LOG.info(keyStroke.toString());
-                SystemProvider.SystemEvent event = KeyBindingsHandler.getSystemEventIfAny(keyStroke);
+                SystemProvider.SystemEvent event = KeyBindingsHandler.getInstance().getSystemEventIfAny(keyStroke);
                 if (event != null && event != NONE) {
                     //if the menuBar is visible it will handle the event, otherwise we need to perform the action here
                     boolean menuVisible = jFrame.getJMenuBar().isVisible();

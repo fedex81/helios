@@ -156,7 +156,7 @@ public class SystemLoader {
             try {
                 SwingUtilities.invokeAndWait(frameRunnable);
             } catch (Exception e) {
-                LOG.error(e);
+                LOG.error("Unable to create SwingUI", e);
             }
         }
 

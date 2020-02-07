@@ -57,7 +57,7 @@ public class KeyBindingsHandlerTest {
 
     @Test
     public void testParsing() {
-        init();
+        KeyBindingsHandler.getInstance();
         String str1 = toConfigString();
         List<String> l = Arrays.asList(str1.split("\\n"));
         parseConfig(l);
@@ -65,5 +65,6 @@ public class KeyBindingsHandlerTest {
         parsePlayerConfig(l, PlayerNumber.P2);
         String str2 = toConfigString();
         Assert.assertEquals(str1, str2);
+        System.out.println(str1);
     }
 }
