@@ -16,6 +16,9 @@ import omegadrive.vdp.model.VdpMemory;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import static omegadrive.input.InputProvider.PlayerNumber;
+import static omegadrive.input.KeyboardInputHelper.keyboardStringBindings;
+
 /**
  * NesHelper
  * <p>
@@ -25,8 +28,8 @@ import java.util.Optional;
  */
 public class NesHelper {
 
-    public static final ControllerImpl cnt1 = new ControllerImpl(0);
-    public static final ControllerImpl cnt2 = new ControllerImpl(1);
+    public static final ControllerImpl cnt1 = new ControllerImpl(0, keyboardStringBindings.row(PlayerNumber.P1));
+    public static final ControllerImpl cnt2 = new ControllerImpl(1, keyboardStringBindings.row(PlayerNumber.P2));
     public static final BaseBusProvider NO_OP_BUS = new BaseBusProvider() {
         @Override
         public long read(long address, Size size) {

@@ -98,7 +98,7 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
         stateHandler = NesStateHandler.EMPTY_STATE;
         bus = NesHelper.NO_OP_BUS;
         vdp = NesHelper.VDP_PROVIDER;
-        memory = MemoryProvider.createSmsInstance();
+        memory = MemoryProvider.NO_MEMORY;
         joypad = new NesPad(NesHelper.cnt1, NesHelper.cnt2);
         initCommon();
     }

@@ -21,12 +21,15 @@ package omegadrive.input;
 
 import omegadrive.SystemLoader;
 import omegadrive.joypad.JoypadProvider;
+import omegadrive.joypad.JoypadProvider.JoypadButton;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static omegadrive.input.InputProvider.PlayerNumber;
 
@@ -60,8 +63,6 @@ public class KeyboardInput extends KeyAdapter {
                 MsxKeyboardInput.currentAdapter = m;
                 res = m;
                 break;
-            case SG_1000: //fall-through
-            case GENESIS://fall-through
             default:
                res = new KeyboardInput();
                break;
@@ -73,61 +74,11 @@ public class KeyboardInput extends KeyAdapter {
 
     protected static void keyHandler(JoypadProvider joypad, KeyEvent e, boolean pressed) {
         JoypadProvider.JoypadAction action = pressed ? JoypadProvider.JoypadAction.PRESSED : JoypadProvider.JoypadAction.RELEASED;
-        PlayerNumber number = null;
-        JoypadProvider.JoypadButton button = null;
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.U;
-                break;
-            case KeyEvent.VK_LEFT:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.L;
-                break;
-            case KeyEvent.VK_RIGHT:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.R;
-                break;
-            case KeyEvent.VK_DOWN:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.D;
-                break;
-            case KeyEvent.VK_ENTER:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.S;
-                break;
-            case KeyEvent.VK_SHIFT:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.M;
-                break;
-            case KeyEvent.VK_A:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.A;
-                break;
-            case KeyEvent.VK_S:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.B;
-                break;
-            case KeyEvent.VK_D:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.C;
-                break;
-            case KeyEvent.VK_Q:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.X;
-                break;
-            case KeyEvent.VK_W:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.Y;
-                break;
-            case KeyEvent.VK_E:
-                number = PlayerNumber.P1;
-                button = JoypadProvider.JoypadButton.Z;
-                break;
-        }
-        if (number != null && button != null) {
-            joypad.setButtonAction(number, button, action, e);
+        int kc = e.getKeyCode();
+        Optional<Map.Entry<PlayerNumber, JoypadButton>> optEntry =
+                KeyboardInputHelper.keyboardInverseBindings.column(kc).entrySet().stream().findFirst();
+        if (optEntry.isPresent()) {
+            joypad.setButtonAction(optEntry.get().getKey(), optEntry.get().getValue(), action, e);
         }
     }
-
 }

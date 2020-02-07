@@ -42,8 +42,22 @@ public interface JoypadProvider extends Device {
     }
 
     enum JoypadButton {
-        A, B, C, X, Y, Z, M, S, U, D, L, R,
-        K0, K1, K2, K3, K4, K5, K6, K7, K8, K9, K_AST, K_HASH
+        A, B, C, X, Y, Z, M("MODE"), S("START"), U("UP"), D("DOWN"), L("LEFT"), R("RIGHT"),
+        K0, K1, K2, K3, K4, K5, K6, K7, K8, K9, K_AST, K_HASH;
+
+        String mnemonic;
+
+        JoypadButton() {
+            this.mnemonic = name();
+        }
+
+        JoypadButton(String s) {
+            this.mnemonic = s;
+        }
+
+        public String getMnemonic() {
+            return mnemonic;
+        }
     }
 
     enum JoypadDirection {

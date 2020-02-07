@@ -27,6 +27,8 @@ public class MemoryProvider implements IMemoryProvider {
 
     private final static Logger LOG = LogManager.getLogger(MemoryProvider.class.getSimpleName());
 
+    public static final MemoryProvider NO_MEMORY = new MemoryProvider();
+
     public static final int M68K_RAM_SIZE = 0x10000;
     public static final int SG1K_Z80_RAM_SIZE = 0x400;
     public static final int MSX_Z80_RAM_SIZE = 0x4000;

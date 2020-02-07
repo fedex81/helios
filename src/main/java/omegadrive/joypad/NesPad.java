@@ -20,19 +20,17 @@
 package omegadrive.joypad;
 
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import omegadrive.input.KeyboardInputHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.HashMap;
 import java.util.Map;
 
 import static omegadrive.input.InputProvider.PlayerNumber;
-import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
 public class NesPad extends BasePadAdapter {
 
@@ -41,20 +39,6 @@ public class NesPad extends BasePadAdapter {
     private KeyListener p1HalfNes, p2HalfNes;
 
     private Component source = new Label();
-
-    private Map<JoypadButton, Integer> p1ButtonKeyCodeMap =
-            ImmutableMap.<JoypadButton, Integer>builder().
-                    put(U, KeyEvent.VK_UP).
-                    put(D, KeyEvent.VK_DOWN).
-                    put(L, KeyEvent.VK_LEFT).
-                    put(R, KeyEvent.VK_RIGHT).
-                    put(A, KeyEvent.VK_Z).
-                    put(B, KeyEvent.VK_X).
-                    put(M, KeyEvent.VK_SHIFT).
-                    put(S, KeyEvent.VK_ENTER).build();
-
-    //TODO
-    private Map<JoypadButton, Integer> p2ButtonKeyCodeMap = new HashMap<>();
 
     public NesPad(KeyListener p1HalfNes, KeyListener p2HalfNes) {
         this.p1HalfNes = p1HalfNes;
@@ -81,9 +65,9 @@ public class NesPad extends BasePadAdapter {
     @Override
     public void setButtonAction(PlayerNumber number, JoypadButton button, JoypadAction action, KeyEvent event) {
         super.setButtonAction(number, button, action);
-        Map<JoypadButton, Integer> btnMap = number == PlayerNumber.P1 ? p1ButtonKeyCodeMap : p2ButtonKeyCodeMap;
+        Map<JoypadButton, Integer> btnMap = KeyboardInputHelper.keyboardBindings.row(number);
         KeyListener keyListener = number == PlayerNumber.P1 ? p1HalfNes : p2HalfNes;
-        if (btnMap.containsKey(button)) {
+        if (btnMap != null && btnMap.containsKey(button)) {
             event.setKeyCode(btnMap.get(button));
             if (action == JoypadAction.PRESSED) {
                 keyListener.keyPressed(event);
