@@ -71,6 +71,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
+    protected volatile boolean futureDoneFlag = false;
     private static final boolean fullThrottle;
 
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
@@ -237,6 +238,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
             try {
                 int[] data = FileLoader.readBinaryFile(file, getSystemType());
                 if (data.length == 0) {
+                    LOG.error("Unable to open/access file: {}", file.toAbsolutePath().toString());
                     return;
                 }
                 memory.setRomData(data);

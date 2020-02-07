@@ -113,18 +113,17 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         LOG.info("Starting game loop");
         updateVideoMode(true);
 
-        do {
-            try {
+        try {
+            do {
                 run68k(counter);
                 runZ80(counter);
                 runFM(counter);
                 runVdp(counter);
                 counter++;
-            } catch (Exception e) {
-                LOG.error("Error main cycle", e);
-                break;
-            }
-        } while (!runningRomFuture.isDone());
+            } while (!futureDoneFlag);
+        } catch (Exception e) {
+            LOG.error("Error main cycle", e);
+        }
         LOG.info("Exiting rom thread loop");
     }
 
@@ -143,6 +142,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         counter = 0;
         startCycle = System.nanoTime();
         frameProcessingDelayNs = startCycle - tstamp - elapsedWaitNs;
+        futureDoneFlag = runningRomFuture.isDone();
 //        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
     }
 
@@ -259,6 +259,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         bus.init();
         cpu.reset();
         z80.reset(); //TODO confirm this is needed
+        futureDoneFlag = false;
     }
 
     @Override
