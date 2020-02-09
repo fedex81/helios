@@ -100,5 +100,9 @@ public interface FmProvider extends Device {
         throw new RuntimeException("Invalid");
     }
 
+    default void newFrame() {
+        //do nothing
+    }
+
 
 }

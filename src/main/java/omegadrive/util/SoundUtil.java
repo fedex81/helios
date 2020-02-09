@@ -35,7 +35,7 @@ public class SoundUtil {
     public static byte ZERO_BYTE = (byte) 0;
     public static long DEFAULT_BUFFER_SIZE_MS = 50; //was 100 check
 
-    private static int DEFAULT_PSG_SHIFT_BITS = 5;
+    private static int DEFAULT_PSG_SHIFT_BITS = 6;
     public static double PSG_ATTENUATION = Double.valueOf(System.getProperty("sound.psg.attenuation", "1.0"));
     private static int USER_PSG_ATT_BITS;
     private static int PSG_SHIFT_BITS;

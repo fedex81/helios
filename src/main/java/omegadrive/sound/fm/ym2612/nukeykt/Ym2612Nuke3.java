@@ -42,12 +42,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * TODO check 50hz, buffer keeps growing
  */
 public class Ym2612Nuke3 implements MdFmProvider {
-    static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);
-    static final int VOLUME_SHIFT = 3;
+    public static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);
+    static final int VOLUME_SHIFT = 5;
     private static final Logger LOG = LogManager.getLogger(Ym2612Nuke3.class.getSimpleName());
     public static int sampleRate = 0;
     public static int chipRate = 0;
     private final int[][] ym3438_accm = new int[24][2];
+    private static final boolean DEBUG = false;
+    volatile double fmCalcsPerMicros = FM_CALCS_PER_MICROS;
     int ym3438_cycles = 0;
     double cycleAccum = 0;
     int sample = 0;
@@ -57,11 +59,8 @@ public class Ym2612Nuke3 implements MdFmProvider {
     private IYm3438.IYm3438_Type chip;
     private AtomicLong queueLen = new AtomicLong();
     private Queue<Integer> sampleQueue = new ConcurrentLinkedQueue<>();
-
-    public Ym2612Nuke3() {
-        this(new IYm3438.IYm3438_Type());
-//        this(new Ym3438Jna());
-    }
+    int bufferSize;
+    double HALF_LIMIT = 0.025;
 
     public Ym2612Nuke3(IYm3438.IYm3438_Type chip) {
         this.ym3438 = new Ym3438();
@@ -107,15 +106,36 @@ public class Ym2612Nuke3 implements MdFmProvider {
         Arrays.stream(ym3438_accm).forEach(row -> Arrays.fill(row, 0));
     }
 
+    double upperLimit = FM_CALCS_PER_MICROS * (1 + HALF_LIMIT);
+
+    //Output frequency: 53.267 kHz (NTSC), 52.781 kHz (PAL)
+    @Override
+    public void tick(double microsPerTick) {
+        cycleAccum += microsPerTick;
+        spinOnce();
+        addSample();
+    }
+
+    double lowerLimit = FM_CALCS_PER_MICROS * (1 - HALF_LIMIT);
+    double fastPace = 0.001;
+    double slowPace = fastPace / 2;
+
+    public Ym2612Nuke3(int bufferSize) {
+        this(new IYm3438.IYm3438_Type());
+        this.bufferSize = bufferSize;
+//        this(new Ym3438Jna());
+    }
 
     @Override
     public int update(int[] buf_lr, int offset, int count) {
         offset <<= 1;
         int end = (count << 1) + offset;
         int sampleNumMono;
-        long initialQueueSize = queueLen.get();
+        final long initialQueueSize = queueLen.get();
         long queueIndicativeLen = initialQueueSize;
-
+        if (initialQueueSize < 50) {
+            return 0;
+        }
         Integer sample;
         int i = offset;
         for (; i < end && queueIndicativeLen > 0; i += 2) {
@@ -131,72 +151,19 @@ public class Ym2612Nuke3 implements MdFmProvider {
             lastSample = sample;
         }
         sampleNumMono = (int) (initialQueueSize - queueIndicativeLen);
-        if (queueIndicativeLen > maxQueueLen) {
+        if (DEBUG && queueIndicativeLen > maxQueueLen) {
             maxQueueLen = queueIndicativeLen;
             LOG.info("Len {}-{}, Prod {}, Req {}", initialQueueSize, maxQueueLen, sampleNumMono, count);
         }
-        if (queueIndicativeLen > 1000 && sampleNumMono < count) {
-            sampleNumMono++;
-            queueLen.decrementAndGet();
-            sample = sampleQueue.poll();
-            buf_lr[i + 1] = sample != null ? sample : lastSample;
-            buf_lr[i + 2] = buf_lr[i + 1];
-            LOG.info("Adding one sample: {}", sampleNumMono);
-        }
-//        sampleNumMono = addSamples(buf_lr, offset, 6);
-//        sampleNumMono = resample(buf_lr, offset, sampleNumMono, count, lastSample);
         return sampleNumMono;
-    }
-
-    private int addSamples(int[] buf_lr, int sampleNumStereo, int numSamplesMax) {
-        int sampleNumMono = sampleNumStereo >> 1;
-        int qlen = (int) queueLen.get();
-        if (qlen > 0) {
-            int limit = Math.min(numSamplesMax, qlen);
-            for (int i = 0; i < limit; i++) {
-                Integer val = sampleQueue.poll();
-                queueLen.decrementAndGet();
-                if (val == null) {
-                    break;
-                }
-                buf_lr[sampleNumStereo] = val;
-                buf_lr[sampleNumStereo + 1] = val;
-                sampleNumStereo += 2;
-            }
-            sampleNumMono = sampleNumStereo >> 1;
-//            LOG.info("Add QL{}, P{}, C{}, FQ{}", qlen, sampleNumMono, sampleNumStereo, qlen);
-        }
-        return sampleNumMono;
-    }
-
-    private int fillBuffer(int[] buf_lr, int offset, int sampleNumMono, int sampleCountMono, int lastSample) {
-        //just fills with the lastSample
-        if (sampleNumMono < sampleCountMono) {
-            int sampleNumStereo = sampleNumMono << 1;
-            int newCount = (int) Math.min(sampleNumMono * 1.1, sampleCountMono);
-            int end = (newCount << 1) + offset;
-            Arrays.fill(buf_lr, sampleNumStereo, end, lastSample);
-//            LOG.info("Fill P{}, C{}, Fill{}", sampleNumMono, sampleCountMono, newCount);
-            sampleNumMono = sampleCountMono;
-        }
-        return sampleNumMono;
-    }
-
-
-    //Output frequency: 53.267 kHz (NTSC), 52.781 kHz (PAL)
-    @Override
-    public void tick(double microsPerTick) {
-        cycleAccum += microsPerTick;
-        spinOnce();
-        addSample();
     }
 
     private void addSample() {
-        if (cycleAccum > FM_CALCS_PER_MICROS) {
+        if (cycleAccum > fmCalcsPerMicros) {
             sampleRate++;
             sampleQueue.offer(sample);
             queueLen.addAndGet(1);
-            cycleAccum -= FM_CALCS_PER_MICROS;
+            cycleAccum -= fmCalcsPerMicros;
         }
     }
 
@@ -212,7 +179,34 @@ public class Ym2612Nuke3 implements MdFmProvider {
                 sampleR += ym3438_accm[j][1];
             }
             //mono
-            sample = (sampleL + sampleR) << 3;// >> 1;
+            sample = (sampleL + sampleR) >> 1;
         }
+    }
+
+    @Override
+    public void newFrame() {
+        adaptiveRateControl();
+    }
+
+    private void adaptiveRateControl() {
+        boolean starving = queueLen.get() < (bufferSize * 2);
+        boolean badStarving = queueLen.get() < (bufferSize) && fmCalcsPerMicros < FM_CALCS_PER_MICROS;
+        boolean growsTooFast = queueLen.get() > (bufferSize * 3) && fmCalcsPerMicros > FM_CALCS_PER_MICROS;
+        boolean steadyState = !starving && !growsTooFast;
+        double fm = fmCalcsPerMicros;
+        if (steadyState) {
+            fm += fmCalcsPerMicros > FM_CALCS_PER_MICROS ? -slowPace : slowPace;
+        } else {
+            fm += starving ? -fastPace : fastPace;
+            fm += badStarving ? -fastPace : 0;
+            fm += growsTooFast ? fastPace : 0;
+        }
+        //limit
+        fm = fm > upperLimit ? upperLimit : (fm < lowerLimit ? lowerLimit : fm);
+        fmCalcsPerMicros = fm;
+        if (DEBUG) {
+            LOG.info("{}hz, q_av {}, b_size {}, steady {}", sampleRate, queueLen.get(), bufferSize, steadyState);
+        }
+        sampleRate = 0;
     }
 }

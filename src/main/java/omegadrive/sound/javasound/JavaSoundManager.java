@@ -76,7 +76,6 @@ public class JavaSoundManager extends AbstractSoundManager {
         return fmBufferLenStereo;
     }
 
-
     @Override
     protected Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
         return new Runnable() {
@@ -87,6 +86,7 @@ public class JavaSoundManager extends AbstractSoundManager {
                 psg_buf_bytes = new byte[psgSize];
                 fmSizeMono = (int) Math.round(fmSize / (2 * FACTOR));
                 hasFm = getFm() != FmProvider.NO_SOUND;
+
                 try {
                     do {
                         int res = playOnce(fmSizeMono);
@@ -107,7 +107,7 @@ public class JavaSoundManager extends AbstractSoundManager {
 
     @Override
     public void output(long nanos) {
-        //do nothing
+        fm.newFrame();
     }
 }
 
