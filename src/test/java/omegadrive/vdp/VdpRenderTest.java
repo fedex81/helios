@@ -44,7 +44,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 @Ignore
-public class VdpRenderTest extends BaseVdpProvider.VdpEventAdapter {
+public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
 
     private static int[] screenData;
     private VdpRenderDump renderDump = new VdpRenderDump();

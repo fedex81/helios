@@ -28,6 +28,7 @@ import omegadrive.joypad.JoypadProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
+import omegadrive.sound.fm.ym2612.nukeykt.AudioRateControl;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.util.FileLoader;
@@ -196,14 +197,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         handleRomInternal();
     }
 
-    protected void createAndAddVdpEventListener() {
-        vdp.addVdpEventListener(new BaseVdpProvider.VdpEventAdapter() {
-            @Override
-            public void onNewFrame() {
-                newFrame();
-            }
-        });
-    }
+    private String stats = "";
 
     @Override
     public boolean isRomRunning() {
@@ -310,6 +304,15 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
     }
 
+    protected void createAndAddVdpEventListener() {
+        vdp.addVdpEventListener(new BaseVdpProvider.VdpEventListener() {
+            @Override
+            public void onNewFrame() {
+                newFrame();
+            }
+        });
+    }
+
     protected String getStats(long nowNs) {
         if (!SystemLoader.showFps) {
             return "";
@@ -320,8 +323,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
             lastFps = ((int) (lastFps * 100)) / 100d;
             points = 0;
             startNs = nowNs;
+            Optional<String> arc = Optional.ofNullable(AudioRateControl.getLatestStats());
+            stats = lastFps + "fps" + (arc.isPresent() ? ", " + arc.get() : "");
         }
-        return lastFps + "fps";
+        return stats;
     }
 
     protected void handleVdpDumpScreenData() {

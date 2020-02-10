@@ -38,29 +38,29 @@ import java.util.concurrent.atomic.AtomicLong;
  * NUKE_CLOCK = FM_CLOCK/6 = 1278409
  * CHIP_OUTPUT_RATE = NUKE_CLOCK/24 = 53267
  * <p>
- * TODO check with no-audio, the buffer keeps growing
- * TODO check 50hz, buffer keeps growing
  */
 public class Ym2612Nuke3 implements MdFmProvider {
-    public static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);
-    static final int VOLUME_SHIFT = 5;
-    private static final Logger LOG = LogManager.getLogger(Ym2612Nuke3.class.getSimpleName());
-    public static int sampleRate = 0;
-    public static int chipRate = 0;
-    private final int[][] ym3438_accm = new int[24][2];
+
     private static final boolean DEBUG = false;
-    volatile double fmCalcsPerMicros = FM_CALCS_PER_MICROS;
-    int ym3438_cycles = 0;
-    double cycleAccum = 0;
-    int sample = 0;
-    int lastSample = 0;
-    long maxQueueLen = 0;
+
+    public static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);
+    private static final int VOLUME_SHIFT = 5;
+    private static int MIN_AUDIO_SAMPLES = 50; //~1ms
+    private static final Logger LOG = LogManager.getLogger(Ym2612Nuke3.class.getSimpleName());
+
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
     private AtomicLong queueLen = new AtomicLong();
     private Queue<Integer> sampleQueue = new ConcurrentLinkedQueue<>();
-    int bufferSize;
-    double HALF_LIMIT = 0.025;
+    private final int[][] ym3438_accm = new int[24][2];
+    volatile double fmCalcsPerMicros = FM_CALCS_PER_MICROS;
+    int ym3438_cycles = 0;
+    double cycleAccum = 0;
+    int sample = 0;
+    long maxQueueLen = 0;
+    private AudioRateControl audioRateControl;
+    private int sampleRatePerFrame = 0;
+    private long chipRate;
 
     public Ym2612Nuke3(IYm3438.IYm3438_Type chip) {
         this.ym3438 = new Ym3438();
@@ -92,8 +92,9 @@ public class Ym2612Nuke3 implements MdFmProvider {
         return ym3438.OPN2_Read(chip, 0x4000);
     }
 
-    @Override
-    public void init(int clock, int rate) {
+    public Ym2612Nuke3(int bufferSize) {
+        this(new IYm3438.IYm3438_Type());
+        this.audioRateControl = new AudioRateControl(bufferSize);
     }
 
     @Override
@@ -106,8 +107,6 @@ public class Ym2612Nuke3 implements MdFmProvider {
         Arrays.stream(ym3438_accm).forEach(row -> Arrays.fill(row, 0));
     }
 
-    double upperLimit = FM_CALCS_PER_MICROS * (1 + HALF_LIMIT);
-
     //Output frequency: 53.267 kHz (NTSC), 52.781 kHz (PAL)
     @Override
     public void tick(double microsPerTick) {
@@ -116,14 +115,9 @@ public class Ym2612Nuke3 implements MdFmProvider {
         addSample();
     }
 
-    double lowerLimit = FM_CALCS_PER_MICROS * (1 - HALF_LIMIT);
-    double fastPace = 0.001;
-    double slowPace = fastPace / 2;
-
-    public Ym2612Nuke3(int bufferSize) {
-        this(new IYm3438.IYm3438_Type());
-        this.bufferSize = bufferSize;
-//        this(new Ym3438Jna());
+    @Override
+    public void init(int clock, int rate) {
+        LOG.info("Init with clock {}hz, sampleRate {}hz", clock, rate);
     }
 
     @Override
@@ -133,22 +127,21 @@ public class Ym2612Nuke3 implements MdFmProvider {
         int sampleNumMono;
         final long initialQueueSize = queueLen.get();
         long queueIndicativeLen = initialQueueSize;
-        if (initialQueueSize < 50) {
+        if (initialQueueSize < MIN_AUDIO_SAMPLES) {
             return 0;
         }
         Integer sample;
         int i = offset;
         for (; i < end && queueIndicativeLen > 0; i += 2) {
             sample = sampleQueue.poll();
+            queueIndicativeLen = queueLen.decrementAndGet();
             if (sample == null) {
                 LOG.warn("Null sample QL{} P{}", queueIndicativeLen, i);
                 break;
             }
             sample <<= VOLUME_SHIFT;
-            queueIndicativeLen = queueLen.decrementAndGet();
             buf_lr[i] = sample;
             buf_lr[i + 1] = sample;
-            lastSample = sample;
         }
         sampleNumMono = (int) (initialQueueSize - queueIndicativeLen);
         if (DEBUG && queueIndicativeLen > maxQueueLen) {
@@ -160,7 +153,7 @@ public class Ym2612Nuke3 implements MdFmProvider {
 
     private void addSample() {
         if (cycleAccum > fmCalcsPerMicros) {
-            sampleRate++;
+            sampleRatePerFrame++;
             sampleQueue.offer(sample);
             queueLen.addAndGet(1);
             cycleAccum -= fmCalcsPerMicros;
@@ -184,29 +177,8 @@ public class Ym2612Nuke3 implements MdFmProvider {
     }
 
     @Override
-    public void newFrame() {
-        adaptiveRateControl();
-    }
-
-    private void adaptiveRateControl() {
-        boolean starving = queueLen.get() < (bufferSize * 2);
-        boolean badStarving = queueLen.get() < (bufferSize) && fmCalcsPerMicros < FM_CALCS_PER_MICROS;
-        boolean growsTooFast = queueLen.get() > (bufferSize * 3) && fmCalcsPerMicros > FM_CALCS_PER_MICROS;
-        boolean steadyState = !starving && !growsTooFast;
-        double fm = fmCalcsPerMicros;
-        if (steadyState) {
-            fm += fmCalcsPerMicros > FM_CALCS_PER_MICROS ? -slowPace : slowPace;
-        } else {
-            fm += starving ? -fastPace : fastPace;
-            fm += badStarving ? -fastPace : 0;
-            fm += growsTooFast ? fastPace : 0;
-        }
-        //limit
-        fm = fm > upperLimit ? upperLimit : (fm < lowerLimit ? lowerLimit : fm);
-        fmCalcsPerMicros = fm;
-        if (DEBUG) {
-            LOG.info("{}hz, q_av {}, b_size {}, steady {}", sampleRate, queueLen.get(), bufferSize, steadyState);
-        }
-        sampleRate = 0;
+    public void onNewFrame() {
+        fmCalcsPerMicros = audioRateControl.adaptiveRateControl(queueLen.get(), fmCalcsPerMicros, sampleRatePerFrame);
+        sampleRatePerFrame = 0;
     }
 }

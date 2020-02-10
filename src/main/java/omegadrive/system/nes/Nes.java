@@ -124,7 +124,6 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
         videoMode = vdp.getVideoMode();
         renderScreenLinearInternal(gui.getScreen(), getStats(System.nanoTime()));
         handleVdpDumpScreenData();
-        sound.output(0);
         elapsedNs = (int) (syncCycle(startCycle) - startCycle);
         processSaveState();
         pauseAndWait();
@@ -134,6 +133,7 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
     @Override
     protected void initAfterRomLoad() {
         sound = AbstractSoundManager.createSoundProvider(systemType, region);
+        vdp.addVdpEventListener(sound);
         resetAfterRomLoad();
     }
 

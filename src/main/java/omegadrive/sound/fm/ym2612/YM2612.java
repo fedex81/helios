@@ -636,11 +636,6 @@ public final class YM2612 implements MdFmProvider {
         return YM2612_REG[type][regNumber];
     }
 
-    @Override
-    public void writeRegister(int type, int regNumber, int data) {
-        YM2612_REG[type][regNumber] = data;
-    }
-
     public final int update(int[] buf_lr, int offset, int count) {
         offset *= 2;
         int end = count * 2 + offset;

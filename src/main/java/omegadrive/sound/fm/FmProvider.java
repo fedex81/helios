@@ -20,8 +20,9 @@
 package omegadrive.sound.fm;
 
 import omegadrive.Device;
+import omegadrive.vdp.model.BaseVdpProvider;
 
-public interface FmProvider extends Device {
+public interface FmProvider extends Device, BaseVdpProvider.VdpEventListener {
 
     FmProvider NO_SOUND = new FmProvider() {
 
@@ -78,10 +79,6 @@ public interface FmProvider extends Device {
 
     int readRegister(int type, int regNumber);
 
-    default void writeRegister(int type, int regNumber, int data) {
-
-    }
-
     void tick(double microsPerTick);
 
     default void write(int addr, int data) {
@@ -99,10 +96,4 @@ public interface FmProvider extends Device {
     default void init() {
         throw new RuntimeException("Invalid");
     }
-
-    default void newFrame() {
-        //do nothing
-    }
-
-
 }

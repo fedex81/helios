@@ -123,22 +123,14 @@ public interface BaseVdpProvider extends Device {
 
     interface VdpEventListener extends EventListener {
 
-        void onVdpEvent(VdpEvent event, Object value);
+        default void onVdpEvent(VdpEvent event, Object value) {
+        }
 
-        void onRegisterChange(int reg, int value);
+        default void onRegisterChange(int reg, int value) {
+        }
 
         default void onNewFrame() {
             onVdpEvent(VdpEvent.NEW_FRAME, null);
-        }
-    }
-
-    abstract class VdpEventAdapter implements VdpEventListener {
-        @Override
-        public void onVdpEvent(VdpEvent event, Object value) {
-        }
-
-        @Override
-        public void onRegisterChange(int reg, int value) {
         }
     }
 }

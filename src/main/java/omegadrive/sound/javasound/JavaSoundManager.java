@@ -34,6 +34,7 @@ public class JavaSoundManager extends AbstractSoundManager {
     private static final Logger LOG = LogManager.getLogger(JavaSoundManager.class.getSimpleName());
 
     public static int sleepTotal = 0;
+    public static final long EMPTY_QUEUE_SLEEP_NS = 500_000;
     public volatile static int samplesProducedCount = 0;
     public volatile static int samplesConsumedCount = 0;
 
@@ -92,7 +93,7 @@ public class JavaSoundManager extends AbstractSoundManager {
                         int res = playOnce(fmSizeMono);
                         samplesConsumedCount += res;
                         if (res == 0) {
-                            LockSupport.parkNanos(500_000);
+                            LockSupport.parkNanos(EMPTY_QUEUE_SLEEP_NS);
                         }
                     } while (!close);
                 } catch (Exception e) {
@@ -106,8 +107,8 @@ public class JavaSoundManager extends AbstractSoundManager {
     }
 
     @Override
-    public void output(long nanos) {
-        fm.newFrame();
+    public void onNewFrame() {
+        fm.onNewFrame();
     }
 }
 

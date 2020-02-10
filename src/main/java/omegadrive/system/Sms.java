@@ -143,7 +143,6 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(System.nanoTime()));
         handleVdpDumpScreenData();
         handleNmi();
-        sound.output(0);
         elapsedNs = (int) (syncCycle(startCycle) - startCycle);
         processSaveState();
         pauseAndWait();
@@ -157,6 +156,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         sound = AbstractSoundManager.createSoundProvider(systemType, region);
         z80 = Z80CoreWrapper.createInstance(bus);
         bus.attachDevice(sound).attachDevice(z80);
+        vdp.addVdpEventListener(sound);
         resetAfterRomLoad();
     }
 

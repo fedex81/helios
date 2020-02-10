@@ -133,7 +133,6 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         updateVideoMode(false);
         renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(startCycle));
         handleVdpDumpScreenData();
-        sound.output(elapsedWaitNs);
         long startWaitNs = System.nanoTime();
         elapsedWaitNs = syncCycle(startCycle) - startWaitNs;
         processSaveState();
@@ -248,6 +247,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     protected void initAfterRomLoad() {
         sound = AbstractSoundManager.createSoundProvider(getSystemType(), region);
         bus.attachDevice(sound);
+        vdp.addVdpEventListener(sound);
         resetAfterRomLoad();
     }
 

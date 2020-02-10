@@ -24,10 +24,11 @@ import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
+import omegadrive.vdp.model.BaseVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public interface SoundProvider extends Device {
+public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener {
     Logger LOG = LogManager.getLogger(SoundProvider.class.getSimpleName());
 
     long PAL_PSG_CLOCK = Util.GEN_PAL_MCLOCK_MHZ / 15; // 3546893
@@ -92,8 +93,7 @@ public interface SoundProvider extends Device {
         }
 
         @Override
-        public void output(long fps) {
-
+        public void onNewFrame() {
         }
 
         @Override
@@ -136,8 +136,6 @@ public interface SoundProvider extends Device {
     void setEnabled(boolean mute);
 
     void setEnabled(Device device, boolean enabled);
-
-    void output(long nanos);
 
     default boolean isSoundWorking() {
         return false;

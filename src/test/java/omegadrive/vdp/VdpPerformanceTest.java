@@ -71,7 +71,6 @@ public class VdpPerformanceTest {
     @Test
     public void testVdpPerf() {
         SystemProvider system = createTestProvider();
-
         createAndAddVdpListener(system);
         Util.waitForever();
     }
@@ -97,7 +96,7 @@ public class VdpPerformanceTest {
             Field f = BaseSystem.class.getDeclaredField("vdp");
             f.setAccessible(true);
             BaseVdpProvider vdpProvider = (BaseVdpProvider) f.get(system);
-            vdpProvider.addVdpEventListener(new BaseVdpProvider.VdpEventAdapter() {
+            vdpProvider.addVdpEventListener(new BaseVdpProvider.VdpEventListener() {
                 @Override
                 public void onNewFrame() {
                     fps = system.getRegion().getFps();
