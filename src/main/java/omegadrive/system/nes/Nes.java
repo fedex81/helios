@@ -133,7 +133,6 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
     @Override
     protected void initAfterRomLoad() {
         sound = AbstractSoundManager.createSoundProvider(systemType, region);
-        vdp.addVdpEventListener(sound);
         resetAfterRomLoad();
     }
 
