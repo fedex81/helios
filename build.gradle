@@ -151,15 +151,19 @@ task packageDistribution(type: Zip) {
 task writeToFile {
     String jarName = jarNameHead + ".jar"
     // sample list.(you already have it as extra.files.collect { file -> file.name })
-    List<String> sample = [ "java", "-XX:AutoBoxCacheMax=65536",
+    List<String> sampleBase = [ "java", "-XX:AutoBoxCacheMax=65536",
                             "-Dlog4j.configurationFile=./log4j2.properties",
                             "-jar", "$jarName" , "\"\$@\"", "\n"] as String[]
+    List<String> sampleUx = sampleBase.clone()
+    sampleUx.add("\"\$@\"" + "\n")
+    List<String> sampleWin = sampleBase.clone()
+    sampleWin.add("\"%1\"" + "\n")
     // create the folders if it does not exist.(otherwise it will throw exception)
     File extraFolder = new File( "${buildDir}/packageDir")
     if( !extraFolder.exists() ) {
         extraFolder.mkdirs()
     }
     // create the file and write text to it.
-    new File("${buildDir}/packageDir/launcher.sh").text = sample.join (" ")
-    new File("${buildDir}/packageDir/launcher.bat").text = sample.join (" ")
+    new File("${buildDir}/packageDir/launcher.sh").text = sampleUx.join (" ")
+    new File("${buildDir}/packageDir/launcher.bat").text = sampleWin.join (" ")
 }

@@ -161,7 +161,7 @@ public class FileLoader {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))
         ) {
             lines = reader.lines().collect(Collectors.toList());
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.error("Unable to load " + fileName + ", from path: " + fileName, e);
         }
         return lines;
