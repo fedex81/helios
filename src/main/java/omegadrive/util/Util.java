@@ -49,7 +49,16 @@ public class Util {
 
     public static final long SECOND_IN_NS = Duration.ofSeconds(1).toNanos();
     public static final long MILLI_IN_NS = Duration.ofMillis(1).toNanos();
-    public static final long SLEEP_LIMIT_NS = 100_000;
+    public static final long SLEEP_LIMIT_NS = 10_000;
+
+    static final int CACHE_LIMIT = Short.MIN_VALUE;
+    static Integer[] negativeCache = new Integer[Short.MAX_VALUE + 2];
+
+    static {
+        for (int i = 0, j = 0; i < negativeCache.length; i++) {
+            negativeCache[i] = Integer.valueOf(j--);
+        }
+    }
 
     public static void sleep(long ms) {
         try {
@@ -59,21 +68,15 @@ public class Util {
         }
     }
 
-    public static long parkUntil(long targetNs) {
-        long start = System.nanoTime();
-        return parkFor(Math.max(0, targetNs - start), start);
-    }
-
-    public static long parkFor(long intervalNs, long startWaitNs) {
+    public static void park(long intervalNs) {
         boolean done;
-        long now;
+        long start = System.nanoTime();
         do {
-            LockSupport.parkNanos(intervalNs - SLEEP_LIMIT_NS);
-            now = System.nanoTime();
-            intervalNs -= now - startWaitNs;
+            LockSupport.parkNanos(intervalNs);
+            long now = System.nanoTime();
+            intervalNs -= now - start;
             done = intervalNs < SLEEP_LIMIT_NS;
         } while (!done);
-        return now;
     }
 
     public static void waitForever() {
@@ -301,6 +304,13 @@ public class Util {
 
     public static final String toHex(long val, int digits) {
         return Strings.padStart(Long.toHexString(val & 0xFF_FFFF), digits, '0');
+    }
+
+    public static Integer getFromIntegerCache(int val) {
+        if (val < 0 && val >= CACHE_LIMIT) {
+            return negativeCache[-val];
+        }
+        return Integer.valueOf(val);
     }
 
     public static List<Range<Integer>> getRangeList(int... values) {

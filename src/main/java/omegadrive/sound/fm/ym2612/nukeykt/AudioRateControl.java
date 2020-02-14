@@ -30,10 +30,10 @@ public class AudioRateControl {
     public static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);
     private static final Logger LOG = LogManager.getLogger(AudioRateControl.class.getSimpleName());
     private static final boolean DEBUG = false;
-    private static final double HALF_LIMIT = 0.025;
+    private static final double HALF_LIMIT = 0.025 / 2;
     private static final double LOWER_LIMIT = FM_CALCS_PER_MICROS * (1 - HALF_LIMIT);
     private static final double UPPER_LIMIT = FM_CALCS_PER_MICROS * (1 + HALF_LIMIT);
-    static double fastPace = 0.0005; //max distortion ~60hz/frame
+    static double fastPace = 0.005; //max distortion ~60hz/frame
     static double slowPace = fastPace / 2;
     private static String latestStats = null;
     private int bufferSize;

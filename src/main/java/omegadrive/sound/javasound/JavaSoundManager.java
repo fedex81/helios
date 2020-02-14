@@ -85,7 +85,7 @@ public class JavaSoundManager extends AbstractSoundManager {
                 fm_buf_ints = new int[fmSize];
                 mix_buf_bytes16 = new byte[fm_buf_ints.length];
                 psg_buf_bytes = new byte[psgSize];
-                fmSizeMono = (int) Math.round(fmSize / (2 * FACTOR));
+                fmSizeMono = (int) Math.round(fmSize / 2d);
                 hasFm = getFm() != FmProvider.NO_SOUND;
 
                 try {

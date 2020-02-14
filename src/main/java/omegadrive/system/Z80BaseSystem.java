@@ -142,7 +142,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
         renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(System.nanoTime()));
         handleVdpDumpScreenData();
         updateVideoMode();
-        int elapsedNs = (int) (syncCycle(startCycle) - startCycle);
+        syncCycle(startCycle);
 //                    processSaveState();
         pauseAndWait();
         resetCycleCounters(counter);

@@ -21,13 +21,14 @@ package omegadrive.sound.fm.ym2612.nukeykt;
 
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.MdFmProvider;
+import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jctools.queues.atomic.SpscAtomicArrayQueue;
 
 import java.util.Arrays;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * NTSC_MCLOCK_MHZ = 53693175;
@@ -50,14 +51,16 @@ public class Ym2612Nuke3 implements MdFmProvider {
 
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
-    private AtomicLong queueLen = new AtomicLong();
-    private Queue<Integer> sampleQueue = new ConcurrentLinkedQueue<>();
+    //            new ConcurrentLinkedQueue<>();
     private final int[][] ym3438_accm = new int[24][2];
+    int maxQueueLen = 0;
+    private AtomicInteger queueLen = new AtomicInteger();
     volatile double fmCalcsPerMicros = FM_CALCS_PER_MICROS;
     int ym3438_cycles = 0;
     double cycleAccum = 0;
     int sample = 0;
-    long maxQueueLen = 0;
+    private Queue<Integer> sampleQueue =
+            new SpscAtomicArrayQueue<>(SoundProvider.SAMPLE_RATE_HZ);
     private AudioRateControl audioRateControl;
     private int sampleRatePerFrame = 0;
     private long chipRate;
@@ -125,8 +128,8 @@ public class Ym2612Nuke3 implements MdFmProvider {
         offset <<= 1;
         int end = (count << 1) + offset;
         int sampleNumMono;
-        final long initialQueueSize = queueLen.get();
-        long queueIndicativeLen = initialQueueSize;
+        final int initialQueueSize = queueLen.get();
+        int queueIndicativeLen = initialQueueSize;
         if (initialQueueSize < MIN_AUDIO_SAMPLES) {
             return 0;
         }
@@ -134,16 +137,16 @@ public class Ym2612Nuke3 implements MdFmProvider {
         int i = offset;
         for (; i < end && queueIndicativeLen > 0; i += 2) {
             sample = sampleQueue.poll();
-            queueIndicativeLen = queueLen.decrementAndGet();
             if (sample == null) {
                 LOG.warn("Null sample QL{} P{}", queueIndicativeLen, i);
                 break;
             }
+            queueIndicativeLen = queueLen.decrementAndGet();
             sample <<= VOLUME_SHIFT;
             buf_lr[i] = sample;
             buf_lr[i + 1] = sample;
         }
-        sampleNumMono = (int) (initialQueueSize - queueIndicativeLen);
+        sampleNumMono = initialQueueSize - queueIndicativeLen;
         if (DEBUG && queueIndicativeLen > maxQueueLen) {
             maxQueueLen = queueIndicativeLen;
             LOG.info("Len {}-{}, Prod {}, Req {}", initialQueueSize, maxQueueLen, sampleNumMono, count);
@@ -154,7 +157,7 @@ public class Ym2612Nuke3 implements MdFmProvider {
     private void addSample() {
         if (cycleAccum > fmCalcsPerMicros) {
             sampleRatePerFrame++;
-            sampleQueue.offer(sample);
+            sampleQueue.offer(Util.getFromIntegerCache(sample));
             queueLen.addAndGet(1);
             cycleAccum -= fmCalcsPerMicros;
         }

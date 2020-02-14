@@ -89,8 +89,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
             case NES:
                 //no PSG, external audio set as FM
                 break;
-            case GENESIS:
-            case SMS:
             default:
                 psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
                 break;
@@ -98,8 +96,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
         hasPsg = getPsg() != PsgProvider.NO_SOUND;
         return psgProvider;
     }
-
-    public static double FACTOR = 1;
 
     protected abstract Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region);
 
@@ -128,8 +124,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
         this.region = region;
         dataLine = SoundUtil.createDataLine(audioFormat);
         soundPersister = new FileSoundPersister();
-        fmSize = (int) (SoundProvider.getFmBufferIntSize(region.getFps()) * FACTOR);
-        psgSize = (int) (SoundProvider.getPsgBufferByteSize(region.getFps()) * FACTOR);
+        fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
+        psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
         executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
         executorService.submit(getRunnable(dataLine, region));
         LOG.info("Output audioFormat: " + audioFormat + ", bufferSize: " + fmSize);

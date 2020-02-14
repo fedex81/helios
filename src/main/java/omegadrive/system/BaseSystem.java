@@ -270,18 +270,26 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
     }
 
-    /**
-     * syncCycle
-     *
-     * @return now
-     */
-    protected long syncCycle(long startCycle) {
+    long driftNs = 0;
+
+    protected final long syncCycle(long startCycle) {
         long now = System.nanoTime();
-        long remainingNs = startCycle + targetNs - now;
-        if (fullThrottle || remainingNs < Util.SLEEP_LIMIT_NS) {
+        if (fullThrottle) {
             return now;
         }
-        return Util.parkFor(remainingNs, now);
+        long driftDeltaNs = 0;
+        if (Math.abs(driftNs) > Util.MILLI_IN_NS) {
+            driftDeltaNs = driftNs > 0 ? Util.MILLI_IN_NS : -Util.MILLI_IN_NS;
+            driftNs -= driftDeltaNs;
+        }
+        long baseRemainingNs = startCycle + targetNs + driftDeltaNs;
+        long remainingNs = baseRemainingNs - now;
+        if (remainingNs > 0) { //too fast
+            Util.park(remainingNs);
+            remainingNs = baseRemainingNs - System.nanoTime();
+        }
+        driftNs += remainingNs;
+        return System.nanoTime();
     }
 
     int points = 0;

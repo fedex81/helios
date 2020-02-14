@@ -44,6 +44,7 @@ dependencies {
     compile group: 'com.google.guava', name: 'guava', version: '28.1-jre'
     // https://mvnrepository.com/artifact/net.sf.emustudio/emuLib
     compile group: 'net.sf.emustudio', name: 'emuLib', version: '9.0.1'
+    compile group: 'org.jctools', name: 'jctools-core', version: '3.0.0'
 
     //include local jars
     compile fileTree(dir: 'lib', include: ['*.jar'])
