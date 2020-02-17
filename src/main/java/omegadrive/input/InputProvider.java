@@ -58,11 +58,6 @@ public interface InputProvider {
         }
 
         @Override
-        public void setPlayers(int number) {
-
-        }
-
-        @Override
         public void setPlayerController(PlayerNumber player, String controllerName) {
 
         }
@@ -77,9 +72,6 @@ public interface InputProvider {
             return Collections.emptyList();
         }
     };
-
-    @Deprecated
-    void setPlayers(int number);
 
     float ON = 1.0f;
 

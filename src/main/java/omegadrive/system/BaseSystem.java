@@ -40,6 +40,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CyclicBarrier;
@@ -114,12 +115,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
             case SAVE_STATE:
             case QUICK_SAVE:
                 handleSaveState((Path) parameter);
-                break;
-            case SET_PLAYERS_1:
-                inputProvider.setPlayers(1);
-                break;
-            case SET_PLAYERS_2:
-                inputProvider.setPlayers(2);
                 break;
             case TOGGLE_DEBUG_LOGGING:
                 setDebug((Boolean) parameter);
@@ -271,6 +266,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     }
 
     long driftNs = 0;
+    static long MAX_DRIFT = Duration.ofMillis(10).toNanos();
 
     protected final long syncCycle(long startCycle) {
         long now = System.nanoTime();
@@ -289,6 +285,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
             remainingNs = baseRemainingNs - System.nanoTime();
         }
         driftNs += remainingNs;
+        driftNs = Math.min(MAX_DRIFT, driftNs);
+        driftNs = Math.max(-MAX_DRIFT, driftNs);
         return System.nanoTime();
     }
 

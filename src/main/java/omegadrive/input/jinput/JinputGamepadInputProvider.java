@@ -88,7 +88,6 @@ public class JinputGamepadInputProvider implements InputProvider {
             g.joypadProvider = joypadProvider;
             g.controllerNames.addAll(controllers.stream().map(Controller::getName).collect(Collectors.toList()));
             g.controllers = controllers;
-            g.setPlayers(1);
             executorService.submit(g.inputRunnable());
             INSTANCE = g;
         }
@@ -148,13 +147,6 @@ public class JinputGamepadInputProvider implements InputProvider {
                 }
             }
         }
-    }
-
-    @Override
-    public void setPlayers(int number) {
-        LOG.info("Setting number of players to: " + number);
-        String p2Ctrl = number > 1 ? KEYBOARD_CONTROLLER : NO_CONTROLLER;
-        playerControllerMap.put(PlayerNumber.P2, p2Ctrl);
     }
 
     @Override
