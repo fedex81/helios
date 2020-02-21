@@ -50,9 +50,9 @@ public class AutomatedGameTester {
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
     private static String romFolder =
-            "/home/fede/roms/nes";
+//            "/home/fede/roms/nes";
 //            "/home/fede/roms/md";
-//            "/home/fede/roms/md/nointro";
+            "/home/fede/roms/md/nointro";
 //            "/home/fede/roms/smsgg";
 //            "/home/fede/roms/msx";
 //            "/data/emu/roms";
@@ -98,6 +98,7 @@ public class AutomatedGameTester {
 
     static {
         System.setProperty("helios.headless", "false");
+        System.setProperty("md.sram.folder", "/tmp/helios/md/sram");
     }
 
     public static void main(String[] args) throws Exception {

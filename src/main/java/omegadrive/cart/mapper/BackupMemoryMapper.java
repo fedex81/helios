@@ -43,10 +43,10 @@ public abstract class BackupMemoryMapper {
     protected String fileType;
     protected String romName;
 
-    protected int sramSize = 0;
+    protected int sramSize;
 
     protected BackupMemoryMapper(SystemLoader.SystemType systemType, String fileType, String romName, int sramSize) {
-        sramFolderProp = systemType.getShortName().toLowerCase() + "sram.folder";
+        sramFolderProp = systemType.getShortName().toLowerCase() + ".sram.folder";
         defaultSramFolder = getDefaultBackupFileFolder(systemType);
         sramFolder = System.getProperty(sramFolderProp, defaultSramFolder);
         this.romName = romName;
@@ -68,18 +68,27 @@ public abstract class BackupMemoryMapper {
                 long size = 0;
                 if (Files.isReadable(backupFile)) {
                     size = Files.size(backupFile);
-                    sram = FileLoader.readBinaryFile(backupFile);
+                    if (size > 0) {
+                        sram = FileLoader.readBinaryFile(backupFile);
+                    } else {
+                        LOG.error("Backup file with size 0, attempting to recreate it");
+                        size = createBackupFile();
+                    }
                 } else {
-                    LOG.info("Creating backup memory file: " + backupFile);
-                    sram = new int[sramSize];
-                    size = sram.length;
-                    FileLoader.writeFileSafe(backupFile, sram);
+                    size = createBackupFile();
                 }
                 LOG.info("Using sram file: " + backupFile + " size: " + size + " bytes");
             } catch (Exception e) {
                 LOG.error("Unable to create file for: " + romName);
             }
         }
+    }
+
+    private int createBackupFile() {
+        LOG.info("Creating backup memory file: " + backupFile);
+        sram = new int[sramSize];
+        FileLoader.writeFileSafe(backupFile, sram);
+        return sram.length;
     }
 
     protected void writeFile() {
