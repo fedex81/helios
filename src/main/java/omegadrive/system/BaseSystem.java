@@ -29,6 +29,7 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.AudioRateControl;
+import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.util.FileLoader;
@@ -75,6 +76,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private volatile boolean pauseFlag = false;
     protected volatile boolean futureDoneFlag = false;
     private static final boolean fullThrottle;
+
+    static final long MAX_DRIFT = Duration.ofMillis(10).toNanos();
 
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
 
@@ -266,7 +269,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     }
 
     long driftNs = 0;
-    static long MAX_DRIFT = Duration.ofMillis(10).toNanos();
+    static final long THRESHOLD = Util.MILLI_IN_NS / 10;
+    protected Telemetry telemetry = Telemetry.getInstance();
 
     protected final long syncCycle(long startCycle) {
         long now = System.nanoTime();
@@ -274,8 +278,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
             return now;
         }
         long driftDeltaNs = 0;
-        if (Math.abs(driftNs) > Util.MILLI_IN_NS) {
-            driftDeltaNs = driftNs > 0 ? Util.MILLI_IN_NS : -Util.MILLI_IN_NS;
+        if (Math.abs(driftNs) > THRESHOLD) {
+            driftDeltaNs = driftNs > 0 ? THRESHOLD : -THRESHOLD;
             driftNs -= driftDeltaNs;
         }
         long baseRemainingNs = startCycle + targetNs + driftDeltaNs;
@@ -290,7 +294,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         return System.nanoTime();
     }
 
-    int points = 0;
     long startNs = 0;
 
     private void handleRomInternal() {
@@ -306,6 +309,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
             emuFrame.resetScreen();
             sound.reset();
             bus.closeRom();
+            telemetry.reset();
             Optional.ofNullable(vdp).ifPresent(Device::reset);
         }
     }
@@ -323,15 +327,17 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         if (!SystemLoader.showFps) {
             return "";
         }
-        points++;
-        if (points % 25 == 0) {
-            lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - startNs) / points);
-            lastFps = ((int) (lastFps * 100)) / 100d;
-            points = 0;
-            startNs = nowNs;
+
+        lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - startNs));
+        lastFps = ((int) (lastFps * 100)) / 100d;
+        telemetry.addSample("fps", lastFps);
+        telemetry.addSample("driftNs", driftNs / 1000d);
+        telemetry.newFrame();
+        if (telemetry.getFrameCounter() % 50 == 0) { //update fps label every N frames
             Optional<String> arc = Optional.ofNullable(AudioRateControl.getLatestStats());
             stats = lastFps + "fps" + (arc.isPresent() ? ", " + arc.get() : "");
         }
+        startNs = nowNs;
         return stats;
     }
 

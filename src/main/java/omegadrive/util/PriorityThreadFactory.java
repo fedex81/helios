@@ -33,6 +33,10 @@ public class PriorityThreadFactory implements ThreadFactory {
         this.threadPriority = priority;
     }
 
+    public PriorityThreadFactory(String namePrefix) {
+        this(Thread.NORM_PRIORITY, namePrefix);
+    }
+
     @Override
     public Thread newThread(Runnable r) {
         Thread t = new Thread(r, namePrefix + "-" + threadNumber.getAndIncrement());

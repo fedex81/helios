@@ -51,7 +51,6 @@ public class Ym2612Nuke3 implements MdFmProvider {
 
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
-    //            new ConcurrentLinkedQueue<>();
     private final int[][] ym3438_accm = new int[24][2];
     int maxQueueLen = 0;
     private AtomicInteger queueLen = new AtomicInteger();
