@@ -99,6 +99,7 @@ public class SwingWindow implements DisplayWindow {
 
     public void setTitle(String title) {
         jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() + " " + VERSION + " - " + title);
+        reloadRecentFiles();
     }
 
     public void init() {
@@ -583,7 +584,7 @@ public class SwingWindow implements DisplayWindow {
     private void reloadRecentFiles() {
         List<String> l = PrefStore.getRecentFilesList();
         IntStream.range(0, recentFilesItems.length).forEach(i -> {
-            String val = l.get(i);
+            String val = i < l.size() ? l.get(i) : "<none>";
             val = Strings.isNullOrEmpty(val) ? "<none>" : val;
             int idx = val.lastIndexOf(File.separatorChar);
             String text = i + ". " + (idx > 0 ? val.substring(idx + 1) : val);

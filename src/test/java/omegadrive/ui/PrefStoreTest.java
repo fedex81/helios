@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class PrefStoreTest {
@@ -41,24 +42,42 @@ public class PrefStoreTest {
         Assert.assertEquals(l.get(0), openFile);
     }
 
+    private static void addSet(String val) {
+        PrefStore.addRecentFile(val);
+    }
+
+    private static String toOrderedString() {
+        return Arrays.toString(PrefStore.getRecentFilesList().toArray());
+    }
+
     @Test
     public void firstRunFill() {
         for (int i = 0; i < PrefStore.recentFileTotal; i++) {
-            PrefStore.addRecentFile("test" + i);
+            addSet("test" + i);
         }
-
-        List<String> l = PrefStore.getRecentFilesList();
-        for (int i = 0; i < PrefStore.recentFileTotal; i++) {
-            Assert.assertEquals(l.get(i), "test" + i);
-        }
+        String exp = "[test9, test8, test7, test6, test5, test4, test3, test2, test1, test0]";
+        Assert.assertEquals(exp, toOrderedString());
     }
 
     @Test
     public void wrap() {
         firstRunFill();
-        PrefStore.addRecentFile("wrap01");
+        addSet("wrap01");
+        String exp = "[wrap01, test9, test8, test7, test6, test5, test4, test3, test2, test1]";
+        Assert.assertEquals(exp, toOrderedString());
+    }
+
+    @Test
+    public void swap() {
+        firstRunFill();
+        for (int i = 0; i < PrefStore.recentFileTotal; i++) {
+            addSet("test" + i);
+        }
+        addSet("test5");
         List<String> l = PrefStore.getRecentFilesList();
-        Assert.assertEquals(l.get(0), "wrap01");
+        Assert.assertEquals(l.get(0), "test5");
+        String exp = "[test5, test9, test8, test7, test6, test4, test3, test2, test1, test0]";
+        Assert.assertEquals(exp, toOrderedString());
     }
 
 }

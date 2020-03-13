@@ -19,15 +19,12 @@
 
 package omegadrive.ui;
 
-import com.google.common.base.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public class PrefStore {
     protected static String PREF_FILENAME = "./helios.prefs";
@@ -35,13 +32,14 @@ public class PrefStore {
     private static Logger LOG = LogManager.getLogger(PrefStore.class.getSimpleName());
 
     private static String RECENT_FILE = "recent";
-    private static String NEXT_SLOT = "nextslot";
     public static int recentFileTotal = 10;
     private static Properties uiProperties = new Properties();
-    private static int nextSlot;
+
+    private static LinkedHashMap<Integer, String> map = new LinkedHashMap<>(recentFileTotal, 1, true);
 
     public static void initPrefs() {
         uiProperties.clear();
+        map.clear();
         try (
                 FileReader reader = new FileReader(PREF_FILENAME)
         ) {
@@ -54,50 +52,43 @@ public class PrefStore {
     }
 
     private static void bootstrapIfNecessary() {
-        for (int i = 0; i < recentFileTotal; i++) {
+        for (int i = recentFileTotal - 1; i >= 0; i--) {
             String key = RECENT_FILE + "." + i;
-            Object res = uiProperties.putIfAbsent(key, "");
-            if (res == null && nextSlot < 0) {
-                nextSlot = i;
-            }
+            uiProperties.putIfAbsent(key, "");
+            addRecentFile(uiProperties.getProperty(key));
         }
-        uiProperties.putIfAbsent(NEXT_SLOT, String.valueOf(0));
-        nextSlot = Integer.valueOf(uiProperties.getProperty(NEXT_SLOT, "0"));
     }
 
     public static void addRecentFile(String path) {
-        if (uiProperties.contains(path)) {
-            return;
-        }
-        try {
-            for (int i = 0; i < recentFileTotal; i++) {
-                String key = RECENT_FILE + "." + i;
-                boolean free = Strings.isNullOrEmpty(uiProperties.getProperty(key, ""));
-                if (free) {
-                    uiProperties.put(key, path);
-                    return;
-                }
-            }
-            uiProperties.put(RECENT_FILE + "." + nextSlot, path);
-        } finally {
-            nextSlot = (nextSlot + 1) % recentFileTotal;
-            uiProperties.put(NEXT_SLOT, String.valueOf(nextSlot));
+        map.put(path.hashCode(), path);
+        //discard the oldest (first) element
+        if (map.size() > PrefStore.recentFileTotal) {
+            map.remove(map.keySet().toArray()[0]);
         }
     }
 
+
     public static List<String> getRecentFilesList() {
-        List<String> l = new ArrayList<>();
-        for (int i = 0; i < recentFileTotal; i++) {
-            String key = RECENT_FILE + "." + i;
-            l.add(uiProperties.getProperty(key, ""));
-        }
+        List<String> l = new ArrayList<>(map.values());
+        Collections.reverse(l);
         return l;
+    }
+
+    private static void toProps() {
+        uiProperties.clear();
+        List<String> l = getRecentFilesList();
+        Iterator<String> it = l.iterator();
+        for (int i = 0; i < l.size(); i++) {
+            String val = it.hasNext() ? it.next() : "";
+            uiProperties.put(RECENT_FILE + "." + i, val);
+        }
     }
 
     public static void close() {
         try (
                 FileWriter writer = new FileWriter(PREF_FILENAME)
         ) {
+            toProps();
             uiProperties.store(writer, "");
             writer.flush();
         } catch (Exception e) {

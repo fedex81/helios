@@ -161,8 +161,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         init();
         this.romFile = file;
         Runnable runnable = new RomRunnable(file);
-        runningRomFuture = executorService.submit(runnable, null);
         PrefStore.addRecentFile(file.toAbsolutePath().toString());
+        runningRomFuture = executorService.submit(runnable, null);
     }
 
     double lastFps = 0;
