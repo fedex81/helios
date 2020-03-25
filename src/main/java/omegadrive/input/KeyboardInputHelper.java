@@ -87,6 +87,10 @@ public class KeyboardInputHelper {
         KeyBindingsHandler.getInstance(); //force init
     }
 
+    public static void init() {
+        //force init
+    }
+
     public static void updatePlayerMappings(PlayerNumber number, Map<String, Integer> map) {
         map.entrySet().stream().forEach(e -> {
             keyboardStringBindings.put(number, e.getKey(), e.getValue());

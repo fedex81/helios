@@ -2,6 +2,7 @@ package omegadrive.system.perf;
 
 import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
+import omegadrive.sound.fm.ym2612.nukeykt.AudioRateControl;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,6 +14,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -38,6 +40,8 @@ public class Telemetry {
     private Table<String, Long, Double> data = TreeBasedTable.create();
     private Path telemetryFile;
     private long frameCounter = 0;
+    private static int STATS_EVERY_FRAMES = 50;
+    private double fpsAccum = 0;
 
 
     public static Telemetry getInstance() {
@@ -52,6 +56,11 @@ public class Telemetry {
         }
     }
 
+    public void addFpsSample(double value) {
+        fpsAccum += value;
+        addSample("fps", value);
+    }
+
     public void addSample(String type, double value) {
         if (!enable) {
             return;
@@ -61,8 +70,24 @@ public class Telemetry {
         }
     }
 
-    public long getFrameCounter() {
-        return frameCounter;
+    private double getAvgFpsRounded() {
+        double r = fpsAccum / STATS_EVERY_FRAMES;
+        r = ((int) (r * 100)) / 100d;
+        fpsAccum = 0;
+        return r;
+    }
+
+    public boolean hasNewStats() {
+        return frameCounter % STATS_EVERY_FRAMES == 0; //update fps label every N frames
+    }
+
+    public Optional<String> getNewStats() {
+        Optional<String> o = Optional.empty();
+        if (hasNewStats()) {
+            Optional<String> arc = Optional.ofNullable(AudioRateControl.getLatestStats());
+            o = Optional.of(getAvgFpsRounded() + "fps" + (arc.isPresent() ? ", " + arc.get() : ""));
+        }
+        return o;
     }
 
     public void reset() {

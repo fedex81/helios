@@ -28,7 +28,6 @@ import omegadrive.joypad.JoypadProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
-import omegadrive.sound.fm.ym2612.nukeykt.AudioRateControl;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
@@ -329,14 +328,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
 
         lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - startNs));
-        lastFps = ((int) (lastFps * 100)) / 100d;
-        telemetry.addSample("fps", lastFps);
+        telemetry.addFpsSample(lastFps);
         telemetry.addSample("driftNs", driftNs / 1000d);
+        telemetry.getNewStats().ifPresent(st -> stats = st);
         telemetry.newFrame();
-        if (telemetry.getFrameCounter() % 50 == 0) { //update fps label every N frames
-            Optional<String> arc = Optional.ofNullable(AudioRateControl.getLatestStats());
-            stats = lastFps + "fps" + (arc.isPresent() ? ", " + arc.get() : "");
-        }
         startNs = nowNs;
         return stats;
     }

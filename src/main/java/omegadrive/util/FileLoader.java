@@ -162,7 +162,7 @@ public class FileLoader {
         ) {
             lines = reader.lines().collect(Collectors.toList());
         } catch (Exception e) {
-            LOG.error("Unable to load " + fileName + ", from path: " + fileName, e);
+            LOG.error("Unable to load " + fileName + ", from path: " + fileName);
         }
         return lines;
     }

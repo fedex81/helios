@@ -77,7 +77,6 @@ public class KeyBindingsHandler {
                 }
             });
         } catch (Exception e) {
-            e.printStackTrace();
             return KeyboardInputHelper.DEFAULT_INPUT_MAP;
         }
         return m.size() == 0 ? KeyboardInputHelper.DEFAULT_INPUT_MAP : m;

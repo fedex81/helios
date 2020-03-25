@@ -96,7 +96,7 @@ public class JavaSoundManager extends AbstractSoundManager {
                             LockSupport.parkNanos(EMPTY_QUEUE_SLEEP_NS);
                         }
                     } while (!close);
-                } catch (Exception e) {
+                } catch (Exception | Error e) {
                     LOG.error("Unexpected sound error, stopping", e);
                 }
                 LOG.info("Stopping sound thread");

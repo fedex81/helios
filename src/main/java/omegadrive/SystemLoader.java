@@ -20,10 +20,12 @@
 package omegadrive;
 
 import omegadrive.input.InputProvider;
+import omegadrive.input.KeyboardInputHelper;
 import omegadrive.system.Genesis;
 import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.Z80BaseSystem;
+import omegadrive.system.gb.Gb;
 import omegadrive.system.nes.Nes;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
@@ -65,11 +67,12 @@ public class SystemLoader {
     public static String[] smsBinaryTypes = {".sms"};
     public static String[] ggBinaryTypes = {".gg"};
     public static String[] nesBinaryTypes = {".nes"};
+    public static String[] gbBinaryTypes = {".gb"};
     public static String[] compressedBinaryTypes = {".gz", ".zip"};
 
     public static String[] binaryTypes = Stream.of(
             mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes, nesBinaryTypes,
-            compressedBinaryTypes
+            gbBinaryTypes, compressedBinaryTypes
     ).flatMap(Stream::of).toArray(String[]::new);
 
     public static boolean debugPerf = false;
@@ -140,6 +143,7 @@ public class SystemLoader {
          boolean isHeadless = isHeadless();
          LOG.info("Headless mode: " + isHeadless);
          SystemLoader.setHeadless(isHeadless);
+         KeyboardInputHelper.init();
          INSTANCE.createFrame(isHeadless);
          init.set(true);
      }
@@ -249,6 +253,7 @@ public class SystemLoader {
         boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isNes = Arrays.stream(nesBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isGb = Arrays.stream(gbBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if (isGen) {
             systemProvider = Genesis.createNewInstance(emuFrame, debugPerf);
         } else if (isSg) {
@@ -263,6 +268,8 @@ public class SystemLoader {
             systemProvider = Sms.createNewInstance(SystemType.GG, emuFrame, debugPerf);
         } else if (isNes) {
             systemProvider = Nes.createNewInstance(SystemType.NES, emuFrame);
+        } else if (isGb) {
+            systemProvider = Gb.createNewInstance(SystemType.GB, emuFrame);
         }
         if (systemProvider == null) {
             LOG.error("Unable to find a system to load: " + file.toAbsolutePath());
@@ -282,7 +289,8 @@ public class SystemLoader {
         MSX("MSX"),
         SMS("SMS"),
         GG("GG"),
-        NES("NES");
+        NES("NES"),
+        GB("GB");
 
         private String shortName;
 
