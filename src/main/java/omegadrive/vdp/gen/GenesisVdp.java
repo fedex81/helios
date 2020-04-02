@@ -796,7 +796,7 @@ public class GenesisVdp implements GenesisVdpProvider {
 
     @Override
     public String getVdpStateString() {
-        return interruptHandler.getStateString(" - ");
+        return interruptHandler.getStateString(" - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
     }
 
     @Override

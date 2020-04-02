@@ -211,7 +211,7 @@ public class BusArbiter implements Device {
     private void logInfo(String str, Object... args) {
         if (verbose) {
             String msg = ParameterizedMessage.format(str, args);
-            LOG.info(new ParameterizedMessage(msg + vdp.getVdpStateString(), Long.toHexString(vdp.getHCounter()), Long.toHexString(vdp.getVCounter())));
+            LOG.info(msg + vdp.getVdpStateString());
         }
     }
 

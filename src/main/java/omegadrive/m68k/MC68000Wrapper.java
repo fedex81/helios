@@ -120,8 +120,9 @@ public class MC68000Wrapper implements M68kProvider {
 
     @Override
     public boolean raiseInterrupt(int level) {
+        int ilev = m68k.getInterruptLevel();
         m68k.raiseInterrupt(level);
-        return m68k.getInterruptLevel() == level;
+        return ilev != level && m68k.getInterruptLevel() == level;
     }
 
     @Override
