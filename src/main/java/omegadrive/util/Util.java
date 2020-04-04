@@ -30,6 +30,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.*;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -322,5 +323,39 @@ public class Util {
             list.add(Range.closed(values[i], values[i + 1]));
         }
         return list;
+    }
+
+    public static byte[] serializeObject(Serializable obj) {
+        byte[] res = new byte[0];
+        try (
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(bos);
+        ) {
+            oos.writeObject(obj);
+            oos.flush();
+            res = bos.toByteArray();
+        } catch (Exception e) {
+            LOG.error("Unable to serialize object: " + obj.getClass().getSimpleName());
+        }
+        if (res == null || res.length == 0) {
+            LOG.error("Unable to serialize object: " + obj.getClass().getSimpleName());
+        }
+        return res;
+    }
+
+    public static Serializable deserializeObject(byte[] data) {
+        if (data == null || data.length == 0) {
+            LOG.error("Unable to deserialize object of len: " + data.length);
+        }
+        Serializable res = null;
+        try (
+                ByteArrayInputStream bis = new ByteArrayInputStream(data);
+                ObjectInput in = new ObjectInputStream(bis);
+        ) {
+            res = (Serializable) in.readObject();
+        } catch (Exception e) {
+            LOG.error("Unable to deserialize object of len: " + data.length);
+        }
+        return res;
     }
 }

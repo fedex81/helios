@@ -44,8 +44,6 @@ import java.util.stream.IntStream;
 
 import static omegadrive.util.Util.getUInt32LE;
 
-//import omegadrive.vdp.model.VdpMemoryInterface;
-
 public class GstStateHandler implements GenesisStateHandler {
 
     private static Logger LOG = LogManager.getLogger(GstStateHandler.class.getSimpleName());
@@ -60,61 +58,46 @@ public class GstStateHandler implements GenesisStateHandler {
     private static int M68K_RAM_DATA_OFFSET = 0x2478;
     private static int M68K_REGD_OFFSET = 0x80;
     private static int M68K_REGA_OFFSET = 0xA0;
-    private static int FILE_SIZE = 0x22478;
+    public static int FILE_SIZE = 0x22478;
 
-    private final static String MAGIC_WORD = "GST";
-    private final static String fileExtension = "gs0";
+    protected static String MAGIC_WORD;
+    protected static String fileExtension;
 
-    private int[] data;
-    private int version;
-    private int softwareId;
-    private String fileName;
-    private Type type;
-    private boolean runAhead;
+    protected int[] data;
+    protected int version;
+    protected int softwareId;
+    protected String fileName;
+    protected Type type;
+    protected boolean runAhead;
 
 
-    private GstStateHandler() {
+    protected GstStateHandler() {
     }
 
-    public static GenesisStateHandler createLoadInstance(String fileName, int[] data) {
-        GstStateHandler h = new GstStateHandler();
-        h.fileName = handleFileExtension(fileName);
-        h.type = Type.LOAD;
-        h.data = data;
-        h.runAhead = true;
-        return h;
-    }
-
-    public static GenesisStateHandler createLoadInstance(String fileName) {
-        GstStateHandler h = new GstStateHandler();
-        h.fileName = handleFileExtension(fileName);
-        h.type = Type.LOAD;
-        h.data = FileLoader.readBinaryFile(Paths.get(h.fileName), fileExtension);
-        GenesisStateHandler res = h.detectStateFileType();
-        return res;
-    }
-
-    public static GenesisStateHandler createSaveInstance(String fileName) {
-        GstStateHandler h = new GstStateHandler();
-        h.data = new int[FILE_SIZE];
-        //file type
-        h.data[0] = 'G';
-        h.data[1] = 'S';
-        h.data[2] = 'T';
-        //special Genecyst stuff
-        h.data[6] = 0xE0;
-        h.data[7] = 0x40;
-        h.fileName = handleFileExtension(fileName);
-        h.type = Type.SAVE;
-        return h;
-    }
-
-    private static String handleFileExtension(String fileName) {
+    protected static String handleFileExtension(String fileName) {
         boolean hasExtension = fileName.toLowerCase().contains(".gs");
         return fileName + (!hasExtension ? "." + fileExtension : "");
     }
 
-    private GenesisStateHandler detectStateFileType() {
+    protected void init(String fileName) {
+        fileExtension = "gs0";
+        MAGIC_WORD = "GST";
+        this.fileName = handleFileExtension(fileName);
+        if (type == Type.SAVE) {
+            data = new int[GstStateHandler.FILE_SIZE];
+            //file type
+            data[0] = 'G';
+            data[1] = 'S';
+            data[2] = 'T';
+            //special Genecyst stuff
+            data[6] = 0xE0;
+            data[7] = 0x40;
+        } else {
+            data = FileLoader.readBinaryFile(Paths.get(fileName), fileExtension);
+        }
+    }
+
+    protected GenesisStateHandler detectStateFileType() {
         String fileType = Util.toStringValue(data[0], data[1], data[2]);
         if (!MAGIC_WORD.equalsIgnoreCase(fileType) || data.length < FILE_SIZE) {
             LOG.error("Unable to load save state of type: {}, size: {}", MAGIC_WORD, data.length);

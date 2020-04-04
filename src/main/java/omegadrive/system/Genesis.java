@@ -30,8 +30,8 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.GenesisStateHandler;
-import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
+import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke3;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.perf.GenesisPerf;
 import omegadrive.ui.DisplayWindow;
@@ -208,9 +208,10 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     @Override
     protected GenesisStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
         String fileName = file.toAbsolutePath().toString();
+        boolean isNuke = sound.getFm() instanceof Ym2612Nuke3;
         return type == BaseStateHandler.Type.LOAD ?
-                GstStateHandler.createLoadInstance(fileName) :
-                GstStateHandler.createSaveInstance(fileName);
+                GenesisStateHandler.createLoadInstance(fileName, isNuke) :
+                GenesisStateHandler.createSaveInstance(fileName, isNuke);
     }
 
     @Override

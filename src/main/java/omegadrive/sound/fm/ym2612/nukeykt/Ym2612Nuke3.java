@@ -79,6 +79,10 @@ public class Ym2612Nuke3 implements MdFmProvider {
         return chip;
     }
 
+    public void setChip(IYm3438.IYm3438_Type chip) {
+        this.chip = chip;
+    }
+
     @Override
     public void write(int addr, int data) {
         ym3438.OPN2_Write(chip, addr, data);

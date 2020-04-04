@@ -19,6 +19,7 @@
 
 package omegadrive.sound.fm.ym2612.nukeykt;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
@@ -59,7 +60,7 @@ public interface IYm3438 {
     int eg_num_release = 3;
 
 
-    class IYm3438_Type {
+    class IYm3438_Type implements Serializable {
         int cycles;   //32 bit unsigned
         int channel;  //32 bit unsigned
         /* 16 bit signed */ int mol, mor;

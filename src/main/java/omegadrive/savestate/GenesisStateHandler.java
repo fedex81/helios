@@ -107,6 +107,21 @@ public interface GenesisStateHandler extends BaseStateHandler {
 
     void save68k(MC68000Wrapper mc68000Wrapper, IMemoryProvider memoryProvider);
 
+    static GenesisStateHandler createLoadInstance(String fileName, boolean isNuke) {
+        GstStateHandler h = isNuke ? new GshStateHandler() : new GstStateHandler();
+        h.type = Type.LOAD;
+        h.init(fileName);
+        GenesisStateHandler res = h.detectStateFileType();
+        return res;
+    }
+
+    static GenesisStateHandler createSaveInstance(String fileName, boolean isNuke) {
+        GstStateHandler h = isNuke ? new GshStateHandler() : new GstStateHandler();
+        h.type = Type.SAVE;
+        h.init(fileName);
+        return h;
+    }
+
     default void processState(BaseVdpProvider vdp, Z80Provider z80, GenesisBusProvider bus,
                               SoundProvider sound, M68kProvider cpu, IMemoryProvider mem) {
         Level prev = LogManager.getRootLogger().getLevel();

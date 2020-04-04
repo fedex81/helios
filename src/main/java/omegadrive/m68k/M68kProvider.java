@@ -33,6 +33,9 @@ public interface M68kProvider extends Device {
 
     boolean isStopped();
 
+    /**
+     * @return has the interrupt level changed?
+     */
     boolean raiseInterrupt(int level);
 
     int runInstruction();
