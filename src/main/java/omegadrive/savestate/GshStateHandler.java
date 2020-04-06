@@ -19,128 +19,136 @@
 
 package omegadrive.savestate;
 
+import com.google.common.io.Files;
+import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.m68k.M68kProvider;
+import omegadrive.memory.IMemoryProvider;
+import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.IYm3438;
-import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke3;
+import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
+import omegadrive.vdp.model.BaseVdpProvider;
+import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
-/**
- * TODO
- * - handle loading of gs0
- * - gsh: save fm registers too
- */
 public class GshStateHandler extends GstStateHandler {
 
     private static Logger LOG = LogManager.getLogger(GshStateHandler.class.getSimpleName());
 
+    protected static final String MAGIC_WORD = "GSH";
+    protected static final String MAGIC_WORD_GST = "GST";
+    protected static final String FM_MAGIC_WORD_NUKE = "NUKE";
+    protected static final String fileExtension = "gsh";
+
+    private GstStateHandlerOld compare;
+    private boolean doCompare = false;
+
     protected GshStateHandler() {
     }
 
-    @Override
+    protected static String handleFileExtension(String fileName) {
+        boolean hasExtension = fileName.toLowerCase().contains(".gs");
+        return fileName + (!hasExtension ? "." + fileExtension : "");
+    }
+
     protected void init(String fileNameEx) {
-        fileExtension = "gsh";
-        MAGIC_WORD = "GSH";
         this.fileName = handleFileExtension(fileNameEx);
+
         if (type == Type.SAVE) {
-            data = new int[GstStateHandler.FILE_SIZE];
-            //file type
-            data[0] = 'G';
-            data[1] = 'S';
-            data[2] = 'H';
+            buffer = ByteBuffer.allocate(GstStateHandler.FILE_SIZE);
+            buffer.put(MAGIC_WORD.getBytes());
             //special Genecyst stuff
-            data[6] = 0xE0;
-            data[7] = 0x40;
+            buffer.put(6, (byte) 0xE0).put(7, (byte) 0x40);
         } else {
-            data = FileLoader.readBinaryFile(Paths.get(fileName), fileExtension);
+            String ext = Files.getFileExtension(fileNameEx);
+            buffer = ByteBuffer.wrap(FileLoader.readBinaryFileByte(Paths.get(fileName), ext));
+        }
+        if (doCompare) {
+            compare = new GstStateHandlerOld();
+            compare.type = type;
+            compare.init(fileNameEx);
         }
     }
 
     @Override
+    public void storeData() {
+        super.storeData();
+        if (doCompare) {
+            compare.storeData();
+        }
+    }
+
+    @Override
+    public void processState(BaseVdpProvider vdp, Z80Provider z80, GenesisBusProvider bus, SoundProvider sound, M68kProvider cpu, IMemoryProvider mem) {
+        super.processState(vdp, z80, bus, sound, cpu, mem);
+        if (doCompare) {
+            compare.processState(vdp, z80, bus, sound, cpu, mem);
+        }
+    }
+
+    protected GenesisStateHandler detectStateFileType() {
+        String fileType = Util.toStringValue(buffer.get(), buffer.get(), buffer.get());
+        boolean isSupported = MAGIC_WORD.equalsIgnoreCase(fileType) || MAGIC_WORD_GST.equalsIgnoreCase(fileType);
+        if (!isSupported || buffer.capacity() < FILE_SIZE) {
+            LOG.error("Unable to load save state of type: {}, size: {}", fileType, buffer.capacity());
+            return GenesisStateHandler.EMPTY_STATE;
+        }
+        version = buffer.get(0x50) & 0xFF;
+        softwareId = buffer.get(0x51) & 0xFF;
+        LOG.info("Savestate type {}, version: {}, softwareId: {}", fileType, version, softwareId);
+        if (MAGIC_WORD_GST.equalsIgnoreCase(fileType)) {
+            LOG.warn("Loading a {} savestate, fm sound may not work correctly!", fileType);
+        }
+        return this;
+    }
+
+    @Override
     public void loadFmState(FmProvider fm) {
-        int fmLen = data.length - FILE_SIZE - 4;
-        int[] fmDataInt = new int[fmLen];
-        System.arraycopy(data, FILE_SIZE + 4, fmDataInt, 0, fmLen);
-        byte[] fmData = Util.toByteArray(fmDataInt);
-        String fmType = new String(new byte[]{(byte) data[FILE_SIZE], (byte) data[FILE_SIZE + 1],
-                (byte) data[FILE_SIZE + 2], (byte) data[FILE_SIZE + 3]});
-        System.out.println("FM data type: " + fmType);
-        Serializable res = Util.deserializeObject(fmData);
-        ((Ym2612Nuke3) fm).setChip((IYm3438.IYm3438_Type) res);
+        int fmLen = buffer.capacity() - FILE_SIZE - FM_MAGIC_WORD_NUKE.length();
+        if (fmLen > 500 && fm instanceof Ym2612Nuke) {
+            int pos = buffer.position();
+            buffer.position(FILE_SIZE);
+            String fmType = Util.toStringValue(buffer.get(), buffer.get(), buffer.get(), buffer.get());
+            if (FM_MAGIC_WORD_NUKE.equalsIgnoreCase(fmType)) {
+                buffer.position(FILE_SIZE + FM_MAGIC_WORD_NUKE.length());
+                Serializable res = Util.deserializeObject(buffer.array(), FILE_SIZE + FM_MAGIC_WORD_NUKE.length(), fmLen);
+                ((Ym2612Nuke) fm).setChip((IYm3438.IYm3438_Type) res);
+            }
+            buffer.position(pos);
+        } else {
+            super.loadFmState(fm); //load FM registers
+        }
     }
 
 
     @Override
     public void saveFm(FmProvider fm) {
-        IYm3438.IYm3438_Type chip = ((Ym2612Nuke3) fm).getChip();
-        int[] res = Util.toIntArray(Util.serializeObject(chip));
-        int end = data.length;
-        try {
-            data = Arrays.copyOf(data, end + res.length + 4);
-            data[end] = 'N';
-            data[end + 1] = 'U';
-            data[end + 2] = 'K';
-            data[end + 3] = 'E';
-
-            System.arraycopy(res, 0, data, end + 4, res.length);
-        } catch (Exception e) {
-            LOG.error("Unable to save FM data");
+        super.saveFm(fm); //save FM registers
+        if (fm instanceof Ym2612Nuke) {
+            IYm3438.IYm3438_Type chip = ((Ym2612Nuke) fm).getChip();
+            byte[] chipData = Util.serializeObject(chip);
+            buffer = extendBuffer(buffer, chipData.length);
+            try {
+                buffer.put(FM_MAGIC_WORD_NUKE.getBytes());
+                buffer.put(chipData);
+            } catch (Exception e) {
+                LOG.error("Unable to save Nuke FM data");
+            }
         }
     }
 
-    /*
-   GSH helios save file
-   Range        Size   Description
-   -----------  -----  -----------
-   00000-00002  3      "GSH"
-   00006-00007  2      "\xE0\x40"
-   000FA-00112  24     VDP registers
-   00112-00191  128    Color RAM
-   00192-001E1  80     Vertical scroll RAM
-   001E4-003E3  512    YM2612 registers
-   00474-02473  8192   Z80 RAM
-   02478-12477  65536  68K RAM
-   12478-22477  65536  Video RAM
-
-   main 68000 registers
-   --------------------
-   00080-0009F : D0-D7
-   000A0-000BF : A0-A7
-   000C8 : PC
-   000D0 : SR
-   000D2 : USP
-   000D6 : SSP
-
-   Z80 registers
-   -------------
-   00404 : AF
-   00408 : BC
-   0040C : DE
-   00410 : HL
-   00414 : IX
-   00418 : IY
-   0041C : PC
-   00420 : SP
-   00424 : AF'
-   00428 : BC'
-   0042C : DE'
-   00430 : HL'
-   00434 : I
-   00435 : Unknow
-   00436 : IFF1 = IFF2
-   00437 : Unknow
-   The 'R' register is not supported.
-   Z80 State
-   ---------
-   00438 : Z80 RESET
-   00439 : Z80 BUSREQ
-   0043A : Unknow0
-   0043B : Unknow
-   0043C : Z80 BANK (DWORD)*/
+    private ByteBuffer extendBuffer(ByteBuffer current, int increaseDelta) {
+        ByteBuffer extBuffer = ByteBuffer.allocate(FILE_SIZE + increaseDelta + 4);
+        current.position(0);
+        extBuffer.put(current);
+        extBuffer.position(FILE_SIZE);
+        return extBuffer;
+    }
 }

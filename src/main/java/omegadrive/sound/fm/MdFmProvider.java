@@ -20,7 +20,7 @@
 package omegadrive.sound.fm;
 
 import omegadrive.sound.fm.ym2612.YM2612;
-import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke3;
+import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
@@ -55,7 +55,7 @@ public interface MdFmProvider extends FmProvider {
     static MdFmProvider createInstance(RegionDetector.Region region, int sampleRate) {
         double clock = getFmSoundClock(region);
         int bufferSize = SoundUtil.getAudioLineBufferSize(AbstractSoundManager.audioFormat, region);
-        MdFmProvider fmProvider = MD_NUKE_AUDIO ? new Ym2612Nuke3(bufferSize) : new YM2612();
+        MdFmProvider fmProvider = MD_NUKE_AUDIO ? new Ym2612Nuke(bufferSize) : new YM2612();
         fmProvider.init((int) clock, sampleRate);
         LOG.info("FM instance, clock: " + clock + ", sampleRate: " + sampleRate);
         return fmProvider;

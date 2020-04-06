@@ -45,8 +45,8 @@ public interface GenesisStateHandler extends BaseStateHandler {
         }
 
         @Override
-        public int[] getData() {
-            return new int[0];
+        public byte[] getData() {
+            return new byte[0];
         }
 
         @Override
@@ -108,7 +108,7 @@ public interface GenesisStateHandler extends BaseStateHandler {
     void save68k(MC68000Wrapper mc68000Wrapper, IMemoryProvider memoryProvider);
 
     static GenesisStateHandler createLoadInstance(String fileName, boolean isNuke) {
-        GstStateHandler h = isNuke ? new GshStateHandler() : new GstStateHandler();
+        GshStateHandler h = new GshStateHandler();
         h.type = Type.LOAD;
         h.init(fileName);
         GenesisStateHandler res = h.detectStateFileType();
@@ -116,7 +116,7 @@ public interface GenesisStateHandler extends BaseStateHandler {
     }
 
     static GenesisStateHandler createSaveInstance(String fileName, boolean isNuke) {
-        GstStateHandler h = isNuke ? new GshStateHandler() : new GstStateHandler();
+        GshStateHandler h = new GshStateHandler();
         h.type = Type.SAVE;
         h.init(fileName);
         return h;

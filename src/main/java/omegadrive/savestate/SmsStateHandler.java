@@ -70,8 +70,8 @@ public interface SmsStateHandler extends BaseStateHandler {
         }
 
         @Override
-        public int[] getData() {
-            return new int[0];
+        public byte[] getData() {
+            return new byte[0];
         }
     };
 

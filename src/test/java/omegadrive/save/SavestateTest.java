@@ -96,6 +96,7 @@ public class SavestateTest {
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
         Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider1);
         FmProvider fm1 = new YM2612();
+        byte[] data = loadHandler.getData();
         loadHandler.loadVdpState(vdpProvider1);
         loadHandler.load68k(cpu1, cpuMem1);
         loadHandler.loadZ80(z80p1, busProvider1);
@@ -115,6 +116,7 @@ public class SavestateTest {
         IMemoryProvider cpuMem2 = MemoryProvider.createGenesisInstance();
         Z80Provider z80p2 = Z80CoreWrapper.createGenesisInstance(busProvider2);
         FmProvider fm2 = new YM2612();
+        byte[] savedData = loadHandler.getData();
         loadHandler1.loadVdpState(vdpProvider2);
         loadHandler1.load68k(cpu2, cpuMem2);
         loadHandler.loadZ80(z80p2, busProvider2);
@@ -125,7 +127,7 @@ public class SavestateTest {
         compareZ80(z80p1, z80p2, busProvider1, busProvider2);
         compareFm(fm1, fm2);
 
-//        Assert.assertArrayEquals("Data mismatch", data, savedData);
+        Assert.assertArrayEquals("Data mismatch", data, savedData);
         return saveHandler;
     }
 

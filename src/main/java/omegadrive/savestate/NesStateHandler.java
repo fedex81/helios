@@ -62,8 +62,8 @@ public class NesStateHandler implements BaseStateHandler {
     }
 
     @Override
-    public int[] getData() {
-        return Util.toIntArray(stateData);
+    public byte[] getData() {
+        return stateData;
     }
 
     public void processState(NES nes) {

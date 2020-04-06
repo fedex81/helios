@@ -76,9 +76,18 @@ public class FileLoader {
         }
     };
 
+    @Deprecated
     public static void writeFileSafe(Path file, int[] data) {
         try {
             Files.write(file, Util.toByteArray(data));
+        } catch (IOException e) {
+            LOG.error("Unable to write file {}, #data {}", file.toAbsolutePath().toString(), data.length);
+        }
+    }
+
+    public static void writeFileSafe(Path file, byte[] data) {
+        try {
+            Files.write(file, data);
         } catch (IOException e) {
             LOG.error("Unable to write file {}, #data {}", file.toAbsolutePath().toString(), data.length);
         }

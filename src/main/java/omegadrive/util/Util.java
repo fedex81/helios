@@ -278,6 +278,13 @@ public class Util {
         data[startIndex] = (value) & 0xFF;
     }
 
+    public static void setUInt32LE(int value, byte[] data, int startIndex) {
+        data[startIndex + 3] = (byte) ((value >> 24) & 0xFF);
+        data[startIndex + 2] = (byte) ((value >> 16) & 0xFF);
+        data[startIndex + 1] = (byte) ((value >> 8) & 0xFF);
+        data[startIndex] = (byte) ((value) & 0xFF);
+    }
+
     public static String toStringValue(int... data) {
         String value = "";
         for (int i = 0; i < data.length; i++) {
@@ -286,6 +293,7 @@ public class Util {
         return value;
     }
 
+    @Deprecated
     public static int[] toIntArray(byte[] bytes) {
         int[] data = new int[bytes.length];
         for (int i = 0; i < bytes.length; i++) {
@@ -344,12 +352,16 @@ public class Util {
     }
 
     public static Serializable deserializeObject(byte[] data) {
-        if (data == null || data.length == 0) {
+        return deserializeObject(data, 0, data.length);
+    }
+
+    public static Serializable deserializeObject(byte[] data, int offset, int len) {
+        if (data == null || data.length == 0 || offset < 0 || len > data.length) {
             LOG.error("Unable to deserialize object of len: " + data.length);
         }
         Serializable res = null;
         try (
-                ByteArrayInputStream bis = new ByteArrayInputStream(data);
+                ByteArrayInputStream bis = new ByteArrayInputStream(data, offset, len);
                 ObjectInput in = new ObjectInputStream(bis);
         ) {
             res = (Serializable) in.readObject();

@@ -40,14 +40,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * CHIP_OUTPUT_RATE = NUKE_CLOCK/24 = 53267
  * <p>
  */
-public class Ym2612Nuke3 implements MdFmProvider {
+public class Ym2612Nuke implements MdFmProvider {
 
     private static final boolean DEBUG = false;
 
     public static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);
     private static final int VOLUME_SHIFT = 5;
     private static int MIN_AUDIO_SAMPLES = 50; //~1ms
-    private static final Logger LOG = LogManager.getLogger(Ym2612Nuke3.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(Ym2612Nuke.class.getSimpleName());
 
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
@@ -64,13 +64,13 @@ public class Ym2612Nuke3 implements MdFmProvider {
     private int sampleRatePerFrame = 0;
     private long chipRate;
 
-    public Ym2612Nuke3(IYm3438.IYm3438_Type chip) {
+    public Ym2612Nuke(IYm3438.IYm3438_Type chip) {
         this.ym3438 = new Ym3438();
         this.chip = chip;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
     }
 
-    public Ym2612Nuke3(IYm3438 impl) {
+    public Ym2612Nuke(IYm3438 impl) {
         this.ym3438 = impl;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
     }
@@ -98,7 +98,7 @@ public class Ym2612Nuke3 implements MdFmProvider {
         return ym3438.OPN2_Read(chip, 0x4000);
     }
 
-    public Ym2612Nuke3(int bufferSize) {
+    public Ym2612Nuke(int bufferSize) {
         this(new IYm3438.IYm3438_Type());
         this.audioRateControl = new AudioRateControl(bufferSize);
     }

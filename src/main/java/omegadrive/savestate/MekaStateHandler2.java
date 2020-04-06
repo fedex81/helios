@@ -74,10 +74,10 @@ public class MekaStateHandler2 implements SmsStateHandler {
         return s;
     }
 
-    public static SmsStateHandler createLoadInstance(String fileName, int[] data) {
+    public static SmsStateHandler createLoadInstance(String fileName, byte[] data) {
         MekaStateHandler2 h = new MekaStateHandler2();
         h.fileName = handleFileExtension(fileName);
-        h.buffer = ByteBuffer.wrap(Util.toByteArray(data));
+        h.buffer = ByteBuffer.wrap(data);
         h.type = Type.LOAD;
         SmsStateHandler s = h.detectStateFileType();
         return s;
@@ -317,7 +317,7 @@ public class MekaStateHandler2 implements SmsStateHandler {
     }
 
     @Override
-    public int[] getData() {
-        return Util.toIntArray(buffer.array());
+    public byte[] getData() {
+        return buffer.array();
     }
 }

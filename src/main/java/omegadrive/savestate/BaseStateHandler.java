@@ -40,8 +40,8 @@ public interface BaseStateHandler {
         }
 
         @Override
-        public int[] getData() {
-            return new int[0];
+        public byte[] getData() {
+            return new byte[0];
         }
     };
 
@@ -49,7 +49,7 @@ public interface BaseStateHandler {
 
     String getFileName();
 
-    int[] getData();
+    byte[] getData();
 
     default void storeData() {
         LOG.info("Persisting savestate to: {}", getFileName());
