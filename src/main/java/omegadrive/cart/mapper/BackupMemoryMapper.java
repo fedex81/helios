@@ -70,7 +70,7 @@ public abstract class BackupMemoryMapper {
                 if (Files.isReadable(backupFile)) {
                     size = Files.size(backupFile);
                     if (size > 0) {
-                        sram = Util.toIntArray(FileLoader.readBinaryFile(backupFile));
+                        sram = Util.toUnsignedIntArray(FileLoader.readBinaryFile(backupFile));
                     } else {
                         LOG.error("Backup file with size 0, attempting to recreate it");
                         size = createBackupFile();
@@ -88,7 +88,7 @@ public abstract class BackupMemoryMapper {
     private int createBackupFile() {
         LOG.info("Creating backup memory file: " + backupFile);
         sram = new int[sramSize];
-        FileLoader.writeFileSafe(backupFile, Util.toByteArray(sram));
+        FileLoader.writeFileSafe(backupFile, Util.unsignedToByteArray(sram));
         return sram.length;
     }
 
@@ -100,7 +100,7 @@ public abstract class BackupMemoryMapper {
         }
         if (Files.isWritable(backupFile)) {
             LOG.info("Writing to sram file: {}, len: {}", this.backupFile, sram.length);
-            FileLoader.writeFileSafe(backupFile, Util.toByteArray(sram));
+            FileLoader.writeFileSafe(backupFile, Util.unsignedToByteArray(sram));
         }
     }
 }

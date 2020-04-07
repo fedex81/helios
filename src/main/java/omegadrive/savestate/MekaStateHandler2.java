@@ -149,7 +149,7 @@ public class MekaStateHandler2 implements SmsStateHandler {
         int control = smsbus.getMapperControl();
         LOG.info("mapperControl: {}, frameReg: {}", control, Arrays.toString(frameReg));
         buffer.put((byte) (control & 0xFF));
-        buffer.put(Util.toByteArray(frameReg));
+        buffer.put(Util.unsignedToByteArray(frameReg));
     }
 
     //2 bytes for a 16 bit int

@@ -36,7 +36,7 @@ public class NesStateHandler implements BaseStateHandler {
         NesStateHandler n = new NesStateHandler();
         n.fileName = handleFileExtension(fileName);
         n.type = Type.LOAD;
-        n.stateData = Util.toByteArray(data);
+        n.stateData = Util.unsignedToByteArray(data);
         return n;
     }
 

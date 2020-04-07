@@ -293,7 +293,7 @@ public class Util {
         return value;
     }
 
-    public static int[] toIntArray(byte[] bytes) {
+    public static int[] toUnsignedIntArray(byte[] bytes) {
         int[] data = new int[bytes.length];
         for (int i = 0; i < bytes.length; i++) {
             data[i] = bytes[i] & 0xFF;
@@ -301,15 +301,33 @@ public class Util {
         return data;
     }
 
+    public static int[] toSignedIntArray(byte[] bytes) {
+        int[] data = new int[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            data[i] = bytes[i];
+        }
+        return data;
+    }
+
     /**
      * NOTE: input int[] must contain values representable as bytes
      */
-    public static byte[] toByteArray(int[] bytes) {
+    public static byte[] unsignedToByteArray(int[] bytes) {
+        return toByteArray(bytes, false);
+    }
+
+    public static byte[] signedToByteArray(int[] bytes) {
+        return toByteArray(bytes, true);
+    }
+
+    private static byte[] toByteArray(int[] bytes, boolean signed) {
+        int min = signed ? Byte.MIN_VALUE : 0;
+        int max = signed ? Byte.MAX_VALUE : 0xFF;
         byte[] data = new byte[bytes.length];
         for (int i = 0; i < bytes.length; i++) {
             data[i] = (byte) (bytes[i] & 0xFF);
-            if (data[i] != (byte) bytes[i]) {
-                throw new IllegalArgumentException("Invalid value, doesn't represent a byte:" + bytes[i]);
+            if (bytes[i] < min || bytes[i] > max) {
+                throw new IllegalArgumentException("Invalid value at pos " + i + ", it doesn't represent a byte: " + bytes[i]);
             }
         }
         return data;

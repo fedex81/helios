@@ -83,7 +83,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvide
 
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
-        bios = Util.toIntArray(FileLoader.loadBiosFile(p));
+        bios = Util.toUnsignedIntArray(FileLoader.loadBiosFile(p));
         LOG.info("Loading Msx bios from: " + p.toAbsolutePath().toString());
         Arrays.fill(emptySlot, 0xFF);
 

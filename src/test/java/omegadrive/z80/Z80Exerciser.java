@@ -62,7 +62,7 @@ public class Z80Exerciser implements NotifyOps {
     public Z80Exerciser() {
         memory = new Z80Memory(MEMORY_SIZE);
         memIo = new MemIoOps();
-        bram = Util.toByteArray(memory.getRamData());
+        bram = Util.unsignedToByteArray(memory.getRamData());
         memIo.setRam(bram);
         z80 = new Z80(memIo, this);
         Z80MemContext context = createContext(memIo);

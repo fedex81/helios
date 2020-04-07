@@ -108,7 +108,7 @@ public class GstStateHandlerOld implements GenesisStateHandler {
             data[6] = 0xE0;
             data[7] = 0x40;
         } else {
-            data = Util.toIntArray(FileLoader.readBinaryFile(Paths.get(fileName), fileExtension));
+            data = Util.toUnsignedIntArray(FileLoader.readBinaryFile(Paths.get(fileName), fileExtension));
         }
     }
 
@@ -124,7 +124,7 @@ public class GstStateHandlerOld implements GenesisStateHandler {
 
     @Override
     public byte[] getData() {
-        return Util.toByteArray(data);
+        return Util.unsignedToByteArray(data);
     }
 
     @Override

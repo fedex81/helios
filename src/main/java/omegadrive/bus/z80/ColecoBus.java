@@ -61,7 +61,7 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProv
 
     public ColecoBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameColeco);
-        bios = Util.toIntArray(FileLoader.loadBiosFile(p));
+        bios = Util.toUnsignedIntArray(FileLoader.loadBiosFile(p));
         LOG.info("Loading Coleco bios from: " + p.toAbsolutePath().toString());
     }
 

@@ -35,7 +35,7 @@ public class Z80DisasmExtTest {
     public void before() {
         memory = new Z80Memory(MEMORY_SIZE);
         memIo = new MemIoOps();
-        bram = Util.toByteArray(memory.getRamData());
+        bram = Util.unsignedToByteArray(memory.getRamData());
         memIo.setRam(bram);
         z80 = new Z80(memIo, null);
         z80.reset();
