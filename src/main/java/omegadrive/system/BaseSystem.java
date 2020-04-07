@@ -227,7 +227,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         @Override
         public void run() {
             try {
-                int[] data = FileLoader.readBinaryFile(file, getSystemType());
+                int[] data = Util.toIntArray(FileLoader.readBinaryFile(file, getSystemType()));
                 if (data.length == 0) {
                     LOG.error("Unable to open/access file: {}", file.toAbsolutePath().toString());
                     return;

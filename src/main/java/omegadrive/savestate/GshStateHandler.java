@@ -68,7 +68,7 @@ public class GshStateHandler extends GstStateHandler {
             buffer.put(6, (byte) 0xE0).put(7, (byte) 0x40);
         } else {
             String ext = Files.getFileExtension(fileNameEx);
-            buffer = ByteBuffer.wrap(FileLoader.readBinaryFileByte(Paths.get(fileName), ext));
+            buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(fileName), ext));
         }
         if (doCompare) {
             compare = new GstStateHandlerOld();

@@ -28,7 +28,7 @@ public class NesStateHandler implements BaseStateHandler {
         NesStateHandler n = new NesStateHandler();
         n.fileName = handleFileExtension(fileName);
         n.type = Type.LOAD;
-        n.stateData = FileLoader.readBinaryFileByte(Paths.get(n.fileName), fileExtension);
+        n.stateData = FileLoader.readBinaryFile(Paths.get(n.fileName), fileExtension);
         return n;
     }
 

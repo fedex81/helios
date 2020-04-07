@@ -50,9 +50,10 @@ public class AutomatedGameTester {
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
     private static String romFolder =
+            "/home/fede/roms/gb";
 //            "/home/fede/roms/nes";
 //            "/home/fede/roms/md";
-            "/home/fede/roms/md/nointro";
+//            "/home/fede/roms/md/nointro";
 //            "/home/fede/roms/smsgg";
 //            "/home/fede/roms/msx";
 //            "/data/emu/roms";
@@ -127,10 +128,10 @@ public class AutomatedGameTester {
         }
         try {
             SystemLoader.main(new String[0]);
-        } catch (Exception e) {
+            bootRoms(testRoms);
+        } catch (Exception | Error e) {
             e.printStackTrace();
         }
-        bootRoms(testRoms);
     }
 
     private void bootRomsSg1000(boolean shuffle) throws IOException {
@@ -302,7 +303,7 @@ public class AutomatedGameTester {
             if (skip) {
                 continue;
             }
-            int[] data = FileLoader.readBinaryFile(rom);
+            int[] data = Util.toIntArray(FileLoader.readBinaryFile(rom));
             IMemoryProvider memoryProvider = MemoryProvider.createInstance(data, 0);
             try {
                 CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,

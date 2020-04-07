@@ -32,6 +32,7 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
+import omegadrive.util.Util;
 import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.Level;
@@ -82,7 +83,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvide
 
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
-        bios = FileLoader.loadBiosFile(p);
+        bios = Util.toIntArray(FileLoader.loadBiosFile(p));
         LOG.info("Loading Msx bios from: " + p.toAbsolutePath().toString());
         Arrays.fill(emptySlot, 0xFF);
 

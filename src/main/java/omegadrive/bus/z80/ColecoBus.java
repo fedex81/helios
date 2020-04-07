@@ -24,6 +24,7 @@ import omegadrive.bus.DeviceAwareBus;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
+import omegadrive.util.Util;
 import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.Level;
@@ -60,7 +61,7 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProv
 
     public ColecoBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameColeco);
-        bios = FileLoader.loadBiosFile(p);
+        bios = Util.toIntArray(FileLoader.loadBiosFile(p));
         LOG.info("Loading Coleco bios from: " + p.toAbsolutePath().toString());
     }
 

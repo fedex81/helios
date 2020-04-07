@@ -293,7 +293,6 @@ public class Util {
         return value;
     }
 
-    @Deprecated
     public static int[] toIntArray(byte[] bytes) {
         int[] data = new int[bytes.length];
         for (int i = 0; i < bytes.length; i++) {
@@ -302,10 +301,16 @@ public class Util {
         return data;
     }
 
+    /**
+     * NOTE: input int[] must contain values representable as bytes
+     */
     public static byte[] toByteArray(int[] bytes) {
         byte[] data = new byte[bytes.length];
         for (int i = 0; i < bytes.length; i++) {
             data[i] = (byte) (bytes[i] & 0xFF);
+            if (data[i] != (byte) bytes[i]) {
+                throw new IllegalArgumentException("Invalid value, doesn't represent a byte:" + bytes[i]);
+            }
         }
         return data;
     }

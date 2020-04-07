@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.filechooser.FileFilter;
 import java.io.*;
 import java.net.URL;
-import java.nio.IntBuffer;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -76,15 +76,6 @@ public class FileLoader {
         }
     };
 
-    @Deprecated
-    public static void writeFileSafe(Path file, int[] data) {
-        try {
-            Files.write(file, Util.toByteArray(data));
-        } catch (IOException e) {
-            LOG.error("Unable to write file {}, #data {}", file.toAbsolutePath().toString(), data.length);
-        }
-    }
-
     public static void writeFileSafe(Path file, byte[] data) {
         try {
             Files.write(file, data);
@@ -93,7 +84,7 @@ public class FileLoader {
         }
     }
 
-    public static byte[] readFileSafeByte(Path file) {
+    public static byte[] readFileSafe(Path file) {
         byte[] rom = new byte[0];
         try {
             rom = Files.readAllBytes(file);
@@ -101,10 +92,6 @@ public class FileLoader {
             LOG.error("Unable to load file: " + file.getFileName());
         }
         return rom;
-    }
-
-    public static int[] readFileSafe(Path file) {
-        return Util.toIntArray(readFileSafeByte(file));
     }
 
     public static String readFileContentAsString(String fileName) {
@@ -135,8 +122,8 @@ public class FileLoader {
         return lines;
     }
 
-    public static int[] loadBiosFile(Path file) {
-        if(file.toFile().exists()){
+    public static byte[] loadBiosFile(Path file) {
+        if (file.toFile().exists()) {
             return readFileSafe(file);
         }
         String classPath = getCurrentClasspath();
@@ -145,17 +132,17 @@ public class FileLoader {
             return readFileFromJar(fileName);
         }
         LOG.error("Unable to load: " + file.toAbsolutePath().toString());
-        return new int[0];
+        return new byte[0];
     }
 
-    private static int[] readFileFromJar(String fileName){
-        IntBuffer buffer = IntBuffer.allocate(0);
+    private static byte[] readFileFromJar(String fileName) {
+        ByteBuffer buffer = ByteBuffer.allocate(0);
         try (
                 InputStream inputStream = FileLoader.class.getResourceAsStream("/" + fileName)
         ) {
-            buffer = IntBuffer.allocate(inputStream.available());
-            while(inputStream.available() > 0){
-                buffer.put(inputStream.read());
+            buffer = ByteBuffer.allocate(inputStream.available());
+            while (inputStream.available() > 0) {
+                buffer.put((byte) inputStream.read());
             }
         } catch (Exception e) {
             LOG.error("Unable to load " + fileName + ", from path: " + fileName, e);
@@ -176,12 +163,12 @@ public class FileLoader {
         return lines;
     }
 
-    public static int[] readBinaryFile(Path file, SystemLoader.SystemType systemType) {
+    public static byte[] readBinaryFile(Path file, SystemLoader.SystemType systemType) {
         return readBinaryFile(file, ROM_FILTER);
     }
 
-    private static int[] readBinaryFile(Path file, FileFilter fileFilter) {
-        int[] data = new int[0];
+    private static byte[] readBinaryFile(Path file, FileFilter fileFilter) {
+        byte[] data = new byte[0];
         String fileName = file.toAbsolutePath().toString();
         try {
             if (fileFilter.accept(file.toFile())) {
@@ -195,11 +182,7 @@ public class FileLoader {
         return data;
     }
 
-    public static int[] readBinaryFile(Path file, String... ext) {
-        return Util.toIntArray(readBinaryFileByte(file, ext));
-    }
-
-    public static byte[] readBinaryFileByte(Path file, String... ext) {
+    public static byte[] readBinaryFile(Path file, String... ext) {
         String fileName = file.toAbsolutePath().toString();
         byte[] data = new byte[0];
         if (ZipUtil.isZipFile.test(fileName)) {
@@ -207,7 +190,7 @@ public class FileLoader {
         } else if (ZipUtil.isGZipFile.test(fileName)) {
             data = ZipUtil.readGZipFileContents(file);
         } else {
-            data = readFileSafeByte(file);
+            data = readFileSafe(file);
         }
         return data;
     }

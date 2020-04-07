@@ -108,7 +108,7 @@ public class GstStateHandlerOld implements GenesisStateHandler {
             data[6] = 0xE0;
             data[7] = 0x40;
         } else {
-            data = FileLoader.readBinaryFile(Paths.get(fileName), fileExtension);
+            data = Util.toIntArray(FileLoader.readBinaryFile(Paths.get(fileName), fileExtension));
         }
     }
 

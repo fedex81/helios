@@ -68,7 +68,7 @@ public class MekaStateHandler implements SmsStateHandler {
     public static SmsStateHandler createLoadInstance(String fileName) {
         MekaStateHandler h = new MekaStateHandler();
         h.fileName = handleFileExtension(fileName);
-        h.buffer = IntBuffer.wrap(FileLoader.readBinaryFile(Paths.get(h.fileName)));
+        h.buffer = IntBuffer.wrap(Util.toIntArray(FileLoader.readBinaryFile(Paths.get(h.fileName))));
         h.type = Type.LOAD;
         SmsStateHandler s = h.detectStateFileType();
         return s;

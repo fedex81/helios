@@ -21,6 +21,7 @@ package omegadrive.cart.mapper;
 
 import omegadrive.SystemLoader;
 import omegadrive.util.FileLoader;
+import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -69,7 +70,7 @@ public abstract class BackupMemoryMapper {
                 if (Files.isReadable(backupFile)) {
                     size = Files.size(backupFile);
                     if (size > 0) {
-                        sram = FileLoader.readBinaryFile(backupFile);
+                        sram = Util.toIntArray(FileLoader.readBinaryFile(backupFile));
                     } else {
                         LOG.error("Backup file with size 0, attempting to recreate it");
                         size = createBackupFile();
@@ -87,7 +88,7 @@ public abstract class BackupMemoryMapper {
     private int createBackupFile() {
         LOG.info("Creating backup memory file: " + backupFile);
         sram = new int[sramSize];
-        FileLoader.writeFileSafe(backupFile, sram);
+        FileLoader.writeFileSafe(backupFile, Util.toByteArray(sram));
         return sram.length;
     }
 
@@ -99,7 +100,7 @@ public abstract class BackupMemoryMapper {
         }
         if (Files.isWritable(backupFile)) {
             LOG.info("Writing to sram file: {}, len: {}", this.backupFile, sram.length);
-            FileLoader.writeFileSafe(backupFile, sram);
+            FileLoader.writeFileSafe(backupFile, Util.toByteArray(sram));
         }
     }
 }
