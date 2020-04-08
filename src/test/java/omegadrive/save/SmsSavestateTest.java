@@ -23,7 +23,7 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.z80.SmsBus;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.savestate.MekaStateHandler2;
+import omegadrive.savestate.MekaStateHandler;
 import omegadrive.savestate.SmsStateHandler;
 import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
@@ -84,14 +84,14 @@ public class SmsSavestateTest {
         cpuMem1.setRomData(new int[0xFFFF]);
         busProvider1.attachDevice(sp).attachDevice(cpuMem1);
         busProvider1.init();
-        SmsStateHandler loadHandler = MekaStateHandler2.createLoadInstance(filePath);
+        SmsStateHandler loadHandler = MekaStateHandler.createLoadInstance(filePath);
         SmsVdp vdp1 = new SmsVdp(SystemLoader.SystemType.SMS, RegionDetector.Region.USA);
         Z80Provider z80p1 = Z80CoreWrapper.createInstance(busProvider1);
 
         loadHandler.processState(vdp1, z80p1, busProvider1, cpuMem1);
 
         String name = loadHandler.getFileName() + "_TEST_" + System.currentTimeMillis() + ".gs0";
-        SmsStateHandler saveHandler = MekaStateHandler2.createSaveInstance(name, SystemLoader.SystemType.SMS);
+        SmsStateHandler saveHandler = MekaStateHandler.createSaveInstance(name, SystemLoader.SystemType.SMS);
 
         saveHandler.processState(vdp1, z80p1, busProvider1, cpuMem1);
 //        saveHandler.storeData();
@@ -103,7 +103,7 @@ public class SmsSavestateTest {
         cpuMem2.setRomData(new int[0xFFFF]);
         busProvider2.attachDevice(sp).attachDevice(cpuMem2);
         busProvider2.init();
-        SmsStateHandler loadHandler2 = MekaStateHandler2.createLoadInstance(name, saveData);
+        SmsStateHandler loadHandler2 = MekaStateHandler.createLoadInstance(name, saveData);
         SmsVdp vdp2 = new SmsVdp(SystemLoader.SystemType.SMS, RegionDetector.Region.USA);
         Z80Provider z80p2 = Z80CoreWrapper.createInstance(busProvider2);
 

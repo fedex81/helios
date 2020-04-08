@@ -35,15 +35,16 @@ import org.apache.logging.log4j.Logger;
 import z80core.Z80;
 import z80core.Z80State;
 
-import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-public class MekaStateHandler2 implements SmsStateHandler {
+@Deprecated
+public class MekaStateHandlerOld implements SmsStateHandler {
 
-    private static final byte[] MAGIC_WORD = {'M', 'E', 'K', 'A'};
+    private static final int[] MAGIC_WORD = {'M', 'E', 'K', 'A'};
     private static final String MAGIC_WORD_STR = "MEKA";
     private static final int Z80_REG_lEN = 25;
     private static final int Z80_MISC_LEN = 27;
@@ -51,33 +52,32 @@ public class MekaStateHandler2 implements SmsStateHandler {
     private static final MekaSavestateVersion DEFAULT_SAVE_VERSION = MekaSavestateVersion.VER_D;
     private static final Function<Integer, String> toCrcStringFn = v -> (v < 16 ? "0" : "") +
             Integer.toHexString(v);
-    private final static String fileExtension = "s00";
-    private static Logger LOG = LogManager.getLogger(MekaStateHandler2.class.getSimpleName());
-    int[] vdpState = new int[3];
-    private ByteBuffer buffer;
+    private static Logger LOG = LogManager.getLogger(MekaStateHandlerOld.class.getSimpleName());
+    private IntBuffer buffer;
     private int version;
     private int softwareId;
     private String fileName;
     private Type type;
     private SystemLoader.SystemType systemType;
     private MekaSavestateVersion mekaVersion;
+    private final static String fileExtension = "s00";
 
-    private MekaStateHandler2() {
+    private MekaStateHandlerOld() {
     }
 
     public static SmsStateHandler createLoadInstance(String fileName) {
-        MekaStateHandler2 h = new MekaStateHandler2();
+        MekaStateHandlerOld h = new MekaStateHandlerOld();
         h.fileName = handleFileExtension(fileName);
-        h.buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(h.fileName)));
+        h.buffer = IntBuffer.wrap(Util.toUnsignedIntArray(FileLoader.readBinaryFile(Paths.get(h.fileName))));
         h.type = Type.LOAD;
         SmsStateHandler s = h.detectStateFileType();
         return s;
     }
 
-    public static SmsStateHandler createLoadInstance(String fileName, byte[] data) {
-        MekaStateHandler2 h = new MekaStateHandler2();
+    public static SmsStateHandler createLoadInstance(String fileName, int[] data) {
+        MekaStateHandlerOld h = new MekaStateHandlerOld();
         h.fileName = handleFileExtension(fileName);
-        h.buffer = ByteBuffer.wrap(data);
+        h.buffer = IntBuffer.wrap(data);
         h.type = Type.LOAD;
         SmsStateHandler s = h.detectStateFileType();
         return s;
@@ -85,29 +85,29 @@ public class MekaStateHandler2 implements SmsStateHandler {
 
     public static SmsStateHandler createSaveInstance(String fileName, SystemLoader.SystemType systemType,
                                                      String romCrc32) {
-        MekaStateHandler2 h = new MekaStateHandler2();
+        MekaStateHandlerOld h = new MekaStateHandlerOld();
         int machineDriverId = systemType == SystemLoader.SystemType.SMS ? 0 :
                 (systemType == SystemLoader.SystemType.GG ? 1 : -1);
         if (machineDriverId < 0) {
             throw new IllegalArgumentException("Invalid systemType: " + systemType);
         }
         long crc32 = Long.parseLong(romCrc32, 16);
-        int len = (DEFAULT_SAVE_VERSION.getMemoryEndPos() + 3) << 1;
-        h.buffer = ByteBuffer.allocate(len);
+        int len = DEFAULT_SAVE_VERSION.getMemoryEndPos() + 3;
+        h.buffer = IntBuffer.allocate(len);
         //file type
         h.buffer.put(MAGIC_WORD);
-        h.buffer.put((byte) 0x1A); //unknown
-        h.buffer.put((byte) DEFAULT_SAVE_VERSION.getVersion());
-        h.buffer.put((byte) machineDriverId);
+        h.buffer.put(0x1A); //unknown
+        h.buffer.put(DEFAULT_SAVE_VERSION.getVersion());
+        h.buffer.put(machineDriverId);
 
-        h.buffer.put((byte) (crc32 & 0xFF));
-        h.buffer.put((byte) ((crc32 >> 8) & 0xFF));
-        h.buffer.put((byte) ((crc32 >> 16) & 0xFF));
-        h.buffer.put((byte) ((crc32 >> 24) & 0xFF));
+        h.buffer.put((int) crc32 & 0xFF);
+        h.buffer.put((int) (crc32 >> 8) & 0xFF);
+        h.buffer.put((int) (crc32 >> 16) & 0xFF);
+        h.buffer.put((int) (crc32 >> 24) & 0xFF);
 
-        h.buffer.put(len - 3, (byte) 'E');
-        h.buffer.put(len - 2, (byte) 'O');
-        h.buffer.put(len - 1, (byte) 'F');
+        h.buffer.put(len - 3, 'E');
+        h.buffer.put(len - 2, 'O');
+        h.buffer.put(len - 1, 'F');
 
         h.mekaVersion = DEFAULT_SAVE_VERSION;
         h.systemType = systemType;
@@ -125,36 +125,35 @@ public class MekaStateHandler2 implements SmsStateHandler {
         return fileName + (!fileName.toLowerCase().contains(".s0") ? "." + fileExtension : "");
     }
 
-    private static String decodeCrc32(MekaSavestateVersion version, ByteBuffer data) {
+    private static String decodeCrc32(MekaSavestateVersion version, IntBuffer data) {
         int index = data.position();
         data.position(index + 4);
-        return toCrcStringFn.apply((int) data.get(index + 3)) + toCrcStringFn.apply((int) data.get(index + 2)) +
-                toCrcStringFn.apply((int) data.get(index + 1)) + toCrcStringFn.apply((int) data.get(index));
+        return toCrcStringFn.apply(data.get(index + 3)) + toCrcStringFn.apply(data.get(index + 2)) +
+                toCrcStringFn.apply(data.get(index + 1)) + toCrcStringFn.apply(data.get(index));
     }
 
-    private static void skip(ByteBuffer buf, int len) {
+    private static void skip(IntBuffer buf, int len) {
         buf.position(buf.position() + len);
     }
 
-    private static void loadMappers(ByteBuffer buffer, Z80BusProvider bus) {
+    private static void loadMappers(IntBuffer buffer, Z80BusProvider bus) {
         bus.write(0xFFFC, buffer.get(), Size.BYTE);
         bus.write(0xFFFD, buffer.get(), Size.BYTE);
         bus.write(0xFFFE, buffer.get(), Size.BYTE);
         bus.write(0xFFFF, buffer.get(), Size.BYTE);
     }
 
-    private static void saveMappers(ByteBuffer buffer, Z80BusProvider bus) {
+    private static void saveMappers(IntBuffer buffer, Z80BusProvider bus) {
         SmsBus smsbus = (SmsBus) bus;
         int[] frameReg = smsbus.getFrameReg();
         int control = smsbus.getMapperControl();
         LOG.info("mapperControl: {}, frameReg: {}", control, Arrays.toString(frameReg));
-        buffer.put((byte) (control & 0xFF));
-        buffer.put(Util.unsignedToByteArray(frameReg));
+        buffer.put(control);
+        buffer.put(frameReg);
     }
 
-    //2 bytes for a 16 bit int
-    private static void setData(ByteBuffer buf, int... data) {
-        Arrays.stream(data).forEach(val -> buf.put((byte) (val & 0xFF)));
+    private static void setData(IntBuffer buf, int... data) {
+        Arrays.stream(data).forEach(buf::put);
     }
 
     private SmsStateHandler detectStateFileType() {
@@ -178,13 +177,12 @@ public class MekaStateHandler2 implements SmsStateHandler {
 
     private void crcCheck() {
         if (version >= 0xC) {
-            //TODO
             String crc32 = decodeCrc32(mekaVersion, buffer);
             LOG.info("ROM crc32: {}", crc32);
         }
     }
 
-    private Z80State loadZ80State(ByteBuffer data) {
+    private Z80State loadZ80State(IntBuffer data) {
         Z80State z80State = new Z80State();
         z80State.setRegAF(Util.getUInt32LE(data.get(), data.get()));
         z80State.setRegBC(Util.getUInt32LE(data.get(), data.get()));
@@ -214,16 +212,7 @@ public class MekaStateHandler2 implements SmsStateHandler {
     public void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory, SmsBus bus) {
         SmsVdp smsVdp = (SmsVdp) vdp;
         IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> smsVdp.registerWrite(i, buffer.get() & 0xFF));
-        int toSkip = VDP_MISC_LEN - 3;
-        String helString = Util.toStringValue(buffer.get(), buffer.get(), buffer.get());
-        if ("HEL".equals(helString)) {
-            vdpState[0] = buffer.getInt();
-            vdpState[1] = buffer.getInt();
-            vdpState[2] = buffer.getInt();
-            smsVdp.setStateSimple(vdpState);
-            toSkip = VDP_MISC_LEN - (vdpState.length * 4 + 3);
-        }
-        skip(buffer, toSkip);
+        skip(buffer, VDP_MISC_LEN);
         loadMappers(buffer, bus);
         if (version >= 0xD) {
             int vdpLine = Util.getUInt32LE(buffer.get(), buffer.get());
@@ -234,15 +223,11 @@ public class MekaStateHandler2 implements SmsStateHandler {
 
     @Override
     public void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory, Z80BusProvider bus) {
-        IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> buffer.put((byte) vdp.getRegisterData(i)));
-        SmsVdp smsVdp = (SmsVdp) vdp;
-        smsVdp.getStateSimple(vdpState);
-        buffer.put((byte) 'H').put((byte) 'E').put((byte) 'L');
-        buffer.putInt(vdpState[0]).putInt(vdpState[1]).putInt(vdpState[2]);
-        skip(buffer, VDP_MISC_LEN - (vdpState.length * 4 + 3));
+        IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> buffer.put(vdp.getRegisterData(i)));
+        skip(buffer, VDP_MISC_LEN);
         saveMappers(buffer, bus);
-        buffer.put((byte) 0); //vdpLine
-        buffer.put((byte) 0); //vdpLine
+        buffer.put(0); //vdpLine
+        buffer.put(0); //vdpLine
     }
 
 
@@ -274,8 +259,8 @@ public class MekaStateHandler2 implements SmsStateHandler {
     public void loadMemory(IMemoryProvider mem, SmsVdp vdp) {
         int[] vram = vdp.getVdpMemory().getVram();
         int[] cram = vdp.getVdpMemory().getCram();
-        IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> mem.writeRamByte(i, buffer.get() & 0xFF));
-        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vram[i] = buffer.get() & 0xFF);
+        IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> mem.writeRamByte(i, buffer.get()));
+        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vram[i] = (buffer.get() & 0xFF));
         //TODO check SMS CRAM = 0x20, GG = 0x40
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
             int smsCol = buffer.get();
@@ -284,7 +269,6 @@ public class MekaStateHandler2 implements SmsStateHandler {
             int b = (smsCol >> 4) & 0x03;
             cram[i] = ((r * 85) << 16) | ((g * 85) << 8) | (b * 85);
         });
-        vdp.forceFullRedraw();
     }
 
     @Override
@@ -292,8 +276,8 @@ public class MekaStateHandler2 implements SmsStateHandler {
         int[] ram = mem.getRamData();
         int[] vram = vdp.getVdpMemory().getVram();
         int[] cram = vdp.getVdpMemory().getCram();
-        IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> buffer.put((byte) (ram[i] & 0xFF)));
-        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> buffer.put((byte) (vram[i] & 0xFF)));
+        IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> buffer.put(ram[i]));
+        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> buffer.put(vram[i] & 0xFF));
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
             //0xAARRGGBB (4 bytes) Java colour
             //SMS : 00BBGGRR   (1 byte)
@@ -302,7 +286,7 @@ public class MekaStateHandler2 implements SmsStateHandler {
             int g = ((javaColor >> 8) & 0xFF) / 85;
             int r = ((javaColor >> 16) & 0xFF) / 85;
             int smsCol = b << 4 | g << 2 | r;
-            buffer.put((byte) (smsCol & 0xFF));
+            buffer.put(smsCol & 0xFF);
         });
     }
 
@@ -318,6 +302,6 @@ public class MekaStateHandler2 implements SmsStateHandler {
 
     @Override
     public byte[] getData() {
-        return buffer.array();
+        return Util.unsignedToByteArray(buffer.array());
     }
 }
