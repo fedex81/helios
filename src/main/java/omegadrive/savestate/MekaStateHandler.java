@@ -178,7 +178,6 @@ public class MekaStateHandler implements SmsStateHandler {
 
     private void crcCheck() {
         if (version >= 0xC) {
-            //TODO
             String crc32 = decodeCrc32(mekaVersion, buffer);
             LOG.info("ROM crc32: {}", crc32);
         }
@@ -262,8 +261,6 @@ public class MekaStateHandler implements SmsStateHandler {
                 s.getRegSP() >> 8);
         setData(buffer, s.getRegFx(), s.getRegAx(), s.getRegCx(), s.getRegBx(), s.getRegEx(),
                 s.getRegDx(), s.getRegLx(), s.getRegHx());
-
-        //TODO check
         int val = (s.isHalted() ? 1 : 0) << 8 | (s.isIFF2() ? 1 : 0) << 3 | s.getIM().ordinal() << 1 |
                 (s.isIFF1() ? 1 : 0);
         setData(buffer, val);
@@ -276,7 +273,7 @@ public class MekaStateHandler implements SmsStateHandler {
         int[] cram = vdp.getVdpMemory().getCram();
         IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> mem.writeRamByte(i, buffer.get() & 0xFF));
         IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vram[i] = buffer.get() & 0xFF);
-        //TODO check SMS CRAM = 0x20, GG = 0x40
+        //SMS CRAM = 0x20, GG = 0x40
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
             int smsCol = buffer.get();
             int r = smsCol & 0x03;

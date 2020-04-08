@@ -126,10 +126,11 @@ public class JinputGamepadInputProvider implements InputProvider {
                 return;
             }
             int count = 0;
-            //TODO perf
-            PlayerNumber[] players = playerControllerMap.entrySet().stream().
-                    filter(e -> ctrlName.equalsIgnoreCase(e.getValue())).map(Map.Entry::getKey).toArray(PlayerNumber[]::new);
-            for (PlayerNumber player : players) {
+            for (Map.Entry<PlayerNumber, String> entry : playerControllerMap.entrySet()) {
+                PlayerNumber player = entry.getKey();
+                if (!ctrlName.equalsIgnoreCase(entry.getValue())) {
+                    continue;
+                }
                 resetDirections = joypadProvider.hasDirectionPressed(player);
                 EventQueue eventQueue = controller.getEventQueue();
 
