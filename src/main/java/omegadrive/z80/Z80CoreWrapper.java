@@ -111,7 +111,7 @@ public class Z80CoreWrapper implements Z80Provider {
         z80Core.setPendingEI(false);
         z80Core.setMemPtr(GenesisZ80BusProviderImpl.END_RAM);
 
-        memIoOps.setActiveInterrupt(false);
+        z80Core.setINTLine(false);
 
         //from GenPlusGx
         z80Core.setRegPC(0);
@@ -126,9 +126,7 @@ public class Z80CoreWrapper implements Z80Provider {
     //to occur, it will be missed, rather than made pending.
     @Override
     public boolean interrupt(boolean value) {
-        z80Core.setINTLine(value);
-        memIoOps.setActiveInterrupt(value);
-        return true;
+        return memIoOps.setActiveINT(value);
     }
 
     @Override

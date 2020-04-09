@@ -119,7 +119,7 @@ public interface BaseVdpProvider extends Device {
         return getVdpEventListenerList().remove(l);
     }
 
-    enum VdpEvent {NEW_FRAME, VIDEO_MODE, H_LINE_COUNTER}
+    enum VdpEvent {NEW_FRAME, VIDEO_MODE, H_LINE_COUNTER, INTERRUPT}
 
     interface VdpEventListener extends EventListener {
 

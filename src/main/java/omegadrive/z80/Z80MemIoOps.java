@@ -23,9 +23,9 @@ import omegadrive.bus.BaseBusProvider;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import z80core.MemIoOps;
+import z80core.IMemIoOps;
 
-public class Z80MemIoOps extends MemIoOps {
+public class Z80MemIoOps implements IMemIoOps {
 
     private BaseBusProvider z80BusProvider;
     private long tstatesCount = 0;
@@ -100,10 +100,13 @@ public class Z80MemIoOps extends MemIoOps {
 
     @Override
     public boolean isActiveINT() {
-        boolean res = activeInterrupt;
-        //TODO this is needed for Gen .ie Sonic 2
-        activeInterrupt = false;
-        return res;
+        return activeInterrupt;
+    }
+
+    @Override
+    public boolean setActiveINT(boolean value) {
+        activeInterrupt = value;
+        return true;
     }
 
     @Override
@@ -124,10 +127,6 @@ public class Z80MemIoOps extends MemIoOps {
     @Override
     public void reset() {
         tstatesCount = 0;
-    }
-
-    public void setActiveInterrupt(boolean activeInterrupt) {
-        this.activeInterrupt = activeInterrupt;
     }
 
     public static Z80MemIoOpsDbg createDbgMemIoOps(StringBuilder sb, int logAddressAccess) {

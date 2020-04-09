@@ -19,6 +19,7 @@
 
 package omegadrive.vdp.gen;
 
+import omegadrive.bus.gen.BusArbiter;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
@@ -26,6 +27,9 @@ import omegadrive.vdp.model.VdpSlotType;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  *
@@ -57,6 +61,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
 
     private VideoMode videoMode;
     protected VdpCounterMode vdpCounterMode;
+    private List<BaseVdpProvider.VdpEventListener> vdpEventListenerList;
     protected boolean h40;
 
     protected boolean vBlankSet;
@@ -75,6 +80,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         if (vdp != null) {
             vdp.addVdpEventListener(handler);
         }
+        handler.vdpEventListenerList = Collections.unmodifiableList(vdp.getVdpEventListenerList());
         return handler;
     }
 
@@ -167,7 +173,16 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         if (vCounterInternal == vdpCounterMode.vBlankSet &&
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
             vIntPending = true;
+            vdpEventListenerList.forEach(l -> l.onVdpEvent(BaseVdpProvider.VdpEvent.INTERRUPT,
+                    BusArbiter.InterruptEvent.Z80_INT_ON));
             logVerbose("Set VIP: true");
+            eventFlag = true;
+        }
+        if (vCounterInternal == vdpCounterMode.vBlankSet + 1 &&
+                hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
+            vdpEventListenerList.forEach(l -> l.onVdpEvent(BaseVdpProvider.VdpEvent.INTERRUPT,
+                    BusArbiter.InterruptEvent.Z80_INT_OFF));
+            logVerbose("Set Z80Int: false");
             eventFlag = true;
         }
         return hCounterInternal;

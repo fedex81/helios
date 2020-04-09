@@ -21,13 +21,14 @@ package omegadrive.bus.gen;
 
 import omegadrive.Device;
 import omegadrive.m68k.M68kProvider;
+import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 
-public class BusArbiter implements Device {
+public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
 
     /**
      *
@@ -48,38 +49,89 @@ public class BusArbiter implements Device {
     private VdpState stateVdp = VdpState.NORMAL;
     private IntState int68k = IntState.ACKED;
     private M68kState state68k = M68kState.RUNNING;
+    private IntState z80Int = IntState.NONE;
+    private InterruptEvent z80IntLineVdp = InterruptEvent.Z80_INT_OFF;
 
     protected GenesisVdpProvider vdp;
     protected M68kProvider m68k;
     protected Z80Provider z80;
 
     private int mask68kState = 0;
-    private boolean vIntFrameExpired;
-    private int vIntOnLine;
-
-    public void setStop68k(int mask) {
-        if (mask != mask68kState) {
-            mask68kState = mask;
-            stateVdp = stateVdpVals[mask];
-            state68k = stateVdp != VdpState.NORMAL ? M68kState.HALTED : M68kState.RUNNING;
-//            LOG.info("68k State{} , {}", mask, state68k);
-        }
-    }
-
-    public boolean is68kRunning() {
-        return state68k == M68kState.RUNNING;
-    }
-    private IntState z80Int = IntState.ACKED;
-
-    protected BusArbiter() {
-    }
 
     public static BusArbiter createInstance(GenesisVdpProvider vdp, M68kProvider m68k, Z80Provider z80) {
         BusArbiter b = new BusArbiter();
         b.vdp = vdp;
         b.m68k = m68k;
         b.z80 = z80;
+        vdp.addVdpEventListener(b);
         return b;
+    }
+
+    public void setStop68k(int mask) {
+        if (mask != mask68kState) {
+            mask68kState = mask;
+            stateVdp = stateVdpVals[mask];
+            state68k = stateVdp != VdpState.NORMAL ? M68kState.HALTED : M68kState.RUNNING;
+            logInfo("68k State{} , {}", mask, state68k);
+        }
+    }
+
+    /**
+     * /INT is an active-low level sensitive input. When pulled low, the Z80 wil start interrupt processing,
+     * and repeatedly do this after each instruction executed until /INT goes high again.
+     * This type of interrupt can be controlled by the Z80, using the DI (disable interrupt)
+     * and EI (enable interrupt) instructions.
+     * <p>
+     * When interrupts are disabled via DI, the Z80 will respond to /INT as soon
+     * as interrupts are enabled again. If /INT goes high before they are enabled,
+     * then the interrupt is 'lost' and the Z80 never responds to it.
+     * <p>
+     * Typically the external hardware which triggered the interrupt will have
+     * some facility to pull /INT high again, either after a set period of time
+     * (auto-acknowledge) or through a dedicated memory address or control register
+     * that can be accessed by the interrupt handler, to indicate that the interrupt is being serviced.
+     * <p>
+     * The Z80 has three processing modes for maskable interrupts. The mode resets to 0 by default,
+     * and can be changed using the IM 0, IM 1, or IM 2 instructions.
+     * https://www.smspower.org/Development/InterruptMechanism
+     */
+    public void handleInterruptZ80() {
+        boolean vIntExpired = z80Int == IntState.ASSERTED && z80IntLineVdp == InterruptEvent.Z80_INT_OFF;
+
+        if (z80IntLineVdp == InterruptEvent.Z80_INT_ON) {
+            raiseInterruptsZ80();
+        } else if (vIntExpired) {
+            resetZ80Int();
+        }
+    }
+
+    private void resetZ80Int() {
+        if (z80Int != IntState.NONE) {
+            logInfo("Z80 INT expired, state {}", z80Int);
+        }
+        z80Int = IntState.NONE;
+        z80.interrupt(false);
+    }
+
+    private void raiseInterruptsZ80() {
+        z80.interrupt(true);
+        if (z80Int != IntState.ASSERTED) {
+            z80Int = IntState.ASSERTED;
+            logInfo("Z80 INT: {}", z80Int);
+        }
+    }
+
+    public boolean is68kRunning() {
+        return state68k == M68kState.RUNNING;
+    }
+
+
+    protected BusArbiter() {
+    }
+
+    public void setZ80Int(InterruptEvent event) {
+        z80IntLineVdp = event;
+        logInfo("Z80Int line: {}", event);
     }
 
     public void addCyclePenalty(CpuType cpuType, int value) {
@@ -92,23 +144,6 @@ public class BusArbiter implements Device {
                 break;
             default:
                 break;
-        }
-    }
-
-    enum IntState {NONE, PENDING, ASSERTED, ACKED}
-
-    public void handleInterruptZ80() {
-        checkInterruptZ80();
-        switch (z80Int) {
-            case PENDING:
-                logInfo("Z80 INT pending");
-                raiseInterruptsZ80();
-                break;
-            case ASSERTED:
-                //fall through
-            case ACKED:
-                logInfo("Z80 INT acked");
-                z80Int = IntState.NONE;
         }
     }
 
@@ -136,29 +171,20 @@ public class BusArbiter implements Device {
         }
     }
 
-    /**
-     * it means z80 interrupt occurs once per frame (on line 224)
-     * and remains active during one full line if not acknowledged by Z80
-     * once the exception is processed on z80 side, interrupt is cleared until next frame
-     * if Z80 interrupt is masked, interrupt remains pending
-     * for one line and should be processed if unmasked during this period
-     */
-    public boolean checkInterruptZ80() {
-        boolean change = false;
-        int vc = vdp.getVCounter();
-        boolean vIntJustTriggered = z80Int == IntState.NONE && isVdpVInt() && !vIntFrameExpired && vc == vIntOnLine;
-        boolean vIntExpired = z80Int == IntState.PENDING && vc != vIntOnLine;
-
-        if (vIntJustTriggered) {
-            z80Int = IntState.PENDING;
-            logInfo("Z80 INT triggered");
-        } else if (vIntExpired) {
-            vIntFrameExpired = true;
-            z80Int = IntState.NONE;
-            logInfo("Z80 INT expired");
+    @Override
+    public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
+        switch (event) {
+            case INTERRUPT:
+                InterruptEvent ievent = (InterruptEvent) value;
+                setZ80Int(ievent);
+                break;
+            case NEW_FRAME:
+                logInfo("NewFrame");
+                break;
         }
-        return change;
     }
+
+    enum IntState {NONE, PENDING, ASSERTED, ACKED}
 
     public void ackInterrupts68k() {
         int level = getLevel68k();
@@ -194,14 +220,9 @@ public class BusArbiter implements Device {
         }
     }
 
-    private boolean raiseInterruptsZ80() {
-        boolean res = z80.interrupt(true);
-        if (res) {
-            z80Int = IntState.ASSERTED;
-            logInfo("Z80 INT: {}", z80Int);
-        }
-        return res;
-    }
+    public enum InterruptEvent {Z80_INT_ON, Z80_INT_OFF}
+
+    enum M68kState {RUNNING, HALTED}
 
     private int getLevel68k() {
         //TODO titan2 this can return 0, why investigate
@@ -215,18 +236,10 @@ public class BusArbiter implements Device {
         }
     }
 
-    enum M68kState {RUNNING, HALTED}
-
     //TODO fifo full shoud not stop 68k
     //TODO fifo full and 68k uses vdp -> stop 68k
     enum VdpState {
         NORMAL, DMA_IN_PROGRESS, FIFO_FULL
-    }
-
-    public void newFrame() {
-        vIntFrameExpired = false;
-        vIntOnLine = vdp.getVideoMode().isV28() ? GenesisVdpProvider.V28_VBLANK_SET : GenesisVdpProvider.V30_VBLANK_SET;
-        logInfo("NewFrame");
     }
 
     private static BusArbiter createNoOp() {
@@ -234,10 +247,6 @@ public class BusArbiter implements Device {
             @Override
             public void addCyclePenalty(CpuType cpuType, int value) {
 
-            }
-
-            @Override
-            public void newFrame() {
             }
         };
     }

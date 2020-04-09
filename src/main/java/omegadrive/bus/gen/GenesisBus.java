@@ -768,7 +768,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     @Override
     public void onNewFrame() {
-        busArbiter.newFrame();
         joypadProvider.newFrame();
     }
 }
