@@ -95,6 +95,10 @@ public class GstStateHandler implements GenesisStateHandler {
     protected GstStateHandler() {
     }
 
+    public void setData(byte[] data) {
+        this.buffer = ByteBuffer.wrap(data);
+    }
+
     @Override
     public Type getType() {
         return type;

@@ -44,13 +44,13 @@ import java.util.stream.IntStream;
 
 import static omegadrive.util.Util.getUInt32LE;
 
+//import omegadrive.vdp.model.VdpMemoryInterface;
+
 public class GstStateHandlerOld implements GenesisStateHandler {
 
-    protected static final String fileExtension = "gs0";
+    private final static String MAGIC_WORD = "GST";
+    private final static String fileExtension = "gs0";
     public static int FM_DATA_SIZE = 0x200;
-    public static int FILE_SIZE = 0x22478;
-    private static Logger LOG = LogManager.getLogger(GstStateHandlerOld.class.getSimpleName());
-    private static int FM_REG_OFFSET = 0x1E4;
     private static int VDP_REG_OFFSET = 0xFA;
     private static int CRAM_DATA_OFFSET = 0x112;
     private static int VRAM_DATA_OFFSET = 0x12478;
@@ -59,18 +59,55 @@ public class GstStateHandlerOld implements GenesisStateHandler {
     private static int M68K_RAM_DATA_OFFSET = 0x2478;
     private static int M68K_REGD_OFFSET = 0x80;
     private static int M68K_REGA_OFFSET = 0xA0;
-    protected int[] data;
-    protected int version;
-    protected int softwareId;
-    protected String fileName;
-    protected Type type;
-    protected boolean runAhead;
+    private static Logger LOG = LogManager.getLogger(GstStateHandler.class.getSimpleName());
+    private static int FM_REG_OFFSET = 0x1E4;
+    private static int FILE_SIZE = 0x22478;
+    public Type type;
+    private int[] data;
+    private int version;
+    private int softwareId;
+    private String fileName;
+    private boolean runAhead;
 
 
-    protected GstStateHandlerOld() {
+    public GstStateHandlerOld() {
     }
 
-    protected static String handleFileExtension(String fileName) {
+    public static GenesisStateHandler createLoadInstance(String fileName, int[] data) {
+        GstStateHandlerOld h = new GstStateHandlerOld();
+        h.fileName = handleFileExtension(fileName);
+        h.type = Type.LOAD;
+        h.data = data;
+        h.runAhead = true;
+        return h;
+    }
+
+    public static GenesisStateHandler createLoadInstance(String fileName) {
+        GstStateHandlerOld h = new GstStateHandlerOld();
+        h.fileName = handleFileExtension(fileName);
+        h.type = Type.LOAD;
+        h.data = Util.toUnsignedIntArray(FileLoader.readBinaryFile(Paths.get(fileName), fileExtension));
+//        h.data = FileLoader.readBinaryFile(Paths.get(h.fileName), fileExtension);
+        GenesisStateHandler res = h.detectStateFileType();
+        return res;
+    }
+
+    public static GenesisStateHandler createSaveInstance(String fileName) {
+        GstStateHandlerOld h = new GstStateHandlerOld();
+        h.data = new int[FILE_SIZE];
+        //file type
+        h.data[0] = 'G';
+        h.data[1] = 'S';
+        h.data[2] = 'T';
+        //special Genecyst stuff
+        h.data[6] = 0xE0;
+        h.data[7] = 0x40;
+        h.fileName = handleFileExtension(fileName);
+        h.type = Type.SAVE;
+        return h;
+    }
+
+    private static String handleFileExtension(String fileName) {
         boolean hasExtension = fileName.toLowerCase().contains(".gs");
         return fileName + (!hasExtension ? "." + fileExtension : "");
     }
@@ -96,19 +133,24 @@ public class GstStateHandlerOld implements GenesisStateHandler {
         return z80State;
     }
 
-    protected void init(String fileNameEx) {
-        this.fileName = handleFileExtension(fileNameEx);
+    public void init(String fileName) {
+        GstStateHandlerOld h = this;
         if (type == Type.SAVE) {
-            data = new int[GstStateHandler.FILE_SIZE];
+            h.data = new int[FILE_SIZE];
             //file type
-            data[0] = 'G';
-            data[1] = 'S';
-            data[2] = 'T';
+            h.data[0] = 'G';
+            h.data[1] = 'S';
+            h.data[2] = 'T';
             //special Genecyst stuff
-            data[6] = 0xE0;
-            data[7] = 0x40;
+            h.data[6] = 0xE0;
+            h.data[7] = 0x40;
+            h.fileName = handleFileExtension(fileName);
         } else {
-            data = Util.toUnsignedIntArray(FileLoader.readBinaryFile(Paths.get(fileName), fileExtension));
+            h.fileName = handleFileExtension(fileName);
+            h.type = Type.LOAD;
+            h.data = Util.toUnsignedIntArray(FileLoader.readBinaryFile(Paths.get(fileName), fileExtension));
+//        h.data = FileLoader.readBinaryFile(Paths.get(h.fileName), fileExtension);
+            GenesisStateHandler res = h.detectStateFileType();
         }
     }
 
@@ -169,6 +211,18 @@ public class GstStateHandlerOld implements GenesisStateHandler {
         }
     }
 
+    private GenesisStateHandler detectStateFileType() {
+        String fileType = Util.toStringValue(data[0], data[1], data[2]);
+        if (!MAGIC_WORD.equalsIgnoreCase(fileType) || data.length < FILE_SIZE) {
+            LOG.error("Unable to load save state of type: {}, size: {}", MAGIC_WORD, data.length);
+            return GenesisStateHandler.EMPTY_STATE;
+        }
+        version = data[0x50];
+        softwareId = data[0x51];
+        LOG.info("Savestate version: {}, softwareId: {}", version, softwareId);
+        return this;
+    }
+
     @Override
     public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
         int z80BankInt = getUInt32LE(Arrays.copyOfRange(data, 0x43C, 0x43C + 4));
@@ -202,15 +256,14 @@ public class GstStateHandlerOld implements GenesisStateHandler {
 
         MC68000 m68k = m68kProvider.getM68k();
         m68k.setSR(getUInt32LE(Arrays.copyOfRange(data, 0xD0, 0xD0 + 2)));
-        int ssp = getUInt32LE(Arrays.copyOfRange(data, 0xD2, 0xD2 + 2));
-        int usp = getUInt32LE(Arrays.copyOfRange(data, 0xD6, 0xD6 + 2));
-
         IntStream.range(0, 8).forEach(i -> m68k.setDataRegisterLong(i,
                 getUInt32LE(Arrays.copyOfRange(data, M68K_REGD_OFFSET + i * 4, M68K_REGD_OFFSET + (1 + i) * 4))));
         IntStream.range(0, 8).forEach(i -> m68k.setAddrRegisterLong(i,
                 getUInt32LE(Arrays.copyOfRange(data, M68K_REGA_OFFSET + i * 4, M68K_REGA_OFFSET + (1 + i) * 4))));
         m68k.setPC(getUInt32LE(Arrays.copyOfRange(data, 0xC8, 0xC8 + 4)));
 
+        int ssp = getUInt32LE(Arrays.copyOfRange(data, 0xD2, 0xD2 + 2));
+        int usp = getUInt32LE(Arrays.copyOfRange(data, 0xD6, 0xD6 + 2));
         if (usp > 0) {
             LOG.warn("USP is not 0: " + usp);
         }

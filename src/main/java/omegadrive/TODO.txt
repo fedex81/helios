@@ -11,8 +11,8 @@ danibus scroll test
 sonic3d traveller's tale logo
 bare knuckle 3 - intro locks (FIFO)
 
-Sonic 2
-Aquatic ruin: music goes too fast when water line is not shown on screen
+lemmings save/load state every frame
+-> corruption when in game
 
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin

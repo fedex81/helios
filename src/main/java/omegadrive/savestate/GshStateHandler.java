@@ -50,7 +50,8 @@ public class GshStateHandler extends GstStateHandler {
     private GstStateHandlerOld compare;
     private boolean doCompare = false;
 
-    protected GshStateHandler() {
+    public GshStateHandler(boolean doCompare) {
+        this.doCompare = doCompare;
     }
 
     protected static String handleFileExtension(String fileName) {

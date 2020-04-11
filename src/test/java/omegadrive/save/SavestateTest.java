@@ -71,7 +71,7 @@ public class SavestateTest {
 
     public static GenesisBusProvider loadSaveState(Path saveFile) {
         GenesisBusProvider busProvider = GenesisBusProvider.createBus();
-        GenesisStateHandler loadHandler = GenesisStateHandler.createLoadInstance(saveFile.toAbsolutePath().toString(), false);
+        GenesisStateHandler loadHandler = GenesisStateHandler.createLoadInstance(saveFile.toAbsolutePath().toString());
         GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
@@ -90,7 +90,7 @@ public class SavestateTest {
         String filePath = saveFile.toAbsolutePath().toString();
         GenesisBusProvider busProvider1 = GenesisBusProvider.createBus();
 
-        GenesisStateHandler loadHandler = GenesisStateHandler.createLoadInstance(filePath, false);
+        GenesisStateHandler loadHandler = GenesisStateHandler.createLoadInstance(filePath);
         GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider1);
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider1);
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
@@ -103,14 +103,14 @@ public class SavestateTest {
         loadHandler.loadFmState(fm1);
 
         String name = loadHandler.getFileName() + "_TEST_" + System.currentTimeMillis() + ".gs0";
-        GenesisStateHandler saveHandler = GenesisStateHandler.createSaveInstance(name, false);
+        GenesisStateHandler saveHandler = GenesisStateHandler.createSaveInstance(name);
         saveHandler.saveVdp(vdpProvider1);
         saveHandler.save68k(cpu1, cpuMem1);
         saveHandler.saveZ80(z80p1, busProvider1);
         saveHandler.saveFm(fm1);
 
         GenesisBusProvider busProvider2 = GenesisBusProvider.createBus();
-        GenesisStateHandler loadHandler1 = GenesisStateHandler.createLoadInstance(filePath, false);
+        GenesisStateHandler loadHandler1 = GenesisStateHandler.createLoadInstance(filePath);
         GenesisVdpProvider vdpProvider2 = GenesisVdp.createInstance(busProvider2);
         MC68000Wrapper cpu2 = new MC68000Wrapper(busProvider2);
         IMemoryProvider cpuMem2 = MemoryProvider.createGenesisInstance();
