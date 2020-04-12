@@ -389,7 +389,7 @@ public class Util {
         ) {
             res = (Serializable) in.readObject();
         } catch (Exception e) {
-            LOG.error("Unable to deserialize object of len: " + data.length);
+            LOG.error("Unable to deserialize object of len: {}, {}", data.length, e.getMessage());
         }
         return res;
     }

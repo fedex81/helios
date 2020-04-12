@@ -124,9 +124,9 @@ public class GstStateHandler implements GenesisStateHandler {
         buffer.position(FM_REG_OFFSET);
         for (reg = 0; reg < limit; reg++) {
             fm.write(MdFmProvider.FM_ADDRESS_PORT0, reg);
-            fm.write(MdFmProvider.FM_DATA_PORT0, buffer.get(FM_REG_OFFSET + reg) & 0xFF);
+            fm.write(MdFmProvider.FM_DATA_PORT0, buffer.get(FM_REG_OFFSET + reg));
             fm.write(MdFmProvider.FM_ADDRESS_PORT1, reg);
-            fm.write(MdFmProvider.FM_DATA_PORT1, buffer.get(FM_REG_OFFSET + limit + reg) & 0xFF);
+            fm.write(MdFmProvider.FM_DATA_PORT1, buffer.get(FM_REG_OFFSET + limit + reg));
         }
     }
 

@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jctools.queues.atomic.SpscAtomicArrayQueue;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,36 +52,52 @@ public class Ym2612Nuke implements MdFmProvider {
 
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
-    private final int[][] ym3438_accm = new int[24][2];
+    private Ym3438Context state;
+
     int maxQueueLen = 0;
     private AtomicInteger queueLen = new AtomicInteger();
     volatile double fmCalcsPerMicros = FM_CALCS_PER_MICROS;
-    int ym3438_cycles = 0;
     double cycleAccum = 0;
-    int sample = 0;
     private Queue<Integer> sampleQueue =
             new SpscAtomicArrayQueue<>(SoundProvider.SAMPLE_RATE_HZ);
     private AudioRateControl audioRateControl;
     private int sampleRatePerFrame = 0;
-    private long chipRate;
 
     public Ym2612Nuke(IYm3438.IYm3438_Type chip) {
         this.ym3438 = new Ym3438();
         this.chip = chip;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
+        this.state = new Ym3438Context();
+        state.chip = chip;
     }
 
     public Ym2612Nuke(IYm3438 impl) {
         this.ym3438 = impl;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
+        this.state = new Ym3438Context();
     }
 
-    public IYm3438.IYm3438_Type getChip() {
-        return chip;
+    public Ym3438Context getState() {
+        return state;
     }
 
-    public void setChip(IYm3438.IYm3438_Type chip) {
-        this.chip = chip;
+    public void setState(Ym3438Context state) {
+        if (state != null) {
+            this.state = state;
+            this.chip = state.chip;
+        } else {
+            LOG.warn("Unable to restore state, FM will not work");
+            this.chip.reset();
+            this.state.reset();
+        }
+    }
+
+    @Override
+    public void reset() {
+        ym3438.OPN2_Reset(chip);
+        sampleQueue.clear();
+        queueLen.set(0);
+        state.reset();
     }
 
     @Override
@@ -103,14 +120,13 @@ public class Ym2612Nuke implements MdFmProvider {
         this.audioRateControl = new AudioRateControl(bufferSize);
     }
 
-    @Override
-    public void reset() {
-        ym3438.OPN2_Reset(chip);
-        sampleQueue.clear();
-        queueLen.set(0);
-        ym3438_cycles = 0;
-        sample = 0;
-        Arrays.stream(ym3438_accm).forEach(row -> Arrays.fill(row, 0));
+    private void addSample() {
+        if (cycleAccum > fmCalcsPerMicros) {
+            sampleRatePerFrame++;
+            sampleQueue.offer(Util.getFromIntegerCache(state.ym3438_sample));
+            queueLen.addAndGet(1);
+            cycleAccum -= fmCalcsPerMicros;
+        }
     }
 
     //Output frequency: 53.267 kHz (NTSC), 52.781 kHz (PAL)
@@ -157,28 +173,35 @@ public class Ym2612Nuke implements MdFmProvider {
         return sampleNumMono;
     }
 
-    private void addSample() {
-        if (cycleAccum > fmCalcsPerMicros) {
-            sampleRatePerFrame++;
-            sampleQueue.offer(Util.getFromIntegerCache(sample));
-            queueLen.addAndGet(1);
-            cycleAccum -= fmCalcsPerMicros;
-        }
-    }
-
     private void spinOnce() {
-        ym3438.OPN2_Clock(chip, ym3438_accm[ym3438_cycles]);
-        ym3438_cycles = (ym3438_cycles + 1) % 24;
-        if (ym3438_cycles == 0) {
-            chipRate++;
+        ym3438.OPN2_Clock(chip, state.ym3438_accm[state.ym3438_cycles]);
+        state.ym3438_cycles = (state.ym3438_cycles + 1) % 24;
+        if (state.ym3438_cycles == 0) {
+//            chipRate++;
             int sampleL = 0;
             int sampleR = 0;
             for (int j = 0; j < 24; j++) {
-                sampleL += ym3438_accm[j][0];
-                sampleR += ym3438_accm[j][1];
+                sampleL += state.ym3438_accm[j][0];
+                sampleR += state.ym3438_accm[j][1];
             }
             //mono
-            sample = (sampleL + sampleR) >> 1;
+            state.ym3438_sample = (sampleL + sampleR) >> 1;
+        }
+    }
+
+    public static class Ym3438Context implements Serializable {
+
+        private static final long serialVersionUID = -2921159132727518547L;
+
+        int ym3438_cycles = 0;
+        int ym3438_sample = 0;
+        int[][] ym3438_accm = new int[24][2];
+        IYm3438.IYm3438_Type chip;
+
+        public void reset() {
+            ym3438_cycles = 0;
+            ym3438_sample = 0;
+            Arrays.stream(ym3438_accm).forEach(row -> Arrays.fill(row, 0));
         }
     }
 

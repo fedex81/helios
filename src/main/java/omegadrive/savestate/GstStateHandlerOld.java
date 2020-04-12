@@ -133,6 +133,10 @@ public class GstStateHandlerOld implements GenesisStateHandler {
         return z80State;
     }
 
+    public void setData(byte[] data) {
+        this.data = Util.toUnsignedIntArray(data);
+    }
+
     public void init(String fileName) {
         GstStateHandlerOld h = this;
         if (type == Type.SAVE) {

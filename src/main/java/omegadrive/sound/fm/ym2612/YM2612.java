@@ -341,8 +341,8 @@ public final class YM2612 implements MdFmProvider {
         }
 
         for (i = 0; i < 0x100; i++) {
-            YM2612_REG[0][i] = 0;
-            YM2612_REG[1][i] = 0;
+            YM2612_REG[0][i] = -1;
+            YM2612_REG[1][i] = -1;
         }
 
         for (i = 0xB6; i >= 0xB4; i--) {

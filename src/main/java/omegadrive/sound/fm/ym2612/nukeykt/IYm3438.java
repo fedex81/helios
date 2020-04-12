@@ -19,11 +19,16 @@
 
 package omegadrive.sound.fm.ym2612.nukeykt;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
 public interface IYm3438 {
+
+    Logger LOG = LogManager.getLogger(IYm3438.class.getSimpleName());
 
     void OPN2_Reset(IYm3438_Type chip);
 
@@ -61,6 +66,8 @@ public interface IYm3438 {
 
 
     class IYm3438_Type implements Serializable {
+        private static final long serialVersionUID = 4240243017432259918L;
+
         int cycles;   //32 bit unsigned
         int channel;  //32 bit unsigned
         /* 16 bit signed */ int mol, mor;
@@ -218,8 +225,10 @@ public interface IYm3438 {
                         Arrays.fill((boolean[]) value, false);
                     } else if (value instanceof int[][]) {
                         Arrays.stream((int[][]) value).forEach(row -> Arrays.fill(row, 0));
+                    } else if (field.getName().contains("serialVersionUID")) {
+                        //skip
                     } else {
-                        System.out.println(field.getName());
+                        LOG.warn("Unable to reset field: {}", field.getName());
                     }
                 }
             } catch (IllegalAccessException iae) {

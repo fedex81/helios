@@ -20,17 +20,10 @@
 package omegadrive.savestate;
 
 import com.google.common.io.Files;
-import omegadrive.bus.gen.GenesisBusProvider;
-import omegadrive.m68k.M68kProvider;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.fm.ym2612.nukeykt.IYm3438;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
-import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,11 +40,7 @@ public class GshStateHandler extends GstStateHandler {
     protected static final String FM_MAGIC_WORD_NUKE = "NUKE";
     protected static final String fileExtension = "gsh";
 
-    private GstStateHandlerOld compare;
-    private boolean doCompare = false;
-
-    public GshStateHandler(boolean doCompare) {
-        this.doCompare = doCompare;
+    public GshStateHandler() {
     }
 
     protected static String handleFileExtension(String fileName) {
@@ -70,27 +59,6 @@ public class GshStateHandler extends GstStateHandler {
         } else {
             String ext = Files.getFileExtension(fileNameEx);
             buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(fileName), ext));
-        }
-        if (doCompare) {
-            compare = new GstStateHandlerOld();
-            compare.type = type;
-            compare.init(fileNameEx);
-        }
-    }
-
-    @Override
-    public void storeData() {
-        super.storeData();
-        if (doCompare) {
-            compare.storeData();
-        }
-    }
-
-    @Override
-    public void processState(BaseVdpProvider vdp, Z80Provider z80, GenesisBusProvider bus, SoundProvider sound, M68kProvider cpu, IMemoryProvider mem) {
-        super.processState(vdp, z80, bus, sound, cpu, mem);
-        if (doCompare) {
-            compare.processState(vdp, z80, bus, sound, cpu, mem);
         }
     }
 
@@ -120,7 +88,7 @@ public class GshStateHandler extends GstStateHandler {
             if (FM_MAGIC_WORD_NUKE.equalsIgnoreCase(fmType)) {
                 buffer.position(FILE_SIZE + FM_MAGIC_WORD_NUKE.length());
                 Serializable res = Util.deserializeObject(buffer.array(), FILE_SIZE + FM_MAGIC_WORD_NUKE.length(), fmLen);
-                ((Ym2612Nuke) fm).setChip((IYm3438.IYm3438_Type) res);
+                ((Ym2612Nuke) fm).setState((Ym2612Nuke.Ym3438Context) res);
             }
             buffer.position(pos);
         } else {
@@ -133,7 +101,8 @@ public class GshStateHandler extends GstStateHandler {
     public void saveFm(FmProvider fm) {
         super.saveFm(fm); //save FM registers
         if (fm instanceof Ym2612Nuke) {
-            IYm3438.IYm3438_Type chip = ((Ym2612Nuke) fm).getChip();
+            int pos = buffer.position();
+            Ym2612Nuke.Ym3438Context chip = ((Ym2612Nuke) fm).getState();
             byte[] chipData = Util.serializeObject(chip);
             buffer = extendBuffer(buffer, chipData.length);
             try {
@@ -141,6 +110,8 @@ public class GshStateHandler extends GstStateHandler {
                 buffer.put(chipData);
             } catch (Exception e) {
                 LOG.error("Unable to save Nuke FM data");
+            } finally {
+                buffer.position(pos);
             }
         }
     }
