@@ -42,8 +42,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static omegadrive.util.Util.getUInt32LE;
-
 public class GstStateHandler implements GenesisStateHandler {
 
     private static Logger LOG = LogManager.getLogger(GstStateHandler.class.getSimpleName());
@@ -118,15 +116,12 @@ public class GstStateHandler implements GenesisStateHandler {
     public void loadFmState(FmProvider fm) {
         int reg;
         int limit = FM_DATA_SIZE / 2;
-        if (!runAhead) {
-            fm.reset();
-        }
         buffer.position(FM_REG_OFFSET);
         for (reg = 0; reg < limit; reg++) {
-            fm.write(MdFmProvider.FM_ADDRESS_PORT0, reg);
-            fm.write(MdFmProvider.FM_DATA_PORT0, buffer.get(FM_REG_OFFSET + reg));
-            fm.write(MdFmProvider.FM_ADDRESS_PORT1, reg);
-            fm.write(MdFmProvider.FM_DATA_PORT1, buffer.get(FM_REG_OFFSET + limit + reg));
+            fm.write(MdFmProvider.FM_ADDRESS_PORT0, reg & 0xFF);
+            fm.write(MdFmProvider.FM_DATA_PORT0, buffer.get(FM_REG_OFFSET + reg) & 0xFF);
+            fm.write(MdFmProvider.FM_ADDRESS_PORT1, reg & 0xFF);
+            fm.write(MdFmProvider.FM_DATA_PORT1, buffer.get(FM_REG_OFFSET + limit + reg) & 0xFF);
         }
     }
 
@@ -181,7 +176,7 @@ public class GstStateHandler implements GenesisStateHandler {
 
     @Override
     public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
-        int z80BankInt = getUInt32LE(getInt4Fn.apply(0x43C));
+        int z80BankInt = getInt4Fn.apply(0x43C);
         GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
 
         bus.setZ80BusRequested((buffer.get(0x439) & 0xFF) > 0);
@@ -192,7 +187,7 @@ public class GstStateHandler implements GenesisStateHandler {
             LOG.warn("Z80 should be reset, not doing it!");
             bus.setZ80ResetState(true);
             //TODO dont think this is needed?
-//            z80.reset();
+            z80.reset();
         }
 
         IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
@@ -221,8 +216,8 @@ public class GstStateHandler implements GenesisStateHandler {
                 m68k.setAddrRegisterLong(i, getInt4Fn.apply(M68K_REGA_OFFSET + i * 4))
         );
         m68k.setPC(getInt4Fn.apply(0xC8));
-        int ssp = getUInt32LE(getInt4Fn.apply(0xD2));
-        int usp = getUInt32LE(getInt4Fn.apply(0xD6));
+        int ssp = getInt4Fn.apply(0xD2);
+        int usp = getInt4Fn.apply(0xD6);
         if (usp > 0) {
             LOG.warn("USP is not 0: " + usp);
         }
