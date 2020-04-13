@@ -83,6 +83,7 @@ public class SwingWindow implements DisplayWindow {
     // Create a new blank cursor.
     private Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
             cursorImg, new Point(0, 0), "blank cursor");
+    int count = 120; //~2sec
 
 
     public SwingWindow(SystemProvider mainEmu) {
@@ -102,166 +103,7 @@ public class SwingWindow implements DisplayWindow {
         reloadRecentFiles();
     }
 
-    public void init() {
-        Util.registerJmx(this);
-        GraphicsDevice gd = SwingScreenSupport.setupScreens();
-        fullScreenSize = gd.getDefaultConfiguration().getBounds().getSize();
-        LOG.info("Full screen size: " + fullScreenSize);
-        LOG.info("Emulation viewport size: " + ScreenSizeHelper.DEFAULT_SCALED_SCREEN_SIZE);
-        LOG.info("Application size: " + DEFAULT_FRAME_SIZE);
-
-        pixelsSrc = new int[0];
-        dest = createImage(gd, outputNonScaledScreenSize);
-        screenLabel.setIcon(new ImageIcon(dest));
-
-        jFrame = new JFrame(FRAME_TITLE_HEAD, gd.getDefaultConfiguration());
-
-        jFrame.getContentPane().setBackground(Color.BLACK);
-        jFrame.getContentPane().setForeground(Color.BLACK);
-
-        JMenuBar bar = new JMenuBar();
-
-        JMenu menu = new JMenu("File");
-        bar.add(menu);
-
-        JMenu setting = new JMenu("Setting");
-        bar.add(setting);
-
-        JMenuItem pauseItem = new JMenuItem("Pause");
-        addKeyAction(pauseItem, TOGGLE_PAUSE, e -> mainEmu.handleSystemEvent(TOGGLE_PAUSE, null));
-        setting.add(pauseItem);
-
-        JMenuItem resetItem = new JMenuItem("Reset");
-        addKeyAction(resetItem, RESET, e -> mainEmu.reset());
-        setting.add(resetItem);
-
-        JMenu regionMenu = new JMenu("Region");
-        setting.add(regionMenu);
-
-        JMenu screensMenu = new JMenu("Screens");
-        createAddScreenItems(screensMenu);
-        setting.add(screensMenu);
-
-        JMenu inputMenu = new JMenu("Input");
-        reloadControllers(InputProvider.DEFAULT_CONTROLLERS);
-        inputMenusMap.values().forEach(inputMenu::add);
-        setting.add(inputMenu);
-
-        JMenu menuView = new JMenu("View");
-        bar.add(menuView);
-
-        regionItems = createRegionItems();
-        regionItems.forEach(regionMenu::add);
-
-        fullScreenItem = new JCheckBoxMenuItem("Full Screen", false);
-        addKeyAction(fullScreenItem, TOGGLE_FULL_SCREEN, e -> fullScreenAction(e));
-        menuView.add(fullScreenItem);
-
-        muteItem = new JCheckBoxMenuItem("Enable Sound", true);
-        addKeyAction(muteItem, TOGGLE_MUTE, e -> mainEmu.handleSystemEvent(TOGGLE_MUTE, null));
-        menuView.add(muteItem);
-
-        JMenu helpMenu = new JMenu("Help");
-        bar.add(helpMenu);
-        bar.add(fpsLabel);
-
-        JMenuItem loadRomItem = new JMenuItem("Load ROM");
-        addKeyAction(loadRomItem, NEW_ROM, e -> handleNewRom());
-
-        recentFilesMenu = new JMenu("Recent Files");
-        recentFilesItems = new JMenuItem[PrefStore.recentFileTotal];
-        IntStream.range(0, recentFilesItems.length).forEach(i -> {
-            recentFilesItems[i] = new JMenuItem();
-            addKeyAction(recentFilesItems[i], NONE, e -> handleNewRom(recentFilesItems[i].getToolTipText()));
-            recentFilesMenu.add(recentFilesItems[i]);
-        });
-        reloadRecentFiles();
-
-        JMenuItem closeRomItem = new JMenuItem("Close ROM");
-        addKeyAction(closeRomItem, CLOSE_ROM, e -> mainEmu.handleSystemEvent(CLOSE_ROM, null));
-
-        JMenuItem loadStateItem = new JMenuItem("Load State");
-        addKeyAction(loadStateItem, LOAD_STATE, e -> handleLoadState());
-
-        JMenuItem saveStateItem = new JMenuItem("Save State");
-        addKeyAction(saveStateItem, SAVE_STATE, e -> handleSaveState());
-
-        JMenuItem quickSaveStateItem = new JMenuItem("Quick Save State");
-        addKeyAction(quickSaveStateItem, QUICK_SAVE, e -> handleQuickSaveState());
-
-        JMenuItem quickLoadStateItem = new JMenuItem("Quick Load State");
-        addKeyAction(quickLoadStateItem, QUICK_LOAD, e -> handleQuickLoadState());
-
-        JMenuItem exitItem = new JMenuItem("Exit");
-        addKeyAction(exitItem, CLOSE_APP, e -> {
-            SystemProvider mainEmu = getMainEmu();
-            mainEmu.handleSystemEvent(CLOSE_APP, null);
-            System.exit(0);
-        });
-
-        JMenuItem aboutItem = new JMenuItem("About");
-        addAction(aboutItem, e -> showHelpMessage(aboutItem.getText(), getAboutString()));
-
-        JMenuItem creditsItem = new JMenuItem("Credits");
-        addAction(creditsItem, e -> showHelpMessage(creditsItem.getText(),
-                FileLoader.readFileContentAsString("CREDITS.md")));
-
-        JMenuItem keyBindingsItem = new JMenuItem("Key Bindings");
-        addAction(keyBindingsItem, e -> showHelpMessage(keyBindingsItem.getText(),
-                FileLoader.readFileContentAsString(KeyBindingsHandler.configFile)));
-
-        JMenuItem readmeItem = new JMenuItem("Readme");
-        addAction(readmeItem, e -> showHelpMessage(readmeItem.getText(),
-                FileLoader.readFileContentAsString("README.md")));
-
-        JMenuItem licenseItem = new JMenuItem("License");
-        addAction(licenseItem, e -> showHelpMessage(licenseItem.getText(),
-                FileLoader.readFileContentAsString("LICENSE.md")));
-
-        JMenuItem historyItem = new JMenuItem("History");
-        addAction(historyItem, e -> showHelpMessage(historyItem.getText(),
-                FileLoader.readFileContentAsString("HISTORY.md")));
-
-        menu.add(loadRomItem);
-        menu.add(recentFilesMenu);
-        menu.add(closeRomItem);
-        menu.add(loadStateItem);
-        menu.add(saveStateItem);
-        menu.add(quickLoadStateItem);
-        menu.add(quickSaveStateItem);
-        menu.add(exitItem);
-        helpMenu.add(aboutItem);
-        helpMenu.add(keyBindingsItem);
-        helpMenu.add(readmeItem);
-        helpMenu.add(creditsItem);
-        helpMenu.add(historyItem);
-        helpMenu.add(licenseItem);
-
-        screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        screenLabel.setVerticalAlignment(SwingConstants.CENTER);
-        screenLabel.setCursor(blankCursor);
-
-        AbstractAction debugUiAction = toAbstractAction("debugUI", e -> showDebugInfo(!showDebug));
-        actionMap.put(SET_DEBUG_UI, debugUiAction);
-
-        setupFrameKeyListener();
-
-        jFrame.setMinimumSize(DEFAULT_FRAME_SIZE);
-        jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        jFrame.setResizable(true);
-        jFrame.setJMenuBar(bar);
-        jFrame.add(screenLabel, -1);
-
-        jFrame.pack();
-
-        //get the center location and then reset it
-        jFrame.setLocationRelativeTo(null);
-        Point centerPoint = jFrame.getLocation();
-        jFrame.setLocation(gd.getDefaultConfiguration().getBounds().x + centerPoint.x,
-                gd.getDefaultConfiguration().getBounds().y + centerPoint.y);
-
-        jFrame.setVisible(true);
-    }
+    private String info;
 
     private void addKeyAction(JMenuItem component, SystemProvider.SystemEvent event, ActionListener l) {
         AbstractAction action = toAbstractAction(component.getText(), l);
@@ -368,13 +210,182 @@ public class SwingWindow implements DisplayWindow {
         }
     }
 
+    public void init() {
+        Util.registerJmx(this);
+        GraphicsDevice gd = SwingScreenSupport.setupScreens();
+        fullScreenSize = gd.getDefaultConfiguration().getBounds().getSize();
+        LOG.info("Full screen size: " + fullScreenSize);
+        LOG.info("Emulation viewport size: " + ScreenSizeHelper.DEFAULT_SCALED_SCREEN_SIZE);
+        LOG.info("Application size: " + DEFAULT_FRAME_SIZE);
+
+        pixelsSrc = new int[0];
+        dest = createImage(gd, outputNonScaledScreenSize);
+        screenLabel.setIcon(new ImageIcon(dest));
+
+        jFrame = new JFrame(FRAME_TITLE_HEAD, gd.getDefaultConfiguration());
+
+        jFrame.getContentPane().setBackground(Color.BLACK);
+        jFrame.getContentPane().setForeground(Color.BLACK);
+
+        JMenuBar bar = new JMenuBar();
+
+        JMenu menu = new JMenu("File");
+        bar.add(menu);
+
+        JMenu setting = new JMenu("Setting");
+        bar.add(setting);
+
+        JMenuItem pauseItem = new JMenuItem("Pause");
+        addKeyAction(pauseItem, TOGGLE_PAUSE, e -> handleSystemEvent(TOGGLE_PAUSE, null, null));
+        setting.add(pauseItem);
+
+        JMenuItem resetItem = new JMenuItem("Reset");
+        addKeyAction(resetItem, RESET, e -> mainEmu.reset());
+        setting.add(resetItem);
+
+        JMenu regionMenu = new JMenu("Region");
+        setting.add(regionMenu);
+
+        JMenu screensMenu = new JMenu("Screens");
+        createAddScreenItems(screensMenu);
+        setting.add(screensMenu);
+
+        JMenu inputMenu = new JMenu("Input");
+        reloadControllers(InputProvider.DEFAULT_CONTROLLERS);
+        inputMenusMap.values().forEach(inputMenu::add);
+        setting.add(inputMenu);
+
+        JMenu menuView = new JMenu("View");
+        bar.add(menuView);
+
+        regionItems = createRegionItems();
+        regionItems.forEach(regionMenu::add);
+
+        fullScreenItem = new JCheckBoxMenuItem("Full Screen", false);
+        addKeyAction(fullScreenItem, TOGGLE_FULL_SCREEN, e -> fullScreenAction(e));
+        menuView.add(fullScreenItem);
+
+        muteItem = new JCheckBoxMenuItem("Enable Sound", true);
+        addKeyAction(muteItem, TOGGLE_MUTE, e -> handleSystemEvent(TOGGLE_MUTE, null, null));
+        menuView.add(muteItem);
+
+        JMenu helpMenu = new JMenu("Help");
+        bar.add(helpMenu);
+        bar.add(fpsLabel);
+
+        JMenuItem loadRomItem = new JMenuItem("Load ROM");
+        addKeyAction(loadRomItem, NEW_ROM, e -> handleNewRom());
+
+        recentFilesMenu = new JMenu("Recent Files");
+        recentFilesItems = new JMenuItem[PrefStore.recentFileTotal];
+        IntStream.range(0, recentFilesItems.length).forEach(i -> {
+            recentFilesItems[i] = new JMenuItem();
+            addKeyAction(recentFilesItems[i], NONE, e -> handleNewRom(recentFilesItems[i].getToolTipText()));
+            recentFilesMenu.add(recentFilesItems[i]);
+        });
+        reloadRecentFiles();
+
+        JMenuItem closeRomItem = new JMenuItem("Close ROM");
+        addKeyAction(closeRomItem, CLOSE_ROM, e -> handleSystemEvent(CLOSE_ROM, null, null));
+
+        JMenuItem loadStateItem = new JMenuItem("Load State");
+        addKeyAction(loadStateItem, LOAD_STATE, e -> handleLoadState());
+
+        JMenuItem saveStateItem = new JMenuItem("Save State");
+        addKeyAction(saveStateItem, SAVE_STATE, e -> handleSaveState());
+
+        JMenuItem quickSaveStateItem = new JMenuItem("Quick Save State");
+        addKeyAction(quickSaveStateItem, QUICK_SAVE, e -> handleQuickSaveState());
+
+        JMenuItem quickLoadStateItem = new JMenuItem("Quick Load State");
+        addKeyAction(quickLoadStateItem, QUICK_LOAD, e -> handleQuickLoadState());
+
+        JMenuItem exitItem = new JMenuItem("Exit");
+        addKeyAction(exitItem, CLOSE_APP, e -> {
+            handleSystemEvent(CLOSE_APP, null, null);
+            System.exit(0);
+        });
+
+        JMenuItem aboutItem = new JMenuItem("About");
+        addAction(aboutItem, e -> showHelpMessage(aboutItem.getText(), getAboutString()));
+
+        JMenuItem creditsItem = new JMenuItem("Credits");
+        addAction(creditsItem, e -> showHelpMessage(creditsItem.getText(),
+                FileLoader.readFileContentAsString("CREDITS.md")));
+
+        JMenuItem keyBindingsItem = new JMenuItem("Key Bindings");
+        addAction(keyBindingsItem, e -> showHelpMessage(keyBindingsItem.getText(),
+                FileLoader.readFileContentAsString(KeyBindingsHandler.configFile)));
+
+        JMenuItem readmeItem = new JMenuItem("Readme");
+        addAction(readmeItem, e -> showHelpMessage(readmeItem.getText(),
+                FileLoader.readFileContentAsString("README.md")));
+
+        JMenuItem licenseItem = new JMenuItem("License");
+        addAction(licenseItem, e -> showHelpMessage(licenseItem.getText(),
+                FileLoader.readFileContentAsString("LICENSE.md")));
+
+        JMenuItem historyItem = new JMenuItem("History");
+        addAction(historyItem, e -> showHelpMessage(historyItem.getText(),
+                FileLoader.readFileContentAsString("HISTORY.md")));
+
+        menu.add(loadRomItem);
+        menu.add(recentFilesMenu);
+        menu.add(closeRomItem);
+        menu.add(loadStateItem);
+        menu.add(saveStateItem);
+        menu.add(quickLoadStateItem);
+        menu.add(quickSaveStateItem);
+        menu.add(exitItem);
+        helpMenu.add(aboutItem);
+        helpMenu.add(keyBindingsItem);
+        helpMenu.add(readmeItem);
+        helpMenu.add(creditsItem);
+        helpMenu.add(historyItem);
+        helpMenu.add(licenseItem);
+
+        screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        screenLabel.setVerticalAlignment(SwingConstants.CENTER);
+        screenLabel.setCursor(blankCursor);
+
+        AbstractAction debugUiAction = toAbstractAction("debugUI", e -> showDebugInfo(!showDebug));
+        actionMap.put(SET_DEBUG_UI, debugUiAction);
+
+        setupFrameKeyListener();
+
+        jFrame.setMinimumSize(DEFAULT_FRAME_SIZE);
+        jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        jFrame.setResizable(true);
+        jFrame.setJMenuBar(bar);
+        jFrame.add(screenLabel, -1);
+
+        jFrame.pack();
+
+        //get the center location and then reset it
+        jFrame.setLocationRelativeTo(null);
+        Point centerPoint = jFrame.getLocation();
+        jFrame.setLocation(gd.getDefaultConfiguration().getBounds().x + centerPoint.x,
+                gd.getDefaultConfiguration().getBounds().y + centerPoint.y);
+
+        jFrame.setVisible(true);
+    }
+
     private void renderScreenLinearInternal(int[] data, String label, VideoMode videoMode) {
         boolean changed = resizeScreen(videoMode);
         RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
-        if (!Strings.isNullOrEmpty(label)) {
-            getFpsLabel().setText(label);
-        }
+        showLabel(label);
         screenLabel.repaint();
+    }
+
+    private void showLabel(String label) {
+        if (!Strings.isNullOrEmpty(label)) {
+            count--;
+            label += Strings.isNullOrEmpty(info) ? "" : " - " + info;
+            getFpsLabel().setText(label);
+            if (count <= 0) {
+                info = null;
+            }
+        }
     }
 
     private boolean resizeScreen(VideoMode videoMode) {
@@ -442,6 +453,12 @@ public class SwingWindow implements DisplayWindow {
         return res;
     }
 
+    @Override
+    public void showInfo(String info) {
+        this.info = info;
+        count = 120;
+    }
+
     private Optional<File> loadRomDialog(Component parent) {
         return loadFileDialog(parent, FileLoader.ROM_FILTER); //TODO
     }
@@ -454,39 +471,47 @@ public class SwingWindow implements DisplayWindow {
         Optional<File> optFile = loadStateFileDialog(jFrame);
         if (optFile.isPresent()) {
             Path file = optFile.get().toPath();
-            mainEmu.handleSystemEvent(LOAD_STATE, file);
+            handleSystemEvent(LOAD_STATE, file, file.getFileName().toString());
         }
     }
 
     private void handleQuickLoadState() {
         Path file = Paths.get(".", FileLoader.QUICK_SAVE_FILENAME);
-        mainEmu.handleSystemEvent(QUICK_LOAD, file);
+        handleSystemEvent(QUICK_LOAD, file, file.getFileName().toString());
     }
 
     private void handleQuickSaveState() {
         Path p = Paths.get(".", FileLoader.QUICK_SAVE_FILENAME);
-        mainEmu.handleSystemEvent(QUICK_SAVE, p);
+        handleSystemEvent(QUICK_SAVE, p, p.getFileName().toString());
+    }
+
+    private void handleSystemEvent(SystemProvider.SystemEvent event, Object par, String msg) {
+        mainEmu.handleSystemEvent(event, par);
+        showInfo(event + (Strings.isNullOrEmpty(msg) ? "" : ": " + msg));
     }
 
     private void handleSaveState() {
         Optional<File> optFile = fileDialog(jFrame, FileLoader.SAVE_STATE_FILTER, false);
         if (optFile.isPresent()) {
-            mainEmu.handleSystemEvent(SAVE_STATE, optFile.get().toPath());
+            handleSystemEvent(SAVE_STATE, optFile.get().toPath(), optFile.get().getName());
         }
     }
 
     private void handleNewRom() {
-        mainEmu.handleSystemEvent(CLOSE_ROM, null);
+        handleSystemEvent(CLOSE_ROM, null, null);
         Optional<File> optFile = loadRomDialog(jFrame);
         if (optFile.isPresent()) {
             Path file = optFile.get().toPath();
             SystemLoader.getInstance().handleNewRomFile(file);
             reloadRecentFiles();
+            showInfo(NEW_ROM + ": " + file.getFileName());
         }
     }
 
     private void handleNewRom(String path) {
-        SystemLoader.getInstance().handleNewRomFile(Paths.get(path));
+        Path p = Paths.get(path);
+        showInfo(NEW_ROM + ": " + p.getFileName());
+        SystemLoader.getInstance().handleNewRomFile(p);
     }
 
     private SystemProvider getMainEmu() {
@@ -603,7 +628,8 @@ public class SwingWindow implements DisplayWindow {
             java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
             list.forEach(c -> {
                 JCheckBoxMenuItem item = new JCheckBoxMenuItem(c, InputProvider.KEYBOARD_CONTROLLER.equalsIgnoreCase(c));
-                addAction(item, e -> mainEmu.handleSystemEvent(CONTROLLER_CHANGE, pn.name() + ":" + c));
+                addAction(item, e -> handleSystemEvent(CONTROLLER_CHANGE, pn.name() + ":" + c,
+                        pn.name() + ":" + c));
                 l.add(item);
             });
             //only allow one selection

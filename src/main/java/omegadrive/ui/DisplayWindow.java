@@ -94,6 +94,10 @@ public interface DisplayWindow {
         //DO NOTHING
     }
 
+    default void showInfo(String info) {
+        //DO NOTHING
+    }
+
     default String getAboutString() {
         int year = LocalDate.now().getYear();
         String yrString = year == 2018 ? "2018" : "2018-" + year;
