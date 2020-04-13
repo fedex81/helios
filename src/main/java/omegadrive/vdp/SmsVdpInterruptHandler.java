@@ -23,12 +23,13 @@ import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
 
+import java.util.Collections;
+
 /**
  * http://www.smspower.org/forums/8161-SMSDisplayTiming
  */
 public class SmsVdpInterruptHandler extends VdpInterruptHandler {
 
-    //TODO fix
     public static VdpInterruptHandler createTmsInstance(VideoMode videoMode) {
         SmsVdpInterruptHandler handler = new SmsVdpInterruptHandler() {
             @Override
@@ -36,6 +37,7 @@ public class SmsVdpInterruptHandler extends VdpInterruptHandler {
                 return hCounterInternal == 0 && vCounterInternal == vdpCounterMode.vBlankSet;
             }
         };
+        handler.vdpEventListenerList = Collections.emptyList();
         handler.setMode(videoMode);
         handler.reset();
         return handler;
@@ -47,10 +49,10 @@ public class SmsVdpInterruptHandler extends VdpInterruptHandler {
         if (vdp != null) {
             vdp.addVdpEventListener(handler);
         }
+        handler.vdpEventListenerList = Collections.unmodifiableList(vdp.getVdpEventListenerList());
         return handler;
     }
 
-    //TODO outrun sms
     @Override
     protected void handleHLinesCounterDecrement() {
         boolean reset = vBlankSet; //OutRun sms

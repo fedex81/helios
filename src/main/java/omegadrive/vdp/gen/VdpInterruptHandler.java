@@ -61,7 +61,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
 
     private VideoMode videoMode;
     protected VdpCounterMode vdpCounterMode;
-    private List<BaseVdpProvider.VdpEventListener> vdpEventListenerList;
+    protected List<BaseVdpProvider.VdpEventListener> vdpEventListenerList;
     protected boolean h40;
 
     protected boolean vBlankSet;
