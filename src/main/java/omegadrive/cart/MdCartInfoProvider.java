@@ -99,7 +99,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     }
 
     private static Logger LOG = LogManager.getLogger(MdCartInfoProvider.class.getSimpleName());
-    private String serial;
+    private String serial = "MISSING";
 
     @Override
     public int getChecksumStartAddress() {
@@ -229,6 +229,10 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     }
 
     private void detectHeaderMetadata() {
+        if (memoryProvider.getRomData().length < SERIAL_NUMBER_END) {
+
+            return;
+        }
         int[] serialArray = Arrays.copyOfRange(memoryProvider.getRomData(), SERIAL_NUMBER_START, SERIAL_NUMBER_END);
         this.serial = Util.toStringValue(serialArray);
 //        System.out.println(serial);
