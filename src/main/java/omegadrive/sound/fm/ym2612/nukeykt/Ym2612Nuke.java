@@ -63,7 +63,7 @@ public class Ym2612Nuke implements MdFmProvider {
     private AudioRateControl audioRateControl;
     private int sampleRatePerFrame = 0;
 
-    public Ym2612Nuke(IYm3438.IYm3438_Type chip) {
+    private Ym2612Nuke(IYm3438.IYm3438_Type chip) {
         this.ym3438 = new Ym3438();
         this.chip = chip;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
@@ -71,25 +71,13 @@ public class Ym2612Nuke implements MdFmProvider {
         state.chip = chip;
     }
 
-    public Ym2612Nuke(IYm3438 impl) {
-        this.ym3438 = impl;
-        this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
-        this.state = new Ym3438Context();
+    @Override
+    public void init(int clock, int rate) {
+        LOG.info("Init with clock {}hz, sampleRate {}hz", clock, rate);
     }
 
     public Ym3438Context getState() {
         return state;
-    }
-
-    public void setState(Ym3438Context state) {
-        if (state != null) {
-            this.state = state;
-            this.chip = state.chip;
-        } else {
-            LOG.warn("Unable to restore state, FM will not work");
-            this.chip.reset();
-            this.state.reset();
-        }
     }
 
     @Override
@@ -135,11 +123,6 @@ public class Ym2612Nuke implements MdFmProvider {
         cycleAccum += microsPerTick;
         spinOnce();
         addSample();
-    }
-
-    @Override
-    public void init(int clock, int rate) {
-        LOG.info("Init with clock {}hz, sampleRate {}hz", clock, rate);
     }
 
     @Override
@@ -189,6 +172,23 @@ public class Ym2612Nuke implements MdFmProvider {
         }
     }
 
+    @Override
+    public void onNewFrame() {
+        fmCalcsPerMicros = audioRateControl.adaptiveRateControl(queueLen.get(), fmCalcsPerMicros, sampleRatePerFrame);
+        sampleRatePerFrame = 0;
+    }
+
+    public void setState(Ym3438Context state) {
+        if (state != null) {
+            this.state = state;
+            this.chip = state.chip;
+        } else {
+            LOG.warn("Unable to restore state, FM will not work");
+            this.chip.reset();
+            this.state.reset();
+        }
+    }
+
     public static class Ym3438Context implements Serializable {
 
         private static final long serialVersionUID = -2921159132727518547L;
@@ -203,11 +203,5 @@ public class Ym2612Nuke implements MdFmProvider {
             ym3438_sample = 0;
             Arrays.stream(ym3438_accm).forEach(row -> Arrays.fill(row, 0));
         }
-    }
-
-    @Override
-    public void onNewFrame() {
-        fmCalcsPerMicros = audioRateControl.adaptiveRateControl(queueLen.get(), fmCalcsPerMicros, sampleRatePerFrame);
-        sampleRatePerFrame = 0;
     }
 }

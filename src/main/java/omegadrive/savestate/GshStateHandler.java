@@ -40,7 +40,7 @@ public class GshStateHandler extends GstStateHandler {
     protected static final String FM_MAGIC_WORD_NUKE = "NUKE";
     protected static final String fileExtension = "gsh";
 
-    public GshStateHandler() {
+    protected GshStateHandler() {
     }
 
     protected static String handleFileExtension(String fileName) {
