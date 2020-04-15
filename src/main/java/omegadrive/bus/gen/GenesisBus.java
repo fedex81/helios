@@ -33,6 +33,7 @@ import omegadrive.system.SystemProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.GenesisVdpProvider.VdpPortType;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -631,33 +632,32 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     //      Doing an 8-bit write to the control or data port is interpreted by
 //                the VDP as a 16-bit word, with the data written used for both halfs
 //                of the word.
-    private void vdpWrite(int addressL, Size size, long data) {
-        boolean valid = (addressL & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
+    private void vdpWrite(int addressLong, Size size, long data) {
+        boolean valid = (addressLong & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
         if (!valid) {
             LOG.error("Illegal VDP write, address {}, data {}, size {}",
-                    Long.toHexString(addressL), Long.toHexString(data), size);
+                    Long.toHexString(addressLong), Long.toHexString(data), size);
             throw new RuntimeException("Illegal VDP write");
         }
-        addressL = addressL & 0x1F; //low 5 bits
-        if (addressL < 0x4) {    //DATA PORT
-            if (size == Size.BYTE) {
-                data = data << 8 | data;
-                vdpProvider.writeDataPort(data);
-            } else if (size == Size.WORD) {
-                vdpProvider.writeDataPort(data);
-            } else {
-                vdpProvider.writeDataPort(data >> 16);
-                vdpProvider.writeDataPort(data & 0xFFFF);
+
+        int addressL = addressLong & 0x1F; //low 5 bits
+        if (addressL < 0x8) { //DATA or CONTROL PORT
+            VdpPortType portType = addressL < 0x4 ? VdpPortType.DATA :
+                    VdpPortType.CONTROL;
+            if (checkVdpReady(addressLong, size, data)) {
+                return;
             }
-        } else if (addressL >= 0x4 && addressL < 0x8) {    //CONTROL PORT
             if (size == Size.BYTE) {
                 data = data << 8 | data;
-                vdpProvider.writeControlPort(data);
-            } else if (size == Size.WORD) {
-                vdpProvider.writeControlPort(data);
+            }
+            if (size != Size.LONG) {
+                vdpProvider.writeVdpPortWord(portType, (int) data);
             } else {
-                vdpProvider.writeControlPort(data >> 16);
-                vdpProvider.writeControlPort(data & 0xFFFF);
+                vdpProvider.writeVdpPortWord(portType, (int) (data >> 16));
+                if (checkVdpReady(addressLong, Size.WORD, data & 0xFFFF)) {
+                    return;
+                }
+                vdpProvider.writeVdpPortWord(portType, (int) (data & 0xFFFF));
             }
         } else if (addressL >= 0x8 && addressL < 0x0F) {   //HV Counter
             LOG.warn("HV counter write");
@@ -678,6 +678,16 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else {
             LOG.warn("Unexpected vdpWrite, address: " + Long.toHexString(addressL) + ", data: " + data);
         }
+    }
+
+    //NOTE: this assumes that only 68k writes on the vpdDataPort
+    private boolean checkVdpReady(int address, Size size, long data) {
+        if (busArbiter.getStateVdp() != BusArbiter.VdpState.NORMAL) {
+            Runnable r = () -> this.write(address, data, size);
+            busArbiter.runLater(r);
+            return true;
+        }
+        return false;
     }
 
     private void checkSsf2Mapper() {

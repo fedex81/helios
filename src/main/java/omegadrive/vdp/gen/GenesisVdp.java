@@ -47,7 +47,8 @@ public class GenesisVdp implements GenesisVdpProvider {
     public final static boolean regVerbose = false;
     private final static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
-    private static boolean ENABLE_READ_AHEAD = Boolean.valueOf(System.getProperty("vdp.enable.read.ahead", "true"));
+    //TODO true breaks a good number of VdpFifoTests
+    private static boolean ENABLE_READ_AHEAD = Boolean.valueOf(System.getProperty("vdp.enable.read.ahead", "false"));
 
     private VramMode vramMode;
     private InterlaceMode interlaceMode;
@@ -55,7 +56,6 @@ public class GenesisVdp implements GenesisVdpProvider {
     int[] registers = new int[VDP_REGISTERS_SIZE];
 
     IVdpFifo.VdpFifoEntry pendingReadEntry = new IVdpFifo.VdpFifoEntry();
-    IVdpFifo.VdpFifoEntry pendingWriteEntry = new IVdpFifo.VdpFifoEntry();
 
     //    This flag is updated when these conditions are met:
 //
@@ -361,26 +361,13 @@ public class GenesisVdp implements GenesisVdpProvider {
 //	VSRAM Read	0	0	0	1	0	0
 
     @Override
-    public void writeControlPort(long dataL) {
-        writeVdpPort(VdpPortType.CONTROL, dataL);
-    }
-
-    @Override
-    public void writeDataPort(long dataL) {
-        writeVdpPort(VdpPortType.DATA, dataL);
-    }
-
-    private void writeVdpPort(VdpPortType type, long dataL) {
-        if (!bus.is68kRunning()) {
-            handlePendingWrite(type, dataL);
-            return;
-        }
+    public void writeVdpPortWord(VdpPortType type, int data) {
         switch (type) {
             case DATA:
-                writeDataPortInternal(dataL);
+                writeDataPortInternal(data);
                 break;
             case CONTROL:
-                writeControlPortInternal(dataL);
+                writeControlPortInternal(data);
                 break;
         }
         evaluateStop68k();
@@ -420,21 +407,7 @@ public class GenesisVdp implements GenesisVdpProvider {
         vramMode = VramMode.getVramMode(codeRegister & 0xF, verbose);
     }
 
-    private void handlePendingWrite(VdpPortType type, long data) {
-        if (pendingWriteEntry.portType != null) {
-            LOG.error("Dropped PORT write: {}, {}\n{}\n{}",
-                    type, Long.toHexString(data), getVdpStateString(), dmaHandler.getDmaStateString());
-            return;
-        }
-        pendingWriteEntry.data = (int) data;
-        pendingWriteEntry.portType = type;
-        pendingWriteEntry.vdpRamMode = vramMode;
-        pendingWriteEntry.addressRegister = -1;
-        LogHelper.printLevel(LOG, Level.INFO, "Pending {}Port write #1 : {}", type, data, fifoVerbose);
-    }
-
-    private void writeDataPortInternal(long dataL) {
-        int data = (int) dataL;
+    private void writeDataPortInternal(int data) {
         writePendingControlPort = false;
         if (vramMode == null) {
             LogHelper.printLevel(LOG, Level.WARN, "writeDataPort, data: {}, address: {}", data, addressRegister, true);
@@ -471,7 +444,6 @@ public class GenesisVdp implements GenesisVdpProvider {
                     entry.vdpRamMode, entry.data, entry.addressRegister, verbose);
             memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
             if (wasFull && !fifo.isFull()) {
-                processPendingWrites();
                 evaluateStop68k();
             }
         }
@@ -657,7 +629,6 @@ public class GenesisVdp implements GenesisVdpProvider {
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
                 LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", dmaMode, verbose);
-                processPendingWrites();
                 evaluateStop68k();
             }
         }
@@ -667,24 +638,6 @@ public class GenesisVdp implements GenesisVdpProvider {
         int value = fifo.isFull() ? GenesisBusProvider.FIFO_FULL_MASK : 0;
         value |= (dma == 1 && dmaHandler.dmaInProgress()) ? GenesisBusProvider.DMA_IN_PROGRESS_MASK : value;
         bus.setStop68k(value);
-    }
-
-    private void processPendingWrites() {
-        if (pendingWriteEntry.portType != null) {
-            LogHelper.printLevel(LOG, Level.INFO, "Process pending {}Port write: {}",
-                    pendingWriteEntry.portType, pendingWriteEntry.data, fifoVerbose);
-            switch (pendingWriteEntry.portType) {
-                case DATA:
-                    writeDataPortInternal(pendingWriteEntry.data);
-                    break;
-                case CONTROL:
-                    writeControlPortInternal(pendingWriteEntry.data);
-                    break;
-            }
-            pendingWriteEntry.portType = null;
-            pendingWriteEntry.vdpRamMode = null;
-            pendingWriteEntry.data = -1;
-        }
     }
 
     private boolean setupDmaFillMaybe(int data) {

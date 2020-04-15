@@ -23,6 +23,7 @@ import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.Size;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.VdpDmaHandlerTest;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -34,6 +35,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static omegadrive.bus.gen.GenesisBusProvider.VDP_ADDRESS_SPACE_START;
 import static omegadrive.vdp.model.GenesisVdpProvider.VramMode.*;
 
 public class GenesisVdpTest2 {
@@ -45,6 +47,8 @@ public class GenesisVdpTest2 {
     VdpDmaHandler dmaHandler;
     GenesisBusProvider busProvider;
 
+    static final long VDP_CONTROL_PORT = VDP_ADDRESS_SPACE_START + 4;
+
     @Before
     public void setup() {
         IMemoryProvider memory = MemoryProvider.createGenesisInstance();
@@ -54,6 +58,7 @@ public class GenesisVdpTest2 {
         dmaHandler = new VdpDmaHandlerImpl();
 
         vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface, dmaHandler, RegionDetector.Region.EUROPE);
+        busProvider.attachDevice(vdpProvider);
 
         ((VdpDmaHandlerImpl) dmaHandler).vdpProvider = vdpProvider;
         ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
@@ -92,17 +97,18 @@ public class GenesisVdpTest2 {
         //setup DMA
         vdpProvider.writeControlPort(0x4400);
         //move.l, first word
-        vdpProvider.writeControlPort(0x81);
-        Assert.assertFalse(busProvider.is68kRunning());
+        busProvider.write(VDP_CONTROL_PORT, 0x81, Size.WORD);
 
         //move.l second word, this changes the autoInc value -> needs to happen after DMA!
-        vdpProvider.writeControlPort(0x8F00 + afterDmaAutoInc);
+        busProvider.write(VDP_CONTROL_PORT, 0x8F00 + afterDmaAutoInc, Size.WORD);
+        Assert.assertFalse(busProvider.is68kRunning());
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         //autoInc has not been changed
         Assert.assertEquals(dmaAutoInc, vdpProvider.getRegisterData(GenesisVdpProvider.VdpRegisterName.AUTO_INCREMENT));
 
         MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
+        Assert.assertTrue(busProvider.is68kRunning());
 
         //autoInc has now been changed
         Assert.assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(GenesisVdpProvider.VdpRegisterName.AUTO_INCREMENT));

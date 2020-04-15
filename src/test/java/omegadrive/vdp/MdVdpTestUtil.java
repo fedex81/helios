@@ -236,18 +236,12 @@ public class MdVdpTestUtil {
         }
 
         @Override
-        public void writeDataPort(long data) {
-
+        public void writeVdpPortWord(VdpPortType type, int data) {
         }
 
         @Override
         public int readControl() {
             return 0;
-        }
-
-        @Override
-        public void writeControlPort(long data) {
-
         }
 
         @Override

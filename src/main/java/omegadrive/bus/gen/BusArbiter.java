@@ -48,7 +48,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
 
     private VdpState stateVdp = VdpState.NORMAL;
     private IntState int68k = IntState.ACKED;
-    private M68kState state68k = M68kState.RUNNING;
+    private CpuState state68k = CpuState.RUNNING;
     private IntState z80Int = IntState.NONE;
     private InterruptEvent z80IntLineVdp = InterruptEvent.Z80_INT_OFF;
 
@@ -57,6 +57,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     protected Z80Provider z80;
 
     private int mask68kState = 0;
+    private Runnable runLater;
 
     public static BusArbiter createInstance(GenesisVdpProvider vdp, M68kProvider m68k, Z80Provider z80) {
         BusArbiter b = new BusArbiter();
@@ -71,8 +72,12 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         if (mask != mask68kState) {
             mask68kState = mask;
             stateVdp = stateVdpVals[mask];
-            state68k = stateVdp != VdpState.NORMAL ? M68kState.HALTED : M68kState.RUNNING;
+            state68k = stateVdp == VdpState.DMA_IN_PROGRESS ? CpuState.HALTED : CpuState.RUNNING;
             logInfo("68k State{} , {}", mask, state68k);
+            if (state68k == CpuState.RUNNING && runLater != null) {
+                runLater.run();
+                runLater = null;
+            }
         }
     }
 
@@ -122,7 +127,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     }
 
     public boolean is68kRunning() {
-        return state68k == M68kState.RUNNING;
+        return state68k == CpuState.RUNNING;
     }
 
 
@@ -184,6 +189,12 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         }
     }
 
+    public void runLater(Runnable r) {
+        runLater = r;
+        state68k = CpuState.HALTED;
+        logInfo("68k State{} , {}", mask68kState, state68k);
+    }
+
     enum IntState {NONE, PENDING, ASSERTED, ACKED}
 
     public void ackInterrupts68k() {
@@ -222,7 +233,9 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
 
     public enum InterruptEvent {Z80_INT_ON, Z80_INT_OFF}
 
-    enum M68kState {RUNNING, HALTED}
+    public VdpState getStateVdp() {
+        return stateVdp;
+    }
 
     private int getLevel68k() {
         //TODO titan2 this can return 0, why investigate
@@ -241,6 +254,8 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     enum VdpState {
         NORMAL, DMA_IN_PROGRESS, FIFO_FULL
     }
+
+    enum CpuState {RUNNING, HALTED}
 
     private static BusArbiter createNoOp() {
         return new BusArbiter() {

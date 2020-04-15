@@ -174,11 +174,10 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
     //always a word
     int readDataPort();
 
-    void writeDataPort(long data);
+    //write a word
+    void writeVdpPortWord(VdpPortType type, int data);
 
     int readControl();
-
-    void writeControlPort(long data);
 
     int getVCounter();
 
@@ -238,4 +237,11 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
         updateRegisterData(registerName.ordinal(), data);
     }
 
+    default void writeControlPort(long data) {
+        writeVdpPortWord(VdpPortType.CONTROL, (int) data);
+    }
+
+    default void writeDataPort(long data) {
+        writeVdpPortWord(VdpPortType.DATA, (int) data);
+    }
 }
