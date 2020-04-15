@@ -12,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +39,7 @@ public class Telemetry {
     };
 
     private static Telemetry telemetry = new Telemetry();
+    private static NumberFormat fpsFormatter = new DecimalFormat("#0.00");
     private Table<String, Long, Double> data = TreeBasedTable.create();
     private Path telemetryFile;
     private long frameCounter = 0;
@@ -70,11 +73,11 @@ public class Telemetry {
         }
     }
 
-    private double getAvgFpsRounded() {
+    private String getAvgFpsRounded() {
         double r = fpsAccum / STATS_EVERY_FRAMES;
         r = ((int) (r * 100)) / 100d;
         fpsAccum = 0;
-        return r;
+        return fpsFormatter.format(r);
     }
 
     public boolean hasNewStats() {

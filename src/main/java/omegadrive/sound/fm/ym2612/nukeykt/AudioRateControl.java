@@ -24,6 +24,9 @@ import omegadrive.system.perf.Telemetry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+
 /**
  * AudioRateControl
  */
@@ -36,6 +39,8 @@ public class AudioRateControl {
     private static final double UPPER_LIMIT = FM_CALCS_PER_MICROS * (1 + HALF_LIMIT);
     static double fastPace = 0.005; //max distortion ~60hz/frame
     static double slowPace = fastPace / 2;
+    private static NumberFormat bufferMsFormatter = new DecimalFormat("000");
+
     private static String latestStats = null;
     private int bufferSize;
     private int targetBufferSize;
@@ -90,7 +95,8 @@ public class AudioRateControl {
         if (latestLen > 0 && maxLen > 0) {
             audioDelayMs = (long) (1000.0 * latestLen / SoundProvider.SAMPLE_RATE_HZ);
             long maxAudioDelayMs = (long) (1000.0 * maxLen / SoundProvider.SAMPLE_RATE_HZ);
-            latestStats = audioDelayMs + " / " + maxAudioDelayMs + "ms";
+            latestStats = bufferMsFormatter.format(audioDelayMs) + " / " +
+                    bufferMsFormatter.format(maxAudioDelayMs) + "ms";
         }
         Telemetry.getInstance().addSample("audioDelayMs", audioDelayMs);
         Telemetry.getInstance().addSample("audioQueueLen", latestLen);

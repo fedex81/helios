@@ -62,7 +62,7 @@ public class SwingWindow implements DisplayWindow {
     private double scale = DEFAULT_SCALE_FACTOR;
 
     private final JLabel screenLabel = new JLabel();
-    private final JLabel fpsLabel = new JLabel("");
+    private final JLabel perfLabel = new JLabel("");
 
     private JFrame jFrame;
     private SystemProvider mainEmu;
@@ -166,7 +166,7 @@ public class SwingWindow implements DisplayWindow {
             if (fullScreenItem.getState()) {
                 jFrame.getJMenuBar().setVisible(showDebug);
             }
-            fpsLabel.setVisible(showDebug);
+            perfLabel.setVisible(showDebug);
         });
     }
 
@@ -176,7 +176,7 @@ public class SwingWindow implements DisplayWindow {
             Arrays.fill(pixelsDest, 0);
             screenLabel.invalidate();
             screenLabel.repaint();
-            fpsLabel.setText("");
+            perfLabel.setText("");
             jFrame.setTitle(FRAME_TITLE_HEAD);
             LOG.info("Blanking screen");
         });
@@ -271,7 +271,8 @@ public class SwingWindow implements DisplayWindow {
 
         JMenu helpMenu = new JMenu("Help");
         bar.add(helpMenu);
-        bar.add(fpsLabel);
+        bar.add(Box.createHorizontalGlue());
+        bar.add(perfLabel);
 
         JMenuItem loadRomItem = new JMenuItem("Load ROM");
         addKeyAction(loadRomItem, NEW_ROM, e -> handleNewRom());
@@ -381,7 +382,7 @@ public class SwingWindow implements DisplayWindow {
         if (!Strings.isNullOrEmpty(label)) {
             count--;
             label += Strings.isNullOrEmpty(info) ? "" : " - " + info;
-            getFpsLabel().setText(label);
+            getPerfLabel().setText(label);
             if (count <= 0) {
                 info = null;
             }
@@ -533,8 +534,8 @@ public class SwingWindow implements DisplayWindow {
         jFrame.addKeyListener(keyAdapter);
     }
 
-    private JLabel getFpsLabel() {
-        return fpsLabel;
+    private JLabel getPerfLabel() {
+        return perfLabel;
     }
 
     private int[] getPixels(BufferedImage img) {
