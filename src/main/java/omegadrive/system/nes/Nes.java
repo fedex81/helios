@@ -49,10 +49,6 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
         LOG.info("Disabling halfNes jinput");
     }
 
-    public static boolean verbose = false;
-
-    protected long startCycle = System.nanoTime();
-    protected int elapsedNs;
     private SystemLoader.SystemType systemType;
     private NesHelper.NesGUIInterface gui;
 
@@ -61,12 +57,8 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
         this.systemType = systemType;
     }
 
-    public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, DisplayWindow emuFrame, boolean debugPerf) {
-        return new Nes(systemType, emuFrame);
-    }
-
     public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
-        return createNewInstance(systemType, emuFrame, false);
+        return new Nes(systemType, emuFrame);
     }
 
     private void initCommon() {
@@ -97,7 +89,7 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
     public void init() {
         stateHandler = NesStateHandler.EMPTY_STATE;
         bus = NesHelper.NO_OP_BUS;
-        vdp = NesHelper.VDP_PROVIDER;
+        vdp = NesHelper.NO_OP_VDP_PROVIDER;
         memory = MemoryProvider.NO_MEMORY;
         joypad = new NesPad(NesHelper.cnt1, NesHelper.cnt2);
         initCommon();
@@ -109,6 +101,7 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         videoMode = vdp.getVideoMode();
         gui = NesHelper.createNes(romFile, this, (AudioOutInterface) sound.getFm());
+        vdp = gui.getVdpProvider();
         gui.run(); //blocking
         LOG.info("Exiting rom thread loop");
     }
@@ -119,15 +112,8 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
         super.handleCloseRom();
     }
 
-    @Override
-    protected void newFrame() {
-        videoMode = vdp.getVideoMode();
-        renderScreenLinearInternal(gui.getScreen(), getStats(System.nanoTime()));
-        handleVdpDumpScreenData();
-        elapsedNs = (int) (syncCycle(startCycle) - startCycle);
-        processSaveState();
-        pauseAndWait();
-        startCycle = System.nanoTime();
+    public void newFrameNes() {
+        newFrame();
     }
 
     @Override
@@ -148,6 +134,16 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
             stateHandler = NesStateHandler.EMPTY_STATE;
             saveStateFlag = false;
         }
+    }
+
+    @Override
+    protected void resetCycleCounters(int counter) {
+        //DO NOTHING
+    }
+
+    @Override
+    protected void updateVideoMode(boolean force) {
+        videoMode = vdp.getVideoMode();
     }
 
     @Override

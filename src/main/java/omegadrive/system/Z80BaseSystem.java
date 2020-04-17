@@ -52,8 +52,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
     private SystemLoader.SystemType systemType;
     private Z80Provider.Interrupt vdpInterruptType;
 
-    public static boolean verbose = false;
-
     protected Z80BaseSystem(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);
         this.systemType = systemType;
@@ -112,17 +110,14 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
     private static int VDP_DIVIDER = 1;  //10.738635 Mhz
     private static int Z80_DIVIDER = 3; //3.579545 Mhz
 
-    int nextZ80Cycle = Z80_DIVIDER;
-    int nextVdpCycle = VDP_DIVIDER;
-
-    int counter = 1;
-    long startCycle = System.nanoTime();
+    private int nextZ80Cycle = Z80_DIVIDER;
+    private int nextVdpCycle = VDP_DIVIDER;
 
     @Override
     protected void loop() {
         LOG.info("Starting game loop");
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
-        updateVideoMode();
+        updateVideoMode(true);
 
         do {
             try {
@@ -135,20 +130,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
             }
         } while (!runningRomFuture.isDone());
         LOG.info("Exiting rom thread loop");
-    }
-
-    @Override
-    protected void newFrame() {
-        renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(System.nanoTime()));
-        handleVdpDumpScreenData();
-        updateVideoMode();
-        syncCycle(startCycle);
-//                    processSaveState();
-        pauseAndWait();
-        resetCycleCounters(counter);
-        counter = 0;
-
-        startCycle = System.nanoTime();
     }
 
     @Override
@@ -167,18 +148,19 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
 
     @Override
     protected void processSaveState() {
-        LOG.error("Not implemented!");
+        //Not implemented
     }
 
-    private void resetCycleCounters(int counter) {
+    @Override
+    protected void resetCycleCounters(int counter) {
         nextZ80Cycle -= counter;
         nextVdpCycle -= counter;
     }
 
-
-    private void updateVideoMode() {
+    @Override
+    protected void updateVideoMode(boolean force) {
         VideoMode vm = vdp.getVideoMode();
-        if (videoMode != vm) {
+        if (force || videoMode != vm) {
             LOG.info("Video mode changed: {}", vm);
             videoMode = vm;
         }

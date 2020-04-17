@@ -20,6 +20,7 @@
 package omegadrive.sound.fm.ym2612.nukeykt;
 
 import omegadrive.sound.SoundProvider;
+import omegadrive.sound.fm.AudioRateControl;
 import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
@@ -54,7 +55,6 @@ public class Ym2612Nuke implements MdFmProvider {
     private IYm3438.IYm3438_Type chip;
     private Ym3438Context state;
 
-    int maxQueueLen = 0;
     private AtomicInteger queueLen = new AtomicInteger();
     volatile double fmCalcsPerMicros = FM_CALCS_PER_MICROS;
     double cycleAccum = 0;
@@ -93,6 +93,7 @@ public class Ym2612Nuke implements MdFmProvider {
         ym3438.OPN2_Write(chip, addr, data);
     }
 
+    //TODO
     @Override
     public int readRegister(int type, int regNumber) {
         return 0;
@@ -135,24 +136,21 @@ public class Ym2612Nuke implements MdFmProvider {
         if (initialQueueSize < MIN_AUDIO_SAMPLES) {
             return 0;
         }
-        Integer sample;
-        int i = offset;
+        Integer isample;
+        int i = offset, sample;
         for (; i < end && queueIndicativeLen > 0; i += 2) {
-            sample = sampleQueue.poll();
-            if (sample == null) {
+            isample = sampleQueue.poll();
+            if (isample == null) {
                 LOG.warn("Null sample QL{} P{}", queueIndicativeLen, i);
                 break;
             }
+            sample = isample;
             queueIndicativeLen = queueLen.decrementAndGet();
             sample <<= VOLUME_SHIFT;
             buf_lr[i] = sample;
             buf_lr[i + 1] = sample;
         }
         sampleNumMono = initialQueueSize - queueIndicativeLen;
-        if (DEBUG && queueIndicativeLen > maxQueueLen) {
-            maxQueueLen = queueIndicativeLen;
-            LOG.info("Len {}-{}, Prod {}, Req {}", initialQueueSize, maxQueueLen, sampleNumMono, count);
-        }
         return sampleNumMono;
     }
 

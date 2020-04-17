@@ -60,7 +60,7 @@ public class SmsPerf extends Sms {
         cycleZ80Frame[frameCnt] = cycleZ80cnt;
         cycleFmFrame[frameCnt] = cycleFmCnt;
 
-        frameWaitNs += elapsedNs;
+        frameWaitNs += elapsedWaitNs;
         frameCnt++;
         totalCycles += counter;
 

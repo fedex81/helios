@@ -67,11 +67,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     protected Z80Provider z80;
     protected M68kProvider cpu;
     protected double nextVdpCycle = vdpVals[0];
-    protected int counter = 1;
-    protected long elapsedWaitNs, frameProcessingDelayNs;
-    public int next68kCycle = M68K_DIVIDER;
-    int nextZ80Cycle = Z80_DIVIDER;
-    long startCycle = System.nanoTime();
+    private int next68kCycle = M68K_DIVIDER;
+    private int nextZ80Cycle = Z80_DIVIDER;
     //fm emulation
     private double microsPerTick = 1;
 
@@ -125,25 +122,6 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         LOG.info("Exiting rom thread loop");
     }
 
-    @Override
-    protected void newFrame() {
-        long tstamp = System.nanoTime();
-        updateVideoMode(false);
-        renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(startCycle));
-        handleVdpDumpScreenData();
-        long startWaitNs = System.nanoTime();
-        elapsedWaitNs = syncCycle(startCycle) - startWaitNs;
-        processSaveState();
-        pauseAndWait();
-        resetCycleCounters(counter);
-        counter = 0;
-        startCycle = System.nanoTime();
-        frameProcessingDelayNs = startCycle - tstamp - elapsedWaitNs;
-        futureDoneFlag = runningRomFuture.isDone();
-//        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
-    }
-
-
     protected final void runVdp(long counter) {
         if (counter >= nextVdpCycle) {
             int vdpMclk = vdp.runSlot();
@@ -189,6 +167,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         }
     }
 
+    @Override
     protected void updateVideoMode(boolean force) {
         if (force || videoMode != vdp.getVideoMode()) {
             videoMode = vdp.getVideoMode();
@@ -236,12 +215,14 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         return romRegion;
     }
 
+    @Override
     protected void resetCycleCounters(int counter) {
         nextZ80Cycle -= counter;
         next68kCycle -= counter;
         nextVdpCycle -= counter;
     }
 
+    @Override
     protected void initAfterRomLoad() {
         sound = AbstractSoundManager.createSoundProvider(getSystemType(), region);
         bus.attachDevice(sound);
@@ -249,6 +230,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         resetAfterRomLoad();
     }
 
+    @Override
     protected void resetAfterRomLoad() {
         vdp.setRegion(region);
         //detect ROM first

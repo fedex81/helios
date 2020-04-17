@@ -7,11 +7,10 @@ import com.grapeshot.halfnes.ui.GUIInterface;
 import com.grapeshot.halfnes.video.RGBRenderer;
 import omegadrive.Device;
 import omegadrive.bus.BaseBusProvider;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.BaseVdpAdapter;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.VdpMemory;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -61,52 +60,7 @@ public class NesHelper {
             return Optional.empty();
         }
     };
-    public static final BaseVdpProvider VDP_PROVIDER = new BaseVdpProvider() {
-        @Override
-        public void init() {
-
-        }
-
-        @Override
-        public int runSlot() {
-            return 0;
-        }
-
-        @Override
-        public int getRegisterData(int reg) {
-            return 0;
-        }
-
-        @Override
-        public void updateRegisterData(int reg, int data) {
-
-        }
-
-        @Override
-        public VdpMemory getVdpMemory() {
-            return null;
-        }
-
-        @Override
-        public boolean isDisplayEnabled() {
-            return false;
-        }
-
-        @Override
-        public VideoMode getVideoMode() {
-            return VideoMode.NTSCU_H32_V30;
-        }
-
-        @Override
-        public int[] getScreenDataLinear() {
-            return new int[0];
-        }
-
-        @Override
-        public void setRegion(RegionDetector.Region region) {
-
-        }
-    };
+    public static final BaseVdpProvider NO_OP_VDP_PROVIDER = new BaseVdpAdapter();
 
     public static NesHelper.NesGUIInterface createNes(Path romFile, Nes nesSys, AudioOutInterface audio) {
         NES nes = new NES(audio);
@@ -123,6 +77,12 @@ public class NesHelper {
             private NES localInstance = instance1;
             private RGBRenderer renderer = new RGBRenderer();
             private int[] screen;
+            private BaseVdpProvider vdpProvider = BaseVdpAdapter.getVdpProviderWrapper(VideoMode.NTSCU_H32_V30, this);
+
+            @Override
+            public BaseVdpProvider getVdpProvider() {
+                return vdpProvider;
+            }
 
             @Override
             public NES getNes() {
@@ -138,7 +98,7 @@ public class NesHelper {
             public void setFrame(int[] frame, int[] bgcolor, boolean dotcrawl) {
                 renderer.renderData(frame, bgcolor, dotcrawl);
                 screen = frame;
-                nesSystem.newFrame();
+                nesSystem.newFrameNes();
             }
 
             @Override
@@ -174,7 +134,9 @@ public class NesHelper {
 
     }
 
-    interface NesGUIInterface extends GUIInterface {
+    interface NesGUIInterface extends GUIInterface, BaseVdpAdapter.ScreenDataSupplier {
         int[] getScreen();
+
+        BaseVdpProvider getVdpProvider();
     }
 }

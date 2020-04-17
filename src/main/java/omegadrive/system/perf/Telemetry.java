@@ -2,7 +2,7 @@ package omegadrive.system.perf;
 
 import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
-import omegadrive.sound.fm.ym2612.nukeykt.AudioRateControl;
+import omegadrive.sound.fm.AudioRateControl;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

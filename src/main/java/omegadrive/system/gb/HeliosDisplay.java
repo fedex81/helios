@@ -3,11 +3,12 @@ package omegadrive.system.gb;
 import eu.rekawek.coffeegb.gpu.Display;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.SwingWindow;
+import omegadrive.vdp.model.BaseVdpAdapter;
 
 import java.awt.event.KeyListener;
 import java.util.Arrays;
 
-public class HeliosDisplay implements Display {
+public class HeliosDisplay implements Display, BaseVdpAdapter.ScreenDataSupplier {
     public static final int DISPLAY_WIDTH = 160;
 
     public static final int DISPLAY_HEIGHT = 144;
@@ -64,7 +65,7 @@ public class HeliosDisplay implements Display {
             Arrays.fill(rgb, 0);
         }
         i = 0;
-        system.newFrame();
+        system.newFrameGb();
     }
 
     @Override
@@ -87,7 +88,8 @@ public class HeliosDisplay implements Display {
         window.addKeyListener(listener);
     }
 
-    int[] getScreen() {
+    @Override
+    public int[] getScreen() {
         return rgb;
     }
 }

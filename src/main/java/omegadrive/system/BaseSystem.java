@@ -74,7 +74,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
     protected volatile boolean futureDoneFlag = false;
+
+    //frame pacing stuff
     private static final boolean fullThrottle;
+    protected long elapsedWaitNs, frameProcessingDelayNs, startCycle;
+    protected int counter = 1;
 
     static final long MAX_DRIFT = Duration.ofMillis(10).toNanos();
 
@@ -90,6 +94,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     protected abstract void processSaveState();
 
+    protected abstract void resetCycleCounters(int counter);
+
+    protected abstract void updateVideoMode(boolean force);
+
     protected abstract RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOverride);
 
     protected BaseSystem(DisplayWindow emuFrame) {
@@ -97,8 +105,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     }
 
     protected abstract STH createStateHandler(Path file, BaseStateHandler.Type type);
-
-    protected abstract void newFrame();
 
     @Override
     public void handleSystemEvent(SystemEvent event, Object parameter) {
@@ -320,6 +326,23 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
                 newFrame();
             }
         });
+    }
+
+    protected void newFrame() {
+        long tstamp = System.nanoTime();
+        updateVideoMode(false);
+        renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(startCycle));
+        handleVdpDumpScreenData();
+        long startWaitNs = System.nanoTime();
+        elapsedWaitNs = syncCycle(startCycle) - startWaitNs;
+        processSaveState();
+        pauseAndWait();
+        resetCycleCounters(counter);
+        counter = 0;
+        startCycle = System.nanoTime();
+        frameProcessingDelayNs = startCycle - tstamp - elapsedWaitNs;
+        futureDoneFlag = runningRomFuture.isDone();
+//        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
     }
 
     protected String getStats(long nowNs) {

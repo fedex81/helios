@@ -20,6 +20,7 @@ import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.BaseVdpAdapter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,8 +40,6 @@ public class Gb extends BaseSystem<BaseBusProvider, BaseStateHandler> {
 
     private static Logger LOG = LogManager.getLogger(Gb.class.getSimpleName());
 
-    protected long startCycle = System.nanoTime();
-    protected int elapsedNs;
     private SystemLoader.SystemType systemType;
     private Emulator emulator;
     private HeliosDisplay display;
@@ -61,7 +60,7 @@ public class Gb extends BaseSystem<BaseBusProvider, BaseStateHandler> {
     @Override
     public void init() {
         bus = NesHelper.NO_OP_BUS;
-        vdp = NesHelper.VDP_PROVIDER;
+        vdp = NesHelper.NO_OP_VDP_PROVIDER;
         memory = MemoryProvider.NO_MEMORY;
         joypad = new GbPad(controller);
         initCommon();
@@ -86,6 +85,7 @@ public class Gb extends BaseSystem<BaseBusProvider, BaseStateHandler> {
         try {
             display = new HeliosDisplay(this, emuFrame);
             emulator = new Emulator(args, display, (SoundOutput) sound.getFm(), controller);
+            vdp = BaseVdpAdapter.getVdpProviderWrapper(VideoMode.NTSCJ_H20_V18, display);
         } catch (Exception e) {
             LOG.error("Unable to start emulation: {}", romFile, e);
         }
@@ -118,6 +118,16 @@ public class Gb extends BaseSystem<BaseBusProvider, BaseStateHandler> {
     }
 
     @Override
+    protected void resetCycleCounters(int counter) {
+        //DO NOTHING
+    }
+
+    @Override
+    protected void updateVideoMode(boolean force) {
+        videoMode = vdp.getVideoMode();
+    }
+
+    @Override
     protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOverride) {
         return RegionDetector.Region.USA;
     }
@@ -127,13 +137,8 @@ public class Gb extends BaseSystem<BaseBusProvider, BaseStateHandler> {
         return BaseStateHandler.EMPTY_STATE;
     }
 
-    @Override
-    protected void newFrame() {
-        emuFrame.renderScreenLinear(display.getScreen(), getStats(System.nanoTime()), VideoMode.NTSCJ_H20_V18);
-        elapsedNs = (int) (syncCycle(startCycle) - startCycle);
-        processSaveState();
-        pauseAndWait();
-        startCycle = System.nanoTime();
+    public void newFrameGb() {
+        newFrame();
     }
 
     @Override

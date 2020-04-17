@@ -22,34 +22,36 @@ package omegadrive.sound.fm.ym2413;
 
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.fm.VariableSampleRateSource;
+import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
-
-public class Ym2413Provider implements FmProvider {
+public class Ym2413Provider extends VariableSampleRateSource {
 
     private static final Logger LOG = LogManager.getLogger(Ym2413Provider.class.getSimpleName());
 
     public static final double FM_RATE = 49716.0;
-
     // Input clock
     private static final int CLOCK_HZ = 3579545;
-    static double FM_CALCS_PER_MS = SoundProvider.SAMPLE_RATE_HZ / 1000.0;
-    static int AUDIO_SCALE_BITS = 4;
-
-    double rateAccum = 0;
-    double ratio = SoundProvider.SAMPLE_RATE_HZ / FM_RATE;
-
-    //TODO review perf of locking
-    private Queue<Integer> sampleQueue = new ArrayDeque<>();
-    private volatile long queueLen = 0;
-    private Object lock = new Object();
+    double ratio, rateAccum, adjustedRatio;
 
     private OPLL opll;
+    private int sample;
 
+    protected Ym2413Provider(int bufferSize) {
+        super(FM_RATE, SoundProvider.SAMPLE_RATE_HZ, bufferSize);
+        ratio = microsPerOutputSample / microsPerInputSample;
+    }
+
+    public static FmProvider createInstance(RegionDetector.Region region, int sampleRate) {
+        int bufferSize = SoundUtil.getAudioLineBufferSize(AbstractSoundManager.audioFormat, region);
+        Ym2413Provider p = new Ym2413Provider(bufferSize);
+        p.init(CLOCK_HZ, sampleRate);
+        return p;
+    }
 
     @Override
     public void reset() {
@@ -61,10 +63,15 @@ public class Ym2413Provider implements FmProvider {
         Emu2413.OPLL_reset(opll);
     }
 
-    public static FmProvider createInstance(RegionDetector.Region region, int sampleRate) {
-        Ym2413Provider p = new Ym2413Provider();
-        p.init(CLOCK_HZ, sampleRate);
-        return p;
+    //this should be called 49716 times per second
+    @Override
+    public void tick(double microsPerTick) {
+        rateAccum += adjustedRatio;
+        spinOnce();
+        if (rateAccum > 1) {
+            addSample(sample);
+            rateAccum -= 1;
+        }
     }
 
     @Override
@@ -86,51 +93,19 @@ public class Ym2413Provider implements FmProvider {
 
     @Override
     public void init(int clock, int rate) {
-        FM_CALCS_PER_MS = rate / 1000.0;
         Emu2413.OPLL_init();
         opll = Emu2413.OPLL_new();
     }
 
-    public static int cnt = 0, fmCnt = 0;
-
     @Override
-    public int update(int[] buf_lr, int offset, int count) {
-        offset <<= 1;
-        int end = (count << 1) + offset;
-        int sampleNum;
-        int sample = 0;
-        synchronized (lock) {
-            long initialQueueSize = queueLen;
-            for (int i = offset; i < end && queueLen > 0; i += 2) {
-                sample = sampleQueue.poll() << AUDIO_SCALE_BITS;
-                queueLen--;
-                buf_lr[i] = sample;
-                buf_lr[i + 1] = sample;
-            }
-            sampleNum = (int) (initialQueueSize - queueLen);
-            if (queueLen > 0) {
-                LOG.info("Dropping {} samples", queueLen);
-                sampleQueue.clear();
-                queueLen = 0;
-            }
-        }
-        return sampleNum;
+    protected void spinOnce() {
+        sample = Emu2413.OPLL_calc(opll);
     }
 
-    //this should be called 49716 times per second
     @Override
-    public void tick(double microsPerTick) {
-        rateAccum += ratio;
-        int res = Emu2413.OPLL_calc(opll);
-        cnt++;
-        if (rateAccum > 1) {
-            synchronized (lock) {
-                sampleQueue.offer(res);
-                queueLen++;
-            }
-            fmCnt++;
-            rateAccum -= 1;
-        }
+    public void onNewFrame() {
+        super.onNewFrame();
+        adjustedRatio = microsPerInputSample / fmCalcsPerMicros;
     }
 
     public enum FmReg {ADDR_LATCH_REG, DATA_REG}

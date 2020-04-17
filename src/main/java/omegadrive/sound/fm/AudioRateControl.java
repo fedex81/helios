@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.sound.fm.ym2612.nukeykt;
+package omegadrive.sound.fm;
 
 import omegadrive.sound.SoundProvider;
 import omegadrive.system.perf.Telemetry;
@@ -41,7 +41,7 @@ public class AudioRateControl {
     static double slowPace = fastPace / 2;
     private static NumberFormat bufferMsFormatter = new DecimalFormat("000");
 
-    private static String latestStats = null;
+    public static String latestStats = null;
     private int bufferSize;
     private int targetBufferSize;
     private long maxLen = 0;

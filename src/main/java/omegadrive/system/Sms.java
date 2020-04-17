@@ -46,10 +46,6 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     private static Logger LOG = LogManager.getLogger(Sms.class.getSimpleName());
 
-    protected Z80Provider z80;
-    private SystemLoader.SystemType systemType;
-
-    public static boolean verbose = false;
     public static final boolean ENABLE_FM = Boolean.valueOf(System.getProperty("sms.enable.fm", "false"));
 
     public static final int MCLK_PAL = 53203424;
@@ -57,6 +53,19 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     public static final int VDP_CLK_NTSC = MCLK_NTSC / 5;
     public static final int VDP_CLK_PAL = MCLK_PAL / 5;
 
+    /**
+     * VDP clock for PAL is 53203424 / 5.
+     * Z80 and PSG clock is 53203424 / 15 or VDP clock / 3.
+     * NTSC Master clock is 53693175 Hz.
+     */
+    protected static int VDP_DIVIDER = 2;  //10.738635 Mhz
+    protected static int Z80_DIVIDER = 3; //3.579545 Mhz
+    protected static int FM_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
+
+    protected Z80Provider z80;
+    int nextZ80Cycle = Z80_DIVIDER;
+    int nextVdpCycle = VDP_DIVIDER;
+    private SystemLoader.SystemType systemType;
 
     protected Sms(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);
@@ -91,18 +100,6 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         return romRegion;
     }
 
-    /**
-     * VDP clock for PAL is 53203424 / 5.
-     * Z80 and PSG clock is 53203424 / 15 or VDP clock / 3.
-     * NTSC Master clock is 53693175 Hz.
-     */
-    protected static int VDP_DIVIDER = 2;  //10.738635 Mhz
-    protected static int Z80_DIVIDER = 3; //3.579545 Mhz
-    protected static int FM_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
-
-    int nextZ80Cycle = Z80_DIVIDER;
-    int nextVdpCycle = VDP_DIVIDER;
-
     @Override
     public void init() {
         stateHandler = SmsStateHandler.EMPTY_STATE;
@@ -112,11 +109,6 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         SmsBus.HW_ENABLE_FM = ENABLE_FM;
         initCommon();
     }
-
-
-    protected int counter = 1;
-    protected long startCycle = System.nanoTime();
-    protected int elapsedNs;
 
     @Override
     protected void loop() {
@@ -138,17 +130,8 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     }
 
     @Override
-    protected void newFrame() {
+    protected void updateVideoMode(boolean force) {
         videoMode = vdp.getVideoMode();
-        renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(System.nanoTime()));
-        handleVdpDumpScreenData();
-        handleNmi();
-        elapsedNs = (int) (syncCycle(startCycle) - startCycle);
-        processSaveState();
-        pauseAndWait();
-        resetCycleCounters(counter);
-        counter = 0;
-        startCycle = System.nanoTime();
     }
 
     @Override
@@ -160,6 +143,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         resetAfterRomLoad();
     }
 
+    @Override
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
         vdp.setRegion(region);
@@ -190,6 +174,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         }
     }
 
+    @Override
     protected void resetCycleCounters(int counter) {
         nextZ80Cycle -= counter;
         nextVdpCycle -= counter;
