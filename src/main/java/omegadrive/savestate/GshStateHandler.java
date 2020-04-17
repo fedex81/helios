@@ -82,13 +82,14 @@ public class GshStateHandler extends GstStateHandler {
     public void loadFmState(FmProvider fm) {
         int fmLen = buffer.capacity() - FILE_SIZE - FM_MAGIC_WORD_NUKE.length();
         if (fmLen > 500 && fm instanceof Ym2612Nuke) {
+            Ym2612Nuke nukeFm = (Ym2612Nuke) fm;
             int pos = buffer.position();
             buffer.position(FILE_SIZE);
             String fmType = Util.toStringValue(buffer.get(), buffer.get(), buffer.get(), buffer.get());
             if (FM_MAGIC_WORD_NUKE.equalsIgnoreCase(fmType)) {
                 buffer.position(FILE_SIZE + FM_MAGIC_WORD_NUKE.length());
                 Serializable res = Util.deserializeObject(buffer.array(), FILE_SIZE + FM_MAGIC_WORD_NUKE.length(), fmLen);
-                ((Ym2612Nuke) fm).setState((Ym2612Nuke.Ym3438Context) res);
+                nukeFm.setState((Ym2612Nuke.Ym3438Context) res);
             }
             buffer.position(pos);
         } else {

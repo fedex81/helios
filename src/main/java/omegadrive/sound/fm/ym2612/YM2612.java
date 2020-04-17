@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author Stephan Dittrich, 2005
  * @author Stephane Dallongeville
  */
-public final class YM2612 implements MdFmProvider {
+public final class YM2612 extends Ym2612RegSupport implements MdFmProvider {
 
     private final static Logger LOG = LogManager.getLogger(YM2612.class.getSimpleName());
 
@@ -260,7 +260,6 @@ public final class YM2612 implements MdFmProvider {
     long YM2612_Inter_Cnt;    // UINT
     long YM2612_Inter_Step;    // UINT
     final cChannel[] YM2612_CHANNEL = new cChannel[6];
-    final int[][] YM2612_REG = new int[2][0x100];
     volatile int YM2612_Mode;
     volatile int YM2612_Status;
 
@@ -341,8 +340,8 @@ public final class YM2612 implements MdFmProvider {
         }
 
         for (i = 0; i < 0x100; i++) {
-            YM2612_REG[0][i] = -1;
-            YM2612_REG[1][i] = -1;
+            ym2612Reg[0][i] = -1;
+            ym2612Reg[1][i] = -1;
         }
 
         for (i = 0xB6; i >= 0xB4; i--) {
@@ -590,31 +589,14 @@ public final class YM2612 implements MdFmProvider {
         lastEvent = now;
     }
 
-    int addressLatch;
-
     @Override
-    public void write(int addr, int data) {
-        addr = addr & 0x3;
-        switch (addr) {
-            case FM_ADDRESS_PORT0:
-                addressLatch = data;
-                break;
-            case FM_ADDRESS_PORT1:
-                addressLatch = data + 0x100;
-                break;
-            default:
-                writeDataPort(data);
-                break;
-        }
-    }
-
-    private void writeDataPort(int data) {
+    protected void writeDataPort(int data) {
         int realAddr = addressLatch;
         int regPart = realAddr >= 0x100 ? 1 : 0;
         int realAddrReg = regPart > 0 ? realAddr - 0x100 : realAddr;
 
         if (realAddr < 0x30) {
-            YM2612_REG[regPart][realAddrReg] = data;
+            ym2612Reg[regPart][realAddrReg] = data;
             setYM(realAddrReg, data);
         } else {
             if (realAddrReg < 0xA0) {
@@ -629,11 +611,6 @@ public final class YM2612 implements MdFmProvider {
     private void setBusyFlag() {
         YM2612_Status |= FM_STATUS_BUSY_BIT_MASK;
         busyCyclesMicros = BUSY_MICROS;
-    }
-
-    @Override
-    public int readRegister(int type, int regNumber) {
-        return YM2612_REG[type][regNumber];
     }
 
     public final int update(int[] buf_lr, int offset, int count) {

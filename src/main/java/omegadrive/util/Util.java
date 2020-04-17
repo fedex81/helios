@@ -374,10 +374,6 @@ public class Util {
         return res;
     }
 
-    public static Serializable deserializeObject(byte[] data) {
-        return deserializeObject(data, 0, data.length);
-    }
-
     public static Serializable deserializeObject(byte[] data, int offset, int len) {
         if (data == null || data.length == 0 || offset < 0 || len > data.length) {
             LOG.error("Unable to deserialize object of len: " + data.length);

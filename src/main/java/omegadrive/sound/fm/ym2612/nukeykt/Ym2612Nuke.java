@@ -22,6 +22,7 @@ package omegadrive.sound.fm.ym2612.nukeykt;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.AudioRateControl;
 import omegadrive.sound.fm.MdFmProvider;
+import omegadrive.sound.fm.ym2612.Ym2612RegSupport;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,6 +63,7 @@ public class Ym2612Nuke implements MdFmProvider {
             new SpscAtomicArrayQueue<>(SoundProvider.SAMPLE_RATE_HZ);
     private AudioRateControl audioRateControl;
     private int sampleRatePerFrame = 0;
+    private Ym2612RegSupport regSupport;
 
     private Ym2612Nuke(IYm3438.IYm3438_Type chip) {
         this.ym3438 = new Ym3438();
@@ -69,6 +71,7 @@ public class Ym2612Nuke implements MdFmProvider {
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
         this.state = new Ym3438Context();
         state.chip = chip;
+        this.regSupport = new Ym2612RegSupport();
     }
 
     @Override
@@ -91,12 +94,12 @@ public class Ym2612Nuke implements MdFmProvider {
     @Override
     public void write(int addr, int data) {
         ym3438.OPN2_Write(chip, addr, data);
+        regSupport.write(addr, data);
     }
 
-    //TODO
     @Override
     public int readRegister(int type, int regNumber) {
-        return 0;
+        return regSupport.readRegister(type, regNumber);
     }
 
     @Override
