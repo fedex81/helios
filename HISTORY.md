@@ -1,3 +1,25 @@
+## 20.0418
+68k: add delay on z80 rom access
+68k: basic prefetch impl
+68k: do not consume an int when the level doesn't change
+helios: add nes emulation based on the halfnes project
+helios: backup sram, do not load empty files
+helios: compute drift for more consistent framerates
+helios: fix recent files handling
+helios: load compressed roms
+helios: mantain 4:3 aspect ratio by default
+md: do not stop 68k on vdp fifo full, but only stop it if it tries to access vdp ports
+md: fix dma fill when len=0
+md: fm add dynamic rate control
+md: improve shadow/highlight
+md: use nuke Ym2612 emulation by default
+md: savestates, use gsh format
+md: support very small roms
+sms: savestate fixes
+ui: hide cursor on screen
+ui: improve multi-screen support
+ui: show info messages
+
 ## 19.1108
 helios: update z80 lib
 md: do not reset fm on z80 un-reset
