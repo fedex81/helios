@@ -316,7 +316,7 @@ public class SwingWindow implements DisplayWindow {
 
         JMenuItem keyBindingsItem = new JMenuItem("Key Bindings");
         addAction(keyBindingsItem, e -> showHelpMessage(keyBindingsItem.getText(),
-                FileLoader.readFileContentAsString(KeyBindingsHandler.configFile)));
+                KeyBindingsHandler.toConfigString()));
 
         JMenuItem readmeItem = new JMenuItem("Readme");
         addAction(readmeItem, e -> showHelpMessage(readmeItem.getText(),

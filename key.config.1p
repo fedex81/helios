@@ -1,0 +1,40 @@
+#ui bindings
+CLOSE_APP=shift ctrl pressed ESCAPE
+CLOSE_ROM=ctrl pressed ESCAPE
+LOAD_STATE=ctrl pressed 7
+NEW_ROM=ctrl pressed L
+QUICK_LOAD=ctrl pressed 9
+QUICK_SAVE=ctrl pressed 8
+RESET=ctrl pressed R
+SAVE_STATE=ctrl pressed 6
+SET_DEBUG_UI=ctrl pressed D
+TOGGLE_FULL_SCREEN=ctrl pressed F
+TOGGLE_MUTE=ctrl pressed M
+TOGGLE_PAUSE=ctrl pressed P
+TOGGLE_SOUND_RECORD=shift ctrl pressed R
+TOGGLE_THROTTLE=ctrl pressed T
+
+#player 1
+P.1.UP=UP
+P.1.DOWN=DOWN
+P.1.LEFT=LEFT
+P.1.RIGHT=RIGHT
+P.1.A=A
+P.1.B=S
+P.1.C=D
+P.1.X=Q
+P.1.Y=W
+P.1.Z=E
+P.1.MODE=L
+P.1.START=ENTER
+
+#no player 2
+#P.2.UP=W
+#P.2.DOWN=S
+#P.2.LEFT=A
+#P.2.RIGHT=D
+#P.2.A=C
+#P.2.B=V
+#P.2.C=B
+#P.2.MODE=N
+#P.2.START=SPACE

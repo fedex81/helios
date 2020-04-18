@@ -20,40 +20,15 @@
 package omegadrive.ui;
 
 import omegadrive.input.InputProvider.PlayerNumber;
-import omegadrive.input.KeyboardInputHelper;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.swing.*;
-import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static omegadrive.ui.KeyBindingsHandler.*;
 
 public class KeyBindingsHandlerTest {
-
-    private static List<String> toConfigList() {
-        List<String> l = new ArrayList<>();
-        for (KeyStroke ks : keyMap.allKeys()) {
-            l.add(keyMap.get(ks).toString() + DIV + ks.toString());
-        }
-        Collections.sort(l);
-        KeyboardInputHelper.keyboardBindings.cellSet().stream().forEach(cell -> {
-            String tk = PLAYER_LINE_HEAD + cell.getRowKey().name().substring(1) + ".";
-            tk += cell.getColumnKey().getMnemonic() + DIV;
-            tk += KeyEvent.getKeyText(cell.getValue()).toUpperCase();
-            l.add(tk);
-        });
-        return l;
-    }
-
-    private static String toConfigString() {
-        return toConfigList().stream().collect(Collectors.joining("\n"));
-    }
 
     @Test
     public void testParsing() {

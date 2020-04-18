@@ -101,7 +101,7 @@ public interface DisplayWindow {
     default String getAboutString() {
         int year = LocalDate.now().getYear();
         String yrString = year == 2018 ? "2018" : "2018-" + year;
-        String res = FRAME_TITLE_HEAD + "\nA Sega Megadrive (Genesis) emulator, written in Java";
+        String res = FRAME_TITLE_HEAD + "\nA Java-based multi-system emulator.";
         res += "\n\nCopyright " + yrString + ", Federico Berti";
         res += "\n\nSee CREDITS.TXT for more information";
         res += "\n\nReleased under GPL v.3.0 license.";

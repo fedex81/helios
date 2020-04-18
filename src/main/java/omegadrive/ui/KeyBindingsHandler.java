@@ -29,7 +29,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
+import java.awt.event.KeyEvent;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static javax.swing.KeyStroke.getKeyStroke;
 
@@ -130,5 +132,24 @@ public class KeyBindingsHandler {
     public KeyStroke getKeyStrokeForEvent(SystemEvent event) {
         return Arrays.stream(keyMap.allKeys()).filter(ks -> event == getSystemEventIfAny(ks)).
                 findFirst().orElse(null);
+    }
+
+    public static String toConfigString() {
+        return toConfigList().stream().collect(Collectors.joining("\n"));
+    }
+
+    private static List<String> toConfigList() {
+        List<String> l = new ArrayList<>();
+        for (KeyStroke ks : keyMap.allKeys()) {
+            l.add(keyMap.get(ks).toString() + DIV + ks.toString());
+        }
+        Collections.sort(l);
+        KeyboardInputHelper.keyboardBindings.cellSet().stream().forEach(cell -> {
+            String tk = PLAYER_LINE_HEAD + cell.getRowKey().name().substring(1) + ".";
+            tk += cell.getColumnKey().getMnemonic() + DIV;
+            tk += KeyEvent.getKeyText(cell.getValue()).toUpperCase();
+            l.add(tk);
+        });
+        return l;
     }
 }
