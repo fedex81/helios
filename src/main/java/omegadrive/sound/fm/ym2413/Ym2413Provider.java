@@ -42,7 +42,7 @@ public class Ym2413Provider extends VariableSampleRateSource {
     private int sample;
 
     protected Ym2413Provider(int bufferSize) {
-        super(FM_RATE, SoundProvider.SAMPLE_RATE_HZ, bufferSize);
+        super(FM_RATE, SoundProvider.SAMPLE_RATE_HZ, bufferSize, "fmDsa");
         ratio = microsPerOutputSample / microsPerInputSample;
     }
 

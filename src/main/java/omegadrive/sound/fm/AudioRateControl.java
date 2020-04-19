@@ -19,6 +19,7 @@
 
 package omegadrive.sound.fm;
 
+import com.google.common.collect.Maps;
 import omegadrive.sound.SoundProvider;
 import omegadrive.system.perf.Telemetry;
 import org.apache.logging.log4j.LogManager;
@@ -26,6 +27,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * AudioRateControl
@@ -39,31 +43,25 @@ public class AudioRateControl {
     private static final double UPPER_LIMIT = FM_CALCS_PER_MICROS * (1 + HALF_LIMIT);
     static double fastPace = 0.005; //max distortion ~60hz/frame
     static double slowPace = fastPace / 2;
-    private static NumberFormat bufferMsFormatter = new DecimalFormat("000");
 
-    public static String latestStats = null;
+    private StatsHolder statsHolder;
     private int bufferSize;
     private int targetBufferSize;
-    private long maxLen = 0;
-    private long latestLen = 0;
 
-    public AudioRateControl(int bufferSize) {
+    public AudioRateControl(String sourceName, int bufferSize) {
         this.bufferSize = bufferSize;
         this.targetBufferSize = bufferSize >> 1;
+        statsHolder = new StatsHolder(sourceName);
         LOG.info("Init with targetBufferSize: {}, bufferSize: {}", targetBufferSize, bufferSize);
     }
 
-    public static String getLatestStats() {
-        return latestStats;
-    }
-
-    public static void main(String[] args) {
-        int i = 0;
-        for (double fmCalcs = LOWER_LIMIT; fmCalcs < UPPER_LIMIT; i++) {
-            double hz = 1_000_000.0 / fmCalcs;
-            System.out.println(i + " , " + fmCalcs + " -> " + hz);
-            fmCalcs += slowPace;
+    public static Optional<String> getLatestStats() {
+        if (StatsHolder.statsHolderMap.isEmpty()) {
+            return Optional.empty();
         }
+        String s = StatsHolder.statsHolderMap.values().stream().
+                map(StatsHolder::computeStringStats).collect(Collectors.joining(","));
+        return Optional.ofNullable(s);
     }
 
     public double adaptiveRateControl(long queueLen, double fmCalcsPerMicros, int sampleRate) {
@@ -79,26 +77,46 @@ public class AudioRateControl {
         }
         //limit
         fm = fm > UPPER_LIMIT ? UPPER_LIMIT : (fm < LOWER_LIMIT ? LOWER_LIMIT : fm);
-        if (queueLen > maxLen) {
+        if (queueLen > statsHolder.maxLen) {
             if (DEBUG) {
                 LOG.info("{}hz, q_av {}, b_size {}, steady {}", sampleRate, queueLen, bufferSize, steadyState);
             }
-            maxLen = queueLen;
+            statsHolder.maxLen = queueLen;
         }
-        latestLen = queueLen;
-        computeStats();
+        statsHolder.latestLen = queueLen;
+        statsHolder.computeTelemetryStats();
         return fm;
     }
 
-    public void computeStats() {
-        long audioDelayMs = 0;
-        if (latestLen > 0 && maxLen > 0) {
-            audioDelayMs = (long) (1000.0 * latestLen / SoundProvider.SAMPLE_RATE_HZ);
-            long maxAudioDelayMs = (long) (1000.0 * maxLen / SoundProvider.SAMPLE_RATE_HZ);
-            latestStats = bufferMsFormatter.format(audioDelayMs) + " / " +
-                    bufferMsFormatter.format(maxAudioDelayMs) + "ms";
+    private static class StatsHolder {
+        public static Map<String, StatsHolder> statsHolderMap = Maps.newHashMap();
+        private static NumberFormat bufferMsFormatter = new DecimalFormat("000");
+        public long maxLen = 0;
+        public long latestLen = 0;
+        public long audioDelayMs = 0;
+        public String sourceName;
+        public String infoString;
+
+        protected StatsHolder(String sourceName) {
+            this.sourceName = sourceName;
+            statsHolderMap.clear();
+            statsHolderMap.put(sourceName, this);
         }
-        Telemetry.getInstance().addSample("audioDelayMs", audioDelayMs);
-        Telemetry.getInstance().addSample("audioQueueLen", latestLen);
+
+        protected void computeTelemetryStats() {
+            audioDelayMs = (long) (1000.0 * latestLen / SoundProvider.SAMPLE_RATE_HZ);
+            Telemetry.getInstance().addSample(sourceName + ".audioDelayMs", audioDelayMs);
+            Telemetry.getInstance().addSample(sourceName + ".audioQueueLen", latestLen);
+        }
+
+        protected String computeStringStats() {
+            if (latestLen > 0 && maxLen > 0) {
+                long maxAudioDelayMs = (long) (1000.0 * maxLen / SoundProvider.SAMPLE_RATE_HZ);
+                infoString = sourceName + " " +
+                        bufferMsFormatter.format(audioDelayMs) + " / " +
+                        bufferMsFormatter.format(maxAudioDelayMs) + "ms";
+            }
+            return infoString;
+        }
     }
 }

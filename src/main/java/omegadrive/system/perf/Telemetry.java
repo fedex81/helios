@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  */
 public class Telemetry {
     private final static Logger LOG = LogManager.getLogger(Telemetry.class.getSimpleName());
-    private static final boolean enable = false;
+    public static final boolean enable = false;
     private static final Function<Map<?, Double>, String> toStringFn = map -> {
         String res = Arrays.toString(map.values().toArray());
         return res.substring(1, res.length() - 2);
@@ -87,7 +87,7 @@ public class Telemetry {
     public Optional<String> getNewStats() {
         Optional<String> o = Optional.empty();
         if (hasNewStats()) {
-            Optional<String> arc = Optional.ofNullable(AudioRateControl.getLatestStats());
+            Optional<String> arc = AudioRateControl.getLatestStats();
             o = Optional.of(getAvgFpsRounded() + "fps" + (arc.isPresent() ? ", " + arc.get() : ""));
         }
         return o;

@@ -44,14 +44,14 @@ public abstract class VariableSampleRateSource implements FmProvider {
     private int bufferSize;
     private int sampleRatePerFrame = 0;
 
-    protected VariableSampleRateSource(double sourceSampleRate, double outputSampleRate, int bufferSize) {
+    protected VariableSampleRateSource(double sourceSampleRate, double outputSampleRate, int bufferSize, String sourceName) {
         this.bufferSize = bufferSize;
         this.outputSampleRate = outputSampleRate;
         this.sourceSampleRate = sourceSampleRate;
         this.microsPerOutputSample = (1_000_000.0 / outputSampleRate);
         this.microsPerInputSample = (1_000_000.0 / sourceSampleRate);
         this.fmCalcsPerMicros = microsPerOutputSample;
-        this.audioRateControl = new AudioRateControl(bufferSize);
+        this.audioRateControl = new AudioRateControl(sourceName, bufferSize);
     }
 
     protected abstract void spinOnce();

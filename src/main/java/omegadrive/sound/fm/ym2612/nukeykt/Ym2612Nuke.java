@@ -109,7 +109,7 @@ public class Ym2612Nuke implements MdFmProvider {
 
     public Ym2612Nuke(int bufferSize) {
         this(new IYm3438.IYm3438_Type());
-        this.audioRateControl = new AudioRateControl(bufferSize);
+        this.audioRateControl = new AudioRateControl("fmNuke", bufferSize);
     }
 
     private void addSample() {
