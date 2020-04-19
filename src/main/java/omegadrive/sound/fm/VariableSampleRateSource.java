@@ -87,6 +87,13 @@ public abstract class VariableSampleRateSource implements FmProvider {
     }
 
     @Override
+    public void reset() {
+        sampleQueue.clear();
+        queueLen.set(0);
+        sampleRatePerFrame = 0;
+    }
+
+    @Override
     public void onNewFrame() {
         fmCalcsPerMicros = audioRateControl.adaptiveRateControl(queueLen.get(), fmCalcsPerMicros, sampleRatePerFrame);
         sampleRatePerFrame = 0;
