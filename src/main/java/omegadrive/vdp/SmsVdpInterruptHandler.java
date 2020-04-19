@@ -53,29 +53,32 @@ public class SmsVdpInterruptHandler extends VdpInterruptHandler {
         return handler;
     }
 
+    /**
+     * Out of lines 0-261:
+     * - The counter is decremented on lines 0-191 and 192.
+     * - The counter is reloaded on lines 193-261.
+     */
     @Override
     protected void handleHLinesCounterDecrement() {
-        boolean reset = vBlankSet; //OutRun sms
+        boolean reset = vBlankSet; //OutRun
+//                vCounterInternal > 0xC0; //Ys
         hLinePassed = reset ? resetHLinesCounter() : hLinePassed - 1;
         if (hLinePassed < 0) {
             hIntPending = true;
             logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
-            eventFlag = true;
             resetHLinesCounter();
         }
     }
 
     protected int increaseVCounterInternal() {
+        handleHLinesCounterDecrement();
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
-            eventFlag = true;
         } else if (vCounterInternal == VBLANK_CLEAR) {
             vBlankSet = false;
-            eventFlag = true;
         }
-        handleHLinesCounterDecrement();
         return vCounterInternal;
     }
 }

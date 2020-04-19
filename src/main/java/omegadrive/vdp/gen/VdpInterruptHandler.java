@@ -72,8 +72,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
     protected static boolean veryVerbose = false;
     protected static boolean verbose = false || veryVerbose;
 
-    protected boolean eventFlag;
-
     public static VdpInterruptHandler createInstance(BaseVdpProvider vdp) {
         VdpInterruptHandler handler = new VdpInterruptHandler();
         handler.reset();
@@ -112,7 +110,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         if (counterInternal == jumpTrigger + 1) {
             counterInternal = (1 + COUNTER_LIMIT) +
                     (jumpTrigger + 1) - totalCount;
-            eventFlag = true;
         }
         return counterInternal;
     }
@@ -137,10 +134,8 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         hLinePassed = vBlankSet ? resetHLinesCounter() : hLinePassed - 1;
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
-            eventFlag = true;
         } else if (vCounterInternal == VBLANK_CLEAR) {
             vBlankSet = false;
-            eventFlag = true;
         }
         handleHLinesCounterDecrement();
         return vCounterInternal;
@@ -158,17 +153,14 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         slotNumber = pixelNumber >> 1;
         if (hCounterInternal == vdpCounterMode.hBlankSet) {
             hBlankSet = true;
-            eventFlag = true;
         }
 
         if (hCounterInternal == vdpCounterMode.hBlankClear) {
             hBlankSet = false;
-            eventFlag = true;
         }
 
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
             increaseVCounter();
-            eventFlag = true;
         }
         if (vCounterInternal == vdpCounterMode.vBlankSet &&
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
@@ -176,14 +168,12 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
             vdpEventListenerList.forEach(l -> l.onVdpEvent(BaseVdpProvider.VdpEvent.INTERRUPT,
                     BusArbiter.InterruptEvent.Z80_INT_ON));
             logVerbose("Set VIP: true");
-            eventFlag = true;
         }
         if (vCounterInternal == vdpCounterMode.vBlankSet + 1 &&
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
             vdpEventListenerList.forEach(l -> l.onVdpEvent(BaseVdpProvider.VdpEvent.INTERRUPT,
                     BusArbiter.InterruptEvent.Z80_INT_OFF));
             logVerbose("Set Z80Int: false");
-            eventFlag = true;
         }
         return hCounterInternal;
     }
@@ -194,7 +184,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         if (hLinePassed < 0) {
             hIntPending = true;
             logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
-            eventFlag = true;
             resetHLinesCounter();
         }
     }
