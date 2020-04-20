@@ -51,12 +51,15 @@ import static omegadrive.util.RegionDetector.Region.USA;
  * Notes:
  * - http://www.smspower.org/forums/viewtopic.php?p=44198
  */
-public final class SmsVdp implements BaseVdpProvider
-{
+public final class SmsVdp implements BaseVdpProvider {
 
     public static final int VDP_VRAM_SIZE = 0x4000;
     public static final int VDP_CRAM_SIZE = 0x20;
     public static final int VDP_REGISTERS_SIZE = 16;
+
+    //https://www.smspower.org/Development/TilemapMirroring
+    public static final boolean ENABLE_TILEMAP_MIRRORING = false;
+
     // --------------------------------------------------------------------------------------------
     // Screen Dimensions
     // --------------------------------------------------------------------------------------------
@@ -65,7 +68,9 @@ public final class SmsVdp implements BaseVdpProvider
             NTSC = 0,
             PAL = 1;
 
-    /** NTSC / PAL Emulation */
+    /**
+     * NTSC / PAL Emulation
+     */
     public static int palFlag = NTSC;
 
     /** SMS Visible Screen Width */
@@ -321,12 +326,7 @@ public final class SmsVdp implements BaseVdpProvider
         //m4 | m3 | m2 | m1
         int data = (vdpreg[0] & 4) << 1 | (vdpreg[1] & 0x8) >> 1 | (vdpreg[0] & 2) | (vdpreg[1] & 0x10) >> 4;
         VideoMode newVideoMode;
-        switch (data){
-            case 8:
-            case 10:
-                newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V24 :
-                        (region == USA ? VideoMode.NTSCU_H32_V24 : VideoMode.NTSCJ_H32_V24);
-                break;
+        switch (data) {
             case 14:
                 newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V30 :
                         (region == USA ? VideoMode.NTSCU_H32_V30 : VideoMode.NTSCJ_H32_V30);
@@ -335,9 +335,12 @@ public final class SmsVdp implements BaseVdpProvider
                 newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V28 :
                         (region == USA ? VideoMode.NTSCU_H32_V28 : VideoMode.NTSCJ_H32_V30);
                 break;
+            case 8:
+            case 10:
             default:
                 newVideoMode = region == EUROPE ? VideoMode.PAL_H32_V24 :
                         (region == USA ? VideoMode.NTSCU_H32_V24 : VideoMode.NTSCJ_H32_V24);
+                break;
 
         }
         if (videoMode != newVideoMode || force) {
@@ -661,6 +664,9 @@ public final class SmsVdp implements BaseVdpProvider
         // Row to start drawing at (0 - 27) for v24, (0 - 31) otherwise
         int vscrollShift = videoMode.isV24() ? 0x1C : 0x20;
         int tile_row = ((lineno + vscroll) >> 3);
+        if (ENABLE_TILEMAP_MIRRORING) {
+            tile_row &= ((vdpreg[2] & 1) << 4) | 0xF;
+        }
         tile_row = tile_row >= vscrollShift ? tile_row - vscrollShift : tile_row;
 
         // Actual y position in tile (0 - 7) (Also times by 8 here for quick access to pixel)
