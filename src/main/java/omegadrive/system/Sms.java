@@ -146,10 +146,8 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
     @Override
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
-        vdp.setRegion(region);
         z80.reset();
         vdp.reset();
-        joypad.init();
     }
 
     @Override

@@ -386,9 +386,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     }
 
     protected void resetAfterRomLoad() {
+        vdp.setRegion(region);
         //detect ROM first
         joypad.init();
         vdp.init();
         bus.init();
+        futureDoneFlag = false;
     }
 }

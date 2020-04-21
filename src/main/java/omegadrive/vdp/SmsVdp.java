@@ -259,6 +259,7 @@ public final class SmsVdp implements BaseVdpProvider {
         VRAM = memory.getVram();
         CRAM = memory.getCram();
         resetVideoMode(true);
+        LOG.info("Initial video mode: " + videoMode + ", " + videoMode.getDimension());
     }
 
     /**
@@ -343,13 +344,16 @@ public final class SmsVdp implements BaseVdpProvider {
                 break;
 
         }
-        if (videoMode != newVideoMode || force) {
+        boolean hasChanged = videoMode != newVideoMode;
+        if (hasChanged || force) {
+            if (hasChanged) {
+                LOG.info("Video mode changed: " + newVideoMode + ", " + newVideoMode.getDimension());
+            }
             this.videoMode = newVideoMode;
             palFlag = videoMode.isPal() ? PAL : NTSC;
             display = new int[videoMode.getDimension().width * videoMode.getDimension().height];
             screenData = isSms ? display : ggDisplay;
             forceFullRedraw();
-            LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
             list.forEach(l -> l.onVdpEvent(VdpEvent.VIDEO_MODE, newVideoMode));
         }
     }

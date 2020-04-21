@@ -232,14 +232,9 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
 
     @Override
     protected void resetAfterRomLoad() {
-        vdp.setRegion(region);
-        //detect ROM first
-        joypad.init();
-        vdp.init();
-        bus.init();
+        super.resetAfterRomLoad();
         cpu.reset();
         z80.reset(); //TODO confirm this is needed
-        futureDoneFlag = false;
     }
 
     @Override
