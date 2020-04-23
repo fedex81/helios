@@ -166,6 +166,20 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
 
     enum VdpPortType {DATA, CONTROL}
 
+    enum VdpBusyState {
+        MEM_TO_VRAM, VRAM_FILL,
+        VRAM_COPY, FIFO_FULL, NOT_BUSY;
+
+        private static VdpBusyState[] values = VdpBusyState.values();
+
+        public static VdpBusyState getVdpBusyState(VdpDmaHandler.DmaMode mode) {
+            if (mode == null) {
+                return NOT_BUSY;
+            }
+            return values[mode.ordinal()];
+        }
+    }
+
 
     static GenesisVdpProvider createVdp(GenesisBusProvider bus) {
         return GenesisVdp.createInstance(bus);

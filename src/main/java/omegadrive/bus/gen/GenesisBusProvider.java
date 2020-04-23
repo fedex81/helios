@@ -63,9 +63,6 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     int M68K_RAM_MASK = M68K_RAM_SIZE - 1;
 
-    int FIFO_FULL_MASK = 0x01;
-    int DMA_IN_PROGRESS_MASK = 0x02;
-
     Logger LOG = LogManager.getLogger(GenesisBusProvider.class.getSimpleName());
 
     static GenesisBusProvider createBus() {
@@ -86,8 +83,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     boolean is68kRunning();
 
-    //VDP setting this
-    void setStop68k(int mask);
+    void setVdpBusyState(GenesisVdpProvider.VdpBusyState state);
 
     boolean isZ80Running();
 

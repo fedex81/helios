@@ -33,6 +33,7 @@ import omegadrive.system.SystemProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.GenesisVdpProvider.VdpBusyState;
 import omegadrive.vdp.model.GenesisVdpProvider.VdpPortType;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
@@ -110,8 +111,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     @Override
-    public void setStop68k(int mask) {
-        busArbiter.setStop68k(mask);
+    public void setVdpBusyState(VdpBusyState state) {
+        busArbiter.setVdpBusyState(state);
     }
 
     @Override
@@ -682,7 +683,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     //NOTE: this assumes that only 68k writes on the vpdDataPort
     private boolean checkVdpReady(int address, Size size, long data) {
-        if (busArbiter.getStateVdp() != BusArbiter.VdpState.NORMAL) {
+        if (busArbiter.getVdpBusyState() == VdpBusyState.FIFO_FULL ||
+                busArbiter.getVdpBusyState() == VdpBusyState.MEM_TO_VRAM) {
             Runnable r = () -> this.write(address, data, size);
             busArbiter.runLater(r);
             return true;

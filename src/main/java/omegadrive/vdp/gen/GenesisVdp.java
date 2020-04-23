@@ -33,12 +33,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.getRegisterName;
+
 /**
  * Initially Based on genefusto GenVdp
  * https://github.com/DarkMoe/genefusto
  *
  * @author Federico Berti
- *
  */
 public class GenesisVdp implements GenesisVdpProvider {
 
@@ -370,7 +371,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                 writeControlPortInternal(data);
                 break;
         }
-        evaluateStop68k();
+        evaluateVdpBusyState();
     }
 
     private void writeControlPortInternal(long dataL) {
@@ -444,7 +445,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                     entry.vdpRamMode, entry.data, entry.addressRegister, verbose);
             memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
             if (wasFull && !fifo.isFull()) {
-                evaluateStop68k();
+                evaluateVdpBusyState();
             }
         }
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
@@ -518,7 +519,7 @@ public class GenesisVdp implements GenesisVdpProvider {
             if ((codeRegister & 0b10_0000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
                 if (dmaMode == VdpDmaHandler.DmaMode.MEM_TO_VRAM) {
-                    bus.setStop68k(GenesisBusProvider.DMA_IN_PROGRESS_MASK);
+                    bus.setVdpBusyState(VdpBusyState.MEM_TO_VRAM);
                 }
                 LogHelper.printLevel(LOG, Level.INFO, "After DMA setup, writeAddr: {}, data: {}, firstWrite: {}"
                         , addressRegister, all, writePendingControlPort, verbose);
@@ -530,9 +531,7 @@ public class GenesisVdp implements GenesisVdpProvider {
     }
 
     private void writeRegister(int data) {
-        int dataControl = data & 0x00FF;
-        int reg = (data >> 8) & 0x1F;
-        writeRegister(reg, dataControl);
+        writeRegister((data >> 8) & 0x1F, data & 0xFF);
     }
 
     private void writeRegister(int reg, int dataControl) {
@@ -548,47 +547,57 @@ public class GenesisVdp implements GenesisVdpProvider {
         updateVariables(reg, dataControl);
     }
 
-    private void updateVariables(int reg, int data) {
-        if (reg == 0x00) {
-            boolean prevLcb = lcb;
-            lcb = ((data >> 5) & 1) == 1;
-            if (prevLcb != lcb) {
-                LOG.info("LCB enable: " + lcb);
-            }
-            de = ((data >> 0) & 1) == 1;
-            boolean newM3 = ((data >> 1) & 1) == 1;
-            updateM3(newM3);
-            boolean newIe1 = ((data >> 4) & 1) == 1;
-            updateIe1(newIe1);
-        } else if (reg == 0x01) {
-            evram = ((data >> 7) & 1) == 1;
-            disp = ((data >> 6) & 1) == 1;
-            ie0 = ((data >> 5) & 1) == 1;
-            m1 = ((data >> 4) & 1) == 1;
-            m2 = ((data >> 3) & 1) == 1;
-            boolean mode5 = ((data >> 2) & 1) == 1;
-            if (m5 != mode5) {
-                LOG.info("Mode5: " + mode5);
-                m5 = mode5;
-            }
-        } else if (reg == 0x0C) {
-            boolean rs0 = Util.bitSetTest(data, 7);
-            boolean rs1 = Util.bitSetTest(data, 0);
-            h40 = rs0 && rs1;
-            boolean val = Util.bitSetTest(data, 3);
-            if (val != ste) {
-                LOG.info("Shadow highlight: " + val);
-            }
-            ste = val;
-            InterlaceMode prev = interlaceMode;
-            interlaceMode = InterlaceMode.getInterlaceMode((data & 0x7) >> 1);
-            if (prev != interlaceMode) {
-                LOG.info("InterlaceMode: {}", interlaceMode);
-            }
-        } else if (reg == 0x0F) {
-            autoIncrementData = data;
-        } else if (reg == 0x0A) {
-            updateReg10(data);
+    private void updateVariables(int regNumber, int data) {
+        VdpRegisterName reg = getRegisterName(regNumber);
+        switch (reg) {
+            case MODE_1:
+                boolean prevLcb = lcb;
+                lcb = ((data >> 5) & 1) == 1;
+                if (prevLcb != lcb) {
+                    LOG.info("LCB enable: " + lcb);
+                }
+                de = ((data >> 0) & 1) == 1;
+                boolean newM3 = ((data >> 1) & 1) == 1;
+                updateM3(newM3);
+                boolean newIe1 = ((data >> 4) & 1) == 1;
+                updateIe1(newIe1);
+                break;
+            case MODE_2:
+                evram = ((data >> 7) & 1) == 1;
+                disp = ((data >> 6) & 1) == 1;
+                ie0 = ((data >> 5) & 1) == 1;
+                m1 = ((data >> 4) & 1) == 1;
+                m2 = ((data >> 3) & 1) == 1;
+                boolean mode5 = ((data >> 2) & 1) == 1;
+                if (m5 != mode5) {
+                    LOG.info("Mode5: " + mode5);
+                    m5 = mode5;
+                }
+                break;
+            case MODE_4:
+                boolean rs0 = Util.bitSetTest(data, 7);
+                boolean rs1 = Util.bitSetTest(data, 0);
+                h40 = rs0 && rs1;
+                boolean val = Util.bitSetTest(data, 3);
+                if (val != ste) {
+                    LOG.info("Shadow highlight: " + val);
+                }
+                ste = val;
+                InterlaceMode prev = interlaceMode;
+                interlaceMode = InterlaceMode.getInterlaceMode((data & 0x7) >> 1);
+                if (prev != interlaceMode) {
+                    LOG.info("InterlaceMode: {}", interlaceMode);
+                }
+                break;
+            case AUTO_INCREMENT:
+                autoIncrementData = data;
+                break;
+            case HCOUNTER_VALUE:
+                interruptHandler.logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
+                list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, data));
+                break;
+            default:
+                break;
         }
     }
 
@@ -597,14 +606,9 @@ public class GenesisVdp implements GenesisVdpProvider {
         //&& reg < 0x13 && interruptHandler.isActiveScreen()
         if (regVerbose && current != data && reg < 0x13) {
             String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- de{}",
-                    VdpRegisterName.getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (disp ? 1 : 0)).getFormattedMessage();
+                    getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (disp ? 1 : 0)).getFormattedMessage();
             LOG.info(this.interruptHandler.getStateString(msg));
         }
-    }
-
-    private void updateReg10(long data) {
-        interruptHandler.logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
-        list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, (int) data));
     }
 
     private void updateM3(boolean newM3) {
@@ -629,15 +633,22 @@ public class GenesisVdp implements GenesisVdpProvider {
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
                 LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", dmaMode, verbose);
-                evaluateStop68k();
+                evaluateVdpBusyState();
             }
         }
     }
 
-    private void evaluateStop68k() {
-        int value = fifo.isFull() ? GenesisBusProvider.FIFO_FULL_MASK : 0;
-        value |= (dma == 1 && dmaHandler.dmaInProgress()) ? GenesisBusProvider.DMA_IN_PROGRESS_MASK : value;
-        bus.setStop68k(value);
+    /**
+     * When doing 68K -> VDP RAM transfers, the 68000 is frozen. For VRAM fills
+     * and copies, the 68000 runs normally, but you can only read the control
+     * port, HV counter, and write to the PSG register.
+     */
+    private void evaluateVdpBusyState() {
+        VdpBusyState state = fifo.isFull() ? VdpBusyState.FIFO_FULL : VdpBusyState.NOT_BUSY;
+        if (state == VdpBusyState.NOT_BUSY && (dma == 1 && dmaHandler.dmaInProgress())) {
+            state = VdpBusyState.getVdpBusyState(dmaHandler.getDmaMode());
+        }
+        bus.setVdpBusyState(state);
     }
 
     private boolean setupDmaFillMaybe(int data) {

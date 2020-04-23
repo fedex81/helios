@@ -23,6 +23,7 @@ import omegadrive.Device;
 import omegadrive.m68k.M68kProvider;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.GenesisVdpProvider.VdpBusyState;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,11 +43,11 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
      *
      */
     private final static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
-    private static final VdpState[] stateVdpVals = VdpState.values();
+
     public static boolean verbose = false;
     public static final BusArbiter NO_OP = createNoOp();
 
-    private VdpState stateVdp = VdpState.NORMAL;
+    private VdpBusyState vdpBusyState = VdpBusyState.NOT_BUSY;
     private IntState int68k = IntState.ACKED;
     private CpuState state68k = CpuState.RUNNING;
     private IntState z80Int = IntState.NONE;
@@ -56,7 +57,6 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     protected M68kProvider m68k;
     protected Z80Provider z80;
 
-    private int mask68kState = 0;
     private Runnable runLater;
 
     public static BusArbiter createInstance(GenesisVdpProvider vdp, M68kProvider m68k, Z80Provider z80) {
@@ -68,12 +68,15 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         return b;
     }
 
-    public void setStop68k(int mask) {
-        if (mask != mask68kState) {
-            mask68kState = mask;
-            stateVdp = stateVdpVals[mask];
-            state68k = stateVdp == VdpState.DMA_IN_PROGRESS ? CpuState.HALTED : CpuState.RUNNING;
-            logInfo("68k State{} , {}", mask, state68k);
+    public VdpBusyState getVdpBusyState() {
+        return vdpBusyState;
+    }
+
+    public void setVdpBusyState(VdpBusyState state) {
+        if (vdpBusyState != state) {
+            state68k = state == VdpBusyState.MEM_TO_VRAM ? CpuState.HALTED : CpuState.RUNNING;
+            logInfo("Vdp State {} -> {} , 68k {}", vdpBusyState, state, state68k);
+            vdpBusyState = state;
             if (state68k == CpuState.RUNNING && runLater != null) {
                 runLater.run();
                 runLater = null;
@@ -192,7 +195,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     public void runLater(Runnable r) {
         runLater = r;
         state68k = CpuState.HALTED;
-        logInfo("68k State{} , {}", mask68kState, state68k);
+        logInfo("68k State {} , vdp {}", state68k, vdpBusyState);
     }
 
     enum IntState {NONE, PENDING, ASSERTED, ACKED}
@@ -233,10 +236,6 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
 
     public enum InterruptEvent {Z80_INT_ON, Z80_INT_OFF}
 
-    public VdpState getStateVdp() {
-        return stateVdp;
-    }
-
     private int getLevel68k() {
         //TODO titan2 this can return 0, why investigate
         return isVdpVInt() ? M68kProvider.VBLANK_INTERRUPT_LEVEL : (isVdpHInt() ? M68kProvider.HBLANK_INTERRUPT_LEVEL : 0);
@@ -247,12 +246,6 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
             String msg = ParameterizedMessage.format(str, args);
             LOG.info(msg + vdp.getVdpStateString());
         }
-    }
-
-    //TODO fifo full shoud not stop 68k
-    //TODO fifo full and 68k uses vdp -> stop 68k
-    enum VdpState {
-        NORMAL, DMA_IN_PROGRESS, FIFO_FULL
     }
 
     enum CpuState {RUNNING, HALTED}
