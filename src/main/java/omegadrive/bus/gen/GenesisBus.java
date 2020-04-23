@@ -726,11 +726,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     @Override
-    public BusArbiter getBusArbiter() {
-        return busArbiter;
-    }
-
-    @Override
     public boolean isZ80Running() {
         return !z80ResetState && !z80BusRequested;
     }
