@@ -74,12 +74,15 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
 
     public void setVdpBusyState(VdpBusyState state) {
         if (vdpBusyState != state) {
-            state68k = state == VdpBusyState.MEM_TO_VRAM ? CpuState.HALTED : CpuState.RUNNING;
+            state68k = state == VdpBusyState.MEM_TO_VRAM
+                    ? CpuState.HALTED : CpuState.RUNNING;
             logInfo("Vdp State {} -> {} , 68k {}", vdpBusyState, state, state68k);
             vdpBusyState = state;
-            if (state68k == CpuState.RUNNING && runLater != null) {
-                runLater.run();
+            if (state68k == CpuState.RUNNING && vdpBusyState == VdpBusyState.NOT_BUSY
+                    && runLater != null) {
+                Runnable runnable = runLater;
                 runLater = null;
+                runnable.run();
             }
         }
     }
