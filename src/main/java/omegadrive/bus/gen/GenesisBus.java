@@ -786,9 +786,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     @Override
     public void closeRom() {
-        if (mapper != this) {
-            mapper.closeRom();
-        }
+        ssf2Mapper.closeRom();
+        backupMemMapper.closeRom();
     }
 
     @Override

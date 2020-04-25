@@ -10,12 +10,7 @@ lotus 2
 danibus scroll test
 sonic3d traveller's tale logo
 bare knuckle 3 - intro locks (FIFO)
-
-SMS Y's status bar glitch
-https://www.smspower.org/forums/16626-StatusBarsWithTwoWayScrollingWasYsVanishedOmensTechnicalQuestion
-https://www.smspower.org/Development/TilemapMirroring
-
-ssf2 dma issue
+titan2 vdp crash
 
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin
