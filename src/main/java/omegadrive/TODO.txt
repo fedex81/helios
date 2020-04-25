@@ -15,6 +15,8 @@ SMS Y's status bar glitch
 https://www.smspower.org/forums/16626-StatusBarsWithTwoWayScrollingWasYsVanishedOmensTechnicalQuestion
 https://www.smspower.org/Development/TilemapMirroring
 
+ssf2 dma issue
+
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin
 Robocop Versus The Terminator (U) [T+Rus].bin

@@ -66,16 +66,7 @@ public class Ssf2Mapper implements RomMapper {
     private IMemoryProvider memory;
     private boolean verbose = false;
 
-    public static RomMapper getOrCreateInstance(RomMapper baseMapper, RomMapper currentMapper,
-                                                IMemoryProvider memoryProvider) {
-        if (baseMapper != currentMapper) {
-            return currentMapper;
-        }
-        return createInstance(baseMapper, memoryProvider);
-
-    }
-
-    private static Ssf2Mapper createInstance(RomMapper baseMapper, IMemoryProvider memoryProvider) {
+    public static Ssf2Mapper createInstance(RomMapper baseMapper, IMemoryProvider memoryProvider) {
         Ssf2Mapper mapper = new Ssf2Mapper();
         mapper.baseMapper = baseMapper;
         mapper.memory = memoryProvider;

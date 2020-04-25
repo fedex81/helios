@@ -52,6 +52,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     private MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
+    private RomMapper ssf2Mapper = RomMapper.NO_OP_MAPPER;
+    private RomMapper backupMemMapper = RomMapper.NO_OP_MAPPER;
     private MdRomDbModel.Entry entry;
 
     private BusArbiter busArbiter = BusArbiter.NO_OP;
@@ -304,26 +306,35 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         return value;
     }
 
+    /**
+     * 0xA130F1
+     * * <p>
+     * * 7  6  5  4  3  2  1  0
+     * * +-----------------------+
+     * * |??|??|??|??|??|??|WP|MD|
+     * * +-----------------------+
+     * * <p>
+     * * MD:     Mode -- 0 = ROM, 1 = RAM
+     * * WP:     Write protect -- 0 = writable, 1 = not writable
+     * * <p>
+     */
     private void timeLineControlWrite(int addressL, long data) {
-        //	Sonic 3 will write to this register to enable and disable writing to its save game memory
-        //$A130F1 (what you'd officially write to if you had a full blown mapper) has this format: ??????WE,
-        //where W = allow writing and E = enable SRAM (it needs to be 00 to make SRAM hidden
-        // and 11 to make SRAM writeable).
-        //These games generally just look at the /TIME signal (the entire $A130xx range)
-        // unless they feature a full-blown mapper).
         if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= Ssf2Mapper.BANK_SET_END_ADDRESS) {
             LOG.info("Mapper bank set, address: " + Long.toHexString(addressL) + ", data: " + Integer.toHexString((int) data));
             checkSsf2Mapper();
             mapper.writeBankData(addressL, data);
         } else if (addressL == 0xA130F1) {
-            boolean rom = (data & 3) % 2 == 0;
-            //NOTE we dont support Ssf2Mapper and SRAM at the same time
-            if (rom) { //enable ROM
-//                    checkSsf2Mapper(); //TODO comment this for s&k
+            boolean rom = (data & 1) == 0;
+            if (rom) {
+                checkSsf2Mapper();
+                mapper = ssf2Mapper;
             } else {
+                //NOTE: seems like 1 allows sram writes
+//                SramMode sramMode = (data & 2) > 0 ? SramMode.READ_WRITE : SramMode.READ_ONLY;
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
+                mapper = backupMemMapper;
             }
-            LOG.info("Mapper register set: {}", data);
+            LOG.info("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
             LOG.warn("Unexpected mapper set, address: {}, data: {}", Long.toHexString(addressL),
                     Integer.toHexString((int) data));
@@ -693,7 +704,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     private void checkSsf2Mapper() {
-        this.mapper = Ssf2Mapper.getOrCreateInstance(this, mapper, memoryProvider);
+        if (ssf2Mapper == RomMapper.NO_OP_MAPPER) {
+            this.ssf2Mapper = Ssf2Mapper.createInstance(this, memoryProvider);
+            mapper = ssf2Mapper;
+        }
     }
 
     private void checkBackupMemoryMapper(SramMode sramMode) {
@@ -701,8 +715,12 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     private void checkBackupMemoryMapper(SramMode sramMode, boolean forceCreate) {
-        this.mapper = forceCreate ? MdBackupMemoryMapper.createInstance(this, cartridgeInfoProvider, entry) :
-                MdBackupMemoryMapper.getOrCreateInstance(this, mapper, cartridgeInfoProvider, sramMode);
+        if (backupMemMapper == RomMapper.NO_OP_MAPPER) {
+            MdRomDbModel.Entry entry = forceCreate ? this.entry : MdLoader.NO_ENTRY;
+            this.backupMemMapper = MdBackupMemoryMapper.createInstance(this, cartridgeInfoProvider, sramMode, entry);
+        }
+        backupMemMapper.setSramMode(sramMode);
+        this.mapper = backupMemMapper;
     }
 
     @Override

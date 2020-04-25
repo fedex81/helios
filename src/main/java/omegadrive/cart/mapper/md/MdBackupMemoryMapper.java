@@ -20,9 +20,7 @@
 package omegadrive.cart.mapper.md;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.gen.GenesisBus;
 import omegadrive.cart.MdCartInfoProvider;
-import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.mapper.BackupMemoryMapper;
 import omegadrive.cart.mapper.RomMapper;
@@ -55,8 +53,8 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         return createInstance(baseMapper, cart, SramMode.DISABLE, entry);
     }
 
-    private static RomMapper createInstance(RomMapper baseMapper, MdCartInfoProvider cart,
-                                            SramMode sramMode, MdRomDbModel.Entry entry) {
+    public static RomMapper createInstance(RomMapper baseMapper, MdCartInfoProvider cart,
+                                           SramMode sramMode, MdRomDbModel.Entry entry) {
         int size = !entry.hasEeprom() ? MdCartInfoProvider.DEFAULT_SRAM_BYTE_SIZE : entry.getEeprom().getSize();
         MdBackupMemoryMapper mapper = new MdBackupMemoryMapper(cart.getRomName(), size);
         mapper.baseMapper = baseMapper;
@@ -72,21 +70,6 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         LOG.info("BackupMemoryMapper created, using folder: " + mapper.sramFolder);
         mapper.initBackupFileIfNecessary();
         return mapper;
-    }
-
-    public static RomMapper getOrCreateInstance(RomMapper baseMapper,
-                                                RomMapper currentMapper,
-                                                MdCartInfoProvider cartridgeInfoProvider,
-                                                SramMode sramMode) {
-        if (baseMapper != currentMapper) {
-            currentMapper.setSramMode(sramMode);
-            return currentMapper;
-        }
-        return createInstance(baseMapper, cartridgeInfoProvider, sramMode, MdLoader.NO_ENTRY);
-    }
-
-    private static boolean noOverlapBetweenRomAndSram() {
-        return SRAM_START_ADDRESS > GenesisBus.ROM_END_ADDRESS;
     }
 
     public static void logInfo(String str, Object... res) {
@@ -120,9 +103,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
 
     private long readDataSram(long address, Size size) {
         address = address & 0xFF_FFFF;
-        boolean noOverlap = noOverlapBetweenRomAndSram();
         boolean sramRead = sramMode != SramMode.DISABLE;
-        sramRead |= noOverlap; //if no overlap allow to read
         sramRead &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (sramRead) {
             initBackupFileIfNecessary();
@@ -137,7 +118,6 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private void writeDataSram(long address, long data, Size size) {
         address = address & 0xFF_FFFF;
         boolean sramWrite = sramMode == SramMode.READ_WRITE;
-        sramWrite |= noOverlapBetweenRomAndSram();  //if no overlap allow to write
         sramWrite &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (sramWrite) {
             initBackupFileIfNecessary();
@@ -151,9 +131,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
 
     private long readDataEeprom(long address, Size size) {
         address = address & 0xFF_FFFF;
-        boolean noOverlap = noOverlapBetweenRomAndSram();
         boolean eepromRead = sramMode != SramMode.DISABLE;
-        eepromRead |= noOverlap; //if no overlap allow to read
         eepromRead &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (eepromRead) {
             initBackupFileIfNecessary();
@@ -167,7 +145,6 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private void writeDataEeprom(long address, long data, Size size) {
         address = address & 0xFF_FFFF;
         boolean eepromWrite = sramMode == SramMode.READ_WRITE;
-        eepromWrite |= noOverlapBetweenRomAndSram();  //if no overlap allow to write
         eepromWrite &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
         if (eepromWrite) {
             initBackupFileIfNecessary();
