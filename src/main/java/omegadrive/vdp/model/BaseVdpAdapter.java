@@ -51,11 +51,6 @@ public class BaseVdpAdapter implements BaseVdpProvider {
     }
 
     @Override
-    public boolean isDisplayEnabled() {
-        return false;
-    }
-
-    @Override
     public VideoMode getVideoMode() {
         return null;
     }

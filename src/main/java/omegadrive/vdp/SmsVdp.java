@@ -1187,11 +1187,6 @@ public final class SmsVdp implements BaseVdpProvider {
     }
 
     @Override
-    public boolean isDisplayEnabled() {
-        return (vdpreg[1] & 0x40) != 0;
-    }
-
-    @Override
     public VideoMode getVideoMode() {
         return isSms ? videoMode : ggVideoMode;
     }

@@ -141,11 +141,6 @@ public class Tms9918aVdp implements Tms9918a {
     }
 
     @Override
-    public boolean isDisplayEnabled() {
-        return true;
-    }
-
-    @Override
     public VideoMode getVideoMode() {
         return VideoMode.NTSCJ_H32_V24;
     }

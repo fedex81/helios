@@ -243,6 +243,8 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
 
     InterlaceMode getInterlaceMode();
 
+    boolean isDisplayEnabled();
+
     default int getRegisterData(VdpRegisterName registerName) {
         return getRegisterData(registerName.ordinal());
     }

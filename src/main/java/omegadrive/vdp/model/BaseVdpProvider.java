@@ -80,8 +80,6 @@ public interface BaseVdpProvider extends Device {
 
     void updateRegisterData(int reg, int data);
 
-    boolean isDisplayEnabled();
-
     VideoMode getVideoMode();
 
     VdpMemory getVdpMemory();

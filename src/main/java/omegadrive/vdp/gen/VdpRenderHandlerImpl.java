@@ -148,6 +148,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         phase1(line + 1);
         boolean disp = vdpProvider.isDisplayEnabled();
         if (!disp) {
+            composeImageLinearLine(line);
             return;
         }
         shadowHighlightMode = vdpProvider.isShadowHighlight();

@@ -76,14 +76,15 @@ public class GenesisVdp implements GenesisVdpProvider {
     boolean ie1;
     //	HV Counter Latch
     boolean m3;
-    //	Display Enable
-    boolean de;
 
     //	REG 1
     //	Extended VRAM
     boolean evram;
-    //	Enable Display
-    boolean disp;
+    // 1- Display Enable, 0 - Only Display Background color
+    //Bit 6 will blank the display when cleared. Any line that is blanked is
+    //filled with the backdrop color. During this time, you can freely access
+    //VDP memory with no limitations on the number of writes per line.
+    boolean displayEnable;
     //	Enable VINT
     boolean ie0;
     //	Enable DMA
@@ -320,7 +321,7 @@ public class GenesisVdp implements GenesisVdpProvider {
 
     @Override
     public boolean isDisplayEnabled() {
-        return disp;
+        return displayEnable;
     }
 
     @Override
@@ -415,7 +416,7 @@ public class GenesisVdp implements GenesisVdpProvider {
         }
         fifo.push(vramMode, addressRegister, data);
         addressRegister += autoIncrementData;
-        setupDmaFillMaybe(data);
+        dmaHandler.setupDmaFillMaybe(dma == 1, data);
     }
 
     private void writeDataToVram(boolean vramSlot) {
@@ -556,7 +557,6 @@ public class GenesisVdp implements GenesisVdpProvider {
                 if (prevLcb != lcb) {
                     LOG.info("LCB enable: " + lcb);
                 }
-                de = ((data >> 0) & 1) == 1;
                 boolean newM3 = ((data >> 1) & 1) == 1;
                 updateM3(newM3);
                 boolean newIe1 = ((data >> 4) & 1) == 1;
@@ -564,7 +564,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                 break;
             case MODE_2:
                 evram = ((data >> 7) & 1) == 1;
-                disp = ((data >> 6) & 1) == 1;
+                displayEnable = ((data >> 6) & 1) == 1;
                 ie0 = ((data >> 5) & 1) == 1;
                 m1 = ((data >> 4) & 1) == 1;
                 m2 = ((data >> 3) & 1) == 1;
@@ -606,7 +606,7 @@ public class GenesisVdp implements GenesisVdpProvider {
         //&& reg < 0x13 && interruptHandler.isActiveScreen()
         if (regVerbose && current != data && reg < 0x13) {
             String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- de{}",
-                    getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (disp ? 1 : 0)).getFormattedMessage();
+                    getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (displayEnable ? 1 : 0)).getFormattedMessage();
             LOG.info(this.interruptHandler.getStateString(msg));
         }
     }
@@ -628,11 +628,10 @@ public class GenesisVdp implements GenesisVdpProvider {
 
     private void doDma(boolean externalSlot) {
         if (externalSlot && dma == 1) {
-            VdpDmaHandler.DmaMode dmaMode = dmaHandler.getDmaMode();
             boolean dmaDone = dmaHandler.doDmaSlot(videoMode);
             dma = dmaDone ? 0 : dma;
             if (dma == 0 && dmaDone) {
-                LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", dmaMode, verbose);
+                LogHelper.printLevel(LOG, Level.INFO, "{}: OFF", dmaHandler.getDmaMode(), verbose);
                 evaluateVdpBusyState();
             }
         }
@@ -651,23 +650,9 @@ public class GenesisVdp implements GenesisVdpProvider {
         bus.setVdpBusyState(state);
     }
 
-    private boolean setupDmaFillMaybe(int data) {
-        //this should proceed even with m1 =0
-        if (dma == 1) {
-            VdpDmaHandler.DmaMode mode = dmaHandler.getDmaMode();
-            boolean dmaOk = mode == VdpDmaHandler.DmaMode.VRAM_FILL;
-            if (dmaOk) {
-                dmaHandler.setupDmaDataPort(data);
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Override
     public int runSlot() {
 //        LogHelper.printLevel(LOG, Level.INFO, "Start slot: {}", interruptHandler.getSlotNumber(), verbose);
-        boolean displayEnable = disp;
         //slot granularity -> 2 H counter increases per cycle
         interruptHandler.increaseHCounter();
         interruptHandler.increaseHCounter();
@@ -703,8 +688,9 @@ public class GenesisVdp implements GenesisVdpProvider {
         //fifo has priority over DMA
         if (fifo.isEmpty()) {
             doDma(isExternalSlot);
+        } else {
+            writeDataToVram(isExternalSlot);
         }
-        writeDataToVram(isExternalSlot);
     }
 
     @Override

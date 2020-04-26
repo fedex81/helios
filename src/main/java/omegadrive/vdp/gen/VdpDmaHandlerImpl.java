@@ -31,8 +31,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Objects;
-
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 public class VdpDmaHandlerImpl implements VdpDmaHandler {
@@ -62,16 +60,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return d;
     }
 
-    private boolean checkSetup(boolean m1, long data) {
+    public DmaMode setupDma(GenesisVdpProvider.VramMode vramMode, long data, boolean m1) {
         if (!m1) {
             LogHelper.printLevel(LOG, Level.WARN, "Attempting DMA but m1 not set: {}, data: {}", dmaMode, data, verbose);
-            return false;
-        }
-        return true;
-    }
-
-    public DmaMode setupDma(GenesisVdpProvider.VramMode vramMode, long data, boolean m1) {
-        if (!checkSetup(m1, data)) {
             return null;
         }
         dmaMode = getDmaMode(vdpProvider.getRegisterData(DMA_SOURCE_HIGH), vramMode);
@@ -84,12 +75,17 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return dmaMode;
     }
 
-    //TODO still buggy I think
     //https://gendev.spritesmind.net/forum/viewtopic.php?t=2663
-    public void setupDmaDataPort(int dataWord) {
-        dmaFillData = dataWord;
-        printLessVerboseInfo("START");
-        dmaFillReady = true;
+    @Override
+    public void setupDmaFillMaybe(boolean isDma, int data) {
+        //this should proceed even with m1 =0
+        if (isDma && dmaMode == VdpDmaHandler.DmaMode.VRAM_FILL) {
+            if (!dmaFillReady) {
+                printLessVerboseInfo("START");
+                dmaFillReady = true;
+            }
+            dmaFillData = data;
+        }
     }
 
     @Override
@@ -153,7 +149,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     private String getDmaStateString(String head, long srcAddress) {
         int dmaLen = getDmaLength();
-        String str = Objects.toString(dmaMode) + " " + head;
+        String str = dmaMode + " " + head;
         String src = Long.toHexString(srcAddress > Long.MIN_VALUE ? srcAddress : getSourceAddress());
         String dest = Long.toHexString(getDestAddress());
         int destAddressIncrement = getDestAddressIncrement();
@@ -264,7 +260,6 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return vdpProvider.getRegisterData(AUTO_INCREMENT);
     }
 
-    //TODO MKII dmaFill and 68kToVram still buggy
     private void dma68kToVram() {
         int sourceAddress = getSourceAddress() << 1; //needs to double it
         int destAddress = getDestAddress();

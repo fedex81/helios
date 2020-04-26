@@ -33,7 +33,7 @@ public interface VdpDmaHandler {
 
     boolean doDmaSlot(VideoMode videoMode);
 
-    void setupDmaDataPort(int dataWord);
+    void setupDmaFillMaybe(boolean isDma, int data);
 
     boolean dmaInProgress();
 
