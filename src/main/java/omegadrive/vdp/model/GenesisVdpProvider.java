@@ -185,13 +185,10 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
         return GenesisVdp.createInstance(bus);
     }
 
-    //always a word
-    int readDataPort();
-
     //write a word
     void writeVdpPortWord(VdpPortType type, int data);
 
-    int readControl();
+    int readVdpPortWord(VdpPortType type);
 
     int getVCounter();
 

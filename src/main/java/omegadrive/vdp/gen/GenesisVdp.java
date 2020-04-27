@@ -125,8 +125,6 @@ public class GenesisVdp implements GenesisVdpProvider {
     // The same information can be obtained from the version register.
     int pal;
 
-    long all;
-
     private GenesisBusProvider bus;
     protected VdpInterruptHandler interruptHandler;
     private VdpMemoryInterface memoryInterface;
@@ -220,8 +218,7 @@ public class GenesisVdp implements GenesisVdpProvider {
 
     private int lastControl = -1;
 
-    @Override
-    public int readControl() {
+    private int readControl() {
         if (!bus.is68kRunning()) {
             LOG.warn("readControl with 68k stopped, address: {}", addressRegister, verbose);
         }
@@ -240,7 +237,6 @@ public class GenesisVdp implements GenesisVdpProvider {
                         | (dma << 1)
                         | (pal << 0)
         );
-        writePendingControlPort = false;
         if (control != lastControl) {
             lastControl = control;
             LogHelper.printLevel(LOG, Level.INFO, "readControl: {}", control, verbose);
@@ -345,6 +341,19 @@ public class GenesisVdp implements GenesisVdpProvider {
         return ste;
     }
 
+    @Override
+    public int readVdpPortWord(VdpPortType type) {
+        writePendingControlPort = false;
+        switch (type) {
+            case DATA:
+                return readDataPort();
+            case CONTROL:
+                return readControl();
+        }
+        LOG.error("Unexpected portType: {}", type);
+        return 0;
+    }
+
     //	https://wiki.megadrive.org/index.php?title=VDP_Ports#Write_2_-_Setting_RAM_address
 //	First word
 //	Bit	15	14	13	12	11	10	9	8	7	6	5	4	3	2	1	0
@@ -382,9 +391,10 @@ public class GenesisVdp implements GenesisVdpProvider {
         boolean isRegisterWrite = !writePendingControlPort && mode == 0b10;
         updateStateFromControlPortWrite(isRegisterWrite, data);
         if (isRegisterWrite) {
+            writePendingControlPort = false;
             writeRegister(data);
         } else {
-            writeRamAddress(data);
+            writeControlReg(data);
         }
     }
 
@@ -452,8 +462,7 @@ public class GenesisVdp implements GenesisVdpProvider {
 //        logInfo("After writeDataPort, data: {}, address: {}", data, addressRegister);
     }
 
-    @Override
-    public int readDataPort() {
+    private int readDataPort() {
         if (!bus.is68kRunning()) {
             LOG.warn("readDataPort with 68k stopped, address: {}", addressRegister);
         }
@@ -464,7 +473,6 @@ public class GenesisVdp implements GenesisVdpProvider {
             //Bonkers
             LOG.warn("readDataPort with FIFO not empty {}, address: {}", vramMode, addressRegister);
         }
-        this.writePendingControlPort = false;
         //TODO need to stop 68k until the result is available
         int value = readDataPortInternal();
         if(ENABLE_READ_AHEAD) {
@@ -505,7 +513,7 @@ public class GenesisVdp implements GenesisVdpProvider {
         return res;
     }
 
-    private void writeRamAddress(int data) {
+    private void writeControlReg(int data) {
         if (!writePendingControlPort) {
             firstWrite = data;
             writePendingControlPort = true;
@@ -513,7 +521,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                     , firstWrite, addressRegister, codeRegister, verbose);
         } else {
             writePendingControlPort = false;
-            all = ((firstWrite << 16) | data);
+            long all = ((firstWrite << 16) | data);
             LogHelper.printLevel(LOG, Level.INFO,
                     "writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}, mode: {}"
                     , data, addressRegister, codeRegister, all, vramMode, verbose);

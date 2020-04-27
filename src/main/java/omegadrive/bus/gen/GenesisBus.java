@@ -587,26 +587,53 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //
 //    Reading from even VDP addresses returns the MSB of the 16-bit data,
 //    and reading from odd address returns the LSB:
-    private long vdpRead(long addressL, Size size) {
-        long data = 0;
+    private long vdpRead(int address, Size size) {
+        switch (size) {
+            case WORD:
+            case BYTE:
+                return vdpReadWord(address, size);
+            case LONG:
+                long res = vdpReadWord(address, size) << 16;
+                return res | vdpReadWord(address + 2, size);
+        }
+        return 0xFF;
+    }
+
+
+    private void vdpWrite(int address, Size size, long data) {
+        switch (size) {
+            case WORD:
+            case BYTE:
+                vdpWriteWord(address, size, data);
+                break;
+            case LONG:
+                int address1 = address & 0x1F; //low 5 bits
+                if (address1 < 0x8 && checkVdpBusy(address, size, data)) {
+                    return;
+                }
+                vdpWriteWord(address, Size.WORD, data >> 16);
+                vdpWriteWord(address + 2, Size.WORD, data & 0xFFFF);
+                break;
+        }
+    }
+
+    private int vdpReadWord(int addressL, Size size) {
         boolean valid = (addressL & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
         if (!valid) {
             LOG.error("Illegal VDP read, address {}, size {}", Long.toHexString(addressL), size);
             return 0xFF;
         }
-        long address = addressL & 0x1F; //low 5 bits
+        int address = addressL & 0x1F; //low 5 bits
         if (address <= 0x07) {
-            boolean even = address % 2 == 0;
-            boolean isVdpData = address <= 0x03;
-            //read word by default
-            data = isVdpData ? vdpProvider.readDataPort() : vdpProvider.readControl();
-            if (size == Size.BYTE) {
-                data = even ? data >> 8 : data & 0xFF;
-            } else if (size == Size.LONG) {
-                data = data << 16;
-                long data2 = isVdpData ? vdpProvider.readDataPort() : vdpProvider.readControl();
-                data |= data2;
+            int vdpData = readVdpPortWord(address);
+            switch (size) {
+                case WORD:
+                    return vdpData;
+                case BYTE:
+                    boolean even = address % 2 == 0;
+                    return even ? vdpData >> 8 : vdpData & 0xFF;
             }
+            return 0xFF;
         } else if (address >= 0x08 && address <= 0x0E) { //	VDP HV counter
 //            Reading the HV counter will return the following data:
 //
@@ -637,14 +664,19 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else {
             LOG.warn("Unexpected vdpRead, address: " + Long.toHexString(addressL));
         }
-        return data;
+        return 0xFF;
     }
 
+    private int readVdpPortWord(int address) {
+        VdpPortType portType = address < 4 ? VdpPortType.DATA : VdpPortType.CONTROL;
+        //read word by default
+        return vdpProvider.readVdpPortWord(portType);
+    }
 
     //      Doing an 8-bit write to the control or data port is interpreted by
 //                the VDP as a 16-bit word, with the data written used for both halfs
 //                of the word.
-    private void vdpWrite(int addressLong, Size size, long data) {
+    private void vdpWriteWord(int addressLong, Size size, long data) {
         boolean valid = (addressLong & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
         if (!valid) {
             LOG.error("Illegal VDP write, address {}, data {}, size {}",
@@ -652,26 +684,18 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             throw new RuntimeException("Illegal VDP write");
         }
 
-        int addressL = addressLong & 0x1F; //low 5 bits
-        if (addressL < 0x8) { //DATA or CONTROL PORT
-            VdpPortType portType = addressL < 0x4 ? VdpPortType.DATA :
+        int address = addressLong & 0x1F; //low 5 bits
+        if (address < 0x8) { //DATA or CONTROL PORT
+            VdpPortType portType = address < 0x4 ? VdpPortType.DATA :
                     VdpPortType.CONTROL;
-            if (checkVdpReady(addressLong, size, data)) {
+            if (checkVdpBusy(addressLong, size, data)) {
                 return;
             }
             if (size == Size.BYTE) {
                 data = data << 8 | data;
             }
-            if (size != Size.LONG) {
-                vdpProvider.writeVdpPortWord(portType, (int) data);
-            } else {
-                vdpProvider.writeVdpPortWord(portType, (int) (data >> 16));
-                if (checkVdpReady(addressLong, Size.WORD, data & 0xFFFF)) {
-                    return;
-                }
-                vdpProvider.writeVdpPortWord(portType, (int) (data & 0xFFFF));
-            }
-        } else if (addressL >= 0x8 && addressL < 0x0F) {   //HV Counter
+            vdpProvider.writeVdpPortWord(portType, (int) data);
+        } else if (address >= 0x8 && address < 0x0F) {   //HV Counter
             LOG.warn("HV counter write");
         }
         //            Doing byte-wide writes to even PSG addresses has no effect.
@@ -681,19 +705,19 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //
 //            move.b      (a4)+, d0       ; PSG data in LSB
 //            move.w      d0, $C00010     ; Write to PSG
-        else if (addressL >= 0x10 && addressL < 0x18) {
+        else if (address >= 0x10 && address < 0x18) {
             int psgData = (int) (data & 0xFF);
             if (size == Size.WORD) {
-                LOG.warn("PSG word write, address: " + Long.toHexString(addressL) + ", data: " + data);
+                LOG.warn("PSG word write, address: " + Long.toHexString(address) + ", data: " + data);
             }
             soundProvider.getPsg().write(psgData);
         } else {
-            LOG.warn("Unexpected vdpWrite, address: " + Long.toHexString(addressL) + ", data: " + data);
+            LOG.warn("Unexpected vdpWrite, address: " + Long.toHexString(address) + ", data: " + data);
         }
     }
 
     //NOTE: this assumes that only 68k writes on the vpdDataPort
-    private boolean checkVdpReady(int address, Size size, long data) {
+    private boolean checkVdpBusy(int address, Size size, long data) {
         if (busArbiter.getVdpBusyState() == VdpBusyState.FIFO_FULL ||
                 busArbiter.getVdpBusyState() == VdpBusyState.MEM_TO_VRAM) {
             Runnable r = () -> this.write(address, data, size);

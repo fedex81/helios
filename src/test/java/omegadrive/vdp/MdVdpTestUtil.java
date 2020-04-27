@@ -33,6 +33,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpPortType.CONTROL;
+
 public class MdVdpTestUtil {
 
     public static void runCounterToStartFrame(VdpInterruptHandler h) {
@@ -80,7 +82,7 @@ public class MdVdpTestUtil {
         do {
             slots++;
             vdp.runSlot();
-            dmaDone = (vdp.readControl() & 0x2) == 0;
+            dmaDone = (vdp.readVdpPortWord(CONTROL) & 0x2) == 0;
         } while (!dmaDone);
         return slots;
     }
@@ -96,11 +98,11 @@ public class MdVdpTestUtil {
     }
 
     public static boolean isVBlank(GenesisVdpProvider vdp) {
-        return (vdp.readControl() & 0x8) == 8;
+        return (vdp.readVdpPortWord(CONTROL) & 0x8) == 8;
     }
 
     public static boolean isHBlank(GenesisVdpProvider vdp) {
-        return (vdp.readControl() & 0x4) == 4;
+        return (vdp.readVdpPortWord(CONTROL) & 0x4) == 4;
     }
 
     public static void setH32(GenesisVdpProvider vdp) {
@@ -231,16 +233,11 @@ public class MdVdpTestUtil {
     public static class VdpAdaptor implements GenesisVdpProvider {
 
         @Override
-        public int readDataPort() {
-            return 0;
-        }
-
-        @Override
         public void writeVdpPortWord(VdpPortType type, int data) {
         }
 
         @Override
-        public int readControl() {
+        public int readVdpPortWord(VdpPortType type) {
             return 0;
         }
 
@@ -340,11 +337,6 @@ public class MdVdpTestUtil {
         }
 
         @Override
-        public boolean isDisplayEnabled() {
-            return false;
-        }
-
-        @Override
         public VideoMode getVideoMode() {
             return null;
         }
@@ -356,6 +348,11 @@ public class MdVdpTestUtil {
 
         @Override
         public void setRegion(RegionDetector.Region region) {
+        }
+
+        @Override
+        public boolean isDisplayEnabled() {
+            return false;
         }
 
         @Override
