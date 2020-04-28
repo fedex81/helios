@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpPortType.CONTROL;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.HCOUNTER_VALUE;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.MODE_4;
 
 public class MdVdpTestUtil {
 
@@ -45,6 +47,18 @@ public class MdVdpTestUtil {
         } while (!isStart);
         h.setHIntPending(false);
         h.setvIntPending(false);
+    }
+
+
+    public static int runToStartNextLine(GenesisVdpProvider vdp) {
+        boolean isStart;
+        int cnt = 0;
+        do {
+            cnt++;
+            vdp.runSlot();
+            isStart = vdp.getHCounter() == 0;
+        } while (!isStart);
+        return cnt;
     }
 
     public static void runToStartFrame(GenesisVdpProvider vdp) {
@@ -107,13 +121,15 @@ public class MdVdpTestUtil {
 
     public static void setH32(GenesisVdpProvider vdp) {
         //        Set Video mode: PAL_H32_V28
-        vdp.writeControlPort(0x8C00);
+        int val = vdp.getRegisterData(MODE_4);
+        vdp.writeControlPort(0x8C00 | (val & 0x7E));
         vdp.resetVideoMode(true);
     }
 
     public static void setH40(GenesisVdpProvider vdp) {
         //        Set Video mode: PAL_H40_V28
-        vdp.writeControlPort(0x8C81);
+        int val = vdp.getRegisterData(MODE_4);
+        vdp.writeControlPort(0x8C00 | (val | 0x81));
         vdp.resetVideoMode(true);
     }
 
@@ -142,7 +158,7 @@ public class MdVdpTestUtil {
     public final static VideoMode[] holder = {null};
 
     public static void updateHCounter(BaseVdpProvider vdp, int hLineCounter) {
-        vdp.updateRegisterData(GenesisVdpProvider.VdpRegisterName.HCOUNTER_VALUE.ordinal(), hLineCounter);
+        vdp.updateRegisterData(HCOUNTER_VALUE.ordinal(), hLineCounter);
     }
 
     public static void updateVideoMode(BaseVdpProvider vdp, VideoMode videoMode) {
@@ -173,7 +189,7 @@ public class MdVdpTestUtil {
 
             @Override
             public void updateRegisterData(int reg, int data) {
-                if (reg == VdpRegisterName.HCOUNTER_VALUE.ordinal()) {
+                if (reg == HCOUNTER_VALUE.ordinal()) {
                     list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, data));
                 } else if (reg < 2) {
                     list.forEach(l -> l.onVdpEvent(VdpEvent.VIDEO_MODE, holder[0]));
@@ -229,6 +245,7 @@ public class MdVdpTestUtil {
             }
         };
     }
+
 
     public static class VdpAdaptor implements GenesisVdpProvider {
 

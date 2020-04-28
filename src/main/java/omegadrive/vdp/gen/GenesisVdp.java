@@ -696,9 +696,8 @@ public class GenesisVdp implements GenesisVdpProvider {
         //fifo has priority over DMA
         if (fifo.isEmpty()) {
             doDma(isExternalSlot);
-        } else {
-            writeDataToVram(isExternalSlot);
         }
+        writeDataToVram(isExternalSlot);
     }
 
     @Override

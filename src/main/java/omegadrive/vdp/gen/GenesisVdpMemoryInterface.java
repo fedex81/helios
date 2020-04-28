@@ -40,16 +40,13 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     private VdpColorMapper colorMapper;
 
-    private GenesisVdpMemoryInterface() {
+    protected GenesisVdpMemoryInterface() {
         colorMapper = VdpColorMapper.getInstance();
     }
 
     public static GenesisVdpMemoryInterface createInstance() {
         GenesisVdpMemoryInterface i = new GenesisVdpMemoryInterface();
-        i.vram = new int[GenesisVdpProvider.VDP_VRAM_SIZE];
-        i.cram = new int[GenesisVdpProvider.VDP_CRAM_SIZE];
-        i.vsram = new int[GenesisVdpProvider.VDP_VSRAM_SIZE];
-        i.initPalette();
+        i.init();
         return i;
     }
 
@@ -60,6 +57,13 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         i.vsram = Arrays.copyOf(vsram, vsram.length);
         i.initPalette();
         return i;
+    }
+
+    protected void init() {
+        vram = new int[GenesisVdpProvider.VDP_VRAM_SIZE];
+        cram = new int[GenesisVdpProvider.VDP_CRAM_SIZE];
+        vsram = new int[GenesisVdpProvider.VDP_VSRAM_SIZE];
+        initPalette();
     }
 
     private void paletteUpdate(int cramAddress) {

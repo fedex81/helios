@@ -24,9 +24,8 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.vdp.gen.GenesisVdp;
-import omegadrive.vdp.gen.GenesisVdpMemoryInterface;
+import omegadrive.vdp.gen.TestGenesisVdpMemoryInterface;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpSlotType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,7 +48,7 @@ public class BaseVdpDmaBandwidthTest {
     private static Logger LOG = LogManager.getLogger(BaseVdpDmaBandwidthTest.class.getSimpleName());
 
     GenesisVdpProvider vdpProvider;
-    VdpMemoryInterface memoryInterface;
+    TestGenesisVdpMemoryInterface memoryInterface;
     IMemoryProvider memoryProvider;
 
     static boolean verbose = true;
@@ -75,7 +74,7 @@ public class BaseVdpDmaBandwidthTest {
         memoryProvider = MemoryProvider.createGenesisInstance();
         SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
         GenesisBusProvider busProvider = GenesisBusProvider.createBus();
-        memoryInterface = GenesisVdpMemoryInterface.createInstance();
+        memoryInterface = new TestGenesisVdpMemoryInterface();
         vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface);
         busProvider.attachDevice(emu).attachDevice(memoryProvider);
 
@@ -220,6 +219,38 @@ public class BaseVdpDmaBandwidthTest {
         int slots = MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
         System.out.println("Dma done" + vdpProvider.getVdpStateString());
         return slots;
+    }
+
+    protected void test68kDmaPerLine(GenesisVdpProvider.VdpRamType vdpRamType, boolean h32, boolean blanking) {
+        setup68kRam();
+        int refreshSlots = h32 ? REFRESH_SLOTS_H32 : REFRESH_SLOTS_H40;
+        int slotsPerLine = h32 ? GenesisVdpProvider.H32_SLOTS : GenesisVdpProvider.H40_SLOTS;
+        int bytesPerLine = blanking ? slotsPerLine - refreshSlots : (h32 ? 16 : 18);
+        bytesPerLine = vdpRamType != GenesisVdpProvider.VdpRamType.VRAM ? bytesPerLine << 1 : bytesPerLine;
+        int dmaLen = bytesPerLine + 1;
+        int mode2 = blanking ? 0x34 : 0x74; //dma enabled
+        vdpProvider.updateRegisterData(MODE_2, mode2);
+        vdpProvider.updateRegisterData(AUTO_INCREMENT, 2);
+        vdpProvider.updateRegisterData(DMA_LENGTH_LOW, dmaLen);
+        vdpProvider.updateRegisterData(DMA_SOURCE_LOW, 0x80);
+        vdpProvider.updateRegisterData(DMA_SOURCE_MID, 0xfd);
+        vdpProvider.updateRegisterData(DMA_SOURCE_HIGH, 0x7f);
+        if (!blanking) {
+            MdVdpTestUtil.runToStartFrame(vdpProvider);
+        }
+//        LogHelper.printToSytemOut =true;
+        System.out.println(vdpRamType + " before: " + MdVdpTestUtil.printVdpMemory(memoryInterface, vdpRamType, 0, 0xFF));
+
+        int commandLong = vdpRamType == GenesisVdpProvider.VdpRamType.CRAM ? 0xC000_0080 : (vdpRamType == GenesisVdpProvider.VdpRamType.VSRAM)
+                ? 0x4000_0090 : 0x4000_0080;
+        vdpProvider.writeControlPort(commandLong >> 16);
+        vdpProvider.writeControlPort(commandLong & 0xFFFF);
+        System.out.println("Dma started" + vdpProvider.getVdpStateString());
+        memoryInterface.resetStats();
+        MdVdpTestUtil.runToStartNextLine(vdpProvider);
+        Assert.assertEquals(bytesPerLine, memoryInterface.getMemoryWrites(vdpRamType));
+        MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
+        System.out.println("Dma done" + vdpProvider.getVdpStateString());
     }
 }
 
