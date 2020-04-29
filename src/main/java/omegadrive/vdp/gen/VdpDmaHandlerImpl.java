@@ -264,7 +264,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         int sourceAddress = getSourceAddress() << 1; //needs to double it
         int destAddress = getDestAddress();
         int dataWord = (int) busProvider.read(sourceAddress, Size.WORD);
-        vdpProvider.getFifo().push(vdpProvider.getVramMode(), destAddress, dataWord);
+        vdpProvider.fifoPush(destAddress, dataWord);
         printInfo("IN PROGRESS: ", sourceAddress);
         //increase by 1, becomes 2 (bytes) when doubling
         postDmaRegisters();

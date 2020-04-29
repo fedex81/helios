@@ -9,6 +9,7 @@ import omegadrive.system.SystemProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -30,6 +31,7 @@ import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_ROM;
  * <p>
  * Copyright 2020
  */
+@Ignore
 public class VdpFifoTesting {
 
     private static final int SUCCESS_TEST_RAM_LOCATION = 0xFF08;

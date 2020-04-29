@@ -78,8 +78,8 @@ public class GenesisVdp implements GenesisVdpProvider {
     boolean m3;
 
     //	REG 1
-    //	Extended VRAM
-    boolean evram;
+    //	Extended VRAM, 128Kb
+    boolean exVram;
     // 1- Display Enable, 0 - Only Display Background color
     //Bit 6 will blank the display when cleared. Any line that is blanked is
     //filled with the backdrop color. During this time, you can freely access
@@ -419,14 +419,23 @@ public class GenesisVdp implements GenesisVdpProvider {
         vramMode = VramMode.getVramMode(codeRegister & 0xF, verbose);
     }
 
-    private void writeDataPortInternal(int data) {
+    protected void writeDataPortInternal(int data) {
         writePendingControlPort = false;
         if (vramMode == null) {
             LogHelper.printLevel(LOG, Level.WARN, "writeDataPort, data: {}, address: {}", data, addressRegister, true);
         }
-        fifo.push(vramMode, addressRegister, data);
+        fifoPush(addressRegister, data);
         addressRegister += autoIncrementData;
         dmaHandler.setupDmaFillMaybe(dma == 1, data);
+    }
+
+    @Override
+    public void fifoPush(int addressRegister, int data) {
+        int a = addressRegister;
+        if (exVram) {
+            a = (((a & 2) >> 1) ^ 1) | ((a & 0x400) >> 9) | a & 0x3FC | ((a & 0x1F800) >> 1);
+        }
+        fifo.push(vramMode, a, data);
     }
 
     private void writeDataToVram(boolean vramSlot) {
@@ -454,7 +463,11 @@ public class GenesisVdp implements GenesisVdpProvider {
             fifo.pop();
             LogHelper.printLevel(LOG, Level.INFO, "writeVram: {}, data: {}, address: {}",
                     entry.vdpRamMode, entry.data, entry.addressRegister, verbose);
-            memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
+            if (exVram && entry.vdpRamMode == VramMode.vramWrite) {
+                memoryInterface.writeVramByte(entry.addressRegister, entry.data & 0xFF);
+            } else {
+                memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
+            }
             if (wasFull && !fifo.isFull()) {
                 evaluateVdpBusyState();
             }
@@ -571,7 +584,11 @@ public class GenesisVdp implements GenesisVdpProvider {
                 updateIe1(newIe1);
                 break;
             case MODE_2:
-                evram = ((data >> 7) & 1) == 1;
+                boolean ext = ((data >> 7) & 1) == 1;
+                if (exVram != ext) {
+                    exVram = ext;
+                    LOG.debug("128kb VRAM: {}", exVram);
+                }
                 displayEnable = ((data >> 6) & 1) == 1;
                 ie0 = ((data >> 5) & 1) == 1;
                 m1 = ((data >> 4) & 1) == 1;

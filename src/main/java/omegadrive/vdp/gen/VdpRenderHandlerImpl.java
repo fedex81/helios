@@ -546,6 +546,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     private SpriteDataHolder getPhase1SpriteData(int baseAddress, SpriteDataHolder holder) {
+        if (baseAddress + 3 > 0xFFFF) {
+//            LOG.error("Invalid sprite address: {}", baseAddress); //titan2
+            return holder;
+        }
         int byte0 = vram[baseAddress];
         int byte1 = vram[baseAddress + 1];
         int byte2 = vram[baseAddress + 2];

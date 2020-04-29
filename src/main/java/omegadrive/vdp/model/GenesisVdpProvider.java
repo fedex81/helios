@@ -257,4 +257,8 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
     default void writeDataPort(long data) {
         writeVdpPortWord(VdpPortType.DATA, (int) data);
     }
+
+    default void fifoPush(int addressRegister, int data) {
+        getFifo().push(getVramMode(), addressRegister, data);
+    }
 }
