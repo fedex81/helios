@@ -79,12 +79,17 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     void initializeRomData() {
         ROM_START_ADDRESS = cartridgeInfoProvider.getRomStart();
-        ROM_END_ADDRESS = cartridgeInfoProvider.getRomEnd();
+        ROM_END_ADDRESS = Math.max(cartridgeInfoProvider.getRomEnd(), DEFAULT_ROM_END_ADDRESS);
+        ROM_END_ADDRESS = Math.min(ROM_END_ADDRESS, Z80_ADDRESS_SPACE_START);
         RAM_START_ADDRESS = cartridgeInfoProvider.getRamStart();
         RAM_END_ADDRESS = cartridgeInfoProvider.getRamEnd();
         entry = MdLoader.getEntry(cartridgeInfoProvider.getSerial());
         if (cartridgeInfoProvider.isSramEnabled() || entry.hasEeprom()) {
             mapper = MdBackupMemoryMapper.createInstance(this, cartridgeInfoProvider, entry);
+        }
+        //some homebrews use a flat ROM mapper, in theory up to Z80_ADDRESS_SPACE_START
+        if (ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
+            LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
         }
     }
 
@@ -157,9 +162,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     @Override
     public long readData(long addressL, Size size) {
         int address = (int) (addressL & 0xFF_FFFF);
-        if (address <= DEFAULT_ROM_END_ADDRESS) {  //ROM
-//            if(address <= cartridgeInfoProvider.getRomEnd()){ TODO Umk trilogy
-            if (MdCartInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
+        if (address <= ROM_END_ADDRESS) {  //ROM
+            if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
                 return mapper.readData(address, size);
             }
@@ -198,7 +202,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             internalRegWrite(address, size, data);
         } else if (address >= VDP_ADDRESS_SPACE_START && address < VDP_ADDRESS_SPACE_END) {  //VDP
             vdpWrite(address, size, data);
-        } else if (address <= DEFAULT_ROM_END_ADDRESS) {
+        } else if (address <= ROM_END_ADDRESS) {
             cartWrite(address, data, size);
         } else {
             LOG.error("Unexpected bus write: {}, 68k PC: {}",
@@ -207,7 +211,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     private void cartWrite(long addressL, long data, Size size) {
-        if (MdCartInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
+        if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
             LOG.info("Unexpected Sram write: " + Long.toHexString(addressL) + ", value : " + data);
             boolean adjust = cartridgeInfoProvider.adjustSramLimits(addressL);
             checkBackupMemoryMapper(SramMode.READ_WRITE, adjust);

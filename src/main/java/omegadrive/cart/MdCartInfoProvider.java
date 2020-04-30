@@ -19,7 +19,6 @@
 
 package omegadrive.cart;
 
-import omegadrive.bus.gen.GenesisBus;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
@@ -141,9 +140,9 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         return provider;
     }
 
-    public static boolean isSramUsedWithBrokenHeader(long address) {
+    public boolean isSramUsedWithBrokenHeader(long address) {
         boolean noOverlapBetweenRomAndSram =
-                MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS > GenesisBus.ROM_END_ADDRESS;
+                MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS > romEnd;
         return noOverlapBetweenRomAndSram &&
                 (address >= MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS &&
                         address <= MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS);
