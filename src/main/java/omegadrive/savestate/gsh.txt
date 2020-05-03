@@ -1,0 +1,18 @@
+   GSH save file
+   same as GST with the following differences
+
+   A GSH savestate should be backward compatible with GST
+
+   Range        Size        Description
+   -----------  -----       -----------
+   00000-00002  3           "GSH"
+   00440-00447  8           Mapper registers
+   22478-EOF    variable    Binary data - non portable
+
+
+   Sega (aka SSF2) Mapper registers
+   ----------------------
+   00440 : 0xA130F3
+   00441 : 0xA130F5
+   ...
+   00447 : 0xA130FF

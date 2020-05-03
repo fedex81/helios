@@ -29,6 +29,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+
 /**
  * A page is specified with 6 bits (bits 7 and 6 are always 0) thus allowing a possible 64 pages
  * (SSFII only has 10, though.)
@@ -107,4 +109,12 @@ public class Ssf2Mapper implements RomMapper {
         }
     }
 
+
+    public int[] getState() {
+        return banks;
+    }
+
+    public void setState(int[] bankData) {
+        this.banks = Arrays.copyOf(bankData, bankData.length);
+    }
 }

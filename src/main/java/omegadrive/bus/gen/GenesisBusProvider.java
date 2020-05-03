@@ -63,6 +63,8 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     int M68K_RAM_MASK = M68K_RAM_SIZE - 1;
 
+    int NUM_MAPPER_BANKS = 8;
+
     Logger LOG = LogManager.getLogger(GenesisBusProvider.class.getSimpleName());
 
     static GenesisBusProvider createBus() {
@@ -102,6 +104,14 @@ public interface GenesisBusProvider extends BaseBusProvider {
     SystemProvider getSystem();
 
     GenesisVdpProvider getVdp();
+
+    default int[] getMapperData() {
+        return new int[0];
+    }
+
+    default void setMapperData(int[] data) {
+        //DO NOTHING
+    }
 
     //Z80 for genesis doesnt do IO
     @Override

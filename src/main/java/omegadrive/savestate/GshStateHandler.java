@@ -20,16 +20,20 @@
 package omegadrive.savestate;
 
 import com.google.common.io.Files;
+import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
+import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public class GshStateHandler extends GstStateHandler {
 
@@ -39,6 +43,8 @@ public class GshStateHandler extends GstStateHandler {
     protected static final String MAGIC_WORD_GST = "GST";
     protected static final String FM_MAGIC_WORD_NUKE = "NUKE";
     protected static final String fileExtension = "gsh";
+
+    private static int SSF2_MAPPER_REG_OFFSET = 0x440;
 
     protected GshStateHandler() {
     }
@@ -115,6 +121,25 @@ public class GshStateHandler extends GstStateHandler {
                 buffer.position(pos);
             }
         }
+    }
+
+    @Override
+    public void saveZ80(Z80Provider z80, GenesisBusProvider bus) {
+        super.saveZ80(z80, bus);
+        int[] data = bus.getMapperData();
+        if (data.length > 0) {
+            buffer.position(SSF2_MAPPER_REG_OFFSET);
+            Arrays.stream(data).forEach(v -> buffer.put((byte) v));
+        }
+    }
+
+    @Override
+    public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
+        super.loadZ80(z80, bus);
+        buffer.position(SSF2_MAPPER_REG_OFFSET);
+        int[] data = new int[GenesisBusProvider.NUM_MAPPER_BANKS];
+        IntStream.range(0, data.length).forEach(i -> data[i] = buffer.get() & 0xFF);
+        bus.setMapperData(data);
     }
 
     private ByteBuffer extendBuffer(ByteBuffer current, int increaseDelta) {

@@ -806,6 +806,21 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         busArbiter.handleInterruptZ80();
     }
 
+    @Override
+    public int[] getMapperData() {
+        if (ssf2Mapper instanceof Ssf2Mapper) {
+            return ((Ssf2Mapper) ssf2Mapper).getState();
+        }
+        return new int[0];
+    }
+
+    @Override
+    public void setMapperData(int[] data) {
+        if (ssf2Mapper instanceof Ssf2Mapper) {
+            ((Ssf2Mapper) ssf2Mapper).setState(data);
+        }
+    }
+
     private static void logInfo(String str, Object... args) {
         if (verbose) {
             LOG.info(new ParameterizedMessage(str, args));

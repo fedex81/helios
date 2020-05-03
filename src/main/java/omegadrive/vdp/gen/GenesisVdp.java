@@ -38,6 +38,8 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.getRegiste
 /**
  * Initially Based on genefusto GenVdp
  * https://github.com/DarkMoe/genefusto
+ * <p>
+ * TODO: fifoDelay, fix read prefetch
  *
  * @author Federico Berti
  */
