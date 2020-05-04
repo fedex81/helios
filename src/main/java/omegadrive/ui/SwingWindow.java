@@ -382,7 +382,9 @@ public class SwingWindow implements DisplayWindow {
         if (!Strings.isNullOrEmpty(label)) {
             count--;
             label += Strings.isNullOrEmpty(info) ? "" : " - " + info;
-            getPerfLabel().setText(label);
+            if (!label.equalsIgnoreCase(perfLabel.getText())) {
+                perfLabel.setText(label);
+            }
             if (count <= 0) {
                 info = null;
             }
