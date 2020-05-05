@@ -52,6 +52,9 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     private final static Logger LOG = LogManager.getLogger(BaseSystem.class.getSimpleName());
 
+    static final long MAX_DRIFT_NS = Duration.ofMillis(10).toNanos();
+    private static final long DRIFT_THRESHOLD_NS = Util.MILLI_IN_NS / 10;
+
     protected IMemoryProvider memory;
     protected BaseVdpProvider vdp;
     protected JoypadProvider joypad;
@@ -60,6 +63,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     protected BUS bus;
 
     protected RegionDetector.Region region = RegionDetector.Region.USA;
+    protected VideoMode videoMode = VideoMode.PAL_H40_V30;
     private String romName;
 
     protected Future<Void> runningRomFuture;
@@ -76,11 +80,15 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     protected volatile boolean futureDoneFlag = false;
 
     //frame pacing stuff
+    protected Telemetry telemetry = Telemetry.getInstance();
     private static final boolean fullThrottle;
     protected long elapsedWaitNs, frameProcessingDelayNs, startCycle;
+    protected long targetNs, startNs = 0;
+    private long driftNs = 0;
     protected int counter = 1;
+    private Optional<String> stats = Optional.empty();
+    private double lastFps = 0;
 
-    static final long MAX_DRIFT = Duration.ofMillis(10).toNanos();
 
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
 
@@ -170,8 +178,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         runningRomFuture = executorService.submit(runnable, null);
     }
 
-    double lastFps = 0;
-
     private void handleCloseApp() {
         try {
             handleCloseRom();
@@ -199,8 +205,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     protected void handleCloseRom() {
         handleRomInternal();
     }
-
-    private String stats = "";
 
     @Override
     public boolean isRomRunning() {
@@ -255,11 +259,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
     }
 
-
-    protected VideoMode videoMode = VideoMode.PAL_H40_V30;
-    protected long targetNs;
-
-
     protected void pauseAndWait() {
         if (!pauseFlag) {
             return;
@@ -273,18 +272,14 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
     }
 
-    long driftNs = 0;
-    static final long THRESHOLD = Util.MILLI_IN_NS / 10;
-    protected Telemetry telemetry = Telemetry.getInstance();
-
     protected final long syncCycle(long startCycle) {
         long now = System.nanoTime();
         if (fullThrottle) {
             return now;
         }
         long driftDeltaNs = 0;
-        if (Math.abs(driftNs) > THRESHOLD) {
-            driftDeltaNs = driftNs > 0 ? THRESHOLD : -THRESHOLD;
+        if (Math.abs(driftNs) > DRIFT_THRESHOLD_NS) {
+            driftDeltaNs = driftNs > 0 ? DRIFT_THRESHOLD_NS : -DRIFT_THRESHOLD_NS;
             driftNs -= driftDeltaNs;
         }
         long baseRemainingNs = startCycle + targetNs + driftDeltaNs;
@@ -294,12 +289,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
             remainingNs = baseRemainingNs - System.nanoTime();
         }
         driftNs += remainingNs;
-        driftNs = Math.min(MAX_DRIFT, driftNs);
-        driftNs = Math.max(-MAX_DRIFT, driftNs);
+        driftNs = Math.min(MAX_DRIFT_NS, driftNs);
+        driftNs = Math.max(-MAX_DRIFT_NS, driftNs);
         return System.nanoTime();
     }
-
-    long startNs = 0;
 
     private void handleRomInternal() {
         if (pauseFlag) {
@@ -345,15 +338,15 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 //        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
     }
 
-    protected String getStats(long nowNs) {
+    protected Optional<String> getStats(long nowNs) {
         if (!SystemLoader.showFps) {
-            return "";
+            return Optional.empty();
         }
 
         lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - startNs));
         telemetry.addFpsSample(lastFps);
         telemetry.addSample("driftNs", driftNs / 1000d);
-        telemetry.getNewStats().ifPresent(st -> stats = st);
+        telemetry.getNewStats().ifPresent(st -> stats = Optional.of(st));
         telemetry.newFrame();
         startNs = nowNs;
         return stats;
@@ -366,7 +359,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
     }
 
-    protected void renderScreenLinearInternal(int[] data, String label) {
+    protected void renderScreenLinearInternal(int[] data, Optional<String> label) {
         emuFrame.renderScreenLinear(data, label, videoMode);
     }
 

@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 
@@ -87,7 +88,7 @@ public class SmsPerf extends Sms {
     }
 
     @Override
-    protected String getStats(long nowNs) {
+    protected Optional<String> getStats(long nowNs) {
         stats();
         return super.getStats(nowNs);
     }

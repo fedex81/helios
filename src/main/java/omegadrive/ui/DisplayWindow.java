@@ -26,12 +26,15 @@ import omegadrive.util.VideoMode;
 import java.awt.event.KeyListener;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Optional;
 
 public interface DisplayWindow {
 
     String APP_NAME = "Helios";
     String VERSION = FileLoader.loadVersionFromManifest();
     String FRAME_TITLE_HEAD = APP_NAME + " " + VERSION;
+
+    int SHOW_INFO_FRAMES_DELAY = 120; //~2sec
 
 
     DisplayWindow HEADLESS_INSTANCE = new DisplayWindow() {
@@ -51,7 +54,7 @@ public interface DisplayWindow {
         }
 
         @Override
-        public void renderScreenLinear(int[] data, String label, VideoMode videoMode) {
+        public void renderScreenLinear(int[] data, Optional<String> label, VideoMode videoMode) {
 
         }
 
@@ -80,7 +83,7 @@ public interface DisplayWindow {
 
     void init();
 
-    void renderScreenLinear(int[] data, String label, VideoMode videoMode);
+    void renderScreenLinear(int[] data, Optional<String> label, VideoMode videoMode);
 
     void resetScreen();
 

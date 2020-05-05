@@ -83,7 +83,8 @@ public class SwingWindow implements DisplayWindow {
     // Create a new blank cursor.
     private Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
             cursorImg, new Point(0, 0), "blank cursor");
-    int count = 120; //~2sec
+    private int showInfoCount = SHOW_INFO_FRAMES_DELAY;
+    private Optional<String> actionInfo = Optional.empty();
 
 
     public SwingWindow(SystemProvider mainEmu) {
@@ -103,7 +104,7 @@ public class SwingWindow implements DisplayWindow {
         reloadRecentFiles();
     }
 
-    private String info;
+
 
     private void addKeyAction(JMenuItem component, SystemProvider.SystemEvent event, ActionListener l) {
         AbstractAction action = toAbstractAction(component.getText(), l);
@@ -198,7 +199,7 @@ public class SwingWindow implements DisplayWindow {
 
     //NOTE: this will copy the input array
     @Override
-    public void renderScreenLinear(int[] data, String label, VideoMode videoMode) {
+    public void renderScreenLinear(int[] data, Optional<String> label, VideoMode videoMode) {
         if (data.length != pixelsSrc.length) {
             pixelsSrc = data.clone();
         }
@@ -371,23 +372,23 @@ public class SwingWindow implements DisplayWindow {
         jFrame.setVisible(true);
     }
 
-    private void renderScreenLinearInternal(int[] data, String label, VideoMode videoMode) {
+    private void renderScreenLinearInternal(int[] data, Optional<String> label, VideoMode videoMode) {
         boolean changed = resizeScreen(videoMode);
-        RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
-        showLabel(label);
+        RenderingStrategy.renderNearestNew(data, pixelsDest, nativeScreenSize, outputScreenSize);
+        label.ifPresent(this::showLabel);
         screenLabel.repaint();
     }
 
     private void showLabel(String label) {
-        if (!Strings.isNullOrEmpty(label)) {
-            count--;
-            label += Strings.isNullOrEmpty(info) ? "" : " - " + info;
-            if (!label.equalsIgnoreCase(perfLabel.getText())) {
-                perfLabel.setText(label);
-            }
-            if (count <= 0) {
-                info = null;
-            }
+        showInfoCount--;
+        if (actionInfo.isPresent()) {
+            label += " - " + actionInfo.get();
+        }
+        if (!label.equalsIgnoreCase(perfLabel.getText())) {
+            perfLabel.setText(label);
+        }
+        if (showInfoCount <= 0) {
+            actionInfo = Optional.empty();
         }
     }
 
@@ -458,8 +459,8 @@ public class SwingWindow implements DisplayWindow {
 
     @Override
     public void showInfo(String info) {
-        this.info = info;
-        count = 120;
+        actionInfo = Optional.of(info);
+        showInfoCount = SHOW_INFO_FRAMES_DELAY;
     }
 
     private Optional<File> loadRomDialog(Component parent) {
