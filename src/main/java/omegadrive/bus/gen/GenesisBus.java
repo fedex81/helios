@@ -171,7 +171,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             return Util.readRam(memoryProvider, size, address & M68K_RAM_MASK);
         } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
-            LOG.warn("Read on reserved address: " + Integer.toHexString(address));
+            LOG.warn("Read on reserved address: {}", Integer.toHexString(address));
             return size.getMax();
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             return z80MemoryRead(address, size);
@@ -219,8 +219,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             return;
         }
         //Batman&Robin writes to address 0 - tries to enable debug mode?
-        String msg = "Unexpected write to ROM: " + Long.toHexString(addressL) + ", value : " + data;
-        LOG.warn(msg);
+        LOG.warn("Unexpected write to ROM address {}, value {}", Long.toHexString(addressL), data);
     }
 
     private void logVdpCounter(int v, int h) {
@@ -267,7 +266,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else if (address >= MEMORY_MODE_START && address <= MEMORY_MODE_END) {
             LOG.warn("Memory mode reg read");
         } else {
-            LOG.error("Unexpected internalRegRead: {}", Long.toHexString(address));
+            LOG.error("Unexpected internalRegRead: {} , {}", Long.toHexString(address), size);
         }
         return 0xFF;
     }
@@ -278,7 +277,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            $A11OO0 D8 ( W)
 //            O: ROM MODE
 //            1: D-RAM MODE
-            LOG.info("Setting memory mode to: " + data);
+            LOG.info("Setting memory mode to: {}", data);
         } else if (addressL >= Z80_BUS_REQ_CONTROL_START && addressL <= Z80_BUS_REQ_CONTROL_END) {
             z80BusReqWrite(addressL, data, size);
         } else if (addressL >= Z80_RESET_CONTROL_START && addressL <= Z80_RESET_CONTROL_END) {
@@ -293,7 +292,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            Setting the first bit to 1 enable the cart, and setting it to 0 enable the TMSS.
             LOG.warn("TMSS write enable cart: " + (data == 1));
         } else {
-            LOG.warn("Unexpected internalRegWrite: " + addressL + ", " + data);
+            LOG.warn("Unexpected internalRegWrite: {}, {}", Integer.toHexString(addressL),
+                    Long.toHexString(data));
         }
     }
 
@@ -324,7 +324,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
      */
     private void timeLineControlWrite(int addressL, long data) {
         if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= Ssf2Mapper.BANK_SET_END_ADDRESS) {
-            LOG.info("Mapper bank set, address: " + Long.toHexString(addressL) + ", data: " + Integer.toHexString((int) data));
+            LOG.info("Mapper bank set, address: {} , data: {}", Long.toHexString(addressL),
+                    Integer.toHexString((int) data));
             checkSsf2Mapper();
             mapper.writeBankData(addressL, data);
         } else if (addressL == 0xA130F1) {
@@ -495,8 +496,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 joypadProvider.writeDataRegister2(data);
                 break;
             case 6:
-                LOG.warn("Write to expansion port: " + Long.toHexString(address) +
-                        ", data: " + Long.toHexString(data));
+                LOG.debug("Write to expansion port: {}, data: {}", Long.toHexString(address),
+                        Long.toHexString(data));
                 break;
             case 8:
                 joypadProvider.writeControlRegister1(data & 0xFF);
@@ -511,7 +512,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             case 0x18:
             case 0x1E:
                 int scNumber = address == 0x12 ? 1 : ((address == 0x18) ? 2 : 3);
-                LOG.warn("Write to controller {} serial: {}, data: {}",
+                LOG.debug("Write to controller {} serial: {}, data: {}",
                         scNumber, Long.toHexString(addressL), Long.toHexString(data));
                 break;
             default:
