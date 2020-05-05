@@ -374,7 +374,7 @@ public class SwingWindow implements DisplayWindow {
 
     private void renderScreenLinearInternal(int[] data, Optional<String> label, VideoMode videoMode) {
         boolean changed = resizeScreen(videoMode);
-        RenderingStrategy.renderNearestNew(data, pixelsDest, nativeScreenSize, outputScreenSize);
+        RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
         label.ifPresent(this::showLabel);
         screenLabel.repaint();
     }
