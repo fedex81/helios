@@ -1,24 +1,18 @@
-/*
- * Ay38910
- * Copyright (c) 2018-2019 Federico Berti
- * Last modified: 09/09/19 17:26
+package omegadrive.sound.psg.msx;
+
+/**
+ * The AY-3-8912 sound chip emulator.
+ * http://www.howell1964.freeserve.co.uk/parts/ay3891x_datasheet.htm
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * @author <A HREF="mailto:razvan.surdulescu@post.harvard.edu">Razvan Surdulescu</A> (c) 2001 - 2006
+ * @author <A HREF="mailto:erikduijs@yahoo.com">Erik Dujis</A> (c) 2001
+ * @author <A HREF="mailto:ensjo@nautilus.com.br">Emerson JosÈ Silveira da Costa ("Ensjo")</a> (c) 2005
+ * <BR>
+ * You may use and distribute this software for free provided you include
+ * this copyright notice. You may not sell this software, use the author
+ * names for publicity reasons or modify the code without permission from
+ * the authors.
  */
-package omegadrive.sound.psg;
-
-
 public class Ay38910 {
 
     /**
