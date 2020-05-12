@@ -52,6 +52,8 @@ public interface GenesisBusProvider extends BaseBusProvider {
     int TMSS_AREA1_END = 0xA14003;
     int TMSS_AREA2_START = 0xA14100;
     int TMSS_AREA2_END = 0xA14101;
+    int SVP_REG_AREA_START = 0xA15000;
+    int SVP_REG_AREA_END = 0xA15008;
     int VDP_ADDRESS_SPACE_START = 0xC00000;
     int VDP_ADDRESS_SPACE_END = 0xDFFFFF;
     int ADDRESS_UPPER_LIMIT = 0xFFFFFF;

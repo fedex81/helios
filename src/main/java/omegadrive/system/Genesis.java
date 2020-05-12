@@ -22,6 +22,7 @@ package omegadrive.system;
 import omegadrive.SystemLoader;
 import omegadrive.bus.gen.GenesisBus;
 import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.bus.gen.SvpMapper;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.m68k.M68kProvider;
@@ -114,6 +115,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
                 runZ80(counter);
                 runFM(counter);
                 runVdp(counter);
+                SvpMapper.svp.ssp1601_run(1);
                 counter++;
             } while (!futureDoneFlag);
         } catch (Exception e) {

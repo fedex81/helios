@@ -54,6 +54,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     private RomMapper mapper;
     private RomMapper ssf2Mapper = RomMapper.NO_OP_MAPPER;
     private RomMapper backupMemMapper = RomMapper.NO_OP_MAPPER;
+    private SvpBus svpMapper = SvpBus.NO_OP;
     private MdRomDbModel.Entry entry;
 
     private BusArbiter busArbiter = BusArbiter.NO_OP;
@@ -70,7 +71,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     private boolean z80BusRequested;
     private boolean z80ResetState;
     private boolean enableTmss;
-
 
     public GenesisBus() {
         this.mapper = this;
@@ -97,6 +97,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     public void init() {
         this.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
         initializeRomData();
+        svpMapper = new SvpMapper(this, memoryProvider);
+        mapper = svpMapper;
         LOG.info(cartridgeInfoProvider.toString());
         attachDevice(BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider));
         this.z80BusRequested = false;
@@ -248,7 +250,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            have the bus) it will also return 1. The only time it will switch from
 //            1 to 0 is right after the bus is requested, and if the Z80 is still
 //            busy accessing memory or not.
-    private long internalRegRead(long address, Size size) {
+    private long internalRegRead(int address, Size size) {
         if (address >= Z80_BUS_REQ_CONTROL_START && address <= Z80_BUS_REQ_CONTROL_END) {
             return z80BusReqRead(size);
         } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
@@ -265,34 +267,38 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             LOG.warn("TMSS read enable cart");
         } else if (address >= MEMORY_MODE_START && address <= MEMORY_MODE_END) {
             LOG.warn("Memory mode reg read");
+        } else if (address >= SVP_REG_AREA_START && address <= SVP_REG_AREA_END) {
+            svpMapper.m68kSvpRegRead(address, size);
         } else {
             LOG.error("Unexpected internalRegRead: {} , {}", Long.toHexString(address), size);
         }
         return 0xFF;
     }
 
-    private void internalRegWrite(int addressL, Size size, long data) {
-        if (addressL >= MEMORY_MODE_START && addressL <= MEMORY_MODE_END) {
+    private void internalRegWrite(int address, Size size, long data) {
+        if (address >= MEMORY_MODE_START && address <= MEMORY_MODE_END) {
 //            Only D8 of address $A11OO0 is effective and for WRITE ONLY.
 //            $A11OO0 D8 ( W)
 //            O: ROM MODE
 //            1: D-RAM MODE
             LOG.info("Setting memory mode to: {}", data);
-        } else if (addressL >= Z80_BUS_REQ_CONTROL_START && addressL <= Z80_BUS_REQ_CONTROL_END) {
-            z80BusReqWrite(addressL, data, size);
-        } else if (addressL >= Z80_RESET_CONTROL_START && addressL <= Z80_RESET_CONTROL_END) {
+        } else if (address >= Z80_BUS_REQ_CONTROL_START && address <= Z80_BUS_REQ_CONTROL_END) {
+            z80BusReqWrite(address, data, size);
+        } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
             z80ResetControlWrite(data);
-        } else if (addressL >= TIME_LINE_START && addressL <= TIME_LINE_END) {
-            timeLineControlWrite(addressL, data);
-        } else if (addressL >= TMSS_AREA1_START && addressL <= TMSS_AREA1_END) {
+        } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {
+            timeLineControlWrite(address, data);
+        } else if (address >= TMSS_AREA1_START && address <= TMSS_AREA1_END) {
             // used to lock/unlock the VDP by writing either "SEGA" to unlock it or anything else to lock it.
             LOG.warn("TMSS write, vdp lock: " + Integer.toHexString((int) data));
-        } else if (addressL == TMSS_AREA2_START || addressL == TMSS_AREA2_END) {
+        } else if (address == TMSS_AREA2_START || address == TMSS_AREA2_END) {
 //            control the bankswitching between the cart and the TMSS rom.
 //            Setting the first bit to 1 enable the cart, and setting it to 0 enable the TMSS.
             LOG.warn("TMSS write enable cart: " + (data == 1));
+        } else if (address >= SVP_REG_AREA_START && address <= SVP_REG_AREA_END) {
+            svpMapper.m68kSvpRegWrite(address, data, size);
         } else {
-            LOG.warn("Unexpected internalRegWrite: {}, {}", Integer.toHexString(addressL),
+            LOG.warn("Unexpected internalRegWrite: {}, {}", Integer.toHexString(address),
                     Long.toHexString(data));
         }
     }

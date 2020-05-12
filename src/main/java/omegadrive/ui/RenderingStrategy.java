@@ -23,16 +23,19 @@ import java.awt.*;
 
 public class RenderingStrategy {
 
+    private static final TransferFnHolder transferFnHolder = new TransferFnHolder();
+
     public static void subImageWithOffset(int[] src, int[] dest, Dimension srcDim, Dimension destDim,
-                                          int xOffset, int yOffset){
-        int start = ((yOffset+1) * srcDim.width) + xOffset + 1;
+                                          int xOffset, int yOffset) {
+        int start = ((yOffset + 1) * srcDim.width) + xOffset + 1;
         int k = 0;
-        for (int i = start; k < dest.length; i+= srcDim.width) {
+        for (int i = start; k < dest.length; i += srcDim.width) {
             System.arraycopy(src, i, dest, k, destDim.width);
             k += destDim.width;
         }
     }
 
+    //still faster on my laptop
     protected static void renderNearest(int[] srcPixels, int[] outputPixels, Dimension src, Dimension dest) {
         int factor = 16;
         int xRatio = ((src.width << factor) / dest.width) + 1;
@@ -45,6 +48,44 @@ public class RenderingStrategy {
             for (int j = 0; j < dest.width; j++) {
                 px = (j * xRatio) >> factor;
                 outputPixels[shiftDest + j] = srcPixels[shiftSrc + px];
+            }
+        }
+    }
+
+    protected static final void renderNearestNew(final int[] srcPixels, final int[] outputPixels,
+                                                 Dimension src, Dimension dest) {
+        if (dest != transferFnHolder.dest || src != transferFnHolder.src) {
+            System.out.println("recalc");
+            //recalc
+            transferFnHolder.src = src;
+            transferFnHolder.dest = dest;
+            transferFnHolder.transferFn = new int[dest.height * dest.width];
+            transferFnHolder.computeTransferFn();
+        }
+        final int[] tFn = transferFnHolder.transferFn;
+        for (int i = 0; i < tFn.length; i++) {
+            outputPixels[i] = srcPixels[tFn[i]];
+        }
+    }
+
+    static class TransferFnHolder {
+        Dimension src = new Dimension(0, 0);
+        Dimension dest = new Dimension(0, 0);
+        int[] transferFn = new int[0];
+
+        protected void computeTransferFn() {
+            int factor = 16;
+            int xRatio = ((src.width << factor) / dest.width) + 1;
+            int yRatio = ((src.height << factor) / dest.height) + 1;
+            int px, py, shiftSrc, shiftDest;
+            for (int i = 0; i < dest.height; i++) {
+                py = (i * yRatio) >> factor;
+                shiftDest = i * dest.width;
+                shiftSrc = py * src.width;
+                for (int j = 0; j < dest.width; j++) {
+                    px = (j * xRatio) >> factor;
+                    transferFn[shiftDest + j] = shiftSrc + px;
+                }
             }
         }
     }
