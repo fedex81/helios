@@ -80,10 +80,9 @@ public class SvpMapper implements RomMapper, SvpBus {
         cart.rom = new int[romBytes.length >> 1]; //words
         int k = 0;
         for (int i = 0; i < romBytes.length; i += 2) {
-            cart.rom[k] = ((romBytes[i] << 8) | romBytes[i + 1]);
+            cart.rom[k] = ((romBytes[i] << 8) | romBytes[i + 1]) & 0xFFFF;
             if (i >= startAddrRomByte && k < svpCtx.iram_rom.length) {
                 svpCtx.iram_rom[k] = cart.rom[k];
-                System.out.println(Integer.toHexString(k) + ": " + Integer.toHexString(svpCtx.iram_rom[k]));
             }
             k++;
         }
@@ -115,7 +114,6 @@ public class SvpMapper implements RomMapper, SvpBus {
             case LONG:
                 svpRegWriteWord(address, data >> 16);
                 svpRegWriteWord(address + 2, data & 0xFFFF);
-//                svpRegWriteWord(address, data & 0xFFFF);
                 break;
         }
     }
@@ -123,17 +121,33 @@ public class SvpMapper implements RomMapper, SvpBus {
     @Override
     public long m68kSvpReadData(long addressL, Size size) {
         int address = (int) (addressL & 0xFF_FFFF);
+
         is68k = true;
         if (address >= SVP_MAP_DRAM_START_ADDR_BYTE && address < SVP_MAP_DRAM_END_ADDR_BYTE) {
-            return svpMemoryReadWord(address >> 1);
-        } else if (address >= 0x39_0000 && address < 0x3A_0000) { // "cell arrange" 1: 390000-39ffff
-            LOG.warn("svp svpca1 read: {} {}", Integer.toHexString(address), size);
+            switch (size) {
+                case WORD:
+                    return svpMemoryReadWord(address >> 1);
+                case LONG:
+                    return svpMemoryReadWord(address >> 1) << 16 |
+                            svpMemoryReadWord((address >> 1) + 1);
+                case BYTE:
+                    LOG.error("Unexpected byte-wide read: {}", Integer.toHexString(address));
+                    return 0xFF;
+            }
+        } else if (address >= SVP_MAP_DRAM_CELL_1_START_BYTE && address < SVP_MAP_DRAM_CELL_1_END_BYTE) {
+            if (size != Size.WORD) {
+                LOG.error("oops");
+            }
+            LOG.debug("svp svpca1 read: {} {}", Integer.toHexString(address), size);
             // this is 68k code rewritten
             long a1 = addressL >> 1;
             a1 = (a1 & 0x7001) | ((a1 & 0x3e) << 6) | ((a1 & 0xfc0) >> 5);
             return svp.svp.dram[(int) a1];
-        } else if (address >= 0x3a_0000 && address < 0x3B_0000) { // "cell arrange" 2: 3a0000-3affff
-            LOG.warn("svp svpca2 read: {} {}", Integer.toHexString(address), size);
+        } else if (address >= SVP_MAP_DRAM_CELL_2_START_BYTE && address < SVP_MAP_DRAM_CELL_2_END_BYTE) {
+            if (size != Size.WORD) {
+                LOG.error("oops");
+            }
+            LOG.debug("svp svpca2 read: {} {}", Integer.toHexString(address), size);
             long a1 = addressL >> 1;
             a1 = (a1 & 0x7801) | ((a1 & 0x1e) << 6) | ((a1 & 0x7e0) >> 4);
             return svp.svp.dram[(int) a1];
@@ -182,7 +196,7 @@ public class SvpMapper implements RomMapper, SvpBus {
             case 4:
                 int pm0 = svp.ssp.gr[SSP_PM0.ordinal()].h & 0xFFFF;
                 svp.ssp.gr[SSP_PM0.ordinal()].setH(pm0 & ~1);
-                LOG.info("Svp read status register: {}", pm0);
+                LOG.debug("Svp read status register: {}", pm0);
                 return pm0;
             case 6:
                 LOG.info("Svp read halt register");

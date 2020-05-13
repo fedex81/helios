@@ -101,7 +101,7 @@ public class Ssp16Disasm {
     }
 
     static int READ_OP_DASM_WORD(int[] base_oprom, int pc, int byteOffset) {
-        return base_oprom[pc + (byteOffset >> 1)];
+        return base_oprom[pc + (byteOffset >> 1)] & 0xFFFF;
     }
 
     static String get_cond(int op) {
@@ -311,7 +311,7 @@ public class Ssp16Disasm {
                 break;
 
             default:
-                sb.append(String.format("OP = %04X", op));
+                sb.append(String.format("Unknown OP = %04X", op));
                 break;
         }
         return size | flags | DASMFLAG_SUPPORTED;
