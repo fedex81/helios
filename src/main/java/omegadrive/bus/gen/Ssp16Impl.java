@@ -263,6 +263,16 @@ public class Ssp16Impl implements Ssp16 {
         return inc * sign;
     }
 
+    static int get_inc_simple(int mode) {
+        int inc = (mode >> 11) & 7;
+        if (inc != 0) {
+            if (inc != 7) inc--;
+            inc = 1 << inc; // 0 1 2 4 8 16 32 128
+            if ((mode & 0x8000) > 0) inc = -inc; // decrement mode
+        }
+        return inc;
+    }
+
     static void debug_dump2file(String fname, int[] mem, int len) {
         //TODO
     }
@@ -291,22 +301,16 @@ public class Ssp16Impl implements Ssp16 {
         return (((op >> 6) & 4) | (op & 3));
     }
 
-    // TODO check
-    //        int GET_PC() (PC - (unsigned short *)svp.iram_rom)
     int GET_PC() {
         return PC;
     }
 
-    // TODO check
-    //        int GET_PPC_OFFS() ((unsigned char *)PC - svp->iram_rom - 2)
     int GET_PPC_OFFS() {
         return PC - 1;
     }
 
-    // TODO check
-    //        int SET_PC(int d) PC = (unsigned short *)svp->iram_rom + d
     int SET_PC(int d) {
-        PC = d & MASK_16BIT; //??
+        PC = d & 0xFFFF; //??
         return PC;
     }
 
@@ -563,7 +567,7 @@ public class Ssp16Impl implements Ssp16 {
     /**
      * @param readWrite, 0 = read, 1 = write
      */
-    int pm_io(int reg, int readWrite, int d) {
+    int pm_io2(int reg, int readWrite, int d) {
         int opcode = svp.iram_rom[PC - 1];
         if ((ssp.emu_status & SSP_PMC_SET) > 0) {
             /* this MUST be blind r or w */
@@ -638,6 +642,84 @@ public class Ssp16Impl implements Ssp16 {
 
             return d;
         }
+        return -1;
+    }
+
+    int pm_io(int reg, int write, int d) {
+        if ((ssp.emu_status & SSP_PMC_SET) > 0) {
+            int opcode = svp.iram_rom[PC - 1];
+            // this MUST be blind r or w
+            if ((opcode & 0xff0f) > 0 && (opcode & 0xfff0) > 0) {
+                ssp.emu_status &= ~SSP_PMC_SET;
+                return 0;
+            }
+            ssp.pmac[write][reg] = rPMC.v;
+            ssp.emu_status &= ~SSP_PMC_SET;
+
+            return 0;
+        }
+
+        // just in case
+        if ((ssp.emu_status & SSP_PMC_HAVE_ADDR) > 0) {
+            ssp.emu_status &= ~SSP_PMC_HAVE_ADDR;
+        }
+
+        if (reg == 4 || (rST.h & 0x60) > 0) {
+            if (write > 0) {
+                int mode = (int) (ssp.pmac[write][reg] >> 16);
+                int addr = (int) (ssp.pmac[write][reg] & 0xffff);
+                if ((mode & 0x43ff) == 0x0018) // DRAM
+                {
+                    int inc = get_inc_simple(mode);
+                    if ((mode & 0x0400) > 0) {
+                        int currentVal = svp.dram[addr];
+                        d = overwrite_write(currentVal, d);
+                    }
+                    svp.dram[addr] = d;
+                    ssp.pmac[write][reg] += inc;
+                } else if ((mode & 0xfbff) == 0x4018) // DRAM, cell inc
+                {
+                    if ((mode & 0x0400) > 0) {
+                        int currentVal = svp.dram[addr];
+                        d = overwrite_write(currentVal, d);
+                    }
+                    svp.dram[addr] = d;
+                    ssp.pmac[write][reg] += (addr & 1) > 0 ? 31 : 1;
+                } else if ((mode & 0x47ff) == 0x001c) // IRAM
+                {
+                    int inc = get_inc_simple(mode);
+                    svp.iram_rom[addr & 0x3FF] = d;
+                    ssp.pmac[write][reg] += inc;
+                } else {
+                    System.out.printf("ssp FIXME: PM%i unhandled write mode %04x, [%06x] %04x @ %04x",
+                            reg, mode, 0, d, GET_PPC_OFFS());
+                }
+            } else {
+                int mode = (int) (ssp.pmac[0][reg] >> 16);
+                int addr = (int) (ssp.pmac[0][reg] & 0xffff);
+                if ((mode & 0xfff0) == 0x0800) // ROM, inc 1, verified to be correct
+                {
+                    ssp.pmac[0][reg] += 1;
+                    int romAddr = (addr | ((mode & 0xf) << 16));
+                    d = cart.rom[romAddr];
+                } else if ((mode & 0x47ff) == 0x0018) // DRAM
+                {
+                    int inc = get_inc_simple(mode);
+                    d = svp.dram[addr];
+                    ssp.pmac[0][reg] += inc;
+                } else {
+                    System.out.printf("ssp FIXME: PM%i unhandled read  mode %04x, [%06x] @ %04x",
+                            reg, mode, 0, GET_PPC_OFFS());
+                    d = 0;
+                }
+            }
+
+            // PMC value corresponds to last PMR accessed (not sure).
+            rPMC.setV(ssp.pmac[write][reg]);
+
+            return d;
+        }
+
         return -1;
     }
 
@@ -962,8 +1044,9 @@ public class Ssp16Impl implements Ssp16 {
 
     int ptr1_read_(int ri, int isj2, int modi3) {
         /* int t = (op&3) | ((op>>6)&4) | ((op<<1)&0x18); */
-        int mask, add = 0, t = ri | isj2 | modi3;
-        int rpPtr = 0;
+        int mask, add = 0;
+        final int t = ri | isj2 | modi3;
+        int rpPtr = 0, res;
         switch (t) {
             /* mod=0 (00) */
             case 0x00:
@@ -1000,10 +1083,10 @@ public class Ssp16Impl implements Ssp16 {
             case 0x11:
             case 0x12:
                 rpPtr = ssp.ptr.bank.r0[t & 3];
-                t = ssp.mem.bank.RAM0[rpPtr];
+                res = ssp.mem.bank.RAM0[rpPtr];
                 if ((rST.h & 7) == 0) {
                     ssp.ptr.bank.r0[t & 3] = (rpPtr - 1) & SSP_POINTER_REGS_MASK;
-                    return t;
+                    return res;
                 }
                 add = -1;
                 //goto modulo;
@@ -1011,25 +1094,24 @@ public class Ssp16Impl implements Ssp16 {
                 //*rp = (*rp & ~mask) | ((*rp + add) & mask);
                 rpPtr = (rpPtr & ~mask) | ((rpPtr + add) & mask);
                 ssp.ptr.bank.r0[t & 3] = rpPtr & SSP_POINTER_REGS_MASK;
-                return t;
+                return res;
             case 0x13:
                 return ssp.mem.bank.RAM0[2];
             case 0x14:
             case 0x15:
             case 0x16:
                 rpPtr = ssp.ptr.bank.r1[t & 3];
-                t = ssp.mem.bank.RAM1[rpPtr];
+                res = ssp.mem.bank.RAM1[rpPtr];
                 if ((rST.h & 7) == 0) {
                     ssp.ptr.bank.r1[t & 3] = (rpPtr - 1) & SSP_POINTER_REGS_MASK;
-                    ;
-                    return t;
+                    return res;
                 }
                 add = -1;
                 //goto modulo;
                 mask = (1 << (rST.h & 7)) - 1;
                 rpPtr = (rpPtr & ~mask) | ((rpPtr + add) & mask);
                 ssp.ptr.bank.r1[t & 3] = rpPtr & SSP_POINTER_REGS_MASK;
-                return t;
+                return res;
             case 0x17:
                 return ssp.mem.bank.RAM1[2];
             /* mod=3 (11), "+" */
@@ -1037,34 +1119,34 @@ public class Ssp16Impl implements Ssp16 {
             case 0x19:
             case 0x1a:
                 rpPtr = ssp.ptr.bank.r0[t & 3];
-                t = ssp.mem.bank.RAM0[rpPtr];
+                res = ssp.mem.bank.RAM0[rpPtr];
                 if ((rST.h & 7) == 0) {
                     ssp.ptr.bank.r0[t & 3] = (rpPtr + 1) & SSP_POINTER_REGS_MASK;
-                    return t;
+                    return res;
                 }
                 add = 1;
                 //goto modulo;
                 mask = (1 << (rST.h & 7)) - 1;
                 rpPtr = (rpPtr & ~mask) | ((rpPtr + add) & mask);
                 ssp.ptr.bank.r0[t & 3] = rpPtr & SSP_POINTER_REGS_MASK;
-                return t;
+                return res;
             case 0x1b:
                 return ssp.mem.bank.RAM0[3];
             case 0x1c:
             case 0x1d:
             case 0x1e:
                 rpPtr = ssp.ptr.bank.r1[t & 3];
-                t = ssp.mem.bank.RAM1[rpPtr];
+                res = ssp.mem.bank.RAM1[rpPtr];
                 if ((rST.h & 7) == 0) {
                     ssp.ptr.bank.r1[t & 3] = (rpPtr + 1) & SSP_POINTER_REGS_MASK;
-                    return t;
+                    return res;
                 }
                 add = 1;
                 //goto modulo;
                 mask = (1 << (rST.h & 7)) - 1;
                 rpPtr = (rpPtr & ~mask) | ((rpPtr + add) & mask);
                 ssp.ptr.bank.r1[t & 3] = rpPtr & SSP_POINTER_REGS_MASK;
-                return t;
+                return res;
             case 0x1f:
                 return ssp.mem.bank.RAM1[3];
         }
@@ -1072,7 +1154,7 @@ public class Ssp16Impl implements Ssp16 {
     }
 
     void ptr1_write(int op, int d) {
-        int t = (op & 3) | ((op >> 6) & 4) | ((op << 1) & 0x18);
+        final int t = (op & 3) | ((op >> 6) & 4) | ((op << 1) & 0x18);
         d = d & MASK_16BIT;
         int val;
         switch (t) {
@@ -1153,7 +1235,8 @@ public class Ssp16Impl implements Ssp16 {
     }
 
     int ptr2_read(int op) {
-        int mv = 0, t = (op & 3) | ((op >> 6) & 4) | ((op << 1) & 0x18);
+        int mv = 0;
+        final int t = (op & 3) | ((op >> 6) & 4) | ((op << 1) & 0x18);
         switch (t) {
             /* mod=0 (00) */
             case 0x00:
@@ -1316,7 +1399,7 @@ public class Ssp16Impl implements Ssp16 {
                 case 'm':
                     debug_dump_mem();
                     break;
-                case 'b': {
+                case 'b':
                     baddr += 2;
                     i = 0;
                     if (buff[baddr + 3] == ' ') {
@@ -1326,7 +1409,6 @@ public class Ssp16Impl implements Ssp16 {
 //                bpts[i] = strtol(baddr, NULL, 16) >> 1; //TODO
                     LOG.info("breakpoint %d set @ %04x\n", i, bpts[i] << 1);
                     break;
-                }
                 case 'd':
 //            LOG.info(buff, "iramrom_%04x.bin", last_iram);
                     debug_dump2file(String.copyValueOf(buff), svp.iram_rom, svp.iram_rom.length);
@@ -1339,25 +1421,27 @@ public class Ssp16Impl implements Ssp16 {
         }
     } /* USE_DEBUGGER */
 
-    @Override
-    public void ssp1601_run(int cycles) {
-        SET_PC(rPC.h);
-        g_cycles = cycles;
-
+    private void logNewPc() {
         if (pcSet.add(PC)) {
             StringBuilder sb = new StringBuilder();
             sb.setLength(0);
             sb.append(Integer.toHexString(PC) + ": ");
             Ssp16Disasm.dasm_ssp1601(sb, PC, svp.iram_rom);
             LOG.info(sb.toString());
-            if (PC == 0x106) {
+            if (PC == 0xc294) {
                 debug_dump(true);
             }
         }
+    }
+
+    @Override
+    public void ssp1601_run(int cycles) {
+        SET_PC(rPC.h);
+        g_cycles = cycles;
         do {
-            int op;
-            int tmpv;
+            int op, tmpv, cond;
 //            debug_dump(true);
+            logNewPc();
             op = svp.iram_rom[PC];
             PC = (PC + 1) & PC_MASK;
 //        #ifdef USE_DEBUGGER
@@ -1435,8 +1519,8 @@ public class Ssp16Impl implements Ssp16 {
                     break;
 
                 /* call cond, addr */
-                case 0x24: {
-                    int cond = COND_CHECK(op);
+                case 0x24:
+                    cond = COND_CHECK(op);
                     if (cond > 0) {
                         int new_PC = svp.iram_rom[PC];
                         ;
@@ -1447,8 +1531,6 @@ public class Ssp16Impl implements Ssp16 {
                         PC = (PC + 1) & PC_MASK;
                     }
                     break;
-                }
-
                 /* ld d, (a) */
                 case 0x25:
 //            tmpv = ((unsigned short *)svp->iram_rom)[rA];
@@ -1457,8 +1539,8 @@ public class Ssp16Impl implements Ssp16 {
                     break;
 
                 /* bra cond, addr */
-                case 0x26: {
-                    int cond = COND_CHECK(op);
+                case 0x26:
+                    cond = COND_CHECK(op);
                     if (cond > 0) {
                         int new_PC = svp.iram_rom[PC];
                         PC = (PC + 1) & PC_MASK;
@@ -1467,11 +1549,9 @@ public class Ssp16Impl implements Ssp16 {
                         PC = (PC + 1) & PC_MASK;
                     }
                     break;
-                }
-
                 /* mod cond, op */
-                case 0x48: {
-                    int cond = COND_CHECK(op);
+                case 0x48:
+                    cond = COND_CHECK(op);
                     if (cond > 0) {
                         int val = rA32.v; //signed 32 bit
                         switch (op & 7) {
@@ -1502,8 +1582,6 @@ public class Ssp16Impl implements Ssp16 {
                         UPD_ACC_ZN(); /* ? */
                     }
                     break;
-                }
-
                 /* mpys? */
                 case 0x1b:
                     if (LOG_SVP) {

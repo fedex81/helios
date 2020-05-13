@@ -154,6 +154,6 @@ public interface Ssp16 {
     }
 
     class cart {
-        int[] rom;
+        int[] rom; //store words here
     }
 }

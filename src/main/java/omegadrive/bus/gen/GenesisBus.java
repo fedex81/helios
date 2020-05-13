@@ -268,7 +268,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else if (address >= MEMORY_MODE_START && address <= MEMORY_MODE_END) {
             LOG.warn("Memory mode reg read");
         } else if (address >= SVP_REG_AREA_START && address <= SVP_REG_AREA_END) {
-            svpMapper.m68kSvpRegRead(address, size);
+            return svpMapper.m68kSvpRegRead(address, size);
         } else {
             LOG.error("Unexpected internalRegRead: {} , {}", Long.toHexString(address), size);
         }

@@ -115,7 +115,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
                 runZ80(counter);
                 runFM(counter);
                 runVdp(counter);
-                SvpMapper.svp.ssp1601_run(1);
+                SvpMapper.svp.ssp1601_run(2);
                 counter++;
             } while (!futureDoneFlag);
         } catch (Exception e) {
