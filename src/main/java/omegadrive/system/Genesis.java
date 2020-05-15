@@ -105,6 +105,10 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         createAndAddVdpEventListener();
     }
 
+    static final int SVP_CYCLES = 100;
+    static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
+
+
     protected void loop() {
         LOG.info("Starting game loop");
         updateVideoMode(true);
@@ -115,7 +119,9 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
                 runZ80(counter);
                 runFM(counter);
                 runVdp(counter);
-                SvpMapper.svp.ssp1601_run(2);
+                if (counter % SVP_CYCLES == 0) {
+                    SvpMapper.svp.ssp1601_run(SVP_RUN_CYCLES);
+                }
                 counter++;
             } while (!futureDoneFlag);
         } catch (Exception e) {

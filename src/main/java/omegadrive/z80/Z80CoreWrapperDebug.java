@@ -64,15 +64,6 @@ public class Z80CoreWrapperDebug extends Z80CoreWrapper {
         return w;
     }
 
-    public static void main(String[] args) {
-        int lastN = 100;
-        int index = 23;
-        IntStream.range(0, lastN).forEach(i -> {
-            int idx = (lastN + (index - i)) % lastN;
-            System.out.println(idx);
-        });
-    }
-
     //NOTE: halt sets PC = PC - 1
     @Override
     public int executeInstruction() {

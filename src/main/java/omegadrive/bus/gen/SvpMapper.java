@@ -138,7 +138,7 @@ public class SvpMapper implements RomMapper, SvpBus {
             if (size != Size.WORD) {
                 LOG.error("oops");
             }
-            LOG.debug("svp svpca1 read: {} {}", Integer.toHexString(address), size);
+//            LOG.debug("svp svpca1 read: {} {}", Integer.toHexString(address), size);
             // this is 68k code rewritten
             long a1 = addressL >> 1;
             a1 = (a1 & 0x7001) | ((a1 & 0x3e) << 6) | ((a1 & 0xfc0) >> 5);
@@ -147,7 +147,7 @@ public class SvpMapper implements RomMapper, SvpBus {
             if (size != Size.WORD) {
                 LOG.error("oops");
             }
-            LOG.debug("svp svpca2 read: {} {}", Integer.toHexString(address), size);
+//            LOG.debug("svp svpca2 read: {} {}", Integer.toHexString(address), size);
             long a1 = addressL >> 1;
             a1 = (a1 & 0x7801) | ((a1 & 0x1e) << 6) | ((a1 & 0x7e0) >> 4);
             return svp.svp.dram[(int) a1];
@@ -175,7 +175,7 @@ public class SvpMapper implements RomMapper, SvpBus {
                 LOG.info("Svp write status register {}, {}", Integer.toHexString(address), Long.toHexString(data));
                 break;
             case 6:
-                LOG.info("Svp write halt register {}, {}", Integer.toHexString(address), Long.toHexString(data));
+//                LOG.info("Svp write halt register {}, {}", Integer.toHexString(address), Long.toHexString(data));
                 break;
             case 8:
                 LOG.info("Svp write interrupt register {}, {}", Integer.toHexString(address), Long.toHexString(data));
@@ -229,11 +229,11 @@ public class SvpMapper implements RomMapper, SvpBus {
         }
         checkCommandAccess(addressByte >> 1, data, true);
         svp.svp.dram[(addressByte >> 1) & 0xFFFF] = data & 0xFFFF;
-        LOG.debug("svp write {}, value {}", Integer.toHexString(addressByte), Long.toHexString(data));
+//        LOG.info("svp write {}, value {}", Integer.toHexString(addressByte), Long.toHexString(data));
     }
 
     private int svpMemoryReadWord(int addressWord) {
-        LOG.debug("svp DRAM read: {}", Integer.toHexString(addressWord));
+//        LOG.debug("svp DRAM read: {}", Integer.toHexString(addressWord));
         int data = svp.svp.dram[addressWord & 0xFFFF];
         checkCommandAccess(addressWord, data, false);
         return data;
@@ -243,7 +243,7 @@ public class SvpMapper implements RomMapper, SvpBus {
         int address = addressWord << 1;
         if (address >= 0x30FE00 && address < 0x30FE10) {
             if (write) {
-                LOG.info((is68k ? "68k" : "Svp") + " Write {} : {}", str[address & 0x1F], data);
+                LOG.debug((is68k ? "68k" : "Svp") + " Write {} : {}", str[address & 0x1F], data);
             } else {
                 LOG.debug((is68k ? "68k" : "Svp") + " Read {} : {}", str[address & 0x1F], data);
             }
@@ -270,7 +270,7 @@ public class SvpMapper implements RomMapper, SvpBus {
             return svpMemoryReadWord(address);
         } else if (address >= SVP_MAP_IRAM_START_ADDR_WORD && address < SVP_MAP_IRAM_END_ADDR_WORD) {
             int res = svp.svp.iram_rom[address & 0x3FF];
-            LOG.debug("svp IRAM read: {}, {}", Integer.toHexString(address), Integer.toHexString(res));
+//            LOG.debug("svp IRAM read: {}, {}", Integer.toHexString(address), Integer.toHexString(res));
             return res;
         } else if (address >= 0 && address <= 0xF_FFFF) { //ROM
             return (int) baseMapper.readData(addressWord << 1, Size.WORD);
