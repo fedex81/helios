@@ -1,4 +1,4 @@
-package omegadrive.bus.gen;
+package omegadrive.ssp16;
 
 import java.util.stream.IntStream;
 
@@ -62,9 +62,9 @@ public interface Ssp16 {
     }
 
     class ssp_reg_t {
-        int v; //unsigned 32 bit
-        short l; //unsigned 16 bit
-        short h; //unsigned 16 bit
+        public int v; //unsigned 32 bit
+        public short l; //unsigned 16 bit
+        public short h; //unsigned 16 bit
 
         public void setV(long v) {
             this.v = (int) v;
@@ -86,11 +86,10 @@ public interface Ssp16 {
     class ssp1601_t {
         mem mem = new mem();
         ptr ptr = new ptr();
-        ssp_reg_t[] gr = new ssp_reg_t[16];  /* general registers */
+        public ssp_reg_t[] gr = new ssp_reg_t[16];  /* general registers */
         short[] stack = new short[6];
-        long[][] pmac = new long[2][6];  /* read/write modes/addrs for PM0-PM5 */
-        int emu_status;
-        int[] pad = new int[30];
+        public int emu_status;
+        int[][] pmac = new int[2][6];  /* read/write modes/addrs for PM0-PM5 */
 
         {
             IntStream.range(0, gr.length).forEach(i -> gr[i] = new ssp_reg_t());
@@ -149,11 +148,11 @@ public interface Ssp16 {
 
     class svp_t {
         public ssp1601_t ssp1601;
-        int[] iram_rom = new int[IRAM_ROM_SIZE_WORDS]; /* IRAM (0-0x7ff) and program ROM (0x800-0x1ffff) */
-        int[] dram = new int[DRAM_SIZE_WORDS];
+        public int[] iram_rom = new int[IRAM_ROM_SIZE_WORDS]; /* IRAM (0-0x7ff) and program ROM (0x800-0x1ffff) */
+        public int[] dram = new int[DRAM_SIZE_WORDS];
     }
 
     class cart {
-        int[] rom; //store words here
+        public int[] rom; //store words here
     }
 }

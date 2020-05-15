@@ -759,6 +759,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     @Override
+    public boolean isSvp() {
+        return svpMapper != SvpBus.NO_OP;
+    }
+
+    @Override
     public FmProvider getFm() {
         return soundProvider.getFm();
     }

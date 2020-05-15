@@ -1,4 +1,4 @@
-package omegadrive.bus.gen;
+package omegadrive.ssp16;
 
 /*
    basic, incomplete SSP160x (SSP1601?) interpreter
@@ -12,6 +12,7 @@ package omegadrive.bus.gen;
    Modified for Genesis Plus GX (Eke-Eke), added big endian support, fixed mode & addr
 */
 
+import omegadrive.bus.gen.SvpBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,7 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import static omegadrive.bus.gen.Ssp16.Ssp16Reg.*;
+import static omegadrive.ssp16.Ssp16.Ssp16Reg.*;
 
 
 /*
@@ -551,91 +552,7 @@ public class Ssp16Impl implements Ssp16 {
         return currentVal;
     }
 
-    int pm_io(int reg, int write, int d) {
-        if ((ssp.emu_status & SSP_PMC_SET) > 0) {
-            int opcode = svp.iram_rom[PC - 1];
-            // this MUST be blind r or w
-            if ((opcode & 0xff0f) > 0 && (opcode & 0xfff0) > 0) {
-                ssp.emu_status &= ~SSP_PMC_SET;
-                return 0;
-            }
-            ssp.pmac[write][reg] = rPMC.v;
-            ssp.emu_status &= ~SSP_PMC_SET;
-
-            return 0;
-        }
-
-        // just in case
-        if ((ssp.emu_status & SSP_PMC_HAVE_ADDR) > 0) {
-            ssp.emu_status &= ~SSP_PMC_HAVE_ADDR;
-        }
-
-        if (reg == 4 || (rST.h & 0x60) > 0) {
-            if (write > 0) {
-                int mode = (int) (ssp.pmac[write][reg] >> 16);
-                int addr = (int) (ssp.pmac[write][reg] & 0xffff);
-                if ((mode & 0x43ff) == 0x0018) // DRAM
-                {
-                    int inc = get_inc(mode);
-                    if ((mode & 0x0400) > 0) {
-                        int currentVal = svp.dram[addr];
-                        d = overwrite_write(currentVal, d);
-                    }
-                    svp.dram[addr] = d & 0xFFFF;
-                    ssp.pmac[write][reg] += inc;
-//                    LOG.info("svp dram write {}, {}", Integer.toHexString(addr),
-//                            Integer.toHexString(d));
-                } else if ((mode & 0xfbff) == 0x4018) // DRAM, cell inc
-                {
-                    if ((mode & 0x0400) > 0) {
-                        int currentVal = svp.dram[addr];
-                        d = overwrite_write(currentVal, d);
-                    }
-                    svp.dram[addr] = d & 0xFFFF;
-                    ssp.pmac[write][reg] += (addr & 1) > 0 ? 31 : 1;
-                } else if ((mode & 0x47ff) == 0x001c) // IRAM
-                {
-                    int inc = get_inc(mode);
-                    svp.iram_rom[addr & 0x3FF] = d & 0xFFFF;
-                    ssp.pmac[write][reg] += inc;
-//                    LOG.debug("svp iram write {}, {}", Integer.toHexString(addr & 0x3FF),
-//                            Integer.toHexString(svp.iram_rom[addr & 0x3FF]));
-                } else {
-                    LOG.info(String.format("ssp FIXME: PM%x unhandled write mode %04x, [%06x] %04x @ %04x",
-                            reg, mode, 0, d, GET_PPC_OFFS()));
-                }
-            } else {
-                int mode = (int) (ssp.pmac[0][reg] >> 16);
-                int addr = (int) (ssp.pmac[0][reg] & 0xffff);
-                if ((mode & 0xfff0) == 0x0800) // ROM, inc 1, verified to be correct
-                {
-                    ssp.pmac[0][reg] += 1;
-                    int romAddr = (addr | ((mode & 0xf) << 16));
-                    d = cart.rom[romAddr] & 0xFFFF;
-//                    LOG.info("svp rom read {}, {}", Integer.toHexString(romAddr),
-//                            Integer.toHexString(d));
-                } else if ((mode & 0x47ff) == 0x0018) // DRAM
-                {
-                    int inc = get_inc(mode);
-                    d = svp.dram[addr] & 0xFFFF;
-                    ssp.pmac[0][reg] += inc;
-//                    LOG.info("svp dram read {}, {}", Integer.toHexString(addr),
-//                            Integer.toHexString(d));
-                } else {
-                    System.out.printf("ssp FIXME: PM%i unhandled read  mode %04x, [%06x] @ %04x",
-                            reg, mode, 0, GET_PPC_OFFS());
-                    d = 0;
-                }
-            }
-
-            // PMC value corresponds to last PMR accessed (not sure).
-            rPMC.setV(ssp.pmac[write][reg]);
-
-            return d;
-        }
-
-        return -1;
-    }
+    private boolean dump = false;
 
     /* 8 */
     int read_PM0() {
@@ -792,25 +709,91 @@ public class Ssp16Impl implements Ssp16 {
         }
     }
 
-    void write_PMC(int d) {
-        if ((ssp.emu_status & SSP_PMC_HAVE_ADDR) > 0) {
-            /* if (ssp.emu_status & SSP_PMC_SET) */
-            /*  LOG.info(EL_ANOMALY|EL_SVP, "prev PMC not used @ %04x", GET_PPC_OFFS()); */
-            ssp.emu_status |= SSP_PMC_SET;
-            ssp.emu_status &= ~SSP_PMC_HAVE_ADDR;
-            /* rPMC.l = d; */
-            rPMC.setH(d);
-            if (LOG_SVP) {
-                LOG.info("PMC w m %04x @ %04x", rPMC.l, GET_PPC_OFFS());
+    int pm_io(int reg, int write, int d) {
+        if ((ssp.emu_status & SSP_PMC_SET) > 0) {
+            int opcode = svp.iram_rom[PC - 1];
+            // this MUST be blind r or w
+            if ((opcode & 0xff0f) > 0 && (opcode & 0xfff0) > 0) {
+                ssp.emu_status &= ~SSP_PMC_SET;
+                return 0;
             }
-        } else {
-            ssp.emu_status |= SSP_PMC_HAVE_ADDR;
-            /* rPMC.h = d; */
-            rPMC.setL(d);
-            if (LOG_SVP) {
-                LOG.info("PMC w a {} @ {}", rPMC.h, GET_PPC_OFFS());
-            }
+            ssp.pmac[write][reg] = rPMC.v;
+            ssp.emu_status &= ~SSP_PMC_SET;
+            return 0;
         }
+
+        // just in case
+        if ((ssp.emu_status & SSP_PMC_HAVE_ADDR) > 0) {
+            ssp.emu_status &= ~SSP_PMC_HAVE_ADDR;
+        }
+
+        if (reg == 4 || (rST.h & 0x60) > 0) {
+            d &= 0xFFFF;
+            int mode = (ssp.pmac[write][reg] >> 16) & 0xFFFF;
+            int addr = ssp.pmac[write][reg] & 0xffff;
+            if (write > 0) {
+
+                if ((mode & 0x43ff) == 0x0018) // DRAM
+                {
+                    int inc = get_inc(mode);
+                    if ((mode & 0x0400) > 0) {
+                        int currentVal = svp.dram[addr];
+                        d = overwrite_write(currentVal, d);
+                    }
+                    svp.dram[addr] = d;
+                    ssp.pmac[write][reg] += inc;
+//                    LOG.info("svp dram write {}, {}", Integer.toHexString(addr),
+//                            Integer.toHexString(d));
+                } else if ((mode & 0xfbff) == 0x4018) // DRAM, cell inc
+                {
+                    if ((mode & 0x0400) > 0) {
+                        int currentVal = svp.dram[addr];
+                        d = overwrite_write(currentVal, d);
+                    }
+                    svp.dram[addr] = d;
+                    ssp.pmac[write][reg] += (addr & 1) > 0 ? 31 : 1;
+//                    LOG.info("svp dram cell write {}, {}", Integer.toHexString(addr),
+//                            Integer.toHexString(d));
+                } else if ((mode & 0x47ff) == 0x001c) // IRAM
+                {
+                    int inc = get_inc(mode);
+                    svp.iram_rom[addr & 0x3FF] = d;
+                    ssp.pmac[write][reg] += inc;
+//                    LOG.debug("svp iram write {}, {}", Integer.toHexString(addr & 0x3FF),
+//                            Integer.toHexString(svp.iram_rom[addr & 0x3FF]));
+                } else {
+                    LOG.info(String.format("ssp FIXME: PM%x unhandled write mode %04x, [%06x] %04x @ %04x",
+                            reg, mode, 0, d, GET_PPC_OFFS()));
+                }
+            } else {
+                if ((mode & 0xfff0) == 0x0800) // ROM, inc 1, verified to be correct
+                {
+                    ssp.pmac[0][reg] += 1;
+                    int romAddr = (addr | ((mode & 0xf) << 16));
+                    d = cart.rom[romAddr];
+//                    LOG.info("svp rom read {}, {}", Integer.toHexString(romAddr),
+//                            Integer.toHexString(d));
+                } else if ((mode & 0x47ff) == 0x0018) // DRAM
+                {
+                    int inc = get_inc(mode);
+                    d = svp.dram[addr];
+                    ssp.pmac[0][reg] += inc;
+//                    LOG.info("svp dram read {}, {}", Integer.toHexString(addr),
+//                            Integer.toHexString(d));
+                } else {
+                    System.out.printf("ssp FIXME: PM%i unhandled read  mode %04x, [%06x] @ %04x",
+                            reg, mode, 0, GET_PPC_OFFS());
+                    d = 0;
+                }
+            }
+
+            // PMC value corresponds to last PMR accessed (not sure).
+            rPMC.setV(ssp.pmac[write][reg]);
+
+            return d; // & 0xFFFF;
+        }
+
+        return -1;
     }
 
 
@@ -1066,84 +1049,27 @@ public class Ssp16Impl implements Ssp16 {
         return 0;
     }
 
-    void ptr1_write(int op, int d) {
-        final int t = (op & 3) | ((op >> 6) & 4) | ((op << 1) & 0x18);
-        d = d & MASK_16BIT;
-        int val;
-        switch (t) {
-            /* mod=0 (00) */
-            case 0x00:
-            case 0x01:
-            case 0x02:
-                ssp.mem.bank.RAM0[ssp.ptr.bank.r0[t & 3]] = d;
-                return;
-            case 0x03:
-                ssp.mem.bank.RAM0[0] = d;
-                return;
-            case 0x04:
-            case 0x05:
-            case 0x06:
-                ssp.mem.bank.RAM1[ssp.ptr.bank.r1[t & 3]] = d;
-                return;
-            case 0x07:
-                ssp.mem.bank.RAM1[0] = d;
-                return;
-            /* mod=1 (01), "+!" */
-            /* mod=3,      "+" */
-            case 0x08:
-            case 0x18:
-            case 0x09:
-            case 0x19:
-            case 0x0a:
-            case 0x1a:
-                val = ssp.ptr.bank.r0[t & 3];
-                ssp.ptr.bank.r0[t & 3] = (val + 1) & SSP_POINTER_REGS_MASK;
-                ssp.mem.bank.RAM0[val] = d;
-                return;
-            case 0x0b:
-                ssp.mem.bank.RAM0[1] = d;
-                return;
-            case 0x0c:
-            case 0x1c:
-            case 0x0d:
-            case 0x1d:
-            case 0x0e:
-            case 0x1e:
-                val = ssp.ptr.bank.r1[t & 3];
-                ssp.ptr.bank.r1[t & 3] = (val + 1) & SSP_POINTER_REGS_MASK;
-                ssp.mem.bank.RAM1[val] = d;
-                return;
-            case 0x0f:
-                ssp.mem.bank.RAM1[1] = d;
-                return;
-            /* mod=2 (10), "-" */
-            case 0x10:
-            case 0x11:
-            case 0x12:
-                val = ssp.ptr.bank.r0[t & 3];
-                ssp.ptr.bank.r0[t & 3] = (val - 1) & SSP_POINTER_REGS_MASK;
-                ssp.mem.bank.RAM0[val] = d;
-                return;
-            case 0x13:
-                ssp.mem.bank.RAM0[2] = d;
-                return;
-            case 0x14:
-            case 0x15:
-            case 0x16:
-                val = ssp.ptr.bank.r1[t & 3];
-                ssp.ptr.bank.r1[t & 3] = (val - 1) & SSP_POINTER_REGS_MASK;
-                ssp.mem.bank.RAM1[val] = d;
-                return;
-            case 0x17:
-                ssp.mem.bank.RAM1[2] = d;
-                return;
-            /* mod=3 (11) */
-            case 0x1b:
-                ssp.mem.bank.RAM0[3] = d;
-                return;
-            case 0x1f:
-                ssp.mem.bank.RAM1[3] = d;
-                return;
+    void write_PMC(int d) {
+        if ((ssp.emu_status & SSP_PMC_HAVE_ADDR) > 0) {
+            /* if (ssp.emu_status & SSP_PMC_SET) */
+            /*  LOG.info(EL_ANOMALY|EL_SVP, "prev PMC not used @ %04x", GET_PPC_OFFS()); */
+            ssp.emu_status |= SSP_PMC_SET;
+            ssp.emu_status &= ~SSP_PMC_HAVE_ADDR;
+            /* rPMC.l = d; */
+            if (d > 0xF000) {
+                System.out.println("here");
+            }
+            rPMC.setH(d);
+            if (LOG_SVP) {
+                LOG.info("PMC w m %04x @ %04x", rPMC.l, GET_PPC_OFFS());
+            }
+        } else {
+            ssp.emu_status |= SSP_PMC_HAVE_ADDR;
+            /* rPMC.h = d; */
+            rPMC.setL(d);
+            if (LOG_SVP) {
+                LOG.info("PMC w a {} @ {}", rPMC.h, GET_PPC_OFFS());
+            }
         }
     }
 
@@ -1334,6 +1260,88 @@ public class Ssp16Impl implements Ssp16 {
         }
     } /* USE_DEBUGGER */
 
+    void ptr1_write(int op, int d) {
+        final int t = (op & 3) | ((op >> 6) & 4) | ((op << 1) & 0x18);
+        boolean blindSrc = ((op & 0xf0) >> 4) == 0;
+        d = d & MASK_16BIT;
+        int val;
+        switch (t) {
+            /* mod=0 (00) */
+            case 0x00:
+            case 0x01:
+            case 0x02:
+                ssp.mem.bank.RAM0[ssp.ptr.bank.r0[t & 3]] = d;
+                return;
+            case 0x03:
+                ssp.mem.bank.RAM0[0] = d;
+                return;
+            case 0x04:
+            case 0x05:
+            case 0x06:
+                ssp.mem.bank.RAM1[ssp.ptr.bank.r1[t & 3]] = d;
+                return;
+            case 0x07:
+                ssp.mem.bank.RAM1[0] = d;
+                return;
+            /* mod=1 (01), "+!" */
+            /* mod=3,      "+" */
+            case 0x08:
+            case 0x18:
+            case 0x09:
+            case 0x19:
+            case 0x0a:
+            case 0x1a:
+                val = ssp.ptr.bank.r0[t & 3];
+                ssp.ptr.bank.r0[t & 3] = (val + 1) & SSP_POINTER_REGS_MASK;
+                ssp.mem.bank.RAM0[val] = d;
+                return;
+            case 0x0b:
+                ssp.mem.bank.RAM0[1] = d;
+                return;
+            case 0x0c:
+            case 0x1c:
+            case 0x0d:
+            case 0x1d:
+            case 0x0e:
+            case 0x1e:
+                val = ssp.ptr.bank.r1[t & 3];
+                ssp.ptr.bank.r1[t & 3] = (val + 1) & SSP_POINTER_REGS_MASK;
+                ssp.mem.bank.RAM1[val] = d;
+                return;
+            case 0x0f:
+                ssp.mem.bank.RAM1[1] = d;
+                return;
+            /* mod=2 (10), "-" */
+            case 0x10:
+            case 0x11:
+            case 0x12:
+                val = ssp.ptr.bank.r0[t & 3];
+                ssp.ptr.bank.r0[t & 3] = (val - 1) & SSP_POINTER_REGS_MASK;
+                ssp.mem.bank.RAM0[val] = d;
+                return;
+            case 0x13:
+                ssp.mem.bank.RAM0[2] = d;
+                return;
+            case 0x14:
+            case 0x15:
+            case 0x16:
+                val = ssp.ptr.bank.r1[t & 3];
+                ssp.ptr.bank.r1[t & 3] = (val - 1) & SSP_POINTER_REGS_MASK;
+                ssp.mem.bank.RAM1[val] = d;
+                return;
+            case 0x17:
+                ssp.mem.bank.RAM1[2] = d;
+                return;
+            /* mod=3 (11) */
+            case 0x1b:
+                ssp.mem.bank.RAM0[3] = d;
+                return;
+            case 0x1f:
+                ssp.mem.bank.RAM1[3] = d;
+                return;
+        }
+    }
+
     private void logNewPc() {
         if (pcSet.add(PC)) {
             StringBuilder sb = new StringBuilder();
@@ -1341,9 +1349,10 @@ public class Ssp16Impl implements Ssp16 {
             sb.append(Integer.toHexString(PC) + ": ");
             Ssp16Disasm.dasm_ssp1601(sb, PC, svp.iram_rom);
             LOG.info(sb.toString());
-//            if (PC == 0x1bc8c) {
-//                debug_dump(true);
-//            }
+            if (PC == 0x211) {
+                dump = true;
+                pcSet.clear();
+            }
         }
     }
 
@@ -1353,8 +1362,8 @@ public class Ssp16Impl implements Ssp16 {
         g_cycles = cycles;
         do {
             int op, tmpv, cond;
-//            debug_dump(true);
 //            logNewPc();
+//            debug_dump(dump);
             op = svp.iram_rom[PC] & 0xFFFF;
             PC = (PC + 1) & PC_MASK;
 //        #ifdef USE_DEBUGGER

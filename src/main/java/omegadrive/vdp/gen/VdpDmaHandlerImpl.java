@@ -71,14 +71,12 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         if (dmaMode != null) {
             vdpProvider.setDmaFlag(1);
             printLessVerboseInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
-            //TODO svp only
             /* Transfer from SVP ROM/RAM ($000000-$3fffff)*/
             //            (svp && !(reg[23] & 0x60)))
-            if ((vdpProvider.getRegisterData(23) & 0x60) == 0) {
+            if (busProvider.isSvp() && (vdpProvider.getRegisterData(23) & 0x60) == 0) {
                 decreaseDmaLength();
                 increaseDestAddress();
             }
-            //svp only
         }
         return dmaMode;
     }

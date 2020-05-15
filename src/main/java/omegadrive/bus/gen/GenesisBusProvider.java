@@ -129,4 +129,8 @@ public interface GenesisBusProvider extends BaseBusProvider {
         LOG.warn("outPort: " + port + ", data: " + value);
         return;
     }
+
+    default boolean isSvp() {
+        return false;
+    }
 }

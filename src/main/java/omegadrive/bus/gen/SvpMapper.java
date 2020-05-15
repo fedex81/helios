@@ -21,13 +21,14 @@ package omegadrive.bus.gen;
 
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.ssp16.Ssp16Impl;
 import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static omegadrive.bus.gen.Ssp16.*;
-import static omegadrive.bus.gen.Ssp16.Ssp16Reg.SSP_PM0;
-import static omegadrive.bus.gen.Ssp16.Ssp16Reg.SSP_XST;
+import static omegadrive.ssp16.Ssp16.*;
+import static omegadrive.ssp16.Ssp16.Ssp16Reg.SSP_PM0;
+import static omegadrive.ssp16.Ssp16.Ssp16Reg.SSP_XST;
 
 public class SvpMapper implements RomMapper, SvpBus {
 
@@ -165,23 +166,27 @@ public class SvpMapper implements RomMapper, SvpBus {
         switch (address & 0xF) {
             case 0:
             case 2:
-                LOG.info("Svp write command register {}, {}", Integer.toHexString(address), Long.toHexString(data));
+                if (verbose) {
+                    LOG.info("Svp write command register {}, {}", Integer.toHexString(address), Long.toHexString(data));
+                }
                 svp.ssp.gr[SSP_XST.ordinal()].setH((int) (data & 0xFFFF));
                 int val = svp.ssp.gr[SSP_PM0.ordinal()].h;
                 svp.ssp.gr[SSP_PM0.ordinal()].setH(val | 2);
                 svp.ssp.emu_status &= ~SSP_WAIT_PM0;
                 break;
             case 4:
-                LOG.info("Svp write status register {}, {}", Integer.toHexString(address), Long.toHexString(data));
+                LOG.debug("Svp write status register {}, {}", Integer.toHexString(address), Long.toHexString(data));
                 break;
             case 6:
-//                LOG.info("Svp write halt register {}, {}", Integer.toHexString(address), Long.toHexString(data));
+                if (verbose) {
+                    LOG.info("Svp write halt register {}, {}", Integer.toHexString(address), Long.toHexString(data));
+                }
                 break;
             case 8:
-                LOG.info("Svp write interrupt register {}, {}", Integer.toHexString(address), Long.toHexString(data));
+                LOG.debug("Svp write interrupt register {}, {}", Integer.toHexString(address), Long.toHexString(data));
                 break;
             default:
-                LOG.info("Svp unexpected register write {}, {}", Integer.toHexString(address), Long.toHexString(data));
+                LOG.debug("Svp unexpected register write {}, {}", Integer.toHexString(address), Long.toHexString(data));
         }
     }
 
@@ -191,7 +196,7 @@ public class SvpMapper implements RomMapper, SvpBus {
             case 0:
             case 2:
                 res = svp.ssp.gr[SSP_XST.ordinal()].h & 0xFFFF;
-                LOG.info("Svp read command register: {}", res);
+                LOG.debug("Svp read command register: {}", res);
                 return res;
             case 4:
                 int pm0 = svp.ssp.gr[SSP_PM0.ordinal()].h & 0xFFFF;
@@ -241,11 +246,13 @@ public class SvpMapper implements RomMapper, SvpBus {
 
     private void checkCommandAccess(int addressWord, int data, boolean write) {
         int address = addressWord << 1;
-        if (address >= 0x30FE00 && address < 0x30FE10) {
-            if (write) {
-                LOG.debug((is68k ? "68k" : "Svp") + " Write {} : {}", str[address & 0x1F], data);
-            } else {
-                LOG.debug((is68k ? "68k" : "Svp") + " Read {} : {}", str[address & 0x1F], data);
+        if (verbose) {
+            if (address >= 0x30FE00 && address < 0x30FE10) {
+                if (write) {
+                    LOG.debug((is68k ? "68k" : "Svp") + " Write {} : {}", str[address & 0x1F], data);
+                } else {
+                    LOG.debug((is68k ? "68k" : "Svp") + " Read {} : {}", str[address & 0x1F], data);
+                }
             }
         }
     }
