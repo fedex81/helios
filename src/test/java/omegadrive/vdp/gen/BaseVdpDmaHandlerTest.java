@@ -51,6 +51,7 @@ public class BaseVdpDmaHandlerTest {
 
         ((VdpDmaHandlerImpl) dmaHandler).vdpProvider = vdpProvider;
         ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
+        ((VdpDmaHandlerImpl) dmaHandler).busProvider = busProvider;
         vdpProvider.updateRegisterData(1, 4); //mode5
     }
 
