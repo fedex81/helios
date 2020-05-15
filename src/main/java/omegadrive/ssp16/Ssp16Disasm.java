@@ -6,6 +6,7 @@ SSP1601 disassembler
 written by Pierpaolo Prazzoli
 updated for SSP1601 by Grazvydas Ignotas
 
+Java translation by Federico Berti
 */
 public class Ssp16Disasm {
 
@@ -53,49 +54,40 @@ public class Ssp16Disasm {
 
     static String[] arith_ops =
             {
-//        "", "add", "", "cmp", "add", "and", "or", "eor"
                     "", "sub", "", "cmp", "add", "and", "or", "eor"
             };
     static int DASMFLAG_STEP_OUT = 1 << 3;
     static int DASMFLAG_STEP_OVER = 1 << 4;
     static int DASMFLAG_SUPPORTED = 1 << 5;
 
-    //#define BIT_B               ((op >> 8) & 1)
     static int BIT_B(int op) {
         return ((op >> 8) & 1);
     }
 
-    //            #define RIJ                 rij[(BIT_B << 2) + (op & 3)]
     static String RIJ(int op) {
         return rij[(BIT_B(op) << 2) + (op & 3)];
     }
 
-    //            #define RI(i)               rij[(i) & 3]
     static String RI(int i) {
         return rij[(i) & 3];
     }
 
-    //            #define RJ(i)               rij[((i) & 3) + 4]
     static String RJ(int i) {
         return rij[((i) & 3) + 4];
     }
 
-    //            #define MODIFIER(mod,r3)    (((r3) == 3) ? modifier_sf[mod] : modifier[mod])
     static String MODIFIER(int mod, int r3) {
         return (((r3) == 3) ? modifier_sf[mod] : modifier[mod]);
     }
 
-    //            #define MODIFIER_LOW        MODIFIER((op >> 2) & 3, op&3)
     static String MODIFIER_LOW(int op) {
         return MODIFIER((op >> 2) & 3, op & 3);
     }
 
-    //            #define MODIFIER_HIGH       MODIFIER((op >> 6) & 3, (op >> 4)&3)
     static String MODIFIER_HIGH(int op) {
         return MODIFIER((op >> 6) & 3, (op >> 4) & 3);
     }
 
-    //            #define READ_OP_DASM(p) ((base_oprom[p] << 8) | base_oprom[(p) + 1])
     static int READ_OP_DASM_BYTE(int[] base_oprom, int p) {
         return ((base_oprom[p] << 8) | base_oprom[(p) + 1]);
     }
@@ -316,13 +308,4 @@ public class Ssp16Disasm {
         }
         return size | flags | DASMFLAG_SUPPORTED;
     }
-
-// vim:ts=4
-
-//    CPU_DISASSEMBLE( ssp1601 )
-//    {
-//        //ssp1601_state_t *ssp1601_state = get_safe_token(device);
-//
-//        return dasm_ssp1601(buffer, pc, oprom);
-//    }
 }

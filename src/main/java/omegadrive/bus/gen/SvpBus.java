@@ -10,8 +10,6 @@ import omegadrive.util.Size;
  */
 public interface SvpBus extends RomMapper {
 
-    int SVP_ROM_START_ADDRESS_BYTE = 0x800;
-    int SVP_ROM_START_ADDRESS_WORD = SVP_ROM_START_ADDRESS_BYTE >> 1;
     int SVP_CMD_SENT_FLAG_BYTE = 0x30fe06;
     int SVP_CMD_ID_FLAG_BYTE = 0x30fe08;
     int SVP_MAP_DRAM_START_ADDR_WORD = 0x18_0000;
@@ -44,16 +42,6 @@ public interface SvpBus extends RomMapper {
         }
 
         @Override
-        public void svpWriteDataWord(long addressWord, int data) {
-
-        }
-
-        @Override
-        public int svpReadDataWord(long addressWord) {
-            return 0;
-        }
-
-        @Override
         public long m68kSvpReadData(long address, Size size) {
             return 0;
         }
@@ -63,10 +51,6 @@ public interface SvpBus extends RomMapper {
 
         }
     };
-
-    void svpWriteDataWord(long addressWord, int data);
-
-    int svpReadDataWord(long addressWord);
 
     long m68kSvpReadData(long address, Size size);
 

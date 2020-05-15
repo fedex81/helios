@@ -1,11 +1,39 @@
 package omegadrive.ssp16;
 
+import omegadrive.memory.IMemoryProvider;
+
 import java.util.stream.IntStream;
 
+/*
+ * basic, incomplete SSP160x (SSP1601?) interpreter
+ *
+ * Copyright (c) Gražvydas "notaz" Ignotas, 2008
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the organization nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /**
- * Federico Berti
- * <p>
- * Copyright 2020
+ * Java translation by Federico Berti
  */
 public interface Ssp16 {
 
@@ -16,10 +44,6 @@ public interface Ssp16 {
     int SSP_WAIT_30FE06 = 0x4000; /* ssp tight loops on 30FE08 to become non-zero */
     int SSP_WAIT_30FE08 = 0x8000; /* same for 30FE06 */
     int SSP_WAIT_MASK = 0xf000;
-
-    //logging
-    int EL_SVP = 0x00004000; /* SVP stuff  */
-    int EL_ANOMALY = 0x80000000; /* some unexpected conditions (during emulation) */
 
     int SSP_RAM_SIZE_WORDS = 256;
     int SSP_RAM_MASK_WORDS = SSP_RAM_SIZE_WORDS - 1;
@@ -32,22 +56,32 @@ public interface Ssp16 {
     int ROM_SIZE_WORDS = IRAM_ROM_SIZE_WORDS - IRAM_SIZE_WORDS; //63k words
     int DRAM_SIZE_WORDS = 0x10000; //128Kbytes -> 64k words
 
-    public static void main(String[] args) {
-        int l = 0xFFFF_8800;
-        short l1 = (short) l;
-        long v = 0x0809_41F4;
-        v = (v & 0xFFFF_0000) | (l & 0xFFFF);
-        System.out.println(Long.toHexString(v));
+    int SVP_ROM_START_ADDRESS_BYTE = 0x800;
+    int SVP_ROM_START_ADDRESS_WORD = SVP_ROM_START_ADDRESS_BYTE >> 1;
 
-        int h = 0xFFFF_F800;
-        short h1 = (short) h;
-        v = 0x0809_41F4;
-        v = (h & 0xFFFF) << 16 | (v & 0xFFFF);
-        v = h << 16 | (v & 0xFFFF);
-        System.out.println(Long.toHexString(v));
+    static Ssp16Impl createSvp(IMemoryProvider memoryProvider) {
+        cart svpCart = new cart();
+        ssp1601_t sspCtx = new ssp1601_t();
+        svp_t svpCtx = new svp_t();
+        loadSvpMemory(svpCtx, svpCart, SVP_ROM_START_ADDRESS_BYTE, memoryProvider.getRomData());
+
+        Ssp16Impl ssp16 = Ssp16Impl.createInstance(sspCtx, svpCtx, svpCart);
+        svpCtx.ssp1601 = sspCtx;
+        ssp16.ssp1601_reset(sspCtx);
+        return ssp16;
     }
 
-    ;
+    static void loadSvpMemory(svp_t svpCtx, cart cart, int startAddrRomByte, int[] romBytes) {
+        cart.rom = new int[romBytes.length >> 1]; //words
+        int k = 0;
+        for (int i = 0; i < romBytes.length; i += 2) {
+            cart.rom[k] = ((romBytes[i] << 8) | romBytes[i + 1]) & 0xFFFF;
+            if (i >= startAddrRomByte && k < svpCtx.iram_rom.length) {
+                svpCtx.iram_rom[k] = cart.rom[k];
+            }
+            k++;
+        }
+    }
 
     void ssp1601_reset(ssp1601_t ssp);
 
