@@ -59,14 +59,27 @@ public interface Ssp16 {
     int SVP_ROM_START_ADDRESS_BYTE = 0x800;
     int SVP_ROM_START_ADDRESS_WORD = SVP_ROM_START_ADDRESS_BYTE >> 1;
 
-    static Ssp16Impl createSvp(IMemoryProvider memoryProvider) {
+    Ssp16 NO_SVP = new Ssp16() {
+        @Override
+        public void ssp1601_reset(ssp1601_t ssp) {
+
+        }
+
+        @Override
+        public void ssp1601_run(int cycles) {
+
+        }
+    };
+
+    svp_t NO_SVP_CONTEXT = new svp_t(new ssp1601_t());
+
+    static Ssp16 createSvp(IMemoryProvider memoryProvider) {
         cart svpCart = new cart();
         ssp1601_t sspCtx = new ssp1601_t();
-        svp_t svpCtx = new svp_t();
+        svp_t svpCtx = new svp_t(sspCtx);
         loadSvpMemory(svpCtx, svpCart, SVP_ROM_START_ADDRESS_BYTE, memoryProvider.getRomData());
 
         Ssp16Impl ssp16 = Ssp16Impl.createInstance(sspCtx, svpCtx, svpCart);
-        svpCtx.ssp1601 = sspCtx;
         ssp16.ssp1601_reset(sspCtx);
         return ssp16;
     }
@@ -86,6 +99,10 @@ public interface Ssp16 {
     void ssp1601_reset(ssp1601_t ssp);
 
     void ssp1601_run(int cycles);
+
+    default svp_t getSvpContext() {
+        return NO_SVP_CONTEXT;
+    }
 
     /* register names */
     enum Ssp16Reg {
@@ -184,6 +201,10 @@ public interface Ssp16 {
         public ssp1601_t ssp1601;
         public int[] iram_rom = new int[IRAM_ROM_SIZE_WORDS]; /* IRAM (0-0x7ff) and program ROM (0x800-0x1ffff) */
         public int[] dram = new int[DRAM_SIZE_WORDS];
+
+        protected svp_t(ssp1601_t ssp1601) {
+            this.ssp1601 = ssp1601;
+        }
     }
 
     class cart {

@@ -317,6 +317,11 @@ public class Ssp16Impl implements Ssp16 {
         rST.setH(0);
     }
 
+    @Override
+    public svp_t getSvpContext() {
+        return svpCtx;
+    }
+
     final int GET_PC() {
         return PC;
     }

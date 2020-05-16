@@ -22,7 +22,6 @@ package omegadrive.bus.gen;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.ssp16.Ssp16;
-import omegadrive.ssp16.Ssp16Impl;
 import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,7 +37,10 @@ public class SvpMapper implements RomMapper, SvpBus {
 
     private static final boolean verbose = false;
     private static final boolean VR_TEST_MODE = false;
-    public static Ssp16Impl svp; //TODO
+    public static Ssp16 svp = NO_SVP;
+
+    private final svp_t svpCtx;
+    private final ssp1601_t sspCtx;
 
     /**
      * $30FE02 - Command finished flag
@@ -57,6 +59,9 @@ public class SvpMapper implements RomMapper, SvpBus {
     public SvpMapper(RomMapper baseMapper, IMemoryProvider memoryProvider) {
         this.baseMapper = baseMapper;
         svp = Ssp16.createSvp(memoryProvider);
+        svpCtx = svp.getSvpContext();
+        sspCtx = svpCtx.ssp1601;
+//        svp = Ssp16Jna.createInstance(memoryProvider);
     }
 
     @Override
@@ -119,12 +124,12 @@ public class SvpMapper implements RomMapper, SvpBus {
             // this is 68k code rewritten
             long a1 = addressL >> 1;
             a1 = (a1 & 0x7001) | ((a1 & 0x3e) << 6) | ((a1 & 0xfc0) >> 5);
-            return svp.svpCtx.dram[(int) a1];
+            return svpCtx.dram[(int) a1];
         } else if (address >= SVP_MAP_DRAM_CELL_2_START_BYTE && address < SVP_MAP_DRAM_CELL_2_END_BYTE) {
 //            LOG.debug("svp svpca2 read: {} {}", Integer.toHexString(address), size);
             long a1 = addressL >> 1;
             a1 = (a1 & 0x7801) | ((a1 & 0x1e) << 6) | ((a1 & 0x7e0) >> 4);
-            return svp.svpCtx.dram[(int) a1];
+            return svpCtx.dram[(int) a1];
         }
         //VR test mode - trigger once otherwise we break checksum
 //        if (VR_TEST_MODE && address == 0x201E0) {
@@ -140,10 +145,10 @@ public class SvpMapper implements RomMapper, SvpBus {
                 if (verbose) {
                     LOG.info("Svp write command register {}, {}", Integer.toHexString(address), Long.toHexString(data));
                 }
-                svp.sspCtx.gr[SSP_XST.ordinal()].setH((int) (data & 0xFFFF));
-                int val = svp.sspCtx.gr[SSP_PM0.ordinal()].h;
-                svp.sspCtx.gr[SSP_PM0.ordinal()].setH(val | 2);
-                svp.sspCtx.emu_status &= ~SSP_WAIT_PM0;
+                sspCtx.gr[SSP_XST.ordinal()].setH((int) (data & 0xFFFF));
+                int val = sspCtx.gr[SSP_PM0.ordinal()].h;
+                sspCtx.gr[SSP_PM0.ordinal()].setH(val | 2);
+                sspCtx.emu_status &= ~SSP_WAIT_PM0;
                 break;
             case 4:
                 LOG.debug("Svp write status register {}, {}", Integer.toHexString(address), Long.toHexString(data));
@@ -166,12 +171,12 @@ public class SvpMapper implements RomMapper, SvpBus {
         switch (address & 0xF) {
             case 0:
             case 2:
-                res = svp.sspCtx.gr[SSP_XST.ordinal()].h & 0xFFFF;
+                res = sspCtx.gr[SSP_XST.ordinal()].h & 0xFFFF;
                 LOG.debug("Svp read command register: {}", res);
                 return res;
             case 4:
-                int pm0 = svp.sspCtx.gr[SSP_PM0.ordinal()].h & 0xFFFF;
-                svp.sspCtx.gr[SSP_PM0.ordinal()].setH(pm0 & ~1);
+                int pm0 = sspCtx.gr[SSP_PM0.ordinal()].h & 0xFFFF;
+                sspCtx.gr[SSP_PM0.ordinal()].setH(pm0 & ~1);
                 LOG.debug("Svp read status register: {}", pm0);
                 return pm0;
             case 6:
@@ -188,16 +193,16 @@ public class SvpMapper implements RomMapper, SvpBus {
 
     private void svpMemoryWriteWord(int addressByte, int data) {
         if (data > 0) {
-            if (addressByte == SVP_CMD_SENT_FLAG_BYTE) svp.sspCtx.emu_status &= ~SSP_WAIT_30FE06;
-            else if (addressByte == SVP_CMD_ID_FLAG_BYTE) svp.sspCtx.emu_status &= ~SSP_WAIT_30FE08;
+            if (addressByte == SVP_CMD_SENT_FLAG_BYTE) sspCtx.emu_status &= ~SSP_WAIT_30FE06;
+            else if (addressByte == SVP_CMD_ID_FLAG_BYTE) sspCtx.emu_status &= ~SSP_WAIT_30FE08;
         }
-        svp.svpCtx.dram[(addressByte >> 1) & 0xFFFF] = data & 0xFFFF;
+        svpCtx.dram[(addressByte >> 1) & 0xFFFF] = data & 0xFFFF;
 //        LOG.info("svp write {}, value {}", Integer.toHexString(addressByte), Long.toHexString(data));
     }
 
     private int svpMemoryReadWord(int addressWord) {
 //        LOG.debug("svp DRAM read: {}", Integer.toHexString(addressWord));
-        return svp.svpCtx.dram[addressWord & 0xFFFF];
+        return svpCtx.dram[addressWord & 0xFFFF];
     }
 
     //68k writing data

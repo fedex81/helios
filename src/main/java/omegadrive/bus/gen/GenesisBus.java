@@ -97,8 +97,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     public void init() {
         this.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
         initializeRomData();
-        svpMapper = new SvpMapper(this, memoryProvider);
-        mapper = svpMapper;
         LOG.info(cartridgeInfoProvider.toString());
         attachDevice(BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider));
         this.z80BusRequested = false;
@@ -268,6 +266,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else if (address >= MEMORY_MODE_START && address <= MEMORY_MODE_END) {
             LOG.warn("Memory mode reg read");
         } else if (address >= SVP_REG_AREA_START && address <= SVP_REG_AREA_END) {
+            checkSvpMapper();
             return svpMapper.m68kSvpRegRead(address, size);
         } else {
             LOG.error("Unexpected internalRegRead: {} , {}", Long.toHexString(address), size);
@@ -296,6 +295,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 //            Setting the first bit to 1 enable the cart, and setting it to 0 enable the TMSS.
             LOG.warn("TMSS write enable cart: " + (data == 1));
         } else if (address >= SVP_REG_AREA_START && address <= SVP_REG_AREA_END) {
+            checkSvpMapper();
             svpMapper.m68kSvpRegWrite(address, data, size);
         } else {
             LOG.warn("Unexpected internalRegWrite: {}, {}", Integer.toHexString(address),
@@ -338,12 +338,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             boolean rom = (data & 1) == 0;
             if (rom) {
                 checkSsf2Mapper();
-                mapper = ssf2Mapper;
             } else {
                 //NOTE: seems like 1 allows sram writes
 //                SramMode sramMode = (data & 2) > 0 ? SramMode.READ_WRITE : SramMode.READ_ONLY;
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
-                mapper = backupMemMapper;
             }
             LOG.info("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
@@ -742,6 +740,14 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         if (ssf2Mapper == RomMapper.NO_OP_MAPPER) {
             this.ssf2Mapper = Ssf2Mapper.createInstance(this, memoryProvider);
             mapper = ssf2Mapper;
+        }
+    }
+
+    private void checkSvpMapper() {
+        if (svpMapper == SvpBus.NO_OP) {
+            this.svpMapper = new SvpMapper(this, memoryProvider);
+            mapper = svpMapper;
+            LOG.info("Enabling mapper: {}", mapper.getClass().getSimpleName());
         }
     }
 
