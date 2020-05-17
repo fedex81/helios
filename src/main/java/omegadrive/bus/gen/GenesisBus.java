@@ -600,10 +600,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         switch (size) {
             case WORD:
             case BYTE:
-                return vdpReadWord(address, size);
+                return vdpReadInternal(address, size);
             case LONG:
-                long res = vdpReadWord(address, size) << 16;
-                return res | vdpReadWord(address + 2, size);
+                long res = vdpReadInternal(address, Size.WORD) << 16;
+                return res | vdpReadInternal(address + 2, Size.WORD);
         }
         return 0xFF;
     }
@@ -626,7 +626,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         }
     }
 
-    private int vdpReadWord(int addressL, Size size) {
+    private int vdpReadInternal(int addressL, Size size) {
         boolean valid = (addressL & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
         if (!valid) {
             LOG.error("Illegal VDP read, address {}, size {}", Long.toHexString(addressL), size);
@@ -642,6 +642,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                     boolean even = address % 2 == 0;
                     return even ? vdpData >> 8 : vdpData & 0xFF;
             }
+            LOG.error("Unexpected {} vdp port read: {}", size, Integer.toHexString(addressL));
             return 0xFF;
         } else if (address >= 0x08 && address <= 0x0E) { //	VDP HV counter
 //            Reading the HV counter will return the following data:
