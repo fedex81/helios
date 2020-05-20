@@ -251,7 +251,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
                 LOG.info("Running rom: " + romName + ", region: " + region);
                 initAfterRomLoad();
                 loop();
-            } catch (Exception e) {
+            } catch (Exception | Error e) {
                 e.printStackTrace();
                 LOG.error(e);
             }
