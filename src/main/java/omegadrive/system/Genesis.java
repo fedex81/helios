@@ -120,7 +120,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
                 runFM(counter);
                 runVdp(counter);
                 if (counter % SVP_CYCLES == 0) {
-                    SvpMapper.svp.ssp1601_run(SVP_RUN_CYCLES);
+                    SvpMapper.ssp16.ssp1601_run(SVP_RUN_CYCLES);
                 }
                 counter++;
             } while (!futureDoneFlag);

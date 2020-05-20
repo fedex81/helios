@@ -24,7 +24,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import static omegadrive.ssp16.Ssp16.Ssp16Reg.*;
+import static omegadrive.ssp16.Ssp16Types.*;
+import static omegadrive.ssp16.Ssp16Types.Ssp16Reg.*;
 
 
 /*
@@ -214,33 +215,33 @@ public class Ssp16Impl implements Ssp16 {
     static final int SSP_FLAG_V = (1 << 0xe);
     static final int SSP_FLAG_N = (1 << 0xf);
 
-    public ssp1601_t sspCtx = null;
-    public svp_t svpCtx = null;
+    public Ssp1601_t sspCtx = null;
+    public Svp_t svpCtx = null;
     int PC;
     int g_cycles;
-    public cart cart = null;
+    public Cart cart = null;
     /* 0 */
-    ssp_reg_t rX; //.h;
-    ssp_reg_t rY; //.h;
-    ssp_reg_t rA; //.h;
-    ssp_reg_t rST; //.h;  /* 4 */
-    ssp_reg_t rSTACK; //.h;
-    ssp_reg_t rPC; //.h;
-    ssp_reg_t rP;
-    ssp_reg_t rPM0; //.h;  /* 8 */
+    Ssp_reg_t rX; //.h;
+    Ssp_reg_t rY; //.h;
+    Ssp_reg_t rA; //.h;
+    Ssp_reg_t rST; //.h;  /* 4 */
+    Ssp_reg_t rSTACK; //.h;
+    Ssp_reg_t rPC; //.h;
+    Ssp_reg_t rP;
+    Ssp_reg_t rPM0; //.h;  /* 8 */
 
     //    int[] rIJ ; //= ssp.ptr.r;
-    ssp_reg_t rPM1; //.h;
-    ssp_reg_t rPM2; //.h;
-    ssp_reg_t rXST; //.h;
-    ssp_reg_t rPM4; //.h;  /* 12 */
+    Ssp_reg_t rPM1; //.h;
+    Ssp_reg_t rPM2; //.h;
+    Ssp_reg_t rXST; //.h;
+    Ssp_reg_t rPM4; //.h;  /* 12 */
     /* 13 */
-    ssp_reg_t rPMC; /* will keep addr in .h, mode in .l */
-    ssp_reg_t rAL; //.l;
-    ssp_reg_t rA32; //.v;
+    Ssp_reg_t rPMC; /* will keep addr in .h, mode in .l */
+    Ssp_reg_t rAL; //.l;
+    Ssp_reg_t rA32; //.v;
     Set<Integer> pcSet = new HashSet<>();
 
-    public static Ssp16Impl createInstance(ssp1601_t ssp, svp_t svp, cart cart) {
+    public static Ssp16Impl createInstance(Ssp1601_t ssp, Svp_t svp, Cart cart) {
         Ssp16Impl s = new Ssp16Impl();
         s.sspCtx = ssp;
         s.cart = cart;
@@ -308,7 +309,7 @@ public class Ssp16Impl implements Ssp16 {
     }
 
     @Override
-    public void ssp1601_reset(ssp1601_t l_ssp) {
+    public void ssp1601_reset(Ssp1601_t l_ssp) {
         sspCtx = l_ssp;
         sspCtx.emu_status = 0;
         sspCtx.gr[SSP_GR0.ordinal()].setV(0xffff0000L);
@@ -318,7 +319,7 @@ public class Ssp16Impl implements Ssp16 {
     }
 
     @Override
-    public svp_t getSvpContext() {
+    public Svp_t getSvpContext() {
         return svpCtx;
     }
 
@@ -766,6 +767,9 @@ public class Ssp16Impl implements Ssp16 {
             } else {
                 if ((mode & 0xfff0) == 0x0800) // ROM, inc 1, verified to be correct
                 {
+                    if ((sspCtx.pmac[0][reg] & 0xffff) == -1) {
+                        sspCtx.pmac[0][reg] += 1 << 16;
+                    }
                     sspCtx.pmac[0][reg] += 1;
                     int romAddr = (addr | ((mode & 0xf) << 16));
                     d = cart.rom[romAddr];
@@ -1155,14 +1159,12 @@ public class Ssp16Impl implements Ssp16 {
     private void logNewPc() {
         if (pcSet.add(PC)) {
             StringBuilder sb = new StringBuilder();
+            int opcode = svpCtx.iram_rom[PC] & 0xFFFF;
             sb.setLength(0);
-            sb.append(Integer.toHexString(PC) + ": ");
-            Ssp16Disasm.dasm_ssp1601(sb, PC, svpCtx.iram_rom);
+            sb.append("PC: " + Integer.toHexString(PC) + ", opcode: " + Integer.toHexString(opcode));
+//            System.out.println(sb);
+            Ssp16Disasm.dasm_ssp1601(sb.append(" - "), PC, svpCtx.iram_rom);
             LOG.info(sb.toString());
-            if (PC == 0x211) {
-//                dump = true;
-                pcSet.clear();
-            }
         }
     }
 
@@ -1591,7 +1593,7 @@ public class Ssp16Impl implements Ssp16 {
                 sspCtx.ptr.getPointerVal(4), sspCtx.ptr.getPointerVal(5), sspCtx.ptr.getPointerVal(6)));
         sb.append(String.format("cycles: %d, emu_status: %x\n\n", g_cycles, sspCtx.emu_status));
         LOG.info(sb.toString());
-        System.out.println(sb.toString());
+//        System.out.println(sb.toString());
     }
 
     void debug_dump_mem() {

@@ -1,8 +1,10 @@
 package omegadrive.ssp16;
 
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.ssp16.Ssp16Types.Ssp1601_t;
 
-import java.util.stream.IntStream;
+import static omegadrive.ssp16.Ssp16Types.Cart;
+import static omegadrive.ssp16.Ssp16Types.Svp_t;
 
 /*
  * basic, incomplete SSP160x (SSP1601?) interpreter
@@ -61,7 +63,7 @@ public interface Ssp16 {
 
     Ssp16 NO_SVP = new Ssp16() {
         @Override
-        public void ssp1601_reset(ssp1601_t ssp) {
+        public void ssp1601_reset(Ssp1601_t ssp) {
 
         }
 
@@ -71,12 +73,10 @@ public interface Ssp16 {
         }
     };
 
-    svp_t NO_SVP_CONTEXT = new svp_t(new ssp1601_t());
-
     static Ssp16 createSvp(IMemoryProvider memoryProvider) {
-        cart svpCart = new cart();
-        ssp1601_t sspCtx = new ssp1601_t();
-        svp_t svpCtx = new svp_t(sspCtx);
+        Cart svpCart = new Cart();
+        Ssp1601_t sspCtx = new Ssp1601_t();
+        Svp_t svpCtx = new Svp_t(sspCtx);
         loadSvpMemory(svpCtx, svpCart, SVP_ROM_START_ADDRESS_BYTE, memoryProvider.getRomData());
 
         Ssp16Impl ssp16 = Ssp16Impl.createInstance(sspCtx, svpCtx, svpCart);
@@ -84,7 +84,7 @@ public interface Ssp16 {
         return ssp16;
     }
 
-    static void loadSvpMemory(svp_t svpCtx, cart cart, int startAddrRomByte, int[] romBytes) {
+    static void loadSvpMemory(Svp_t svpCtx, Cart cart, int startAddrRomByte, int[] romBytes) {
         cart.rom = new int[romBytes.length >> 1]; //words
         int k = 0;
         for (int i = 0; i < romBytes.length; i += 2) {
@@ -96,118 +96,11 @@ public interface Ssp16 {
         }
     }
 
-    void ssp1601_reset(ssp1601_t ssp);
+    void ssp1601_reset(Ssp1601_t ssp);
 
     void ssp1601_run(int cycles);
 
-    default svp_t getSvpContext() {
-        return NO_SVP_CONTEXT;
-    }
-
-    /* register names */
-    enum Ssp16Reg {
-        SSP_GR0, SSP_X, SSP_Y, SSP_A,
-        SSP_ST, SSP_STACK, SSP_PC, SSP_P,
-        SSP_PM0, SSP_PM1, SSP_PM2, SSP_XST,
-        SSP_PM4, SSP_gr13, SSP_PMC, SSP_AL
-    }
-
-    class ssp_reg_t {
-        public int v; //unsigned 32 bit
-        public short l; //unsigned 16 bit
-        public short h; //unsigned 16 bit
-
-        public void setV(long v) {
-            this.v = (int) v;
-            this.h = (short) (this.v >> 16);
-            this.l = (short) (this.v & 0xFFFF);
-        }
-
-        public void setH(int h) {
-            this.h = (short) h;
-            this.v = (h << 16) | (v & 0xFFFF);
-        }
-
-        public void setL(int l) {
-            this.l = (short) l;
-            this.v = (v & 0xFFFF_0000) | (l & 0xFFFF);
-        }
-    }
-
-    class ssp1601_t {
-        mem mem = new mem();
-        ptr ptr = new ptr();
-        public ssp_reg_t[] gr = new ssp_reg_t[16];  /* general registers */
-        short[] stack = new short[6];
-        public int emu_status;
-        int[][] pmac = new int[2][6];  /* read/write modes/addrs for PM0-PM5 */
-
-        {
-            IntStream.range(0, gr.length).forEach(i -> gr[i] = new ssp_reg_t());
-        }
-
-        class mem {
-
-            bank bank = new bank();
-
-            public void setRAM(int addr, int val) {
-                if (addr < SSP_RAM_SIZE_WORDS) {
-                    bank.RAM0[addr] = val;
-                } else {
-                    bank.RAM1[addr & 0xFF] = val;
-                }
-            }
-
-            public int readRAM(int addr) {
-                if (addr < SSP_RAM_SIZE_WORDS) {
-                    return bank.RAM0[addr];
-                } else {
-                    return bank.RAM1[addr & 0xFF];
-                }
-            }
-
-            /* 2 internal RAM banks */ //16 bit unsigned
-            class bank {
-                int[] RAM0 = new int[SSP_RAM_SIZE_WORDS]; //16 bit unsigned
-                int[] RAM1 = new int[SSP_RAM_SIZE_WORDS]; //16 bit unsigned
-            }
-        }
-
-        class ptr {
-            bank bank = new bank();
-
-            public int getPointerVal(int pos) {
-                return pos < 4 ? bank.r0[pos] : bank.r1[pos - 4];
-            }
-
-            public void setPointerVal(int pos, int val) {
-                int pos1 = pos % 4;
-                if (pos1 == 3) { //r3 and r7 cannot be modified
-                    return;
-                }
-                int[] rg = pos < 4 ? bank.r0 : bank.r1;
-                rg[pos1] = val & SSP_POINTER_REGS_MASK;
-            }
-
-            /* BANK pointers */ //8 bit unsigned
-            class bank {
-                int[] r0 = new int[4]; //8 bit unsigned
-                int[] r1 = new int[4]; //8 bit unsigned
-            }
-        }
-    }
-
-    class svp_t {
-        public ssp1601_t ssp1601;
-        public int[] iram_rom = new int[IRAM_ROM_SIZE_WORDS]; /* IRAM (0-0x7ff) and program ROM (0x800-0x1ffff) */
-        public int[] dram = new int[DRAM_SIZE_WORDS];
-
-        protected svp_t(ssp1601_t ssp1601) {
-            this.ssp1601 = ssp1601;
-        }
-    }
-
-    class cart {
-        public int[] rom; //store words here
+    default Svp_t getSvpContext() {
+        return Ssp16Types.NO_SVP_CONTEXT;
     }
 }

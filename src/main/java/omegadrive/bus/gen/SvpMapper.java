@@ -26,42 +26,39 @@ import omegadrive.util.Size;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static omegadrive.ssp16.Ssp16.*;
-import static omegadrive.ssp16.Ssp16.Ssp16Reg.SSP_PM0;
-import static omegadrive.ssp16.Ssp16.Ssp16Reg.SSP_XST;
+import static omegadrive.ssp16.Ssp16.NO_SVP;
+import static omegadrive.ssp16.Ssp16Types.*;
+import static omegadrive.ssp16.Ssp16Types.Ssp16Reg.SSP_PM0;
+import static omegadrive.ssp16.Ssp16Types.Ssp16Reg.SSP_XST;
 
 public class SvpMapper implements RomMapper, SvpBus {
-
 
     private static final Logger LOG = LogManager.getLogger(SvpMapper.class.getSimpleName());
 
     private static final boolean verbose = false;
     private static final boolean VR_TEST_MODE = false;
-    public static Ssp16 svp = NO_SVP;
+    public static Ssp16 ssp16 = NO_SVP;
 
-    private final svp_t svpCtx;
-    private final ssp1601_t sspCtx;
+    protected Svp_t svpCtx;
+    protected Ssp1601_t sspCtx;
+    protected Ssp16 ssp16Int;
 
-    /**
-     * $30FE02 - Command finished flag
-     * $30FE04 - Tile buffer address
-     * $30FE06 - Command sent flag
-     * $30FE08 - Command ID
-     * $30FE10 - Command parameter (SEGA logo sequence frame ID, title screen end transition sequence frame ID)
-     */
-    final static String[] str = {
-            "", "", "Command finished flag", "", //3
-            "Tile buffer address", "", "Command sent flag", "", //7
-            "Command ID", "", "", "", "Command parameter", "", "", "", ""};
+    protected RomMapper baseMapper;
 
-    private RomMapper baseMapper;
-
-    public SvpMapper(RomMapper baseMapper, IMemoryProvider memoryProvider) {
+    protected SvpMapper(RomMapper baseMapper, Ssp16 ssp16p) {
         this.baseMapper = baseMapper;
-        svp = Ssp16.createSvp(memoryProvider);
-        svpCtx = svp.getSvpContext();
-        sspCtx = svpCtx.ssp1601;
-//        svp = Ssp16Jna.createInstance(memoryProvider);
+        this.ssp16Int = ssp16p;
+        ssp16 = ssp16p;
+        this.svpCtx = ssp16p.getSvpContext();
+        this.sspCtx = this.svpCtx.ssp1601;
+    }
+
+    public static SvpMapper createInstance(RomMapper baseMapper, Ssp16 ssp16) {
+        return new SvpMapper(baseMapper, ssp16);
+    }
+
+    public static SvpMapper createInstance(RomMapper baseMapper, IMemoryProvider memoryProvider) {
+        return createInstance(baseMapper, Ssp16.createSvp(memoryProvider));
     }
 
     @Override
@@ -77,44 +74,63 @@ public class SvpMapper implements RomMapper, SvpBus {
 
     @Override
     public long m68kSvpRegRead(int address, Size size) {
-        switch (size) {
-            case BYTE:
-                long val = svpRegReadWord(address & ~1);
-                return (address & 1) > 0 ? (val & 0xFF) : (val >> 8);
-            case WORD:
-                return svpRegReadWord(address);
-            case LONG:
-                return svpRegReadWord(address) << 16 | svpRegReadWord(address + 2);
-        }
-        return 0xFFFF_FFFF;
+        return m68kSvpRegRead(sspCtx, address, size);
     }
 
     @Override
     public void m68kSvpRegWrite(int address, long data, Size size) {
+        m68kSvpRegWrite(sspCtx, address, data, size);
+    }
+
+    //68k writing data
+    @Override
+    public void m68kSvpWriteData(long addressL, long data, Size size) {
+        m68kSvpWriteData(svpCtx, addressL, data, size);
+    }
+
+    @Override
+    public long m68kSvpReadData(long addressL, Size size) {
+        return m68kSvpReadData(svpCtx, addressL, size);
+    }
+
+    protected final long m68kSvpRegRead(Ssp1601_t sspCtx, int address, Size size) {
+        switch (size) {
+            case BYTE:
+                long val = svpRegReadWord(sspCtx, address & ~1);
+                return (address & 1) > 0 ? (val & 0xFF) : (val >> 8);
+            case WORD:
+                return svpRegReadWord(sspCtx, address);
+            case LONG:
+                return svpRegReadWord(sspCtx, address) << 16 | svpRegReadWord(sspCtx, address + 2);
+        }
+        return 0xFFFF_FFFF;
+    }
+
+    protected final void m68kSvpRegWrite(Ssp1601_t sspCtx, int address, long data, Size size) {
         switch (size) {
             case BYTE:
                 LOG.error("Unexpected write {}, {}, {}", address, data, size);
                 break;
             case WORD:
-                svpRegWriteWord(address, data);
+                svpRegWriteWord(sspCtx, address, data);
                 break;
             case LONG:
-                svpRegWriteWord(address, data >> 16);
-                svpRegWriteWord(address + 2, data & 0xFFFF);
+                svpRegWriteWord(sspCtx, address, data >> 16);
+                svpRegWriteWord(sspCtx, address + 2, data & 0xFFFF);
                 break;
         }
     }
 
-    @Override
-    public long m68kSvpReadData(long addressL, Size size) {
+    protected final long m68kSvpReadData(Svp_t svpCtx, long addressL, Size size) {
         int address = (int) (addressL & 0xFF_FFFF);
         if (address >= SVP_MAP_DRAM_START_ADDR_BYTE && address < SVP_MAP_DRAM_END_ADDR_BYTE) {
+            //        LOG.debug("svp DRAM read: {}", Integer.toHexString(addressWord));
             switch (size) {
                 case WORD:
-                    return svpMemoryReadWord(address >> 1);
+                    return svpCtx.readRamWord(address >> 1);
                 case LONG:
-                    return svpMemoryReadWord(address >> 1) << 16 |
-                            svpMemoryReadWord((address >> 1) + 1);
+                    return svpCtx.readRamWord(address >> 1) << 16 |
+                            svpCtx.readRamWord((address >> 1) + 1);
                 case BYTE:
                     LOG.error("Unexpected byte-wide read: {}", Integer.toHexString(address));
                     return 0xFF;
@@ -124,12 +140,12 @@ public class SvpMapper implements RomMapper, SvpBus {
             // this is 68k code rewritten
             long a1 = addressL >> 1;
             a1 = (a1 & 0x7001) | ((a1 & 0x3e) << 6) | ((a1 & 0xfc0) >> 5);
-            return svpCtx.dram[(int) a1];
+            return svpCtx.readRamWord((int) a1);
         } else if (address >= SVP_MAP_DRAM_CELL_2_START_BYTE && address < SVP_MAP_DRAM_CELL_2_END_BYTE) {
 //            LOG.debug("svp svpca2 read: {} {}", Integer.toHexString(address), size);
             long a1 = addressL >> 1;
             a1 = (a1 & 0x7801) | ((a1 & 0x1e) << 6) | ((a1 & 0x7e0) >> 4);
-            return svpCtx.dram[(int) a1];
+            return svpCtx.readRamWord((int) a1);
         }
         //VR test mode - trigger once otherwise we break checksum
 //        if (VR_TEST_MODE && address == 0x201E0) {
@@ -138,86 +154,64 @@ public class SvpMapper implements RomMapper, SvpBus {
         return baseMapper.readData(addressL, size);
     }
 
-    private void svpRegWriteWord(int address, long data) {
+    protected final void svpRegWriteWord(Ssp1601_t sspCtx, int address, long data) {
         switch (address & 0xF) {
             case 0:
             case 2:
                 if (verbose) {
                     LOG.info("Svp write command register {}, {}", Integer.toHexString(address), Long.toHexString(data));
                 }
-                sspCtx.gr[SSP_XST.ordinal()].setH((int) (data & 0xFFFF));
-                int val = sspCtx.gr[SSP_PM0.ordinal()].h;
-                sspCtx.gr[SSP_PM0.ordinal()].setH(val | 2);
-                sspCtx.emu_status &= ~SSP_WAIT_PM0;
-                break;
-            case 4:
-                LOG.debug("Svp write status register {}, {}", Integer.toHexString(address), Long.toHexString(data));
-                break;
-            case 6:
-                if (verbose) {
-                    LOG.info("Svp write halt register {}, {}", Integer.toHexString(address), Long.toHexString(data));
-                }
-                break;
-            case 8:
-                LOG.debug("Svp write interrupt register {}, {}", Integer.toHexString(address), Long.toHexString(data));
+                int pm0 = sspCtx.getRegisterValue(SSP_PM0);
+                sspCtx.setRegisterValue(SSP_PM0, pm0 | 2);
+                sspCtx.setRegisterValue(SSP_XST, (int) (data & 0xFFFF));
+                int es = sspCtx.getEmu_status();
+                sspCtx.setEmu_status(es & ~SSP_WAIT_PM0);
                 break;
             default:
                 LOG.debug("Svp unexpected register write {}, {}", Integer.toHexString(address), Long.toHexString(data));
         }
     }
 
-    private long svpRegReadWord(int address) {
+    private final long svpRegReadWord(Ssp1601_t sspCtx, int address) {
         int res;
         switch (address & 0xF) {
             case 0:
             case 2:
-                res = sspCtx.gr[SSP_XST.ordinal()].h & 0xFFFF;
-                LOG.debug("Svp read command register: {}", res);
+                res = sspCtx.getRegisterValue(SSP_XST);
+//                LOG.debug("Svp read command register: {}", res);
                 return res;
             case 4:
-                int pm0 = sspCtx.gr[SSP_PM0.ordinal()].h & 0xFFFF;
-                sspCtx.gr[SSP_PM0.ordinal()].setH(pm0 & ~1);
-                LOG.debug("Svp read status register: {}", pm0);
+                int pm0 = sspCtx.getRegisterValue(SSP_PM0);
+                sspCtx.setRegisterValue(SSP_PM0, pm0 & ~1);
+//                LOG.debug("Svp read status register: {}", pm0);
                 return pm0;
-            case 6:
-                LOG.info("Svp read halt register");
-                break;
-            case 8:
-                LOG.info("Svp read interrupt register");
-                break;
             default:
                 LOG.warn("Svp unexpected register read {}", Integer.toHexString(address));
         }
         return 0xFFFF;
     }
 
-    private void svpMemoryWriteWord(int addressByte, int data) {
+    protected final void svpMemoryWriteWord(Svp_t svpCtx, int addressByte, int data) {
         if (data > 0) {
-            if (addressByte == SVP_CMD_SENT_FLAG_BYTE) sspCtx.emu_status &= ~SSP_WAIT_30FE06;
-            else if (addressByte == SVP_CMD_ID_FLAG_BYTE) sspCtx.emu_status &= ~SSP_WAIT_30FE08;
+            if (addressByte == SVP_CMD_SENT_FLAG_BYTE) sspCtx.setEmu_status(sspCtx.getEmu_status() & ~SSP_WAIT_30FE06);
+            else if (addressByte == SVP_CMD_ID_FLAG_BYTE)
+                sspCtx.setEmu_status(sspCtx.getEmu_status() & ~SSP_WAIT_30FE08);
         }
-        svpCtx.dram[(addressByte >> 1) & 0xFFFF] = data & 0xFFFF;
-//        LOG.info("svp write {}, value {}", Integer.toHexString(addressByte), Long.toHexString(data));
+        svpCtx.writeRamWord((addressByte >> 1), data);
+//        LOG.info("svp write word {}_w, value {}", Integer.toHexString(addressByte >> 1), Long.toHexString(data));
     }
 
-    private int svpMemoryReadWord(int addressWord) {
-//        LOG.debug("svp DRAM read: {}", Integer.toHexString(addressWord));
-        return svpCtx.dram[addressWord & 0xFFFF];
-    }
-
-    //68k writing data
-    @Override
-    public void m68kSvpWriteData(long addressL, long data, Size size) {
+    protected final void m68kSvpWriteData(Svp_t svpCtx, long addressL, long data, Size size) {
         int address = (int) (addressL & 0xFF_FFFF);
         data &= size.getMask();
         if (address >= SVP_MAP_DRAM_START_ADDR_BYTE && address < SVP_MAP_DRAM_END_ADDR_BYTE) {
             switch (size) {
                 case WORD:
-                    svpMemoryWriteWord(address, (int) data);
+                    svpMemoryWriteWord(svpCtx, address, (int) data);
                     break;
                 case LONG:
-                    svpMemoryWriteWord(address, (int) (data >> 16));
-                    svpMemoryWriteWord(address + 2, (int) (data & 0xFFFF));
+                    svpMemoryWriteWord(svpCtx, address, (int) (data >> 16));
+                    svpMemoryWriteWord(svpCtx, address + 2, (int) (data & 0xFFFF));
                     break;
                 case BYTE:
                     LOG.error("Unexpected byte-wide write: {}, {}", Integer.toHexString(address), Long.toHexString(data));

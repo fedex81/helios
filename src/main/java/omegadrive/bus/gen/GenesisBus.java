@@ -746,7 +746,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     private void checkSvpMapper() {
         if (svpMapper == SvpBus.NO_OP) {
-            this.svpMapper = new SvpMapper(this, memoryProvider);
+            this.svpMapper = SvpMapper.createInstance(this, memoryProvider);
             mapper = svpMapper;
             LOG.info("Enabling mapper: {}", mapper.getClass().getSimpleName());
         }
