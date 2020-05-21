@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import static omegadrive.ssp16.Ssp16Types.*;
 import static omegadrive.ssp16.Ssp16Types.Ssp16Reg.*;
@@ -347,22 +346,27 @@ public class Ssp16Impl implements Ssp16 {
         else rST.setH(rST.h | ((rA32.v >> 16) & SSP_FLAG_N));
     }
 
+    final static int CHECK32_FALSE = Integer.MIN_VALUE;
+
+    /* ops with accumulator. */
+    /* how is low word really affected by these? */
+    /* nearly sure 'ld A' doesn't affect flags */
+
     /* standard cond processing. */
     /* again, only Z and N is checked, as SVP doesn't seem to use any other conds. */
     int COND_CHECK(int op) {
         int cond = 0;
-        long opl = op;
         switch (op & 0xf0) {
             case 0x00:
                 cond = 1;
                 break; /* always true */
             case 0x50:
 //                return (Z == f) ? true : false; // check Z flag
-                cond = ((rST.h ^ (opl << 5)) & SSP_FLAG_Z) == 0 ? 1 : 0;
+                cond = ((rST.h ^ (op << 5)) & SSP_FLAG_Z) == 0 ? 1 : 0;
                 break; /* Z matches f(?) bit */
             case 0x70:
 //                return (N == f) ? true : false; // check N flag
-                cond = ((rST.h ^ (opl << 7)) & SSP_FLAG_N) == 0 ? 1 : 0;
+                cond = ((rST.h ^ (op << 7)) & SSP_FLAG_N) == 0 ? 1 : 0;
                 break; /* N matches f(?) bit */
             default:
                 break;
@@ -370,29 +374,26 @@ public class Ssp16Impl implements Ssp16 {
         return cond;
     }
 
-    /* ops with accumulator. */
-    /* how is low word really affected by these? */
-    /* nearly sure 'ld A' doesn't affect flags */
-    void OP_LDA(long x) {
-        rA.setH((int) x);
+    void OP_LDA(int x) {
+        rA.setH(x);
     }
 
-    void OP_LDA32(long x) {
+    void OP_LDA32(int x) {
         rA32.setV(x);
     }
 
-    void OP_SUBA(long x) {
+    void OP_SUBA(int x) {
         rA32.setV(rA32.v - (x << 16));
         UPD_LZVN();
     }
 
-    void OP_SUBA32(long x) {
+    void OP_SUBA32(int x) {
         rA32.setV(rA32.v - x);
         UPD_LZVN();
     }
 
-    void OP_CMPA(long x) {
-        long t = rA32.v - (int) (x << 16);
+    void OP_CMPA(int x) {
+        int t = rA32.v - (x << 16);
         rST.setH(rST.h & ~(SSP_FLAG_L | SSP_FLAG_Z | SSP_FLAG_V | SSP_FLAG_N));
         if (t == 0) {
             rST.setH(rST.h | SSP_FLAG_Z);
@@ -401,66 +402,64 @@ public class Ssp16Impl implements Ssp16 {
         }
     }
 
-    void OP_CMPA32(long x) {
-        long t = (int) rA32.v - (x);
+    void OP_CMPA32(int x) {
+        int t = rA32.v - x;
         rST.setH(rST.h & ~(SSP_FLAG_L | SSP_FLAG_Z | SSP_FLAG_V | SSP_FLAG_N));
         if (t == 0) rST.setH(rST.h | SSP_FLAG_Z);
         else rST.setH((int) (rST.h | ((t >> 16) & SSP_FLAG_N)));
     }
 
-    void OP_ADDA(long x) {
+    void OP_ADDA(int x) {
         rA32.setV(rA32.v + (x << 16));
         UPD_LZVN();
     }
 
-    void OP_ADDA32(long x) {
+    void OP_ADDA32(int x) {
         rA32.setV(rA32.v + x);
         UPD_LZVN();
     }
 
-    void OP_ANDA(long x) {
+    void OP_ANDA(int x) {
         rA32.setV(rA32.v & (x << 16));
-        UPD_ACC_ZN();
-    }
-
-    void OP_ANDA32(long x) {
-        rA32.setV(rA32.v & x);
         UPD_ACC_ZN();
     }
 
     /* ----------------------------------------------------- */
     /* register i/o handlers */
 
-    void OP_ORA(long x) {
+    void OP_ANDA32(int x) {
+        rA32.setV(rA32.v & x);
+        UPD_ACC_ZN();
+    }
+
+    void OP_ORA(int x) {
         rA32.setV(rA32.v | (x << 16));
         UPD_ACC_ZN();
     }
 
-    void OP_ORA32(long x) {
+    void OP_ORA32(int x) {
         rA32.setV(rA32.v | x);
         UPD_ACC_ZN();
     }
 
-    void OP_EORA(long x) {
+    void OP_EORA(int x) {
         rA32.setV(rA32.v ^ (x << 16));
         UPD_ACC_ZN();
     }
 
-    void OP_EORA32(long x) {
+    void OP_EORA32(int x) {
         rA32.setV(rA32.v ^ x);
         UPD_ACC_ZN();
     }
 
-    boolean OP_CHECK32(int op, Consumer<Integer> OP) {
+    int OP_CHECK32(int op) {
         if ((op & 0x0f) == SSP_P.ordinal()) { /* A <- P */
             read_P(); /* update P */
-            OP.accept(rP.v);
-            return true;
+            return rP.v;
         } else if ((op & 0x0f) == SSP_A.ordinal()) { /* A <- A */
-            OP.accept(rA32.v);
-            return true;
+            return rA32.v;
         }
-        return false;
+        return CHECK32_FALSE;
     }
 
     /* 0-4, 13 */
@@ -681,8 +680,8 @@ public class Ssp16Impl implements Ssp16 {
             /*  LOG.info(EL_ANOMALY|EL_SVP, "prev PMC not used @ %04x", GET_PPC_OFFS()); */
             sspCtx.emu_status |= SSP_PMC_SET;
             sspCtx.emu_status &= ~SSP_PMC_HAVE_ADDR;
-            long val = rPMC.l;
-            return (int) (((val << 4) & 0xfff0) | ((val >> 4) & 0xf));
+            int val = rPMC.l;
+            return (((val << 4) & 0xfff0) | ((val >> 4) & 0xf));
         } else {
             sspCtx.emu_status |= SSP_PMC_HAVE_ADDR;
             return rPMC.l;
@@ -1348,32 +1347,56 @@ public class Ssp16Impl implements Ssp16 {
 
                 /* OP a, s */
                 case 0x10:
-                    if (OP_CHECK32(op, this::OP_SUBA32)) break;
+                    tmpv = OP_CHECK32(op);
+                    if (tmpv != CHECK32_FALSE) {
+                        OP_SUBA32(tmpv);
+                        break;
+                    }
                     tmpv = REG_READ(op & 0x0f);
                     OP_SUBA(tmpv);
                     break;
                 case 0x30:
-                    if (OP_CHECK32(op, this::OP_CMPA32)) break;
+                    tmpv = OP_CHECK32(op);
+                    if (tmpv != CHECK32_FALSE) {
+                        OP_CMPA32(tmpv);
+                        break;
+                    }
                     tmpv = REG_READ(op & 0x0f);
                     OP_CMPA(tmpv);
                     break;
                 case 0x40:
-                    if (OP_CHECK32(op, this::OP_ADDA32)) break;
+                    tmpv = OP_CHECK32(op);
+                    if (tmpv != CHECK32_FALSE) {
+                        OP_ADDA32(tmpv);
+                        break;
+                    }
                     tmpv = REG_READ(op & 0x0f);
                     OP_ADDA(tmpv);
                     break;
                 case 0x50:
-                    if (OP_CHECK32(op, this::OP_ANDA32)) break;
+                    tmpv = OP_CHECK32(op);
+                    if (tmpv != CHECK32_FALSE) {
+                        OP_ANDA32(tmpv);
+                        break;
+                    }
                     tmpv = REG_READ(op & 0x0f);
                     OP_ANDA(tmpv);
                     break;
                 case 0x60:
-                    if (OP_CHECK32(op, this::OP_ORA32)) break;
+                    tmpv = OP_CHECK32(op);
+                    if (tmpv != CHECK32_FALSE) {
+                        OP_ORA32(tmpv);
+                        break;
+                    }
                     tmpv = REG_READ(op & 0x0f);
                     OP_ORA(tmpv);
                     break;
                 case 0x70:
-                    if (OP_CHECK32(op, this::OP_EORA32)) break;
+                    tmpv = OP_CHECK32(op);
+                    if (tmpv != CHECK32_FALSE) {
+                        OP_EORA32(tmpv);
+                        break;
+                    }
                     tmpv = REG_READ(op & 0x0f);
                     OP_EORA(tmpv);
                     break;

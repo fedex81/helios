@@ -24,7 +24,7 @@ public class Ssp16Test {
     public void testCMPA_Zero() {
         Ssp16Impl ssp16 = createSvp(MemoryProvider.NO_MEMORY);
         int ra32 = 0xFFFF_0000;
-        long val = 0xFFFF;
+        int val = 0xFFFF;
 
         ssp16.rA32.v = ra32;
         ssp16.rST.h = 0;
