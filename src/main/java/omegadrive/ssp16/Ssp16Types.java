@@ -2,6 +2,8 @@ package omegadrive.ssp16;
 
 import java.util.stream.IntStream;
 
+import static omegadrive.ssp16.Ssp16.*;
+
 /*
  * basic, incomplete SSP160x (SSP1601?) interpreter
  *
@@ -34,28 +36,6 @@ import java.util.stream.IntStream;
  * Java translation by Federico Berti
  */
 public interface Ssp16Types {
-
-    int SSP_PMC_HAVE_ADDR = 0x0001; /* address written to PMAC, waiting for mode */
-    int SSP_PMC_SET = 0x0002; /* PMAC is set */
-    int SSP_HANG = 0x1000; /* 68000 hangs SVP */
-    int SSP_WAIT_PM0 = 0x2000; /* bit1 in PM0 */
-    int SSP_WAIT_30FE06 = 0x4000; /* ssp tight loops on 30FE08 to become non-zero */
-    int SSP_WAIT_30FE08 = 0x8000; /* same for 30FE06 */
-    int SSP_WAIT_MASK = 0xf000;
-
-    int SSP_RAM_SIZE_WORDS = 256;
-    int SSP_RAM_MASK_WORDS = SSP_RAM_SIZE_WORDS - 1;
-    int SSP_POINTER_REGS_MASK = 0xFF;
-    int MASK_16BIT = 0xFFFF;
-    int PC_MASK = MASK_16BIT;
-
-    int IRAM_ROM_SIZE_WORDS = 0x10000; //128 kbytes -> 64k words
-    int IRAM_SIZE_WORDS = 0x400; //2kbytes -> 1k words
-    int ROM_SIZE_WORDS = IRAM_ROM_SIZE_WORDS - IRAM_SIZE_WORDS; //63k words
-    int DRAM_SIZE_WORDS = 0x10000; //128Kbytes -> 64k words
-
-    int SVP_ROM_START_ADDRESS_BYTE = 0x800;
-    int SVP_ROM_START_ADDRESS_WORD = SVP_ROM_START_ADDRESS_BYTE >> 1;
 
     Svp_t NO_SVP_CONTEXT = new Svp_t(new Ssp1601_t());
 
@@ -153,25 +133,26 @@ public interface Ssp16Types {
         }
 
         public class ptr {
+            final static int REGS_PER_BANK = 4;
             public bank bank = new bank();
 
             public int getPointerVal(int pos) {
-                return pos < 4 ? bank.r0[pos] : bank.r1[pos - 4];
+                return pos < REGS_PER_BANK ? bank.r0[pos] : bank.r1[pos - REGS_PER_BANK];
             }
 
             public void setPointerVal(int pos, int val) {
-                int pos1 = pos % 4;
+                int pos1 = pos % REGS_PER_BANK;
                 if (pos1 == 3) { //r3 and r7 cannot be modified
                     return;
                 }
-                int[] rg = pos < 4 ? bank.r0 : bank.r1;
+                int[] rg = pos < REGS_PER_BANK ? bank.r0 : bank.r1;
                 rg[pos1] = val & SSP_POINTER_REGS_MASK;
             }
 
             /* BANK pointers */ //8 bit unsigned
             public class bank {
-                public int[] r0 = new int[4]; //8 bit unsigned
-                public int[] r1 = new int[4]; //8 bit unsigned
+                public int[] r0 = new int[REGS_PER_BANK]; //8 bit unsigned
+                public int[] r1 = new int[REGS_PER_BANK]; //8 bit unsigned
             }
         }
     }
@@ -186,11 +167,11 @@ public interface Ssp16Types {
         }
 
         public void writeRamWord(int addressWord, int value) {
-            dram[addressWord & 0xFFFF] = value & 0xFFFF;
+            dram[addressWord & MASK_16BIT] = value & MASK_16BIT;
         }
 
         public int readRamWord(int addressWord) {
-            return dram[addressWord & 0xFFFF] & 0xFFFF;
+            return dram[addressWord & MASK_16BIT] & MASK_16BIT;
         }
     }
 

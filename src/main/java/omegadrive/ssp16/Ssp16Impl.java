@@ -392,7 +392,7 @@ public class Ssp16Impl implements Ssp16 {
     }
 
     void OP_CMPA(long x) {
-        long t = rA32.v - ((x) << 16);
+        long t = rA32.v - (int) (x << 16);
         rST.setH(rST.h & ~(SSP_FLAG_L | SSP_FLAG_Z | SSP_FLAG_V | SSP_FLAG_N));
         if (t == 0) {
             rST.setH(rST.h | SSP_FLAG_Z);

@@ -88,7 +88,7 @@ public interface Ssp16 {
         cart.rom = new int[romBytes.length >> 1]; //words
         int k = 0;
         for (int i = 0; i < romBytes.length; i += 2) {
-            cart.rom[k] = ((romBytes[i] << 8) | romBytes[i + 1]) & 0xFFFF;
+            cart.rom[k] = ((romBytes[i] << 8) | romBytes[i + 1]) & MASK_16BIT;
             if (i >= startAddrRomByte && k < svpCtx.iram_rom.length) {
                 svpCtx.iram_rom[k] = cart.rom[k];
             }
