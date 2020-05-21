@@ -333,7 +333,7 @@ public class Ssp16Impl implements Ssp16 {
     }
 
     /* update ZN according to 32bit ACC. */
-    void UPD_ACC_ZN() {
+    private final void UPD_ACC_ZN() {
         rST.setH(rST.h & ~(SSP_FLAG_Z | SSP_FLAG_N));
         if (rA32.v == 0) rST.setH(rST.h | SSP_FLAG_Z);
         else rST.setH(rST.h | ((rA32.v >> 16) & SSP_FLAG_N));
@@ -817,7 +817,28 @@ public class Ssp16Impl implements Ssp16 {
     }
 
     final int invokeReadHandler(int ordinal) {
+        //common calls: PM0, STACK, PM4, PMC
         switch (ordinal) {
+            case 8:
+                return read_PM0(); /* 8 */
+            case 5:
+                return read_STACK();
+            case 12:
+                return read_PM4(); /* 12 */
+            case 14:
+                return read_PMC();
+            case 15:
+                return read_AL();
+            case 6:
+                return read_PC();
+            case 7:
+                return read_P();
+            case 9:
+                return read_PM1();
+            case 10:
+                return read_PM2();
+            case 11:
+                return read_XST();
             case 0:
             case 1:
             case 2:
@@ -825,26 +846,6 @@ public class Ssp16Impl implements Ssp16 {
             case 4:                         /* 4 ST */
             case 13:                        /* 13 gr13 */
                 return read_unknown();
-            case 5:
-                return read_STACK();
-            case 6:
-                return read_PC();
-            case 7:
-                return read_P();
-            case 8:
-                return read_PM0(); /* 8 */
-            case 9:
-                return read_PM1();
-            case 10:
-                return read_PM2();
-            case 11:
-                return read_XST();
-            case 12:
-                return read_PM4(); /* 12 */
-            case 14:
-                return read_PMC();
-            case 15:
-                return read_AL();
             default:
                 LOG.info("invokeReadHandler error: " + ordinal);
         }
@@ -852,14 +853,19 @@ public class Ssp16Impl implements Ssp16 {
     }
 
     final void invokeWriteHandler(int ordinal, int value) {
+        //common calls: PM4, PC, PMC, AL
         switch (ordinal) {
-            case 0:
-            case 1:
-            case 2:
-            case 3: /* -, X, Y, A */
-            case 7:                         /* 7 P */
-            case 13:                        /* 13 gr13 */
-                write_unknown(value);
+            case 12:
+                write_PM4(value); /* 12 */
+                break;
+            case 6:
+                write_PC(value);
+                break;
+            case 14:
+                write_PMC(value);
+                break;
+            case 15:
+                write_AL(value);
                 break;
             case 4:/* 4 ST */
                 //VR needs this
@@ -867,9 +873,6 @@ public class Ssp16Impl implements Ssp16 {
                 break;
             case 5:
                 write_STACK(value);
-                break;
-            case 6:
-                write_PC(value);
                 break;
             case 8:
                 write_PM0(value); /* 8 */
@@ -883,14 +886,13 @@ public class Ssp16Impl implements Ssp16 {
             case 11:
                 write_XST(value);
                 break;
-            case 12:
-                write_PM4(value); /* 12 */
-                break;
-            case 14:
-                write_PMC(value);
-                break;
-            case 15:
-                write_AL(value);
+            case 0:
+            case 1:
+            case 2:
+            case 3: /* -, X, Y, A */
+            case 7:                         /* 7 P */
+            case 13:                        /* 13 gr13 */
+                write_unknown(value);
                 break;
             default:
                 LOG.info("invokeWriteHandler error: " + ordinal);

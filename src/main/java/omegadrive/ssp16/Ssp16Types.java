@@ -58,7 +58,7 @@ public interface Ssp16Types {
             this.l = (short) (this.v & 0xFFFF);
         }
 
-        public void setH(int h) {
+        public final void setH(int h) {
             this.h = (short) h;
             this.v = (h << 16) | (v & 0xFFFF);
         }
