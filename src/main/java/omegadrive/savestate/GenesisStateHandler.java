@@ -25,6 +25,7 @@ import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.ssp16.Ssp16;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.Level;
@@ -144,6 +145,9 @@ public interface GenesisStateHandler extends BaseStateHandler {
         if (getType() == Type.LOAD) {
             LOG.info("Savestate loaded from: {}", getFileName());
         }
+    }
+
+    default void loadSvpState(Ssp16 ssp16) {
     }
 
 }

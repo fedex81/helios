@@ -52,16 +52,16 @@ public class SavestateTest {
     public static Path saveStateFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources", "savestate", "md");
 
-    public static Set<Path> getSavestateList() throws IOException {
+    public static Set<Path> getSavestateList(Path saveStateFolder, String fileExt) throws IOException {
         System.out.println(new File(".").getAbsolutePath());
         Set<Path> files = Files.list(saveStateFolder).
-                filter(p -> p.getFileName().toString().contains(".gs")).collect(Collectors.toSet());
+                filter(p -> p.getFileName().toString().contains(fileExt)).collect(Collectors.toSet());
         return files;
     }
 
     @Test
     public void testLoadAndSave() throws IOException {
-        Set<Path> files = getSavestateList();
+        Set<Path> files = getSavestateList(saveStateFolder, ".gs");
         Assert.assertFalse(files.isEmpty());
         for (Path saveFile : files) {
             System.out.println("Testing: " + saveFile.getFileName());

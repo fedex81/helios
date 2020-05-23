@@ -94,7 +94,7 @@ public class GshStateHandler extends GstStateHandler {
     private static int getNextPosForPattern(byte[] buf, int startPos, String pattern) {
         byte[] ba2 = Arrays.copyOfRange(buf, startPos, buf.length);
         int endPos = Bytes.indexOf(ba2, pattern.getBytes()) + startPos;
-        return endPos > startPos ? endPos : ba2.length;
+        return endPos > startPos ? endPos : buf.length;
     }
 
     @Override
@@ -110,7 +110,8 @@ public class GshStateHandler extends GstStateHandler {
         }
     }
 
-    private void loadSvp(Ssp16 ssp16) {
+    @Override
+    public void loadSvpState(Ssp16 ssp16) {
         byte[] ba = buffer.array();
         int svpStart = Bytes.indexOf(ba, SVP_MAGIC_WORD.getBytes());
         if (svpStart > -1 && ssp16 != Ssp16.NO_SVP) {
@@ -175,7 +176,7 @@ public class GshStateHandler extends GstStateHandler {
         int[] data = new int[GenesisBusProvider.NUM_MAPPER_BANKS];
         IntStream.range(0, data.length).forEach(i -> data[i] = buffer.get() & 0xFF);
         bus.setMapperData(data);
-        loadSvp(SvpMapper.ssp16);
+        loadSvpState(SvpMapper.ssp16);
     }
 
     private ByteBuffer extendBuffer(ByteBuffer current, int increaseDelta) {

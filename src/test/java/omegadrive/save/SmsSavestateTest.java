@@ -39,11 +39,9 @@ import z80core.Z80State;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class SmsSavestateTest {
@@ -53,16 +51,9 @@ public class SmsSavestateTest {
 
     SystemProvider sp = Sms.createNewInstance(SystemLoader.SystemType.SMS, DisplayWindow.HEADLESS_INSTANCE);
 
-    public static Set<Path> getSavestateList() throws IOException {
-        System.out.println(new File(".").getAbsolutePath());
-        Set<Path> files = Files.list(saveStateFolder).
-                filter(p -> p.getFileName().toString().contains(".s0")).collect(Collectors.toSet());
-        return files;
-    }
-
     @Test
     public void testLoadAndSave() throws IOException {
-        Set<Path> files = getSavestateList();
+        Set<Path> files = SavestateTest.getSavestateList(saveStateFolder, ".s0");
         Assert.assertFalse(files.isEmpty());
         for (Path saveFile : files) {
             System.out.println("Testing: " + saveFile.getFileName());
