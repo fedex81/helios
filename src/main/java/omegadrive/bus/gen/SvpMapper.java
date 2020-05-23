@@ -38,20 +38,22 @@ public class SvpMapper implements RomMapper, SvpBus {
 
     private static final boolean verbose = false;
     private static final boolean VR_TEST_MODE = false;
+
+    //TODO fix
     public static Ssp16 ssp16 = NO_SVP;
+    private static SvpMapper instance = null;
 
     protected Svp_t svpCtx;
     protected Ssp1601_t sspCtx;
-    protected Ssp16 ssp16Int;
 
     protected RomMapper baseMapper;
 
     protected SvpMapper(RomMapper baseMapper, Ssp16 ssp16p) {
         this.baseMapper = baseMapper;
-        this.ssp16Int = ssp16p;
         ssp16 = ssp16p;
         this.svpCtx = ssp16p.getSvpContext();
         this.sspCtx = this.svpCtx.ssp1601;
+        instance = this;
     }
 
     public static SvpMapper createInstance(RomMapper baseMapper, Ssp16 ssp16) {
@@ -221,5 +223,14 @@ public class SvpMapper implements RomMapper, SvpBus {
             return;
         }
         baseMapper.writeData(addressL, data, size);
+    }
+
+    public static void setSvpContext(Svp_t svpCtx) {
+        if (svpCtx == null) {
+            return;
+        }
+        instance.svpCtx = svpCtx;
+        instance.sspCtx = svpCtx.ssp1601;
+        ssp16.loadSvpContext(svpCtx);
     }
 }

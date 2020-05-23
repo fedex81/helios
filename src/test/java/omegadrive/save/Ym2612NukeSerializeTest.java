@@ -20,7 +20,7 @@ import java.nio.file.Paths;
 public class Ym2612NukeSerializeTest {
 
     private static final String fileFolder = "src/test/resources/savestate";
-    private static final String savestateName = "quick_save.gsh";
+    private static final String savestateName = "nuke_serialized_test.gsh";
     private Path p = Paths.get(fileFolder, savestateName);
     private byte[] data;
 

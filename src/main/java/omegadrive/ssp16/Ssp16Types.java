@@ -1,5 +1,7 @@
 package omegadrive.ssp16;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.stream.IntStream;
 
 import static omegadrive.ssp16.Ssp16.*;
@@ -47,7 +49,7 @@ public interface Ssp16Types {
         SSP_PM4, SSP_gr13, SSP_PMC, SSP_AL
     }
 
-    class Ssp_reg_t {
+    class Ssp_reg_t implements Serializable {
         public int v; //unsigned 32 bit
         public short l; //unsigned 16 bit
         public short h; //unsigned 16 bit
@@ -69,7 +71,7 @@ public interface Ssp16Types {
         }
     }
 
-    class Ssp1601_t {
+    class Ssp1601_t implements Serializable {
         public mem mem = new mem();
         public ptr ptr = new ptr();
         public Ssp_reg_t[] gr = new Ssp_reg_t[16];  /* general registers */
@@ -105,7 +107,7 @@ public interface Ssp16Types {
             return gr[reg.ordinal()].h;
         }
 
-        class mem {
+        class mem implements Serializable {
 
             bank bank = new bank();
 
@@ -126,13 +128,13 @@ public interface Ssp16Types {
             }
 
             /* 2 internal RAM banks */ //16 bit unsigned
-            class bank {
+            class bank implements Serializable {
                 int[] RAM0 = new int[SSP_RAM_SIZE_WORDS]; //16 bit unsigned
                 int[] RAM1 = new int[SSP_RAM_SIZE_WORDS]; //16 bit unsigned
             }
         }
 
-        public class ptr {
+        public class ptr implements Serializable {
             final static int REGS_PER_BANK = 4;
             public bank bank = new bank();
 
@@ -150,17 +152,19 @@ public interface Ssp16Types {
             }
 
             /* BANK pointers */ //8 bit unsigned
-            public class bank {
+            public class bank implements Serializable {
                 public int[] r0 = new int[REGS_PER_BANK]; //8 bit unsigned
                 public int[] r1 = new int[REGS_PER_BANK]; //8 bit unsigned
             }
         }
     }
 
-    class Svp_t {
+    class Svp_t implements Serializable {
         public Ssp1601_t ssp1601;
-        public int[] iram_rom = new int[IRAM_ROM_SIZE_WORDS]; /* IRAM (0-0x7ff) and program ROM (0x800-0x1ffff) */
+        /* IRAM (0-0x3ff) and program ROM (0x400-0xffff) */
+        public transient int[] iram_rom = new int[IRAM_ROM_SIZE_WORDS];
         public int[] dram = new int[DRAM_SIZE_WORDS];
+        private int[] iramSerial = new int[IRAM_SIZE_WORDS];
 
         protected Svp_t(Ssp1601_t ssp1601) {
             this.ssp1601 = ssp1601;
@@ -173,9 +177,20 @@ public interface Ssp16Types {
         public int readRamWord(int addressWord) {
             return dram[addressWord & MASK_16BIT] & MASK_16BIT;
         }
+
+        private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+            System.arraycopy(iram_rom, 0, iramSerial, 0, IRAM_SIZE_WORDS);
+            out.defaultWriteObject();
+        }
+
+        private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+            in.defaultReadObject();
+            iram_rom = new int[IRAM_ROM_SIZE_WORDS];
+            System.arraycopy(iramSerial, 0, iram_rom, 0, IRAM_SIZE_WORDS);
+        }
     }
 
     class Cart {
-        public int[] rom; //store words here
+        public transient int[] rom; //store words here
     }
 }

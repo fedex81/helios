@@ -1,7 +1,5 @@
 package omegadrive.ssp16;
 
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
 import omegadrive.ssp16.Ssp16Types.Ssp1601_t;
 import org.junit.Assert;
 import org.junit.Test;
@@ -11,18 +9,19 @@ import static omegadrive.ssp16.Ssp16Types.Svp_t;
 
 public class Ssp16Test {
 
-    static Ssp16Impl createSvp(IMemoryProvider memoryProvider) {
+    static Ssp16Impl createSvp() {
         Cart svpCart = new Cart();
+        svpCart.rom = new int[0];
         Ssp1601_t sspCtx = new Ssp1601_t();
         Svp_t svpCtx = new Svp_t(sspCtx);
-        Ssp16Impl ssp16 = Ssp16Impl.createInstance(sspCtx, svpCtx, svpCart);
+        Ssp16Impl ssp16 = Ssp16Impl.createInstance(svpCtx, svpCart);
         ssp16.ssp1601_reset(sspCtx);
         return ssp16;
     }
 
     @Test
     public void testCMPA_Zero() {
-        Ssp16Impl ssp16 = createSvp(MemoryProvider.NO_MEMORY);
+        Ssp16Impl ssp16 = createSvp();
         int ra32 = 0xFFFF_0000;
         int val = 0xFFFF;
 

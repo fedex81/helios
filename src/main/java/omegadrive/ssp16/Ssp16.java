@@ -77,22 +77,17 @@ public interface Ssp16 {
         Cart svpCart = new Cart();
         Ssp1601_t sspCtx = new Ssp1601_t();
         Svp_t svpCtx = new Svp_t(sspCtx);
-        loadSvpMemory(svpCtx, svpCart, SVP_ROM_START_ADDRESS_BYTE, memoryProvider.getRomData());
-
-        Ssp16Impl ssp16 = Ssp16Impl.createInstance(sspCtx, svpCtx, svpCart);
+        loadCart(svpCart, memoryProvider.getRomData());
+        Ssp16Impl ssp16 = Ssp16Impl.createInstance(svpCtx, svpCart);
         ssp16.ssp1601_reset(sspCtx);
         return ssp16;
     }
 
-    static void loadSvpMemory(Svp_t svpCtx, Cart cart, int startAddrRomByte, int[] romBytes) {
+    static void loadCart(Cart cart, int[] romBytes) {
         cart.rom = new int[romBytes.length >> 1]; //words
         int k = 0;
         for (int i = 0; i < romBytes.length; i += 2) {
-            cart.rom[k] = ((romBytes[i] << 8) | romBytes[i + 1]) & MASK_16BIT;
-            if (i >= startAddrRomByte && k < svpCtx.iram_rom.length) {
-                svpCtx.iram_rom[k] = cart.rom[k];
-            }
-            k++;
+            cart.rom[k++] = ((romBytes[i] << 8) | romBytes[i + 1]) & MASK_16BIT;
         }
     }
 
@@ -102,5 +97,9 @@ public interface Ssp16 {
 
     default Svp_t getSvpContext() {
         return Ssp16Types.NO_SVP_CONTEXT;
+    }
+
+    default void loadSvpContext(Svp_t svpCtx) {
+        //DO NOTHING
     }
 }

@@ -214,11 +214,13 @@ public class Ssp16Impl implements Ssp16 {
     static final int SSP_FLAG_V = (1 << 0xe);
     static final int SSP_FLAG_N = (1 << 0xf);
 
-    public Ssp1601_t sspCtx = null;
-    public Svp_t svpCtx = null;
-    int PC;
-    int g_cycles;
-    public Cart cart = null;
+    Set<Integer> pcSet = new HashSet<>();
+    private int g_cycles;
+    private Cart cart = null;
+    /* context */
+    private Ssp1601_t sspCtx = null;
+    private Svp_t svpCtx = null;
+    private int PC;
     /* 0 */
     Ssp_reg_t rX; //.h;
     Ssp_reg_t rY; //.h;
@@ -238,14 +240,12 @@ public class Ssp16Impl implements Ssp16 {
     Ssp_reg_t rPMC; /* will keep addr in .h, mode in .l */
     Ssp_reg_t rAL; //.l;
     Ssp_reg_t rA32; //.v;
-    Set<Integer> pcSet = new HashSet<>();
+    /* context */
 
-    public static Ssp16Impl createInstance(Ssp1601_t ssp, Svp_t svp, Cart cart) {
+    public static Ssp16Impl createInstance(Svp_t svp, Cart cart) {
         Ssp16Impl s = new Ssp16Impl();
-        s.sspCtx = ssp;
         s.cart = cart;
-        s.svpCtx = svp;
-        s.init();
+        s.loadSvpContext(svp);
         return s;
     }
 
@@ -303,10 +303,6 @@ public class Ssp16Impl implements Ssp16 {
         rA32 = sspCtx.gr[SSP_A.ordinal()]; //.v
     }
 
-    int GET_PPC_OFFS() {
-        return PC - 1;
-    }
-
     @Override
     public void ssp1601_reset(Ssp1601_t l_ssp) {
         sspCtx = l_ssp;
@@ -322,8 +318,24 @@ public class Ssp16Impl implements Ssp16 {
         return svpCtx;
     }
 
+    @Override
+    public void loadSvpContext(Svp_t svpCtx) {
+        this.svpCtx = svpCtx;
+        this.sspCtx = svpCtx.ssp1601;
+        int limit = Math.min(svpCtx.iram_rom.length, cart.rom.length);
+        for (int i = SVP_ROM_START_ADDRESS_WORD; i < limit; i++) {
+            svpCtx.iram_rom[i] = cart.rom[i];
+        }
+        init();
+        SET_PC(rPC.h);
+    }
+
     final int GET_PC() {
         return PC;
+    }
+
+    int GET_PPC_OFFS() {
+        return PC - 1;
     }
 
     final int SET_PC(int d) {
@@ -782,7 +794,7 @@ public class Ssp16Impl implements Ssp16 {
 //                    LOG.info("svp dram read {}, {}", Integer.toHexString(addr),
 //                            Integer.toHexString(d));
                 } else {
-                    System.out.printf("ssp FIXME: PM%i unhandled read  mode %04x, [%06x] @ %04x",
+                    System.out.printf("ssp FIXME: PM%x unhandled read  mode %04x, [%06x] @ %04x",
                             reg, mode, 0, GET_PPC_OFFS());
                     d = 0;
                 }
@@ -1596,6 +1608,8 @@ public class Ssp16Impl implements Ssp16 {
         }
     }
 
+    /* DEBUG */
+
     void debug_dump(boolean force) {
         if (!LOG_SVP && !force) {
             return;
@@ -1620,6 +1634,7 @@ public class Ssp16Impl implements Ssp16 {
         LOG.info(sb.toString());
 //        System.out.println(sb.toString());
     }
+
 
     void debug_dump_mem() {
         int h, i;
