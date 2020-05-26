@@ -8,9 +8,10 @@ turbo outrun
 lotus 2
 
 danibus scroll test
-sonic3d traveller's tale logo
+sonic3d traveller's tale logo (uses shadow/highlight)
 bare knuckle 3 - intro locks (FIFO)
 titan2 vdp crash
+rambo III intro corruption (uses shadow/highlight)
 
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin

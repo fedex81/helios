@@ -147,6 +147,7 @@ public interface VdpRenderHandler {
     static int getSpriteTableLocation(GenesisVdpProvider vdp) {
         //	AT16 is only valid if 128 KB mode is enabled,
         // and allows for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
+        //TODO check, ST0: Ignored in 320 pixel wide mode, limiting the address to a multiple of $400.
         return (vdp.getRegisterData(SPRITE_TABLE_LOC) & 0x7F) << SPRITE_TABLE_SHIFT;
     }
 
@@ -195,6 +196,7 @@ public interface VdpRenderHandler {
         public int horizontalCellSize;
         public int verticalCellSize;
         public int linkData;
+        public int spriteNumber;
 
         @Override
         public String toString() {

@@ -49,6 +49,14 @@ public interface VdpMemoryInterface extends VdpMemory {
 
     int[] getJavaColorPalette();
 
+    default int[] getSatCache() {
+        return new int[0];
+    }
+
+    default void setSatBaseAddress(int address) {
+        //DO NOTHING
+    }
+
     default int readVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int address) {
         switch (vramType) {
             case VRAM:

@@ -27,6 +27,8 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_FRAME_H40;
+
 public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     public final static boolean verbose = false;
@@ -37,6 +39,8 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     private int[] cram;
     private int[] vsram;
     private int[] javaPalette;
+    private int[] satCache = new int[MAX_SPRITES_PER_FRAME_H40 * 8]; //8 bytes per sprite
+    private int satBaseAddress = 0, satEndAddress = satBaseAddress + satCache.length;
 
     private VdpColorMapper colorMapper;
 
@@ -88,6 +92,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     public void writeVramByte(int address, int data) {
         address &= (GenesisVdpProvider.VDP_VRAM_SIZE - 1);
         vram[address] = data & 0xFF;
+        updateSatCache(address, data & 0xFF);
     }
 
     @Override
@@ -115,6 +120,23 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
             default:
                 LOG.warn("Unexpected videoRam write: " + vramType);
         }
+    }
+
+    private void updateSatCache(int vramAddress, int value) {
+        if (vramAddress >= satBaseAddress && vramAddress < satEndAddress) {
+            satCache[vramAddress - satBaseAddress] = value;
+        }
+    }
+
+    @Override
+    public void setSatBaseAddress(int satBaseAddress) {
+        this.satBaseAddress = satBaseAddress;
+        this.satEndAddress = satBaseAddress + satCache.length;
+    }
+
+    @Override
+    public int[] getSatCache() {
+        return satCache;
     }
 
     @Override

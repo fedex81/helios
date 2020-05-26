@@ -126,6 +126,7 @@ public class GenesisVdp implements GenesisVdpProvider {
     //	PAL seems to be set when the system's display is PAL, and possibly reflects the state of having 240 line display enabled.
     // The same information can be obtained from the version register.
     int pal;
+    int satStart;
 
     private GenesisBusProvider bus;
     protected VdpInterruptHandler interruptHandler;
@@ -470,6 +471,7 @@ public class GenesisVdp implements GenesisVdpProvider {
             } else {
                 memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
             }
+
             if (wasFull && !fifo.isFull()) {
                 evaluateVdpBusyState();
             }
@@ -607,7 +609,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                 h40 = rs0 && rs1;
                 boolean val = Util.bitSetTest(data, 3);
                 if (val != ste) {
-                    LOG.info("Shadow highlight: " + val);
+                    LOG.debug("Shadow highlight: " + val);
                 }
                 ste = val;
                 InterlaceMode prev = interlaceMode;
@@ -622,6 +624,14 @@ public class GenesisVdp implements GenesisVdpProvider {
             case HCOUNTER_VALUE:
                 interruptHandler.logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
                 list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, data));
+                break;
+            case SPRITE_TABLE_LOC:
+                int res = VdpRenderHandler.getSpriteTableLocation(this);
+                if (res != satStart) {
+                    LOG.debug("Sat location: {} -> {}", Integer.toHexString(satStart), Integer.toHexString(res));
+                    satStart = res;
+                    memoryInterface.setSatBaseAddress(satStart);
+                }
                 break;
             default:
                 break;

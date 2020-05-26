@@ -30,16 +30,15 @@ import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.util.Arrays;
-import java.util.function.BiConsumer;
-import java.util.stream.IntStream;
 
 import static omegadrive.vdp.model.BaseVdpProvider.VdpEventListener;
-import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_LINE_H40;
+import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_FRAME_H40;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
-public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener {
+@Deprecated
+public class VdpRenderHandlerImplOld implements VdpRenderHandler, VdpEventListener {
 
-    private final static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(VdpRenderHandlerImplOld.class.getSimpleName());
     private GenesisVdpProvider vdpProvider;
     private VdpMemoryInterface memoryInterface;
     private VdpScrollHandler scrollHandler;
@@ -49,16 +48,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private VideoMode videoMode;
     private VideoMode newVideoMode;
     private VdpColorMapper colorMapper;
-    private static final BiConsumer<SpriteDataHolder, SpriteDataHolder> updatePhase1DataFn =
-            (src, dest) -> {
-                dest.verticalPos = src.verticalPos;
-                dest.linkData = src.linkData;
-                dest.verticalCellSize = src.verticalCellSize;
-                dest.horizontalCellSize = src.horizontalCellSize;
-                dest.spriteNumber = src.spriteNumber;
-            };
-    private SpriteDataHolder[] spriteDataHoldersCurrent = new SpriteDataHolder[MAX_SPRITES_PER_LINE_H40];
-
+    private int[][] spritesPerLine = new int[INDEXES_NUM][MAX_SPRITES_PER_FRAME_H40];
     private int[] planeA = new int[COLS];
     private int[] planeB = new int[COLS];
     private int[] planeBack = new int[COLS];
@@ -78,10 +68,25 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private int[] cram;
     private int[] javaPalette;
     private int activeLines = 0;
-    private SpriteDataHolder[] spriteDataHoldersNext = new SpriteDataHolder[MAX_SPRITES_PER_LINE_H40];
+
+    public VdpRenderHandlerImplOld(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
+        this.vdpProvider = vdpProvider;
+        this.memoryInterface = memoryInterface;
+        this.colorMapper = VdpColorMapper.getInstance();
+        this.renderDump = new VdpRenderDump();
+        this.scrollHandler = VdpScrollHandler.createInstance(memoryInterface);
+        this.vram = memoryInterface.getVram();
+        this.cram = memoryInterface.getCram();
+        this.javaPalette = memoryInterface.getJavaColorPalette();
+        this.scrollContextA = ScrollContext.createInstance(true);
+        this.scrollContextB = ScrollContext.createInstance(false);
+        vdpProvider.addVdpEventListener(this);
+        clearDataLine();
+        clearDataFrame();
+    }
 
     public static VdpRenderHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
-        VdpRenderHandler v = new VdpRenderHandlerImpl(vdpProvider, memoryInterface);
+        VdpRenderHandler v = new VdpRenderHandlerImplOld(vdpProvider, memoryInterface);
         return v;
     }
 
@@ -97,6 +102,34 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         holder.priority = (nameTable & TILE_PRIORITY_MASK) > 0;
         holder.horFlipAmount = holder.horFlip ? CELL_WIDTH - 1 : 0;
         holder.vertFlipAmount = holder.vertFlip ? interlaceMode.getVerticalCellPixelSize() - 1 : 0;
+        return holder;
+    }
+
+    public static SpriteDataHolder getSpriteData(int[] vram, int baseAddress, InterlaceMode interlaceMode, SpriteDataHolder holder) {
+        int byte0 = vram[baseAddress];
+        int byte1 = vram[baseAddress + 1];
+        int byte2 = vram[baseAddress + 2];
+        int byte3 = vram[baseAddress + 3];
+        int byte4 = vram[baseAddress + 4];
+        int byte5 = vram[baseAddress + 5];
+        int byte6 = vram[baseAddress + 6];
+        int byte7 = vram[baseAddress + 7];
+
+        holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;
+        if (interlaceMode == InterlaceMode.MODE_2) {
+            holder.verticalPos = ((byte0 & 0x3) << 7) | (byte1 >> 1);
+        }
+        holder.horizontalCellSize = (byte2 >> 2) & 0x3;
+        holder.verticalCellSize = byte2 & 0x3;
+        holder.linkData = byte3 & 0x7F;
+        holder.tileIndex = (((byte4 & 0x7) << 8) | byte5) << interlaceMode.tileShift();
+        holder.paletteLineIndex = ((byte4 >> 5) & 0x3) << PALETTE_INDEX_SHIFT;
+        holder.priority = ((byte4 >> 7) & 0x1) == 1;
+        holder.vertFlip = ((byte4 >> 4) & 0x1) == 1;
+        holder.horFlip = ((byte4 >> 3) & 0x1) == 1;
+        holder.horizontalPos = ((byte6 & 0x1) << 8) | byte7;
+        holder.horFlipAmount = holder.horFlip ? (holder.horizontalCellSize << 3) - 1 : 0;
+        holder.vertFlipAmount = holder.vertFlip ? (holder.verticalCellSize << 3) - 1 : 0;
         return holder;
     }
 
@@ -118,24 +151,20 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     }
 
-    public VdpRenderHandlerImpl(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
-        this.vdpProvider = vdpProvider;
-        this.memoryInterface = memoryInterface;
-        this.colorMapper = VdpColorMapper.getInstance();
-        this.renderDump = new VdpRenderDump();
-        this.scrollHandler = VdpScrollHandler.createInstance(memoryInterface);
-        this.vram = memoryInterface.getVram();
-        this.cram = memoryInterface.getCram();
-        this.javaPalette = memoryInterface.getJavaColorPalette();
-        this.scrollContextA = ScrollContext.createInstance(true);
-        this.scrollContextB = ScrollContext.createInstance(false);
-        vdpProvider.addVdpEventListener(this);
-        IntStream.range(0, spriteDataHoldersCurrent.length).forEach(i -> {
-            spriteDataHoldersCurrent[i] = new SpriteDataHolder();
-            spriteDataHoldersNext[i] = new SpriteDataHolder();
-        });
+    @Override
+    public void initLineData(int line) {
+        if (line == 0) {
+            LOG.debug("New Frame");
+            this.interlaceMode = vdpProvider.getInterlaceMode();
+            initVideoMode();
+            //need to do this here so I can dump data just after rendering the frame
+            clearDataFrame();
+            spriteTableLocation = VdpRenderHandler.getSpriteTableLocation(vdpProvider);
+            phase1(0);
+        }
+        scrollContextA.hScrollTableLocation = VdpRenderHandler.getHScrollDataLocation(vdpProvider);
+        scrollContextB.hScrollTableLocation = scrollContextA.hScrollTableLocation;
         clearDataLine();
-        clearDataFrame();
     }
 
     @Override
@@ -159,40 +188,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         composeImageLinearLine(line);
     }
 
-    public static SpriteDataHolder getSpriteData(int[] vram, int vramOffset,
-                                                 InterlaceMode interlaceMode, SpriteDataHolder holder) {
-        int byte4 = vram[vramOffset + 4];
-        int byte5 = vram[vramOffset + 5];
-        int byte6 = vram[vramOffset + 6];
-        int byte7 = vram[vramOffset + 7];
-
-        holder.tileIndex = (((byte4 & 0x7) << 8) | byte5) << interlaceMode.tileShift();
-        holder.paletteLineIndex = ((byte4 >> 5) & 0x3) << PALETTE_INDEX_SHIFT;
-        holder.priority = ((byte4 >> 7) & 0x1) == 1;
-        holder.vertFlip = ((byte4 >> 4) & 0x1) == 1;
-        holder.horFlip = ((byte4 >> 3) & 0x1) == 1;
-        holder.horizontalPos = ((byte6 & 0x1) << 8) | byte7;
-        holder.horFlipAmount = holder.horFlip ? (holder.horizontalCellSize << 3) - 1 : 0;
-        holder.vertFlipAmount = holder.vertFlip ? (holder.verticalCellSize << 3) - 1 : 0;
-        return holder;
-    }
-
-    @Override
-    public void initLineData(int line) {
-        if (line == 0) {
-            LOG.debug("New Frame");
-            this.interlaceMode = vdpProvider.getInterlaceMode();
-            initVideoMode();
-            //need to do this here so I can dump data just after rendering the frame
-            clearDataFrame();
-            phase1(0);
-        }
-        scrollContextA.hScrollTableLocation = VdpRenderHandler.getHScrollDataLocation(vdpProvider);
-        scrollContextB.hScrollTableLocation = scrollContextA.hScrollTableLocation;
-        spriteTableLocation = VdpRenderHandler.getSpriteTableLocation(vdpProvider);
-        clearDataLine();
-    }
-
     private void clearDataLine() {
         Arrays.fill(sprites, 0);
         Arrays.fill(window, 0);
@@ -200,19 +195,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         Arrays.fill(planeB, 0);
         Arrays.fill(pixelPriority, RenderPriority.BACK_PLANE);
         Arrays.fill(shadowHighlight, ShadowHighlightType.NORMAL);
-        SpriteDataHolder[] temp = spriteDataHoldersCurrent;
-        spriteDataHoldersCurrent = spriteDataHoldersNext;
-        IntStream.range(0, spriteDataHoldersCurrent.length).forEach(i -> {
-            temp[i].spriteNumber = -1;
-        });
-        spriteDataHoldersNext = temp;
     }
 
     private void clearDataFrame() {
-        IntStream.range(0, spriteDataHoldersCurrent.length).forEach(i -> {
-            spriteDataHoldersCurrent[i].spriteNumber = -1;
-            spriteDataHoldersNext[i].spriteNumber = -1;
-        });
+        Arrays.stream(spritesPerLine).forEach(a -> Arrays.fill(a, -1));
         spritesFrame = 0;
     }
 
@@ -225,13 +211,14 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         if (spritesFrame >= maxSpritesPerFrame) {
             return;
         }
-        SpriteDataHolder holder = new SpriteDataHolder();
+        SpriteDataHolder holder = spriteDataHolder;
         int next = 0;
         int current;
         boolean stop = false;
         for (int index = 0; index < maxSpritesPerFrame && !stop; index++) {
             current = next;
-            holder = getPhase1SpriteData(current, holder);
+            int baseAddress = spriteTableLocation + (current << 3);
+            holder = getPhase1SpriteData(baseAddress, holder);
             next = holder.linkData;
             int verSizePixels = (holder.verticalCellSize + 1) << 3;
             int realY = holder.verticalPos - 128;
@@ -241,11 +228,58 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             if (!isSpriteOnLine) {
                 continue;
             }
-            updatePhase1DataFn.accept(holder, spriteDataHoldersNext[count]);
+            spritesPerLine[line][count] = current;
             spritesFrame += line == realY ? 1 : 0;
             count++;
 
             stop |= count >= maxSpritesPerLine || spritesFrame >= maxSpritesPerFrame;
+        }
+    }
+
+    //* -Sprite masks at x=0 only work correctly when there's at least one higher priority sprite
+//            * on the same line which is not at x=0. (This is what Galaxy Force II relies on)
+    private void renderSprites(int line) {
+        int[] spritesInLine = spritesPerLine[line];
+        int currSprite = spritesInLine[0];
+        SpriteDataHolder holder = spriteDataHolder;
+        //Sonic intro screen
+        int spritePixelLineLimit = VdpRenderHandler.maxSpritesPixelPerLine(videoMode.isH40());
+        spritePixelLineCount = 0;
+
+        int ind = 0;
+        int baseAddress;
+        boolean nonZeroSpriteOnLine = false;
+        while (currSprite != -1) {
+            baseAddress = spriteTableLocation + (currSprite << 3);
+            holder = getSpriteData(baseAddress, holder);
+            int verSizePixels = (holder.verticalCellSize + 1) << 3; //8 * sizeInCells
+            int realY = holder.verticalPos - 128;
+            int realX = holder.horizontalPos - 128;
+            int spriteLine = (line - realY) % verSizePixels;
+            int pointVert = holder.vertFlip ? verSizePixels - 1 - spriteLine : spriteLine; //8,16,24
+
+            boolean stop = (nonZeroSpriteOnLine && holder.horizontalPos == 0) || spritePixelLineCount >= spritePixelLineLimit;
+            if (stop) {
+                return;
+            }
+//            LOG.info("Line: " + line + ", sprite: "+currSprite +", lastSpriteNonZero: "
+//                        + "\n" + holder.toString());
+            int horOffset = realX;
+            int spriteVerticalCell = pointVert >> 3;
+            int vertLining = (spriteVerticalCell << interlaceMode.tileShift())
+                    + ((pointVert % interlaceMode.getVerticalCellPixelSize()) << 2);
+            vertLining = interlaceMode == InterlaceMode.MODE_2 ? vertLining << 1 : vertLining;
+            for (int cellX = 0; cellX <= holder.horizontalCellSize &&
+                    spritePixelLineCount < spritePixelLineLimit; cellX++) {
+                int spriteCellX = holder.horFlip ? holder.horizontalCellSize - cellX : cellX;
+                int horLining = vertLining + (spriteCellX * ((holder.verticalCellSize + 1) << interlaceMode.tileShift()));
+                renderSprite(holder, holder.tileIndex + horLining, horOffset, spritePixelLineLimit);
+                //8 pixels
+                horOffset += CELL_WIDTH;
+            }
+            ind++;
+            currSprite = spritesInLine[ind];
+            nonZeroSpriteOnLine |= holder.horizontalPos != 0;
         }
     }
 
@@ -350,52 +384,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
         if (planeBack[0] != cramColorIndex) {
             Arrays.fill(planeBack, 0, limitHorTiles << 3, cramColorIndex);
-        }
-    }
-
-    //* -Sprite masks at x=0 only work correctly when there's at least one higher priority sprite
-//            * on the same line which is not at x=0. (This is what Galaxy Force II relies on)
-    private void renderSprites(int line) {
-        //Sonic intro screen
-        int spritePixelLineLimit = VdpRenderHandler.maxSpritesPixelPerLine(videoMode.isH40());
-        int maxSpritesPerLine = VdpRenderHandler.maxSpritesPerLine(videoMode.isH40());
-        spritePixelLineCount = 0;
-        boolean nonZeroSpriteOnLine = false;
-
-        int ind = 0;
-        SpriteDataHolder holder = spriteDataHoldersCurrent[0];
-        boolean stop = holder.spriteNumber < 0;
-        while (!stop) {
-            holder = spriteDataHoldersCurrent[ind];
-            holder = getSpriteData(holder);
-            int verSizePixels = (holder.verticalCellSize + 1) << 3; //8 * sizeInCells
-            int realY = holder.verticalPos - 128;
-            int realX = holder.horizontalPos - 128;
-            int spriteLine = (line - realY) % verSizePixels;
-            int pointVert = holder.vertFlip ? verSizePixels - 1 - spriteLine : spriteLine; //8,16,24
-
-            stop = (nonZeroSpriteOnLine && holder.horizontalPos == 0) || spritePixelLineCount >= spritePixelLineLimit;
-            if (stop) {
-                return;
-            }
-//            LOG.info("Line: " + line + ", sprite: "+currSprite +", lastSpriteNonZero: "
-//                        + "\n" + holder.toString());
-            int horOffset = realX;
-            int spriteVerticalCell = pointVert >> 3;
-            int vertLining = (spriteVerticalCell << interlaceMode.tileShift())
-                    + ((pointVert % interlaceMode.getVerticalCellPixelSize()) << 2);
-            vertLining = interlaceMode == InterlaceMode.MODE_2 ? vertLining << 1 : vertLining;
-            for (int cellX = 0; cellX <= holder.horizontalCellSize &&
-                    spritePixelLineCount < spritePixelLineLimit; cellX++) {
-                int spriteCellX = holder.horFlip ? holder.horizontalCellSize - cellX : cellX;
-                int horLining = vertLining + (spriteCellX * ((holder.verticalCellSize + 1) << interlaceMode.tileShift()));
-                renderSprite(holder, holder.tileIndex + horLining, horOffset, spritePixelLineLimit);
-                //8 pixels
-                horOffset += CELL_WIDTH;
-            }
-            ind++;
-            stop = !(ind < maxSpritesPerLine && spriteDataHoldersCurrent[ind].spriteNumber >= 0);
-            nonZeroSpriteOnLine |= holder.horizontalPos != 0;
         }
     }
 
@@ -558,17 +546,15 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     }
 
-    private SpriteDataHolder getPhase1SpriteData(int spriteIdx, SpriteDataHolder holder) {
-        if (spriteIdx + 3 >= 640) {
-            LOG.error("Invalid sprite address: {}", spriteIdx); //titan2
+    private SpriteDataHolder getPhase1SpriteData(int baseAddress, SpriteDataHolder holder) {
+        if (baseAddress + 3 > 0xFFFF) {
+//            LOG.error("Invalid sprite address: {}", baseAddress); //titan2
             return holder;
         }
-        int satAddress = spriteIdx << 3;
-        int[] satCache = memoryInterface.getSatCache();
-        int byte0 = satCache[satAddress];
-        int byte1 = satCache[satAddress + 1];
-        int byte2 = satCache[satAddress + 2];
-        int byte3 = satCache[satAddress + 3];
+        int byte0 = vram[baseAddress];
+        int byte1 = vram[baseAddress + 1];
+        int byte2 = vram[baseAddress + 2];
+        int byte3 = vram[baseAddress + 3];
 
         holder.linkData = byte3 & 0x7F;
         holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;
@@ -576,8 +562,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             holder.verticalPos = ((byte0 & 0x3) << 7) | (byte1 >> 1);
         }
         holder.verticalCellSize = byte2 & 0x3;
-        holder.horizontalCellSize = (byte2 >> 2) & 0x3;
-        holder.spriteNumber = spriteIdx;
         return holder;
     }
 
@@ -585,9 +569,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         renderPlane(line, VdpRenderHandler.getPlaneBNameTableLocation(vdpProvider), scrollContextB);
     }
 
-    private SpriteDataHolder getSpriteData(SpriteDataHolder holder) {
-        int vramOffset = spriteTableLocation + (holder.spriteNumber << 3);
-        return getSpriteData(vram, vramOffset, interlaceMode, holder);
+    private SpriteDataHolder getSpriteData(int baseAddress, SpriteDataHolder holder) {
+        return getSpriteData(vram, baseAddress, interlaceMode, holder);
     }
 
     private void drawWindowPlane(final int line, int tileStart, int tileEnd, boolean isH40) {
