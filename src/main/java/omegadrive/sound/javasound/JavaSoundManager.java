@@ -20,6 +20,7 @@
 package omegadrive.sound.javasound;
 
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
@@ -38,35 +39,43 @@ public class JavaSoundManager extends AbstractSoundManager {
     public volatile static int samplesProducedCount = 0;
     public volatile static int samplesConsumedCount = 0;
 
-    volatile int[] fm_buf_ints = new int[fmSize];
-    volatile byte[] mix_buf_bytes16 = new byte[fm_buf_ints.length];
-    volatile byte[] psg_buf_bytes = new byte[psgSize];
-    volatile int fmSizeMono = fmSize / 2;
+    volatile int[] fm_buf_ints;
+    volatile byte[] mix_buf_bytes16Stereo;
+    volatile byte[] psg_buf_bytes;
+    volatile int fmSizeMono;
 
     @Override
     public void init() {
+        fm_buf_ints = new int[fmSize];
+        mix_buf_bytes16Stereo = new byte[fm_buf_ints.length << 1];
+        psg_buf_bytes = new byte[psgSize];
+        fmSizeMono = (int) Math.round(fmSize / 2d);
+        hasFm = getFm() != FmProvider.NO_SOUND;
+        hasPsg = getPsg() != PsgProvider.NO_SOUND;
         fm_buf_ints = hasFm ? fm_buf_ints : EMPTY_FM;
         psg_buf_bytes = hasPsg ? psg_buf_bytes : EMPTY_PSG;
     }
 
-    private int playOnce(int fmBufferLenMono) {
+    private int playOnceStereo(int fmBufferLenMono) {
         int fmMonoActual = fm.update(fm_buf_ints, 0, fmBufferLenMono);
         //if FM is present load a matching number of psg samples
         fmBufferLenMono = hasFm ? fmMonoActual : fmBufferLenMono;
         psg.output(psg_buf_bytes, 0, fmBufferLenMono);
         int fmBufferLenStereo = fmBufferLenMono << 1;
+        int bufferBytesMono = fmBufferLenMono << 1;
+        int bufferBytesStereo = bufferBytesMono << 1;
         samplesProducedCount += fmBufferLenStereo;
 
         try {
-            Arrays.fill(mix_buf_bytes16, SoundUtil.ZERO_BYTE);
+            Arrays.fill(mix_buf_bytes16Stereo, SoundUtil.ZERO_BYTE);
             //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
-            SoundUtil.mixFmPsg(fm_buf_ints, mix_buf_bytes16, psg_buf_bytes, fmBufferLenStereo);
-            updateSoundWorking(mix_buf_bytes16);
+            SoundUtil.mixFmPsgStereo(fm_buf_ints, mix_buf_bytes16Stereo, psg_buf_bytes, fmBufferLenStereo);
+            updateSoundWorking(mix_buf_bytes16Stereo);
             if (!isMute()) {
-                SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16, fmBufferLenStereo);
+                SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, bufferBytesStereo);
             }
             if (isRecording()) {
-                soundPersister.persistSound(DEFAULT_SOUND_TYPE, mix_buf_bytes16);
+                soundPersister.persistSound(DEFAULT_SOUND_TYPE, mix_buf_bytes16Stereo);
             }
 
         } catch (Exception e) {
@@ -82,17 +91,13 @@ public class JavaSoundManager extends AbstractSoundManager {
         return new Runnable() {
             @Override
             public void run() {
-                fm_buf_ints = new int[fmSize];
-                mix_buf_bytes16 = new byte[fm_buf_ints.length];
-                psg_buf_bytes = new byte[psgSize];
-                fmSizeMono = (int) Math.round(fmSize / 2d);
-                hasFm = getFm() != FmProvider.NO_SOUND;
+                init();
 
                 try {
                     do {
-                        int res = playOnce(fmSizeMono);
+                        int res = playOnceStereo(fmSizeMono);
                         samplesConsumedCount += res;
-                        if (res == 0) {
+                        if (res <= 10) {
                             LockSupport.parkNanos(EMPTY_QUEUE_SLEEP_NS);
                         }
                     } while (!close);

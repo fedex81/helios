@@ -20,14 +20,12 @@
 package omegadrive.sound.fm.ym2413;
 
 
-import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.VariableSampleRateSource;
-import omegadrive.sound.javasound.AbstractSoundManager;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import javax.sound.sampled.AudioFormat;
 
 public class Ym2413Provider extends VariableSampleRateSource {
 
@@ -41,15 +39,14 @@ public class Ym2413Provider extends VariableSampleRateSource {
     private OPLL opll;
     private int sample;
 
-    protected Ym2413Provider(int bufferSize) {
-        super(FM_RATE, SoundProvider.SAMPLE_RATE_HZ, bufferSize, "fmDsa");
+    protected Ym2413Provider(AudioFormat audioFormat) {
+        super(FM_RATE, audioFormat, "fmDsa");
         ratio = microsPerOutputSample / microsPerInputSample;
     }
 
-    public static FmProvider createInstance(RegionDetector.Region region, int sampleRate) {
-        int bufferSize = SoundUtil.getAudioLineBufferSize(AbstractSoundManager.audioFormat, region);
-        Ym2413Provider p = new Ym2413Provider(bufferSize);
-        p.init(CLOCK_HZ, sampleRate);
+    public static FmProvider createInstance(AudioFormat audioFormat) {
+        Ym2413Provider p = new Ym2413Provider(audioFormat);
+        p.init(CLOCK_HZ, (int) audioFormat.getSampleRate());
         return p;
     }
 

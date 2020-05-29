@@ -6,6 +6,7 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
+import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.ssp16.Ssp16;
 import omegadrive.ssp16.Ssp16Types;
 import org.junit.Assert;
@@ -38,7 +39,7 @@ public class SavestateSerializeTest {
     public void testSerialFormatUnchangedNuke() {
         Path p = Paths.get(fileFolder, nukeSavestateName);
         GenesisStateHandler stateHandler = GenesisStateHandler.createLoadInstance(p.toAbsolutePath().toString());
-        Ym2612Nuke nuke = new Ym2612Nuke(0);
+        Ym2612Nuke nuke = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
         int hashCode = nuke.getState().hashCode();
         stateHandler.loadFmState(nuke);
         Ym2612Nuke.Ym3438Context context = nuke.getState();

@@ -50,7 +50,7 @@ public class AudioRateControl {
 
     public AudioRateControl(String sourceName, int bufferSize) {
         this.bufferSize = bufferSize;
-        this.targetBufferSize = bufferSize >> 1;
+        this.targetBufferSize = (int) (bufferSize * 0.75d);
         statsHolder = new StatsHolder(sourceName);
         LOG.info("Init with targetBufferSize: {}, bufferSize: {}", targetBufferSize, bufferSize);
     }

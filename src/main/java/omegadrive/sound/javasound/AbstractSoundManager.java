@@ -51,7 +51,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     private ExecutorService executorService;
 
     private static int OUTPUT_SAMPLE_SIZE = 16;
-    private static int OUTPUT_CHANNELS = 1;
+    private static int OUTPUT_CHANNELS = 2;
     public volatile boolean close;
     protected volatile PsgProvider psg;
     protected volatile FmProvider fm;
@@ -105,11 +105,11 @@ public abstract class AbstractSoundManager implements SoundProvider {
         FmProvider fmProvider = FmProvider.NO_SOUND;
         switch (systemType) {
             case GENESIS:
-                fmProvider = MdFmProvider.createInstance(region, SAMPLE_RATE_HZ);
+                fmProvider = MdFmProvider.createInstance(region, AbstractSoundManager.audioFormat);
                 break;
             case SMS:
                 if (Sms.ENABLE_FM) {
-                    fmProvider = Ym2413Provider.createInstance(region, SAMPLE_RATE_HZ);
+                    fmProvider = Ym2413Provider.createInstance(AbstractSoundManager.audioFormat);
                 }
                 break;
             case NES:

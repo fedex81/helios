@@ -20,18 +20,20 @@
 package omegadrive.sound.fm;
 
 import omegadrive.sound.SoundProvider;
+import omegadrive.util.SoundUtil;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jctools.queues.atomic.SpscAtomicArrayQueue;
 
+import javax.sound.sampled.AudioFormat;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class VariableSampleRateSource implements FmProvider {
 
     private static final Logger LOG = LogManager.getLogger(VariableSampleRateSource.class.getSimpleName());
-    static int AUDIO_SCALE_BITS = 5;
+    final static int DEFAULT_AUDIO_SCALE_BITS = 5;
     protected double microsPerOutputSample;
     protected double microsPerInputSample;
     protected double sourceSampleRate;
@@ -41,17 +43,22 @@ public abstract class VariableSampleRateSource implements FmProvider {
             new SpscAtomicArrayQueue<>(SoundProvider.SAMPLE_RATE_HZ);
     private AtomicInteger queueLen = new AtomicInteger();
     private AudioRateControl audioRateControl;
-    private int bufferSize;
     private int sampleRatePerFrame = 0;
+    private final int audioScaleBits;
 
-    protected VariableSampleRateSource(double sourceSampleRate, double outputSampleRate, int bufferSize, String sourceName) {
-        this.bufferSize = bufferSize;
-        this.outputSampleRate = outputSampleRate;
+    protected VariableSampleRateSource(double sourceSampleRate, AudioFormat audioFormat, String sourceName) {
+        this(sourceSampleRate, audioFormat, sourceName, DEFAULT_AUDIO_SCALE_BITS);
+    }
+
+    protected VariableSampleRateSource(double sourceSampleRate, AudioFormat audioFormat,
+                                       String sourceName, int audioScaleBits) {
+        this.outputSampleRate = audioFormat.getSampleRate();
         this.sourceSampleRate = sourceSampleRate;
         this.microsPerOutputSample = (1_000_000.0 / outputSampleRate);
         this.microsPerInputSample = (1_000_000.0 / sourceSampleRate);
         this.fmCalcsPerMicros = microsPerOutputSample;
-        this.audioRateControl = new AudioRateControl(sourceName, bufferSize);
+        this.audioRateControl = new AudioRateControl(sourceName, SoundUtil.getMonoSamplesBufferSize(audioFormat));
+        this.audioScaleBits = audioScaleBits;
     }
 
     protected abstract void spinOnce();
@@ -66,21 +73,23 @@ public abstract class VariableSampleRateSource implements FmProvider {
     public int update(int[] buf_lr, int offset, int count) {
         offset <<= 1;
         int end = (count << 1) + offset;
-        int sample, sampleNum;
+        int rsample, lsample;
+        int sampleNum;
         Integer isample;
         final int initialQueueSize = queueLen.get();
         int queueIndicativeLen = initialQueueSize;
         for (int i = offset; i < end && queueIndicativeLen > 0; i += 2) {
-            isample = sampleQueue.poll();
+            isample = sampleQueue.peek();
             if (isample == null) {
                 LOG.debug("Null sample QL{} P{}", queueIndicativeLen, i);
                 break;
             }
-            sample = isample;
-            sample <<= AUDIO_SCALE_BITS;
+            sampleQueue.remove();
+            lsample = (short) (isample & 0xFFFF);
+            rsample = (short) (lsample - (short) ((isample >> 16) & 0xFFFF)); // diff = l - r, r = l - diff
             queueIndicativeLen = queueLen.decrementAndGet();
-            buf_lr[i] = sample;
-            buf_lr[i + 1] = sample;
+            buf_lr[i] = lsample << audioScaleBits;
+            buf_lr[i + 1] = rsample << audioScaleBits;
         }
         sampleNum = initialQueueSize - queueIndicativeLen;
         return sampleNum;

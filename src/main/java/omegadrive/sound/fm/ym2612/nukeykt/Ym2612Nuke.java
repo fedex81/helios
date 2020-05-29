@@ -19,7 +19,6 @@
 
 package omegadrive.sound.fm.ym2612.nukeykt;
 
-import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.fm.VariableSampleRateSource;
 import omegadrive.sound.fm.ym2612.Ym2612RegSupport;
@@ -27,6 +26,7 @@ import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.sound.sampled.AudioFormat;
 import java.io.Serializable;
 import java.util.Arrays;
 
@@ -44,6 +44,8 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     private static final Logger LOG = LogManager.getLogger(Ym2612Nuke.class.getSimpleName());
 
+    private final static int AUDIO_SCALE_BITS = 4;
+
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
     private Ym3438Context state;
@@ -51,12 +53,13 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     private double cycleAccum = 0;
 
-    public Ym2612Nuke(int bufferSize) {
-        this(new IYm3438.IYm3438_Type(), bufferSize);
+    public Ym2612Nuke(AudioFormat audioFormat, double sourceSampleRate) {
+        this(new IYm3438.IYm3438_Type(), audioFormat, sourceSampleRate);
     }
 
-    private Ym2612Nuke(IYm3438.IYm3438_Type chip, int bufferSize) {
-        super(1278409, SoundProvider.SAMPLE_RATE_HZ, bufferSize, "fmNuke");
+    // sourceSampleRate ~= 7.6 mhz
+    private Ym2612Nuke(IYm3438.IYm3438_Type chip, AudioFormat audioFormat, double sourceSampleRate) {
+        super(sourceSampleRate / 6, audioFormat, "fmNuke", AUDIO_SCALE_BITS);
         this.ym3438 = new Ym3438();
         this.chip = chip;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
@@ -95,7 +98,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     private void addSample() {
         if (cycleAccum > fmCalcsPerMicros) {
-            super.addSample(Util.getFromIntegerCache(state.ym3438_sample));
+            super.addSample(Util.getFromIntegerCache(state.ym3438_diffLR_sampleL));
             cycleAccum -= fmCalcsPerMicros;
         }
     }
@@ -120,8 +123,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
                 sampleL += state.ym3438_accm[j][0];
                 sampleR += state.ym3438_accm[j][1];
             }
-            //mono
-            state.ym3438_sample = (sampleL + sampleR) >> 1;
+            state.ym3438_diffLR_sampleL = (((sampleL - sampleR) & 0xFFFF) << 16) | (sampleL & 0xFFFF);
         }
     }
 
@@ -145,13 +147,13 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
         private static final long serialVersionUID = -2921159132727518547L;
 
         int ym3438_cycles = 0;
-        int ym3438_sample = 0;
+        int ym3438_diffLR_sampleL = 0;
         int[][] ym3438_accm = new int[24][2];
         IYm3438.IYm3438_Type chip;
 
         public void reset() {
             ym3438_cycles = 0;
-            ym3438_sample = 0;
+            ym3438_diffLR_sampleL = 0;
             Arrays.stream(ym3438_accm).forEach(row -> Arrays.fill(row, 0));
         }
     }

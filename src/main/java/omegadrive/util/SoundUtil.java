@@ -33,7 +33,7 @@ public class SoundUtil {
     private static Logger LOG = LogManager.getLogger(SoundUtil.class.getSimpleName());
 
     public static byte ZERO_BYTE = (byte) 0;
-    public static long DEFAULT_BUFFER_SIZE_MS = 50; //was 100 check
+    public static long DEFAULT_BUFFER_SIZE_MS = 70;
 
     private static int DEFAULT_PSG_SHIFT_BITS = 6;
     public static double PSG_ATTENUATION = Double.valueOf(System.getProperty("sound.psg.attenuation", "1.0"));
@@ -98,8 +98,13 @@ public class SoundUtil {
         return bytes - (bytes % blockSize);
     }
 
-    public static int getAudioLineBufferSize(AudioFormat audioFormat, RegionDetector.Region r) {
+    //as in bytes for the underlying dataLine
+    public static int getAudioLineBufferSize(AudioFormat audioFormat) {
         return (int) millis2bytes(audioFormat, DEFAULT_BUFFER_SIZE_MS);
+    }
+
+    public static int getMonoSamplesBufferSize(AudioFormat audioFormat) {
+        return getAudioLineBufferSize(audioFormat) / audioFormat.getFrameSize();
     }
 
     public static SourceDataLine createDataLine(AudioFormat audioFormat) {
@@ -111,7 +116,7 @@ public class SoundUtil {
         } else {
             try {
                 line = (SourceDataLine) AudioSystem.getLine(info);
-                line.open(audioFormat, getAudioLineBufferSize(audioFormat, RegionDetector.Region.USA));
+                line.open(audioFormat, getAudioLineBufferSize(audioFormat));
                 lowerLatencyHack(line);
                 line.start();
                 LOG.info("SourceDataLine buffer: " + line.getBufferSize());
@@ -133,6 +138,54 @@ public class SoundUtil {
             } catch (Exception e) {
                 LOG.warn("Unable to set waitTime for SourceDataLine: {}", line.getClass().getCanonicalName());
             }
+        }
+    }
+
+
+    private static void intStereo14ToByteStereo16Mix(int[] input, byte[] output, int inputLen) {
+        for (int i = 0, k = 0; i < inputLen; i += 2, k += 4) {
+            output[k] = (byte) (input[i] & 0xFF); //left lsb
+            output[k + 1] = (byte) ((input[i] >> 8) & 0xFF); //left msb
+            output[k + 2] = (byte) (input[i + 1] & 0xFF); //left lsb
+            output[k + 3] = (byte) ((input[i + 1] >> 8) & 0xFF); //left msb
+        }
+    }
+
+    public static void mixFmPsgStereo(int[] fmStereo16, byte[] outputMono16, byte[] psgMono8, int inputLen) {
+        if (fmStereo16.length == 0) {
+            byteMono8ToByteStereo16Mix(psgMono8, outputMono16);
+        } else if (psgMono8.length == 0) {
+            intStereo14ToByteStereo16Mix(fmStereo16, outputMono16, inputLen);
+        } else {
+            intStereo14ToByteStereo16Mix(fmStereo16, outputMono16, psgMono8, inputLen);
+        }
+    }
+
+    private static void intStereo14ToByteStereo16Mix(int[] input, byte[] output, byte[] psgMono8, int inputLen) {
+        int j = 0; //psg index
+        int k = 0; //output index
+        for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
+            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
+            int psg = psgMono8[j];
+            psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
+            //avg fm and psg
+            int out16L = Math.min(Math.max((input[i] >> 1) + psg, Short.MIN_VALUE), Short.MAX_VALUE);
+            int out16R = Math.min(Math.max((input[i + 1] >> 1) + psg, Short.MIN_VALUE), Short.MAX_VALUE);
+            output[k] = (byte) (out16L & 0xFF); //lsb left
+            output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
+            output[k + 2] = (byte) (out16R & 0xFF); //lsb right
+            output[k + 3] = (byte) ((out16R >> 8) & 0xFF); //msb right
+        }
+    }
+
+    private static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output) {
+        for (int j = 0, i = 0; j < psgMono8.length; j++, i += 4) {
+            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
+            int psg16 = ((int) psgMono8[j]) << 7;
+            output[i] = (byte) (psg16 & 0xFF); //lsb
+            output[i + 1] = (byte) ((psg16 >> 8) & 0xFF); //msb
+            output[i + 2] = output[i];
+            output[i + 3] = output[i + 1];
         }
     }
 
