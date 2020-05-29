@@ -29,13 +29,12 @@ import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static omegadrive.cart.MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
+import static omegadrive.cart.MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS;
+
 public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMapper {
 
     private final static Logger LOG = LogManager.getLogger(MdBackupMemoryMapper.class.getSimpleName());
-
-    public static boolean SRAM_AVAILABLE;
-    public static long SRAM_START_ADDRESS;
-    public static long SRAM_END_ADDRESS;
 
     private static boolean verbose = false;
     private static String fileType = "srm";
@@ -58,15 +57,10 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         int size = !entry.hasEeprom() ? MdCartInfoProvider.DEFAULT_SRAM_BYTE_SIZE : entry.getEeprom().getSize();
         MdBackupMemoryMapper mapper = new MdBackupMemoryMapper(cart.getRomName(), size);
         mapper.baseMapper = baseMapper;
-        mapper.sramMode = sramMode;
+        mapper.sramMode = SramMode.READ_WRITE;
         mapper.cartridgeInfoProvider = cart;
         mapper.eeprom = entry.getEeprom();
         mapper.i2c = I2cEeprom.createInstance(entry);
-        SRAM_START_ADDRESS = mapper.cartridgeInfoProvider.getSramStart();
-        SRAM_START_ADDRESS = SRAM_START_ADDRESS > 0 ? SRAM_START_ADDRESS : MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS;
-        SRAM_END_ADDRESS = mapper.cartridgeInfoProvider.getSramEnd();
-        SRAM_END_ADDRESS = SRAM_END_ADDRESS > 0 ? SRAM_END_ADDRESS : MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
-        SRAM_AVAILABLE = true; //mapper.cartridgeInfoProvider.isSramEnabled();
         LOG.info("BackupMemoryMapper created, using folder: " + mapper.sramFolder);
         mapper.initBackupFileIfNecessary();
         return mapper;
@@ -104,7 +98,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private long readDataSram(long address, Size size) {
         address = address & 0xFF_FFFF;
         boolean sramRead = sramMode != SramMode.DISABLE;
-        sramRead &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
+        sramRead &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (sramRead) {
             initBackupFileIfNecessary();
             address = (address & 0xFFFF);
@@ -118,21 +112,21 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private void writeDataSram(long address, long data, Size size) {
         address = address & 0xFF_FFFF;
         boolean sramWrite = sramMode == SramMode.READ_WRITE;
-        sramWrite &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
-        if (sramWrite) {
+        sramWrite &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
+        if (!sramWrite) {
+            baseMapper.writeData(address, data, size);
+        } else if (sramWrite) {
             initBackupFileIfNecessary();
             address = (address & 0xFFFF);
             logInfo("SRAM write at: {} {}, data: {} ", address, size, data);
             Util.writeSram(sram, size, (int) address, data);
-        } else {
-            baseMapper.writeData(address, data, size);
         }
     }
 
     private long readDataEeprom(long address, Size size) {
         address = address & 0xFF_FFFF;
         boolean eepromRead = sramMode != SramMode.DISABLE;
-        eepromRead &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
+        eepromRead &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (eepromRead) {
             initBackupFileIfNecessary();
             long res = i2c.eeprom_i2c_out();
@@ -145,7 +139,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private void writeDataEeprom(long address, long data, Size size) {
         address = address & 0xFF_FFFF;
         boolean eepromWrite = sramMode == SramMode.READ_WRITE;
-        eepromWrite &= address >= SRAM_START_ADDRESS && address <= SRAM_END_ADDRESS;
+        eepromWrite &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (eepromWrite) {
             initBackupFileIfNecessary();
             i2c.eeprom_i2c_in((int) (data & 0xFF));
