@@ -31,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
-import java.util.stream.IntStream;
 
 import static omegadrive.vdp.model.BaseVdpProvider.VdpEventListener;
 import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_LINE_H40;
@@ -49,6 +48,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private VideoMode videoMode;
     private VideoMode newVideoMode;
     private VdpColorMapper colorMapper;
+
     private static final BiConsumer<SpriteDataHolder, SpriteDataHolder> updatePhase1DataFn =
             (src, dest) -> {
                 dest.verticalPos = src.verticalPos;
@@ -130,10 +130,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         this.scrollContextA = ScrollContext.createInstance(true);
         this.scrollContextB = ScrollContext.createInstance(false);
         vdpProvider.addVdpEventListener(this);
-        IntStream.range(0, spriteDataHoldersCurrent.length).forEach(i -> {
+        for (int i = 0; i < spriteDataHoldersCurrent.length; i++) {
             spriteDataHoldersCurrent[i] = new SpriteDataHolder();
             spriteDataHoldersNext[i] = new SpriteDataHolder();
-        });
+        }
         clearDataLine();
         clearDataFrame();
     }
@@ -202,17 +202,17 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         Arrays.fill(shadowHighlight, ShadowHighlightType.NORMAL);
         SpriteDataHolder[] temp = spriteDataHoldersCurrent;
         spriteDataHoldersCurrent = spriteDataHoldersNext;
-        IntStream.range(0, spriteDataHoldersCurrent.length).forEach(i -> {
+        for (int i = 0; i < spriteDataHoldersCurrent.length; i++) {
             temp[i].spriteNumber = -1;
-        });
+        }
         spriteDataHoldersNext = temp;
     }
 
     private void clearDataFrame() {
-        IntStream.range(0, spriteDataHoldersCurrent.length).forEach(i -> {
+        for (int i = 0; i < spriteDataHoldersCurrent.length; i++) {
             spriteDataHoldersCurrent[i].spriteNumber = -1;
             spriteDataHoldersNext[i].spriteNumber = -1;
-        });
+        }
         spritesFrame = 0;
     }
 
@@ -225,7 +225,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         if (spritesFrame >= maxSpritesPerFrame) {
             return;
         }
-        SpriteDataHolder holder = new SpriteDataHolder();
+        SpriteDataHolder holder = spriteDataHolder;
         int next = 0;
         int current;
         boolean stop = false;
