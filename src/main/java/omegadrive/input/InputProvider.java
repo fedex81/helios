@@ -26,7 +26,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.List;
 
 public interface InputProvider {
@@ -69,7 +68,7 @@ public interface InputProvider {
 
         @Override
         public List<String> getAvailableControllers() {
-            return Collections.emptyList();
+            return DEFAULT_CONTROLLERS;
         }
     };
 

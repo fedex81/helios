@@ -49,6 +49,7 @@ public class FileLoader {
     private static String MANIFEST_RELATIVE_PATH = "/META-INF/MANIFEST.MF";
     private static String BIOS_JAR_PATH = ".";
     public static String QUICK_SAVE_FILENAME = "quick_save";
+    public static String QUICK_SAVE_PATH = System.getProperty("quick.save.path", ".");
 
     public static FileFilter ROM_FILTER = new FileFilter() {
         @Override

@@ -43,6 +43,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static omegadrive.system.SystemProvider.SystemEvent.*;
+import static omegadrive.util.FileLoader.QUICK_SAVE_PATH;
 import static omegadrive.util.ScreenSizeHelper.*;
 
 public class SwingWindow implements DisplayWindow {
@@ -480,12 +481,12 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private void handleQuickLoadState() {
-        Path file = Paths.get(".", FileLoader.QUICK_SAVE_FILENAME);
+        Path file = Paths.get(QUICK_SAVE_PATH, FileLoader.QUICK_SAVE_FILENAME);
         handleSystemEvent(QUICK_LOAD, file, file.getFileName().toString());
     }
 
     private void handleQuickSaveState() {
-        Path p = Paths.get(".", FileLoader.QUICK_SAVE_FILENAME);
+        Path p = Paths.get(QUICK_SAVE_PATH, FileLoader.QUICK_SAVE_FILENAME);
         handleSystemEvent(QUICK_SAVE, p, p.getFileName().toString());
     }
 
