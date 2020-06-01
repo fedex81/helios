@@ -19,7 +19,6 @@
 
 package omegadrive.system.perf;
 
-import omegadrive.sound.javasound.JavaSoundManager;
 import omegadrive.system.Genesis;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
@@ -76,8 +75,8 @@ public class GenesisPerf extends Genesis {
             long frameProcMs = Duration.ofNanos(frameProcessingNs).toMillis();
             long prevP = samplesAudioProd;
             long prevC = samplesAudioCons;
-            samplesAudioProd = JavaSoundManager.samplesProducedCount;
-            samplesAudioCons = JavaSoundManager.samplesConsumedCount;
+            samplesAudioProd = 0;//JavaSoundManager.samplesProducedCount;
+            samplesAudioCons = 0; //JavaSoundManager.samplesConsumedCount;
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("Last 1s duration in ms %d, errorPerc %f%n", lastSecLenMs, 100 - (100 * lastSecLenMs / 1000.0)));
             sb.append(String.format("helios cycles: %d, frameProcMs: %d, sleepMs %d%n", totalCycles, frameProcMs, waitMs));

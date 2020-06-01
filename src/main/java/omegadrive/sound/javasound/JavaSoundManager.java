@@ -21,6 +21,7 @@ package omegadrive.sound.javasound;
 
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.system.perf.Telemetry;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
@@ -36,13 +37,15 @@ public class JavaSoundManager extends AbstractSoundManager {
 
     public static int sleepTotal = 0;
     public static final long EMPTY_QUEUE_SLEEP_NS = 500_000;
-    public volatile static int samplesProducedCount = 0;
-    public volatile static int samplesConsumedCount = 0;
 
     volatile int[] fm_buf_ints;
     volatile byte[] mix_buf_bytes16Stereo;
     volatile byte[] psg_buf_bytes;
     volatile int fmSizeMono;
+
+    //stats
+    private Telemetry telemetry;
+    private volatile int samplesProducedCount, samplesConsumedCount, audioThreadLoops, audioThreadEmptyLoops;
 
     @Override
     public void init() {
@@ -54,6 +57,7 @@ public class JavaSoundManager extends AbstractSoundManager {
         hasPsg = getPsg() != PsgProvider.NO_SOUND;
         fm_buf_ints = hasFm ? fm_buf_ints : EMPTY_FM;
         psg_buf_bytes = hasPsg ? psg_buf_bytes : EMPTY_PSG;
+        telemetry = Telemetry.getInstance();
     }
 
     private int playOnceStereo(int fmBufferLenMono) {
@@ -96,10 +100,13 @@ public class JavaSoundManager extends AbstractSoundManager {
                 try {
                     do {
                         int res = playOnceStereo(fmSizeMono);
-                        samplesConsumedCount += res;
+                        samplesConsumedCount += (res >> 1); //mono samples
                         if (res <= 10) {
+                            audioThreadEmptyLoops++;
                             LockSupport.parkNanos(EMPTY_QUEUE_SLEEP_NS);
+
                         }
+                        audioThreadLoops++;
                     } while (!close);
                 } catch (Exception | Error e) {
                     LOG.error("Unexpected sound error, stopping", e);
@@ -113,7 +120,18 @@ public class JavaSoundManager extends AbstractSoundManager {
 
     @Override
     public void onNewFrame() {
+        doStats();
         fm.onNewFrame();
+    }
+
+    private void doStats() {
+        if (Telemetry.enable) {
+            telemetry.addSample("audioThreadLoops", audioThreadLoops);
+            telemetry.addSample("audioThreadEmptyLoops", audioThreadEmptyLoops);
+            telemetry.addSample("audioSamplesConsumed", samplesConsumedCount);
+            telemetry.addSample("audioSamplesProduced", samplesProducedCount);
+        }
+        audioThreadLoops = audioThreadEmptyLoops = samplesConsumedCount = samplesProducedCount = 0;
     }
 }
 

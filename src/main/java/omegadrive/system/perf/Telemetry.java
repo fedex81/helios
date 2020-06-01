@@ -99,6 +99,14 @@ public class Telemetry {
         telemetryFile = null;
     }
 
+    public Optional<String> newFrame(double lastFps, double driftNs) {
+        addFpsSample(lastFps);
+        addSample("driftNs", driftNs / 1000d);
+        Optional<String> os = getNewStats();
+        newFrame();
+        return os;
+    }
+
     public void newFrame() {
         frameCounter++;
         if (!enable) {

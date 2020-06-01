@@ -344,10 +344,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
 
         lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - startNs));
-        telemetry.addFpsSample(lastFps);
-        telemetry.addSample("driftNs", driftNs / 1000d);
-        telemetry.getNewStats().ifPresent(st -> stats = Optional.of(st));
-        telemetry.newFrame();
+        telemetry.newFrame(lastFps, driftNs / 1000d).ifPresent(st -> stats = Optional.of(st));
         startNs = nowNs;
         return stats;
     }
