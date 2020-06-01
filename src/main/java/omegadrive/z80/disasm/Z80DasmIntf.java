@@ -3,18 +3,9 @@ package omegadrive.z80.disasm;
 // copyright-holders:Juergen Buchmueller
 
 /**
- * z80dasm.c
- * Portable Z80 disassembler
- * <p>
- * <p>
  * Java translation
  * Federico Berti 2020
  */
-/**
- * Java translation
- * Federico Berti 2020
- */
-
 import static omegadrive.z80.disasm.Z80DasmIntf.e_mnemonics.*;
 
 public class Z80DasmIntf {
