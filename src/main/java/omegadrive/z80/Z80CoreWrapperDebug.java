@@ -21,15 +21,11 @@ package omegadrive.z80;
 
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
-import omegadrive.z80.disasm.Z80Decoder;
-import omegadrive.z80.disasm.Z80Disasm;
-import omegadrive.z80.disasm.Z80MemContext;
+import omegadrive.z80.disasm.Z80Dasm;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import z80core.Z80State;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.IntStream;
 
 public class Z80CoreWrapperDebug extends Z80CoreWrapper {
@@ -37,14 +33,13 @@ public class Z80CoreWrapperDebug extends Z80CoreWrapper {
     private final static Logger LOG = LogManager.getLogger(Z80CoreWrapperDebug.class.getSimpleName());
     public static boolean verbose = false;
 
-    protected Z80Disasm z80Disasm;
+    protected Z80Dasm z80Disasm;
     protected int logAddressAccess = -1;
     protected StringBuilder sb = new StringBuilder();
     private int lastN = 100;
     private int index = 0;
     private Z80Helper.Z80StateExt current = new Z80Helper.Z80StateExt();
     private Z80Helper.Z80StateExt[] traceArray = new Z80Helper.Z80StateExt[lastN];
-    private Map<Integer, String> disasmMap = new HashMap<>();
     private Z80MemIoOps.Z80MemIoOpsDbg memIoOpsDbg;
     private boolean m68kActivity = false;
 
@@ -59,8 +54,7 @@ public class Z80CoreWrapperDebug extends Z80CoreWrapper {
 
     private static Z80CoreWrapper setupInternalDbg(Z80CoreWrapperDebug w, Z80State z80State) {
         setupInternal(w, z80State);
-        Z80MemContext memContext = Z80MemContext.createInstance(w.z80BusProvider);
-        w.z80Disasm = new Z80Disasm(memContext, new Z80Decoder(memContext));
+        w.z80Disasm = new Z80Dasm();
         return w;
     }
 
@@ -71,7 +65,7 @@ public class Z80CoreWrapperDebug extends Z80CoreWrapper {
         //      dumpHistory();
         // dumpCurrent()
         sb.setLength(0); //avoid mem leak
-        LOG.info(disasmMap.computeIfAbsent(z80Core.getRegPC(), k -> Z80Helper.dumpInfo(z80Disasm, memIoOps, k)));
+        LOG.info(z80Disasm.disassemble(z80Core.getRegPC(), memIoOpsDbg));
         int res = super.executeInstruction();
         handlePostRunState();
         return res;
@@ -95,12 +89,12 @@ public class Z80CoreWrapperDebug extends Z80CoreWrapper {
     private void dumpHistory() {
         IntStream.range(0, lastN).forEach(i -> {
             int idx = (lastN + (index - i)) % lastN;
-            System.out.println(idx + ":" + Z80Helper.toStringExt(traceArray[idx], z80Disasm, memIoOps));
+            System.out.println(idx + ":" + Z80Helper.toStringExt(traceArray[idx], z80Disasm, memIoOpsDbg));
         });
     }
 
     private void dumpCurrent() {
-        System.out.println(index + "\n" + Z80Helper.toStringExt(traceArray[index], z80Disasm, memIoOps));
+        System.out.println(index + "\n" + Z80Helper.toStringExt(traceArray[index], z80Disasm, memIoOpsDbg));
     }
 
     @Override
