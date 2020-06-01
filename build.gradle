@@ -83,7 +83,7 @@ task copyRes {
             include "res/**"
         }
         into "$buildDir/packageDir"
-        exclude "**/*.col"
+        exclude "**/*.col", "**/site/**"
     }
     copy {
         from {
