@@ -37,7 +37,7 @@ import java.nio.file.Paths;
 @Ignore
 public class VdpRenderCompareTest extends VdpRenderTest {
 
-    private static final boolean SHOW_IMAGES_ON_FAILURE = true;
+    private static boolean SHOW_IMAGES_ON_FAILURE = true;
     public static String IMG_EXT = "bmp";
     public static String DOT_EXT = "." + IMG_EXT + ".zip";
     private static Path compareFolderPath = Paths.get(saveStateFolder, "compare");
@@ -73,8 +73,9 @@ public class VdpRenderCompareTest extends VdpRenderTest {
 
     @Test
     public void testCompareAll() {
+        SHOW_IMAGES_ON_FAILURE = true;
         File[] files = Paths.get(saveStateFolder).toFile().listFiles();
-        boolean showingFailures = false;
+        StringBuilder sb = new StringBuilder();
         for (File file : files) {
             if (file.isDirectory()) {
                 continue;
@@ -82,21 +83,24 @@ public class VdpRenderCompareTest extends VdpRenderTest {
             System.out.println("Testing: " + file);
             boolean res = testCompareOne(file.getName());
             if (res) {
+                sb.append("Mismatch: " + file + "\n");
                 System.out.println("Error: " + file);
+//                FileUtil.compressAndSaveToZipFile(file.toPath());
             }
-            showingFailures |= res;
         }
         System.out.println("Done");
-        if (showingFailures) {
+        if (SHOW_IMAGES_ON_FAILURE) {
             Util.waitForever();
+        } else {
+            Assert.assertTrue(sb.toString(), sb.length() == 0);
         }
     }
 
     @Test
     public void testCompare() {
-        boolean overwrite = true;
-        String name = "VECTORMA";
-        String ext = ".GS0".toLowerCase();
+        boolean overwrite = false;
+        String name = "s2_int";
+        String ext = ".gs0".toLowerCase();
         if (overwrite) {
             testOverwriteBaselineImage(name + ext);
         }
@@ -154,8 +158,8 @@ public class VdpRenderCompareTest extends VdpRenderTest {
                 JFrame f1 = showImageFrame(scaleImage(baseLine, 4), "BASELINE_" + saveName + DOT_EXT);
                 JFrame f2 = showImageFrame(scaleImage(actual, 4), saveName);
                 JFrame f3 = showImageFrame(scaleImage(diffImage, 4), "DIFF_" + saveName + " (Diffs are non white pixels)");
-                return true;
             }
+            return true;
         }
         return false;
     }

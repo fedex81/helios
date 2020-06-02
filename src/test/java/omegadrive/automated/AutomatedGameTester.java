@@ -41,7 +41,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_ROM;
-import static omegadrive.system.SystemProvider.SystemEvent.NEW_ROM;
 
 public class AutomatedGameTester {
 
@@ -50,10 +49,10 @@ public class AutomatedGameTester {
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
     private static String romFolder =
-            "/home/fede/roms/gb";
+//            "/home/fede/roms/gb";
 //            "/home/fede/roms/nes";
 //            "/home/fede/roms/md";
-//            "/home/fede/roms/md/nointro";
+            "/home/fede/roms/md/nointro";
 //            "/home/fede/roms/smsgg";
 //            "/home/fede/roms/msx";
 //            "/data/emu/roms";
@@ -100,6 +99,7 @@ public class AutomatedGameTester {
     static {
         System.setProperty("helios.headless", "false");
         System.setProperty("md.sram.folder", "/tmp/helios/md/sram");
+        new File(System.getProperty("md.sram.folder")).mkdirs();
     }
 
     public static void main(String[] args) throws Exception {
@@ -175,70 +175,6 @@ public class AutomatedGameTester {
             System.out.println("Skipping: " + str);
         }
         return skip;
-    }
-
-    private void testAll(boolean random) throws Exception {
-        Path folder = Paths.get(romFolder);
-        List<Path> testRoms = Files.list(folder).filter(testVerifiedRomsPredicate).sorted().collect(Collectors.toList());
-        if (random) {
-            Collections.shuffle(testRoms);
-            Collections.shuffle(testRoms);
-            Collections.shuffle(testRoms);
-        }
-        testRoms(testRoms);
-    }
-
-    private void testList() throws Exception {
-        String[] arr = romList.split(";");
-        List<String> list = Arrays.stream(arr).map(String::trim).sorted().collect(Collectors.toList());
-        Path folder = Paths.get(romFolder);
-        List<Path> testRoms = Files.list(folder).filter(p -> list.contains(p.getFileName().toString())).
-                sorted().collect(Collectors.toList());
-        testRoms(testRoms);
-    }
-
-    private void testRoms(List<Path> testRoms) {
-        System.out.println("Roms to test: " + testRoms.size());
-        System.out.println(header);
-        boolean skip = true;
-        File logFile = new File("./test_output.log");
-        long logFileLen = 0;
-        SystemProvider system;
-        for (Path rom : testRoms) {
-            skip &= shouldSkip(rom);
-            if (skip) {
-                continue;
-            }
-            system = SystemLoader.getInstance().createSystemProvider(rom);
-//            System.out.println("Testing: " + rom.getFileName().toString());
-            system.init();
-            system.handleSystemEvent(NEW_ROM, rom);
-//            genesisProvider.setFullScreen(true);
-            Util.sleep(BOOT_DELAY_MS);
-            boolean boots = false;
-            boolean soundOk = false;
-            boolean tooManyErrors = false;
-            int totalDelay = BOOT_DELAY_MS;
-            if (system.isRomRunning()) {
-                boots = true;
-                do {
-                    tooManyErrors = checkLogFileSize(logFile, rom.getFileName().toString(), logFileLen);
-                    soundOk = system.isSoundWorking();
-                    if (!soundOk) { //wait a bit longer
-                        Util.sleep(BOOT_DELAY_MS);
-                        totalDelay += BOOT_DELAY_MS;
-                        soundOk = system.isSoundWorking();
-                    }
-                } while (!soundOk && totalDelay < AUDIO_DELAY_MS && !tooManyErrors);
-                system.handleSystemEvent(CLOSE_ROM, null);
-            }
-            System.out.println(rom.getFileName().toString() + ";" + boots + ";" + soundOk);
-            logFileLen = logFileLength(logFile);
-            Util.sleep(2000);
-            if (tooManyErrors) {
-                break;
-            }
-        }
     }
 
     private long logFileLength(File file) {

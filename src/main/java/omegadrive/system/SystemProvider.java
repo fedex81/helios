@@ -39,8 +39,6 @@ public interface SystemProvider extends Device {
         return getRegion().getVersionCode();
     }
 
-    boolean isSoundWorking();
-
     String getRomName();
 
     SystemLoader.SystemType getSystemType();

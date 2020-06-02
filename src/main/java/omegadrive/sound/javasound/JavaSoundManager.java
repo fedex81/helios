@@ -74,7 +74,6 @@ public class JavaSoundManager extends AbstractSoundManager {
             Arrays.fill(mix_buf_bytes16Stereo, SoundUtil.ZERO_BYTE);
             //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
             SoundUtil.mixFmPsgStereo(fm_buf_ints, mix_buf_bytes16Stereo, psg_buf_bytes, fmBufferLenStereo);
-            updateSoundWorking(mix_buf_bytes16Stereo);
             if (!isMute()) {
                 SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, bufferBytesStereo);
             }
@@ -99,9 +98,9 @@ public class JavaSoundManager extends AbstractSoundManager {
 
                 try {
                     do {
-                        int res = playOnceStereo(fmSizeMono);
-                        samplesConsumedCount += (res >> 1); //mono samples
-                        if (res <= 10) {
+                        int actualStereo = playOnceStereo(fmSizeMono);
+                        samplesConsumedCount += (actualStereo >> 1); //mono samples
+                        if (actualStereo <= 10) {
                             audioThreadEmptyLoops++;
                             LockSupport.parkNanos(EMPTY_QUEUE_SLEEP_NS);
 

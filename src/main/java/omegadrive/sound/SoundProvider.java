@@ -23,10 +23,13 @@ import omegadrive.Device;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.SoundUtil;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import javax.sound.sampled.AudioFormat;
 
 public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener {
     Logger LOG = LogManager.getLogger(SoundProvider.class.getSimpleName());
@@ -38,15 +41,13 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
 
     int SAMPLE_RATE_HZ = Integer.valueOf(System.getProperty("audio.sample.rate.hz", "44100"));
 
-    int OVERRIDE_AUDIO_BUFFER_LEN_MS = Integer.valueOf(System.getProperty("audio.buffer.length.ms", "0"));
+    int DEFAULT_BUFFER_SIZE_MS = 50;
+    int AUDIO_BUFFER_LEN_MS = Integer.valueOf(System.getProperty("audio.buffer.length.ms",
+            String.valueOf(DEFAULT_BUFFER_SIZE_MS)));
 
     boolean ENABLE_SOUND = Boolean.valueOf(System.getProperty("helios.enable.sound", "true"));
 
-    boolean MD_NUKE_AUDIO = Boolean.valueOf(System.getProperty("md.nuke.audio", "false"));
-
-    int OVERRIDE_AUDIO_BUFFER_SIZE = OVERRIDE_AUDIO_BUFFER_LEN_MS > 0 ?
-            (int) (SAMPLE_RATE_HZ / 1000d * OVERRIDE_AUDIO_BUFFER_LEN_MS)
-            : 0;
+    boolean MD_NUKE_AUDIO = Boolean.valueOf(System.getProperty("md.nuke.audio", "true"));
 
     int[] EMPTY_FM = new int[0];
     byte[] EMPTY_PSG = new byte[0];
@@ -55,22 +56,12 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
 
     FmProvider getFm();
 
-    static int getPsgBufferByteSize(int fps) {
-        return getFmBufferIntSize(fps) / 2;
+    static int getPsgBufferByteSize(AudioFormat audioFormat) {
+        return getFmBufferIntSize(audioFormat) >> 1;
     }
 
-    static int getFmBufferIntSize(int fps) {
-        if (OVERRIDE_AUDIO_BUFFER_SIZE > 0) {
-            int size = OVERRIDE_AUDIO_BUFFER_SIZE;
-            size += size % 2 == 1 ? 1 : 0;
-            return size;
-        }
-        int res = 2 * SAMPLE_RATE_HZ / fps;
-        return res % 2 == 0 ? res : res + 1;
-    }
-
-    static double getPsgSoundClockScaled(RegionDetector.Region r) {
-        return (RegionDetector.Region.EUROPE != r ? NTSC_PSG_CLOCK : PAL_PSG_CLOCK) / 32d;
+    static int getFmBufferIntSize(AudioFormat audioFormat) {
+        return SoundUtil.getStereoSamplesBufferSize(audioFormat);
     }
 
     static double getPsgSoundClock(RegionDetector.Region r) {
@@ -136,8 +127,4 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
     void setEnabled(boolean mute);
 
     void setEnabled(Device device, boolean enabled);
-
-    default boolean isSoundWorking() {
-        return false;
-    }
 }

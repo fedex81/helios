@@ -61,7 +61,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
     public static AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
     protected SourceDataLine dataLine;
     private boolean mute = false;
-    private volatile boolean isSoundWorking = false;
     private SystemLoader.SystemType type;
     protected RegionDetector.Region region;
 
@@ -129,20 +128,11 @@ public abstract class AbstractSoundManager implements SoundProvider {
         this.region = region;
         dataLine = SoundUtil.createDataLine(audioFormat);
         soundPersister = new FileSoundPersister();
-        fmSize = SoundProvider.getFmBufferIntSize(region.getFps());
-        psgSize = SoundProvider.getPsgBufferByteSize(region.getFps());
+        fmSize = SoundProvider.getFmBufferIntSize(audioFormat);
+        psgSize = SoundProvider.getPsgBufferByteSize(audioFormat);
         executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
         executorService.submit(getRunnable(dataLine, region));
         LOG.info("Output audioFormat: " + audioFormat + ", bufferSize: " + fmSize);
-    }
-
-    protected void updateSoundWorking(byte[] b) {
-        if (isSoundWorking) {
-            return;
-        }
-        for (int i = 0; i < b.length; i++) {
-            isSoundWorking |= b[i] != 0;
-        }
     }
 
     public void setSystemType(SystemLoader.SystemType type) {
@@ -225,10 +215,5 @@ public abstract class AbstractSoundManager implements SoundProvider {
                 LOG.info("PSG enabled: {}", enabled);
             }
         }
-    }
-
-    @Override
-    public boolean isSoundWorking() {
-        return isSoundWorking;
     }
 }

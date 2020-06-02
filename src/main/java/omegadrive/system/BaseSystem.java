@@ -212,11 +212,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     }
 
     @Override
-    public boolean isSoundWorking() {
-        return sound.isSoundWorking();
-    }
-
-    @Override
     public RegionDetector.Region getRegion() {
         return region;
     }

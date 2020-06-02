@@ -19,6 +19,7 @@
 
 package omegadrive.util;
 
+import omegadrive.sound.javasound.AbstractSoundManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,7 +34,6 @@ public class SoundUtil {
     private static Logger LOG = LogManager.getLogger(SoundUtil.class.getSimpleName());
 
     public static byte ZERO_BYTE = (byte) 0;
-    public static long DEFAULT_BUFFER_SIZE_MS = 70;
 
     private static int DEFAULT_PSG_SHIFT_BITS = 6;
     public static double PSG_ATTENUATION = Double.valueOf(System.getProperty("sound.psg.attenuation", "1.0"));
@@ -100,11 +100,15 @@ public class SoundUtil {
 
     //as in bytes for the underlying dataLine
     public static int getAudioLineBufferSize(AudioFormat audioFormat) {
-        return (int) millis2bytes(audioFormat, DEFAULT_BUFFER_SIZE_MS);
+        return (int) millis2bytes(audioFormat, AbstractSoundManager.AUDIO_BUFFER_LEN_MS);
     }
 
     public static int getMonoSamplesBufferSize(AudioFormat audioFormat) {
         return getAudioLineBufferSize(audioFormat) / audioFormat.getFrameSize();
+    }
+
+    public static int getStereoSamplesBufferSize(AudioFormat audioFormat) {
+        return getMonoSamplesBufferSize(audioFormat) << 1;
     }
 
     public static SourceDataLine createDataLine(AudioFormat audioFormat) {
@@ -119,7 +123,7 @@ public class SoundUtil {
                 line.open(audioFormat, getAudioLineBufferSize(audioFormat));
                 lowerLatencyHack(line);
                 line.start();
-                LOG.info("SourceDataLine buffer: " + line.getBufferSize());
+                LOG.info("SourceDataLine buffer (bytes): " + line.getBufferSize());
             } catch (LineUnavailableException lue) {
                 LOG.error("Unable to open audio line.");
             }
