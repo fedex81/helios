@@ -218,12 +218,6 @@ public class MdVdpTestUtil {
             }
 
             @Override
-            public boolean isSoundWorking() {
-                return false;
-            }
-
-
-            @Override
             public void init() {
 
             }

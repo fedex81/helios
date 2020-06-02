@@ -205,11 +205,6 @@ public class SystemLoader {
             }
 
             @Override
-            public boolean isSoundWorking() {
-                return false;
-            }
-
-            @Override
             public String getRomName() {
                 return null;
             }
