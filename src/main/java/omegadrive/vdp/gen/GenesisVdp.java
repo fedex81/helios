@@ -454,6 +454,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                     entry.vdpRamMode, entry.data, entry.addressRegister);
             fifo.pop();
             doWrite = false;
+            evaluateVdpBusyState();
         }
         boolean byteWide = entry.vdpRamMode == VramMode.vramWrite;
         if (byteWide && !entry.firstByteWritten) {
