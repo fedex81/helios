@@ -58,10 +58,10 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
         int res = 0;
         sb.setLength(0);
         try {
-            printVerbose();
-            printCpuStateIfVerbose("");
             storeM68kState(current);
             res = super.runInstruction();
+            printVerbose();
+            printCpuStateIfVerbose("");
             handlePostRunState();
             stepBarrier.await();
         } catch (Exception e) {
