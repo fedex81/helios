@@ -44,12 +44,14 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     private static final Logger LOG = LogManager.getLogger(Ym2612Nuke.class.getSimpleName());
 
-    private final static int AUDIO_SCALE_BITS = 4;
+    private final static int AUDIO_SCALE_BITS = 5;
 
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
     private Ym3438Context state;
     private Ym2612RegSupport regSupport;
+
+    private int prevL, prevR;
 
     private double cycleAccum = 0;
 
@@ -123,8 +125,19 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
                 sampleL += state.ym3438_accm[j][0];
                 sampleR += state.ym3438_accm[j][1];
             }
-            state.ym3438_diffLR_sampleL = (((sampleL - sampleR) & 0xFFFF) << 16) | (sampleL & 0xFFFF);
+            filterAndSet(sampleL, sampleR);
         }
+    }
+
+    //1st order lpf: p[n]=αp[n−1]+(1−α)pi[n] with α = 0.5
+    //The cutoff frequency fco = fs*(1−α)/2πα, where fs is your sampling frequency.
+    //fco ~= 8.5 khz
+    private void filterAndSet(int sampleL, int sampleR) {
+        sampleL = (sampleL + prevL) >> 1;
+        sampleR = (sampleR + prevR) >> 1;
+        state.ym3438_diffLR_sampleL = (((sampleL - sampleR) & 0xFFFF) << 16) | (sampleL & 0xFFFF);
+        prevL = sampleL;
+        prevR = sampleR;
     }
 
     public void setState(Ym3438Context state) {

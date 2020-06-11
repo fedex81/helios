@@ -84,7 +84,7 @@ public abstract class VariableSampleRateSource implements FmProvider {
                 LOG.debug("Null sample QL{} P{}", queueIndicativeLen, i);
                 break;
             }
-            sampleQueue.remove();
+            sampleQueue.poll();
             lsample = (short) (isample & 0xFFFF);
             rsample = (short) (lsample - (short) ((isample >> 16) & 0xFFFF)); // diff = l - r, r = l - diff
             queueIndicativeLen = queueLen.decrementAndGet();

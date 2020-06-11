@@ -121,6 +121,8 @@ public class SoundUtil {
             try {
                 line = (SourceDataLine) AudioSystem.getLine(info);
                 line.open(audioFormat, getAudioLineBufferSize(audioFormat));
+                //TODO check
+//                line.open(audioFormat, (int) align((int) (getAudioLineBufferSize(audioFormat) * 1.5), 4));
                 lowerLatencyHack(line);
                 line.start();
                 LOG.info("SourceDataLine buffer (bytes): " + line.getBufferSize());
@@ -172,9 +174,11 @@ public class SoundUtil {
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
             int psg = psgMono8[j];
             psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
+            int out16L = (input[i] + psg) << 1;
+            int out16R = (input[i + 1] + psg) << 1;
             //avg fm and psg
-            int out16L = Math.min(Math.max((input[i] >> 1) + psg, Short.MIN_VALUE), Short.MAX_VALUE);
-            int out16R = Math.min(Math.max((input[i + 1] >> 1) + psg, Short.MIN_VALUE), Short.MAX_VALUE);
+            out16L = Math.min(Math.max(out16L, Short.MIN_VALUE), Short.MAX_VALUE);
+            out16R = Math.min(Math.max(out16R, Short.MIN_VALUE), Short.MAX_VALUE);
             output[k] = (byte) (out16L & 0xFF); //lsb left
             output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
             output[k + 2] = (byte) (out16R & 0xFF); //lsb right
