@@ -23,6 +23,7 @@ import omegadrive.util.VideoMode;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.gen.VdpScrollHandler.ScrollContext;
 import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.RenderType;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpRenderHandler;
 import org.junit.Ignore;
@@ -85,8 +86,8 @@ public class VdpScrollHandlerTest {
 
         ScrollContext sca = new ScrollContext();
         ScrollContext scb = new ScrollContext();
-        sca.planeA = true;
-        scb.planeA = false;
+        sca.planeType = RenderType.PLANE_A;
+        scb.planeType = RenderType.PLANE_B;
         ScrollContext[] contexts = {sca, scb};
 
         for (int planeSizeReg : planeSizeRegVals) {
@@ -95,7 +96,7 @@ public class VdpScrollHandlerTest {
                 for (VdpScrollHandler.HSCROLL hscroll : VdpScrollHandler.HSCROLL.values()) {
                     vdp.updateRegisterData(MODE_3, vscroll.getRegValue() << 2 | hscroll.getRegValue());
                     for (ScrollContext sc : contexts) {
-                        boolean isPlaneA = sc.planeA;
+                        boolean isPlaneA = sc.planeType == RenderType.PLANE_A;
                         int nameTable = isPlaneA ? planeANameTable : planeBNameTable;
                         for (int line = 0; line < vm.getDimension().height; line++) {
 //                            renderHandler.renderPlane(line, nameTable, sc);

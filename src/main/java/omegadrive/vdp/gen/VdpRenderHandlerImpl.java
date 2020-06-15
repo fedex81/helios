@@ -69,10 +69,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private int[] linearScreen = new int[0];
     private SpriteDataHolder spriteDataHolder = new SpriteDataHolder();
     private int spriteTableLocation = 0;
-    private boolean lineShowWindowPlane = false;
     private int spritePixelLineCount;
     private ScrollContext scrollContextA;
     private ScrollContext scrollContextB;
+    private ScrollContext scrollContextW;
+    private WindowPlaneContext windowPlaneContext;
     private InterlaceMode interlaceMode = InterlaceMode.NONE;
     private int[] vram;
     private int[] cram;
@@ -127,8 +128,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         this.vram = memoryInterface.getVram();
         this.cram = memoryInterface.getCram();
         this.javaPalette = memoryInterface.getJavaColorPalette();
-        this.scrollContextA = ScrollContext.createInstance(true);
-        this.scrollContextB = ScrollContext.createInstance(false);
+        this.scrollContextA = ScrollContext.createInstance(RenderType.PLANE_A);
+        this.scrollContextB = ScrollContext.createInstance(RenderType.PLANE_B);
+        this.scrollContextW = ScrollContext.createInstance(RenderType.WINDOW_PLANE);
+        this.windowPlaneContext = new WindowPlaneContext();
         vdpProvider.addVdpEventListener(this);
         for (int i = 0; i < spriteDataHoldersCurrent.length; i++) {
             spriteDataHoldersCurrent[i] = new SpriteDataHolder();
@@ -409,16 +412,16 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 // which results in $30, the proper value for this register.
 //	SA16 is only valid if 128 KB mode is enabled, and allows for rebasing the Plane A nametable to the second 64 KB of VRAM.
     private void renderPlaneA(int line) {
-        if (lineShowWindowPlane) {
+        if (windowPlaneContext.lineWindow) { //entire line is window plane
             return;
         }
         // TODO bit 3 for 128KB VRAM
-        renderPlane(line, VdpRenderHandler.getPlaneANameTableLocation(vdpProvider), scrollContextA);
+        renderScrollPlane(line, VdpRenderHandler.getPlaneANameTableLocation(vdpProvider),
+                scrollContextA, windowPlaneContext);
     }
 
-    protected void renderPlane(int line, int nameTableLocation, ScrollContext sc) {
+    protected void renderScrollPlane(int line, int nameTableLocation, ScrollContext sc, WindowPlaneContext wpc) {
         int limitHorTiles = VdpRenderHandler.getHorizontalTiles(videoMode.isH40());
-        final int cellHeight = interlaceMode.getVerticalCellPixelSize();
         int regB = vdpProvider.getRegisterData(MODE_3);
         int reg10 = vdpProvider.getRegisterData(PLANE_SIZE);
 
@@ -428,25 +431,33 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         sc.planeWidth = VdpRenderHandler.getHorizontalPlaneSize(reg10);
         sc.planeHeight = VdpRenderHandler.getVerticalPlaneSize(reg10);
 
-        int vScrollSizeMask = (sc.planeHeight << 3) - 1;
-        int hScrollPixelOffset = scrollHandler.getHorizontalScroll(line, sc);
+        final int startTwoCells = wpc.endHCell > 0 && wpc.endHCell < limitHorTiles
+                ? wpc.endHCell >> 1 : 0;
+        final int endTwoCells = wpc.startHCell > 0 ? wpc.startHCell >> 1 : limitHorTiles >> 1;
+        renderPlaneInternal(line, nameTableLocation, startTwoCells, endTwoCells, sc);
+    }
 
-        int[] plane = sc.planeA ? planeA : planeB;
-        TileDataHolder tileDataHolder = spriteDataHolder;
-
-        RenderType renderType = sc.planeA ? RenderType.PLANE_A : RenderType.PLANE_B;
-        RenderPriority highPrio = RenderPriority.getRenderPriority(renderType, true);
-        RenderPriority lowPrio = RenderPriority.getRenderPriority(renderType, false);
-
+    private void renderPlaneInternal(final int line, final int nameTableLocation,
+                                     final int startTwoCells, final int endTwoCells, ScrollContext sc) {
         int vScrollLineOffset, planeCellVOffset, planeLine;
-        final int totalTwoCells = limitHorTiles >> 1;
+        int vScrollSizeMask = (sc.planeHeight << 3) - 1;
+        boolean isScrollable = sc.vScrollType != null;
+        int hScrollPixelOffset = isScrollable ? scrollHandler.getHorizontalScroll(line, sc) : 0;
+        final int cellHeight = interlaceMode.getVerticalCellPixelSize();
 
-        for (int twoCell = 0; twoCell < totalTwoCells; twoCell++) {
-            vScrollLineOffset = scrollHandler.getVerticalScroll(twoCell, sc);
+        TileDataHolder tileDataHolder = spriteDataHolder;
+        RenderPriority highPrio = RenderPriority.getRenderPriority(sc.planeType, true);
+        RenderPriority lowPrio = RenderPriority.getRenderPriority(sc.planeType, false);
+        int[] plane = sc.planeType == RenderType.PLANE_A ? planeA :
+                (sc.planeType == RenderType.PLANE_B ? planeB : window);
+
+
+        for (int twoCell = startTwoCells; twoCell < endTwoCells; twoCell++) {
+            vScrollLineOffset = isScrollable ? scrollHandler.getVerticalScroll(twoCell, sc) : 0;
             planeLine = (vScrollLineOffset + line) & vScrollSizeMask;
             planeCellVOffset = (planeLine >> 3) * sc.planeWidth;
             int startPixel = twoCell << 4;
-            int currentPrio = 0;
+            int currentPrio;
             int rowCellBase = planeLine % 8; //cellHeight;
             int latestTileLocatorVram = -1;
             for (int pixel = startPixel; pixel < startPixel + 16; pixel++) {
@@ -535,11 +546,19 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         boolean legalHorizontal = hStartCell < hEndCell;
         boolean drawWindow = legalVertical || legalHorizontal;
 
+        windowPlaneContext.endHCell = windowPlaneContext.startHCell = 0;
+        windowPlaneContext.lineWindow = false;
         if (drawWindow) {
-            drawWindowPlane(line, hStartCell, hEndCell, isH40);
+            int nameTableLocation = VdpRenderHandler.getWindowPlaneNameTableLocation(vdpProvider, isH40);
+            int reg10 = vdpProvider.getRegisterData(PLANE_SIZE);
+            scrollContextW.planeWidth = VdpRenderHandler.getHorizontalPlaneSize(reg10);
+            scrollContextW.planeHeight = VdpRenderHandler.getVerticalPlaneSize(reg10);
+            renderPlaneInternal(line, nameTableLocation, hStartCell >> 1,
+                    hEndCell >> 1, scrollContextW);
+            windowPlaneContext.startHCell = hStartCell;
+            windowPlaneContext.endHCell = hEndCell;
+            windowPlaneContext.lineWindow = legalVertical;
         }
-        //if the line belongs to the window, do not show planeA
-        lineShowWindowPlane = legalVertical;
     }
 
     @Override
@@ -582,53 +601,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     private void renderPlaneB(int line) {
-        renderPlane(line, VdpRenderHandler.getPlaneBNameTableLocation(vdpProvider), scrollContextB);
+        renderScrollPlane(line, VdpRenderHandler.getPlaneBNameTableLocation(vdpProvider),
+                scrollContextB, NO_CONTEXT);
     }
 
     private SpriteDataHolder getSpriteData(SpriteDataHolder holder) {
         int vramOffset = spriteTableLocation + (holder.spriteNumber << 3);
         return getSpriteData(vram, vramOffset, interlaceMode, holder);
-    }
-
-    private void drawWindowPlane(final int line, int tileStart, int tileEnd, boolean isH40) {
-        int vertTile = line >> 3;
-        int nameTableLocation = VdpRenderHandler.getWindowPlaneNameTableLocation(vdpProvider, isH40);
-        int tileShiftFactor = isH40 ? 128 : 64;
-        int tileLocator = nameTableLocation + (tileShiftFactor * vertTile);
-
-        int vramLocation = tileLocator;
-        int rowInTile = (line % CELL_WIDTH);
-        TileDataHolder tileDataHolder = spriteDataHolder;
-
-        for (int horTile = tileStart; horTile < tileEnd; horTile++) {
-            int nameTable = vram[vramLocation] << 8 | vram[vramLocation + 1];
-            vramLocation += 2;
-
-            tileDataHolder = getTileData(nameTable, tileDataHolder);
-            int pointVert = tileDataHolder.vertFlip ? CELL_WIDTH - 1 - rowInTile : rowInTile;
-            RenderPriority rp = tileDataHolder.priority ? RenderPriority.WINDOW_PLANE_PRIO :
-                    RenderPriority.WINDOW_PLANE_NO_PRIO;
-
-            //two pixels at a time as they share a tile
-            for (int k = 0; k < 4; k++) {
-                int point = k ^ (tileDataHolder.horFlipAmount & 3); //[0,4]
-                int po = (horTile << 3) + (k << 1);
-
-                int tileBytePointer = (tileDataHolder.tileIndex + point) + (pointVert << 2);
-
-                int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, tileDataHolder.horFlipAmount);
-                int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, tileDataHolder.horFlipAmount);
-
-                window[po] = tileDataHolder.paletteLineIndex + (pixelIndexColor1 << 1);
-                window[po + 1] = tileDataHolder.paletteLineIndex + (pixelIndexColor2 << 1);
-                if (pixelIndexColor1 > 0) {
-                    updatePriority(po, rp);
-                }
-                if (pixelIndexColor2 > 0) {
-                    updatePriority(po + 1, rp);
-                }
-            }
-        }
     }
 
     private void updatePriority(int col, RenderPriority rp) {

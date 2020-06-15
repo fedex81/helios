@@ -83,21 +83,7 @@ public interface VdpRenderHandler {
         return 0;
     }
 
-    static int getHorizontalPlaneSize(int reg10) {
-        int horScrollSize = reg10 & 3;
-        switch (horScrollSize) {
-            case 0:
-                return 32;
-            case 0b01:
-                return 64;
-            case 0b10:
-                return 32;
-            case 0b11:
-                return 128;
-
-        }
-        return 0;
-    }
+    WindowPlaneContext NO_CONTEXT = new WindowPlaneContext();
 
     static int maxSpritesPerFrame(boolean isH40) {
         return isH40 ? MAX_SPRITES_PER_FRAME_H40 : MAX_SPRITES_PER_FRAME_H32;
@@ -226,5 +212,26 @@ public interface VdpRenderHandler {
         public int hashCode() {
             return Objects.hash(super.hashCode(), verticalPos, horizontalPos, horizontalCellSize, verticalCellSize, linkData);
         }
+    }
+
+    static int getHorizontalPlaneSize(int reg10) {
+        int horScrollSize = reg10 & 3;
+        switch (horScrollSize) {
+            case 0:
+            case 0b10:
+                return 32;
+            case 0b01:
+                return 64;
+            case 0b11:
+                return 128;
+
+        }
+        return 0;
+    }
+
+    class WindowPlaneContext {
+        public int startHCell;
+        public int endHCell;
+        public boolean lineWindow;
     }
 }

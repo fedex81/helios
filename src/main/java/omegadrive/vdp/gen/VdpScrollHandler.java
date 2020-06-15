@@ -22,6 +22,7 @@ package omegadrive.vdp.gen;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Maps;
 import omegadrive.vdp.model.InterlaceMode;
+import omegadrive.vdp.model.RenderType;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
 import java.util.EnumSet;
@@ -51,16 +52,16 @@ public class VdpScrollHandler {
         int vramOffset = 0, scrollAmount;
         switch (sc.hScrollType) {
             case SCREEN:
-                vramOffset = sc.planeA ? sc.hScrollTableLocation : sc.hScrollTableLocation + 2;
+                vramOffset = sc.planeType == RenderType.PLANE_A ? sc.hScrollTableLocation : sc.hScrollTableLocation + 2;
                 break;
             case CELL:
                 int scrollLine = sc.hScrollTableLocation + ((line >> 3) << 5);
-                vramOffset = sc.planeA ? scrollLine : scrollLine + 2;
+                vramOffset = sc.planeType == RenderType.PLANE_A ? scrollLine : scrollLine + 2;
                 break;
             case INVALID:
             case LINE:
                 int scrollLine1 = sc.hScrollTableLocation + (line << 2);
-                vramOffset = sc.planeA ? scrollLine1 : scrollLine1 + 2;
+                vramOffset = sc.planeType == RenderType.PLANE_A ? scrollLine1 : scrollLine1 + 2;
                 break;
         }
         scrollAmount = (vram[vramOffset] << 8 | vram[vramOffset + 1]) & scrollMask;
@@ -68,14 +69,14 @@ public class VdpScrollHandler {
     }
 
     public int getVerticalScroll(int cell, ScrollContext sc) {
-        int vramOffset = sc.planeA ? 0 : 2;
+        int vramOffset = sc.planeType == RenderType.PLANE_A ? 0 : 2;
         vramOffset += sc.vScrollType == VSCROLL.TWO_CELLS ? cell << 2 : 0;
         int scrollAmount = vsram[vramOffset] << 8 | vsram[vramOffset + 1];
         return scrollAmount >> sc.interlaceMode.verticalScrollShift();
     }
 
     public static class ScrollContext {
-        boolean planeA;
+        RenderType planeType;
         int planeWidth;
         int planeHeight;
         int hScrollTableLocation;
@@ -83,9 +84,9 @@ public class VdpScrollHandler {
         HSCROLL hScrollType;
         InterlaceMode interlaceMode;
 
-        public static ScrollContext createInstance(boolean isPlaneA) {
+        public static ScrollContext createInstance(RenderType type) {
             ScrollContext s = new ScrollContext();
-            s.planeA = isPlaneA;
+            s.planeType = type;
             return s;
         }
     }
