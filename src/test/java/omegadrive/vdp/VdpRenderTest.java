@@ -136,6 +136,7 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
     }
 
     @Test
+    @Ignore
     public void testInterlaced() {
         String saveName = "gen_interlace_test.gs0";
 //        saveName = "cc_int.gs0";
@@ -165,6 +166,7 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
     }
 
     @Test
+    @Ignore
     public void testSavestateViewerAll() {
         for (Map.Entry<String, String> e : SavestateGameLoader.saveStates.entrySet()) {
             String saveStateFile = e.getKey();

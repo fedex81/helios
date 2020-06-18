@@ -32,7 +32,7 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 
-import static omegadrive.vdp.model.BaseVdpProvider.VdpEventListener;
+import static omegadrive.vdp.model.BaseVdpProvider.*;
 import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_LINE_H40;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
@@ -72,7 +72,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private int spritePixelLineCount;
     private ScrollContext scrollContextA;
     private ScrollContext scrollContextB;
-    private ScrollContext scrollContextW;
     private WindowPlaneContext windowPlaneContext;
     private InterlaceMode interlaceMode = InterlaceMode.NONE;
     private int[] vram;
@@ -130,7 +129,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         this.javaPalette = memoryInterface.getJavaColorPalette();
         this.scrollContextA = ScrollContext.createInstance(RenderType.PLANE_A);
         this.scrollContextB = ScrollContext.createInstance(RenderType.PLANE_B);
-        this.scrollContextW = ScrollContext.createInstance(RenderType.WINDOW_PLANE);
         this.windowPlaneContext = new WindowPlaneContext();
         vdpProvider.addVdpEventListener(this);
         for (int i = 0; i < spriteDataHoldersCurrent.length; i++) {
@@ -441,8 +439,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                                      final int startTwoCells, final int endTwoCells, ScrollContext sc) {
         int vScrollLineOffset, planeCellVOffset, planeLine;
         int vScrollSizeMask = (sc.planeHeight << 3) - 1;
-        boolean isScrollable = sc.vScrollType != null;
-        int hScrollPixelOffset = isScrollable ? scrollHandler.getHorizontalScroll(line, sc) : 0;
+        int hScrollPixelOffset = scrollHandler.getHorizontalScroll(line, sc);
         final int cellHeight = interlaceMode.getVerticalCellPixelSize();
 
         TileDataHolder tileDataHolder = spriteDataHolder;
@@ -451,9 +448,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         int[] plane = sc.planeType == RenderType.PLANE_A ? planeA :
                 (sc.planeType == RenderType.PLANE_B ? planeB : window);
 
-
         for (int twoCell = startTwoCells; twoCell < endTwoCells; twoCell++) {
-            vScrollLineOffset = isScrollable ? scrollHandler.getVerticalScroll(twoCell, sc) : 0;
+            vScrollLineOffset = scrollHandler.getVerticalScroll(twoCell, sc);
             planeLine = (vScrollLineOffset + line) & vScrollSizeMask;
             planeCellVOffset = (planeLine >> 3) * sc.planeWidth;
             int startPixel = twoCell << 4;
@@ -466,7 +462,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                     continue;
                 }
 
-                int planeCellHOffset = ((pixel + hScrollPixelOffset) % (sc.planeWidth << 3)) >> 3;
+                int planeCellHOffset = ((pixel + hScrollPixelOffset) >> 3) % sc.planeWidth;
                 int tileLocatorVram = nameTableLocation + ((planeCellHOffset + planeCellVOffset) << 1);
                 if (tileLocatorVram != latestTileLocatorVram) {
                     //one word per 8x8 tile
@@ -493,6 +489,55 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 if (onePixelData > 0) {
                     updatePriority(pixel, rp);
                 }
+//                System.out.printf("NEW PixelPos %d-%d, nameTableLocation: %x, tileLocatorVram: %x, " +
+//                                    "tileBytePointer: %x, cramIdx: %d\n",
+//                            line, linePixel, nameTableLocation, tileLocatorVram, tileBytePointer, plane[linePixel]);
+            }
+        }
+    }
+
+    private void drawWindowPlane(final int line, int hCellStart, int hCellEnd, int wPlaneWidth, boolean isH40) {
+        int lineVCell = line >> 3;
+        int nameTableLocation = VdpRenderHandler.getWindowPlaneNameTableLocation(vdpProvider, isH40);
+        //do all the screenHCells fit within wPlane width?
+        int planeTileShift = wPlaneWidth << (2 - (wPlaneWidth / (isH40 ? H40_TILES : H32_TILES)));
+        int tileLocatorVram = nameTableLocation + (planeTileShift * lineVCell) + (hCellStart << 1);
+//        System.out.println(String.format("Line: %d, pW: %d, pH: %d, tileStart: %d, tileEnd: %d", line, sc.planeWidth,
+//                sc.planeHeight, tileStart, tileEnd));
+        int rowInTile = (line % CELL_WIDTH);
+        TileDataHolder tileDataHolder = spriteDataHolder;
+
+        for (int hCell = hCellStart; hCell < hCellEnd; hCell++, tileLocatorVram += 2) {
+            int tileNameTable = vram[tileLocatorVram] << 8 | vram[tileLocatorVram + 1];
+            tileDataHolder = getTileData(tileNameTable, tileDataHolder);
+            int pixelVPosTile = tileDataHolder.vertFlip ? CELL_WIDTH - 1 - rowInTile : rowInTile;
+            RenderPriority rp = tileDataHolder.priority ? RenderPriority.WINDOW_PLANE_PRIO :
+                    RenderPriority.WINDOW_PLANE_NO_PRIO;
+
+            //two pixels at a time as they share a tile
+            for (int k = 0; k < 4; k++) {
+                int pixelHPosTile = k ^ (tileDataHolder.horFlipAmount & 3); //[0,4]
+                int pos = (hCell << 3) + (k << 1);
+
+                int tileBytePointer = (tileDataHolder.tileIndex + pixelHPosTile) + (pixelVPosTile << 2);
+
+                int pixelIndexColor1 = getPixelIndexColor(tileBytePointer, 0, tileDataHolder.horFlipAmount);
+                int pixelIndexColor2 = getPixelIndexColor(tileBytePointer, 1, tileDataHolder.horFlipAmount);
+
+                int val1 = tileDataHolder.paletteLineIndex + (pixelIndexColor1 << 1);
+                int val2 = tileDataHolder.paletteLineIndex + (pixelIndexColor2 << 1);
+
+//                System.out.printf("OLD PixelPos %d-%d, nameTableLocation: %x, tileLocatorVram: %x, tileBytePointer: %x, " +
+//                                    "cramIdx: %d\n", line, po,
+//                            nameTableLocation, tileLocatorVram, tileBytePointer, val1);
+                window[pos] = val1;
+                window[pos + 1] = val2;
+                if (pixelIndexColor1 > 0) {
+                    updatePriority(pos, rp);
+                }
+                if (pixelIndexColor2 > 0) {
+                    updatePriority(pos + 1, rp);
+                }
             }
         }
     }
@@ -510,6 +555,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     // was to be located at $F000 in VRAM, it would be divided by $400, which
     // results in $3C, the proper value for this register.
     private void renderWindow(int line) {
+        windowPlaneContext.endHCell = windowPlaneContext.startHCell = 0;
+        windowPlaneContext.lineWindow = false;
+
         int reg11 = vdpProvider.getRegisterData(WINDOW_PLANE_HOR_POS);
         int reg12 = vdpProvider.getRegisterData(WINDOW_PLANE_VERT_POS);
 
@@ -519,15 +567,14 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         boolean down = (reg12 & 0x80) == 0x80;
         boolean right = (reg11 & 0x80) == 0x80;
 
-        int hCell = (reg11 & 0x1F) << 1; //2-cell = 2*8 pixels
-        int vCell = (reg12 & 0x1F); // unit of 8 lines
+        final int hCell = (reg11 & 0x1F) << 1; //2-cell = 2*8 pixels
+        final int vCell = (reg12 & 0x1F); // unit of 8 lines
         int lineCell = line >> 3;
 
 //        When DOWN=0, the window is shown from line zero to the line specified
 //        by the WVP field.
 //        When DOWN=1, the window is shown from the line specified in the WVP
 //        field up to the last line in the display.
-//        boolean legalVertical = vCellRange != 0;
         boolean legalDown = (down && lineCell >= vCell);
         boolean legalUp = (!down && lineCell < vCell);
         boolean legalVertical = (legalDown || legalUp);
@@ -546,15 +593,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         boolean legalHorizontal = hStartCell < hEndCell;
         boolean drawWindow = legalVertical || legalHorizontal;
 
-        windowPlaneContext.endHCell = windowPlaneContext.startHCell = 0;
-        windowPlaneContext.lineWindow = false;
         if (drawWindow) {
-            int nameTableLocation = VdpRenderHandler.getWindowPlaneNameTableLocation(vdpProvider, isH40);
-            int reg10 = vdpProvider.getRegisterData(PLANE_SIZE);
-            scrollContextW.planeWidth = VdpRenderHandler.getHorizontalPlaneSize(reg10);
-            scrollContextW.planeHeight = VdpRenderHandler.getVerticalPlaneSize(reg10);
-            renderPlaneInternal(line, nameTableLocation, hStartCell >> 1,
-                    hEndCell >> 1, scrollContextW);
+//            System.out.println(String.format("Line: %d, h40: %b, hPosCell: %d, vPosCell: %d, lineCell: %d, down: %b, " +
+//                            "right: %b, hStartCell: %d, hEndCell: %d",
+//                    line, isH40, hCell,
+//                    vCell, lineCell, down, right, hStartCell, hEndCell));
+            int wPlaneWidth = VdpRenderHandler.getHorizontalPlaneSize(vdpProvider.getRegisterData(PLANE_SIZE));
+            drawWindowPlane(line, hStartCell, hEndCell, wPlaneWidth, isH40);
             windowPlaneContext.startHCell = hStartCell;
             windowPlaneContext.endHCell = hEndCell;
             windowPlaneContext.lineWindow = legalVertical;

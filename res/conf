@@ -1,5 +1,11 @@
+#linux
 sudo usermod -a -G audio <user>
 sudo usermod -a -G pulse-rt <user>
+sudo usermod -a -G jackuser <user>
+
+run visudo
+add: <user> ALL=NOPASSWD:/usr/bin/nice
+start the process: nice -n -5 <cmdLine>
 
 see /etc/pulse/daemon.conf
 ; default-sample-format = s16le

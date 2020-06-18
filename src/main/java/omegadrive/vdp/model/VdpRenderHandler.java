@@ -215,8 +215,7 @@ public interface VdpRenderHandler {
     }
 
     static int getHorizontalPlaneSize(int reg10) {
-        int horScrollSize = reg10 & 3;
-        switch (horScrollSize) {
+        switch (reg10 & 3) {
             case 0:
             case 0b10:
                 return 32;

@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,9 +36,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Ignore
+@Disabled
 public class VdpRenderCompareTest extends VdpRenderTest {
 
-    private static boolean SHOW_IMAGES_ON_FAILURE = true;
+    protected static boolean SHOW_IMAGES_ON_FAILURE = true;
     public static String IMG_EXT = "bmp";
     public static String DOT_EXT = "." + IMG_EXT + ".zip";
     private static Path compareFolderPath = Paths.get(saveStateFolder, "compare");
@@ -85,6 +87,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
             if (res) {
                 sb.append("Mismatch: " + file + "\n");
                 System.out.println("Error: " + file);
+                break;
 //                FileUtil.compressAndSaveToZipFile(file.toPath());
             }
         }
@@ -99,8 +102,8 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     @Test
     public void testCompare() {
         boolean overwrite = false;
-        String name = "s2_int";
-        String ext = ".gs0".toLowerCase();
+        String name = "slap_01".trim();
+        String ext = ".gsh".toLowerCase().trim();
         if (overwrite) {
             testOverwriteBaselineImage(name + ext);
         }
@@ -145,7 +148,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
         saveToFile(saveName, i);
     }
 
-    private boolean testCompareOne(String saveName) {
+    protected boolean testCompareOne(String saveName) {
         Path saveFile = Paths.get(saveStateFolder, saveName);
         Path baselineZipImageFile = Paths.get(compareFolder, saveName + DOT_EXT);
         Image i = testSavestateViewerSingle(saveFile, SavestateGameLoader.saveStates.get(saveName));
