@@ -377,10 +377,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         LOG.debug("Write Z80 busReq: {} {}", size, data);
         //	To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
         if (size == Size.WORD) {
-            // Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF
-            data = data & 0x0100;
+            // Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF, Slap Fight 0xFF
+            data >>= 8;
         }
-        if (data == 0x0100 || data == 0x1) {
+        data &= 1;
+        if (data > 0) {
             boolean isReset = z80ResetState;
             if (!z80BusRequested) {
                 LOG.debug("busRequested, reset: {}", isReset);
@@ -397,8 +398,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 LOG.debug("busUnrequested ignored");
             }
         } else {
-            LOG.warn("Unexpected data on busRequest, address: {} , {}",
-                    Integer.toHexString(addressL), Long.toHexString(data));
+            LOG.warn("Unexpected data on busRequest, address: {} , {} {}",
+                    Integer.toHexString(addressL), Long.toHexString(data), size);
         }
     }
 

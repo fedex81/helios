@@ -58,6 +58,7 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
         int res = 0;
         sb.setLength(0);
         try {
+            currentPC = m68k.getPC(); //needs to be set
             storeM68kState(current);
             res = super.runInstruction();
             printVerbose();

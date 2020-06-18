@@ -31,6 +31,7 @@ import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
+import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -127,17 +128,16 @@ public class GstStateHandler implements GenesisStateHandler {
 
     @Override
     public void loadVdpState(BaseVdpProvider vdp) {
-        loadVdpMemory(vdp.getVdpMemory());
         IntStream.range(0, GenesisVdpProvider.VDP_REGISTERS_SIZE).forEach(
                 i -> vdp.updateRegisterData(i, buffer.get(i + VDP_REG_OFFSET) & 0xFF));
+        loadVdpMemory((VdpMemoryInterface) vdp.getVdpMemory());
         vdp.reload();
     }
 
-    private void loadVdpMemory(VdpMemory vdpMemoryInterface) {
-        int[] vram = vdpMemoryInterface.getVram();
+    private void loadVdpMemory(VdpMemoryInterface vdpMemoryInterface) {
         for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i += 2) {
-            vram[i] = buffer.get(i + VRAM_DATA_OFFSET) & 0xFF;
-            vram[i + 1] = buffer.get(i + VRAM_DATA_OFFSET + 1) & 0xFF;
+            vdpMemoryInterface.writeVramByte(i, buffer.get(i + VRAM_DATA_OFFSET) & 0xFF);
+            vdpMemoryInterface.writeVramByte(i + 1, buffer.get(i + VRAM_DATA_OFFSET + 1) & 0xFF);
         }
         //cram is swapped
         int[] cram = vdpMemoryInterface.getCram();

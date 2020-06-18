@@ -60,9 +60,9 @@ public class MC68000Helper {
         return dumpOp(cpu, cpu.getPC());
     }
 
-    public static String dumpInfo(Cpu cpu, boolean showBytes, int memorySize) {
+    public static String dumpInfo(Cpu cpu, long pc, boolean showBytes, int memorySize) {
         StringBuilder sb = new StringBuilder("\n");
-        int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
+        int wrapPc = (int) (pc & 0xFF_FFFF); //PC is 24 bits
 
         sb.append(String.format("D0: %08x   D4: %08x   A0: %08x   A4: %08x     PC:  %08x\n",
                 cpu.getDataRegisterLong(0), cpu.getDataRegisterLong(4), cpu.getAddrRegisterLong(0),
@@ -154,7 +154,7 @@ public class MC68000Helper {
 
     public static void printCpuState(Cpu cpu, Level level, String head, int memorySize) {
         try {
-            String str = MC68000Helper.dumpInfo(cpu, true, memorySize);
+            String str = MC68000Helper.dumpInfo(cpu, cpu.getPC(), true, memorySize);
             LOG.log(level, head + str);
         } catch (Exception e) {
             String pc = Long.toHexString(cpu.getPC() & 0xFF_FFFF);
