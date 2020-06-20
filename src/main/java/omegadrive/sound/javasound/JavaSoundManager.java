@@ -99,11 +99,10 @@ public class JavaSoundManager extends AbstractSoundManager {
                 try {
                     do {
                         int actualStereo = playOnceStereo(fmSizeMono);
-                        samplesConsumedCount += (actualStereo >> 1); //mono samples
+                        samplesConsumedCount += actualStereo;
                         if (actualStereo <= 10) {
                             audioThreadEmptyLoops++;
                             LockSupport.parkNanos(EMPTY_QUEUE_SLEEP_NS);
-
                         }
                         audioThreadLoops++;
                     } while (!close);

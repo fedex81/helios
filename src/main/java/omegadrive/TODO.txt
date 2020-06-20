@@ -1,6 +1,7 @@
 
 - Sonic & Knuckles mapper
 - EEPROM mapper (take list from blastem)
+
 TODO
 hline issue:
 monaco gp2
@@ -17,8 +18,9 @@ bubba and stix
 hook (helios 20.0418 ok, helios 20.0528 ko)
 asterix and the great rescue
 power monger
-Shadow of the Beast - z80 on busRequest and !reset, 68k stuck waiting on busUnrequested
+Shadow of the Beast (UE) - z80 on busRequest and !reset, 68k stuck waiting on busUnrequested (J works)
 batman and robin, mad hatter: hint related?
+subterrania perf: lots of vdpBusy hits
 
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin

@@ -449,8 +449,9 @@ public class GenesisVdp implements GenesisVdpProvider {
         boolean doWrite = true;
         VdpFifo.VdpFifoEntry entry = fifo.peek();
         boolean invalidEntry = entry.vdpRamMode == null || !entry.vdpRamMode.isWriteMode();
+
         if (invalidEntry) {
-            LOG.warn("FIFO write on invalid target: {}, data: {}, address: {}",
+            LOG.printf(Level.WARN, "FIFO write on invalid target: %s, data: %x, address: %x",
                     entry.vdpRamMode, entry.data, entry.addressRegister);
             fifo.pop();
             doWrite = false;
@@ -488,8 +489,8 @@ public class GenesisVdp implements GenesisVdpProvider {
             LOG.warn("readDataPort with FIFO full, address: {}", addressRegister);
         }
         if (!fifo.isEmpty()) {
-            //Bonkers
-            LOG.warn("readDataPort with FIFO not empty {}, address: {}", vramMode, addressRegister);
+            //Bonkers, Subterrania
+            LOG.debug("readDataPort with FIFO not empty {}, address: {}", vramMode, addressRegister);
         }
         //TODO need to stop 68k until the result is available
         int value = readDataPortInternal();

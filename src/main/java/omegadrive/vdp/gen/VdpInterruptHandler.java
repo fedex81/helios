@@ -318,12 +318,13 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         }
     }
 
+    private static final String STATE_FMT_STR =
+            "%s, slot=0x%x, hce=0x%x(0x%x), vce=0x%x(0x%x), hb%d, vb%d, VINTPend%d, HINTPend%d, hLines=%d";
+
     public String getStateString(String head) {
-        return head + ", slot=" + Integer.toHexString(slotNumber) + "h,hce=" + Integer.toHexString((hCounterInternal >> 1) & 0xFF) +
-                "(" + Integer.toHexString(this.hCounterInternal) + ")h, vce=" + Integer.toHexString(vCounterInternal & 0xFF)
-                + "(" + Integer.toHexString(this.vCounterInternal) + ")" +
-                "h, hb" + (hBlankSet ? "1" : "0") + ",vb" + (vBlankSet ? "1" : "0")
-                + ", VINTPen" + (vIntPending ? "1" : "0") + ", HINTPend" + (hIntPending ? "1" : "0") + ", hLines=" + hLinesCounter;
+        return String.format(STATE_FMT_STR,
+                head, slotNumber, (hCounterInternal >> 1) & 0xFF, hCounterInternal, vCounterInternal & 0xFF, vCounterInternal,
+                (hBlankSet ? 1 : 0), (vBlankSet ? 1 : 0), (vIntPending ? 1 : 0), (hIntPending ? 1 : 0), hLinesCounter);
     }
 
     private void printStateString(String head) {
