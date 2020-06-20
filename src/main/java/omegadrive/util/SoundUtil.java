@@ -174,8 +174,10 @@ public class SoundUtil {
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
             int psg = psgMono8[j];
             psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
-            int out16L = (input[i] + psg) << 1;
-            int out16R = (input[i + 1] + psg) << 1;
+            int out16L = (input[i] + psg);
+            int out16R = (input[i + 1] + psg);
+            out16L = (out16L << 1) - out16L; //mult by 1.5
+            out16R = (out16R << 1) - out16R;
             //avg fm and psg
             out16L = Math.min(Math.max(out16L, Short.MIN_VALUE), Short.MAX_VALUE);
             out16R = Math.min(Math.max(out16R, Short.MIN_VALUE), Short.MAX_VALUE);

@@ -44,7 +44,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     private static final Logger LOG = LogManager.getLogger(Ym2612Nuke.class.getSimpleName());
 
-    private final static int AUDIO_SCALE_BITS = 5;
+    private final static int AUDIO_SCALE_BITS = 3;
 
     private IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
