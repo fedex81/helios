@@ -19,22 +19,24 @@
 
 package omegadrive.util;
 
-//import com.jmxwebtools.JmxLauncher;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.lang.reflect.Method;
 
 public class JmxBridge {
 
     private static Logger LOG = LogManager.getLogger(JmxBridge.class.getSimpleName());
 
     private static boolean JMX_SUPPORT_FLAG;
-//    private static JmxLauncher jmxLauncher;
+    private static JmxLauncherProxy proxy;
 
     static {
         try {
-            Class.forName("com.jmxwebtools.JmxLauncher");
-//            jmxLauncher = JmxLauncher.getInstance().launch("GenesisEmu");
+            Class<JmxLauncherProxy> cl = (Class<JmxLauncherProxy>) Class.forName("com.jmxwebtools.JmxLauncher");
+            Method factoryMethod = cl.getDeclaredMethod("getInstance"); //static method
+            proxy = (JmxLauncherProxy) factoryMethod.invoke(null, (Object[]) null);
+            proxy.launch("Helios");
             JMX_SUPPORT_FLAG = true;
         } catch (Exception e) {
             LOG.info("JMX not supported");
@@ -44,13 +46,17 @@ public class JmxBridge {
 
     public static void registerJmx(Object object) {
         if (JMX_SUPPORT_FLAG) {
-            String name = object.getClass().getSimpleName();
-//            ObjectName objName = jmxLauncher.getExporter().exportToJMX(object, name);
-//            if (objName != null) {
-//                LOG.info("JMX exporting: " + objName);
-//            } else {
-//                LOG.warn("JMX exporting failed: " + name);
-//            }
+            try {
+                String name = object.getClass().getSimpleName();
+                String objName = proxy.exportToJMX(object, name);
+                if (objName != null) {
+                    LOG.info("JMX exporting: " + objName);
+                } else {
+                    LOG.warn("JMX exporting failed: " + name);
+                }
+            } catch (Exception e) {
+                LOG.warn("Unable to export: " + object.getClass().getSimpleName());
+            }
         }
     }
 }

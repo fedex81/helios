@@ -128,6 +128,7 @@ public class SystemLoader {
     }
 
     private SystemLoader() {
+        Util.registerJmx(this);
     }
 
     public static SystemLoader getInstance() {

@@ -152,7 +152,7 @@ task writeToFile {
     List<String> sampleBase = [ "java", "-XX:AutoBoxCacheMax=65536",
                             "-Dlog4j.configurationFile=./log4j2.properties",
                                 "-Djinput.enable=true -Djinput.native.location=lib",
-                            "-jar", "$jarName" , "\"\$@\"", "\n"] as String[]
+                            "-jar", "$jarName"] as String[]
     List<String> sampleUx = sampleBase.clone()
     sampleUx.add("\"\$@\"" + "\n")
     List<String> sampleWin = sampleBase.clone()
@@ -165,4 +165,14 @@ task writeToFile {
     // create the file and write text to it.
     new File("${buildDir}/packageDir/launcher.sh").text = sampleUx.join (" ")
     new File("${buildDir}/packageDir/launcher.bat").text = sampleWin.join (" ")
+}
+
+test {
+    testLogging {
+        afterSuite { desc, result ->
+            if (!desc.parent) { // will match the outermost suite
+                println "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)"
+            }
+        }
+    }
 }
