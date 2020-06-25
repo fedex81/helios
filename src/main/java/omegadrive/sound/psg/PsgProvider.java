@@ -45,29 +45,26 @@ public interface PsgProvider extends Device {
     //SN style PSG
     void write(int data);
 
+    void output(byte[] output, int offset, int end);
+
     //AY style psg
-    default void write(int register, int data){
+    default void write(int register, int data) {
         write(data);
     }
 
     //AY style psg
-    default int read(int register){
+    default int read(int register) {
         return 0xFF;
     }
 
-    void output(byte[] output);
-
-    void output(byte[] output, int offset, int end);
+    default void output(byte[] output) {
+        output(output, 0, output.length);
+    }
 
     PsgProvider NO_SOUND = new PsgProvider() {
 
         @Override
         public void write(int data) {
-
-        }
-
-        @Override
-        public void output(byte[] ouput) {
 
         }
 

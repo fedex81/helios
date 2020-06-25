@@ -49,11 +49,6 @@ public class Ay38910Psg implements PsgProvider {
     }
 
     @Override
-    public void output(byte[] output) {
-        output(output, 0, output.length);
-    }
-
-    @Override
     public void output(byte[] output, int offset, int end) {
         for (int i = offset; i < end; i++) {
             output[i] = (byte) psg.getSoundSigned();

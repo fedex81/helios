@@ -43,11 +43,6 @@ public class SN76489Psg implements PsgProvider {
     }
 
     @Override
-    public void output(byte[] output) {
-        psg.update(output, 0, output.length);
-    }
-
-    @Override
     public void output(byte[] output, int offset, int end) {
         psg.update(output, offset, end - offset);
     }
