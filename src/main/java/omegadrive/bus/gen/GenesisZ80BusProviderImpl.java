@@ -31,28 +31,6 @@ import org.apache.logging.log4j.Logger;
 public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements GenesisZ80BusProvider {
     private static Logger LOG = LogManager.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
 
-    public static final int END_RAM = 0x3FFF;
-    public static final int START_YM2612 = 0x4000;
-    public static final int END_YM2612 = 0x5FFF;
-    public static final int START_ROM_BANK_ADDRESS = 0x6000;
-    public static final int END_ROM_BANK_ADDRESS = 0x60FF;
-    public static final int START_UNUSED = 0x6100;
-    public static final int END_UNUSED = 0x7EFF;
-    public static final int START_VDP = 0x7F00;
-    public static final int END_VDP_VALID = 0x7F1F;
-    public static final int END_VDP = 0x7FFF;
-    public static final int START_68K_BANK = 0x8000;
-    public static final int END_68K_BANK = 0xFFFF;
-
-    public static final int VDP_BASE_ADDRESS = 0xC00000;
-    public static final int M68K_BANK_MASK = 0x7FFF;
-
-    private static final int ROM_BANK_POINTER_SIZE = 9;
-
-    //z80 should incur a 3.5 z80 cycles penalty when accessing 68k bus
-    public static final int Z80_CYCLE_PENALTY = 4;
-    public static final int M68K_CYCLE_PENALTY = 11;
-
     //    To specify which 32k section you want to access, write the upper nine
     //    bits of the complete 24-bit address into bit 0 of the bank address
     //    register, which is at 6000h (Z80) or A06000h (68000), starting with
