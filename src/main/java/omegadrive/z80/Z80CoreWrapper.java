@@ -62,11 +62,7 @@ public class Z80CoreWrapper implements Z80Provider {
         return createGenesisInstanceInternal(busProvider);
     }
 
-    private static Z80CoreWrapper createGenesisInstanceInternal(GenesisBusProvider busProvider) {
-        Z80CoreWrapper w = new Z80CoreWrapper();
-        w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider);
-        w.memIoOps = Z80MemIoOps.createGenesisInstance(w.z80BusProvider);
-        return setupInternal(w, null);
+    protected Z80CoreWrapper() {
     }
 
     protected static Z80CoreWrapper setupInternal(Z80CoreWrapper w, Z80State z80State) {
@@ -78,8 +74,14 @@ public class Z80CoreWrapper implements Z80Provider {
         return w;
     }
 
-    //TEST
-    public Z80CoreWrapper() {
+    private static Z80CoreWrapper createGenesisInstanceInternal(GenesisBusProvider busProvider) {
+        Z80CoreWrapper w = new Z80CoreWrapper();
+        w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider);
+        w.memIoOps = Z80MemIoOps.createGenesisInstance(w.z80BusProvider);
+        setupInternal(w, null);
+        //fixes Z80 WAV Player v0.1
+        w.z80Core.setRegSP(GenesisZ80BusProvider.END_RAM);
+        return w;
     }
 
     //NOTE: halt sets PC = PC - 1
