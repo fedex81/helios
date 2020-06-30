@@ -8,9 +8,10 @@ monaco gp2
 turbo outrun
 lotus 2
 
+check PSG in Sonic2 ??
+
 danibus scroll test
 sonic3d traveller's tale logo (uses shadow/highlight)
-bare knuckle 3 - intro locks (FIFO)
 titan2 vdp crash
 rambo III intro corruption (uses shadow/highlight)
 iss deluxe colors
@@ -21,6 +22,7 @@ power monger
 Shadow of the Beast (UE) - z80 on busRequest and !reset, 68k stuck waiting on busUnrequested (J works)
 batman and robin, mad hatter: hint related?
 subterrania perf: lots of vdpBusy hits
+megaman demo sprite corruption
 
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin

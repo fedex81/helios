@@ -42,11 +42,13 @@ public interface M68kProvider extends Device {
 
     void addCyclePenalty(int value);
 
+    void softReset();
+
     default int getPrefetchWord() {
         return 0;
     }
 
-    default String getInfo(){
+    default String getInfo() {
         return "NOT SUPPORTED";
     }
 }

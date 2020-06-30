@@ -75,7 +75,12 @@ public class KeyBindingsHandler {
                 boolean validLine = !l.isEmpty() && !l.startsWith("#") && !l.startsWith(PLAYER_LINE_HEAD);
                 if (validLine) {
                     String[] s = l.split(DIV);
-                    m.put(getKeyStroke(s[1]), SystemEvent.valueOf(s[0]));
+                    Optional<KeyStroke> ksOpt = Optional.ofNullable(getKeyStroke(s[1]));
+                    if (ksOpt.isPresent()) {
+                        m.put(ksOpt.get(), SystemEvent.valueOf(s[0]));
+                    } else {
+                        LOG.warn("Unable to parse keyStroke: {}", s[1]);
+                    }
                 }
             });
         } catch (Exception e) {

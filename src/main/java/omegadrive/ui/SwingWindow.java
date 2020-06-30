@@ -241,9 +241,13 @@ public class SwingWindow implements DisplayWindow {
         addKeyAction(pauseItem, TOGGLE_PAUSE, e -> handleSystemEvent(TOGGLE_PAUSE, null, null));
         setting.add(pauseItem);
 
-        JMenuItem resetItem = new JMenuItem("Reset");
+        JMenuItem resetItem = new JMenuItem("Hard Reset");
         addKeyAction(resetItem, RESET, e -> mainEmu.reset());
         setting.add(resetItem);
+
+        JMenuItem softResetItem = new JMenuItem("Soft Reset");
+        addKeyAction(softResetItem, SOFT_RESET, e -> handleSystemEvent(SOFT_RESET, null, null));
+        setting.add(softResetItem);
 
         JMenu regionMenu = new JMenu("Region");
         setting.add(regionMenu);

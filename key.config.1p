@@ -6,12 +6,13 @@ NEW_ROM=ctrl pressed L
 QUICK_LOAD=ctrl pressed 9
 QUICK_SAVE=ctrl pressed 8
 RESET=ctrl pressed R
+SOFT_RESET=shift ctrl pressed R
 SAVE_STATE=ctrl pressed 6
 SET_DEBUG_UI=ctrl pressed D
-TOGGLE_FULL_SCREEN=ctrl pressed F
+TOGGLE_FULL_SCREEN=alt pressed ENTER
 TOGGLE_MUTE=ctrl pressed M
 TOGGLE_PAUSE=ctrl pressed P
-TOGGLE_SOUND_RECORD=shift ctrl pressed R
+TOGGLE_SOUND_RECORD=shift ctrl pressed S
 TOGGLE_THROTTLE=ctrl pressed T
 
 #player 1

@@ -68,19 +68,20 @@ public class KeyboardInputHelper {
     protected static Logger LOG = LogManager.getLogger(KeyboardInputHelper.class.getSimpleName());
 
     static {
-        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_F, CTRL_DOWN_MASK), TOGGLE_FULL_SCREEN);
+        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_ENTER, ALT_DOWN_MASK), TOGGLE_FULL_SCREEN);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_T, CTRL_DOWN_MASK), TOGGLE_THROTTLE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_D, CTRL_DOWN_MASK), SET_DEBUG_UI);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_P, CTRL_DOWN_MASK), TOGGLE_PAUSE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_M, CTRL_DOWN_MASK), TOGGLE_MUTE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_R, CTRL_DOWN_MASK), RESET);
+        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_R, CTRL_DOWN_MASK | SHIFT_DOWN_MASK), SOFT_RESET);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_9, CTRL_DOWN_MASK), QUICK_LOAD);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_8, CTRL_DOWN_MASK), QUICK_SAVE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_7, CTRL_DOWN_MASK), LOAD_STATE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_6, CTRL_DOWN_MASK), SAVE_STATE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_L, CTRL_DOWN_MASK), NEW_ROM);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_ESCAPE, CTRL_DOWN_MASK), CLOSE_ROM);
-        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_R, CTRL_DOWN_MASK | SHIFT_DOWN_MASK), TOGGLE_SOUND_RECORD);
+        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_S, CTRL_DOWN_MASK | SHIFT_DOWN_MASK), TOGGLE_SOUND_RECORD);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_ESCAPE, CTRL_DOWN_MASK | SHIFT_DOWN_MASK), CLOSE_APP);
         updatePlayerMappings(PlayerNumber.P1, DEFAULT_P1_KEY_BINDINGS);
         updatePlayerMappings(PlayerNumber.P2, DEFAULT_P2_KEY_BINDINGS);

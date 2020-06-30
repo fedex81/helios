@@ -246,6 +246,11 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     }
 
     @Override
+    protected void handleSoftReset() {
+        cpu.softReset();
+    }
+
+    @Override
     public SystemLoader.SystemType getSystemType() {
         return SystemLoader.SystemType.GENESIS;
     }

@@ -44,6 +44,12 @@ public class CheatCodeTest {
     private static Path cheatFolder2 = Paths.get(new File(".").getAbsolutePath(),
             "docs", "Kega Fusion Cheat Code Pack", "Kega Fusion Cheat Code Pack");
 
+    public static void main(String[] args) {
+//        AB1A-CAGJ + AB1T-CAHE
+        BasicGenesisRawCode code = GameGenieHelper.decode("AB1T-CAHE");
+        System.out.println(code.toString());
+    }
+
 
     @Test
     public void ggTest() {

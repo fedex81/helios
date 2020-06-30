@@ -130,6 +130,14 @@ public class MC68000Wrapper implements M68kProvider {
         m68k.reset();
     }
 
+    //X-men uses it
+    @Override
+    public void softReset() {
+        m68k.reset();
+        instCycles += 132;
+    }
+
+
     @Override
     public String getInfo() {
         return MC68000Helper.dumpOp(m68k, currentPC);

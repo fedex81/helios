@@ -155,10 +155,17 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
                 String[] s = str.split(":");
                 inputProvider.setPlayerController(InputProvider.PlayerNumber.valueOf(s[0]), s[1]);
                 break;
+            case SOFT_RESET:
+                handleSoftReset();
+                break;
             default:
                 LOG.warn("Unable to handle event: {}, with parameter: {}", event, Objects.toString(parameter));
                 break;
         }
+    }
+
+    protected void handleSoftReset() {
+        LOG.info("Soft Reset");
     }
 
     @Deprecated
