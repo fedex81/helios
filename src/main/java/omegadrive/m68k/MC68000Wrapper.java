@@ -135,6 +135,7 @@ public class MC68000Wrapper implements M68kProvider {
     public void softReset() {
         m68k.reset();
         instCycles += 132;
+        stop = false;
     }
 
 

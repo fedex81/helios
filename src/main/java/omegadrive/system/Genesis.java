@@ -247,7 +247,10 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
 
     @Override
     protected void handleSoftReset() {
-        cpu.softReset();
+        if (softReset) {
+            cpu.softReset();
+        }
+        super.handleSoftReset();
     }
 
     @Override

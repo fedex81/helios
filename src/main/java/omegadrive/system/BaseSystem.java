@@ -78,6 +78,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
     protected volatile boolean futureDoneFlag = false;
+    protected volatile boolean softReset = false;
 
     //frame pacing stuff
     protected Telemetry telemetry = Telemetry.getInstance();
@@ -156,7 +157,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
                 inputProvider.setPlayerController(InputProvider.PlayerNumber.valueOf(s[0]), s[1]);
                 break;
             case SOFT_RESET:
-                handleSoftReset();
+                softReset = true;
                 break;
             default:
                 LOG.warn("Unable to handle event: {}, with parameter: {}", event, Objects.toString(parameter));
@@ -165,7 +166,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     }
 
     protected void handleSoftReset() {
-        LOG.info("Soft Reset");
+        if (softReset) {
+            LOG.info("Soft Reset");
+        }
+        softReset = false;
     }
 
     @Deprecated
@@ -337,6 +341,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         startCycle = System.nanoTime();
         frameProcessingDelayNs = startCycle - tstamp - elapsedWaitNs;
         futureDoneFlag = runningRomFuture.isDone();
+        handleSoftReset();
 //        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
     }
 
