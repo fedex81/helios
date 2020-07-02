@@ -11,7 +11,7 @@ the following systems:
 - Sega Sg-1000
 - Colecovision
 - MSX v1
-- NES, GameBoy
+- NES
 
 # How to Run
 Requires java 8+ installed.
