@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.stream.IntStream;
 
@@ -65,6 +66,9 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
             printCpuStateIfVerbose("");
             handlePostRunState();
             stepBarrier.await();
+        } catch (BrokenBarrierException bbe) {
+            LOG.error("68k debug error", bbe);
+            setStop(true);
         } catch (Exception e) {
             LOG.error("68k error", e);
         }

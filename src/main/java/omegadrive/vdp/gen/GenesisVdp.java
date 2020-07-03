@@ -401,22 +401,18 @@ public class GenesisVdp implements GenesisVdpProvider {
         }
     }
 
-    //TODO write test, Clue broken
-    //Clue breaks when CD is cleared
-    //GoldenAxeII expects CD to be cleared
-    //see Sonic3d intro wrong colors
-    //check GoldenAxeII, MW4 intro, EA intro, CLUE and VdpFifoTesting
+    //check Sonic3d intro wrong colors, GoldenAxeII, MW4 intro, EA intro, CLUE and VdpFifoTesting
     //http://gendev.spritesmind.net/forum/viewtopic.php?f=15&t=627&p=10854&hilit=golden+axe#p10854
     private void updateStateFromControlPortWrite(boolean isRegisterWrite, int data) {
         if (writePendingControlPort) {
             codeRegister = ((data >> 2) & 0xFF) | (codeRegister & 0x3);
             addressRegister = (addressRegister & 0x3FFF) | ((data & 0x3) << 14);
         } else {
-            //It is perfectly valid to write the first half of the command word only.
-//            In this case, _only_ A13-A00 and CD1-CD0 are updated to reflect the new
-//            values, while the remaining address and code bits _retain_ their former value.
             codeRegister = (codeRegister & 0x3C) | ((data >> 14) & 3);
             addressRegister = (addressRegister & 0xC000) | (data & 0x3FFF);
+            //TODO mona.md needs, but breaks EA intro:
+//            addressRegister = data & 0x3FFF;
+
         }
         boolean verbose = !isRegisterWrite && writePendingControlPort;
         vramMode = VramMode.getVramMode(codeRegister & 0xF, verbose);
