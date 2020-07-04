@@ -4,7 +4,6 @@
 
 TODO
 hline issue:
-monaco gp2
 turbo outrun
 lotus 2
 
@@ -16,13 +15,13 @@ titan2 vdp crash
 rambo III intro corruption (uses shadow/highlight)
 iss deluxe colors
 bubba and stix
-hook (helios 20.0418 ok, helios 20.0528 ko)
 asterix and the great rescue
 power monger
-Shadow of the Beast (UE) - z80 on busRequest and !reset, 68k stuck waiting on busUnrequested (J works)
 batman and robin, mad hatter: hint related?
 subterrania perf: lots of vdpBusy hits
 megaman demo sprite corruption
+hook(U) (E works), Shadow of the Beast (UE) (J works):
+- z80 on busRequest and !reset, 68k stuck waiting on busUnrequested
 
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin

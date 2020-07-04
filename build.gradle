@@ -17,10 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//version dateString
+
 def dateString = getDate()
 group 'com.fberti.genesis'
 
+//version dateString
 version dateString + '-SNAPSHOT'
 def jarNameHead = rootProject.name + "-" + version
 
@@ -109,6 +110,7 @@ task copyRes {
             exclude "misc/**"
             exclude "src/**"
             exclude "jna*.jar"
+            exclude "jmx*.jar"
         }
         into "$buildDir/packageDir/lib"
     }
