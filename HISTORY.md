@@ -1,3 +1,23 @@
+## 20.0704
+gb: disable for now, buggy
+helios: default to stereo sound
+md: add svp support (using notaz implementation)
+md: fix bug on vdp long reads
+md: fix emulation stall on invalid vdp write
+md: fix joypad detection 6btn
+md: fix window plane
+md: fix Z80 SP default value
+md: avoid fm audio clipping
+md: add satCache
+md: add support for soft reset
+md: only stop 68k on DMA MEM_TO_VRAM
+md: savestate support for ssf2/sega mapper registers
+md: support flat ROM mappers > 4MB
+md: initial 128kb VRAM vdp support
+md: support roms that require both ssf2 mapper and sram
+sms: vdp handle tilemap mirroring
+z80: use z80disasm from mame
+
 ## 20.0418
 68k: add delay on z80 rom access
 68k: basic prefetch impl
