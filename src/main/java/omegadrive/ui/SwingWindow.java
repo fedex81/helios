@@ -137,6 +137,7 @@ public class SwingWindow implements DisplayWindow {
 
     private void showHelpMessage(String title, String msg) {
         JTextArea area = new JTextArea(msg);
+        area.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(area);
         scrollPane.setPreferredSize(jFrame.getPreferredSize());
         JOptionPane.showMessageDialog(this.jFrame,
