@@ -27,7 +27,6 @@ import omegadrive.system.SystemProvider;
 import omegadrive.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import ru.krlvm.swingdpi.ScalableJFrame;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -226,7 +225,7 @@ public class SwingWindow implements DisplayWindow {
         dest = createImage(gd, outputNonScaledScreenSize);
         screenLabel.setIcon(new ImageIcon(dest));
 
-        jFrame = new ScalableJFrame(FRAME_TITLE_HEAD, gd.getDefaultConfiguration());
+        jFrame = new JFrame(FRAME_TITLE_HEAD, gd.getDefaultConfiguration());
 
         jFrame.getContentPane().setBackground(Color.BLACK);
         jFrame.getContentPane().setForeground(Color.BLACK);
