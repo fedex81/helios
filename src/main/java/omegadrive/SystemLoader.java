@@ -35,6 +35,7 @@ import omegadrive.util.Util;
 import omegadrive.util.ZipUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import ru.krlvm.swingdpi.SwingDPI;
 
 import javax.swing.*;
 import java.awt.*;
@@ -156,11 +157,28 @@ public class SystemLoader {
             emuFrame = isHeadless ? DisplayWindow.HEADLESS_INSTANCE : new SwingWindow(getSystemAdapter());
             emuFrame.init();
         };
+        SwingDPI.determineScaleFactor();
+        LOG.info("SwingUI DPI Scale factor: " + SwingDPI.getScaleFactor());
+        System.out.println("SwingUI DPI Scale factor: " + SwingDPI.getScaleFactor());
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            String lf = UIManager.getSystemLookAndFeelClassName();
+            UIManager.setLookAndFeel(lf);
+            if(lf.equals("com.sun.java.swing.plaf.windows.WindowsLookAndFeel")) {
+                SwingDPI.excludeDefaults(
+                        "RadioButtonMenuItem.font",
+                        "CheckBoxMenuItem.font",
+                        "MenuBar.font",
+                        "PopupMenu.font",
+                        "MenuItem.font",
+                        "Menu.font"
+                );
+            }
         } catch (Exception e) {
             LOG.error("Failed to set SwingUI native Look and Feel", e);
         }
+        UIDefaults defaults = UIManager.getLookAndFeelDefaults();
+        defaults.put("TextArea.font", ((Font) defaults.get("TextArea.font")).deriveFont(13*SwingDPI.getScaleFactor()));
+        SwingDPI.applyScalingAutomatically();
         if (SwingUtilities.isEventDispatchThread()) {
             frameRunnable.run();
         } else {
@@ -170,7 +188,6 @@ public class SystemLoader {
                 LOG.error("Unable to create SwingUI", e);
             }
         }
-
     }
 
     private static void setHeadless(boolean headless) {
