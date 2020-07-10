@@ -156,6 +156,11 @@ public class SystemLoader {
             emuFrame = isHeadless ? DisplayWindow.HEADLESS_INSTANCE : new SwingWindow(getSystemAdapter());
             emuFrame.init();
         };
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            LOG.error("Failed to set SwingUI native Look and Feel", e);
+        }
         if (SwingUtilities.isEventDispatchThread()) {
             frameRunnable.run();
         } else {
