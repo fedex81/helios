@@ -112,14 +112,16 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     protected void loop() {
         LOG.info("Starting game loop");
         updateVideoMode(true);
+        int cnt;
 
         try {
             do {
-                run68k(counter);
-                runZ80(counter);
-                runFM(counter);
-                runVdp(counter);
-                if (counter % SVP_CYCLES == 0) {
+                cnt = counter;
+                run68k(cnt);
+                runZ80(cnt);
+                runFM(cnt);
+                runVdp(cnt);
+                if (cnt % SVP_CYCLES == 0) {
                     SvpMapper.ssp16.ssp1601_run(SVP_RUN_CYCLES);
                 }
                 counter++;
@@ -130,14 +132,14 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         LOG.info("Exiting rom thread loop");
     }
 
-    protected final void runVdp(long counter) {
+    protected final void runVdp(int counter) {
         if (counter >= nextVdpCycle) {
             int vdpMclk = vdp.runSlot();
             nextVdpCycle += vdpVals[vdpMclk - 4];
         }
     }
 
-    protected final void run68k(long counter) {
+    protected final void run68k(int counter) {
         if (counter == next68kCycle) {
             boolean isRunning = bus.is68kRunning();
             boolean canRun = !cpu.isStopped() && isRunning;
@@ -156,7 +158,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         }
     }
 
-    protected final void runZ80(long counter) {
+    protected final void runZ80(int counter) {
         if (counter == nextZ80Cycle) {
             int cycleDelay = 0;
             boolean running = bus.isZ80Running();
