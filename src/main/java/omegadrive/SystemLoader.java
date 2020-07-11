@@ -147,16 +147,12 @@ public class SystemLoader {
          LOG.info("Headless mode: " + isHeadless);
          SystemLoader.setHeadless(isHeadless);
          KeyboardInputHelper.init();
+         initLookAndFeel();
          INSTANCE.createFrame(isHeadless);
          init.set(true);
      }
 
-    // Create the frame on the event dispatching thread
-    protected void createFrame(boolean isHeadless) {
-        Runnable frameRunnable = () -> {
-            emuFrame = isHeadless ? DisplayWindow.HEADLESS_INSTANCE : new SwingWindow(getSystemAdapter());
-            emuFrame.init();
-        };
+    private static void initLookAndFeel() {
         try {
             String lf = UIManager.getSystemLookAndFeelClassName();
             UIManager.setLookAndFeel(lf);
@@ -174,9 +170,17 @@ public class SystemLoader {
             LOG.error("Failed to set SwingUI native Look and Feel", e);
         }
         UIDefaults defaults = UIManager.getLookAndFeelDefaults();
-        defaults.put("TextArea.font", ((Font) defaults.get("TextArea.font")).deriveFont(13*SwingDPI.getScaleFactor()));
+        defaults.put("TextArea.font", ((Font) defaults.get("TextArea.font")).deriveFont(13 * SwingDPI.getScaleFactor()));
         SwingDPI.applyScalingAutomatically();
         LOG.info("SwingUI DPI Scale factor: " + SwingDPI.getScaleFactor());
+    }
+
+    // Create the frame on the event dispatching thread
+    protected void createFrame(boolean isHeadless) {
+        Runnable frameRunnable = () -> {
+            emuFrame = isHeadless ? DisplayWindow.HEADLESS_INSTANCE : new SwingWindow(getSystemAdapter());
+            emuFrame.init();
+        };
         if (SwingUtilities.isEventDispatchThread()) {
             frameRunnable.run();
         } else {

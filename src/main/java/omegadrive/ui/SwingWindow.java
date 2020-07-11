@@ -558,7 +558,7 @@ public class SwingWindow implements DisplayWindow {
                         handleSystemEvent(LOAD_STATE, path, path.getFileName().toString());
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    LOG.warn("Unable to process drag and drop event: {}", e);
                 }
             }
         });
