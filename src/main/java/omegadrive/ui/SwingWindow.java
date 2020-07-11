@@ -31,6 +31,10 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
@@ -136,6 +140,7 @@ public class SwingWindow implements DisplayWindow {
 
     private void showHelpMessage(String title, String msg) {
         JTextArea area = new JTextArea(msg);
+        area.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(area);
         scrollPane.setPreferredSize(jFrame.getPreferredSize());
         JOptionPane.showMessageDialog(this.jFrame,
@@ -223,6 +228,8 @@ public class SwingWindow implements DisplayWindow {
         pixelsSrc = new int[0];
         dest = createImage(gd, outputNonScaledScreenSize);
         screenLabel.setIcon(new ImageIcon(dest));
+
+        addDndListener(screenLabel);
 
         jFrame = new JFrame(FRAME_TITLE_HEAD, gd.getDefaultConfiguration());
 
@@ -521,6 +528,40 @@ public class SwingWindow implements DisplayWindow {
         Path p = Paths.get(path);
         showInfo(NEW_ROM + ": " + p.getFileName());
         SystemLoader.getInstance().handleNewRomFile(p);
+    }
+
+    private void addDndListener(Component component) {
+        component.setDropTarget(new DropTarget() {
+            @Override
+            public synchronized void drop(DropTargetDropEvent e) {
+                try {
+                    e.acceptDrop(DnDConstants.ACTION_COPY);
+                    Object data = e.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+                    if (!(data instanceof List)) {
+                        return;
+                    }
+                    List<?> droppedFiles = (List<?>) data;
+                    if (droppedFiles.isEmpty()) {
+                        return;
+                    }
+                    Object firstElement = droppedFiles.get(0);
+                    if (!(firstElement instanceof File)) {
+                        return;
+                    }
+                    File file = ((File) firstElement);
+                    Path path = file.toPath();
+                    if(FileLoader.ROM_FILTER.accept(file)) {
+                        SystemLoader.getInstance().handleNewRomFile(path);
+                        reloadRecentFiles();
+                        showInfo(NEW_ROM + ": " + path.getFileName());
+                    } else if(FileLoader.SAVE_STATE_FILTER.accept(file)) {
+                        handleSystemEvent(LOAD_STATE, path, path.getFileName().toString());
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
     }
 
     private SystemProvider getMainEmu() {
