@@ -107,6 +107,10 @@ public class SoundUtil {
         return getAudioLineBufferSize(audioFormat) / audioFormat.getFrameSize();
     }
 
+    public static int getMonoSamplesBufferSize(AudioFormat audioFormat, int millis) {
+        return (int) millis2bytes(audioFormat, millis) / audioFormat.getFrameSize();
+    }
+
     public static int getStereoSamplesBufferSize(AudioFormat audioFormat) {
         return getMonoSamplesBufferSize(audioFormat) << 1;
     }

@@ -95,10 +95,11 @@ public class JavaSoundManager extends AbstractSoundManager {
             @Override
             public void run() {
                 init();
-
+                //this needs to be less than one frame worth (ie. < 16.67 ms)
+                final int monoSize = Math.min(fmSizeMono, SoundUtil.getMonoSamplesBufferSize(audioFormat, 16));
                 try {
                     do {
-                        int actualStereo = playOnceStereo(fmSizeMono);
+                        int actualStereo = playOnceStereo(monoSize);
                         samplesConsumedCount += actualStereo;
                         if (actualStereo <= 10) {
                             audioThreadEmptyLoops++;
