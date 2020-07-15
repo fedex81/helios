@@ -50,6 +50,11 @@ public class Util {
     public static final int GEN_NTSC_MCLOCK_MHZ = 53693175;
     public static final int GEN_PAL_MCLOCK_MHZ = 53203424;
 
+    public static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+    public static final String NATIVE_SUBDIR = OS_NAME.contains("win") ? "windows" :
+            (OS_NAME.contains("mac") ? "osx" : "linux");
+    public static final boolean BUSY_WAIT;
+
     public static final long SECOND_IN_NS = Duration.ofSeconds(1).toNanos();
     public static final long MILLI_IN_NS = Duration.ofMillis(1).toNanos();
     public static final long SLEEP_LIMIT_NS = 10_000;
@@ -62,6 +67,25 @@ public class Util {
         for (int i = 0, j = 0; i < negativeCache.length; i++) {
             negativeCache[i] = Integer.valueOf(j--);
         }
+        startSleeperThread();
+        BUSY_WAIT = Boolean.valueOf(System.getProperty("helios.busy.wait", "false"));
+        LOG.info("Busy waiting instead of sleeping: {}", BUSY_WAIT);
+    }
+
+    //futile attempt at getting high resolution sleeps on windows
+    private static void startSleeperThread() {
+        if (isWindows()) {
+            Runnable r = () -> {
+                sleep(Long.MAX_VALUE);
+            };
+            Thread t = new Thread(r);
+            t.setName("sleeperForWindows");
+            t.start();
+        }
+    }
+
+    public static boolean isWindows() {
+        return OS_NAME.contains("win");
     }
 
     public static void sleep(long ms) {
@@ -72,15 +96,29 @@ public class Util {
         }
     }
 
-    public static void park(long intervalNs) {
+    public static void parkExactly(final long intervalNs) {
+        if (BUSY_WAIT) {
+            long deadlineNs = System.nanoTime() + intervalNs;
+            while (System.nanoTime() < deadlineNs) {
+                Thread.yield();
+            }
+            return;
+        }
         boolean done;
         long start = System.nanoTime();
+        final long deadlineNs = start + intervalNs;
+        if (deadlineNs < start) {
+            return;
+        }
         do {
             LockSupport.parkNanos(intervalNs);
-            long now = System.nanoTime();
-            intervalNs -= now - start;
-            done = intervalNs < SLEEP_LIMIT_NS;
+            done = System.nanoTime() > deadlineNs;
         } while (!done);
+    }
+
+    //sleeps for the given interval, doesn't mind returning a bit early
+    public static void parkFuzzy(final long intervalNs) {
+        parkExactly(intervalNs - SLEEP_LIMIT_NS);
     }
 
     public static void waitForever() {

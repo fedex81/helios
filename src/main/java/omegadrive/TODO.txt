@@ -6,8 +6,7 @@ TODO
 hline issue:
 turbo outrun
 lotus 2
-
-check PSG in Sonic2 ??
+FIFA 97 noisy audio
 
 danibus scroll test
 sonic3d traveller's tale logo (uses shadow/highlight)

@@ -291,7 +291,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         long baseRemainingNs = startCycle + targetNs + driftDeltaNs;
         long remainingNs = baseRemainingNs - now;
         if (remainingNs > 0) { //too fast
-            Util.park(remainingNs);
+            Util.parkFuzzy(remainingNs);
             remainingNs = baseRemainingNs - System.nanoTime();
         }
         driftNs += remainingNs;

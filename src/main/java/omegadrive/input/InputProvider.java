@@ -22,6 +22,7 @@ package omegadrive.input;
 import com.google.common.collect.ImmutableList;
 import omegadrive.input.jinput.JinputGamepadInputProvider;
 import omegadrive.joypad.JoypadProvider;
+import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,11 +37,6 @@ public interface InputProvider {
     String NO_CONTROLLER = "Disable";
 
     List<String> DEFAULT_CONTROLLERS = ImmutableList.of(NO_CONTROLLER, KEYBOARD_CONTROLLER);
-
-    String OS_NAME = System.getProperty("os.name").toLowerCase();
-    String NATIVE_SUBDIR = OS_NAME.contains("win") ? "windows" :
-            (OS_NAME.contains("mac") ? "osx" : "linux");
-
 
     boolean DEBUG_DETECTION = Boolean.valueOf(System.getProperty("jinput.detect.debug", "false"));
     boolean JINPUT_ENABLE = Boolean.valueOf(System.getProperty("jinput.enable", "false"));
@@ -88,7 +84,7 @@ public interface InputProvider {
 
     static void bootstrap() {
         String lib = new File(".").getAbsolutePath() + File.separator + JINPUT_NATIVES_PATH
-                + File.separator + NATIVE_SUBDIR;
+                + File.separator + Util.NATIVE_SUBDIR;
 //        System.out.println(lib);
         System.setProperty("net.java.games.input.librarypath", lib);
         LOG.info("Loading system library from: " + lib);
