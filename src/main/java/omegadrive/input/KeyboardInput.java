@@ -77,7 +77,7 @@ public class KeyboardInput extends KeyAdapter {
         int kc = e.getKeyCode();
         Optional<Map.Entry<PlayerNumber, JoypadButton>> optEntry =
                 KeyboardInputHelper.keyboardInverseBindings.column(kc).entrySet().stream().findFirst();
-        if (optEntry.isPresent()) {
+        if (e.getModifiers() == 0 && optEntry.isPresent()) {
             joypad.setButtonAction(optEntry.get().getKey(), optEntry.get().getValue(), action, e);
         }
     }
