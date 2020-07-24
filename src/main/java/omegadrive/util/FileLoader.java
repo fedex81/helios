@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.*;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -51,18 +52,12 @@ public class FileLoader {
     public static String QUICK_SAVE_FILENAME = "quick_save";
     public static String QUICK_SAVE_PATH = System.getProperty("quick.save.path", ".");
 
-    public static FileFilter ROM_FILTER = new FileFilter() {
-        @Override
-        public String getDescription() {
-            return Arrays.toString(SystemLoader.binaryTypes) + " files";
-        }
+    public static String[] extBinaryTypesList = Arrays.stream(SystemLoader.binaryTypes).
+            map(s -> s.replace(".", "")).toArray(String[]::new);
+    public static FileFilter ROM_FILTER = new FileNameExtensionFilter(
+            Arrays.toString(extBinaryTypesList) + " files", extBinaryTypesList);
 
-        @Override
-        public boolean accept(File f) {
-            String name = f.getName().toLowerCase();
-            return f.isDirectory() || Arrays.stream(SystemLoader.binaryTypes).anyMatch(name::endsWith);
-        }
-    };
+    public enum FileResourceType {ROM, SAVE_STATE_RES}
 
     public static FileFilter SAVE_STATE_FILTER = new FileFilter() {
         @Override

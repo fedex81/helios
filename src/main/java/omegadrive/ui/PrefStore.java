@@ -19,6 +19,7 @@
 
 package omegadrive.ui;
 
+import omegadrive.util.FileLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,6 +35,9 @@ public class PrefStore {
     private static String RECENT_FILE = "recent";
     public static int recentFileTotal = 10;
     private static Properties uiProperties = new Properties();
+
+    public static String lastRomFolder = FileLoader.basePath;
+    public static String lastSaveFolder = FileLoader.basePath;
 
     private static LinkedHashMap<Integer, String> map = new LinkedHashMap<>(recentFileTotal, 1, true);
 

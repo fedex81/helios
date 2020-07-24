@@ -25,6 +25,7 @@ import omegadrive.input.InputProvider;
 import omegadrive.input.InputProvider.PlayerNumber;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.*;
+import omegadrive.util.FileLoader.FileResourceType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,6 +48,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static omegadrive.system.SystemProvider.SystemEvent.*;
+import static omegadrive.util.FileLoader.FileResourceType.SAVE_STATE_RES;
 import static omegadrive.util.FileLoader.QUICK_SAVE_PATH;
 import static omegadrive.util.ScreenSizeHelper.*;
 
@@ -452,14 +454,16 @@ public class SwingWindow implements DisplayWindow {
         };
     }
 
-    private Optional<File> loadFileDialog(Component parent, FileFilter filter) {
-        return fileDialog(parent, filter, true);
+    private Optional<File> loadFileDialog(Component parent, FileResourceType type) {
+        return fileDialog(parent, type, true);
     }
 
-    private Optional<File> fileDialog(Component parent, FileFilter filter, boolean load) {
+    private Optional<File> fileDialog(Component parent, FileResourceType type, boolean load) {
         int dialogType = load ? JFileChooser.OPEN_DIALOG : JFileChooser.SAVE_DIALOG;
+        FileFilter filter = type == FileResourceType.SAVE_STATE_RES ? FileLoader.SAVE_STATE_FILTER : FileLoader.ROM_FILTER;
+        String location = type == FileResourceType.SAVE_STATE_RES ? PrefStore.lastSaveFolder : PrefStore.lastRomFolder;
         Optional<File> res = Optional.empty();
-        JFileChooser fileChooser = new JFileChooser(FileLoader.basePath);
+        JFileChooser fileChooser = new JFileChooser(location);
         fileChooser.setFileFilter(filter);
         fileChooser.setDialogType(dialogType);
         int result = fileChooser.showDialog(parent, null);
@@ -476,11 +480,11 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private Optional<File> loadRomDialog(Component parent) {
-        return loadFileDialog(parent, FileLoader.ROM_FILTER); //TODO
+        return loadFileDialog(parent, FileResourceType.ROM);
     }
 
     private Optional<File> loadStateFileDialog(Component parent) {
-        return loadFileDialog(parent, FileLoader.SAVE_STATE_FILTER);
+        return loadFileDialog(parent, FileResourceType.SAVE_STATE_RES);
     }
 
     private void handleLoadState() {
@@ -488,6 +492,7 @@ public class SwingWindow implements DisplayWindow {
         if (optFile.isPresent()) {
             Path file = optFile.get().toPath();
             handleSystemEvent(LOAD_STATE, file, file.getFileName().toString());
+            PrefStore.lastSaveFolder = file.getParent().toAbsolutePath().toString();
         }
     }
 
@@ -507,7 +512,7 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private void handleSaveState() {
-        Optional<File> optFile = fileDialog(jFrame, FileLoader.SAVE_STATE_FILTER, false);
+        Optional<File> optFile = fileDialog(jFrame, SAVE_STATE_RES, false);
         if (optFile.isPresent()) {
             handleSystemEvent(SAVE_STATE, optFile.get().toPath(), optFile.get().getName());
         }
@@ -521,6 +526,7 @@ public class SwingWindow implements DisplayWindow {
             SystemLoader.getInstance().handleNewRomFile(file);
             reloadRecentFiles();
             showInfo(NEW_ROM + ": " + file.getFileName());
+            PrefStore.lastRomFolder = file.getParent().toAbsolutePath().toString();
         }
     }
 

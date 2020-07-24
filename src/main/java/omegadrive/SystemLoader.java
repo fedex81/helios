@@ -89,7 +89,6 @@ public class SystemLoader {
                 FileReader reader = new FileReader(PROPERTIES_FILENAME)
         ) {
             System.getProperties().load(reader);
-            //java.lang.System.getProperties().store(java.lang.System.out, null);
         } catch (Exception e) {
             LOG.error("Unable to load properties file: " + PROPERTIES_FILENAME);
         }
