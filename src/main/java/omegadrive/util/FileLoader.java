@@ -38,6 +38,8 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
+import static omegadrive.SystemLoader.smdFileAsInterleaved;
+
 public class FileLoader {
 
     private static final Logger LOG = LogManager.getLogger(FileLoader.class.getSimpleName());
@@ -51,6 +53,9 @@ public class FileLoader {
     private static String BIOS_JAR_PATH = ".";
     public static String QUICK_SAVE_FILENAME = "quick_save";
     public static String QUICK_SAVE_PATH = System.getProperty("quick.save.path", ".");
+
+    public static final int SMD_HEADER_SIZE = 512;
+    public static final int SMD_CHUNK_SIZE = 16384;
 
     public static String[] extBinaryTypesList = Arrays.stream(SystemLoader.binaryTypes).
             map(s -> s.replace(".", "")).toArray(String[]::new);
@@ -188,7 +193,23 @@ public class FileLoader {
         } else {
             data = readFileSafe(file);
         }
+        if (smdFileAsInterleaved && fileName.toLowerCase().contains(SystemLoader.SMD_INTERLEAVED_EXT)) {
+            LOG.info("SMD interleaved file detected: " + fileName);
+            data = unscrambleSmd(data);
+        }
         return data;
+    }
+
+    public static byte[] unscrambleSmd(byte[] input) {
+        byte[] output = new byte[input.length - SMD_HEADER_SIZE];
+        for (int i = SMD_HEADER_SIZE, k = 0; i < input.length; i += SMD_CHUNK_SIZE) {
+            int remainHalf = Math.min(SMD_CHUNK_SIZE, input.length - i) >> 1;
+            for (int j = 0; j < remainHalf; j++, k += 2) {
+                output[k + 1] = input[i + j];
+                output[k] = input[i + j + remainHalf];
+            }
+        }
+        return output;
     }
 
     public static String loadVersionFromManifest() {
