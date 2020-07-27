@@ -37,8 +37,8 @@ Open a terminal and run:
 
 [SG-1000 Super Uwol](http://www.mojontwins.com/juegos_mojonos/super-uwol-sg-1000)  
 [MSX Caos Begins](http://msxdev.msxblue.com/?page_id=305)    
-[SMS Astro Force](http://www.smspower.org/Homebrew/AstroForce-SMS)
-[NES Böbl](https://forums.nesdev.com/viewtopic.php?f=35&t=19718)
+[SMS Astro Force](http://www.smspower.org/Homebrew/AstroForce-SMS)     
+[NES Böbl](http://forums.nesdev.com/viewtopic.php?f=35&t=19718)
 
 
 
