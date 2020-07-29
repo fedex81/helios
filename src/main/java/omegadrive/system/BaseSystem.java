@@ -47,6 +47,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseStateHandler> implements SystemProvider {
 
@@ -345,13 +346,15 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 //        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
     }
 
+    final Consumer<String> statsConsumer = st -> stats = Optional.of(st);
+
     protected Optional<String> getStats(long nowNs) {
         if (!SystemLoader.showFps) {
             return Optional.empty();
         }
 
         lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - startNs));
-        telemetry.newFrame(lastFps, driftNs / 1000d).ifPresent(st -> stats = Optional.of(st));
+        telemetry.newFrame(lastFps, driftNs / 1000d).ifPresent(statsConsumer);
         startNs = nowNs;
         return stats;
     }

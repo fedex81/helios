@@ -421,7 +421,8 @@ public class GenesisVdp implements GenesisVdpProvider {
     protected void writeDataPortInternal(int data) {
         writePendingControlPort = false;
         if (vramMode == null) {
-            LogHelper.printLevel(LOG, Level.WARN, "writeDataPort, data: {}, address: {}", data, addressRegister, true);
+            LogHelper.printLevel(LOG, Level.WARN, "Invalid writeDataPort, vramMode {}, data: {}, address: {}",
+                    vramMode, data, addressRegister, true);
         }
         fifoPush(addressRegister, data);
         addressRegister += autoIncrementData;
@@ -434,6 +435,7 @@ public class GenesisVdp implements GenesisVdpProvider {
         if (exVram) {
             a = (((a & 2) >> 1) ^ 1) | ((a & 0x400) >> 9) | a & 0x3FC | ((a & 0x1F800) >> 1);
         }
+
         fifo.push(vramMode, a, data);
     }
 

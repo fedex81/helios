@@ -23,6 +23,7 @@ import omegadrive.bus.BaseBusProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
+import omegadrive.util.Size;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,6 +72,12 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     static GenesisBusProvider createBus() {
         return new GenesisBus();
+    }
+
+    abstract class VdpRunnable implements Runnable {
+        public int vdpAddress;
+        public long vpdData;
+        public Size vdpSize;
     }
 
     void handleVdpInterrupts68k();

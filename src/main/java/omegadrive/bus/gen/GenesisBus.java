@@ -59,6 +59,13 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     private BusArbiter busArbiter = BusArbiter.NO_OP;
 
+    GenesisBus.VdpRunnable vdpRunnable = new GenesisBus.VdpRunnable() {
+        @Override
+        public void run() {
+            write(vdpAddress, vpdData, vdpSize);
+        }
+    };
+
     public static long ROM_START_ADDRESS;
     public static long ROM_END_ADDRESS;
     public static long RAM_START_ADDRESS;
@@ -731,8 +738,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     private boolean checkVdpBusy(int address, Size size, long data) {
         if (busArbiter.getVdpBusyState() == VdpBusyState.FIFO_FULL ||
                 busArbiter.getVdpBusyState() == VdpBusyState.MEM_TO_VRAM) {
-            Runnable r = () -> this.write(address, data, size);
-            busArbiter.runLater(r);
+            vdpRunnable.vdpAddress = address;
+            vdpRunnable.vdpSize = size;
+            vdpRunnable.vpdData = data;
+            busArbiter.runLater(vdpRunnable);
             return true;
         }
         return false;
