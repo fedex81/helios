@@ -82,16 +82,6 @@ public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseB
     }
 
     @Override
-    public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
-        //do nothing
-    }
-
-    @Override
-    public void onRegisterChange(int reg, int value) {
-        //do nothing
-    }
-
-    @Override
     public void reset() {
         deviceSet.clear();
         memoryProvider = null;

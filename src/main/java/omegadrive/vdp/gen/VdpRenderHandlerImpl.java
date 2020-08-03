@@ -617,11 +617,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
     }
 
-    @Override
-    public void onRegisterChange(int reg, int value) {
-
-    }
-
     private SpriteDataHolder getPhase1SpriteData(int spriteIdx, SpriteDataHolder holder) {
         if (spriteIdx + 3 >= 640) {
             LOG.error("Invalid sprite address: {}", spriteIdx); //titan2

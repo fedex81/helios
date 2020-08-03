@@ -283,11 +283,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         }
     }
 
-    @Override
-    public void onRegisterChange(int reg, int value) {
-        //do nothing
-    }
-
     public void logVerbose(String str) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(str);
