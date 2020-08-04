@@ -19,7 +19,7 @@
 
 
 def dateString = getDate()
-group 'com.fberti.genesis'
+group 'uk.co.md.helios'
 
 //version dateString
 version dateString + '-SNAPSHOT'
@@ -150,11 +150,13 @@ task packageDistribution(type: Zip) {
 
 task writeToFile {
     String jarName = jarNameHead + ".jar"
-    // sample list.(you already have it as extra.files.collect { file -> file.name })
-    List<String> sampleBase = [ "java", "-XX:AutoBoxCacheMax=65536",
+    List<String> javaAdvOpts =
+            ["-XX:AutoBoxCacheMax=65536", "-XX:-DontCompileHugeMethods", "-XX:+AlwaysCompileLoopMethods"]
+    List<String> sampleBase = [ "java",
                             "-Dlog4j.configurationFile=./log4j2.properties",
                                 "-Djinput.enable=true -Djinput.native.location=lib",
                             "-jar", "$jarName"] as String[]
+    sampleBase.addAll(1, javaAdvOpts)
     List<String> sampleUx = sampleBase.clone()
     sampleUx.add("\"\$@\"" + "\n")
     List<String> sampleWin = sampleBase.clone()
