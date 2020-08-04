@@ -22,7 +22,6 @@ package omegadrive.sound.fm.ym2612.nukeykt;
 import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.fm.VariableSampleRateSource;
 import omegadrive.sound.fm.ym2612.Ym2612RegSupport;
-import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -100,7 +99,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     private void addSample() {
         if (cycleAccum > fmCalcsPerMicros) {
-            super.addSample(Util.getFromIntegerCache(state.ym3438_diffLR_sampleL));
+            super.addStereoSamples(prevL, prevR);
             cycleAccum -= fmCalcsPerMicros;
         }
     }

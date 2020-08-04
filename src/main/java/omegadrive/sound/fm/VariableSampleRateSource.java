@@ -63,36 +63,42 @@ public abstract class VariableSampleRateSource implements FmProvider {
 
     protected abstract void spinOnce();
 
-    protected void addSample(int sample) {
-        sampleQueue.offer(Util.getFromIntegerCache(sample));
-        queueLen.addAndGet(1);
-        sampleRatePerFrame++;
+    protected void addStereoSamples(int sampleL, int sampleR) {
+        sampleQueue.offer(Util.getFromIntegerCache(sampleL));
+        sampleQueue.offer(Util.getFromIntegerCache(sampleR));
+        queueLen.addAndGet(2);
+        sampleRatePerFrame += 2;
+    }
+
+    protected void addMonoSample(int sample) {
+        addStereoSamples(sample, sample);
     }
 
     @Override
     public int update(int[] buf_lr, int offset, int count) {
         offset <<= 1;
         int end = (count << 1) + offset;
-        int rsample, lsample;
-        int sampleNum;
-        Integer isample;
+        int monoSampleNum;
+        Integer ilsample, irsample;
         final int initialQueueSize = queueLen.get();
         int queueIndicativeLen = initialQueueSize;
         for (int i = offset; i < end && queueIndicativeLen > 0; i += 2) {
-            isample = sampleQueue.peek();
-            if (isample == null) {
+            //when using mono we process two samples
+            ilsample = sampleQueue.peek();
+            irsample = sampleQueue.peek();
+            if (irsample == null) {
                 LOG.debug("Null sample QL{} P{}", queueIndicativeLen, i);
                 break;
             }
             sampleQueue.poll();
-            lsample = (short) (isample & 0xFFFF);
-            rsample = (short) (lsample - (short) ((isample >> 16) & 0xFFFF)); // diff = l - r, r = l - diff
-            queueIndicativeLen = queueLen.decrementAndGet();
-            buf_lr[i] = lsample << audioScaleBits;
-            buf_lr[i + 1] = rsample << audioScaleBits;
+            sampleQueue.poll();
+            queueIndicativeLen = queueLen.addAndGet(-2);
+            //Integer -> short -> int
+            buf_lr[i] = ((short) (ilsample & 0xFFFF)) << audioScaleBits;
+            buf_lr[i + 1] = ((short) (irsample & 0xFFFF)) << audioScaleBits;
         }
-        sampleNum = initialQueueSize - queueIndicativeLen;
-        return sampleNum;
+        monoSampleNum = (initialQueueSize - queueIndicativeLen) >> 1;
+        return monoSampleNum;
     }
 
     @Override

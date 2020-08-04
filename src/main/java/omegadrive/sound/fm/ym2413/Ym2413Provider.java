@@ -66,7 +66,7 @@ public class Ym2413Provider extends VariableSampleRateSource {
         rateAccum += adjustedRatio;
         spinOnce();
         if (rateAccum > 1) {
-            addSample(sample);
+            addMonoSample(sample);
             rateAccum -= 1;
         }
     }
