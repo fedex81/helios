@@ -190,7 +190,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
         scrollContextA.hScrollTableLocation = VdpRenderHandler.getHScrollDataLocation(vdpProvider);
         scrollContextB.hScrollTableLocation = scrollContextA.hScrollTableLocation;
-        spriteTableLocation = VdpRenderHandler.getSpriteTableLocation(vdpProvider);
+        spriteTableLocation = VdpRenderHandler.getSpriteTableLocation(vdpProvider, videoMode.isH40());
         clearDataLine();
     }
 

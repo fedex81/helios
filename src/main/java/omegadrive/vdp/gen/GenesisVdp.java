@@ -626,15 +626,19 @@ public class GenesisVdp implements GenesisVdpProvider {
                 list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, data));
                 break;
             case SPRITE_TABLE_LOC:
-                int res = VdpRenderHandler.getSpriteTableLocation(this);
-                if (res != satStart) {
-                    LOG.debug("Sat location: {} -> {}", Integer.toHexString(satStart), Integer.toHexString(res));
-                    satStart = res;
-                    memoryInterface.setSatBaseAddress(satStart);
-                }
+                updateSatLocation();
                 break;
             default:
                 break;
+        }
+    }
+
+    private void updateSatLocation() {
+        int res = VdpRenderHandler.getSpriteTableLocation(this, videoMode.isH40());
+        if (res != satStart) {
+//            LOG.info("Sat location: {} -> {}", Integer.toHexString(satStart), Integer.toHexString(res));
+            satStart = res;
+            memoryInterface.setSatBaseAddress(satStart);
         }
     }
 
@@ -736,6 +740,7 @@ public class GenesisVdp implements GenesisVdpProvider {
             this.videoMode = newVideoMode;
             LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
             pal = videoMode.isPal() ? 1 : 0;
+            updateSatLocation();
             list.forEach(l -> l.onVdpEvent(VdpEvent.VIDEO_MODE, newVideoMode));
         }
     }

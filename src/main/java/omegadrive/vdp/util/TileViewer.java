@@ -130,7 +130,7 @@ public class TileViewer implements UpdatableViewer {
         int planeALoc = VdpRenderHandler.getPlaneANameTableLocation(vdp);
         int planeBLoc = VdpRenderHandler.getPlaneBNameTableLocation(vdp);
         int planeWLoc = VdpRenderHandler.getWindowPlaneNameTableLocation(vdp, isH40);
-        int satLoc = VdpRenderHandler.getSpriteTableLocation(vdp);
+        int satLoc = VdpRenderHandler.getSpriteTableLocation(vdp, isH40);
 
         //planeSize -> each cell 16 bit
         int planeADataEnd = getClosestUpperLimit(planeALoc, planeALoc + (planeSize << 1),

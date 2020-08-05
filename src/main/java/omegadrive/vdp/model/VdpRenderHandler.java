@@ -130,11 +130,11 @@ public interface VdpRenderHandler {
         return (vdpProvider.getRegisterData(PLANE_A_NAMETABLE) & 0x38) << PLANE_A_SHIFT;
     }
 
-    static int getSpriteTableLocation(GenesisVdpProvider vdp) {
+    static int getSpriteTableLocation(GenesisVdpProvider vdp, boolean isH40) {
         //	AT16 is only valid if 128 KB mode is enabled,
         // and allows for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
-        //TODO check, ST0: Ignored in 320 pixel wide mode, limiting the address to a multiple of $400.
-        return (vdp.getRegisterData(SPRITE_TABLE_LOC) & 0x7F) << SPRITE_TABLE_SHIFT;
+        // AT0: Ignored in 320 pixel wide mode, limiting the address to a multiple of $400.
+        return (vdp.getRegisterData(SPRITE_TABLE_LOC) & (isH40 ? 0x7E : 0x7F)) << SPRITE_TABLE_SHIFT;
     }
 
 
