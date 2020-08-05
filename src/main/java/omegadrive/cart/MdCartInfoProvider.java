@@ -19,9 +19,7 @@
 
 package omegadrive.cart;
 
-import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
@@ -32,14 +30,9 @@ import java.util.Arrays;
 public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     static int SERIAL_NUMBER_START = 0x180;
-
-    public static final long DEFAULT_ROM_START_ADDRESS = 0x00_0000;
-    public static final long DEFAULT_RAM_END_ADDRESS = GenesisBusProvider.ADDRESS_UPPER_LIMIT;
-    public static final long DEFAULT_RAM_START_ADDRESS = 0xFF_0000;
     public static final long DEFAULT_SRAM_START_ADDRESS = 0x20_0000;
     public static final long DEFAULT_SRAM_END_ADDRESS = 0x20_FFFF;
     public static final int DEFAULT_SRAM_BYTE_SIZE = (int) (DEFAULT_SRAM_END_ADDRESS - DEFAULT_SRAM_START_ADDRESS) + 1;
-
 
     public static final int ROM_START_ADDRESS = 0x1A0;
     public static final int ROM_END_ADDRESS = 0x1A4;
@@ -60,26 +53,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     private long sramEnd;
     private boolean sramEnabled;
     static int SERIAL_NUMBER_END = SERIAL_NUMBER_START + 14;
-
-    public long getRomStart() {
-        return romStart;
-    }
-
-    public long getRomEnd() {
-        return romEnd;
-    }
-
-    public long getRamStart() {
-        return ramStart;
-    }
-
-    public long getRamEnd() {
-        return ramEnd;
-    }
-
-    public long getSramStart() {
-        return sramStart;
-    }
+    private int romSize;
 
     public long getSramEnd() {
         return sramEnd;
@@ -95,6 +69,10 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     public void setSramEnd(long sramEnd) {
         this.sramEnd = sramEnd;
+    }
+
+    public int getRomSize() {
+        return romSize;
     }
 
     private static Logger LOG = LogManager.getLogger(MdCartInfoProvider.class.getSimpleName());
@@ -162,9 +140,9 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         ramStart |= Util.readRom(memoryProvider, Size.WORD, RAM_START_ADDRESS + 2);
         ramEnd = Util.readRom(memoryProvider, Size.WORD, RAM_END_ADDRESS) << 16;
         ramEnd |= Util.readRom(memoryProvider, Size.WORD, RAM_END_ADDRESS + 2);
+        romSize = memoryProvider.getRomData().length;
         detectSram();
         detectHeaderMetadata();
-        checkLayout();
     }
 
 
@@ -192,38 +170,6 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
             } else if (!isBackup && isSramType) {
                 LOG.warn("Volatile SRAM? " + romName);
             }
-        }
-    }
-
-    //homebrew roms are sometimes broken
-    private void checkLayout() {
-        if (romStart > romEnd) {
-            LOG.warn("Invalid ROM START ADDRESS: " + romStart);
-            LOG.warn("Invalid ROM END ADDRESS: " + romEnd);
-            romStart = DEFAULT_ROM_START_ADDRESS;
-            romEnd = GenesisBusProvider.DEFAULT_ROM_END_ADDRESS;
-        }
-        if (romStart != 0) {
-            LOG.warn("Invalid ROM START ADDRESS: " + romStart);
-            romStart = DEFAULT_ROM_START_ADDRESS;
-        }
-        int romEndAddressFromFile = memoryProvider.getRomSize() - 1;
-        if (romEnd != romEndAddressFromFile) {
-            LOG.warn("Invalid ROM END ADDRESS: " + romEnd + ", setting to: " + romEndAddressFromFile);
-            romEnd = romEndAddressFromFile;
-        }
-        if (ramStart == 0) {
-            LOG.warn("Unable to parse RAM START ADDRESS");
-            ramStart = DEFAULT_RAM_START_ADDRESS;
-        }
-        if (ramEnd == 0) {
-            LOG.warn("Unable to parse RAM END ADDRESS");
-            ramEnd = DEFAULT_RAM_END_ADDRESS;
-        }
-        if (Math.abs(ramEnd - ramStart) > MemoryProvider.M68K_RAM_SIZE) {
-            LOG.warn("Invalid RAM size: " + (ramEnd - ramStart) + " bytes");
-            ramStart = DEFAULT_RAM_START_ADDRESS;
-            ramEnd = DEFAULT_RAM_END_ADDRESS;
         }
     }
 

@@ -21,7 +21,12 @@ subterrania perf: lots of vdpBusy hits
 megaman demo sprite corruption
 hook(U) (E works), Shadow of the Beast (UE) (J works):
 - z80 on busRequest and !reset, 68k stuck waiting on busUnrequested
-Star cruiser, gfx corruption
+
+- Star cruiser, gfx corruption
+20.0418 ok
+20.0624 ko
+
+- sf2 color hack, reset issue somewhere? (soft reset makes it work)
 
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin

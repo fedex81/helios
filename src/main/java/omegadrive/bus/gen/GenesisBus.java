@@ -66,10 +66,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         }
     };
 
-    public static long ROM_START_ADDRESS;
-    public static long ROM_END_ADDRESS;
-    public static long RAM_START_ADDRESS;
-    public static long RAM_END_ADDRESS;
+    private static long ROM_END_ADDRESS;
 
     enum BusState {READY, NOT_READY}
 
@@ -85,11 +82,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     }
 
     void initializeRomData() {
-        ROM_START_ADDRESS = cartridgeInfoProvider.getRomStart();
-        ROM_END_ADDRESS = Math.max(cartridgeInfoProvider.getRomEnd(), DEFAULT_ROM_END_ADDRESS);
-        ROM_END_ADDRESS = Math.min(ROM_END_ADDRESS, Z80_ADDRESS_SPACE_START);
-        RAM_START_ADDRESS = cartridgeInfoProvider.getRamStart();
-        RAM_END_ADDRESS = cartridgeInfoProvider.getRamEnd();
+        ROM_END_ADDRESS = Math.min(cartridgeInfoProvider.getRomSize(), Z80_ADDRESS_SPACE_START);
         entry = MdLoader.getEntry(cartridgeInfoProvider.getSerial());
         if (cartridgeInfoProvider.isSramEnabled() || entry.hasEeprom()) {
             mapper = MdBackupMemoryMapper.createInstance(this, cartridgeInfoProvider, entry);
