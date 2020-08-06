@@ -78,7 +78,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     public GenesisBus() {
         this.mapper = this;
-        this.enableTmss = Boolean.valueOf(System.getProperty("md.enable.tmss", "false"));
+        this.enableTmss = Boolean.parseBoolean(System.getProperty("md.enable.tmss", "false"));
     }
 
     void initializeRomData() {
@@ -390,37 +390,34 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 LOG.debug("busRequested, ignored, reset: {}", isReset);
             }
             //	 #$0000 needs to be written to $A11100 to return the bus back to the Z80
-        } else if (data == 0x0000) {
+        } else {
             if (z80BusRequested) {
                 z80BusRequested = false;
                 LOG.debug("busUnrequested, reset : {}", z80ResetState);
             } else {
                 LOG.debug("busUnrequested ignored");
             }
-        } else {
-            LOG.warn("Unexpected data on busRequest, address: {} , {} {}",
-                    Integer.toHexString(addressL), Long.toHexString(data), size);
         }
     }
 
+    /**
+     * $A10001	REG_VERSION
+     * Bit	7
+     * 0 : Domestic (Japanese model)
+     * 1 : Oversea (US or European model)
+     * Bit	6
+     * 0 : NTSC Clock (7.67Mhz)
+     * 1 : PAL Clock (7.60Mhz)
+     * Bit	5
+     * 0 : Expansion unit connected
+     * 1 : Expansion unit not connected
+     * Bit 0-4
+     * ?	Version number
+     * <p>
+     * TMSS = REGION_CODE + 1
+     */
     private long ioRead(long address, Size size) {
         long data = 0;
-        /**
-         * $A10001	REG_VERSION
-         * Bit	7
-         * 0 : Domestic (Japanese model)
-         * 1 : Oversea (US or European model)
-         * Bit	6
-         * 0 : NTSC Clock (7.67Mhz)
-         * 1 : PAL Clock (7.60Mhz)
-         * Bit	5
-         * 0 : Expansion unit connected
-         * 1 : Expansion unit not connected
-         * Bit 0-4
-         *  ?	Version number
-         *
-         * TMSS = REGION_CODE + 1
-         */
         if ((address & 0xFFF) <= 1) {    //	Version register (read-only word-long)
             data = systemProvider.getRegionCode() | (enableTmss ? 1 : 0);
             data = size == Size.WORD ? (data << 8) | data : data;
@@ -522,7 +519,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 break;
             default:
                 if (address >= 0x20) { //Reserved
-                    LOG.warn("Unexpected ioWrite {}, data {} {}",
+                    LOG.warn("Unexpected ioWrite {}, data {}",
                             Long.toHexString(address), Long.toHexString(data));
                 }
                 break;
@@ -583,12 +580,12 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     //	https://emu-docs.org/Genesis/gen-hw.txt
     //	When doing word-wide writes to Z80 RAM, only the MSB is written, and the LSB is ignored
-    private final void z80MemoryWriteWord(int address, int data) {
+    private void z80MemoryWriteWord(int address, int data) {
         z80Provider.writeMemory(address, (data & 0xFFFF) >> 8);
     }
 
     //    A word-wide read from Z80 RAM has the LSB of the data duplicated in the MSB
-    private final int z80MemoryReadWord(int address) {
+    private int z80MemoryReadWord(int address) {
         int data = z80Provider.readMemory(address);
         return data << 8 | data;
     }
@@ -645,7 +642,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             }
             LOG.error("Unexpected {} vdp port read: {}", size, Integer.toHexString(addressL));
             return 0xFF;
-        } else if (address >= 0x08 && address <= 0x0E) { //	VDP HV counter
+        } else if (address <= 0x0E) { //	VDP HV counter
 //            Reading the HV counter will return the following data:
 //
 //            VC7 VC6 VC5 VC4 VC3 VC2 VC1 VC0     (D15-D08)
@@ -706,7 +703,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
                 data = data << 8 | data;
             }
             vdpProvider.writeVdpPortWord(portType, (int) data);
-        } else if (address >= 0x8 && address < 0x0F) {   //HV Counter
+        } else if (address < 0x0F) {   //HV Counter
             LOG.warn("HV counter write");
         }
         //            Doing byte-wide writes to even PSG addresses has no effect.
@@ -851,7 +848,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     @Override
     public void closeRom() {
-        mapper.closeRom();
+        if (mapper != this) {
+            mapper.closeRom();
+        }
         ssf2Mapper.closeRom();
         backupMemMapper.closeRom();
     }
