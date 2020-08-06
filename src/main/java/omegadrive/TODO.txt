@@ -27,6 +27,12 @@ hook(U) (E works), Shadow of the Beast (UE) (J works):
 20.0624 ko
 
 - sf2 color hack, reset issue somewhere? (soft reset makes it work)
+68k: add delay on z80 rom access
+ko - ba56def0 Federico Berti <berti@leet.it> on 22/11/2019 at 13:30
+
+md: vdp perf
+ok (buggy) - 78b91eeb Federico Berti <berti@leet.it> on 11/11/2019 at 11:52
+- ie. adds a rendering bug
 
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin
