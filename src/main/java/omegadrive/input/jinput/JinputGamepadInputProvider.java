@@ -47,7 +47,7 @@ public class JinputGamepadInputProvider implements InputProvider {
 
     private static ExecutorService executorService =
             Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY, JinputGamepadInputProvider.class.getSimpleName()));
-    private long POLLING_INTERVAL_MS = Long.valueOf(System.getProperty("jinput.polling.interval.ms", "5"));
+    private long POLLING_INTERVAL_MS = Long.parseLong(System.getProperty("jinput.polling.interval.ms", "5"));
 
     private volatile JoypadProvider joypadProvider;
     private volatile boolean stop = false;
@@ -181,9 +181,9 @@ public class JinputGamepadInputProvider implements InputProvider {
             System.out.println(id + ": " + value);
         }
         Object res = JinputGamepadMapping.deviceMappings.row(ctrlName).getOrDefault(id, null);
-        if (res != null && res instanceof JoypadButton) {
+        if (res instanceof JoypadButton) {
             joypadProvider.setButtonAction(playerNumber, (JoypadButton) res, action);
-        } else if (res != null && res instanceof JoypadProvider.JoypadDirection) {
+        } else if (res instanceof JoypadProvider.JoypadDirection) {
             handleDPad(playerNumber, id, value);
         } else {
             LOG.debug("Unhandled event: {}", event);

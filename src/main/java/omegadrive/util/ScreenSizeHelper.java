@@ -29,12 +29,12 @@ public class ScreenSizeHelper {
     public static int DEFAULT_Y = 256; //TODO check this
 
     public static final int DEFAULT_SCALE_FACTOR =
-            Integer.valueOf(System.getProperty("helios.ui.scale", "2"));
+            Integer.parseInt(System.getProperty("helios.ui.scale", "2"));
     public static final double FULL_SCREEN_WITH_TITLE_BAR_FACTOR =
-            Double.valueOf(System.getProperty("helios.ui.fsTitle.factor", "1"));
+            Double.parseDouble(System.getProperty("helios.ui.fsTitle.factor", "1"));
 
     public static final boolean FIX_ASPECT_RATIO =
-            Boolean.valueOf(System.getProperty("ui.fix.aspect.ratio", "true"));
+            Boolean.parseBoolean(System.getProperty("ui.fix.aspect.ratio", "true"));
 
     public static Dimension DEFAULT_SCALED_SCREEN_SIZE = new Dimension(ScreenSizeHelper.DEFAULT_X * DEFAULT_SCALE_FACTOR,
             ScreenSizeHelper.DEFAULT_Y * DEFAULT_SCALE_FACTOR);
@@ -62,7 +62,6 @@ public class ScreenSizeHelper {
         double baseH = nativeScreenSize.getHeight();
         baseH = FIX_ASPECT_RATIO ? nativeScreenSize.getWidth() / FOUR_BY_THREE : baseH;
         double scaleH = fullScreenSize.getHeight() * FULL_SCREEN_WITH_TITLE_BAR_FACTOR / baseH;
-        double scale = Math.min(scaleW, scaleH);
-        return scale;
+        return Math.min(scaleW, scaleH);
     }
 }

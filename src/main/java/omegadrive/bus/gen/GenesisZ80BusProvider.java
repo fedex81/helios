@@ -77,7 +77,6 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
     @Override
     default void writeIoPort(int port, int value) {
         LOG.warn("outPort: " + port + ", data: " + value);
-        return;
     }
 
     static int getRomBank68kSerial(Z80Provider z80) {

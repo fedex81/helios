@@ -39,15 +39,15 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
     long NTSC_FM_CLOCK = Util.GEN_NTSC_MCLOCK_MHZ / 7; //7670442;
     long PAL_FM_CLOCK = Util.GEN_PAL_MCLOCK_MHZ / 7; //7600485;
 
-    int SAMPLE_RATE_HZ = Integer.valueOf(System.getProperty("audio.sample.rate.hz", "44100"));
+    int SAMPLE_RATE_HZ = Integer.parseInt(System.getProperty("audio.sample.rate.hz", "44100"));
 
     int DEFAULT_BUFFER_SIZE_MS = 50;
-    int AUDIO_BUFFER_LEN_MS = Integer.valueOf(System.getProperty("audio.buffer.length.ms",
+    int AUDIO_BUFFER_LEN_MS = Integer.parseInt(System.getProperty("audio.buffer.length.ms",
             String.valueOf(DEFAULT_BUFFER_SIZE_MS)));
 
-    boolean ENABLE_SOUND = Boolean.valueOf(System.getProperty("helios.enable.sound", "true"));
+    boolean ENABLE_SOUND = Boolean.parseBoolean(System.getProperty("helios.enable.sound", "true"));
 
-    boolean MD_NUKE_AUDIO = Boolean.valueOf(System.getProperty("md.nuke.audio", "true"));
+    boolean MD_NUKE_AUDIO = Boolean.parseBoolean(System.getProperty("md.nuke.audio", "true"));
 
     int[] EMPTY_FM = new int[0];
     byte[] EMPTY_PSG = new byte[0];

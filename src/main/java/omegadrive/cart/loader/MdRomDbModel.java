@@ -59,7 +59,7 @@ public class MdRomDbModel {
         }
 
         protected int getIntValue(String key, int defaultValue) {
-            return Integer.valueOf(String.valueOf(data.getOrDefault(key, defaultValue)));
+            return Integer.parseInt(String.valueOf(data.getOrDefault(key, defaultValue)));
         }
 
         protected Map<String, Object> getMapValue(String key) {

@@ -298,7 +298,6 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
 
     private void handleAudioControl(int value) {
         audioControl = value;
-        audioControl = value;
         boolean psgDisable = (value & 3) == 1 || (value & 3) == 2;
         boolean fmDisable = (value & 3) == 0 || (value & 3) == 2;
         soundProvider.setEnabled(soundProvider.getPsg(), !psgDisable);

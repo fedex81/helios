@@ -59,7 +59,7 @@ public class SwingWindow implements DisplayWindow {
     private Dimension fullScreenSize;
     //when scaling is slow set this to FALSE
     private static final boolean UI_SCALE_ON_EDT
-            = Boolean.valueOf(System.getProperty("ui.scale.on.edt", "true"));
+            = Boolean.parseBoolean(System.getProperty("ui.scale.on.edt", "true"));
     private Dimension outputNonScaledScreenSize = DEFAULT_SCALED_SCREEN_SIZE;
     private Dimension outputScreenSize = DEFAULT_SCALED_SCREEN_SIZE;
 
@@ -201,7 +201,7 @@ public class SwingWindow implements DisplayWindow {
 
     @Override
     public String getRegionOverride() {
-        return regionItems.stream().filter(i -> i.isSelected()).
+        return regionItems.stream().filter(AbstractButton::isSelected).
                 map(JCheckBoxMenuItem::getText).findFirst().orElse(null);
     }
 
@@ -277,7 +277,7 @@ public class SwingWindow implements DisplayWindow {
         regionItems.forEach(regionMenu::add);
 
         fullScreenItem = new JCheckBoxMenuItem("Full Screen", false);
-        addKeyAction(fullScreenItem, TOGGLE_FULL_SCREEN, e -> fullScreenAction(e));
+        addKeyAction(fullScreenItem, TOGGLE_FULL_SCREEN, this::fullScreenAction);
         menuView.add(fullScreenItem);
 
         muteItem = new JCheckBoxMenuItem("Enable Sound", true);
@@ -387,7 +387,7 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private void renderScreenLinearInternal(int[] data, Optional<String> label, VideoMode videoMode) {
-        boolean changed = resizeScreen(videoMode);
+        resizeScreen(videoMode);
         RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
         label.ifPresent(this::showLabel);
         screenLabel.repaint();
@@ -513,9 +513,7 @@ public class SwingWindow implements DisplayWindow {
 
     private void handleSaveState() {
         Optional<File> optFile = fileDialog(jFrame, SAVE_STATE_RES, false);
-        if (optFile.isPresent()) {
-            handleSystemEvent(SAVE_STATE, optFile.get().toPath(), optFile.get().getName());
-        }
+        optFile.ifPresent(file -> handleSystemEvent(SAVE_STATE, file.toPath(), file.getName()));
     }
 
     private void handleNewRom() {
@@ -603,7 +601,6 @@ public class SwingWindow implements DisplayWindow {
 
             @Override
             public void keyPressed(KeyEvent e) {
-                SystemProvider mainEmu = getMainEmu();
                 KeyStroke keyStroke = KeyStroke.getKeyStrokeForEvent(e);
 //                LOG.info(keyStroke.toString());
                 SystemProvider.SystemEvent event = KeyBindingsHandler.getInstance().getSystemEventIfAny(keyStroke);
@@ -695,7 +692,7 @@ public class SwingWindow implements DisplayWindow {
                     list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
                 }
             }));
-            l.stream().forEach(menu::add);
+            l.forEach(menu::add);
             //fudgePlayer1Using1stController
             if (list.size() > 2 && pn == PlayerNumber.P1) {
                 LOG.info("Auto-selecting {} using Controller: {}", pn, l.get(2).getText());

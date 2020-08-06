@@ -53,16 +53,16 @@ public enum VdpCounterMode {
     private final static EnumSet<VdpCounterMode> values = EnumSet.allOf(VdpCounterMode.class);
     private final static Logger LOG = LogManager.getLogger(VdpCounterMode.class.getSimpleName());
 
-    public int hTotalCount;
-    public int hJumpTrigger;
-    public int hBlankSet;
-    public int hBlankClear;
-    public int hBlankClearSlot;
-    public int vTotalCount;
-    public int vJumpTrigger;
-    public int vBlankSet;
-    public int vCounterIncrementOn;
-    public int slotsPerLine;
+    public final int hTotalCount;
+    public final int hJumpTrigger;
+    public final int hBlankSet;
+    public final int hBlankClear;
+    public final int hBlankClearSlot;
+    public final int vTotalCount;
+    public final int vJumpTrigger;
+    public final int vBlankSet;
+    public final int vCounterIncrementOn;
+    public final int slotsPerLine;
     VideoMode videoMode;
     VdpSlotType[] slotTypes;
 

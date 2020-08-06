@@ -22,16 +22,15 @@ megaman demo sprite corruption
 hook(U) (E works), Shadow of the Beast (UE) (J works):
 - z80 on busRequest and !reset, 68k stuck waiting on busUnrequested
 
-- Star cruiser, gfx corruption
-20.0418 ok
-20.0624 ko
+- Star cruiser, window plane corruption
+ko - f7a9385 on 15/06/2020 at 17:29
 
 - sf2 color hack, reset issue somewhere? (soft reset makes it work)
 68k: add delay on z80 rom access
-ko - ba56def0 Federico Berti <berti@leet.it> on 22/11/2019 at 13:30
+ko - ba56def0 on 22/11/2019 at 13:30
 
 md: vdp perf
-ok (buggy) - 78b91eeb Federico Berti <berti@leet.it> on 11/11/2019 at 11:52
+ok (buggy) - 78b91eeb on 11/11/2019 at 11:52
 - ie. adds a rendering bug
 
 //region issue EUJ -> U, should use U

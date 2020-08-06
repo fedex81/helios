@@ -31,12 +31,12 @@ public class RegionDetector {
 
     private static Comparator<Region> REGION_COMPARATOR = Comparator.comparingInt(r -> r.order);
 
-    public static int PAL_FPS = 50;
-    public static int NTSC_FPS = 60;
+    public final static int PAL_FPS = 50;
+    public final static int NTSC_FPS = 60;
 
-    public static int FIRST_REGION_ADDRESS = 0x1f0;
-    public static int SECOND_REGION_ADDRESS = 0x1f1;
-    public static int THIRD_REGION_ADDRESS = 0x1f2;
+    public final static int FIRST_REGION_ADDRESS = 0x1f0;
+    public final static int SECOND_REGION_ADDRESS = 0x1f1;
+    public final static int THIRD_REGION_ADDRESS = 0x1f2;
 
     public static Region detectRegion(IMemoryProvider memoryProvider, boolean verbose) {
         char char1 = (char) memoryProvider.readRomByte(FIRST_REGION_ADDRESS);
@@ -49,7 +49,7 @@ public class RegionDetector {
         regions[1] = Region.getRegion(char2);
         regions[2] = Region.getRegion(char3);
 
-        Optional<Region> optRegion = Arrays.stream(regions).filter(Objects::nonNull).sorted(REGION_COMPARATOR).findFirst();
+        Optional<Region> optRegion = Arrays.stream(regions).filter(Objects::nonNull).min(REGION_COMPARATOR);
 
         Region res = optRegion.orElse(detectRegionFallBack(memoryProvider).orElse(null));
         if (res == null) {

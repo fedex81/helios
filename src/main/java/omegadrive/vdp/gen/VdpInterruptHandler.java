@@ -74,10 +74,11 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
     public static VdpInterruptHandler createInstance(BaseVdpProvider vdp) {
         VdpInterruptHandler handler = new VdpInterruptHandler();
         handler.reset();
+        handler.vdpEventListenerList = Collections.emptyList();
         if (vdp != null) {
             vdp.addVdpEventListener(handler);
+            handler.vdpEventListenerList = Collections.unmodifiableList(vdp.getVdpEventListenerList());
         }
-        handler.vdpEventListenerList = Collections.unmodifiableList(vdp.getVdpEventListenerList());
         return handler;
     }
 
@@ -241,8 +242,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
     /**
      * H32 = 171 slots = 171/5 = 42.75
      * H40 = 210 slots = 195/4 + 15/5 = 42.75
-     *
-     * @return
      */
     public int getVdpClockSpeed() {
         return h40 && hCounterInternal < BaseVdpProvider.H40_SLOW_CLOCK ?
@@ -287,7 +286,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         }
     }
 
-    private final void logVerbose(String str) {
+    private void logVerbose(String str) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(str);
         }
@@ -299,13 +298,13 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         }
     }
 
-    private final void logVerbose(String str, int arg) {
+    private void logVerbose(String str, int arg) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(String.format(str, arg));
         }
     }
 
-    private final void logVerbose(String str, boolean arg) {
+    private void logVerbose(String str, boolean arg) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(String.format(str, arg));
         }

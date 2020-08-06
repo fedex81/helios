@@ -65,19 +65,17 @@ public class Util {
 
     static {
         for (int i = 0, j = 0; i < negativeCache.length; i++) {
-            negativeCache[i] = Integer.valueOf(j--);
+            negativeCache[i] = j--;
         }
         startSleeperThread();
-        BUSY_WAIT = Boolean.valueOf(System.getProperty("helios.busy.wait", "false"));
+        BUSY_WAIT = Boolean.parseBoolean(System.getProperty("helios.busy.wait", "false"));
         LOG.info("Busy waiting instead of sleeping: {}", BUSY_WAIT);
     }
 
     //futile attempt at getting high resolution sleeps on windows
     private static void startSleeperThread() {
         if (isWindows()) {
-            Runnable r = () -> {
-                sleep(Long.MAX_VALUE);
-            };
+            Runnable r = () -> sleep(Long.MAX_VALUE);
             Thread t = new Thread(r);
             t.setName("sleeperForWindows");
             t.start();
@@ -280,7 +278,7 @@ public class Util {
 
     public static String computeCrc32(int[] data) {
         CRC32 crc32 = new CRC32();
-        Arrays.stream(data).forEach(d -> crc32.update(d));
+        Arrays.stream(data).forEach(crc32::update);
         return Long.toHexString(crc32.getValue());
     }
 
@@ -294,7 +292,7 @@ public class Util {
     }
 
     public static int getUInt32LE(byte... bytes) {
-        int value = (bytes[0] & 0xFF) << 0;
+        int value = (bytes[0] & 0xFF);
         value = bytes.length > 1 ? value | ((bytes[1] & 0xFF) << 8) : value;
         value = bytes.length > 2 ? value | ((bytes[2] & 0xFF) << 16) : value;
         value = bytes.length > 3 ? value | ((bytes[3] & 0xFF) << 24) : value;
@@ -302,7 +300,7 @@ public class Util {
     }
 
     public static int getUInt32LE(int... bytes) {
-        int value = (bytes[0] & 0xFF) << 0;
+        int value = (bytes[0] & 0xFF);
         value = bytes.length > 1 ? value | ((bytes[1] & 0xFF) << 8) : value;
         value = bytes.length > 2 ? value | ((bytes[2] & 0xFF) << 16) : value;
         value = bytes.length > 3 ? value | ((bytes[3] & 0xFF) << 24) : value;
@@ -325,8 +323,8 @@ public class Util {
 
     public static String toStringValue(int... data) {
         String value = "";
-        for (int i = 0; i < data.length; i++) {
-            value += (char) (data[i] & 0xFF);
+        for (int datum : data) {
+            value += (char) (datum & 0xFF);
         }
         return value;
     }
@@ -371,11 +369,11 @@ public class Util {
         return data;
     }
 
-    public static final String toHex(long val) {
+    public static String toHex(long val) {
         return Strings.padStart(Long.toHexString(val & 0xFF_FFFF), 8, '0');
     }
 
-    public static final String toHex(long val, int digits) {
+    public static String toHex(long val, int digits) {
         return Strings.padStart(Long.toHexString(val & 0xFF_FFFF), digits, '0');
     }
 
@@ -383,7 +381,7 @@ public class Util {
         if (val < 0 && val >= CACHE_LIMIT) {
             return negativeCache[-val];
         }
-        return Integer.valueOf(val);
+        return val;
     }
 
     public static List<Range<Integer>> getRangeList(int... values) {
@@ -398,7 +396,7 @@ public class Util {
         byte[] res = new byte[0];
         try (
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(bos);
+                ObjectOutputStream oos = new ObjectOutputStream(bos)
         ) {
             oos.writeObject(obj);
             oos.flush();
@@ -406,7 +404,7 @@ public class Util {
         } catch (Exception e) {
             LOG.error("Unable to serialize object: " + obj.getClass().getSimpleName());
         }
-        if (res == null || res.length == 0) {
+        if (res.length == 0) {
             LOG.error("Unable to serialize object: " + obj.getClass().getSimpleName());
         }
         return res;
@@ -414,12 +412,13 @@ public class Util {
 
     public static Serializable deserializeObject(byte[] data, int offset, int len) {
         if (data == null || data.length == 0 || offset < 0 || len > data.length) {
-            LOG.error("Unable to deserialize object of len: " + data.length);
+            LOG.error("Unable to deserialize object of len: " + (data != null ? data.length : "null"));
+            return null;
         }
         Serializable res = null;
         try (
                 ByteArrayInputStream bis = new ByteArrayInputStream(data, offset, len);
-                ObjectInput in = new ObjectInputStream(bis);
+                ObjectInput in = new ObjectInputStream(bis)
         ) {
             res = (Serializable) in.readObject();
         } catch (Exception e) {

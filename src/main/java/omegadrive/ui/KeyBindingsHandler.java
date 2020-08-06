@@ -31,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import java.awt.event.KeyEvent;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static javax.swing.KeyStroke.getKeyStroke;
 
@@ -47,7 +46,7 @@ public class KeyBindingsHandler {
 
     private static KeyBindingsHandler instance;
 
-    public static KeyBindingsHandler getInstance() {
+    public synchronized static KeyBindingsHandler getInstance() {
         if (instance == null) {
             instance = new KeyBindingsHandler();
             instance.init();
@@ -140,7 +139,7 @@ public class KeyBindingsHandler {
     }
 
     public static String toConfigString() {
-        return toConfigList().stream().collect(Collectors.joining("\n"));
+        return String.join("\n", toConfigList());
     }
 
     private static List<String> toConfigList() {

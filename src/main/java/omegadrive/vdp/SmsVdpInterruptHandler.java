@@ -46,10 +46,11 @@ public class SmsVdpInterruptHandler extends VdpInterruptHandler {
     public static VdpInterruptHandler createSmsInstance(BaseVdpProvider vdp) {
         SmsVdpInterruptHandler handler = new SmsVdpInterruptHandler();
         handler.reset();
+        handler.vdpEventListenerList = Collections.emptyList();
         if (vdp != null) {
             vdp.addVdpEventListener(handler);
+            handler.vdpEventListenerList = Collections.unmodifiableList(vdp.getVdpEventListenerList());
         }
-        handler.vdpEventListenerList = Collections.unmodifiableList(vdp.getVdpEventListenerList());
         return handler;
     }
 

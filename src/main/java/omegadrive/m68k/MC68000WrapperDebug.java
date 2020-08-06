@@ -129,7 +129,7 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
     }
 
     protected void handleException(int vector) {
-        if (vector == LEV4_EXCEPTION && vector == LEV6_EXCEPTION) {
+        if (vector == LEV4_EXCEPTION || vector == LEV6_EXCEPTION) {
             return;
         }
         if (vector == ILLEGAL_ACCESS_EXCEPTION) {

@@ -34,13 +34,11 @@ import java.util.Map;
 //                every line of the display.
 public class VdpScrollHandler {
 
-    protected VdpMemoryInterface memoryInterface;
     protected int[] vram;
     protected int[] vsram;
 
     public static VdpScrollHandler createInstance(VdpMemoryInterface memoryInterface) {
         VdpScrollHandler v = new VdpScrollHandler();
-        v.memoryInterface = memoryInterface;
         v.vram = memoryInterface.getVram();
         v.vsram = memoryInterface.getVsram();
         return v;

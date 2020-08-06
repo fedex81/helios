@@ -134,7 +134,6 @@ public interface GenesisBusProvider extends BaseBusProvider {
     @Override
     default void writeIoPort(int port, int value) {
         LOG.warn("outPort: " + port + ", data: " + value);
-        return;
     }
 
     default boolean isSvp() {
