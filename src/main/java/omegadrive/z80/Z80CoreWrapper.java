@@ -113,8 +113,6 @@ public class Z80CoreWrapper implements Z80Provider {
         z80Core.setPendingEI(false);
         z80Core.setMemPtr(GenesisZ80BusProviderImpl.END_RAM);
 
-        z80Core.setINTLine(false);
-
         //from GenPlusGx
         z80Core.setRegPC(0);
         z80Core.setRegI(0);

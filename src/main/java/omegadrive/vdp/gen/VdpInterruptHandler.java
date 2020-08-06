@@ -69,8 +69,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
     private boolean vIntPending;
     protected boolean hIntPending;
 
-    protected static boolean veryVerbose = false;
-    protected static boolean verbose = false || veryVerbose;
+    protected static final boolean verbose = false;
 
     public static VdpInterruptHandler createInstance(BaseVdpProvider vdp) {
         VdpInterruptHandler handler = new VdpInterruptHandler();
@@ -139,6 +138,11 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         }
         handleHLinesCounterDecrement();
         return vCounterInternal;
+    }
+
+    public final int increaseHCounterSlot() {
+        increaseHCounterInternal();
+        return increaseHCounterInternal();
     }
 
     public int increaseHCounter() {
@@ -265,7 +269,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
 
     public int resetHLinesCounter() {
         this.hLinePassed = hLinesCounter;
-        logVeryVerbose("Reset hLinePassed: %s", hLinePassed);
+        logVerbose("Reset hLinePassed: %s", hLinePassed);
         return hLinePassed;
     }
 
@@ -283,32 +287,26 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         }
     }
 
-    public void logVerbose(String str) {
+    private final void logVerbose(String str) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(str);
         }
     }
 
-    public void logVerbose(String str, long arg) {
+    protected final void logVerbose(String str, long arg) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(String.format(str, arg));
         }
     }
 
-    public void logVerbose(String str, int arg) {
+    private final void logVerbose(String str, int arg) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
             printStateString(String.format(str, arg));
         }
     }
 
-    public void logVerbose(String str, boolean arg) {
+    private final void logVerbose(String str, boolean arg) {
         if (verbose && LOG.isEnabled(Level.INFO)) {
-            printStateString(String.format(str, arg));
-        }
-    }
-
-    public void logVeryVerbose(String str, int arg) {
-        if (veryVerbose && LOG.isEnabled(Level.INFO)) {
             printStateString(String.format(str, arg));
         }
     }
@@ -316,14 +314,13 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
     private static final String STATE_FMT_STR =
             "%s, slot=0x%x, hce=0x%x(0x%x), vce=0x%x(0x%x), hb%d, vb%d, VINTPend%d, HINTPend%d, hLines=%d";
 
-    public String getStateString(String head) {
+    public final String getStateString(String head) {
         return String.format(STATE_FMT_STR,
                 head, slotNumber, (hCounterInternal >> 1) & 0xFF, hCounterInternal, vCounterInternal & 0xFF, vCounterInternal,
                 (hBlankSet ? 1 : 0), (vBlankSet ? 1 : 0), (vIntPending ? 1 : 0), (hIntPending ? 1 : 0), hLinesCounter);
     }
 
     private void printStateString(String head) {
-        String str = getStateString(head);
-        LOG.info(str);
+        LOG.info(getStateString(head));
     }
 }

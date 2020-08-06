@@ -46,7 +46,6 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.getRegiste
 public class GenesisVdp implements GenesisVdpProvider {
 
     public final static boolean verbose = false;
-    public final static boolean fifoVerbose = false;
     public final static boolean regVerbose = false;
     private final static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
@@ -622,7 +621,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                 autoIncrementData = data;
                 break;
             case HCOUNTER_VALUE:
-                interruptHandler.logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
+                logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
                 list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, data));
                 break;
             case SPRITE_TABLE_LOC:
@@ -648,7 +647,7 @@ public class GenesisVdp implements GenesisVdpProvider {
         if (regVerbose && current != data && reg < 0x13) {
             String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- de{}",
                     getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (displayEnable ? 1 : 0)).getFormattedMessage();
-            LOG.info(this.interruptHandler.getStateString(msg));
+            LOG.info(getVdpStateString(msg));
         }
     }
 
@@ -663,7 +662,7 @@ public class GenesisVdp implements GenesisVdpProvider {
     private void updateIe1(boolean newIe1) {
         if (ie1 != newIe1) {
             ie1 = newIe1;
-            interruptHandler.logVerbose("Update ie1 register: %s", newIe1);
+            logVerbose("Update ie1 register: %s", newIe1 ? 1 : 0);
         }
     }
 
@@ -695,8 +694,7 @@ public class GenesisVdp implements GenesisVdpProvider {
     public int runSlot() {
 //        LogHelper.printLevel(LOG, Level.INFO, "Start slot: {}", interruptHandler.getSlotNumber(), verbose);
         //slot granularity -> 2 H counter increases per cycle
-        interruptHandler.increaseHCounter();
-        interruptHandler.increaseHCounter();
+        interruptHandler.increaseHCounterSlot();
 
         //vblank bit is set during all of vblank (and while display is disabled)
         //VdpFifoTesting !disp -> vb = 1, but not for hb
@@ -708,14 +706,13 @@ public class GenesisVdp implements GenesisVdpProvider {
 
         //draw the frame
         if (interruptHandler.isDrawFrameSlot()) {
-            interruptHandler.logVerbose("Draw Screen");
+            logVerbose("Draw Screen");
             debugViewer.update();
             list.forEach(VdpEventListener::onNewFrame);
             resetVideoMode(false);
         }
         if (interruptHandler.isDrawLineSlot()) {
-            //draw line
-            interruptHandler.logVeryVerbose("Draw Scanline: %s", interruptHandler.vCounterInternal);
+            logVerbose("Draw Scanline: %s", interruptHandler.vCounterInternal);
             renderHandler.renderLine(interruptHandler.vCounterInternal);
             debugViewer.updateLine(interruptHandler.vCounterInternal);
         }
@@ -807,5 +804,21 @@ public class GenesisVdp implements GenesisVdpProvider {
     public void reset() {
         this.debugViewer.reset();
         this.list.clear();
+    }
+
+    private final void logVerbose(String str, int arg) {
+        if (verbose) {
+            LOG.info(getVdpStateString(String.format(str, arg)));
+        }
+    }
+
+    private final void logVerbose(String str) {
+        if (verbose) {
+            LOG.info(getVdpStateString(str));
+        }
+    }
+
+    private final String getVdpStateString(String head) {
+        return interruptHandler.getStateString(head + " - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
     }
 }
