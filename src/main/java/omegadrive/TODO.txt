@@ -14,11 +14,9 @@ titan2 vdp crash
 rambo III intro corruption (uses shadow/highlight)
 iss deluxe colors
 bubba and stix
-asterix and the great rescue
 power monger
 batman and robin, mad hatter: hint related?
 subterrania perf: lots of vdpBusy hits
-megaman demo sprite corruption
 hook(U) (E works), Shadow of the Beast (UE) (J works):
 - z80 on busRequest and !reset, 68k stuck waiting on busUnrequested
 
@@ -37,4 +35,3 @@ ok (buggy) - 78b91eeb on 11/11/2019 at 11:52
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin
 Robocop Versus The Terminator (U) [T+Rus].bin
 Jiuji Majiang Er - Yeyan Pian (Ch) [h2C] //custom mapper?
-
