@@ -152,6 +152,8 @@ task writeToFile {
     String jarName = jarNameHead + ".jar"
     List<String> javaAdvOpts =
             ["-XX:AutoBoxCacheMax=65536", "-XX:-DontCompileHugeMethods", "-XX:+AlwaysCompileLoopMethods"]
+    //win: default to busy wait
+    List<String> winOpts = ["-Dhelios.busy.wait=true"]
     List<String> sampleBase = [ "java",
                             "-Dlog4j.configurationFile=./log4j2.properties",
                                 "-Djinput.enable=true -Djinput.native.location=lib",
@@ -160,6 +162,7 @@ task writeToFile {
     List<String> sampleUx = sampleBase.clone()
     sampleUx.add("\"\$@\"" + "\n")
     List<String> sampleWin = sampleBase.clone()
+    sampleWin.addAll(1, winOpts)
     sampleWin.add("\"%1\"" + "\n")
     // create the folders if it does not exist.(otherwise it will throw exception)
     File extraFolder = new File( "${buildDir}/packageDir")
