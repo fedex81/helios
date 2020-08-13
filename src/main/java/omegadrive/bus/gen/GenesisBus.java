@@ -333,6 +333,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             LOG.info("Mapper bank set, address: {} , data: {}", Long.toHexString(addressL),
                     Integer.toHexString((int) data));
             checkSsf2Mapper();
+            ROM_END_ADDRESS = DEFAULT_ROM_END_ADDRESS;
             mapper.writeBankData(addressL, data);
         } else if (addressL == 0xA130F1) {
             boolean rom = (data & 1) == 0;
@@ -740,8 +741,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     private void checkSsf2Mapper() {
         if (ssf2Mapper == RomMapper.NO_OP_MAPPER) {
             this.ssf2Mapper = Ssf2Mapper.createInstance(this, memoryProvider);
-            mapper = ssf2Mapper;
         }
+        mapper = ssf2Mapper;
     }
 
     private void checkSvpMapper() {
