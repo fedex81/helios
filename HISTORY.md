@@ -1,3 +1,16 @@
+## 20.0816
+
+68k: update lib, tas fix
+helios: refactor fm stereo handling
+helios: ignore keys with modifiers when detecting a joypad button press
+helios: remember the folder when opening a resource
+helios: add option to busy-wait instead of sleeping, should help on windows
+md: avoid psg distortion, acquire data more often
+md: add support for SMD interleaved dumps, disabled by default
+md: fix savestate persist
+md: fix ssf2 mapper issue
+ui: scaling for HiDPI displays, add drag and drop - contributed by krlvm
+
 ## 20.0704
 gb: disable for now, buggy
 helios: default to stereo sound
