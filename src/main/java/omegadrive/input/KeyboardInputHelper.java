@@ -76,7 +76,7 @@ public class KeyboardInputHelper {
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_R, CTRL_DOWN_MASK), RESET);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_R, CTRL_DOWN_MASK | SHIFT_DOWN_MASK), SOFT_RESET);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_9, CTRL_DOWN_MASK), QUICK_LOAD);
-        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_8, CTRL_DOWN_MASK), QUICK_SAVE);
+        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_1, CTRL_DOWN_MASK), QUICK_SAVE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_7, CTRL_DOWN_MASK), LOAD_STATE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_6, CTRL_DOWN_MASK), SAVE_STATE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_L, CTRL_DOWN_MASK), NEW_ROM);
