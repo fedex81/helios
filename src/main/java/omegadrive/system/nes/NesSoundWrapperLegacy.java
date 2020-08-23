@@ -3,14 +3,10 @@ package omegadrive.system.nes;
 import com.grapeshot.halfnes.audio.AudioOutInterface;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.RegionDetector;
-import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jctools.queues.atomic.SpscAtomicArrayQueue;
 
 import javax.sound.sampled.AudioFormat;
-import java.util.Queue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * NesSoundWrapper
@@ -19,17 +15,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * Copyright 2020
  */
-public class NesSoundWrapper implements AudioOutInterface, FmProvider {
+@Deprecated
+public class NesSoundWrapperLegacy implements AudioOutInterface, FmProvider {
 
-    private static final Logger LOG = LogManager.getLogger(NesSoundWrapper.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(NesSoundWrapperLegacy.class.getSimpleName());
 
-    static final double VOLUME = 13107 / 16384.;
+    protected volatile int[] monoBuffer;
+    protected volatile int monoBufPtr = 0;
+    protected int samplesPerFrame;
+    double VOLUME = 13107 / 16384.;
 
-    private Queue<Integer> sampleQueue;
-    private AtomicInteger queueLen = new AtomicInteger();
-
-    public NesSoundWrapper(RegionDetector.Region region, AudioFormat audioFormat) {
-        sampleQueue = new SpscAtomicArrayQueue<>(((int) audioFormat.getSampleRate()) << 1);
+    public NesSoundWrapperLegacy(RegionDetector.Region region, AudioFormat audioFormat) {
+        int channels = audioFormat.getChannels();
+        int sampleRate = (int) audioFormat.getSampleRate();
+        this.samplesPerFrame = (int) Math.ceil((sampleRate * channels) / region.getFps());
+        this.monoBuffer = new int[samplesPerFrame];
     }
 
     @Override
@@ -37,25 +37,23 @@ public class NesSoundWrapper implements AudioOutInterface, FmProvider {
         offset <<= 1;
         int end = (count << 1) + offset;
 
-        int res = queueLen.get();
+        int res = monoBufPtr;
 //        LOG.info("update " + res);
-        int sampleNum = 0;
+
         int k = 0, i = 0;
         for (k = offset; k < end && i < res; k += 2, i++) {
-            Integer sample = sampleQueue.peek();
-            if (sample != null) {
-                sampleQueue.poll();
-                sampleNum++;
-                buf_lr[k] = sample;
-                buf_lr[k + 1] = buf_lr[k];
-            }
+            buf_lr[k] = monoBuffer[i];
+            buf_lr[k + 1] = monoBuffer[i];
         }
-        queueLen.addAndGet(-sampleNum);
-        return sampleNum;
+        monoBufPtr -= i;
+        return res;
     }
 
     @Override
     public void outputSample(int sample) {
+        if (monoBufPtr > monoBuffer.length - 1) {
+            return;
+        }
         sample *= VOLUME;
         if (sample < -32768) {
             sample = -32768;
@@ -66,24 +64,18 @@ public class NesSoundWrapper implements AudioOutInterface, FmProvider {
             //System.err.println("clop");
         }
         //mono
-        boolean res = sampleQueue.offer(Util.getFromIntegerCache(sample));
-        if (res) {
-            queueLen.getAndIncrement();
-        } else {
-            LOG.info("Sample dropped");
-        }
+        monoBuffer[monoBufPtr] = sample;
+        monoBufPtr++;
     }
 
     @Override
     public void flushFrame(boolean waitIfBufferFull) {
         //DO NOTHING
-//        LOG.info("flush, waitIfFull: {}, samples: {}" ,waitIfBufferFull, queueLen.get());
     }
 
     @Override
     public boolean bufferHasLessThan(int samples) {
-//        LOG.info("bufferHasLessThan: {}, actual: {}", samples, queueLen.get());
-        return queueLen.get() < samples;
+        return false;
     }
 
     @Override
@@ -98,12 +90,12 @@ public class NesSoundWrapper implements AudioOutInterface, FmProvider {
 
     @Override
     public void destroy() {
-        reset();
+
     }
 
     @Override
     public void init(int clock, int rate) {
-        reset();
+
     }
 
     @Override
@@ -118,7 +110,6 @@ public class NesSoundWrapper implements AudioOutInterface, FmProvider {
 
     @Override
     public void reset() {
-        sampleQueue.clear();
-        queueLen.set(0);
+
     }
 }
