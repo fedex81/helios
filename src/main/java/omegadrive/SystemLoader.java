@@ -75,7 +75,7 @@ public class SystemLoader {
 
     public static String[] binaryTypes = Stream.of(
             mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes, nesBinaryTypes,
-//            gbBinaryTypes,
+            gbBinaryTypes,
             compressedBinaryTypes
     ).flatMap(Stream::of).toArray(String[]::new);
 
@@ -277,7 +277,7 @@ public class SystemLoader {
         boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isNes = Arrays.stream(nesBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isGb = false; //Arrays.stream(gbBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isGb = Arrays.stream(gbBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if (isGen) {
             systemProvider = Genesis.createNewInstance(emuFrame, debugPerf);
         } else if (isSg) {
