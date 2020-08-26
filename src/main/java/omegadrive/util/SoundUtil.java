@@ -203,56 +203,6 @@ public class SoundUtil {
         }
     }
 
-    private static void intStereo14ToByteMono16Mix(int[] input, byte[] output, int inputLen) {
-        int j = 0;
-        for (int i = 0; i < inputLen; i += 2) {
-            //fm: avg 2 channels -> mono
-            // avg = (16 bit + 16 bit) >> (1 + 1) = 15 bit
-            int out16 = (input[i] + input[i + 1]) >> 2;
-            output[i] = (byte) (out16 & 0xFF); //lsb
-            output[i + 1] = (byte) ((out16 >> 8) & 0xFF); //msb
-            j++;
-        }
-    }
-
-    public static void mixFmPsg(int[] fmMono16, byte[] outputMono16, byte[] psgMono8, int inputLen) {
-        if (fmMono16.length == 0) {
-            byteMono8ToByteMono16Mix(psgMono8, outputMono16);
-        } else if (psgMono8.length == 0) {
-            intStereo14ToByteMono16Mix(fmMono16, outputMono16, inputLen);
-        } else {
-            intStereo14ToByteMono16Mix(fmMono16, outputMono16, psgMono8, inputLen);
-        }
-    }
-
-    private static void intStereo14ToByteMono16Mix(int[] input, byte[] output, byte[] psgMono8, int inputLen) {
-        int j = 0;
-        for (int i = 0; i < inputLen; i += 2) {
-            //fm: avg 2 channels -> mono
-            // avg = (16 bit + 16 bit) >> (1 + 1) = 15 bit
-            int fm = (input[i] + input[i + 1]) >> 2;
-            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg = psgMono8[j];
-            //TODO check this
-            psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
-            //avg fm and psg
-            int out16 = Math.min(Math.max(fm + psg, Short.MIN_VALUE), Short.MAX_VALUE);
-            output[i] = (byte) (out16 & 0xFF); //lsb
-            output[i + 1] = (byte) ((out16 >> 8) & 0xFF); //msb
-            j++;
-        }
-    }
-
-    private static void byteMono8ToByteMono16Mix(byte[] psgMono8, byte[] output) {
-        int i = 0;
-        for (int j = 0; j < psgMono8.length; j++, i+=2) {
-            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg16 = ((int) psgMono8[j]) << 7;
-            output[i] = (byte) (psg16 & 0xFF); //lsb
-            output[i + 1] = (byte) ((psg16 >> 8) & 0xFF); //msb
-        }
-    }
-
     public static void convertToWav(AudioFormat audioFormat, String fileName) {
         File input = new File(fileName);
         File output = new File(fileName + ".wav");

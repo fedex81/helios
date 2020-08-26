@@ -41,7 +41,7 @@ public abstract class VariableSampleRateSource implements FmProvider {
     private double outputSampleRate;
     private Queue<Integer> sampleQueue =
             new SpscAtomicArrayQueue<>(SoundProvider.SAMPLE_RATE_HZ);
-    private AtomicInteger queueLen = new AtomicInteger();
+    protected AtomicInteger queueLen = new AtomicInteger();
     private AudioRateControl audioRateControl;
     private int sampleRatePerFrame = 0;
     private final int audioScaleBits;
@@ -64,6 +64,7 @@ public abstract class VariableSampleRateSource implements FmProvider {
     protected abstract void spinOnce();
 
     protected void addStereoSamples(int sampleL, int sampleR) {
+        //TODO check results
         sampleQueue.offer(Util.getFromIntegerCache(sampleL));
         sampleQueue.offer(Util.getFromIntegerCache(sampleR));
         queueLen.addAndGet(2);
