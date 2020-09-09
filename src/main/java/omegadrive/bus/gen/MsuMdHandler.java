@@ -5,6 +5,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
+import java.io.File;
+import java.util.Optional;
 
 /**
  * Federico Berti
@@ -66,5 +68,32 @@ public interface MsuMdHandler {
             }
             return null;
         }
+    }
+
+    enum CueFileDataType {
+        BINARY,
+        WAVE,
+        UNKNOWN;
+
+        static MsuMdHandlerImpl.CueFileDataType getFileType(String type) {
+            for (MsuMdHandlerImpl.CueFileDataType c : MsuMdHandlerImpl.CueFileDataType.values()) {
+                if (c.name().equalsIgnoreCase(type)) {
+                    return c;
+                }
+            }
+            return UNKNOWN;
+        }
+    }
+
+    class MsuCommandArg {
+        MsuCommand command;
+        int arg;
+    }
+
+    class TrackDataHolder {
+        MsuMdHandlerImpl.CueFileDataType type;
+        Optional<File> waveFile = Optional.empty();
+        Optional<Integer> numBytes = Optional.empty();
+        Optional<Integer> startFrame = Optional.empty();
     }
 }

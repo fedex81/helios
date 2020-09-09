@@ -8,12 +8,15 @@ import org.apache.logging.log4j.Logger;
 import org.digitalmediaserver.cuelib.CueSheet;
 import org.digitalmediaserver.cuelib.TrackData;
 
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * MsuMdHandlerImpl
@@ -36,6 +39,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private Path romPath;
     private volatile byte[] buffer = new byte[0];
     private RandomAccessFile binFile;
+    private TrackDataHolder[] trackDataHolders = new TrackDataHolder[CueFileParser.MAX_TRACKS];
 
 
     private MsuMdHandlerImpl(Path romPath, CueSheet cueSheet, RandomAccessFile binFile) {
@@ -57,8 +61,35 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             LOG.error("Disabling MSU-MD handling, unable to find BIN file");
             return NO_OP_HANDLER;
         }
-        MsuMdHandler h = new MsuMdHandlerImpl(romPath, cueSheet, binFile);
+        MsuMdHandlerImpl h = new MsuMdHandlerImpl(romPath, cueSheet, binFile);
+        h.initTrackData(cueSheet);
         return h;
+    }
+
+    protected void initTrackData(CueSheet cueSheet) {
+        List<TrackData> trackDataList = cueSheet.getAllTrackData();
+        for (TrackData td : trackDataList) {
+            TrackDataHolder h = new TrackDataHolder();
+            h.type = CueFileDataType.getFileType(td.getParent().getFileType());
+            switch (h.type) {
+                case BINARY:
+                    if (trackDataList.size() == td.getNumber()) {
+                        continue; //TODO
+                    }
+                    TrackData trackDataNext = trackDataList.get(td.getNumber());
+                    int startFrame = td.getFirstIndex().getPosition().getTotalFrames();
+                    int endFrame = trackDataNext.getFirstIndex().getPosition().getTotalFrames();
+                    int numBytes = (endFrame - startFrame) * CueFileParser.SECTOR_SIZE_BYTES;
+                    h.numBytes = Optional.of(numBytes);
+                    h.startFrame = Optional.of(startFrame);
+                    break;
+                case WAVE:
+                    h.type = CueFileDataType.WAVE;
+                    h.waveFile = Optional.ofNullable(cueSheet.getFile().resolveSibling(td.getParent().getFile()).toFile());
+                    break;
+            }
+            trackDataHolders[td.getNumber()] = h;
+        }
     }
 
     private static CueSheet initCueSheet(Path romPath) {
@@ -76,25 +107,6 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             LOG.error(e);
         }
         return binFile;
-    }
-
-    public int readTrack(int num) {
-        TrackData trackData = cueSheet.getAllTrackData().get(num - 1);
-        TrackData trackDataNext = cueSheet.getAllTrackData().get(num);
-        int startFrame = trackData.getFirstIndex().getPosition().getTotalFrames();
-        int endFrame = trackDataNext.getFirstIndex().getPosition().getTotalFrames();
-        int numBytes = (endFrame - startFrame) * CueFileParser.SECTOR_SIZE_BYTES;
-        if (buffer.length < numBytes) {
-            buffer = new byte[numBytes];
-        }
-        Arrays.fill(buffer, (byte) 0);
-        try {
-            binFile.seek(startFrame * CueFileParser.SECTOR_SIZE_BYTES);
-            binFile.readFully(buffer, 0, numBytes);
-        } catch (IOException e) {
-            LOG.error(e);
-        }
-        return numBytes;
     }
 
     @Override
@@ -214,10 +226,21 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    int len = readTrack(track);
+                    TrackDataHolder h = trackDataHolders[track];
                     stopTrack();
                     clip = AudioSystem.getClip();
-                    clip.open(CDDA_FORMAT, buffer, 0, len);
+                    switch (h.type) {
+                        case WAVE:
+                            AudioInputStream ais = AudioSystem.getAudioInputStream(h.waveFile.get());
+                            clip.open(ais);
+                            break;
+                        case BINARY:
+                            prepareBuffer(h);
+                            clip.open(CDDA_FORMAT, buffer, 0, h.numBytes.get());
+                            break;
+                        default:
+                            LOG.error("Unable to parse track type: {}", h.type);
+                    }
                     clip.loop(loop ? Clip.LOOP_CONTINUOUSLY : 0);
                     clip.start();
                     LOG.info("Track started: {}", track);
@@ -228,8 +251,17 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         }).start();
     }
 
-    private class MsuCommandArg {
-        MsuCommand command;
-        int arg;
+    private void prepareBuffer(TrackDataHolder h) {
+        int numBytes = h.numBytes.get();
+        if (buffer.length < numBytes) {
+            buffer = new byte[numBytes];
+        }
+        Arrays.fill(buffer, (byte) 0);
+        try {
+            binFile.seek(h.startFrame.get() * CueFileParser.SECTOR_SIZE_BYTES);
+            binFile.readFully(buffer, 0, numBytes);
+        } catch (IOException e) {
+            LOG.error(e);
+        }
     }
 }

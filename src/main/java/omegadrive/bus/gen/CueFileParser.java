@@ -29,7 +29,7 @@ import java.nio.file.Path;
 
 public class CueFileParser {
     private static final Logger LOG = LogManager.getLogger(CueFileParser.class.getSimpleName());
-    private static final int MAX_TRACKS = 100; //0-99
+    public static final int MAX_TRACKS = 100; //0-99
     static int SECTOR_SIZE_BYTES = 2352;
 
     public static CueSheet parse(Path cueFilePath) {
