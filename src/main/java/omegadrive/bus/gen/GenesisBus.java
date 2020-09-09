@@ -92,12 +92,13 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         if (ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
             LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
         }
-        msuMdHandler = MsuMdHandlerImpl.createInstance(cartridgeInfoProvider.getRomName());
+        msuMdHandler = MsuMdHandlerImpl.createInstance(systemProvider.getRomPath());
     }
 
     @Override
     public void init() {
-        this.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
+        this.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider,
+                systemProvider.getRomPath().getFileName().toString());
         initializeRomData();
         LOG.info(cartridgeInfoProvider.toString());
         attachDevice(BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider));

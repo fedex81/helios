@@ -10,9 +10,9 @@ import org.digitalmediaserver.cuelib.TrackData;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 /**
@@ -33,39 +33,49 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private volatile Clip clip;
     private volatile long clipPosition;
     private volatile CueSheet cueSheet;
-    private String romName;
+    private Path romPath;
     private volatile byte[] buffer = new byte[0];
     private RandomAccessFile binFile;
 
 
-    private MsuMdHandlerImpl(String romName, CueSheet cueSheet, RandomAccessFile binFile) {
-        this.romName = romName;
+    private MsuMdHandlerImpl(Path romPath, CueSheet cueSheet, RandomAccessFile binFile) {
+        this.romPath = romPath;
         this.cueSheet = cueSheet;
         this.binFile = binFile;
         LOG.info("Enabling MSU-MD handling, using cue sheet: {}", cueSheet.getFile().toAbsolutePath());
         System.out.println(cueSheet);
     }
 
-    public static MsuMdHandler createInstance(String romName) {
-        CueSheet cueSheet = MsuMdHandlerImpl.initCueSheet(romName);
+    public static MsuMdHandler createInstance(Path romPath) {
+        CueSheet cueSheet = MsuMdHandlerImpl.initCueSheet(romPath);
         if (cueSheet == null) {
-            LOG.error("Disabling MSU-MD handling");
+            LOG.error("Disabling MSU-MD handling, unable to find CUE file.");
             return NO_OP_HANDLER;
         }
-        RandomAccessFile binFile = null;
-        try {
-            binFile = new RandomAccessFile(cueSheet.getFileData().get(0).getFile(), "r");
-        } catch (FileNotFoundException e) {
-            LOG.error(e);
+        RandomAccessFile binFile = MsuMdHandlerImpl.initBinFile(romPath, cueSheet);
+        if (binFile == null) {
+            LOG.error("Disabling MSU-MD handling, unable to find BIN file");
             return NO_OP_HANDLER;
         }
-        MsuMdHandler h = new MsuMdHandlerImpl(romName, cueSheet, binFile);
+        MsuMdHandler h = new MsuMdHandlerImpl(romPath, cueSheet, binFile);
         return h;
     }
 
-    private static CueSheet initCueSheet(String romName) {
+    private static CueSheet initCueSheet(Path romPath) {
+        String romName = romPath.getFileName().toString();
         String cueFileName = romName.replace("." + Files.getFileExtension(romName), ".cue");
-        return CueFileParser.parse(cueFileName);
+        return CueFileParser.parse(romPath.resolveSibling(cueFileName));
+    }
+
+    private static RandomAccessFile initBinFile(Path romPath, CueSheet sheet) {
+        RandomAccessFile binFile = null;
+        try {
+            Path binPath = romPath.resolveSibling(sheet.getFileData().get(0).getFile());
+            binFile = new RandomAccessFile(binPath.toFile(), "r");
+        } catch (Exception e) {
+            LOG.error(e);
+        }
+        return binFile;
     }
 
     public int readTrack(int num) {
@@ -128,7 +138,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private void handleMsuMdWriteByte(int address, int data) {
         switch (address) {
             case CLOCK_ADDR:
-                LOG.info("Cmd clock: {} -> {}", clock, data);
+                LOG.debug("Cmd clock: {} -> {}", clock, data);
                 processCommand(commandArg);
                 clock = data;
                 break;
@@ -187,8 +197,9 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             clip.stop();
             clipPosition = 0;
             clip.flush();
-            Util.sleep(250); //avoid pulse-audio crashes on linux
+            Util.sleep(150); //avoid pulse-audio crashes on linux
             clip.close();
+            Util.sleep(100);
             LOG.info("Track stopped");
         }
     }

@@ -66,6 +66,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     protected RegionDetector.Region region = RegionDetector.Region.USA;
     protected VideoMode videoMode = VideoMode.PAL_H40_V30;
     private String romName;
+    private Path romPath;
 
     protected Future<Void> runningRomFuture;
     protected Path romFile;
@@ -229,8 +230,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     }
 
     @Override
-    public String getRomName() {
-        return romName;
+    public Path getRomPath() {
+        return romPath;
     }
 
     class RomRunnable implements Runnable {
@@ -250,6 +251,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
                     return;
                 }
                 memory.setRomData(data);
+                romPath = file;
                 romName = file.getFileName().toString();
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);

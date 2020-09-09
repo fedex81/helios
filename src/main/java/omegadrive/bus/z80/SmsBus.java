@@ -85,12 +85,13 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
     }
 
     protected void setupCartHw() {
-        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
+        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,
+                systemProvider.getRomPath().getFileName().toString());
         MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(),
                 cartridgeInfoProvider.getCrc32());
         LOG.info(cartridgeInfoProvider.toString());
         String mapperName = SmsMapper.Type.SEGA.name();
-        if(e != MapperSelector.MISSING_DATA){
+        if (e != MapperSelector.MISSING_DATA) {
             LOG.info("Cart db match:\n{}", e);
             mapperName = e.mapperName;
         } else {

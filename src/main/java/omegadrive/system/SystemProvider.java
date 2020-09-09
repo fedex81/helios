@@ -23,6 +23,8 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.util.RegionDetector;
 
+import java.nio.file.Path;
+
 public interface SystemProvider extends Device {
 
     void handleSystemEvent(SystemEvent event, Object parameter);
@@ -39,7 +41,7 @@ public interface SystemProvider extends Device {
         return getRegion().getVersionCode();
     }
 
-    String getRomName();
+    Path getRomPath();
 
     SystemLoader.SystemType getSystemType();
 

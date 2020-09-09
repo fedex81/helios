@@ -23,22 +23,21 @@ import org.apache.logging.log4j.Logger;
 import org.digitalmediaserver.cuelib.CueParser;
 import org.digitalmediaserver.cuelib.CueSheet;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 
 public class CueFileParser {
     private static final Logger LOG = LogManager.getLogger(CueFileParser.class.getSimpleName());
     private static final int MAX_TRACKS = 100; //0-99
     static int SECTOR_SIZE_BYTES = 2352;
 
-    public static CueSheet parse(String cueFilename) {
-        File cueFile = new File(cueFilename);
+    public static CueSheet parse(Path cueFilePath) {
         CueSheet cueSheet = null;
         try {
-            cueSheet = CueParser.parse(cueFile, Charset.defaultCharset());
+            cueSheet = CueParser.parse(cueFilePath.toFile(), Charset.defaultCharset());
         } catch (IOException e) {
-            LOG.warn("Unable to open BIN/CUE file " + cueFilename + ": " + e.getMessage());
+            LOG.warn("Unable to open BIN/CUE file " + cueFilePath + ": " + e.getMessage());
         }
         return cueSheet;
     }
