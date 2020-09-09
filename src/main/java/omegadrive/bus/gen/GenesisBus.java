@@ -97,8 +97,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     @Override
     public void init() {
-        this.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider,
-                systemProvider.getRomPath().getFileName().toString());
+        this.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
         initializeRomData();
         LOG.info(cartridgeInfoProvider.toString());
         attachDevice(BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider));

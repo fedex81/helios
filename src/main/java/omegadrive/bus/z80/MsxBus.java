@@ -276,8 +276,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvide
 
     private void setupCartHw(){
         int len = memoryProvider.getRomSize();
-        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,
-                systemProvider.getRomPath().getFileName().toString());
+        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
         MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(), cartridgeInfoProvider.getSha1());
         if (e != MapperSelector.MISSING_DATA) {
             LOG.info("Cart Hw match:\n{}", e);

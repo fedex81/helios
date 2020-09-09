@@ -85,8 +85,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, Ro
     }
 
     protected void setupCartHw() {
-        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,
-                systemProvider.getRomPath().getFileName().toString());
+        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
         MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(),
                 cartridgeInfoProvider.getCrc32());
         LOG.info(cartridgeInfoProvider.toString());
