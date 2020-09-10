@@ -2,7 +2,7 @@ package omegadrive.bus.gen;
 
 import com.google.common.io.Files;
 import omegadrive.util.Size;
-import omegadrive.util.Util;
+import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.digitalmediaserver.cuelib.CueSheet;
@@ -47,7 +47,6 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         this.cueSheet = cueSheet;
         this.binFile = binFile;
         LOG.info("Enabling MSU-MD handling, using cue sheet: {}", cueSheet.getFile().toAbsolutePath());
-        System.out.println(cueSheet);
     }
 
     public static MsuMdHandler createInstance(Path romPath) {
@@ -168,90 +167,101 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         }
     }
 
+    boolean paused;
+
     private void processCommand(MsuCommandArg commandArg) {
         int arg = commandArg.arg;
+        Runnable r = null;
         switch (commandArg.command) {
             case PLAY:
                 LOG.info("Play track: {}", arg);
-                playTrack(arg, false);
+                r = playTrack(arg, false);
                 break;
             case PLAY_LOOP:
                 LOG.info("PlayLoop track: {}", arg);
-                playTrack(arg, true);
+                r = playTrack(arg, true);
                 break;
             case PAUSE:
                 LOG.info("Pause: {}", arg);
-                pauseTrack(arg / 75d);
+                r = pauseTrack(arg / 75d);
                 break;
             case RESUME:
                 LOG.info("Resume: {}", arg);
-                resumeTrack();
+                r = resumeTrack();
                 break;
             case VOL:
                 LOG.info("Volume: {}", arg);
                 break;
         }
-    }
-
-    private void pauseTrack(final double fadeMs) {
-        if (clip != null) {
-            clipPosition = clip.getMicrosecondPosition();
-            clip.stop();
+        if (r != null) {
+//            Util.executorService.submit(r);
+            r.run();
         }
     }
 
-    private void resumeTrack() {
-        if (clip != null) {
-            clip.setMicrosecondPosition(clipPosition);
-            clip.start();
-        }
+    private Runnable pauseTrack(final double fadeMs) {
+        return () -> {
+            if (clip != null) {
+                clipPosition = clip.getMicrosecondPosition();
+                clip.stop();
+            }
+            paused = true;
+        };
     }
 
-    private void stopTrack() {
-        if (clip != null) {
-            clip.stop();
+    private Runnable resumeTrack() {
+        return () -> {
+            if (clip != null) {
+                clip.setMicrosecondPosition(clipPosition);
+                clip.start();
+            }
+            paused = false;
+        };
+    }
+
+    private Runnable stopTrack() {
+        return () -> {
+            SoundUtil.close(clip);
             clipPosition = 0;
-            clip.flush();
-            Util.sleep(150); //avoid pulse-audio crashes on linux
-            clip.close();
-            Util.sleep(100);
             LOG.info("Track stopped");
-        }
+        };
     }
 
     @Override
     public void close() {
-        stopTrack();
+        stopTrack().run();
         LOG.info("Closing");
     }
 
-    private void playTrack(final int track, boolean loop) {
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    TrackDataHolder h = trackDataHolders[track];
-                    stopTrack();
-                    clip = AudioSystem.getClip();
-                    switch (h.type) {
-                        case WAVE:
-                            AudioInputStream ais = AudioSystem.getAudioInputStream(h.waveFile.get());
-                            clip.open(ais);
-                            break;
-                        case BINARY:
-                            prepareBuffer(h);
-                            clip.open(CDDA_FORMAT, buffer, 0, h.numBytes.get());
-                            break;
-                        default:
-                            LOG.error("Unable to parse track type: {}", h.type);
-                    }
-                    clip.loop(loop ? Clip.LOOP_CONTINUOUSLY : 0);
-                    clip.start();
-                    LOG.info("Track started: {}", track);
-                } catch (Exception e) {
-                    LOG.error(e);
+    private Runnable playTrack(final int track, boolean loop) {
+        return () -> {
+            try {
+                TrackDataHolder h = trackDataHolders[track];
+                stopTrack();
+                clip = AudioSystem.getClip();
+                switch (h.type) {
+                    case WAVE:
+                        AudioInputStream ais = AudioSystem.getAudioInputStream(h.waveFile.get());
+                        clip.open(ais);
+                        break;
+                    case BINARY:
+                        prepareBuffer(h);
+                        clip.open(CDDA_FORMAT, buffer, 0, h.numBytes.get());
+                        break;
+                    default:
+                        LOG.error("Unable to parse track type: {}", h.type);
                 }
+                clip.loop(loop ? Clip.LOOP_CONTINUOUSLY : 0);
+                if (!paused) {
+                    clip.start();
+                } else {
+                    clipPosition = 0;
+                }
+                LOG.info("Track started: {}", track);
+            } catch (Exception e) {
+                LOG.error(e);
             }
-        }).start();
+        };
     }
 
     private void prepareBuffer(TrackDataHolder h) {
