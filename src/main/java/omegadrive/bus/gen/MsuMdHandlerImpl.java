@@ -63,25 +63,36 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             LOG.error("Disabling MSU-MD handling, unable to find BIN file");
             return NO_OP_HANDLER;
         }
+        long binLen = 0;
+        try {
+            if ((binLen = binFile.length()) == 0) {
+                throw new Exception("Zero length file: " + binFile.toString());
+            }
+        } catch (Exception e) {
+            LOG.error("Disabling MSU-MD handling, unable to find BIN file");
+            return NO_OP_HANDLER;
+        }
         MsuMdHandlerImpl h = new MsuMdHandlerImpl(romPath, cueSheet, binFile);
-        h.initTrackData(cueSheet);
+        h.initTrackData(cueSheet, binLen);
         return h;
     }
 
-    protected void initTrackData(CueSheet cueSheet) {
+    protected void initTrackData(CueSheet cueSheet, long binLen) {
         List<TrackData> trackDataList = cueSheet.getAllTrackData();
         for (TrackData td : trackDataList) {
             TrackDataHolder h = new TrackDataHolder();
             h.type = CueFileDataType.getFileType(td.getParent().getFileType());
             switch (h.type) {
                 case BINARY:
-                    if (trackDataList.size() == td.getNumber()) {
-                        continue; //TODO
-                    }
-                    TrackData trackDataNext = trackDataList.get(td.getNumber());
+                    int numBytes = 0;
                     int startFrame = td.getFirstIndex().getPosition().getTotalFrames();
-                    int endFrame = trackDataNext.getFirstIndex().getPosition().getTotalFrames();
-                    int numBytes = (endFrame - startFrame) * CueFileParser.SECTOR_SIZE_BYTES;
+                    if (trackDataList.size() == td.getNumber()) {
+                        numBytes = (int) binLen - (startFrame * CueFileParser.SECTOR_SIZE_BYTES);
+                    } else {
+                        TrackData trackDataNext = trackDataList.get(td.getNumber());
+                        int endFrame = trackDataNext.getFirstIndex().getPosition().getTotalFrames();
+                        numBytes = (endFrame - startFrame) * CueFileParser.SECTOR_SIZE_BYTES;
+                    }
                     h.numBytes = Optional.of(numBytes);
                     h.startFrame = Optional.of(startFrame);
                     break;
@@ -219,17 +230,15 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         };
     }
 
-    private Runnable stopTrack() {
-        return () -> {
-            SoundUtil.close(clip);
-            clipPosition = 0;
-            LOG.info("Track stopped");
-        };
+    private void stopTrackInternal() {
+        SoundUtil.close(clip);
+        clipPosition = 0;
+        LOG.info("Track stopped");
     }
 
     @Override
     public void close() {
-        stopTrack().run();
+        stopTrackInternal();
         LOG.info("Closing");
     }
 
@@ -237,7 +246,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         return () -> {
             try {
                 TrackDataHolder h = trackDataHolders[track];
-                stopTrack();
+                stopTrackInternal();
                 clip = AudioSystem.getClip();
                 switch (h.type) {
                     case WAVE:
