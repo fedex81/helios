@@ -243,6 +243,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 clip = AudioSystem.getClip();
                 switch (h.type) {
                     case WAVE:
+                    case OGG:
                         AudioInputStream ais = AudioSystem.getAudioInputStream(h.waveFile.get());
                         AudioInputStream dataIn = AudioSystem.getAudioInputStream(CDDA_FORMAT, ais);
                         clip.open(dataIn);

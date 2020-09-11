@@ -73,6 +73,7 @@ public interface MsuMdHandler {
     enum CueFileDataType {
         BINARY,
         WAVE,
+        OGG,
         UNKNOWN;
 
         static MsuMdHandlerImpl.CueFileDataType getFileType(String type) {
