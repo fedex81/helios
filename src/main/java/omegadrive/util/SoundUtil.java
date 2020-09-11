@@ -125,8 +125,6 @@ public class SoundUtil {
             try {
                 line = (SourceDataLine) AudioSystem.getLine(info);
                 line.open(audioFormat, getAudioLineBufferSize(audioFormat));
-                //TODO check
-//                line.open(audioFormat, (int) align((int) (getAudioLineBufferSize(audioFormat) * 1.5), 4));
                 lowerLatencyHack(line);
                 line.start();
                 LOG.info("SourceDataLine buffer (bytes): " + line.getBufferSize());
@@ -206,7 +204,9 @@ public class SoundUtil {
     public static void close(DataLine line) {
         if (line != null) {
             line.stop();
-            line.flush();
+            synchronized (line) {
+                line.flush();
+            }
             Util.sleep(150); //avoid pulse-audio crashes on linux
             line.close();
             Util.sleep(100);

@@ -35,16 +35,12 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private boolean init;
     private volatile Clip clip;
     private volatile long clipPosition;
-    private volatile CueSheet cueSheet;
-    private Path romPath;
     private volatile byte[] buffer = new byte[0];
     private RandomAccessFile binFile;
     private TrackDataHolder[] trackDataHolders = new TrackDataHolder[CueFileParser.MAX_TRACKS];
 
 
     private MsuMdHandlerImpl(Path romPath, CueSheet cueSheet, RandomAccessFile binFile) {
-        this.romPath = romPath;
-        this.cueSheet = cueSheet;
         this.binFile = binFile;
         LOG.info("Enabling MSU-MD handling, using cue sheet: {}", cueSheet.getFile().toAbsolutePath());
     }
@@ -222,10 +218,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
 
     private Runnable resumeTrack() {
         return () -> {
-            if (clip != null) {
-                clip.setMicrosecondPosition(clipPosition);
-                clip.start();
-            }
+            startClipInternal(clip);
             paused = false;
         };
     }
@@ -251,7 +244,8 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 switch (h.type) {
                     case WAVE:
                         AudioInputStream ais = AudioSystem.getAudioInputStream(h.waveFile.get());
-                        clip.open(ais);
+                        AudioInputStream dataIn = AudioSystem.getAudioInputStream(CDDA_FORMAT, ais);
+                        clip.open(dataIn);
                         break;
                     case BINARY:
                         prepareBuffer(h);
@@ -262,15 +256,26 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 }
                 clip.loop(loop ? Clip.LOOP_CONTINUOUSLY : 0);
                 if (!paused) {
-                    clip.start();
+                    startClipInternal(clip);
                 } else {
                     clipPosition = 0;
                 }
                 LOG.info("Track started: {}", track);
             } catch (Exception e) {
                 LOG.error(e);
+                e.printStackTrace();
             }
         };
+    }
+
+    private void startClipInternal(Clip clip) {
+        if (clip == null) {
+            return;
+        }
+        if (clipPosition > 0) {
+            clip.setMicrosecondPosition(clipPosition);
+        }
+        clip.start();
     }
 
     private void prepareBuffer(TrackDataHolder h) {
