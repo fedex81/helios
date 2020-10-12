@@ -27,6 +27,7 @@ import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.*;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -223,7 +224,7 @@ public class MdVdpTestUtil {
             }
 
             @Override
-            public String getRomName() {
+            public Path getRomPath() {
                 return null;
             }
 

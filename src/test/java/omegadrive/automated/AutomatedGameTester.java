@@ -243,7 +243,7 @@ public class AutomatedGameTester {
             IMemoryProvider memoryProvider = MemoryProvider.createInstance(data, 0);
             try {
                 CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,
-                        rom.getFileName().toString());
+                        rom);
                 if (!cartridgeInfoProvider.hasCorrectChecksum()) {
                     System.out.println(rom.getFileName().toString() + ";" + cartridgeInfoProvider.toString());
                 }

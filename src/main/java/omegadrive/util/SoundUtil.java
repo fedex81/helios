@@ -125,8 +125,6 @@ public class SoundUtil {
             try {
                 line = (SourceDataLine) AudioSystem.getLine(info);
                 line.open(audioFormat, getAudioLineBufferSize(audioFormat));
-                //TODO check
-//                line.open(audioFormat, (int) align((int) (getAudioLineBufferSize(audioFormat) * 1.5), 4));
                 lowerLatencyHack(line);
                 line.start();
                 LOG.info("SourceDataLine buffer (bytes): " + line.getBufferSize());
@@ -203,14 +201,26 @@ public class SoundUtil {
         }
     }
 
+    public static void close(DataLine line) {
+        if (line != null) {
+            line.stop();
+            synchronized (line) {
+                line.flush();
+            }
+            Util.sleep(150); //avoid pulse-audio crashes on linux
+            line.close();
+            Util.sleep(100);
+        }
+    }
+
     public static void convertToWav(AudioFormat audioFormat, String fileName) {
         File input = new File(fileName);
         File output = new File(fileName + ".wav");
 
         try (
-            FileInputStream fileInputStream = new FileInputStream(input);
-            AudioInputStream audioInputStream = new AudioInputStream(fileInputStream, audioFormat
-                    , input.length());
+                FileInputStream fileInputStream = new FileInputStream(input);
+                AudioInputStream audioInputStream = new AudioInputStream(fileInputStream, audioFormat
+                        , input.length());
         ) {
             AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, output);
             audioInputStream.close();

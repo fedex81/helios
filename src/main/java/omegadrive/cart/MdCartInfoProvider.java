@@ -25,7 +25,9 @@ import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Optional;
 
 public class MdCartInfoProvider extends CartridgeInfoProvider {
 
@@ -110,10 +112,10 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
                 ";" + getSramSizeBytes();
     }
 
-    public static MdCartInfoProvider createInstance(IMemoryProvider memoryProvider, String rom) {
+    public static MdCartInfoProvider createInstance(IMemoryProvider memoryProvider, Path rom) {
         MdCartInfoProvider provider = new MdCartInfoProvider();
         provider.memoryProvider = memoryProvider;
-        provider.romName = rom;
+        provider.romName = Optional.ofNullable(rom).map(p -> p.getFileName().toString()).orElse("norom.bin");
         provider.init();
         return provider;
     }

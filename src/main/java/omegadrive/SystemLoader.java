@@ -234,7 +234,7 @@ public class SystemLoader {
             }
 
             @Override
-            public String getRomName() {
+            public Path getRomPath() {
                 return null;
             }
 

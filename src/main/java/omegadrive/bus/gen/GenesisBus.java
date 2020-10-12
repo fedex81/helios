@@ -55,6 +55,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
     private RomMapper ssf2Mapper = RomMapper.NO_OP_MAPPER;
     private RomMapper backupMemMapper = RomMapper.NO_OP_MAPPER;
     private SvpBus svpMapper = SvpBus.NO_OP;
+    private MsuMdHandler msuMdHandler;
     private MdRomDbModel.Entry entry;
 
     private BusArbiter busArbiter = BusArbiter.NO_OP;
@@ -91,11 +92,12 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         if (ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
             LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
         }
+        msuMdHandler = MsuMdHandlerImpl.createInstance(systemProvider.getRomPath());
     }
 
     @Override
     public void init() {
-        this.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomName());
+        this.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
         initializeRomData();
         LOG.info(cartridgeInfoProvider.toString());
         attachDevice(BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider));
@@ -171,7 +173,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             return Util.readRam(memoryProvider, size, address & M68K_RAM_MASK);
         } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
-            LOG.warn("Read on reserved address: {}", Integer.toHexString(address));
+            LOG.warn("Read on reserved address: {}, {}", Integer.toHexString(address), size);
+            if (address == 0x400100) { //TODO
+                return Util.readRom(memoryProvider, size, address & 0xFFFF);
+            }
             return size.getMax();
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             return z80MemoryRead(address, size);
@@ -253,9 +258,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             return z80BusReqRead(size);
         } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
             //NOTE few roms read a11200
-            LOG.warn("Unexpected Z80 read at: " + Long.toHexString(address));
+            LOG.warn("Unexpected Z80 read at: {}, {}", Long.toHexString(address), size);
         } else if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
-            LOG.warn("Unexpected MegaCD address range read at: " + Long.toHexString(address));
+            return msuMdHandler.handleMsuMdRead(address, size);
         } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {
             //NOTE genTest does: cmpi.l #'MARS',$A130EC  ;32X
             LOG.warn("Unexpected /TIME or mapper read at: " + Long.toHexString(address));
@@ -297,9 +302,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         } else if (address >= SVP_REG_AREA_START && address <= SVP_REG_AREA_END) {
             checkSvpMapper();
             svpMapper.m68kSvpRegWrite(address, data, size);
+        } else if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
+            msuMdHandler.handleMsuMdWrite(address, (int) data, size);
         } else {
-            LOG.warn("Unexpected internalRegWrite: {}, {}", Integer.toHexString(address),
-                    Long.toHexString(data));
+            LOG.warn("Unexpected internalRegWrite: {}, {}, {}", Integer.toHexString(address),
+                    Long.toHexString(data), size);
         }
     }
 
@@ -854,6 +861,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
         }
         ssf2Mapper.closeRom();
         backupMemMapper.closeRom();
+        msuMdHandler.close();
     }
 
     @Override

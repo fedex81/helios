@@ -162,10 +162,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         LOG.info("Resetting sound");
         close = true;
         List<Runnable> list = executorService.shutdownNow();
-        if (dataLine != null) {
-            dataLine.flush();
-            dataLine.close();
-        }
+        SoundUtil.close(dataLine);
         setRecording(false);
         LOG.info("Closing sound, stopping background tasks: #" + list.size());
     }

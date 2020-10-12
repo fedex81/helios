@@ -24,6 +24,9 @@ import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.file.Path;
+import java.util.Optional;
+
 public class CartridgeInfoProvider {
 
     private static Logger LOG = LogManager.getLogger(CartridgeInfoProvider.class.getSimpleName());
@@ -38,10 +41,10 @@ public class CartridgeInfoProvider {
 
     protected String romName;
 
-    public static CartridgeInfoProvider createInstance(IMemoryProvider memoryProvider, String rom) {
+    public static CartridgeInfoProvider createInstance(IMemoryProvider memoryProvider, Path rom) {
         CartridgeInfoProvider provider = new CartridgeInfoProvider();
         provider.memoryProvider = memoryProvider;
-        provider.romName = rom;
+        provider.romName = Optional.ofNullable(rom).map(p -> p.getFileName().toString()).orElse("norom.bin");
         provider.init();
         return provider;
     }
