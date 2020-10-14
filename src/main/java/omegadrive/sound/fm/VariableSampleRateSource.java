@@ -79,11 +79,11 @@ public abstract class VariableSampleRateSource implements FmProvider {
     public int update(int[] buf_lr, int offset, int count) {
         offset <<= 1;
         int end = (count << 1) + offset;
-        int monoSampleNum;
         Integer ilsample, irsample;
         final int initialQueueSize = queueLen.get();
         int queueIndicativeLen = initialQueueSize;
-        for (int i = offset; i < end && queueIndicativeLen > 0; i += 2) {
+        int i = offset;
+        for (; i < end && queueIndicativeLen > 0; i += 2) {
             //when using mono we process two samples
             ilsample = sampleQueue.peek();
             irsample = sampleQueue.peek();
@@ -98,8 +98,7 @@ public abstract class VariableSampleRateSource implements FmProvider {
             buf_lr[i] = ((short) (ilsample & 0xFFFF)) << audioScaleBits;
             buf_lr[i + 1] = ((short) (irsample & 0xFFFF)) << audioScaleBits;
         }
-        monoSampleNum = (initialQueueSize - queueIndicativeLen) >> 1;
-        return monoSampleNum;
+        return i >> 1;
     }
 
     @Override
