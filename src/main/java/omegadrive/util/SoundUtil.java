@@ -190,6 +190,25 @@ public class SoundUtil {
         }
     }
 
+    public static void intStereo14ToByteStereo16MixFloat(int[] input, float[] output, byte[] psgMono8, int inputLen) {
+        int j = 0; //psg index
+        int k = 0; //output index
+        for (int i = 0; i < inputLen; i += 2, j++, k += 2) {
+            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
+            int psg = psgMono8[j];
+            psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
+            int out16L = (input[i] + psg);
+            int out16R = (input[i + 1] + psg);
+            out16L = (out16L << 1) - out16L; //mult by 1.5
+            out16R = (out16R << 1) - out16R;
+            //avg fm and psg
+            out16L = Math.min(Math.max(out16L, Short.MIN_VALUE), Short.MAX_VALUE);
+            out16R = Math.min(Math.max(out16R, Short.MIN_VALUE), Short.MAX_VALUE);
+            output[k] = out16L / 32768f;
+            output[k + 1] = out16R / 32768f;
+        }
+    }
+
     private static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output) {
         for (int j = 0, i = 0; j < psgMono8.length; j++, i += 4) {
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)

@@ -48,7 +48,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     protected static SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
 
-    private ExecutorService executorService;
+    protected ExecutorService executorService;
 
     private static int OUTPUT_SAMPLE_SIZE = 16;
     private static int OUTPUT_CHANNELS = 2;
@@ -72,7 +72,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
             LOG.warn("Sound disabled");
             return NO_SOUND;
         }
-        AbstractSoundManager jsm = new JavaSoundManager();
+        AbstractSoundManager jsm = new JalSoundManager();
         jsm.setFm(jsm.getFmProvider(systemType, region));
         jsm.setPsg(jsm.getPsgProvider(systemType, region));
         jsm.setSystemType(systemType);
