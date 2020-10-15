@@ -72,7 +72,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
             LOG.warn("Sound disabled");
             return NO_SOUND;
         }
-        AbstractSoundManager jsm = new JalSoundManager();
+        AbstractSoundManager jsm = new JavaSoundManager();
         jsm.setFm(jsm.getFmProvider(systemType, region));
         jsm.setPsg(jsm.getPsgProvider(systemType, region));
         jsm.setSystemType(systemType);
@@ -97,8 +97,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
         hasPsg = getPsg() != PsgProvider.NO_SOUND;
         return psgProvider;
     }
-
-    protected abstract Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region);
 
     FmProvider getFmProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
         FmProvider fmProvider = FmProvider.NO_SOUND;
@@ -126,13 +124,18 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     protected void init(RegionDetector.Region region) {
         this.region = region;
-        dataLine = SoundUtil.createDataLine(audioFormat);
         soundPersister = new FileSoundPersister();
         fmSize = SoundProvider.getFmBufferIntSize(audioFormat);
         psgSize = SoundProvider.getPsgBufferByteSize(audioFormat);
-        executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
-        executorService.submit(getRunnable(dataLine, region));
+        executorService = Executors.newSingleThreadExecutor
+                (new PriorityThreadFactory(Thread.MAX_PRIORITY, AbstractSoundManager.class.getSimpleName()));
+        init();
         LOG.info("Output audioFormat: " + audioFormat + ", bufferSize: " + fmSize);
+    }
+
+    @Override
+    public void init() {
+        dataLine = SoundUtil.createDataLine(audioFormat);
     }
 
     public void setSystemType(SystemLoader.SystemType type) {

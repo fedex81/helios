@@ -19,13 +19,9 @@
 
 package omegadrive.sound.javasound;
 
-import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.persist.FileSoundPersister;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.perf.Telemetry;
-import omegadrive.util.PriorityThreadFactory;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,13 +33,9 @@ import org.jaudiolibs.audioservers.ext.ClientID;
 import org.jaudiolibs.audioservers.ext.Connections;
 import org.jaudiolibs.audioservers.javasound.JSTimingMode;
 
-import javax.sound.sampled.SourceDataLine;
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class JalSoundManager extends AbstractSoundManager implements AudioClient {
 
@@ -54,8 +46,6 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     volatile byte[] psg_buf_bytes;
     volatile int fmSizeMono;
     private float[] buffer;
-    private Thread runner;
-    private AtomicLong counter = new AtomicLong();
 
     //stats
     private Telemetry telemetry;
@@ -72,26 +62,10 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
         fm_buf_ints = hasFm ? fm_buf_ints : EMPTY_FM;
         psg_buf_bytes = hasPsg ? psg_buf_bytes : EMPTY_PSG;
         telemetry = Telemetry.getInstance();
-    }
-
-    @Override
-    protected void init(RegionDetector.Region region) {
-        this.region = region;
-        soundPersister = new FileSoundPersister();
-        fmSize = SoundProvider.getFmBufferIntSize(audioFormat);
-        psgSize = SoundProvider.getPsgBufferByteSize(audioFormat);
-        executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
-        LOG.info("Output audioFormat: " + audioFormat + ", bufferSize: " + fmSize);
-        init();
         startAudio();
     }
 
-    public void startAudio() {
-
-        /* Search for an AudioServerProvider that matches the required library name
-         * using the ServiceLoader mechanism. This removes the need for a direct
-         * dependency on any particular server implementation.
-         */
+    private void startAudio() {
         String lib = "JavaSound"; // or "JACK";
 
         AudioServerProvider provider = null;
@@ -104,27 +78,12 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
         if (provider == null) {
             throw new NullPointerException("No AudioServer found that matches : " + lib);
         }
-
-        /* Create an instance of our client - see methods in the implementation
-         * below for more information.
-         */
         AudioClient client = this;
-
-        /* Create an audio configuration.
-         *
-         * The configuration is a hint to the AudioServer. Some servers (eg. JACK)
-         * will ignore the sample rate and buffersize here.
-         * The correct values will be passed to the client during configuration.
-         *
-         * Various extension objects can be added to the AudioConfiguration.
-         * The ClientID and Connections parameters here will be used by the JACK server.
-         *
-         */
         AudioConfiguration config = new AudioConfiguration(
-                SAMPLE_RATE_HZ, //sample rate
+                audioFormat.getSampleRate(), //sample rate
                 0, // input channels
-                2, // output channels
-                2205 / 2, //buffer size
+                audioFormat.getChannels(), // output channels
+                2205, //buffer size
                 false,
                 // extensions
                 new Object[]{
@@ -132,21 +91,10 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
                         JSTimingMode.FramePosition,
                         Connections.OUTPUT
                 });
-
-
-        /* Use the AudioServerProvider to create an AudioServer for the client.
-         */
         try {
             AudioServer server = provider.createServer(config, client);
-
-            /* Create a Thread to run our server. All servers require a Thread to run in.
-             */
-            runner = new Thread(getServerRunnable(server));
-            // set the Thread priority as high as possible.
-            runner.setPriority(Thread.MAX_PRIORITY);
-            runner.setName("jalAudio-" + counter.getAndIncrement());
-            // and start processing audio - you'll have to kill the program manually!
-            runner.start();
+            Thread runner = new Thread(getServerRunnable(server));
+            executorService.submit(runner);
         } catch (Throwable t) {
             LOG.error(t);
             t.printStackTrace();
@@ -155,22 +103,15 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
 
     private Runnable getServerRunnable(AudioServer server) {
         return () -> {
-            // The server's run method can throw an Exception so we need to wrap it
             try {
                 server.run();
             } catch (InterruptedException ie) {
                 LOG.info("interrupted");
                 return;
-            } catch (Exception ex) {
+            } catch (Exception | Error ex) {
                 LOG.error(ex);
                 ex.printStackTrace();
             }
-        };
-    }
-
-    @Override
-    protected Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
-        return () -> {
         };
     }
 
@@ -190,8 +131,6 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
         } catch (Exception e) {
             LOG.error("Unexpected sound error", e);
         }
-        Arrays.fill(fm_buf_ints, 0);
-        Arrays.fill(psg_buf_bytes, SoundUtil.ZERO_BYTE);
         return fmMonoActual;
     }
 
@@ -221,12 +160,12 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
         // get left and right channels from array list
         FloatBuffer left = outputs.get(0);
         FloatBuffer right = outputs.get(1);
-        if (buffer == null || buffer.length != nframes) {
+        if (buffer == null || buffer.length != nframes << 1) {
             buffer = new float[nframes << 1]; //stereo
         }
         int resFrames = playOnceStereo(nframes);
         if (resFrames != nframes) {
-            LOG.info("xrun! req {}, actual {}", nframes, resFrames);
+//            LOG.info("xrun! req {}, actual {}", nframes, resFrames);
         }
         int k = 0;
         for (int i = 0; i < nframes; i++, k += 2) {
@@ -243,7 +182,6 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     @Override
     public void shutdown() {
         LOG.info("shutdown");
-        runner.interrupt();
     }
 
     @Override

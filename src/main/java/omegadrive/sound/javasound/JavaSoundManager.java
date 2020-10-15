@@ -27,7 +27,6 @@ import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.sound.sampled.SourceDataLine;
 import java.util.Arrays;
 import java.util.concurrent.locks.LockSupport;
 
@@ -48,7 +47,8 @@ public class JavaSoundManager extends AbstractSoundManager {
     private volatile int samplesProducedCount, samplesConsumedCount, audioThreadLoops, audioThreadEmptyLoops;
 
     @Override
-    public void init() {
+    public void init(RegionDetector.Region region) {
+        super.init(region);
         fm_buf_ints = new int[fmSize];
         mix_buf_bytes16Stereo = new byte[fm_buf_ints.length << 1];
         psg_buf_bytes = new byte[psgSize];
@@ -58,6 +58,7 @@ public class JavaSoundManager extends AbstractSoundManager {
         fm_buf_ints = hasFm ? fm_buf_ints : EMPTY_FM;
         psg_buf_bytes = hasPsg ? psg_buf_bytes : EMPTY_PSG;
         telemetry = Telemetry.getInstance();
+        executorService.submit(getRunnable());
     }
 
     private int playOnceStereo(int fmBufferLenMono) {
@@ -89,31 +90,27 @@ public class JavaSoundManager extends AbstractSoundManager {
         return fmBufferLenStereo;
     }
 
-    @Override
-    protected Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region) {
-        return new Runnable() {
-            @Override
-            public void run() {
-                init();
-                //this needs to be less than one frame worth (ie. < 16.67 ms)
-                final int monoSize = Math.min(fmSizeMono, SoundUtil.getMonoSamplesBufferSize(audioFormat, 25));
-                try {
-                    do {
-                        int actualStereo = playOnceStereo(monoSize);
-                        samplesConsumedCount += actualStereo;
-                        if (actualStereo <= 10) {
-                            audioThreadEmptyLoops++;
-                            LockSupport.parkNanos(EMPTY_QUEUE_SLEEP_NS);
-                        }
-                        audioThreadLoops++;
-                    } while (!close);
-                } catch (Exception | Error e) {
-                    LOG.error("Unexpected sound error, stopping", e);
-                }
-                LOG.info("Stopping sound thread");
-                psg.reset();
-                fm.reset();
+    //TODO broken
+    private Runnable getRunnable() {
+        return () -> {
+            //this needs to be less than one frame worth (ie. < 16.67 ms)
+            final int monoSize = Math.min(fmSizeMono, SoundUtil.getMonoSamplesBufferSize(audioFormat, 25));
+            try {
+                do {
+                    int actualStereo = playOnceStereo(monoSize);
+                    samplesConsumedCount += actualStereo;
+                    if (actualStereo <= 10) {
+                        audioThreadEmptyLoops++;
+                        LockSupport.parkNanos(EMPTY_QUEUE_SLEEP_NS);
+                    }
+                    audioThreadLoops++;
+                } while (!close);
+            } catch (Exception | Error e) {
+                LOG.error("Unexpected sound error, stopping", e);
             }
+            LOG.info("Stopping sound thread");
+            psg.reset();
+            fm.reset();
         };
     }
 
