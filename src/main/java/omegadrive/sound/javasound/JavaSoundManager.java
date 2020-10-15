@@ -90,7 +90,6 @@ public class JavaSoundManager extends AbstractSoundManager {
         return fmBufferLenStereo;
     }
 
-    //TODO broken
     private Runnable getRunnable() {
         return () -> {
             //this needs to be less than one frame worth (ie. < 16.67 ms)
