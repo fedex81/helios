@@ -28,7 +28,7 @@ public class M68Test {
         GenesisVdpProvider vdpProvider = GenesisVdpProvider.createVdp(bus);
         memoryProvider.setRomData(new int[1024]);
         memoryProvider.getRomData()[0x3c] = 1;
-        provider = MC68000Wrapper.createInstance(bus, false);
+        provider = MC68000Wrapper.createInstance(bus);
         SystemProvider systemProvider = MdVdpTestUtil.createTestGenesisProvider();
         bus.attachDevice(memoryProvider).attachDevice(provider).attachDevice(systemProvider).attachDevice(vdpProvider);
         bus.init();

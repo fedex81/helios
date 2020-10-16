@@ -21,6 +21,7 @@ package omegadrive.vdp;
 
 import omegadrive.SystemLoader;
 import omegadrive.input.InputProvider;
+import omegadrive.m68k.MC68000WrapperDebug;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
@@ -37,7 +38,7 @@ import java.time.Duration;
 @Ignore
 public class VdpPerformanceTest {
 
-    static Path testFilePath = Paths.get("./test_roms", "titan2.bin");
+    static Path testFilePath = Paths.get("./test_roms", "s1.zip");
     //    static Path testFilePath = Paths.get("./test_roms", "s1.zip");
     //    static Path testFilePath = Paths.get("./test_roms", "zax.col");
     static int fps = 60;
@@ -52,6 +53,8 @@ public class VdpPerformanceTest {
         System.setProperty("helios.headless", "false");
         System.setProperty("helios.fullSpeed", "true");
         System.setProperty("helios.enable.sound", "true");
+        System.setProperty("68k.debug", "false");
+        System.setProperty("z80.debug", "false");
 //        System.setProperty("md.show.vdp.debug.viewer", "true");
     }
 
@@ -83,10 +86,26 @@ public class VdpPerformanceTest {
         }
         frameCnt++;
         if (frameCnt % fps == 0) {
+            hitCounter(0, -1);
             long now = System.nanoTime();
+
             printFramePerf(sampleCnt, now, last, start, frameCnt);
             last = now;
             sampleCnt++;
+        }
+    }
+
+    private void hitCounter(int startFrame, int endFrame) {
+        if (!MC68000WrapperDebug.M68K_DEBUG) {
+            return;
+        }
+        if (MC68000WrapperDebug.countHits) {
+            MC68000WrapperDebug.dumpHitCounter();
+        }
+        if (sampleCnt == startFrame) {
+            MC68000WrapperDebug.countHits = true;
+        } else if (sampleCnt == endFrame) {
+            MC68000WrapperDebug.countHits = false;
         }
     }
 

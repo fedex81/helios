@@ -33,11 +33,16 @@ import z80core.Z80State;
 public class Z80CoreWrapper implements Z80Provider {
 
     public final static boolean STOP_ON_EXCEPTION;
+    public static final boolean Z80_DEBUG;
     private final static Logger LOG = LogManager.getLogger(Z80CoreWrapper.class.getSimpleName());
 
     static {
         STOP_ON_EXCEPTION =
-            Boolean.valueOf(System.getProperty("z80.stop.on.exception", "false"));
+                Boolean.valueOf(System.getProperty("z80.stop.on.exception", "false"));
+        Z80_DEBUG = Boolean.valueOf(System.getProperty("z80.debug", "false"));
+        if (Z80_DEBUG) {
+            LOG.info("z80 debug mode: true");
+        }
     }
 
     public static boolean verbose = false;
@@ -54,12 +59,8 @@ public class Z80CoreWrapper implements Z80Provider {
         return setupInternal(w, null);
     }
 
-    public static Z80CoreWrapper createGenesisInstance(GenesisBusProvider busProvider, boolean debug) {
-        return debug ? Z80CoreWrapperDebug.createGenesisInstance(busProvider) : createGenesisInstanceInternal(busProvider);
-    }
-
     public static Z80CoreWrapper createGenesisInstance(GenesisBusProvider busProvider) {
-        return createGenesisInstanceInternal(busProvider);
+        return Z80_DEBUG ? Z80CoreWrapperDebug.createGenesisInstance(busProvider) : createGenesisInstanceInternal(busProvider);
     }
 
     protected Z80CoreWrapper() {

@@ -41,13 +41,18 @@ public class MC68000Wrapper implements M68kProvider {
     private final static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
     public static final boolean STOP_ON_EXCEPTION;
     public static final boolean GENESIS_TAS_BROKEN;
+    public static final boolean M68K_DEBUG;
 
     static {
         STOP_ON_EXCEPTION =
                 Boolean.valueOf(System.getProperty("68k.stop.on.exception", "true"));
         GENESIS_TAS_BROKEN = Boolean.valueOf(System.getProperty("68k.broken.tas", "true"));
+        M68K_DEBUG = Boolean.valueOf(System.getProperty("68k.debug", "false"));
         if (GENESIS_TAS_BROKEN != TAS.EMULATE_BROKEN_TAS) {
             LOG.info("Overriding 68k TAS broken setting: " + GENESIS_TAS_BROKEN);
+        }
+        if (M68K_DEBUG) {
+            LOG.info("68k debug mode: true");
         }
     }
 
@@ -66,8 +71,8 @@ public class MC68000Wrapper implements M68kProvider {
         TAS.EMULATE_BROKEN_TAS = GENESIS_TAS_BROKEN;
     }
 
-    public static MC68000Wrapper createInstance(GenesisBusProvider busProvider, boolean debug) {
-        return debug ? new MC68000WrapperDebug(busProvider) : new MC68000Wrapper(busProvider);
+    public static MC68000Wrapper createInstance(GenesisBusProvider busProvider) {
+        return M68K_DEBUG ? new MC68000WrapperDebug(busProvider) : new MC68000Wrapper(busProvider);
     }
 
     @Override
