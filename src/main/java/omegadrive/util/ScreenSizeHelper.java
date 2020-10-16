@@ -34,7 +34,10 @@ public class ScreenSizeHelper {
             Double.parseDouble(System.getProperty("helios.ui.fsTitle.factor", "1"));
 
     public static final boolean FIX_ASPECT_RATIO =
-            Boolean.parseBoolean(System.getProperty("ui.fix.aspect.ratio", "true"));
+            Boolean.parseBoolean(System.getProperty("helios.ui.fix.aspect.ratio", "true"));
+
+    public static final boolean INTEGER_SCALING =
+            Boolean.parseBoolean(System.getProperty("helios.ui.integer.scaling", "true"));
 
     public static Dimension DEFAULT_SCALED_SCREEN_SIZE = new Dimension(ScreenSizeHelper.DEFAULT_X * DEFAULT_SCALE_FACTOR,
             ScreenSizeHelper.DEFAULT_Y * DEFAULT_SCALE_FACTOR);
@@ -62,6 +65,7 @@ public class ScreenSizeHelper {
         double baseH = nativeScreenSize.getHeight();
         baseH = FIX_ASPECT_RATIO ? nativeScreenSize.getWidth() / FOUR_BY_THREE : baseH;
         double scaleH = fullScreenSize.getHeight() * FULL_SCREEN_WITH_TITLE_BAR_FACTOR / baseH;
-        return Math.min(scaleW, scaleH);
+        double res = Math.min(scaleW, scaleH);
+        return INTEGER_SCALING ? Math.floor(res) : res;
     }
 }
