@@ -19,6 +19,7 @@
 
 package omegadrive.m68k;
 
+import m68k.cpu.Cpu;
 import m68k.memory.AddressSpace;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.util.Size;
@@ -27,6 +28,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.stream.IntStream;
@@ -45,34 +47,38 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
     private M68kState[] traceArray = new M68kState[lastN];
     private M68kState current = new M68kState();
 
+    public static boolean countHits = false;
+    private static long[] hitsTable = new long[0xFF_FFFF];
+    private static Cpu cpu;
+
     private int logAddressAccess = -1;
     private boolean dump = false;
+
+    private int prev = -1;
 
     public MC68000WrapperDebug(GenesisBusProvider busProvider) {
         super(busProvider);
         pcList = new int[0]; //[0xFF_FFFF]; //PC is 24 bits]
         IntStream.range(0, lastN).forEach(i -> traceArray[i] = new M68kState());
+        cpu = m68k;
     }
 
-    @Override
-    public int runInstruction() {
-        int res = 0;
-        sb.setLength(0);
-        try {
-            currentPC = m68k.getPC(); //needs to be set
-            storeM68kState(current);
-            res = super.runInstruction();
-            printVerbose();
-            printCpuStateIfVerbose("");
-            handlePostRunState();
-            stepBarrier.await();
-        } catch (BrokenBarrierException bbe) {
-            LOG.error("68k debug error", bbe);
-            setStop(true);
-        } catch (Exception e) {
-            LOG.error("68k error", e);
+    public static void dumpHitCounter() {
+        Map<Integer, Long> vmap = new TreeMap<>();
+        for (int i = 0; i < hitsTable.length; i++) {
+            if (hitsTable[i] > 100) {
+                vmap.put(i, hitsTable[i]);
+            }
         }
-        return res;
+        Arrays.fill(hitsTable, 0);
+        List<Map.Entry<Integer, Long>> l = new ArrayList(vmap.entrySet());
+        l.sort(Map.Entry.comparingByValue());
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<Integer, Long> entry : l) {
+            int k = entry.getKey();
+            sb.append(MC68000Helper.dumpOp(cpu, k) + "," + entry.getValue() + "\n");
+        }
+        System.out.println(sb);
     }
 
     @Override
@@ -116,6 +122,39 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
         IntStream.range(0, lastN).forEach(i -> {
             System.out.println(MC68000Helper.dumpInfo(m68k, traceArray[(i + index) % lastN], s));
         });
+    }
+
+    @Override
+    public int runInstruction() {
+        int res = 0;
+        sb.setLength(0);
+        try {
+            prev = currentPC;
+            currentPC = m68k.getPC(); //needs to be set
+            hitCounter(currentPC);
+            storeM68kState(current);
+            res = super.runInstruction();
+            printVerbose();
+            printCpuStateIfVerbose("");
+            handlePostRunState();
+            stepBarrier.await();
+        } catch (BrokenBarrierException bbe) {
+            LOG.error("68k debug error", bbe);
+            setStop(true);
+        } catch (Exception e) {
+            LOG.error("68k error", e);
+        }
+        return res;
+    }
+
+    private void hitCounter(int pc) {
+        if (countHits) {
+            hitsTable[pc & 0xFF_FFFF]++;
+//            if(hitsTable[pc & 0xFF_FFFF] > 1000 && hitsTable[prev] > 1000){
+//                System.out.println("Loop: " + MC68000Helper.dumpOp(cpu, prev) +
+//                        "\n" + MC68000Helper.dumpOp(cpu));
+//            }
+        }
     }
 
     @Override

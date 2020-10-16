@@ -60,9 +60,9 @@ public class MC68000Helper {
         return dumpOp(cpu, cpu.getPC());
     }
 
-    public static String dumpInfo(Cpu cpu, long pc, boolean showBytes, int memorySize) {
+    public static String dumpInfo(Cpu cpu, int pc, boolean showBytes, int memorySize) {
         StringBuilder sb = new StringBuilder("\n");
-        int wrapPc = (int) (pc & 0xFF_FFFF); //PC is 24 bits
+        int wrapPc = pc & 0xFF_FFFF; //PC is 24 bits
 
         sb.append(String.format("D0: %08x   D4: %08x   A0: %08x   A4: %08x     PC:  %08x\n",
                 cpu.getDataRegisterLong(0), cpu.getDataRegisterLong(4), cpu.getAddrRegisterLong(0),
