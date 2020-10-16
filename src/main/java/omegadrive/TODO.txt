@@ -19,6 +19,7 @@ batman and robin, mad hatter: hint related?
 subterrania perf: lots of vdpBusy hits
 hook(U) (E works), Shadow of the Beast (UE) (J works):
 - z80 on busRequest and !reset, 68k stuck waiting on busUnrequested
+Summer Challenge (USA, Europe) (Unl) - red screen, eeprom?
 
 - Star cruiser, window plane corruption
 ko - f7a9385 on 15/06/2020 at 17:29

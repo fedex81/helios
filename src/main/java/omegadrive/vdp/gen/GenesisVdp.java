@@ -126,6 +126,7 @@ public class GenesisVdp implements GenesisVdpProvider {
     // The same information can be obtained from the version register.
     int pal;
     int satStart;
+    int fifoEmpty = 1, fifoFull = 0;
 
     private GenesisBusProvider bus;
     protected VdpInterruptHandler interruptHandler;
@@ -228,12 +229,12 @@ public class GenesisVdp implements GenesisVdpProvider {
         // last read the M68000 performed.
         // Writes from the M68000 don't affect these bits, only reads.
         int control = (
-                ((fifo.isEmpty() ? 1 : 0) << 9)
-                        | ((fifo.isFull() ? 1 : 0) << 8)
+                (fifoEmpty << 9) //fifo empty
+                        | (fifoFull << 8) //fifo full
                         | (vip << 7)
-                        | (sovr << 6)
-                        | (scol << 5)
-                        | (odd << 4)
+//                        | (sovr << 6)
+//                        | (scol << 5)
+//                        | (odd << 4)
                         | (vb << 3)
                         | (hb << 2)
                         | (dma << 1)
@@ -436,6 +437,12 @@ public class GenesisVdp implements GenesisVdpProvider {
         }
 
         fifo.push(vramMode, a, data);
+        updateFifoState(fifo);
+    }
+
+    private void fifoPop() {
+        fifo.pop();
+        updateFifoState(fifo);
     }
 
     private void writeDataToVram(boolean vramSlot) {
@@ -450,7 +457,7 @@ public class GenesisVdp implements GenesisVdpProvider {
         if (invalidEntry) {
             LOG.printf(Level.WARN, "FIFO write on invalid target: %s, data: %x, address: %x",
                     entry.vdpRamMode, entry.data, entry.addressRegister);
-            fifo.pop();
+            fifoPop();
             doWrite = false;
             evaluateVdpBusyState();
         }
@@ -462,7 +469,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                     entry.vdpRamMode, entry.data, entry.addressRegister, verbose);
         }
         if (doWrite) {
-            fifo.pop();
+            fifoPop();
             LogHelper.printLevel(LOG, Level.INFO, "writeVram: {}, data: {}, address: {}",
                     entry.vdpRamMode, entry.data, entry.addressRegister, verbose);
             if (exVram && entry.vdpRamMode == VramMode.vramWrite) {
@@ -728,6 +735,11 @@ public class GenesisVdp implements GenesisVdpProvider {
             doDma(isExternalSlot);
         }
         writeDataToVram(isExternalSlot);
+    }
+
+    private void updateFifoState(IVdpFifo fifo) {
+        fifoFull = fifo.isFull() ? 1 : 0;
+        fifoEmpty = fifo.isEmpty() ? 1 : 0;
     }
 
     @Override
