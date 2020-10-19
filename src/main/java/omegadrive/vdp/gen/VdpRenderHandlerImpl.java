@@ -385,7 +385,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             int spriteVerticalCell = pointVert >> 3;
             int vertLining = (spriteVerticalCell << interlaceMode.tileShift())
                     + ((pointVert % interlaceMode.getVerticalCellPixelSize()) << 2);
-            vertLining = interlaceMode == InterlaceMode.MODE_2 ? vertLining << 1 : vertLining;
+            vertLining <<= interlaceMode.interlaceAdjust();
             for (int cellX = 0; cellX <= holder.horizontalCellSize &&
                     spritePixelLineCount < spritePixelLineLimit; cellX++) {
                 int spriteCellX = holder.horFlip ? holder.horizontalCellSize - cellX : cellX;
@@ -480,8 +480,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 int rowCell = rowCellBase ^ (spriteDataHolder.vertFlipAmount & (cellHeight - 1)); //[0,7] or [0,15] IM2
 
                 //two pixels per byte, 4 bytes per row
-                //TODO
-                int rowCellShift = interlaceMode == InterlaceMode.MODE_2 ? rowCell << 3 : rowCell << 2;
+                int rowCellShift = rowCell << (2 + interlaceMode.interlaceAdjust());
                 int tileBytePointer = tileDataHolder.tileIndex + (colCell >> 1) + rowCellShift;
                 int onePixelData = getPixelIndexColor(tileBytePointer, xPosCell, tileDataHolder.horFlipAmount);
 
