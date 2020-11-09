@@ -1,6 +1,7 @@
 
 - Sonic & Knuckles mapper
 - EEPROM mapper (take list from blastem)
+- megacolor
 
 TODO
 hline issue:

@@ -47,10 +47,6 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     public static final String EXTERNAL_RAM_FLAG_VALUE = "RA";
 
-    private long romStart;
-    private long romEnd;
-    private long ramStart;
-    private long ramEnd;
     private long sramStart;
     private long sramEnd;
     private boolean sramEnabled;
@@ -94,10 +90,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("ROM size: " + (romEnd - romStart + 1) + " bytes, start-end: " + Long.toHexString(romStart) + " - " +
-                Long.toHexString(romEnd)).append("\n");
-        sb.append("RAM size: " + (ramEnd - ramStart + 1) + " bytes, start-end: " + Long.toHexString(ramStart) + " - " +
-                Long.toHexString(ramEnd)).append("\n");
+        sb.append("ROM size: " + romSize + ", ");
         sb.append("SRAM flag: " + sramEnabled).append("\n");
         sb.append(super.toString());
         if (sramEnabled) {
@@ -105,11 +98,6 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
                     Long.toHexString(sramEnd));
         }
         return sb.toString();
-    }
-
-    public String toSramCsvString() {
-        return sramEnabled + ";" + Long.toHexString(sramStart) + ";" + Long.toHexString(sramEnd) +
-                ";" + getSramSizeBytes();
     }
 
     public static MdCartInfoProvider createInstance(IMemoryProvider memoryProvider, Path rom) {
@@ -122,7 +110,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     public boolean isSramUsedWithBrokenHeader(long address) {
         boolean noOverlapBetweenRomAndSram =
-                MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS > romEnd;
+                MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS > romSize;
         return noOverlapBetweenRomAndSram &&
                 (address >= MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS &&
                         address <= MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS);
@@ -133,15 +121,6 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     }
 
     private void initMemoryLayout(IMemoryProvider memoryProvider) {
-        romStart = Util.readRom(memoryProvider, Size.WORD, ROM_START_ADDRESS) << 16;
-        romStart |= Util.readRom(memoryProvider, Size.WORD, ROM_START_ADDRESS + 2);
-        romEnd = Util.readRom(memoryProvider, Size.WORD, ROM_END_ADDRESS) << 16;
-        romEnd |= Util.readRom(memoryProvider, Size.WORD, ROM_END_ADDRESS + 2);
-
-        ramStart = Util.readRom(memoryProvider, Size.WORD, RAM_START_ADDRESS) << 16;
-        ramStart |= Util.readRom(memoryProvider, Size.WORD, RAM_START_ADDRESS + 2);
-        ramEnd = Util.readRom(memoryProvider, Size.WORD, RAM_END_ADDRESS) << 16;
-        ramEnd |= Util.readRom(memoryProvider, Size.WORD, RAM_END_ADDRESS + 2);
         romSize = memoryProvider.getRomData().length;
         detectSram();
         detectHeaderMetadata();
