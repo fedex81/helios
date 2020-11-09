@@ -39,7 +39,6 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private static boolean verbose = false;
     private static String fileType = "srm";
     private RomMapper baseMapper;
-    private MdCartInfoProvider cartridgeInfoProvider;
     private SramMode sramMode = SramMode.DISABLE;
     private MdRomDbModel.EEPROM eeprom = MdRomDbModel.NO_EEPROM;
     private I2cEeprom i2c = I2cEeprom.NO_OP;
@@ -58,7 +57,6 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         MdBackupMemoryMapper mapper = new MdBackupMemoryMapper(cart.getRomName(), size);
         mapper.baseMapper = baseMapper;
         mapper.sramMode = SramMode.READ_WRITE;
-        mapper.cartridgeInfoProvider = cart;
         mapper.eeprom = entry.getEeprom();
         mapper.i2c = I2cEeprom.createInstance(entry);
         LOG.info("BackupMemoryMapper created, using folder: " + mapper.sramFolder);

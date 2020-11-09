@@ -19,6 +19,7 @@
 
 package omegadrive.cart;
 
+import omegadrive.cart.mapper.md.MdMapperType;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -31,6 +32,8 @@ import java.util.Optional;
 
 public class MdCartInfoProvider extends CartridgeInfoProvider {
 
+    public static final int ROM_HEADER_START = 0x100;
+
     static int SERIAL_NUMBER_START = 0x180;
     public static final long DEFAULT_SRAM_START_ADDRESS = 0x20_0000;
     public static final long DEFAULT_SRAM_END_ADDRESS = 0x20_FFFF;
@@ -40,6 +43,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     public static final int ROM_END_ADDRESS = 0x1A4;
     public static final int RAM_START_ADDRESS = 0x1A8;
     public static final int RAM_END_ADDRESS = 0x1AC;
+    private static Logger LOG = LogManager.getLogger(MdCartInfoProvider.class.getSimpleName());
     public static final int SRAM_FLAG_ADDRESS = 0x1B0;
     public static final int SRAM_START_ADDRESS = 0x1B4;
     public static final int SRAM_END_ADDRESS = 0x1B8;
@@ -52,6 +56,9 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     private boolean sramEnabled;
     static int SERIAL_NUMBER_END = SERIAL_NUMBER_START + 14;
     private int romSize;
+    private String systemType;
+    private MdMapperType forceMapper = null;
+    private String serial = "MISSING";
 
     public long getSramEnd() {
         return sramEnd;
@@ -73,8 +80,9 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         return romSize;
     }
 
-    private static Logger LOG = LogManager.getLogger(MdCartInfoProvider.class.getSimpleName());
-    private String serial = "MISSING";
+    public MdMapperType getCartridgeMapper() {
+        return forceMapper;
+    }
 
     @Override
     public int getChecksumStartAddress() {
@@ -90,7 +98,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("ROM size: " + romSize + ", ");
+        sb.append(systemType + ", ROM size: " + romSize + ", ");
         sb.append("SRAM flag: " + sramEnabled).append("\n");
         sb.append(super.toString());
         if (sramEnabled) {
@@ -121,9 +129,9 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     }
 
     private void initMemoryLayout(IMemoryProvider memoryProvider) {
+        detectHeaderMetadata();
         romSize = memoryProvider.getRomData().length;
         detectSram();
-        detectHeaderMetadata();
     }
 
 
@@ -156,13 +164,13 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     private void detectHeaderMetadata() {
         if (memoryProvider.getRomData().length < SERIAL_NUMBER_END) {
-
             return;
         }
+        int[] rom = memoryProvider.getRomData();
+        systemType = new String(rom, ROM_HEADER_START, 16).trim();
+        forceMapper = MdMapperType.getMdMapperType(systemType);
         int[] serialArray = Arrays.copyOfRange(memoryProvider.getRomData(), SERIAL_NUMBER_START, SERIAL_NUMBER_END);
         this.serial = Util.toStringValue(serialArray);
-//        System.out.println(serial);
-//        MdLoader.testLoading(this);
     }
 
     public boolean adjustSramLimits(long address) {

@@ -26,6 +26,7 @@ import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
+import omegadrive.cart.mapper.md.MdMapperType;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
@@ -93,6 +94,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
             LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
         }
         msuMdHandler = MsuMdHandlerImpl.createInstance(systemProvider.getRomPath());
+        if (cartridgeInfoProvider.getCartridgeMapper() == MdMapperType.SEGA_SSF) {
+            mapper = Ssf2Mapper.createInstance(this, memoryProvider);
+        }
     }
 
     @Override
