@@ -54,7 +54,7 @@ import static omegadrive.input.InputProvider.PlayerNumber.P2;
  */
 public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvider {
 
-    private static Logger LOG = LogManager.getLogger(MsxBus.class);
+    private static final Logger LOG = LogManager.getLogger(MsxBus.class);
 
     static final boolean verbose = false;
 
@@ -84,7 +84,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvide
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
         bios = Util.toUnsignedIntArray(FileLoader.loadBiosFile(p));
-        LOG.info("Loading Msx bios from: " + p.toAbsolutePath().toString());
+        LOG.info("Loading Msx bios from: {}", p.toAbsolutePath().toString());
         Arrays.fill(emptySlot, 0xFF);
 
         secondarySlot[0] = bios;

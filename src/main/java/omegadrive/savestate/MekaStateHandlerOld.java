@@ -52,7 +52,7 @@ public class MekaStateHandlerOld implements SmsStateHandler {
     private static final MekaSavestateVersion DEFAULT_SAVE_VERSION = MekaSavestateVersion.VER_D;
     private static final Function<Integer, String> toCrcStringFn = v -> (v < 16 ? "0" : "") +
             Integer.toHexString(v);
-    private static Logger LOG = LogManager.getLogger(MekaStateHandlerOld.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(MekaStateHandlerOld.class.getSimpleName());
     private IntBuffer buffer;
     private int version;
     private int softwareId;

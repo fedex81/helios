@@ -29,7 +29,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements GenesisZ80BusProvider {
-    private static Logger LOG = LogManager.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
 
     //    To specify which 32k section you want to access, write the upper nine
     //    bits of the complete 24-bit address into bit 0 of the bank address
@@ -76,7 +76,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             }
             return getFm().read();
         } else if (address >= START_ROM_BANK_ADDRESS && address <= END_UNUSED) {
-            LOG.warn("Z80 read bank switching/unused: " + Integer.toHexString(address));
+            LOG.warn("Z80 read bank switching/unused: {}", Integer.toHexString(address));
             return 0xFF;
         } else if (address >= START_VDP && address <= END_VDP_VALID) {
             int vdpAddress = (VDP_BASE_ADDRESS + address);
@@ -93,7 +93,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             }
             return (int) mainBusProvider.read(address, Size.BYTE);
         } else {
-            LOG.error("Illegal Z80 memory read: " + Integer.toHexString(address));
+            LOG.error("Illegal Z80 memory read: {}", Integer.toHexString(address));
         }
         return 0xFF;
     }
@@ -115,7 +115,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
         } else if (address >= START_ROM_BANK_ADDRESS && address <= END_ROM_BANK_ADDRESS) {
             romBanking(dataInt);
         } else if (address >= START_UNUSED && address <= END_UNUSED) {
-            LOG.warn("Write to unused memory: " + Integer.toHexString(address));
+            LOG.warn("Write to unused memory: {}", Integer.toHexString(address));
         } else if (address >= START_VDP && address <= END_VDP_VALID) {
             int vdpAddress = VDP_BASE_ADDRESS + address;
             mainBusProvider.write(vdpAddress, dataInt, Size.BYTE);
@@ -129,7 +129,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             //NOTE: Z80 write to 68k RAM - this seems to be allowed (Mamono)
             mainBusProvider.write(address, dataInt, Size.BYTE);
         } else {
-            LOG.error("Illegal Z80 memory write:  " + Integer.toHexString(address) + ", " + dataInt);
+            LOG.error("Illegal Z80 memory write:  {}, {}", Integer.toHexString(address), dataInt);
         }
     }
 

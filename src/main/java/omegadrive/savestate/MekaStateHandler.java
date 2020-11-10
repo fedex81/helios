@@ -52,7 +52,7 @@ public class MekaStateHandler implements SmsStateHandler {
     private static final Function<Integer, String> toCrcStringFn = v -> (v < 16 ? "0" : "") +
             Integer.toHexString(v);
     private final static String fileExtension = "s00";
-    private static Logger LOG = LogManager.getLogger(MekaStateHandler.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(MekaStateHandler.class.getSimpleName());
     int[] vdpState = new int[3];
     private ByteBuffer buffer;
     private int version;
@@ -70,8 +70,7 @@ public class MekaStateHandler implements SmsStateHandler {
         h.fileName = handleFileExtension(fileName);
         h.buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(h.fileName)));
         h.type = Type.LOAD;
-        SmsStateHandler s = h.detectStateFileType();
-        return s;
+        return h.detectStateFileType();
     }
 
     public static SmsStateHandler createLoadInstance(String fileName, byte[] data) {
@@ -79,8 +78,7 @@ public class MekaStateHandler implements SmsStateHandler {
         h.fileName = handleFileExtension(fileName);
         h.buffer = ByteBuffer.wrap(data);
         h.type = Type.LOAD;
-        SmsStateHandler s = h.detectStateFileType();
-        return s;
+        return h.detectStateFileType();
     }
 
     public static SmsStateHandler createSaveInstance(String fileName, SystemLoader.SystemType systemType,

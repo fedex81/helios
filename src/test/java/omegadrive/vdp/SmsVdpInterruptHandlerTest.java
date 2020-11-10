@@ -32,7 +32,7 @@ import org.junit.Test;
 
 public class SmsVdpInterruptHandlerTest {
 
-    private static Logger LOG = LogManager.getLogger(SmsVdpInterruptHandlerTest.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(SmsVdpInterruptHandlerTest.class.getSimpleName());
     static boolean verbose = true;
 
     public static void hLinesCounterBasic(BaseVdpProvider vdp, VdpInterruptHandler h, VideoMode mode, boolean[] expectedLineInt) {

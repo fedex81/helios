@@ -54,7 +54,7 @@ import static omegadrive.util.ScreenSizeHelper.*;
 
 public class SwingWindow implements DisplayWindow {
 
-    private static Logger LOG = LogManager.getLogger(SwingWindow.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(SwingWindow.class.getSimpleName());
 
     private Dimension fullScreenSize;
     //when scaling is slow set this to FALSE
@@ -127,17 +127,7 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private AbstractAction toAbstractAction(String name, ActionListener listener) {
-        return new AbstractAction(name) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                listener.actionPerformed(e);
-            }
-
-            @Override
-            public void setEnabled(boolean newValue) {
-                super.setEnabled(true);
-            }
-        };
+        return new MyAbstractAction(name, listener);
     }
 
     private void showHelpMessage(String title, String msg) {
@@ -223,9 +213,9 @@ public class SwingWindow implements DisplayWindow {
         Util.registerJmx(this);
         GraphicsDevice gd = SwingScreenSupport.setupScreens();
         fullScreenSize = gd.getDefaultConfiguration().getBounds().getSize();
-        LOG.info("Full screen size: " + fullScreenSize);
-        LOG.info("Emulation viewport size: " + ScreenSizeHelper.DEFAULT_SCALED_SCREEN_SIZE);
-        LOG.info("Application size: " + DEFAULT_FRAME_SIZE);
+        LOG.info("Full screen size: {}", fullScreenSize);
+        LOG.info("Emulation viewport size: {}", ScreenSizeHelper.DEFAULT_SCALED_SCREEN_SIZE);
+        LOG.info("Application size: {}", DEFAULT_FRAME_SIZE);
 
         pixelsSrc = new int[0];
         dest = createImage(gd, outputNonScaledScreenSize);
@@ -449,8 +439,8 @@ public class SwingWindow implements DisplayWindow {
             jFrame.setPreferredSize(isFullScreen ? fullScreenSize : nativeScreenSize);
             jFrame.getJMenuBar().setVisible(!isFullScreen);
             jFrame.pack();
-            LOG.info("Emulation Viewport size: " + outputScreenSize);
-            LOG.info("Application size: " + jFrame.getSize());
+            LOG.info("Emulation Viewport size: {}", outputScreenSize);
+            LOG.info("Application size: {}", jFrame.getSize());
         };
     }
 
@@ -675,8 +665,9 @@ public class SwingWindow implements DisplayWindow {
 
     @Override
     public void reloadControllers(Collection<String> list) {
-        for (PlayerNumber pn : inputMenusMap.keySet()) {
-            JMenu menu = inputMenusMap.get(pn);
+        for (Map.Entry<PlayerNumber, JMenu> entry : inputMenusMap.entrySet()) {
+            PlayerNumber pn = entry.getKey();
+            JMenu menu = entry.getValue();
             menu.removeAll();
             java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
             list.forEach(c -> {
@@ -698,6 +689,25 @@ public class SwingWindow implements DisplayWindow {
                 LOG.info("Auto-selecting {} using Controller: {}", pn, l.get(2).getText());
                 l.get(2).doClick();
             }
+        }
+    }
+
+    private static class MyAbstractAction extends AbstractAction {
+        private final ActionListener listener;
+
+        public MyAbstractAction(String name, ActionListener listener) {
+            super(name);
+            this.listener = listener;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            listener.actionPerformed(e);
+        }
+
+        @Override
+        public void setEnabled(boolean newValue) {
+            super.setEnabled(true);
         }
     }
 }

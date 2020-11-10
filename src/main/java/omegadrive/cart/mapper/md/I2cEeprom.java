@@ -48,7 +48,7 @@ public class I2cEeprom {
             MdRomDbModel.EEPROM eeprom = entry.getEeprom();
             e.sram = new int[eeprom.getSize()];
             e.sizeMask = e.sram.length - 1;
-            LOG.info("Init " + eeprom);
+            LOG.info("Init {}", eeprom);
         }
         return e;
     }

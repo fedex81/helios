@@ -39,7 +39,7 @@ public class KonamiMapper extends KonamiMapperImpl {
     public static final int MAPPER_END_ADDRESS = 0xBFFF;
     public static final int PAGES_8KB = 4;
     private static final KonamiType[] list = KonamiType.values();
-    private static Logger LOG = LogManager.getLogger(KonamiMapper.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(KonamiMapper.class.getSimpleName());
 
     private KonamiMapper(int[] rom, KonamiType type) {
         super(rom, type);
@@ -48,7 +48,7 @@ public class KonamiMapper extends KonamiMapperImpl {
     public static RomMapper createMapper(int[] rom, String type) {
         KonamiType t = getMapperType(type);
         if (t == null) {
-            LOG.error("Mapper not supported: " + type);
+            LOG.error("Mapper not supported: {}", type);
             return NO_OP_MAPPER;
         }
         return createMapper(rom, t);

@@ -97,13 +97,13 @@ public class SystemLoader {
         }
         System.getProperties().list(System.out);
         System.out.println("-- done listing properties --");
-        debugPerf = Boolean.valueOf(java.lang.System.getProperty("helios.debug", "false"));
-        showFps = Boolean.valueOf(java.lang.System.getProperty("helios.fps", "false"));
-        headless = Boolean.valueOf(java.lang.System.getProperty("helios.headless", "false"));
+        debugPerf = Boolean.parseBoolean(java.lang.System.getProperty("helios.debug", "false"));
+        showFps = Boolean.parseBoolean(java.lang.System.getProperty("helios.fps", "false"));
+        headless = Boolean.parseBoolean(java.lang.System.getProperty("helios.headless", "false"));
         biosFolder = String.valueOf(java.lang.System.getProperty("bios.folder", biosFolder));
         biosNameMsx1 = String.valueOf(java.lang.System.getProperty("bios.name.msx1", biosNameMsx1));
         biosNameColeco = String.valueOf(java.lang.System.getProperty("bios.name.coleco", biosNameColeco));
-        smdFileAsInterleaved = Boolean.valueOf(java.lang.System.getProperty("md.enable.smd.handling", "false"));
+        smdFileAsInterleaved = Boolean.parseBoolean(java.lang.System.getProperty("md.enable.smd.handling", "false"));
         PrefStore.initPrefs();
     }
 
@@ -123,7 +123,7 @@ public class SystemLoader {
             //linux pulseaudio can crash if we start too quickly
             Util.sleep(250);
             String filePath = args[0];
-            LOG.info("Launching file at: " + filePath);
+            LOG.info("Launching file at: {}", filePath);
             INSTANCE.handleNewRomFile(Paths.get(filePath));
             Util.sleep(1_000); //give the game thread a chance
         }
@@ -147,7 +147,7 @@ public class SystemLoader {
          loadProperties();
          InputProvider.bootstrap();
          boolean isHeadless = isHeadless();
-         LOG.info("Headless mode: " + isHeadless);
+         LOG.info("Headless mode: {}", isHeadless);
          SystemLoader.setHeadless(isHeadless);
          KeyboardInputHelper.init();
          initLookAndFeel();
@@ -175,7 +175,7 @@ public class SystemLoader {
         UIDefaults defaults = UIManager.getLookAndFeelDefaults();
         defaults.put("TextArea.font", ((Font) defaults.get("TextArea.font")).deriveFont(13 * SwingDPI.getScaleFactor()));
         SwingDPI.applyScalingAutomatically();
-        LOG.info("SwingUI DPI Scale factor: " + SwingDPI.getScaleFactor());
+        LOG.info("SwingUI DPI Scale factor: {}", SwingDPI.getScaleFactor());
     }
 
     // Create the frame on the event dispatching thread
@@ -253,7 +253,7 @@ public class SystemLoader {
         if (ZipUtil.isZipArchiveByteStream(file)) {
             Optional<? extends ZipEntry> optEntry = ZipUtil.getSupportedZipEntryIfAny(file);
             if (!optEntry.isPresent()) {
-                LOG.error("Unable to find a system to load: " + file.toAbsolutePath());
+                LOG.error("Unable to find a system to load: {}", file.toAbsolutePath());
                 return null;
             }
             LOG.info("Valid zipEntry detected: {}", optEntry.get().getName());
@@ -296,7 +296,7 @@ public class SystemLoader {
             systemProvider = Gb.createNewInstance(SystemType.GB, emuFrame);
         }
         if (systemProvider == null) {
-            LOG.error("Unable to find a system to load: " + file.toAbsolutePath());
+            LOG.error("Unable to find a system to load: {}", file.toAbsolutePath());
         }
         return systemProvider;
     }

@@ -90,7 +90,7 @@ public class FileLoader {
         try {
             rom = Files.readAllBytes(file);
         } catch (IOException e) {
-            LOG.error("Unable to load file: " + file.getFileName());
+            LOG.error("Unable to load file: {}", file.getFileName());
         }
         return rom;
     }
@@ -111,7 +111,7 @@ public class FileLoader {
             try {
                 lines = Files.readAllLines(pathObj);
             } catch (IOException e) {
-                LOG.error("Unable to load " + fileName + ", from path: " + pathObj);
+                LOG.error("Unable to load {}, from path: {}", fileName, pathObj);
             }
             return lines;
         }
@@ -119,7 +119,7 @@ public class FileLoader {
         if (isRunningInJar(classPath)) {
             return loadFileContentFromJar(fileName);
         }
-        LOG.warn("Unable to load: " + fileName);
+        LOG.warn("Unable to load: {}", fileName);
         return lines;
     }
 
@@ -132,7 +132,7 @@ public class FileLoader {
             String fileName = file.getFileName().toString();
             return readFileFromJar(fileName);
         }
-        LOG.error("Unable to load: " + file.toAbsolutePath().toString());
+        LOG.error("Unable to load: {}", file.toAbsolutePath().toString());
         return new byte[0];
     }
 
@@ -146,7 +146,7 @@ public class FileLoader {
                 buffer.put((byte) inputStream.read());
             }
         } catch (Exception e) {
-            LOG.error("Unable to load " + fileName + ", from path: " + fileName, e);
+            LOG.error("Unable to load {}, from path: {}", fileName, fileName, e);
         }
         return buffer.array();
     }
@@ -159,7 +159,7 @@ public class FileLoader {
         ) {
             lines = reader.lines().collect(Collectors.toList());
         } catch (Exception e) {
-            LOG.error("Unable to load " + fileName + ", from path: " + fileName);
+            LOG.error("Unable to load {}, from path: {}", fileName, fileName);
         }
         return lines;
     }
@@ -178,7 +178,7 @@ public class FileLoader {
                 throw new RuntimeException("Unexpected file: " + fileName);
             }
         } catch (Exception e) {
-            LOG.error("Unable to load: " + fileName, e);
+            LOG.error("Unable to load: {}", fileName, e);
         }
         return data;
     }
@@ -194,7 +194,7 @@ public class FileLoader {
             data = readFileSafe(file);
         }
         if (smdFileAsInterleaved && fileName.toLowerCase().contains(SystemLoader.SMD_INTERLEAVED_EXT)) {
-            LOG.info("SMD interleaved file detected: " + fileName);
+            LOG.info("SMD interleaved file detected: {}", fileName);
             data = unscrambleSmd(data);
         }
         return data;
@@ -217,7 +217,7 @@ public class FileLoader {
         String classPath = getCurrentClasspath();
         if (!isRunningInJar(classPath)) {
             // Class not from JAR
-            LOG.info("Not running from a JAR, using version: " + version);
+            LOG.info("Not running from a JAR, using version: {}", version);
             return version;
         }
         String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) +
@@ -226,9 +226,9 @@ public class FileLoader {
             Manifest manifest = new Manifest(is);
             Attributes attr = manifest.getMainAttributes();
             version = attr.getValue("Implementation-Version");
-            LOG.info("Using version from Manifest: " + version);
+            LOG.info("Using version from Manifest: {}", version);
         } catch (Exception e) {
-            LOG.error("Unable to load manifest file: " + manifestPath);
+            LOG.error("Unable to load manifest file: {}", manifestPath);
         }
         return version;
     }

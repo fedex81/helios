@@ -46,7 +46,7 @@ import java.nio.file.Path;
 
 public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> {
 
-    private static Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
 
     protected Z80Provider z80;
     private SystemLoader.SystemType systemType;

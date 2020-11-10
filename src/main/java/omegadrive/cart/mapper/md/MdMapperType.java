@@ -30,7 +30,7 @@ public enum MdMapperType {
 
     public static MdMapperType getMdMapperType(String systemType) {
         for (MdMapperType m : MdMapperType.values()) {
-            if (m.getName().equalsIgnoreCase(systemType)) {
+            if (m.name.equalsIgnoreCase(systemType)) {
                 return m;
             }
         }

@@ -31,7 +31,7 @@ import org.junit.Test;
 
 public class VdpInterruptHandlerTest {
 
-    private static Logger LOG = LogManager.getLogger(VdpInterruptHandlerTest.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(VdpInterruptHandlerTest.class.getSimpleName());
     static boolean verbose = true;
 
 

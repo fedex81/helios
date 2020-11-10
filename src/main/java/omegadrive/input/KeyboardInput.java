@@ -35,7 +35,7 @@ import static omegadrive.input.InputProvider.PlayerNumber;
 
 public class KeyboardInput extends KeyAdapter {
 
-    protected static Logger LOG = LogManager.getLogger(KeyboardInput.class.getSimpleName());
+    protected static final Logger LOG = LogManager.getLogger(KeyboardInput.class.getSimpleName());
 
     protected JoypadProvider provider;
     protected SystemLoader.SystemType systemType;

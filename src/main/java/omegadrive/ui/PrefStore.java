@@ -30,7 +30,7 @@ import java.util.*;
 public class PrefStore {
     protected static String PREF_FILENAME = "./helios.prefs";
 
-    private static Logger LOG = LogManager.getLogger(PrefStore.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(PrefStore.class.getSimpleName());
 
     private static String RECENT_FILE = "recent";
     public static int recentFileTotal = 10;
@@ -49,7 +49,7 @@ public class PrefStore {
         ) {
             uiProperties.load(reader);
         } catch (Exception e) {
-            LOG.error("Unable to load properties file: " + PREF_FILENAME);
+            LOG.error("Unable to load properties file: {}", PREF_FILENAME);
         } finally {
             bootstrapIfNecessary();
         }
@@ -96,7 +96,7 @@ public class PrefStore {
             uiProperties.store(writer, "");
             writer.flush();
         } catch (Exception e) {
-            LOG.error("Unable to store to properties file: " + PREF_FILENAME, e);
+            LOG.error("Unable to store to properties file: {}", PREF_FILENAME, e);
         }
     }
 }

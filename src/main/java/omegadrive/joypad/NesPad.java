@@ -34,7 +34,7 @@ import static omegadrive.input.InputProvider.PlayerNumber;
 
 public class NesPad extends BasePadAdapter {
 
-    private static Logger LOG = LogManager.getLogger(NesPad.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(NesPad.class.getSimpleName());
 
     private KeyListener p1HalfNes, p2HalfNes;
 

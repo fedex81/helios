@@ -38,8 +38,8 @@ public interface InputProvider {
 
     List<String> DEFAULT_CONTROLLERS = ImmutableList.of(NO_CONTROLLER, KEYBOARD_CONTROLLER);
 
-    boolean DEBUG_DETECTION = Boolean.valueOf(System.getProperty("jinput.detect.debug", "false"));
-    boolean JINPUT_ENABLE = Boolean.valueOf(System.getProperty("jinput.enable", "false"));
+    boolean DEBUG_DETECTION = Boolean.parseBoolean(System.getProperty("jinput.detect.debug", "false"));
+    boolean JINPUT_ENABLE = Boolean.parseBoolean(System.getProperty("jinput.enable", "false"));
     String JINPUT_NATIVES_PATH = System.getProperty("jinput.native.location", "lib");
 
     enum PlayerNumber {
@@ -87,7 +87,7 @@ public interface InputProvider {
                 + File.separator + Util.NATIVE_SUBDIR;
 //        System.out.println(lib);
         System.setProperty("net.java.games.input.librarypath", lib);
-        LOG.info("Loading system library from: " + lib);
+        LOG.info("Loading system library from: {}", lib);
         //disable java.util.logging
         java.util.logging.LogManager.getLogManager().reset();
         LOG.info("Disabling java.util.logging");

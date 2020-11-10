@@ -94,7 +94,7 @@ public enum VdpCounterMode {
                 return v;
             }
         }
-        LOG.error("Unable to find counter mode for videoMode: " + videoMode);
+        LOG.error("Unable to find counter mode for videoMode: {}", videoMode);
         return null;
     }
 

@@ -37,7 +37,7 @@ public class JinputGamepadMapping {
     public static final String GAMESIR_G3S_PAD_NAME = "xiaoji Gamesir-G3s 1.02";
 
     public static Table<String, Component.Identifier, Object> deviceMappings = HashBasedTable.create();
-    private static Logger LOG = LogManager.getLogger(JinputGamepadMapping.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(JinputGamepadMapping.class.getSimpleName());
 
     static {
         deviceMappings.put(SONY_PSX_CLASSIC_PAD_NAME, Axis.Y, JoypadDirection.UP_DOWN);

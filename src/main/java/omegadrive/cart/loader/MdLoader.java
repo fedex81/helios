@@ -70,7 +70,7 @@ public class MdLoader {
                 try {
                     i = processEntry(lines, i);
                 } catch (Exception e) {
-                    LOG.error("Unable to process entry " + s + ", at line: " + i, e);
+                    LOG.error("Unable to process entry {}, at line: {}", s, i, e);
                 }
             }
         }
@@ -104,7 +104,7 @@ public class MdLoader {
                     String value = line.substring(idx).trim();
                     map.put(key, value);
                 } else {
-                    LOG.warn("Unable to parse line: " + line);
+                    LOG.warn("Unable to parse line: {}", line);
                 }
             }
         }

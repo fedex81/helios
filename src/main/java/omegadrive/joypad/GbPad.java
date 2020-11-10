@@ -34,7 +34,7 @@ import static omegadrive.input.InputProvider.PlayerNumber;
 
 public class GbPad extends BasePadAdapter {
 
-    private static Logger LOG = LogManager.getLogger(GbPad.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(GbPad.class.getSimpleName());
 
     private KeyListener p1Listener;
 

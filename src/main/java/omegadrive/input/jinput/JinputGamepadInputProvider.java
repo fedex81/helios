@@ -43,7 +43,7 @@ import static net.java.games.input.Component.Identifier.Button.Axis;
 
 public class JinputGamepadInputProvider implements InputProvider {
 
-    private static Logger LOG = LogManager.getLogger(JinputGamepadInputProvider.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(JinputGamepadInputProvider.class.getSimpleName());
 
     private static ExecutorService executorService =
             Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY, JinputGamepadInputProvider.class.getSimpleName()));
@@ -99,14 +99,14 @@ public class JinputGamepadInputProvider implements InputProvider {
         Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
         List<Controller> l = Arrays.stream(ca).filter(c -> c.getType() == Controller.Type.GAMEPAD).collect(Collectors.toList());
         if (DEBUG_DETECTION || l.isEmpty()) {
-            LOG.info("Controller detection: " + detectControllerVerbose());
+            LOG.info("Controller detection: {}", detectControllerVerbose());
         }
         return l;
     }
 
     private Runnable inputRunnable() {
         return () -> {
-            LOG.info("Starting controller polling, interval (ms): " + POLLING_INTERVAL_MS);
+            LOG.info("Starting controller polling, interval (ms): {}", POLLING_INTERVAL_MS);
             do {
                 handleEvents();
                 Util.sleep(POLLING_INTERVAL_MS);
@@ -177,7 +177,7 @@ public class JinputGamepadInputProvider implements InputProvider {
         double value = event.getValue();
         JoypadAction action = value == ON ? JoypadAction.PRESSED : JoypadAction.RELEASED;
         if (InputProvider.DEBUG_DETECTION) {
-            LOG.info(id + ": " + value);
+            LOG.info("{}: {}", id, value);
             System.out.println(id + ": " + value);
         }
         Object res = JinputGamepadMapping.deviceMappings.row(ctrlName).getOrDefault(id, null);

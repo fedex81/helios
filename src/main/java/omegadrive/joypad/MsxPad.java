@@ -34,7 +34,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
  */
 public class MsxPad extends BasePadAdapter {
 
-    private static Logger LOG = LogManager.getLogger(MsxPad.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(MsxPad.class.getSimpleName());
 
     @Override
     public void init() {

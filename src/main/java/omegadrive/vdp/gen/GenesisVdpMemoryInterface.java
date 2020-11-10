@@ -97,9 +97,8 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     @Override
     public void writeVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int data, int address) {
-        int word = data;
-        int data1 = (word >> 8);
-        int data2 = word & 0xFF;
+        int data1 = (data >> 8);
+        int data2 = data & 0xFF;
         //ignore A0
         int index = address & EVEN_VALUE_MASK;
 
@@ -118,7 +117,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
                 writeCramByte(index + 1, data2);
                 break;
             default:
-                LOG.warn("Unexpected videoRam write: " + vramType);
+                LOG.warn("Unexpected videoRam write: {}", vramType);
         }
     }
 

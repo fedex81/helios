@@ -46,11 +46,11 @@ public enum Size {
     public static long getMaxFromByteCount(int byteCount) {
         switch (byteCount) {
             case 1:
-                return BYTE.getMax();
+                return BYTE.max;
             case 2:
-                return WORD.getMax();
+                return WORD.max;
             case 4:
-                return LONG.getMax();
+                return LONG.max;
         }
         return 0;
     }

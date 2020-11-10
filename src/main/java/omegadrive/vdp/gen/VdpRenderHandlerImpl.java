@@ -81,8 +81,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private SpriteDataHolder[] spriteDataHoldersNext = new SpriteDataHolder[MAX_SPRITES_PER_LINE_H40];
 
     public static VdpRenderHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
-        VdpRenderHandler v = new VdpRenderHandlerImpl(vdpProvider, memoryInterface);
-        return v;
+        return new VdpRenderHandlerImpl(vdpProvider, memoryInterface);
     }
 
     public static TileDataHolder getTileData(int nameTable, InterlaceMode interlaceMode, TileDataHolder holder) {

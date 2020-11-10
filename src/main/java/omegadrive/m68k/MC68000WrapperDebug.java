@@ -35,7 +35,7 @@ import java.util.stream.IntStream;
 
 public class MC68000WrapperDebug extends MC68000Wrapper {
 
-    private static Logger LOG = LogManager.getLogger(MC68000WrapperDebug.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(MC68000WrapperDebug.class.getSimpleName());
 
     public static boolean verbose = false;
     StringBuilder sb = new StringBuilder();
@@ -260,7 +260,7 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
             }
         } catch (Exception e) {
             String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
-            LOG.warn("Unable to dump the instruction: " + pc, e);
+            LOG.warn("Unable to dump the instruction: {}", pc, e);
         }
     }
 

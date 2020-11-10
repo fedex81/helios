@@ -42,7 +42,7 @@ import java.nio.file.Path;
 
 public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
 
-    private static Logger LOG = LogManager.getLogger(Nes.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(Nes.class.getSimpleName());
 
     static {
         ControllerImpl.JINPUT_ENABLE = false;
@@ -71,7 +71,7 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
         RegionDetector.Region romRegion = RegionDetector.Region.JAPAN;
         RegionDetector.Region ovrRegion = RegionDetector.getRegion(regionOvr);
         if (ovrRegion != null && ovrRegion != romRegion) {
-            LOG.info("Setting region override from: " + romRegion + " to " + ovrRegion);
+            LOG.info("Setting region override from: {} to {}", romRegion, ovrRegion);
             romRegion = ovrRegion;
         }
         return romRegion;

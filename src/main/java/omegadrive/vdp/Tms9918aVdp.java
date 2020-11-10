@@ -44,7 +44,7 @@ import static omegadrive.vdp.model.Tms9918a.TmsRegisterName.*;
  */
 public class Tms9918aVdp implements Tms9918a {
 
-    private static Logger LOG = LogManager.getLogger(Tms9918aVdp.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(Tms9918aVdp.class.getSimpleName());
 
     private static boolean verbose = false;
 

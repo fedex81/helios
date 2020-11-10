@@ -41,7 +41,7 @@ import java.nio.file.Paths;
  */
 public class ColecoBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvider {
 
-    private static Logger LOG = LogManager.getLogger(ColecoBus.class);
+    private static final Logger LOG = LogManager.getLogger(ColecoBus.class);
 
     static final boolean verbose = false;
 
@@ -62,7 +62,7 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProv
     public ColecoBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameColeco);
         bios = Util.toUnsignedIntArray(FileLoader.loadBiosFile(p));
-        LOG.info("Loading Coleco bios from: " + p.toAbsolutePath().toString());
+        LOG.info("Loading Coleco bios from: {}", p.toAbsolutePath().toString());
     }
 
     @Override
@@ -81,7 +81,7 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProv
             address = (address - ROM_START);// & (rom.length - 1);
             return memoryProvider.readRomByte(address);
         }
-        LOG.error("Unexpected Z80 memory read: " + Long.toHexString(address));
+        LOG.error("Unexpected Z80 memory read: {}", Long.toHexString(address));
         return 0xFF;
     }
 

@@ -26,7 +26,7 @@ import org.junit.Test;
 
 public class VdpDmaBandwidthTest extends BaseVdpDmaBandwidthTest {
 
-    private static Logger LOG = LogManager.getLogger(VdpDmaBandwidthTest.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(VdpDmaBandwidthTest.class.getSimpleName());
 
     @Test
     public void test68kToCramBlankingH40() {

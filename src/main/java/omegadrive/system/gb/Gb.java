@@ -38,7 +38,7 @@ import java.util.Properties;
  */
 public class Gb extends BaseSystem<BaseBusProvider, BaseStateHandler> {
 
-    private static Logger LOG = LogManager.getLogger(Gb.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(Gb.class.getSimpleName());
 
     private SystemLoader.SystemType systemType;
     private Emulator emulator;

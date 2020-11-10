@@ -45,7 +45,7 @@ import java.util.stream.IntStream;
 
 public class GstStateHandler implements GenesisStateHandler {
 
-    private static Logger LOG = LogManager.getLogger(GstStateHandler.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(GstStateHandler.class.getSimpleName());
 
     private static int FM_REG_OFFSET = 0x1E4;
     public static int FM_DATA_SIZE = 0x200;
@@ -219,10 +219,10 @@ public class GstStateHandler implements GenesisStateHandler {
         int ssp = getInt4Fn.apply(0xD2);
         int usp = getInt4Fn.apply(0xD6);
         if (usp > 0) {
-            LOG.warn("USP is not 0: " + usp);
+            LOG.warn("USP is not 0: {}", usp);
         }
         if (ssp > 0) {
-            LOG.warn("SSP is not 0: " + ssp);
+            LOG.warn("SSP is not 0: {}", ssp);
         }
     }
 

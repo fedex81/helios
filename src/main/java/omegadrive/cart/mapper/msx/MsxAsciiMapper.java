@@ -32,7 +32,7 @@ import static omegadrive.cart.mapper.msx.MsxAsciiMapper.*;
  */
 public class MsxAsciiMapper extends AsciiMapperImpl {
 
-    private static Logger LOG = LogManager.getLogger(MsxAsciiMapper.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(MsxAsciiMapper.class.getSimpleName());
 
     public static final int BLOCK_NUM = 32;
     public static final int MAPPER_START_ADDRESS = 0x4000;
@@ -48,7 +48,7 @@ public class MsxAsciiMapper extends AsciiMapperImpl {
     public static RomMapper createMapper(int[] rom, String type){
         AsciiType t = getMapperType(type);
         if(t == null){
-            LOG.error("Mapper not supported: " + type);
+            LOG.error("Mapper not supported: {}", type);
             return NO_OP_MAPPER;
         }
         return createMapper(rom, t);

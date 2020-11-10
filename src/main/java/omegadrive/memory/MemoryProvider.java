@@ -85,7 +85,7 @@ public class MemoryProvider implements IMemoryProvider {
         if (address < ramSize) {
             return ram[address];
         }
-        LOG.error("Invalid RAM read, address : " + Integer.toHexString(address));
+        LOG.error("Invalid RAM read, address : {}", Integer.toHexString(address));
         return 0;
     }
 
@@ -94,7 +94,7 @@ public class MemoryProvider implements IMemoryProvider {
         if (address < ramSize) {
             ram[address] = data;
         } else {
-            LOG.error("Invalid RAM write, address : " + Integer.toHexString(address) + ", data: " + data);
+            LOG.error("Invalid RAM write, address : {}, data: {}", Integer.toHexString(address), data);
         }
     }
 

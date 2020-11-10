@@ -27,7 +27,7 @@ import java.util.*;
 
 public class RegionDetector {
 
-    private static Logger LOG = LogManager.getLogger(RegionDetector.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(RegionDetector.class.getSimpleName());
 
     private static Comparator<Region> REGION_COMPARATOR = Comparator.comparingInt(r -> r.order);
 
@@ -58,7 +58,7 @@ public class RegionDetector {
         }
 
         if (verbose) {
-            LOG.info(res.name() + " (" + s + ")");
+            LOG.info("{} ({})", res.name(), s);
         }
         return res;
     }

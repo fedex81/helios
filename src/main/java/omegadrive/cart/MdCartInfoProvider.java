@@ -43,7 +43,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     public static final int ROM_END_ADDRESS = 0x1A4;
     public static final int RAM_START_ADDRESS = 0x1A8;
     public static final int RAM_END_ADDRESS = 0x1AC;
-    private static Logger LOG = LogManager.getLogger(MdCartInfoProvider.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(MdCartInfoProvider.class.getSimpleName());
     public static final int SRAM_FLAG_ADDRESS = 0x1B0;
     public static final int SRAM_START_ADDRESS = 0x1B4;
     public static final int SRAM_END_ADDRESS = 0x1B8;
@@ -136,7 +136,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
 
     private void detectSram() {
-        String sramFlag = "" + (char) memoryProvider.readRomByte(SRAM_FLAG_ADDRESS);
+        String sramFlag = String.valueOf((char) memoryProvider.readRomByte(SRAM_FLAG_ADDRESS));
         sramFlag += (char) memoryProvider.readRomByte(SRAM_FLAG_ADDRESS + 1);
         boolean externalRamEnabled = EXTERNAL_RAM_FLAG_VALUE.equals(sramFlag);
 
@@ -152,12 +152,12 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
                 sramEnd = Util.readRom(memoryProvider, Size.WORD, SRAM_END_ADDRESS) << 16;
                 sramEnd |= Util.readRom(memoryProvider, Size.WORD, SRAM_END_ADDRESS + 2);
                 if (sramEnd - sramStart < 0) {
-                    LOG.error("Unexpected SRAM setup: " + toString());
+                    LOG.error("Unexpected SRAM setup: {}", toString());
                     sramStart = DEFAULT_SRAM_START_ADDRESS;
                     sramEnd = DEFAULT_SRAM_END_ADDRESS;
                 }
             } else if (!isBackup && isSramType) {
-                LOG.warn("Volatile SRAM? " + romName);
+                LOG.warn("Volatile SRAM? {}", romName);
             }
         }
     }
@@ -175,12 +175,12 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     public boolean adjustSramLimits(long address) {
         //FIFA 96
-        boolean adjust = getSramEnd() < MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
-        adjust &= address > getSramEnd() && address < MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
+        boolean adjust = sramEnd < MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
+        adjust &= address > sramEnd && address < MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
         if (adjust) {
-            LOG.warn("Adjusting SRAM limit from: {} to: {}", Long.toHexString(getSramEnd()),
+            LOG.warn("Adjusting SRAM limit from: {} to: {}", Long.toHexString(sramEnd),
                     Long.toHexString(MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS));
-            setSramEnd(MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS);
+            sramEnd = MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
         }
         return adjust;
     }

@@ -96,7 +96,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
 
     static {
-        fullThrottle = Boolean.valueOf(java.lang.System.getProperty("helios.fullSpeed", "false"));
+        fullThrottle = Boolean.parseBoolean(java.lang.System.getProperty("helios.fullSpeed", "false"));
     }
 
     protected abstract void loop();
@@ -234,6 +234,19 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         return romPath;
     }
 
+    protected void pauseAndWait() {
+        if (!pauseFlag) {
+            return;
+        }
+        LOG.info("Pause: {}", pauseFlag);
+        try {
+            Util.waitOnBarrier(pauseBarrier);
+            LOG.info("Pause: {}", pauseFlag);
+        } finally {
+            pauseBarrier.reset();
+        }
+    }
+
     class RomRunnable implements Runnable {
         private Path file;
         private static final String threadNamePrefix = "cycle-";
@@ -257,7 +270,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
                 emuFrame.setTitle(romName);
                 region = getRegionInternal(memory, emuFrame.getRegionOverride());
-                LOG.info("Running rom: " + romName + ", region: " + region);
+                LOG.info("Running rom: {}, region: {}", romName, region);
                 initAfterRomLoad();
                 loop();
             } catch (Exception | Error e) {
@@ -265,19 +278,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
                 LOG.error(e);
             }
             handleCloseRom();
-        }
-    }
-
-    protected void pauseAndWait() {
-        if (!pauseFlag) {
-            return;
-        }
-        LOG.info("Pause: " + pauseFlag);
-        try {
-            Util.waitOnBarrier(pauseBarrier);
-            LOG.info("Pause: " + pauseFlag);
-        } finally {
-            pauseBarrier.reset();
         }
     }
 

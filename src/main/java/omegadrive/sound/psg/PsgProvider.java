@@ -31,15 +31,14 @@ public interface PsgProvider extends Device {
 
     static PsgProvider createSnInstance(RegionDetector.Region region, int sampleRate) {
         int clockHz = (int) getPsgSoundClock(region);
-        LOG.info("PSG instance, clockHz: " + clockHz + ", sampleRate: " + sampleRate);
+        LOG.info("PSG instance, clockHz: {}, sampleRate: {}", clockHz, sampleRate);
         return SN76489Psg.createInstance(clockHz, sampleRate);
     }
 
     static PsgProvider createAyInstance(RegionDetector.Region region, int sampleRate) {
         int clockHz = (int) getPsgSoundClock(region);
-        LOG.info("PSG instance, clockHz: " + clockHz + ", sampleRate: " + sampleRate);
-        PsgProvider psgProvider = Ay38910Psg.createInstance(sampleRate);
-        return psgProvider;
+        LOG.info("PSG instance, clockHz: {}, sampleRate: {}", clockHz, sampleRate);
+        return Ay38910Psg.createInstance(sampleRate);
     }
 
     //SN style PSG

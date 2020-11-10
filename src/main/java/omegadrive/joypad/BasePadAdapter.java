@@ -34,7 +34,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
 public abstract class BasePadAdapter implements JoypadProvider {
 
-    private static Logger LOG = LogManager.getLogger(BasePadAdapter.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(BasePadAdapter.class.getSimpleName());
 
     JoypadProvider.JoypadType p1Type;
     JoypadProvider.JoypadType p2Type;

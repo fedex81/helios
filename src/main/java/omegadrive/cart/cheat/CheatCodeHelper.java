@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 
 public class CheatCodeHelper {
 
-    private static Logger LOG = LogManager.getLogger(CheatCodeHelper.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(CheatCodeHelper.class.getSimpleName());
 
     /**
      * Pattern for recognizing Genesis Raw Codes.
@@ -46,10 +46,10 @@ public class CheatCodeHelper {
                 int value = Integer.parseInt(m.group(2), 16);
                 result = new BasicGenesisRawCode(address, value);
             } else {
-                LOG.error("Invalid cheat code: " + str);
+                LOG.error("Invalid cheat code: {}", str);
             }
         } else {
-            LOG.error("Invalid cheat code: " + str);
+            LOG.error("Invalid cheat code: {}", str);
         }
         return result;
     }

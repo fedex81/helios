@@ -27,7 +27,7 @@ import org.junit.Test;
 
 public class VdpDmaBandwidthTest2 extends BaseVdpDmaBandwidthTest {
 
-    private static Logger LOG = LogManager.getLogger(VdpDmaBandwidthTest2.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(VdpDmaBandwidthTest2.class.getSimpleName());
 
     @Ignore("TODO fix")
     @Test

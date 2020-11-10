@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 public class Z80Exerciser implements NotifyOps {
 
-    private static Logger LOG = LogManager.getLogger(Z80Exerciser.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(Z80Exerciser.class.getSimpleName());
 
     private static String resourcesPath = "./src/test/java/omegadrive/z80/";
 

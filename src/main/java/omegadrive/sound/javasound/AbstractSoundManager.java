@@ -73,9 +73,9 @@ public abstract class AbstractSoundManager implements SoundProvider {
             return NO_SOUND;
         }
         AbstractSoundManager jsm = new JavaSoundManager();
-        jsm.setFm(jsm.getFmProvider(systemType, region));
-        jsm.setPsg(jsm.getPsgProvider(systemType, region));
-        jsm.setSystemType(systemType);
+        jsm.fm = jsm.getFmProvider(systemType, region);
+        jsm.psg = jsm.getPsgProvider(systemType, region);
+        jsm.type = systemType;
         jsm.init(region);
         return jsm;
     }
@@ -94,7 +94,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
                 psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
                 break;
         }
-        hasPsg = getPsg() != PsgProvider.NO_SOUND;
+        hasPsg = psg != PsgProvider.NO_SOUND;
         return psgProvider;
     }
 
@@ -120,7 +120,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
             default:
                 break;
         }
-        hasFm = getFm() != FmProvider.NO_SOUND;
+        hasFm = fm != FmProvider.NO_SOUND;
         return fmProvider;
     }
 
@@ -132,7 +132,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         psgSize = SoundProvider.getPsgBufferByteSize(audioFormat);
         executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
         executorService.submit(getRunnable(dataLine, region));
-        LOG.info("Output audioFormat: " + audioFormat + ", bufferSize: " + fmSize);
+        LOG.info("Output audioFormat: {}, bufferSize: {}", audioFormat, fmSize);
     }
 
     public void setSystemType(SystemLoader.SystemType type) {
@@ -164,7 +164,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         List<Runnable> list = executorService.shutdownNow();
         SoundUtil.close(dataLine);
         setRecording(false);
-        LOG.info("Closing sound, stopping background tasks: #" + list.size());
+        LOG.info("Closing sound, stopping background tasks: #{}", list.size());
     }
 
     @Override
@@ -194,7 +194,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     @Override
     public void setEnabled(boolean mute) {
         this.mute = mute;
-        LOG.info("Set mute: " + mute);
+        LOG.info("Set mute: {}", mute);
     }
 
     @Override

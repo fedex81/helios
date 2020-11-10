@@ -45,11 +45,11 @@ public class MC68000Wrapper implements M68kProvider {
 
     static {
         STOP_ON_EXCEPTION =
-                Boolean.valueOf(System.getProperty("68k.stop.on.exception", "true"));
-        GENESIS_TAS_BROKEN = Boolean.valueOf(System.getProperty("68k.broken.tas", "true"));
-        M68K_DEBUG = Boolean.valueOf(System.getProperty("68k.debug", "false"));
+                Boolean.parseBoolean(System.getProperty("68k.stop.on.exception", "true"));
+        GENESIS_TAS_BROKEN = Boolean.parseBoolean(System.getProperty("68k.broken.tas", "true"));
+        M68K_DEBUG = Boolean.parseBoolean(System.getProperty("68k.debug", "false"));
         if (GENESIS_TAS_BROKEN != TAS.EMULATE_BROKEN_TAS) {
-            LOG.info("Overriding 68k TAS broken setting: " + GENESIS_TAS_BROKEN);
+            LOG.info("Overriding 68k TAS broken setting: {}", GENESIS_TAS_BROKEN);
         }
         if (M68K_DEBUG) {
             LOG.info("68k debug mode: true");

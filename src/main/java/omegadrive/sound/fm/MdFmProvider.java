@@ -58,7 +58,7 @@ public interface MdFmProvider extends FmProvider {
         MdFmProvider fmProvider = MD_NUKE_AUDIO ? new Ym2612Nuke(AbstractSoundManager.audioFormat, clock)
                 : new YM2612();
         fmProvider.init((int) clock, (int) audioFormat.getSampleRate());
-        LOG.info("FM instance, clock: " + clock + ", sampleRate: " + audioFormat.getSampleRate());
+        LOG.info("FM instance, clock: {}, sampleRate: {}", clock, audioFormat.getSampleRate());
         return fmProvider;
     }
 

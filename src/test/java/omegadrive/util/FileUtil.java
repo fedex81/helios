@@ -23,7 +23,7 @@ import java.util.zip.ZipOutputStream;
  */
 public class FileUtil {
 
-    private static Logger LOG = LogManager.getLogger(FileUtil.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(FileUtil.class.getSimpleName());
 
     public static Path compressAndSaveToZipFile(Path srcFilePath) {
         String fileName = srcFilePath.getFileName().toString();
@@ -41,7 +41,7 @@ public class FileUtil {
             zos.write(data);
             zos.closeEntry();
         } catch (Exception e) {
-            LOG.error("Unable to save source file: " + fileName, e);
+            LOG.error("Unable to save source file: {}", fileName, e);
         } finally {
             closeQuietly(zos);
             closeQuietly(fos);
@@ -67,7 +67,7 @@ public class FileUtil {
             zos.write(baos.toByteArray());
             zos.closeEntry();
         } catch (Exception e) {
-            LOG.error("Unable to save source file: " + fileName, e);
+            LOG.error("Unable to save source file: {}", fileName, e);
         } finally {
             closeQuietly(zos);
             closeQuietly(fos);

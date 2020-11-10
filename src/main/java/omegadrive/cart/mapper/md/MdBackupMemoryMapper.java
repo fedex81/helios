@@ -59,7 +59,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         mapper.sramMode = SramMode.READ_WRITE;
         mapper.eeprom = entry.getEeprom();
         mapper.i2c = I2cEeprom.createInstance(entry);
-        LOG.info("BackupMemoryMapper created, using folder: " + mapper.sramFolder);
+        LOG.info("BackupMemoryMapper created, using folder: {}", mapper.sramFolder);
         mapper.initBackupFileIfNecessary();
         return mapper;
     }
@@ -73,7 +73,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     @Override
     public void setSramMode(SramMode sramMode) {
         if (this.sramMode != sramMode) {
-            LOG.info("SramMode from: " + this.sramMode + " to: " + sramMode);
+            LOG.info("SramMode from: {} to: {}", this.sramMode, sramMode);
         }
         this.sramMode = sramMode;
     }

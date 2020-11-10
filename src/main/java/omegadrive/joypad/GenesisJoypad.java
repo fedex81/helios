@@ -47,7 +47,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
  */
 public class GenesisJoypad extends BasePadAdapter {
 
-    private static Logger LOG = LogManager.getLogger(GenesisJoypad.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(GenesisJoypad.class.getSimpleName());
 
     static final int SIX_BUTTON_STEPS = 9;
     static final int SIX_BUTTON_START_A_ONLY_STEP = 6;

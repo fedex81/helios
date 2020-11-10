@@ -38,8 +38,8 @@ public class Z80CoreWrapper implements Z80Provider {
 
     static {
         STOP_ON_EXCEPTION =
-                Boolean.valueOf(System.getProperty("z80.stop.on.exception", "false"));
-        Z80_DEBUG = Boolean.valueOf(System.getProperty("z80.debug", "false"));
+                Boolean.parseBoolean(System.getProperty("z80.stop.on.exception", "false"));
+        Z80_DEBUG = Boolean.parseBoolean(System.getProperty("z80.debug", "false"));
         if (Z80_DEBUG) {
             LOG.info("z80 debug mode: true");
         }
@@ -94,7 +94,7 @@ public class Z80CoreWrapper implements Z80Provider {
             z80Core.execute();
         } catch (Exception | Error e) {
             LOG.error("z80 exception", e);
-            LOG.error("Z80State: " + Z80Helper.toString(z80Core.getZ80State()));
+            LOG.error("Z80State: {}", Z80Helper.toString(z80Core.getZ80State()));
             LOG.error("Halting Z80");
             z80Core.setHalted(true);
             if(STOP_ON_EXCEPTION){

@@ -323,9 +323,8 @@ public class Ssp16Impl implements Ssp16 {
         this.svpCtx = svpCtx;
         this.sspCtx = svpCtx.ssp1601;
         int limit = Math.min(svpCtx.iram_rom.length, cart.rom.length);
-        for (int i = SVP_ROM_START_ADDRESS_WORD; i < limit; i++) {
-            svpCtx.iram_rom[i] = cart.rom[i];
-        }
+        if (limit - 1024 >= 0)
+            System.arraycopy(cart.rom, SVP_ROM_START_ADDRESS_WORD, svpCtx.iram_rom, SVP_ROM_START_ADDRESS_WORD, limit - 1024);
         init();
         SET_PC(rPC.h);
     }
@@ -503,11 +502,10 @@ public class Ssp16Impl implements Ssp16 {
     }
 
     final void REG_WRITE(int r, int d) {
-        int r1 = r;
-        if (r1 >= 4) {
-            invokeWriteHandler(r1, d);
-        } else if (r1 > 0) {
-            sspCtx.gr[r1].setH(d);
+        if (r >= 4) {
+            invokeWriteHandler(r, d);
+        } else if (r > 0) {
+            sspCtx.gr[r].setH(d);
         }
     }
 
@@ -858,7 +856,7 @@ public class Ssp16Impl implements Ssp16 {
             case 13:                        /* 13 gr13 */
                 return read_unknown();
             default:
-                LOG.info("invokeReadHandler error: " + ordinal);
+                LOG.info("invokeReadHandler error: {}", ordinal);
         }
         return 0xFF;
     }
@@ -906,7 +904,7 @@ public class Ssp16Impl implements Ssp16 {
                 write_unknown(value);
                 break;
             default:
-                LOG.info("invokeWriteHandler error: " + ordinal);
+                LOG.info("invokeWriteHandler error: {}", ordinal);
         }
     }
 

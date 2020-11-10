@@ -259,7 +259,7 @@ public final class SmsVdp implements BaseVdpProvider {
         VRAM = memory.getVram();
         CRAM = memory.getCram();
         resetVideoMode(true);
-        LOG.info("Initial video mode: " + videoMode + ", " + videoMode.getDimension());
+        LOG.info("Initial video mode: {}, {}", videoMode, videoMode.getDimension());
     }
 
     /**
@@ -347,7 +347,7 @@ public final class SmsVdp implements BaseVdpProvider {
         boolean hasChanged = videoMode != newVideoMode;
         if (hasChanged || force) {
             if (hasChanged) {
-                LOG.info("Video mode changed: " + newVideoMode + ", " + newVideoMode.getDimension());
+                LOG.info("Video mode changed: {}, {}", newVideoMode, newVideoMode.getDimension());
             }
             this.videoMode = newVideoMode;
             palFlag = videoMode.isPal() ? PAL : NTSC;

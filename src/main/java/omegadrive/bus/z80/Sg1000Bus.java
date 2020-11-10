@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 
 public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvider {
 
-    private static Logger LOG = LogManager.getLogger(Sg1000Bus.class);
+    private static final Logger LOG = LogManager.getLogger(Sg1000Bus.class);
 
     private static int ROM_START = 0;
     private static int ROM_END = 0xBFFF;
@@ -53,7 +53,7 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProv
             address &= RAM_SIZE - 1;
             return memoryProvider.readRamByte(address);
         }
-        LOG.error("Unexpected Z80 memory read: " + Long.toHexString(address));
+        LOG.error("Unexpected Z80 memory read: {}", Long.toHexString(address));
         return 0xFF;
     }
 

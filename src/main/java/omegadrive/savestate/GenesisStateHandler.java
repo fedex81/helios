@@ -112,8 +112,7 @@ public interface GenesisStateHandler extends BaseStateHandler {
         GshStateHandler h = new GshStateHandler();
         h.type = Type.LOAD;
         h.init(fileName);
-        GenesisStateHandler res = h.detectStateFileType();
-        return res;
+        return h.detectStateFileType();
     }
 
     static GenesisStateHandler createSaveInstance(String fileName) {

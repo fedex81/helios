@@ -50,7 +50,7 @@ public class GenesisVdp implements GenesisVdpProvider {
     private final static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
     //TODO true breaks a good number of VdpFifoTests
-    private static boolean ENABLE_READ_AHEAD = Boolean.valueOf(System.getProperty("vdp.enable.read.ahead", "false"));
+    private static boolean ENABLE_READ_AHEAD = Boolean.parseBoolean(System.getProperty("vdp.enable.read.ahead", "false"));
 
     private VramMode vramMode;
     private InterlaceMode interlaceMode;
@@ -223,7 +223,7 @@ public class GenesisVdp implements GenesisVdpProvider {
 
     private int readControl() {
         if (!bus.is68kRunning()) {
-            LOG.warn("readControl with 68k stopped, address: {}", addressRegister, verbose);
+            LOG.warn("readControl with 68k stopped, address: {}", addressRegister);
         }
         // The value assigned to these bits will be whatever value these bits were set to from the
         // last read the M68000 performed.
@@ -586,7 +586,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                 boolean prevLcb = lcb;
                 lcb = ((data >> 5) & 1) == 1;
                 if (prevLcb != lcb) {
-                    LOG.info("LCB enable: " + lcb);
+                    LOG.info("LCB enable: {}", lcb);
                 }
                 boolean newM3 = ((data >> 1) & 1) == 1;
                 updateM3(newM3);
@@ -605,7 +605,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                 m2 = ((data >> 3) & 1) == 1;
                 boolean mode5 = ((data >> 2) & 1) == 1;
                 if (m5 != mode5) {
-                    LOG.info("Mode5: " + mode5);
+                    LOG.info("Mode5: {}", mode5);
                     m5 = mode5;
                 }
                 break;
@@ -615,7 +615,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                 h40 = rs0 && rs1;
                 boolean val = Util.bitSetTest(data, 3);
                 if (val != ste) {
-                    LOG.debug("Shadow highlight: " + val);
+                    LOG.debug("Shadow highlight: {}", val);
                 }
                 ste = val;
                 InterlaceMode prev = interlaceMode;
@@ -744,10 +744,10 @@ public class GenesisVdp implements GenesisVdpProvider {
 
     @Override
     public void resetVideoMode(boolean force) {
-        VideoMode newVideoMode = getVideoMode(region, isH40(), isV30());
+        VideoMode newVideoMode = getVideoMode(region, h40, m2);
         if (videoMode != newVideoMode || force) {
             this.videoMode = newVideoMode;
-            LOG.info("Video mode changed: " + videoMode + ", " + videoMode.getDimension());
+            LOG.info("Video mode changed: {}, {}", videoMode, videoMode.getDimension());
             pal = videoMode.isPal() ? 1 : 0;
             updateSatLocation();
             list.forEach(l -> l.onVdpEvent(VdpEvent.VIDEO_MODE, newVideoMode));

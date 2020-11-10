@@ -24,7 +24,7 @@ public class VdpDebugView implements UpdatableViewer {
 
     static {
         DEBUG_VIEWER_ENABLED =
-                Boolean.valueOf(System.getProperty("md.show.vdp.debug.viewer", "false"));
+                Boolean.parseBoolean(System.getProperty("md.show.vdp.debug.viewer", "false"));
         if (DEBUG_VIEWER_ENABLED) {
             LOG.info("Debug viewer enabled");
         }

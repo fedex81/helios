@@ -55,7 +55,7 @@ import java.util.Arrays;
  **/
 public class Ssf2Mapper implements RomMapper {
 
-    private static Logger LOG = LogManager.getLogger(Ssf2Mapper.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(Ssf2Mapper.class.getSimpleName());
 
     public static final int BANK_SET_START_ADDRESS = 0xA130F3;
     public static final int BANK_SET_END_ADDRESS = 0xA130FF;
@@ -82,7 +82,7 @@ public class Ssf2Mapper implements RomMapper {
         if (address >= BANKABLE_START_ADDRESS && address <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
             LogHelper.printLevel(LOG, Level.INFO, "Bank read: {}", address, verbose);
             int bankSelector = (int) (address / BANK_SIZE);
-            address = (banks[bankSelector] * BANK_SIZE) + (address - bankSelector * BANK_SIZE);
+            address = ((long) banks[bankSelector] * BANK_SIZE) + (address - bankSelector * BANK_SIZE);
             return Util.readRom(memory, size, (int) address);
         }
         return baseMapper.readData(address, size);

@@ -219,7 +219,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         RegionDetector.Region romRegion = RegionDetector.detectRegion(memory);
         RegionDetector.Region ovrRegion = RegionDetector.getRegion(regionOvr);
         if (ovrRegion != null && ovrRegion != romRegion) {
-            LOG.info("Setting region override from: " + romRegion + " to " + ovrRegion);
+            LOG.info("Setting region override from: {} to {}", romRegion, ovrRegion);
             romRegion = ovrRegion;
         }
         return romRegion;

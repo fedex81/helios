@@ -32,7 +32,7 @@ import java.nio.file.Paths;
 
 public class FileSoundPersister implements SoundPersister {
 
-    private static Logger LOG = LogManager.getLogger(FileSoundPersister.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(FileSoundPersister.class.getSimpleName());
 
     /**
      * For Recording Sound to Disk.
@@ -70,7 +70,7 @@ public class FileSoundPersister implements SoundPersister {
         try {
             rawFile = Paths.get(".", name).toFile();
             fileStream = Files.asByteSink(rawFile).openBufferedStream();
-            LOG.info("Started recording file: " + name);
+            LOG.info("Started recording file: {}", name);
             recording = true;
         } catch (IOException ioe) {
             LOG.error("Could not open file for recording.");

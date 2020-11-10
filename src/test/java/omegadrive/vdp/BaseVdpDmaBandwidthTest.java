@@ -45,7 +45,7 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 @Ignore
 public class BaseVdpDmaBandwidthTest {
 
-    private static Logger LOG = LogManager.getLogger(BaseVdpDmaBandwidthTest.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(BaseVdpDmaBandwidthTest.class.getSimpleName());
 
     GenesisVdpProvider vdpProvider;
     TestGenesisVdpMemoryInterface memoryInterface;

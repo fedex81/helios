@@ -42,7 +42,7 @@ import java.util.stream.IntStream;
 
 public class GshStateHandler extends GstStateHandler {
 
-    private static Logger LOG = LogManager.getLogger(GshStateHandler.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(GshStateHandler.class.getSimpleName());
 
     protected static final String MAGIC_WORD = "GSH";
     protected static final String MAGIC_WORD_GST = "GST";

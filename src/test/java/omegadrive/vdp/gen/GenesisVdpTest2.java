@@ -40,7 +40,7 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VramMode.*;
 
 public class GenesisVdpTest2 {
 
-    private static Logger LOG = LogManager.getLogger(VdpDmaHandlerTest.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(VdpDmaHandlerTest.class.getSimpleName());
 
     GenesisVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;

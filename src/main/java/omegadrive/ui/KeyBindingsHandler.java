@@ -36,7 +36,7 @@ import static javax.swing.KeyStroke.getKeyStroke;
 
 public class KeyBindingsHandler {
 
-    private static Logger LOG = LogManager.getLogger(KeyBindingsHandler.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(KeyBindingsHandler.class.getSimpleName());
 
     protected static final String DIV = "=";
     protected static final String PLAYER_DIV = "\\.";
@@ -55,7 +55,7 @@ public class KeyBindingsHandler {
     }
 
     private static void loadKeyMap() {
-        LOG.info("Loading key config file: " + configFile);
+        LOG.info("Loading key config file: {}", configFile);
         List<String> l = FileLoader.readFileContent(configFile);
         keyMap = parseConfig(l);
         final List<String> l1 = l;

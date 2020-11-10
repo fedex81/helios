@@ -65,7 +65,7 @@ public class KeyboardInputHelper {
     public static final Table<PlayerNumber, Integer, JoypadButton> keyboardInverseBindings = HashBasedTable.create();
     public static final Table<PlayerNumber, JoypadButton, Integer> keyboardBindings = HashBasedTable.create();
     public static final InputMap DEFAULT_INPUT_MAP = new InputMap();
-    protected static Logger LOG = LogManager.getLogger(KeyboardInputHelper.class.getSimpleName());
+    protected static final Logger LOG = LogManager.getLogger(KeyboardInputHelper.class.getSimpleName());
 
     static {
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_ENTER, ALT_DOWN_MASK), TOGGLE_FULL_SCREEN);

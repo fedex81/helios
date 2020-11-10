@@ -37,7 +37,7 @@ public class CueFileParser {
         try {
             cueSheet = CueParser.parse(cueFilePath.toFile(), Charset.defaultCharset());
         } catch (IOException e) {
-            LOG.warn("Unable to open BIN/CUE file " + cueFilePath + ": " + e.getMessage());
+            LOG.warn("Unable to open BIN/CUE file {}: {}", cueFilePath, e.getMessage());
         }
         return cueSheet;
     }

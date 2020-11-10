@@ -35,7 +35,7 @@ import java.util.stream.IntStream;
 @Ignore
 public class BaseVdpDmaHandlerTest {
 
-    private static Logger LOG = LogManager.getLogger(BaseVdpDmaHandlerTest.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(BaseVdpDmaHandlerTest.class.getSimpleName());
 
     GenesisVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;

@@ -31,12 +31,12 @@ import java.lang.reflect.Field;
 
 public class SoundUtil {
 
-    private static Logger LOG = LogManager.getLogger(SoundUtil.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(SoundUtil.class.getSimpleName());
 
-    public static byte ZERO_BYTE = (byte) 0;
+    public static byte ZERO_BYTE = 0;
 
     private static int DEFAULT_PSG_SHIFT_BITS = 6;
-    public static double PSG_ATTENUATION = Double.valueOf(System.getProperty("sound.psg.attenuation", "1.0"));
+    public static double PSG_ATTENUATION = Double.parseDouble(System.getProperty("sound.psg.attenuation", "1.0"));
     private static int USER_PSG_ATT_BITS;
     private static int PSG_SHIFT_BITS;
 
@@ -60,7 +60,7 @@ public class SoundUtil {
             // Small buffer to avoid latency, but more intensive CPU usage
             res = line.write(buffer, start, end);
             if (res < (end - start)) {
-                LOG.warn("bytes written: " + res + "/" + (end - start));
+                LOG.warn("bytes written: {}/{}", res, end - start);
             }
         } catch (IllegalArgumentException iae) {
             LOG.error("Error writing to the audio line. "
@@ -127,7 +127,7 @@ public class SoundUtil {
                 line.open(audioFormat, getAudioLineBufferSize(audioFormat));
                 lowerLatencyHack(line);
                 line.start();
-                LOG.info("SourceDataLine buffer (bytes): " + line.getBufferSize());
+                LOG.info("SourceDataLine buffer (bytes): {}", line.getBufferSize());
             } catch (LineUnavailableException lue) {
                 LOG.error("Unable to open audio line.");
             }
@@ -193,7 +193,7 @@ public class SoundUtil {
     private static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output) {
         for (int j = 0, i = 0; j < psgMono8.length; j++, i += 4) {
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg16 = ((int) psgMono8[j]) << 7;
+            int psg16 = psgMono8[j] << 7;
             output[i] = (byte) (psg16 & 0xFF); //lsb
             output[i + 1] = (byte) ((psg16 >> 8) & 0xFF); //msb
             output[i + 2] = output[i];
@@ -224,9 +224,9 @@ public class SoundUtil {
         ) {
             AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, output);
             audioInputStream.close();
-            LOG.info(output.getAbsolutePath() + " saved");
+            LOG.info("{} saved", output.getAbsolutePath());
         } catch (IOException ioe) {
-            LOG.error("Error writing WAV file: " + output.getAbsolutePath());
+            LOG.error("Error writing WAV file: {}", output.getAbsolutePath());
             ioe.printStackTrace();
             System.out.println("Error writing WAV file");
         }

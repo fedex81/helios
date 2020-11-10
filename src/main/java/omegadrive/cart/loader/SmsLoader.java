@@ -45,7 +45,7 @@ public class SmsLoader {
             SmsMapper.Type.CODEM.name(), "/EMU_MAPPER=3",
             SmsMapper.Type.KOREA.name(), "/EMU_MAPPER=9"
     );
-    private static Logger LOG = LogManager.getLogger(SmsLoader.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(SmsLoader.class.getSimpleName());
 
     public static void main(String[] args) {
         Map<String, MapperSelector.Entry> m = loadData(SystemLoader.SystemType.SMS);
@@ -66,9 +66,9 @@ public class SmsLoader {
                 });
             }
         } catch (Exception e) {
-            LOG.error("Unable to parse: " + fileName, e);
+            LOG.error("Unable to parse: {}", fileName, e);
         }
-        LOG.info("Data loaded in ms: " + (System.currentTimeMillis() - start));
+        LOG.info("Data loaded in ms: {}", System.currentTimeMillis() - start);
         return map;
     }
 

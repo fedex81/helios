@@ -42,7 +42,7 @@ import java.util.Map;
  */
 public class MsxXmlLoader {
 
-    private static Logger LOG = LogManager.getLogger(MsxXmlLoader.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(MsxXmlLoader.class.getSimpleName());
 
     static DocumentBuilderFactory dbf;
 
@@ -89,9 +89,9 @@ public class MsxXmlLoader {
                 addRoms(map, title, megaroms, true);
             }
         } catch (Exception e){
-            LOG.error("Unable to parse: " + fileName, e);
+            LOG.error("Unable to parse: {}", fileName, e);
         }
-        LOG.info("XML loaded in ms: " + (System.currentTimeMillis() - start));
+        LOG.info("XML loaded in ms: {}", System.currentTimeMillis() - start);
         return map;
     }
 

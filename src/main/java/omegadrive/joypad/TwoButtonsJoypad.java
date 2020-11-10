@@ -53,7 +53,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
  */
 public class TwoButtonsJoypad extends BasePadAdapter {
 
-    private static Logger LOG = LogManager.getLogger(TwoButtonsJoypad.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(TwoButtonsJoypad.class.getSimpleName());
 
     //only for SMS, 1 - unpressed, 0 - pressed
     private int pauseButton1 = 1;

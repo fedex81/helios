@@ -26,7 +26,7 @@ import java.lang.reflect.Method;
 
 public class JmxBridge {
 
-    private static Logger LOG = LogManager.getLogger(JmxBridge.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(JmxBridge.class.getSimpleName());
 
     private static boolean JMX_SUPPORT_FLAG;
     private static JmxLauncherProxy proxy;
@@ -50,12 +50,12 @@ public class JmxBridge {
                 String name = object.getClass().getSimpleName();
                 String objName = proxy.exportToJMX(object, name);
                 if (objName != null) {
-                    LOG.info("JMX exporting: " + objName);
+                    LOG.info("JMX exporting: {}", objName);
                 } else {
-                    LOG.warn("JMX exporting failed: " + name);
+                    LOG.warn("JMX exporting failed: {}", name);
                 }
             } catch (Exception e) {
-                LOG.warn("Unable to export: " + object.getClass().getSimpleName());
+                LOG.warn("Unable to export: {}", object.getClass().getSimpleName());
             }
         }
     }

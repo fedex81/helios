@@ -247,7 +247,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     private void logInfo(String str, Object... args) {
         if (verbose) {
             String msg = ParameterizedMessage.format(str, args);
-            LOG.info(msg + vdp.getVdpStateString());
+            LOG.info("{}{}", msg, vdp.getVdpStateString());
         }
     }
 

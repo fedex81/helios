@@ -29,7 +29,7 @@ import java.util.Optional;
 
 public class CartridgeInfoProvider {
 
-    private static Logger LOG = LogManager.getLogger(CartridgeInfoProvider.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(CartridgeInfoProvider.class.getSimpleName());
 
     public static final boolean AUTOFIX_CHECKSUM = false;
 

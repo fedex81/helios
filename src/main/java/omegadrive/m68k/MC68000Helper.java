@@ -158,7 +158,7 @@ public class MC68000Helper {
             LOG.log(level, head + str);
         } catch (Exception e) {
             String pc = Long.toHexString(cpu.getPC() & 0xFF_FFFF);
-            LOG.warn("Unable to dump the state: " + pc, e);
+            LOG.warn("Unable to dump the state: {}", pc, e);
         }
     }
 }

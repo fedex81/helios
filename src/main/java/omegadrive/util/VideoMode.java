@@ -108,11 +108,11 @@ public enum VideoMode {
         int hMode = isH40 ? H40 : H32;
         int vMode = isV30 ? V30_CELL : V28_CELL;
         for (VideoMode m : VideoMode.values) {
-            if (m.getRegion() == region && m.v == vMode && m.h == hMode) {
+            if (m.region == region && m.v == vMode && m.h == hMode) {
                 return m;
             }
         }
-        LOG.error("Unable to find videoMode for: " + region + ", isH40: " + isH40 + ", isV30: " + isV30);
+        LOG.error("Unable to find videoMode for: {}, isH40: {}, isV30: {}", region, isH40, isV30);
         return currentMode;
     }
 }

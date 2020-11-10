@@ -132,7 +132,7 @@ public class SvpMapper implements RomMapper, SvpBus {
                 case WORD:
                     return svpCtx.readRamWord(address >> 1);
                 case LONG:
-                    return svpCtx.readRamWord(address >> 1) << 16 |
+                    return (long) svpCtx.readRamWord(address >> 1) << 16 |
                             svpCtx.readRamWord((address >> 1) + 1);
                 case BYTE:
                     LOG.error("Unexpected byte-wide read: {}", Integer.toHexString(address));

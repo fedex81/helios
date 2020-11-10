@@ -37,7 +37,7 @@ import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.DATA_REG;
 
 public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, RomMapper {
 
-    private static Logger LOG = LogManager.getLogger(SmsBus.class);
+    private static final Logger LOG = LogManager.getLogger(SmsBus.class);
 
     private static final boolean verbose = false;
 

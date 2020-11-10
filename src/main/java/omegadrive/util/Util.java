@@ -177,7 +177,7 @@ public class Util {
             data = memory.readRomByte(address) << 8;
             data |= memory.readRomByte(address + 1);
         } else {
-            data = memory.readRomByte(address) << 24;
+            data = (long) memory.readRomByte(address) << 24;
             data |= memory.readRomByte(address + 1) << 16;
             data |= memory.readRomByte(address + 2) << 8;
             data |= memory.readRomByte(address + 3);
@@ -196,7 +196,7 @@ public class Util {
             data = memory.readRamByte(address) << 8;
             data |= memory.readRamByte(address + 1);
         } else {
-            data = memory.readRamByte(address) << 24;
+            data = (long) memory.readRamByte(address) << 24;
             data |= memory.readRamByte(address + 1) << 16;
             data |= memory.readRamByte(address + 2) << 8;
             data |= memory.readRamByte(address + 3);
@@ -213,7 +213,7 @@ public class Util {
             data = sram[(int) address] << 8;
             data |= sram[(int) address + 1];
         } else {
-            data = sram[(int) address] << 24;
+            data = (long) sram[(int) address] << 24;
             data |= sram[(int) address + 1] << 16;
             data |= sram[(int) address + 2] << 8;
             data |= sram[(int) address + 3];
@@ -402,17 +402,17 @@ public class Util {
             oos.flush();
             res = bos.toByteArray();
         } catch (Exception e) {
-            LOG.error("Unable to serialize object: " + obj.getClass().getSimpleName());
+            LOG.error("Unable to serialize object: {}", obj.getClass().getSimpleName());
         }
         if (res.length == 0) {
-            LOG.error("Unable to serialize object: " + obj.getClass().getSimpleName());
+            LOG.error("Unable to serialize object: {}", obj.getClass().getSimpleName());
         }
         return res;
     }
 
     public static Serializable deserializeObject(byte[] data, int offset, int len) {
         if (data == null || data.length == 0 || offset < 0 || len > data.length) {
-            LOG.error("Unable to deserialize object of len: " + (data != null ? data.length : "null"));
+            LOG.error("Unable to deserialize object of len: {}", data != null ? data.length : "null");
             return null;
         }
         Serializable res = null;

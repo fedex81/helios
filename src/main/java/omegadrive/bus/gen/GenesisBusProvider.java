@@ -133,7 +133,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
     //Z80 for genesis doesnt do IO
     @Override
     default void writeIoPort(int port, int value) {
-        LOG.warn("outPort: " + port + ", data: " + value);
+        LOG.warn("outPort: {}, data: {}", port, value);
     }
 
     default boolean isSvp() {

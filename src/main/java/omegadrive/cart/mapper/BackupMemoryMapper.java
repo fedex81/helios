@@ -78,15 +78,15 @@ public abstract class BackupMemoryMapper {
                 } else {
                     size = createBackupFile();
                 }
-                LOG.info("Using sram file: " + backupFile + " size: " + size + " bytes");
+                LOG.info("Using sram file: {} size: {} bytes", backupFile, size);
             } catch (Exception e) {
-                LOG.error("Unable to create file for: " + romName);
+                LOG.error("Unable to create file for: {}", romName);
             }
         }
     }
 
     private int createBackupFile() {
-        LOG.info("Creating backup memory file: " + backupFile);
+        LOG.info("Creating backup memory file: {}", backupFile);
         sram = new int[sramSize];
         FileLoader.writeFileSafe(backupFile, Util.unsignedToByteArray(sram));
         return sram.length;

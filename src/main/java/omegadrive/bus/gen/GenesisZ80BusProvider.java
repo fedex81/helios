@@ -76,7 +76,7 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
     //Z80 for genesis doesnt do IO
     @Override
     default void writeIoPort(int port, int value) {
-        LOG.warn("outPort: " + port + ", data: " + value);
+        LOG.warn("outPort: {}, data: {}", port, value);
     }
 
     static int getRomBank68kSerial(Z80Provider z80) {

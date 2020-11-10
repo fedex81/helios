@@ -34,7 +34,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
 public class ColecoPad extends BasePadAdapter {
 
-    private static Logger LOG = LogManager.getLogger(ColecoPad.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(ColecoPad.class.getSimpleName());
 
     private Map<JoypadButton, JoypadAction> stateMapKeypad = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
             put(K0, RELEASED).put(K1, RELEASED).

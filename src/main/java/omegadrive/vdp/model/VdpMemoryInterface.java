@@ -66,7 +66,7 @@ public interface VdpMemoryInterface extends VdpMemory {
             case CRAM:
                 return readCramWord(address);
             default:
-                LOG.warn("Unexpected videoRam read: " + vramType);
+                LOG.warn("Unexpected videoRam read: {}", vramType);
         }
         return 0;
     }

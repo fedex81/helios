@@ -39,7 +39,7 @@ import java.util.stream.IntStream;
 public class GenesisPerf extends Genesis {
 
     static int mclkHz, m68kRef, vdpRef, z80Ref, fmRef;
-    private static Logger LOG = LogManager.getLogger(GenesisPerf.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(GenesisPerf.class.getSimpleName());
     int[] cycleVdpFrame = new int[RegionDetector.Region.USA.getFps()];
     int[] cycle68kFrame = new int[RegionDetector.Region.USA.getFps()];
     int[] cycleZ80Frame = new int[RegionDetector.Region.USA.getFps()];

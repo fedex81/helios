@@ -38,7 +38,7 @@ public class SmsMapper {
 
     private static final Type[] list = Type.values();
 
-    private static Logger LOG = LogManager.getLogger(SmsMapper.class);
+    private static final Logger LOG = LogManager.getLogger(SmsMapper.class);
 
     private static boolean verbose = false;
 
@@ -139,7 +139,7 @@ public class SmsMapper {
             address &= SmsBus.RAM_SIZE - 1;
             return memoryProvider.readRamByte(address);
         }
-        LOG.error("Unexpected Z80 memory read: " + Long.toHexString(address));
+        LOG.error("Unexpected Z80 memory read: {}", Long.toHexString(address));
         return 0xFF;
     }
 

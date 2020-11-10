@@ -20,7 +20,7 @@ public class SwingScreenSupport {
 
     public static final int DEFAULT_SCREEN = 1;
 
-    private static Logger LOG = LogManager.getLogger(SwingScreenSupport.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(SwingScreenSupport.class.getSimpleName());
 
     private static GraphicsDevice[] graphicsDevices =
             GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
@@ -28,9 +28,9 @@ public class SwingScreenSupport {
     private static int currentScreen = graphicsDevices.length > 1 ? DEFAULT_SCREEN : 0;
 
     public static GraphicsDevice setupScreens() {
-        LOG.info("Screen detected: #" + graphicsDevices.length);
+        LOG.info("Screen detected: #{}", graphicsDevices.length);
         GraphicsDevice gd = graphicsDevices[currentScreen];
-        LOG.info("Initial screen: " + gd.getIDstring());
+        LOG.info("Initial screen: {}", gd.getIDstring());
         return gd;
     }
 
@@ -54,10 +54,10 @@ public class SwingScreenSupport {
                     ((height / 2) - (frame.getSize().height / 2)) + bounds.y
             );
             frame.setVisible(true);
-            LOG.info("Showing on screen: " + screen);
+            LOG.info("Showing on screen: {}", screen);
             currentScreen = screen;
         } else {
-            LOG.error("Unable to set screen: " + screen);
+            LOG.error("Unable to set screen: {}", screen);
         }
     }
 }

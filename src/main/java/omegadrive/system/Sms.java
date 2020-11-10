@@ -44,9 +44,8 @@ import java.nio.file.Path;
 
 public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
-    private static Logger LOG = LogManager.getLogger(Sms.class.getSimpleName());
-
-    public static final boolean ENABLE_FM = Boolean.valueOf(System.getProperty("sms.enable.fm", "false"));
+    public static final boolean ENABLE_FM = Boolean.parseBoolean(System.getProperty("sms.enable.fm", "false"));
+    private static final Logger LOG = LogManager.getLogger(Sms.class.getSimpleName());
 
     public static final int MCLK_PAL = 53203424;
     public static final int MCLK_NTSC = 53693175;
@@ -94,7 +93,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         RegionDetector.Region romRegion = RegionDetector.Region.JAPAN;
         RegionDetector.Region ovrRegion = RegionDetector.getRegion(regionOvr);
         if (ovrRegion != null && ovrRegion != romRegion) {
-            LOG.info("Setting region override from: " + romRegion + " to " + ovrRegion);
+            LOG.info("Setting region override from: {} to {}", romRegion, ovrRegion);
             romRegion = ovrRegion;
         }
         return romRegion;

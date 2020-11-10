@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 public class VdpDmaHandlerTest extends BaseVdpDmaHandlerTest {
 
-    private static Logger LOG = LogManager.getLogger(VdpDmaHandlerTest.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(VdpDmaHandlerTest.class.getSimpleName());
 
     @Test
     public void testDMACopy_inc0() {
