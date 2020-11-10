@@ -92,10 +92,8 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
     }
 
     protected void reset() {
-        hCounterInternal = 0;
+        hCounterInternal = pixelNumber = slotNumber = 0;
         vCounterInternal = COUNTER_LIMIT;
-        pixelNumber = hCounterInternal;
-        slotNumber = pixelNumber >> 1;
         hBlankSet = false;
         vBlankSet = false;
         vIntPending = false;

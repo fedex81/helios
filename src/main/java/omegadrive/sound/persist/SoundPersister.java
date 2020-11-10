@@ -24,7 +24,7 @@ public interface SoundPersister {
     enum SoundType {
         PSG,
         FM,
-        BOTH;
+        BOTH
     }
 
     void persistSound(SoundType type, byte[] output);

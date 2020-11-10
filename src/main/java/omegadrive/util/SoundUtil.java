@@ -220,7 +220,7 @@ public class SoundUtil {
         try (
                 FileInputStream fileInputStream = new FileInputStream(input);
                 AudioInputStream audioInputStream = new AudioInputStream(fileInputStream, audioFormat
-                        , input.length());
+                        , input.length())
         ) {
             AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, output);
             audioInputStream.close();

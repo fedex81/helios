@@ -34,9 +34,6 @@ public class MsxMapper {
             return mapper;
         }
         mapper = KonamiMapper.createMapper(memoryProvider.getRomData(), name);
-        if (mapper != RomMapper.NO_OP_MAPPER) {
-            return mapper;
-        }
         return mapper;
     }
 }

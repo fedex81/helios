@@ -88,7 +88,7 @@ public class CramViewer implements UpdatableViewer {
                 cpanel.setForeground(Color.BLACK);
                 cpanel.setName("CRAM" + k);
                 cpanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-                cpanel.setMaximumSize(new Dimension(LABEL_WIDTH, LABEL_WIDTH));
+                cpanel.setMaximumSize(new Dimension(LABEL_WIDTH, LABEL_HEIGHT));
                 panelList[k] = cpanel;
                 cramPanel.add(cpanel);
                 k++;

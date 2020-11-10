@@ -200,7 +200,7 @@ public class MC68000Monitor implements Runnable {
 
         while (var5.hasNext()) {
             int bp = (Integer) var5.next();
-            this.writer.println(String.format("$%x", bp));
+            this.writer.printf("$%x%n", bp);
         }
 
     }

@@ -11,7 +11,6 @@ FIFA 97 noisy audio
 
 danibus scroll test
 sonic3d traveller's tale logo (uses shadow/highlight)
-titan2 vdp crash
 rambo III intro corruption (uses shadow/highlight)
 iss deluxe colors
 bubba and stix

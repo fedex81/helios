@@ -150,9 +150,9 @@ public class GshStateHandler extends GstStateHandler {
         }
     }
 
-    private void saveSvp(Ssp16Types.Svp_t context) {
-        if (context != Ssp16.NO_SVP) {
-            storeSerializedData(SVP_MAGIC_WORD, context, buffer.position());
+    private void saveSvp(Ssp16 ssp16) {
+        if (ssp16 != Ssp16.NO_SVP) {
+            storeSerializedData(SVP_MAGIC_WORD, ssp16.getSvpContext(), buffer.position());
         }
     }
 
@@ -165,7 +165,7 @@ public class GshStateHandler extends GstStateHandler {
             buffer.position(SSF2_MAPPER_REG_OFFSET);
             Arrays.stream(data).forEach(v -> buffer.put((byte) v));
         }
-        saveSvp(SvpMapper.ssp16.getSvpContext());
+        saveSvp(SvpMapper.ssp16);
     }
 
 

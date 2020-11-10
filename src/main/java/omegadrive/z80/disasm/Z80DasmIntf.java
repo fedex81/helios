@@ -109,7 +109,6 @@ public class Z80DasmIntf {
 			new z80dasmStruct(zSET, "b=7,Y"), new z80dasmStruct(zSET, "c=7,Y"), new z80dasmStruct(zSET, "d=7,Y"), new z80dasmStruct(zSET, "e=7,Y"),
 			new z80dasmStruct(zSET, "h=7,Y"), new z80dasmStruct(zSET, "l=7,Y"), new z80dasmStruct(zSET, "7,Y"), new z80dasmStruct(zSET, "a=7,Y")
 	};
-	;
 	static z80dasmStruct[] mnemonic_cb =
 			{
 					new z80dasmStruct(zRLC, "b"), new z80dasmStruct(zRLC, "c"), new z80dasmStruct(zRLC, "d"), new z80dasmStruct(zRLC, "e"),

@@ -1266,7 +1266,6 @@ public class Ssp16Impl implements Ssp16 {
                     cond = COND_CHECK(op);
                     if (cond > 0) {
                         int new_PC = svpCtx.iram_rom[PC];
-                        ;
                         PC = (PC + 1) & PC_MASK;
                         write_STACK(GET_PC());
                         write_PC(new_PC);

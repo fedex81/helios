@@ -68,4 +68,4 @@ public class BaseVdpAdapter implements BaseVdpProvider {
     public interface ScreenDataSupplier {
         int[] getScreen();
     }
-};
+}

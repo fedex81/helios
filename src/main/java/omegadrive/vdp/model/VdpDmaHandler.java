@@ -24,7 +24,7 @@ import omegadrive.util.VideoMode;
 public interface VdpDmaHandler {
 
     enum DmaMode {
-        MEM_TO_VRAM, VRAM_FILL, VRAM_COPY;
+        MEM_TO_VRAM, VRAM_FILL, VRAM_COPY
     }
 
     DmaMode getDmaMode();
