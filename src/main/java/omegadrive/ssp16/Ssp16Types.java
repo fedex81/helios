@@ -107,7 +107,7 @@ public interface Ssp16Types {
             return gr[reg.ordinal()].h;
         }
 
-        static class mem implements Serializable {
+        class mem implements Serializable {
 
             bank bank = new bank();
 
@@ -134,7 +134,7 @@ public interface Ssp16Types {
             }
         }
 
-        public static class ptr implements Serializable {
+        public class ptr implements Serializable {
             final static int REGS_PER_BANK = 4;
             public bank bank = new bank();
 
