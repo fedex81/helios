@@ -48,10 +48,10 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     protected static SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
 
-    private ExecutorService executorService;
+    protected ExecutorService executorService;
 
-    private static int OUTPUT_SAMPLE_SIZE = 16;
-    private static int OUTPUT_CHANNELS = 2;
+    private static final int OUTPUT_SAMPLE_SIZE = 16;
+    private static final int OUTPUT_CHANNELS = 2;
     public volatile boolean close;
     protected volatile PsgProvider psg;
     protected volatile FmProvider fm;
@@ -98,8 +98,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
         return psgProvider;
     }
 
-    protected abstract Runnable getRunnable(SourceDataLine dataLine, RegionDetector.Region region);
-
     FmProvider getFmProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
         FmProvider fmProvider = FmProvider.NO_SOUND;
         switch (systemType) {
@@ -126,13 +124,18 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     protected void init(RegionDetector.Region region) {
         this.region = region;
-        dataLine = SoundUtil.createDataLine(audioFormat);
         soundPersister = new FileSoundPersister();
         fmSize = SoundProvider.getFmBufferIntSize(audioFormat);
         psgSize = SoundProvider.getPsgBufferByteSize(audioFormat);
-        executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, JavaSoundManager.class.getSimpleName()));
-        executorService.submit(getRunnable(dataLine, region));
-        LOG.info("Output audioFormat: {}, bufferSize: {}", audioFormat, fmSize);
+        executorService = Executors.newSingleThreadExecutor
+                (new PriorityThreadFactory(Thread.MAX_PRIORITY, AbstractSoundManager.class.getSimpleName()));
+        init();
+        LOG.info("Output audioFormat: " + audioFormat + ", bufferSize: " + fmSize);
+    }
+
+    @Override
+    public void init() {
+        dataLine = SoundUtil.createDataLine(audioFormat);
     }
 
     public void setSystemType(SystemLoader.SystemType type) {
