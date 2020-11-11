@@ -72,7 +72,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
             LOG.warn("Sound disabled");
             return NO_SOUND;
         }
-        AbstractSoundManager jsm = new JavaSoundManager();
+        AbstractSoundManager jsm = JAL_SOUND_MGR ? new JalSoundManager() : new JavaSoundManager();
         jsm.fm = jsm.getFmProvider(systemType, region);
         jsm.psg = jsm.getPsgProvider(systemType, region);
         jsm.type = systemType;

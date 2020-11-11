@@ -41,6 +41,10 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
 
     private static final Logger LOG = LogManager.getLogger(JalSoundManager.class.getSimpleName());
 
+    //in sample per channels, ie divide by 4 (4 bytes per channel)
+    private static final int bufferSize = SoundUtil.getAudioLineBufferSize(audioFormat) >> 2;
+    private static final String lib = "JavaSound"; // or "JACK";
+
     volatile int[] fm_buf_ints;
     volatile byte[] mix_buf_bytes16Stereo;
     volatile byte[] psg_buf_bytes;
@@ -66,8 +70,6 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     }
 
     private void startAudio() {
-        String lib = "JavaSound"; // or "JACK";
-
         AudioServerProvider provider = null;
         for (AudioServerProvider p : ServiceLoader.load(AudioServerProvider.class)) {
             if (lib.equals(p.getLibraryName())) {
@@ -83,7 +85,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
                 audioFormat.getSampleRate(), //sample rate
                 0, // input channels
                 audioFormat.getChannels(), // output channels
-                2205, //buffer size
+                bufferSize, //buffer size
                 false,
                 // extensions
                 new Object[]{
@@ -93,8 +95,8 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
                 });
         try {
             AudioServer server = provider.createServer(config, client);
-            Thread runner = new Thread(getServerRunnable(server));
-            executorService.submit(runner);
+            executorService.submit(getServerRunnable(server));
+            LOG.info("Audio Max buffer size (in samples per channel): {}", bufferSize);
         } catch (Throwable t) {
             LOG.error(t);
             t.printStackTrace();
