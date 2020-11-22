@@ -41,7 +41,7 @@ dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.14.0'
     // https://mvnrepository.com/artifact/com.google.guava/guava
     compile group: 'com.google.guava', name: 'guava', version: '30.0-jre'
-    compile group: 'org.jctools', name: 'jctools-core', version: '3.0.0'
+    compile group: 'org.jctools', name: 'jctools-core', version: '3.1.0'
     // https://mvnrepository.com/artifact/org.digitalmediaserver/cuelib-core
     compile group: 'org.digitalmediaserver', name: 'cuelib-core', version: '2.0.0'
     compile group: 'com.github.trilarion', name: 'java-vorbis-support', version: '1.2.1'
