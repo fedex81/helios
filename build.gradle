@@ -19,7 +19,7 @@
 
 
 def dateString = getDate()
-group 'uk.co.md.helios'
+group 'com.fbdev.helios'
 
 //version dateString
 version dateString + '-SNAPSHOT'
