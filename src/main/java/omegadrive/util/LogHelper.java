@@ -27,7 +27,7 @@ import java.util.Objects;
 
 public class LogHelper {
 
-    public final static boolean printToSytemOut = false;
+    public final static boolean printToSystemOut = false;
 
 
     public static void printLevel(Logger LOG, Level level, String str, long arg1, long arg2, long arg3, boolean verbose) {
@@ -141,14 +141,14 @@ public class LogHelper {
 
     private static void logMessage(Logger LOG, Level level, String msg) {
         LOG.log(level, msg);
-        if (printToSytemOut) {
+        if (printToSystemOut) {
             System.out.println(msg);
         }
     }
 
     private static void logParamMessage(Logger LOG, Level level, ParameterizedMessage pm) {
         LOG.log(level, pm);
-        if (printToSytemOut) {
+        if (printToSystemOut) {
             System.out.println(pm.getFormattedMessage());
         }
     }

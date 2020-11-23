@@ -76,10 +76,12 @@ public class SwingWindow implements DisplayWindow {
 
     private java.util.List<JCheckBoxMenuItem> regionItems;
     private JCheckBoxMenuItem fullScreenItem;
-    private JCheckBoxMenuItem muteItem;
     private JMenu recentFilesMenu;
     private JMenuItem[] recentFilesItems;
     private Map<PlayerNumber, JMenu> inputMenusMap;
+    private final static int screenChangedCheckFrequency = 60;
+    private List<JCheckBoxMenuItem> screenItems;
+    private int screenChangedCheckCounter = screenChangedCheckFrequency;
     private boolean showDebug = false;
     private Dimension nativeScreenSize = DEFAULT_BASE_SCREEN_SIZE;
     private Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
@@ -270,7 +272,7 @@ public class SwingWindow implements DisplayWindow {
         addKeyAction(fullScreenItem, TOGGLE_FULL_SCREEN, this::fullScreenAction);
         menuView.add(fullScreenItem);
 
-        muteItem = new JCheckBoxMenuItem("Enable Sound", true);
+        JCheckBoxMenuItem muteItem = new JCheckBoxMenuItem("Enable Sound", true);
         addKeyAction(muteItem, TOGGLE_MUTE, e -> handleSystemEvent(TOGGLE_MUTE, null, null));
         menuView.add(muteItem);
 
@@ -381,6 +383,19 @@ public class SwingWindow implements DisplayWindow {
         RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
         label.ifPresent(this::showLabel);
         screenLabel.repaint();
+        detectUserScreenChange();
+    }
+
+    private void detectUserScreenChange() {
+        if (--screenChangedCheckCounter == 0) {
+            screenChangedCheckCounter = screenChangedCheckFrequency;
+            int prev = SwingScreenSupport.getCurrentScreen();
+            int newScreen = SwingScreenSupport.detectUserScreenChange(jFrame.getGraphicsConfiguration().getDevice());
+            if (prev != newScreen) {
+                LOG.info("Detected user change, showing on screen: {}", newScreen);
+                handleScreenChangeItems(screenItems, newScreen);
+            }
+        }
     }
 
     private void showLabel(String label) {
@@ -558,10 +573,6 @@ public class SwingWindow implements DisplayWindow {
         });
     }
 
-    private SystemProvider getMainEmu() {
-        return mainEmu;
-    }
-
     @Override
     public void reloadSystem(SystemProvider systemProvider) {
         Optional.ofNullable(mainEmu).ifPresent(sys -> sys.handleSystemEvent(CLOSE_ROM, null));
@@ -575,10 +586,6 @@ public class SwingWindow implements DisplayWindow {
     @Override
     public void addKeyListener(KeyListener keyAdapter) {
         jFrame.addKeyListener(keyAdapter);
-    }
-
-    private JLabel getPerfLabel() {
-        return perfLabel;
     }
 
     private int[] getPixels(BufferedImage img) {
@@ -612,7 +619,7 @@ public class SwingWindow implements DisplayWindow {
                 forEach(r -> l.add(new JCheckBoxMenuItem(r.name(), false)));
         //only allow one selection
         final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
-        l.stream().forEach(i -> i.addItemListener(e -> {
+        l.forEach(i -> i.addItemListener(e -> {
             if (ItemEvent.SELECTED == e.getStateChange()) {
                 list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
             }
@@ -622,19 +629,19 @@ public class SwingWindow implements DisplayWindow {
 
     private java.util.List<JCheckBoxMenuItem> createAddScreenItems(JMenu screensMenu) {
         List<String> l = SwingScreenSupport.detectScreens();
-        List<JCheckBoxMenuItem> items = new ArrayList<>();
+        screenItems = new ArrayList<>();
         for (int i = 0; i < l.size(); i++) {
             String s = l.get(i);
             JCheckBoxMenuItem it = new JCheckBoxMenuItem(s);
             it.setState(i == SwingScreenSupport.getCurrentScreen());
-            items.add(it);
+            screenItems.add(it);
             screensMenu.add(it);
         }
-        for (int i = 0; i < items.size(); i++) {
+        for (int i = 0; i < screenItems.size(); i++) {
             final int num = i;
-            addKeyAction(items.get(i), NONE, e -> handleScreenChange(items, num));
+            addKeyAction(screenItems.get(i), NONE, e -> handleScreenChange(screenItems, num));
         }
-        return items;
+        return screenItems;
     }
 
     private void handleScreenChange(List<JCheckBoxMenuItem> items, int newScreen) {
@@ -642,10 +649,12 @@ public class SwingWindow implements DisplayWindow {
         if (cs != newScreen) {
             SwingScreenSupport.showOnScreen(newScreen, jFrame);
         }
+        handleScreenChangeItems(items, newScreen);
+    }
+
+    private void handleScreenChangeItems(List<JCheckBoxMenuItem> items, int newScreen) {
         for (int i = 0; i < items.size(); i++) {
-            if (i != newScreen) {
-                items.get(i).setSelected(false);
-            }
+            items.get(i).setSelected(i == newScreen);
         }
     }
 
@@ -678,7 +687,7 @@ public class SwingWindow implements DisplayWindow {
             });
             //only allow one selection
             final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
-            l.stream().forEach(i -> i.addItemListener(e -> {
+            l.forEach(i -> i.addItemListener(e -> {
                 if (ItemEvent.SELECTED == e.getStateChange()) {
                     list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
                 }

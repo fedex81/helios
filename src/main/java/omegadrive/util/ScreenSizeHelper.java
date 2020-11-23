@@ -46,13 +46,13 @@ public class ScreenSizeHelper {
     public static Dimension DEFAULT_FRAME_SIZE = new Dimension((int) (DEFAULT_SCALED_SCREEN_SIZE.width * 1.02),
             (int) (DEFAULT_SCALED_SCREEN_SIZE.height * 1.10));
 
-    public static Dimension getScreenSize(VideoMode videoMode, double multiplier, boolean mantainAspectRatio) {
-        return getScreenSize(videoMode.getDimension(), multiplier, mantainAspectRatio);
+    public static Dimension getScreenSize(VideoMode videoMode, double multiplier, boolean keepAspectRatio) {
+        return getScreenSize(videoMode.getDimension(), multiplier, keepAspectRatio);
     }
 
-    public static Dimension getScreenSize(Dimension src, double multiplier, boolean mantainAspectRatio) {
+    public static Dimension getScreenSize(Dimension src, double multiplier, boolean keepAspectRatio) {
         Dimension dim = src;
-        if (mantainAspectRatio || multiplier != 1.0) {
+        if (keepAspectRatio || multiplier != 1.0) {
             double w = src.width * multiplier;
             double h = w / FOUR_BY_THREE;
             dim = new Dimension((int) w, (int) h);

@@ -96,7 +96,7 @@ public class FileLoader {
     }
 
     public static String readFileContentAsString(String fileName) {
-        return readFileContent(fileName).stream().collect(Collectors.joining("\n"));
+        return String.join("\n", readFileContent(fileName));
     }
 
     public static List<String> readFileContent(String fileName) {

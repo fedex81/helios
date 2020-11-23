@@ -119,8 +119,9 @@ public class Util {
         parkExactly(intervalNs - SLEEP_LIMIT_NS);
     }
 
+    private static final Object lock = new Object();
+
     public static void waitForever() {
-        Object lock = new Object();
         synchronized (lock) {
             try {
                 lock.wait();

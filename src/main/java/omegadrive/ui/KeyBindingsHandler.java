@@ -148,7 +148,7 @@ public class KeyBindingsHandler {
             l.add(keyMap.get(ks).toString() + DIV + ks.toString());
         }
         Collections.sort(l);
-        KeyboardInputHelper.keyboardBindings.cellSet().stream().forEach(cell -> {
+        KeyboardInputHelper.keyboardBindings.cellSet().forEach(cell -> {
             String tk = PLAYER_LINE_HEAD + cell.getRowKey().name().substring(1) + ".";
             tk += cell.getColumnKey().getMnemonic() + DIV;
             tk += KeyEvent.getKeyText(cell.getValue()).toUpperCase();

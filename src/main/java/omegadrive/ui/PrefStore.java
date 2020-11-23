@@ -67,7 +67,8 @@ public class PrefStore {
         map.put(path.hashCode(), path);
         //discard the oldest (first) element
         if (map.size() > PrefStore.recentFileTotal) {
-            map.remove(map.keySet().toArray()[0]);
+            Integer key = map.keySet().stream().findFirst().orElse(0);
+            map.remove(key);
         }
     }
 

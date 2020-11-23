@@ -48,7 +48,7 @@ public class VdpColorMapper {
 
     public final static int VDP_TONES_PER_CHANNEL = 8;  // 3 bits per channel
     public final static int OUTPUT_TONES_PER_CHANNEL = 256; // 8 bits per channel
-    public final static double VDP_MAX_COLOR_LEVEL = 4.7; //voltage ouput
+    public final static double VDP_MAX_COLOR_LEVEL = 4.7; //voltage output
 
     private final static int[][][] colorsCache = new int[VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL];
     private final static int[][][] colorsCacheShadow = new int[VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL][VDP_TONES_PER_CHANNEL];
