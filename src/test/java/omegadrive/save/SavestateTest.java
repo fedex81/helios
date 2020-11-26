@@ -146,6 +146,7 @@ public class SavestateTest {
         Assert.assertEquals("BC", s1.getRegBC(), s2.getRegBC());
         Assert.assertEquals("DE", s1.getRegDE(), s2.getRegDE());
         Assert.assertEquals("HL", s1.getRegHL(), s2.getRegHL());
+        Assert.assertEquals("I", s1.getRegI(), s2.getRegI());
         Assert.assertEquals("IX", s1.getRegIX(), s2.getRegIX());
         Assert.assertEquals("IY", s1.getRegIY(), s2.getRegIY());
         Assert.assertEquals("PC", s1.getRegPC(), s2.getRegPC());
