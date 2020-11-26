@@ -29,6 +29,7 @@ import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.vdp.model.BaseVdpProvider;
+import omegadrive.z80.Z80Helper;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,9 +44,9 @@ import java.util.stream.IntStream;
 
 public class MekaStateHandler implements SmsStateHandler {
 
-    private static final byte[] MAGIC_WORD = {'M', 'E', 'K', 'A'};
     private static final String MAGIC_WORD_STR = "MEKA";
-    private static final int Z80_REG_lEN = 25;
+    private static final byte[] MAGIC_WORD = MAGIC_WORD_STR.getBytes();
+    private static final int Z80_REG_lEN = 26;
     private static final int Z80_MISC_LEN = 27;
     private static final int VDP_MISC_LEN = 20;
     private static final MekaSavestateVersion DEFAULT_SAVE_VERSION = MekaSavestateVersion.VER_D;
@@ -195,9 +196,10 @@ public class MekaStateHandler implements SmsStateHandler {
         z80State.setRegBCx(Util.getUInt32LE(data.get(), data.get()));
         z80State.setRegDEx(Util.getUInt32LE(data.get(), data.get()));
         z80State.setRegHLx(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegI(data.get() & 0xFF); //note breaking change
 
         int val = data.get();
-        Z80.IntMode im = ((val & 2) > 0) ? Z80.IntMode.IM1 : Z80.IntMode.IM0;
+        Z80.IntMode im = Z80Helper.parseIntMode((val >> 1) & 3);
         z80State.setIM(im);
         z80State.setIFF1((val & 1) > 0);
         z80State.setIFF2((val & 8) > 0);
@@ -255,10 +257,10 @@ public class MekaStateHandler implements SmsStateHandler {
         setData(buffer, s.getRegF(), s.getRegA(), s.getRegC(), s.getRegB(),
                 s.getRegE(), s.getRegD(), s.getRegL(), s.getRegH());
         setData(buffer, s.getRegIX() & 0xFF, s.getRegIX() >> 8, s.getRegIY() & 0xFF,
-                s.getRegIX() >> 8, s.getRegPC() & 0xFF, s.getRegPC() >> 8, s.getRegSP() & 0xFF,
+                s.getRegIY() >> 8, s.getRegPC() & 0xFF, s.getRegPC() >> 8, s.getRegSP() & 0xFF,
                 s.getRegSP() >> 8);
         setData(buffer, s.getRegFx(), s.getRegAx(), s.getRegCx(), s.getRegBx(), s.getRegEx(),
-                s.getRegDx(), s.getRegLx(), s.getRegHx());
+                s.getRegDx(), s.getRegLx(), s.getRegHx(), s.getRegI());
         int val = (s.isHalted() ? 1 : 0) << 8 | (s.isIFF2() ? 1 : 0) << 3 | s.getIM().ordinal() << 1 |
                 (s.isIFF1() ? 1 : 0);
         setData(buffer, val);

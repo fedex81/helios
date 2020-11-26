@@ -167,6 +167,7 @@ public class GstStateHandler implements GenesisStateHandler {
         z80State.setRegBCx(getInt2Fn.apply(0x428));
         z80State.setRegDEx(getInt2Fn.apply(0x42C));
         z80State.setRegHLx(getInt2Fn.apply(0x430));
+        z80State.setRegI(getInt2Fn.apply(0x434));
         z80State.setIM(Z80.IntMode.IM1);
         boolean iffN = (buffer.get(0x436) & 0xFF) > 0;
         z80State.setIFF1(iffN);
@@ -286,6 +287,7 @@ public class GstStateHandler implements GenesisStateHandler {
         setInt4LEFn.accept(0x428, z80State.getRegBCx());
         setInt4LEFn.accept(0x42C, z80State.getRegDEx());
         setInt4LEFn.accept(0x430, z80State.getRegHLx());
+        setInt4LEFn.accept(0x434, z80State.getRegI());
         buffer.put(0x436, (byte) (z80State.isIFF1() ? 1 : 0));
     }
 

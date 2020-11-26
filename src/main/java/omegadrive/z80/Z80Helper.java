@@ -19,6 +19,12 @@ public class Z80Helper {
     private final static Logger LOG = LogManager.getLogger(Z80Helper.class.getSimpleName());
     public static boolean verbose = false;
 
+    private static final Z80.IntMode[] values = Z80.IntMode.values();
+
+    public static Z80.IntMode parseIntMode(int ordinal) {
+        return ordinal < values.length ? values[ordinal] : null;
+    }
+
     public static String toStringExt(Z80StateExt state, Z80Dasm disasm, IMemIoOps memIoOps) {
         StringBuilder sb = new StringBuilder();
         sb.append(toString(state)).append("\n\n");
