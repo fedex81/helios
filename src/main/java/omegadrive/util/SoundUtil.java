@@ -19,7 +19,7 @@
 
 package omegadrive.util;
 
-import omegadrive.sound.javasound.AbstractSoundManager;
+import omegadrive.sound.SoundProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -100,7 +100,7 @@ public class SoundUtil {
 
     //as in bytes for the underlying dataLine
     public static int getAudioLineBufferSize(AudioFormat audioFormat) {
-        return (int) millis2bytes(audioFormat, AbstractSoundManager.AUDIO_BUFFER_LEN_MS);
+        return (int) millis2bytes(audioFormat, SoundProvider.AUDIO_BUFFER_LEN_MS);
     }
 
     public static int getMonoSamplesBufferSize(AudioFormat audioFormat) {

@@ -45,6 +45,9 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     private static final int bufferSize = SoundUtil.getAudioLineBufferSize(audioFormat) >> 2;
     private static final String lib = "JavaSound"; // or "JACK";
 
+    private static final int JAL_TIMING_MODE = Integer.parseInt(System.getProperty("helios.jal.timing.mode", "2"));
+    private JSTimingMode timingMode = JSTimingMode.Estimated;
+
     volatile int[] fm_buf_ints;
     volatile byte[] mix_buf_bytes16Stereo;
     volatile byte[] psg_buf_bytes;
@@ -80,6 +83,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
         if (provider == null) {
             throw new NullPointerException("No AudioServer found that matches : " + lib);
         }
+        detectTimingMode();
         AudioClient client = this;
         AudioConfiguration config = new AudioConfiguration(
                 audioFormat.getSampleRate(), //sample rate
@@ -90,7 +94,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
                 // extensions
                 new Object[]{
                         new ClientID("JalSoundManager"),
-                        JSTimingMode.FramePosition,
+                        timingMode,
                         Connections.OUTPUT
                 });
         try {
@@ -101,6 +105,16 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
             LOG.error(t);
             t.printStackTrace();
         }
+    }
+
+    private void detectTimingMode() {
+        for (JSTimingMode mode : JSTimingMode.values()) {
+            if (mode.ordinal() == JAL_TIMING_MODE) {
+                timingMode = mode;
+                break;
+            }
+        }
+        LOG.info("Using timing mode: {}", timingMode);
     }
 
     private Runnable getServerRunnable(AudioServer server) {
@@ -123,8 +137,6 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
         fmBufferLenMono = hasFm ? fmMonoActual : fmBufferLenMono;
         psg.output(psg_buf_bytes, 0, fmBufferLenMono);
         int fmBufferLenStereo = fmBufferLenMono << 1;
-        int bufferBytesMono = fmBufferLenMono << 1;
-        int bufferBytesStereo = bufferBytesMono << 1;
         samplesProducedCount += fmBufferLenStereo;
 
         try {
@@ -183,13 +195,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
 
     @Override
     public void shutdown() {
-        LOG.info("shutdown");
-    }
-
-    @Override
-    public void reset() {
-        super.reset();
-        shutdown();
+        LOG.info("Shutdown");
     }
 }
 
