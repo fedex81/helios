@@ -65,14 +65,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     protected RegionDetector.Region region = RegionDetector.Region.USA;
     protected VideoMode videoMode = VideoMode.PAL_H40_V30;
-    private String romName;
     private Path romPath;
 
     protected Future<Void> runningRomFuture;
     protected Path romFile;
     protected DisplayWindow emuFrame;
 
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     protected volatile boolean saveStateFlag = false;
     protected volatile STH stateHandler;
@@ -90,8 +89,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private long driftNs = 0;
     protected int counter = 1;
     private Optional<String> stats = Optional.empty();
-    private double lastFps = 0;
-
 
     private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
 
@@ -247,38 +244,15 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
     }
 
-    class RomRunnable implements Runnable {
-        private Path file;
-        private static final String threadNamePrefix = "cycle-";
-
-        public RomRunnable(Path file) {
-            this.file = file;
+    protected Optional<String> getStats(long nowNs) {
+        if (!SystemLoader.showFps) {
+            return Optional.empty();
         }
 
-        @Override
-        public void run() {
-            try {
-                int[] data = Util.toUnsignedIntArray(FileLoader.readBinaryFile(file, getSystemType()));
-                if (data.length == 0) {
-                    LOG.error("Unable to open/access file: {}", file.toAbsolutePath().toString());
-                    return;
-                }
-                memory.setRomData(data);
-                romPath = file;
-                romName = file.getFileName().toString();
-                Thread.currentThread().setName(threadNamePrefix + romName);
-                Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
-                emuFrame.setTitle(romName);
-                region = getRegionInternal(memory, emuFrame.getRegionOverride());
-                LOG.info("Running rom: {}, region: {}", romName, region);
-                initAfterRomLoad();
-                loop();
-            } catch (Exception | Error e) {
-                e.printStackTrace();
-                LOG.error(e);
-            }
-            handleCloseRom();
-        }
+        double lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - startNs));
+        telemetry.newFrame(lastFps, driftNs / 1000d).ifPresent(statsConsumer);
+        startNs = nowNs;
+        return stats;
     }
 
     protected final long syncCycle(long startCycle) {
@@ -350,15 +324,38 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     final Consumer<String> statsConsumer = st -> stats = Optional.of(st);
 
-    protected Optional<String> getStats(long nowNs) {
-        if (!SystemLoader.showFps) {
-            return Optional.empty();
+    class RomRunnable implements Runnable {
+        private Path file;
+        private static final String threadNamePrefix = "cycle-";
+
+        public RomRunnable(Path file) {
+            this.file = file;
         }
 
-        lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - startNs));
-        telemetry.newFrame(lastFps, driftNs / 1000d).ifPresent(statsConsumer);
-        startNs = nowNs;
-        return stats;
+        @Override
+        public void run() {
+            try {
+                int[] data = Util.toUnsignedIntArray(FileLoader.readBinaryFile(file, getSystemType()));
+                if (data.length == 0) {
+                    LOG.error("Unable to open/access file: {}", file.toAbsolutePath().toString());
+                    return;
+                }
+                memory.setRomData(data);
+                romPath = file;
+                String romName = file.getFileName().toString();
+                Thread.currentThread().setName(threadNamePrefix + romName);
+                Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
+                emuFrame.setTitle(romName);
+                region = getRegionInternal(memory, emuFrame.getRegionOverride());
+                LOG.info("Running rom: {}, region: {}", romName, region);
+                initAfterRomLoad();
+                loop();
+            } catch (Exception | Error e) {
+                e.printStackTrace();
+                LOG.error(e);
+            }
+            handleCloseRom();
+        }
     }
 
     protected void handleVdpDumpScreenData() {

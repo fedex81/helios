@@ -26,7 +26,6 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.IMemoryRom;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -183,14 +182,12 @@ public class Util {
             data |= memory.readRomByte(address + 2) << 8;
             data |= memory.readRomByte(address + 3);
         }
-        LogHelper.printLevel(LOG, Level.DEBUG, "Read ROM: {}, {}: {}", address, data, size, verbose);
+//        LogHelper.printLevel(LOG, Level.DEBUG, "Read ROM: {}, {}: {}", address, data, size, verbose);
         return data;
     }
 
-    public static long readRam(IMemoryProvider memory, Size size, long addressL) {
+    public static long readRam(IMemoryProvider memory, Size size, int address) {
         long data;
-        int address = (int) (addressL & 0xFFFF);
-
         if (size == Size.BYTE) {
             data = memory.readRamByte(address);
         } else if (size == Size.WORD) {
@@ -202,24 +199,24 @@ public class Util {
             data |= memory.readRamByte(address + 2) << 8;
             data |= memory.readRamByte(address + 3);
         }
-        LogHelper.printLevel(LOG, Level.DEBUG, "Read RAM: {}, {}: {}", address, data, size, verbose);
+//        LogHelper.printLevel(LOG, Level.DEBUG, "Read RAM: {}, {}: {}", address, data, size, verbose);
         return data;
     }
 
-    public static long readSram(int[] sram, Size size, long address) {
+    public static long readSram(int[] sram, Size size, int address) {
         long data;
         if (size == Size.BYTE) {
-            data = sram[(int) address];
+            data = sram[address];
         } else if (size == Size.WORD) {
-            data = sram[(int) address] << 8;
-            data |= sram[(int) address + 1];
+            data = sram[address] << 8;
+            data |= sram[address + 1];
         } else {
-            data = (long) sram[(int) address] << 24;
-            data |= sram[(int) address + 1] << 16;
-            data |= sram[(int) address + 2] << 8;
-            data |= sram[(int) address + 3];
+            data = sram[address] << 24;
+            data |= sram[address + 1] << 16;
+            data |= sram[address + 2] << 8;
+            data |= sram[address + 3];
         }
-        LogHelper.printLevel(LOG, Level.DEBUG, "Read SRAM: {}, {}: {}", address, data, size, verbose);
+//        LogHelper.printLevel(LOG, Level.DEBUG, "Read SRAM: {}, {}: {}", address, data, size, verbose);
         return data;
     }
 
@@ -235,7 +232,7 @@ public class Util {
             memory.writeRamByte(address + 2, (int) ((data >> 8) & 0xFF));
             memory.writeRamByte(address + 3, (int) (data & 0xFF));
         }
-        LogHelper.printLevel(LOG, Level.DEBUG, "Write RAM: {}, {}: {}", address, data, size, verbose);
+//        LogHelper.printLevel(LOG, Level.DEBUG, "Write RAM: {}, {}: {}", address, data, size, verbose);
     }
 
     public static void writeSram(int[] sram, Size size, int address, long data) {
@@ -250,7 +247,7 @@ public class Util {
             sram[address + 2] = (int) ((data >> 8) & 0xFF);
             sram[address + 3] = (int) (data & 0xFF);
         }
-        LogHelper.printLevel(LOG, Level.DEBUG, "Write SRAM: {}, {}: {}", address, data, size, verbose);
+//        LogHelper.printLevel(LOG, Level.DEBUG, "Write SRAM: {}, {}: {}", address, data, size, verbose);
     }
 
     public static long computeChecksum(IMemoryProvider memoryProvider) {

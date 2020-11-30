@@ -45,8 +45,6 @@ public class Z80CoreWrapper implements Z80Provider {
         }
     }
 
-    public static boolean verbose = false;
-
     protected Z80 z80Core;
     protected BaseBusProvider z80BusProvider;
     protected Z80MemIoOps memIoOps;

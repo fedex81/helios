@@ -36,7 +36,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
 
     private final static Logger LOG = LogManager.getLogger(MdBackupMemoryMapper.class.getSimpleName());
 
-    private static boolean verbose = false;
+    private final static boolean verbose = false;
     private static String fileType = "srm";
     private RomMapper baseMapper;
     private SramMode sramMode = SramMode.DISABLE;
@@ -99,9 +99,8 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         sramRead &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (sramRead) {
             initBackupFileIfNecessary();
-            address = (address & 0xFFFF);
-            long res = Util.readSram(sram, size, address);
-            logInfo("SRAM read at: {} {}, result: {} ", address, size, res);
+            long res = Util.readSram(sram, size, (int) (address & 0xFFFF));
+            logInfo("SRAM read at: {} {}, result: {} ", address & 0xFFFF, size, res);
             return res;
         }
         return baseMapper.readData(address, size);

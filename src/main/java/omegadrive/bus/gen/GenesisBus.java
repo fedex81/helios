@@ -48,7 +48,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements Ge
 
     private static final Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
 
-    public static boolean verbose = false;
+    public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
 
     private MdCartInfoProvider cartridgeInfoProvider;

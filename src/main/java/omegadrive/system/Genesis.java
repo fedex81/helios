@@ -187,7 +187,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
         }
     }
 
-    private final double getMicrosPerTick() {
+    private double getMicrosPerTick() {
         double mclkhz = videoMode.isPal() ? Util.GEN_PAL_MCLOCK_MHZ : Util.GEN_NTSC_MCLOCK_MHZ;
         return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
     }

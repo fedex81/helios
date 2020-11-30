@@ -17,7 +17,6 @@ import z80core.Z80State;
 public class Z80Helper {
 
     private final static Logger LOG = LogManager.getLogger(Z80Helper.class.getSimpleName());
-    public static boolean verbose = false;
 
     private static final Z80.IntMode[] values = Z80.IntMode.values();
 

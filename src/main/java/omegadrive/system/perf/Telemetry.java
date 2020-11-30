@@ -46,7 +46,6 @@ public class Telemetry {
     private static int STATS_EVERY_FRAMES = 50;
     private double fpsAccum = 0;
 
-
     public static Telemetry getInstance() {
         return telemetry;
     }
@@ -124,5 +123,9 @@ public class Telemetry {
             data.clear();
             Util.executorService.submit(() -> writeToFile(telemetryFile, res));
         }
+    }
+
+    public long getFrameCounter() {
+        return frameCounter;
     }
 }
