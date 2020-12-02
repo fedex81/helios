@@ -50,6 +50,11 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
     private Ym3438Context state;
     private Ym2612RegSupport regSupport;
 
+    private final static int syncAudioMode =
+            Integer.parseInt(System.getProperty("helios.md.fm.sync.mode", "2"));
+    private final static int syncAudioCycles = Math.max(1, 24 * syncAudioMode);
+    private int syncAudioCnt = 0;
+
     private int prevL, prevR;
 
     private double cycleAccum = 0;
@@ -74,17 +79,14 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
         LOG.info("Init with clock {}hz, sampleRate {}hz", clock, rate);
     }
 
+    private double microsPerTick;
+
     @Override
     public void reset() {
+        spin();
         super.reset();
         ym3438.OPN2_Reset(chip);
         state.reset();
-    }
-
-    @Override
-    public void write(int addr, int data) {
-        ym3438.OPN2_Write(chip, addr, data);
-        regSupport.write(addr, data);
     }
 
     @Override
@@ -93,8 +95,10 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
     }
 
     @Override
-    public int read() {
-        return ym3438.OPN2_Read(chip, 0x4000);
+    public void write(int addr, int data) {
+        spin();
+        ym3438.OPN2_Write(chip, addr, data);
+        regSupport.write(addr, data);
     }
 
     private void addSample() {
@@ -104,12 +108,28 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
         }
     }
 
+    @Override
+    public int read() {
+        spin();
+        return ym3438.OPN2_Read(chip, 0x4000);
+    }
+
     //Output frequency: 53.267 kHz (NTSC), 52.781 kHz (PAL)
     @Override
     public void tick(double microsPerTick) {
-        cycleAccum += microsPerTick;
-        spinOnce();
-        addSample();
+        if (++syncAudioCnt == syncAudioCycles) {
+            this.microsPerTick = microsPerTick;
+            spin();
+        }
+    }
+
+    private final void spin() {
+        for (int i = 0; i < syncAudioCnt; i++) {
+            cycleAccum += microsPerTick;
+            spinOnce();
+            addSample();
+        }
+        syncAudioCnt = 0;
     }
 
     @Override
@@ -140,6 +160,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
     }
 
     public void setState(Ym3438Context state) {
+        spin();
         if (state != null) {
             this.state = state;
             this.chip = state.chip;
