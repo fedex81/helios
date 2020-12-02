@@ -38,10 +38,10 @@ public class AudioRateControl {
     public static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);
     private static final Logger LOG = LogManager.getLogger(AudioRateControl.class.getSimpleName());
     private static final boolean DEBUG = false;
-    private static final double HALF_LIMIT = 0.025;
+    private static final double HALF_LIMIT = 0.0125;
     private static final double LOWER_LIMIT = FM_CALCS_PER_MICROS * (1 - HALF_LIMIT);
     private static final double UPPER_LIMIT = FM_CALCS_PER_MICROS * (1 + HALF_LIMIT);
-    static double fastPace = 0.005; //max distortion ~60hz/frame
+    static double fastPace = 0.05; //max distortion ~60hz/frame
     static double slowPace = fastPace / 2;
 
     private StatsHolder statsHolder;
@@ -84,6 +84,7 @@ public class AudioRateControl {
             statsHolder.maxLen = queueLen;
         }
         statsHolder.latestLen = queueLen;
+        statsHolder.fmCalcPerMicros = fm;
         statsHolder.computeTelemetryStats();
         return fm;
     }
@@ -94,6 +95,7 @@ public class AudioRateControl {
         public long maxLen = 0;
         public long latestLen = 0;
         public long audioDelayMs = 0;
+        public double fmCalcPerMicros = 0;
         public String sourceName;
         public String infoString;
 
@@ -105,6 +107,7 @@ public class AudioRateControl {
 
         protected void computeTelemetryStats() {
             audioDelayMs = (long) (1000.0 * latestLen / SoundProvider.SAMPLE_RATE_HZ);
+            Telemetry.getInstance().addSample(sourceName + ".fmCalcPerMicros", fmCalcPerMicros);
             Telemetry.getInstance().addSample(sourceName + ".audioDelayMs", audioDelayMs);
             Telemetry.getInstance().addSample(sourceName + ".audioQueueLen", latestLen);
         }
