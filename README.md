@@ -51,8 +51,6 @@ Tony Headford, m68k core: [m68k](https://github.com/tonyheadford/m68k)
 
 J. Sanchez, Z80 core: [Z80](https://github.com/jsanchezv/Z80Core)
 
-S. Dallongeville, Ym2612 core from the Gens project: [YM2612](https://github.com/rofl0r/gens) 
-
 Alexey Khokholov, Ym2612 core: [Nuked-OPN2](https://github.com/nukeykt/Nuked-OPN2)
 
 Chris White, JavaGear project and in particular:

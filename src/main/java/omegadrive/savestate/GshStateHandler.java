@@ -105,9 +105,8 @@ public class GshStateHandler extends GstStateHandler {
             Ym2612Nuke nukeFm = (Ym2612Nuke) fm;
             Optional<Serializable> res = loadSerializedData(FM_MAGIC_WORD_NUKE, fmNukeStart, ba);
             res.ifPresent(ser -> nukeFm.setState((Ym2612Nuke.Ym3438Context) ser));
-        } else {
-            super.loadFmState(fm); //load FM registers
         }
+        super.loadFmState(fm); //load FM registers
     }
 
     @Override

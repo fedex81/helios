@@ -93,7 +93,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     @Override
     public void write(int addr, int data) {
-        spin();
+        spin(); //TODO when loading a savestate we shouldnt spin
         ym3438.OPN2_Write(chip, addr, data);
         regSupport.write(addr, data);
     }
@@ -160,6 +160,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
         if (state != null) {
             this.state = state;
             this.chip = state.chip;
+            this.syncAudioCnt = state.ym3438_cycles;
         } else {
             LOG.warn("Unable to restore state, FM will not work");
             this.chip.reset();

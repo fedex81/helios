@@ -113,6 +113,7 @@ public class GstStateHandler implements GenesisStateHandler {
         return buffer.array();
     }
 
+    //TODO write to regsupport
     @Override
     public void loadFmState(FmProvider fm) {
         int reg;

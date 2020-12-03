@@ -28,7 +28,8 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.fm.ym2612.YM2612;
+import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
+import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.vdp.gen.GenesisVdp;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
@@ -76,7 +77,7 @@ public class SavestateTest {
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
         Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider);
-        FmProvider fm1 = new YM2612();
+        FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
         loadHandler.loadVdpState(vdpProvider1);
         loadHandler.load68k(cpu1, cpuMem1);
         loadHandler.loadZ80(z80p1, busProvider);
@@ -95,7 +96,7 @@ public class SavestateTest {
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider1);
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
         Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider1);
-        FmProvider fm1 = new YM2612();
+        FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
         byte[] data = loadHandler.getData();
         loadHandler.loadVdpState(vdpProvider1);
         loadHandler.load68k(cpu1, cpuMem1);
@@ -115,7 +116,7 @@ public class SavestateTest {
         MC68000Wrapper cpu2 = new MC68000Wrapper(busProvider2);
         IMemoryProvider cpuMem2 = MemoryProvider.createGenesisInstance();
         Z80Provider z80p2 = Z80CoreWrapper.createGenesisInstance(busProvider2);
-        FmProvider fm2 = new YM2612();
+        FmProvider fm2 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
         byte[] savedData = loadHandler.getData();
         loadHandler1.loadVdpState(vdpProvider2);
         loadHandler1.load68k(cpu2, cpuMem2);
