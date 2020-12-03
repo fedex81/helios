@@ -32,12 +32,12 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseBusProvider, BaseVdpProvider.VdpEventListener {
+public abstract class DeviceAwareBus<V extends BaseVdpProvider, J extends JoypadProvider> implements BaseBusProvider, BaseVdpProvider.VdpEventListener {
 
     private Set<Device> deviceSet = new HashSet<>();
 
     protected IMemoryProvider memoryProvider;
-    protected JoypadProvider joypadProvider;
+    protected J joypadProvider;
     protected SoundProvider soundProvider;
     protected SystemProvider systemProvider;
     protected V vdpProvider;
@@ -61,7 +61,7 @@ public abstract class DeviceAwareBus<V extends BaseVdpProvider> implements BaseB
             memoryProvider = getDeviceIfAny(IMemoryProvider.class).orElse(null);
         }
         if (joypadProvider == null) {
-            joypadProvider = getDeviceIfAny(JoypadProvider.class).orElse(null);
+            joypadProvider = (J) getDeviceIfAny(JoypadProvider.class).orElse(null);
         }
         if (soundProvider == null) {
             soundProvider = getDeviceIfAny(SoundProvider.class).orElse(null);

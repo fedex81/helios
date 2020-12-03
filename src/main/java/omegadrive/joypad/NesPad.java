@@ -78,21 +78,6 @@ public class NesPad extends BasePadAdapter {
     }
 
     @Override
-    public int readDataRegister1() {
-        throw new RuntimeException("Not implemented!");
-    }
-
-    @Override
-    public int readDataRegister2() {
-        throw new RuntimeException("Not implemented!");
-    }
-
-    @Override
-    public int readDataRegister3() {
-        throw new RuntimeException("Not implemented!");
-    }
-
-    @Override
     public void newFrame() {
     }
 }

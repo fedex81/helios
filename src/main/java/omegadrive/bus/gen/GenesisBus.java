@@ -28,6 +28,7 @@ import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
 import omegadrive.cart.mapper.md.MdMapperType;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
+import omegadrive.joypad.GenesisJoypad;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
@@ -43,7 +44,7 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Objects;
 
-public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider> implements GenesisBusProvider, RomMapper {
+public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad> implements GenesisBusProvider, RomMapper {
 
 
     private static final Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());

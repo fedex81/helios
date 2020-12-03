@@ -68,17 +68,14 @@ public class ColecoPad extends BasePadAdapter {
         stateMap2 = Maps.newHashMap(stateMap1);
     }
 
-    @Override
     public void writeDataRegister1(long data) {
         mode80 = (data & 0xC0) != 0xC0;
     }
 
-    @Override
     public int readDataRegister1() {
         return mode80 ? getMode80(PlayerNumber.P1) : getModeC0(PlayerNumber.P1);
     }
 
-    @Override
     public int readDataRegister2() {
         return mode80 ? getMode80(PlayerNumber.P2) : getModeC0(PlayerNumber.P2);
     }

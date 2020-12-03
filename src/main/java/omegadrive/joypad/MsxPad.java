@@ -54,12 +54,10 @@ public class MsxPad extends BasePadAdapter {
                 (getValue(number, L) << 2) | (getValue(number, D) << 1) | (getValue(number, U));
     }
 
-    @Override
     public int readDataRegister1() {
         return value1;
     }
 
-    @Override
     public int readDataRegister2() {
         return value2;
     }

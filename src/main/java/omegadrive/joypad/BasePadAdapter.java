@@ -81,45 +81,4 @@ public abstract class BasePadAdapter implements JoypadProvider {
     public String getState(PlayerNumber number) {
         return getMap(number).toString();
     }
-
-    // ADAPTER
-
-    public void writeDataRegister1(long data) {
-    }
-
-    public void writeDataRegister2(long data) {
-    }
-
-    public long readControlRegister1() {
-        return 0xFF;
-    }
-
-    public long readControlRegister2() {
-        return 0xFF;
-    }
-
-    public long readControlRegister3() {
-        return 0xFF;
-    }
-
-    public int readDataRegister1() {
-        return 0xFF;
-    }
-
-    public int readDataRegister2() {
-        return 0xFF;
-    }
-
-    public int readDataRegister3() {
-        return 0xFF;
-    }
-
-    public void writeControlRegister1(long data) {
-    }
-
-    public void writeControlRegister2(long data) {
-    }
-
-    public void writeControlRegister3(long data) {
-    }
 }

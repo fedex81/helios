@@ -53,62 +53,6 @@ public class GamepadTest {
         return new JoypadProvider() {
             @Override
             public void init() {
-
-            }
-
-            @Override
-            public int readDataRegister1() {
-                return 0;
-            }
-
-            @Override
-            public int readDataRegister2() {
-                return 0;
-            }
-
-            @Override
-            public int readDataRegister3() {
-                return 0;
-            }
-
-            @Override
-            public long readControlRegister1() {
-                return 0;
-            }
-
-            @Override
-            public long readControlRegister2() {
-                return 0;
-            }
-
-            @Override
-            public long readControlRegister3() {
-                return 0;
-            }
-
-            @Override
-            public void writeDataRegister1(long data) {
-
-            }
-
-            @Override
-            public void writeDataRegister2(long data) {
-
-            }
-
-            @Override
-            public void writeControlRegister1(long data) {
-
-            }
-
-            @Override
-            public void writeControlRegister2(long data) {
-
-            }
-
-            @Override
-            public void writeControlRegister3(long data) {
-
             }
 
             @Override

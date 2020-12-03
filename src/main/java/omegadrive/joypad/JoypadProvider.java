@@ -80,28 +80,6 @@ public interface JoypadProvider extends Device {
         }
     }
 
-    int readDataRegister1();
-
-    int readDataRegister2();
-
-    int readDataRegister3();
-
-    long readControlRegister1();
-
-    long readControlRegister2();
-
-    long readControlRegister3();
-
-    void writeDataRegister1(long data);
-
-    void writeDataRegister2(long data);
-
-    void writeControlRegister1(long data);
-
-    void writeControlRegister2(long data);
-
-    void writeControlRegister3(long data);
-
     void setButtonAction(InputProvider.PlayerNumber number, JoypadButton button, JoypadAction action);
 
     boolean hasDirectionPressed(InputProvider.PlayerNumber number);

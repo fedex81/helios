@@ -68,18 +68,15 @@ public class TwoButtonsJoypad extends BasePadAdapter {
         stateMap2 = Maps.newHashMap(releasedMap);
     }
 
-    @Override
     public int readDataRegister1() {
         return value1;
     }
 
-    @Override
     public int readDataRegister2() {
         return value2;
     }
 
     //only for SMS
-    @Override
     public int readDataRegister3() {
         return pauseButton1 + pauseButton2;
     }

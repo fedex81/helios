@@ -20,13 +20,14 @@
 package omegadrive.bus.z80;
 
 import omegadrive.bus.DeviceAwareBus;
+import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.util.Size;
 import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvider {
+public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> implements Z80BusProvider {
 
     private static final Logger LOG = LogManager.getLogger(Sg1000Bus.class);
 

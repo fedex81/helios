@@ -21,6 +21,7 @@ package omegadrive.bus.z80;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
+import omegadrive.joypad.ColecoPad;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -39,7 +40,7 @@ import java.nio.file.Paths;
  * https://atarihq.com/danb/files/CV-Tech.txt
  * http://www.smspower.org/forums/9920-ColecoNMIEmulationWasMekaBugAndFix
  */
-public class ColecoBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvider {
+public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements Z80BusProvider {
 
     private static final Logger LOG = LogManager.getLogger(ColecoBus.class);
 

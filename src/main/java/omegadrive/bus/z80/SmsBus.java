@@ -25,6 +25,7 @@ import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.sms.SmsMapper;
+import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.vdp.SmsVdp;
@@ -35,7 +36,7 @@ import org.apache.logging.log4j.Logger;
 import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.ADDR_LATCH_REG;
 import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.DATA_REG;
 
-public class SmsBus extends DeviceAwareBus<SmsVdp> implements Z80BusProvider, RomMapper {
+public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements Z80BusProvider, RomMapper {
 
     private static final Logger LOG = LogManager.getLogger(SmsBus.class);
 

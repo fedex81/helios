@@ -28,6 +28,7 @@ import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.msx.MsxMapper;
 import omegadrive.input.InputProvider;
 import omegadrive.input.MsxKeyboardInput;
+import omegadrive.joypad.MsxPad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
@@ -52,14 +53,14 @@ import static omegadrive.input.InputProvider.PlayerNumber.P2;
  * http://msx.ebsoft.fr/roms/index.php?v=MSX1&Send=Send
  * http://fms.komkon.org/MSX/Docs/Portar.txt
  */
-public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvider {
+public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80BusProvider {
 
     private static final Logger LOG = LogManager.getLogger(MsxBus.class);
 
     static final boolean verbose = false;
 
     private static int PAGE_SIZE = 0x4000; //16kb
-    private static int PAGE_MASK = PAGE_SIZE -1;
+    private static int PAGE_MASK = PAGE_SIZE - 1;
 
     private static int SLOT_SIZE = 0x10000;
     private static int SLOTS = 4;
@@ -152,8 +153,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp> implements Z80BusProvide
         LogHelper.printLevel(LOG, Level.INFO, "Write IO port: {}, value: {}", port, value, verbose);
         switch (port) {
             case 0x80:
-            case 0xC0:
-                joypadProvider.writeDataRegister1(port);
+            case 0xC0: //MSX-AUDIO, RS232 - ignore
                 break;
             case 0x98:
                 vdpProvider.writeVRAMData(byteVal);

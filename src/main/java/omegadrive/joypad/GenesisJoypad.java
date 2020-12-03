@@ -110,6 +110,10 @@ public class GenesisJoypad extends BasePadAdapter {
 //        LOG.info("read p2: high : {}, step : {}, result: {}", high2, readStep2, res);
     }
 
+    public int readDataRegister3() {
+        return 0xFF;
+    }
+
     //TODO: when pressing Mode on startup (for a 1/few seconds), a 6 button behaves like a 3btn
     private boolean isModePressed(PlayerNumber pn) {
         return getValue(pn, M) == PRESSED.ordinal();
@@ -180,17 +184,15 @@ public class GenesisJoypad extends BasePadAdapter {
                 (getValue(n, X) << 2) | (getValue(n, Y) << 1) | (getValue(n, Z));
     }
 
-    @Override
+
     public long readControlRegister1() {
         return control1;
     }
 
-    @Override
     public long readControlRegister2() {
         return control2;
     }
 
-    @Override
     public long readControlRegister3() {
         return control3;
     }
