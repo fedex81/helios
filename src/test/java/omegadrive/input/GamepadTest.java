@@ -20,6 +20,7 @@
 package omegadrive.input;
 
 import net.java.games.input.Controller;
+import omegadrive.joypad.GenesisJoypad;
 import omegadrive.joypad.JoypadProvider;
 
 import java.io.File;
@@ -50,7 +51,7 @@ public class GamepadTest {
     }
 
     public static JoypadProvider createTestJoypadProvider() {
-        return new JoypadProvider() {
+        return new GenesisJoypad() {
             @Override
             public void init() {
             }
