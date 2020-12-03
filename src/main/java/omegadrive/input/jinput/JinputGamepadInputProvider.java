@@ -45,9 +45,9 @@ public class JinputGamepadInputProvider implements InputProvider {
 
     private static final Logger LOG = LogManager.getLogger(JinputGamepadInputProvider.class.getSimpleName());
 
-    private static ExecutorService executorService =
-            Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY, JinputGamepadInputProvider.class.getSimpleName()));
-    private long POLLING_INTERVAL_MS = Long.parseLong(System.getProperty("jinput.polling.interval.ms", "5"));
+    private final static boolean USE_POLLING_THREAD = Boolean.parseBoolean(System.getProperty("jinput.polling.thread", "false"));
+    private final static long POLLING_INTERVAL_MS = Long.parseLong(System.getProperty("jinput.polling.interval.ms", "5"));
+    private static ExecutorService executorService;
 
     private volatile JoypadProvider joypadProvider;
     private volatile boolean stop = false;
@@ -88,12 +88,22 @@ public class JinputGamepadInputProvider implements InputProvider {
             g.joypadProvider = joypadProvider;
             g.controllerNames.addAll(controllers.stream().map(Controller::getName).collect(Collectors.toList()));
             g.controllers = controllers;
-            executorService.submit(g.inputRunnable());
+            g.initPollingThreadMaybe();
             INSTANCE = g;
         }
         ((JinputGamepadInputProvider) INSTANCE).joypadProvider = joypadProvider;
         return INSTANCE;
     }
+
+    private void initPollingThreadMaybe() {
+        if (USE_POLLING_THREAD) {
+            if (executorService == null) {
+                executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY, JinputGamepadInputProvider.class.getSimpleName()));
+            }
+            executorService.submit(inputRunnable());
+        }
+    }
+
 
     static List<Controller> detectControllers() {
         Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
@@ -108,7 +118,7 @@ public class JinputGamepadInputProvider implements InputProvider {
         return () -> {
             LOG.info("Starting controller polling, interval (ms): {}", POLLING_INTERVAL_MS);
             do {
-                handleEvents();
+                handleEventsInternal();
                 Util.sleep(POLLING_INTERVAL_MS);
             } while (!stop);
             LOG.info("Controller polling stopped");
@@ -119,6 +129,12 @@ public class JinputGamepadInputProvider implements InputProvider {
 
     @Override
     public void handleEvents() {
+        if (!USE_POLLING_THREAD) {
+            handleEventsInternal();
+        }
+    }
+
+    private void handleEventsInternal() {
         for (Controller controller : controllers) {
             String ctrlName = controller.getName();
             boolean ok = controller.poll();

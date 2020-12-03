@@ -319,6 +319,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         frameProcessingDelayNs = startCycle - tstamp - elapsedWaitNs;
         futureDoneFlag = runningRomFuture.isDone();
         handleSoftReset();
+        inputProvider.handleEvents();
 //        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
     }
 
