@@ -47,8 +47,6 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
 
     boolean ENABLE_SOUND = Boolean.parseBoolean(System.getProperty("helios.enable.sound", "true"));
 
-    boolean MD_NUKE_AUDIO = Boolean.parseBoolean(System.getProperty("md.nuke.audio", "true"));
-
     boolean JAL_SOUND_MGR = Boolean.parseBoolean(System.getProperty("helios.jal.sound.mgr", "false"));
 
     int[] EMPTY_FM = new int[0];

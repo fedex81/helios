@@ -54,7 +54,6 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
             Integer.parseInt(System.getProperty("helios.md.fm.sync.mode", "2"));
     private final static int syncAudioCycles = Math.max(1, 24 * syncAudioMode);
     private int syncAudioCnt = 0;
-
     private int prevL, prevR;
 
     private double cycleAccum = 0;
@@ -75,11 +74,9 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
     }
 
     @Override
-    public void init(int clock, int rate) {
-        LOG.info("Init with clock {}hz, sampleRate {}hz", clock, rate);
+    public void setMicrosPerTick(double microsPerTick) {
+        setMicrosPerInputSample(microsPerTick);
     }
-
-    private double microsPerTick;
 
     @Override
     public void reset() {
@@ -116,16 +113,15 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     //Output frequency: 53.267 kHz (NTSC), 52.781 kHz (PAL)
     @Override
-    public void tick(double microsPerTick) {
+    public void tick() {
         if (++syncAudioCnt == syncAudioCycles) {
-            this.microsPerTick = microsPerTick;
             spin();
         }
     }
 
     private final void spin() {
         for (int i = 0; i < syncAudioCnt; i++) {
-            cycleAccum += microsPerTick;
+            cycleAccum += microsPerInputSample;
             spinOnce();
             addSample();
         }

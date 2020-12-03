@@ -63,6 +63,10 @@ public abstract class VariableSampleRateSource implements FmProvider {
 
     protected abstract void spinOnce();
 
+    public void setMicrosPerInputSample(double microsPerInputSample) {
+        this.microsPerInputSample = microsPerInputSample;
+    }
+
     protected void addStereoSamples(int sampleL, int sampleR) {
         //TODO check results
         sampleQueue.offer(Util.getFromIntegerCache(sampleL));

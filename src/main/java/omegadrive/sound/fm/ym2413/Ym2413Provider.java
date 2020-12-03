@@ -46,7 +46,7 @@ public class Ym2413Provider extends VariableSampleRateSource {
 
     public static FmProvider createInstance(AudioFormat audioFormat) {
         Ym2413Provider p = new Ym2413Provider(audioFormat);
-        p.init(CLOCK_HZ, (int) audioFormat.getSampleRate());
+        p.init();
         return p;
     }
 
@@ -62,7 +62,7 @@ public class Ym2413Provider extends VariableSampleRateSource {
 
     //this should be called 49716 times per second
     @Override
-    public void tick(double microsPerTick) {
+    public void tick() {
         rateAccum += adjustedRatio;
         spinOnce();
         if (rateAccum > 1) {
@@ -89,7 +89,7 @@ public class Ym2413Provider extends VariableSampleRateSource {
     }
 
     @Override
-    public void init(int clock, int rate) {
+    public void init() {
         Emu2413.OPLL_init();
         opll = Emu2413.OPLL_new();
     }

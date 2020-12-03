@@ -89,7 +89,7 @@ public class ExternalAudioProvider implements FmProvider {
     }
 
     @Override
-    public void init(int clock, int rate) {
+    public void init() {
         reset();
     }
 
@@ -99,7 +99,7 @@ public class ExternalAudioProvider implements FmProvider {
     }
 
     @Override
-    public void tick(double microsPerTick) {
+    public void tick() {
 
     }
 

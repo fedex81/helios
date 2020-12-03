@@ -42,10 +42,6 @@ public interface FmProvider extends Device, BaseVdpProvider.VdpEventListener {
         }
 
         @Override
-        public void init(int clock, int rate) {
-        }
-
-        @Override
         public void write(int addr, int data) {
 
         }
@@ -61,8 +57,7 @@ public interface FmProvider extends Device, BaseVdpProvider.VdpEventListener {
         }
 
         @Override
-        public void tick(double microsPerTick) {
-
+        public void tick() {
         }
 
         @Override
@@ -75,11 +70,13 @@ public interface FmProvider extends Device, BaseVdpProvider.VdpEventListener {
 
     int update(int[] buf_lr, int offset, int count);
 
-    void init(int clock, int rate);
-
     int readRegister(int type, int regNumber);
 
-    void tick(double microsPerTick);
+    void tick();
+
+    default void setMicrosPerTick(double microsPerTick) {
+        throw new RuntimeException("Invalid");
+    }
 
     default void write(int addr, int data) {
         throw new RuntimeException("Invalid");

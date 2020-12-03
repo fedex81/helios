@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author Stephan Dittrich, 2005
  * @author Stephane Dallongeville
  */
+@Deprecated
 public final class YM2612 extends Ym2612RegSupport implements MdFmProvider {
 
     private final static Logger LOG = LogManager.getLogger(YM2612.class.getSimpleName());
@@ -554,7 +555,8 @@ public final class YM2612 extends Ym2612RegSupport implements MdFmProvider {
     static double MICROS_PER_PCM = 25; //TODO why?
 
     @Override
-    public void tick(double microsPerTick) {
+    public void tick() {
+        double microsPerTick = 0.78; //NOTE approximate
         microsAcc += microsPerTick;
         pcmMicrosAcc += microsPerTick;
         //sync every microsecond

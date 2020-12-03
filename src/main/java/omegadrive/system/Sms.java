@@ -195,7 +195,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     protected void runFM(int counter) {
         if ((counter + 1) % FM_DIVIDER == 0) {
-            sound.getFm().tick(0);
+            sound.getFm().tick();
         }
     }
 

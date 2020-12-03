@@ -70,8 +70,6 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     protected double nextVdpCycle = vdpVals[0];
     private int next68kCycle = M68K_DIVIDER;
     private int nextZ80Cycle = Z80_DIVIDER;
-    //fm emulation
-    private double microsPerTick = 1;
 
     protected Genesis(DisplayWindow emuFrame) {
         super(emuFrame);
@@ -173,7 +171,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
 
     protected final void runFM(int counter) {
         if (counter % FM_DIVIDER == 0) {
-            bus.getFm().tick(microsPerTick);
+            bus.getFm().tick();
         }
     }
 
@@ -181,7 +179,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     protected void updateVideoMode(boolean force) {
         if (force || videoMode != vdp.getVideoMode()) {
             videoMode = vdp.getVideoMode();
-            microsPerTick = getMicrosPerTick();
+            double microsPerTick = getMicrosPerTick();
+            sound.getFm().setMicrosPerTick(microsPerTick);
             targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
             LOG.info("Video mode changed: {}, microsPerTick: {}", videoMode, microsPerTick);
         }
