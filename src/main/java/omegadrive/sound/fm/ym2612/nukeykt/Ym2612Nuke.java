@@ -80,10 +80,11 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     @Override
     public void reset() {
-        spin();
         super.reset();
         ym3438.OPN2_Reset(chip);
         state.reset();
+        cycleAccum = 0;
+        syncAudioCnt = prevL = prevR = 0;
     }
 
     @Override
@@ -93,7 +94,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     @Override
     public void write(int addr, int data) {
-        spin(); //TODO when loading a savestate we shouldnt spin
+        spin();
         ym3438.OPN2_Write(chip, addr, data);
         regSupport.write(addr, data);
     }

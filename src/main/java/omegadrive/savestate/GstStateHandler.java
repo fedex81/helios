@@ -113,7 +113,6 @@ public class GstStateHandler implements GenesisStateHandler {
         return buffer.array();
     }
 
-    //TODO write to regsupport
     @Override
     public void loadFmState(FmProvider fm) {
         int reg;
@@ -122,8 +121,14 @@ public class GstStateHandler implements GenesisStateHandler {
         for (reg = 0; reg < limit; reg++) {
             fm.write(MdFmProvider.FM_ADDRESS_PORT0, reg & 0xFF);
             fm.write(MdFmProvider.FM_DATA_PORT0, buffer.get(FM_REG_OFFSET + reg) & 0xFF);
+            do {
+                fm.tick();
+            } while ((fm.read() & 0x40) > 0); //while busy
             fm.write(MdFmProvider.FM_ADDRESS_PORT1, reg & 0xFF);
             fm.write(MdFmProvider.FM_DATA_PORT1, buffer.get(FM_REG_OFFSET + limit + reg) & 0xFF);
+            do {
+                fm.tick();
+            } while ((fm.read() & 0x40) > 0); //while busy
         }
     }
 
