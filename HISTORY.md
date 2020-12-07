@@ -1,5 +1,16 @@
-## 20.0816
+## 20.1207
+gb: re-enable emulation, sound is much better
+68k: update lib, subx.l flag fix, movem changes
+jinput: disable polling thread by default
+md: msu-md support
+md: support SEGA SSF system type, force load SSF2 mapper
+md: rework sram detection
+nes: rework audio wrapper, reduce audio popping
+sms: fix savestate handling
+ui: detect user changing screen
+z80: savestate to store regI too
 
+## 20.0816
 68k: update lib, tas fix
 helios: refactor fm stereo handling
 helios: ignore keys with modifiers when detecting a joypad button press
