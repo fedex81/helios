@@ -83,7 +83,7 @@ public class Ssf2Mapper implements RomMapper {
             LogHelper.printLevel(LOG, Level.INFO, "Bank read: {}", address, verbose);
             int bankSelector = (int) (address / BANK_SIZE);
             address = ((long) banks[bankSelector] * BANK_SIZE) + (address - bankSelector * BANK_SIZE);
-            return Util.readRom(memory, size, (int) address);
+            return Util.readData(memory.getRomData(), size, (int) address);
         }
         return baseMapper.readData(address, size);
     }

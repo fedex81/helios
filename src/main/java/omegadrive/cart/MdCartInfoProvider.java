@@ -147,10 +147,10 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
             boolean isSramType = (byte2 & 0x20) == 0x20; //sram vs EEPROM
             if (isBackup) { //&& isSramType) {
                 sramEnabled = true;
-                sramStart = Util.readRom(memoryProvider, Size.WORD, SRAM_START_ADDRESS) << 16;
-                sramStart |= Util.readRom(memoryProvider, Size.WORD, SRAM_START_ADDRESS + 2);
-                sramEnd = Util.readRom(memoryProvider, Size.WORD, SRAM_END_ADDRESS) << 16;
-                sramEnd |= Util.readRom(memoryProvider, Size.WORD, SRAM_END_ADDRESS + 2);
+                sramStart = Util.readData(memoryProvider.getRomData(), Size.WORD, SRAM_START_ADDRESS) << 16;
+                sramStart |= Util.readData(memoryProvider.getRomData(), Size.WORD, SRAM_START_ADDRESS + 2);
+                sramEnd = Util.readData(memoryProvider.getRomData(), Size.WORD, SRAM_END_ADDRESS) << 16;
+                sramEnd |= Util.readData(memoryProvider.getRomData(), Size.WORD, SRAM_END_ADDRESS + 2);
                 if (sramEnd - sramStart < 0) {
                     LOG.error("Unexpected SRAM setup: {}", toString());
                     sramStart = DEFAULT_SRAM_START_ADDRESS;
