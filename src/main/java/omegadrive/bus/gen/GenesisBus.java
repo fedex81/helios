@@ -25,8 +25,8 @@ import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.mapper.RomMapper;
+import omegadrive.cart.mapper.md.ExSsfMapper;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
-import omegadrive.cart.mapper.md.MdMapperType;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.sound.fm.FmProvider;
@@ -96,12 +96,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
         }
         msuMdHandler = MsuMdHandlerImpl.createInstance(systemProvider.getRomPath());
-        if (cartridgeInfoProvider.getCartridgeMapper() == MdMapperType.SEGA_SSF) {
-            mapper = Ssf2Mapper.createInstance(this, memoryProvider);
+        if (cartridgeInfoProvider.isSsfMapper()) {
+            mapper = ExSsfMapper.createInstance(this, memoryProvider);
         }
     }
-
-    int[][] ramSsf = new int[8][bankSize];
 
     @Override
     public void resetFrom68k() {
@@ -224,9 +222,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             checkBackupMemoryMapper(SramMode.READ_WRITE);
             mapper.writeData(address, data, size);
         } else {
-//            int bank = address / bankSize;
-//            int bankAddress = address % bankSize;
-//            Util.writeData(ramSsf[bank], size, bankAddress, data);
             LOG.error("Unexpected bus write: {}, data {} {}, 68k PC: {}",
                     Long.toHexString(addressL), Long.toHexString(data), size,
                     Long.toHexString(m68kProvider.getPC()));

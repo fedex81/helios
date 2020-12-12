@@ -173,6 +173,10 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         this.serial = Util.toStringValue(serialArray);
     }
 
+    public boolean isSsfMapper() {
+        return forceMapper != null;
+    }
+
     public boolean adjustSramLimits(long address) {
         //FIFA 96
         boolean adjust = sramEnd < MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
