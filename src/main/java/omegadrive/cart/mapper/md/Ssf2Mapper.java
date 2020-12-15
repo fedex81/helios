@@ -43,7 +43,7 @@ import java.util.Arrays;
  * MD:     Mode -- 0 = ROM, 1 = RAM
  * WP:     Write protect -- 0 = writable, 1 = not writable
  * <p>
- * 0xA130F3 ->	0x080000 - 0x0FFFFF
+ * 0xA130F3 -> 0x080000 - 0x0FFFFF
  * 0xA130F5 -> 0x100000 - 0x17FFFF
  * 0xA130F7 -> 0x180000 - 0x1FFFFF
  * 0xA130F9 -> 0x200000 - 0x27FFFF
@@ -64,8 +64,8 @@ public class Ssf2Mapper implements RomMapper {
     public static final int BANKABLE_START_ADDRESS = 0x80000;
 
     private int[] banks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
-    private RomMapper baseMapper;
-    private IMemoryProvider memory;
+    protected RomMapper baseMapper;
+    protected IMemoryProvider memory;
     private boolean verbose = false;
 
     public static Ssf2Mapper createInstance(RomMapper baseMapper, IMemoryProvider memoryProvider) {
@@ -83,7 +83,7 @@ public class Ssf2Mapper implements RomMapper {
             LogHelper.printLevel(LOG, Level.INFO, "Bank read: {}", address, verbose);
             int bankSelector = (int) (address / BANK_SIZE);
             address = ((long) banks[bankSelector] * BANK_SIZE) + (address - bankSelector * BANK_SIZE);
-            return Util.readRom(memory, size, (int) address);
+            return Util.readData(memory.getRomData(), size, (int) address);
         }
         return baseMapper.readData(address, size);
     }
