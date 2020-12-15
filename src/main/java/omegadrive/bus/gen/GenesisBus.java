@@ -59,7 +59,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private SvpBus svpMapper = SvpBus.NO_OP;
     private MsuMdHandler msuMdHandler;
     private MdRomDbModel.Entry entry;
-    int bankSize = 0x80000;
 
     private BusArbiter busArbiter = BusArbiter.NO_OP;
 
