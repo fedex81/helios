@@ -1,7 +1,10 @@
+- flush audio on close (see nintaco)
+- fm vs psg sync
 
 - Sonic & Knuckles mapper
 - EEPROM mapper (take list from blastem)
 - extended ssf vs ssf mapper, https://krikzz.com/pub/support/mega-everdrive/x3x5x7/dev/extended_ssf-v2.txt
+https://github.com/krikzz/MEGA-PRO/blob/master/samples/mappers-se/extended-ssf.txt
 
 TODO
 hline issue:
@@ -9,17 +12,17 @@ turbo outrun
 lotus 2
 FIFA 97 noisy audio
 
+shadow/highlight:
+sonic3d traveller's tale logo
+rambo III intro corruption
+iss deluxe colors (?)
+
 danibus scroll test
-sonic3d traveller's tale logo (uses shadow/highlight)
-rambo III intro corruption (uses shadow/highlight)
-iss deluxe colors
 bubba and stix
 power monger
 batman and robin, mad hatter: hint related?
-subterrania perf: lots of vdpBusy hits
 hook(U) (E works), Shadow of the Beast (UE) (J works):
 - z80 on busRequest and !reset, 68k stuck waiting on busUnrequested
-Summer Challenge (USA, Europe) (Unl) - red screen, eeprom?
 
 - Star cruiser, window plane corruption
 ko - f7a9385 on 15/06/2020 at 17:29

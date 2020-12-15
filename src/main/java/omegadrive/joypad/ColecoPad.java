@@ -32,6 +32,9 @@ import static omegadrive.input.InputProvider.PlayerNumber;
 import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
+/**
+ * NOTE: Turbo requires an analog device to work (not emulated)
+ */
 public class ColecoPad extends BasePadAdapter {
 
     private static final Logger LOG = LogManager.getLogger(ColecoPad.class.getSimpleName());
