@@ -37,24 +37,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class MC68000Wrapper implements M68kProvider {
 
-
     private final static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
-    public static final boolean STOP_ON_EXCEPTION;
-    public static final boolean GENESIS_TAS_BROKEN;
-    public static final boolean M68K_DEBUG;
-
-    static {
-        STOP_ON_EXCEPTION =
-                Boolean.parseBoolean(System.getProperty("68k.stop.on.exception", "true"));
-        GENESIS_TAS_BROKEN = Boolean.parseBoolean(System.getProperty("68k.broken.tas", "true"));
-        M68K_DEBUG = Boolean.parseBoolean(System.getProperty("68k.debug", "false"));
-        if (GENESIS_TAS_BROKEN != TAS.EMULATE_BROKEN_TAS) {
-            LOG.info("Overriding 68k TAS broken setting: {}", GENESIS_TAS_BROKEN);
-        }
-        if (M68K_DEBUG) {
-            LOG.info("68k debug mode: true");
-        }
-    }
 
     protected MC68000 m68k;
     protected AddressSpace addressSpace;
@@ -68,11 +51,11 @@ public class MC68000Wrapper implements M68kProvider {
         this.busProvider = busProvider;
         this.addressSpace = createAddressSpace();
         m68k.setAddressSpace(addressSpace);
-        TAS.EMULATE_BROKEN_TAS = GENESIS_TAS_BROKEN;
+        TAS.EMULATE_BROKEN_TAS = MC68000Helper.GENESIS_TAS_BROKEN;
     }
 
     public static MC68000Wrapper createInstance(GenesisBusProvider busProvider) {
-        return M68K_DEBUG ? new MC68000WrapperDebug(busProvider) : new MC68000Wrapper(busProvider);
+        return MC68000Helper.M68K_DEBUG ? new MC68000WrapperDebug(busProvider) : new MC68000Wrapper(busProvider);
     }
 
     @Override
@@ -85,12 +68,12 @@ public class MC68000Wrapper implements M68kProvider {
         } catch (Exception e) {
             LOG.error("68k error", e);
             handleException(ILLEGAL_ACCESS_EXCEPTION);
-            if (STOP_ON_EXCEPTION) {
+            if (MC68000Helper.STOP_ON_EXCEPTION) {
                 MC68000Helper.printCpuState(m68k, Level.ERROR, "", addressSpace.size());
                 throw e;
             }
         }
-        return res;
+        return res >> MC68000Helper.OVERCLOCK_FACTOR;
     }
 
     protected AddressSpace createAddressSpace() {
@@ -142,7 +125,6 @@ public class MC68000Wrapper implements M68kProvider {
         instCycles += 132;
         stop = false;
     }
-
 
     @Override
     public String getInfo() {

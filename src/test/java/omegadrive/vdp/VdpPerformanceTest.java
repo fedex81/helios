@@ -21,6 +21,7 @@ package omegadrive.vdp;
 
 import omegadrive.SystemLoader;
 import omegadrive.input.InputProvider;
+import omegadrive.m68k.MC68000Helper;
 import omegadrive.m68k.MC68000WrapperDebug;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
@@ -96,7 +97,7 @@ public class VdpPerformanceTest {
     }
 
     private void hitCounter(int startFrame, int endFrame) {
-        if (!MC68000WrapperDebug.M68K_DEBUG) {
+        if (!MC68000Helper.M68K_DEBUG) {
             return;
         }
         if (MC68000WrapperDebug.countHits) {

@@ -173,7 +173,7 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
         }
         if (vector == ILLEGAL_ACCESS_EXCEPTION) {
             printCpuState("Exception: " + vector);
-            if (STOP_ON_EXCEPTION) {
+            if (MC68000Helper.STOP_ON_EXCEPTION) {
                 setStop(true);
             }
         }
