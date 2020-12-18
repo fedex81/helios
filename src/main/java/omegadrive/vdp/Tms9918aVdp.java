@@ -414,7 +414,7 @@ public class Tms9918aVdp implements Tms9918a {
     }
 
     public final void increaseReadWriteAddr() {
-        readWriteAddr = (short) ((readWriteAddr + 1) & 0x3fff);
+        readWriteAddr = (short) ((readWriteAddr + 1) & RAM_SIZE_MASK);
     }
 
     /*

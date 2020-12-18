@@ -63,7 +63,8 @@ public interface Tms9918a extends BaseVdpProvider {
             (new Color(255, 255, 255)),    // F
     };
 
-    int RAM_SIZE = 0xFFFF;
+    int RAM_SIZE = 0x4000; //16kb
+    int RAM_SIZE_MASK = RAM_SIZE - 1;
     int REGISTERS = 8;
 
     default int getRegisterData(TmsRegisterName registerName) {
