@@ -27,7 +27,6 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.MdFmProvider;
-import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
@@ -39,9 +38,9 @@ import z80core.Z80;
 import z80core.Z80State;
 
 import java.nio.ByteBuffer;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.stream.IntStream;
+
+import static omegadrive.savestate.StateUtil.*;
 
 public class GstStateHandler implements GenesisStateHandler {
 
@@ -65,31 +64,6 @@ public class GstStateHandler implements GenesisStateHandler {
     protected String fileName;
     protected Type type;
     protected boolean runAhead;
-
-    byte[] arr4 = new byte[4], arr2 = new byte[2];
-
-    private Function<Integer, Integer> getInt4Fn = pos -> {
-        buffer.position(pos);
-        buffer.get(arr4);
-        return Util.getUInt32LE(arr4);
-    };
-
-    private Function<Integer, Integer> getInt2Fn = pos -> {
-        buffer.position(pos);
-        buffer.get(arr2);
-        return Util.getUInt32LE(arr2);
-    };
-
-    private BiConsumer<Integer, Integer> setInt4LEFn = (pos, val) -> {
-        Util.setUInt32LE(val, arr4, 0);
-        buffer.position(pos);
-        buffer.put(arr4);
-    };
-
-    private BiConsumer<Integer, Integer> setInt2LEFn = (pos, val) -> {
-        buffer.put(pos, (byte) (val & 0xFF));
-        buffer.put(pos + 1, (byte) ((val >> 8) & 0xFF));
-    };
 
     protected GstStateHandler() {
     }
@@ -159,31 +133,9 @@ public class GstStateHandler implements GenesisStateHandler {
         }
     }
 
-    private Z80State loadZ80State() {
-        Z80State z80State = new Z80State();
-        z80State.setRegAF(getInt2Fn.apply(0x404));
-        z80State.setRegBC(getInt2Fn.apply(0x408));
-        z80State.setRegDE(getInt2Fn.apply(0x40C));
-        z80State.setRegHL(getInt2Fn.apply(0x410));
-        z80State.setRegIX(getInt2Fn.apply(0x414));
-        z80State.setRegIY(getInt2Fn.apply(0x418));
-        z80State.setRegPC(getInt2Fn.apply(0x41C));
-        z80State.setRegSP(getInt2Fn.apply(0x420));
-        z80State.setRegAFx(getInt2Fn.apply(0x424));
-        z80State.setRegBCx(getInt2Fn.apply(0x428));
-        z80State.setRegDEx(getInt2Fn.apply(0x42C));
-        z80State.setRegHLx(getInt2Fn.apply(0x430));
-        z80State.setRegI(getInt2Fn.apply(0x434));
-        z80State.setIM(Z80.IntMode.IM1);
-        boolean iffN = (buffer.get(0x436) & 0xFF) > 0;
-        z80State.setIFF1(iffN);
-        z80State.setIFF2(iffN);
-        return z80State;
-    }
-
     @Override
     public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
-        int z80BankInt = getInt4Fn.apply(0x43C);
+        int z80BankInt = getInt4Fn.apply(buffer, 0x43C);
         GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
 
         bus.setZ80BusRequested((buffer.get(0x439) & 0xFF) > 0);
@@ -200,7 +152,8 @@ public class GstStateHandler implements GenesisStateHandler {
         IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> z80.writeMemory(i, buffer.get(i + Z80_RAM_DATA_OFFSET) & 0xFF));
 
-        Z80State z80State = loadZ80State();
+        Z80State z80State = loadZ80StateGst(buffer);
+        z80State.setIM(Z80.IntMode.IM1);
         z80.loadZ80State(z80State);
     }
 
@@ -214,17 +167,17 @@ public class GstStateHandler implements GenesisStateHandler {
         }
 
         MC68000 m68k = m68kProvider.getM68k();
-        m68k.setSR(getInt2Fn.apply(0xD0));
+        m68k.setSR(getInt2Fn.apply(buffer, 0xD0));
         IntStream.range(0, 8).forEach(i ->
-                m68k.setDataRegisterLong(i, getInt4Fn.apply(M68K_REGD_OFFSET + i * 4))
+                m68k.setDataRegisterLong(i, getInt4Fn.apply(buffer, M68K_REGD_OFFSET + i * 4))
         );
 
         IntStream.range(0, 8).forEach(i ->
-                m68k.setAddrRegisterLong(i, getInt4Fn.apply(M68K_REGA_OFFSET + i * 4))
+                m68k.setAddrRegisterLong(i, getInt4Fn.apply(buffer, M68K_REGA_OFFSET + i * 4))
         );
-        m68k.setPC(getInt4Fn.apply(0xC8));
-        int ssp = getInt4Fn.apply(0xD2);
-        int usp = getInt4Fn.apply(0xD6);
+        m68k.setPC(getInt4Fn.apply(buffer, 0xC8));
+        int ssp = getInt4Fn.apply(buffer, 0xD2);
+        int usp = getInt4Fn.apply(buffer, 0xD6);
         if (usp > 0) {
             LOG.warn("USP is not 0: {}", usp);
         }
@@ -275,26 +228,9 @@ public class GstStateHandler implements GenesisStateHandler {
 
         int romBankSerial = GenesisZ80BusProvider.getRomBank68kSerial(z80);
         if (romBankSerial >= 0) {
-            setInt4LEFn.accept(0x43C, romBankSerial);
+            setInt4LEFn(buffer, 0x43C, romBankSerial);
         }
-        saveZ80State(z80.getZ80State());
-    }
-
-    private void saveZ80State(Z80State z80State) {
-        setInt4LEFn.accept(0x404, z80State.getRegAF());
-        setInt4LEFn.accept(0x408, z80State.getRegBC());
-        setInt4LEFn.accept(0x40C, z80State.getRegDE());
-        setInt4LEFn.accept(0x410, z80State.getRegHL());
-        setInt4LEFn.accept(0x414, z80State.getRegIX());
-        setInt4LEFn.accept(0x418, z80State.getRegIY());
-        setInt4LEFn.accept(0x41C, z80State.getRegPC());
-        setInt4LEFn.accept(0x420, z80State.getRegSP());
-        setInt4LEFn.accept(0x424, z80State.getRegAFx());
-        setInt4LEFn.accept(0x428, z80State.getRegBCx());
-        setInt4LEFn.accept(0x42C, z80State.getRegDEx());
-        setInt4LEFn.accept(0x430, z80State.getRegHLx());
-        setInt4LEFn.accept(0x434, z80State.getRegI());
-        buffer.put(0x436, (byte) (z80State.isIFF1() ? 1 : 0));
+        saveZ80StateGst(buffer, z80.getZ80State());
     }
 
     @Override
@@ -305,14 +241,14 @@ public class GstStateHandler implements GenesisStateHandler {
         }
 
         MC68000 m68k = mc68000Wrapper.getM68k();
-        setInt4LEFn.accept(0xC8, m68k.getPC());
-        setInt2LEFn.accept(0xD0, m68k.getSR());
-        setInt4LEFn.accept(0xD2, m68k.getSSP());
-        setInt4LEFn.accept(0xD6, m68k.getUSP());
+        setInt4LEFn(buffer, 0xC8, m68k.getPC());
+        setInt2LEFn(buffer, 0xD0, m68k.getSR());
+        setInt4LEFn(buffer, 0xD2, m68k.getSSP());
+        setInt4LEFn(buffer, 0xD6, m68k.getUSP());
 
         IntStream.range(0, 8).forEach(i ->
-                setInt4LEFn.accept(M68K_REGD_OFFSET + i * 4, m68k.getDataRegisterLong(i)));
+                setInt4LEFn(buffer, M68K_REGD_OFFSET + i * 4, m68k.getDataRegisterLong(i)));
         IntStream.range(0, 8).forEach(i ->
-                setInt4LEFn.accept(M68K_REGA_OFFSET + i * 4, m68k.getAddrRegisterLong(i)));
+                setInt4LEFn(buffer, M68K_REGA_OFFSET + i * 4, m68k.getAddrRegisterLong(i)));
     }
 }

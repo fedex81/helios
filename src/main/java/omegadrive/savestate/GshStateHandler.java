@@ -40,6 +40,8 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+import static omegadrive.savestate.StateUtil.extendBuffer;
+
 public class GshStateHandler extends GstStateHandler {
 
     private static final Logger LOG = LogManager.getLogger(GshStateHandler.class.getSimpleName());
@@ -178,13 +180,5 @@ public class GshStateHandler extends GstStateHandler {
         IntStream.range(0, data.length).forEach(i -> data[i] = buffer.get() & 0xFF);
         bus.setMapperData(data);
         loadSvpState(SvpMapper.ssp16);
-    }
-
-    private ByteBuffer extendBuffer(ByteBuffer current, int increaseDelta) {
-        ByteBuffer extBuffer = ByteBuffer.allocate(buffer.capacity() + increaseDelta);
-        current.position(0);
-        extBuffer.put(current);
-        extBuffer.position(buffer.capacity());
-        return extBuffer;
     }
 }

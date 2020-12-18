@@ -29,11 +29,9 @@ import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.z80.Z80Helper;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import z80core.Z80;
 import z80core.Z80State;
 
 import java.nio.ByteBuffer;
@@ -41,6 +39,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+
+import static omegadrive.savestate.StateUtil.*;
 
 public class MekaStateHandler implements SmsStateHandler {
 
@@ -131,10 +131,6 @@ public class MekaStateHandler implements SmsStateHandler {
                 toCrcStringFn.apply(data.get(index + 1) & 0xFF) + toCrcStringFn.apply(data.get(index) & 0xFF);
     }
 
-    private static void skip(ByteBuffer buf, int len) {
-        buf.position(buf.position() + len);
-    }
-
     private static void loadMappers(ByteBuffer buffer, Z80BusProvider bus) {
         bus.write(0xFFFC, buffer.get(), Size.BYTE);
         bus.write(0xFFFD, buffer.get(), Size.BYTE);
@@ -149,11 +145,6 @@ public class MekaStateHandler implements SmsStateHandler {
         LOG.info("mapperControl: {}, frameReg: {}", control, Arrays.toString(frameReg));
         buffer.put((byte) (control & 0xFF));
         buffer.put(Util.unsignedToByteArray(frameReg));
-    }
-
-    //2 bytes for a 16 bit int
-    private static void setData(ByteBuffer buf, int... data) {
-        Arrays.stream(data).forEach(val -> buf.put((byte) (val & 0xFF)));
     }
 
     private SmsStateHandler detectStateFileType() {
@@ -182,33 +173,6 @@ public class MekaStateHandler implements SmsStateHandler {
         }
     }
 
-    private Z80State loadZ80State(ByteBuffer data) {
-        Z80State z80State = new Z80State();
-        z80State.setRegAF(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegBC(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegDE(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegHL(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegIX(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegIY(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegPC(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegSP(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegAFx(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegBCx(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegDEx(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegHLx(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegI(data.get() & 0xFF); //note breaking change
-
-        int val = data.get();
-        Z80.IntMode im = Z80Helper.parseIntMode((val >> 1) & 3);
-        z80State.setIM(im);
-        z80State.setIFF1((val & 1) > 0);
-        z80State.setIFF2((val & 8) > 0);
-        z80State.setHalted((val & 0x80) > 0);
-
-        skip(data, Z80_MISC_LEN);
-        return z80State;
-    }
-
     @Override
     public void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory, SmsBus bus) {
         SmsVdp smsVdp = (SmsVdp) vdp;
@@ -230,7 +194,6 @@ public class MekaStateHandler implements SmsStateHandler {
         }
     }
 
-
     @Override
     public void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory, Z80BusProvider bus) {
         IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> buffer.put((byte) vdp.getRegisterData(i)));
@@ -248,22 +211,14 @@ public class MekaStateHandler implements SmsStateHandler {
     @Override
     public void loadZ80(Z80Provider z80, Z80BusProvider bus) {
         Z80State z80State = loadZ80State(buffer);
+        skip(buffer, Z80_MISC_LEN);
         z80.loadZ80State(z80State);
     }
 
     @Override
     public void saveZ80(Z80Provider z80, Z80BusProvider bus) {
         Z80State s = z80.getZ80State();
-        setData(buffer, s.getRegF(), s.getRegA(), s.getRegC(), s.getRegB(),
-                s.getRegE(), s.getRegD(), s.getRegL(), s.getRegH());
-        setData(buffer, s.getRegIX() & 0xFF, s.getRegIX() >> 8, s.getRegIY() & 0xFF,
-                s.getRegIY() >> 8, s.getRegPC() & 0xFF, s.getRegPC() >> 8, s.getRegSP() & 0xFF,
-                s.getRegSP() >> 8);
-        setData(buffer, s.getRegFx(), s.getRegAx(), s.getRegCx(), s.getRegBx(), s.getRegEx(),
-                s.getRegDx(), s.getRegLx(), s.getRegHx(), s.getRegI());
-        int val = (s.isHalted() ? 1 : 0) << 8 | (s.isIFF2() ? 1 : 0) << 3 | s.getIM().ordinal() << 1 |
-                (s.isIFF1() ? 1 : 0);
-        setData(buffer, val);
+        saveZ80State(buffer, s);
         skip(buffer, Z80_MISC_LEN);
     }
 
