@@ -39,8 +39,6 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> imp
     private static int RAM_SIZE = 0x400;  //1Kb
     private static int ROM_SIZE = ROM_END + 1; //48kb
 
-    private int lastDE;
-
     @Override
     public long read(long addressL, Size size) {
         int address = (int) addressL;
@@ -107,10 +105,10 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> imp
                 vdpProvider.writeRegister(byteVal);
                 break;
             case 0xC0: //aka $DE
-                if (port == 0xDE) {
-                    LOG.debug("write 0xDE: {}", Integer.toHexString(value & 0xFF));
-                    lastDE = value;
-                }
+//                if (port == 0xDE) { //sc-3000, can be ignored
+//                    LOG.debug("write 0xDE: {}", Integer.toHexString(value & 0xFF));
+//                    lastDE = value;
+//                }
                 break;
             case 0xC1: //aka $DF
                 if (port == 0xDF) {
@@ -141,10 +139,10 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> imp
                 //                LOG.warn("read: vdp status reg");
                 return vdpProvider.readStatus();
             case 0xC0:
-                if (port == 0xDE) {
-                    LOG.warn("read 0xDE: {}", Integer.toHexString(lastDE));
+//                if (port == 0xDE) {
+//                    LOG.debug("read 0xDE: {}", Integer.toHexString(lastDE));
 //                    return lastDE;
-                }
+//                }
                 LOG.debug("read: joy1");
                 return joypadProvider.readDataRegister1();
             case 0xC1:
