@@ -40,6 +40,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.Serializable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -65,18 +66,14 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
     private static int SLOT_SIZE = 0x10000;
     private static int SLOTS = 4;
 
+    private static final int[] emptySlot = new int[SLOT_SIZE];
+
     private int[] bios;
 
-    private int slotSelect = 0;
-    private int ppiC_Keyboard = 0;
     private int[][] secondarySlot = new int[SLOTS][];
     private boolean[] secondarySlotWritable = new boolean[SLOTS];
-    private int[] pageStartAddress = {0, 0, 0, 0};
-    private int[] pageSlotMapper = {0, 0, 0, 0};
 
-    private int[] emptySlot = new int[SLOT_SIZE];
-
-    private int psgAddressLatch = 0;
+    private MsxBusContext ctx;
     private InputProvider.PlayerNumber joypadSelect = P1;
 
     private RomMapper mapper;
@@ -87,6 +84,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         bios = Util.toUnsignedIntArray(FileLoader.loadBiosFile(p));
         LOG.info("Loading Msx bios from: {}", p.toAbsolutePath().toString());
         Arrays.fill(emptySlot, 0xFF);
+        ctx = new MsxBusContext();
 
         secondarySlot[0] = bios;
         secondarySlot[1] = emptySlot;
@@ -97,26 +95,16 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
     }
 
     @Override
-    public Z80BusProvider attachDevice(Device device) {
-        super.attachDevice(device);
-        if(device instanceof IMemoryProvider){
-            secondarySlot[3] = this.memoryProvider.getRamData();
-            secondarySlotWritable[3] = true;
-        }
-        return this;
-    }
-
-    @Override
     public long read(long addressL, Size size) {
         int addressI = (int) (addressL & 0xFFFF);
         int page = addressI >> 14;
-        int secSlotNumber = pageSlotMapper[page];
+        int secSlotNumber = ctx.pageSlotMapper[page];
         int res = 0xFF;
-        int address = (addressI & PAGE_MASK) + pageStartAddress[page];
+        int address = (addressI & PAGE_MASK) + ctx.pageStartAddress[page];
 
-        if(mapper != RomMapper.NO_OP_MAPPER && secSlotNumber > 0 && secSlotNumber < 3){
+        if (mapper != RomMapper.NO_OP_MAPPER && secSlotNumber > 0 && secSlotNumber < 3) {
             res = (int) mapper.readData(addressL, Size.BYTE);
-        } else if(address < secondarySlot[secSlotNumber].length) {
+        } else if (address < secondarySlot[secSlotNumber].length) {
             res = secondarySlot[secSlotNumber][address];
         } else {
             LOG.error("Unexpected read: {}, slot: {}", Long.toHexString(addressL), secSlotNumber);
@@ -124,25 +112,35 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         return res;
     }
 
-    private void writeSlot(int[] data, int address, int value){
-        if(address < data.length) {
-            data[address] = value;
+    @Override
+    public Z80BusProvider attachDevice(Device device) {
+        super.attachDevice(device);
+        if (device instanceof IMemoryProvider) {
+            secondarySlot[3] = this.memoryProvider.getRamData();
+            secondarySlotWritable[3] = true;
         }
+        return this;
     }
 
     @Override
     public void write(long addressL, long data, Size size) {
         int addressI = (int) (addressL & 0xFFFF);
         int page = addressI >> 14;
-        int secSlotNumber = pageSlotMapper[page];
-        if(secondarySlotWritable[secSlotNumber]){
-            int address = (addressI & PAGE_MASK) + pageStartAddress[page];
+        int secSlotNumber = ctx.pageSlotMapper[page];
+        if (secondarySlotWritable[secSlotNumber]) {
+            int address = (addressI & PAGE_MASK) + ctx.pageStartAddress[page];
             writeSlot(secondarySlot[secSlotNumber], address, (int) data);
-        } else if(mapper != RomMapper.NO_OP_MAPPER && secSlotNumber > 0 && secSlotNumber < 3) {
+        } else if (mapper != RomMapper.NO_OP_MAPPER && secSlotNumber > 0 && secSlotNumber < 3) {
             mapper.writeData(addressL, data, size);
         } else {
             LOG.error("Unexpected write: {}, data: {}, slot: {}", Long.toHexString(addressL),
                     Long.toHexString(data), secSlotNumber);
+        }
+    }
+
+    private void writeSlot(int[] data, int address, int value) {
+        if (address < data.length) {
+            data[address] = value;
         }
     }
 
@@ -162,22 +160,22 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
                 vdpProvider.writeRegister(byteVal);
                 break;
             case 0xA0:
-                LOG.debug("Write PSG register select: {}",  value);
-                psgAddressLatch = value;
+                LOG.debug("Write PSG register select: {}", value);
+                ctx.psgAddressLatch = value;
                 break;
             case 0xA1:
                 LOG.debug("Write PSG: {}", value);
-                soundProvider.getPsg().write(psgAddressLatch , value);
-                if(psgAddressLatch == 0xF){
+                soundProvider.getPsg().write(ctx.psgAddressLatch, value);
+                if (ctx.psgAddressLatch == 0xF) {
                     joypadSelect = (value & 0x40) == 0x40 ? P2 : P1;
-                    LOG.debug("Write PSG register {}, data {}", psgAddressLatch, value);
+                    LOG.debug("Write PSG register {}, data {}", ctx.psgAddressLatch, value);
                 }
                 break;
             case 0xA8:
                 setSlotSelect(value);
                 break;
             case 0xAA: // Write PPI register C (keyboard and cassette interface) (port AA)
-                ppiC_Keyboard = value;
+                ctx.ppiC_Keyboard = value;
                 break;
             case 0xAB: //Write PPI command register (used for setting bit 4-7 of ppi_C) (port AB)
                 break;
@@ -208,24 +206,24 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
                 break;
             case 0xA0:
                 LOG.debug("Read PSG register select");
-                res = psgAddressLatch;
+                res = ctx.psgAddressLatch;
                 break;
             case 0xA2:
-                res = soundProvider.getPsg().read(psgAddressLatch);
-                if(psgAddressLatch == 0xE){
+                res = soundProvider.getPsg().read(ctx.psgAddressLatch);
+                if (ctx.psgAddressLatch == 0xE) {
                     res = readJoyData();
-                    LOG.debug("Read PSG register {}, data {}", psgAddressLatch, res);
+                    LOG.debug("Read PSG register {}, data {}", ctx.psgAddressLatch, res);
                 }
                 break;
             case 0xA8:
-                res = slotSelect;
+                res = ctx.slotSelect;
                 break;
             case 0xA9: //Read PPI register B (keyboard matrix row input register)
-                res = MsxKeyboardInput.getMsxKeyAdapter().getRowValue(ppiC_Keyboard & 0xF);
-                res = ~((byte)res);
+                res = MsxKeyboardInput.getMsxKeyAdapter().getRowValue(ctx.ppiC_Keyboard & 0xF);
+                res = ~((byte) res);
                 break;
             case 0xAA: //Read PPI register C (keyboard and cassette interface) (port AA)
-                res = ppiC_Keyboard;
+                res = ctx.ppiC_Keyboard;
                 break;
             default:
                 LOG.warn("inPort: {}", Integer.toHexString(port & 0xFF));
@@ -237,21 +235,32 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         return res;
     }
 
-    private void setSlotSelect(int value){
-        slotSelect = value;
+    private void setSlotSelect(int value) {
+        ctx.slotSelect = value;
         reloadPageSlotMapper();
     }
 
-    private void reloadPageSlotMapper(){
-        pageSlotMapper[0] = slotSelect & 3;
-        pageSlotMapper[1] = (slotSelect & 0xC) >> 2;
-        pageSlotMapper[2] = (slotSelect & 0x30) >> 4;
-        pageSlotMapper[3] = (slotSelect & 0xC0) >> 6;
+    private void reloadPageSlotMapper() {
+        ctx.pageSlotMapper[0] = ctx.slotSelect & 3;
+        ctx.pageSlotMapper[1] = (ctx.slotSelect & 0xC) >> 2;
+        ctx.pageSlotMapper[2] = (ctx.slotSelect & 0x30) >> 4;
+        ctx.pageSlotMapper[3] = (ctx.slotSelect & 0xC0) >> 6;
     }
 
-    private int readJoyData(){
+    @Override
+    public void init() {
+        setupCartHw();
+        int len = memoryProvider.getRomSize();
+        secondarySlot[1] = memoryProvider.getRomData();
+        if (len > PAGE_SIZE) {
+            secondarySlot[2] = memoryProvider.getRomData();
+            ctx.pageStartAddress[2] = PAGE_SIZE;
+        }
+    }
+
+    private int readJoyData() {
         int res = 0xFF;
-        switch (joypadSelect){
+        switch (joypadSelect) {
             case P1:
                 res = joypadProvider.readDataRegister1();
                 break;
@@ -263,18 +272,11 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         return res;
     }
 
-    @Override
-    public void init() {
-        setupCartHw();
-        int len = memoryProvider.getRomSize();
-        secondarySlot[1] = memoryProvider.getRomData();
-        if(len > PAGE_SIZE){
-            secondarySlot[2] = memoryProvider.getRomData();
-            pageStartAddress[2] = PAGE_SIZE;
-        }
+    public MsxBusContext getContext() {
+        return ctx;
     }
 
-    private void setupCartHw(){
+    private void setupCartHw() {
         int len = memoryProvider.getRomSize();
         this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
         MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(), cartridgeInfoProvider.getSha1());
@@ -289,6 +291,19 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
 
     @Override
     public void reset() {
+    }
+
+    public void setContext(MsxBusContext ctx) {
+        this.ctx = ctx;
+        setSlotSelect(ctx.slotSelect);
+    }
+
+    public static class MsxBusContext implements Serializable {
+        public int psgAddressLatch = 0;
+        public int slotSelect = 0;
+        public int ppiC_Keyboard = 0;
+        public int[] pageStartAddress = {0, 0, 0, 0};
+        public int[] pageSlotMapper = {0, 0, 0, 0};
     }
 
     @Override

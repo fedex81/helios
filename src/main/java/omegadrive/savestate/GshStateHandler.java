@@ -40,8 +40,6 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import static omegadrive.savestate.StateUtil.extendBuffer;
-
 public class GshStateHandler extends GstStateHandler {
 
     private static final Logger LOG = LogManager.getLogger(GshStateHandler.class.getSimpleName());
@@ -52,7 +50,7 @@ public class GshStateHandler extends GstStateHandler {
     protected static final String SVP_MAGIC_WORD = "SVP0";
     protected static final String fileExtension = "gsh";
 
-    private static int SSF2_MAPPER_REG_OFFSET = 0x440;
+    private static final int SSF2_MAPPER_REG_OFFSET = 0x440;
 
     protected GshStateHandler() {
     }
@@ -92,20 +90,13 @@ public class GshStateHandler extends GstStateHandler {
         return this;
     }
 
-    //TODO lastIndexOf?
-    private static int getNextPosForPattern(byte[] buf, int startPos, String pattern) {
-        byte[] ba2 = Arrays.copyOfRange(buf, startPos, buf.length);
-        int endPos = Bytes.indexOf(ba2, pattern.getBytes()) + startPos;
-        return endPos > startPos ? endPos : buf.length;
-    }
-
     @Override
     public void loadFmState(FmProvider fm) {
         byte[] ba = buffer.array();
         int fmNukeStart = Bytes.indexOf(ba, FM_MAGIC_WORD_NUKE.getBytes());
         if (fmNukeStart > -1 && fm instanceof Ym2612Nuke) {
             Ym2612Nuke nukeFm = (Ym2612Nuke) fm;
-            Optional<Serializable> res = loadSerializedData(FM_MAGIC_WORD_NUKE, fmNukeStart, ba);
+            Optional<Serializable> res = StateUtil.loadSerializedData(FM_MAGIC_WORD_NUKE, fmNukeStart, ba);
             res.ifPresent(ser -> nukeFm.setState((Ym2612Nuke.Ym3438Context) ser));
         } else {
             //loading a gs0, ie. registers only
@@ -118,29 +109,8 @@ public class GshStateHandler extends GstStateHandler {
         byte[] ba = buffer.array();
         int svpStart = Bytes.indexOf(ba, SVP_MAGIC_WORD.getBytes());
         if (svpStart > -1 && ssp16 != Ssp16.NO_SVP) {
-            Optional<Serializable> res = loadSerializedData(SVP_MAGIC_WORD, svpStart, ba);
+            Optional<Serializable> res = StateUtil.loadSerializedData(SVP_MAGIC_WORD, svpStart, ba);
             res.ifPresent(ser -> SvpMapper.setSvpContext((Ssp16Types.Svp_t) ser));
-        }
-    }
-
-    private Optional<Serializable> loadSerializedData(String magicWord, int dataStart, byte[] data) {
-        dataStart += magicWord.length();
-        int dataEnd = getNextPosForPattern(data, dataStart, magicWord);
-        return Optional.ofNullable(Util.deserializeObject(data, dataStart, dataEnd - dataStart));
-    }
-
-    private void storeSerializedData(String magicWord, Serializable object, int prevPos) {
-        int len = magicWord.length() << 1;
-        byte[] data = Util.serializeObject(object);
-        buffer = extendBuffer(buffer, data.length + len);
-        try {
-            buffer.put(magicWord.getBytes());
-            buffer.put(data);
-            buffer.put(magicWord.getBytes());
-        } catch (Exception e) {
-            LOG.error("Unable to save {} data", magicWord);
-        } finally {
-            buffer.position(prevPos);
         }
     }
 
@@ -149,13 +119,13 @@ public class GshStateHandler extends GstStateHandler {
         super.saveFm(fm); //save FM registers, back-compat
         if (fm instanceof Ym2612Nuke) {
             Ym2612Nuke.Ym3438Context chip = ((Ym2612Nuke) fm).getState();
-            storeSerializedData(FM_MAGIC_WORD_NUKE, chip, buffer.position());
+            StateUtil.storeSerializedData(FM_MAGIC_WORD_NUKE, chip, buffer);
         }
     }
 
     private void saveSvp(Ssp16 ssp16) {
         if (ssp16 != Ssp16.NO_SVP) {
-            storeSerializedData(SVP_MAGIC_WORD, ssp16.getSvpContext(), buffer.position());
+            StateUtil.storeSerializedData(SVP_MAGIC_WORD, ssp16.getSvpContext(), buffer);
         }
     }
 

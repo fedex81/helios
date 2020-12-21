@@ -31,6 +31,8 @@ import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
+import omegadrive.savestate.Z80StateBaseHandler;
+import omegadrive.savestate.Z80StateHandler;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
@@ -44,7 +46,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 
-public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> {
+public class Z80BaseSystem extends BaseSystem<Z80BusProvider, Z80StateHandler> {
 
     private static final Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
 
@@ -85,8 +87,17 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
         initCommon();
     }
 
+    private static final int VDP_DIVIDER = 1;  //10.738635 Mhz
+
+    @Override
+    protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOvr) {
+        return RegionDetector.Region.JAPAN;
+    }
+
+    private static final int Z80_DIVIDER = 3; //3.579545 Mhz
+
     private void initCommon() {
-        stateHandler = BaseStateHandler.EMPTY_STATE;
+        stateHandler = Z80StateHandler.EMPTY_STATE;
         inputProvider = InputProvider.createInstance(joypad);
         vdp = new Tms9918aVdp();
         //z80, sound attached later
@@ -97,18 +108,10 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
     }
 
     @Override
-    protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOvr) {
-        return RegionDetector.Region.JAPAN;
+    protected Z80StateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
+        String fileName = file.toAbsolutePath().toString();
+        return Z80StateBaseHandler.createInstance(fileName, systemType, type);
     }
-
-    @Override
-    protected BaseStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
-        LOG.error("Not implemented!");
-        return stateHandler;
-    }
-
-    private static int VDP_DIVIDER = 1;  //10.738635 Mhz
-    private static int Z80_DIVIDER = 3; //3.579545 Mhz
 
     private int nextZ80Cycle = Z80_DIVIDER;
     private int nextVdpCycle = VDP_DIVIDER;
@@ -148,7 +151,16 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
 
     @Override
     protected void processSaveState() {
-        //Not implemented
+        if (saveStateFlag) {
+            stateHandler.processState(vdp, z80, bus, memory);
+            if (stateHandler.getType() == BaseStateHandler.Type.SAVE) {
+                stateHandler.storeData();
+            } else {
+                sound.getPsg().reset();
+            }
+            stateHandler = Z80StateHandler.EMPTY_STATE;
+            saveStateFlag = false;
+        }
     }
 
     @Override
