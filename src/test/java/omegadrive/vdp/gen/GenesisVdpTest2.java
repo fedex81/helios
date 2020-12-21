@@ -20,8 +20,10 @@
 package omegadrive.vdp.gen;
 
 import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.input.GamepadTest;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.vdp.MdVdpTestUtil;
@@ -51,6 +53,7 @@ public class GenesisVdpTest2 {
 
     @Before
     public void setup() {
+        SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
         IMemoryProvider memory = MemoryProvider.createGenesisInstance();
         busProvider = GenesisBusProvider.createBus();
         busProvider.attachDevice(memory);
@@ -58,7 +61,8 @@ public class GenesisVdpTest2 {
         dmaHandler = new VdpDmaHandlerImpl();
 
         vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface, dmaHandler, RegionDetector.Region.EUROPE);
-        busProvider.attachDevice(vdpProvider);
+        busProvider.attachDevice(emu).attachDevice(vdpProvider).attachDevice(GamepadTest.createTestJoypadProvider());
+        busProvider.init();
 
         ((VdpDmaHandlerImpl) dmaHandler).vdpProvider = vdpProvider;
         ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
