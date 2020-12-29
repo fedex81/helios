@@ -19,6 +19,7 @@
 
 package omegadrive.vdp;
 
+import omegadrive.DeviceWithContext;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
@@ -31,18 +32,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static omegadrive.vdp.model.Tms9918a.TmsRegisterName.*;
 
 /**
  * Modified version of:
  * https://github.com/jitze/TMSX/blob/master/MSXEMU/src/emu/TMS9918A.java
+ *
  * @author Tjitze Rienstra
  */
-public class Tms9918aVdp implements Tms9918a {
+public class Tms9918aVdp implements Tms9918a, DeviceWithContext {
 
     private static final Logger LOG = LogManager.getLogger(Tms9918aVdp.class.getSimpleName());
 
@@ -692,6 +696,18 @@ public class Tms9918aVdp implements Tms9918a {
         if (!getM1() && getBL()) {
             drawSprites();
         }
+    }
+
+    @Override
+    public void loadContext(ByteBuffer buffer) {
+        IntStream.range(0, Tms9918a.RAM_SIZE).forEach(i -> mem[i] = buffer.get() & 0xFF);
+        IntStream.range(0, Tms9918a.REGISTERS).forEach(i -> updateRegisterData(i, buffer.get() & 0xFF));
+    }
+
+    @Override
+    public void saveContext(ByteBuffer buffer) {
+        IntStream.range(0, Tms9918a.RAM_SIZE).forEach(i -> buffer.put((byte) (mem[i] & 0xFF)));
+        IntStream.range(0, Tms9918a.REGISTERS).forEach(i -> buffer.put((byte) registers[i]));
     }
 
     @Override

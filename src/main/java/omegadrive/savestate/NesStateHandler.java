@@ -5,6 +5,7 @@ import com.grapeshot.halfnes.state.HalfnesSaveStateHandler;
 import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
 
+import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 
 /**
@@ -59,6 +60,11 @@ public class NesStateHandler implements BaseStateHandler {
     @Override
     public String getFileName() {
         return fileName;
+    }
+
+    @Override
+    public ByteBuffer getDataBuffer() {
+        return ByteBuffer.wrap(stateData);
     }
 
     @Override

@@ -23,6 +23,9 @@ import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.ByteBuffer;
+import java.util.stream.IntStream;
+
 public class MemoryProvider implements IMemoryProvider {
 
     private final static Logger LOG = LogManager.getLogger(MemoryProvider.class.getSimpleName());
@@ -120,5 +123,15 @@ public class MemoryProvider implements IMemoryProvider {
     @Override
     public int[] getRamData() {
         return ram;
+    }
+
+    @Override
+    public void saveContext(ByteBuffer buffer) {
+        IntStream.range(0, ram.length).forEach(i -> buffer.put((byte) (ram[i] & 0xFF)));
+    }
+
+    @Override
+    public void loadContext(ByteBuffer buffer) {
+        IntStream.range(0, ram.length).forEach(i -> ram[i] = buffer.get() & 0xFF);
     }
 }

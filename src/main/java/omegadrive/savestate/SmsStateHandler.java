@@ -26,6 +26,8 @@ import omegadrive.vdp.SmsVdp;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.z80.Z80Provider;
 
+import java.nio.ByteBuffer;
+
 public interface SmsStateHandler extends BaseStateHandler {
 
     SmsStateHandler EMPTY_STATE = new SmsStateHandler() {
@@ -70,8 +72,8 @@ public interface SmsStateHandler extends BaseStateHandler {
         }
 
         @Override
-        public byte[] getData() {
-            return new byte[0];
+        public ByteBuffer getDataBuffer() {
+            return null;
         }
     };
 

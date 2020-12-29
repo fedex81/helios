@@ -23,6 +23,7 @@ import omegadrive.Device;
 import omegadrive.util.Size;
 
 import java.util.Optional;
+import java.util.Set;
 
 public interface BaseBusProvider extends Device {
 
@@ -41,4 +42,6 @@ public interface BaseBusProvider extends Device {
     BaseBusProvider attachDevice(Device device);
 
     <T extends Device> Optional<T> getDeviceIfAny(Class<T> clazz);
+
+    <T extends Device> Set<T> getAllDevices(Class<T> clazz);
 }

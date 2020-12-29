@@ -1,5 +1,5 @@
 /*
- * IMemoryProvider
+ * Device
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 07/04/19 16:01
  *
@@ -17,13 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.memory;
+package omegadrive;
 
-import omegadrive.DeviceWithContext;
+import java.nio.ByteBuffer;
 
-public interface IMemoryProvider extends IMemoryRam, IMemoryRom, DeviceWithContext {
+public interface DeviceWithContext extends Device {
 
-    void setChecksumRomValue(long value);
+    void saveContext(ByteBuffer buffer);
 
-    void setRomData(int[] data);
+    void loadContext(ByteBuffer buffer);
 }

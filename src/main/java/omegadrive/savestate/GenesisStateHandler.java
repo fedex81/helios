@@ -32,6 +32,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.config.Configurator;
 
+import java.nio.ByteBuffer;
+
 public interface GenesisStateHandler extends BaseStateHandler {
 
     GenesisStateHandler EMPTY_STATE = new GenesisStateHandler() {
@@ -46,8 +48,8 @@ public interface GenesisStateHandler extends BaseStateHandler {
         }
 
         @Override
-        public byte[] getData() {
-            return new byte[0];
+        public ByteBuffer getDataBuffer() {
+            return null;
         }
 
         @Override

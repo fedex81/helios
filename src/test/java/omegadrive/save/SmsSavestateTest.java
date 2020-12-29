@@ -99,6 +99,7 @@ public class SmsSavestateTest {
         Z80Provider z80p2 = Z80CoreWrapper.createInstance(busProvider2);
 
         loadHandler2.processState(vdp2, z80p2, busProvider2, cpuMem2);
+        Assert.assertArrayEquals(saveData, loadHandler2.getData());
 
         compareVdp(vdp1, vdp2);
         compareZ80(z80p1, z80p2);

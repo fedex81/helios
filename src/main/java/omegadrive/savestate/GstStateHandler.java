@@ -83,8 +83,8 @@ public class GstStateHandler implements GenesisStateHandler {
     }
 
     @Override
-    public byte[] getData() {
-        return buffer.array();
+    public ByteBuffer getDataBuffer() {
+        return buffer;
     }
 
     @Override

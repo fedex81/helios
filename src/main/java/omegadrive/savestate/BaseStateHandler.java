@@ -19,15 +19,19 @@
 
 package omegadrive.savestate;
 
+import omegadrive.DeviceWithContext;
 import omegadrive.util.FileLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.ByteBuffer;
 import java.nio.file.Paths;
+import java.util.Set;
 
 public interface BaseStateHandler {
 
     Logger LOG = LogManager.getLogger(BaseStateHandler.class.getSimpleName());
+
     BaseStateHandler EMPTY_STATE = new BaseStateHandler() {
         @Override
         public Type getType() {
@@ -40,8 +44,16 @@ public interface BaseStateHandler {
         }
 
         @Override
-        public byte[] getData() {
-            return new byte[0];
+        public ByteBuffer getDataBuffer() {
+            return null;
+        }
+
+        @Override
+        public void setDevicesWithContext(Set<DeviceWithContext> devs) {
+        }
+
+        @Override
+        public void processState() {
         }
     };
 
@@ -49,7 +61,21 @@ public interface BaseStateHandler {
 
     String getFileName();
 
-    byte[] getData();
+    ByteBuffer getDataBuffer();
+
+    //TODO implement md, sms, etc
+    default void setDevicesWithContext(Set<DeviceWithContext> devs) {
+        //DO NOTHING
+    }
+
+    //TODO implement md, sms, etc
+    default void processState() {
+        //DO NOTHING
+    }
+
+    default byte[] getData() {
+        return getDataBuffer().array();
+    }
 
     default void storeData() {
         LOG.info("Persisting savestate to: {}", getFileName());

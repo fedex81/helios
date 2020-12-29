@@ -13,7 +13,9 @@ import omegadrive.vdp.model.BaseVdpAdapter;
 import omegadrive.vdp.model.BaseVdpProvider;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 
 import static omegadrive.input.InputProvider.PlayerNumber;
 import static omegadrive.input.KeyboardInputHelper.keyboardStringBindings;
@@ -58,6 +60,11 @@ public class NesHelper {
         @Override
         public <T extends Device> Optional<T> getDeviceIfAny(Class<T> clazz) {
             return Optional.empty();
+        }
+
+        @Override
+        public <T extends Device> Set<T> getAllDevices(Class<T> clazz) {
+            return Collections.emptySet();
         }
     };
     public static final BaseVdpProvider NO_OP_VDP_PROVIDER = new BaseVdpAdapter();

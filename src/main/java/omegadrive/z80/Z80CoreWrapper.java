@@ -23,12 +23,15 @@ import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProviderImpl;
+import omegadrive.savestate.StateUtil;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import z80core.Z80;
 import z80core.Z80State;
+
+import java.nio.ByteBuffer;
 
 public class Z80CoreWrapper implements Z80Provider {
 
@@ -156,6 +159,16 @@ public class Z80CoreWrapper implements Z80Provider {
     @Override
     public void addCyclePenalty(int value) {
         instCyclesPenalty += value;
+    }
+
+    @Override
+    public void loadContext(ByteBuffer buffer) {
+        z80Core.setZ80State(StateUtil.loadZ80State(buffer));
+    }
+
+    @Override
+    public void saveContext(ByteBuffer buffer) {
+        StateUtil.saveZ80State(buffer, z80Core.getZ80State());
     }
 
     @Override

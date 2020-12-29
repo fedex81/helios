@@ -2,6 +2,7 @@ package omegadrive.savestate;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Bytes;
+import omegadrive.DeviceWithContext;
 import omegadrive.SystemLoader;
 import omegadrive.util.Util;
 import omegadrive.z80.Z80Helper;
@@ -12,9 +13,7 @@ import z80core.Z80State;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiFunction;
 
 /**
@@ -180,5 +179,29 @@ public class StateUtil {
         byte[] ba2 = Arrays.copyOfRange(buf, startPos, buf.length);
         int endPos = Bytes.indexOf(ba2, pattern.getBytes()) + startPos;
         return endPos > startPos ? endPos : buf.length;
+    }
+
+    public static void processState(BaseStateHandler state, List<DeviceWithContext> list) {
+        if (state.getType() == BaseStateHandler.Type.LOAD) {
+            list.forEach(d -> d.loadContext(state.getDataBuffer()));
+        } else {
+            list.forEach(d -> d.saveContext(state.getDataBuffer()));
+        }
+    }
+
+    static List<DeviceWithContext> getDeviceOrderList(Set<Class<? extends DeviceWithContext>> deviceClassSet,
+                                                      Set<DeviceWithContext> devs) {
+        List<DeviceWithContext> sysList = new ArrayList<>(devs);
+        List<DeviceWithContext> ds = new ArrayList<>();
+        for (Iterator<Class<? extends DeviceWithContext>> i = deviceClassSet.iterator(); i.hasNext(); ) {
+            Class<? extends DeviceWithContext> c = i.next();
+            for (int j = 0; j < sysList.size(); j++) {
+                if (c.isAssignableFrom(sysList.get(j).getClass())) {
+                    ds.add(sysList.get(j));
+                    break;
+                }
+            }
+        }
+        return ds;
     }
 }

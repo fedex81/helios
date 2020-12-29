@@ -19,11 +19,11 @@
 
 package omegadrive.z80;
 
-import omegadrive.Device;
+import omegadrive.DeviceWithContext;
 import omegadrive.bus.BaseBusProvider;
 import z80core.Z80State;
 
-public interface Z80Provider extends Device {
+public interface Z80Provider extends DeviceWithContext {
 
     enum Interrupt {NMI, IM0, IM1, IM2}
 

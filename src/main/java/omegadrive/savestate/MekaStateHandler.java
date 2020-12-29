@@ -269,7 +269,7 @@ public class MekaStateHandler implements SmsStateHandler {
     }
 
     @Override
-    public byte[] getData() {
-        return buffer.array();
+    public ByteBuffer getDataBuffer() {
+        return buffer;
     }
 }

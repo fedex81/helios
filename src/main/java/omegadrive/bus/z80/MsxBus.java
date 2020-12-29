@@ -20,6 +20,7 @@
 package omegadrive.bus.z80;
 
 import omegadrive.Device;
+import omegadrive.DeviceWithContext;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.cart.CartridgeInfoProvider;
@@ -30,6 +31,7 @@ import omegadrive.input.InputProvider;
 import omegadrive.input.MsxKeyboardInput;
 import omegadrive.joypad.MsxPad;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.savestate.StateUtil;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -41,6 +43,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -54,7 +57,7 @@ import static omegadrive.input.InputProvider.PlayerNumber.P2;
  * http://msx.ebsoft.fr/roms/index.php?v=MSX1&Send=Send
  * http://fms.komkon.org/MSX/Docs/Portar.txt
  */
-public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80BusProvider {
+public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80BusProvider, DeviceWithContext {
 
     private static final Logger LOG = LogManager.getLogger(MsxBus.class);
 
@@ -272,10 +275,6 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         return res;
     }
 
-    public MsxBusContext getContext() {
-        return ctx;
-    }
-
     private void setupCartHw() {
         int len = memoryProvider.getRomSize();
         this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
@@ -293,8 +292,26 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
     public void reset() {
     }
 
-    public void setContext(MsxBusContext ctx) {
-        this.ctx = ctx;
+    @Override
+    public void saveContext(ByteBuffer buffer) {
+        buffer.put((byte) ctx.psgAddressLatch);
+        buffer.put((byte) ctx.slotSelect);
+        buffer.put((byte) ctx.ppiC_Keyboard);
+        StateUtil.setData(buffer, ctx.pageSlotMapper);
+        StateUtil.setData(buffer, ctx.pageStartAddress);
+    }
+
+    @Override
+    public void loadContext(ByteBuffer buffer) {
+        ctx.psgAddressLatch = buffer.get() & 0xFF;
+        ctx.slotSelect = buffer.get() & 0xFF;
+        ctx.ppiC_Keyboard = buffer.get() & 0xFF;
+        for (int i = 0; i < ctx.pageSlotMapper.length; i++) {
+            ctx.pageSlotMapper[i] = buffer.getInt();
+        }
+        for (int i = 0; i < ctx.pageStartAddress.length; i++) {
+            ctx.pageStartAddress[i] = buffer.getInt();
+        }
         setSlotSelect(ctx.slotSelect);
     }
 

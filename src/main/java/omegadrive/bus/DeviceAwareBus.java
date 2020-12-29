@@ -31,6 +31,7 @@ import omegadrive.z80.Z80Provider;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public abstract class DeviceAwareBus<V extends BaseVdpProvider, J extends JoypadProvider> implements BaseBusProvider, BaseVdpProvider.VdpEventListener {
 
@@ -54,6 +55,11 @@ public abstract class DeviceAwareBus<V extends BaseVdpProvider, J extends Joypad
     @Override
     public <T extends Device> Optional<T> getDeviceIfAny(Class<T> clazz) {
         return deviceSet.stream().filter(t -> clazz.isAssignableFrom(t.getClass())).findFirst().map(clazz::cast);
+    }
+
+    @Override
+    public <T extends Device> Set<T> getAllDevices(Class<T> clazz) {
+        return deviceSet.stream().filter(t -> clazz.isAssignableFrom(t.getClass())).map(clazz::cast).collect(Collectors.toSet());
     }
 
     private void loadMappings() {
