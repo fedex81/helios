@@ -20,7 +20,7 @@
 package omegadrive.savestate;
 
 import com.google.common.collect.ImmutableSet;
-import omegadrive.DeviceWithContext;
+import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.z80.MsxBus;
 import omegadrive.memory.IMemoryProvider;
@@ -44,7 +44,7 @@ public class Z80StateBaseHandler implements BaseStateHandler {
     private static final String MAGIC_WORD_STR = "HELIOS-Z80";
     private static final byte[] MAGIC_WORD = MAGIC_WORD_STR.getBytes();
     private static final int SYS_NAME_LEN = 16;
-    private static final Set<Class<? extends DeviceWithContext>> deviceClassSet = ImmutableSet.of(Z80Provider.class,
+    private static final Set<Class<? extends Device>> deviceClassSet = ImmutableSet.of(Z80Provider.class,
             Tms9918aVdp.class, IMemoryProvider.class, MsxBus.class);
     protected String fileExtension = "error";
     protected ByteBuffer buffer;
@@ -53,13 +53,18 @@ public class Z80StateBaseHandler implements BaseStateHandler {
     protected Type type;
     private Z80SavestateVersion pmVersion;
     protected int FIXED_SIZE_LIMIT = 0x5000;
-    private List<DeviceWithContext> deviceList = Collections.emptyList();
+    private List<Device> deviceList = Collections.emptyList();
 
     protected Z80StateBaseHandler() {
     }
 
     public static BaseStateHandler createInstance(String fileName, SystemLoader.SystemType systemType,
-                                                  BaseStateHandler.Type loadSaveType) {
+                                                  BaseStateHandler.Type loadSaveType, Set<Device> devices) {
+        return createInstance(fileName, systemType, loadSaveType, devices, null);
+    }
+
+    private static BaseStateHandler createInstance(String fileName, SystemLoader.SystemType systemType,
+                                                   BaseStateHandler.Type loadSaveType, Set<Device> devices, byte[] data) {
         Z80StateBaseHandler h;
         switch (systemType) {
             case SG_1000:
@@ -75,19 +80,26 @@ public class Z80StateBaseHandler implements BaseStateHandler {
                 return BaseStateHandler.EMPTY_STATE;
         }
         if (loadSaveType == Type.LOAD) {
-            boolean res = h.initLoadType(fileName, systemType);
+            boolean res = h.initLoadType(fileName, systemType, data);
             if (!res) {
                 return BaseStateHandler.EMPTY_STATE;
             }
         } else {
             h.initSaveType(fileName, systemType);
         }
+        h.setDevicesWithContext(devices);
         return h;
     }
 
-    protected void initCommon(String fileName, SystemLoader.SystemType systemType) {
+    public static BaseStateHandler createLoadInstance(String fileName, SystemLoader.SystemType systemType, byte[] data,
+                                                      Set<Device> devices) {
+        return createInstance(fileName, systemType, Type.LOAD, devices, data);
+    }
+
+    protected String initCommon(String fileName, SystemLoader.SystemType systemType) {
         fileExtension = StateUtil.fileExtensionMap.getOrDefault(systemType, "error");
         this.fileName = handleFileExtension(fileName);
+        return this.fileName;
     }
 
     protected void initSaveType(String fileName, SystemLoader.SystemType systemType) {
@@ -106,9 +118,10 @@ public class Z80StateBaseHandler implements BaseStateHandler {
         type = Type.SAVE;
     }
 
-    protected boolean initLoadType(String fileName, SystemLoader.SystemType systemType) {
-        initCommon(fileName, systemType);
-        buffer = ByteBuffer.wrap(FileLoader.readFileSafe(Paths.get(this.fileName)));
+    protected boolean initLoadType(String fileName, SystemLoader.SystemType systemType, byte[] data) {
+        fileName = initCommon(fileName, systemType);
+        data = data == null ? FileLoader.readFileSafe(Paths.get(fileName)) : data;
+        buffer = ByteBuffer.wrap(data);
         type = Type.LOAD;
         return detectStateFileType(systemType);
     }
@@ -168,12 +181,12 @@ public class Z80StateBaseHandler implements BaseStateHandler {
         StateUtil.processState(this, deviceList);
     }
 
-    @Override
-    public void setDevicesWithContext(Set<DeviceWithContext> devs) {
+    private void setDevicesWithContext(Set<Device> devs) {
         if (!deviceList.isEmpty()) {
             LOG.warn("Overwriting device list: {}", Arrays.toString(deviceList.toArray()));
         }
         deviceList = StateUtil.getDeviceOrderList(deviceClassSet, devs);
+
     }
 
     enum Z80SavestateVersion {

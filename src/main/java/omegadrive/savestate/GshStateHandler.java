@@ -21,6 +21,7 @@ package omegadrive.savestate;
 
 import com.google.common.io.Files;
 import com.google.common.primitives.Bytes;
+import omegadrive.Device;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.SvpMapper;
 import omegadrive.sound.fm.FmProvider;
@@ -38,6 +39,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 public class GshStateHandler extends GstStateHandler {
@@ -51,6 +53,14 @@ public class GshStateHandler extends GstStateHandler {
     protected static final String fileExtension = "gsh";
 
     private static final int SSF2_MAPPER_REG_OFFSET = 0x440;
+
+    public static BaseStateHandler createInstance(String fileName, Type type, Set<Device> deviceSet) {
+        GshStateHandler h = new GshStateHandler();
+        h.type = type;
+        h.init(fileName);
+        h.setDevicesWithContext(deviceSet);
+        return h;
+    }
 
     protected GshStateHandler() {
     }
@@ -71,15 +81,16 @@ public class GshStateHandler extends GstStateHandler {
         } else {
             String ext = Files.getFileExtension(fileNameEx);
             buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(fileName), ext));
+            detectStateFileType();
         }
     }
 
-    protected GenesisStateHandler detectStateFileType() {
+    protected BaseStateHandler detectStateFileType() {
         String fileType = Util.toStringValue(buffer.get(), buffer.get(), buffer.get());
         boolean isSupported = MAGIC_WORD.equalsIgnoreCase(fileType) || MAGIC_WORD_GST.equalsIgnoreCase(fileType);
         if (!isSupported || buffer.capacity() < FILE_SIZE) {
             LOG.error("Unable to load save state of type: {}, size: {}", fileType, buffer.capacity());
-            return GenesisStateHandler.EMPTY_STATE;
+            return BaseStateHandler.EMPTY_STATE;
         }
         version = buffer.get(0x50) & 0xFF;
         softwareId = buffer.get(0x51) & 0xFF;
@@ -104,7 +115,6 @@ public class GshStateHandler extends GstStateHandler {
         }
     }
 
-    @Override
     public void loadSvpState(Ssp16 ssp16) {
         byte[] ba = buffer.array();
         int svpStart = Bytes.indexOf(ba, SVP_MAGIC_WORD.getBytes());

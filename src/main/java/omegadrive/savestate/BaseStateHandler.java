@@ -19,12 +19,14 @@
 
 package omegadrive.savestate;
 
-import omegadrive.DeviceWithContext;
+import omegadrive.Device;
+import omegadrive.SystemLoader;
 import omegadrive.util.FileLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 
@@ -47,14 +49,6 @@ public interface BaseStateHandler {
         public ByteBuffer getDataBuffer() {
             return null;
         }
-
-        @Override
-        public void setDevicesWithContext(Set<DeviceWithContext> devs) {
-        }
-
-        @Override
-        public void processState() {
-        }
     };
 
     Type getType();
@@ -63,12 +57,37 @@ public interface BaseStateHandler {
 
     ByteBuffer getDataBuffer();
 
-    //TODO implement md, sms, etc
-    default void setDevicesWithContext(Set<DeviceWithContext> devs) {
-        //DO NOTHING
+    static BaseStateHandler createInstance(SystemLoader.SystemType systemType, Path filePath,
+                                           Type type, Set<Device> devices) {
+        return createInstance(systemType, filePath.toAbsolutePath().toString(), type, devices);
     }
 
-    //TODO implement md, sms, etc
+    static BaseStateHandler createInstance(SystemLoader.SystemType systemType, String fileName,
+                                           Type type, Set<Device> devices) {
+        BaseStateHandler h = BaseStateHandler.EMPTY_STATE;
+        switch (systemType) {
+            case GENESIS:
+                h = GshStateHandler.createInstance(fileName, type, devices);
+                break;
+            case SMS:
+            case GG:
+                h = MekaStateHandler.createInstance(systemType, fileName, type, devices);
+                break;
+            case MSX:
+            case COLECO:
+            case SG_1000:
+                h = Z80StateBaseHandler.createInstance(fileName, systemType, type, devices);
+                break;
+            case NES:
+                h = NesStateHandler.createInstance(fileName, type);
+                break;
+            default:
+                LOG.error("{} doesn't support savestates", systemType);
+                break;
+        }
+        return h;
+    }
+
     default void processState() {
         //DO NOTHING
     }

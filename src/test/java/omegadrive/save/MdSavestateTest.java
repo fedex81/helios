@@ -20,16 +20,20 @@
 package omegadrive.save;
 
 import m68k.cpu.MC68000;
+import omegadrive.Device;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.savestate.GenesisStateHandler;
+import omegadrive.savestate.BaseStateHandler;
+import omegadrive.savestate.BaseStateHandler.Type;
 import omegadrive.savestate.GstStateHandler;
+import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
+import omegadrive.sound.psg.PsgProvider;
 import omegadrive.vdp.gen.GenesisVdp;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
@@ -37,7 +41,6 @@ import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Test;
-import z80core.Z80State;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,10 +51,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class SavestateTest {
+import static omegadrive.SystemLoader.SystemType.GENESIS;
 
-    public static Path saveStateFolder = Paths.get(new File(".").getAbsolutePath(),
-            "src", "test", "resources", "savestate", "md");
+public class MdSavestateTest extends BaseSavestateTest {
+
+    public static Path saveStateFolder = Paths.get(baseSaveStateFolder.toAbsolutePath().toString(), "md");
 
     public static Set<Path> getSavestateList(Path saveStateFolder, String fileExt) throws IOException {
         System.out.println(new File(".").getAbsolutePath());
@@ -60,76 +64,39 @@ public class SavestateTest {
         return files;
     }
 
-    @Test
-    public void testLoadAndSave() throws IOException {
-        Set<Path> files = getSavestateList(saveStateFolder, ".gs");
-        Assert.assertFalse(files.isEmpty());
-        for (Path saveFile : files) {
-            System.out.println("Testing: " + saveFile.getFileName());
-            testLoadSaveInternal(saveFile);
-        }
+    public static GenesisBusProvider loadSaveState(Path saveFile) {
+        GenesisBusProvider busProvider = setupNewSystem();
+        BaseStateHandler loadHandler = BaseStateHandler.createInstance(
+                GENESIS, saveFile.toAbsolutePath().toString(), Type.LOAD, busProvider.getAllDevices(Device.class));
+        loadHandler.processState();
+        return busProvider;
     }
 
-    public static GenesisBusProvider loadSaveState(Path saveFile) {
+    public static GenesisBusProvider setupNewSystem() {
         GenesisBusProvider busProvider = GenesisBusProvider.createBus();
-        GenesisStateHandler loadHandler = GenesisStateHandler.createLoadInstance(saveFile.toAbsolutePath().toString());
+
         GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
         MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
         IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
         Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider);
         FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
-        loadHandler.loadVdpState(vdpProvider1);
-        loadHandler.load68k(cpu1, cpuMem1);
-        loadHandler.loadZ80(z80p1, busProvider);
-        loadHandler.loadFmState(fm1);
-
-        busProvider.attachDevice(vdpProvider1);
+        SoundProvider sp1 = getSoundProvider(fm1);
+        busProvider.attachDevice(vdpProvider1).attachDevice(cpu1).attachDevice(cpuMem1).attachDevice(z80p1).attachDevice(sp1);
         return busProvider;
     }
 
-    private GenesisStateHandler testLoadSaveInternal(Path saveFile) {
-        String filePath = saveFile.toAbsolutePath().toString();
-        GenesisBusProvider busProvider1 = GenesisBusProvider.createBus();
+    @Test
+    public void testLoadAndSave() throws IOException {
+        testLoadAndSave(saveStateFolder, ".gs");
+    }
 
-        GenesisStateHandler loadHandler = GenesisStateHandler.createLoadInstance(filePath);
-        GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider1);
-        MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider1);
-        IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
-        Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider1);
-        FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
-        byte[] data = loadHandler.getData();
-        loadHandler.loadVdpState(vdpProvider1);
-        loadHandler.load68k(cpu1, cpuMem1);
-        loadHandler.loadZ80(z80p1, busProvider1);
-        loadHandler.loadFmState(fm1);
-
-        String name = loadHandler.getFileName() + "_TEST_" + System.currentTimeMillis() + ".gs0";
-        GenesisStateHandler saveHandler = GenesisStateHandler.createSaveInstance(name);
-        saveHandler.saveVdp(vdpProvider1);
-        saveHandler.save68k(cpu1, cpuMem1);
-        saveHandler.saveZ80(z80p1, busProvider1);
-        saveHandler.saveFm(fm1);
-
-        GenesisBusProvider busProvider2 = GenesisBusProvider.createBus();
-        GenesisStateHandler loadHandler1 = GenesisStateHandler.createLoadInstance(filePath);
-        GenesisVdpProvider vdpProvider2 = GenesisVdp.createInstance(busProvider2);
-        MC68000Wrapper cpu2 = new MC68000Wrapper(busProvider2);
-        IMemoryProvider cpuMem2 = MemoryProvider.createGenesisInstance();
-        Z80Provider z80p2 = Z80CoreWrapper.createGenesisInstance(busProvider2);
-        FmProvider fm2 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
-        byte[] savedData = loadHandler.getData();
-        loadHandler1.loadVdpState(vdpProvider2);
-        loadHandler1.load68k(cpu2, cpuMem2);
-        loadHandler.loadZ80(z80p2, busProvider2);
-        loadHandler.loadFmState(fm2);
-
-        compareVdp(vdpProvider1, vdpProvider2);
-        compare68k(cpu1, cpu2, cpuMem1, cpuMem2);
-        compareZ80(z80p1, z80p2, busProvider1, busProvider2);
-        compareFm(fm1, fm2);
-
-        Assert.assertArrayEquals("Data mismatch", data, savedData);
-        return saveHandler;
+    private static SoundProvider getSoundProvider(FmProvider fm) {
+        return new SoundProviderAdapter() {
+            @Override
+            public FmProvider getFm() {
+                return fm;
+            }
+        };
     }
 
     private void compareFm(FmProvider fm1, FmProvider fm2) {
@@ -141,24 +108,7 @@ public class SavestateTest {
     }
 
     private void compareZ80(Z80Provider z80p1, Z80Provider z80p2, GenesisBusProvider bus1, GenesisBusProvider bus2) {
-        Z80State s1 = z80p1.getZ80State();
-        Z80State s2 = z80p2.getZ80State();
-        Assert.assertEquals("AF", s1.getRegAF(), s2.getRegAF());
-        Assert.assertEquals("BC", s1.getRegBC(), s2.getRegBC());
-        Assert.assertEquals("DE", s1.getRegDE(), s2.getRegDE());
-        Assert.assertEquals("HL", s1.getRegHL(), s2.getRegHL());
-        Assert.assertEquals("I", s1.getRegI(), s2.getRegI());
-        Assert.assertEquals("IX", s1.getRegIX(), s2.getRegIX());
-        Assert.assertEquals("IY", s1.getRegIY(), s2.getRegIY());
-        Assert.assertEquals("PC", s1.getRegPC(), s2.getRegPC());
-        Assert.assertEquals("SP", s1.getRegSP(), s2.getRegSP());
-        Assert.assertEquals("AFx", s1.getRegAFx(), s2.getRegAFx());
-        Assert.assertEquals("BCx", s1.getRegBCx(), s2.getRegBCx());
-        Assert.assertEquals("DEx", s1.getRegDEx(), s2.getRegDEx());
-        Assert.assertEquals("HLx", s1.getRegHLx(), s2.getRegHLx());
-        Assert.assertEquals("IFF1", s1.isIFF1(), s2.isIFF1());
-        Assert.assertEquals("IFF2", s1.isIFF2(), s2.isIFF2());
-        Assert.assertEquals("IM", s1.getIM(), s2.getIM());
+        compareZ80(z80p1, z80p2);
 
         IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> Assert.assertEquals("Z80Ram:" + i, z80p1.readMemory(i), z80p2.readMemory(i))
@@ -199,5 +149,75 @@ public class SavestateTest {
                 Assert.assertEquals("Vsram" + i, vm1.getVsram()[i], vm2.getVsram()[i]));
         IntStream.range(0, GenesisVdpProvider.VDP_CRAM_SIZE).forEach(i ->
                 Assert.assertEquals("Cram" + i, vm1.getCram()[i], vm2.getCram()[i]));
+    }
+
+    @Override
+    protected BaseStateHandler testLoadSaveInternal(Path saveFile) {
+        String filePath = saveFile.toAbsolutePath().toString();
+        GenesisBusProvider busProvider1 = setupNewSystem();
+
+        BaseStateHandler loadHandler = BaseStateHandler.createInstance(
+                GENESIS, filePath, Type.LOAD, busProvider1.getAllDevices(Device.class));
+        byte[] data = loadHandler.getData();
+
+        loadHandler.processState();
+
+        String name = loadHandler.getFileName() + "_TEST_" + System.currentTimeMillis() + ".gs0";
+
+        BaseStateHandler saveHandler = BaseStateHandler.createInstance(
+                GENESIS, name, Type.SAVE, busProvider1.getAllDevices(Device.class));
+
+        GenesisBusProvider busProvider2 = setupNewSystem();
+
+        BaseStateHandler loadHandler1 = BaseStateHandler.createInstance(
+                GENESIS, filePath, Type.LOAD, busProvider2.getAllDevices(Device.class));
+        byte[] savedData = loadHandler1.getData();
+        loadHandler1.processState();
+
+        compareDevices(busProvider1, busProvider2);
+
+        Assert.assertArrayEquals("Data mismatch", data, savedData);
+        return saveHandler;
+    }
+
+    private void compareDevices(GenesisBusProvider b1, GenesisBusProvider b2) {
+        compareVdp(getDevice(b1, GenesisVdpProvider.class), getDevice(b2, GenesisVdpProvider.class));
+        compare68k(getDevice(b1, MC68000Wrapper.class), getDevice(b2, MC68000Wrapper.class),
+                getDevice(b1, IMemoryProvider.class), getDevice(b2, IMemoryProvider.class));
+        compareZ80(getDevice(b1, Z80Provider.class), getDevice(b2, Z80Provider.class), b1, b2);
+        compareFm(getDevice(b1, SoundProvider.class).getFm(), getDevice(b1, SoundProvider.class).getFm());
+    }
+
+    static class SoundProviderAdapter implements SoundProvider {
+
+        @Override
+        public PsgProvider getPsg() {
+            return null;
+        }
+
+        @Override
+        public FmProvider getFm() {
+            return null;
+        }
+
+        @Override
+        public void close() {
+
+        }
+
+        @Override
+        public boolean isMute() {
+            return false;
+        }
+
+        @Override
+        public void setEnabled(boolean mute) {
+
+        }
+
+        @Override
+        public void setEnabled(Device device, boolean enabled) {
+
+        }
     }
 }

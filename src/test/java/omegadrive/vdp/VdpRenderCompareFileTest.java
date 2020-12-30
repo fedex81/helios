@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-@Ignore
 public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
 
     static List<String> ignoredTests = ImmutableList.<String>of(

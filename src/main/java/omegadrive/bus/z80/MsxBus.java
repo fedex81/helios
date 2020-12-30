@@ -20,7 +20,6 @@
 package omegadrive.bus.z80;
 
 import omegadrive.Device;
-import omegadrive.DeviceWithContext;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.cart.CartridgeInfoProvider;
@@ -57,7 +56,7 @@ import static omegadrive.input.InputProvider.PlayerNumber.P2;
  * http://msx.ebsoft.fr/roms/index.php?v=MSX1&Send=Send
  * http://fms.komkon.org/MSX/Docs/Portar.txt
  */
-public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80BusProvider, DeviceWithContext {
+public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80BusProvider, Device {
 
     private static final Logger LOG = LogManager.getLogger(MsxBus.class);
 
@@ -81,6 +80,10 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
 
     private RomMapper mapper;
     private CartridgeInfoProvider cartridgeInfoProvider;
+
+    public MsxBusContext getCtx() {
+        return ctx;
+    }
 
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
@@ -322,6 +325,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         public int[] pageStartAddress = {0, 0, 0, 0};
         public int[] pageSlotMapper = {0, 0, 0, 0};
     }
+
 
     @Override
     public void onNewFrame() {

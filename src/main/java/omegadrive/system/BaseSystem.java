@@ -49,7 +49,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
-public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseStateHandler> implements SystemProvider {
+public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemProvider {
 
     private final static Logger LOG = LogManager.getLogger(BaseSystem.class.getSimpleName());
 
@@ -74,7 +74,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     protected volatile boolean saveStateFlag = false;
-    protected volatile STH stateHandler;
+    protected volatile BaseStateHandler stateHandler;
 
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
@@ -100,8 +100,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
 
     protected abstract void initAfterRomLoad();
 
-    protected abstract void processSaveState();
-
     protected abstract void resetCycleCounters(int counter);
 
     protected abstract void updateVideoMode(boolean force);
@@ -111,8 +109,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
     protected BaseSystem(DisplayWindow emuFrame) {
         this.emuFrame = emuFrame;
     }
-
-    protected abstract STH createStateHandler(Path file, BaseStateHandler.Type type);
 
     @Override
     public void handleSystemEvent(SystemEvent event, Object parameter) {
@@ -198,6 +194,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         }
     }
 
+    protected BaseStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
+        return BaseStateHandler.createInstance(getSystemType(), file, type, bus.getAllDevices(Device.class));
+    }
+
     private void handleLoadState(Path file) {
         stateHandler = createStateHandler(file, BaseStateHandler.Type.LOAD);
         LOG.info("Savestate action detected: {} , using file: {}",
@@ -210,6 +210,19 @@ public abstract class BaseSystem<BUS extends BaseBusProvider, STH extends BaseSt
         LOG.info("Savestate action detected: {} , using file: {}",
                 stateHandler.getType(), stateHandler.getFileName());
         this.saveStateFlag = true;
+    }
+
+    protected void processSaveState() {
+        if (saveStateFlag) {
+            stateHandler.processState();
+            if (stateHandler.getType() == BaseStateHandler.Type.SAVE) {
+                stateHandler.storeData();
+            } else {
+                sound.getPsg().reset();
+            }
+            stateHandler = BaseStateHandler.EMPTY_STATE;
+            saveStateFlag = false;
+        }
     }
 
     protected void handleCloseRom() {

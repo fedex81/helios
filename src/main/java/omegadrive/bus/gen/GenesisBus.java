@@ -121,7 +121,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     public GenesisBusProvider attachDevice(Device device) {
         if (device instanceof BusArbiter) {
             this.busArbiter = (BusArbiter) device;
-            getDeviceIfAny(Z80Provider.class).ifPresent(zp -> zp.getZ80BusProvider().attachDevice(device));
+            getBusDeviceIfAny(Z80Provider.class).ifPresent(zp -> zp.getZ80BusProvider().attachDevice(device));
         }
         super.attachDevice(device);
         return this;

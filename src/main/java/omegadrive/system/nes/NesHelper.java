@@ -58,7 +58,7 @@ public class NesHelper {
         }
 
         @Override
-        public <T extends Device> Optional<T> getDeviceIfAny(Class<T> clazz) {
+        public <T extends Device> Optional<T> getBusDeviceIfAny(Class<T> clazz) {
             return Optional.empty();
         }
 

@@ -3,7 +3,6 @@ package omegadrive.savestate;
 import com.grapeshot.halfnes.NES;
 import com.grapeshot.halfnes.state.HalfnesSaveStateHandler;
 import omegadrive.util.FileLoader;
-import omegadrive.util.Util;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
@@ -18,14 +17,17 @@ import java.nio.file.Paths;
 public class NesStateHandler implements BaseStateHandler {
 
     private final static String fileExtension = "n00";
-    public static NesStateHandler EMPTY_STATE = new NesStateHandler() {
-    };
     private HalfnesSaveStateHandler handler = new HalfnesSaveStateHandler();
     private byte[] stateData;
     private String fileName;
     private Type type;
+    private NES nes;
 
-    public static NesStateHandler createLoadInstance(String fileName) {
+    public static NesStateHandler createInstance(String fileName, Type type) {
+        return type == Type.LOAD ? createLoadInstance(fileName) : createSaveInstance(fileName);
+    }
+
+    private static NesStateHandler createLoadInstance(String fileName) {
         NesStateHandler n = new NesStateHandler();
         n.fileName = handleFileExtension(fileName);
         n.type = Type.LOAD;
@@ -33,19 +35,15 @@ public class NesStateHandler implements BaseStateHandler {
         return n;
     }
 
-    public static NesStateHandler createLoadInstance(String fileName, int[] data) {
-        NesStateHandler n = new NesStateHandler();
-        n.fileName = handleFileExtension(fileName);
-        n.type = Type.LOAD;
-        n.stateData = Util.unsignedToByteArray(data);
-        return n;
-    }
-
-    public static NesStateHandler createSaveInstance(String fileName) {
+    private static NesStateHandler createSaveInstance(String fileName) {
         NesStateHandler n = new NesStateHandler();
         n.fileName = handleFileExtension(fileName);
         n.type = Type.SAVE;
         return n;
+    }
+
+    public void setNes(NES nes) {
+        this.nes = nes;
     }
 
     private static String handleFileExtension(String fileName) {
@@ -72,7 +70,8 @@ public class NesStateHandler implements BaseStateHandler {
         return stateData;
     }
 
-    public void processState(NES nes) {
+    @Override
+    public void processState() {
         switch (type) {
             case LOAD:
                 handler.setSaveStateData(nes, stateData);

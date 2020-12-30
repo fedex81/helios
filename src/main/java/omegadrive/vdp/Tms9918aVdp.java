@@ -19,7 +19,7 @@
 
 package omegadrive.vdp;
 
-import omegadrive.DeviceWithContext;
+import omegadrive.Device;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
@@ -46,7 +46,7 @@ import static omegadrive.vdp.model.Tms9918a.TmsRegisterName.*;
  *
  * @author Tjitze Rienstra
  */
-public class Tms9918aVdp implements Tms9918a, DeviceWithContext {
+public class Tms9918aVdp implements Tms9918a, Device {
 
     private static final Logger LOG = LogManager.getLogger(Tms9918aVdp.class.getSimpleName());
 

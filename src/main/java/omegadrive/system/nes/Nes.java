@@ -40,7 +40,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 
-public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
+public class Nes extends BaseSystem<BaseBusProvider> {
 
     private static final Logger LOG = LogManager.getLogger(Nes.class.getSimpleName());
 
@@ -78,16 +78,15 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
     }
 
     @Override
-    protected NesStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
-        String fileName = file.toAbsolutePath().toString();
-        return type == BaseStateHandler.Type.LOAD ?
-                NesStateHandler.createLoadInstance(fileName) :
-                NesStateHandler.createSaveInstance(fileName);
+    protected BaseStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
+        NesStateHandler n = (NesStateHandler) super.createStateHandler(file, type);
+        n.setNes(gui.getNes());
+        return n;
     }
 
     @Override
     public void init() {
-        stateHandler = NesStateHandler.EMPTY_STATE;
+        stateHandler = BaseStateHandler.EMPTY_STATE;
         bus = NesHelper.NO_OP_BUS;
         vdp = NesHelper.NO_OP_VDP_PROVIDER;
         memory = MemoryProvider.NO_MEMORY;
@@ -120,20 +119,6 @@ public class Nes extends BaseSystem<BaseBusProvider, NesStateHandler> {
     protected void initAfterRomLoad() {
         sound = AbstractSoundManager.createSoundProvider(systemType, region);
         resetAfterRomLoad();
-    }
-
-    @Override
-    protected void processSaveState() {
-        if (saveStateFlag) {
-            stateHandler.processState(gui.getNes());
-            if (stateHandler.getType() == BaseStateHandler.Type.SAVE) {
-                stateHandler.storeData();
-            } else {
-                sound.getPsg().reset();
-            }
-            stateHandler = NesStateHandler.EMPTY_STATE;
-            saveStateFlag = false;
-        }
     }
 
     @Override

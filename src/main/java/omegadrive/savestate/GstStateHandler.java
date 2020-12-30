@@ -19,30 +19,40 @@
 
 package omegadrive.savestate;
 
+import com.google.common.collect.ImmutableSet;
 import m68k.cpu.MC68000;
+import omegadrive.Device;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
 import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.MdFmProvider;
+import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.z80.Z80Provider;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import z80core.Z80;
 import z80core.Z80State;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static omegadrive.savestate.StateUtil.*;
 
-public class GstStateHandler implements GenesisStateHandler {
+public class GstStateHandler implements BaseStateHandler {
 
     private static final Logger LOG = LogManager.getLogger(GstStateHandler.class.getSimpleName());
 
@@ -58,12 +68,17 @@ public class GstStateHandler implements GenesisStateHandler {
     private static int M68K_REGA_OFFSET = 0xA0;
     public static int FILE_SIZE = 0x22478;
 
+    private static final Set<Class<? extends Device>> deviceClassSet = ImmutableSet.of(Z80Provider.class,
+            GenesisVdpProvider.class, IMemoryProvider.class, GenesisBusProvider.class, SoundProvider.class, MC68000Wrapper.class);
+
     protected ByteBuffer buffer;
     protected int version;
     protected int softwareId;
     protected String fileName;
     protected Type type;
     protected boolean runAhead;
+
+    private List<Device> deviceList = Collections.emptyList();
 
     protected GstStateHandler() {
     }
@@ -88,6 +103,42 @@ public class GstStateHandler implements GenesisStateHandler {
     }
 
     @Override
+    public void processState() {
+        Level prev = LogManager.getRootLogger().getLevel();
+        GenesisBusProvider bus = Util.getDeviceIfAny(deviceList, GenesisBusProvider.class).orElse(null); //TODO
+        BaseVdpProvider vdp = Util.getDeviceIfAny(deviceList, BaseVdpProvider.class).orElse(null);
+        Z80Provider z80 = Util.getDeviceIfAny(deviceList, Z80Provider.class).orElse(null);
+        IMemoryProvider mem = Util.getDeviceIfAny(deviceList, IMemoryProvider.class).orElse(null);
+        MC68000Wrapper cpu = Util.getDeviceIfAny(deviceList, MC68000Wrapper.class).orElse(null);
+        SoundProvider sound = Util.getDeviceIfAny(deviceList, SoundProvider.class).orElse(null);
+        try {
+            Configurator.setRootLevel(Level.ERROR);
+            if (getType() == Type.LOAD) {
+                loadFmState(sound.getFm());
+                loadVdpState(vdp);
+                loadZ80(z80, bus);
+                load68k(cpu, mem);
+            } else {
+                saveFm(sound.getFm());
+                saveZ80(z80, bus);
+                save68k(cpu, mem);
+                saveVdp(vdp);
+            }
+        } finally {
+            Configurator.setRootLevel(prev);
+        }
+        if (getType() == Type.LOAD) {
+            LOG.info("Savestate loaded from: {}", getFileName());
+        }
+    }
+
+    protected void setDevicesWithContext(Set<Device> devs) {
+        if (!deviceList.isEmpty()) {
+            LOG.warn("Overwriting device list: {}", Arrays.toString(deviceList.toArray()));
+        }
+        deviceList = StateUtil.getDeviceOrderList(deviceClassSet, devs);
+    }
+
     public void loadFmState(FmProvider fm) {
         int reg;
         int limit = FM_DATA_SIZE / 2;
@@ -106,15 +157,14 @@ public class GstStateHandler implements GenesisStateHandler {
         }
     }
 
-    @Override
-    public void loadVdpState(BaseVdpProvider vdp) {
+    protected void loadVdpState(BaseVdpProvider vdp) {
         IntStream.range(0, GenesisVdpProvider.VDP_REGISTERS_SIZE).forEach(
                 i -> vdp.updateRegisterData(i, buffer.get(i + VDP_REG_OFFSET) & 0xFF));
         loadVdpMemory((VdpMemoryInterface) vdp.getVdpMemory());
         vdp.reload();
     }
 
-    private void loadVdpMemory(VdpMemoryInterface vdpMemoryInterface) {
+    protected void loadVdpMemory(VdpMemoryInterface vdpMemoryInterface) {
         for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i += 2) {
             vdpMemoryInterface.writeVramByte(i, buffer.get(i + VRAM_DATA_OFFSET) & 0xFF);
             vdpMemoryInterface.writeVramByte(i + 1, buffer.get(i + VRAM_DATA_OFFSET + 1) & 0xFF);
@@ -133,8 +183,7 @@ public class GstStateHandler implements GenesisStateHandler {
         }
     }
 
-    @Override
-    public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
+    protected void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
         int z80BankInt = getInt4Fn.apply(buffer, 0x43C);
         GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
 
@@ -159,8 +208,7 @@ public class GstStateHandler implements GenesisStateHandler {
 
 
     //TODO should use M68kProvider
-    @Override
-    public void load68k(MC68000Wrapper m68kProvider, IMemoryProvider memoryProvider) {
+    protected void load68k(MC68000Wrapper m68kProvider, IMemoryProvider memoryProvider) {
         for (int i = 0; i < MemoryProvider.M68K_RAM_SIZE; i += 2) {
             memoryProvider.writeRamByte(i, buffer.get(i + M68K_RAM_DATA_OFFSET) & 0xFF);
             memoryProvider.writeRamByte(i + 1, buffer.get(i + M68K_RAM_DATA_OFFSET + 1) & 0xFF);
@@ -186,8 +234,7 @@ public class GstStateHandler implements GenesisStateHandler {
         }
     }
 
-    @Override
-    public void saveFm(FmProvider fm) {
+    protected void saveFm(FmProvider fm) {
         int limit = FM_DATA_SIZE / 2;
         for (int i = 0; i < limit; i++) {
             buffer.put(FM_REG_OFFSET + i, (byte) fm.readRegister(0, i));
@@ -195,8 +242,7 @@ public class GstStateHandler implements GenesisStateHandler {
         }
     }
 
-    @Override
-    public void saveVdp(BaseVdpProvider vdp) {
+    protected void saveVdp(BaseVdpProvider vdp) {
         VdpMemory vdpMemoryInterface = vdp.getVdpMemory();
         int[] vram = vdpMemoryInterface.getVram();
         for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i += 2) {
@@ -219,8 +265,7 @@ public class GstStateHandler implements GenesisStateHandler {
         IntStream.range(0, 24).forEach(i -> buffer.put(i + VDP_REG_OFFSET, (byte) vdp.getRegisterData(i)));
     }
 
-    @Override
-    public void saveZ80(Z80Provider z80, GenesisBusProvider bus) {
+    protected void saveZ80(Z80Provider z80, GenesisBusProvider bus) {
         IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> buffer.put(Z80_RAM_DATA_OFFSET + i, (byte) z80.readMemory(i)));
         buffer.put(0x438, (byte) (bus.isZ80ResetState() ? 1 : 0));
@@ -233,8 +278,7 @@ public class GstStateHandler implements GenesisStateHandler {
         saveZ80StateGst(buffer, z80.getZ80State());
     }
 
-    @Override
-    public void save68k(MC68000Wrapper mc68000Wrapper, IMemoryProvider memoryProvider) {
+    protected void save68k(MC68000Wrapper mc68000Wrapper, IMemoryProvider memoryProvider) {
         for (int i = 0; i < MemoryProvider.M68K_RAM_SIZE; i += 2) {
             buffer.put(i + M68K_RAM_DATA_OFFSET, (byte) memoryProvider.readRamByte(i));
             buffer.put(i + 1 + M68K_RAM_DATA_OFFSET, (byte) memoryProvider.readRamByte(i + 1));

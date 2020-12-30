@@ -19,9 +19,7 @@
 
 package omegadrive.memory;
 
-import omegadrive.DeviceWithContext;
-
-public interface IMemoryProvider extends IMemoryRam, IMemoryRom, DeviceWithContext {
+public interface IMemoryProvider extends IMemoryRam, IMemoryRom {
 
     void setChecksumRomValue(long value);
 

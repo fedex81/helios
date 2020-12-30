@@ -74,8 +74,9 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     }
 
     @Test
+    @Ignore
     public void testCompareAll() {
-        SHOW_IMAGES_ON_FAILURE = true;
+//        SHOW_IMAGES_ON_FAILURE = true;
         File[] files = Paths.get(saveStateFolder).toFile().listFiles();
         StringBuilder sb = new StringBuilder();
         for (File file : files) {
@@ -100,6 +101,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     }
 
     @Test
+    @Ignore
     public void testCompare() {
         boolean overwrite = false;
         String name = "slap_01".trim();

@@ -43,7 +43,7 @@ public class Z80MemIoOps implements IMemIoOps {
 
     private static Z80MemIoOps createGenesisInstanceInternal(Z80MemIoOps m, BaseBusProvider z80BusProvider) {
         m.z80BusProvider = z80BusProvider;
-        IMemoryRam mem = z80BusProvider.getDeviceIfAny(IMemoryRam.class).
+        IMemoryRam mem = z80BusProvider.getBusDeviceIfAny(IMemoryRam.class).
                 orElseThrow(() -> new RuntimeException("Invalid setup"));
         m.ram = mem.getRamData();
         m.ramSizeMask = m.ram.length - 1;

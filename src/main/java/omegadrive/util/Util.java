@@ -23,6 +23,7 @@ import com.google.common.base.Strings;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import omegadrive.Device;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.IMemoryRom;
 import org.apache.logging.log4j.LogManager;
@@ -31,10 +32,14 @@ import org.apache.logging.log4j.Logger;
 import java.io.*;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.LockSupport;
+import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
 public class Util {
@@ -364,5 +369,13 @@ public class Util {
             LOG.error("Unable to deserialize object of len: {}, {}", data.length, e.getMessage());
         }
         return res;
+    }
+
+    public static <T, V extends Device> Optional<V> getDeviceIfAny(Collection<T> deviceSet, Class<V> clazz) {
+        return deviceSet.stream().filter(t -> clazz.isAssignableFrom(t.getClass())).findFirst().map(clazz::cast);
+    }
+
+    public static <T, V extends Device> Set<V> getAllDevices(Collection<T> deviceSet, Class<V> clazz) {
+        return deviceSet.stream().filter(t -> clazz.isAssignableFrom(t.getClass())).map(clazz::cast).collect(Collectors.toSet());
     }
 }

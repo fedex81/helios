@@ -28,10 +28,13 @@ import omegadrive.cart.mapper.sms.SmsMapper;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
+import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.nio.ByteBuffer;
 
 import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.ADDR_LATCH_REG;
 import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.DATA_REG;
@@ -379,4 +382,18 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
         return smsMapper.getFrameReg();
     }
 
+    @Override
+    public void saveContext(ByteBuffer buffer) {
+//        LOG.info("mapperControl: {}, frameReg: {}", control, Arrays.toString(frameReg));
+        buffer.put((byte) (smsMapper.getMapperControl() & 0xFF));
+        buffer.put(Util.unsignedToByteArray(smsMapper.getFrameReg()));
+    }
+
+    @Override
+    public void loadContext(ByteBuffer buffer) {
+        write(0xFFFC, buffer.get(), Size.BYTE);
+        write(0xFFFD, buffer.get(), Size.BYTE);
+        write(0xFFFE, buffer.get(), Size.BYTE);
+        write(0xFFFF, buffer.get(), Size.BYTE);
+    }
 }

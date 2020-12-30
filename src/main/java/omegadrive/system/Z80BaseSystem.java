@@ -19,7 +19,6 @@
 
 package omegadrive.system;
 
-import omegadrive.DeviceWithContext;
 import omegadrive.SystemLoader;
 import omegadrive.bus.z80.ColecoBus;
 import omegadrive.bus.z80.MsxBus;
@@ -32,7 +31,6 @@ import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.savestate.Z80StateBaseHandler;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
@@ -44,9 +42,7 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.nio.file.Path;
-
-public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> {
+public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     private static final Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
 
@@ -107,14 +103,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
         createAndAddVdpEventListener();
     }
 
-    @Override
-    protected BaseStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
-        String fileName = file.toAbsolutePath().toString();
-        BaseStateHandler h = Z80StateBaseHandler.createInstance(fileName, systemType, type);
-        h.setDevicesWithContext(bus.getAllDevices(DeviceWithContext.class));
-        return h;
-    }
-
     private int nextZ80Cycle = Z80_DIVIDER;
     private int nextVdpCycle = VDP_DIVIDER;
 
@@ -149,20 +137,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider, BaseStateHandler> 
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
         z80.reset();
-    }
-
-    @Override
-    protected void processSaveState() {
-        if (saveStateFlag) {
-            stateHandler.processState();
-            if (stateHandler.getType() == BaseStateHandler.Type.SAVE) {
-                stateHandler.storeData();
-            } else {
-                sound.getPsg().reset();
-            }
-            stateHandler = BaseStateHandler.EMPTY_STATE;
-            saveStateFlag = false;
-        }
     }
 
     @Override

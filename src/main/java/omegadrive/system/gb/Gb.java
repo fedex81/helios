@@ -11,7 +11,6 @@ import omegadrive.joypad.GbPad;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
@@ -24,7 +23,6 @@ import omegadrive.vdp.model.BaseVdpAdapter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -36,7 +34,7 @@ import java.util.Properties;
  * <p>
  * Copyright 2020
  */
-public class Gb extends BaseSystem<BaseBusProvider, BaseStateHandler> {
+public class Gb extends BaseSystem<BaseBusProvider> {
 
     private static final Logger LOG = LogManager.getLogger(Gb.class.getSimpleName());
 
@@ -130,11 +128,6 @@ public class Gb extends BaseSystem<BaseBusProvider, BaseStateHandler> {
     @Override
     protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOverride) {
         return RegionDetector.Region.USA;
-    }
-
-    @Override
-    protected BaseStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
-        return BaseStateHandler.EMPTY_STATE;
     }
 
     public void newFrameGb() {

@@ -23,7 +23,7 @@ import omegadrive.automated.SavestateGameLoader;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.input.GamepadTest;
 import omegadrive.input.InputProvider;
-import omegadrive.save.SavestateTest;
+import omegadrive.save.MdSavestateTest;
 import omegadrive.system.Genesis;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
@@ -48,7 +48,7 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
 
     private static int[] screenData;
     private VdpRenderDump renderDump = new VdpRenderDump();
-    protected static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
+    protected static String saveStateFolder = MdSavestateTest.saveStateFolder.toAbsolutePath().toString();
     private JLabel label;
     private JFrame f;
     int count = 0;
@@ -179,7 +179,7 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
 
     private GenesisVdpProvider prepareVdp(Path saveFile) {
         SystemProvider genesisProvider = createTestProvider();
-        GenesisBusProvider busProvider = SavestateTest.loadSaveState(saveFile);
+        GenesisBusProvider busProvider = MdSavestateTest.loadSaveState(saveFile);
         busProvider.attachDevice(genesisProvider).attachDevice(GamepadTest.createTestJoypadProvider());
         vdpProvider = busProvider.getVdp();
         vdpProvider.addVdpEventListener(this);

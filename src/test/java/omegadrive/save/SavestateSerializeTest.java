@@ -4,7 +4,9 @@ import omegadrive.bus.gen.SvpMapper;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.savestate.GenesisStateHandler;
+import omegadrive.savestate.BaseStateHandler;
+import omegadrive.savestate.GshStateHandler;
+import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.ssp16.Ssp16;
@@ -15,6 +17,9 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
+
+import static omegadrive.SystemLoader.SystemType.GENESIS;
 
 /**
  * Ym2612NukeSerializeTest
@@ -38,7 +43,9 @@ public class SavestateSerializeTest {
     @Test
     public void testSerialFormatUnchangedNuke() {
         Path p = Paths.get(fileFolder, nukeSavestateName);
-        GenesisStateHandler stateHandler = GenesisStateHandler.createLoadInstance(p.toAbsolutePath().toString());
+//        GstStateHandler stateHandler = (GstStateHandler) GshStateHandler.createLoadInstance(p.toAbsolutePath().toString());
+        GstStateHandler stateHandler = (GstStateHandler) BaseStateHandler.createInstance(
+                GENESIS, p.toAbsolutePath().toString(), BaseStateHandler.Type.LOAD, Collections.emptySet());
         Ym2612Nuke nuke = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
         int hashCode = nuke.getState().hashCode();
         stateHandler.loadFmState(nuke);
@@ -57,7 +64,9 @@ public class SavestateSerializeTest {
     @Test
     public void testSerialFormatUnchangedSvp() {
         Path p = Paths.get(fileFolder, svpSavestateName);
-        GenesisStateHandler stateHandler = GenesisStateHandler.createLoadInstance(p.toAbsolutePath().toString());
+//        GshStateHandler stateHandler = (GshStateHandler) GshStateHandler.createLoadInstance(p.toAbsolutePath().toString());
+        GshStateHandler stateHandler = (GshStateHandler) BaseStateHandler.createInstance(
+                GENESIS, p.toAbsolutePath().toString(), BaseStateHandler.Type.LOAD, Collections.emptySet());
         SvpMapper svpMapper = SvpMapper.createInstance(RomMapper.NO_OP_MAPPER, NO_MEMORY);
         Ssp16 ssp16 = SvpMapper.ssp16;
         int hc1 = Arrays.hashCode(ssp16.getSvpContext().iram_rom) + Arrays.hashCode(ssp16.getSvpContext().dram);

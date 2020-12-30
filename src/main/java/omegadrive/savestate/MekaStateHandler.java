@@ -19,30 +19,30 @@
 
 package omegadrive.savestate;
 
+import com.google.common.collect.ImmutableSet;
+import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.z80.SmsBus;
-import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
 import omegadrive.util.FileLoader;
-import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
-import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import z80core.Z80State;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static omegadrive.savestate.StateUtil.*;
+import static omegadrive.savestate.StateUtil.skip;
 
-public class MekaStateHandler implements SmsStateHandler {
+public class MekaStateHandler implements BaseStateHandler {
 
     private static final String MAGIC_WORD_STR = "MEKA";
     private static final byte[] MAGIC_WORD = MAGIC_WORD_STR.getBytes();
@@ -54,6 +54,9 @@ public class MekaStateHandler implements SmsStateHandler {
             Integer.toHexString(v);
     private final static String fileExtension = "s00";
     private static final Logger LOG = LogManager.getLogger(MekaStateHandler.class.getSimpleName());
+    private static final Set<Class<? extends Device>> deviceClassSet = ImmutableSet.of(Z80Provider.class,
+            SmsVdp.class, IMemoryProvider.class, SmsBus.class);
+
     int[] vdpState = new int[3];
     private ByteBuffer buffer;
     private int version;
@@ -62,28 +65,44 @@ public class MekaStateHandler implements SmsStateHandler {
     private Type type;
     private SystemLoader.SystemType systemType;
     private MekaSavestateVersion mekaVersion;
+    private List<Device> deviceList = Collections.emptyList();
 
     private MekaStateHandler() {
     }
 
-    public static SmsStateHandler createLoadInstance(String fileName) {
+    public static BaseStateHandler createInstance(SystemLoader.SystemType systemType,
+                                                  String fileName, Type type, Set<Device> deviceSet) {
+        BaseStateHandler h = type == Type.LOAD ? createLoadInstance(fileName, deviceSet) :
+                createSaveInstance(fileName, systemType, deviceSet);
+        return h;
+    }
+
+    private static BaseStateHandler createLoadInstance(String fileName, Set<Device> deviceSet) {
         MekaStateHandler h = new MekaStateHandler();
         h.fileName = handleFileExtension(fileName);
         h.buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(h.fileName)));
         h.type = Type.LOAD;
+        h.setDevicesWithContext(deviceSet);
         return h.detectStateFileType();
     }
 
-    public static SmsStateHandler createLoadInstance(String fileName, byte[] data) {
+    private static MekaStateHandler createSaveInstance(String fileName, SystemLoader.SystemType systemType, Set<Device> deviceSet) {
+        MekaStateHandler h = createSaveInstance(fileName, systemType, "0"); //TODO crc32
+        h.setDevicesWithContext(deviceSet);
+        return h;
+    }
+
+    public static BaseStateHandler createLoadInstance(String fileName, byte[] data, Set<Device> deviceSet) {
         MekaStateHandler h = new MekaStateHandler();
         h.fileName = handleFileExtension(fileName);
         h.buffer = ByteBuffer.wrap(data);
         h.type = Type.LOAD;
+        h.setDevicesWithContext(deviceSet);
         return h.detectStateFileType();
     }
 
-    public static SmsStateHandler createSaveInstance(String fileName, SystemLoader.SystemType systemType,
-                                                     String romCrc32) {
+    private static MekaStateHandler createSaveInstance(String fileName, SystemLoader.SystemType systemType,
+                                                       String romCrc32) {
         MekaStateHandler h = new MekaStateHandler();
         int machineDriverId = systemType == SystemLoader.SystemType.SMS ? 0 :
                 (systemType == SystemLoader.SystemType.GG ? 1 : -1);
@@ -116,9 +135,7 @@ public class MekaStateHandler implements SmsStateHandler {
         return h;
     }
 
-    public static SmsStateHandler createSaveInstance(String fileName, SystemLoader.SystemType systemType) {
-        return createSaveInstance(fileName, systemType, "0"); //TODO crc32
-    }
+
 
     private static String handleFileExtension(String fileName) {
         return fileName + (!fileName.toLowerCase().contains(".s0") ? "." + fileExtension : "");
@@ -131,27 +148,46 @@ public class MekaStateHandler implements SmsStateHandler {
                 toCrcStringFn.apply(data.get(index + 1) & 0xFF) + toCrcStringFn.apply(data.get(index) & 0xFF);
     }
 
-    private static void loadMappers(ByteBuffer buffer, Z80BusProvider bus) {
-        bus.write(0xFFFC, buffer.get(), Size.BYTE);
-        bus.write(0xFFFD, buffer.get(), Size.BYTE);
-        bus.write(0xFFFE, buffer.get(), Size.BYTE);
-        bus.write(0xFFFF, buffer.get(), Size.BYTE);
+    @Override
+    public void processState() {
+        SmsBus bus = Util.getDeviceIfAny(deviceList, SmsBus.class).orElse(null); //TODO
+        SmsVdp vdp = Util.getDeviceIfAny(deviceList, SmsVdp.class).orElse(null);
+        Z80Provider z80 = Util.getDeviceIfAny(deviceList, Z80Provider.class).orElse(null);
+        IMemoryProvider mem = Util.getDeviceIfAny(deviceList, IMemoryProvider.class).orElse(null);
+
+        if (type == Type.LOAD) {
+            //order is important
+            z80.loadContext(buffer);
+            skip(buffer, Z80_MISC_LEN);
+
+            loadVdp(vdp, bus);
+
+            mem.loadContext(buffer);
+            loadVdpMemory(vdp);
+        } else {
+            //order is important
+            z80.saveContext(buffer);
+            skip(buffer, Z80_MISC_LEN);
+
+            saveVdp(vdp, bus);
+
+            mem.saveContext(buffer);
+            saveVdpMemory(vdp);
+        }
     }
 
-    private static void saveMappers(ByteBuffer buffer, Z80BusProvider bus) {
-        SmsBus smsbus = (SmsBus) bus;
-        int[] frameReg = smsbus.getFrameReg();
-        int control = smsbus.getMapperControl();
-        LOG.info("mapperControl: {}, frameReg: {}", control, Arrays.toString(frameReg));
-        buffer.put((byte) (control & 0xFF));
-        buffer.put(Util.unsignedToByteArray(frameReg));
+    private void setDevicesWithContext(Set<Device> devs) {
+        if (!deviceList.isEmpty()) {
+            LOG.warn("Overwriting device list: {}", Arrays.toString(deviceList.toArray()));
+        }
+        deviceList = StateUtil.getDeviceOrderList(deviceClassSet, devs);
     }
 
-    private SmsStateHandler detectStateFileType() {
+    private BaseStateHandler detectStateFileType() {
         String fileType = Util.toStringValue(buffer.get(), buffer.get(), buffer.get(), buffer.get());
         if (!MAGIC_WORD_STR.equalsIgnoreCase(fileType)) {
             LOG.error("Unable to load savestate of type: {}, size: {}", fileType, buffer.capacity());
-            return SmsStateHandler.EMPTY_STATE;
+            return BaseStateHandler.EMPTY_STATE;
         }
         buffer.get(); //skip 1
         version = buffer.get();
@@ -173,60 +209,31 @@ public class MekaStateHandler implements SmsStateHandler {
         }
     }
 
-    @Override
-    public void loadVdp(BaseVdpProvider vdp, IMemoryProvider memory, SmsBus bus) {
-        SmsVdp smsVdp = (SmsVdp) vdp;
-        IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> smsVdp.registerWrite(i, buffer.get() & 0xFF));
-        int toSkip = VDP_MISC_LEN - 3;
-        String helString = Util.toStringValue(buffer.get(), buffer.get(), buffer.get());
-        if ("HEL".equals(helString)) {
-            vdpState[0] = buffer.getInt();
-            vdpState[1] = buffer.getInt();
-            vdpState[2] = buffer.getInt();
-            smsVdp.setStateSimple(vdpState);
-            toSkip = VDP_MISC_LEN - (vdpState.length * 4 + 3);
-        }
+    private void loadVdp(SmsVdp vdp, SmsBus bus) {
+        int pos = buffer.position();
+        vdp.loadContext(buffer);
+        //HEL string + additional data
+        boolean isHeliosFormat = buffer.position() > pos + SmsVdp.VDP_REGISTERS_SIZE + 3;
+        int toSkip = isHeliosFormat ? VDP_MISC_LEN - (vdpState.length * 4 + 3) : VDP_MISC_LEN - 3;
         skip(buffer, toSkip);
-        loadMappers(buffer, bus);
+        bus.loadContext(buffer); //loadMappers
         if (version >= 0xD) {
             int vdpLine = Util.getUInt32LE(buffer.get(), buffer.get());
             LOG.info("vdpLine: {}", vdpLine);
         }
     }
 
-    @Override
-    public void saveVdp(BaseVdpProvider vdp, IMemoryProvider memory, Z80BusProvider bus) {
-        IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> buffer.put((byte) vdp.getRegisterData(i)));
-        SmsVdp smsVdp = (SmsVdp) vdp;
-        smsVdp.getStateSimple(vdpState);
-        buffer.put((byte) 'H').put((byte) 'E').put((byte) 'L');
-        buffer.putInt(vdpState[0]).putInt(vdpState[1]).putInt(vdpState[2]);
+    private void saveVdp(SmsVdp vdp, SmsBus bus) {
+        vdp.saveContext(buffer);
         skip(buffer, VDP_MISC_LEN - (vdpState.length * 4 + 3));
-        saveMappers(buffer, bus);
+        bus.saveContext(buffer); //saveMappers
         buffer.put((byte) 0); //vdpLine
         buffer.put((byte) 0); //vdpLine
     }
 
-
-    @Override
-    public void loadZ80(Z80Provider z80, Z80BusProvider bus) {
-        Z80State z80State = loadZ80State(buffer);
-        skip(buffer, Z80_MISC_LEN);
-        z80.loadZ80State(z80State);
-    }
-
-    @Override
-    public void saveZ80(Z80Provider z80, Z80BusProvider bus) {
-        Z80State s = z80.getZ80State();
-        saveZ80State(buffer, s);
-        skip(buffer, Z80_MISC_LEN);
-    }
-
-    @Override
-    public void loadMemory(IMemoryProvider mem, SmsVdp vdp) {
+    private void loadVdpMemory(SmsVdp vdp) {
         int[] vram = vdp.getVdpMemory().getVram();
         int[] cram = vdp.getVdpMemory().getCram();
-        IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> mem.writeRamByte(i, buffer.get() & 0xFF));
         IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vram[i] = buffer.get() & 0xFF);
         //SMS CRAM = 0x20, GG = 0x40
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
@@ -239,12 +246,9 @@ public class MekaStateHandler implements SmsStateHandler {
         vdp.forceFullRedraw();
     }
 
-    @Override
-    public void saveMemory(IMemoryProvider mem, SmsVdp vdp) {
-        int[] ram = mem.getRamData();
+    private void saveVdpMemory(SmsVdp vdp) {
         int[] vram = vdp.getVdpMemory().getVram();
         int[] cram = vdp.getVdpMemory().getCram();
-        IntStream.range(0, MemoryProvider.SMS_Z80_RAM_SIZE).forEach(i -> buffer.put((byte) (ram[i] & 0xFF)));
         IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> buffer.put((byte) (vram[i] & 0xFF)));
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
             //0xAARRGGBB (4 bytes) Java colour

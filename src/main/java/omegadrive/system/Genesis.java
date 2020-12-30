@@ -30,7 +30,6 @@ import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.savestate.GenesisStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.perf.GenesisPerf;
@@ -44,14 +43,12 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.nio.file.Path;
-
 /**
  * Genesis emulator main class
  * <p>
  * MEMORY MAP:	https://en.wikibooks.org/wiki/Genesis_Programming
  */
-public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler> {
+public class Genesis extends BaseSystem<GenesisBusProvider> {
 
     public final static boolean verbose = false;
     //NTSC_MCLOCK_MHZ = 53693175;
@@ -85,7 +82,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
 
     @Override
     public void init() {
-        stateHandler = GenesisStateHandler.EMPTY_STATE;
+        stateHandler = BaseStateHandler.EMPTY_STATE;
         joypad = new GenesisJoypad();
         inputProvider = InputProvider.createInstance(joypad);
 
@@ -189,28 +186,6 @@ public class Genesis extends BaseSystem<GenesisBusProvider, GenesisStateHandler>
     private double getMicrosPerTick() {
         double mclkhz = videoMode.isPal() ? Util.GEN_PAL_MCLOCK_MHZ : Util.GEN_NTSC_MCLOCK_MHZ;
         return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
-    }
-
-    @Override
-    protected GenesisStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
-        String fileName = file.toAbsolutePath().toString();
-        return type == BaseStateHandler.Type.LOAD ?
-                GenesisStateHandler.createLoadInstance(fileName) :
-                GenesisStateHandler.createSaveInstance(fileName);
-    }
-
-    @Override
-    protected void processSaveState() {
-        if (saveStateFlag) {
-            stateHandler.processState(vdp, z80, bus, sound, cpu, memory);
-            if (stateHandler.getType() == GenesisStateHandler.Type.SAVE) {
-                stateHandler.storeData();
-            } else {
-                sound.getPsg().reset();
-            }
-            stateHandler = GenesisStateHandler.EMPTY_STATE;
-            saveStateFlag = false;
-        }
     }
 
     @Override

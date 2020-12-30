@@ -27,8 +27,6 @@ import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.savestate.MekaStateHandler;
-import omegadrive.savestate.SmsStateHandler;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.perf.SmsPerf;
 import omegadrive.ui.DisplayWindow;
@@ -40,9 +38,7 @@ import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.nio.file.Path;
-
-public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
+public class Sms extends BaseSystem<Z80BusProvider> {
 
     public static final boolean ENABLE_FM = Boolean.parseBoolean(System.getProperty("sms.enable.fm", "false"));
     private static final Logger LOG = LogManager.getLogger(Sms.class.getSimpleName());
@@ -101,7 +97,7 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
 
     @Override
     public void init() {
-        stateHandler = SmsStateHandler.EMPTY_STATE;
+        stateHandler = BaseStateHandler.EMPTY_STATE;
         joypad = new TwoButtonsJoypad();
         memory = MemoryProvider.createSmsInstance();
         bus = new SmsBus();
@@ -147,28 +143,6 @@ public class Sms extends BaseSystem<Z80BusProvider, SmsStateHandler> {
         super.resetAfterRomLoad();
         z80.reset();
         vdp.reset();
-    }
-
-    @Override
-    protected SmsStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
-        String fileName = file.toAbsolutePath().toString();
-        return type == BaseStateHandler.Type.LOAD ? MekaStateHandler.createLoadInstance(fileName) :
-                MekaStateHandler.createSaveInstance(fileName, systemType);
-    }
-
-
-    @Override
-    protected void processSaveState() {
-        if (saveStateFlag) {
-            stateHandler.processState((SmsVdp) vdp, z80, (SmsBus) bus, memory);
-            if (stateHandler.getType() == BaseStateHandler.Type.SAVE) {
-                stateHandler.storeData();
-            } else {
-                sound.getPsg().reset();
-            }
-            stateHandler = SmsStateHandler.EMPTY_STATE;
-            saveStateFlag = false;
-        }
     }
 
     @Override

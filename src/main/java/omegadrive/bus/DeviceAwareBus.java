@@ -25,13 +25,15 @@ import omegadrive.m68k.M68kProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.system.SystemProvider;
+import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.z80.Z80Provider;
 
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import static omegadrive.util.Util.getDeviceIfAny;
 
 public abstract class DeviceAwareBus<V extends BaseVdpProvider, J extends JoypadProvider> implements BaseBusProvider, BaseVdpProvider.VdpEventListener {
 
@@ -52,38 +54,38 @@ public abstract class DeviceAwareBus<V extends BaseVdpProvider, J extends Joypad
         return this;
     }
 
-    @Override
-    public <T extends Device> Optional<T> getDeviceIfAny(Class<T> clazz) {
-        return deviceSet.stream().filter(t -> clazz.isAssignableFrom(t.getClass())).findFirst().map(clazz::cast);
+    public <T extends Device> Optional<T> getBusDeviceIfAny(Class<T> clazz) {
+        return Util.getDeviceIfAny(deviceSet, clazz);
     }
 
     @Override
     public <T extends Device> Set<T> getAllDevices(Class<T> clazz) {
-        return deviceSet.stream().filter(t -> clazz.isAssignableFrom(t.getClass())).map(clazz::cast).collect(Collectors.toSet());
+        return Util.getAllDevices(deviceSet, clazz);
     }
 
     private void loadMappings() {
+        deviceSet.add(this);
         if (memoryProvider == null) {
-            memoryProvider = getDeviceIfAny(IMemoryProvider.class).orElse(null);
+            memoryProvider = getDeviceIfAny(deviceSet, IMemoryProvider.class).orElse(null);
         }
         if (joypadProvider == null) {
-            joypadProvider = (J) getDeviceIfAny(JoypadProvider.class).orElse(null);
+            joypadProvider = (J) getDeviceIfAny(deviceSet, JoypadProvider.class).orElse(null);
         }
         if (soundProvider == null) {
-            soundProvider = getDeviceIfAny(SoundProvider.class).orElse(null);
+            soundProvider = getDeviceIfAny(deviceSet, SoundProvider.class).orElse(null);
         }
         if (systemProvider == null) {
-            systemProvider = getDeviceIfAny(SystemProvider.class).orElse(null);
+            systemProvider = getDeviceIfAny(deviceSet, SystemProvider.class).orElse(null);
         }
         if (vdpProvider == null) {
-            vdpProvider = (V) getDeviceIfAny(BaseVdpProvider.class).orElse(null);
+            vdpProvider = (V) getDeviceIfAny(deviceSet, BaseVdpProvider.class).orElse(null);
             Optional.ofNullable(vdpProvider).ifPresent(v -> v.addVdpEventListener(this));
         }
         if (z80Provider == null) {
-            z80Provider = getDeviceIfAny(Z80Provider.class).orElse(null);
+            z80Provider = getDeviceIfAny(deviceSet, Z80Provider.class).orElse(null);
         }
         if (m68kProvider == null) {
-            m68kProvider = getDeviceIfAny(M68kProvider.class).orElse(null);
+            m68kProvider = getDeviceIfAny(deviceSet, M68kProvider.class).orElse(null);
         }
     }
 

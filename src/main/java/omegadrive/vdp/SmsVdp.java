@@ -22,14 +22,17 @@ import omegadrive.SystemLoader;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.RenderingStrategy;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static omegadrive.util.RegionDetector.Region.EUROPE;
 import static omegadrive.util.RegionDetector.Region.USA;
@@ -51,7 +54,7 @@ import static omegadrive.util.RegionDetector.Region.USA;
  * Notes:
  * - http://www.smspower.org/forums/viewtopic.php?p=44198
  */
-public final class SmsVdp implements BaseVdpProvider {
+public class SmsVdp implements BaseVdpProvider {
 
     public static final int VDP_VRAM_SIZE = 0x4000;
     public static final int VDP_CRAM_SIZE = 0x20;
@@ -1199,5 +1202,29 @@ public final class SmsVdp implements BaseVdpProvider {
     @Override
     public int[] getScreenDataLinear() {
         return screenData;
+    }
+
+    int[] vdpState = new int[3];
+
+    //NOTE: vdp memory is not saved
+    @Override
+    public void saveContext(ByteBuffer buffer) {
+        IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> buffer.put((byte) getRegisterData(i)));
+        getStateSimple(vdpState);
+        buffer.put((byte) 'H').put((byte) 'E').put((byte) 'L');
+        buffer.putInt(vdpState[0]).putInt(vdpState[1]).putInt(vdpState[2]);
+    }
+
+    //NOTE: vdp memory is not loaded
+    @Override
+    public void loadContext(ByteBuffer buffer) {
+        IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i -> registerWrite(i, buffer.get() & 0xFF));
+        String helString = Util.toStringValue(buffer.get(), buffer.get(), buffer.get());
+        if ("HEL".equals(helString)) {
+            vdpState[0] = buffer.getInt();
+            vdpState[1] = buffer.getInt();
+            vdpState[2] = buffer.getInt();
+            setStateSimple(vdpState);
+        }
     }
 }

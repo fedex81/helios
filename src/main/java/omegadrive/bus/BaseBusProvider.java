@@ -41,7 +41,7 @@ public interface BaseBusProvider extends Device {
 
     BaseBusProvider attachDevice(Device device);
 
-    <T extends Device> Optional<T> getDeviceIfAny(Class<T> clazz);
+    <T extends Device> Optional<T> getBusDeviceIfAny(Class<T> clazz);
 
     <T extends Device> Set<T> getAllDevices(Class<T> clazz);
 }

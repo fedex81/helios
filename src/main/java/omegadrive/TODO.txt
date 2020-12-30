@@ -12,6 +12,9 @@ turbo outrun
 lotus 2
 FIFA 97 noisy audio
 
+savestate:
+md: broken {ssf2, virtua racing}
+
 shadow/highlight:
 sonic3d traveller's tale logo
 rambo III intro corruption

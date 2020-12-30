@@ -19,6 +19,8 @@
 
 package omegadrive;
 
+import java.nio.ByteBuffer;
+
 public interface Device {
 
     default void init() {
@@ -26,6 +28,14 @@ public interface Device {
     }
 
     default void reset() {
+        //DO NOTHING
+    }
+
+    default void saveContext(ByteBuffer buffer) {
+        //DO NOTHING
+    }
+
+    default void loadContext(ByteBuffer buffer) {
         //DO NOTHING
     }
 }

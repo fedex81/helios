@@ -21,7 +21,7 @@ package omegadrive.automated;
 
 import com.google.common.collect.ImmutableMap;
 import omegadrive.SystemLoader;
-import omegadrive.save.SavestateTest;
+import omegadrive.save.MdSavestateTest;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
 
@@ -36,7 +36,7 @@ public class SavestateGameLoader {
 
     public static String romFolder = "/home/fede/roms/test/savestate_test";
 
-    private static String saveStateFolder = SavestateTest.saveStateFolder.toAbsolutePath().toString();
+    private static String saveStateFolder = MdSavestateTest.saveStateFolder.toAbsolutePath().toString();
 
     private static final String s2_rom = "Sonic The Hedgehog 2 (World) (Rev A).zip";
     private static final String s1_rom = "Sonic The Hedgehog (USA, Europe).zip";
