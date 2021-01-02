@@ -42,7 +42,7 @@ public class VdpDebugView implements UpdatableViewer {
         this.memoryInterface = memoryInterface;
         this.renderHandler = renderHandler;
         this.cramViewer = CramViewer.createInstance(memoryInterface);
-        this.planeViewer = PlaneViewer.createInstance(memoryInterface, renderHandler);
+        this.planeViewer = PlaneViewer.createInstance(vdp, memoryInterface, renderHandler);
         this.tileViewer = TileViewer.createInstance(vdp, memoryInterface, renderHandler);
         init();
     }

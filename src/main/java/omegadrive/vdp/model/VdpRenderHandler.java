@@ -19,8 +19,6 @@
 
 package omegadrive.vdp.model;
 
-import omegadrive.util.VideoMode;
-
 import java.util.Objects;
 
 import static omegadrive.vdp.model.BaseVdpProvider.*;
@@ -47,16 +45,11 @@ public interface VdpRenderHandler {
 
     void dumpScreenData();
 
-    @Deprecated
-    VideoMode getVideoMode();
-
     void renderLine(int line);
 
     void initLineData(int line);
 
     int[] getScreenDataLinear();
-
-    void updateSatCache(int satLocation, int vramAddress);
 
     default int[] getPlaneData(RenderType type) {
         throw new RuntimeException("not implemented");

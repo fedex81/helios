@@ -60,7 +60,6 @@ public interface SystemProvider extends Device {
         TOGGLE_FULL_SCREEN,
         TOGGLE_THROTTLE,
         CONTROLLER_CHANGE,
-        TOGGLE_DEBUG_LOGGING,
         SET_DEBUG_UI,
         TOGGLE_SOUND_RECORD,
         SOFT_RESET

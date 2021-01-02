@@ -22,17 +22,13 @@ package omegadrive.vdp.model;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static omegadrive.vdp.model.GenesisVdpProvider.*;
+import static omegadrive.vdp.model.GenesisVdpProvider.H32_SLOTS;
+import static omegadrive.vdp.model.GenesisVdpProvider.H40_SLOTS;
 
 public enum VdpSlotType {
     NONE,
     REFRESH,
     EXTERNAL;
-
-    @Deprecated
-    public static VdpSlotType[] h32CounterSlots = new VdpSlotType[H32_PIXELS];
-    @Deprecated
-    public static VdpSlotType[] h40CounterSlots = new VdpSlotType[H40_PIXELS];
 
     public static VdpSlotType[] h32Slots = new VdpSlotType[H32_SLOTS];
     public static VdpSlotType[] h40Slots = new VdpSlotType[H40_SLOTS];

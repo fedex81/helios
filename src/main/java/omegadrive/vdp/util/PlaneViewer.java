@@ -1,11 +1,9 @@
 package omegadrive.vdp.util;
 
 import omegadrive.util.ImageUtil;
+import omegadrive.util.VideoMode;
 import omegadrive.vdp.VdpRenderDump;
-import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.RenderType;
-import omegadrive.vdp.model.VdpMemoryInterface;
-import omegadrive.vdp.model.VdpRenderHandler;
+import omegadrive.vdp.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,7 +20,7 @@ import java.util.Arrays;
  * <p>
  * Copyright 2019
  */
-public class PlaneViewer implements UpdatableViewer {
+public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventListener {
 
     private static final Logger LOG = LogManager.getLogger(PlaneViewer.class.getSimpleName());
 
@@ -50,8 +48,10 @@ public class PlaneViewer implements UpdatableViewer {
         initPanel();
     }
 
-    public static PlaneViewer createInstance(VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
-        return new PlaneViewer(memoryInterface, renderHandler);
+    public static PlaneViewer createInstance(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
+        PlaneViewer p = new PlaneViewer(memoryInterface, renderHandler);
+        vdp.addVdpEventListener(p);
+        return p;
     }
 
     private static int[] getPixels(BufferedImage img) {
@@ -113,7 +113,6 @@ public class PlaneViewer implements UpdatableViewer {
 
     @Override
     public void update() {
-        adjustFullFrameSize();
         BufferedImage img = imageList[RenderType.FULL.ordinal()];
         int[] imgData = getPixels(img);
         int[] data = renderHandler.getScreenDataLinear();
@@ -121,8 +120,15 @@ public class PlaneViewer implements UpdatableViewer {
         panel.repaint();
     }
 
-    private void adjustFullFrameSize() {
-        Dimension d = renderHandler.getVideoMode().getDimension();
+    @Override
+    public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
+        if (event == BaseVdpProvider.VdpEvent.VIDEO_MODE) {
+            adjustFullFrameSize((VideoMode) value);
+        }
+    }
+
+    private void adjustFullFrameSize(VideoMode videoMode) {
+        Dimension d = videoMode.getDimension();
         if (!d.equals(fullFrameDimension)) {
             imageList[RenderType.FULL.ordinal()] = ImageUtil.createImage(VdpRenderDump.gd, d);
             fullFrameDimension = d;

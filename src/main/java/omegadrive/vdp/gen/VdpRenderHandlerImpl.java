@@ -112,11 +112,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
     }
 
-    @Override
-    public void updateSatCache(int satLocation, int vramAddress) {
-
-    }
-
     public VdpRenderHandlerImpl(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
         this.memoryInterface = memoryInterface;
@@ -651,10 +646,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private void updatePriority(int col, RenderPriority rp) {
         RenderPriority prev = pixelPriority[col];
         pixelPriority[col] = rp.ordinal() > prev.ordinal() ? rp : prev;
-    }
-
-    public VideoMode getVideoMode() {
-        return videoMode;
     }
 
     private void setVideoMode(VideoMode videoMode) {

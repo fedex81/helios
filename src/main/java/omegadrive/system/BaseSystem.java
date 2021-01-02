@@ -128,9 +128,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
             case QUICK_SAVE:
                 handleSaveState((Path) parameter);
                 break;
-            case TOGGLE_DEBUG_LOGGING:
-                setDebug((Boolean) parameter);
-                break;
             case TOGGLE_FULL_SCREEN:
                 emuFrame.setFullScreen((Boolean) parameter);
                 break;
@@ -165,10 +162,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
             LOG.info("Soft Reset");
         }
         softReset = false;
-    }
-
-    @Deprecated
-    private void setDebug(boolean value) {
     }
 
     protected void reloadWindowState() {

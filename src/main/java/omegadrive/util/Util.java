@@ -177,13 +177,12 @@ public class Util {
         if (size == Size.BYTE) {
             data = src[address];
         } else if (size == Size.WORD) {
-            data = src[address] << 8;
-            data |= src[address + 1];
+            data = (src[address] << 8) | src[address + 1];
         } else {
-            data = src[address] << 24;
-            data |= src[address + 1] << 16;
-            data |= src[address + 2] << 8;
-            data |= src[address + 3];
+            data = (src[address] << 24) |
+                    (src[address + 1] << 16) |
+                    (src[address + 2] << 8) |
+                    (src[address + 3]);
         }
 //        LogHelper.printLevel(LOG, Level.DEBUG, "Read SRAM: {}, {}: {}", address, data, size, verbose);
         return data;

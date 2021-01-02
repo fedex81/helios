@@ -52,8 +52,8 @@ public class VdpScrollHandler {
             case SCREEN:
                 vramOffset = sc.planeType == RenderType.PLANE_A ? sc.hScrollTableLocation : sc.hScrollTableLocation + 2;
                 break;
-            case CELL:
-                int scrollLine = sc.hScrollTableLocation + ((line >> 3) << 5);
+            case CELL: //cluster of 8 lines
+                int scrollLine = sc.hScrollTableLocation + ((line >> 3) * sc.planeWidth);
                 vramOffset = sc.planeType == RenderType.PLANE_A ? scrollLine : scrollLine + 2;
                 break;
             case INVALID:
@@ -62,14 +62,14 @@ public class VdpScrollHandler {
                 vramOffset = sc.planeType == RenderType.PLANE_A ? scrollLine1 : scrollLine1 + 2;
                 break;
         }
-        scrollAmount = (vram[vramOffset] << 8 | vram[vramOffset + 1]) & scrollMask;
+        scrollAmount = ((vram[vramOffset] << 8) | vram[vramOffset + 1]) & scrollMask;
         return (sc.planeWidth << 3) - scrollAmount;
     }
 
     public int getVerticalScroll(int cell, ScrollContext sc) {
         int vramOffset = sc.planeType == RenderType.PLANE_A ? 0 : 2;
         vramOffset += sc.vScrollType == VSCROLL.TWO_CELLS ? cell << 2 : 0;
-        int scrollAmount = vsram[vramOffset] << 8 | vsram[vramOffset + 1];
+        int scrollAmount = (vsram[vramOffset] << 8) | vsram[vramOffset + 1];
         return scrollAmount >> sc.interlaceMode.verticalScrollShift();
     }
 
