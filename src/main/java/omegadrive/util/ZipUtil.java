@@ -32,7 +32,7 @@ public class ZipUtil {
     public static final Predicate<String> isZipFile = n -> n.endsWith(ZIP_EXT);
     public static final Predicate<String> isGZipFile = n -> n.endsWith(GZIP_EXT);
     static final BiPredicate<ZipEntry, String[]> isSupportedBinaryType =
-            (ze, ext) -> Arrays.stream(ext).anyMatch(t -> ze.getName().endsWith(t));
+            (ze, ext) -> Arrays.stream(ext).anyMatch(t -> ze.getName().contains(t));
     private final static Logger LOG = LogManager.getLogger(ZipUtil.class.getSimpleName());
 
     public static boolean isZipArchiveByteStream(Path path) {

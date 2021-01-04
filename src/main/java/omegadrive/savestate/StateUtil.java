@@ -1,10 +1,13 @@
 package omegadrive.savestate;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Files;
 import com.google.common.primitives.Bytes;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
+import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
+import omegadrive.util.ZipUtil;
 import omegadrive.z80.Z80Helper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,8 +16,11 @@ import z80core.Z80State;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.zip.ZipEntry;
 
 /**
  * Federico Berti
@@ -203,5 +209,23 @@ public class StateUtil {
             }
         }
         return ds;
+    }
+
+    public static String getStateFileName(String fileName, String... exts) {
+        String fileNameEx = fileName;
+        Path p = Paths.get(fileName);
+        if (ZipUtil.isGZipByteStream(p) || ZipUtil.isZipArchiveByteStream(p)) {
+            Optional<? extends ZipEntry> opt = ZipUtil.getSupportedZipEntryIfAny(p, exts);
+            if (opt.isPresent()) {
+                fileNameEx = opt.get().getName();
+            }
+        }
+        return fileNameEx;
+    }
+
+    public static ByteBuffer loadStateFile(String fileName, String... exts) {
+        String ext = Files.getFileExtension(getStateFileName(fileName, exts));
+        ByteBuffer buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(fileName), ext));
+        return buffer;
     }
 }

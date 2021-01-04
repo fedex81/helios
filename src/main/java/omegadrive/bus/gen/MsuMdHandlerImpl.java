@@ -51,7 +51,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         }
         CueSheet cueSheet = MsuMdHandlerImpl.initCueSheet(romPath);
         if (cueSheet == null) {
-            LOG.error("Disabling MSU-MD handling, unable to find CUE file.");
+            LOG.info("Disabling MSU-MD handling, unable to find CUE file.");
             return NO_OP_HANDLER;
         }
         RandomAccessFile binFile = MsuMdHandlerImpl.initBinFile(romPath, cueSheet);

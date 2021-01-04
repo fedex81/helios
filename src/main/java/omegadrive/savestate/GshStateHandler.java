@@ -19,7 +19,6 @@
 
 package omegadrive.savestate;
 
-import com.google.common.io.Files;
 import com.google.common.primitives.Bytes;
 import omegadrive.Device;
 import omegadrive.bus.gen.GenesisBusProvider;
@@ -28,7 +27,6 @@ import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.ssp16.Ssp16;
 import omegadrive.ssp16.Ssp16Types;
-import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
 import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +34,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
@@ -66,7 +63,7 @@ public class GshStateHandler extends GstStateHandler {
     }
 
     protected static String handleFileExtension(String fileName) {
-        boolean hasExtension = fileName.toLowerCase().contains(".gs");
+        boolean hasExtension = fileName.toLowerCase().contains(extension);
         return fileName + (!hasExtension ? "." + fileExtension : "");
     }
 
@@ -79,8 +76,7 @@ public class GshStateHandler extends GstStateHandler {
             //special Genecyst stuff
             buffer.put(6, (byte) 0xE0).put(7, (byte) 0x40);
         } else {
-            String ext = Files.getFileExtension(fileNameEx);
-            buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(fileName), ext));
+            buffer = StateUtil.loadStateFile(fileName, extension);
             detectStateFileType();
         }
     }

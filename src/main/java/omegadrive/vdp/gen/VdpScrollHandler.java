@@ -45,33 +45,33 @@ public class VdpScrollHandler {
     }
 
     public int getHorizontalScroll(int line, ScrollContext sc) {
-        int scrollDataShift = sc.planeWidth << 3;
-        int scrollMask = scrollDataShift - 1;
-        int vramOffset = 0, scrollAmount;
+        int vramOffset = sc.hScrollTableLocation;
         switch (sc.hScrollType) {
             case SCREEN:
-                vramOffset = sc.hScrollTableLocation;
                 break;
             case CELL: //cluster of 8 lines
-                //NOTE: Tecmo Super Baseball, Shadow of the beast(J) expects *32 even when using H40,
-                //therefore using *sc.planeWidth seems incorrect
-                vramOffset = sc.hScrollTableLocation + ((line >> 3) << 5);
+                //NOTE: each cluster's hScrollValue is 32 bytes apart in VRAM
+                vramOffset += ((line >> 3) << 5);
                 break;
             case INVALID:
             case LINE:
-                vramOffset = sc.hScrollTableLocation + (line << 2);
+                vramOffset += (line << 2);
                 break;
         }
+        final int scrollDataShift = sc.planeWidth << 3;
+        final int scrollMask = scrollDataShift - 1;
         vramOffset = sc.planeType == RenderType.PLANE_A ? vramOffset : vramOffset + 2;
-        scrollAmount = ((vram[vramOffset] << 8) | vram[vramOffset + 1]) & scrollMask;
-        return (sc.planeWidth << 3) - scrollAmount;
+        int scrollAmount = ((vram[vramOffset] << 8) | vram[vramOffset + 1]) & scrollMask;
+        return scrollDataShift - scrollAmount;
     }
 
-    public int getVerticalScroll(int cell, ScrollContext sc) {
+    public int getVerticalScroll(int twoCell, ScrollContext sc) {
+        int scrollMask = (sc.planeHeight << 3) - 1;
         int vramOffset = sc.planeType == RenderType.PLANE_A ? 0 : 2;
-        vramOffset += sc.vScrollType == VSCROLL.TWO_CELLS ? cell << 2 : 0;
-        int scrollAmount = (vsram[vramOffset] << 8) | vsram[vramOffset + 1];
-        return scrollAmount >> sc.interlaceMode.verticalScrollShift();
+        vramOffset += sc.vScrollType == VSCROLL.TWO_CELLS ? twoCell << 2 : 0;
+        int scrollAmount = ((vsram[vramOffset] << 8) | vsram[vramOffset + 1])
+                >> sc.interlaceMode.verticalScrollShift();
+        return scrollAmount & scrollMask;
     }
 
     public static class ScrollContext {

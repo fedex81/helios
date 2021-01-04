@@ -182,8 +182,9 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
     }
 
     protected void handleHLinesCounterDecrement() {
-//        boolean reset = vCounterInternal > vdpCounterMode.vBlankSet; //fixes LotusII
-//        hLinePassed = vBlankSet ? resetHLinesCounter(vdpHLineProvider.getHLinesCounter()) : hLinePassed - 1;
+//        if(vBlankSet){   //fixes wobble.bin
+//            resetHLinesCounter();
+//        }
         if (hLinePassed < 0) {
             hIntPending = true;
             logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);

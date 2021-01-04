@@ -12,6 +12,6 @@ test_roms/
 docs
 *.col
 **/ym3438/*
-savestate/
+/savestate/
 misc/
 test_output.log

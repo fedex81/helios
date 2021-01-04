@@ -35,8 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpPortType.CONTROL;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.HCOUNTER_VALUE;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.MODE_4;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 public class MdVdpTestUtil {
 
@@ -62,6 +61,7 @@ public class MdVdpTestUtil {
         return cnt;
     }
 
+    //NOTE: overwrites m3 (counter latch) to off
     public static void runToStartFrame(GenesisVdpProvider vdp) {
         do {
             vdp.runSlot();
@@ -70,10 +70,15 @@ public class MdVdpTestUtil {
             vdp.runSlot();
         } while (isVBlank(vdp));
 
+        //TODO detect event START_FRAME
+        int reg1 = vdp.getRegisterData(MODE_1);
+        if ((reg1 & 0xFD) > 0) {
+            System.out.println("m3 (counter latch) is on!");
+            vdp.updateRegisterData(MODE_1, reg1 & 0xFD);
+        }
         boolean isStart;
         do {
             vdp.runSlot();
-            //TODO
             isStart = vdp.getHCounter() == 0 && vdp.getVCounter() == 0;
         } while (!isStart);
         vdp.setVip(false);

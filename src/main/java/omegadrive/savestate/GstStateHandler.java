@@ -68,6 +68,8 @@ public class GstStateHandler implements BaseStateHandler {
     private static int M68K_REGA_OFFSET = 0xA0;
     public static int FILE_SIZE = 0x22478;
 
+    protected static final String extension = ".gs";
+
     private static final Set<Class<? extends Device>> deviceClassSet = ImmutableSet.of(Z80Provider.class,
             GenesisVdpProvider.class, IMemoryProvider.class, GenesisBusProvider.class, SoundProvider.class, MC68000Wrapper.class);
 
