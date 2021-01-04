@@ -50,18 +50,19 @@ public class VdpScrollHandler {
         int vramOffset = 0, scrollAmount;
         switch (sc.hScrollType) {
             case SCREEN:
-                vramOffset = sc.planeType == RenderType.PLANE_A ? sc.hScrollTableLocation : sc.hScrollTableLocation + 2;
+                vramOffset = sc.hScrollTableLocation;
                 break;
             case CELL: //cluster of 8 lines
-                int scrollLine = sc.hScrollTableLocation + ((line >> 3) * sc.planeWidth);
-                vramOffset = sc.planeType == RenderType.PLANE_A ? scrollLine : scrollLine + 2;
+                //NOTE: Tecmo Super Baseball, Shadow of the beast(J) expects *32 even when using H40,
+                //therefore using *sc.planeWidth seems incorrect
+                vramOffset = sc.hScrollTableLocation + ((line >> 3) << 5);
                 break;
             case INVALID:
             case LINE:
-                int scrollLine1 = sc.hScrollTableLocation + (line << 2);
-                vramOffset = sc.planeType == RenderType.PLANE_A ? scrollLine1 : scrollLine1 + 2;
+                vramOffset = sc.hScrollTableLocation + (line << 2);
                 break;
         }
+        vramOffset = sc.planeType == RenderType.PLANE_A ? vramOffset : vramOffset + 2;
         scrollAmount = ((vram[vramOffset] << 8) | vram[vramOffset + 1]) & scrollMask;
         return (sc.planeWidth << 3) - scrollAmount;
     }
