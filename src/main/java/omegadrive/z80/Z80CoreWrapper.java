@@ -22,7 +22,6 @@ package omegadrive.z80;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.bus.gen.GenesisBusProvider;
 import omegadrive.bus.gen.GenesisZ80BusProvider;
-import omegadrive.bus.gen.GenesisZ80BusProviderImpl;
 import omegadrive.savestate.StateUtil;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -52,6 +51,7 @@ public class Z80CoreWrapper implements Z80Provider {
     protected BaseBusProvider z80BusProvider;
     protected Z80MemIoOps memIoOps;
     protected int instCyclesPenalty = 0;
+    protected int memPtrInitVal;
 
     public static Z80CoreWrapper createInstance(BaseBusProvider busProvider) {
         Z80CoreWrapper w = new Z80CoreWrapper();
@@ -73,6 +73,8 @@ public class Z80CoreWrapper implements Z80Provider {
         if (z80State != null) {
             w.z80Core.setZ80State(z80State);
         }
+        w.z80Core.setRegSP(w.memIoOps.getPcUpperLimit()); //md: fixes Z80 WAV Player v0.1
+        w.memPtrInitVal = w.memIoOps.getPcUpperLimit();
         return w;
     }
 
@@ -80,10 +82,7 @@ public class Z80CoreWrapper implements Z80Provider {
         Z80CoreWrapper w = new Z80CoreWrapper();
         w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider);
         w.memIoOps = Z80MemIoOps.createGenesisInstance(w.z80BusProvider);
-        setupInternal(w, null);
-        //fixes Z80 WAV Player v0.1
-        w.z80Core.setRegSP(GenesisZ80BusProvider.END_RAM);
-        return w;
+        return setupInternal(w, null);
     }
 
     //NOTE: halt sets PC = PC - 1
@@ -113,7 +112,7 @@ public class Z80CoreWrapper implements Z80Provider {
         z80Core.setINTLine(false);
         z80Core.setNMI(false);
         z80Core.setPendingEI(false);
-        z80Core.setMemPtr(GenesisZ80BusProviderImpl.END_RAM);
+        z80Core.setMemPtr(memPtrInitVal);
 
         //from GenPlusGx
         z80Core.setRegPC(0);

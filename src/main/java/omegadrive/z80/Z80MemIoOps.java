@@ -20,6 +20,7 @@
 package omegadrive.z80;
 
 import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.gen.GenesisZ80BusProvider;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -32,6 +33,7 @@ public class Z80MemIoOps implements IMemIoOps {
     private boolean activeInterrupt;
     private int[] ram;
     private int ramSizeMask;
+    private int pcUpperLimit = 0xFFFF;
 
     public static Z80MemIoOps createGenesisInstance(BaseBusProvider z80BusProvider) {
         return createGenesisInstanceInternal(new Z80MemIoOps(), z80BusProvider);
@@ -47,9 +49,9 @@ public class Z80MemIoOps implements IMemIoOps {
                 orElseThrow(() -> new RuntimeException("Invalid setup"));
         m.ram = mem.getRamData();
         m.ramSizeMask = m.ram.length - 1;
+        m.pcUpperLimit = GenesisZ80BusProvider.END_RAM;
         return m;
     }
-
 
     public static Z80MemIoOps createInstance(BaseBusProvider z80BusProvider) {
         Z80MemIoOps m = new Z80MemIoOps() {
@@ -62,16 +64,72 @@ public class Z80MemIoOps implements IMemIoOps {
         return m;
     }
 
+    public static Z80MemIoOpsDbg createDbgMemIoOps(StringBuilder sb, int logAddressAccess) {
+        return new Z80MemIoOpsDbg() {
+            @Override
+            public int fetchOpcode(int address) {
+                int res = super.fetchOpcode(address);
+                traceAndCheck("READ , ", Size.BYTE, address, res);
+                return res;
+            }
+
+            @Override
+            public int peek8(int address) {
+                int res = super.peek8(address);
+                traceAndCheck("READ , ", Size.BYTE, address, res);
+                return res;
+            }
+
+            @Override
+            public int peek16(int address) {
+                int res = (super.peek8(address + 1) << 8) | super.peek8(address);
+                traceAndCheck("READ , ", Size.WORD, address, res);
+                return res;
+            }
+
+            @Override
+            public void poke8(int address, int value) {
+                traceAndCheck("WRITE, ", Size.BYTE, address, value);
+                super.poke8(address, value);
+            }
+
+            @Override
+            public int peek8Ext(int address) {
+                int res = super.peek8(address);
+                traceAndCheck("68k READ , ", Size.BYTE, address, res);
+                return res;
+            }
+
+            @Override
+            public void poke8Ext(int address, int value) {
+                traceAndCheck("68k WRITE, ", Size.BYTE, address, value);
+                super.poke8(address, value);
+            }
+
+            @Override
+            public void poke16(int address, int word) {
+                traceAndCheck("WRITE, ", Size.WORD, address, word);
+                super.poke8(address, word);
+                super.poke8(address + 1, word >>> 8);
+            }
+
+            private final void traceAndCheck(String head, Size size, int address, int data) {
+                sb.append(head + size + ", " + Util.toHex(address) + ", " + Util.toHex(data) + "\n");
+                if (logAddressAccess >= 0 && address == logAddressAccess) {
+                    //do something
+                }
+            }
+        };
+    }
+
     protected final int fetchOpcodeBus(int address) {
         tstatesCount += 4;
         return (int) z80BusProvider.read(address, Size.BYTE) & 0xFF;
     }
 
     @Override
-    public int fetchOpcode(int address) {
-        tstatesCount += 4;
-        address &= ramSizeMask;
-        return ram[address];
+    public int getPcUpperLimit() {
+        return pcUpperLimit;
     }
 
     @Override
@@ -129,62 +187,14 @@ public class Z80MemIoOps implements IMemIoOps {
         tstatesCount = 0;
     }
 
-    public static Z80MemIoOpsDbg createDbgMemIoOps(StringBuilder sb, int logAddressAccess) {
-        return new Z80MemIoOpsDbg() {
-            @Override
-            public int fetchOpcode(int address) {
-                int res = fetchOpcodeBus(address);
-                traceAndCheck("READ , ", Size.BYTE, address, res);
-                return res;
-            }
-
-            @Override
-            public int peek8(int address) {
-                int res = super.peek8(address);
-                traceAndCheck("READ , ", Size.BYTE, address, res);
-                return res;
-            }
-
-            @Override
-            public int peek16(int address) {
-                int res = (super.peek8(address + 1) << 8) | super.peek8(address);
-                traceAndCheck("READ , ", Size.WORD, address, res);
-                return res;
-            }
-
-            @Override
-            public void poke8(int address, int value) {
-                traceAndCheck("WRITE, ", Size.BYTE, address, value);
-                super.poke8(address, value);
-            }
-
-            @Override
-            public int peek8Ext(int address) {
-                int res = super.peek8(address);
-                traceAndCheck("68k READ , ", Size.BYTE, address, res);
-                return res;
-            }
-
-            @Override
-            public void poke8Ext(int address, int value) {
-                traceAndCheck("68k WRITE, ", Size.BYTE, address, value);
-                super.poke8(address, value);
-            }
-
-            @Override
-            public void poke16(int address, int word) {
-                traceAndCheck("WRITE, ", Size.WORD, address, word);
-                super.poke8(address, word);
-                super.poke8(address + 1, word >>> 8);
-            }
-
-            private final void traceAndCheck(String head, Size size, int address, int data) {
-                sb.append(head + size + ", " + Util.toHex(address) + ", " + Util.toHex(data) + "\n");
-                if (logAddressAccess >= 0 && address == logAddressAccess) {
-                    //do something
-                }
-            }
-        };
+    /**
+     * Defaults on fetching the opcode from RAM only (MD mode)
+     */
+    @Override
+    public int fetchOpcode(int address) {
+        tstatesCount += 4;
+        address &= ramSizeMask;
+        return ram[address];
     }
 
     static abstract class Z80MemIoOpsDbg extends Z80MemIoOps {

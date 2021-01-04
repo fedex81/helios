@@ -34,10 +34,6 @@ ko - f7a9385 on 15/06/2020 at 17:29
 titan1, chip twister scene broken
 ko - 022bc232 23/04/2020 at 12:23
 
-- sf2 color hack, reset issue somewhere? (soft reset makes it work)
-68k: add delay on z80 rom access
-ko - ba56def0 on 22/11/2019 at 13:30
-
 md: vdp perf
 ok (buggy) - 78b91eeb on 11/11/2019 at 11:52
 - ie. adds a rendering bug
