@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -39,7 +40,8 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
     static List<String> ignoredTests = ImmutableList.<String>of(
             "s2_int.gs0",  //interlace
             "s2_im2_01.gs0", //interlace
-            "cc_int.gs0" //interlace
+            "cc_int.gs0", //interlace
+            "vr_01.gsh" //needs to init SSP16
     );
 
     static Stream<String> fileProvider() {
@@ -71,8 +73,8 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
 
     @Ignore
     @Disabled
-    @Override
+    @Test
     public void testCompare() {
-        super.testCompare();
+        super.testCompareFile("vr_01.gsh", true);
     }
 }

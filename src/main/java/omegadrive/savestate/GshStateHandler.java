@@ -34,10 +34,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.IntStream;
 
 public class GshStateHandler extends GstStateHandler {
 
@@ -96,7 +94,6 @@ public class GshStateHandler extends GstStateHandler {
         }
         return this;
     }
-
     @Override
     public void loadFmState(FmProvider fm) {
         byte[] ba = buffer.array();
@@ -125,36 +122,42 @@ public class GshStateHandler extends GstStateHandler {
         super.saveFm(fm); //save FM registers, back-compat
         if (fm instanceof Ym2612Nuke) {
             Ym2612Nuke.Ym3438Context chip = ((Ym2612Nuke) fm).getState();
-            StateUtil.storeSerializedData(FM_MAGIC_WORD_NUKE, chip, buffer);
+            buffer = StateUtil.storeSerializedData(FM_MAGIC_WORD_NUKE, chip, buffer);
         }
     }
 
     private void saveSvp(Ssp16 ssp16) {
         if (ssp16 != Ssp16.NO_SVP) {
-            StateUtil.storeSerializedData(SVP_MAGIC_WORD, ssp16.getSvpContext(), buffer);
+            buffer = StateUtil.storeSerializedData(SVP_MAGIC_WORD, ssp16.getSvpContext(), buffer);
         }
     }
-
 
     @Override
     public void saveZ80(Z80Provider z80, GenesisBusProvider bus) {
         super.saveZ80(z80, bus);
-        int[] data = bus.getMapperData();
-        if (data.length > 0) {
-            buffer.position(SSF2_MAPPER_REG_OFFSET);
-            Arrays.stream(data).forEach(v -> buffer.put((byte) v));
-        }
+        saveMapper(bus);
         saveSvp(SvpMapper.ssp16);
     }
 
+    private void saveMapper(GenesisBusProvider bus) {
+        int[] data = bus.getMapperData();
+        for (int i = 0; i < data.length; i++) {
+            buffer.put(SSF2_MAPPER_REG_OFFSET + i, (byte) data[i]);
+        }
+    }
 
     @Override
     public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
         super.loadZ80(z80, bus);
-        buffer.position(SSF2_MAPPER_REG_OFFSET);
-        int[] data = new int[GenesisBusProvider.NUM_MAPPER_BANKS];
-        IntStream.range(0, data.length).forEach(i -> data[i] = buffer.get() & 0xFF);
-        bus.setMapperData(data);
+        loadMapper(bus);
         loadSvpState(SvpMapper.ssp16);
+    }
+
+    private void loadMapper(GenesisBusProvider bus) {
+        int[] data = new int[GenesisBusProvider.NUM_MAPPER_BANKS];
+        for (int i = 0; i < data.length; i++) {
+            data[i] = buffer.get(SSF2_MAPPER_REG_OFFSET + i) & 0xFF;
+        }
+        bus.setMapperData(data);
     }
 }

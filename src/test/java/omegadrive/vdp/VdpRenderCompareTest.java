@@ -100,16 +100,11 @@ public class VdpRenderCompareTest extends VdpRenderTest {
         }
     }
 
-    @Test
-    @Ignore
-    public void testCompare() {
-        boolean overwrite = false;
-        String name = "slap_01".trim();
-        String ext = ".gsh".toLowerCase().trim();
+    protected void testCompareFile(String fileName, boolean overwrite) {
         if (overwrite) {
-            testOverwriteBaselineImage(name + ext);
+            testOverwriteBaselineImage(fileName);
         }
-        boolean showingFailures = testCompareOne(name + ext);
+        boolean showingFailures = testCompareOne(fileName);
         if (showingFailures) {
             Util.waitForever();
         }
