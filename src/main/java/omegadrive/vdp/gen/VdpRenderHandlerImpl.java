@@ -121,8 +121,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         this.vram = memoryInterface.getVram();
         this.cram = memoryInterface.getCram();
         this.javaPalette = memoryInterface.getJavaColorPalette();
-        this.scrollContextA = ScrollContext.createInstance(RenderType.PLANE_A);
-        this.scrollContextB = ScrollContext.createInstance(RenderType.PLANE_B);
+        this.scrollContextA = ScrollContext.createInstance(RenderType.PLANE_A, planeA);
+        this.scrollContextB = ScrollContext.createInstance(RenderType.PLANE_B, planeB);
         this.windowPlaneContext = new WindowPlaneContext();
         vdpProvider.addVdpEventListener(this);
         for (int i = 0; i < spriteDataHoldersCurrent.length; i++) {
@@ -437,10 +437,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         final int cellHeight = interlaceMode.getVerticalCellPixelSize();
 
         TileDataHolder tileDataHolder = spriteDataHolder;
-        RenderPriority highPrio = RenderPriority.getRenderPriority(sc.planeType, true);
-        RenderPriority lowPrio = RenderPriority.getRenderPriority(sc.planeType, false);
-        int[] plane = sc.planeType == RenderType.PLANE_A ? planeA :
-                (sc.planeType == RenderType.PLANE_B ? planeB : window);
+        final int[] plane = sc.plane;
 
         for (int twoCell = startTwoCells; twoCell < endTwoCells; twoCell++) {
             vScrollLineOffset = scrollHandler.getVerticalScroll(twoCell, sc);
@@ -464,7 +461,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                     tileDataHolder = getTileData(tileNameTable, tileDataHolder);
                     latestTileLocatorVram = tileLocatorVram;
                 }
-                RenderPriority rp = tileDataHolder.priority ? highPrio : lowPrio;
+                RenderPriority rp = tileDataHolder.priority ? sc.highPrio : sc.lowPrio;
                 if (currentPrio >= rp.ordinal()) {
                     continue;
                 }

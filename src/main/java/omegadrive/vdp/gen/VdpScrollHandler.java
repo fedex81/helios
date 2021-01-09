@@ -22,6 +22,7 @@ package omegadrive.vdp.gen;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Maps;
 import omegadrive.vdp.model.InterlaceMode;
+import omegadrive.vdp.model.RenderPriority;
 import omegadrive.vdp.model.RenderType;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
@@ -75,7 +76,10 @@ public class VdpScrollHandler {
     }
 
     public static class ScrollContext {
-        RenderType planeType;
+        final RenderType planeType;
+        final int[] plane;
+        final RenderPriority highPrio;
+        final RenderPriority lowPrio;
         int planeWidth;
         int planeHeight;
         int hScrollTableLocation;
@@ -83,10 +87,15 @@ public class VdpScrollHandler {
         HSCROLL hScrollType;
         InterlaceMode interlaceMode;
 
-        public static ScrollContext createInstance(RenderType type) {
-            ScrollContext s = new ScrollContext();
-            s.planeType = type;
-            return s;
+        private ScrollContext(RenderType type, int[] plane) {
+            this.planeType = type;
+            this.highPrio = RenderPriority.getRenderPriority(type, true);
+            this.lowPrio = RenderPriority.getRenderPriority(type, false);
+            this.plane = plane;
+        }
+
+        public static ScrollContext createInstance(RenderType type, int[] plane) {
+            return new ScrollContext(type, plane);
         }
     }
 

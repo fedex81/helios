@@ -560,8 +560,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private long z80MemoryRead(long address, Size size) {
         busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
         if (!z80BusRequested || z80ResetState) {
-            LOG.warn("Reading Z80 memory without busreq");
-            return 0;
+            //uwol
+            LOG.warn("68k read access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
+            return 0; //TODO this should return z80 open bus (ie. prefetch?)
         }
         int addressZ = (int) (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
         if (size == Size.BYTE) {
@@ -580,7 +581,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private void z80MemoryWrite(int address, Size size, long dataL) {
         busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
         if (!z80BusRequested || z80ResetState) {
-            LOG.warn("Writing Z80 memory when bus not requested or Z80 reset");
+            LOG.warn("68k write access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
             return;
         }
         address &= GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK;
