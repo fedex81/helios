@@ -56,7 +56,7 @@ public class SmsSavestateTest extends BaseSavestateTest {
     }
 
     @Override
-    protected BaseStateHandler testLoadSaveInternal(Path saveFile) {
+    protected void testLoadSaveInternal(Path saveFile) {
         String filePath = saveFile.toAbsolutePath().toString();
 
         SmsBus busProvider1 = setupNewSystem();
@@ -81,7 +81,6 @@ public class SmsSavestateTest extends BaseSavestateTest {
         compareDevices(busProvider1, busProvider2);
 
 //        Assert.assertArrayEquals("Data mismatch", data, savedData);
-        return saveHandler;
     }
 
     private SmsBus setupNewSystem() {

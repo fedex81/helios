@@ -141,7 +141,7 @@ public class NesHelper {
 
     }
 
-    interface NesGUIInterface extends GUIInterface, BaseVdpAdapter.ScreenDataSupplier {
+    public interface NesGUIInterface extends GUIInterface, BaseVdpAdapter.ScreenDataSupplier {
         int[] getScreen();
 
         BaseVdpProvider getVdpProvider();

@@ -22,7 +22,6 @@ package omegadrive.save;
 import omegadrive.Device;
 import omegadrive.bus.BaseBusProvider;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.savestate.BaseStateHandler;
 import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -41,7 +40,7 @@ public abstract class BaseSavestateTest {
     public static Path baseSaveStateFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources", "savestate");
 
-    protected abstract BaseStateHandler testLoadSaveInternal(Path saveFile);
+    protected abstract void testLoadSaveInternal(Path saveFile);
 
     protected void testLoadAndSave(Path saveStateFolder, String fileExt) throws IOException {
         Set<Path> files = MdSavestateTest.getSavestateList(saveStateFolder, fileExt);

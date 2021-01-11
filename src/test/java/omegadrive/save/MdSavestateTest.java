@@ -152,7 +152,7 @@ public class MdSavestateTest extends BaseSavestateTest {
     }
 
     @Override
-    protected BaseStateHandler testLoadSaveInternal(Path saveFile) {
+    protected void testLoadSaveInternal(Path saveFile) {
         String filePath = saveFile.toAbsolutePath().toString();
         GenesisBusProvider busProvider1 = setupNewSystem();
 
@@ -177,7 +177,6 @@ public class MdSavestateTest extends BaseSavestateTest {
         compareDevices(busProvider1, busProvider2);
 
         Assert.assertArrayEquals("Data mismatch", data, savedData);
-        return saveHandler;
     }
 
     private void compareDevices(GenesisBusProvider b1, GenesisBusProvider b2) {

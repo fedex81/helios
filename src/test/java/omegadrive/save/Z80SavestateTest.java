@@ -74,7 +74,7 @@ public class Z80SavestateTest extends BaseSavestateTest {
     }
 
     @Override
-    protected BaseStateHandler testLoadSaveInternal(Path saveFile) {
+    protected void testLoadSaveInternal(Path saveFile) {
         String filePath = saveFile.toAbsolutePath().toString();
 
         Z80BusProvider busProvider1 = setupNewSystem(systemType);
@@ -99,7 +99,6 @@ public class Z80SavestateTest extends BaseSavestateTest {
         compareDevices(busProvider1, busProvider2);
 
 //        Assert.assertArrayEquals("Data mismatch", data, savedData);
-        return saveHandler;
     }
 
     private Z80BusProvider setupNewSystem(SystemLoader.SystemType systemType) {
