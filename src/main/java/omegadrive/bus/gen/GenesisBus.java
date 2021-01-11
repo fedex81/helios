@@ -327,12 +327,13 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     // the Z80's /BUSREQ line.
     //0 means the Z80 bus can be accessed by 68k (/BUSACK asserted and/ZRESET released).
     private int z80BusReqRead(Size size) {
-        int value = (z80BusRequested && !z80ResetState) ? 0 : 1;
+        int prefetch = m68kProvider.getPrefetchWord(); //shadow beast[U] needs the prefetch
+        int value = (prefetch & 0xFE) | ((z80BusRequested && !z80ResetState) ? 0 : 1);
         if (size == Size.WORD) {
             //NOTE: Time Killers is buggy and needs bit0 !=0
-            value = (value << 8) | (m68kProvider.getPrefetchWord() & 0xFF);
+            value = (value << 8) | (prefetch & 0xFEFF);
         }
-//        LOG.info("Read Z80 busReq: {}, {} {}", Integer.toHexString(address), Integer.toHexString(value), size);
+//        LOG.debug("Read Z80 busReq: {} {}", Integer.toHexString(value), size);
         return value;
     }
 
