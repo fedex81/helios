@@ -47,7 +47,7 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
     static Stream<String> fileProvider() {
         File[] files = Paths.get(saveStateFolder).toFile().listFiles();
         Predicate<File> validFile = f -> !f.isDirectory() && !ignoredTests.contains(f.getName());
-        return Arrays.stream(files).filter(validFile).map(f -> f.getName());
+        return Arrays.stream(files).filter(validFile).map(f -> f.getName()).sorted();
     }
 
     @BeforeEach

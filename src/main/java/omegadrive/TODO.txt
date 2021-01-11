@@ -22,7 +22,7 @@ md: broken {ssf2, virtua racing}
 shadow/highlight:
 sonic3d traveller's tale logo
 rambo III intro corruption
-iss deluxe colors (?)
+iss deluxe colors
 
 danibus scroll test
 bubba and stix
@@ -38,6 +38,10 @@ ko - f7a9385 on 15/06/2020 at 17:29
 
 titan1, chip twister scene broken
 ko - 022bc232 23/04/2020 at 12:23
+
+power monger
+md: window plane fixes
+2b02f633 on 12/11/2019 at 20:43
 
 md: vdp perf
 ok (buggy) - 78b91eeb on 11/11/2019 at 11:52

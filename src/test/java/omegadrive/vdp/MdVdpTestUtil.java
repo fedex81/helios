@@ -72,7 +72,7 @@ public class MdVdpTestUtil {
 
         //TODO detect event START_FRAME
         int reg1 = vdp.getRegisterData(MODE_1);
-        if ((reg1 & 0xFD) > 0) {
+        if ((reg1 & 2) > 0) {
             System.out.println("m3 (counter latch) is on!");
             vdp.updateRegisterData(MODE_1, reg1 & 0xFD);
         }
