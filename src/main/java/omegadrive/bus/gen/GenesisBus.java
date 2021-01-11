@@ -300,9 +300,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 //            1: D-RAM MODE
             LOG.info("Setting memory mode to: {}", data);
         } else if (address >= Z80_BUS_REQ_CONTROL_START && address <= Z80_BUS_REQ_CONTROL_END) {
-            z80BusReqWrite(address, data, size);
+            z80BusReqWrite(data, size);
         } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
-            z80ResetControlWrite(data);
+            z80ResetControlWrite(data, size);
         } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {
             timeLineControlWrite(address, data);
         } else if (address >= TMSS_AREA1_START && address <= TMSS_AREA1_END) {
@@ -323,16 +323,16 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         }
     }
 
+    // Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
+    // the Z80's /BUSREQ line.
+    //0 means the Z80 bus can be accessed by 68k (/BUSACK asserted and/ZRESET released).
     private int z80BusReqRead(Size size) {
-        int value = z80BusRequested ? 0 : 1;
-        value = z80ResetState ? 1 : value;
-//            Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
-//            the Z80's /BUSREQ line.
+        int value = (z80BusRequested && !z80ResetState) ? 0 : 1;
         if (size == Size.WORD) {
             //NOTE: Time Killers is buggy and needs bit0 !=0
             value = (value << 8) | (m68kProvider.getPrefetchWord() & 0xFF);
         }
-        LOG.debug("Read Z80 busReq: {} {}", size, value);
+//        LOG.info("Read Z80 busReq: {}, {} {}", Integer.toHexString(address), Integer.toHexString(value), size);
         return value;
     }
 
@@ -371,38 +371,43 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         }
     }
 
-    private void z80ResetControlWrite(long data) {
-        //	if the Z80 is required to be reset (for example, to load a new program to it's memory)
-        //	this may be done by writing #$0000 to $A11200, but only when the Z80 bus is requested
-        if (data == 0x0000) {
+    //	if the Z80 is required to be reset (for example, to load a new program to it's memory)
+    //	this may be done by writing #$0000 to $A11200, but only when the Z80 bus is requested
+    //	After returning the bus after loading the new program to it's memory,
+    //	the Z80 may be let go from reset by writing #$0100 to $A11200.
+    private void z80ResetControlWrite(long data, Size size) {
+//        LOG.info("Write Z80 resetControl: {}, {} {}", Integer.toHexString(address), Long.toHexString(data), size);
+        if (size == Size.WORD) {
+            data >>= 8;
+        }
+        //only data bit0 is connected to the bus arbiter
+        boolean reset = (data & 1) == 0;
+        if (reset) {
             if (z80BusRequested) {
                 z80Provider.reset();
                 z80ResetState = true;
                 getFm().reset();
-                LOG.debug("Reset while busRequested");
+                LOG.debug("Reset while busRequested: {}", z80BusRequested);
             } else {
                 LOG.debug("Reset while busUnrequested, ignoring");
             }
-
-            //	After returning the bus after loading the new program to it's memory,
-            //	the Z80 may be let go from reset by writing #$0100 to $A11200.
-        } else if (data == 0x0100 || data == 0x1) {
+        } else {
             z80ResetState = false;
             LOG.debug("Disable reset, busReq : {}", z80BusRequested);
-        } else {
-            LOG.warn("Unexpected data on busReset: {}", Integer.toBinaryString((int) data));
         }
     }
 
-    private void z80BusReqWrite(int addressL, long data, Size size) {
-        LOG.debug("Write Z80 busReq: {} {}", size, data);
-        //	To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
+    //	To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
+    //	 #$0000 needs to be written to $A11100 to return the bus back to the Z80
+    //NOTE: Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF, Slap Fight 0xFF
+    private void z80BusReqWrite(long data, Size size) {
+//        LOG.info("Write Z80 busReq: {}, {} {}", Integer.toHexString(address), Long.toHexString(data), size);
         if (size == Size.WORD) {
-            // Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF, Slap Fight 0xFF
             data >>= 8;
         }
-        data &= 1;
-        if (data > 0) {
+        //only data bit0 is connected to the bus arbiter
+        boolean busReq = (data & 1) > 0;
+        if (busReq) {
             boolean isReset = z80ResetState;
             if (!z80BusRequested) {
                 LOG.debug("busRequested, reset: {}", isReset);
@@ -410,7 +415,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             } else {
                 LOG.debug("busRequested, ignored, reset: {}", isReset);
             }
-            //	 #$0000 needs to be written to $A11100 to return the bus back to the Z80
         } else {
             if (z80BusRequested) {
                 z80BusRequested = false;
