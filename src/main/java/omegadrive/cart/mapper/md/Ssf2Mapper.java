@@ -53,7 +53,7 @@ import java.util.Arrays;
  * <p>
  * https://github.com/Emu-Docs/Emu-Docs/blob/master/Genesis/ssf2.txt
  **/
-public class Ssf2Mapper implements RomMapper {
+public abstract class Ssf2Mapper implements RomMapper {
 
     private static final Logger LOG = LogManager.getLogger(Ssf2Mapper.class.getSimpleName());
 
@@ -66,15 +66,7 @@ public class Ssf2Mapper implements RomMapper {
     private int[] banks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
     protected RomMapper baseMapper;
     protected IMemoryProvider memory;
-    private boolean verbose = false;
-
-    public static Ssf2Mapper createInstance(RomMapper baseMapper, IMemoryProvider memoryProvider) {
-        Ssf2Mapper mapper = new Ssf2Mapper();
-        mapper.baseMapper = baseMapper;
-        mapper.memory = memoryProvider;
-        LOG.info("Ssf2Mapper created and enabled");
-        return mapper;
-    }
+    private final boolean verbose = false;
 
     @Override
     public long readData(long address, Size size) {
@@ -105,10 +97,10 @@ public class Ssf2Mapper implements RomMapper {
         if (val % 2 == 1 && index > 0) {
             int dataI = (int) (data & 0x3F);
             banks[index] = dataI;
-            LogHelper.printLevel(LOG, Level.INFO, "Bank write to: {}", addressL, verbose);
+            LogHelper.printLevel(LOG, Level.INFO, "Setting bankSelector {}: {}, {}",
+                    index, addressL, dataI, verbose);
         }
     }
-
 
     public int[] getState() {
         return banks;

@@ -54,7 +54,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     private MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
-    private RomMapper ssf2Mapper = RomMapper.NO_OP_MAPPER;
+    private RomMapper exSsfMapper = RomMapper.NO_OP_MAPPER;
     private RomMapper backupMemMapper = RomMapper.NO_OP_MAPPER;
     private SvpBus svpMapper = SvpBus.NO_OP;
     private MsuMdHandler msuMdHandler;
@@ -90,13 +90,14 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         if (cartridgeInfoProvider.isSramEnabled() || entry.hasEeprom()) {
             mapper = MdBackupMemoryMapper.createInstance(this, cartridgeInfoProvider, entry);
         }
-        //some homebrews use a flat ROM mapper, in theory up to Z80_ADDRESS_SPACE_START
-        if (ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
-            LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
-        }
         msuMdHandler = MsuMdHandlerImpl.createInstance(systemProvider.getRomPath());
         if (cartridgeInfoProvider.isSsfMapper()) {
-            mapper = ExSsfMapper.createInstance(this, memoryProvider);
+            checkExSsfMapper();
+            ROM_END_ADDRESS = DEFAULT_ROM_END_ADDRESS;
+        }
+        //some homebrews use a flat ROM mapper, in theory up to Z80_ADDRESS_SPACE_START
+        if (!cartridgeInfoProvider.isSsfMapper() && ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
+            LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
         }
     }
 
@@ -353,13 +354,13 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= Ssf2Mapper.BANK_SET_END_ADDRESS) {
             LOG.info("Mapper bank set, address: {} , data: {}", Long.toHexString(addressL),
                     Integer.toHexString((int) data));
-            checkSsf2Mapper();
+            checkExSsfMapper();
             ROM_END_ADDRESS = DEFAULT_ROM_END_ADDRESS;
             mapper.writeBankData(addressL, data);
         } else if (addressL == 0xA130F1) {
             boolean rom = (data & 1) == 0;
             if (rom) {
-                checkSsf2Mapper();
+                checkExSsfMapper();
             } else {
                 //NOTE: seems like 1 allows sram writes
 //                SramMode sramMode = (data & 2) > 0 ? SramMode.READ_WRITE : SramMode.READ_ONLY;
@@ -764,11 +765,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         return false;
     }
 
-    private void checkSsf2Mapper() {
-        if (ssf2Mapper == RomMapper.NO_OP_MAPPER) {
-            this.ssf2Mapper = Ssf2Mapper.createInstance(this, memoryProvider);
+    private void checkExSsfMapper() {
+        if (exSsfMapper == RomMapper.NO_OP_MAPPER) {
+            this.exSsfMapper = ExSsfMapper.createInstance(this, memoryProvider);
         }
-        mapper = ssf2Mapper;
+        mapper = exSsfMapper;
     }
 
     private void checkSvpMapper() {
@@ -854,16 +855,16 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     @Override
     public int[] getMapperData() {
-        if (ssf2Mapper instanceof Ssf2Mapper) {
-            return ((Ssf2Mapper) ssf2Mapper).getState();
+        if (exSsfMapper instanceof Ssf2Mapper) {
+            return ((Ssf2Mapper) exSsfMapper).getState();
         }
         return new int[0];
     }
 
     @Override
     public void setMapperData(int[] data) {
-        if (ssf2Mapper instanceof Ssf2Mapper) {
-            ((Ssf2Mapper) ssf2Mapper).setState(data);
+        if (exSsfMapper instanceof Ssf2Mapper) {
+            ((Ssf2Mapper) exSsfMapper).setState(data);
         }
     }
 
@@ -878,7 +879,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         if (mapper != this) {
             mapper.closeRom();
         }
-        ssf2Mapper.closeRom();
+        exSsfMapper.closeRom();
         backupMemMapper.closeRom();
         msuMdHandler.close();
     }
