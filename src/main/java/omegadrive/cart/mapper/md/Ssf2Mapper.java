@@ -62,6 +62,7 @@ public abstract class Ssf2Mapper implements RomMapper {
 
     public static final int BANK_SIZE = 0x80000;
     public static final int BANKABLE_START_ADDRESS = 0x80000;
+    public static final int BANK_SHIFT = 19;
 
     private int[] banks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
     protected RomMapper baseMapper;
@@ -69,20 +70,20 @@ public abstract class Ssf2Mapper implements RomMapper {
     private final boolean verbose = false;
 
     @Override
-    public long readData(long address, Size size) {
-        address = address & 0xFF_FFFF;
-        if (address >= BANKABLE_START_ADDRESS && address <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
-            LogHelper.printLevel(LOG, Level.INFO, "Bank read: {}", address, verbose);
-            int bankSelector = (int) (address / BANK_SIZE);
-            address = ((long) banks[bankSelector] * BANK_SIZE) + (address - bankSelector * BANK_SIZE);
-            return Util.readData(memory.getRomData(), size, (int) address);
+    public long readData(long addressL, Size size) {
+        if (addressL >= BANKABLE_START_ADDRESS && addressL <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
+            int address = (int) (addressL & 0xFF_FFFF);
+            //bankSelector = address >> BANK_SHIFT;
+            address = (banks[address >> BANK_SHIFT] << BANK_SHIFT) | (address & 0x7_FFFF);
+            LogHelper.printLevel(LOG, Level.INFO, "Bank read: {} -> {}",
+                    addressL, address, verbose);
+            return Util.readData(memory.getRomData(), size, address);
         }
-        return baseMapper.readData(address, size);
+        return baseMapper.readData(addressL, size);
     }
 
     @Override
     public void writeData(long addressL, long data, Size size) {
-        addressL = addressL & 0xFF_FFFF;
         if (addressL >= BANK_SET_START_ADDRESS && addressL <= BANK_SET_END_ADDRESS) {
             writeBankData(addressL, data);
             return;
@@ -97,10 +98,12 @@ public abstract class Ssf2Mapper implements RomMapper {
         if (val % 2 == 1 && index > 0) {
             int dataI = (int) (data & 0x3F);
             banks[index] = dataI;
-            LogHelper.printLevel(LOG, Level.INFO, "Setting bankSelector {}: {}, {}",
-                    index, addressL, dataI, verbose);
+            LogHelper.printLevel(LOG, Level.INFO, "Bank write to: {}, {}", addressL, dataI, verbose);
+        } else if (val == 1) { //0xA130F1 goes to timeControlWrite
+            baseMapper.writeData(addressL, data, Size.BYTE);
         }
     }
+
 
     public int[] getState() {
         return banks;

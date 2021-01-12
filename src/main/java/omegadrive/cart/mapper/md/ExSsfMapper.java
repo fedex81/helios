@@ -85,13 +85,13 @@ public class ExSsfMapper extends Ssf2Mapper {
 
     @Override
     public long readData(long address, Size size) {
-        address = address & 0xFF_FFFF;
+        address &= 0xFF_FFFF;
         if (address >= BANKABLE_START_ADDRESS && address <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
             if (mapRom) {
                 return super.readData(address, size);
             }
             LogHelper.printLevel(LOG, Level.INFO, "Bank read: {}", address, verbose);
-            int bankSelector = (int) (address / BANK_SIZE);
+            int bankSelector = (int) (address >> BANK_SHIFT);
             address &= (BANK_SIZE - 1);
             return Util.readData(moreRam[moreBanks[bankSelector]], size, (int) address);
         } else if (address >= MATH_ARG_HI && address <= MATH_ARG_LO) {
@@ -113,10 +113,10 @@ public class ExSsfMapper extends Ssf2Mapper {
 
     @Override
     public void writeData(long address, long data, Size size) {
-        address = address & 0xFF_FFFF;
+        address &= 0xFF_FFFF;
         if (address >= BANKABLE_START_ADDRESS && address <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
             LogHelper.printLevel(LOG, Level.INFO, "Bank write: {}", address, verbose);
-            int bankSelector = (int) (address / BANK_SIZE);
+            int bankSelector = (int) (address >> BANK_SHIFT);
             address &= (BANK_SIZE - 1);
             Util.writeData(moreRam[moreBanks[bankSelector]], size, (int) address, data);
             return;

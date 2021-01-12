@@ -7,7 +7,7 @@
 https://github.com/krikzz/MEGA-PRO/blob/master/samples/mappers-se/extended-ssf.txt
 
 
-danny sullivan, swamp thing no work
+sonic_delta broken
 
 TODO
 hline issue:

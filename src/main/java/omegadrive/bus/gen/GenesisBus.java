@@ -88,13 +88,12 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         ROM_END_ADDRESS = Math.min(cartridgeInfoProvider.getRomSize(), Z80_ADDRESS_SPACE_START);
         entry = MdLoader.getEntry(cartridgeInfoProvider.getSerial());
         if (cartridgeInfoProvider.isSramEnabled() || entry.hasEeprom()) {
-            mapper = MdBackupMemoryMapper.createInstance(this, cartridgeInfoProvider, entry);
+            checkBackupMemoryMapper(SramMode.READ_WRITE);
         }
-        msuMdHandler = MsuMdHandlerImpl.createInstance(systemProvider.getRomPath());
         if (cartridgeInfoProvider.isSsfMapper()) {
             checkExSsfMapper();
-            ROM_END_ADDRESS = DEFAULT_ROM_END_ADDRESS;
         }
+        msuMdHandler = MsuMdHandlerImpl.createInstance(systemProvider.getRomPath());
         //some homebrews use a flat ROM mapper, in theory up to Z80_ADDRESS_SPACE_START
         if (!cartridgeInfoProvider.isSsfMapper() && ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
             LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
@@ -355,7 +354,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             LOG.info("Mapper bank set, address: {} , data: {}", Long.toHexString(addressL),
                     Integer.toHexString((int) data));
             checkExSsfMapper();
-            ROM_END_ADDRESS = DEFAULT_ROM_END_ADDRESS;
             mapper.writeBankData(addressL, data);
         } else if (addressL == 0xA130F1) {
             boolean rom = (data & 1) == 0;

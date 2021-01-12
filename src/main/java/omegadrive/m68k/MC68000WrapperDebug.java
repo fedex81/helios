@@ -134,6 +134,7 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
             hitCounter(currentPC);
             storeM68kState(current);
             res = super.runInstruction();
+            printInstOnly();
             printVerbose();
             printCpuStateIfVerbose("");
             handlePostRunState();
@@ -246,6 +247,18 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
             return;
         }
         MC68000Helper.printCpuState(m68k, Level.INFO, head, addressSpace.size());
+    }
+
+    protected void printInstOnly() {
+        if (!verbose) {
+            return;
+        }
+        try {
+            LOG.info(MC68000Helper.dumpOp(m68k));
+        } catch (Exception e) {
+            String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
+            LOG.warn("Unable to dump the instruction: {}", pc, e);
+        }
     }
 
     protected void printVerbose() {
