@@ -45,6 +45,7 @@ public abstract class VariableSampleRateSource implements FmProvider {
     private AudioRateControl audioRateControl;
     private int sampleRatePerFrame = 0;
     private final int audioScaleBits;
+    private final Integer[] stereoSamples = new Integer[2]; //[0] left, [1] right
 
     protected VariableSampleRateSource(double sourceSampleRate, AudioFormat audioFormat, String sourceName) {
         this(sourceSampleRate, audioFormat, sourceName, DEFAULT_AUDIO_SCALE_BITS);
@@ -68,9 +69,8 @@ public abstract class VariableSampleRateSource implements FmProvider {
     }
 
     protected void addStereoSamples(int sampleL, int sampleR) {
-        //TODO check results
-        sampleQueue.offer(Util.getFromIntegerCache(sampleL));
-        sampleQueue.offer(Util.getFromIntegerCache(sampleR));
+        sampleQueue.offer(Util.getFromIntegerCache(sampleL | 1)); //sampleL is always odd
+        sampleQueue.offer(Util.getFromIntegerCache(sampleR & ~1)); //sampleR is always even
         queueLen.addAndGet(2);
         sampleRatePerFrame += 2;
     }
@@ -83,26 +83,39 @@ public abstract class VariableSampleRateSource implements FmProvider {
     public int update(int[] buf_lr, int offset, int count) {
         offset <<= 1;
         int end = (count << 1) + offset;
-        Integer ilsample, irsample;
         final int initialQueueSize = queueLen.get();
         int queueIndicativeLen = initialQueueSize;
         int i = offset;
         for (; i < end && queueIndicativeLen > 0; i += 2) {
             //when using mono we process two samples
-            ilsample = sampleQueue.peek();
-            irsample = sampleQueue.peek();
-            if (irsample == null) {
-                LOG.debug("Null sample QL{} P{}", queueIndicativeLen, i);
+            if (!fillStereoSamples(stereoSamples)) {
+                LOG.warn("Null left sample QL{} P{}", queueIndicativeLen, i);
                 break;
             }
-            sampleQueue.poll();
-            sampleQueue.poll();
             queueIndicativeLen = queueLen.addAndGet(-2);
             //Integer -> short -> int
-            buf_lr[i] = ((short) (ilsample & 0xFFFF)) << audioScaleBits;
-            buf_lr[i + 1] = ((short) (irsample & 0xFFFF)) << audioScaleBits;
+            buf_lr[i] = ((short) (stereoSamples[0] & 0xFFFF)) << audioScaleBits;
+            buf_lr[i + 1] = ((short) (stereoSamples[1] & 0xFFFF)) << audioScaleBits;
         }
         return i >> 1;
+    }
+
+    private boolean fillStereoSamples(Integer[] stereoSamples) {
+        stereoSamples[0] = sampleQueue.peek();
+        if (stereoSamples[0] == null) {
+            return false;
+        }
+        sampleQueue.poll();
+        stereoSamples[1] = sampleQueue.poll();
+        if (stereoSamples[1] == null) {
+            stereoSamples[1] = stereoSamples[0];
+            LOG.warn("Null right sample, left: {}", stereoSamples[0]);
+        }
+        //sanity check
+//        if((stereoSamples[0] & 1) == 0 || (stereoSamples[1] & 1) == 1){
+//            LOG.warn("Unexpected sample ordering");
+//        }
+        return true;
     }
 
     @Override

@@ -6,9 +6,6 @@
 - extended ssf vs ssf mapper, https://krikzz.com/pub/support/mega-everdrive/x3x5x7/dev/extended_ssf-v2.txt
 https://github.com/krikzz/MEGA-PRO/blob/master/samples/mappers-se/extended-ssf.txt
 
-
-sonic_delta broken
-
 TODO
 hline issue:
 turbo outrun
