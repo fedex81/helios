@@ -118,7 +118,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     public boolean isSramUsedWithBrokenHeader(long address) {
         boolean noOverlapBetweenRomAndSram =
-                MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS > romSize;
+                MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS + 1 > romSize;
         return noOverlapBetweenRomAndSram &&
                 (address >= MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS &&
                         address <= MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS);

@@ -355,7 +355,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                     Integer.toHexString((int) data));
             checkExSsfMapper();
             mapper.writeBankData(addressL, data);
-        } else if (addressL == 0xA130F1) {
+        } else if (addressL == SRAM_LOCK) {
             boolean rom = (data & 1) == 0;
             if (rom) {
                 checkExSsfMapper();

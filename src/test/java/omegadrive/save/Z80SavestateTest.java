@@ -21,21 +21,15 @@ package omegadrive.save;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
-import omegadrive.bus.z80.ColecoBus;
 import omegadrive.bus.z80.MsxBus;
-import omegadrive.bus.z80.Sg1000Bus;
 import omegadrive.bus.z80.Z80BusProvider;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.StateUtil;
 import omegadrive.savestate.Z80StateBaseHandler;
-import omegadrive.system.SystemProvider;
-import omegadrive.system.Z80BaseSystem;
-import omegadrive.ui.DisplayWindow;
+import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.vdp.model.Tms9918a;
-import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Test;
@@ -77,7 +71,7 @@ public class Z80SavestateTest extends BaseSavestateTest {
     protected void testLoadSaveInternal(Path saveFile) {
         String filePath = saveFile.toAbsolutePath().toString();
 
-        Z80BusProvider busProvider1 = setupNewSystem(systemType);
+        Z80BusProvider busProvider1 = SystemTestUtil.setupNewZ80System(systemType);
         BaseStateHandler loadHandler = BaseStateHandler.createInstance(systemType, filePath, LOAD,
                 busProvider1.getAllDevices(Device.class));
         loadHandler.processState();
@@ -90,7 +84,7 @@ public class Z80SavestateTest extends BaseSavestateTest {
 
         byte[] saveData = saveHandler.getData();
 
-        Z80BusProvider busProvider2 = setupNewSystem(systemType);
+        Z80BusProvider busProvider2 = SystemTestUtil.setupNewZ80System(systemType);
         BaseStateHandler loadHandler2 = Z80StateBaseHandler.createLoadInstance(name, systemType, saveData,
                 busProvider2.getAllDevices(Device.class));
         loadHandler2.processState();
@@ -99,34 +93,6 @@ public class Z80SavestateTest extends BaseSavestateTest {
         compareDevices(busProvider1, busProvider2);
 
 //        Assert.assertArrayEquals("Data mismatch", data, savedData);
-    }
-
-    private Z80BusProvider setupNewSystem(SystemLoader.SystemType systemType) {
-        IMemoryProvider memory = null;
-        Z80BusProvider bus = null;
-
-        switch (systemType) {
-            case SG_1000:
-                memory = MemoryProvider.createSg1000Instance();
-                bus = new Sg1000Bus();
-                break;
-            case MSX:
-                memory = MemoryProvider.createMsxInstance();
-                bus = new MsxBus();
-                break;
-            case COLECO:
-                memory = MemoryProvider.createSg1000Instance();
-                bus = new ColecoBus();
-                break;
-            default:
-                Assert.fail("Unkonwn system: " + systemType);
-        }
-        SystemProvider system = Z80BaseSystem.createNewInstance(systemType, DisplayWindow.HEADLESS_INSTANCE);
-        Z80Provider z80p1 = Z80CoreWrapper.createInstance(bus);
-        Tms9918aVdp vdp = new Tms9918aVdp();
-        bus.attachDevice(system).attachDevice(memory).attachDevice(z80p1).attachDevice(vdp);
-        bus.init();
-        return bus;
     }
 
     private void compareDevices(Z80BusProvider b1, Z80BusProvider b2) {

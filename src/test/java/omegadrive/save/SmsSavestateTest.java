@@ -22,15 +22,13 @@ package omegadrive.save;
 import omegadrive.Device;
 import omegadrive.bus.z80.SmsBus;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.MekaStateHandler;
 import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.util.RegionDetector;
+import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.SmsVdp;
-import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Test;
@@ -59,7 +57,7 @@ public class SmsSavestateTest extends BaseSavestateTest {
     protected void testLoadSaveInternal(Path saveFile) {
         String filePath = saveFile.toAbsolutePath().toString();
 
-        SmsBus busProvider1 = setupNewSystem();
+        SmsBus busProvider1 = SystemTestUtil.setupNewSmsSystem(sp);
         BaseStateHandler loadHandler = BaseStateHandler.createInstance(SMS, filePath, LOAD,
                 busProvider1.getAllDevices(Device.class));
         loadHandler.processState();
@@ -72,7 +70,7 @@ public class SmsSavestateTest extends BaseSavestateTest {
 
         byte[] saveData = saveHandler.getData();
 
-        SmsBus busProvider2 = setupNewSystem();
+        SmsBus busProvider2 = SystemTestUtil.setupNewSmsSystem(sp);
         BaseStateHandler loadHandler2 = MekaStateHandler.
                 createLoadInstance(name, saveData, busProvider2.getAllDevices(Device.class));
         loadHandler2.processState();
@@ -81,18 +79,6 @@ public class SmsSavestateTest extends BaseSavestateTest {
         compareDevices(busProvider1, busProvider2);
 
 //        Assert.assertArrayEquals("Data mismatch", data, savedData);
-    }
-
-    private SmsBus setupNewSystem() {
-        SmsBus busProvider1 = new SmsBus();
-        IMemoryProvider cpuMem1 = MemoryProvider.createSmsInstance();
-        cpuMem1.setRomData(new int[0xFFFF]);
-
-        SmsVdp vdp1 = new SmsVdp(SMS, RegionDetector.Region.USA);
-        Z80Provider z80p1 = Z80CoreWrapper.createInstance(busProvider1);
-        busProvider1.attachDevice(sp).attachDevice(cpuMem1).attachDevice(z80p1).attachDevice(vdp1);
-        busProvider1.init();
-        return busProvider1;
     }
 
     private void compareDevices(SmsBus b1, SmsBus b2) {

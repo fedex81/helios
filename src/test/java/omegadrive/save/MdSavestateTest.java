@@ -31,13 +31,9 @@ import omegadrive.savestate.BaseStateHandler.Type;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
-import omegadrive.sound.javasound.AbstractSoundManager;
-import omegadrive.sound.psg.PsgProvider;
-import omegadrive.vdp.gen.GenesisVdp;
+import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
-import omegadrive.z80.Z80CoreWrapper;
 import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Test;
@@ -65,38 +61,16 @@ public class MdSavestateTest extends BaseSavestateTest {
     }
 
     public static GenesisBusProvider loadSaveState(Path saveFile) {
-        GenesisBusProvider busProvider = setupNewSystem();
+        GenesisBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
         BaseStateHandler loadHandler = BaseStateHandler.createInstance(
                 GENESIS, saveFile.toAbsolutePath().toString(), Type.LOAD, busProvider.getAllDevices(Device.class));
         loadHandler.processState();
         return busProvider;
     }
 
-    public static GenesisBusProvider setupNewSystem() {
-        GenesisBusProvider busProvider = GenesisBusProvider.createBus();
-
-        GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
-        MC68000Wrapper cpu1 = new MC68000Wrapper(busProvider);
-        IMemoryProvider cpuMem1 = MemoryProvider.createGenesisInstance();
-        Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider);
-        FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
-        SoundProvider sp1 = getSoundProvider(fm1);
-        busProvider.attachDevice(vdpProvider1).attachDevice(cpu1).attachDevice(cpuMem1).attachDevice(z80p1).attachDevice(sp1);
-        return busProvider;
-    }
-
     @Test
     public void testLoadAndSave() throws IOException {
         testLoadAndSave(saveStateFolder, ".gs");
-    }
-
-    private static SoundProvider getSoundProvider(FmProvider fm) {
-        return new SoundProviderAdapter() {
-            @Override
-            public FmProvider getFm() {
-                return fm;
-            }
-        };
     }
 
     private void compareFm(FmProvider fm1, FmProvider fm2) {
@@ -154,7 +128,7 @@ public class MdSavestateTest extends BaseSavestateTest {
     @Override
     protected void testLoadSaveInternal(Path saveFile) {
         String filePath = saveFile.toAbsolutePath().toString();
-        GenesisBusProvider busProvider1 = setupNewSystem();
+        GenesisBusProvider busProvider1 = SystemTestUtil.setupNewMdSystem();
 
         BaseStateHandler loadHandler = BaseStateHandler.createInstance(
                 GENESIS, filePath, Type.LOAD, busProvider1.getAllDevices(Device.class));
@@ -167,7 +141,7 @@ public class MdSavestateTest extends BaseSavestateTest {
         BaseStateHandler saveHandler = BaseStateHandler.createInstance(
                 GENESIS, name, Type.SAVE, busProvider1.getAllDevices(Device.class));
 
-        GenesisBusProvider busProvider2 = setupNewSystem();
+        GenesisBusProvider busProvider2 = SystemTestUtil.setupNewMdSystem();
 
         BaseStateHandler loadHandler1 = BaseStateHandler.createInstance(
                 GENESIS, filePath, Type.LOAD, busProvider2.getAllDevices(Device.class));
@@ -185,38 +159,5 @@ public class MdSavestateTest extends BaseSavestateTest {
                 getDevice(b1, IMemoryProvider.class), getDevice(b2, IMemoryProvider.class));
         compareZ80(getDevice(b1, Z80Provider.class), getDevice(b2, Z80Provider.class), b1, b2);
         compareFm(getDevice(b1, SoundProvider.class).getFm(), getDevice(b1, SoundProvider.class).getFm());
-    }
-
-    static class SoundProviderAdapter implements SoundProvider {
-
-        @Override
-        public PsgProvider getPsg() {
-            return null;
-        }
-
-        @Override
-        public FmProvider getFm() {
-            return null;
-        }
-
-        @Override
-        public void close() {
-
-        }
-
-        @Override
-        public boolean isMute() {
-            return false;
-        }
-
-        @Override
-        public void setEnabled(boolean mute) {
-
-        }
-
-        @Override
-        public void setEnabled(Device device, boolean enabled) {
-
-        }
     }
 }

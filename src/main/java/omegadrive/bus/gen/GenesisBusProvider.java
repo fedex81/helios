@@ -48,6 +48,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
     int MEGA_CD_EXP_START = 0xA12000;
     int MEGA_CD_EXP_END = 0xA120FF;
     int TIME_LINE_START = 0xA13000;
+    int SRAM_LOCK = 0xA130F1;
     int TIME_LINE_END = 0xA130FF;
     int TMSS_AREA1_START = 0xA14000;
     int TMSS_AREA1_END = 0xA14003;

@@ -62,6 +62,9 @@ import org.apache.logging.log4j.Logger;
  * Every CTRLx register controls corresponding 512K cartridge BANKx. CTRL0 has extra functions listed above.
  * All registers is write only
  * Mapper supports up to 16Mbyte of memory (32 banks total). Backup ram mapped to the last 31th bank
+ *
+ * - extended ssf vs ssf mapper, https://krikzz.com/pub/support/mega-everdrive/x3x5x7/dev/extended_ssf-v2.txt
+ * https://github.com/krikzz/MEGA-PRO/blob/master/samples/mappers-se/extended-ssf.txt
  */
 //TODO savestate stuff
 public class ExSsfMapper extends Ssf2Mapper {
