@@ -43,10 +43,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemProvider {
@@ -181,6 +178,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         try {
             handleCloseRom();
             sound.close();
+            Util.executorService.shutdown();
+            Util.executorService.awaitTermination(1, TimeUnit.SECONDS);
             PrefStore.close();
         } catch (Exception e) {
             LOG.error("Error while closing app", e);
