@@ -583,11 +583,8 @@ public class GenesisVdp implements GenesisVdpProvider {
         VdpRegisterName reg = getRegisterName(regNumber);
         switch (reg) {
             case MODE_1:
-                boolean prevLcb = lcb;
-                lcb = ((data >> 5) & 1) == 1;
-                if (prevLcb != lcb) {
-                    LOG.info("LCB enable: {}", lcb);
-                }
+                boolean newLcb = ((data >> 5) & 1) == 1;
+                updateLcb(newLcb);
                 boolean newM3 = ((data >> 1) & 1) == 1;
                 updateM3(newM3);
                 boolean newIe1 = ((data >> 4) & 1) == 1;
@@ -670,6 +667,14 @@ public class GenesisVdp implements GenesisVdpProvider {
         if (ie1 != newIe1) {
             ie1 = newIe1;
             logVerbose("Update ie1 register: %s", newIe1 ? 1 : 0);
+        }
+    }
+
+    private void updateLcb(boolean newLcb) {
+        if (newLcb != lcb) {
+            lcb = newLcb;
+            logVerbose("Update lcb: %s", lcb ? 1 : 0);
+            list.forEach(l -> l.onVdpEvent(VdpEvent.LEFT_COL_BLANK, lcb));
         }
     }
 

@@ -48,6 +48,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private VideoMode videoMode;
     private VideoMode newVideoMode;
     private VdpColorMapper colorMapper;
+    private boolean lcb;
 
     private static final BiConsumer<SpriteDataHolder, SpriteDataHolder> updatePhase1DataFn =
             (src, dest) -> {
@@ -278,10 +279,16 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     protected void composeImageLinearLine(int line) {
-        int width = videoMode.getDimension().width;
+        final int width = videoMode.getDimension().width;
         int k = width * line;
         for (int col = 0; col < width; col++) {
             linearScreen[k++] = getPixelFromLayer(pixelPriority[col], col);
+        }
+        if (lcb) { //left column blank, use BACK_PLANE color
+            k = width * line;
+            for (int col = 0; col < 8; col++) {
+                linearScreen[k++] = getPixelFromLayer(RenderPriority.BACK_PLANE, col);
+            }
         }
     }
 
@@ -602,6 +609,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             case VIDEO_MODE:
                 setVideoMode((VideoMode) value);
                 break;
+            case LEFT_COL_BLANK:
+                lcb = (boolean) value;
             default:
                 break;
         }
