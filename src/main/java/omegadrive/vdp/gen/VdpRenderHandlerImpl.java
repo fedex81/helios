@@ -39,15 +39,15 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener {
 
     private final static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
-    private GenesisVdpProvider vdpProvider;
-    private VdpMemoryInterface memoryInterface;
-    private VdpScrollHandler scrollHandler;
-    private VdpRenderDump renderDump;
+    private final GenesisVdpProvider vdpProvider;
+    private final VdpMemoryInterface memoryInterface;
+    private final VdpScrollHandler scrollHandler;
+    private final VdpRenderDump renderDump;
     private int spritesFrame = 0;
     private boolean shadowHighlightMode;
     private VideoMode videoMode;
     private VideoMode newVideoMode;
-    private VdpColorMapper colorMapper;
+    private final VdpColorMapper colorMapper;
     private boolean lcb;
 
     private static final BiConsumer<SpriteDataHolder, SpriteDataHolder> updatePhase1DataFn =
@@ -60,24 +60,24 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             };
     private SpriteDataHolder[] spriteDataHoldersCurrent = new SpriteDataHolder[MAX_SPRITES_PER_LINE_H40];
 
-    private int[] planeA = new int[COLS];
-    private int[] planeB = new int[COLS];
-    private int[] planeBack = new int[COLS];
-    private int[] sprites = new int[COLS];
-    private int[] window = new int[COLS];
-    private RenderPriority[] pixelPriority = new RenderPriority[COLS];
-    private ShadowHighlightType[] shadowHighlight = new ShadowHighlightType[COLS];
+    private final int[] planeA = new int[COLS];
+    private final int[] planeB = new int[COLS];
+    private final int[] planeBack = new int[COLS];
+    private final int[] sprites = new int[COLS];
+    private final int[] window = new int[COLS];
+    private final RenderPriority[] pixelPriority = new RenderPriority[COLS];
+    private final ShadowHighlightType[] shadowHighlight = new ShadowHighlightType[COLS];
     private int[] linearScreen = new int[0];
-    private SpriteDataHolder spriteDataHolder = new SpriteDataHolder();
+    private final SpriteDataHolder spriteDataHolder = new SpriteDataHolder();
     private int spriteTableLocation = 0;
     private int spritePixelLineCount;
-    private ScrollContext scrollContextA;
-    private ScrollContext scrollContextB;
-    private WindowPlaneContext windowPlaneContext;
+    private final ScrollContext scrollContextA;
+    private final ScrollContext scrollContextB;
+    private final WindowPlaneContext windowPlaneContext;
     private InterlaceMode interlaceMode = InterlaceMode.NONE;
-    private int[] vram;
-    private int[] cram;
-    private int[] javaPalette;
+    private final int[] vram;
+    private final int[] cram;
+    private final int[] javaPalette;
     private int activeLines = 0;
     private SpriteDataHolder[] spriteDataHoldersNext = new SpriteDataHolder[MAX_SPRITES_PER_LINE_H40];
 
@@ -140,7 +140,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             return;
         }
         initLineData(line);
-        renderBack(line);
+        renderBack();
         phase1(line + 1);
         boolean disp = vdpProvider.isDisplayEnabled();
         if (!disp) {
@@ -245,8 +245,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
     }
 
-    private boolean renderSprite(SpriteDataHolder holder, int tileBytePointerBase,
-                                 int horOffset, int spritePixelLineLimit) {
+    private void renderSprite(SpriteDataHolder holder, int tileBytePointerBase,
+                              int horOffset, int spritePixelLineLimit) {
         for (int tileBytePos = 0; tileBytePos < BYTES_PER_TILE &&
                 spritePixelLineCount < spritePixelLineLimit; tileBytePos++, horOffset += 2) {
             spritePixelLineCount += 2;
@@ -255,7 +255,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             storeSpriteData(tileBytePointer, horOffset, holder, 0);
             storeSpriteData(tileBytePointer, horOffset + 1, holder, 1);
         }
-        return true;
     }
 
     //    The priority flag takes care of the order between each layer, but between sprites the situation is different
@@ -317,7 +316,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     private int processShadowHighlight(boolean shadowHighlightMode, int col, int cramIndex, RenderPriority rp) {
-        if (!shadowHighlightMode) {
+        if (!shadowHighlightMode || rp.getRenderType() == RenderType.BACK_PLANE) {
             return javaPalette[cramIndex >> 1];
         }
         ShadowHighlightType type = shadowHighlight[col];
@@ -343,7 +342,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         return cramIndexColor;
     }
 
-    private void renderBack(int line) {
+    private void renderBack() {
         int limitHorTiles = VdpRenderHandler.getHorizontalTiles(videoMode.isH40());
         int reg7 = vdpProvider.getRegisterData(BACKGROUND_COLOR);
         int backLine = (reg7 >> 4) & 0x3;
@@ -611,6 +610,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 break;
             case LEFT_COL_BLANK:
                 lcb = (boolean) value;
+                break;
             default:
                 break;
         }
