@@ -27,9 +27,6 @@ z80 timing (busReq unused bits?)
 hook(U) (E works), Shadow of the Beast (UE) (J works), danny sullivan proto,
 time killers, swamp thing proto
 
-- Star cruiser, window plane corruption
-ko - f7a9385 on 15/06/2020 at 17:29
-
 titan1, chip twister scene broken
 ko - 022bc232 23/04/2020 at 12:23
 

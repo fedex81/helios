@@ -32,7 +32,7 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 
-import static omegadrive.vdp.model.BaseVdpProvider.*;
+import static omegadrive.vdp.model.BaseVdpProvider.VdpEventListener;
 import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_LINE_H40;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
@@ -493,11 +493,12 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
     }
 
-    private void drawWindowPlane(final int line, int hCellStart, int hCellEnd, int wPlaneWidth, boolean isH40) {
+    private void drawWindowPlane(final int line, int hCellStart, int hCellEnd, boolean isH40) {
         int lineVCell = line >> 3;
         int nameTableLocation = VdpRenderHandler.getWindowPlaneNameTableLocation(vdpProvider, isH40);
         //do all the screenHCells fit within wPlane width?
-        int planeTileShift = wPlaneWidth << (2 - (wPlaneWidth / (isH40 ? H40_TILES : H32_TILES)));
+        //cant remember why h40 -> 0, but it works...
+        int planeTileShift = 32 << (2 - (isH40 ? 0 : 1));
         int tileLocatorVram = nameTableLocation + (planeTileShift * lineVCell) + (hCellStart << 1);
 //        System.out.println(String.format("Line: %d, pW: %d, pH: %d, tileStart: %d, tileEnd: %d", line, sc.planeWidth,
 //                sc.planeHeight, tileStart, tileEnd));
@@ -595,8 +596,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 //                            "right: %b, hStartCell: %d, hEndCell: %d",
 //                    line, isH40, hCell,
 //                    vCell, lineCell, down, right, hStartCell, hEndCell));
-            int wPlaneWidth = VdpRenderHandler.getHorizontalPlaneSize(vdpProvider.getRegisterData(PLANE_SIZE));
-            drawWindowPlane(line, hStartCell, hEndCell, wPlaneWidth, isH40);
+            drawWindowPlane(line, hStartCell, hEndCell, isH40);
             windowPlaneContext.startHCell = hStartCell;
             windowPlaneContext.endHCell = hEndCell;
             windowPlaneContext.lineWindow = legalVertical;
