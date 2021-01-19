@@ -277,17 +277,20 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
     }
 
-    protected void composeImageLinearLine(int line) {
-        final int width = videoMode.getDimension().width;
-        int k = width * line;
-        for (int col = 0; col < width; col++) {
-            linearScreen[k++] = getPixelFromLayer(pixelPriority[col], col);
-        }
-        if (lcb) { //left column blank, use BACK_PLANE color
-            k = width * line;
-            for (int col = 0; col < 8; col++) {
-                linearScreen[k++] = getPixelFromLayer(RenderPriority.BACK_PLANE, col);
-            }
+    private static void getPlaneCells(WindowPlaneContext wpc, int cellWidth) {
+        if (wpc.startHCell == wpc.endHCell) {//no window
+            wpc.startHCellPlane = 0;
+            wpc.endHCellPlane = cellWidth;
+        } else if (wpc.startHCell == 0) {
+            wpc.startHCellPlane = wpc.endHCell;
+            wpc.endHCellPlane = cellWidth;
+        } else if (wpc.endHCell == cellWidth) {
+            wpc.startHCellPlane = 0;
+            wpc.endHCellPlane = wpc.startHCell;
+        } else {
+            LOG.error("Unexpected windowPlane setup: {}, {}", wpc.startHCell, wpc.endHCell);
+            wpc.startHCellPlane = 0;
+            wpc.endHCellPlane = cellWidth;
         }
     }
 
@@ -410,12 +413,23 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 // which results in $30, the proper value for this register.
 //	SA16 is only valid if 128 KB mode is enabled, and allows for rebasing the Plane A nametable to the second 64 KB of VRAM.
     private void renderPlaneA(int line) {
-        if (windowPlaneContext.lineWindow) { //entire line is window plane
-            return;
-        }
         // TODO bit 3 for 128KB VRAM
         renderScrollPlane(line, VdpRenderHandler.getPlaneANameTableLocation(vdpProvider),
                 scrollContextA, windowPlaneContext);
+    }
+
+    protected void composeImageLinearLine(int line) {
+        final int width = videoMode.getDimension().width;
+        int k = width * line;
+        for (int col = 0; col < width; col++) {
+            linearScreen[k++] = getPixelFromLayer(pixelPriority[col], col);
+        }
+        if (lcb) { //left column blank, use BACK_PLANE color
+            k = width * line;
+            for (int col = 0; col < CELL_WIDTH; col++) {
+                linearScreen[k++] = getPixelFromLayer(RenderPriority.BACK_PLANE, col);
+            }
+        }
     }
 
     protected void renderScrollPlane(int line, int nameTableLocation, ScrollContext sc, WindowPlaneContext wpc) {
@@ -429,9 +443,10 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         sc.planeWidth = VdpRenderHandler.getHorizontalPlaneSize(reg10);
         sc.planeHeight = VdpRenderHandler.getVerticalPlaneSize(reg10);
 
-        final int startTwoCells = wpc.endHCell > 0 && wpc.endHCell < limitHorTiles
-                ? wpc.endHCell >> 1 : 0;
-        final int endTwoCells = wpc.startHCell > 0 ? wpc.startHCell >> 1 : limitHorTiles >> 1;
+        getPlaneCells(wpc, limitHorTiles);
+        final int startTwoCells = wpc.startHCellPlane >> 1;
+        final int endTwoCells = wpc.endHCellPlane >> 1;
+
         renderPlaneInternal(line, nameTableLocation, startTwoCells, endTwoCells, sc);
     }
 
@@ -552,9 +567,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     // was to be located at $F000 in VRAM, it would be divided by $400, which
     // results in $3C, the proper value for this register.
     private void renderWindow(int line) {
-        windowPlaneContext.endHCell = windowPlaneContext.startHCell = 0;
-        windowPlaneContext.lineWindow = false;
-
+        windowPlaneContext.reset();
         int reg11 = vdpProvider.getRegisterData(WINDOW_PLANE_HOR_POS);
         int reg12 = vdpProvider.getRegisterData(WINDOW_PLANE_VERT_POS);
 
@@ -598,7 +611,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             drawWindowPlane(line, hStartCell, hEndCell, isH40);
             windowPlaneContext.startHCell = hStartCell;
             windowPlaneContext.endHCell = hEndCell;
-            windowPlaneContext.lineWindow = legalVertical;
         }
     }
 

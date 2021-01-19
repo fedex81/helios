@@ -14,7 +14,6 @@ savestate:
 md: broken {ssf2, virtua racing}
 
 shadow/highlight:
-sonic3d traveller's tale logo
 rambo III intro corruption
 iss deluxe colors
 
@@ -29,10 +28,6 @@ time killers, swamp thing proto
 
 titan1, chip twister scene broken
 ko - 022bc232 23/04/2020 at 12:23
-
-power monger
-md: window plane fixes
-2b02f633 on 12/11/2019 at 20:43
 
 md: vdp perf
 ok (buggy) - 78b91eeb on 11/11/2019 at 11:52

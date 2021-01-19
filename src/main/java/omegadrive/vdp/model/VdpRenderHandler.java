@@ -224,6 +224,11 @@ public interface VdpRenderHandler {
     class WindowPlaneContext {
         public int startHCell;
         public int endHCell;
-        public boolean lineWindow;
+        public int startHCellPlane;
+        public int endHCellPlane;
+
+        public void reset() {
+            endHCell = startHCell = startHCellPlane = endHCellPlane = 0;
+        }
     }
 }
