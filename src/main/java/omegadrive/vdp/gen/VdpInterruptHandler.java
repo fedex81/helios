@@ -129,7 +129,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
     protected int increaseVCounterInternal() {
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
-        hLinePassed = vBlankSet ? resetHLinesCounter() : hLinePassed - 1;
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
         } else if (vCounterInternal == VBLANK_CLEAR) {
@@ -182,9 +181,10 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
     }
 
     protected void handleHLinesCounterDecrement() {
-//        if(vBlankSet){   //fixes wobble.bin
-//            resetHLinesCounter();
-//        }
+        hLinePassed--;
+        if (vCounterInternal >= vdpCounterMode.vBlankSet - 1) {
+            resetHLinesCounter();
+        }
         if (hLinePassed < 0) {
             hIntPending = true;
             logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);

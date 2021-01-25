@@ -4,11 +4,9 @@
 - Sonic & Knuckles mapper
 - EEPROM mapper (take list from blastem)
 
-hline issue:
-turbo outrun
-lotus 2
-FIFA 97 noisy audio
-wobble.bin
+Fatal Rewind - timing? has been broken forever
+
+lotus 2 (hline issue?)
 
 savestate:
 md: broken {ssf2, virtua racing}

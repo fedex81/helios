@@ -57,14 +57,38 @@ public class MdMapperTest {
     public void testMapper() {
         prepareRomData(0x50_0000, "SEGA GENESIS"); //40 Mbit
 
-        int address = 0x44_0000;
+        int address = 0x20_00FF;
+        int address1 = 0x40_00FF;
         int val = 0x11_22_33_44;
         buffer.putInt(address, val);
+        buffer.putInt(address1, val);
         GenesisBusProvider bus = loadRomData();
         bus.write(SRAM_LOCK, 0, Size.BYTE); //enable ssfMapper, disable SRAM
-
         testBusRead(bus, address, val);
-        //TODO
+        testBusRead(bus, address1, val);
+
+        bus.write(address, 0x55, Size.BYTE); //write to cart ignored
+        testBusRead(bus, address, val);
+
+        bus.write(SRAM_LOCK, 1, Size.BYTE); //enable SRAM, disable ssfMapper
+        testBusRead(bus, address, 0); //read SRAM = 0
+        testBusRead(bus, address1, val);
+
+        int sramData = 0x1234_5678;
+        bus.write(address, sramData, Size.BYTE); //write BYTE to SRAM
+        testBusRead(bus, address, (sramData & 0xFF) << 24);
+
+        sramData = 0x1324_5768;
+        bus.write(address, sramData, Size.WORD); //write WORD to SRAM
+        testBusRead(bus, address, (sramData & 0xFFFF) << 16);
+
+        sramData = 0x8326_1748;
+        bus.write(address, sramData, Size.LONG); //write LONG to SRAM
+        testBusRead(bus, address, sramData);
+
+        bus.write(SRAM_LOCK, 0, Size.BYTE); //enable ssfMapper, disable SRAM
+        testBusRead(bus, address, val);
+        testBusRead(bus, address1, val);
     }
 
     //tries to use sram without declaring it in the header
