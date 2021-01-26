@@ -364,7 +364,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 //                SramMode sramMode = (data & 2) > 0 ? SramMode.READ_WRITE : SramMode.READ_ONLY;
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
             }
-            LOG.info("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
+            LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
             LOG.warn("Unexpected mapper set, address: {}, data: {}", Long.toHexString(addressL),
                     Integer.toHexString((int) data));

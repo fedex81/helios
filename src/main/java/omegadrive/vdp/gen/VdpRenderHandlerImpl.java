@@ -346,14 +346,14 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     }
 
     private void renderBack() {
-        int limitHorTiles = VdpRenderHandler.getHorizontalTiles(videoMode.isH40());
         int reg7 = vdpProvider.getRegisterData(BACKGROUND_COLOR);
         int backLine = (reg7 >> 4) & 0x3;
         int backEntry = (reg7) & 0xF;
         int cramColorIndex = (backLine << 5) + (backEntry << 1);
 
         if (planeBack[0] != cramColorIndex) {
-            Arrays.fill(planeBack, 0, limitHorTiles << 3, cramColorIndex);
+            //turbo outrun switches h40 -> h32
+            Arrays.fill(planeBack, cramColorIndex);
         }
     }
 

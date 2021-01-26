@@ -6,7 +6,7 @@
 
 Fatal Rewind - timing? has been broken forever
 
-lotus 2 (hline issue?)
+lotus, lotus 2 (hline issue?)
 
 savestate:
 md: broken {ssf2, virtua racing}

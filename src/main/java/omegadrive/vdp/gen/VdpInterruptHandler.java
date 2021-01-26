@@ -40,11 +40,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
 
     /**
      * Relevant Games:
-     * Kawasaki
-     * Outrun
-     * Gunstar Heroes
-     * Lotus II
-     * Legend of Galahad
+     * Kawasaki, Outrun,Gunstar Heroes,Lotus II,Legend of Galahad, wobble.bin, Vscrollexperiment
      */
     private final static Logger LOG = LogManager.getLogger(VdpInterruptHandler.class.getSimpleName());
 

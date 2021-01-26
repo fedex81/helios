@@ -222,8 +222,12 @@ public class SystemLoader {
                     case NEW_ROM:
                         handleNewRomFile((Path) parameter);
                         break;
+                    case CLOSE_ROM:
+                    case CLOSE_APP:
+                        //do nothing
+                        break;
                     default:
-                        LOG.warn("Unabe to handle event: {}, with parameter: {}", event, Objects.toString(parameter));
+                        LOG.warn("Unable to handle event: {}, with parameter: {}", event, Objects.toString(parameter));
                         break;
                 }
             }
