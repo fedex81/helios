@@ -40,7 +40,8 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
 
     /**
      * Relevant Games:
-     * Kawasaki, Outrun,Gunstar Heroes,Lotus II,Legend of Galahad, wobble.bin, Vscrollexperiment
+     * Kawasaki, Outrun, Gunstar Heroes,Lotus II,Legend of Galahad, wobble.bin, Vscrollexperiment,
+     * Road rash, lemmings, Bram Stoker Dracula
      */
     private final static Logger LOG = LogManager.getLogger(VdpInterruptHandler.class.getSimpleName());
 
@@ -122,6 +123,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
         vdpEvent.fireVdpEvent(V_COUNT_INC, vCounterInternal);
+        handleHLinesCounterDecrement();
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
             vdpEvent.fireVdpEvent(V_BLANK_CHANGE, true);
@@ -129,7 +131,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
             vBlankSet = false;
             vdpEvent.fireVdpEvent(V_BLANK_CHANGE, false);
         }
-        handleHLinesCounterDecrement();
         return vCounterInternal;
     }
 
@@ -148,16 +149,18 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
 
         pixelNumber = (pixelNumber + 1) % vdpCounterMode.hTotalCount;
         slotNumber = pixelNumber >> 1;
+
         if (hCounterInternal == vdpCounterMode.hBlankSet) {
             vdpEvent.fireVdpEvent(H_BLANK_CHANGE, true);
             hBlankSet = true;
-        }
-
-        if (hCounterInternal == vdpCounterMode.hBlankClear) {
+        } else if (hCounterInternal == vdpCounterMode.hBlankClear) {
             vdpEvent.fireVdpEvent(H_BLANK_CHANGE, false);
             hBlankSet = false;
         }
 
+        //TODO sms should use 0x1E8
+        //Lotus2, line interrupt sensitive,  H32, 0x10A (=vCounterIncrementOn), < 0x127 ko, >= 0x127 (=hJumpTrigger) ok
+        //Dracula, vcounter increment sensitive, H40, 0x14A (=vCounterIncrementOn) ok, <= 0x150 ok, > 0x150 ko, hJumpTrigger = 0x16C
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
             increaseVCounterInternal();
         }
@@ -166,8 +169,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
             vIntPending = true;
             vdpEvent.fireVdpEvent(INTERRUPT, BusArbiter.InterruptEvent.Z80_INT_ON);
             logVerbose("Set VIP: true");
-        }
-        if (vCounterInternal == vdpCounterMode.vBlankSet + 1 &&
+        } else if (vCounterInternal == vdpCounterMode.vBlankSet + 1 &&
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
             vdpEvent.fireVdpEvent(INTERRUPT, BusArbiter.InterruptEvent.Z80_INT_OFF);
             logVerbose("Set Z80Int: false");

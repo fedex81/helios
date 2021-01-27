@@ -47,6 +47,11 @@ public interface FmProvider extends Device, BaseVdpProvider.VdpEventListener {
         }
 
         @Override
+        public void setMicrosPerTick(double microsPerTick) {
+
+        }
+
+        @Override
         public int readRegister(int type, int regNumber) {
             return 0;
         }

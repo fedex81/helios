@@ -21,60 +21,16 @@ package omegadrive.vdp;
 
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
-import omegadrive.vdp.gen.VdpInterruptHandlerTest;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.VdpCounterMode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class SmsVdpInterruptHandlerTest {
+@Ignore
+public class SmsVdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
 
     private static final Logger LOG = LogManager.getLogger(SmsVdpInterruptHandlerTest.class.getSimpleName());
-    static boolean verbose = true;
-
-    public static void hLinesCounterBasic(BaseVdpProvider vdp, VdpInterruptHandler h, VideoMode mode, boolean[] expectedLineInt) {
-        boolean[] actualLineInt = new boolean[expectedLineInt.length];
-        MdVdpTestUtil.updateVideoMode(vdp, mode);
-        VdpCounterMode counterMode = VdpCounterMode.getCounterMode(mode);
-
-        int totalCount = counterMode.vTotalCount * 3;
-        int count = 0;
-        int line = 0;
-        System.out.println("STARTING: " + mode);
-        MdVdpTestUtil.runCounterToStartFrame(h);
-        printMsg(h.getStateString("Start frame: "));
-        do {
-            int hLine = h.hLinePassed;
-            if (h.gethCounterInternal() == 0) {
-                if (h.getvCounterInternal() == 0) {
-                    line = 0;
-                    printMsg(h.getStateString("Start frame, count: " + count));
-                }
-                printMsg(h.getStateString("Start Line: " + line));
-            }
-            h.increaseHCounter();
-            if (h.isvIntPending()) {
-                h.setvIntPending(false);
-            }
-            if (h.isHIntPending()) {
-                printMsg(h.getStateString("Line: " + line + ", HINT pending"));
-                actualLineInt[line] = true;
-                h.setHIntPending(false);
-            }
-            if (h.hLinePassed != hLine) {
-                printMsg(h.getStateString("Line: " + line + ", hLine Counter changed"));
-            }
-            if (h.gethCounterInternal() == VdpInterruptHandler.COUNTER_LIMIT) {
-                line++;
-                count++;
-            }
-
-        } while (count < totalCount);
-        Assert.assertArrayEquals(expectedLineInt, actualLineInt);
-    }
 
     /**
      * According to http://www.smspower.org/Development/SMSOfficialDocs
@@ -88,27 +44,26 @@ public class SmsVdpInterruptHandlerTest {
      * (etc)	(etc)
      */
     @Test
-    @Ignore("TODO fix")
     public void testSmsHLinesCounter() {
         testSmsHLinesCounterInternal(0);
         testSmsHLinesCounterInternal(1);
         testSmsHLinesCounterInternal(2);
         testSmsHLinesCounterInternal(3);
         testSmsHLinesCounterInternal(0xBE);
-        //TODO should this generate on line #192 ? with [0...192]
+//        //TODO shouldn't 0xBF this generate one hint?
         testSmsHLinesCounterInternal(0xBF);
         testSmsHLinesCounterInternal(0xC0);
         testSmsHLinesCounterInternal(0xFF);
     }
 
-    //TODO fix
     @Test
+    @Ignore("TODO fix")
     public void testHLinesCounter() {
         int hLinePassed = 0;
         BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
         VdpInterruptHandler h = VdpInterruptHandlerHelper.createSmsInstance(vdp);
         MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
-        VdpInterruptHandlerTest.hLinesCounterBasic(vdp, h, VideoMode.NTSCJ_H32_V24);
+        hLinesCounterBasic2(vdp, h, VideoMode.NTSCJ_H32_V24);
     }
 
     private void testSmsHLinesCounterInternal(final int lineCounter) {
@@ -119,16 +74,11 @@ public class SmsVdpInterruptHandlerTest {
 
         VdpInterruptHandler h = VdpInterruptHandlerHelper.createSmsInstance(vdp);
         MdVdpTestUtil.updateHCounter(vdp, lineCounter);
-        for (int i = lineCounter + 1; i < exp.length; i++) {
-            exp[i] = (i < height) && (i % (lineCounter + 1)) == 0;
+        for (int i = lineCounter; i < exp.length; i++) {
+            exp[i] = (i < height - 1) && ((i + 1) % (lineCounter + 1)) == 0;
         }
+//        System.out.println(lineCounter + ":\n" +Arrays.toString( exp));
+//        before();
         hLinesCounterBasic(vdp, h, vm, exp);
-    }
-
-
-    private static void printMsg(String msg) {
-        if (verbose) {
-            System.out.println(msg);
-        }
     }
 }
