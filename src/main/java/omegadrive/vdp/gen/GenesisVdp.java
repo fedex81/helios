@@ -169,7 +169,7 @@ public class GenesisVdp implements GenesisVdpProvider {
 
     private void setupVdp() {
         this.list = new ArrayList<>();
-        this.interruptHandler = VdpInterruptHandler.createInstance(this);
+        this.interruptHandler = VdpInterruptHandler.createMdInstance(this);
         this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);
         this.debugViewer = VdpDebugView.createInstance(this, memoryInterface, renderHandler);
         this.fifo = new VdpFifo();
@@ -626,7 +626,7 @@ public class GenesisVdp implements GenesisVdpProvider {
                 break;
             case HCOUNTER_VALUE:
                 logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
-                list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, data));
+                fireVdpEvent(VdpEvent.REG_H_LINE_COUNTER_CHANGE, data);
                 break;
             case SPRITE_TABLE_LOC:
                 updateSatLocation();
@@ -674,7 +674,7 @@ public class GenesisVdp implements GenesisVdpProvider {
         if (newLcb != lcb) {
             lcb = newLcb;
             logVerbose("Update lcb: %s", lcb ? 1 : 0);
-            list.forEach(l -> l.onVdpEvent(VdpEvent.LEFT_COL_BLANK, lcb));
+            fireVdpEvent(VdpEvent.LEFT_COL_BLANK, lcb);
         }
     }
 
@@ -755,7 +755,7 @@ public class GenesisVdp implements GenesisVdpProvider {
             LOG.info("Video mode changed: {}, {}", videoMode, videoMode.getDimension());
             pal = videoMode.isPal() ? 1 : 0;
             updateSatLocation();
-            list.forEach(l -> l.onVdpEvent(VdpEvent.VIDEO_MODE, newVideoMode));
+            fireVdpEvent(VdpEvent.VIDEO_MODE, newVideoMode);
         }
     }
 

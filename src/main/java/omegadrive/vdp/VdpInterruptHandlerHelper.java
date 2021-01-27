@@ -19,31 +19,25 @@
 
 package omegadrive.vdp;
 
-import omegadrive.util.VideoMode;
 import omegadrive.vdp.gen.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
 
-import java.util.Collections;
+public class VdpInterruptHandlerHelper {
 
-/**
- * http://www.smspower.org/forums/8161-SMSDisplayTiming
- */
-public class SmsVdpInterruptHandler extends VdpInterruptHandler {
-
-    public static VdpInterruptHandler createTmsInstance(VideoMode videoMode) {
-        SmsVdpInterruptHandler handler = new SmsVdpInterruptHandler() {
+    public static VdpInterruptHandler createTmsInstance(BaseVdpProvider vdp) {
+        VdpInterruptHandler handler = new VdpInterruptHandler(vdp) {
             @Override
             public boolean isDrawFrameSlot() {
                 return hCounterInternal == 0 && vCounterInternal == vdpCounterMode.vBlankSet;
             }
         };
-        handler.vdpEventListenerList = Collections.emptyList();
-        handler.setMode(videoMode);
-        handler.reset();
+        handler.onVdpEvent(BaseVdpProvider.VdpEvent.VIDEO_MODE, vdp.getVideoMode());
         return handler;
     }
 
     /**
+     * http://www.smspower.org/forums/8161-SMSDisplayTiming
+     * <p>
      * Out of lines 0-261:
      * - The counter is decremented on lines 0-191 and 192.
      * - The counter is reloaded on lines 193-261.
@@ -53,13 +47,6 @@ public class SmsVdpInterruptHandler extends VdpInterruptHandler {
      * - Ys
      */
     public static VdpInterruptHandler createSmsInstance(BaseVdpProvider vdp) {
-        SmsVdpInterruptHandler handler = new SmsVdpInterruptHandler();
-        handler.reset();
-        handler.vdpEventListenerList = Collections.emptyList();
-        if (vdp != null) {
-            vdp.addVdpEventListener(handler);
-            handler.vdpEventListenerList = Collections.unmodifiableList(vdp.getVdpEventListenerList());
-        }
-        return handler;
+        return VdpInterruptHandler.createMdInstance(vdp);
     }
 }

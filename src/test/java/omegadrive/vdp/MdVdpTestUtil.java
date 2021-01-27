@@ -196,9 +196,9 @@ public class MdVdpTestUtil {
             @Override
             public void updateRegisterData(int reg, int data) {
                 if (reg == HCOUNTER_VALUE.ordinal()) {
-                    list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, data));
+                    fireVdpEvent(VdpEvent.REG_H_LINE_COUNTER_CHANGE, data);
                 } else if (reg < 2) {
-                    list.forEach(l -> l.onVdpEvent(VdpEvent.VIDEO_MODE, holder[0]));
+                    fireVdpEvent(VdpEvent.VIDEO_MODE, holder[0]);
                 }
                 vdpReg[reg] = data;
             }

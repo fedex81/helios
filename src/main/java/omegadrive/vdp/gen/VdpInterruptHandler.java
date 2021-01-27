@@ -19,8 +19,10 @@
 
 package omegadrive.vdp.gen;
 
+import omegadrive.Device;
 import omegadrive.bus.gen.BusArbiter;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import omegadrive.vdp.model.VdpSlotType;
@@ -28,15 +30,13 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Collections;
-import java.util.List;
+import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.*;
 
 /**
- *
- *  VDPTEST - needs NTSC
- *  http://gendev.spritesmind.net/forum/viewtopic.php?t=787
+ * VDPTEST - needs NTSC
+ * http://gendev.spritesmind.net/forum/viewtopic.php?t=787
  */
-public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
+public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, Device {
 
     /**
      * Relevant Games:
@@ -57,7 +57,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
 
     private VideoMode videoMode;
     protected VdpCounterMode vdpCounterMode;
-    protected List<BaseVdpProvider.VdpEventListener> vdpEventListenerList;
+    protected BaseVdpAdapterEventSupport vdpEvent;
     protected boolean h40;
 
     protected boolean vBlankSet;
@@ -67,14 +67,14 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
 
     protected static final boolean verbose = false;
 
-    public static VdpInterruptHandler createInstance(BaseVdpProvider vdp) {
-        VdpInterruptHandler handler = new VdpInterruptHandler();
+    protected VdpInterruptHandler(BaseVdpAdapterEventSupport vdp) {
+        this.vdpEvent = vdp;
+        vdp.addVdpEventListener(this);
+    }
+
+    public static VdpInterruptHandler createMdInstance(BaseVdpProvider vdp) {
+        VdpInterruptHandler handler = new VdpInterruptHandler(vdp);
         handler.reset();
-        handler.vdpEventListenerList = Collections.emptyList();
-        if (vdp != null) {
-            vdp.addVdpEventListener(handler);
-            handler.vdpEventListenerList = Collections.unmodifiableList(vdp.getVdpEventListenerList());
-        }
         return handler;
     }
 
@@ -87,7 +87,8 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         }
     }
 
-    protected void reset() {
+    @Override
+    public void reset() {
         hCounterInternal = pixelNumber = slotNumber = 0;
         vCounterInternal = COUNTER_LIMIT;
         hBlankSet = false;
@@ -97,7 +98,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         resetHLinesCounter();
     }
 
-    protected int updateCounterValue(int counterInternal, int jumpTrigger, int totalCount) {
+    private int updateCounterValue(int counterInternal, int jumpTrigger, int totalCount) {
         counterInternal++;
         counterInternal &= COUNTER_LIMIT;
 
@@ -108,11 +109,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         return counterInternal;
     }
 
-    private int increaseVCounter() {
-        return increaseVCounterInternal();
-    }
-
-
     /**
      * 1) every line, wait for line end (Hcounter $84->$85, or more likely the 9-bits value) then increment VCounter.
      * 2) if VBLANK flag is set, reload HINT Counter else decrement it.
@@ -122,13 +118,16 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
      * 6) if VCounter=$E0($F0), wait for Hcounter $00->$01 then set VINT flag.
      * 7) if VINT is enabled and VINT flag is set, interrupt control asserts /IPL2 and /IPL1.
      */
-    protected int increaseVCounterInternal() {
+    private int increaseVCounterInternal() {
         vCounterInternal = updateCounterValue(vCounterInternal, vdpCounterMode.vJumpTrigger,
                 vdpCounterMode.vTotalCount);
+        vdpEvent.fireVdpEvent(V_COUNT_INC, vCounterInternal);
         if (vCounterInternal == vdpCounterMode.vBlankSet) {
             vBlankSet = true;
+            vdpEvent.fireVdpEvent(V_BLANK_CHANGE, true);
         } else if (vCounterInternal == VBLANK_CLEAR) {
             vBlankSet = false;
+            vdpEvent.fireVdpEvent(V_BLANK_CHANGE, false);
         }
         handleHLinesCounterDecrement();
         return vCounterInternal;
@@ -150,33 +149,33 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         pixelNumber = (pixelNumber + 1) % vdpCounterMode.hTotalCount;
         slotNumber = pixelNumber >> 1;
         if (hCounterInternal == vdpCounterMode.hBlankSet) {
+            vdpEvent.fireVdpEvent(H_BLANK_CHANGE, true);
             hBlankSet = true;
         }
 
         if (hCounterInternal == vdpCounterMode.hBlankClear) {
+            vdpEvent.fireVdpEvent(H_BLANK_CHANGE, false);
             hBlankSet = false;
         }
 
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
-            increaseVCounter();
+            increaseVCounterInternal();
         }
         if (vCounterInternal == vdpCounterMode.vBlankSet &&
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
             vIntPending = true;
-            vdpEventListenerList.forEach(l -> l.onVdpEvent(BaseVdpProvider.VdpEvent.INTERRUPT,
-                    BusArbiter.InterruptEvent.Z80_INT_ON));
+            vdpEvent.fireVdpEvent(INTERRUPT, BusArbiter.InterruptEvent.Z80_INT_ON);
             logVerbose("Set VIP: true");
         }
         if (vCounterInternal == vdpCounterMode.vBlankSet + 1 &&
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
-            vdpEventListenerList.forEach(l -> l.onVdpEvent(BaseVdpProvider.VdpEvent.INTERRUPT,
-                    BusArbiter.InterruptEvent.Z80_INT_OFF));
+            vdpEvent.fireVdpEvent(INTERRUPT, BusArbiter.InterruptEvent.Z80_INT_OFF);
             logVerbose("Set Z80Int: false");
         }
         return hCounterInternal;
     }
 
-    protected void handleHLinesCounterDecrement() {
+    private void handleHLinesCounterDecrement() {
         hLinePassed--;
         if (vCounterInternal >= vdpCounterMode.vBlankSet - 1) {
             resetHLinesCounter();
@@ -184,6 +183,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
         if (hLinePassed < 0) {
             hIntPending = true;
             logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
+            vdpEvent.fireVdpEvent(H_LINE_UNDERFLOW, vCounterInternal);
             resetHLinesCounter();
         }
     }
@@ -273,7 +273,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener {
             case VIDEO_MODE:
                 setMode((VideoMode) value);
                 break;
-            case H_LINE_COUNTER:
+            case REG_H_LINE_COUNTER_CHANGE:
                 hLinesCounter = (int) value;
                 break;
             default:

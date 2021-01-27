@@ -253,7 +253,7 @@ public class SmsVdp implements BaseVdpProvider {
 
         this.region = region;
         this.list = new ArrayList<>();
-        interruptHandler = SmsVdpInterruptHandler.createSmsInstance(this);
+        interruptHandler = VdpInterruptHandlerHelper.createSmsInstance(this);
 
         // Note, we don't directly emulate CRAM but actually store the converted Java palette
         // in it. Therefore the length is different to on the real GameGear where it's actually
@@ -357,7 +357,7 @@ public class SmsVdp implements BaseVdpProvider {
             display = new int[videoMode.getDimension().width * videoMode.getDimension().height];
             screenData = isSms ? display : ggDisplay;
             forceFullRedraw();
-            list.forEach(l -> l.onVdpEvent(VdpEvent.VIDEO_MODE, newVideoMode));
+            fireVdpEvent(VdpEvent.VIDEO_MODE, newVideoMode);
         }
     }
 
@@ -478,7 +478,7 @@ public class SmsVdp implements BaseVdpProvider {
             //hLine counter
             case 0xA:
                 if (commandByte != vdpreg[reg]) {
-                    list.forEach(l -> l.onVdpEvent(VdpEvent.H_LINE_COUNTER, commandByte));
+                    fireVdpEvent(VdpEvent.REG_H_LINE_COUNTER_CHANGE, commandByte);
                 }
                 break;
         }

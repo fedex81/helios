@@ -40,7 +40,7 @@ public class SmsVdpInterruptHandlerTest {
         MdVdpTestUtil.updateVideoMode(vdp, mode);
         VdpCounterMode counterMode = VdpCounterMode.getCounterMode(mode);
 
-        int totalCount = counterMode.vTotalCount * 3 + 5;
+        int totalCount = counterMode.vTotalCount * 3;
         int count = 0;
         int line = 0;
         System.out.println("STARTING: " + mode);
@@ -106,7 +106,7 @@ public class SmsVdpInterruptHandlerTest {
     public void testHLinesCounter() {
         int hLinePassed = 0;
         BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
-        VdpInterruptHandler h = SmsVdpInterruptHandler.createSmsInstance(vdp);
+        VdpInterruptHandler h = VdpInterruptHandlerHelper.createSmsInstance(vdp);
         MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
         VdpInterruptHandlerTest.hLinesCounterBasic(vdp, h, VideoMode.NTSCJ_H32_V24);
     }
@@ -117,7 +117,7 @@ public class SmsVdpInterruptHandlerTest {
         int height = vm.getDimension().height;
         BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
 
-        VdpInterruptHandler h = SmsVdpInterruptHandler.createSmsInstance(vdp);
+        VdpInterruptHandler h = VdpInterruptHandlerHelper.createSmsInstance(vdp);
         MdVdpTestUtil.updateHCounter(vdp, lineCounter);
         for (int i = lineCounter + 1; i < exp.length; i++) {
             exp[i] = (i < height) && (i % (lineCounter + 1)) == 0;

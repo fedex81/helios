@@ -109,7 +109,7 @@ public class Tms9918aVdp implements Tms9918a, Device {
         this.list = new ArrayList<>();
         memory = SimpleVdpMemoryInterface.createInstance(RAM_SIZE);
         screenDataLinear = new int[VDP_WIDTH * VDP_HEIGHT];
-        interruptHandler = SmsVdpInterruptHandler.createTmsInstance(getVideoMode());
+        interruptHandler = VdpInterruptHandlerHelper.createTmsInstance(this);
         mem = memory.getVram();
         renderDump = new VdpRenderDump();
     }

@@ -52,7 +52,7 @@ public class VdpInterruptHandlerTest {
 
         int totalCount = counterMode.vTotalCount * 3 + 5;
         //V28: triggers on line [0-E0] - includes vblank line
-        int expectedNumberOfHint = (counterMode.vBlankSet + 1) * 3 + 5;
+        int expectedNumberOfHint = (counterMode.vBlankSet + 1) * 3 - 1;
         int numberOfHint = 0;
         int count = 0;
         int line = 0;
@@ -103,7 +103,7 @@ public class VdpInterruptHandlerTest {
     public void testHLinesCounter_01() {
         int hLinePassed = 0;
         BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
-        VdpInterruptHandler h = VdpInterruptHandler.createInstance(vdp);
+        VdpInterruptHandler h = VdpInterruptHandler.createMdInstance(vdp);
         MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
         hLinesCounterBasic(vdp, h, VideoMode.PAL_H40_V28);
         hLinesCounterBasic(vdp, h, VideoMode.PAL_H40_V30);
@@ -120,7 +120,7 @@ public class VdpInterruptHandlerTest {
     public void testHLinesCounterPending() {
         int hLinePassed = 0x80;
         BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
-        VdpInterruptHandler h = VdpInterruptHandler.createInstance(vdp);
+        VdpInterruptHandler h = VdpInterruptHandler.createMdInstance(vdp);
         MdVdpTestUtil.updateVideoMode(vdp, VideoMode.PAL_H40_V28);
         MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
         VdpCounterMode counterMode = VdpCounterMode.getCounterMode(VideoMode.PAL_H40_V28);
@@ -171,7 +171,7 @@ public class VdpInterruptHandlerTest {
         int hIntOnLine = hLinePassed - 1; //0 based
 
         BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
-        VdpInterruptHandler h = VdpInterruptHandler.createInstance(vdp);
+        VdpInterruptHandler h = VdpInterruptHandler.createMdInstance(vdp);
         MdVdpTestUtil.updateVideoMode(vdp, VideoMode.NTSCU_H40_V28);
         MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
 
