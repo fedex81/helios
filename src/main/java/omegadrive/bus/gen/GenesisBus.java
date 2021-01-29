@@ -178,11 +178,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             return Util.readData(ram, size, address & M68K_RAM_MASK);
         } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
-            LOG.warn("Read on reserved address: {}, {}", Integer.toHexString(address), size);
-            if (address == 0x400100) { //TODO msu-md
-                return Util.readData(rom, size, address & 0xFFFF);
-            }
-            return size.getMax();
+            return reservedRead(address, size);
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             return z80MemoryRead(address, size);
         } else if (address >= IO_ADDRESS_SPACE_START && address <= IO_ADDRESS_SPACE_END) {    //IO Addressing space
@@ -221,9 +217,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             checkBackupMemoryMapper(SramMode.READ_WRITE);
             mapper.writeData(address, data, size);
         } else {
-            LOG.error("Unexpected bus write: {}, data {} {}, 68k PC: {}",
-                    Long.toHexString(addressL), Long.toHexString(data), size,
-                    Long.toHexString(m68kProvider.getPC()));
+            reservedWrite(addressL, data, size);
         }
     }
 
@@ -238,6 +232,26 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         //Batman&Robin writes to address 0 - tries to enable debug mode?
         LOG.warn("Unexpected write to ROM address {}, value {} {}", Long.toHexString(addressL),
                 Long.toHexString(data), size);
+    }
+
+    private void reservedWrite(long addressL, long data, Size size) {
+        if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
+            LOG.error("Unexpected bus write: {}, data {} {}, 68k PC: {}",
+                    Long.toHexString(addressL), Long.toHexString(data), size,
+                    Long.toHexString(m68kProvider.getPC()));
+        } else {
+            msuMdHandler.handleMsuMdWrite((int) addressL, (int) data, size);
+        }
+    }
+
+    private long reservedRead(int address, Size size) {
+        if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
+            LOG.warn("Read on reserved address: {}, {}", Integer.toHexString(address), size);
+            return size.getMax();
+        } else {
+            //reads rom at 0x40_0000 MegaCD mirror
+            return Util.readData(rom, size, (int) (address & DEFAULT_ROM_END_ADDRESS));
+        }
     }
 
     private void logVdpCounter(int v, int h) {

@@ -21,8 +21,11 @@ public interface MsuMdHandler {
     int CMD_ADDR = 0xa12010;
     int CMD_ARG_ADDR = CMD_ADDR + 1;
     int MCD_STATUS_ADDR = 0xA12020;
-
     int MCD_GATE_ARRAY_START = 0xa12001;
+    int MCD_WRAM_START = 0x42_0000;
+    int MCD_WRAM_END = 0x42_07FF; //probably wrong
+    int MCD_MMOD = 0xa12003;
+    int MCD_COMF = 0xa1200f;
 
     AudioFormat CDDA_FORMAT = new AudioFormat(44100f,
             16, 2, true, false);
@@ -91,8 +94,10 @@ public interface MsuMdHandler {
         int arg;
     }
 
+    TrackDataHolder NO_TRACK = new TrackDataHolder();
+
     class TrackDataHolder {
-        MsuMdHandlerImpl.CueFileDataType type;
+        MsuMdHandlerImpl.CueFileDataType type = CueFileDataType.UNKNOWN;
         Optional<File> waveFile = Optional.empty();
         Optional<Integer> numBytes = Optional.empty();
         Optional<Integer> startFrame = Optional.empty();
