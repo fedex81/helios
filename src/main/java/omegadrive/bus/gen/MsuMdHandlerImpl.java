@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MsuMdHandlerImpl implements MsuMdHandler {
 
     private static final Logger LOG = LogManager.getLogger(MsuMdHandlerImpl.class.getSimpleName());
-    private static final boolean verbose = true;
+    private static final boolean verbose = false;
 
     private MsuCommandArg commandArg = new MsuCommandArg();
     private int clock = 0;
@@ -128,27 +128,12 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         return binFile;
     }
 
-    @Override
-    public int handleMsuMdRead(int address, Size size) {
-        switch (address) {
-            case MCD_STATUS_ADDR:
-                if (!init) { //first read needs to return INIT
-                    return handleFirstRead();
-                }
-                MCD_STATE m = (clip != null && clip.isRunning()) ? MCD_STATE.CMD_BUSY : MCD_STATE.READY;
-                LogHelper.printLevel(LOG, Level.INFO, "Read MCD_STATUS: {}", m, verbose);
-                return m.ordinal();
-            case CLOCK_ADDR:
-                LogHelper.printLevel(LOG, Level.INFO, "Read CLOCK_ADDR: {}", clock, verbose);
-                return clock;
-            case MCD_GATE_ARRAY_START:
-                LogHelper.printLevel(LOG, Level.INFO, "Read MCD_GATE_ARRAY_START: {}", 0xFF, verbose);
-                return 0xFF; //ignore
-            default:
-                LOG.warn("Unexpected MegaCD address range read at: {}, {}",
-                        Long.toHexString(address), size);
-                return 0xFF;
-        }
+    private volatile boolean busy = false;
+    private int lastPlayed = -1;
+
+    public void setBusy(boolean busy) {
+        LogHelper.printLevel(LOG, Level.INFO, "Busy: {} -> {}", this.busy ? 1 : 0, busy ? 1 : 0, verbose);
+        this.busy = busy;
     }
 
     @Override
@@ -205,15 +190,37 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         }
     }
 
+    @Override
+    public int handleMsuMdRead(int address, Size size) {
+        switch (address) {
+            case MCD_STATUS_ADDR:
+                if (!init) { //first read needs to return INIT
+                    return handleFirstRead();
+                }
+                MCD_STATE m = busy
+//                        || (clip != null && clip.isRunning())
+                        ? MCD_STATE.CMD_BUSY : MCD_STATE.READY;
+                LogHelper.printLevel(LOG, Level.INFO, "Read MCD_STATUS: {}, busy: " + busy, m, verbose);
+                return m.ordinal();
+            case CLOCK_ADDR:
+                LogHelper.printLevel(LOG, Level.INFO, "Read CLOCK_ADDR: {}", clock, verbose);
+                return clock;
+            case MCD_GATE_ARRAY_START:
+                LogHelper.printLevel(LOG, Level.INFO, "Read MCD_GATE_ARRAY_START: {}", 0xFF, verbose);
+                return 0xFF; //ignore
+            default:
+                LOG.warn("Unexpected MegaCD address range read at: {}, {}",
+                        Long.toHexString(address), size);
+                return 0xFF;
+        }
+    }
+
     private void processCommand(MsuCommandArg commandArg) {
         int arg = commandArg.arg;
         Runnable r = null;
         LogHelper.printLevel(LOG, Level.INFO, "{} track: {}", commandArg.command, arg, verbose);
         switch (commandArg.command) {
             case PLAY:
-                if (arg == 20) {
-                    break;
-                }
                 r = playTrack(arg, false);
                 break;
             case PLAY_LOOP:
@@ -233,18 +240,18 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         }
         if (r != null) {
             Util.executorService.submit(r);
-//            r.run();
         }
     }
 
     boolean paused;
 
-    private void stopTrackInternal() {
+    private void stopTrackInternal(boolean busy) {
         SoundUtil.close(clip);
         clipPosition = 0;
         if (clip != null) {
             clip.removeLineListener(lineListenerRef.getAndSet(null));
         }
+        setBusy(busy);
         LogHelper.printLevel(LOG, Level.INFO, "Track stopped", verbose);
     }
 
@@ -266,10 +273,19 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     }
 
     private Runnable playTrack(final int track, boolean loop) {
+        //TODO HACK
+        if (lastPlayed == track && track == 20) { //sonic 1 hack
+            LOG.warn("Trying to play again track: {}, ignoring", track);
+            return () -> {
+            };
+        }
+        lastPlayed = track;
+        setBusy(true);
+        //TODO HACK
         return () -> {
             try {
                 TrackDataHolder h = trackDataHolders[track];
-                stopTrackInternal();
+                stopTrackInternal(true);
                 clip = AudioSystem.getClip();
                 lineListenerRef.set(this::handleClipEvent);
                 clip.addLineListener(lineListenerRef.get());
@@ -285,7 +301,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                         clip.open(CDDA_FORMAT, buffer, 0, h.numBytes.get());
                         break;
                     default:
-                        LOG.error("Unable to parse track type: {}", h.type);
+                        LOG.error("Unable to parse track {}, type: {}", track, h.type);
                         return;
                 }
                 clip.loop(loop ? Clip.LOOP_CONTINUOUSLY : 0);
@@ -298,23 +314,19 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             } catch (Exception e) {
                 LOG.error(e);
                 e.printStackTrace();
+            } finally {
+                setBusy(false);
             }
         };
     }
 
     @Override
     public void close() {
-        stopTrackInternal();
+        stopTrackInternal(false);
         LOG.info("Closing");
     }
 
     private void handleClipEvent(LineEvent event) {
-        LineEvent.Type t = event.getType();
-        if (LineEvent.Type.CLOSE.equals(t) || LineEvent.Type.STOP.equals(t)) {
-//            stopTrackInternal();
-        } else if (LineEvent.Type.START.equals(t) || LineEvent.Type.OPEN.equals(t)) {
-//            clipRunning.set(true);
-        }
         LogHelper.printLevel(LOG, Level.INFO, "Clip event: {}", event.getType(), verbose);
     }
 
