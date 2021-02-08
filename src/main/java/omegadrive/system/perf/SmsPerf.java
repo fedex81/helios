@@ -88,9 +88,9 @@ public class SmsPerf extends Sms {
     }
 
     @Override
-    protected Optional<String> getStats(long nowNs) {
+    protected Optional<String> getStats(long nowNs, long prevStartNs) {
         stats();
-        return super.getStats(nowNs);
+        return super.getStats(nowNs, prevStartNs);
     }
 
     @Override

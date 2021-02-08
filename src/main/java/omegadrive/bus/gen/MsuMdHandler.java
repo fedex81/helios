@@ -21,9 +21,10 @@ public interface MsuMdHandler {
     int CMD_ADDR = 0xa12010;
     int CMD_ARG_ADDR = CMD_ADDR + 1;
     int MCD_STATUS_ADDR = 0xA12020;
-    int MCD_GATE_ARRAY_START = 0xa12001;
     int MCD_WRAM_START = 0x42_0000;
     int MCD_WRAM_END = 0x42_07FF; //probably wrong
+    int MCD_GATE_ARRAY_START = 0xa12001;
+    int MCD_MEMWP = 0xA12002;
     int MCD_MMOD = 0xa12003;
     int MCD_COMF = 0xa1200f;
 

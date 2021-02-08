@@ -107,12 +107,20 @@ public class Util {
         long start = System.nanoTime();
         final long deadlineNs = start + intervalNs;
         if (deadlineNs < start) {
+            handleSlowdown(start, deadlineNs);
             return;
         }
         do {
             LockSupport.parkNanos(intervalNs);
             done = System.nanoTime() > deadlineNs;
         } while (!done);
+    }
+
+    private static void handleSlowdown(long start, long deadlineNs) {
+        if (start > deadlineNs + MILLI_IN_NS) {
+            LOG.warn("Slowdown detected on thread {}, start_ns: {}, deadline_ns: {}, diff_ns: {}",
+                    Thread.currentThread().getName(), start, deadlineNs, start - deadlineNs);
+        }
     }
 
     //sleeps for the given interval, doesn't mind returning a bit early

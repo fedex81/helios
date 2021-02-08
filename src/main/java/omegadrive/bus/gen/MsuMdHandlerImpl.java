@@ -38,6 +38,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private boolean init;
     private volatile Clip clip;
     private volatile long clipPosition;
+    private boolean paused;
     private volatile byte[] buffer = new byte[0];
     private AtomicReference<LineListener> lineListenerRef = new AtomicReference<>();
     private RandomAccessFile binFile;
@@ -174,18 +175,8 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 commandArg.arg = data;
                 LogHelper.printLevel(LOG, Level.INFO, "Cmd Arg: {}, arg {}", commandArg.command, commandArg.arg, verbose);
                 break;
-            case MCD_GATE_ARRAY_START:
-                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_GATE_ARRAY_START: {}", data, verbose);
-                break;
-            case MCD_MMOD:
-                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_MMOD: {}", data, verbose);
-                break;
-            case MCD_COMF:
-                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_COMF: {}", data, verbose);
-                break;
             default:
-                LOG.error("Unexpected bus write: {}, data {} {}",
-                        Long.toHexString(address), Long.toHexString(data), Size.BYTE);
+                handleIgnoredMcdWrite(address, data);
                 break;
         }
     }
@@ -205,13 +196,41 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             case CLOCK_ADDR:
                 LogHelper.printLevel(LOG, Level.INFO, "Read CLOCK_ADDR: {}", clock, verbose);
                 return clock;
+            default:
+                return handleIgnoredMcdRead(address, size);
+        }
+    }
+
+    private void handleIgnoredMcdWrite(int address, int data) {
+        switch (address) {
+            case MCD_GATE_ARRAY_START:
+                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_GATE_ARRAY_START: {}", data, verbose);
+                break;
+            case MCD_MMOD:
+                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_MMOD: {}", data, verbose);
+                break;
+            case MCD_COMF:
+                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_COMF: {}", data, verbose);
+                break;
+            case MCD_MEMWP:
+                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_MEMWP: {}", data, verbose);
+                break;
+            default:
+                LOG.error("Unexpected bus write: {}, data {} {}",
+                        Long.toHexString(address), Long.toHexString(data), Size.BYTE);
+                break;
+        }
+    }
+
+    private int handleIgnoredMcdRead(int address, Size size) {
+        switch (address) {
             case MCD_GATE_ARRAY_START:
                 LogHelper.printLevel(LOG, Level.INFO, "Read MCD_GATE_ARRAY_START: {}", 0xFF, verbose);
-                return 0xFF; //ignore
+                return (int) size.getMask(); //ignore
             default:
                 LOG.warn("Unexpected MegaCD address range read at: {}, {}",
                         Long.toHexString(address), size);
-                return 0xFF;
+                return (int) size.getMask();
         }
     }
 
@@ -243,7 +262,6 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         }
     }
 
-    boolean paused;
 
     private void stopTrackInternal(boolean busy) {
         SoundUtil.close(clip);

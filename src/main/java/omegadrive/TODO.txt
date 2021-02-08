@@ -27,6 +27,9 @@ time killers, swamp thing proto
 titan1, chip twister scene broken
 ko - 022bc232 23/04/2020 at 12:23
 
+md perf:
+sor2 slowdown frame# 1633
+
 md: vdp perf
 ok (buggy) - 78b91eeb on 11/11/2019 at 11:52
 - ie. adds a rendering bug

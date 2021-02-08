@@ -81,7 +81,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     //frame pacing stuff
     protected Telemetry telemetry = Telemetry.getInstance();
     private static final boolean fullThrottle;
-    protected long elapsedWaitNs, frameProcessingDelayNs, startCycle;
+    protected long elapsedWaitNs, frameProcessingDelayNs;
     protected long targetNs, startNs = 0;
     private long driftNs = 0;
     protected int counter = 1;
@@ -249,14 +249,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         }
     }
 
-    protected Optional<String> getStats(long nowNs) {
+    protected Optional<String> getStats(long nowNs, long prevStartNs) {
         if (!SystemLoader.showFps) {
             return Optional.empty();
         }
 
-        double lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - startNs));
-        telemetry.newFrame(lastFps, driftNs / 1000d).ifPresent(statsConsumer);
-        startNs = nowNs;
+        double lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - prevStartNs));
+        telemetry.newFrame(lastFps, driftNs).ifPresent(statsConsumer);
         return stats;
     }
 
@@ -310,18 +309,18 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     }
 
     protected void newFrame() {
-        long tstamp = System.nanoTime();
-        updateVideoMode(false);
-        renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(startCycle));
-        handleVdpDumpScreenData();
         long startWaitNs = System.nanoTime();
-        elapsedWaitNs = syncCycle(startCycle) - startWaitNs;
+        long prevStartNs = startNs;
+        elapsedWaitNs = syncCycle(startNs) - startWaitNs;
+        startNs = System.nanoTime();
+        updateVideoMode(false);
+        renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(startNs, prevStartNs));
+        frameProcessingDelayNs = startNs - startWaitNs - elapsedWaitNs;
+        handleVdpDumpScreenData();
         processSaveState();
         pauseAndWait();
         resetCycleCounters(counter);
         counter = 0;
-        startCycle = System.nanoTime();
-        frameProcessingDelayNs = startCycle - tstamp - elapsedWaitNs;
         futureDoneFlag = runningRomFuture.isDone();
         handleSoftReset();
         inputProvider.handleEvents();
