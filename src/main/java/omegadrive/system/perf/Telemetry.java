@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,17 +40,27 @@ public class Telemetry {
         String res = Arrays.toString(map.values().stream().toArray());
         return res.substring(1, res.length() - 2);
     };
-    private static final Function<Long, String> toTimestampFn =
-            mill -> mill + "," + Instant.ofEpochMilli(mill).toString();
+
+    private static final BiFunction<Timing, Timing, String> toTimestampFn =
+            (now, prev) -> (now.nanoTime - prev.nanoTime) / (double) Util.MILLI_IN_NS + "," +
+                    Instant.ofEpochMilli(now.instantNow);
 
     private static Telemetry telemetry = new Telemetry();
     private static NumberFormat fpsFormatter = new DecimalFormat("#0.00");
     private Table<String, Long, Double> data = TreeBasedTable.create();
-    private Map<Long, Long> frameTimeStamp = new HashMap<>();
+    private static final Timing NO_TIMING = new Timing();
     private Path telemetryFile;
     private long frameCounter = 0;
     private static int STATS_EVERY_FRAMES = 50;
     private double fpsAccum = 0;
+    private Map<Long, Timing> frameTimeStamp = new HashMap<>();
+
+    private void addFrameTimestamp() {
+        Timing t = new Timing();
+        t.instantNow = Instant.now().toEpochMilli();
+        t.nanoTime = System.nanoTime();
+        frameTimeStamp.put(frameCounter, t);
+    }
 
     public static Telemetry getInstance() {
         return telemetry;
@@ -105,7 +116,7 @@ public class Telemetry {
     }
 
     public Optional<String> newFrame(double lastFps, double driftNs) {
-        frameTimeStamp.put(frameCounter, Instant.now().toEpochMilli());
+        addFrameTimestamp();
         addFpsSample(lastFps);
         addSample("driftNs", driftNs);
         Optional<String> os = getNewStats();
@@ -120,19 +131,29 @@ public class Telemetry {
         }
         if (frameCounter == 2) {
             telemetryFile = Paths.get(".", "tel_" + System.currentTimeMillis() + ".log");
-            String header = "frame," + data.rowKeySet().stream().collect(Collectors.joining(","));
+            String header = String.format("frame,%s,frameTimeMs,frameEndTime",
+                    data.rowKeySet().stream().collect(Collectors.joining(",")));
             LOG.info("Logging telemetry file to: {}", telemetryFile.toAbsolutePath());
             Util.executorService.submit(() -> writeToFile(telemetryFile, header));
         }
         if (frameCounter % 600 == 0) {
-            String res = "\n" +
-                    data.columnKeySet().stream().map(num ->
-                            num + "," + toStringFn.apply(data.column(num)) + "," +
-                                    toTimestampFn.apply(frameTimeStamp.getOrDefault(num, 0L))).
-                            collect(Collectors.joining("\n"));
+            String res = "\n" + data.columnKeySet().stream().map(this::toLogString).
+                    collect(Collectors.joining("\n"));
             data.clear();
             Util.executorService.submit(() -> writeToFile(telemetryFile, res));
         }
+    }
+
+    private String toLogString(Long num) {
+        return num + "," + toStringFn.apply(data.column(num)) + "," +
+                toTimestampFn.apply(
+                        frameTimeStamp.getOrDefault(num, NO_TIMING),
+                        frameTimeStamp.getOrDefault(num - 1, NO_TIMING));
+    }
+
+    static class Timing {
+        long instantNow;
+        long nanoTime;
     }
 
     public long getFrameCounter() {

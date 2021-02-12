@@ -31,10 +31,7 @@ import omegadrive.sound.SoundProvider;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
-import omegadrive.util.FileLoader;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.Util;
-import omegadrive.util.VideoMode;
+import omegadrive.util.*;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -272,7 +269,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         long baseRemainingNs = startCycle + targetNs + driftDeltaNs;
         long remainingNs = baseRemainingNs - now;
         if (remainingNs > 0) { //too fast
-            Util.parkFuzzy(remainingNs);
+            Sleeper.parkFuzzy(remainingNs);
             remainingNs = baseRemainingNs - System.nanoTime();
         }
         driftNs += remainingNs;

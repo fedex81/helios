@@ -38,7 +38,6 @@ import java.util.Set;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
@@ -54,11 +53,9 @@ public class Util {
     public static final String OS_NAME = System.getProperty("os.name").toLowerCase();
     public static final String NATIVE_SUBDIR = OS_NAME.contains("win") ? "windows" :
             (OS_NAME.contains("mac") ? "osx" : "linux");
-    public static final boolean BUSY_WAIT;
 
     public static final long SECOND_IN_NS = Duration.ofSeconds(1).toNanos();
     public static final long MILLI_IN_NS = Duration.ofMillis(1).toNanos();
-    public static final long SLEEP_LIMIT_NS = 10_000;
 
     static final int CACHE_LIMIT = Short.MIN_VALUE;
     static Integer[] negativeCache = new Integer[Short.MAX_VALUE + 2];
@@ -67,19 +64,6 @@ public class Util {
     static {
         for (int i = 0, j = 0; i < negativeCache.length; i++) {
             negativeCache[i] = j--;
-        }
-        startSleeperThread();
-        BUSY_WAIT = Boolean.parseBoolean(System.getProperty("helios.busy.wait", "false"));
-        LOG.info("Busy waiting instead of sleeping: {}", BUSY_WAIT);
-    }
-
-    //futile attempt at getting high resolution sleeps on windows
-    private static void startSleeperThread() {
-        if (isWindows()) {
-            Runnable r = () -> sleep(Long.MAX_VALUE);
-            Thread t = new Thread(r);
-            t.setName("sleeperForWindows");
-            t.start();
         }
     }
 
@@ -93,39 +77,6 @@ public class Util {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-    }
-
-    public static void parkExactly(final long intervalNs) {
-        if (BUSY_WAIT) {
-            long deadlineNs = System.nanoTime() + intervalNs;
-            while (System.nanoTime() < deadlineNs) {
-                Thread.yield();
-            }
-            return;
-        }
-        boolean done;
-        long start = System.nanoTime();
-        final long deadlineNs = start + intervalNs;
-        if (deadlineNs < start) {
-            handleSlowdown(start, deadlineNs);
-            return;
-        }
-        do {
-            LockSupport.parkNanos(intervalNs);
-            done = System.nanoTime() > deadlineNs;
-        } while (!done);
-    }
-
-    private static void handleSlowdown(long start, long deadlineNs) {
-        if (start > deadlineNs + MILLI_IN_NS) {
-            LOG.warn("Slowdown detected on thread {}, start_ns: {}, deadline_ns: {}, diff_ns: {}",
-                    Thread.currentThread().getName(), start, deadlineNs, start - deadlineNs);
-        }
-    }
-
-    //sleeps for the given interval, doesn't mind returning a bit early
-    public static void parkFuzzy(final long intervalNs) {
-        parkExactly(intervalNs - SLEEP_LIMIT_NS);
     }
 
     private static final Object lock = new Object();
