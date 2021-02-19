@@ -31,10 +31,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,6 +54,8 @@ public class Util {
     public static final long SECOND_IN_NS = Duration.ofSeconds(1).toNanos();
     public static final long MILLI_IN_NS = Duration.ofMillis(1).toNanos();
 
+    public static final Random random;
+
     static final int CACHE_LIMIT = Short.MIN_VALUE;
     static Integer[] negativeCache = new Integer[Short.MAX_VALUE + 2];
     public static ExecutorService executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory("util"));
@@ -65,6 +64,9 @@ public class Util {
         for (int i = 0, j = 0; i < negativeCache.length; i++) {
             negativeCache[i] = j--;
         }
+        long seed = System.currentTimeMillis();
+        random = new Random(seed);
+        LOG.info("Creating Random with seed: {}", seed);
     }
 
     public static boolean isWindows() {

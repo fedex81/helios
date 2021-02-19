@@ -29,6 +29,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.IntStream;
 
 public abstract class BackupMemoryMapper {
 
@@ -88,6 +89,8 @@ public abstract class BackupMemoryMapper {
     private int createBackupFile() {
         LOG.info("Creating backup memory file: {}", backupFile);
         sram = new int[sramSize];
+        //StarTrek echoes fails when reading sram with all 0s
+        IntStream.range(0, sramSize).forEach(i -> sram[i] = Util.random.nextInt(0x100));
         FileLoader.writeFileSafe(backupFile, Util.unsignedToByteArray(sram));
         return sram.length;
     }
