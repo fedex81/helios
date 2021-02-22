@@ -19,12 +19,12 @@
 
 package omegadrive.vdp.gen;
 
+import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_FRAME_H40;
@@ -33,16 +33,16 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     public final static boolean verbose = false;
     private final static Logger LOG = LogManager.getLogger(GenesisVdpMemoryInterface.class.getSimpleName());
-    private static int EVEN_VALUE_MASK = ~1;
+    private static final int EVEN_VALUE_MASK = ~1;
 
     private int[] vram;
     private int[] cram;
     private int[] vsram;
     private int[] javaPalette;
-    private int[] satCache = new int[MAX_SPRITES_PER_FRAME_H40 * 8]; //8 bytes per sprite
+    private final int[] satCache = new int[MAX_SPRITES_PER_FRAME_H40 * 8]; //8 bytes per sprite
     private int satBaseAddress = 0, satEndAddress = satBaseAddress + satCache.length;
 
-    private VdpColorMapper colorMapper;
+    private final VdpColorMapper colorMapper;
 
     protected GenesisVdpMemoryInterface() {
         colorMapper = VdpColorMapper.getInstance();
@@ -54,19 +54,10 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         return i;
     }
 
-    public static GenesisVdpMemoryInterface createInstance(int[] vram, int[] cram, int[] vsram) {
-        GenesisVdpMemoryInterface i = new GenesisVdpMemoryInterface();
-        i.vram = Arrays.copyOf(vram, vram.length);
-        i.cram = Arrays.copyOf(cram, cram.length);
-        i.vsram = Arrays.copyOf(vsram, vsram.length);
-        i.initPalette();
-        return i;
-    }
-
     protected void init() {
-        vram = new int[GenesisVdpProvider.VDP_VRAM_SIZE];
-        cram = new int[GenesisVdpProvider.VDP_CRAM_SIZE];
-        vsram = new int[GenesisVdpProvider.VDP_VSRAM_SIZE];
+        vram = Util.initMemoryRandomBytes(new int[GenesisVdpProvider.VDP_VRAM_SIZE]);
+        cram = Util.initMemoryRandomBytes(new int[GenesisVdpProvider.VDP_CRAM_SIZE]);
+        vsram = Util.initMemoryRandomBytes(new int[GenesisVdpProvider.VDP_VSRAM_SIZE]);
         initPalette();
     }
 

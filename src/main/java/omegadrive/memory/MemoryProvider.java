@@ -69,7 +69,7 @@ public class MemoryProvider implements IMemoryProvider {
     public static IMemoryProvider createInstance(int[] rom, int ramSize) {
         MemoryProvider memory = new MemoryProvider();
         memory.setRomData(rom);
-        memory.ram = new int[ramSize];
+        memory.ram = Util.initMemoryRandomBytes(new int[ramSize]);
         memory.ramSize = ramSize;
         return memory;
     }

@@ -1,5 +1,6 @@
 package omegadrive.vdp;
 
+import omegadrive.util.Util;
 import omegadrive.vdp.model.VdpMemory;
 
 /**
@@ -16,14 +17,14 @@ public class SimpleVdpMemoryInterface implements VdpMemory {
 
     public static VdpMemory createInstance(int vramSize) {
         SimpleVdpMemoryInterface i = new SimpleVdpMemoryInterface();
-        i.vram = new int[vramSize];
+        i.vram = Util.initMemoryRandomBytes(new int[vramSize]);
         return i;
     }
 
     public static VdpMemory createInstance(int vramSize, int cramSize) {
         SimpleVdpMemoryInterface i = new SimpleVdpMemoryInterface();
-        i.vram = new int[vramSize];
-        i.cram = new int[cramSize];
+        i.vram = Util.initMemoryRandomBytes(new int[vramSize]);
+        i.cram = Util.initMemoryRandomBytes(new int[cramSize]);
         return i;
     }
 

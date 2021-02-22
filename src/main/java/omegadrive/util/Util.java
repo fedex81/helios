@@ -123,6 +123,13 @@ public class Util {
         }
     }
 
+    public static int[] initMemoryRandomBytes(int[] mem) {
+        for (int i = 0; i < mem.length; i++) {
+            mem[i] = Util.random.nextInt(0x100);
+        }
+        return mem;
+    }
+
     public static void registerJmx(Object object) {
         JmxBridge.registerJmx(object);
     }
