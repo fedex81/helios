@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * MsuMdHandlerImpl
- * TODO fadeOut, volume
+ * TODO fadeOut
  * <p>
  * Federico Berti
  * <p>
@@ -252,7 +252,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 r = resumeTrack();
                 break;
             case VOL:
-                //TODO
+                r = volumeTrack(arg);
                 break;
             default:
                 LOG.warn("Unknown command: {}", commandArg.command);
@@ -262,6 +262,19 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         }
     }
 
+    private Runnable volumeTrack(int val) {
+        return () -> {
+            if (clip != null) {
+                FloatControl gain = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                double gainAbs = Math.max(val, 0.1) / 255.0; //(0;1]
+                float gain_dB = (float) (Math.log(gainAbs) / Math.log(10.0) * 20.0);
+                float prevDb = gain.getValue();
+                //0.0db is the line's normal gain (baseline), any value < 0xFF attenuates the volume
+                gain.setValue(gain_dB);
+                LOG.info("Volume: {}, gain_db changed from: {}, to: {}", val, prevDb, gain_dB);
+            }
+        };
+    }
 
     private void stopTrackInternal(boolean busy) {
         SoundUtil.close(clip);
