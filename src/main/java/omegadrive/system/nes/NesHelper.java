@@ -6,7 +6,7 @@ import com.grapeshot.halfnes.ui.ControllerImpl;
 import com.grapeshot.halfnes.ui.GUIInterface;
 import com.grapeshot.halfnes.video.RGBRenderer;
 import omegadrive.Device;
-import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.BaseVdpAdapter;

@@ -17,15 +17,15 @@
 
 package omegadrive.bus;
 
-import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.cpu.m68k.MC68000Wrapper;
+import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.joypad.GenesisJoypad;
-import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.util.Size;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.z80.Z80CoreWrapper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

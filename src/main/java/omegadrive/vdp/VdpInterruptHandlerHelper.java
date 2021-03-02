@@ -19,7 +19,7 @@
 
 package omegadrive.vdp;
 
-import omegadrive.vdp.gen.VdpInterruptHandler;
+import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
 
 public class VdpInterruptHandlerHelper {

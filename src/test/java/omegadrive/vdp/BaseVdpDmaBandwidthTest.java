@@ -19,13 +19,13 @@
 
 package omegadrive.vdp;
 
-import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.input.GamepadTest;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.system.SystemProvider;
-import omegadrive.vdp.gen.GenesisVdp;
-import omegadrive.vdp.gen.TestGenesisVdpMemoryInterface;
+import omegadrive.vdp.md.GenesisVdp;
+import omegadrive.vdp.md.TestGenesisVdpMemoryInterface;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpSlotType;
 import org.apache.logging.log4j.LogManager;

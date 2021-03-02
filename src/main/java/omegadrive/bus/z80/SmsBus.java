@@ -21,16 +21,17 @@ package omegadrive.bus.z80;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
+import omegadrive.bus.model.Z80BusProvider;
 import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.sms.SmsMapper;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

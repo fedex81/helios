@@ -19,7 +19,7 @@
 
 package omegadrive.cart.mapper.md;
 
-import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.LogHelper;

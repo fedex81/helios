@@ -21,6 +21,7 @@ package omegadrive.save;
 
 import omegadrive.Device;
 import omegadrive.bus.z80.SmsBus;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.MekaStateHandler;
@@ -29,7 +30,6 @@ import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.SmsVdp;
-import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Test;
 

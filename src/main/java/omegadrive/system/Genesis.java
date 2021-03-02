@@ -20,13 +20,15 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.gen.GenesisBus;
-import omegadrive.bus.gen.GenesisBusProvider;
-import omegadrive.bus.gen.SvpMapper;
+import omegadrive.bus.md.GenesisBus;
+import omegadrive.bus.md.SvpMapper;
+import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.cpu.m68k.M68kProvider;
+import omegadrive.cpu.m68k.MC68000Wrapper;
+import omegadrive.cpu.z80.Z80CoreWrapper;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.GenesisJoypad;
-import omegadrive.m68k.M68kProvider;
-import omegadrive.m68k.MC68000Wrapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
@@ -38,8 +40,6 @@ import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.z80.Z80CoreWrapper;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

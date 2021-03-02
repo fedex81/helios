@@ -21,13 +21,14 @@ package omegadrive.bus.z80;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
+import omegadrive.bus.model.Z80BusProvider;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.ColecoPad;
 import omegadrive.util.FileLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.Tms9918aVdp;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

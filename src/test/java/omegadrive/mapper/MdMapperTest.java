@@ -1,6 +1,6 @@
 package omegadrive.mapper;
 
-import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
@@ -12,7 +12,7 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-import static omegadrive.bus.gen.GenesisBusProvider.SRAM_LOCK;
+import static omegadrive.bus.model.GenesisBusProvider.SRAM_LOCK;
 
 /**
  * Federico Berti

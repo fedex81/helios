@@ -20,7 +20,7 @@
 package omegadrive.vdp;
 
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.gen.VdpInterruptHandler;
+import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEventListener;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;

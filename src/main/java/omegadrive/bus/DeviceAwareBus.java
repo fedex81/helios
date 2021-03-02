@@ -20,14 +20,15 @@
 package omegadrive.bus;
 
 import omegadrive.Device;
+import omegadrive.bus.model.BaseBusProvider;
+import omegadrive.cpu.m68k.M68kProvider;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.JoypadProvider;
-import omegadrive.m68k.M68kProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.z80.Z80Provider;
 
 import java.util.HashSet;
 import java.util.Optional;

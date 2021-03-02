@@ -199,6 +199,7 @@ public class GenesisJoypad extends BasePadAdapter {
 
     @Override
     public void newFrame() {
+        super.newFrame();
         readStep1 = p1Type == JoypadType.BUTTON_6 && high1 ? 1 : 0;
         readStep2 = p2Type == JoypadType.BUTTON_6 && high2 ? 1 : 0;
 //        LOG.info("new frame");

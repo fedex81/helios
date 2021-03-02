@@ -20,9 +20,9 @@
 package omegadrive.vdp;
 
 import omegadrive.SystemLoader;
+import omegadrive.cpu.m68k.MC68000Helper;
+import omegadrive.cpu.m68k.MC68000WrapperDebug;
 import omegadrive.input.InputProvider;
-import omegadrive.m68k.MC68000Helper;
-import omegadrive.m68k.MC68000WrapperDebug;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;

@@ -19,7 +19,7 @@
 
 package omegadrive.vdp.util;
 
-import omegadrive.vdp.gen.VdpColorMapper;
+import omegadrive.vdp.md.VdpColorMapper;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpRenderHandler;

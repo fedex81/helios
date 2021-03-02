@@ -23,7 +23,7 @@ import omegadrive.Device;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.gen.VdpInterruptHandler;
+import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.RenderType;
 import omegadrive.vdp.model.Tms9918a;
 import omegadrive.vdp.model.VdpMemory;

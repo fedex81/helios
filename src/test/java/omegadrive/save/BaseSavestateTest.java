@@ -20,9 +20,9 @@
 package omegadrive.save;
 
 import omegadrive.Device;
-import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.model.BaseBusProvider;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Ignore;
 import z80core.Z80State;

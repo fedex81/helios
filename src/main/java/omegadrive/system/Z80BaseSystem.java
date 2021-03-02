@@ -20,10 +20,12 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
+import omegadrive.bus.model.Z80BusProvider;
 import omegadrive.bus.z80.ColecoBus;
 import omegadrive.bus.z80.MsxBus;
 import omegadrive.bus.z80.Sg1000Bus;
-import omegadrive.bus.z80.Z80BusProvider;
+import omegadrive.cpu.z80.Z80CoreWrapper;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.ColecoPad;
 import omegadrive.joypad.MsxPad;
@@ -37,8 +39,6 @@ import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.Tms9918aVdp;
-import omegadrive.z80.Z80CoreWrapper;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

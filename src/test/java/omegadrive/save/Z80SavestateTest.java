@@ -21,8 +21,9 @@ package omegadrive.save;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
+import omegadrive.bus.model.Z80BusProvider;
 import omegadrive.bus.z80.MsxBus;
-import omegadrive.bus.z80.Z80BusProvider;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.StateUtil;
@@ -30,7 +31,6 @@ import omegadrive.savestate.Z80StateBaseHandler;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.vdp.model.Tms9918a;
-import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -24,7 +24,7 @@ import omegadrive.ui.RenderingStrategy;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.gen.VdpInterruptHandler;
+import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
 

@@ -21,7 +21,7 @@ package omegadrive.system;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
-import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInput;
 import omegadrive.joypad.JoypadProvider;

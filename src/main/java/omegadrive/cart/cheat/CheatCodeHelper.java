@@ -19,7 +19,7 @@
 
 package omegadrive.cart.cheat;
 
-import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.bus.model.GenesisBusProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

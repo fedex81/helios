@@ -4,6 +4,8 @@
 - Sonic & Knuckles mapper
 - EEPROM mapper (take list from blastem)
 
+- jdk9: Thread.onSpinWait vs Thread.yield
+
 Fatal Rewind - timing? has been broken forever
 
 lotus, lotus 2 (hline issue?)

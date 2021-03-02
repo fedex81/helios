@@ -17,7 +17,7 @@
 
 package omegadrive.vdp;
 
-import omegadrive.vdp.gen.GenesisVdpMemoryInterface;
+import omegadrive.vdp.md.GenesisVdpMemoryInterface;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.junit.Assert;

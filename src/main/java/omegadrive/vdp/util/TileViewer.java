@@ -1,7 +1,7 @@
 package omegadrive.vdp.util;
 
 import omegadrive.util.ImageUtil;
-import omegadrive.vdp.gen.VdpRenderHandlerImpl;
+import omegadrive.vdp.md.VdpRenderHandlerImpl;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.InterlaceMode;
 import omegadrive.vdp.model.VdpMemoryInterface;

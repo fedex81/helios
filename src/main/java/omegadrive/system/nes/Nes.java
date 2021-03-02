@@ -22,7 +22,7 @@ package omegadrive.system.nes;
 import com.grapeshot.halfnes.audio.AudioOutInterface;
 import com.grapeshot.halfnes.ui.ControllerImpl;
 import omegadrive.SystemLoader;
-import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.NesPad;
 import omegadrive.memory.IMemoryProvider;

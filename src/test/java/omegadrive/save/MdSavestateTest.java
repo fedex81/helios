@@ -21,9 +21,10 @@ package omegadrive.save;
 
 import m68k.cpu.MC68000;
 import omegadrive.Device;
-import omegadrive.bus.gen.GenesisBusProvider;
-import omegadrive.bus.gen.GenesisZ80BusProvider;
-import omegadrive.m68k.MC68000Wrapper;
+import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.GenesisZ80BusProvider;
+import omegadrive.cpu.m68k.MC68000Wrapper;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
@@ -34,7 +35,6 @@ import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
-import omegadrive.z80.Z80Provider;
 import org.junit.Assert;
 import org.junit.Test;
 

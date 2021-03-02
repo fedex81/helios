@@ -20,10 +20,11 @@
 package omegadrive.bus.z80;
 
 import omegadrive.bus.DeviceAwareBus;
+import omegadrive.bus.model.Z80BusProvider;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.util.Size;
 import omegadrive.vdp.Tms9918aVdp;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

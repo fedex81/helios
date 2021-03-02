@@ -21,6 +21,7 @@ package omegadrive.joypad;
 
 import com.google.common.collect.ImmutableMap;
 import omegadrive.input.InputProvider.PlayerNumber;
+import omegadrive.input.automated.InputStrategy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,6 +43,7 @@ public abstract class BasePadAdapter implements JoypadProvider {
     Map<JoypadButton, JoypadAction> stateMap2 = Collections.emptyMap();
     int value1 = 0xFF;
     int value2 = 0xFF;
+    InputStrategy inputStrategy = InputStrategy.NO_STRATEGY; //new InputStrategy(stateMap1);
 
     static Map<JoypadButton, JoypadAction> releasedMap = ImmutableMap.<JoypadButton, JoypadAction>builder().
             put(D, RELEASED).put(U, RELEASED).
@@ -80,5 +82,10 @@ public abstract class BasePadAdapter implements JoypadProvider {
     @Override
     public String getState(PlayerNumber number) {
         return getMap(number).toString();
+    }
+
+    @Override
+    public void newFrame() {
+        inputStrategy.newFrame();
     }
 }

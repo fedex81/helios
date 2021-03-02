@@ -20,7 +20,7 @@
 package omegadrive.vdp;
 
 import omegadrive.automated.SavestateGameLoader;
-import omegadrive.bus.gen.GenesisBusProvider;
+import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.input.GamepadTest;
 import omegadrive.input.InputProvider;
 import omegadrive.save.MdSavestateTest;

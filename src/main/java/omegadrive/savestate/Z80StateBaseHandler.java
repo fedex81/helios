@@ -23,10 +23,10 @@ import com.google.common.collect.ImmutableSet;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.z80.MsxBus;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.FileLoader;
 import omegadrive.vdp.Tms9918aVdp;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

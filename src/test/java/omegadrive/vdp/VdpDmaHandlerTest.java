@@ -17,7 +17,7 @@
 
 package omegadrive.vdp;
 
-import omegadrive.vdp.gen.BaseVdpDmaHandlerTest;
+import omegadrive.vdp.md.BaseVdpDmaHandlerTest;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

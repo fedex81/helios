@@ -21,14 +21,14 @@ package omegadrive.savestate;
 
 import com.google.common.primitives.Bytes;
 import omegadrive.Device;
-import omegadrive.bus.gen.GenesisBusProvider;
-import omegadrive.bus.gen.SvpMapper;
+import omegadrive.bus.md.SvpMapper;
+import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.cpu.ssp16.Ssp16;
+import omegadrive.cpu.ssp16.Ssp16Types;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
-import omegadrive.ssp16.Ssp16;
-import omegadrive.ssp16.Ssp16Types;
 import omegadrive.util.Util;
-import omegadrive.z80.Z80Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

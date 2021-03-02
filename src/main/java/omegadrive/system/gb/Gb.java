@@ -4,7 +4,7 @@ import eu.rekawek.coffeegb.gui.Emulator;
 import eu.rekawek.coffeegb.gui.SwingController;
 import eu.rekawek.coffeegb.sound.SoundOutput;
 import omegadrive.SystemLoader;
-import omegadrive.bus.BaseBusProvider;
+import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInputHelper;
 import omegadrive.joypad.GbPad;

@@ -1,7 +1,9 @@
 package omegadrive.save;
 
-import omegadrive.bus.gen.SvpMapper;
+import omegadrive.bus.md.SvpMapper;
 import omegadrive.cart.mapper.RomMapper;
+import omegadrive.cpu.ssp16.Ssp16;
+import omegadrive.cpu.ssp16.Ssp16Types;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
@@ -9,8 +11,6 @@ import omegadrive.savestate.GshStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
-import omegadrive.ssp16.Ssp16;
-import omegadrive.ssp16.Ssp16Types;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,7 +32,7 @@ public class SavestateSerializeTest {
 
     private static final String fileFolder = "src/test/resources/savestate/serialize";
     private static final String nukeSavestateName = "nuke_serialized_test.gsh";
-    private static final String svpSavestateName = "svp_serialized_test.gsh";
+    private static final String svpSavestateName = "svp_serialized_test_01.gsh";
 
     private static final IMemoryProvider NO_MEMORY = MemoryProvider.createInstance(new int[2], 0);
 
