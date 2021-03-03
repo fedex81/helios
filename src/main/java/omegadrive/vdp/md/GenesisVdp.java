@@ -192,20 +192,8 @@ public class GenesisVdp implements GenesisVdpProvider {
         writeRegister(8, 0);
         writeRegister(9, 0);
         writeRegister(10, 255);
-        writeRegister(11, 0);
-        writeRegister(12, 129);
-        writeRegister(13, 55);
-        writeRegister(14, 0);
-        writeRegister(15, 1);
-        writeRegister(16, 1);
-        writeRegister(17, 0);
-        writeRegister(18, 0);
-        writeRegister(19, 255);
-        writeRegister(20, 255);
-        writeRegister(21, 0);
-        writeRegister(22, 0);
-        writeRegister(23, 128);
-
+        //registers 11-23 are set to 0 on power-up, see GenTechBulletins
+        IntStream.range(11, VDP_REGISTERS_SIZE).forEach(i -> writeRegister(i, 0));
         initMode();
     }
 
