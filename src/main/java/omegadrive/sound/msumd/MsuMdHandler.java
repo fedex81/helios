@@ -57,7 +57,10 @@ public interface MsuMdHandler {
         PLAY_LOOP(0x12),
         PAUSE(0x13),
         RESUME(0x14),
-        VOL(0x15);
+        VOL(0x15),
+        NO_SEEK(0x16),
+        PLAY_OFFSET(0x1A),
+        UNKNOWN(-1);
 
         private int val;
 
@@ -71,7 +74,8 @@ public interface MsuMdHandler {
                     return c;
                 }
             }
-            return null;
+            LOG.error("Unknown command code: {}", val);
+            return UNKNOWN;
         }
     }
 
@@ -92,7 +96,7 @@ public interface MsuMdHandler {
     }
 
     class MsuCommandArg {
-        MsuCommand command;
+        MsuCommand command = MsuCommand.UNKNOWN;
         int arg;
     }
 
