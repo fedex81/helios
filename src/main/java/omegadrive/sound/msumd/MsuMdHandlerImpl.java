@@ -37,12 +37,19 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private int clock = 0;
     private boolean init;
     private volatile Clip clip;
-    private volatile long clipPosition;
-    private boolean paused;
     private volatile byte[] buffer = new byte[0];
     private AtomicReference<LineListener> lineListenerRef = new AtomicReference<>();
     private RandomAccessFile binFile;
     private TrackDataHolder[] trackDataHolders = new TrackDataHolder[CueFileParser.MAX_TRACKS];
+    private volatile ClipContext clipContext = new ClipContext();
+
+    //CDDA: clipFrames are 44100/sec, each frame has 4 bytes (16 bit stereo)
+    private static int sectorsToClipFrames(int val) {
+        int mins = val / 75 / 60;
+        int sec = val / 75 % 60;
+        int frames = val % 75;
+        return (int) (CDDA_SAMPLE_RATE / 1000d * (mins * 60 * 1000 + sec * 1000 + frames / 75d));
+    }
 
     protected void initTrackData(CueSheet cueSheet, long binLen) {
         List<TrackData> trackDataList = cueSheet.getAllTrackData();
@@ -143,24 +150,10 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         if (address >= MCD_WRAM_START && address <= MCD_WRAM_END) {
             return;
         }
-        switch (size) {
-            case BYTE:
-                handleMsuMdWriteByte(address, data);
-                break;
-            case WORD:
-                handleMsuMdWriteByte(address, data >> 8);
-                handleMsuMdWriteByte(address + 1, data & 0xFF);
-                break;
-            case LONG:
-                handleMsuMdWriteByte(address, (data >> 24) & 0xFF);
-                handleMsuMdWriteByte(address + 1, (data >> 16) & 0xFF);
-                handleMsuMdWriteByte(address + 2, (data >> 8) & 0xFF);
-                handleMsuMdWriteByte(address + 3, data & 0xFF);
-                break;
-        }
+        handleMsuMdWriteByte(address, data, size);
     }
 
-    private void handleMsuMdWriteByte(int address, int data) {
+    private void handleMsuMdWriteByte(int address, int data, Size size) {
         switch (address) {
             case CLOCK_ADDR:
                 LogHelper.printLevel(LOG, Level.INFO, "Cmd clock: {} -> {}", clock, data, verbose);
@@ -168,12 +161,18 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 clock = data;
                 break;
             case CMD_ADDR:
-                commandArg.command = MsuCommand.getMsuCommand(data);
-                LogHelper.printLevel(LOG, Level.INFO, "Cmd: {}, arg {}", commandArg.command, commandArg.arg, verbose);
+                int cmdData = data >> (size == Size.WORD ? 8 : (size == Size.LONG ? 24 : 0));
+                commandArg.command = MsuCommand.getMsuCommand(cmdData);
+                if (size == Size.WORD) {
+                    commandArg.arg = data & 0xFF;
+                }
+                LogHelper.printLevel(LOG, Level.INFO, "Cmd: {}, arg {}, arg1 {}", commandArg.command, commandArg.arg,
+                        commandArg.arg1, verbose);
                 break;
             case CMD_ARG_ADDR:
-                commandArg.arg = data;
-                LogHelper.printLevel(LOG, Level.INFO, "Cmd Arg: {}, arg {}", commandArg.command, commandArg.arg, verbose);
+                commandArg.arg1 = data;
+                LogHelper.printLevel(LOG, Level.INFO, "Cmd Arg: {}, arg {}, arg1 {}", commandArg.command, commandArg.arg,
+                        commandArg.arg1, verbose);
                 break;
             default:
                 handleIgnoredMcdWrite(address, data);
@@ -240,10 +239,16 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         LogHelper.printLevel(LOG, Level.INFO, "{} track: {}", commandArg.command, arg, verbose);
         switch (commandArg.command) {
             case PLAY:
-                r = playTrack(arg, false);
+                clipContext.track = arg;
+                clipContext.loop = false;
+                clipContext.loopOffsetCDDAFrames = 0;
+                r = playTrack(clipContext);
                 break;
             case PLAY_LOOP:
-                r = playTrack(arg, true);
+                clipContext.track = arg;
+                clipContext.loop = true;
+                clipContext.loopOffsetCDDAFrames = 0;
+                r = playTrack(clipContext);
                 break;
             case PAUSE:
                 r = pauseTrack(arg / 75d);
@@ -253,6 +258,12 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 break;
             case VOL:
                 r = volumeTrack(arg);
+                break;
+            case PLAY_OFFSET:
+                clipContext.track = arg;
+                clipContext.loop = true;
+                clipContext.loopOffsetCDDAFrames = commandArg.arg1;
+                r = playTrack(clipContext);
                 break;
             default:
                 LOG.warn("Unknown command: {}", commandArg.command);
@@ -278,7 +289,6 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
 
     private void stopTrackInternal(boolean busy) {
         SoundUtil.close(clip);
-        clipPosition = 0;
         if (clip != null) {
             clip.removeLineListener(lineListenerRef.getAndSet(null));
         }
@@ -289,21 +299,21 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private Runnable pauseTrack(final double fadeMs) {
         return () -> {
             if (clip != null) {
-                clipPosition = clip.getMicrosecondPosition();
+                clipContext.positionMicros = clip.getMicrosecondPosition();
                 clip.stop();
+                clipContext.paused = true;
             }
-            paused = true;
         };
     }
 
     private Runnable resumeTrack() {
         return () -> {
-            startClipInternal(clip);
-            paused = false;
+            startClipInternal(clip, clipContext);
         };
     }
 
-    private Runnable playTrack(final int track, boolean loop) {
+    private Runnable playTrack(ClipContext context) {
+        int track = context.track;
         //TODO HACK
         if (lastPlayed == track && track == 20) { //sonic 1 hack
             LOG.warn("Trying to play again track: {}, ignoring", track);
@@ -335,11 +345,10 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                         LOG.error("Unable to parse track {}, type: {}", track, h.type);
                         return;
                 }
-                clip.loop(loop ? Clip.LOOP_CONTINUOUSLY : 0);
-                if (!paused) {
-                    startClipInternal(clip);
+                if (!clipContext.paused) {
+                    startClipInternal(clip, context);
                 } else {
-                    clipPosition = 0;
+                    clipContext.positionMicros = 0;
                 }
                 LogHelper.printLevel(LOG, Level.INFO, "Track started: {}", track, verbose);
             } catch (Exception e) {
@@ -361,14 +370,21 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         LogHelper.printLevel(LOG, Level.INFO, "Clip event: {}", event.getType(), verbose);
     }
 
-    private void startClipInternal(Clip clip) {
+    private void startClipInternal(Clip clip, ClipContext context) {
         if (clip == null) {
             return;
         }
-        if (clipPosition > 0) {
-            clip.setMicrosecondPosition(clipPosition);
+        LogHelper.printLevel(LOG, Level.INFO, "Playing clip: {}", context, verbose);
+        if (clipContext.positionMicros > 0) {
+            clip.setMicrosecondPosition(clipContext.positionMicros);
         }
-        clip.start();
+        if (clipContext.loopOffsetCDDAFrames > 0) {
+            int startLoop = Math.min(clip.getFrameLength(), sectorsToClipFrames(context.loopOffsetCDDAFrames));
+            clip.setLoopPoints(Math.max(startLoop, 0), -1);
+        }
+        clip.loop(context.loop ? Clip.LOOP_CONTINUOUSLY : 0);
+        clipContext.paused = false;
+        clipContext.positionMicros = 0;
     }
 
     enum MCD_STATE {READY, INIT, CMD_BUSY}
@@ -384,6 +400,25 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             binFile.readFully(buffer, 0, numBytes);
         } catch (IOException e) {
             LOG.error(e);
+        }
+    }
+
+    static class ClipContext {
+        int track;
+        int loopOffsetCDDAFrames; //see MSF
+        long positionMicros;
+        boolean loop;
+        boolean paused;
+
+        @Override
+        public String toString() {
+            return "ClipContext{" +
+                    "track=" + track +
+                    ", loopOffsetCDDAFrames=" + loopOffsetCDDAFrames +
+                    ", positionMicros=" + positionMicros +
+                    ", loop=" + loop +
+                    ", paused=" + paused +
+                    '}';
         }
     }
 }

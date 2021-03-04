@@ -20,7 +20,7 @@ public interface MsuMdHandler {
 
     int CLOCK_ADDR = 0xa1201f;
     int CMD_ADDR = 0xa12010;
-    int CMD_ARG_ADDR = CMD_ADDR + 1;
+    int CMD_ARG_ADDR = CMD_ADDR + 2;
     int MCD_STATUS_ADDR = 0xA12020;
     int MCD_WRAM_START = 0x42_0000;
     int MCD_WRAM_END = 0x42_07FF; //probably wrong
@@ -29,7 +29,9 @@ public interface MsuMdHandler {
     int MCD_MMOD = 0xa12003;
     int MCD_COMF = 0xa1200f;
 
-    AudioFormat CDDA_FORMAT = new AudioFormat(44100f,
+    int CDDA_SAMPLE_RATE = 44100;
+
+    AudioFormat CDDA_FORMAT = new AudioFormat(CDDA_SAMPLE_RATE,
             16, 2, true, false);
 
     MsuMdHandler NO_OP_HANDLER = new MsuMdHandler() {
@@ -98,6 +100,7 @@ public interface MsuMdHandler {
     class MsuCommandArg {
         MsuCommand command = MsuCommand.UNKNOWN;
         int arg;
+        int arg1;
     }
 
     TrackDataHolder NO_TRACK = new TrackDataHolder();
