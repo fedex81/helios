@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.digitalmediaserver.cuelib.CueSheet;
+import org.digitalmediaserver.cuelib.Message;
 import org.digitalmediaserver.cuelib.TrackData;
 
 import javax.sound.sampled.*;
@@ -54,9 +55,11 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     protected void initTrackData(CueSheet cueSheet, long binLen) {
         List<TrackData> trackDataList = cueSheet.getAllTrackData();
         Arrays.fill(trackDataHolders, NO_TRACK);
-        for (TrackData td : trackDataList) {
+        for (int i = 0; i < trackDataList.size(); i++) {
+            TrackData td = trackDataList.get(i);
             TrackDataHolder h = new TrackDataHolder();
             h.type = CueFileDataType.getFileType(td.getParent().getFileType());
+
             switch (h.type) {
                 case BINARY:
                     int numBytes = 0;
@@ -75,8 +78,30 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                     h.waveFile = Optional.ofNullable(cueSheet.getFile().resolveSibling(td.getParent().getFile()).toFile());
                     break;
             }
+            initCueLoopPoints(cueSheet.getMessages(), i, h);
             trackDataHolders[td.getNumber()] = h;
         }
+    }
+
+    private TrackDataHolder initCueLoopPoints(List<Message> loopInfoList, int index, TrackDataHolder h) {
+        if (loopInfoList == null || loopInfoList.size() <= index) {
+            return h;
+        }
+        String str = Optional.ofNullable(loopInfoList.get(index)).map(Message::getInput).orElse("");
+//        Legal commands are: REM LOOP; REM LOOP xxxxx; REM NOLOOP
+        if (str.contains("LOOP")) {
+            h.cueLoop = Optional.of(!str.contains("NOLOOP"));
+            if (h.cueLoop.get()) {
+                try {
+                    int loopPoint = Integer.parseInt(str.split("\\s+")[2].trim());
+                    h.cueLoopPoint = Optional.of(loopPoint);
+                } catch (Exception e) {
+                    LOG.warn("Unable to parse loop point for pos #{}: {}", index, str);
+                }
+            }
+            LogHelper.printLevel(LOG, Level.INFO, "CueFile has loop info for pos #{}: " + str, index, verbose);
+        }
+        return h;
     }
 
 
@@ -187,9 +212,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 if (!init) { //first read needs to return INIT
                     return handleFirstRead();
                 }
-                MCD_STATE m = busy
-//                        || (clip != null && clip.isRunning())
-                        ? MCD_STATE.CMD_BUSY : MCD_STATE.READY;
+                MCD_STATE m = busy ? MCD_STATE.CMD_BUSY : MCD_STATE.READY;
                 LogHelper.printLevel(LOG, Level.INFO, "Read MCD_STATUS: {}, busy: " + busy, m, verbose);
                 return m.ordinal();
             case CLOCK_ADDR:
@@ -233,10 +256,28 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         }
     }
 
+    private MsuCommandArg injectCueLoopSetup(MsuCommandArg commandArg) {
+        TrackDataHolder tdh = trackDataHolders[commandArg.arg];
+        if (commandArg.command == MsuCommand.PLAY && tdh.cueLoop.orElse(false)) {
+            String str = String.format("Using loop info from CUE file to override: %s %X %s", commandArg.command,
+                    commandArg.arg, commandArg.arg1);
+            if (tdh.cueLoopPoint.orElse(0) > 0) {
+                commandArg.command = MsuCommand.PLAY_OFFSET;
+                commandArg.arg1 = tdh.cueLoopPoint.get();
+            } else {
+                commandArg.command = MsuCommand.PLAY_LOOP;
+            }
+            LogHelper.printLevel(LOG, Level.INFO, str + " to: {} 0x{} 0x{}", commandArg.command, commandArg.arg,
+                    commandArg.arg1, verbose);
+        }
+        return commandArg;
+    }
+
     private void processCommand(MsuCommandArg commandArg) {
         int arg = commandArg.arg;
         Runnable r = null;
         LogHelper.printLevel(LOG, Level.INFO, "{} track: {}", commandArg.command, arg, verbose);
+        commandArg = injectCueLoopSetup(commandArg);
         switch (commandArg.command) {
             case PLAY:
                 clipContext.track = arg;

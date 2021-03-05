@@ -107,6 +107,8 @@ public interface MsuMdHandler {
 
     class TrackDataHolder {
         MsuMdHandlerImpl.CueFileDataType type = CueFileDataType.UNKNOWN;
+        Optional<Boolean> cueLoop = Optional.empty();
+        Optional<Integer> cueLoopPoint = Optional.empty();
         Optional<File> waveFile = Optional.empty();
         Optional<Integer> numBytes = Optional.empty();
         Optional<Integer> startFrame = Optional.empty();
