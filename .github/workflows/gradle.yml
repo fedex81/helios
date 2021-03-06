@@ -17,5 +17,5 @@ jobs:
       run: ./gradlew packageDistribution
     - uses: actions/upload-artifact@v2
       with:
-        name: helios-SNAPSHOT-${{ github.sha }}-${{ github.run_number }}
-          path: build/dist
+        name: helios-SNAPSHOT-${{ github.sha }}
+        path: build/dist
