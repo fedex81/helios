@@ -142,7 +142,7 @@ jar {
 
 
 task packageDistribution(type: Zip) {
-    dependsOn "jar", "copyRes", "writeToFile"
+    dependsOn "test", "jar", "copyRes", "writeToFile"
     archiveName = jarNameHead + ".zip"
     destinationDir = file("$buildDir/dist")
 
