@@ -102,6 +102,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         if (!cartridgeInfoProvider.isSsfMapper() && ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
             LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
         }
+        if (cartridgeInfoProvider.isSvp()) {
+            checkSvpMapper();
+        }
     }
 
     @Override

@@ -39,10 +39,9 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     public static final long DEFAULT_SRAM_END_ADDRESS = 0x20_FFFF;
     public static final int DEFAULT_SRAM_BYTE_SIZE = (int) (DEFAULT_SRAM_END_ADDRESS - DEFAULT_SRAM_START_ADDRESS) + 1;
 
-    public static final int ROM_START_ADDRESS = 0x1A0;
-    public static final int ROM_END_ADDRESS = 0x1A4;
-    public static final int RAM_START_ADDRESS = 0x1A8;
-    public static final int RAM_END_ADDRESS = 0x1AC;
+    //see https://github.com/jdesiloniz/svpdev/wiki/Internal-ROM
+    public static final int SVP_SV_TOKEN_ADDRESS = 0x1C8;
+    public static final String SVP_SV_TOKEN = "SV";
     private static final Logger LOG = LogManager.getLogger(MdCartInfoProvider.class.getSimpleName());
     public static final int SRAM_FLAG_ADDRESS = 0x1B0;
     public static final int SRAM_START_ADDRESS = 0x1B4;
@@ -58,6 +57,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     private int romSize;
     private String systemType;
     private MdMapperType forceMapper = null;
+    private boolean isSvp;
     private String serial = "MISSING";
 
     public long getSramEnd() {
@@ -163,18 +163,26 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     }
 
     private void detectHeaderMetadata() {
-        if (memoryProvider.getRomData().length < SERIAL_NUMBER_END) {
+        int[] rom = memoryProvider.getRomData();
+        if (rom.length < SERIAL_NUMBER_END) {
             return;
         }
-        int[] rom = memoryProvider.getRomData();
+
         systemType = new String(rom, ROM_HEADER_START, 16).trim();
         forceMapper = MdMapperType.getMdMapperType(systemType);
         int[] serialArray = Arrays.copyOfRange(memoryProvider.getRomData(), SERIAL_NUMBER_START, SERIAL_NUMBER_END);
         this.serial = Util.toStringValue(serialArray);
+        if (rom.length > SVP_SV_TOKEN_ADDRESS + 1) {
+            isSvp = SVP_SV_TOKEN.equals(new String(rom, SVP_SV_TOKEN_ADDRESS, 2).trim());
+        }
     }
 
     public boolean isSsfMapper() {
         return forceMapper != null;
+    }
+
+    public boolean isSvp() {
+        return isSvp;
     }
 
     public boolean adjustSramLimits(long address) {
