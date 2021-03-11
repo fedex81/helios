@@ -452,47 +452,45 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private void renderPlaneInternal(final int line, final int nameTableLocation,
                                      final int startTwoCells, final int endTwoCells, ScrollContext sc) {
-        int vScrollLineOffset, planeCellVOffset, planeLine;
-        int vScrollSizeMask = (sc.planeHeight << 3) - 1;
-        int hScrollPixelOffset = scrollHandler.getHorizontalScroll(line, sc);
-        final int cellHeight = interlaceMode.getVerticalCellPixelSize();
 
-        TileDataHolder tileDataHolder = spriteDataHolder;
+        final int vScrollSizeMask = (sc.planeHeight << 3) - 1;
+        final int hScrollPixelOffset = scrollHandler.getHorizontalScroll(line, sc);
+        final int cellHeight = interlaceMode.getVerticalCellPixelSize();
         final int[] plane = sc.plane;
 
+        TileDataHolder tileDataHolder = spriteDataHolder;
+        RenderPriority rp = null;
+
         for (int twoCell = startTwoCells; twoCell < endTwoCells; twoCell++) {
-            vScrollLineOffset = scrollHandler.getVerticalScroll(twoCell, sc);
-            planeLine = (vScrollLineOffset + line) & vScrollSizeMask;
-            planeCellVOffset = (planeLine >> 3) * sc.planeWidth;
-            int startPixel = twoCell << 4;
-            int currentPrio;
-            int rowCellBase = planeLine % 8; //cellHeight;
-            int latestTileLocatorVram = -1;
+            int rowCellShift = 0, latestTileLocatorVram = -1;
+            final int vScrollLineOffset = scrollHandler.getVerticalScroll(twoCell, sc);
+            final int planeLine = (vScrollLineOffset + line) & vScrollSizeMask;
+            final int planeCellVOffset = (planeLine >> 3) * sc.planeWidth;
+            final int rowCellBase = planeLine % 8; //cellHeight;
+            final int startPixel = twoCell << 4;
             for (int pixel = startPixel; pixel < startPixel + 16; pixel++) {
-                currentPrio = pixelPriority[pixel].ordinal();
+                final int currentPrio = pixelPriority[pixel].ordinal();
                 if (currentPrio >= RenderPriority.PLANE_A_PRIO.ordinal()) {
                     continue;
                 }
 
                 int planeCellHOffset = ((pixel + hScrollPixelOffset) >> 3) % sc.planeWidth;
                 int tileLocatorVram = nameTableLocation + ((planeCellHOffset + planeCellVOffset) << 1);
+                int xPosCell = (pixel + hScrollPixelOffset) % CELL_WIDTH;
                 if (tileLocatorVram != latestTileLocatorVram) {
                     //one word per 8x8 tile
                     int tileNameTable = vram[tileLocatorVram] << 8 | vram[tileLocatorVram + 1];
                     tileDataHolder = getTileData(tileNameTable, tileDataHolder);
                     latestTileLocatorVram = tileLocatorVram;
+                    rp = tileDataHolder.priority ? sc.highPrio : sc.lowPrio;
+                    int rowCell = rowCellBase ^ (tileDataHolder.vertFlipAmount & (cellHeight - 1)); //[0,7] or [0,15] IM2
+                    rowCellShift = rowCell << (2 + interlaceMode.interlaceAdjust());
                 }
-                RenderPriority rp = tileDataHolder.priority ? sc.highPrio : sc.lowPrio;
                 if (currentPrio >= rp.ordinal()) {
                     continue;
                 }
-                int xPosCell = (pixel + hScrollPixelOffset) % CELL_WIDTH;
-
-                int colCell = xPosCell ^ (spriteDataHolder.horFlipAmount & 7); //[0,7]
-                int rowCell = rowCellBase ^ (spriteDataHolder.vertFlipAmount & (cellHeight - 1)); //[0,7] or [0,15] IM2
-
+                int colCell = xPosCell ^ (tileDataHolder.horFlipAmount & 7); //[0,7]
                 //two pixels per byte, 4 bytes per row
-                int rowCellShift = rowCell << (2 + interlaceMode.interlaceAdjust());
                 int tileBytePointer = tileDataHolder.tileIndex + (colCell >> 1) + rowCellShift;
                 int onePixelData = getPixelIndexColor(tileBytePointer, xPosCell, tileDataHolder.horFlipAmount);
 
