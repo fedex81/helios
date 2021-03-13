@@ -5,6 +5,7 @@
 - EEPROM mapper (take list from blastem)
 
 - jdk9: Thread.onSpinWait vs Thread.yield
+- mdmappertest
 
 Fatal Rewind - timing? has been broken forever
 
