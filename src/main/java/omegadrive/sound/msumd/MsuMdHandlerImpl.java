@@ -257,8 +257,8 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     }
 
     private MsuCommandArg injectCueLoopSetup(MsuCommandArg commandArg) {
-        TrackDataHolder tdh = trackDataHolders[commandArg.arg];
-        if (commandArg.command == MsuCommand.PLAY && tdh.cueLoop.orElse(false)) {
+        if (commandArg.command == MsuCommand.PLAY && trackDataHolders[commandArg.arg].cueLoop.orElse(false)) {
+            TrackDataHolder tdh = trackDataHolders[commandArg.arg];
             String str = String.format("Using loop info from CUE file to override: %s %X %s", commandArg.command,
                     commandArg.arg, commandArg.arg1);
             if (tdh.cueLoopPoint.orElse(0) > 0) {
