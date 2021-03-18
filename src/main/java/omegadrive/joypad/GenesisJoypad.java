@@ -28,7 +28,6 @@ import omegadrive.input.InputProvider.PlayerNumber;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static omegadrive.joypad.JoypadProvider.JoypadAction.PRESSED;
 import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
@@ -112,11 +111,6 @@ public class GenesisJoypad extends BasePadAdapter {
 
     public int readDataRegister3() {
         return 0xFF;
-    }
-
-    //TODO: when pressing Mode on startup (for a 1/few seconds), a 6 button behaves like a 3btn
-    private boolean isModePressed(PlayerNumber pn) {
-        return getValue(pn, M) == PRESSED.ordinal();
     }
 
     private int readDataRegister(PlayerNumber n, JoypadType type, boolean high, int readStep) {

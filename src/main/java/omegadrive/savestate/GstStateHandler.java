@@ -31,7 +31,6 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.MdFmProvider;
-import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
@@ -107,12 +106,12 @@ public class GstStateHandler implements BaseStateHandler {
     @Override
     public void processState() {
         Level prev = LogManager.getRootLogger().getLevel();
-        GenesisBusProvider bus = Util.getDeviceIfAny(deviceList, GenesisBusProvider.class).orElse(null); //TODO
-        BaseVdpProvider vdp = Util.getDeviceIfAny(deviceList, BaseVdpProvider.class).orElse(null);
-        Z80Provider z80 = Util.getDeviceIfAny(deviceList, Z80Provider.class).orElse(null);
-        IMemoryProvider mem = Util.getDeviceIfAny(deviceList, IMemoryProvider.class).orElse(null);
-        MC68000Wrapper cpu = Util.getDeviceIfAny(deviceList, MC68000Wrapper.class).orElse(null);
-        SoundProvider sound = Util.getDeviceIfAny(deviceList, SoundProvider.class).orElse(null);
+        GenesisBusProvider bus = StateUtil.getInstanceOrThrow(deviceList, GenesisBusProvider.class);
+        BaseVdpProvider vdp = StateUtil.getInstanceOrThrow(deviceList, BaseVdpProvider.class);
+        Z80Provider z80 = StateUtil.getInstanceOrThrow(deviceList, Z80Provider.class);
+        IMemoryProvider mem = StateUtil.getInstanceOrThrow(deviceList, IMemoryProvider.class);
+        MC68000Wrapper cpu = StateUtil.getInstanceOrThrow(deviceList, MC68000Wrapper.class);
+        SoundProvider sound = StateUtil.getInstanceOrThrow(deviceList, SoundProvider.class);
         try {
             Configurator.setRootLevel(Level.ERROR);
             if (getType() == Type.LOAD) {

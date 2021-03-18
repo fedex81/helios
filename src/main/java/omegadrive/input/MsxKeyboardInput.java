@@ -19,17 +19,13 @@
 
 package omegadrive.input;
 
-import omegadrive.joypad.JoypadProvider;
-
-import java.awt.Toolkit;
-import java.awt.event.KeyAdapter;
+import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.util.Objects;
 
 /**
  * Taken from the TMSX project, see KeyboardDecoder
  * https://github.com/tjitze/TMSX
+ *
  * @author tjitze.rienstra
  */
 public class MsxKeyboardInput extends KeyboardInput {
@@ -37,16 +33,19 @@ public class MsxKeyboardInput extends KeyboardInput {
     //TODO fix
     protected static MsxKeyboardInput currentAdapter;
 
-    public static MsxKeyboardInput getMsxKeyAdapter(){
-        return (MsxKeyboardInput) currentAdapter;
+    public MsxKeyboardInput() {
+        currentAdapter = this;
     }
 
+    public static MsxKeyboardInput getMsxKeyAdapter() {
+        return currentAdapter;
+    }
 
-        /*
-         * This array contains the MSX key matrix (11 rows of 8 bits each)
-         * The array is updated by the pressKey and depressKey methods and
-         * is read out by the getRowValue method.
-         */
+    /*
+     * This array contains the MSX key matrix (11 rows of 8 bits each)
+     * The array is updated by the pressKey and depressKey methods and
+     * is read out by the getRowValue method.
+     */
         private byte[] rows = new byte[11];
 
         /*

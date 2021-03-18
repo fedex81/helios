@@ -123,7 +123,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             mainBusProvider.write(vdpAddress, dataInt, Size.BYTE);
         } else if (address > END_VDP_VALID && address <= END_VDP) {
             //Rambo III (W) (REV01) [h1C]
-            //TODO should lock the machine
+            LOG.error("Machine should be locked, write to address: {}", Integer.toHexString(address));
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);

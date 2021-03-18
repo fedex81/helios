@@ -150,10 +150,10 @@ public class MekaStateHandler implements BaseStateHandler {
 
     @Override
     public void processState() {
-        SmsBus bus = Util.getDeviceIfAny(deviceList, SmsBus.class).orElse(null); //TODO
-        SmsVdp vdp = Util.getDeviceIfAny(deviceList, SmsVdp.class).orElse(null);
-        Z80Provider z80 = Util.getDeviceIfAny(deviceList, Z80Provider.class).orElse(null);
-        IMemoryProvider mem = Util.getDeviceIfAny(deviceList, IMemoryProvider.class).orElse(null);
+        SmsBus bus = StateUtil.getInstanceOrThrow(deviceList, SmsBus.class);
+        SmsVdp vdp = StateUtil.getInstanceOrThrow(deviceList, SmsVdp.class);
+        Z80Provider z80 = StateUtil.getInstanceOrThrow(deviceList, Z80Provider.class);
+        IMemoryProvider mem = StateUtil.getInstanceOrThrow(deviceList, IMemoryProvider.class);
 
         if (type == Type.LOAD) {
             //order is important

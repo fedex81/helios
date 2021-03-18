@@ -37,8 +37,6 @@ public class TileViewer implements UpdatableViewer {
     private JFrame frame;
     private BufferedImage imageA, imageB, imageS, imageW;
     private int[] pixelsA, pixelsB, pixelsS, pixelsW;
-    private VdpRenderHandler.TileDataHolder tileDataHolder = new VdpRenderHandler.TileDataHolder();
-    private VdpRenderHandler.SpriteDataHolder spriteDataHolder = new VdpRenderHandler.SpriteDataHolder();
 
     private TileViewer(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.vdp = vdp;
@@ -131,6 +129,7 @@ public class TileViewer implements UpdatableViewer {
         int planeBLoc = VdpRenderHandler.getPlaneBNameTableLocation(vdp);
         int planeWLoc = VdpRenderHandler.getWindowPlaneNameTableLocation(vdp, isH40);
         int satLoc = VdpRenderHandler.getSpriteTableLocation(vdp, isH40);
+        this.javaPalette = memoryInterface.getJavaColorPalette();
 
         //planeSize -> each cell 16 bit
         int planeADataEnd = getClosestUpperLimit(planeALoc, planeALoc + (planeSize << 1),
@@ -160,10 +159,10 @@ public class TileViewer implements UpdatableViewer {
 
     private void showPlaneTiles(int[] pixels, int nameTableLocation, int nameTableEnd) {
         int[] vram = vdp.getVdpMemory().getVram();
-        this.javaPalette = memoryInterface.getJavaColorPalette();
         int tileLinearShift = 0;
         int shownTiles = 0;
         Arrays.fill(pixels, 0);
+        VdpRenderHandler.TileDataHolder tileDataHolder = new VdpRenderHandler.TileDataHolder();
         try {
             for (int i = nameTableLocation; i < nameTableEnd && i < vram.length; i += 2) {
                 int vramPointer = vram[i] << 8 | vram[i + 1];
@@ -173,7 +172,7 @@ public class TileViewer implements UpdatableViewer {
                 if (nonBlank) {
                     tileLinearShift += 8;
                     shownTiles++;
-                    if (shownTiles % 64 == 0) {
+                    if (shownTiles % MAX_TILES_PER_LINE == 0) {
                         tileLinearShift = (shownTiles / 8) * PLANE_IMG_WIDTH;
                     }
                 }
@@ -185,25 +184,20 @@ public class TileViewer implements UpdatableViewer {
 
     private void showSpriteTiles(int[] pixels, int satLoc) {
         int[] vram = vdp.getVdpMemory().getVram();
-        this.javaPalette = memoryInterface.getJavaColorPalette();
-        int tileNumber = 0;
         int tileLinearShift = 0;
         int shownTiles = 0;
         int satEnd = Math.min(satLoc + 640, vram.length - 8);
         Arrays.fill(pixels, 0);
+        VdpRenderHandler.SpriteDataHolder spriteDataHolder = new VdpRenderHandler.SpriteDataHolder();
         try {
-            for (int i = satLoc; i < satEnd; i += 2, tileNumber++) {
-                int vramOffset = satLoc + (tileNumber << 3);
-                if (vramOffset + 8 > 0xFFFF) {
-                    continue;
-                }
+            for (int vramOffset = satLoc; vramOffset < satEnd; vramOffset += 8) {  //8 bytes per sprite
                 //8x8 pixels
                 spriteDataHolder = VdpRenderHandlerImpl.getSpriteData(vram, vramOffset, InterlaceMode.NONE, spriteDataHolder);
                 boolean nonBlank = renderInternal(spriteDataHolder, pixels, vram, tileLinearShift);
                 if (nonBlank) {
                     tileLinearShift += 8;
                     shownTiles++;
-                    if (shownTiles % 64 == 0) {
+                    if (shownTiles % MAX_TILES_PER_LINE == 0) {
                         tileLinearShift = (shownTiles / 8) * PLANE_IMG_WIDTH;
                     }
                 }

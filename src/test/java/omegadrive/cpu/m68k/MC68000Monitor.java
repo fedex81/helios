@@ -186,7 +186,7 @@ public class MC68000Monitor implements Runnable {
             try {
                 int addr = this.parseInt(tokens[1]);
                 if (this.breakpoints.contains(addr)) {
-                    this.breakpoints.remove(new Integer(addr));
+                    this.breakpoints.remove(addr);
                 } else {
                     this.breakpoints.add(addr);
                 }

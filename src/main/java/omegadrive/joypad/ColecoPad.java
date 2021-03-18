@@ -34,6 +34,9 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
 /**
  * NOTE: Turbo requires an analog device to work (not emulated)
+ * <p>
+ * TODO:
+ * p2 not emulated
  */
 public class ColecoPad extends BasePadAdapter {
 
@@ -117,7 +120,7 @@ public class ColecoPad extends BasePadAdapter {
                     filter(e -> e.getValue() == JoypadAction.PRESSED).map(Map.Entry::getKey).findFirst();
             res |= pressedBtn.map(valueMapKeypad::get).orElse(0xF);
         } else {
-            res |= 0xF; //TODO p2
+            res |= 0xF;
         }
         return res;
     }

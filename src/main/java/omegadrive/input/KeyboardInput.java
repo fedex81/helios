@@ -59,9 +59,7 @@ public class KeyboardInput extends KeyAdapter {
                 res = new ColecoKeyboardInput();
                 break;
             case MSX:
-                MsxKeyboardInput m = new MsxKeyboardInput();
-                MsxKeyboardInput.currentAdapter = m;
-                res = m;
+                res = new MsxKeyboardInput();
                 break;
             default:
                res = new KeyboardInput();

@@ -180,7 +180,7 @@ public class StateUtil {
         return buffer;
     }
 
-    //TODO lastIndexOf?
+    //TODO copies the array
     private static int getNextPosForPattern(byte[] buf, int startPos, String pattern) {
         byte[] ba2 = Arrays.copyOfRange(buf, startPos, buf.length);
         int endPos = Bytes.indexOf(ba2, pattern.getBytes()) + startPos;
@@ -227,5 +227,11 @@ public class StateUtil {
         String ext = Files.getFileExtension(getStateFileName(fileName, exts));
         ByteBuffer buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(fileName), ext));
         return buffer;
+    }
+
+    public static <T extends Device> T getInstanceOrThrow(List<Device> deviceList, Class<T> clazz) {
+        return Util.getDeviceIfAny(deviceList, clazz).orElseThrow(() ->
+                new RuntimeException("Unable to find an instance of class: " + clazz + ", from list: " +
+                        Arrays.toString(deviceList.toArray())));
     }
 }
