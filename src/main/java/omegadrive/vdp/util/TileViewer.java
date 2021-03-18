@@ -139,13 +139,11 @@ public class TileViewer implements UpdatableViewer {
                 new int[]{planeBLoc + (planeSize << 1), planeALoc, satLoc, planeWLoc, GenesisVdpProvider.VDP_VRAM_SIZE - 1});
         int planeWDataEnd = getClosestUpperLimit(planeBLoc, planeWLoc + (wPlaneSize << 1),
                 new int[]{planeWLoc + (wPlaneSize << 1), planeALoc, satLoc, planeBLoc, GenesisVdpProvider.VDP_VRAM_SIZE - 1});
-        int satDataEnd = getClosestUpperLimit(satLoc, GenesisVdpProvider.VDP_VRAM_SIZE - 1,
-                new int[]{planeALoc, planeWLoc, planeBLoc, GenesisVdpProvider.VDP_VRAM_SIZE - 1});
 
         showPlaneTiles(pixelsA, planeALoc, planeADataEnd);
         showPlaneTiles(pixelsB, planeBLoc, planeBDataEnd);
         showPlaneTiles(pixelsW, planeWLoc, planeWDataEnd);
-        showSpriteTiles(pixelsS, satLoc, satDataEnd);
+        showSpriteTiles(pixelsS, satLoc);
         panel.repaint();
     }
 
@@ -160,40 +158,18 @@ public class TileViewer implements UpdatableViewer {
         return defaultVal;
     }
 
-    private void showSpriteTiles(int[] pixels, int nameTableLocation, int nameTableEnd) {
+    private void showPlaneTiles(int[] pixels, int nameTableLocation, int nameTableEnd) {
         int[] vram = vdp.getVdpMemory().getVram();
         this.javaPalette = memoryInterface.getJavaColorPalette();
-        int tileNumber = 0;
         int tileLinearShift = 0;
         int shownTiles = 0;
         Arrays.fill(pixels, 0);
         try {
-            for (int i = nameTableLocation; i < nameTableEnd && i < vram.length - 8; i += 2, tileNumber++) {
+            for (int i = nameTableLocation; i < nameTableEnd && i < vram.length; i += 2) {
                 int vramPointer = vram[i] << 8 | vram[i + 1];
-                if (vramPointer + 8 > 0xFFFF) {
-                    continue;
-                }
                 //8x8 pixels
-                spriteDataHolder = VdpRenderHandlerImpl.getSpriteData(vram, vramPointer, InterlaceMode.NONE, spriteDataHolder);
-                int tileRowShift = 0;
-                boolean nonBlank = false;
-                for (int j = 0; j < 8; j++) { //for each tile row
-                    for (int k = 0; k < 4; k++) { //for each two pixels
-                        int rowData = vram[tileDataHolder.tileIndex + (j << 2) + k]; //2 pixels
-                        int px1 = rowData & 0xF;
-                        int px2 = (rowData & 0xF0) >> 4;
-                        int javaColorIndex1 = (tileDataHolder.paletteLineIndex + (px1 << 1)) >> 1;
-                        int javaColorIndex2 = (tileDataHolder.paletteLineIndex + (px2 << 1)) >> 1;
-                        int px = (tileLinearShift + tileRowShift) + (k << 1);
-                        if (px > 0xFFFF) {
-                            return;
-                        }
-                        pixels[px] = javaPalette[javaColorIndex1];
-                        pixels[px + 1] = javaPalette[javaColorIndex1];
-                        nonBlank |= javaColorIndex1 > 0 || javaColorIndex2 > 0;
-                    }
-                    tileRowShift += PLANE_IMG_WIDTH;
-                }
+                tileDataHolder = renderHandler.getTileData(vramPointer, InterlaceMode.NONE, tileDataHolder);
+                boolean nonBlank = renderInternal(tileDataHolder, pixels, vram, tileLinearShift);
                 if (nonBlank) {
                     tileLinearShift += 8;
                     shownTiles++;
@@ -207,37 +183,23 @@ public class TileViewer implements UpdatableViewer {
         }
     }
 
-    private void showPlaneTiles(int[] pixels, int nameTableLocation, int nameTableEnd) {
+    private void showSpriteTiles(int[] pixels, int satLoc) {
         int[] vram = vdp.getVdpMemory().getVram();
         this.javaPalette = memoryInterface.getJavaColorPalette();
         int tileNumber = 0;
         int tileLinearShift = 0;
         int shownTiles = 0;
+        int satEnd = Math.min(satLoc + 640, vram.length - 8);
         Arrays.fill(pixels, 0);
         try {
-            for (int i = nameTableLocation; i < nameTableEnd && i < vram.length; i += 2, tileNumber++) {
-                int vramPointer = vram[i] << 8 | vram[i + 1];
-                //8x8 pixels
-                tileDataHolder = renderHandler.getTileData(vramPointer, InterlaceMode.NONE, tileDataHolder);
-                int tileRowShift = 0;
-                boolean nonBlank = false;
-                for (int j = 0; j < 8; j++) { //for each tile row
-                    for (int k = 0; k < 4; k++) { //for each two pixels
-                        int rowData = vram[tileDataHolder.tileIndex + (j << 2) + k]; //2 pixels
-                        int px1 = rowData & 0xF;
-                        int px2 = (rowData & 0xF0) >> 4;
-                        int javaColorIndex1 = (tileDataHolder.paletteLineIndex + (px1 << 1)) >> 1;
-                        int javaColorIndex2 = (tileDataHolder.paletteLineIndex + (px2 << 1)) >> 1;
-                        int px = (tileLinearShift + tileRowShift) + (k << 1);
-                        if (px > 0xFFFF) {
-                            return;
-                        }
-                        pixels[px] = javaPalette[javaColorIndex1];
-                        pixels[px + 1] = javaPalette[javaColorIndex1];
-                        nonBlank |= javaColorIndex1 > 0 || javaColorIndex2 > 0;
-                    }
-                    tileRowShift += PLANE_IMG_WIDTH;
+            for (int i = satLoc; i < satEnd; i += 2, tileNumber++) {
+                int vramOffset = satLoc + (tileNumber << 3);
+                if (vramOffset + 8 > 0xFFFF) {
+                    continue;
                 }
+                //8x8 pixels
+                spriteDataHolder = VdpRenderHandlerImpl.getSpriteData(vram, vramOffset, InterlaceMode.NONE, spriteDataHolder);
+                boolean nonBlank = renderInternal(spriteDataHolder, pixels, vram, tileLinearShift);
                 if (nonBlank) {
                     tileLinearShift += 8;
                     shownTiles++;
@@ -249,6 +211,28 @@ public class TileViewer implements UpdatableViewer {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
 
+    private boolean renderInternal(VdpRenderHandler.TileDataHolder tileDataHolder, int[] pixels, int[] vram, int tileLinearShift) {
+        int tileRowShift = 0;
+        boolean nonBlank = false;
+        for (int j = 0; j < 8; j++) { //for each tile row
+            for (int k = 0; k < 4; k++) { //for each two pixels
+                int rowData = vram[tileDataHolder.tileIndex + (j << 2) + k]; //2 pixels
+                int px1 = rowData & 0xF;
+                int px2 = (rowData & 0xF0) >> 4;
+                int javaColorIndex1 = (tileDataHolder.paletteLineIndex + (px1 << 1)) >> 1;
+                int javaColorIndex2 = (tileDataHolder.paletteLineIndex + (px2 << 1)) >> 1;
+                int px = (tileLinearShift + tileRowShift) + (k << 1);
+                if (px > 0xFFFF) {
+                    continue;
+                }
+                pixels[px] = javaPalette[javaColorIndex1];
+                pixels[px + 1] = javaPalette[javaColorIndex1];
+                nonBlank |= javaColorIndex1 > 0 || javaColorIndex2 > 0;
+            }
+            tileRowShift += PLANE_IMG_WIDTH;
+        }
+        return nonBlank;
     }
 }
