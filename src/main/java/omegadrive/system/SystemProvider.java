@@ -62,6 +62,7 @@ public interface SystemProvider extends Device {
         CONTROLLER_CHANGE,
         SET_DEBUG_UI,
         TOGGLE_SOUND_RECORD,
-        SOFT_RESET
+        SOFT_RESET,
+        PAD_SETUP_CHANGE
     }
 }

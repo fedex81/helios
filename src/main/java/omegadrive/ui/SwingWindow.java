@@ -23,6 +23,7 @@ import com.google.common.base.Strings;
 import omegadrive.SystemLoader;
 import omegadrive.input.InputProvider;
 import omegadrive.input.InputProvider.PlayerNumber;
+import omegadrive.joypad.JoypadProvider.JoypadType;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.*;
 import omegadrive.util.FileLoader.FileResourceType;
@@ -114,8 +115,7 @@ public class SwingWindow implements DisplayWindow {
     }
 
 
-
-    private void addKeyAction(JMenuItem component, SystemProvider.SystemEvent event, ActionListener l) {
+    private void addKeyAction(AbstractButton component, SystemProvider.SystemEvent event, ActionListener l) {
         AbstractAction action = toAbstractAction(component.getText(), l);
         if (event != NONE) {
             action.putValue(Action.ACCELERATOR_KEY, KeyBindingsHandler.getInstance().getKeyStrokeForEvent(event));
@@ -124,7 +124,7 @@ public class SwingWindow implements DisplayWindow {
         component.setAction(action);
     }
 
-    private void addAction(JMenuItem component, ActionListener act) {
+    private void addAction(AbstractButton component, ActionListener act) {
         addKeyAction(component, NONE, act);
     }
 
@@ -261,6 +261,10 @@ public class SwingWindow implements DisplayWindow {
         reloadControllers(InputProvider.DEFAULT_CONTROLLERS);
         inputMenusMap.values().forEach(inputMenu::add);
         setting.add(inputMenu);
+
+        JMenu joypadTypeMenu = new JMenu("Joypad Type");
+        createAndAddJoypadTypes(joypadTypeMenu);
+        setting.add(joypadTypeMenu);
 
         JMenu menuView = new JMenu("View");
         bar.add(menuView);
@@ -678,26 +682,37 @@ public class SwingWindow implements DisplayWindow {
             PlayerNumber pn = entry.getKey();
             JMenu menu = entry.getValue();
             menu.removeAll();
-            java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
+            ButtonGroup bg = new ButtonGroup();
+            List<JRadioButton> l = new ArrayList<>();
             list.forEach(c -> {
-                JCheckBoxMenuItem item = new JCheckBoxMenuItem(c, InputProvider.KEYBOARD_CONTROLLER.equalsIgnoreCase(c));
+                JRadioButton item = new JRadioButton(c, InputProvider.KEYBOARD_CONTROLLER.equalsIgnoreCase(c));
+                bg.add(item);
                 addAction(item, e -> handleSystemEvent(CONTROLLER_CHANGE, pn.name() + ":" + c,
                         pn.name() + ":" + c));
                 l.add(item);
+
             });
-            //only allow one selection
-            final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
-            l.forEach(i -> i.addItemListener(e -> {
-                if (ItemEvent.SELECTED == e.getStateChange()) {
-                    list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
-                }
-            }));
             l.forEach(menu::add);
             //fudgePlayer1Using1stController
             if (list.size() > 2 && pn == PlayerNumber.P1) {
                 LOG.info("Auto-selecting {} using Controller: {}", pn, l.get(2).getText());
                 l.get(2).doClick();
             }
+        }
+    }
+
+    private void createAndAddJoypadTypes(JMenu joypadTypeMenu) {
+        for (PlayerNumber pn : PlayerNumber.values()) {
+            JMenu pMenu = new JMenu(pn.name());
+            ButtonGroup bg = new ButtonGroup();
+            for (JoypadType type : JoypadType.values()) {
+                JRadioButton it = new JRadioButton(type.name(), type == JoypadType.BUTTON_6);
+                bg.add(it);
+                addAction(it, e -> handleSystemEvent(PAD_SETUP_CHANGE, pn.name() + ":" + type.name(),
+                        pn.name() + ":" + type.name()));
+                pMenu.add(it);
+            }
+            joypadTypeMenu.add(pMenu);
         }
     }
 

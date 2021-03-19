@@ -19,8 +19,9 @@
 
 package omegadrive;
 
-import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInputHelper;
+import omegadrive.joypad.GenesisJoypad;
+import omegadrive.joypad.JoypadProvider.JoypadType;
 import omegadrive.system.Genesis;
 import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
@@ -49,6 +50,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
+import static omegadrive.input.InputProvider.PlayerNumber;
+import static omegadrive.input.InputProvider.bootstrap;
 import static omegadrive.system.SystemProvider.SystemEvent.NEW_ROM;
 
 public class SystemLoader {
@@ -145,7 +148,7 @@ public class SystemLoader {
 
      private static void init() {
          loadProperties();
-         InputProvider.bootstrap();
+         bootstrap();
          boolean isHeadless = isHeadless();
          LOG.info("Headless mode: {}", isHeadless);
          SystemLoader.setHeadless(isHeadless);
@@ -225,6 +228,13 @@ public class SystemLoader {
                     case CLOSE_ROM:
                     case CLOSE_APP:
                         //do nothing
+                        break;
+                    case PAD_SETUP_CHANGE:
+                        String[] s1 = parameter.toString().split(":");
+                        PlayerNumber pn = PlayerNumber.valueOf(s1[0]);
+                        JoypadType jt = JoypadType.valueOf(s1[1]);
+                        GenesisJoypad.P1_DEFAULT_TYPE = pn == PlayerNumber.P1 ? jt : GenesisJoypad.P1_DEFAULT_TYPE;
+                        GenesisJoypad.P2_DEFAULT_TYPE = pn == PlayerNumber.P2 ? jt : GenesisJoypad.P2_DEFAULT_TYPE;
                         break;
                     default:
                         LOG.warn("Unable to handle event: {}, with parameter: {}", event, Objects.toString(parameter));

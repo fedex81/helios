@@ -138,12 +138,15 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
                 handleCloseApp();
                 break;
             case CONTROLLER_CHANGE:
-                String str = parameter.toString();
-                String[] s = str.split(":");
+                String[] s = parameter.toString().split(":");
                 inputProvider.setPlayerController(InputProvider.PlayerNumber.valueOf(s[0]), s[1]);
                 break;
             case SOFT_RESET:
                 softReset = true;
+                break;
+            case PAD_SETUP_CHANGE:
+                String[] s1 = parameter.toString().split(":");
+                joypad.setPadSetupChange(InputProvider.PlayerNumber.valueOf(s1[0]), s1[1]);
                 break;
             default:
                 LOG.warn("Unable to handle event: {}, with parameter: {}", event, Objects.toString(parameter));

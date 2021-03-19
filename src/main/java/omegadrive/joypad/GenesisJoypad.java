@@ -28,6 +28,8 @@ import omegadrive.input.InputProvider.PlayerNumber;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static omegadrive.input.InputProvider.PlayerNumber.P1;
+import static omegadrive.input.InputProvider.PlayerNumber.P2;
 import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
@@ -53,6 +55,9 @@ public class GenesisJoypad extends BasePadAdapter {
     static final int SIX_BUTTON_XYZ_STEP = 7;
     static final int SIX_BUTTON_START_A_FINAL_STEP = 8;
 
+    public static JoypadType P1_DEFAULT_TYPE = JoypadType.BUTTON_6;
+    public static JoypadType P2_DEFAULT_TYPE = JoypadType.BUTTON_6;
+
     //SGDK needs 0 here, otherwise it is considered a RESET
     long control1 = 0;
     long control2 = 0;
@@ -68,9 +73,6 @@ public class GenesisJoypad extends BasePadAdapter {
     public void init() {
         writeDataRegister1(0x40);
         writeDataRegister2(0x40);
-        p1Type = JoypadType.BUTTON_6;
-        p2Type = JoypadType.BUTTON_3;
-        LOG.info("Joypad1: {} - Joypad2: {}", p1Type, p2Type);
         stateMap1 = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
                 put(D, RELEASED).put(U, RELEASED).
                 put(L, RELEASED).put(R, RELEASED).
@@ -79,6 +81,22 @@ public class GenesisJoypad extends BasePadAdapter {
                 put(M, RELEASED).put(X, RELEASED).
                 put(Y, RELEASED).put(Z, RELEASED).build());
         stateMap2 = Maps.newHashMap(stateMap1);
+        setPadSetupChange(P1, P1_DEFAULT_TYPE.name());
+        setPadSetupChange(P2, P2_DEFAULT_TYPE.name());
+    }
+
+    @Override
+    public void setPadSetupChange(PlayerNumber pn, String info) {
+        JoypadType jt = JoypadType.valueOf(info);
+        switch (pn) {
+            case P1:
+                P1_DEFAULT_TYPE = p1Type = jt;
+                break;
+            case P2:
+                P2_DEFAULT_TYPE = p2Type = jt;
+                break;
+        }
+        LOG.info("Setting {} joypad type to: {}", pn, jt);
     }
 
     public void writeDataRegister1(long data) {
@@ -100,12 +118,12 @@ public class GenesisJoypad extends BasePadAdapter {
     }
 
     public int readDataRegister1() {
-        return readDataRegister(PlayerNumber.P1, p1Type, high1, readStep1);
+        return readDataRegister(P1, p1Type, high1, readStep1);
 //        LOG.info("read p1: high : {}, step : {}, result: {}", high1, readStep1, res);
     }
 
     public int readDataRegister2() {
-        return readDataRegister(PlayerNumber.P2, p2Type, high2, readStep2);
+        return readDataRegister(P2, p2Type, high2, readStep2);
 //        LOG.info("read p2: high : {}, step : {}, result: {}", high2, readStep2, res);
     }
 

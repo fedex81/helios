@@ -91,4 +91,8 @@ public interface JoypadProvider extends Device {
     default void setButtonAction(InputProvider.PlayerNumber number, JoypadButton button, JoypadAction action, KeyEvent event) {
         setButtonAction(number, button, action);
     }
+
+    default void setPadSetupChange(InputProvider.PlayerNumber playerNumber, String info) {
+        //DO NOTHING
+    }
 }
