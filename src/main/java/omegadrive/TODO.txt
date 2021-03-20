@@ -1,3 +1,4 @@
+- emudetect.asm
 - flush audio on close (see nintaco)
 - fm vs psg sync
 

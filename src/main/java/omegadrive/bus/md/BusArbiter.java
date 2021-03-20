@@ -57,7 +57,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     protected M68kProvider m68k;
     protected Z80Provider z80;
 
-    private Runnable runLater;
+    private Runnable runLater68k;
 
     public static BusArbiter createInstance(GenesisVdpProvider vdp, M68kProvider m68k, Z80Provider z80) {
         BusArbiter b = new BusArbiter();
@@ -79,9 +79,9 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
             logInfo("Vdp State {} -> {} , 68k {}", vdpBusyState, state, state68k);
             vdpBusyState = state;
             if (state68k == CpuState.RUNNING && vdpBusyState == VdpBusyState.NOT_BUSY
-                    && runLater != null) {
-                Runnable runnable = runLater;
-                runLater = null;
+                    && runLater68k != null) {
+                Runnable runnable = runLater68k;
+                runLater68k = null;
                 runnable.run();
             }
         }
@@ -195,8 +195,8 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         }
     }
 
-    public void runLater(Runnable r) {
-        runLater = r;
+    public void runLater68k(Runnable r) {
+        runLater68k = r;
         state68k = CpuState.HALTED;
         logInfo("68k State {} , vdp {}", state68k, vdpBusyState);
     }

@@ -69,6 +69,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     GenesisBus.VdpRunnable vdpRunnable = new GenesisBus.VdpRunnable() {
         @Override
         public void run() {
+//            LOG.info("{}, {} {}", Integer.toHexString(vdpAddress), vpdData, vdpSize);
             write(vdpAddress, vpdData, vdpSize);
         }
     };
@@ -778,7 +779,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             vdpRunnable.vdpAddress = address;
             vdpRunnable.vdpSize = size;
             vdpRunnable.vpdData = data;
-            busArbiter.runLater(vdpRunnable);
+            busArbiter.runLater68k(vdpRunnable);
             return true;
         }
         return false;

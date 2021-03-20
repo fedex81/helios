@@ -75,13 +75,13 @@ public class SwingWindow implements DisplayWindow {
     private JFrame jFrame;
     private SystemProvider mainEmu;
 
-    private java.util.List<JCheckBoxMenuItem> regionItems;
+    private List<AbstractButton> regionItems;
     private JCheckBoxMenuItem fullScreenItem;
     private JMenu recentFilesMenu;
     private JMenuItem[] recentFilesItems;
     private Map<PlayerNumber, JMenu> inputMenusMap;
     private final static int screenChangedCheckFrequency = 60;
-    private List<JCheckBoxMenuItem> screenItems;
+    private List<AbstractButton> screenItems;
     private int screenChangedCheckCounter = screenChangedCheckFrequency;
     private boolean showDebug = false;
     private Dimension nativeScreenSize = DEFAULT_BASE_SCREEN_SIZE;
@@ -194,7 +194,7 @@ public class SwingWindow implements DisplayWindow {
     @Override
     public String getRegionOverride() {
         return regionItems.stream().filter(AbstractButton::isSelected).
-                map(JCheckBoxMenuItem::getText).findFirst().orElse(null);
+                map(AbstractButton::getText).findFirst().orElse(null);
     }
 
     //NOTE: this will copy the input array
@@ -616,28 +616,22 @@ public class SwingWindow implements DisplayWindow {
         });
     }
 
-    private java.util.List<JCheckBoxMenuItem> createRegionItems() {
-        java.util.List<JCheckBoxMenuItem> l = new ArrayList<>();
-        l.add(new JCheckBoxMenuItem("AutoDetect", true));
+    private List<AbstractButton> createRegionItems() {
+        List<AbstractButton> l = new ArrayList<>();
+        l.add(new JRadioButtonMenuItem("AutoDetect", true));
         Arrays.stream(RegionDetector.Region.values()).sorted().
-                forEach(r -> l.add(new JCheckBoxMenuItem(r.name(), false)));
-        //only allow one selection
-        final List<JCheckBoxMenuItem> list1 = new ArrayList<>(l);
-        l.forEach(i -> i.addItemListener(e -> {
-            if (ItemEvent.SELECTED == e.getStateChange()) {
-                list1.stream().filter(i1 -> !i.getText().equals(i1.getText())).forEach(i1 -> i1.setSelected(false));
-            }
-        }));
+                forEach(r -> l.add(new JRadioButtonMenuItem(r.name(), false)));
+        ButtonGroup bg = new ButtonGroup();
+        l.forEach(bg::add);
         return l;
     }
 
-    private java.util.List<JCheckBoxMenuItem> createAddScreenItems(JMenu screensMenu) {
+    private List<AbstractButton> createAddScreenItems(JMenu screensMenu) {
         List<String> l = SwingScreenSupport.detectScreens();
         screenItems = new ArrayList<>();
         for (int i = 0; i < l.size(); i++) {
             String s = l.get(i);
-            JCheckBoxMenuItem it = new JCheckBoxMenuItem(s);
-            it.setState(i == SwingScreenSupport.getCurrentScreen());
+            JRadioButtonMenuItem it = new JRadioButtonMenuItem(s, i == SwingScreenSupport.getCurrentScreen());
             screenItems.add(it);
             screensMenu.add(it);
         }
@@ -648,7 +642,7 @@ public class SwingWindow implements DisplayWindow {
         return screenItems;
     }
 
-    private void handleScreenChange(List<JCheckBoxMenuItem> items, int newScreen) {
+    private void handleScreenChange(List<AbstractButton> items, int newScreen) {
         int cs = SwingScreenSupport.getCurrentScreen();
         if (cs != newScreen) {
             SwingScreenSupport.showOnScreen(newScreen, jFrame);
@@ -656,7 +650,7 @@ public class SwingWindow implements DisplayWindow {
         handleScreenChangeItems(items, newScreen);
     }
 
-    private void handleScreenChangeItems(List<JCheckBoxMenuItem> items, int newScreen) {
+    private void handleScreenChangeItems(List<AbstractButton> items, int newScreen) {
         for (int i = 0; i < items.size(); i++) {
             items.get(i).setSelected(i == newScreen);
         }
@@ -682,16 +676,17 @@ public class SwingWindow implements DisplayWindow {
             PlayerNumber pn = entry.getKey();
             JMenu menu = entry.getValue();
             menu.removeAll();
-            ButtonGroup bg = new ButtonGroup();
-            List<JRadioButton> l = new ArrayList<>();
+            List<JRadioButtonMenuItem> l = new ArrayList<>();
             list.forEach(c -> {
-                JRadioButton item = new JRadioButton(c, InputProvider.KEYBOARD_CONTROLLER.equalsIgnoreCase(c));
-                bg.add(item);
+                JRadioButtonMenuItem item = new JRadioButtonMenuItem(c,
+                        InputProvider.KEYBOARD_CONTROLLER.equalsIgnoreCase(c));
                 addAction(item, e -> handleSystemEvent(CONTROLLER_CHANGE, pn.name() + ":" + c,
                         pn.name() + ":" + c));
                 l.add(item);
 
             });
+            ButtonGroup bg = new ButtonGroup();
+            l.forEach(bg::add);
             l.forEach(menu::add);
             //fudgePlayer1Using1stController
             if (list.size() > 2 && pn == PlayerNumber.P1) {
@@ -706,10 +701,10 @@ public class SwingWindow implements DisplayWindow {
             JMenu pMenu = new JMenu(pn.name());
             ButtonGroup bg = new ButtonGroup();
             for (JoypadType type : JoypadType.values()) {
-                JRadioButton it = new JRadioButton(type.name(), type == JoypadType.BUTTON_6);
-                bg.add(it);
+                JRadioButtonMenuItem it = new JRadioButtonMenuItem(type.name(), type == JoypadType.BUTTON_6);
                 addAction(it, e -> handleSystemEvent(PAD_SETUP_CHANGE, pn.name() + ":" + type.name(),
                         pn.name() + ":" + type.name()));
+                bg.add(it);
                 pMenu.add(it);
             }
             joypadTypeMenu.add(pMenu);
