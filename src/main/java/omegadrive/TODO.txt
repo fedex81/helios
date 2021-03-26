@@ -38,6 +38,10 @@ md: vdp perf
 ok (buggy) - 78b91eeb on 11/11/2019 at 11:52
 - ie. adds a rendering bug
 
+md: hint tweaks
+05c7ce0a  25/01/2021 at 17:20
+breaks fullscreen_niccc2000_for_megadrive_fixed.bin
+
 //region issue EUJ -> U, should use U
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin
 Robocop Versus The Terminator (U) [T+Rus].bin

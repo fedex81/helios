@@ -77,7 +77,7 @@ public class SwingWindow implements DisplayWindow {
 
     private List<AbstractButton> regionItems;
     private JCheckBoxMenuItem fullScreenItem;
-    private JMenu recentFilesMenu;
+    private JMenu recentFilesMenu, joypadTypeMenu;
     private JMenuItem[] recentFilesItems;
     private Map<PlayerNumber, JMenu> inputMenusMap;
     private final static int screenChangedCheckFrequency = 60;
@@ -262,7 +262,7 @@ public class SwingWindow implements DisplayWindow {
         inputMenusMap.values().forEach(inputMenu::add);
         setting.add(inputMenu);
 
-        JMenu joypadTypeMenu = new JMenu("Joypad Type");
+        joypadTypeMenu = new JMenu("Joypad Type");
         createAndAddJoypadTypes(joypadTypeMenu);
         setting.add(joypadTypeMenu);
 
@@ -584,7 +584,10 @@ public class SwingWindow implements DisplayWindow {
 
         Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);
         setupFrameKeyListener();
-        Optional.ofNullable(mainEmu).ifPresent(sp -> setTitle(""));
+        Optional.ofNullable(mainEmu).ifPresent(sp -> {
+            setTitle("");
+            joypadTypeMenu.setEnabled(mainEmu.getSystemType() == SystemLoader.SystemType.GENESIS);
+        });
     }
 
     @Override
@@ -701,6 +704,9 @@ public class SwingWindow implements DisplayWindow {
             JMenu pMenu = new JMenu(pn.name());
             ButtonGroup bg = new ButtonGroup();
             for (JoypadType type : JoypadType.values()) {
+                if (type == JoypadType.BUTTON_2) {
+                    continue;
+                }
                 JRadioButtonMenuItem it = new JRadioButtonMenuItem(type.name(), type == JoypadType.BUTTON_6);
                 addAction(it, e -> handleSystemEvent(PAD_SETUP_CHANGE, pn.name() + ":" + type.name(),
                         pn.name() + ":" + type.name()));
