@@ -1,3 +1,30 @@
+## 21.0407
+68k: overclock support
+helios: init SRAM with 0xFF, according to docs
+helios: init RAM with random values
+helios: async write to file, mitigate sporadic savestate corruption
+helios: add savestate support for sg1000, coleco, msx
+md: select between 3/6 buttons joypad
+md: vdp debug fixes
+md: improve SVP auto-detection
+md: change vdp registers init values, according to docs
+md: hint tweaks
+md: backPlane color issue
+md: further windowPlane fixes
+md: sh tweak
+md: add support for vdp left column blanking
+md: fix fm stereo
+md: partial support for exssf mapper
+md: unused bits on Z80_BUSREQ read, z80 zreset tweak
+md: fix on saving serialized data
+md: limit z80 pc range to RAM space only
+md: fix hscroll cell mode
+msumd: add support for CUE based loop points (MD+ style)
+msumd: support PLAY_OFFSET, volume
+nes: update lib
+tms: fix vdp vram size
+z80: update lib
+
 ## 20.1207
 gb: re-enable emulation, sound is much better
 68k: update lib, subx.l flag fix, movem changes
