@@ -118,6 +118,78 @@ public class GenesisVdpTest2 {
         Assert.assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(GenesisVdpProvider.VdpRegisterName.AUTO_INCREMENT));
     }
 
+    @Test
+    public void testCtrlPortVdpRegisterWriteUpdatesCodeAndAddrRegs() {
+        MdVdpTestUtil.setH32(vdpProvider);
+
+        //setup vpd
+        int autoInc = 2;
+
+        vdpProvider.writeControlPort(0x8124);
+        vdpProvider.writeControlPort(0x8134);
+        vdpProvider.writeControlPort(0x8F00 + autoInc);
+        vdpProvider.writeControlPort(0x93E8);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+
+        vdpProvider.writeControlPort(0); //addrReg = 0, codeReg = 0 (vramRead)
+        vdpProvider.writeControlPort(0);
+
+        memoryInterface.writeVramByte(0xf02, 0xFF);
+
+        vdpProvider.writeControlPort(0x8f02); //set autoInc = 2, addressRegister -> 0xF02, codeReg = 2 (invalid)
+        //codeReg should now be 2
+        int res = vdpProvider.readVdpPortWord(GenesisVdpProvider.VdpPortType.DATA);
+        Assert.assertEquals(0, res); //invalid read returns 0
+    }
+
+    /**
+     * GoldenAxe2 attempts to write to VRAM after setting the CTRL port for a register write,
+     * without setting the address and control registers in between.
+     * The solution is to still update the address (lower 14 bits) and code (lower 2 bits)
+     * registers when a VDP register write occurs, and ignore data port writes when
+     * the code register value is not a valid write command value (0x1, 0x3 or 0x5).
+     * <p>
+     * writeReg: f, data: 2
+     * Invalid writeDataPort, vramMode null, data: 8032, address: cf02
+     * Invalid writeDataPort, vramMode null, data: 8004, address: cf04
+     */
+    @Test
+    public void testInvalidModeDataPortWrite() {
+        MdVdpTestUtil.setH32(vdpProvider);
+
+        //setup vpd
+        int autoInc = 2;
+
+        vdpProvider.writeControlPort(0x8124);
+        vdpProvider.writeControlPort(0x8134);
+        vdpProvider.writeControlPort(0x8F00 + autoInc);
+        vdpProvider.writeControlPort(0x93E8);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+
+        int addrReg = 0xf02;
+
+        int vram0 = memoryInterface.readVramByte(addrReg);
+        int vram2 = memoryInterface.readVramByte(addrReg + autoInc);
+        int cram0 = memoryInterface.readCramByte(addrReg);
+        int cram2 = memoryInterface.readCramByte(addrReg + autoInc);
+        int vsram0 = memoryInterface.readVsramByte(addrReg);
+        int vsram2 = memoryInterface.readVsramByte(addrReg + autoInc);
+
+        //do work
+        vdpProvider.writeControlPort(0x8f02); //set autoInc = 2, addressRegister -> 0xF02, codeReg = 2 (invalid)
+        vdpProvider.writeDataPort(0x8032); //attempts to write to address 0xf02, should fail
+        vdpProvider.writeDataPort(0x8004); //attempts to write to address 0xf04, should fail
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+
+        //verify nothing was written to mem
+        Assert.assertEquals(vram0, memoryInterface.readVramByte(addrReg));
+        Assert.assertEquals(vram2, memoryInterface.readVramByte(addrReg + autoInc));
+        Assert.assertEquals(vsram0, memoryInterface.readVsramByte(addrReg));
+        Assert.assertEquals(vsram2, memoryInterface.readVsramByte(addrReg + autoInc));
+        Assert.assertEquals(cram0, memoryInterface.readCramByte(addrReg));
+        Assert.assertEquals(cram2, memoryInterface.readCramByte(addrReg + autoInc));
+    }
+
     /**
      * vramRead(0b0000, VdpRamType.VRAM),
      * cramRead(0b1000, VdpRamType.CRAM),

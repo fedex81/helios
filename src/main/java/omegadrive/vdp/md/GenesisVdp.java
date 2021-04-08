@@ -497,7 +497,8 @@ public class GenesisVdp implements GenesisVdpProvider {
 
     private int readDataPortInternal() {
         int res = memoryInterface.readVideoRamWord(vramMode, addressRegister);
-        if (vramMode == null) {
+        if (vramMode == null || vramMode.isWriteMode()) {
+            LOG.error("Unexpected vramMode: {}, vdp should lock up", vramMode);
             return res;
         }
         int fifoData = fifo.peek().data;
