@@ -69,17 +69,20 @@ public class MdVdpTestUtil {
         do {
             vdp.runSlot();
         } while (isVBlank(vdp));
-
         //TODO detect event START_FRAME
         int reg1 = vdp.getRegisterData(MODE_1);
         if ((reg1 & 2) > 0) {
             System.out.println("m3 (counter latch) is on!");
             vdp.updateRegisterData(MODE_1, reg1 & 0xFD);
         }
+        runToCounter(vdp, 0, 0);
+    }
+
+    public static void runToCounter(GenesisVdpProvider vdp, int hCounter, int vCounter) {
         boolean isStart;
         do {
             vdp.runSlot();
-            isStart = vdp.getHCounter() == 0 && vdp.getVCounter() == 0;
+            isStart = vdp.getHCounter() == hCounter && vdp.getVCounter() == vCounter;
         } while (!isStart);
         vdp.setVip(false);
         vdp.setHip(false);

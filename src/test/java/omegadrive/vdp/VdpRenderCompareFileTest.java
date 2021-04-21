@@ -29,6 +29,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -38,9 +39,6 @@ import java.util.stream.Stream;
 public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
 
     static List<String> ignoredTests = ImmutableList.<String>of(
-            "s2_int.gs0",  //interlace
-            "s2_im2_01.gs0", //interlace
-            "cc_int.gs0", //interlace
             "vr_01.gsh" //needs to init SSP16
     );
 
@@ -60,7 +58,8 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
     @MethodSource("fileProvider")
     public void testCompareFile(String fileName) {
         SHOW_IMAGES_ON_FAILURE = false;
-        boolean error = testCompareOne(fileName);
+        Path saveFile = Paths.get(saveStateFolder, fileName);
+        boolean error = testCompareOne(saveFile);
         Assert.assertFalse("Error: " + fileName, error);
     }
 
@@ -75,6 +74,7 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
     @Disabled
     @Test
     public void testCompare() {
-        super.testCompareFile("vr_01.gsh", true);
+        Path saveFile = Paths.get(saveStateFolder, "vr_01.gsh");
+        super.testCompareFile(saveFile, true);
     }
 }
