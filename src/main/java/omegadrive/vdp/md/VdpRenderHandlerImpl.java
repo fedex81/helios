@@ -162,7 +162,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         int byte6 = vram[vramOffset + 6];
         int byte7 = vram[vramOffset + 7];
 
-        holder.tileIndex = (((byte4 & 0x7) << 8) | byte5) << interlaceMode.tileShift();
+        holder.tileIndex = ((((byte4 & 0x7) << 8) | byte5) << interlaceMode.tileShift()) &
+                interlaceMode.getTileIndexMask();
         holder.paletteLineIndex = ((byte4 >> 5) & 0x3) << PALETTE_INDEX_SHIFT;
         holder.priority = ((byte4 >> 7) & 0x1) == 1;
         holder.vertFlip = ((byte4 >> 4) & 0x1) == 1;
@@ -387,8 +388,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             int horOffset = realX;
             int spriteVerticalCell = pointVert >> 3;
             int vertLining = (spriteVerticalCell << interlaceMode.tileShift())
-                    + ((pointVert % interlaceMode.getVerticalCellPixelSize()) << 2);
-            vertLining <<= interlaceMode.interlaceAdjust();
+                    + ((pointVert % 8) << (2 + interlaceMode.interlaceAdjust()));
             for (int cellX = 0; cellX <= holder.horizontalCellSize &&
                     spritePixelLineCount < spritePixelLineLimit; cellX++) {
                 int spriteCellX = holder.horFlip ? holder.horizontalCellSize - cellX : cellX;

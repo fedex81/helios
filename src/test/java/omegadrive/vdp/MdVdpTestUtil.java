@@ -175,6 +175,26 @@ public class MdVdpTestUtil {
         vdp.updateRegisterData(0, 0);
     }
 
+    private void dumpTiles() {
+        int cnt = 0;
+        int start = 47744;
+        System.out.print(start + ":");
+        for (int i = start; i < 48500; i++) {
+            int cramIdx = 0; //getPixelIndexColor(i, 0 , 0);
+            int cramIdx2 = 0; //getPixelIndexColor(i, 1 , 0);
+            if (cnt > 0 && cnt % 8 == 0) {
+                if (cnt % (8 * 16) == 0) {
+                    System.out.println();
+                }
+                System.out.println();
+                System.out.print(i + ":");
+            }
+            System.out.printf("%2d %2d ", cramIdx, cramIdx2);
+            cnt += 2;
+        }
+        System.out.println();
+    }
+
     public static BaseVdpProvider createBaseTestVdp() {
         BaseVdpProvider vdp = new MdVdpTestUtil.VdpAdaptor() {
 

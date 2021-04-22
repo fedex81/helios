@@ -35,6 +35,7 @@ public enum InterlaceMode {
     private int verticalScrollShift = 0;
     private int verticalCellPixelSize = 8;
     private int interlaceAdjust = 0;
+    private int tileIndexMask = 0xFFFF;
 
     InterlaceMode() {
     }
@@ -44,6 +45,7 @@ public enum InterlaceMode {
         this.tileShift = tileShift + interlaceAdjust;
         this.verticalScrollShift = interlaceAdjust;
         this.verticalCellPixelSize = verticalCellPixelSize << interlaceAdjust;
+        this.tileIndexMask = 0xFFFF - interlaceAdjust;
     }
 
     private static Map<Integer, InterlaceMode> lookup = ImmutableBiMap.copyOf(
@@ -67,5 +69,9 @@ public enum InterlaceMode {
 
     public int getVerticalCellPixelSize() {
         return verticalCellPixelSize;
+    }
+
+    public int getTileIndexMask() {
+        return tileIndexMask;
     }
 }

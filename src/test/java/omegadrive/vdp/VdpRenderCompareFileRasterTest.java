@@ -21,6 +21,7 @@ package omegadrive.vdp;
 
 import com.google.common.io.Files;
 import omegadrive.util.FileLoader;
+import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider.VdpPortType;
 import org.junit.Assert;
@@ -135,8 +136,18 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
     @Disabled
     @Test
     public void testCompare() {
-        String fileName = "cc_int.gs0";
-        saveToFile(fileName, runAndgetImage(fileName));
+        String fileName = "s2_int_01.gsh";
+        boolean save = false;
+        BufferedImage i = runAndgetImage(fileName);
+        if (save) {
+            saveToFile(fileName, i);
+        } else {
+            boolean error = testCompareOne(fileName, i);
+            System.out.println("Done");
+            if (error) {
+                Util.waitForever();
+            }
+        }
     }
 
     class VdpPortWrite {
