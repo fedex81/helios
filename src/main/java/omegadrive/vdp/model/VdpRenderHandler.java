@@ -27,9 +27,7 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 public interface VdpRenderHandler {
 
-    int ROWS = VDP_VIDEO_ROWS;
     int COLS = VDP_VIDEO_COLS;
-    int INDEXES_NUM = ROWS;
     int HOR_SCROLL_SHIFT = 10;
     int WINDOW_TABLE_SHIFT = 10;
     int SPRITE_TABLE_SHIFT = 9;

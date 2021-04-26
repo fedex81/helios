@@ -37,7 +37,6 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
     int MAX_SPRITES_PER_FRAME_H32 = 64;
     int MAX_SPRITES_PER_LINE_H40 = 20;
     int MAX_SPRITES_PER_LINE_H32 = 16;
-    int VDP_VIDEO_ROWS = 256;
     int VDP_VIDEO_COLS = 320;
 
     //	The CRAM contains 128 bytes, addresses 0 to 7F

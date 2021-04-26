@@ -388,14 +388,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             int horOffset = realX;
             int spriteVerticalCell = pointVert >> 3;
             int vertLining = (spriteVerticalCell << interlaceMode.tileShift())
-                    + ((pointVert % 8) << (2 + interlaceMode.interlaceAdjust()));
+                    + ((pointVert & 7) << (2 + interlaceMode.interlaceAdjust())); //& 7 ??
             for (int cellX = 0; cellX <= holder.horizontalCellSize &&
                     spritePixelLineCount < spritePixelLineLimit; cellX++) {
                 int spriteCellX = holder.horFlip ? holder.horizontalCellSize - cellX : cellX;
                 int horLining = vertLining + (spriteCellX * ((holder.verticalCellSize + 1) << interlaceMode.tileShift()));
                 renderSprite(holder, holder.tileIndex + horLining, horOffset, spritePixelLineLimit);
-                //8 pixels
-                horOffset += CELL_WIDTH;
+                horOffset += CELL_WIDTH; //8 pixels
             }
             ind++;
             stop = !(ind < maxSpritesPerLine && spriteDataHoldersCurrent[ind].spriteNumber >= 0);
@@ -455,7 +454,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
         final int vScrollSizeMask = (sc.planeHeight << 3) - 1;
         final int hScrollPixelOffset = scrollHandler.getHorizontalScroll(line, sc);
-        final int cellHeight = interlaceMode.getVerticalCellPixelSize();
         final int[] plane = sc.plane;
 
         TileDataHolder tileDataHolder = spriteDataHolder;
@@ -466,7 +464,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             final int vScrollLineOffset = scrollHandler.getVerticalScroll(twoCell, sc);
             final int planeLine = (vScrollLineOffset + line) & vScrollSizeMask;
             final int planeCellVOffset = (planeLine >> 3) * sc.planeWidth;
-            final int rowCellBase = planeLine % 8; //cellHeight;
+            final int rowCellBase = planeLine & 7; //cellHeight;
             final int startPixel = twoCell << 4;
             for (int pixel = startPixel; pixel < startPixel + 16; pixel++) {
                 final int currentPrio = pixelPriority[pixel].ordinal();
@@ -483,7 +481,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                     tileDataHolder = getTileData(tileNameTable, tileDataHolder);
                     latestTileLocatorVram = tileLocatorVram;
                     rp = tileDataHolder.priority ? sc.highPrio : sc.lowPrio;
-                    int rowCell = rowCellBase ^ (tileDataHolder.vertFlipAmount & (cellHeight - 1)); //[0,7] or [0,15] IM2
+                    int rowCell = rowCellBase ^ (tileDataHolder.vertFlipAmount & 7); //[0,7]
                     rowCellShift = rowCell << (2 + interlaceMode.interlaceAdjust());
                 }
                 if (currentPrio >= rp.ordinal()) {
@@ -496,11 +494,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
                 plane[pixel] = tileDataHolder.paletteLineIndex + (onePixelData << 1);
                 if (onePixelData > 0) {
+//                    System.out.printf("\n%s %d-%d, nameTableLocation: %x, tileLocatorVram: %x, " +
+//                                    "tileBytePointer: %x, cramIdx: %d\n%s", sc.planeType,
+//                            line, pixel, nameTableLocation, tileLocatorVram, tileBytePointer, plane[pixel], tileDataHolder);
                     updatePriority(pixel, rp);
                 }
-//                System.out.printf("NEW PixelPos %d-%d, nameTableLocation: %x, tileLocatorVram: %x, " +
-//                                    "tileBytePointer: %x, cramIdx: %d\n",
-//                            line, linePixel, nameTableLocation, tileLocatorVram, tileBytePointer, plane[linePixel]);
             }
         }
     }
@@ -555,7 +553,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private int getPixelIndexColor(int tileBytePointer, int pixelInTile, int horFlipAmount) {
         //1 byte represents 2 pixels, 1 pixel = 4 bit = 16 color gamut
         int twoPixelsData = vram[tileBytePointer & 0xFFFF];
-        boolean isFirstPixel = (pixelInTile % 2) == (~horFlipAmount & 1);
+        boolean isFirstPixel = (pixelInTile & 1) == (~horFlipAmount & 1);
         return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
     }
 
