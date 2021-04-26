@@ -168,6 +168,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
             vIntPending = true;
             vdpEvent.fireVdpEvent(INTERRUPT, BusArbiter.InterruptEvent.Z80_INT_ON);
+            vdpEvent.fireVdpEvent(VDP_VINT_PENDING, true);
             logVerbose("Set VIP: true");
         } else if (vCounterInternal == vdpCounterMode.vBlankSet + 1 &&
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {

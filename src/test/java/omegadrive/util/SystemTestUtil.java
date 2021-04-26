@@ -24,7 +24,6 @@ import omegadrive.ui.DisplayWindow;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.vdp.Tms9918aVdp;
-import omegadrive.vdp.md.GenesisVdp;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import org.junit.Assert;
 
@@ -44,7 +43,7 @@ public class SystemTestUtil {
     public static GenesisBusProvider setupNewMdSystem(IMemoryProvider cpuMem1) {
         GenesisBusProvider busProvider = GenesisBusProvider.createBus();
 
-        GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider);
+        GenesisVdpProvider vdpProvider1 = GenesisVdpProvider.createVdp(busProvider);
         MC68000Wrapper cpu = new MC68000Wrapper(busProvider);
 
         Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider);

@@ -33,8 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_FIELD_CHANGE;
-import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_MODE_CHANGE;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.getRegisterName;
 
 /**
@@ -45,22 +43,18 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.getRegiste
  *
  * @author Federico Berti
  */
-public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSupport.VdpEventListener {
+@Deprecated
+public class GenesisVdpOld implements GenesisVdpProvider {
 
     public final static boolean verbose = false;
     public final static boolean regVerbose = false;
-    private final static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
+    private final static Logger LOG = LogManager.getLogger(GenesisVdpOld.class.getSimpleName());
 
     //TODO true breaks a good number of VdpFifoTests
     private static boolean ENABLE_READ_AHEAD = Boolean.parseBoolean(System.getProperty("vdp.enable.read.ahead", "false"));
-
-    private VramMode vramMode;
-    private InterlaceMode interlaceMode;
-
+    protected VdpInterruptHandler interruptHandler;
     int[] registers = new int[VDP_REGISTERS_SIZE];
-
     IVdpFifo.VdpFifoEntry pendingReadEntry = new IVdpFifo.VdpFifoEntry();
-
     //    This flag is updated when these conditions are met:
 //
 // - It is set when the first half of the command word is written.
@@ -71,7 +65,6 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     long firstWrite;
     int addressRegister;
     int codeRegister;
-
     //	Reg 0
     //	Left Column Blank
     boolean lcb;
@@ -79,7 +72,6 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     boolean ie1;
     //	HV Counter Latch
     boolean m3;
-
     //	REG 1
     //	Extended VRAM, 128Kb
     boolean exVram;
@@ -96,26 +88,21 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     boolean m2;
     //	Enable Mode 5	(si esta inactivo, es mode = 4, compatibilidad con SMS)
     boolean m5;
-
     //	REG 0xC
     boolean h40;
     boolean ste;  //shadow-highlight
-
     //	REG 0xF
     int autoIncrementData;
+    //	VIP indicates that a vertical interrupt has occurred, approximately at line $E0. It seems to be cleared at the end of the frame.
+    int vip;
 
     //	Status register:
 //	15	14	13	12	11	10	9		8			7	6		5		4	3	2	1	0
 //	0	0	1	1	0	1	EMPTY	FULL		VIP	SOVR	SCOL	ODD	VB	HB	DMA	PAL
-
-    //	VIP indicates that a vertical interrupt has occurred, approximately at line $E0. It seems to be cleared at the end of the frame.
-    int vip;
-
     //	SOVR is set when there are too many sprites on the current scanline. The 17th sprite in 32 cell mode and the 21st sprite on one scanline in 40 cell mode will cause this.
     int sovr;
     //	SCOL is set when any sprites have non-transparent pixels overlapping. This is cleared when the Control Port is read.
     int scol;
-
     //	ODD is set if the VDP is currently showing an odd-numbered frame while Interlaced Mode is enabled.
     int odd;
     //	VB returns the real-time status of the V-Blank signal. It is presumably set on line $E0 and unset at $FF.
@@ -129,9 +116,9 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     int pal;
     int satStart;
     int fifoEmpty = 1, fifoFull = 0;
-
+    private VramMode vramMode;
+    private InterlaceMode interlaceMode;
     private GenesisBusProvider bus;
-    protected VdpInterruptHandler interruptHandler;
     private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
     private VdpRenderHandler renderHandler;
@@ -140,10 +127,18 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private RegionDetector.Region region;
     private List<VdpEventListener> list;
     private UpdatableViewer debugViewer;
+    private int lastControl = -1;
+    //Sunset riders
+    private int lastVCounter = 0;
+    private int lastHCounter = 0;
 
-    public static GenesisVdp createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface,
-                                            VdpDmaHandler dmaHandler, RegionDetector.Region region) {
-        GenesisVdp v = new GenesisVdp();
+    private GenesisVdpOld() {
+        throw new RuntimeException("GenesisVdp");
+    }
+
+    public static GenesisVdpOld createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface,
+                                               VdpDmaHandler dmaHandler, RegionDetector.Region region) {
+        GenesisVdpOld v = new GenesisVdpOld();
         v.bus = bus;
         v.memoryInterface = memoryInterface;
         v.dmaHandler = dmaHandler;
@@ -152,8 +147,8 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         return v;
     }
 
-    public static GenesisVdp createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface) {
-        GenesisVdp v = new GenesisVdp();
+    public static GenesisVdpOld createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface) {
+        GenesisVdpOld v = new GenesisVdpOld();
         v.bus = bus;
         v.memoryInterface = memoryInterface;
         v.dmaHandler = VdpDmaHandlerImpl.createInstance(v, v.memoryInterface, bus);
@@ -162,14 +157,18 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         return v;
     }
 
-    public static GenesisVdp createInstance(GenesisBusProvider bus) {
+    public static GenesisVdpOld createInstance(GenesisBusProvider bus) {
         return createInstance(bus, GenesisVdpMemoryInterface.createInstance());
     }
 
-    private GenesisVdp() {
+    private void setupVdp() {
+        this.list = new ArrayList<>();
+        this.interruptHandler = VdpInterruptHandler.createMdInstance(this);
+        this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);
+        this.debugViewer = VdpDebugView.createInstance(this, memoryInterface, renderHandler);
+        this.fifo = new VdpFifo();
+        this.initMode();
     }
-
-    public static int REF_CNT = -1;
 
     @Override
     public void init() {
@@ -202,21 +201,38 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         IntStream.range(0, GenesisVdpProvider.VDP_REGISTERS_SIZE).forEach(i -> updateVariables(i, registers[i]));
     }
 
-    private int lastControl = -1;
-    public static int cnt = 0;
+    private int readControl() {
+        if (!bus.is68kRunning()) {
+            LOG.warn("readControl with 68k stopped, address: {}", addressRegister);
+        }
+        // The value assigned to these bits will be whatever value these bits were set to from the
+        // last read the M68000 performed.
+        // Writes from the M68000 don't affect these bits, only reads.
+        int control = (
+                (fifoEmpty << 9) //fifo empty
+                        | (fifoFull << 8) //fifo full
+                        | (vip << 7)
+//                        | (sovr << 6)
+//                        | (scol << 5)
+//                        | (odd << 4)
+                        | (vb << 3)
+                        | (hb << 2)
+                        | (dma << 1)
+                        | (pal << 0)
+        );
+        if (control != lastControl) {
+            lastControl = control;
+            LogHelper.printLevel(LOG, Level.INFO, "readControl: {}", control, verbose);
+        }
+        return control;
+    }
 
-    //Sunset riders
-    private int lastVCounter = 0;
-    private int lastHCounter = 0;
-
-    private void setupVdp() {
-        this.list = new ArrayList<>();
-        list.add(this);
-        this.interruptHandler = VdpInterruptHandler.createMdInstance(this);
-        this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);
-        this.debugViewer = VdpDebugView.createInstance(this, memoryInterface, renderHandler);
-        this.fifo = new VdpFifo();
-        this.initMode();
+    @Override
+    public int getVCounter() {
+        if (m3) {
+            return lastVCounter;
+        }
+        return interruptHandler.getVCounterExternal();
     }
 
     @Override
@@ -292,6 +308,14 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         return VideoMode.getVideoMode(region, isH40, isV30, videoMode);
     }
 
+    private boolean isV30() {
+        return m2;
+    }
+
+    private boolean isH40() {
+        return h40;
+    }
+
     public boolean isShadowHighlight() {
         return ste;
     }
@@ -326,30 +350,17 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 //	CRAM Read	0	0	1	0	0	0
 //	VSRAM Read	0	0	0	1	0	0
 
-    private int readControl() {
-        if (!bus.is68kRunning()) {
-            LOG.warn("readControl with 68k stopped, address: {}", addressRegister);
+    @Override
+    public void writeVdpPortWord(VdpPortType type, int data) {
+        switch (type) {
+            case DATA:
+                writeDataPortInternal(data);
+                break;
+            case CONTROL:
+                writeControlPortInternal(data);
+                break;
         }
-        // The value assigned to these bits will be whatever value these bits were set to from the
-        // last read the M68000 performed.
-        // Writes from the M68000 don't affect these bits, only reads.
-        int control = (
-                (fifoEmpty << 9) //fifo empty
-                        | (fifoFull << 8) //fifo full
-                        | (vip << 7)
-//                        | (sovr << 6)
-//                        | (scol << 5)
-                        | (odd << 4)
-                        | (vb << 3)
-                        | (hb << 2)
-                        | (dma << 1)
-                        | (pal << 0)
-        );
-        if (control != lastControl) {
-            lastControl = control;
-            LogHelper.printLevel(LOG, Level.INFO, "readControl: {}", control, verbose);
-        }
-        return control;
+        evaluateVdpBusyState();
     }
 
     private void writeControlPortInternal(long dataL) {
@@ -463,7 +474,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         }
         //TODO need to stop 68k until the result is available
         int value = readDataPortInternal();
-        if(ENABLE_READ_AHEAD) {
+        if (ENABLE_READ_AHEAD) {
             int readAhead = pendingReadEntry.data;
             pendingReadEntry.data = value;
             pendingReadEntry.vdpRamMode = vramMode;
@@ -521,7 +532,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
                 }
                 LogHelper.printLevel(LOG, Level.INFO, "After DMA setup, writeAddr: {}, data: {}, firstWrite: {}"
                         , addressRegister, all, writePendingControlPort, verbose);
-            } else if(ENABLE_READ_AHEAD && (codeRegister & 1) == 0){ //vdp read
+            } else if (ENABLE_READ_AHEAD && (codeRegister & 1) == 0) { //vdp read
                 pendingReadEntry.data = readDataPortInternal();
                 pendingReadEntry.vdpRamMode = vramMode;
             }
@@ -545,19 +556,61 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         updateVariables(reg, dataControl);
     }
 
-    @Override
-    public int getVCounter() {
-        if (m3) {
-            return lastVCounter;
+    private void updateVariables(int regNumber, int data) {
+        VdpRegisterName reg = getRegisterName(regNumber);
+        switch (reg) {
+            case MODE_1:
+                boolean newLcb = ((data >> 5) & 1) == 1;
+                updateLcb(newLcb);
+                boolean newM3 = ((data >> 1) & 1) == 1;
+                updateM3(newM3);
+                boolean newIe1 = ((data >> 4) & 1) == 1;
+                updateIe1(newIe1);
+                break;
+            case MODE_2:
+                boolean ext = ((data >> 7) & 1) == 1;
+                if (exVram != ext) {
+                    exVram = ext;
+                    LOG.debug("128kb VRAM: {}", exVram);
+                }
+                displayEnable = ((data >> 6) & 1) == 1;
+                ie0 = ((data >> 5) & 1) == 1;
+                m1 = ((data >> 4) & 1) == 1;
+                m2 = ((data >> 3) & 1) == 1;
+                boolean mode5 = ((data >> 2) & 1) == 1;
+                if (m5 != mode5) {
+                    LOG.info("Mode5: {}", mode5);
+                    m5 = mode5;
+                }
+                break;
+            case MODE_4:
+                boolean rs0 = Util.bitSetTest(data, 7);
+                boolean rs1 = Util.bitSetTest(data, 0);
+                h40 = rs0 && rs1;
+                boolean val = Util.bitSetTest(data, 3);
+                if (val != ste) {
+                    LOG.debug("Shadow highlight: {}", val);
+                }
+                ste = val;
+                InterlaceMode prev = interlaceMode;
+                interlaceMode = InterlaceMode.getInterlaceMode((data & 0x7) >> 1);
+                if (prev != interlaceMode) {
+                    LOG.info("InterlaceMode: {}", interlaceMode);
+                }
+                break;
+            case AUTO_INCREMENT:
+                autoIncrementData = data;
+                break;
+            case HCOUNTER_VALUE:
+                logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
+                fireVdpEvent(VdpEvent.REG_H_LINE_COUNTER_CHANGE, data);
+                break;
+            case SPRITE_TABLE_LOC:
+                updateSatLocation();
+                break;
+            default:
+                break;
         }
-//        if(interlaceMode != InterlaceMode.NONE){
-//            int vc = interruptHandler.getVCounterExternal();
-//            vc <<= odd;
-//            /* Replace bit 0 with bit 8 */
-//            vc = (vc & ~1) | ((vc >> 8) & 1);
-//            return vc & 0xFF;
-//        }
-        return interruptHandler.getVCounterExternal();
     }
 
     private void updateSatLocation() {
@@ -631,79 +684,28 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 //        LogHelper.printLevel(LOG, Level.INFO, "Start slot: {}", interruptHandler.getSlotNumber(), verbose);
         //slot granularity -> 2 H counter increases per cycle
         interruptHandler.increaseHCounterSlot();
+
+        //vblank bit is set during all of vblank (and while display is disabled)
+        //VdpFifoTesting !disp -> vb = 1, but not for hb
+        hb = interruptHandler.ishBlankSet() ? 1 : 0;
+        vb = interruptHandler.isvBlankSet() || !displayEnable ? 1 : 0;
+        vip = interruptHandler.isvIntPending() ? 1 : vip;
+
         processExternalSlot();
+
+        //draw the frame
+        if (interruptHandler.isDrawFrameSlot()) {
+            logVerbose("Draw Screen");
+            debugViewer.update();
+            list.forEach(VdpEventListener::onNewFrame);
+            resetVideoMode(false);
+        }
+        if (interruptHandler.isDrawLineSlot()) {
+            logVerbose("Draw Scanline: %s", interruptHandler.vCounterInternal);
+            renderHandler.renderLine(interruptHandler.vCounterInternal);
+            debugViewer.updateLine(interruptHandler.vCounterInternal);
+        }
         return interruptHandler.getVdpClockSpeed();
-    }
-
-    @Override
-    public void writeVdpPortWord(VdpPortType type, int data) {
-//        LOG.info("{},{},{},{}", interruptHandler.getHCounterExternal(),
-//                interruptHandler.getVCounterExternal(), data, type);
-        switch (type) {
-            case DATA:
-                writeDataPortInternal(data);
-                break;
-            case CONTROL:
-                writeControlPortInternal(data);
-                break;
-        }
-        evaluateVdpBusyState();
-    }
-
-    private void updateVariables(int regNumber, int data) {
-        VdpRegisterName reg = getRegisterName(regNumber);
-        switch (reg) {
-            case MODE_1:
-                boolean newLcb = ((data >> 5) & 1) == 1;
-                updateLcb(newLcb);
-                boolean newM3 = ((data >> 1) & 1) == 1;
-                updateM3(newM3);
-                boolean newIe1 = ((data >> 4) & 1) == 1;
-                updateIe1(newIe1);
-                break;
-            case MODE_2:
-                boolean ext = ((data >> 7) & 1) == 1;
-                if (exVram != ext) {
-                    exVram = ext;
-                    LOG.debug("128kb VRAM: {}", exVram);
-                }
-                displayEnable = ((data >> 6) & 1) == 1;
-                ie0 = ((data >> 5) & 1) == 1;
-                m1 = ((data >> 4) & 1) == 1;
-                m2 = ((data >> 3) & 1) == 1;
-                boolean mode5 = ((data >> 2) & 1) == 1;
-                if (m5 != mode5) {
-                    LOG.info("Mode5: {}", mode5);
-                    m5 = mode5;
-                }
-                handleDisplayEnabled();
-                break;
-            case MODE_4:
-                boolean rs0 = Util.bitSetTest(data, 7);
-                boolean rs1 = Util.bitSetTest(data, 0);
-                h40 = rs0 && rs1;
-                boolean val = Util.bitSetTest(data, 3);
-                if (val != ste) {
-                    LOG.debug("Shadow highlight: {}", val);
-                }
-                ste = val;
-                InterlaceMode prev = interlaceMode;
-                interlaceMode = InterlaceMode.getInterlaceMode((data & 0x7) >> 1);
-                fireVdpEventOnChange(INTERLACE_MODE_CHANGE, prev, interlaceMode);
-                break;
-            case AUTO_INCREMENT:
-                autoIncrementData = data;
-                break;
-            case HCOUNTER_VALUE:
-                logVerbose("Update hLinePassed register: %s", (data & 0x00FF));
-                fireVdpEvent(VdpEvent.REG_H_LINE_COUNTER_CHANGE, data);
-                break;
-            case SPRITE_TABLE_LOC:
-                updateSatLocation();
-                break;
-            default:
-                break;
-        }
     }
 
 
@@ -720,56 +722,6 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private void updateFifoState(IVdpFifo fifo) {
         fifoFull = fifo.isFull() ? 1 : 0;
         fifoEmpty = fifo.isEmpty() ? 1 : 0;
-    }
-
-    @Override
-    public void onVdpEvent(VdpEvent event, Object value) {
-        switch (event) {
-            case H_BLANK_CHANGE:
-                boolean valh = (boolean) value;
-                hb = valh ? 1 : 0;
-                if (valh) {
-                    handleHBlankOn();
-                }
-                break;
-            case V_BLANK_CHANGE:
-                boolean valv = (boolean) value;
-                handleDisplayEnabled();
-                if (valv) {
-                    handleVBlankOn();
-                }
-                break;
-            case VDP_VINT_PENDING:
-                boolean valvip = (boolean) value;
-                vip = valvip ? 1 : vip;
-                break;
-        }
-    }
-
-    private void handleDisplayEnabled() {
-        //vblank bit is set during all of vblank (and while display is disabled)
-        //VdpFifoTesting !disp -> vb = 1, but not for hb
-        vb = interruptHandler.isvBlankSet() || !displayEnable ? 1 : 0;
-    }
-
-    private void handleVBlankOn() {
-        int prevOdd = odd;
-        odd = interlaceMode != InterlaceMode.NONE ? (odd + 1) & 1 : odd;
-        fireVdpEventOnChange(INTERLACE_FIELD_CHANGE, prevOdd, odd);
-
-//                    if(++cnt == REF_CNT){
-//                        System.out.println("here");
-//                    }
-        logVerbose("Draw Screen");
-        debugViewer.update();
-        list.forEach(VdpEventListener::onNewFrame);
-        resetVideoMode(false);
-    }
-
-    private void handleHBlankOn() {
-        logVerbose("Draw Scanline: %s", interruptHandler.vCounterInternal);
-        renderHandler.renderLine(interruptHandler.vCounterInternal);
-        debugViewer.updateLine(interruptHandler.vCounterInternal);
     }
 
     @Override

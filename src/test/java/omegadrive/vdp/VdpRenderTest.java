@@ -42,7 +42,7 @@ import java.nio.file.Path;
 public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
 
     protected static int[] screenData;
-    private VdpRenderDump renderDump = new VdpRenderDump();
+    protected VdpRenderDump renderDump = new VdpRenderDump();
     protected static String saveStateFolder = MdSavestateTest.saveStateFolder.toAbsolutePath().toString();
     int count = 0;
 
@@ -51,7 +51,7 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
         System.setProperty("helios.headless", "true");
     }
 
-    private GenesisVdpProvider vdpProvider;
+    protected GenesisVdpProvider vdpProvider;
 
     private static SystemProvider createTestProvider() {
         InputProvider.bootstrap();

@@ -80,6 +80,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private final int[] javaPalette;
     private int activeLines = 0;
     private SpriteDataHolder[] spriteDataHoldersNext = new SpriteDataHolder[MAX_SPRITES_PER_LINE_H40];
+    private int odd;
 
     public static VdpRenderHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         return new VdpRenderHandlerImpl(vdpProvider, memoryInterface);
@@ -178,7 +179,6 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     public void initLineData(int line) {
         if (line == 0) {
             LOG.debug("New Frame");
-            this.interlaceMode = vdpProvider.getInterlaceMode();
             initVideoMode();
             //need to do this here so I can dump data just after rendering the frame
             clearDataFrame();
@@ -388,7 +388,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             int horOffset = realX;
             int spriteVerticalCell = pointVert >> 3;
             int vertLining = (spriteVerticalCell << interlaceMode.tileShift())
-                    + ((pointVert & 7) << (2 + interlaceMode.interlaceAdjust())); //& 7 ??
+                    + ((pointVert & 7) << (2 + interlaceMode.interlaceAdjust()));
+            vertLining += odd << 2; //shift by 4 when odd field, 0 otherwise
             for (int cellX = 0; cellX <= holder.horizontalCellSize &&
                     spritePixelLineCount < spritePixelLineLimit; cellX++) {
                 int spriteCellX = holder.horFlip ? holder.horizontalCellSize - cellX : cellX;
@@ -618,6 +619,12 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 break;
             case LEFT_COL_BLANK:
                 lcb = (boolean) value;
+                break;
+            case INTERLACE_FIELD_CHANGE:
+//                odd = Integer.parseInt(value.toString());
+                break;
+            case INTERLACE_MODE_CHANGE:
+                interlaceMode = (InterlaceMode) value;
                 break;
             default:
                 break;
