@@ -27,6 +27,10 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 public interface VdpRenderHandler {
 
+    //reduce flickering when true
+    boolean INTERLACE_SHOW_ONE_FIELD =
+            Boolean.parseBoolean(System.getProperty("helios.interlace.one.field", "true"));
+
     int COLS = VDP_VIDEO_COLS;
     int HOR_SCROLL_SHIFT = 10;
     int WINDOW_TABLE_SHIFT = 10;

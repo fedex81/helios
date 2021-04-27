@@ -484,6 +484,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                     rp = tileDataHolder.priority ? sc.highPrio : sc.lowPrio;
                     int rowCell = rowCellBase ^ (tileDataHolder.vertFlipAmount & 7); //[0,7]
                     rowCellShift = rowCell << (2 + interlaceMode.interlaceAdjust());
+                    rowCellShift += (odd << 2); //shift by 4 when odd field, 0 otherwise
                 }
                 if (currentPrio >= rp.ordinal()) {
                     continue;
@@ -621,7 +622,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 lcb = (boolean) value;
                 break;
             case INTERLACE_FIELD_CHANGE:
-//                odd = Integer.parseInt(value.toString());
+                odd = INTERLACE_SHOW_ONE_FIELD ? odd : Integer.parseInt(value.toString());
                 break;
             case INTERLACE_MODE_CHANGE:
                 interlaceMode = (InterlaceMode) value;
