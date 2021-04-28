@@ -74,4 +74,8 @@ public enum InterlaceMode {
     public int getTileIndexMask() {
         return tileIndexMask;
     }
+
+    public boolean isInterlaced() {
+        return this == MODE_1 || this == MODE_2;
+    }
 }

@@ -169,8 +169,6 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private GenesisVdp() {
     }
 
-    public static int REF_CNT = -1;
-
     @Override
     public void init() {
         vb = 1;
@@ -194,6 +192,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 
     private void initMode() {
         vramMode = VramMode.getVramMode(codeRegister & 0xF);
+        interlaceMode = InterlaceMode.NONE;
         resetVideoMode(true);
         reloadRegisters();
     }
@@ -203,7 +202,6 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     }
 
     private int lastControl = -1;
-    public static int cnt = 0;
 
     //Sunset riders
     private int lastVCounter = 0;
@@ -689,6 +687,9 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
                 ste = val;
                 InterlaceMode prev = interlaceMode;
                 interlaceMode = InterlaceMode.getInterlaceMode((data & 0x7) >> 1);
+                if (prev != interlaceMode) {
+                    LOG.info("InterlaceMode {} -> {}", prev, interlaceMode);
+                }
                 fireVdpEventOnChange(INTERLACE_MODE_CHANGE, prev, interlaceMode);
                 break;
             case AUTO_INCREMENT:
@@ -753,14 +754,10 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     }
 
     private void handleVBlankOn() {
-        int prevOdd = odd;
-        odd = interlaceMode != InterlaceMode.NONE ? (odd + 1) & 1 : odd;
-        fireVdpEventOnChange(INTERLACE_FIELD_CHANGE, prevOdd, odd);
-
-//                    if(++cnt == REF_CNT){
-//                        System.out.println("here");
-//                    }
         logVerbose("Draw Screen");
+        int prevOdd = odd;
+        odd = interlaceMode.isInterlaced() ? (odd + 1) & 1 : odd;
+        fireVdpEventOnChange(INTERLACE_FIELD_CHANGE, prevOdd, odd);
         debugViewer.update();
         list.forEach(VdpEventListener::onNewFrame);
         resetVideoMode(false);

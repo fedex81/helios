@@ -25,12 +25,7 @@ import omegadrive.vdp.model.BaseVdpProvider;
 public class VdpInterruptHandlerHelper {
 
     public static VdpInterruptHandler createTmsInstance(BaseVdpProvider vdp) {
-        VdpInterruptHandler handler = new VdpInterruptHandler(vdp) {
-            @Override
-            public boolean isDrawFrameSlot() {
-                return hCounterInternal == 0 && vCounterInternal == vdpCounterMode.vBlankSet;
-            }
-        };
+        VdpInterruptHandler handler = VdpInterruptHandler.createMdInstance(vdp);
         handler.onVdpEvent(BaseVdpProvider.VdpEvent.VIDEO_MODE, vdp.getVideoMode());
         return handler;
     }

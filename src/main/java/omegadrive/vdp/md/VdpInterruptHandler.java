@@ -195,10 +195,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
         return vBlankSet;
     }
 
-    public boolean ishBlankSet() {
-        return hBlankSet;
-    }
-
     public int getvCounterInternal() {
         return vCounterInternal;
     }
@@ -233,10 +229,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
         this.hIntPending = hIntPending;
     }
 
-    public boolean isDrawLineSlot() {
-        return slotNumber == vdpCounterMode.hBlankSet >> 1;
-    }
-
     /**
      * H32 = 171 slots = 171/5 = 42.75
      * H40 = 210 slots = 195/4 + 15/5 = 42.75
@@ -248,10 +240,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
 
     public boolean isEndOfFrameCounter() {
         return vCounterInternal == COUNTER_LIMIT && hCounterInternal == COUNTER_LIMIT;
-    }
-
-    public boolean isDrawFrameSlot() {
-        return hCounterInternal == 0 && vCounterInternal == COUNTER_LIMIT;
     }
 
     public boolean isExternalSlot(boolean isBlanking) {
