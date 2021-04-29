@@ -36,7 +36,7 @@ public interface BaseVdpAdapterEventSupport {
     enum VdpEvent {
         NEW_FRAME, VIDEO_MODE, REG_H_LINE_COUNTER_CHANGE, INTERRUPT, LEFT_COL_BLANK, H_LINE_UNDERFLOW,
         H_BLANK_CHANGE, V_COUNT_INC, V_BLANK_CHANGE, INTERLACE_FIELD_CHANGE, INTERLACE_MODE_CHANGE,
-        VDP_VINT_PENDING
+        VDP_VINT_PENDING, VDP_ACTIVE_DISPLAY_CHANGE
     }
 
     interface VdpEventListener extends EventListener {

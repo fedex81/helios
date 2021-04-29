@@ -156,10 +156,13 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
         } else if (hCounterInternal == vdpCounterMode.hBlankClear) {
             vdpEvent.fireVdpEvent(H_BLANK_CHANGE, false);
             hBlankSet = false;
+        } else if (hCounterInternal == vdpCounterMode.hActiveDisplayEnd) {
+            vdpEvent.fireVdpEvent(VDP_ACTIVE_DISPLAY_CHANGE, false);
+        } else if (hCounterInternal == vdpCounterMode.hActiveDisplayStart) {
+            vdpEvent.fireVdpEvent(VDP_ACTIVE_DISPLAY_CHANGE, true);
         }
 
         //TODO sms should use 0x1E8
-        //Lotus2, line interrupt sensitive,  H32, 0x10A (=vCounterIncrementOn), < 0x127 ko, >= 0x127 (=hJumpTrigger) ok
         //Dracula, vcounter increment sensitive, H40, 0x14A (=vCounterIncrementOn) ok, <= 0x150 ok, > 0x150 ko, hJumpTrigger = 0x16C
         if (hCounterInternal == vdpCounterMode.vCounterIncrementOn) {
             increaseVCounterInternal();

@@ -726,12 +726,12 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     @Override
     public void onVdpEvent(VdpEvent event, Object value) {
         switch (event) {
-            case H_BLANK_CHANGE:
-                boolean valh = (boolean) value;
-                hb = valh ? 1 : 0;
-                if (valh) {
-                    handleHBlankOn();
+            case VDP_ACTIVE_DISPLAY_CHANGE:
+                if (!(boolean) value) {
+                    handleEndOfActiveDisplay();
                 }
+            case H_BLANK_CHANGE:
+                hb = (boolean) value ? 1 : 0;
                 break;
             case V_BLANK_CHANGE:
                 boolean valv = (boolean) value;
@@ -763,7 +763,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         resetVideoMode(false);
     }
 
-    private void handleHBlankOn() {
+    private void handleEndOfActiveDisplay() {
         logVerbose("Draw Scanline: %s", interruptHandler.vCounterInternal);
         renderHandler.renderLine(interruptHandler.vCounterInternal);
         debugViewer.updateLine(interruptHandler.vCounterInternal);

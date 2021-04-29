@@ -58,6 +58,8 @@ public enum VdpCounterMode {
     public final int hBlankSet;
     public final int hBlankClear;
     public final int hBlankClearSlot;
+    public final int hActiveDisplayStart;
+    public final int hActiveDisplayEnd;
     public final int vTotalCount;
     public final int vJumpTrigger;
     public final int vBlankSet;
@@ -77,6 +79,8 @@ public enum VdpCounterMode {
         this.hBlankSet = isH32 ? H32_HBLANK_SET : H40_HBLANK_SET;
         this.hBlankClear = isH32 ? H32_HBLANK_CLEAR : H40_HBLANK_CLEAR;
         this.hBlankClearSlot = hBlankClear >> 1;
+        this.hActiveDisplayStart = isH32 ? H32_ACTIVE_DISPLAY_START : H40_ACTIVE_DISPLAY_START;
+        this.hActiveDisplayEnd = isH32 ? H32_ACTIVE_DISPLAY_END : H40_ACTIVE_DISPLAY_END;
         this.vTotalCount = videoMode.isPal() ? PAL_SCANLINES : NTSC_SCANLINES;
         this.vCounterIncrementOn = isH32 ? H32_VCOUNTER_INC_ON : H40_VCOUNTER_INC_ON;
         this.videoMode = videoMode;

@@ -53,6 +53,10 @@ public interface BaseVdpProvider extends Device, BaseVdpAdapterEventSupport {
     int H40_HBLANK_SET = 0x166;
     int H32_HBLANK_CLEAR = 0xA;
     int H40_HBLANK_CLEAR = 0xB;
+    int H32_ACTIVE_DISPLAY_START = 0x018;
+    int H40_ACTIVE_DISPLAY_START = 0x01A;
+    int H32_ACTIVE_DISPLAY_END = H32_ACTIVE_DISPLAY_START + H32; //0x117
+    int H40_ACTIVE_DISPLAY_END = H40_ACTIVE_DISPLAY_START + H40 - 1; //0x159
     int V24_VBLANK_SET = 0xC0;
     int V28_VBLANK_SET = 0xE0;
     int V30_VBLANK_SET = 0xF0;
