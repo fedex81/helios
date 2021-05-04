@@ -548,13 +548,6 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         if (m3) {
             return lastVCounter;
         }
-//        if(interlaceMode != InterlaceMode.NONE){
-//            int vc = interruptHandler.getVCounterExternal();
-//            vc <<= odd;
-//            /* Replace bit 0 with bit 8 */
-//            vc = (vc & ~1) | ((vc >> 8) & 1);
-//            return vc & 0xFF;
-//        }
         return interruptHandler.getVCounterExternal();
     }
 

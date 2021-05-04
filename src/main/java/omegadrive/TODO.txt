@@ -12,6 +12,7 @@ Fatal Rewind - timing? has been broken forever
 dashing desp: broken before 21.0407, 20.1207 ok
 combat cars:  IM2 has always been broken?? (20.0816 ko)
 dracula: gameplay slow down, demo mode level missing graphics (planeA issue)
+lemmings: hint vs vint issue
 
 savestate:
 md: broken {ssf2, virtua racing}

@@ -22,10 +22,7 @@ package omegadrive.vdp.md;
 import omegadrive.Device;
 import omegadrive.bus.md.BusArbiter;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
-import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.VdpCounterMode;
-import omegadrive.vdp.model.VdpSlotType;
+import omegadrive.vdp.model.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,6 +54,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
     private int hLinesCounter = 0;
 
     private VideoMode videoMode;
+    private InterlaceMode interlaceMode = InterlaceMode.NONE;
     protected VdpCounterMode vdpCounterMode;
     protected BaseVdpAdapterEventSupport vdpEvent;
     protected boolean h40;
@@ -207,7 +205,19 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
     }
 
     public int getVCounterExternal() {
+        if (interlaceMode.isInterlaced()) {
+            return getVCounterExternalInterlace();
+        }
         return vCounterInternal & 0xFF;
+    }
+
+    private int getVCounterExternalInterlace() {
+        int vc = vCounterInternal;
+        /* Interlace mode 2 (Sonic the Hedgehog 2, Combat Cars) */
+        vc <<= (interlaceMode.ordinal() >> 1);
+        /* Replace bit 0 with bit 8 */
+        vc = (vc & ~1) | ((vc >> 8) & 1);
+        return vc & 0xFF;
     }
 
     public int getHCounterExternal() {
@@ -269,6 +279,9 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
                 break;
             case REG_H_LINE_COUNTER_CHANGE:
                 hLinesCounter = (int) value;
+                break;
+            case INTERLACE_MODE_CHANGE:
+                interlaceMode = (InterlaceMode) value;
                 break;
             default:
                 break;
