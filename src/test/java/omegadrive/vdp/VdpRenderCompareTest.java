@@ -152,6 +152,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     protected boolean testCompareOne(String saveName, BufferedImage actual) {
         Path baselineZipImageFile = Paths.get(compareFolder, saveName + DOT_EXT);
         Image base = FileUtil.decompressAndLoadFromZipFile(baselineZipImageFile, saveName + "." + IMG_EXT, IMG_EXT);
+        Assert.assertNotNull("File missing: " + baselineZipImageFile.toAbsolutePath(), base);
         BufferedImage baseLine = convertToBufferedImage(base);
         boolean match = compareImage(baseLine, actual);
         if (!match) {

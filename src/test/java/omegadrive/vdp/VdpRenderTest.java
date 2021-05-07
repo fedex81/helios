@@ -91,6 +91,10 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
         return false;
     }
 
+    protected static Image cloneImage(Image img) {
+        return img.getScaledInstance(-1, -1, Image.SCALE_DEFAULT);
+    }
+
     protected BufferedImage saveRenderToImage(int[] data, VideoMode videoMode) {
         BufferedImage bi = renderDump.getImage(videoMode);
         int[] linear = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();

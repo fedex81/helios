@@ -26,6 +26,7 @@ import omegadrive.input.InputProvider;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
+import omegadrive.vdp.md.GenesisVdp;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -43,7 +44,7 @@ public class VdpPerformanceTest {
     //    static Path testFilePath = Paths.get("./test_roms", "s1.zip");
     //    static Path testFilePath = Paths.get("./test_roms", "zax.col");
     static int fps = 60;
-    int frameCnt = 0;
+    protected int frameCnt = 0;
     int sampleCnt = 0;
     long last = 0;
     int ignoreFramceCounter = 5; //warmup
@@ -59,7 +60,7 @@ public class VdpPerformanceTest {
 //        System.setProperty("md.show.vdp.debug.viewer", "true");
     }
 
-    private static SystemProvider createTestProvider() {
+    protected static SystemProvider createTestProvider() {
         InputProvider.bootstrap();
         return SystemLoader.getInstance().handleNewRomFile(testFilePath);
     }
@@ -110,16 +111,20 @@ public class VdpPerformanceTest {
         }
     }
 
-    private void createAndAddVdpListener(SystemProvider systemProvider) {
+    protected GenesisVdp getVdpProvider(SystemProvider systemProvider) throws Exception {
+        BaseSystem system = (BaseSystem) systemProvider;
+        Field f = BaseSystem.class.getDeclaredField("vdp");
+        f.setAccessible(true);
+        return (GenesisVdp) f.get(system);
+    }
+
+    protected void createAndAddVdpListener(SystemProvider systemProvider) {
         try {
-            BaseSystem system = (BaseSystem) systemProvider;
-            Field f = BaseSystem.class.getDeclaredField("vdp");
-            f.setAccessible(true);
-            BaseVdpProvider vdpProvider = (BaseVdpProvider) f.get(system);
+            BaseVdpProvider vdpProvider = getVdpProvider(systemProvider);
             vdpProvider.addVdpEventListener(new BaseVdpProvider.VdpEventListener() {
                 @Override
                 public void onNewFrame() {
-                    fps = system.getRegion().getFps();
+                    fps = systemProvider.getRegion().getFps();
                     doStats();
                 }
             });

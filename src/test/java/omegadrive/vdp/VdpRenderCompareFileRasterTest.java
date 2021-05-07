@@ -25,7 +25,6 @@ import omegadrive.util.FileLoader;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider.VdpPortType;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,21 +38,23 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-//TODO fix tests, need to regenerate the dat file, using the new vcounter values
-@Ignore
-@Disabled
+import static omegadrive.vdp.util.VdpPortAccessLogger.VdpWriteContext;
+
+/**
+ * Interlace mode only, store and compares only the even field (#0)
+ */
 public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
 
     private static Path saveStateFolderPath;
-    static Set<String> excluded = ImmutableSet.of("s2_int_03.gsh"); //TODO fix
+    static Set<String> excluded = ImmutableSet.of();
     private Image[] fields = new Image[2];
 
     static {
@@ -61,6 +62,7 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
         saveStateFolder = saveStateFolderPath.toAbsolutePath().toString();
         Path compareFolderPath = Paths.get(saveStateFolder, "compare");
         compareFolder = compareFolderPath.toAbsolutePath().toString();
+        System.setProperty("helios.interlace.one.field", "false");
     }
 
     private int fieldCompleted = -1;
@@ -82,7 +84,7 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
     @ParameterizedTest
     @MethodSource("fileProvider")
     public void testCompareFile(String fileName) {
-        SHOW_IMAGES_ON_FAILURE = true;
+        SHOW_IMAGES_ON_FAILURE = false;
         BufferedImage actual = runAndGetImage(fileName);
         boolean error = testCompareOne(fileName, actual);
         Assert.assertFalse("Error: " + fileName, error);
@@ -111,11 +113,13 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
     }
 
     private void writeVdpData(GenesisVdpProvider vdp, Path datFile) {
-        for (VdpPortWrite v : getDatFileContents(datFile)) {
-            if (vdp.getHCounter() != v.hc || vdp.getVCounter() != v.vc) {
-                MdVdpTestUtil.runToCounter(vdp, v.hc, v.vc);
+        List<VdpWriteContext> list = getDatFileContents(datFile);
+        System.out.println("Replaying vdpPort writes: " + list.size());
+        for (VdpWriteContext v : list) {
+            if (vdp.getHCounter() != v.hcExternal || vdp.getVCounter() != v.vcExternal) {
+                MdVdpTestUtil.runToCounter(vdp, v.hcExternal, v.vcExternal);
             }
-            vdp.writeVdpPortWord(v.portType, v.data);
+            vdp.writeVdpPortWord(v.portType, v.value);
 //            System.out.println(v.line);
         }
     }
@@ -127,19 +131,10 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
         return p;
     }
 
-    private List<VdpPortWrite> getDatFileContents(Path datFile) {
+    private List<VdpWriteContext> getDatFileContents(Path datFile) {
         List<String> lines = FileLoader.readFileContent(datFile);
-        List<VdpPortWrite> vdpWrites = new ArrayList<>();
-        for (String line : lines) {
-            String[] tk = line.split(",");
-            VdpPortWrite v = new VdpPortWrite();
-            v.hc = Integer.parseInt(tk[0]);
-            v.vc = Integer.parseInt(tk[1]);
-            v.data = Integer.parseInt(tk[2]);
-            v.portType = VdpPortType.valueOf(tk[3]);
-            v.line = line;
-            vdpWrites.add(v);
-        }
+        List<VdpWriteContext> vdpWrites = lines.stream().map(VdpWriteContext::parseShortString).
+                collect(Collectors.toList());
         if (vdpWrites.isEmpty()) {
             System.out.println("Dat file missing or empty: " + datFile.toAbsolutePath().toString());
         }
@@ -153,12 +148,13 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
                 fieldCompleted = (Integer.parseInt(value.toString()) + 1) & 1;
                 System.out.println(fieldCompleted + "->" + value);
                 if (ready.get()) {
-                    Image f = saveRenderToImage(screenData, vdpProvider.getVideoMode());
+                    Image f = cloneImage(saveRenderToImage(screenData, vdpProvider.getVideoMode()));
                     if (fields[fieldCompleted] != null) {
-                        Assert.fail("Attempting to overwrite field# " + fieldCompleted);
+                        System.out.println("Attempting to overwrite field# " + fieldCompleted);
+                        return;
                     }
                     fields[fieldCompleted] = f;
-                    System.out.println("Saving image for field#" + fieldCompleted);
+                    System.out.println("Storing image for field#" + fieldCompleted);
                 }
                 break;
         }
@@ -175,7 +171,7 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
     @Disabled
     @Test
     public void testCompare() {
-        String fileName = "s2_int_01.gsh";
+        String fileName = "ccars_int_01.gsh";
         boolean save = false;
         BufferedImage i = runAndGetImage(fileName);
         if (save) {
@@ -187,11 +183,5 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
                 Util.waitForever();
             }
         }
-    }
-
-    class VdpPortWrite {
-        int hc, vc, data;
-        VdpPortType portType;
-        String line;
     }
 }
