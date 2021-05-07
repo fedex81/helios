@@ -24,6 +24,7 @@ import omegadrive.util.*;
 import omegadrive.vdp.model.*;
 import omegadrive.vdp.util.UpdatableViewer;
 import omegadrive.vdp.util.VdpDebugView;
+import omegadrive.vdp.util.VdpPortAccessLogger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -140,6 +141,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private RegionDetector.Region region;
     private List<VdpEventListener> list;
     private UpdatableViewer debugViewer;
+    private VdpPortAccessLogger vdpPortAccessLogger;
 
     public static GenesisVdp createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface,
                                             VdpDmaHandler dmaHandler, RegionDetector.Region region) {
@@ -214,6 +216,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);
         this.debugViewer = VdpDebugView.createInstance(this, memoryInterface, renderHandler);
         this.fifo = new VdpFifo();
+        this.vdpPortAccessLogger = VdpPortAccessLogger.NO_LOGGER;
         this.initMode();
     }
 
@@ -628,8 +631,9 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 
     @Override
     public void writeVdpPortWord(VdpPortType type, int data) {
-//        LOG.info("{},{},{},{}", interruptHandler.getHCounterExternal(),
-//                interruptHandler.getVCounterExternal(), data, type);
+        if (vdpPortAccessLogger != VdpPortAccessLogger.NO_LOGGER) {
+            vdpPortAccessLogger.logVdpWrite(type, data);
+        }
         switch (type) {
             case DATA:
                 writeDataPortInternal(data);
@@ -782,6 +786,16 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     @Override
     public List<VdpEventListener> getVdpEventListenerList() {
         return list;
+    }
+
+    public VdpPortAccessLogger toggleVdpPortAccessLogger(boolean enable) {
+        if (!enable) {
+            vdpPortAccessLogger.reset();
+            vdpPortAccessLogger = VdpPortAccessLogger.NO_LOGGER;
+        } else {
+            vdpPortAccessLogger = new VdpPortAccessLogger(interruptHandler);
+        }
+        return vdpPortAccessLogger;
     }
 
     @Override
