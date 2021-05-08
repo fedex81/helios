@@ -48,19 +48,8 @@ public class AutomatedGameTester {
 
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
-    private static String romFolder =
-//            "/home/fede/roms/gb";
-//            "/home/fede/roms/nes";
-//            "/home/fede/roms/md";
-            "/home/fede/roms/md/nointro";
-//            "/home/fede/roms/smsgg";
-//            "/home/fede/roms/msx";
-//            "/data/emu/roms";
-//                "/data/emu/roms/genesis/nointro";
-//            "/home/fede/roms/md/issues";
-//            "/home/fede/roms/md/tricky";
-//            "/home/fede/roms/md/homebrew/retrobrews";
-//            "/data/emu/roms/genesis/goodgen/unverified";
+
+    private static String romFolder = ".";
 
     private static boolean noIntro = true;
     private static String header = "rom;boot;sound";
@@ -102,6 +91,10 @@ public class AutomatedGameTester {
         new File(System.getProperty("md.sram.folder")).mkdirs();
     }
 
+    private long seed = System.currentTimeMillis();
+    private Random random = new Random(seed);
+
+
     public static void main(String[] args) throws Exception {
         System.out.println("Current folder: " + new File(".").getAbsolutePath());
         System.out.println("Blacklist entries: " + blackList.size());
@@ -123,8 +116,9 @@ public class AutomatedGameTester {
         List<Path> testRoms = Files.walk(folder, FileVisitOption.FOLLOW_LINKS).
                 filter(p -> testAllRomsPredicate.test(p)).collect(Collectors.toList());
         System.out.println("Loaded files: " + testRoms.size());
+        System.out.println("Randomizer seed: " + seed);
         if (shuffle) {
-            Collections.shuffle(testRoms, new Random());
+            Collections.shuffle(testRoms, random);
         }
         try {
             SystemLoader.main(new String[0]);
