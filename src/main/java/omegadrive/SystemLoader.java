@@ -282,6 +282,7 @@ public class SystemLoader {
     public SystemProvider createSystemProvider(Path file, boolean debugPerf) {
         String lowerCaseName = handleCompressedFiles(file, file.toString().toLowerCase());
         if (lowerCaseName == null) {
+            LOG.error("Unable to load file: " + file != null ? file.toAbsolutePath() : "null");
             return null;
         }
         boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);

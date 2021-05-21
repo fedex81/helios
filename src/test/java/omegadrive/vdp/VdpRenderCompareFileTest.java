@@ -20,6 +20,7 @@
 package omegadrive.vdp;
 
 import com.google.common.collect.ImmutableList;
+import omegadrive.util.Util;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,23 +59,20 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
     @MethodSource("fileProvider")
     public void testCompareFile(String fileName) {
         SHOW_IMAGES_ON_FAILURE = false;
+        boolean stopWhenDone = false;
         Path saveFile = Paths.get(saveStateFolder, fileName);
         boolean error = testCompareOne(saveFile);
+        if (stopWhenDone && fileName.startsWith("vf2")) {
+            Util.waitForever();
+        }
         Assert.assertFalse("Error: " + fileName, error);
-    }
-
-    @Ignore
-    @Disabled
-    @Override
-    public void testCompareAll() {
-        super.testCompareAll();
     }
 
     @Ignore
     @Disabled
     @Test
     public void testCompare() {
-        Path saveFile = Paths.get(saveStateFolder, "vr_01.gsh");
-        super.testCompareFile(saveFile, true);
+        Path saveFile = Paths.get(saveStateFolder, "subterr_01.gsh");
+        super.testCompareFile(saveFile, false);
     }
 }

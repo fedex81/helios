@@ -35,7 +35,7 @@ public enum RenderPriority { //implements Comparable<RenderPriority> {
     PriorityType priorityType;
     int priorityOrder;
 
-    static RenderPriority[] enums = RenderPriority.class.getEnumConstants();
+    public static RenderPriority[] enums = RenderPriority.class.getEnumConstants();
 
     RenderPriority(RenderType renderType, PriorityType priorityType, int priorityOrder) {
         this.renderType = renderType;

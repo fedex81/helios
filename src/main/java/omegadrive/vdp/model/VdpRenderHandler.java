@@ -19,6 +19,7 @@
 
 package omegadrive.vdp.model;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import static omegadrive.vdp.model.BaseVdpProvider.*;
@@ -44,6 +45,7 @@ public interface VdpRenderHandler {
     int TILE_INDEX_MASK = 0x7FF;
     int CELL_WIDTH = 8; //in pixels
     int BYTES_PER_TILE = 4; //32 bit
+    int CRAM_TRANSP_PIXEL_MASK = 0x1F; //transparent pixels are the first in the palette, (0x10 << 1) -1
 
     void dumpScreenData();
 
@@ -231,6 +233,18 @@ public interface VdpRenderHandler {
 
         public void reset() {
             endHCell = startHCell = startHCellPlane = endHCellPlane = 0;
+        }
+    }
+
+    class PixelData {
+        public PriorityType[] priorityMap = new PriorityType[RenderType.values().length];
+        public int[] cramIndexMap = new int[RenderType.values().length];
+        public RenderPriority pixelPriority = RenderPriority.BACK_PLANE; //shadow/highlight off
+
+        public void reset() {
+            Arrays.fill(priorityMap, PriorityType.NO);
+            Arrays.fill(cramIndexMap, 0);
+            pixelPriority = RenderPriority.BACK_PLANE;
         }
     }
 }

@@ -12,13 +12,10 @@ Fatal Rewind - timing? has been broken forever
 dashing desp: broken before 21.0407, 20.1207 ok
 dracula: gameplay slow down, demo mode level missing graphics (planeA issue)
 lemmings: hint vs vint issue
+iss deluxe: flickering
 
 savestate:
 md: broken {ssf2, virtua racing}
-
-shadow/highlight:
-rambo III intro corruption
-iss deluxe colors
 
 danibus scroll test
 bubba and stix
