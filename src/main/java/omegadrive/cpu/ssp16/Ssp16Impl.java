@@ -308,7 +308,7 @@ public class Ssp16Impl implements Ssp16 {
         sspCtx = l_ssp;
         sspCtx.emu_status = 0;
         sspCtx.gr[SSP_GR0.ordinal()].setV(0xffff0000L);
-        rPC.setH(0x400);
+        rPC.setH(cart.rom[SVP_ROM_BOOTSTRAP_PC_WORD]);
         rSTACK.setH(0); /* ? using ascending stack */
         rST.setH(0);
     }

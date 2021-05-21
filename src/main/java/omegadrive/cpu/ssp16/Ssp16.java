@@ -61,6 +61,9 @@ public interface Ssp16 {
     int SVP_ROM_START_ADDRESS_BYTE = 0x800;
     int SVP_ROM_START_ADDRESS_WORD = SVP_ROM_START_ADDRESS_BYTE >> 1;
 
+    //see https://github.com/jdesiloniz/svpdev/wiki/Internal-ROM
+    int SVP_ROM_BOOTSTRAP_PC_WORD = 0x1FE >> 1;
+
     Ssp16 NO_SVP = new Ssp16() {
         @Override
         public void ssp1601_reset(Ssp1601_t ssp) {
