@@ -220,7 +220,7 @@ public class Ssp16Impl implements Ssp16 {
     /* context */
     private Ssp1601_t sspCtx = null;
     private Svp_t svpCtx = null;
-    private int PC;
+    private int PC, cartPC;
     /* 0 */
     Ssp_reg_t rX; //.h;
     Ssp_reg_t rY; //.h;
@@ -246,6 +246,7 @@ public class Ssp16Impl implements Ssp16 {
         Ssp16Impl s = new Ssp16Impl();
         s.cart = cart;
         s.loadSvpContext(svp);
+        s.cartPC = cart.rom.length > SVP_ROM_BOOTSTRAP_PC_WORD ? cart.rom[SVP_ROM_BOOTSTRAP_PC_WORD] : 0x400;
         return s;
     }
 
@@ -308,7 +309,7 @@ public class Ssp16Impl implements Ssp16 {
         sspCtx = l_ssp;
         sspCtx.emu_status = 0;
         sspCtx.gr[SSP_GR0.ordinal()].setV(0xffff0000L);
-        rPC.setH(cart.rom[SVP_ROM_BOOTSTRAP_PC_WORD]);
+        rPC.setH(cartPC);
         rSTACK.setH(0); /* ? using ascending stack */
         rST.setH(0);
     }
