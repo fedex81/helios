@@ -1,6 +1,7 @@
 package omegadrive.system.gb;
 
 import eu.rekawek.coffeegb.gpu.Display;
+import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.SwingWindow;
 import omegadrive.vdp.model.BaseVdpAdapter;
@@ -24,7 +25,7 @@ public class HeliosDisplay implements Display, BaseVdpAdapter.ScreenDataSupplier
     private int i;
     private boolean enabled;
     private DisplayWindow window;
-    private Gb system;
+    private SystemProvider.NewFrameListener system;
 
     public HeliosDisplay() {
         window = new SwingWindow(null);
@@ -32,7 +33,7 @@ public class HeliosDisplay implements Display, BaseVdpAdapter.ScreenDataSupplier
         rgb = new int[DISPLAY_WIDTH * DISPLAY_HEIGHT];
     }
 
-    public HeliosDisplay(Gb system, DisplayWindow window) {
+    public HeliosDisplay(SystemProvider.NewFrameListener system, DisplayWindow window) {
         this.window = window;
         this.system = system;
         this.rgb = new int[DISPLAY_WIDTH * DISPLAY_HEIGHT];
@@ -65,7 +66,7 @@ public class HeliosDisplay implements Display, BaseVdpAdapter.ScreenDataSupplier
             Arrays.fill(rgb, 0);
         }
         i = 0;
-        system.newFrameGb();
+        system.newFrame();
     }
 
     @Override

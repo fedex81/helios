@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ExternalAudioProvider implements FmProvider {
 
-    private static final Logger LOG = LogManager.getLogger(omegadrive.system.gb.GbSoundWrapper.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(ExternalAudioProvider.class.getSimpleName());
     protected AtomicInteger queueLen = new AtomicInteger();
     private Queue<Integer> sampleQueue;
     private volatile boolean running = false;

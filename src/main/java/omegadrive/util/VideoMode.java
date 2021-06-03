@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static omegadrive.util.RegionDetector.Region.*;
-import static omegadrive.vdp.model.GenesisVdpProvider.*;
+import static omegadrive.vdp.model.BaseVdpProvider.*;
 
 public enum VideoMode {
     PAL_H40_V30(EUROPE, H40, V30_CELL),
@@ -53,7 +53,8 @@ public enum VideoMode {
     NTSCJ_H20_V18(JAPAN, H20, V18_CELL),
     NTSCU_H20_V18(USA, H20, V18_CELL),
     PAL_H20_V18(EUROPE, H20, V18_CELL),
-    ;
+
+    NTSCU_H32_V32(USA, H32, V32_CELL);
 
     private static Logger LOG = LogManager.getLogger(VideoMode.class.getSimpleName());
 

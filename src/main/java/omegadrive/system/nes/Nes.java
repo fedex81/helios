@@ -24,13 +24,14 @@ import com.grapeshot.halfnes.ui.ControllerImpl;
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.input.InputProvider;
-import omegadrive.joypad.NesPad;
+import omegadrive.joypad.ExternalPad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.NesStateHandler;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.BaseSystem;
+import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
@@ -87,10 +88,10 @@ public class Nes extends BaseSystem<BaseBusProvider> {
     @Override
     public void init() {
         stateHandler = BaseStateHandler.EMPTY_STATE;
-        bus = NesHelper.NO_OP_BUS;
-        vdp = NesHelper.NO_OP_VDP_PROVIDER;
+        bus = SysUtil.NO_OP_BUS;
+        vdp = SysUtil.NO_OP_VDP_PROVIDER;
         memory = MemoryProvider.NO_MEMORY;
-        joypad = new NesPad(NesHelper.cnt1, NesHelper.cnt2);
+        joypad = ExternalPad.createTwoButtonsPad(NesHelper.cnt1, NesHelper.cnt2);
         initCommon();
     }
 
@@ -109,10 +110,6 @@ public class Nes extends BaseSystem<BaseBusProvider> {
     protected void handleCloseRom() {
         gui.close();
         super.handleCloseRom();
-    }
-
-    public void newFrameNes() {
-        newFrame();
     }
 
     @Override

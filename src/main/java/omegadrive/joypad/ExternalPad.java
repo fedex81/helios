@@ -32,24 +32,40 @@ import java.util.Map;
 
 import static omegadrive.input.InputProvider.PlayerNumber;
 
-public class NesPad extends BasePadAdapter {
+public class ExternalPad extends BasePadAdapter {
 
-    private static final Logger LOG = LogManager.getLogger(NesPad.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(ExternalPad.class.getSimpleName());
 
-    private KeyListener p1HalfNes, p2HalfNes;
+    private KeyListener p1Listener, p2Listener;
 
     private Component source = new Label();
 
-    public NesPad(KeyListener p1HalfNes, KeyListener p2HalfNes) {
-        this.p1HalfNes = p1HalfNes;
-        this.p2HalfNes = p2HalfNes;
+    private ExternalPad(KeyListener p1, KeyListener p2, JoypadType type) {
+        this.p1Listener = p1;
+        this.p2Listener = p2;
+        //TODO disable p2 key bindings
+        if (p2 == null) {
+            KeyboardInputHelper.keyboardInverseBindings.rowMap().remove(PlayerNumber.P2);
+        }
+        p1Type = type;
+        p2Type = type;
+        LOG.info("Joypad1: {} - Joypad2: {}", p1Type, p2Type);
+    }
+
+    public static BasePadAdapter createTwoButtonsPad(KeyListener p1) {
+        return new ExternalPad(p1, null, JoypadType.BUTTON_2);
+    }
+
+    public static BasePadAdapter createTwoButtonsPad(KeyListener p1, KeyListener p2) {
+        return new ExternalPad(p1, p2, JoypadType.BUTTON_2);
+    }
+
+    public static BasePadAdapter createSixButtonsPad(KeyListener p1, KeyListener p2) {
+        return new ExternalPad(p1, p2, JoypadType.BUTTON_6);
     }
 
     @Override
     public void init() {
-        p1Type = JoypadType.BUTTON_2;
-        p2Type = JoypadType.BUTTON_2;
-        LOG.info("Joypad1: {} - Joypad2: {}", p1Type, p2Type);
         stateMap1 = Maps.newHashMap(releasedMap);
         stateMap2 = Maps.newHashMap(releasedMap);
     }
@@ -66,7 +82,7 @@ public class NesPad extends BasePadAdapter {
     public void setButtonAction(PlayerNumber number, JoypadButton button, JoypadAction action, KeyEvent event) {
         super.setButtonAction(number, button, action);
         Map<JoypadButton, Integer> btnMap = KeyboardInputHelper.keyboardBindings.row(number);
-        KeyListener keyListener = number == PlayerNumber.P1 ? p1HalfNes : p2HalfNes;
+        KeyListener keyListener = number == PlayerNumber.P1 ? p1Listener : p2Listener;
         if (btnMap != null && btnMap.containsKey(button)) {
             event.setKeyCode(btnMap.get(button));
             if (action == JoypadAction.PRESSED) {
@@ -75,9 +91,5 @@ public class NesPad extends BasePadAdapter {
                 keyListener.keyReleased(event);
             }
         }
-    }
-
-    @Override
-    public void newFrame() {
     }
 }

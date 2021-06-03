@@ -36,6 +36,7 @@ public interface BaseVdpProvider extends Device, BaseVdpAdapterEventSupport {
     int V24_CELL = 192;
     int V28_CELL = 224;
     int V30_CELL = 240;
+    int V32_CELL = 256;
     int H40 = 320;
     int H32 = 256;
     int H20 = 160;

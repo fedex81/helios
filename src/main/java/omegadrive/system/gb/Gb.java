@@ -7,14 +7,14 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInputHelper;
-import omegadrive.joypad.GbPad;
+import omegadrive.joypad.ExternalPad;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.BaseSystem;
+import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
-import omegadrive.system.nes.NesHelper;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -57,10 +57,10 @@ public class Gb extends BaseSystem<BaseBusProvider> {
 
     @Override
     public void init() {
-        bus = NesHelper.NO_OP_BUS;
-        vdp = NesHelper.NO_OP_VDP_PROVIDER;
+        bus = SysUtil.NO_OP_BUS;
+        vdp = SysUtil.NO_OP_VDP_PROVIDER;
         memory = MemoryProvider.NO_MEMORY;
-        joypad = new GbPad(controller);
+        joypad = ExternalPad.createTwoButtonsPad(controller);
         initCommon();
     }
 
@@ -128,10 +128,6 @@ public class Gb extends BaseSystem<BaseBusProvider> {
     @Override
     protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOverride) {
         return RegionDetector.Region.USA;
-    }
-
-    public void newFrameGb() {
-        newFrame();
     }
 
     @Override

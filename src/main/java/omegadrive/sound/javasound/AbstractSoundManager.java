@@ -23,14 +23,10 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.fm.MdFmProvider;
-import omegadrive.sound.fm.ym2413.Ym2413Provider;
 import omegadrive.sound.persist.FileSoundPersister;
 import omegadrive.sound.persist.SoundPersister;
 import omegadrive.sound.psg.PsgProvider;
-import omegadrive.system.Sms;
-import omegadrive.system.gb.GbSoundWrapper;
-import omegadrive.system.nes.NesSoundWrapper;
+import omegadrive.system.SysUtil;
 import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
@@ -81,43 +77,13 @@ public abstract class AbstractSoundManager implements SoundProvider {
     }
 
     PsgProvider getPsgProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.NO_SOUND;
-        switch (systemType) {
-            case MSX:
-                psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
-                break;
-            case NES:
-            case GB:
-                //no PSG, external audio set as FM
-                break;
-            default:
-                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
-                break;
-        }
+        PsgProvider psgProvider = SysUtil.getPsgProvider(systemType, region);
         hasPsg = psg != PsgProvider.NO_SOUND;
         return psgProvider;
     }
 
     FmProvider getFmProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
-        FmProvider fmProvider = FmProvider.NO_SOUND;
-        switch (systemType) {
-            case GENESIS:
-                fmProvider = MdFmProvider.createInstance(region, AbstractSoundManager.audioFormat);
-                break;
-            case SMS:
-                if (Sms.ENABLE_FM) {
-                    fmProvider = Ym2413Provider.createInstance(AbstractSoundManager.audioFormat);
-                }
-                break;
-            case NES:
-                fmProvider = new NesSoundWrapper(region, AbstractSoundManager.audioFormat);
-                break;
-            case GB:
-                fmProvider = new GbSoundWrapper(region, AbstractSoundManager.audioFormat);
-                break;
-            default:
-                break;
-        }
+        FmProvider fmProvider = SysUtil.getFmProvider(systemType, region);
         hasFm = fm != FmProvider.NO_SOUND;
         return fmProvider;
     }

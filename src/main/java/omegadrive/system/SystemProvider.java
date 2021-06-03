@@ -65,4 +65,8 @@ public interface SystemProvider extends Device {
         SOFT_RESET,
         PAD_SETUP_CHANGE
     }
+
+    interface NewFrameListener {
+        void newFrame();
+    }
 }

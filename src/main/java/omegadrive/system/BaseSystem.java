@@ -43,7 +43,7 @@ import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
-public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemProvider {
+public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemProvider, SystemProvider.NewFrameListener {
 
     private final static Logger LOG = LogManager.getLogger(BaseSystem.class.getSimpleName());
 
@@ -308,7 +308,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         });
     }
 
-    protected void newFrame() {
+    @Override
+    public void newFrame() {
         long startWaitNs = System.nanoTime();
         long prevStartNs = startNs;
         elapsedWaitNs = syncCycle(startNs) - startWaitNs;

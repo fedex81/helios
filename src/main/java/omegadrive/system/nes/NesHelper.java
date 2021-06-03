@@ -5,17 +5,12 @@ import com.grapeshot.halfnes.audio.AudioOutInterface;
 import com.grapeshot.halfnes.ui.ControllerImpl;
 import com.grapeshot.halfnes.ui.GUIInterface;
 import com.grapeshot.halfnes.video.RGBRenderer;
-import omegadrive.Device;
-import omegadrive.bus.model.BaseBusProvider;
-import omegadrive.util.Size;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.BaseVdpAdapter;
 import omegadrive.vdp.model.BaseVdpProvider;
 
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
 
 import static omegadrive.input.InputProvider.PlayerNumber;
 import static omegadrive.input.KeyboardInputHelper.keyboardStringBindings;
@@ -31,43 +26,7 @@ public class NesHelper {
 
     public static final ControllerImpl cnt1 = new ControllerImpl(0, keyboardStringBindings.row(PlayerNumber.P1));
     public static final ControllerImpl cnt2 = new ControllerImpl(1, keyboardStringBindings.row(PlayerNumber.P2));
-    public static final BaseBusProvider NO_OP_BUS = new BaseBusProvider() {
-        @Override
-        public long read(long address, Size size) {
-            return 0;
-        }
 
-        @Override
-        public void write(long address, long data, Size size) {
-
-        }
-
-        @Override
-        public void writeIoPort(int port, int value) {
-
-        }
-
-        @Override
-        public int readIoPort(int port) {
-            return 0;
-        }
-
-        @Override
-        public BaseBusProvider attachDevice(Device device) {
-            return null;
-        }
-
-        @Override
-        public <T extends Device> Optional<T> getBusDeviceIfAny(Class<T> clazz) {
-            return Optional.empty();
-        }
-
-        @Override
-        public <T extends Device> Set<T> getAllDevices(Class<T> clazz) {
-            return Collections.emptySet();
-        }
-    };
-    public static final BaseVdpProvider NO_OP_VDP_PROVIDER = new BaseVdpAdapter();
 
     public static NesHelper.NesGUIInterface createNes(Path romFile, Nes nesSys, AudioOutInterface audio) {
         NES nes = new NES(audio);
@@ -78,7 +37,8 @@ public class NesHelper {
         return gui;
     }
 
-    public static NesGUIInterface createGuiWrapper(NES instance1, Nes nesSystem) {
+    public static NesGUIInterface createGuiWrapper(NES instance1,
+                                                   SystemProvider.NewFrameListener nesSystem) {
         return new NesGUIInterface() {
 
             private NES localInstance = instance1;
@@ -105,7 +65,7 @@ public class NesHelper {
             public void setFrame(int[] frame, int[] bgcolor, boolean dotcrawl) {
                 renderer.renderData(frame, bgcolor, dotcrawl);
                 screen = frame;
-                nesSystem.newFrameNes();
+                nesSystem.newFrame();
             }
 
             @Override
