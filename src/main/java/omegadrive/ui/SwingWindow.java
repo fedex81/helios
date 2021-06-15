@@ -87,14 +87,9 @@ public class SwingWindow implements DisplayWindow {
     private Dimension nativeScreenSize = DEFAULT_BASE_SCREEN_SIZE;
     private Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
 
-    // Transparent 16 x 16 pixel cursor image.
-    private BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-
-    // Create a new blank cursor.
-    private Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-            cursorImg, new Point(0, 0), "blank cursor");
     private int showInfoCount = SHOW_INFO_FRAMES_DELAY;
     private Optional<String> actionInfo = Optional.empty();
+    private MouseCursorHandler cursorHandler;
 
 
     public SwingWindow(SystemProvider mainEmu) {
@@ -179,6 +174,7 @@ public class SwingWindow implements DisplayWindow {
             screenLabel.repaint();
             perfLabel.setText("");
             jFrame.setTitle(FRAME_TITLE_HEAD);
+            cursorHandler.reset();
             LOG.info("Blanking screen");
         });
     }
@@ -358,12 +354,12 @@ public class SwingWindow implements DisplayWindow {
 
         screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
         screenLabel.setVerticalAlignment(SwingConstants.CENTER);
-        screenLabel.setCursor(blankCursor);
 
         AbstractAction debugUiAction = toAbstractAction("debugUI", e -> showDebugInfo(!showDebug));
         actionMap.put(SET_DEBUG_UI, debugUiAction);
 
         setupFrameKeyListener();
+        this.cursorHandler = new MouseCursorHandler(jFrame);
 
         jFrame.setMinimumSize(DEFAULT_FRAME_SIZE);
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -388,6 +384,7 @@ public class SwingWindow implements DisplayWindow {
         label.ifPresent(this::showLabel);
         screenLabel.repaint();
         detectUserScreenChange();
+        cursorHandler.newFrame();
     }
 
     private void detectUserScreenChange() {
