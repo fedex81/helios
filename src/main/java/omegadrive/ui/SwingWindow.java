@@ -76,14 +76,13 @@ public class SwingWindow implements DisplayWindow {
     private SystemProvider mainEmu;
 
     private List<AbstractButton> regionItems;
-    private JCheckBoxMenuItem fullScreenItem;
+    private JCheckBoxMenuItem fullScreenItem, debugInfoItem;
     private JMenu recentFilesMenu, joypadTypeMenu;
     private JMenuItem[] recentFilesItems;
     private Map<PlayerNumber, JMenu> inputMenusMap;
     private final static int screenChangedCheckFrequency = 60;
     private List<AbstractButton> screenItems;
     private int screenChangedCheckCounter = screenChangedCheckFrequency;
-    private boolean showDebug = false;
     private Dimension nativeScreenSize = DEFAULT_BASE_SCREEN_SIZE;
     private Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
 
@@ -156,13 +155,21 @@ public class SwingWindow implements DisplayWindow {
         return bi;
     }
 
-    private void showDebugInfo(boolean showDebug) {
-        this.showDebug = showDebug;
+    private void showDebugInfo(ActionEvent event) {
+        //key_accel has event == null -> toggle
+        showDebugInfo(event == null ? !debugInfoItem.getState() : debugInfoItem.getState());
+    }
+
+    private void showDebugInfo(boolean state) {
         SwingUtilities.invokeLater(() -> {
-            if (fullScreenItem.getState()) {
-                jFrame.getJMenuBar().setVisible(showDebug);
+            debugInfoItem.setState(state);
+            jFrame.getJMenuBar().setVisible(state);
+            //always show the menu when windowed
+            if (!fullScreenItem.getState()) {
+                jFrame.getJMenuBar().setVisible(true);
             }
-            perfLabel.setVisible(showDebug);
+            perfLabel.setVisible(state);
+            jFrame.repaint();
         });
     }
 
@@ -272,9 +279,13 @@ public class SwingWindow implements DisplayWindow {
         addKeyAction(fullScreenItem, TOGGLE_FULL_SCREEN, this::fullScreenAction);
         menuView.add(fullScreenItem);
 
+        debugInfoItem = new JCheckBoxMenuItem("Debug Info", false);
+        addKeyAction(debugInfoItem, SHOW_FPS, this::showDebugInfo);
+        menuView.add(debugInfoItem);
+
         JCheckBoxMenuItem muteItem = new JCheckBoxMenuItem("Enable Sound", true);
         addKeyAction(muteItem, TOGGLE_MUTE, e -> handleSystemEvent(TOGGLE_MUTE, null, null));
-        menuView.add(muteItem);
+        setting.add(muteItem);
 
         JMenu helpMenu = new JMenu("Help");
         bar.add(helpMenu);
@@ -355,9 +366,6 @@ public class SwingWindow implements DisplayWindow {
         screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
         screenLabel.setVerticalAlignment(SwingConstants.CENTER);
 
-        AbstractAction debugUiAction = toAbstractAction("debugUI", e -> showDebugInfo(!showDebug));
-        actionMap.put(SET_DEBUG_UI, debugUiAction);
-
         setupFrameKeyListener();
         this.cursorHandler = new MouseCursorHandler(jFrame);
 
@@ -376,6 +384,7 @@ public class SwingWindow implements DisplayWindow {
                 gd.getDefaultConfiguration().getBounds().y + centerPoint.y);
 
         jFrame.setVisible(true);
+        showDebugInfo(SystemLoader.showFps);
     }
 
     private void renderScreenLinearInternal(int[] data, Optional<String> label, VideoMode videoMode) {
@@ -597,6 +606,7 @@ public class SwingWindow implements DisplayWindow {
     }
 
     //TODO this is necessary in fullScreenMode
+    //TODO try Toolkit.getDefaultToolkit().addAWTEventListener();
     private void setupFrameKeyListener() {
         jFrame.addKeyListener(new KeyAdapter() {
 

@@ -70,7 +70,7 @@ public class KeyboardInputHelper {
     static {
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_ENTER, ALT_DOWN_MASK), TOGGLE_FULL_SCREEN);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_T, CTRL_DOWN_MASK), TOGGLE_THROTTLE);
-        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_D, CTRL_DOWN_MASK), SET_DEBUG_UI);
+        DEFAULT_INPUT_MAP.put(getKeyStroke(VK_D, CTRL_DOWN_MASK), SHOW_FPS);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_P, CTRL_DOWN_MASK), TOGGLE_PAUSE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_M, CTRL_DOWN_MASK), TOGGLE_MUTE);
         DEFAULT_INPUT_MAP.put(getKeyStroke(VK_R, CTRL_DOWN_MASK), RESET);
