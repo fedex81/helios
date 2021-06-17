@@ -62,7 +62,6 @@ public class MouseCursorHandler extends MouseMotionAdapter {
 
     public void reset() {
         cmp.setCursor(null);
-        cmp.removeMouseMotionListener(this);
-        cmp = null;
+        frameCnt = lastMovementFrame = 0;
     }
 }

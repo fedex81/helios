@@ -89,6 +89,7 @@ public class SwingWindow implements DisplayWindow {
     private int showInfoCount = SHOW_INFO_FRAMES_DELAY;
     private Optional<String> actionInfo = Optional.empty();
     private MouseCursorHandler cursorHandler;
+    private AWTEventListener awtEventListener;
 
 
     public SwingWindow(SystemProvider mainEmu) {
@@ -365,8 +366,6 @@ public class SwingWindow implements DisplayWindow {
 
         screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
         screenLabel.setVerticalAlignment(SwingConstants.CENTER);
-
-        setupFrameKeyListener();
         this.cursorHandler = new MouseCursorHandler(jFrame);
 
         jFrame.setMinimumSize(DEFAULT_FRAME_SIZE);
@@ -589,7 +588,6 @@ public class SwingWindow implements DisplayWindow {
         this.mainEmu = systemProvider;
 
         Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);
-        setupFrameKeyListener();
         Optional.ofNullable(mainEmu).ifPresent(sp -> {
             setTitle("");
             joypadTypeMenu.setEnabled(mainEmu.getSystemType() == SystemLoader.SystemType.GENESIS);
@@ -598,32 +596,50 @@ public class SwingWindow implements DisplayWindow {
 
     @Override
     public void addKeyListener(KeyListener keyAdapter) {
-        jFrame.addKeyListener(keyAdapter);
+        if (awtEventListener != null) {
+            Toolkit.getDefaultToolkit().removeAWTEventListener(awtEventListener);
+        }
+        awtEventListener = e -> {
+            if (e instanceof KeyEvent) {
+                KeyEvent ke = (KeyEvent) e;
+                handleSystemInputEvent(keyAdapter, ke);
+                handleUiEvent(ke);
+            }
+        };
+        Toolkit.getDefaultToolkit().addAWTEventListener(awtEventListener, AWTEvent.KEY_EVENT_MASK);
+    }
+
+    private void handleSystemInputEvent(KeyListener keyAdapter, KeyEvent ke) {
+        switch (ke.getID()) {
+            case KeyEvent.KEY_PRESSED:
+                keyAdapter.keyPressed(ke);
+                break;
+            case KeyEvent.KEY_RELEASED:
+                keyAdapter.keyReleased(ke);
+                break;
+            case KeyEvent.KEY_TYPED:
+                keyAdapter.keyTyped(ke);
+                break;
+            default:
+                LOG.warn("Unknown key event: {}", ke);
+                break;
+        }
+    }
+
+    private void handleUiEvent(KeyEvent ke) {
+        KeyStroke keyStroke = KeyStroke.getKeyStrokeForEvent(ke);
+        SystemProvider.SystemEvent event = KeyBindingsHandler.getInstance().getSystemEventIfAny(keyStroke);
+        if (event != null && event != NONE) {
+            //if the menuBar is visible it will handle the event, otherwise we need to perform the action here
+            boolean menuVisible = jFrame.getJMenuBar().isVisible();
+            if (!menuVisible) {
+                Optional.ofNullable(actionMap.get(event)).ifPresent(act -> act.actionPerformed(null));
+            }
+        }
     }
 
     private int[] getPixels(BufferedImage img) {
         return ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
-    }
-
-    //TODO this is necessary in fullScreenMode
-    //TODO try Toolkit.getDefaultToolkit().addAWTEventListener();
-    private void setupFrameKeyListener() {
-        jFrame.addKeyListener(new KeyAdapter() {
-
-            @Override
-            public void keyPressed(KeyEvent e) {
-                KeyStroke keyStroke = KeyStroke.getKeyStrokeForEvent(e);
-//                LOG.info(keyStroke.toString());
-                SystemProvider.SystemEvent event = KeyBindingsHandler.getInstance().getSystemEventIfAny(keyStroke);
-                if (event != null && event != NONE) {
-                    //if the menuBar is visible it will handle the event, otherwise we need to perform the action here
-                    boolean menuVisible = jFrame.getJMenuBar().isVisible();
-                    if (!menuVisible) {
-                        Optional.ofNullable(actionMap.get(event)).ifPresent(act -> act.actionPerformed(null));
-                    }
-                }
-            }
-        });
     }
 
     private List<AbstractButton> createRegionItems() {
