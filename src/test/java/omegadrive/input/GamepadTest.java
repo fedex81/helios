@@ -35,7 +35,7 @@ public class GamepadTest {
     public static float ON = 1.0f;
 
     public static void main(String[] args) {
-        String lib = new File(".").getAbsolutePath() + File.separator + "privateLib"
+        String lib = new File(".").getAbsolutePath() + File.separator + "lib"
                 + File.separator + "linux";
         System.out.println(lib);
         System.setProperty("log4j.configurationFile", "./res/log4j2-info.properties");

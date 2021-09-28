@@ -56,7 +56,6 @@ dependencies {
     //include local jars
     compile fileTree(dir: 'lib', include: ['*.jar'])
     testCompile fileTree(dir: 'lib', include: ['*.jar'])
-    testCompile fileTree(dir: 'privateLib', include: ['*.jar'])
 }
 
 def getDate() {
@@ -108,15 +107,6 @@ task copyRes {
     }
     copy {
         from configurations.runtime
-        into "$buildDir/packageDir/lib"
-    }
-    copy {
-        from("privateLib") {
-            exclude "misc/**"
-            exclude "src/**"
-            exclude "jna*.jar"
-            exclude "jmx*.jar"
-        }
         into "$buildDir/packageDir/lib"
     }
     copy {
