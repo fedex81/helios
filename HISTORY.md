@@ -1,3 +1,14 @@
+## 21.1007
+* 68k: update lib, fixes a few bugs
+* helios: include jinput libs by default
+* helios: auto-hide mouse cursor
+* md: fix sprite rendering in interlace mode
+* md: IM2 default to show one field only (even), reduces flickering
+* md: shadow/highlight fixes and refactor
+* md: vdp draw line on end of activeDisplay instead of hblankOn
+* svp: handle missing or small rom, fixes a few tests
+* svp: read initial pc from rom
+
 ## 21.0407
 * 68k: overclock support
 * helios: init SRAM with 0xFF, according to docs
