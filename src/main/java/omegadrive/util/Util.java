@@ -69,10 +69,6 @@ public class Util {
         LOG.info("Creating Random with seed: {}", seed);
     }
 
-    public static boolean isWindows() {
-        return OS_NAME.contains("win");
-    }
-
     public static void sleep(long ms) {
         try {
             Thread.sleep(ms);

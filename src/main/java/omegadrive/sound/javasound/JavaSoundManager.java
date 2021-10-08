@@ -23,12 +23,12 @@ import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.Sleeper;
 import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
-import java.util.concurrent.locks.LockSupport;
 
 public class JavaSoundManager extends AbstractSoundManager {
 
@@ -100,7 +100,7 @@ public class JavaSoundManager extends AbstractSoundManager {
                     samplesConsumedCount += actualStereo;
                     if (actualStereo <= 10) {
                         audioThreadEmptyLoops++;
-                        LockSupport.parkNanos(EMPTY_QUEUE_SLEEP_NS);
+                        Sleeper.parkExactly(EMPTY_QUEUE_SLEEP_NS);
                     }
                     audioThreadLoops++;
                 } while (!close);
