@@ -40,11 +40,11 @@ public class CramViewer implements UpdatableViewer {
     private static final int FRAME_WIDTH = LABEL_WIDTH * CRAM_ENTRIES + 50;
     private static final int ROWS = 4;
 
-    private VdpMemoryInterface vdpMemoryInterface;
+    private final VdpMemoryInterface vdpMemoryInterface;
     private JPanel cramPanel;
     private JFrame cramFrame;
-    private VdpColorMapper colorMapper;
-    private JPanel[] panelList = new JPanel[CRAM_ENTRIES];
+    private final VdpColorMapper colorMapper;
+    private final JPanel[] panelList = new JPanel[CRAM_ENTRIES];
 
     private CramViewer(VdpMemoryInterface vdpMemoryInterface) {
         this.vdpMemoryInterface = vdpMemoryInterface;

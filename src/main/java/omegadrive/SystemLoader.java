@@ -112,7 +112,7 @@ public class SystemLoader {
 
     private SystemProvider systemProvider;
 
-    private static AtomicBoolean init = new AtomicBoolean();
+    private static final AtomicBoolean init = new AtomicBoolean();
 
     protected static boolean isHeadless() {
         GraphicsEnvironment ge =
@@ -331,7 +331,7 @@ public class SystemLoader {
         NES("NES"),
         GB("GB");
 
-        private String shortName;
+        private final String shortName;
 
         SystemType(String s) {
             this.shortName = s;

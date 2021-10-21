@@ -19,7 +19,7 @@
 
 package omegadrive.cpu.z80;
 
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.bus.model.GenesisZ80BusProvider;
 import omegadrive.cpu.z80.disasm.Z80Dasm;
 import org.apache.logging.log4j.LogManager;
@@ -43,16 +43,23 @@ public class Z80CoreWrapperDebug extends Z80CoreWrapper {
     private Z80MemIoOps.Z80MemIoOpsDbg memIoOpsDbg;
     private boolean m68kActivity = false;
 
-    public static Z80CoreWrapper createGenesisInstance(GenesisBusProvider busProvider) {
+    public static Z80CoreWrapper createGenesisInstance(BaseBusProvider busProvider) {
         Z80CoreWrapperDebug w = new Z80CoreWrapperDebug();
         w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider);
         w.memIoOps = Z80MemIoOps.createDebugGenesisInstance(w.z80BusProvider, w.sb, w.logAddressAccess);
         w.memIoOpsDbg = (Z80MemIoOps.Z80MemIoOpsDbg) w.memIoOps;
-        IntStream.range(0, w.lastN).forEach(i -> w.traceArray[i] = new Z80Helper.Z80StateExt());
+        return setupInternalDbg(w, null);
+    }
+
+    public static Z80CoreWrapper createInstance(BaseBusProvider busProvider) {
+        Z80CoreWrapperDebug w = new Z80CoreWrapperDebug();
+        w.z80BusProvider = busProvider;
+        w.memIoOps = Z80MemIoOps.createInstance(w.z80BusProvider);
         return setupInternalDbg(w, null);
     }
 
     private static Z80CoreWrapper setupInternalDbg(Z80CoreWrapperDebug w, Z80State z80State) {
+        IntStream.range(0, w.lastN).forEach(i -> w.traceArray[i] = new Z80Helper.Z80StateExt());
         setupInternal(w, z80State);
         w.z80Disasm = new Z80Dasm();
         return w;
@@ -65,7 +72,7 @@ public class Z80CoreWrapperDebug extends Z80CoreWrapper {
         //      dumpHistory();
         // dumpCurrent()
         sb.setLength(0); //avoid mem leak
-        LOG.info(z80Disasm.disassemble(z80Core.getRegPC(), memIoOpsDbg));
+        LOG.info(z80Disasm.disassemble(z80Core.getRegPC(), memIoOps));
         int res = super.executeInstruction();
         handlePostRunState();
         return res;

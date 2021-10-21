@@ -32,13 +32,13 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> imp
 
     private static final Logger LOG = LogManager.getLogger(Sg1000Bus.class);
 
-    private static int ROM_START = 0;
-    private static int ROM_END = 0xBFFF;
-    private static int RAM_START = 0xC000;
-    private static int RAM_END = 0xFFFF;
+    private static final int ROM_START = 0;
+    private static final int ROM_END = 0xBFFF;
+    private static final int RAM_START = 0xC000;
+    private static final int RAM_END = 0xFFFF;
 
-    private static int RAM_SIZE = 0x400;  //1Kb
-    private static int ROM_SIZE = ROM_END + 1; //48kb
+    private static final int RAM_SIZE = 0x400;  //1Kb
+    private static final int ROM_SIZE = ROM_END + 1; //48kb
 
     @Override
     public long read(long addressL, Size size) {

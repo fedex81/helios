@@ -42,9 +42,9 @@ public class NesHelper {
         return new NesGUIInterface() {
 
             private NES localInstance = instance1;
-            private RGBRenderer renderer = new RGBRenderer();
+            private final RGBRenderer renderer = new RGBRenderer();
             private int[] screen;
-            private BaseVdpProvider vdpProvider = BaseVdpAdapter.getVdpProviderWrapper(VideoMode.NTSCU_H32_V30, this);
+            private final BaseVdpProvider vdpProvider = BaseVdpAdapter.getVdpProviderWrapper(VideoMode.NTSCU_H32_V30, this);
 
             @Override
             public BaseVdpProvider getVdpProvider() {

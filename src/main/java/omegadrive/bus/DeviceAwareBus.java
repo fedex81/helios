@@ -38,7 +38,7 @@ import static omegadrive.util.Util.getDeviceIfAny;
 
 public abstract class DeviceAwareBus<V extends BaseVdpProvider, J extends JoypadProvider> implements BaseBusProvider, BaseVdpProvider.VdpEventListener {
 
-    private Set<Device> deviceSet = new HashSet<>();
+    private final Set<Device> deviceSet = new HashSet<>();
 
     protected IMemoryProvider memoryProvider;
     protected J joypadProvider;

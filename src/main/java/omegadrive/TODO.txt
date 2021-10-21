@@ -7,6 +7,7 @@
 
 - jdk9: Thread.onSpinWait vs Thread.yield
 - mdmappertest
+- realtec mapper
 
 Fatal Rewind - timing? has been broken forever
 dashing desp: broken before 21.0407, 20.1207 ok

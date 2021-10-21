@@ -36,9 +36,10 @@ public class ExternalPad extends BasePadAdapter {
 
     private static final Logger LOG = LogManager.getLogger(ExternalPad.class.getSimpleName());
 
-    private KeyListener p1Listener, p2Listener;
+    private final KeyListener p1Listener;
+    private final KeyListener p2Listener;
 
-    private Component source = new Label();
+    private final Component source = new Label();
 
     private ExternalPad(KeyListener p1, KeyListener p2, JoypadType type) {
         this.p1Listener = p1;

@@ -35,10 +35,10 @@ public class SoundUtil {
 
     public static byte ZERO_BYTE = 0;
 
-    private static int DEFAULT_PSG_SHIFT_BITS = 6;
+    private static final int DEFAULT_PSG_SHIFT_BITS = 6;
     public static double PSG_ATTENUATION = Double.parseDouble(System.getProperty("sound.psg.attenuation", "1.0"));
-    private static int USER_PSG_ATT_BITS;
-    private static int PSG_SHIFT_BITS;
+    private static final int USER_PSG_ATT_BITS;
+    private static final int PSG_SHIFT_BITS;
 
     static {
         double val = PSG_ATTENUATION;

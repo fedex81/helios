@@ -24,9 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class PriorityThreadFactory implements ThreadFactory {
 
-    private AtomicInteger threadNumber = new AtomicInteger();
-    private String namePrefix;
-    private int threadPriority;
+    private final AtomicInteger threadNumber = new AtomicInteger();
+    private final String namePrefix;
+    private final int threadPriority;
 
     public PriorityThreadFactory(int priority, String namePrefix) {
         this.namePrefix = namePrefix;

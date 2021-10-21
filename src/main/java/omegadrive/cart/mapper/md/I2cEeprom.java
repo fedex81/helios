@@ -31,7 +31,7 @@ public class I2cEeprom {
         }
     };
     private final static Logger LOG = LogManager.getLogger(I2cEeprom.class.getSimpleName());
-    private static boolean verbose = false;
+    private static final boolean verbose = false;
     private int scl, prevScl;
     private int sda, prevSda;
     private int cycles, rw;

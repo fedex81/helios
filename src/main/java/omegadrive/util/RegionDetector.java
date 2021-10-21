@@ -29,7 +29,7 @@ public class RegionDetector {
 
     private static final Logger LOG = LogManager.getLogger(RegionDetector.class.getSimpleName());
 
-    private static Comparator<Region> REGION_COMPARATOR = Comparator.comparingInt(r -> r.order);
+    private static final Comparator<Region> REGION_COMPARATOR = Comparator.comparingInt(r -> r.order);
 
     public final static int PAL_FPS = 50;
     public final static int NTSC_FPS = 60;
@@ -94,13 +94,13 @@ public class RegionDetector {
         USA('U', 0, 0x80, NTSC_FPS),
         EUROPE('E', 1, 0xC0, PAL_FPS);
 
-        private static EnumSet<Region> values = EnumSet.allOf(Region.class);
+        private static final EnumSet<Region> values = EnumSet.allOf(Region.class);
 
-        private char region;
-        private long versionCode;
-        private int fps;
-        private int order;
-        private double frameIntervalMs;
+        private final char region;
+        private final long versionCode;
+        private final int fps;
+        private final int order;
+        private final double frameIntervalMs;
 
         Region(char region, int order, long versionCode, int fps) {
             this.region = region;

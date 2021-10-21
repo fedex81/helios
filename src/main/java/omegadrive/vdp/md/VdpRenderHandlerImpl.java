@@ -77,7 +77,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private final int[] javaPalette;
     private int activeLines = 0;
     private SpriteDataHolder[] spriteDataHoldersNext = new SpriteDataHolder[MAX_SPRITES_PER_LINE_H40];
-    private PixelData[] linePixelData = new PixelData[COLS];
+    private final PixelData[] linePixelData = new PixelData[COLS];
     private int odd;
 
     public static VdpRenderHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
@@ -349,7 +349,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         boolean anyLayerHighPrio =
                 pxData.priorityMap[RenderType.PLANE_A.ordinal()] == PriorityType.YES ||
                         pxData.priorityMap[RenderType.PLANE_B.ordinal()] == PriorityType.YES ||
-                        (!spriteTransparent ? pxData.priorityMap[spriteRt] == PriorityType.YES : false);
+                        (!spriteTransparent && pxData.priorityMap[spriteRt] == PriorityType.YES);
         if (!anyLayerHighPrio && !spritePalette14) {
             shadowHighlight = shadowHighlight.darker();
         }

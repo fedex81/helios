@@ -19,7 +19,8 @@ import javax.sound.sampled.AudioFormat;
 public class GbSoundWrapper extends ExternalAudioProvider implements SoundOutput {
 
     private static final Logger LOG = LogManager.getLogger(GbSoundWrapper.class.getSimpleName());
-    private int tick, divider;
+    private final int divider;
+    private int tick;
 
     public GbSoundWrapper(RegionDetector.Region region, AudioFormat audioFormat) {
         super(region, audioFormat);

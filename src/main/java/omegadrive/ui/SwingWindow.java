@@ -79,12 +79,12 @@ public class SwingWindow implements DisplayWindow {
     private JCheckBoxMenuItem fullScreenItem, debugInfoItem;
     private JMenu recentFilesMenu, joypadTypeMenu;
     private JMenuItem[] recentFilesItems;
-    private Map<PlayerNumber, JMenu> inputMenusMap;
+    private final Map<PlayerNumber, JMenu> inputMenusMap;
     private final static int screenChangedCheckFrequency = 60;
     private List<AbstractButton> screenItems;
     private int screenChangedCheckCounter = screenChangedCheckFrequency;
     private Dimension nativeScreenSize = DEFAULT_BASE_SCREEN_SIZE;
-    private Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
+    private final Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
 
     private int showInfoCount = SHOW_INFO_FRAMES_DELAY;
     private Optional<String> actionInfo = Optional.empty();
@@ -158,7 +158,7 @@ public class SwingWindow implements DisplayWindow {
 
     private void showDebugInfo(ActionEvent event) {
         //key_accel has event == null -> toggle
-        showDebugInfo(event == null ? !debugInfoItem.getState() : debugInfoItem.getState());
+        showDebugInfo((event == null) != debugInfoItem.getState());
     }
 
     private void showDebugInfo(boolean state) {

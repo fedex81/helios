@@ -24,7 +24,7 @@ public class HeliosDisplay implements Display, BaseVdpAdapter.ScreenDataSupplier
     private final int[] rgb;
     private int i;
     private boolean enabled;
-    private DisplayWindow window;
+    private final DisplayWindow window;
     private SystemProvider.NewFrameListener system;
 
     public HeliosDisplay() {

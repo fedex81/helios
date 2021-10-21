@@ -63,20 +63,20 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
 
     static final boolean verbose = false;
 
-    private static int PAGE_SIZE = 0x4000; //16kb
-    private static int PAGE_MASK = PAGE_SIZE - 1;
+    private static final int PAGE_SIZE = 0x4000; //16kb
+    private static final int PAGE_MASK = PAGE_SIZE - 1;
 
-    private static int SLOT_SIZE = 0x10000;
-    private static int SLOTS = 4;
+    private static final int SLOT_SIZE = 0x10000;
+    private static final int SLOTS = 4;
 
     private static final int[] emptySlot = new int[SLOT_SIZE];
 
-    private int[] bios;
+    private final int[] bios;
 
-    private int[][] secondarySlot = new int[SLOTS][];
-    private boolean[] secondarySlotWritable = new boolean[SLOTS];
+    private final int[][] secondarySlot = new int[SLOTS][];
+    private final boolean[] secondarySlotWritable = new boolean[SLOTS];
 
-    private MsxBusContext ctx;
+    private final MsxBusContext ctx;
     private InputProvider.PlayerNumber joypadSelect = P1;
 
     private RomMapper mapper;

@@ -37,7 +37,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private final static Logger LOG = LogManager.getLogger(MdBackupMemoryMapper.class.getSimpleName());
 
     private final static boolean verbose = false;
-    private static String fileType = "srm";
+    private static final String fileType = "srm";
     private RomMapper baseMapper;
     private SramMode sramMode = SramMode.DISABLE;
     private MdRomDbModel.EEPROM eeprom = MdRomDbModel.NO_EEPROM;

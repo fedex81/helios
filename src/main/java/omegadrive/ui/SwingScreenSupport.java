@@ -22,7 +22,7 @@ public class SwingScreenSupport {
 
     private static final Logger LOG = LogManager.getLogger(SwingScreenSupport.class.getSimpleName());
 
-    private static GraphicsDevice[] graphicsDevices =
+    private static final GraphicsDevice[] graphicsDevices =
             GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
 
     private static int currentScreen = graphicsDevices.length > 1 ? DEFAULT_SCREEN : 0;

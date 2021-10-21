@@ -42,7 +42,7 @@ public class ColecoPad extends BasePadAdapter {
 
     private static final Logger LOG = LogManager.getLogger(ColecoPad.class.getSimpleName());
 
-    private Map<JoypadButton, JoypadAction> stateMapKeypad = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
+    private final Map<JoypadButton, JoypadAction> stateMapKeypad = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
             put(K0, RELEASED).put(K1, RELEASED).
             put(K2, RELEASED).put(K3, RELEASED).
             put(K4, RELEASED).put(K5, RELEASED).
@@ -50,7 +50,7 @@ public class ColecoPad extends BasePadAdapter {
             put(K8, RELEASED).put(K9, RELEASED).
             put(K_AST, RELEASED).put(K_HASH, RELEASED).build());
 
-    private Map<JoypadButton, Integer> valueMapKeypad = Maps.newHashMap(ImmutableMap.<JoypadButton, Integer>builder().
+    private final Map<JoypadButton, Integer> valueMapKeypad = Maps.newHashMap(ImmutableMap.<JoypadButton, Integer>builder().
             put(K0, 10).put(K1, 13).
             put(K2, 7).put(K3, 12).
             put(K4, 2).put(K5, 3).

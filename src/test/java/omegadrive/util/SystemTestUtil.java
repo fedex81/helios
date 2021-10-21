@@ -46,7 +46,7 @@ public class SystemTestUtil {
         GenesisVdpProvider vdpProvider1 = GenesisVdpProvider.createVdp(busProvider);
         MC68000Wrapper cpu = new MC68000Wrapper(busProvider);
 
-        Z80Provider z80p1 = Z80CoreWrapper.createGenesisInstance(busProvider);
+        Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, busProvider);
         FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
         SoundProvider sp1 = getSoundProvider(fm1);
         SystemProvider systemProvider = MdVdpTestUtil.createTestGenesisProvider();
@@ -61,7 +61,7 @@ public class SystemTestUtil {
         cpuMem1.setRomData(new int[0xFFFF]);
 
         SmsVdp vdp1 = new SmsVdp(SMS, RegionDetector.Region.USA);
-        Z80Provider z80p1 = Z80CoreWrapper.createInstance(busProvider1);
+        Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.SMS, busProvider1);
         busProvider1.attachDevice(sp).attachDevice(cpuMem1).attachDevice(z80p1).attachDevice(vdp1);
         busProvider1.init();
         return busProvider1;
@@ -88,7 +88,7 @@ public class SystemTestUtil {
                 Assert.fail("Unkonwn system: " + systemType);
         }
         SystemProvider system = Z80BaseSystem.createNewInstance(systemType, DisplayWindow.HEADLESS_INSTANCE);
-        Z80Provider z80p1 = Z80CoreWrapper.createInstance(bus);
+        Z80Provider z80p1 = Z80CoreWrapper.createInstance(systemType, bus);
         Tms9918aVdp vdp = new Tms9918aVdp();
         bus.attachDevice(system).attachDevice(memory).attachDevice(z80p1).attachDevice(vdp);
         bus.init();

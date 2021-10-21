@@ -48,7 +48,7 @@ public enum InterlaceMode {
         this.tileIndexMask = 0xFFFF - interlaceAdjust;
     }
 
-    private static Map<Integer, InterlaceMode> lookup = ImmutableBiMap.copyOf(
+    private static final Map<Integer, InterlaceMode> lookup = ImmutableBiMap.copyOf(
             Maps.toMap(EnumSet.allOf(InterlaceMode.class), InterlaceMode::ordinal)).inverse();
 
     public static InterlaceMode getInterlaceMode(int index) {

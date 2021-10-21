@@ -84,7 +84,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     protected int counter = 1;
     private Optional<String> stats = Optional.empty();
 
-    private CyclicBarrier pauseBarrier = new CyclicBarrier(2);
+    private final CyclicBarrier pauseBarrier = new CyclicBarrier(2);
 
     static {
         fullThrottle = Boolean.parseBoolean(java.lang.System.getProperty("helios.fullSpeed", "false"));
@@ -331,7 +331,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     final Consumer<String> statsConsumer = st -> stats = Optional.of(st);
 
     class RomRunnable implements Runnable {
-        private Path file;
+        private final Path file;
         private static final String threadNamePrefix = "cycle-";
 
         public RomRunnable(Path file) {

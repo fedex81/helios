@@ -58,7 +58,7 @@ public class MsxAsciiMapper extends AsciiMapperImpl {
         return new AsciiMapperImpl(rom, type);
     }
 
-    private static AsciiType[] list = AsciiType.values();
+    private static final AsciiType[] list = AsciiType.values();
 
     //TODO fix ASCII16
     public enum AsciiType { ASCII8,

@@ -331,10 +331,6 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
         return vdpProvider.getHCount();
     }
 
-    public void reloadBanking() {
-        smsMapper.reloadBanking();
-    }
-
     @Override
     public void closeRom() {
         mapper.closeRom();

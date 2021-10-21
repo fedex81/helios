@@ -80,9 +80,9 @@ public class ExSsfMapper extends Ssf2Mapper {
     public static final int MATH_DIV_HI = 0xA130D8; //write only
     public static final int MATH_DIV_LO = 0xA130DA; //write only
     private static final Logger LOG = LogManager.getLogger(ExSsfMapper.class.getSimpleName());
-    private long[] mathReg = new long[0xB];
-    private int[] moreBanks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
-    private int[][] moreRam = new int[moreBanks.length][BANK_SIZE];
+    private final long[] mathReg = new long[0xB];
+    private final int[] moreBanks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
+    private final int[][] moreRam = new int[moreBanks.length][BANK_SIZE];
     private int reg_ctrl0 = 0; //protection on, read-only
     private boolean mapRom = true;
 

@@ -34,7 +34,8 @@ public class StateUtil {
             SystemLoader.SystemType.COLECO, "cvs",
             SystemLoader.SystemType.MSX, "mss"
     );
-    private static byte[] arr4 = new byte[4], arr2 = new byte[2];
+    private static final byte[] arr4 = new byte[4];
+    private static final byte[] arr2 = new byte[2];
 
     public static final BiFunction<ByteBuffer, Integer, Integer> getInt2Fn = (b, pos) -> {
         b.position(pos);

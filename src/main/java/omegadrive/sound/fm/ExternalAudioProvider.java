@@ -21,7 +21,7 @@ public class ExternalAudioProvider implements FmProvider {
 
     private static final Logger LOG = LogManager.getLogger(ExternalAudioProvider.class.getSimpleName());
     protected AtomicInteger queueLen = new AtomicInteger();
-    private Queue<Integer> sampleQueue;
+    private final Queue<Integer> sampleQueue;
     private volatile boolean running = false;
 
     public ExternalAudioProvider(RegionDetector.Region region, AudioFormat audioFormat) {

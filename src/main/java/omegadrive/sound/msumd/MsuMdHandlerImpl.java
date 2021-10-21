@@ -34,15 +34,15 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private static final Logger LOG = LogManager.getLogger(MsuMdHandlerImpl.class.getSimpleName());
     private static final boolean verbose = false;
 
-    private MsuCommandArg commandArg = new MsuCommandArg();
+    private final MsuCommandArg commandArg = new MsuCommandArg();
     private int clock = 0;
     private boolean init;
     private volatile Clip clip;
     private volatile byte[] buffer = new byte[0];
-    private AtomicReference<LineListener> lineListenerRef = new AtomicReference<>();
-    private RandomAccessFile binFile;
-    private TrackDataHolder[] trackDataHolders = new TrackDataHolder[CueFileParser.MAX_TRACKS];
-    private volatile ClipContext clipContext = new ClipContext();
+    private final AtomicReference<LineListener> lineListenerRef = new AtomicReference<>();
+    private final RandomAccessFile binFile;
+    private final TrackDataHolder[] trackDataHolders = new TrackDataHolder[CueFileParser.MAX_TRACKS];
+    private final ClipContext clipContext = new ClipContext();
 
     //CDDA: clipFrames are 44100/sec, each frame has 4 bytes (16 bit stereo)
     private static int sectorsToClipFrames(int val) {

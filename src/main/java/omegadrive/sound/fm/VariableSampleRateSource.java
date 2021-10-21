@@ -38,11 +38,11 @@ public abstract class VariableSampleRateSource implements FmProvider {
     protected double microsPerInputSample;
     protected double sourceSampleRate;
     protected volatile double fmCalcsPerMicros;
-    private double outputSampleRate;
-    private Queue<Integer> sampleQueue =
+    private final double outputSampleRate;
+    private final Queue<Integer> sampleQueue =
             new SpscAtomicArrayQueue<>(SoundProvider.SAMPLE_RATE_HZ);
     protected AtomicInteger queueLen = new AtomicInteger();
-    private AudioRateControl audioRateControl;
+    private final AudioRateControl audioRateControl;
     private int sampleRatePerFrame = 0;
     private final int audioScaleBits;
     private final Integer[] stereoSamples = new Integer[2]; //[0] left, [1] right

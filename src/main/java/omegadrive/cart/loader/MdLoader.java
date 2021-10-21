@@ -35,8 +35,8 @@ public class MdLoader {
     public static final MdRomDbModel.Entry NO_ENTRY = new MdRomDbModel.Entry();
     private static final Logger LOG = LogManager.getLogger(MdLoader.class.getSimpleName());
     static String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "rom.db";
-    private static Set<MdRomDbModel.Entry> entrySet = new HashSet<>();
-    private static Map<String, MdRomDbModel.Entry> map = new HashMap<>();
+    private static final Set<MdRomDbModel.Entry> entrySet = new HashSet<>();
+    private static final Map<String, MdRomDbModel.Entry> map = new HashMap<>();
 
     private static Map<String, MdRomDbModel.Entry> getMap() {
         if (map.isEmpty()) {

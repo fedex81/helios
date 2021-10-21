@@ -28,10 +28,10 @@ public enum MekaSavestateVersion {
     public final static int VERSION_POS = 5;
     public final static int CRC_POS = 7;
     final static int EQ = 0, LESS = -1, MORE = 1;
-    private int endHeaderPos;
-    private int memoryStartPos;
-    private int version;
-    private int orderToken;
+    private final int endHeaderPos;
+    private final int memoryStartPos;
+    private final int version;
+    private final int orderToken;
 
     MekaSavestateVersion(int orderToken, int version, int endHeaderPos, int memoryStartPos) {
         this.endHeaderPos = endHeaderPos;

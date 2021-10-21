@@ -71,8 +71,8 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
         cramRead(0b1000, VdpRamType.CRAM),
         vramRead_8bit(0b1100, VdpRamType.VRAM);
 
-        private VdpRamType ramType;
-        private int addressMode;
+        private final VdpRamType ramType;
+        private final int addressMode;
 
         VramMode(int addressMode, VdpRamType ramType) {
             this.ramType = ramType;
@@ -155,7 +155,7 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
         DMA_SOURCE_HIGH //23 - 0x17
         ;
 
-        private static Map<Integer, VdpRegisterName> lookup = ImmutableBiMap.copyOf(
+        private static final Map<Integer, VdpRegisterName> lookup = ImmutableBiMap.copyOf(
                 Maps.toMap(EnumSet.allOf(VdpRegisterName.class), VdpRegisterName::ordinal)).inverse();
 
         public static VdpRegisterName getRegisterName(int index) {
@@ -169,7 +169,7 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
         MEM_TO_VRAM, VRAM_FILL,
         VRAM_COPY, FIFO_FULL, NOT_BUSY;
 
-        private static VdpBusyState[] values = VdpBusyState.values();
+        private static final VdpBusyState[] values = VdpBusyState.values();
 
         public static VdpBusyState getVdpBusyState(VdpDmaHandler.DmaMode mode) {
             if (mode == null) {

@@ -56,14 +56,14 @@ public enum VideoMode {
 
     NTSCU_H32_V32(USA, H32, V32_CELL);
 
-    private static Logger LOG = LogManager.getLogger(VideoMode.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(VideoMode.class.getSimpleName());
 
-    private static Set<VideoMode> values = new HashSet<>(EnumSet.allOf(VideoMode.class));
+    private static final Set<VideoMode> values = new HashSet<>(EnumSet.allOf(VideoMode.class));
 
-    private RegionDetector.Region region;
-    private int h;
-    private int v;
-    private Dimension dimension;
+    private final RegionDetector.Region region;
+    private final int h;
+    private final int v;
+    private final Dimension dimension;
 
     VideoMode(RegionDetector.Region region, int h, int v) {
         this.h = h;

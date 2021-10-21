@@ -54,7 +54,7 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
     int Z80_RAM_MEMORY_SIZE = 0x2000;
 
 
-    static GenesisZ80BusProvider createInstance(GenesisBusProvider genesisBusProvider) {
+    static GenesisZ80BusProvider createInstance(BaseBusProvider genesisBusProvider) {
         IMemoryRam ram = new Z80Memory(Z80_RAM_MEMORY_SIZE);
         GenesisZ80BusProvider b = new GenesisZ80BusProviderImpl();
         b.attachDevice(genesisBusProvider).attachDevice(ram);

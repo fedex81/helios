@@ -90,7 +90,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         bus = new GenesisBus();
         vdp = GenesisVdpProvider.createVdp(bus);
         cpu = MC68000Wrapper.createInstance(bus);
-        z80 = Z80CoreWrapper.createGenesisInstance(bus);
+        z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
         //sound attached later
         sound = SoundProvider.NO_SOUND;
 

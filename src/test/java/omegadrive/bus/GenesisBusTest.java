@@ -17,6 +17,7 @@
 
 package omegadrive.bus;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
@@ -47,7 +48,7 @@ public class GenesisBusTest {
 
         GenesisVdpProvider vdp = GenesisVdpProvider.createVdp(bus);
         MC68000Wrapper cpu = new MC68000Wrapper(bus);
-        Z80CoreWrapper z80 = Z80CoreWrapper.createGenesisInstance(bus);
+        Z80CoreWrapper z80 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, bus);
         //sound attached later
         SoundProvider sound = SoundProvider.NO_SOUND;
         bus.attachDevice(memory).attachDevice(joypad).attachDevice(vdp).

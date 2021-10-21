@@ -53,7 +53,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private final static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
 
     //TODO true breaks a good number of VdpFifoTests
-    private static boolean ENABLE_READ_AHEAD = Boolean.parseBoolean(System.getProperty("vdp.enable.read.ahead", "false"));
+    private static final boolean ENABLE_READ_AHEAD = Boolean.parseBoolean(System.getProperty("vdp.enable.read.ahead", "false"));
 
     private VramMode vramMode;
     private InterlaceMode interlaceMode;

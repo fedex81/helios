@@ -45,15 +45,15 @@ public class Telemetry {
             (now, prev) -> (now.nanoTime - prev.nanoTime) / (double) Util.MILLI_IN_NS + "," +
                     Instant.ofEpochMilli(now.instantNow);
 
-    private static Telemetry telemetry = new Telemetry();
-    private static NumberFormat fpsFormatter = new DecimalFormat("#0.00");
-    private Table<String, Long, Double> data = TreeBasedTable.create();
+    private static final Telemetry telemetry = new Telemetry();
+    private static final NumberFormat fpsFormatter = new DecimalFormat("#0.00");
+    private static final int STATS_EVERY_FRAMES = 50;
     private static final Timing NO_TIMING = new Timing();
     private Path telemetryFile;
     private long frameCounter = 0;
-    private static int STATS_EVERY_FRAMES = 50;
+    private final Table<String, Long, Double> data = TreeBasedTable.create();
     private double fpsAccum = 0;
-    private Map<Long, Timing> frameTimeStamp = new HashMap<>();
+    private final Map<Long, Timing> frameTimeStamp = new HashMap<>();
 
     private void addFrameTimestamp() {
         Timing t = new Timing();

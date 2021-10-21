@@ -20,7 +20,7 @@ public class VdpDebugView implements UpdatableViewer {
 
     private static final Logger LOG = LogManager.getLogger(VdpDebugView.class.getSimpleName());
 
-    private static boolean DEBUG_VIEWER_ENABLED;
+    private static final boolean DEBUG_VIEWER_ENABLED;
 
     static {
         DEBUG_VIEWER_ENABLED =
@@ -30,11 +30,11 @@ public class VdpDebugView implements UpdatableViewer {
         }
     }
 
-    private VdpRenderHandler renderHandler;
-    private VdpMemoryInterface memoryInterface;
-    private CramViewer cramViewer;
-    private PlaneViewer planeViewer;
-    private TileViewer tileViewer;
+    private final VdpRenderHandler renderHandler;
+    private final VdpMemoryInterface memoryInterface;
+    private final CramViewer cramViewer;
+    private final PlaneViewer planeViewer;
+    private final TileViewer tileViewer;
     private JFrame frame;
     private JPanel panel;
 

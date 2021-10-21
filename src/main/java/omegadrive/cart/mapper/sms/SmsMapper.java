@@ -40,7 +40,7 @@ public class SmsMapper {
 
     private static final Logger LOG = LogManager.getLogger(SmsMapper.class);
 
-    private static boolean verbose = false;
+    private static final boolean verbose = false;
 
     private static final int DEFAULT_SRAM_SIZE = 0x4000; //16kb
 
@@ -56,7 +56,7 @@ public class SmsMapper {
     private RomMapper activeMapper = RomMapper.NO_OP_MAPPER;
 
     private Type currentType = Type.NONE;
-    private static String sramFileType = "srm";
+    private static final String sramFileType = "srm";
     private String smsRomName;
 
     public static SmsMapper createInstance(String romName, IMemoryProvider memoryProvider) {
@@ -115,15 +115,6 @@ public class SmsMapper {
         frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
     }
 
-    public void reloadBanking() {
-//        frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
-//        for (int i = 0; i < 4; i++) {
-//            int memAddr = i + 0xFFFC;
-//            int val = memoryProvider.readRamByte(memAddr & SmsBus.RAM_MASK);
-//            activeMapper.writeBankData(i, val);
-//        }
-    }
-
     public long readDataMapper(long addressL, Size size) {
         int address = (int) (addressL & 0xFFFF);
         if (size != Size.BYTE) {
@@ -148,7 +139,7 @@ public class SmsMapper {
 
         //This feature is not known to be used by any software.
         //Ys need this
-        private boolean sramWriteEnable = true;
+        private final boolean sramWriteEnable = true;
 
         private boolean sramSlot2Enable = false;
 

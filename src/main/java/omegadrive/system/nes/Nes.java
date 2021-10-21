@@ -50,7 +50,7 @@ public class Nes extends BaseSystem<BaseBusProvider> {
         LOG.info("Disabling halfNes jinput");
     }
 
-    private SystemLoader.SystemType systemType;
+    private final SystemLoader.SystemType systemType;
     private NesHelper.NesGUIInterface gui;
 
     protected Nes(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {

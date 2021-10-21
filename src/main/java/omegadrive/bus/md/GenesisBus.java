@@ -82,7 +82,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     private boolean z80BusRequested;
     private boolean z80ResetState;
-    private boolean enableTmss;
+    private final boolean enableTmss;
 
     public GenesisBus() {
         this.mapper = this;

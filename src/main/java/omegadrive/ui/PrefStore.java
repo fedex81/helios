@@ -32,14 +32,14 @@ public class PrefStore {
 
     private static final Logger LOG = LogManager.getLogger(PrefStore.class.getSimpleName());
 
-    private static String RECENT_FILE = "recent";
+    private static final String RECENT_FILE = "recent";
     public static int recentFileTotal = 10;
-    private static Properties uiProperties = new Properties();
+    private static final Properties uiProperties = new Properties();
 
     public static String lastRomFolder = FileLoader.basePath;
     public static String lastSaveFolder = FileLoader.basePath;
 
-    private static LinkedHashMap<Integer, String> map = new LinkedHashMap<>(recentFileTotal, 1, true);
+    private static final LinkedHashMap<Integer, String> map = new LinkedHashMap<>(recentFileTotal, 1, true);
 
     public static void initPrefs() {
         uiProperties.clear();

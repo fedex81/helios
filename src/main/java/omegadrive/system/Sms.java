@@ -60,7 +60,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     protected Z80Provider z80;
     int nextZ80Cycle = Z80_DIVIDER;
     int nextVdpCycle = VDP_DIVIDER;
-    private SystemLoader.SystemType systemType;
+    private final SystemLoader.SystemType systemType;
 
     protected Sms(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);
@@ -132,7 +132,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     @Override
     protected void initAfterRomLoad() {
         sound = AbstractSoundManager.createSoundProvider(systemType, region);
-        z80 = Z80CoreWrapper.createInstance(bus);
+        z80 = Z80CoreWrapper.createInstance(systemType, bus);
         bus.attachDevice(sound).attachDevice(z80);
         vdp.addVdpEventListener(sound);
         resetAfterRomLoad();

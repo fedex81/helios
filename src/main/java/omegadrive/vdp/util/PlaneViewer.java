@@ -30,13 +30,13 @@ public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventLis
 
     private static final Dimension layerDim = new Dimension(320, 256);
 
-    private VdpRenderHandler renderHandler;
+    private final VdpRenderHandler renderHandler;
     private static final int CRAM_MASK = GenesisVdpProvider.VDP_CRAM_SIZE - 1;
     private JPanel panel;
     private JFrame frame;
-    private JPanel[] panelList = new JPanel[RenderType.values().length];
-    private BufferedImage[] imageList = new BufferedImage[RenderType.values().length];
-    private int[] javaPalette;
+    private final JPanel[] panelList = new JPanel[RenderType.values().length];
+    private final BufferedImage[] imageList = new BufferedImage[RenderType.values().length];
+    private final int[] javaPalette;
     private Dimension fullFrameDimension = layerDim;
     private int[] colorData = new int[0];
 

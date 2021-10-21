@@ -47,17 +47,17 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements
 
     static final boolean verbose = false;
 
-    private static int BIOS_START = 0;
-    private static int BIOS_END = 0x1FFF;
-    private static int RAM_START = 0x6000;
-    private static int RAM_END = 0x7FFF;
-    private static int ROM_START = 0x8000;
-    private static int ROM_END = 0xFFFF;
+    private static final int BIOS_START = 0;
+    private static final int BIOS_END = 0x1FFF;
+    private static final int RAM_START = 0x6000;
+    private static final int RAM_END = 0x7FFF;
+    private static final int ROM_START = 0x8000;
+    private static final int ROM_END = 0xFFFF;
 
-    private static int RAM_SIZE = 0x400;  //1Kb
-    private static int ROM_SIZE = ROM_END + 1; //48kb
+    private static final int RAM_SIZE = 0x400;  //1Kb
+    private static final int ROM_SIZE = ROM_END + 1; //48kb
 
-    private int[] bios;
+    private final int[] bios;
 
     private boolean isNmiSet = false;
 

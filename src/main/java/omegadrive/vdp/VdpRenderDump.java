@@ -45,7 +45,7 @@ public class VdpRenderDump {
         }
     }
 
-    private Path folder = Paths.get(".", "screencap");
+    private final Path folder = Paths.get(".", "screencap");
     private int[] pixels = new int[0];
     private BufferedImage bi;
 

@@ -29,9 +29,9 @@ public class TileViewer implements UpdatableViewer {
     private static final int PLANE_IMG_WIDTH = MAX_TILES_PER_LINE * 8;
     private static final int PANEL_WIDTH = PLANE_IMG_WIDTH;
 
-    private VdpRenderHandlerImpl renderHandler;
-    private VdpMemoryInterface memoryInterface;
-    private GenesisVdpProvider vdp;
+    private final VdpRenderHandlerImpl renderHandler;
+    private final VdpMemoryInterface memoryInterface;
+    private final GenesisVdpProvider vdp;
     private int[] javaPalette;
     private JPanel panel;
     private JFrame frame;
@@ -167,7 +167,7 @@ public class TileViewer implements UpdatableViewer {
             for (int i = nameTableLocation; i < nameTableEnd && i < vram.length; i += 2) {
                 int vramPointer = vram[i] << 8 | vram[i + 1];
                 //8x8 pixels
-                tileDataHolder = renderHandler.getTileData(vramPointer, InterlaceMode.NONE, tileDataHolder);
+                tileDataHolder = VdpRenderHandlerImpl.getTileData(vramPointer, InterlaceMode.NONE, tileDataHolder);
                 boolean nonBlank = renderInternal(tileDataHolder, pixels, vram, tileLinearShift);
                 if (nonBlank) {
                     tileLinearShift += 8;

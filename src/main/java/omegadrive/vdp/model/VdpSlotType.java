@@ -33,14 +33,14 @@ public enum VdpSlotType {
     public static VdpSlotType[] h32Slots = new VdpSlotType[H32_SLOTS];
     public static VdpSlotType[] h40Slots = new VdpSlotType[H40_SLOTS];
 
-    private static int[] refreshSlotsH32 = {
+    private static final int[] refreshSlotsH32 = {
             32 * 0 + 38,
             32 * 1 + 38,
             32 * 2 + 38,
             32 * 3 + 38,
     };
 
-    private static int[] refreshSlotsH40 = {
+    private static final int[] refreshSlotsH40 = {
             32 * 0 + 38,
             32 * 1 + 38,
             32 * 2 + 38,
@@ -48,7 +48,7 @@ public enum VdpSlotType {
             32 * 4 + 38,
     };
 
-    private static int[] externalSlotsH32 = {
+    private static final int[] externalSlotsH32 = {
             32 * 0 + 14, 32 * 0 + 22, 32 * 0 + 30,
             32 * 1 + 14, 32 * 1 + 22, 32 * 1 + 30,
             32 * 2 + 14, 32 * 2 + 22, 32 * 2 + 30,
@@ -56,7 +56,7 @@ public enum VdpSlotType {
             141, 142, 156, 170
     };
 
-    private static int[] externalSlotsH40 = {
+    private static final int[] externalSlotsH40 = {
             32 * 0 + 14, 32 * 0 + 22, 32 * 0 + 30,
             32 * 1 + 14, 32 * 1 + 22, 32 * 1 + 30,
             32 * 2 + 14, 32 * 2 + 22, 32 * 2 + 30,

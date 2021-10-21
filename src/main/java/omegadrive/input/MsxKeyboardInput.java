@@ -46,25 +46,25 @@ public class MsxKeyboardInput extends KeyboardInput {
      * The array is updated by the pressKey and depressKey methods and
      * is read out by the getRowValue method.
      */
-        private byte[] rows = new byte[11];
+    private final byte[] rows = new byte[11];
 
-        /*
-         * Matrix for translating characters to key matrix codes.
-         * Every entry is of the form {character, row, column},
-         * meaning that character is mapped to the matrix at position
-         * row/column.
-         */
-        private int[][] charMatrix = {
-                {'0', 0, 0}, {')', 0, 0}, {'1', 0, 1}, {'!', 0, 1}, {'2', 0, 2}, {'@', 0, 2},
-                {'3', 0, 3}, {'#', 0, 3}, {'4', 0, 4}, {'$', 0, 4}, {'5', 0, 5}, {'%', 0, 5},
-                {'6', 0, 6}, {'&', 0, 6}, {'7', 0, 7}, {'\'', 0, 7},
+    /*
+     * Matrix for translating characters to key matrix codes.
+     * Every entry is of the form {character, row, column},
+     * meaning that character is mapped to the matrix at position
+     * row/column.
+     */
+    private final int[][] charMatrix = {
+            {'0', 0, 0}, {')', 0, 0}, {'1', 0, 1}, {'!', 0, 1}, {'2', 0, 2}, {'@', 0, 2},
+            {'3', 0, 3}, {'#', 0, 3}, {'4', 0, 4}, {'$', 0, 4}, {'5', 0, 5}, {'%', 0, 5},
+            {'6', 0, 6}, {'&', 0, 6}, {'7', 0, 7}, {'\'', 0, 7},
 
-                {'8', 1, 0}, {'*', 1, 0}, {'9', 1, 1}, {'(', 1, 1}, {'-', 1, 2}, {'_', 1, 2},
-                {'=', 1, 3}, {'+', 1, 3}, {'\\', 1, 4}, {'|', 1, 4}, {'[', 1, 5}, {'{', 1, 5},
-                {']', 1, 6}, {'}', 1, 6}, {';', 1, 7}, {':', 1, 7},
+            {'8', 1, 0}, {'*', 1, 0}, {'9', 1, 1}, {'(', 1, 1}, {'-', 1, 2}, {'_', 1, 2},
+            {'=', 1, 3}, {'+', 1, 3}, {'\\', 1, 4}, {'|', 1, 4}, {'[', 1, 5}, {'{', 1, 5},
+            {']', 1, 6}, {'}', 1, 6}, {';', 1, 7}, {':', 1, 7},
 
-                {'A', 2, 6}, {'B', 2, 7}, {'a', 2, 6}, {'b', 2, 7},
-                {'/', 2, 4}, {'?', 2, 4}, {'.', 2, 3}, {'>', 2, 3},
+            {'A', 2, 6}, {'B', 2, 7}, {'a', 2, 6}, {'b', 2, 7},
+            {'/', 2, 4}, {'?', 2, 4}, {'.', 2, 3}, {'>', 2, 3},
                 {',', 2, 2}, {'<', 2, 2}, {'`', 2, 1}, {'~', 2, 1},
                 {'\'', 2, 0}, {'"', 2, 0},
 
@@ -85,23 +85,23 @@ public class MsxKeyboardInput extends KeyboardInput {
 
         };
 
-        /*
-         * Matrix for translating special keys to key matrix codes.
-         * Every entry is of the form {KeyEvent, row, column},
-         * meaning that KeyEvent is mapped to the matrix at position
-         * row/column.
-         */
-        private int[][] keyMatrix = {
-                {KeyEvent.VK_SHIFT, 		6, 0},
-                {KeyEvent.VK_CONTROL,		6, 1},
-                {KeyEvent.VK_ALT_GRAPH, 	6, 2}, // GRAPH ??
-                {KeyEvent.VK_CAPS_LOCK,		6, 3},
-                {KeyEvent.VK_CODE_INPUT, 	6, 4}, // CODE ??
-                {KeyEvent.VK_F1, 			6, 5},
-                {KeyEvent.VK_F2, 			6, 6},
-                {KeyEvent.VK_F3, 			6, 7},
+    /*
+     * Matrix for translating special keys to key matrix codes.
+     * Every entry is of the form {KeyEvent, row, column},
+     * meaning that KeyEvent is mapped to the matrix at position
+     * row/column.
+     */
+    private final int[][] keyMatrix = {
+            {KeyEvent.VK_SHIFT, 6, 0},
+            {KeyEvent.VK_CONTROL, 6, 1},
+            {KeyEvent.VK_ALT_GRAPH, 6, 2}, // GRAPH ??
+            {KeyEvent.VK_CAPS_LOCK, 6, 3},
+            {KeyEvent.VK_CODE_INPUT, 6, 4}, // CODE ??
+            {KeyEvent.VK_F1, 6, 5},
+            {KeyEvent.VK_F2, 6, 6},
+            {KeyEvent.VK_F3, 6, 7},
 
-                {KeyEvent.VK_F4, 			7, 0},
+            {KeyEvent.VK_F4, 7, 0},
                 {KeyEvent.VK_F5,			7, 1},
                 {KeyEvent.VK_ESCAPE, 		7, 2},
                 {KeyEvent.VK_TAB,			7, 3},
@@ -152,7 +152,7 @@ public class MsxKeyboardInput extends KeyboardInput {
         private void processKeyEvent(KeyEvent e, boolean state) {
 
             /* Try to match character and translate it to a pressKey/depressKey call */
-            int c = (int)e.getKeyChar();
+            int c = e.getKeyChar();
             boolean success = false;
             keySearchLoop:
             for (int i = 0; i < charMatrix.length; i++) {

@@ -55,16 +55,16 @@ public class GstStateHandler implements BaseStateHandler {
 
     private static final Logger LOG = LogManager.getLogger(GstStateHandler.class.getSimpleName());
 
-    private static int FM_REG_OFFSET = 0x1E4;
+    private static final int FM_REG_OFFSET = 0x1E4;
     public static int FM_DATA_SIZE = 0x200;
-    private static int VDP_REG_OFFSET = 0xFA;
-    private static int CRAM_DATA_OFFSET = 0x112;
-    private static int VRAM_DATA_OFFSET = 0x12478;
-    private static int VSRAM_DATA_OFFSET = 0x192;
-    private static int Z80_RAM_DATA_OFFSET = 0x474;
-    private static int M68K_RAM_DATA_OFFSET = 0x2478;
-    private static int M68K_REGD_OFFSET = 0x80;
-    private static int M68K_REGA_OFFSET = 0xA0;
+    private static final int VDP_REG_OFFSET = 0xFA;
+    private static final int CRAM_DATA_OFFSET = 0x112;
+    private static final int VRAM_DATA_OFFSET = 0x12478;
+    private static final int VSRAM_DATA_OFFSET = 0x192;
+    private static final int Z80_RAM_DATA_OFFSET = 0x474;
+    private static final int M68K_RAM_DATA_OFFSET = 0x2478;
+    private static final int M68K_REGD_OFFSET = 0x80;
+    private static final int M68K_REGA_OFFSET = 0xA0;
     public static int FILE_SIZE = 0x22478;
 
     protected static final String extension = ".gs";

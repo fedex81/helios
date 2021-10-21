@@ -45,10 +45,10 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     private final static int AUDIO_SCALE_BITS = 3;
 
-    private IYm3438 ym3438;
+    private final IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
     private Ym3438Context state;
-    private Ym2612RegSupport regSupport;
+    private final Ym2612RegSupport regSupport;
 
     private final static int syncAudioMode =
             Integer.parseInt(System.getProperty("helios.md.fm.sync.mode", "2"));

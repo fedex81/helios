@@ -17,6 +17,7 @@
 
 package omegadrive.bus.md;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
@@ -50,7 +51,7 @@ public class BusArbiterTest {
         SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
         bus = GenesisBusProvider.createBus();
         vdp = GenesisVdpProvider.createVdp(bus);
-        Z80Provider z80 = Z80CoreWrapper.createGenesisInstance(bus);
+        Z80Provider z80 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, bus);
 
 
         cpu = new MC68000Wrapper(bus) {

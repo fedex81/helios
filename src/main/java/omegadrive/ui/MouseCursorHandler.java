@@ -20,19 +20,19 @@ public class MouseCursorHandler extends MouseMotionAdapter {
 
     private static final Logger LOG = LogManager.getLogger(MouseCursorHandler.class.getSimpleName());
 
-    private int hideMouseDelayFrames =
+    private final int hideMouseDelayFrames =
             Integer.parseInt(System.getProperty("ui.hide.mouse.delay.frames", "180"));
     // Transparent 16 x 16 pixel cursor image.
-    private BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+    private final BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
 
     // Create a new blank cursor.
-    private Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+    private final Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
             cursorImg, new Point(0, 0), "blank cursor");
-    private Cursor defaultCursor = Cursor.getDefaultCursor();
+    private final Cursor defaultCursor = Cursor.getDefaultCursor();
 
-    private AtomicBoolean hasMoved = new AtomicBoolean();
+    private final AtomicBoolean hasMoved = new AtomicBoolean();
     private long frameCnt, lastMovementFrame;
-    private Component cmp;
+    private final Component cmp;
 
     public MouseCursorHandler(Component cmp) {
         cmp.addMouseMotionListener(this);

@@ -64,7 +64,7 @@ public interface MsuMdHandler {
         PLAY_OFFSET(0x1A),
         UNKNOWN(-1);
 
-        private int val;
+        private final int val;
 
         MsuCommand(int val) {
             this.val = val;

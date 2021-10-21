@@ -47,8 +47,8 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     private static final Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
 
     protected Z80Provider z80;
-    private SystemLoader.SystemType systemType;
-    private Z80Provider.Interrupt vdpInterruptType;
+    private final SystemLoader.SystemType systemType;
+    private final Z80Provider.Interrupt vdpInterruptType;
 
     protected Z80BaseSystem(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);
@@ -128,7 +128,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     @Override
     protected void initAfterRomLoad() {
         sound = AbstractSoundManager.createSoundProvider(systemType, region);
-        z80 = Z80CoreWrapper.createInstance(bus);
+        z80 = Z80CoreWrapper.createInstance(systemType, bus);
         bus.attachDevice(sound).attachDevice(z80);
 
         resetAfterRomLoad();

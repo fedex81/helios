@@ -193,7 +193,7 @@ public class Z80StateBaseHandler implements BaseStateHandler {
         UNKNOWN(0),
         VER_1(1);
 
-        private int version;
+        private final int version;
 
         Z80SavestateVersion(int version) {
             this.version = version;

@@ -15,8 +15,8 @@ import java.util.stream.Collectors;
 public class VdpPortAccessLogger {
 
     public static VdpPortAccessLogger NO_LOGGER = new VdpPortAccessLogger(null);
-    private VdpInterruptHandler handler;
-    private List<VdpWriteContext> writes;
+    private final VdpInterruptHandler handler;
+    private final List<VdpWriteContext> writes;
 
     public VdpPortAccessLogger(VdpInterruptHandler handler) {
         this.handler = handler;

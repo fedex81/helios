@@ -44,9 +44,9 @@ public class AudioRateControl {
     static double fastPace = 0.05; //max distortion ~60hz/frame
     static double slowPace = fastPace / 2;
 
-    private StatsHolder statsHolder;
-    private int bufferSize;
-    private int targetBufferSize;
+    private final StatsHolder statsHolder;
+    private final int bufferSize;
+    private final int targetBufferSize;
 
     public AudioRateControl(String sourceName, int bufferSize) {
         this.bufferSize = bufferSize;
@@ -91,7 +91,7 @@ public class AudioRateControl {
 
     private static class StatsHolder {
         public static Map<String, StatsHolder> statsHolderMap = Maps.newHashMap();
-        private static NumberFormat bufferMsFormatter = new DecimalFormat("000");
+        private static final NumberFormat bufferMsFormatter = new DecimalFormat("000");
         public long maxLen = 0;
         public long latestLen = 0;
         public long audioDelayMs = 0;

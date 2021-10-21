@@ -38,11 +38,11 @@ public class Gb extends BaseSystem<BaseBusProvider> {
 
     private static final Logger LOG = LogManager.getLogger(Gb.class.getSimpleName());
 
-    private SystemLoader.SystemType systemType;
+    private final SystemLoader.SystemType systemType;
     private Emulator emulator;
     private HeliosDisplay display;
-    private Properties properties;
-    private SwingController controller;
+    private final Properties properties;
+    private final SwingController controller;
 
     protected Gb(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);

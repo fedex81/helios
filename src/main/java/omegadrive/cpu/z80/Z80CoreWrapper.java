@@ -19,8 +19,8 @@
 
 package omegadrive.cpu.z80;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.model.BaseBusProvider;
-import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.bus.model.GenesisZ80BusProvider;
 import omegadrive.savestate.StateUtil;
 import omegadrive.util.Size;
@@ -53,15 +53,21 @@ public class Z80CoreWrapper implements Z80Provider {
     protected int instCyclesPenalty = 0;
     protected int memPtrInitVal;
 
-    public static Z80CoreWrapper createInstance(BaseBusProvider busProvider) {
-        Z80CoreWrapper w = new Z80CoreWrapper();
-        w.z80BusProvider = busProvider;
-        w.memIoOps = Z80MemIoOps.createInstance(w.z80BusProvider);
-        return setupInternal(w, null);
-    }
-
-    public static Z80CoreWrapper createGenesisInstance(GenesisBusProvider busProvider) {
-        return Z80_DEBUG ? Z80CoreWrapperDebug.createGenesisInstance(busProvider) : createGenesisInstanceInternal(busProvider);
+    public static Z80CoreWrapper createInstance(SystemLoader.SystemType systemType, BaseBusProvider busProvider) {
+        switch (systemType) {
+            case GENESIS:
+                return Z80_DEBUG ? Z80CoreWrapperDebug.createGenesisInstance(busProvider) :
+                        createGenesisInstanceInternal(busProvider);
+            case GG:
+            case SMS:
+            case COLECO:
+            case SG_1000:
+            case MSX:
+                return Z80_DEBUG ? Z80CoreWrapperDebug.createInstance(busProvider) : createInstanceInternal(busProvider);
+            default:
+                LOG.error("Unexpected system: {}", systemType);
+        }
+        return null;
     }
 
     protected Z80CoreWrapper() {
@@ -78,7 +84,14 @@ public class Z80CoreWrapper implements Z80Provider {
         return w;
     }
 
-    private static Z80CoreWrapper createGenesisInstanceInternal(GenesisBusProvider busProvider) {
+    private static Z80CoreWrapper createInstanceInternal(BaseBusProvider busProvider) {
+        Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperDebug() : new Z80CoreWrapper();
+        w.z80BusProvider = busProvider;
+        w.memIoOps = Z80MemIoOps.createInstance(w.z80BusProvider);
+        return setupInternal(w, null);
+    }
+
+    private static Z80CoreWrapper createGenesisInstanceInternal(BaseBusProvider busProvider) {
         Z80CoreWrapper w = new Z80CoreWrapper();
         w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider);
         w.memIoOps = Z80MemIoOps.createGenesisInstance(w.z80BusProvider);

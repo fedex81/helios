@@ -49,7 +49,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private boolean dmaFillReady;
 
     //TODO this should be in the VDP
-    private IVdpFifo.VdpFifoEntry pendingReadEntry = new IVdpFifo.VdpFifoEntry();
+    private final IVdpFifo.VdpFifoEntry pendingReadEntry = new IVdpFifo.VdpFifoEntry();
 
     public static VdpDmaHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
                                                GenesisBusProvider busProvider) {

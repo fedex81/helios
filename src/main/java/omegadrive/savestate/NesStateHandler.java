@@ -17,7 +17,7 @@ import java.nio.file.Paths;
 public class NesStateHandler implements BaseStateHandler {
 
     private final static String fileExtension = "n00";
-    private HalfnesSaveStateHandler handler = new HalfnesSaveStateHandler();
+    private final HalfnesSaveStateHandler handler = new HalfnesSaveStateHandler();
     private byte[] stateData;
     private String fileName;
     private Type type;

@@ -55,7 +55,7 @@ public interface IVdpFifo {
     static IVdpFifo createNoFifo(VdpMemoryInterface memoryInterface) {
         return new IVdpFifo() {
 
-            private VdpFifoEntry latest = new VdpFifoEntry();
+            private final VdpFifoEntry latest = new VdpFifoEntry();
 
             @Override
             public void push(VramMode vdpRamMode, int addressReg, int data) {

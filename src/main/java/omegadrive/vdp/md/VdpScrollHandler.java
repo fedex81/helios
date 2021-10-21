@@ -105,9 +105,9 @@ public class VdpScrollHandler {
         LINE(0b11),
         INVALID(0b01);
 
-        private static Map<Integer, HSCROLL> lookup = ImmutableBiMap.copyOf(
+        private static final Map<Integer, HSCROLL> lookup = ImmutableBiMap.copyOf(
                 Maps.toMap(EnumSet.allOf(HSCROLL.class), HSCROLL::getRegValue)).inverse();
-        private int regValue;
+        private final int regValue;
 
         HSCROLL(int regValue) {
             this.regValue = regValue;
@@ -126,9 +126,9 @@ public class VdpScrollHandler {
         SCREEN(0),
         TWO_CELLS(1);
 
-        private static Map<Integer, VSCROLL> lookup = ImmutableBiMap.copyOf(
+        private static final Map<Integer, VSCROLL> lookup = ImmutableBiMap.copyOf(
                 Maps.toMap(EnumSet.allOf(VSCROLL.class), VSCROLL::getRegValue)).inverse();
-        private int regValue;
+        private final int regValue;
 
         VSCROLL(int regValue) {
             this.regValue = regValue;

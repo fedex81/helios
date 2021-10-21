@@ -50,7 +50,7 @@ public class Tms9918aVdp implements Tms9918a, Device {
 
     private static final Logger LOG = LogManager.getLogger(Tms9918aVdp.class.getSimpleName());
 
-    private static boolean verbose = false;
+    private static final boolean verbose = false;
 
     public static final int
             VDP_WIDTH = 256,
@@ -68,7 +68,7 @@ public class Tms9918aVdp implements Tms9918a, Device {
     public int[] mem;
 
     /* Registers */
-    private int[] registers = new int[REGISTERS];
+    private final int[] registers = new int[REGISTERS];
     private byte statusRegister = 0;
 
     /* I/O variables */
@@ -77,9 +77,9 @@ public class Tms9918aVdp implements Tms9918a, Device {
     private boolean secondByteFlag = false;
     private byte ioByte0, ioByte1;
 
-    private int[] spriteLineCount = new int[VDP_HEIGHT + 16];
-    private boolean[][] spritePriorityMatrix = new boolean[VDP_WIDTH + 16][VDP_HEIGHT + 16];
-    private boolean[][] spriteCollisionMatrix = new boolean[VDP_WIDTH + 16][VDP_HEIGHT + 16];
+    private final int[] spriteLineCount = new int[VDP_HEIGHT + 16];
+    private final boolean[][] spritePriorityMatrix = new boolean[VDP_WIDTH + 16][VDP_HEIGHT + 16];
+    private final boolean[][] spriteCollisionMatrix = new boolean[VDP_WIDTH + 16][VDP_HEIGHT + 16];
 
     public Tms9918aVdp() {
         setupVdp();

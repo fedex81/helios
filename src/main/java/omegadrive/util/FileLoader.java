@@ -44,13 +44,13 @@ public class FileLoader {
 
     private static final Logger LOG = LogManager.getLogger(FileLoader.class.getSimpleName());
 
-    private static int[] EMPTY = new int[0];
+    private static final int[] EMPTY = new int[0];
 
     public static String basePath = System.getProperty("user.home") + File.separatorChar + "roms";
 
-    private static String SNAPSHOT_VERSION = "SNAPSHOT";
-    private static String MANIFEST_RELATIVE_PATH = "/META-INF/MANIFEST.MF";
-    private static String BIOS_JAR_PATH = ".";
+    private static final String SNAPSHOT_VERSION = "SNAPSHOT";
+    private static final String MANIFEST_RELATIVE_PATH = "/META-INF/MANIFEST.MF";
+    private static final String BIOS_JAR_PATH = ".";
     public static String QUICK_SAVE_FILENAME = "quick_save";
     public static String QUICK_SAVE_PATH = System.getProperty("quick.save.path", ".");
 

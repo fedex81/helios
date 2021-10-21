@@ -91,8 +91,8 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
                 audioFormat.getChannels(), // output channels
                 bufferSize, //buffer size
                 false,
-                // extensions
                 new Object[]{
+                        // extensions
                         new ClientID("JalSoundManager"),
                         timingMode,
                         Connections.OUTPUT

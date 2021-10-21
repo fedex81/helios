@@ -98,11 +98,15 @@ public class SmsVdp implements BaseVdpProvider {
     // VDP Emulation
     // --------------------------------------------------------------------------------------------
 
-    /** Video RAM */
-    private int[] VRAM;
+    /**
+     * Video RAM
+     */
+    private final int[] VRAM;
 
-    /** Colour RAM */
-    private int[] CRAM;
+    /**
+     * Colour RAM
+     */
+    private final int[] CRAM;
 
     /** VDP Registers */
     private final int[] vdpreg;
@@ -159,7 +163,7 @@ public class SmsVdp implements BaseVdpProvider {
     /**
      * Sprite Collisions
      */
-    private boolean[] spriteCol;
+    private final boolean[] spriteCol;
     /**
      * Emulated display
      */
@@ -213,22 +217,26 @@ public class SmsVdp implements BaseVdpProvider {
     /** Decoded tile data */
     private int[][] tiles;
 
-    /** Store whether tile has been written to */
+    /**
+     * Store whether tile has been written to
+     */
     private boolean[] isTileDirty;
 
-    /** Min / Max of dirty tile index */
+    /**
+     * Min / Max of dirty tile index
+     */
     private int minDirty, maxDirty;
 
     // --------------------------------------------------------------------------------------------
 
-    private VdpInterruptHandler interruptHandler;
-    private VdpMemory memory;
+    private final VdpInterruptHandler interruptHandler;
+    private final VdpMemory memory;
     private final boolean isSms;
     private VideoMode ggVideoMode = VideoMode.NTSCU_H20_V18;
     private RegionDetector.Region region;
     private SystemLoader.SystemType systemType;
     private VideoMode videoMode;
-    private List<VdpEventListener> list;
+    private final List<VdpEventListener> list;
 
     /**
      *  Vdp Constructor
