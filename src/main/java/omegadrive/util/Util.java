@@ -54,6 +54,9 @@ public class Util {
     public static final long SECOND_IN_NS = Duration.ofSeconds(1).toNanos();
     public static final long MILLI_IN_NS = Duration.ofMillis(1).toNanos();
 
+    public static final boolean randomInitRam =
+            Boolean.parseBoolean(System.getProperty("helios.random.init.ram", "false"));
+
     public static final Random random;
 
     static final int CACHE_LIMIT = Short.MIN_VALUE;
@@ -67,6 +70,7 @@ public class Util {
         long seed = System.currentTimeMillis();
         random = new Random(seed);
         LOG.info("Creating Random with seed: {}", seed);
+        LOG.info("Init RAM with random values: {}", randomInitRam);
     }
 
     public static void sleep(long ms) {
@@ -120,6 +124,9 @@ public class Util {
     }
 
     public static int[] initMemoryRandomBytes(int[] mem) {
+        if (!randomInitRam) {
+            return mem;
+        }
         for (int i = 0; i < mem.length; i++) {
             mem[i] = Util.random.nextInt(0x100);
         }
