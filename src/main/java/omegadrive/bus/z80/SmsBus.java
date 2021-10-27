@@ -28,6 +28,7 @@ import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.sms.SmsMapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.TwoButtonsJoypad;
+import omegadrive.util.FileLoader;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -36,10 +37,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.ADDR_LATCH_REG;
 import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.DATA_REG;
 
+/**
+ * TODO: add support for port 3E
+ */
 public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements Z80BusProvider, RomMapper {
 
     private static final Logger LOG = LogManager.getLogger(SmsBus.class);
@@ -47,7 +53,11 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
     private static final boolean verbose = false;
 
     public static boolean HW_ENABLE_FM = false;
-
+    public static final boolean HW_ENABLE_BIOS = false;
+    /**
+     * Horizontal Counter Latch
+     */
+    protected int hCounter;
     private static final int ROM_START = 0;
     private static final int ROM_END = 0xBFFF;
     public static final int RAM_START = 0xC000;
@@ -67,24 +77,34 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
     private CartridgeInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private SmsMapper smsMapper;
+    private int BIOS_END;
+    private int[] bios;
+    private int audioControl = 0;
+    //https://www.smspower.org/Development/Port3E
+    private int portAB, port3E;
 
     //0 - domestic (J)
     //0x40 - overseas (U/E)
     protected int countryValue = DOMESTIC;
 
     private boolean isGG = false;
-
-    /** Horizontal Counter Latch */
-    protected int hCounter;
-    private int portAB;
+    private boolean ioEnable = true, biosEnable = false, cartEnabled = true;
 
     @Override
     public void init() {
-        portAB = 0xF;
+        handlePortAB(0xF);
+        handlePort3E(HW_ENABLE_BIOS ? 0xE7 : 8);
 
         countryValue = RegionDetector.Region.JAPAN != systemProvider.getRegion() ? OVERSEAS : DOMESTIC;
         isGG = systemProvider.getSystemType() == SystemLoader.SystemType.GG;
         mapper = RomMapper.NO_OP_MAPPER;
+
+        if (HW_ENABLE_BIOS) {
+            Path p = Paths.get(SystemLoader.biosFolder, "bios.sms");
+            bios = Util.toUnsignedIntArray(FileLoader.loadBiosFile(p));
+            BIOS_END = bios.length;
+            LOG.info("Loading Sms bios from: {}", p.toAbsolutePath().toString());
+        }
 
         setupCartHw();
     }
@@ -107,6 +127,10 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
 
     @Override
     public long read(long addressL, Size size) {
+        //TODO should be in the mapper?
+//        if (HW_ENABLE_BIOS && biosEnable && addressL < BIOS_END) {
+//            return Util.readData(bios, size, (int) addressL);
+//        }
         return mapper.readData(addressL, size);
     }
 
@@ -125,9 +149,6 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
         memoryProvider.writeRamByte((int)(address & RAM_MASK), (int)(data & 0xFF));
     }
 
-    private int audioControl = 0;
-    private boolean ioEnable = true;
-
     @Override
     public void writeIoPort(int port, int value) {
         port &= 0xFF;
@@ -139,7 +160,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
             case 0:
             case 0x01:
                 if (port % 2 == 0) {
-                    ioEnable = (value & 4) == 0;
+                    handlePort3E(value);
                 } else {
                     handlePortAB(value);
                 }
@@ -180,15 +201,13 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
     }
 
     @Override
-    public int readIoPort(int port)
-    {
+    public int readIoPort(int port) {
         port &= 0xFF;
         // Game Gear Serial Ports (not fully emulated)
         if (isGG && port < 0x07) {
             return handleGGSerialRead(port);
         }
-        switch (port & 0xC1)
-        {
+        switch (port & 0xC1) {
             // 0x7E - Vertical Port
             case 0x40:
                 return vdpProvider.getVCount();
@@ -241,6 +260,35 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
 
         // Default Value is 0xFF
         return 0xFF;
+    }
+
+    /**
+     * Bit	Function	            No effect on
+     * 7	Expansion slot enable	SMS2, GG, Genesis
+     * 6	Cartridge slot enable	GG, Genesis
+     * 5	Card slot enable	    SMS2, GG, Genesis
+     * 4	RAM enable
+     * 3	BIOS ROM enable	        Genesis
+     * 2	I/O enable	            GG, Genesis
+     * 1	Unknown
+     * 0	Unknown
+     */
+    private void handlePort3E(int value) {
+        if (value != port3E) {
+            boolean bEn = (value & 8) == 0;
+            if (bEn && !HW_ENABLE_BIOS) {
+                LOG.warn("HW_ENABLE_BIOS is {}, unable to set biosEn: {}", HW_ENABLE_BIOS, bEn);
+                bEn = false;
+            }
+            ioEnable = (value & 4) == 0;
+            biosEnable = bEn;
+            cartEnabled = (value & 32) == 0 || (value & 64) == 0; //cart and card ports
+            LOG.info("Setting port3E, {} -> {},  cartEn: {}, biosEn: {}, ioEn: {}", value, port3E,
+                    cartEnabled, biosEnable, ioEnable);
+            if (bEn && !HW_ENABLE_BIOS) {
+                LOG.warn("HW_ENABLE_BIOS is {}, unable to set biosEn: {}", HW_ENABLE_BIOS, bEn);
+            }
+        }
     }
 
 

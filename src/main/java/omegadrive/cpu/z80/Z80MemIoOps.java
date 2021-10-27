@@ -34,6 +34,7 @@ public class Z80MemIoOps implements IMemIoOps {
     private int[] ram;
     private int ramSizeMask;
     private int pcUpperLimit = 0xFFFF;
+    public int lastFetch;
 
     public static Z80MemIoOps createGenesisInstance(BaseBusProvider z80BusProvider) {
         return createGenesisInstanceInternal(new Z80MemIoOps(), z80BusProvider);
@@ -124,7 +125,8 @@ public class Z80MemIoOps implements IMemIoOps {
 
     protected final int fetchOpcodeBus(int address) {
         tstatesCount += 4;
-        return (int) z80BusProvider.read(address, Size.BYTE) & 0xFF;
+        lastFetch = (int) z80BusProvider.read(address, Size.BYTE) & 0xFF;
+        return lastFetch;
     }
 
     @Override
