@@ -31,34 +31,25 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 
 public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
 
-    /**
-     *
-     * A very short Z80 interrupt routine would be triggered multiple times
-     * if it finishes within 228 Z80 clock cycles. I think (but cannot recall the specifics)
-     * that some games have delay loops in the interrupt handler for this very reason.
-     * http://gendev.spritesmind.net/forum/viewtopic.php?t=740
-     *
-     * VDPTEST
-     * http://gendev.spritesmind.net/forum/viewtopic.php?t=787
-     *
-     */
     private final static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
 
     public static boolean verbose = false;
     public static final BusArbiter NO_OP = createNoOp();
 
-    private IntState int68k = IntState.NONE;
-
-    public void ackInterrupt68k(int level) {
-        ackVdpInt(level);
-        int68k = IntState.NONE;
-        logInfo("68k int{}: {}", level, int68k);
-    }
-
-    private VdpBusyState vdpBusyState = VdpBusyState.NOT_BUSY;
+    private static final int VDP_IPL1 = 2;
+    private static final int VDP_IPL2 = 4;
 
     enum IntState {NONE, PENDING, ASSERTED}
 
+    enum CpuType {M68K, Z80}
+
+    enum CpuState {RUNNING, HALTED}
+
+    public enum InterruptEvent {Z80_INT_ON, Z80_INT_OFF}
+
+    private int vdpLevel = 0;
+    private IntState int68k = IntState.NONE;
+    private VdpBusyState vdpBusyState = VdpBusyState.NOT_BUSY;
     private CpuState state68k = CpuState.RUNNING;
     private IntState z80Int = IntState.NONE;
     private InterruptEvent z80IntLineVdp = InterruptEvent.Z80_INT_OFF;
@@ -68,6 +59,9 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     protected Z80Provider z80;
 
     private Runnable runLater68k;
+
+    protected BusArbiter() {
+    }
 
     public static BusArbiter createInstance(GenesisVdpProvider vdp, M68kProvider m68k, Z80Provider z80) {
         BusArbiter b = new BusArbiter();
@@ -115,6 +109,15 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
      * The Z80 has three processing modes for maskable interrupts. The mode resets to 0 by default,
      * and can be changed using the IM 0, IM 1, or IM 2 instructions.
      * https://www.smspower.org/Development/InterruptMechanism
+     *
+     * A very short Z80 interrupt routine would be triggered multiple times
+     * if it finishes within 228 Z80 clock cycles. I think (but cannot recall the specifics)
+     * that some games have delay loops in the interrupt handler for this very reason.
+     * http://gendev.spritesmind.net/forum/viewtopic.php?t=740
+     *
+     * VDPTEST
+     * http://gendev.spritesmind.net/forum/viewtopic.php?t=787
+     *
      */
     public void handleInterruptZ80() {
         boolean vIntExpired = z80Int == IntState.ASSERTED && z80IntLineVdp == InterruptEvent.Z80_INT_OFF;
@@ -146,10 +149,6 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         return state68k == CpuState.RUNNING;
     }
 
-
-    protected BusArbiter() {
-    }
-
     public void setZ80Int(InterruptEvent event) {
         z80IntLineVdp = event;
         logInfo("Z80Int line: {}", event);
@@ -168,6 +167,14 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         }
     }
 
+    /**
+     * TODO, from ares
+     * // Note: A pending interrupt will be delayed when a register write
+     * // is used to enable that interrupt. Further testing is required,
+     * // but the current method should be sufficient to handle most cases.
+     * // Required for Sesame Street Counting Cafe et al.
+     * irq.delay = 2; // 4 pixel delay (4-6 M68k clocks) from this write
+     */
     public void handleInterrupts68k() {
         switch (int68k) {
             case NONE:
@@ -179,10 +186,42 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         }
     }
 
+    private void raiseInterrupts68k() {
+        boolean res = m68k.raiseInterrupt(getLevel68k());
+        if (res) {
+            logInfo("68k int{}: {}", getLevel68k(), "was " + IntState.ASSERTED);
+        }
+    }
+
+    public void ackInterrupt68k(int level) {
+        //ackLev4 can become ackLev6 (Fatal Rewind), but ackLev6 shouldn't become ackLev4 (Lotus2)
+        int ackLevel = vdpLevel | level;
+        if (ackLevel != level) {
+            LOG.warn("68k level: {} but vdp thinks: {}, setting {}=false", level, ackLevel,
+                    ackLevel == M68kProvider.VBLANK_INTERRUPT_LEVEL ? "vip" : "hip");
+        }
+        switch (ackLevel) {
+            case M68kProvider.VBLANK_INTERRUPT_LEVEL:
+                vdp.setVip(false);
+                vdpLevel = 0;
+                break;
+            case M68kProvider.HBLANK_INTERRUPT_LEVEL:
+                vdp.setHip(false);
+                vdpLevel = 0;
+                break;
+            default:
+                LOG.error("Unexpected vdpLevel {}, 68kLevel: {}", vdpLevel, level);
+                break;
+        }
+        int68k = IntState.NONE;
+        logInfo("68k int{}: {} (ACKED)", level, int68k);
+    }
+
     public void checkInterrupts68k() {
         if (isVdpVInt() || isVdpHInt()) {
             int68k = IntState.PENDING;
-            logInfo("68k int{}: {}", getLevel68k(), int68k);
+            vdpLevel |= isVdpVInt() ? (VDP_IPL1 + VDP_IPL2) : isVdpHInt() ? VDP_IPL2 : 0;
+            logInfo("68k int{}, vdpLevel{}: {}", getLevel68k(), vdpLevel, int68k);
         }
     }
 
@@ -205,16 +244,6 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         logInfo("68k State {} , vdp {}", state68k, vdpBusyState);
     }
 
-    enum CpuType {M68K, Z80}
-
-    private void ackVdpInt(int level) {
-        if (level == M68kProvider.VBLANK_INTERRUPT_LEVEL) {
-            vdp.setVip(false);
-        } else if (level == M68kProvider.HBLANK_INTERRUPT_LEVEL) {
-            vdp.setHip(false);
-        }
-    }
-
     protected boolean isVdpVInt() {
         return vdp.getVip() && vdp.isIe0();
     }
@@ -222,16 +251,6 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     private boolean isVdpHInt() {
         return vdp.getHip() && vdp.isIe1();
     }
-
-    private void raiseInterrupts68k() {
-        int level = getLevel68k();
-        boolean nonMasked = m68k.raiseInterrupt(level);
-        if (nonMasked) {
-            logInfo("68k int{}: {}", level, int68k);
-        }
-    }
-
-    public enum InterruptEvent {Z80_INT_ON, Z80_INT_OFF}
 
     private int getLevel68k() {
         //TODO titan2 this can return 0, why investigate
@@ -245,15 +264,11 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         }
     }
 
-    enum CpuState {RUNNING, HALTED}
-
     private static BusArbiter createNoOp() {
         return new BusArbiter() {
             @Override
             public void addCyclePenalty(CpuType cpuType, int value) {
-
             }
         };
     }
-
 }

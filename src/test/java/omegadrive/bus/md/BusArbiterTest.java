@@ -19,7 +19,6 @@ package omegadrive.bus.md;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
@@ -39,12 +38,14 @@ public class BusArbiterTest {
     private GenesisVdpProvider vdp;
     private GenesisBusProvider bus;
     private BusArbiter busArbiter;
-    private M68kProvider cpu;
+    int hCounterIntAccepted = -1;
 
     int hCounterRaise = -1;
     int vCounterRaise = -1;
     int hCounterPending = -1;
     int vCounterPending = -1;
+    int vCounterIntAccepted = -1;
+    private MC68000Wrapper cpu;
 
     @Before
     public void setup() {
@@ -59,7 +60,12 @@ public class BusArbiterTest {
             public boolean raiseInterrupt(int level) {
                 hCounterRaise = vdp.getHCounter();
                 vCounterRaise = vdp.getVCounter();
-                return true;
+                boolean accept = level > cpu.getM68k().getInterruptLevel();
+                if (accept) {
+                    hCounterIntAccepted = hCounterRaise;
+                    vCounterIntAccepted = vCounterRaise;
+                }
+                return accept;
             }
         };
         busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
@@ -118,7 +124,7 @@ public class BusArbiterTest {
      */
     @Test
     @Ignore("TODO fix")
-    public void testLotus2() {
+    public void testLotus2_hint() {
         vdp.writeControlPort(0x8C00);
         //disable hint
         vdp.writeControlPort(0x8AFF);
@@ -210,11 +216,114 @@ public class BusArbiterTest {
     }
 
     /**
-     * TODO
      * Interrupts are know acknowledged based on what the
      * VDP thinks its asserting rather than what the 68K actually is ack-ing - Fixes Fatal Rewind
+     * <p>
+     * VBLANK_INT was vdp_enabled6 and vdp_pending6 at some point
+     * the arbiter sets it as arb_pending6, but 68k is masking level6 interrupts.
+     * Later !vdp_enabled6, but still arb_pending6.
+     * When the busArb gets an ack back for HBLANK_INT, it mistakenly
+     * sets !vdp_pending6 intstead of !vdp_pending4
      */
+    @Test
     public void testFatalRewind() {
+        hCounterIntAccepted = -1;
+        vCounterIntAccepted = -1;
 
+        cpu.getM68k().setSR(0x2000);
+        set68kIntMask(7); //mask all ints
+        //disable hint
+        vdp.writeControlPort(0x8AFF);
+        vdp.writeControlPort(0x8004);
+        //enable VINT
+        vdp.writeControlPort(0x8164);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        vdp.resetVideoMode(true);
+
+        checkIntAccepted(false);
+
+        //disable VINT
+        vdp.writeControlPort(0x8144);
+        //enable HINT
+        vdp.writeControlPort(0x8A01); //hint every line
+        vdp.writeControlPort(0x8014);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+
+        checkIntAccepted(false);
+
+        //Now the busArbiter still has VINT has pending, when it gets an ack from 68k
+        //it should mistakenly set vip=false (instead of hip=false)
+        set68kIntMask(0);
+
+        checkIntAccepted(true);
+        bus.ackInterrupt68k(4); //simulate the CPU acking level 4
+
+        //check that vint was accepted instead of hint
+        Assert.assertFalse(vdp.getVip());
+        Assert.assertTrue(vdp.getHip());
+    }
+
+    /**
+     * Similar to FatalRewind but 68k acks for lev6, but the vdp thinks it's a lev4.
+     * In this case make sure we are acking lev6.
+     */
+    @Test
+    public void testLotus2() {
+        hCounterIntAccepted = -1;
+        vCounterIntAccepted = -1;
+
+        cpu.getM68k().setSR(0x2000);
+        set68kIntMask(7); //mask all ints
+        //enable hint
+        vdp.writeControlPort(0x8A01); //hint every line
+        vdp.writeControlPort(0x8014);
+        //disable VINT
+        vdp.writeControlPort(0x8144);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        vdp.resetVideoMode(true);
+
+        checkIntAccepted(false);
+
+        //enable VINT
+        vdp.writeControlPort(0x8164);
+        //disable HINT
+        vdp.writeControlPort(0x8A01); //hint every line
+        vdp.writeControlPort(0x8014);
+        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+
+        checkIntAccepted(false);
+
+        //Now the busArbiter still has HINT has pending, when it gets an ack from 68k
+        //it should correctly set vip=false
+        set68kIntMask(0);
+
+        checkIntAccepted(true);
+        bus.ackInterrupt68k(6); //simulate the CPU acking level 6
+
+        //check that vint was accepted
+        Assert.assertFalse(vdp.getVip());
+        Assert.assertTrue(vdp.getHip());
+    }
+
+    private void checkIntAccepted(boolean accepted) {
+        int cnt = 0;
+        MdVdpTestUtil.runToStartFrame(vdp);
+        do {
+            MdVdpTestUtil.runVdpSlot(vdp);
+            bus.handleVdpInterrupts68k();
+            cnt++;
+        } while (vCounterIntAccepted < 0 && cnt < 50000);
+
+        //vint was not processed
+        Assert.assertEquals(accepted, hCounterIntAccepted >= 0);
+        Assert.assertEquals(accepted, vCounterIntAccepted >= 0);
+    }
+
+    private void set68kIntMask(int level) {
+        final int INTERRUPT_FLAGS_MASK = 0x0700;
+        int sr = cpu.getM68k().getSR();
+        sr &= ~(INTERRUPT_FLAGS_MASK);
+        sr |= (level & 0x07) << 8;
+        cpu.getM68k().setSR(sr);
     }
 }

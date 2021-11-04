@@ -9,9 +9,7 @@
 - mdmappertest
 - realtec mapper
 
-Fatal Rewind - timing? has been broken forever
 dashing desp: broken before 21.0407, 20.1207 ok
-dracula: gameplay slow down, demo mode level missing graphics (planeA issue)
 lemmings: hint vs vint issue
 iss deluxe: flickering
 
@@ -22,10 +20,6 @@ danibus scroll test
 bubba and stix
 power monger
 batman and robin, mad hatter: hint related?
-
-z80 timing (busReq unused bits?)
-hook(U) (E works), Shadow of the Beast (UE) (J works), danny sullivan proto,
-time killers, swamp thing proto
 
 titan1, chip twister scene broken
 ko - 022bc232 23/04/2020 at 12:23
@@ -45,3 +39,11 @@ breaks fullscreen_niccc2000_for_megadrive_fixed.bin
 120: Toejam & Earl in Panic on Funkotron (E) [f2].bin
 Robocop Versus The Terminator (U) [T+Rus].bin
 Jiuji Majiang Er - Yeyan Pian (Ch) [h2C] //custom mapper?
+
+//fixed
+
+z80 timing (busReq unused bits?)
+hook(U) (E works), Shadow of the Beast (UE) (J works), danny sullivan proto,
+time killers, swamp thing proto
+dracula: gameplay slow down, demo mode level missing graphics (planeA issue)
+Fatal Rewind - hint vs vint
