@@ -93,13 +93,21 @@ public class Util {
         }
     }
 
-    public static void waitOnBarrier(CyclicBarrier barrier) {
+    public static void waitOnBarrier(CyclicBarrier barrier, boolean verbose) {
         try {
             barrier.await();
         } catch (Exception e) {
-            LOG.warn("Error on barrier", e);
+            if (verbose) {
+                LOG.warn("Error on barrier", e);
+            } else {
+                LOG.info("Leaving barrier: " + e.getClass().getName());
+            }
             barrier.reset();
         }
+    }
+
+    public static void waitOnBarrier(CyclicBarrier barrier) {
+        waitOnBarrier(barrier, true);
     }
 
 

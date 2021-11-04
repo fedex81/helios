@@ -5,7 +5,7 @@
 - Sonic & Knuckles mapper
 - EEPROM mapper (take list from blastem)
 
-- jdk9: Thread.onSpinWait vs Thread.yield
+- jdk9: Thread.onSpinWait vs Thread.yield, check @Contented
 - mdmappertest
 - realtec mapper
 

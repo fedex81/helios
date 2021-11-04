@@ -45,7 +45,7 @@ public class Sleeper {
 
     private static void handleSlowdown(String when, long now, long deadlineNs) {
         if (now > deadlineNs + Util.MILLI_IN_NS) {
-            LOG.info("Slowdown detected {} sleeping, delay_ms: {}", when, (now - deadlineNs) / (double) Util.MILLI_IN_NS);
+//            LOG.info("Slowdown detected {} sleeping, delay_ms: {}", when, (now - deadlineNs) / (double) Util.MILLI_IN_NS);
         }
     }
 

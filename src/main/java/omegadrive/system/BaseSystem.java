@@ -377,7 +377,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
 
     private void handlePause() {
         boolean isPausing = pauseFlag;
-        pauseFlag = !pauseFlag;
+        pauseFlag = !isPausing;
         sound.setEnabled(pauseFlag);
         if (isPausing) {
             Util.waitOnBarrier(pauseBarrier);
