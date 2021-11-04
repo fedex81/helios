@@ -47,8 +47,18 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     public static boolean verbose = false;
     public static final BusArbiter NO_OP = createNoOp();
 
+    private IntState int68k = IntState.NONE;
+
+    public void ackInterrupt68k(int level) {
+        ackVdpInt(level);
+        int68k = IntState.NONE;
+        logInfo("68k int{}: {}", level, int68k);
+    }
+
     private VdpBusyState vdpBusyState = VdpBusyState.NOT_BUSY;
-    private IntState int68k = IntState.ACKED;
+
+    enum IntState {NONE, PENDING, ASSERTED}
+
     private CpuState state68k = CpuState.RUNNING;
     private IntState z80Int = IntState.NONE;
     private InterruptEvent z80IntLineVdp = InterruptEvent.Z80_INT_OFF;
@@ -166,12 +176,6 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
             case PENDING:
                 raiseInterrupts68k();
                 break;
-            case ASSERTED:
-                ackInterrupts68k();
-                break;
-            case ACKED:
-                int68k = IntState.NONE;
-                break;
         }
     }
 
@@ -201,15 +205,6 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         logInfo("68k State {} , vdp {}", state68k, vdpBusyState);
     }
 
-    enum IntState {NONE, PENDING, ASSERTED, ACKED}
-
-    public void ackInterrupts68k() {
-        int level = getLevel68k();
-        ackVdpInt(level);
-        int68k = IntState.ACKED;
-        logInfo("68k int{}: {}", level, int68k);
-    }
-
     enum CpuType {M68K, Z80}
 
     private void ackVdpInt(int level) {
@@ -232,7 +227,6 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         int level = getLevel68k();
         boolean nonMasked = m68k.raiseInterrupt(level);
         if (nonMasked) {
-            int68k = IntState.ASSERTED;
             logInfo("68k int{}: {}", level, int68k);
         }
     }

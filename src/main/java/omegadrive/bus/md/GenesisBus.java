@@ -874,6 +874,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     @Override
+    public void ackInterrupt68k(int level) {
+        busArbiter.ackInterrupt68k(level);
+    }
+
+    @Override
     public int[] getMapperData() {
         if (exSsfMapper instanceof Ssf2Mapper) {
             return ((Ssf2Mapper) exSsfMapper).getState();

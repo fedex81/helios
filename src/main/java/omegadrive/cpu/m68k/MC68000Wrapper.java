@@ -142,6 +142,7 @@ public class MC68000Wrapper implements M68kProvider {
                 handleException(vector);
                 super.raiseException(vector);
                 handleException(vector);
+                handleIntAck(vector);
                 setStop(false);
             }
 
@@ -152,7 +153,6 @@ public class MC68000Wrapper implements M68kProvider {
                 LOG.info("Reset External");
                 busProvider.resetFrom68k();
             }
-
 
             @Override
             public void reset() {
@@ -166,6 +166,17 @@ public class MC68000Wrapper implements M68kProvider {
                 setStop(true);
             }
         };
+    }
+
+    /**
+     * Only for LEV4, LEV6 interrupts
+     */
+    private void handleIntAck(int vector) {
+        if (vector == LEV4_EXCEPTION || vector == LEV6_EXCEPTION) {
+            //interrupt processing time, the Ack happens after ~10cycles, we make it happen immediately
+            instCycles += 44;
+            busProvider.ackInterrupt68k(vector - EXCEPTION_OFFSET);
+        }
     }
 
     protected void handleException(int vector) {

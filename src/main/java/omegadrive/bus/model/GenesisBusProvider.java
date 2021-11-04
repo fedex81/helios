@@ -85,6 +85,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     void handleVdpInterruptsZ80();
 
+    void ackInterrupt68k(int level);
 
     /**
      * VRES is fed to 68000 for 128 VCLKs (16.7us); ZRES is fed
