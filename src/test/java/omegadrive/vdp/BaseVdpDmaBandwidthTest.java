@@ -19,6 +19,7 @@
 
 package omegadrive.vdp;
 
+import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.input.GamepadTest;
 import omegadrive.memory.IMemoryProvider;
@@ -74,7 +75,7 @@ public class BaseVdpDmaBandwidthTest {
     public void setup() {
         memoryProvider = MemoryProvider.createGenesisInstance();
         SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
-        GenesisBusProvider busProvider = GenesisBusProvider.createBus();
+        GenesisBusProvider busProvider = new GenesisBus();
         memoryInterface = new TestGenesisVdpMemoryInterface();
         vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface);
         busProvider.attachDevice(emu).attachDevice(memoryProvider).

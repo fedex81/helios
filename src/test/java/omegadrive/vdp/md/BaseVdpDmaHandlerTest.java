@@ -17,6 +17,7 @@
 
 package omegadrive.vdp.md;
 
+import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.vdp.MdVdpTestUtil;
@@ -43,7 +44,7 @@ public class BaseVdpDmaHandlerTest {
 
     @Before
     public void setup() {
-        GenesisBusProvider busProvider = GenesisBusProvider.createBus();
+        GenesisBusProvider busProvider = new GenesisBus();
         memoryInterface = GenesisVdpMemoryInterface.createInstance();
         dmaHandler = new VdpDmaHandlerImpl();
 

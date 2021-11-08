@@ -22,6 +22,7 @@ package omegadrive.util;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +36,10 @@ public class ImageUtil {
             bi = new BufferedImage(d.width, d.height, BufferedImage.TYPE_INT_RGB);
         }
         return bi;
+    }
+
+    public static int[] getPixels(BufferedImage img) {
+        return ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
     }
 
     public static BufferedImage loadImageFromFile(File file) {

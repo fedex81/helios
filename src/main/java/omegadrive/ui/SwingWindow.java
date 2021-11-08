@@ -39,7 +39,6 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
@@ -152,7 +151,7 @@ public class SwingWindow implements DisplayWindow {
             //mmh we need INT_RGB here
             bi = new BufferedImage(d.width, d.height, BufferedImage.TYPE_INT_RGB);
         }
-        pixelsDest = getPixels(bi);
+        pixelsDest = ImageUtil.getPixels(bi);
         return bi;
     }
 
@@ -636,10 +635,6 @@ public class SwingWindow implements DisplayWindow {
                 Optional.ofNullable(actionMap.get(event)).ifPresent(act -> act.actionPerformed(null));
             }
         }
-    }
-
-    private int[] getPixels(BufferedImage img) {
-        return ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
     }
 
     private List<AbstractButton> createRegionItems() {

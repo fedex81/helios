@@ -61,7 +61,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private RomMapper exSsfMapper = RomMapper.NO_OP_MAPPER;
     private RomMapper backupMemMapper = RomMapper.NO_OP_MAPPER;
     private SvpBus svpMapper = SvpBus.NO_OP;
-    private MsuMdHandler msuMdHandler;
+    protected MsuMdHandler msuMdHandler = MsuMdHandler.NO_OP_HANDLER;
     private MdRomDbModel.Entry entry;
 
     private BusArbiter busArbiter = BusArbiter.NO_OP;
@@ -162,7 +162,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         mapper.writeData(address, data, size);
     }
 
-    private int[] ram, rom;
+    protected int[] ram, rom;
 
     @Override
     public void init() {

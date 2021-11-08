@@ -50,7 +50,7 @@ public class BusArbiterTest {
     @Before
     public void setup() {
         SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
-        bus = GenesisBusProvider.createBus();
+        bus = new GenesisBus();
         vdp = GenesisVdpProvider.createVdp(bus);
         Z80Provider z80 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, bus);
 

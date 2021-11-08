@@ -25,10 +25,7 @@ group 'com.fbdev.helios'
 version dateString + '-SNAPSHOT'
 def jarNameHead = rootProject.name + "-" + version
 
-
 apply plugin: 'java'
-
-sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
@@ -58,7 +55,7 @@ dependencies {
     testCompile fileTree(dir: 'lib', include: ['*.jar'])
 }
 
-def getDate() {
+def static getDate() {
     String date = new Date().format('yyMMdd')
     date.substring(0,2) + "." + date.substring(2)
 }

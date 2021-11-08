@@ -63,27 +63,43 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
         cpu = m68k;
     }
 
-    public static void dumpHitCounter() {
-        Map<Integer, Long> vmap = new TreeMap<>();
-        for (int i = 0; i < hitsTable.length; i++) {
-            if (hitsTable[i] > 100) {
-                vmap.put(i, hitsTable[i]);
-            }
-        }
-        Arrays.fill(hitsTable, 0);
-        List<Map.Entry<Integer, Long>> l = new ArrayList(vmap.entrySet());
-        l.sort(Map.Entry.comparingByValue());
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<Integer, Long> entry : l) {
-            int k = entry.getKey();
-            sb.append(MC68000Helper.dumpOp(cpu, k) + "," + entry.getValue() + "\n");
-        }
-        System.out.println(sb);
-    }
-
     @Override
     protected AddressSpace createAddressSpace() {
         return createDbgAddressSpace(super.createAddressSpace());
+    }
+
+    @Override
+    public int runInstruction() {
+        int res = 0;
+        sb.setLength(0);
+        try {
+            prev = currentPC;
+            currentPC = m68k.getPC(); //needs to be set
+            hitCounter(currentPC);
+            storeM68kState(current);
+            res = super.runInstruction();
+            printInstOnly();
+            printVerbose();
+            printCpuStateIfVerbose("");
+            handlePostRunState();
+            stepBarrier.await();
+        } catch (BrokenBarrierException bbe) {
+            LOG.error("68k debug error", bbe);
+            setStop(true);
+        } catch (Exception e) {
+            LOG.error("68k error", e);
+        }
+        return res;
+    }
+
+    private void hitCounter(int pc) {
+        if (countHits) {
+            hitsTable[pc & 0xFF_FFFF]++;
+//            if(hitsTable[pc & 0xFF_FFFF] > 1000 && hitsTable[prev] > 1000){
+//                System.out.println("Loop: " + MC68000Helper.dumpOp(cpu, prev) +
+//                        "\n" + MC68000Helper.dumpOp(cpu));
+//            }
+        }
     }
 
     private void handlePostRunState() {
@@ -125,40 +141,6 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
     }
 
     @Override
-    public int runInstruction() {
-        int res = 0;
-        sb.setLength(0);
-        try {
-            prev = currentPC;
-            currentPC = m68k.getPC(); //needs to be set
-            hitCounter(currentPC);
-            storeM68kState(current);
-            res = super.runInstruction();
-            printInstOnly();
-            printVerbose();
-            printCpuStateIfVerbose("");
-            handlePostRunState();
-            stepBarrier.await();
-        } catch (BrokenBarrierException bbe) {
-            LOG.error("68k debug error", bbe);
-            setStop(true);
-        } catch (Exception e) {
-            LOG.error("68k error", e);
-        }
-        return res;
-    }
-
-    private void hitCounter(int pc) {
-        if (countHits) {
-            hitsTable[pc & 0xFF_FFFF]++;
-//            if(hitsTable[pc & 0xFF_FFFF] > 1000 && hitsTable[prev] > 1000){
-//                System.out.println("Loop: " + MC68000Helper.dumpOp(cpu, prev) +
-//                        "\n" + MC68000Helper.dumpOp(cpu));
-//            }
-        }
-    }
-
-    @Override
     public boolean raiseInterrupt(int level) {
         m68k.raiseInterrupt(level);
         boolean raise = m68k.getInterruptLevel() == level;
@@ -177,6 +159,36 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
             if (MC68000Helper.STOP_ON_EXCEPTION) {
                 setStop(true);
             }
+        }
+    }
+
+    public static void dumpHitCounter() {
+        Map<Integer, Long> vmap = new TreeMap<>();
+        for (int i = 0; i < hitsTable.length; i++) {
+            if (hitsTable[i] > 100) {
+                vmap.put(i, hitsTable[i]);
+            }
+        }
+        Arrays.fill(hitsTable, 0);
+        List<Map.Entry<Integer, Long>> l = new ArrayList(vmap.entrySet());
+        l.sort(Map.Entry.comparingByValue());
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<Integer, Long> entry : l) {
+            int k = entry.getKey();
+            sb.append(MC68000Helper.dumpOp(cpu, k) + "," + entry.getValue() + "\n");
+        }
+        System.out.println(sb);
+    }
+
+    public void dumpPcList() {
+        if (pcList.length > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < pcList.length; i++) {
+                if (pcList[i] > 0) {
+                    sb.append(MC68000Helper.dumpOp(cpu, i)).append("\n");
+                }
+            }
+            System.out.println(sb);
         }
     }
 

@@ -152,7 +152,7 @@ public class GenesisJoypad extends BasePadAdapter {
 
     private void writeControlCheck(int port, long data) {
         if (data != 0x40 && data != 0) {
-            LOG.info("Setting ctrlPort{} to {}", port, Long.toHexString(data));
+//            LOG.info("Setting ctrlPort{} to {}", port, Long.toHexString(data));
         }
     }
 

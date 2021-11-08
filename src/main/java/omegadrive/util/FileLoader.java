@@ -237,13 +237,28 @@ public class FileLoader {
         return version;
     }
 
-    private static String getCurrentClasspath(){
+    private static String getCurrentClasspath() {
         Class<?> clazz = FileLoader.class;
         String className = clazz.getSimpleName() + ".class";
         return clazz.getResource(className).toString();
     }
 
-    private static boolean isRunningInJar(String classPath){
+    private static boolean isRunningInJar(String classPath) {
         return classPath.startsWith("jar");
+    }
+
+    //Handles symLinks
+    public static String getFileName(Path rom) {
+        String n = rom.getFileName().toString();
+        try {
+            //follows symLink, might throw
+            String m = rom.toFile().getCanonicalFile().getName();
+            if (!n.equalsIgnoreCase(m)) {
+                n = m + " (" + n + ")";
+            }
+        } catch (Exception e) {
+            LOG.throwing(e);
+        }
+        return n;
     }
 }

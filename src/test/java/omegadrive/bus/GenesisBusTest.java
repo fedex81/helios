@@ -18,6 +18,7 @@
 package omegadrive.bus;
 
 import omegadrive.SystemLoader;
+import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
@@ -42,7 +43,7 @@ public class GenesisBusTest {
 
     @Before
     public void init() {
-        bus = GenesisBusProvider.createBus();
+        bus = new GenesisBus();
         IMemoryProvider memory = MemoryProvider.createGenesisInstance();
         GenesisJoypad joypad = new GenesisJoypad();
 

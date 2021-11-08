@@ -19,7 +19,6 @@
 
 package omegadrive.bus.model;
 
-import omegadrive.bus.md.GenesisBus;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
@@ -70,10 +69,6 @@ public interface GenesisBusProvider extends BaseBusProvider {
     int NUM_MAPPER_BANKS = 8;
 
     Logger LOG = LogManager.getLogger(GenesisBusProvider.class.getSimpleName());
-
-    static GenesisBusProvider createBus() {
-        return new GenesisBus();
-    }
 
     abstract class VdpRunnable implements Runnable {
         public int vdpAddress;

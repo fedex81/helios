@@ -1,5 +1,6 @@
 package omegadrive.cpu.m68k;
 
+import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
@@ -23,7 +24,7 @@ public class M68Test {
 
     @Before
     public void setup() {
-        GenesisBusProvider bus = GenesisBusProvider.createBus();
+        GenesisBusProvider bus = new GenesisBus();
         IMemoryProvider memoryProvider = MemoryProvider.createGenesisInstance();
         GenesisVdpProvider vdpProvider = GenesisVdpProvider.createVdp(bus);
         memoryProvider.setRomData(new int[1024]);

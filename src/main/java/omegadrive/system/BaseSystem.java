@@ -351,7 +351,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
                 String romName = file.getFileName().toString();
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
-                emuFrame.setTitle(romName);
+                emuFrame.setTitle(FileLoader.getFileName(romPath));
                 region = getRegionInternal(memory, emuFrame.getRegionOverride());
                 LOG.info("Running rom: {}, region: {}", romName, region);
                 initAfterRomLoad();

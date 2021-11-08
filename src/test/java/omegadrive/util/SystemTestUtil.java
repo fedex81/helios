@@ -2,6 +2,7 @@ package omegadrive.util;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
+import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.bus.model.Z80BusProvider;
 import omegadrive.bus.z80.ColecoBus;
@@ -41,7 +42,7 @@ public class SystemTestUtil {
     }
 
     public static GenesisBusProvider setupNewMdSystem(IMemoryProvider cpuMem1) {
-        GenesisBusProvider busProvider = GenesisBusProvider.createBus();
+        GenesisBusProvider busProvider = new GenesisBus();
 
         GenesisVdpProvider vdpProvider1 = GenesisVdpProvider.createVdp(busProvider);
         MC68000Wrapper cpu = new MC68000Wrapper(busProvider);
