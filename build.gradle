@@ -50,7 +50,7 @@ dependencies {
 
     testCompile group: 'junit', name: 'junit', version: '4.13.2'
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
-    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.1'
+    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.2'
     testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.8.1'
 
     //include local jars
