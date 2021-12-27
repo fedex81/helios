@@ -25,7 +25,7 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.z80.SmsBus;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
 import org.apache.logging.log4j.LogManager;
@@ -80,7 +80,7 @@ public class MekaStateHandler implements BaseStateHandler {
     private static BaseStateHandler createLoadInstance(String fileName, Set<Device> deviceSet) {
         MekaStateHandler h = new MekaStateHandler();
         h.fileName = handleFileExtension(fileName);
-        h.buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(h.fileName)));
+        h.buffer = ByteBuffer.wrap(FileUtil.readBinaryFile(Paths.get(h.fileName)));
         h.type = Type.LOAD;
         h.setDevicesWithContext(deviceSet);
         return h.detectStateFileType();

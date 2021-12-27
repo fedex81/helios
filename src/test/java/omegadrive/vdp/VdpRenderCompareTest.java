@@ -19,7 +19,7 @@
 
 package omegadrive.vdp;
 
-import omegadrive.util.FileUtil;
+import omegadrive.util.TestFileUtil;
 import omegadrive.util.Util;
 import org.junit.Assert;
 import org.junit.Before;
@@ -151,7 +151,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
 
     protected boolean testCompareOne(String saveName, BufferedImage actual) {
         Path baselineZipImageFile = Paths.get(compareFolder, saveName + DOT_EXT);
-        Image base = FileUtil.decompressAndLoadFromZipFile(baselineZipImageFile, saveName + "." + IMG_EXT, IMG_EXT);
+        Image base = TestFileUtil.decompressAndLoadFromZipFile(baselineZipImageFile, saveName + "." + IMG_EXT, IMG_EXT);
         Assert.assertNotNull("File missing: " + baselineZipImageFile.toAbsolutePath(), base);
         BufferedImage baseLine = convertToBufferedImage(base);
         boolean match = compareImage(baseLine, actual);
@@ -168,7 +168,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
 
     protected void saveToFile(String saveName, Image i) {
         Path folder = Paths.get(compareFolder);
-        Path res = FileUtil.compressAndSaveToZipFile(saveName + "." + IMG_EXT, folder, i, IMG_EXT);
+        Path res = TestFileUtil.compressAndSaveToZipFile(saveName + "." + IMG_EXT, folder, i, IMG_EXT);
         System.out.println("Image saved: " + res.toAbsolutePath().toString());
     }
 }

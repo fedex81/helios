@@ -19,6 +19,9 @@
 
 package omegadrive.vdp.model;
 
+import omegadrive.vdp.model.VdpMisc.PriorityType;
+import omegadrive.vdp.model.VdpMisc.RenderType;
+
 import java.util.Arrays;
 import java.util.Objects;
 

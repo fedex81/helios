@@ -24,7 +24,7 @@ import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.system.SystemProvider;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
 
 import java.io.File;
@@ -57,7 +57,7 @@ public class AutomatedGameTester {
     private static int AUDIO_DELAY_MS = 25000;
 
     private static String romList = "";
-    private static List<String> blackList = FileLoader.readFileContent(Paths.get(resFolder.toAbsolutePath().toString()
+    private static List<String> blackList = FileUtil.readFileContent(Paths.get(resFolder.toAbsolutePath().toString()
             , "blacklist.txt"));
 
     private static Predicate<Path> testGenRomsPredicate = p ->
@@ -233,7 +233,7 @@ public class AutomatedGameTester {
             if (skip) {
                 continue;
             }
-            int[] data = Util.toUnsignedIntArray(FileLoader.readBinaryFile(rom));
+            int[] data = Util.toUnsignedIntArray(FileUtil.readBinaryFile(rom));
             IMemoryProvider memoryProvider = MemoryProvider.createInstance(data, 0);
             try {
                 CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,

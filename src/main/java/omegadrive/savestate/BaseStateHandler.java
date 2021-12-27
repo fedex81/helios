@@ -21,7 +21,7 @@ package omegadrive.savestate;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -98,7 +98,7 @@ public interface BaseStateHandler {
 
     default void storeData() {
         LOG.info("Persisting savestate to: {}", getFileName());
-        FileLoader.writeFileSafe(Paths.get(getFileName()), getData());
+        FileUtil.writeFileSafe(Paths.get(getFileName()), getData());
     }
 
     enum Type {SAVE, LOAD}

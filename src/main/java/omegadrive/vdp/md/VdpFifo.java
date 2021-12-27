@@ -20,7 +20,6 @@
 package omegadrive.vdp.md;
 
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.IVdpFifo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -28,7 +27,49 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-public class VdpFifo implements IVdpFifo {
+public interface VdpFifo {
+
+    class VdpFifoEntry {
+        public GenesisVdpProvider.VdpPortType portType;
+        public GenesisVdpProvider.VramMode vdpRamMode;
+        public int addressRegister;
+        public int data;
+        public boolean firstByteWritten;
+
+        @Override
+        public String toString() {
+            return "VdpFifoEntry{" +
+                    "portType=" + portType +
+                    ", vdpRamMode=" + vdpRamMode +
+                    ", addressRegister=" + addressRegister +
+                    ", data=" + data +
+                    ", firstByteWritten=" + firstByteWritten +
+                    '}';
+        }
+    }
+
+    void push(GenesisVdpProvider.VramMode vdpRamMode, int addressReg, int data);
+
+    VdpFifoEntry pop();
+
+    VdpFifoEntry peek();
+
+    boolean isEmpty();
+
+    boolean isFull();
+
+    default void clear() {
+        while (!isEmpty()) {
+            pop();
+        }
+    }
+
+    static VdpFifo createInstance() {
+        return new VdpFifoImpl();
+    }
+}
+
+class VdpFifoImpl implements VdpFifo {
 
     public static final boolean logEnable = false;
 
@@ -38,7 +79,7 @@ public class VdpFifo implements IVdpFifo {
     private int pushPointer;
     private int fifoSize;
 
-    public VdpFifo() {
+    public VdpFifoImpl() {
         IntStream.range(0, FIFO_SIZE).forEach(i -> fifo[i] = new VdpFifoEntry());
     }
 

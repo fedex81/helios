@@ -26,7 +26,7 @@ import omegadrive.input.InputProvider.PlayerNumber;
 import omegadrive.joypad.JoypadProvider.JoypadType;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.*;
-import omegadrive.util.FileLoader.FileResourceType;
+import omegadrive.util.FileUtil.FileResourceType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,8 +48,8 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static omegadrive.system.SystemProvider.SystemEvent.*;
-import static omegadrive.util.FileLoader.FileResourceType.SAVE_STATE_RES;
-import static omegadrive.util.FileLoader.QUICK_SAVE_PATH;
+import static omegadrive.util.FileUtil.FileResourceType.SAVE_STATE_RES;
+import static omegadrive.util.FileUtil.QUICK_SAVE_PATH;
 import static omegadrive.util.ScreenSizeHelper.*;
 
 public class SwingWindow implements DisplayWindow {
@@ -330,7 +330,7 @@ public class SwingWindow implements DisplayWindow {
 
         JMenuItem creditsItem = new JMenuItem("Credits");
         addAction(creditsItem, e -> showHelpMessage(creditsItem.getText(),
-                FileLoader.readFileContentAsString("CREDITS.md")));
+                FileUtil.readFileContentAsString("CREDITS.md")));
 
         JMenuItem keyBindingsItem = new JMenuItem("Key Bindings");
         addAction(keyBindingsItem, e -> showHelpMessage(keyBindingsItem.getText(),
@@ -338,15 +338,15 @@ public class SwingWindow implements DisplayWindow {
 
         JMenuItem readmeItem = new JMenuItem("Readme");
         addAction(readmeItem, e -> showHelpMessage(readmeItem.getText(),
-                FileLoader.readFileContentAsString("README.md")));
+                FileUtil.readFileContentAsString("README.md")));
 
         JMenuItem licenseItem = new JMenuItem("License");
         addAction(licenseItem, e -> showHelpMessage(licenseItem.getText(),
-                FileLoader.readFileContentAsString("LICENSE.md")));
+                FileUtil.readFileContentAsString("LICENSE.md")));
 
         JMenuItem historyItem = new JMenuItem("History");
         addAction(historyItem, e -> showHelpMessage(historyItem.getText(),
-                FileLoader.readFileContentAsString("HISTORY.md")));
+                FileUtil.readFileContentAsString("HISTORY.md")));
 
         menu.add(loadRomItem);
         menu.add(recentFilesMenu);
@@ -473,7 +473,7 @@ public class SwingWindow implements DisplayWindow {
 
     private Optional<File> fileDialog(Component parent, FileResourceType type, boolean load) {
         int dialogType = load ? JFileChooser.OPEN_DIALOG : JFileChooser.SAVE_DIALOG;
-        FileFilter filter = type == FileResourceType.SAVE_STATE_RES ? FileLoader.SAVE_STATE_FILTER : FileLoader.ROM_FILTER;
+        FileFilter filter = type == FileResourceType.SAVE_STATE_RES ? FileUtil.SAVE_STATE_FILTER : FileUtil.ROM_FILTER;
         String location = type == FileResourceType.SAVE_STATE_RES ? PrefStore.lastSaveFolder : PrefStore.lastRomFolder;
         Optional<File> res = Optional.empty();
         JFileChooser fileChooser = new JFileChooser(location);
@@ -510,12 +510,12 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private void handleQuickLoadState() {
-        Path file = Paths.get(QUICK_SAVE_PATH, FileLoader.QUICK_SAVE_FILENAME);
+        Path file = Paths.get(QUICK_SAVE_PATH, FileUtil.QUICK_SAVE_FILENAME);
         handleSystemEvent(QUICK_LOAD, file, file.getFileName().toString());
     }
 
     private void handleQuickSaveState() {
-        Path p = Paths.get(QUICK_SAVE_PATH, FileLoader.QUICK_SAVE_FILENAME);
+        Path p = Paths.get(QUICK_SAVE_PATH, FileUtil.QUICK_SAVE_FILENAME);
         handleSystemEvent(QUICK_SAVE, p, p.getFileName().toString());
     }
 
@@ -567,11 +567,11 @@ public class SwingWindow implements DisplayWindow {
                     }
                     File file = ((File) firstElement);
                     Path path = file.toPath();
-                    if(FileLoader.ROM_FILTER.accept(file)) {
+                    if (FileUtil.ROM_FILTER.accept(file)) {
                         SystemLoader.getInstance().handleNewRomFile(path);
                         reloadRecentFiles();
                         showInfo(NEW_ROM + ": " + path.getFileName());
-                    } else if(FileLoader.SAVE_STATE_FILTER.accept(file)) {
+                    } else if (FileUtil.SAVE_STATE_FILTER.accept(file)) {
                         handleSystemEvent(LOAD_STATE, path, path.getFileName().toString());
                     }
                 } catch (Exception ex) {

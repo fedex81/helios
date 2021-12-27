@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Maps;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.vdp.md.GenesisVdp;
+import omegadrive.vdp.md.VdpFifo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -233,7 +234,7 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
 
     boolean isShadowHighlight();
 
-    IVdpFifo getFifo();
+    VdpFifo getFifo();
 
     VramMode getVramMode();
 

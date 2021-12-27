@@ -21,7 +21,7 @@ package omegadrive.vdp;
 
 import omegadrive.util.ImageUtil;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.model.RenderType;
+import omegadrive.vdp.model.VdpMisc.RenderType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

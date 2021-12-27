@@ -25,7 +25,7 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.z80.MsxBus;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.vdp.Tms9918aVdp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -120,7 +120,7 @@ public class Z80StateBaseHandler implements BaseStateHandler {
 
     protected boolean initLoadType(String fileName, SystemLoader.SystemType systemType, byte[] data) {
         fileName = initCommon(fileName, systemType);
-        data = data == null ? FileLoader.readFileSafe(Paths.get(fileName)) : data;
+        data = data == null ? FileUtil.readFileSafe(Paths.get(fileName)) : data;
         buffer = ByteBuffer.wrap(data);
         type = Type.LOAD;
         return detectStateFileType(systemType);

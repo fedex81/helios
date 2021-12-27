@@ -20,7 +20,7 @@
 package omegadrive.cart.loader;
 
 import omegadrive.cart.mapper.MapperSelector;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,7 +56,7 @@ public class MdLoader {
     }
 
     private static void init() {
-        List<String> lines = FileLoader.readFileContent(fileName);
+        List<String> lines = FileUtil.readFileContent(fileName);
         processData(lines);
         map.clear();
         entrySet.forEach(e -> map.put(e.getId(), e));

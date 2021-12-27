@@ -341,7 +341,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         @Override
         public void run() {
             try {
-                int[] data = Util.toUnsignedIntArray(FileLoader.readBinaryFile(file, getSystemType()));
+                int[] data = Util.toUnsignedIntArray(FileUtil.readBinaryFile(file, getSystemType()));
                 if (data.length == 0) {
                     LOG.error("Unable to open/access file: {}", file.toAbsolutePath().toString());
                     return;
@@ -351,7 +351,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
                 String romName = file.getFileName().toString();
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
-                emuFrame.setTitle(FileLoader.getFileName(romPath));
+                emuFrame.setTitle(FileUtil.getFileName(romPath));
                 region = getRegionInternal(memory, emuFrame.getRegionOverride());
                 LOG.info("Running rom: {}, region: {}", romName, region);
                 initAfterRomLoad();

@@ -24,8 +24,12 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.md.VdpFifo;
 import omegadrive.vdp.md.VdpInterruptHandler;
-import omegadrive.vdp.model.*;
+import omegadrive.vdp.model.BaseVdpProvider;
+import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.InterlaceMode;
+import omegadrive.vdp.model.VdpMemoryInterface;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -93,7 +97,7 @@ public class MdVdpTestUtil {
     }
 
     public static void runVdpUntilFifoEmpty(GenesisVdpProvider vdp) {
-        IVdpFifo fifo = vdp.getFifo();
+        VdpFifo fifo = vdp.getFifo();
         while (!fifo.isEmpty()) {
             vdp.runSlot();
         }
@@ -342,7 +346,7 @@ public class MdVdpTestUtil {
         }
 
         @Override
-        public IVdpFifo getFifo() {
+        public VdpFifo getFifo() {
             return null;
         }
 

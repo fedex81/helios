@@ -28,7 +28,7 @@ import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.sms.SmsMapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.TwoButtonsJoypad;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -101,7 +101,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
 
         if (HW_ENABLE_BIOS) {
             Path p = Paths.get(SystemLoader.biosFolder, "bios.sms");
-            bios = Util.toUnsignedIntArray(FileLoader.loadBiosFile(p));
+            bios = Util.toUnsignedIntArray(FileUtil.loadBiosFile(p));
             BIOS_END = bios.length;
             LOG.info("Loading Sms bios from: {}", p.toAbsolutePath().toString());
         }

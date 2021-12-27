@@ -20,7 +20,7 @@
 package omegadrive.ui;
 
 import omegadrive.system.SystemProvider;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.util.VideoMode;
 
 import java.awt.event.KeyListener;
@@ -31,7 +31,7 @@ import java.util.Optional;
 public interface DisplayWindow {
 
     String APP_NAME = "Helios";
-    String VERSION = FileLoader.loadVersionFromManifest();
+    String VERSION = FileUtil.loadVersionFromManifest();
     String FRAME_TITLE_HEAD = APP_NAME + " " + VERSION;
 
     int SHOW_INFO_FRAMES_DELAY = 120; //~2sec

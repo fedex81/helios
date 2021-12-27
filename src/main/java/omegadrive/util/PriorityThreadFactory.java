@@ -28,6 +28,10 @@ public class PriorityThreadFactory implements ThreadFactory {
     private final String namePrefix;
     private final int threadPriority;
 
+    public PriorityThreadFactory(int priority, Object className) {
+        this(priority, className.getClass().getSimpleName());
+    }
+
     public PriorityThreadFactory(int priority, String namePrefix) {
         this.namePrefix = namePrefix;
         this.threadPriority = priority;

@@ -19,7 +19,7 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.vdp.model.ShadowHighlightType;
+import omegadrive.vdp.model.VdpMisc.ShadowHighlightType;
 
 public class VdpColorMapper {
 

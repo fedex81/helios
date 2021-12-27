@@ -20,7 +20,7 @@
 package omegadrive.cart.mapper;
 
 import omegadrive.SystemLoader;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,7 +71,7 @@ public abstract class BackupMemoryMapper {
                 if (Files.isReadable(backupFile)) {
                     size = Files.size(backupFile);
                     if (size > 0) {
-                        sram = Util.toUnsignedIntArray(FileLoader.readBinaryFile(backupFile));
+                        sram = Util.toUnsignedIntArray(FileUtil.readBinaryFile(backupFile));
                     } else {
                         LOG.error("Backup file with size 0, attempting to recreate it");
                         size = createBackupFile();
@@ -91,7 +91,7 @@ public abstract class BackupMemoryMapper {
         sram = new int[sramSize];
         //see GenTechBulletins, StarTrek echoes fails when reading sram with all 0s
         Arrays.fill(sram, 0xFF);
-        FileLoader.writeFileSafe(backupFile, Util.unsignedToByteArray(sram));
+        FileUtil.writeFileSafe(backupFile, Util.unsignedToByteArray(sram));
         return sram.length;
     }
 
@@ -103,7 +103,7 @@ public abstract class BackupMemoryMapper {
         }
         if (Files.isWritable(backupFile)) {
             LOG.info("Writing to sram file: {}, len: {}", this.backupFile, sram.length);
-            FileLoader.writeFileSafe(backupFile, Util.unsignedToByteArray(sram));
+            FileUtil.writeFileSafe(backupFile, Util.unsignedToByteArray(sram));
         }
     }
 }

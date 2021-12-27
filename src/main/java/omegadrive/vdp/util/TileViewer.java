@@ -24,7 +24,7 @@ public class TileViewer implements UpdatableViewer {
 
     private static final int MAX_TILES_PER_LINE = 64;
     private static final int PANEL_TEXT_HEIGHT = 20;
-    private static final int PANEL_HEIGHT = 300 + PANEL_TEXT_HEIGHT;
+    private static final int PANEL_HEIGHT = 200 + PANEL_TEXT_HEIGHT;
     private static final int PLANE_IMG_HEIGHT = 128;
     private static final int PLANE_IMG_WIDTH = MAX_TILES_PER_LINE * 8;
     private static final int PANEL_WIDTH = PLANE_IMG_WIDTH;
@@ -34,7 +34,6 @@ public class TileViewer implements UpdatableViewer {
     private final GenesisVdpProvider vdp;
     private int[] javaPalette;
     private JPanel panel;
-    private JFrame frame;
     private BufferedImage imageA, imageB, imageS, imageW;
     private int[] pixelsA, pixelsB, pixelsS, pixelsW;
 
@@ -43,7 +42,6 @@ public class TileViewer implements UpdatableViewer {
         this.renderHandler = (VdpRenderHandlerImpl) renderHandler;
         this.memoryInterface = memoryInterface;
         this.javaPalette = memoryInterface.getJavaColorPalette();
-        this.frame = new JFrame();
         this.panel = new JPanel();
         initPanel();
     }
@@ -55,18 +53,6 @@ public class TileViewer implements UpdatableViewer {
 
     private static int[] getPixels(BufferedImage img) {
         return ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
-    }
-
-    private void initFrame() {
-        initPanel();
-        SwingUtilities.invokeLater(() -> {
-            this.frame = new JFrame();
-            frame.add(panel);
-            frame.setMinimumSize(new Dimension(PANEL_WIDTH, PANEL_HEIGHT));
-            frame.setTitle("Tile Viewer");
-            frame.pack();
-            frame.setVisible(true);
-        });
     }
 
     private void initPanel() {
@@ -83,7 +69,7 @@ public class TileViewer implements UpdatableViewer {
         int planeATilesVPos = planeATextVPos + 10;
         int planeBTextVPos = planeATextVPos;
         int planeBTilesVPos = planeATilesVPos;
-        int spriteTextVPos = planeBTilesVPos + imageB.getHeight() + 10;
+        int spriteTextVPos = planeBTilesVPos + imageB.getHeight() + 13;
         int spriteTilesVPos = spriteTextVPos + 10;
         int planeWTextVPos = spriteTextVPos;
         int planeWTilesVPos = spriteTilesVPos;
@@ -96,15 +82,23 @@ public class TileViewer implements UpdatableViewer {
                     Graphics2D g2 = (Graphics2D) g;
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                             RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(Color.white);
 
-                    g2.drawString("Plane A Tiles", 70, planeATextVPos);
-                    g2.drawImage(imageA, 0, planeATilesVPos, this);
-                    g2.drawString("Plane B Tiles", rightHalfPos + 70, planeBTextVPos);
-                    g2.drawImage(imageB, rightHalfPos, planeBTilesVPos, this);
-                    g2.drawString("Sprite Tiles", 70, spriteTextVPos);
-                    g2.drawImage(imageS, 0, spriteTilesVPos, this);
-                    g2.drawString("Window Tiles", rightHalfPos + 70, planeWTextVPos);
-                    g2.drawImage(imageW, rightHalfPos, planeWTilesVPos, this);
+                    g2.drawString("MD Plane A Tiles", 70, planeATextVPos);
+                    g2.drawRect(0, planeATilesVPos, imageA.getWidth() + 1, imageA.getHeight() + 1);
+                    g2.drawImage(imageA, 1, planeATilesVPos + 1, this);
+
+                    g2.drawString("MD Plane B Tiles", rightHalfPos + 70, planeBTextVPos);
+                    g2.drawRect(rightHalfPos, planeBTilesVPos, imageB.getWidth() + 1, imageB.getHeight() + 1);
+                    g2.drawImage(imageB, rightHalfPos + 1, planeBTilesVPos + 1, this);
+
+                    g2.drawString("MD Sprite Tiles", 70, spriteTextVPos);
+                    g2.drawImage(imageS, 1, spriteTilesVPos + 1, this);
+                    g2.drawRect(0, spriteTilesVPos, imageS.getWidth() + 1, imageS.getHeight() + 1);
+
+                    g2.drawString("MD Window Tiles", rightHalfPos + 70, planeWTextVPos);
+                    g2.drawImage(imageW, rightHalfPos + 1, planeWTilesVPos + 1, this);
+                    g2.drawRect(rightHalfPos, planeWTilesVPos, imageW.getWidth() + 1, imageW.getHeight() + 1);
                 }
             }
         };

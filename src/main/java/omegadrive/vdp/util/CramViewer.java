@@ -22,7 +22,6 @@ package omegadrive.vdp.util;
 import omegadrive.vdp.md.VdpColorMapper;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,7 +33,7 @@ public class CramViewer implements UpdatableViewer {
     private static final Logger LOG = LogManager.getLogger(CramViewer.class.getSimpleName());
 
     private static final int CRAM_ENTRIES = GenesisVdpProvider.VDP_CRAM_SIZE / 2;
-    private static final int LABEL_HEIGHT = 200;
+    private static final int LABEL_HEIGHT = 100;
     private static final int LABEL_WIDTH = 10;
     private static final int FRAME_HEIGHT = LABEL_HEIGHT + 50;
     private static final int FRAME_WIDTH = LABEL_WIDTH * CRAM_ENTRIES + 50;
@@ -42,14 +41,12 @@ public class CramViewer implements UpdatableViewer {
 
     private final VdpMemoryInterface vdpMemoryInterface;
     private JPanel cramPanel;
-    private JFrame cramFrame;
     private final VdpColorMapper colorMapper;
     private final JPanel[] panelList = new JPanel[CRAM_ENTRIES];
 
     private CramViewer(VdpMemoryInterface vdpMemoryInterface) {
         this.vdpMemoryInterface = vdpMemoryInterface;
         this.colorMapper = VdpColorMapper.getInstance();
-        this.cramFrame = new JFrame();
         this.cramPanel = new JPanel();
         initPanel();
     }
@@ -96,18 +93,6 @@ public class CramViewer implements UpdatableViewer {
         });
     }
 
-    private void initFrame() {
-        initPanel();
-        SwingUtilities.invokeLater(() -> {
-            this.cramFrame = new JFrame();
-            cramFrame.add(cramPanel);
-            cramFrame.setMinimumSize(new Dimension(FRAME_WIDTH, FRAME_HEIGHT));
-            cramFrame.setTitle("CRAM Viewer");
-            cramFrame.pack();
-            cramFrame.setVisible(true);
-        });
-    }
-
     public JPanel getPanel() {
         return cramPanel;
     }
@@ -126,26 +111,5 @@ public class CramViewer implements UpdatableViewer {
                 k++;
             }
         });
-    }
-
-    public static void dumpVram(int[] vram) {
-        VdpRenderHandler.TileDataHolder tileDataHolder = new VdpRenderHandler.TileDataHolder();
-        for (int i = 0; i < vram.length; i += 2) {
-            int tileNameTable = vram[i] << 8 | vram[i + 1];
-//            tileDataHolder = getTileData(tileNameTable, tileDataHolder); //TODO
-            if (tileDataHolder.tileIndex > 0) {
-                System.out.println(Integer.toHexString(i) + "," + tileDataHolder);
-                for (int j = 0; j < 64; j++) {
-                    if (j > 0 && j % 4 == 0) {
-                        System.out.println();
-                    }
-                    System.out.print(Integer.toHexString(vram[tileDataHolder.tileIndex + j]) + ",");
-                }
-                System.out.println("\n");
-            }
-        }
-//        for (int i = 0; i < VDP_CRAM_SIZE; i++) {
-//            System.out.println(i + "," + getJavaColorValue(i));
-//        }
     }
 }

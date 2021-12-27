@@ -6,7 +6,7 @@ import com.google.common.primitives.Bytes;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.cpu.z80.Z80Helper;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
 import omegadrive.util.ZipUtil;
 import org.apache.logging.log4j.LogManager;
@@ -226,7 +226,7 @@ public class StateUtil {
 
     public static ByteBuffer loadStateFile(String fileName, String... exts) {
         String ext = Files.getFileExtension(getStateFileName(fileName, exts));
-        ByteBuffer buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(Paths.get(fileName), ext));
+        ByteBuffer buffer = ByteBuffer.wrap(FileUtil.readBinaryFile(Paths.get(fileName), ext));
         return buffer;
     }
 

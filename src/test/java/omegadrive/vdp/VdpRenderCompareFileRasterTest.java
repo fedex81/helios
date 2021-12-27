@@ -21,7 +21,7 @@ package omegadrive.vdp;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -138,7 +138,7 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
     }
 
     private List<VdpWriteContext> getDatFileContents(Path datFile) {
-        List<String> lines = FileLoader.readFileContent(datFile);
+        List<String> lines = FileUtil.readFileContent(datFile);
         List<VdpWriteContext> vdpWrites = lines.stream().map(VdpWriteContext::parseShortString).
                 collect(Collectors.toList());
         if (vdpWrites.isEmpty()) {

@@ -33,7 +33,7 @@ import omegadrive.input.MsxKeyboardInput;
 import omegadrive.joypad.MsxPad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.StateUtil;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -88,7 +88,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
 
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
-        bios = Util.toUnsignedIntArray(FileLoader.loadBiosFile(p));
+        bios = Util.toUnsignedIntArray(FileUtil.loadBiosFile(p));
         LOG.info("Loading Msx bios from: {}", p.toAbsolutePath().toString());
         Arrays.fill(emptySlot, 0xFF);
         ctx = new MsxBusContext();

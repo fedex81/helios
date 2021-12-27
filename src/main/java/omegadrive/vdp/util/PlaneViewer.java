@@ -3,7 +3,11 @@ package omegadrive.vdp.util;
 import omegadrive.util.ImageUtil;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.VdpRenderDump;
-import omegadrive.vdp.model.*;
+import omegadrive.vdp.model.BaseVdpProvider;
+import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpMisc.RenderType;
+import omegadrive.vdp.model.VdpRenderHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,7 +37,6 @@ public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventLis
     private final VdpRenderHandler renderHandler;
     private static final int CRAM_MASK = GenesisVdpProvider.VDP_CRAM_SIZE - 1;
     private JPanel panel;
-    private JFrame frame;
     private final JPanel[] panelList = new JPanel[RenderType.values().length];
     private final BufferedImage[] imageList = new BufferedImage[RenderType.values().length];
     private final int[] javaPalette;
@@ -42,7 +45,6 @@ public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventLis
 
     private PlaneViewer(VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.renderHandler = renderHandler;
-        this.frame = new JFrame();
         this.panel = new JPanel();
         this.javaPalette = memoryInterface.getJavaColorPalette();
         initPanel();
@@ -58,20 +60,6 @@ public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventLis
         return ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
     }
 
-    private void initFrame() {
-        int numCols = 3;
-        int numRows = 2;
-        initPanel();
-        SwingUtilities.invokeLater(() -> {
-            this.frame = new JFrame();
-            frame.add(panel);
-            frame.setMinimumSize(new Dimension(PANEL_WIDTH * numCols, PANEL_HEIGHT * numRows));
-            frame.setTitle("Plane Viewer");
-            frame.pack();
-            frame.setVisible(true);
-        });
-    }
-
     public JPanel getPanel() {
         return panel;
     }
@@ -80,7 +68,6 @@ public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventLis
         int numCols = 3;
         int numRows = 2;
         SwingUtilities.invokeLater(() -> {
-            this.frame = new JFrame();
             this.panel = new JPanel(new GridLayout(numRows, numCols));
             int k = 0;
             for (RenderType type : RenderType.values()) {
@@ -93,13 +80,14 @@ public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventLis
                             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                                     RenderingHints.VALUE_ANTIALIAS_ON);
 
-                            g2.drawString(type.name(), 70, 10);
+                            g2.drawString("MD " + type.name(), 70, 10);
                             g2.drawImage(imageList[type.ordinal()], 0, PANEL_TEXT_HEIGHT, this);
                         }
                     }
                 };
                 cpanel.setBackground(Color.BLACK);
                 cpanel.setForeground(Color.WHITE);
+                cpanel.setBorder(BorderFactory.createLineBorder(Color.WHITE));
                 cpanel.setName(type.name());
                 cpanel.setSize(new Dimension(PANEL_WIDTH, PANEL_HEIGHT));
                 panelList[k] = cpanel;

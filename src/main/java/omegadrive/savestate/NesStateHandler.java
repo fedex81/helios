@@ -2,7 +2,7 @@ package omegadrive.savestate;
 
 import com.grapeshot.halfnes.NES;
 import com.grapeshot.halfnes.state.HalfnesSaveStateHandler;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
@@ -31,7 +31,7 @@ public class NesStateHandler implements BaseStateHandler {
         NesStateHandler n = new NesStateHandler();
         n.fileName = handleFileExtension(fileName);
         n.type = Type.LOAD;
-        n.stateData = FileLoader.readBinaryFile(Paths.get(n.fileName), fileExtension);
+        n.stateData = FileUtil.readBinaryFile(Paths.get(n.fileName), fileExtension);
         return n;
     }
 

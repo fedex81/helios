@@ -29,7 +29,7 @@ import com.grapeshot.halfnes.mappers.Mapper;
 import com.grapeshot.halfnes.mappers.MapperHelper;
 import com.grapeshot.halfnes.state.HalfnesSaveStateHandler;
 import omegadrive.SystemLoader;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -82,7 +82,7 @@ public class NesSavestateTest extends BaseSavestateTest {
 
     @Override
     protected void testLoadSaveInternal(Path saveFile) {
-        ByteBuffer buffer = ByteBuffer.wrap(FileLoader.readBinaryFile(saveFile));
+        ByteBuffer buffer = ByteBuffer.wrap(FileUtil.readBinaryFile(saveFile));
         Mapper mapper = createMapper(saveFile);
         CPURAM cpuram = new CPURAM(mapper);
         CPU cpu = new CPU(cpuram);

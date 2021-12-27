@@ -1,5 +1,6 @@
 package omegadrive.vdp.util;
 
+import omegadrive.util.PriorityThreadFactory;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpRenderHandler;
@@ -8,6 +9,8 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * VdpDebugView
@@ -19,6 +22,8 @@ import java.awt.*;
 public class VdpDebugView implements UpdatableViewer {
 
     private static final Logger LOG = LogManager.getLogger(VdpDebugView.class.getSimpleName());
+    private ExecutorService service = Executors.newSingleThreadExecutor(
+            new PriorityThreadFactory(Thread.MIN_PRIORITY, this));
 
     private static final boolean DEBUG_VIEWER_ENABLED;
 
@@ -37,6 +42,7 @@ public class VdpDebugView implements UpdatableViewer {
     private final TileViewer tileViewer;
     private JFrame frame;
     private JPanel panel;
+    private JPanel additionalPanel;
 
     private VdpDebugView(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.memoryInterface = memoryInterface;
@@ -57,29 +63,44 @@ public class VdpDebugView implements UpdatableViewer {
             this.panel = new JPanel();
             this.panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
             panel.setBackground(Color.GRAY);
-            JPanel planePanel = planeViewer.getPanel();
-            JPanel cramPanel = cramViewer.getPanel();
-            JPanel tilePanel = tileViewer.getPanel();
-            this.panel.add(planePanel);
-            this.panel.add(tilePanel);
-            this.panel.add(cramPanel);
-            int w = planePanel.getWidth();
-            int h = planePanel.getHeight() + cramPanel.getHeight();
-            cramPanel.setMaximumSize(cramPanel.getSize());
-            this.panel.setSize(new Dimension(w, h));
-            frame.add(panel);
-            frame.setMinimumSize(panel.getSize());
+            buildPanel();
             frame.setTitle("Vdp Debug Viewer");
             frame.pack();
             frame.setVisible(true);
         });
     }
 
+    private void buildPanel() {
+        frame.remove(panel);
+        frame.invalidate();
+        JPanel planePanel = planeViewer.getPanel();
+        JPanel cramPanel = cramViewer.getPanel();
+        JPanel tilePanel = tileViewer.getPanel();
+        int h = planePanel.getHeight() + cramPanel.getHeight() + tilePanel.getHeight();
+        this.panel.add(planePanel);
+        this.panel.add(tilePanel);
+        if (additionalPanel != null) {
+            this.panel.add(additionalPanel);
+            h += additionalPanel.getHeight();
+        }
+        this.panel.add(cramPanel);
+        int w = Math.max(planePanel.getWidth(), cramPanel.getWidth());
+        w = Math.max(w, tilePanel.getWidth()) + 20;
+
+        cramPanel.setMaximumSize(cramPanel.getSize());
+        this.panel.setSize(new Dimension(w, h));
+        frame.add(panel);
+        frame.setMinimumSize(panel.getSize());
+        frame.pack();
+    }
+
     @Override
     public void update() {
-        cramViewer.update();
-        planeViewer.update();
-        tileViewer.update();
+        service.submit(() -> {
+            cramViewer.update();
+            planeViewer.update();
+            tileViewer.update();
+        });
     }
 
     @Override
@@ -87,8 +108,14 @@ public class VdpDebugView implements UpdatableViewer {
         planeViewer.updateLine(line);
     }
 
+    public void setAdditionalPanel(JPanel panel) {
+        this.additionalPanel = panel;
+        buildPanel();
+    }
+
     @Override
     public void reset() {
+        service.shutdownNow();
         frame.setVisible(false);
         frame.dispose();
     }

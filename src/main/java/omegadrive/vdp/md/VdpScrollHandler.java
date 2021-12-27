@@ -23,8 +23,8 @@ import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Maps;
 import omegadrive.vdp.model.InterlaceMode;
 import omegadrive.vdp.model.RenderPriority;
-import omegadrive.vdp.model.RenderType;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import omegadrive.vdp.model.VdpMisc.RenderType;
 
 import java.util.EnumSet;
 import java.util.Map;

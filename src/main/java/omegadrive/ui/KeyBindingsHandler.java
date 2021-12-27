@@ -24,7 +24,7 @@ import omegadrive.input.InputProvider.PlayerNumber;
 import omegadrive.input.KeyboardInputHelper;
 import omegadrive.joypad.JoypadProvider.JoypadButton;
 import omegadrive.system.SystemProvider.SystemEvent;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,7 +56,7 @@ public class KeyBindingsHandler {
 
     private static void loadKeyMap() {
         LOG.info("Loading key config file: {}", configFile);
-        List<String> l = FileLoader.readFileContent(configFile);
+        List<String> l = FileUtil.readFileContent(configFile);
         keyMap = parseConfig(l);
         final List<String> l1 = l;
         Arrays.stream(InputProvider.PlayerNumber.values()).forEach(p -> parsePlayerConfig(l1, p));

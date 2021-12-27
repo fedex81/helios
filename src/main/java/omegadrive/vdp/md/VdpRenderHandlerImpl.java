@@ -25,6 +25,9 @@ import omegadrive.vdp.md.VdpScrollHandler.HSCROLL;
 import omegadrive.vdp.md.VdpScrollHandler.ScrollContext;
 import omegadrive.vdp.md.VdpScrollHandler.VSCROLL;
 import omegadrive.vdp.model.*;
+import omegadrive.vdp.model.VdpMisc.PriorityType;
+import omegadrive.vdp.model.VdpMisc.RenderType;
+import omegadrive.vdp.model.VdpMisc.ShadowHighlightType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

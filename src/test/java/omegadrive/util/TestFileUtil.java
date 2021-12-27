@@ -21,9 +21,9 @@ import java.util.zip.ZipOutputStream;
  * <p>
  * Copyright 2019
  */
-public class FileUtil {
+public class TestFileUtil {
 
-    private static final Logger LOG = LogManager.getLogger(FileUtil.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(TestFileUtil.class.getSimpleName());
 
     public static Path compressAndSaveToZipFile(Path srcFilePath) {
         String fileName = srcFilePath.getFileName().toString();

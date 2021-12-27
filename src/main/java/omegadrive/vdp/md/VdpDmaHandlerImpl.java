@@ -24,7 +24,6 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.IVdpFifo;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.Level;
@@ -49,7 +48,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private boolean dmaFillReady;
 
     //TODO this should be in the VDP
-    private final IVdpFifo.VdpFifoEntry pendingReadEntry = new IVdpFifo.VdpFifoEntry();
+    private final VdpFifo.VdpFifoEntry pendingReadEntry = new VdpFifo.VdpFifoEntry();
 
     public static VdpDmaHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
                                                GenesisBusProvider busProvider) {

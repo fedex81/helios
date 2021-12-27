@@ -60,7 +60,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 
     int[] registers = new int[VDP_REGISTERS_SIZE];
 
-    IVdpFifo.VdpFifoEntry pendingReadEntry = new IVdpFifo.VdpFifoEntry();
+    VdpFifo.VdpFifoEntry pendingReadEntry = new VdpFifo.VdpFifoEntry();
 
     //    This flag is updated when these conditions are met:
 //
@@ -136,7 +136,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
     private VdpRenderHandler renderHandler;
-    private IVdpFifo fifo;
+    private VdpFifo fifo;
     private VideoMode videoMode;
     private RegionDetector.Region region;
     private List<VdpEventListener> list;
@@ -215,7 +215,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         this.interruptHandler = VdpInterruptHandler.createMdInstance(this);
         this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);
         this.debugViewer = VdpDebugView.createInstance(this, memoryInterface, renderHandler);
-        this.fifo = new VdpFifo();
+        this.fifo = new VdpFifoImpl();
         this.vdpPortAccessLogger = VdpPortAccessLogger.NO_LOGGER;
         this.initMode();
     }
@@ -715,7 +715,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         writeDataToVram(isExternalSlot);
     }
 
-    private void updateFifoState(IVdpFifo fifo) {
+    private void updateFifoState(VdpFifo fifo) {
         fifoFull = fifo.isFull() ? 1 : 0;
         fifoEmpty = fifo.isEmpty() ? 1 : 0;
     }
@@ -809,7 +809,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     }
 
     @Override
-    public IVdpFifo getFifo() {
+    public VdpFifo getFifo() {
         return fifo;
     }
 
@@ -831,6 +831,10 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     @Override
     public String getVdpStateString() {
         return interruptHandler.getStateString(" - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
+    }
+
+    public UpdatableViewer getDebugViewer() {
+        return debugViewer;
     }
 
     @Override

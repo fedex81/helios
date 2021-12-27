@@ -20,7 +20,7 @@
 package omegadrive.vdp;
 
 import omegadrive.system.SystemProvider;
-import omegadrive.util.FileLoader;
+import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
 import omegadrive.vdp.md.GenesisVdp;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -85,7 +85,7 @@ public class VdpRasterDataGeneratorTest extends VdpPerformanceTest {
             String writes = logger.getWritesAsString();
             System.out.println(writes);
             logger.reset();
-            FileLoader.writeFileSafe(datPath, writes.getBytes(StandardCharsets.UTF_8));
+            FileUtil.writeFileSafe(datPath, writes.getBytes(StandardCharsets.UTF_8));
             System.out.println("Save dat: " + datPath.toAbsolutePath().toString());
             System.exit(0);
         }

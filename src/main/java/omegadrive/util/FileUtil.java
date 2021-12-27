@@ -40,9 +40,9 @@ import java.util.stream.Collectors;
 
 import static omegadrive.SystemLoader.smdFileAsInterleaved;
 
-public class FileLoader {
+public class FileUtil {
 
-    private static final Logger LOG = LogManager.getLogger(FileLoader.class.getSimpleName());
+    private static final Logger LOG = LogManager.getLogger(FileUtil.class.getSimpleName());
 
     private static final int[] EMPTY = new int[0];
 
@@ -143,7 +143,7 @@ public class FileLoader {
     private static byte[] readFileFromJar(String fileName) {
         ByteBuffer buffer = ByteBuffer.allocate(0);
         try (
-                InputStream inputStream = FileLoader.class.getResourceAsStream("/" + fileName)
+                InputStream inputStream = FileUtil.class.getResourceAsStream("/" + fileName)
         ) {
             buffer = ByteBuffer.allocate(inputStream.available());
             while (inputStream.available() > 0) {
@@ -158,7 +158,7 @@ public class FileLoader {
     private static List<String> loadFileContentFromJar(String fileName) {
         List<String> lines = Collections.emptyList();
         try (
-                InputStream inputStream = FileLoader.class.getResourceAsStream("/" + fileName);
+                InputStream inputStream = FileUtil.class.getResourceAsStream("/" + fileName);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))
         ) {
             lines = reader.lines().collect(Collectors.toList());
@@ -238,7 +238,7 @@ public class FileLoader {
     }
 
     private static String getCurrentClasspath() {
-        Class<?> clazz = FileLoader.class;
+        Class<?> clazz = FileUtil.class;
         String className = clazz.getSimpleName() + ".class";
         return clazz.getResource(className).toString();
     }
