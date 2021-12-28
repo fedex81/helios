@@ -198,7 +198,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         Arrays.fill(sprites, 0);
         Arrays.fill(planeA, 0);
         Arrays.fill(planeB, 0);
-        Arrays.stream(linePixelData).forEach(PixelData::reset);
+        for (int i = 0; i < linePixelData.length; i++) {
+            linePixelData[i].reset(shadowHighlightMode);
+        }
         SpriteDataHolder[] temp = spriteDataHoldersCurrent;
         spriteDataHoldersCurrent = spriteDataHoldersNext;
         for (int i = 0; i < spriteDataHoldersCurrent.length; i++) {

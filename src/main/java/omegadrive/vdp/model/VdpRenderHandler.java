@@ -244,9 +244,11 @@ public interface VdpRenderHandler {
         public int[] cramIndexMap = new int[RenderType.values().length];
         public RenderPriority pixelPriority = RenderPriority.BACK_PLANE; //shadow/highlight off
 
-        public void reset() {
-            Arrays.fill(priorityMap, PriorityType.NO);
-            Arrays.fill(cramIndexMap, 0);
+        public void reset(boolean sh) {
+            if (sh) {
+                Arrays.fill(priorityMap, PriorityType.NO);
+                Arrays.fill(cramIndexMap, 0);
+            }
             pixelPriority = RenderPriority.BACK_PLANE;
         }
     }
