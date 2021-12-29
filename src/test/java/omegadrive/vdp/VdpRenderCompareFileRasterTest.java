@@ -22,6 +22,7 @@ package omegadrive.vdp;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import omegadrive.util.FileUtil;
+import omegadrive.util.TestRenderUtil;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -61,9 +62,9 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
     private Image[] fields = new Image[2];
 
     static {
-        saveStateFolderPath = Paths.get(saveStateFolder, "raster");
-        saveStateFolder = saveStateFolderPath.toAbsolutePath().toString();
-        Path compareFolderPath = Paths.get(saveStateFolder, "compare");
+        saveStateFolderPath = Paths.get(baseDataFolder, "raster");
+        baseDataFolder = saveStateFolderPath.toAbsolutePath().toString();
+        Path compareFolderPath = Paths.get(baseDataFolder, "compare");
         compareFolder = compareFolderPath.toAbsolutePath().toString();
         System.setProperty("helios.interlace.one.field", "false");
     }
@@ -98,7 +99,7 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
     }
 
     private BufferedImage runAndGetImage(String fileName) {
-        Path saveFile = Paths.get(saveStateFolder, fileName);
+        Path saveFile = Paths.get(baseDataFolder, fileName);
         Path datFile = getDatFile(saveFile);
         vdpProvider = prepareVdp(saveFile);
         runToEvenField();
@@ -108,7 +109,7 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
         while (fields[0] == null) {
             MdVdpTestUtil.runToStartFrame(vdpProvider);
         }
-        BufferedImage actual = convertToBufferedImage(fields[0]);
+        BufferedImage actual = TestRenderUtil.convertToBufferedImage(fields[0]);
         return actual;
     }
 
@@ -154,7 +155,8 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
                 fieldCompleted = (Integer.parseInt(value.toString()) + 1) & 1;
                 System.out.println(fieldCompleted + "->" + value);
                 if (ready.get()) {
-                    Image f = cloneImage(saveRenderToImage(screenData, vdpProvider.getVideoMode()));
+                    Image f = TestRenderUtil.cloneImage(
+                            TestRenderUtil.saveRenderToImage(screenData, vdpProvider.getVideoMode()));
                     if (fields[fieldCompleted] != null) {
                         System.out.println("Attempting to overwrite field# " + fieldCompleted);
                         return;
@@ -181,7 +183,7 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
         boolean save = false;
         BufferedImage i = runAndGetImage(fileName);
         if (save) {
-            saveToFile(fileName, i);
+            TestRenderUtil.saveToFile(compareFolder, fileName, IMG_EXT, i);
         } else {
             boolean error = testCompareOne(fileName, i);
             System.out.println("Done");

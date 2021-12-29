@@ -20,6 +20,7 @@
 package omegadrive.vdp;
 
 import omegadrive.util.TestFileUtil;
+import omegadrive.util.TestRenderUtil;
 import omegadrive.util.Util;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,6 +35,8 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static omegadrive.util.TestRenderUtil.*;
+
 @Ignore
 @Disabled
 public class VdpRenderCompareTest extends VdpRenderTest {
@@ -41,30 +44,9 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     protected static boolean SHOW_IMAGES_ON_FAILURE = true;
     public static String IMG_EXT = "bmp";
     public static String DOT_EXT = "." + IMG_EXT + ".zip";
-    private static Path compareFolderPath = Paths.get(saveStateFolder, "compare");
+    private static Path compareFolderPath = Paths.get(baseDataFolder, "compare");
     protected static String compareFolder = compareFolderPath.toAbsolutePath().toString();
     private BufferedImage diffImage;
-
-    public static BufferedImage convertToBufferedImage(Image image) {
-        BufferedImage newImage = new BufferedImage(
-                image.getWidth(null), image.getHeight(null),
-                BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = newImage.createGraphics();
-        g.drawImage(image, 0, 0, null);
-        g.dispose();
-        return newImage;
-    }
-
-    public static void main(String[] args) {
-        File[] files = compareFolderPath.getParent().toFile().listFiles();
-        for (File file : files) {
-            if (file.isDirectory()) {
-                continue;
-            }
-            System.out.println("Testing: " + file);
-//            FileUtil.compressAndSaveToZipFile(file.toPath());
-        }
-    }
 
     @Before
     public void beforeTest() {
@@ -76,7 +58,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     @Ignore
     public void testCompareAll() {
 //        SHOW_IMAGES_ON_FAILURE = true;
-        File[] files = Paths.get(saveStateFolder).toFile().listFiles();
+        File[] files = Paths.get(baseDataFolder).toFile().listFiles();
         StringBuilder sb = new StringBuilder();
         for (File file : files) {
             if (file.isDirectory()) {
@@ -140,7 +122,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
 
     private void testOverwriteBaselineImage(Path saveFile) {
         Image i = testSavestateViewerSingle(saveFile);
-        saveToFile(saveFile.getFileName().toString(), i);
+        TestRenderUtil.saveToFile(compareFolder, saveFile.getFileName().toString(), IMG_EXT, i);
     }
 
     protected boolean testCompareOne(Path saveFile) {
@@ -164,11 +146,5 @@ public class VdpRenderCompareTest extends VdpRenderTest {
             return true;
         }
         return false;
-    }
-
-    protected void saveToFile(String saveName, Image i) {
-        Path folder = Paths.get(compareFolder);
-        Path res = TestFileUtil.compressAndSaveToZipFile(saveName + "." + IMG_EXT, folder, i, IMG_EXT);
-        System.out.println("Image saved: " + res.toAbsolutePath().toString());
     }
 }

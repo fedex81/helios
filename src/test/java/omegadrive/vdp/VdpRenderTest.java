@@ -26,24 +26,20 @@ import omegadrive.save.MdSavestateTest;
 import omegadrive.system.Genesis;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.util.VideoMode;
+import omegadrive.util.TestRenderUtil;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import org.junit.Before;
 import org.junit.Ignore;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.nio.file.Path;
 
 @Ignore
 public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
 
     protected static int[] screenData;
-    protected VdpRenderDump renderDump = new VdpRenderDump();
-    protected static String saveStateFolder = MdSavestateTest.saveStateFolder.toAbsolutePath().toString();
+    protected static String baseDataFolder = MdSavestateTest.saveStateFolder.toAbsolutePath().toString();
     int count = 0;
 
     @Before
@@ -58,48 +54,10 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
         return Genesis.createNewInstance(DisplayWindow.HEADLESS_INSTANCE);
     }
 
-    protected static Image scaleImage(Image i, int factor) {
-        return i.getScaledInstance(i.getWidth(null) * factor, i.getHeight(null) * factor, 0);
-    }
-
-    public static JFrame showImageFrame(Image bi, String title) {
-        JLabel label = new JLabel();
-        JPanel panel = new JPanel();
-        panel.add(label);
-        JFrame f = new JFrame();
-        f.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        f.add(panel);
-        label.setIcon(new ImageIcon(bi));
-        f.setTitle(title);
-        f.pack();
-        f.setVisible(true);
-        return f;
-    }
-
     protected Image testSavestateViewerSingle(Path saveFile) {
         GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
         MdVdpTestUtil.runToStartFrame(vdpProvider);
-        return saveRenderToImage(screenData, vdpProvider.getVideoMode());
-    }
-
-    private static boolean isValidImage(int[] screenData) {
-        for (int i = 0; i < screenData.length; i++) {
-            if (screenData[i] > 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected static Image cloneImage(Image img) {
-        return img.getScaledInstance(-1, -1, Image.SCALE_DEFAULT);
-    }
-
-    protected BufferedImage saveRenderToImage(int[] data, VideoMode videoMode) {
-        BufferedImage bi = renderDump.getImage(videoMode);
-        int[] linear = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
-        System.arraycopy(data, 0, linear, 0, linear.length);
-        return bi;
+        return TestRenderUtil.saveRenderToImage(screenData, vdpProvider.getVideoMode());
     }
 
     protected GenesisVdpProvider prepareVdp(Path saveFile) {
@@ -115,7 +73,7 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
     @Override
     public void onNewFrame() {
         int[] sd = vdpProvider.getScreenDataLinear();
-        boolean isValid = isValidImage(sd);
+        boolean isValid = TestRenderUtil.isValidImage(sd);
         if (!isValid) {
             System.out.println("Empty render #" + count);
         }

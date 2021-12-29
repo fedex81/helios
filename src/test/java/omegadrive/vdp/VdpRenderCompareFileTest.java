@@ -44,7 +44,7 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
     );
 
     static Stream<String> fileProvider() {
-        File[] files = Paths.get(saveStateFolder).toFile().listFiles();
+        File[] files = Paths.get(baseDataFolder).toFile().listFiles();
         Predicate<File> validFile = f -> !f.isDirectory() && !ignoredTests.contains(f.getName());
         return Arrays.stream(files).filter(validFile).map(f -> f.getName()).sorted();
     }
@@ -60,7 +60,7 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
     public void testCompareFile(String fileName) {
         SHOW_IMAGES_ON_FAILURE = false;
         boolean stopWhenDone = false;
-        Path saveFile = Paths.get(saveStateFolder, fileName);
+        Path saveFile = Paths.get(baseDataFolder, fileName);
         boolean error = testCompareOne(saveFile);
         if (stopWhenDone && fileName.startsWith("vf2")) {
             Util.waitForever();
@@ -72,7 +72,7 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
     @Disabled
     @Test
     public void testCompare() {
-        Path saveFile = Paths.get(saveStateFolder, "subterr_01.gsh");
+        Path saveFile = Paths.get(baseDataFolder, "subterr_01.gsh");
         super.testCompareFile(saveFile, false);
     }
 }
