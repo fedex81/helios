@@ -303,30 +303,34 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         final ShadowHighlightType shadowHighlight = processShadowHighlight(col);
         final PixelData pxData = linePixelData[col];
         int cramIndex = planeBack[col];
+        int blanking = 1;
         for (int i = RenderPriority.enums.length - 1; i > 0; i--) {
             RenderPriority rp = RenderPriority.enums[i];
             final int rt = rp.getRenderType().ordinal();
             if (pxData.priorityMap[rt] == rp.getPriorityType()
                     && (pxData.cramIndexMap[rt] & CRAM_TRANSP_PIXEL_MASK) != 0) {
                 cramIndex = pxData.cramIndexMap[rt];
+                blanking = 0;
                 break;
             }
         }
-        return colorMapper.getColor(cram[cramIndex] << 8 | cram[cramIndex + 1],
-                shadowHighlight);
+        int color = colorMapper.getColor(cram[cramIndex] << 8 | cram[cramIndex + 1],
+                shadowHighlight) & ~1;
+        return color | blanking;
     }
 
     private int getPixelFromLayer(RenderPriority rp, int col) {
         switch (rp.getRenderType()) {
             case PLANE_A:
             case WINDOW_PLANE:
-                return javaPalette[planeA[col] >> 1];
+                return javaPalette[planeA[col] >> 1] & ~1;
             case PLANE_B:
-                return javaPalette[planeB[col] >> 1];
+                return javaPalette[planeB[col] >> 1] & ~1;
             case SPRITE:
-                return javaPalette[sprites[col] >> 1];
+                return javaPalette[sprites[col] >> 1] & ~1;
             case BACK_PLANE:
-                return javaPalette[planeBack[col] >> 1];
+                //lsb (bit) indicates blanking
+                return javaPalette[planeBack[col] >> 1] | 1;
             default:
                 return -1;
         }

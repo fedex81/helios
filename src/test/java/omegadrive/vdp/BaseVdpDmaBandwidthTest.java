@@ -90,8 +90,6 @@ public class BaseVdpDmaBandwidthTest {
             memoryProvider.writeRamByte(i, val);
             val = (val - 1) & 0xFF;
         }
-        String str = MdVdpTestUtil.print68kMemory(memoryProvider, 0, GenesisVdpProvider.VDP_VRAM_SIZE);
-        System.out.println(str);
     }
 
     //CRAM words == vdp Slots

@@ -833,6 +833,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         return interruptHandler.getStateString(" - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
     }
 
+    //NOTE: used by helios32x
     public UpdatableViewer getDebugViewer() {
         return debugViewer;
     }

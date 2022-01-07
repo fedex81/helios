@@ -103,8 +103,9 @@ public class VdpRenderCompareTest extends VdpRenderTest {
             diffImage = convertToBufferedImage(baseline);
             for (int i = 0; i < d1.width; i++) {
                 for (int j = 0; j < d1.height; j++) {
-                    int r1 = baseline.getRGB(i, j);
-                    int r2 = actual.getRGB(i, j);
+                    //NOTE: ignore lsb (bit) as it encodes the blanking information for that pixel
+                    int r1 = baseline.getRGB(i, j) & ~1;
+                    int r2 = actual.getRGB(i, j) & ~1;
                     double ratio = 1.0 * r1 / r2;
                     if (ratio - 1.0 != 0.0) {
 //                        System.out.println(i + "," + j + ": " + r1 + "," + r2 + "," + ratio);
