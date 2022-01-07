@@ -35,6 +35,8 @@ public class JinputGamepadMapping {
     public static final String SONY_PSX_CLASSIC_PAD_NAME = "Sony Interactive Entertainment Controller";
     public static final String XBOX360_COMPAT_PAD_NAME = "Microsoft X-Box 360 pad";
     public static final String GAMESIR_G3S_PAD_NAME = "xiaoji Gamesir-G3s 1.02";
+    public static final String GOOGLE_STADIA_PAD_NAME = "Google Inc. Stadia Controller";
+    public static final String DEFAULT_PAD_NAME = "Default Pad Name";
 
     public static Table<String, Component.Identifier, Object> deviceMappings = HashBasedTable.create();
     private static final Logger LOG = LogManager.getLogger(JinputGamepadMapping.class.getSimpleName());
@@ -78,5 +80,31 @@ public class JinputGamepadMapping {
 
         deviceMappings.put(GAMESIR_G3S_PAD_NAME, Button.START, JoypadButton.S);
         deviceMappings.put(GAMESIR_G3S_PAD_NAME, Button.SELECT, JoypadButton.M);
+
+        deviceMappings.put(GOOGLE_STADIA_PAD_NAME, Axis.POV, JoypadDirection.UP_DOWN);
+        deviceMappings.put(GOOGLE_STADIA_PAD_NAME, Axis.POV, JoypadDirection.LEFT_RIGHT);
+
+        deviceMappings.put(GOOGLE_STADIA_PAD_NAME, Button.X, JoypadButton.A);
+        deviceMappings.put(GOOGLE_STADIA_PAD_NAME, Button.A, JoypadButton.B);
+        deviceMappings.put(GOOGLE_STADIA_PAD_NAME, Button.B, JoypadButton.C);
+        deviceMappings.put(GOOGLE_STADIA_PAD_NAME, Button.LEFT_THUMB, JoypadButton.X);
+        deviceMappings.put(GOOGLE_STADIA_PAD_NAME, Button.RIGHT_THUMB, JoypadButton.Y);
+        deviceMappings.put(GOOGLE_STADIA_PAD_NAME, Button.Y, JoypadButton.Z);
+
+        deviceMappings.put(GOOGLE_STADIA_PAD_NAME, Button.START, JoypadButton.S);
+        deviceMappings.put(GOOGLE_STADIA_PAD_NAME, Button.SELECT, JoypadButton.M);
+
+        deviceMappings.put(DEFAULT_PAD_NAME, Axis.POV, JoypadDirection.UP_DOWN);
+        deviceMappings.put(DEFAULT_PAD_NAME, Axis.POV, JoypadDirection.LEFT_RIGHT);
+
+        deviceMappings.put(DEFAULT_PAD_NAME, Button.X, JoypadButton.A);
+        deviceMappings.put(DEFAULT_PAD_NAME, Button.A, JoypadButton.B);
+        deviceMappings.put(DEFAULT_PAD_NAME, Button.B, JoypadButton.C);
+        deviceMappings.put(DEFAULT_PAD_NAME, Button.LEFT_THUMB, JoypadButton.X);
+        deviceMappings.put(DEFAULT_PAD_NAME, Button.RIGHT_THUMB, JoypadButton.Y);
+        deviceMappings.put(DEFAULT_PAD_NAME, Button.Y, JoypadButton.Z);
+
+        deviceMappings.put(DEFAULT_PAD_NAME, Button.START, JoypadButton.S);
+        deviceMappings.put(DEFAULT_PAD_NAME, Button.SELECT, JoypadButton.M);
     }
 }

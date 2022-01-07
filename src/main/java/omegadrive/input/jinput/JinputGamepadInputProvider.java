@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static net.java.games.input.Component.Identifier.Button.Axis;
+import static omegadrive.input.jinput.JinputGamepadMapping.DEFAULT_PAD_NAME;
 
 public class JinputGamepadInputProvider implements InputProvider {
 
@@ -196,7 +197,8 @@ public class JinputGamepadInputProvider implements InputProvider {
             LOG.info("{}: {}", id, value);
             System.out.println(id + ": " + value);
         }
-        Object res = JinputGamepadMapping.deviceMappings.row(ctrlName).getOrDefault(id, null);
+        Map<Component.Identifier, Object> map = getDeviceMappings(ctrlName);
+        Object res = map.getOrDefault(id, null);
         if (res instanceof JoypadButton) {
             joypadProvider.setButtonAction(playerNumber, (JoypadButton) res, action);
         } else if (res instanceof JoypadProvider.JoypadDirection) {
@@ -204,6 +206,14 @@ public class JinputGamepadInputProvider implements InputProvider {
         } else {
             LOG.debug("Unhandled event: {}", event);
         }
+    }
+
+    private Map<Component.Identifier, Object> getDeviceMappings(String ctrlName) {
+        Map<Component.Identifier, Object> map = JinputGamepadMapping.deviceMappings.row(ctrlName);
+        if (map.isEmpty()) {
+            map = JinputGamepadMapping.deviceMappings.row(DEFAULT_PAD_NAME);
+        }
+        return map;
     }
 
     private void handleDPad(PlayerNumber playerNumber, Component.Identifier id, double value) {

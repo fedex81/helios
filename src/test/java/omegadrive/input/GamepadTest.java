@@ -68,7 +68,7 @@ public class GamepadTest {
 
             @Override
             public String getState(PlayerNumber number) {
-                return null;
+                return "test";
             }
 
             @Override
