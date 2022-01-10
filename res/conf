@@ -3,14 +3,16 @@ sudo usermod -a -G audio <user>
 sudo usermod -a -G pulse-rt <user>
 sudo usermod -a -G jackuser <user>
 
+#set Pulse latency
+export PULSE_LATENCY_MSEC=50
+
+#show current latency
+pactl list sinks | grep Lat
+
 run visudo
 add: <user> ALL=NOPASSWD:/usr/bin/nice
 start the process: nice -n -5 <cmdLine>
 
-see /etc/pulse/daemon.conf
-; default-sample-format = s16le
-; default-sample-rate = 44100
-; alternate-sample-rate = 48000
-; default-sample-channels = 2
-; default-channel-map = front-left,front-right
-; resample-method = speex-float-3
+#see /etc/pulse/daemon.conf
+default-fragments = 2
+default-fragment-size-msec = 25

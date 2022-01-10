@@ -75,39 +75,23 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
         private final VdpRamType ramType;
         private final int addressMode;
 
+        private static VramMode[] lookup = new VramMode[0xF];
+
+        static {
+            for (VramMode v : VramMode.values()) {
+                lookup[v.addressMode] = v;
+            }
+        }
+
         VramMode(int addressMode, VdpRamType ramType) {
             this.ramType = ramType;
             this.addressMode = addressMode;
         }
 
         public static VramMode getVramMode(int addressMode, boolean verbose) {
-            VramMode m = null;
-            switch (addressMode) {
-                case 0b0000:
-                    m = VramMode.vramRead;
-                    break;
-                case 0b0001:
-                    m = VramMode.vramWrite;
-                    break;
-                case 0b0011:
-                    m = VramMode.cramWrite;
-                    break;
-                case 0b0100:
-                    m = VramMode.vsramRead;
-                    break;
-                case 0b0101:
-                    m = VramMode.vsramWrite;
-                    break;
-                case 0b1000:
-                    m = VramMode.cramRead;
-                    break;
-                case 0b1100:
-                    m = VramMode.vramRead_8bit;
-                    break;
-                default:
-                    if (verbose) {
-                        LOG.warn("Unexpected value: {}, vramMode is null", addressMode);
-                    }
+            VramMode m = lookup[addressMode];
+            if (verbose && m == null) {
+                LOG.warn("Unexpected value: {}, vramMode is null", addressMode);
             }
             return m;
         }

@@ -124,10 +124,12 @@ public class SoundUtil {
         } else {
             try {
                 line = (SourceDataLine) AudioSystem.getLine(info);
-                line.open(audioFormat, getAudioLineBufferSize(audioFormat));
+                int bufSize = getAudioLineBufferSize(audioFormat);
+                line.open(audioFormat, bufSize);
                 lowerLatencyHack(line);
                 line.start();
-                LOG.info("SourceDataLine buffer (bytes): {}", line.getBufferSize());
+                LOG.info("SourceDataLine buffer: {} ms, {} bytes, actual: {} bytes",
+                        SoundProvider.AUDIO_BUFFER_LEN_MS, bufSize, line.getBufferSize());
             } catch (LineUnavailableException lue) {
                 LOG.error("Unable to open audio line.");
             }

@@ -18,7 +18,6 @@ md: broken {ssf2, virtua racing}
 
 danibus scroll test
 bubba and stix
-power monger
 batman and robin, mad hatter: hint related?
 
 titan1, chip twister scene broken
