@@ -44,6 +44,8 @@ public class VdpDebugView implements UpdatableViewer {
     private JPanel panel;
     private JPanel additionalPanel;
 
+    private boolean s32xMode = false;
+
     private VdpDebugView(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.memoryInterface = memoryInterface;
         this.renderHandler = renderHandler;
@@ -78,10 +80,11 @@ public class VdpDebugView implements UpdatableViewer {
         JPanel tilePanel = tileViewer.getPanel();
         int h = planePanel.getHeight() + cramPanel.getHeight() + tilePanel.getHeight();
         this.panel.add(planePanel);
-        this.panel.add(tilePanel);
-        if (additionalPanel != null) {
+        if (s32xMode) {
             this.panel.add(additionalPanel);
             h += additionalPanel.getHeight();
+        } else {
+            this.panel.add(tilePanel);
         }
         this.panel.add(cramPanel);
         int w = Math.max(planePanel.getWidth(), cramPanel.getWidth());
@@ -96,10 +99,16 @@ public class VdpDebugView implements UpdatableViewer {
 
     @Override
     public void update() {
+        //need to do it now, as the render will be changed by the 32x layer
+        if (s32xMode) {
+            planeViewer.update();
+        }
         service.submit(() -> {
             cramViewer.update();
-            planeViewer.update();
             tileViewer.update();
+            if (!s32xMode) {
+                planeViewer.update();
+            }
         });
     }
 
@@ -110,6 +119,7 @@ public class VdpDebugView implements UpdatableViewer {
 
     public void setAdditionalPanel(JPanel panel) {
         this.additionalPanel = panel;
+        s32xMode = panel != null;
         buildPanel();
     }
 
