@@ -215,7 +215,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         this.interruptHandler = VdpInterruptHandler.createMdInstance(this);
         this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);
         this.debugViewer = VdpDebugView.createInstance(this, memoryInterface, renderHandler);
-        this.fifo = new VdpFifoImpl();
+        this.fifo = new VdpFifo();
         this.vdpPortAccessLogger = VdpPortAccessLogger.NO_LOGGER;
         this.initMode();
     }
@@ -716,8 +716,8 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     }
 
     private void updateFifoState(VdpFifo fifo) {
-        fifoFull = fifo.isFull() ? 1 : 0;
-        fifoEmpty = fifo.isEmpty() ? 1 : 0;
+        fifoFull = fifo.isFullBit();
+        fifoEmpty = fifo.isEmptyBit();
     }
 
     @Override

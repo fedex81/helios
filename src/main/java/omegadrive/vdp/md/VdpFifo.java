@@ -19,17 +19,16 @@
 
 package omegadrive.vdp.md;
 
+import omegadrive.util.Fifo;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
-public interface VdpFifo {
+public class VdpFifo extends Fifo.FixedSizeFifo<VdpFifo.VdpFifoEntry> {
 
-    class VdpFifoEntry {
+    public static final int VDP_FIFO_SIZE = 4;
+
+    public static class VdpFifoEntry {
         public GenesisVdpProvider.VdpPortType portType;
         public GenesisVdpProvider.VramMode vdpRamMode;
         public int addressRegister;
@@ -48,45 +47,12 @@ public interface VdpFifo {
         }
     }
 
-    void push(GenesisVdpProvider.VramMode vdpRamMode, int addressReg, int data);
-
-    VdpFifoEntry pop();
-
-    VdpFifoEntry peek();
-
-    boolean isEmpty();
-
-    boolean isFull();
-
-    default void clear() {
-        while (!isEmpty()) {
-            pop();
-        }
+    public VdpFifo() {
+        super(VDP_FIFO_SIZE);
+        fifo = new VdpFifoEntry[VDP_FIFO_SIZE];
+        IntStream.range(0, VDP_FIFO_SIZE).forEach(i -> fifo[i] = new VdpFifoEntry());
     }
 
-    static VdpFifo createInstance() {
-        return new VdpFifoImpl();
-    }
-}
-
-class VdpFifoImpl implements VdpFifo {
-
-    public static final boolean logEnable = false;
-
-    public static final int FIFO_SIZE = 4;
-    public static final boolean printToSysOut = false;
-    private int popPointer;
-    private int pushPointer;
-    private int fifoSize;
-
-    public VdpFifoImpl() {
-        IntStream.range(0, FIFO_SIZE).forEach(i -> fifo[i] = new VdpFifoEntry());
-    }
-
-    private final static Logger LOG = LogManager.getLogger(VdpFifo.class.getSimpleName());
-    private final VdpFifoEntry[] fifo = new VdpFifoEntry[FIFO_SIZE];
-
-    @Override
     public void push(GenesisVdpProvider.VramMode vdpRamMode, int addressReg, int data) {
         if (isFull()) {
             LOG.info("FIFO full");
@@ -97,51 +63,6 @@ class VdpFifoImpl implements VdpFifo {
         entry.addressRegister = addressReg;
         entry.vdpRamMode = vdpRamMode;
         entry.firstByteWritten = false;
-        pushPointer = (pushPointer + 1) % FIFO_SIZE;
-        fifoSize++;
-        logState(entry, "push");
-    }
-
-    @Override
-    public VdpFifoEntry pop() {
-        if (isEmpty()) {
-            LOG.info("FIFO empty");
-            return null;
-        }
-        VdpFifoEntry entry = fifo[popPointer];
-        popPointer = (popPointer + 1) % FIFO_SIZE;
-        fifoSize--;
-        logState(entry, "pop");
-        return entry;
-    }
-
-    private void logState(VdpFifoEntry entry, String type) {
-        if (logEnable) {
-            ParameterizedMessage pm = new ParameterizedMessage(
-                    "Fifo {}: {}, address: {}, data: {}, push: {}, pop: {}, size: {}\nstate: {}", type,
-                    entry.vdpRamMode,
-                    Integer.toHexString(entry.addressRegister), Integer.toHexString(entry.data),
-                    pushPointer, popPointer, fifoSize, Arrays.toString(fifo));
-            String str = pm.getFormattedMessage();
-            LOG.info(str);
-            if (printToSysOut) {
-                System.out.println(str);
-            }
-
-        }
-    }
-
-    public VdpFifoEntry peek() {
-        return fifo[popPointer];
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return fifoSize == 0;
-    }
-
-    @Override
-    public boolean isFull() {
-        return fifoSize >= FIFO_SIZE;
+        push(entry);
     }
 }
