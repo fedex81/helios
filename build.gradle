@@ -123,6 +123,21 @@ jar {
     archivesBaseName = rootProject.name
     destinationDir = file("$buildDir/packageDir")
     doLast {
+        println("Creating jar with sources in folder: " + destinationDir)
+    }
+}
+
+task jarWithSources dependsOn jar {
+    from sourceSets.main.allSource
+    manifest {
+        attributes 'Implementation-Title': 'Helios',
+                'Implementation-Version': version,
+                'Main-Class': 'omegadrive.SystemLoader',
+                'Class-Path': configurations.compile.collect { "lib/" + it.getName() }.join(' ')
+    }
+    archivesBaseName = rootProject.name + "-src"
+    destinationDir = file("$buildDir/packageDir")
+    doLast {
         println("Creating jar in folder: " + destinationDir)
     }
 }

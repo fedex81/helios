@@ -19,7 +19,6 @@
 
 package omegadrive.util;
 
-import com.google.common.base.Strings;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
@@ -35,6 +34,8 @@ import java.util.*;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
@@ -108,6 +109,31 @@ public class Util {
 
     public static void waitOnBarrier(CyclicBarrier barrier) {
         waitOnBarrier(barrier, true);
+    }
+
+    public static boolean trySignalCondition(Lock lock, Condition condition) {
+        if (lock.tryLock()) {
+            try {
+                condition.signal();
+                return true;
+            } finally {
+                lock.unlock();
+            }
+        }
+        return false;
+    }
+
+    public static void waitOnCondition(Lock lock, Condition condition) {
+        try {
+            lock.lock();
+            try {
+                condition.await();
+            } catch (Exception e) {
+                LOG.warn("Error on condition", e);
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
 
@@ -299,12 +325,8 @@ public class Util {
         return data;
     }
 
-    public static String toHex(long val) {
-        return Strings.padStart(Long.toHexString(val & 0xFF_FFFF), 8, '0');
-    }
-
-    public static String toHex(long val, int digits) {
-        return Strings.padStart(Long.toHexString(val & 0xFF_FFFF), digits, '0');
+    public static String th(int pos) {
+        return Integer.toHexString(pos);
     }
 
     public static Integer getFromIntegerCache(int val) {

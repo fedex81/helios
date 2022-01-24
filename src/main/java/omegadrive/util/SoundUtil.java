@@ -151,8 +151,7 @@ public class SoundUtil {
         }
     }
 
-
-    private static void intStereo14ToByteStereo16Mix(int[] input, byte[] output, int inputLen) {
+    public static void intStereo16ToByteStereo16Mix(int[] input, byte[] output, int inputLen) {
         for (int i = 0, k = 0; i < inputLen; i += 2, k += 4) {
             output[k] = (byte) (input[i] & 0xFF); //left lsb
             output[k + 1] = (byte) ((input[i] >> 8) & 0xFF); //left msb
@@ -165,7 +164,7 @@ public class SoundUtil {
         if (fmStereo16.length == 0) {
             byteMono8ToByteStereo16Mix(psgMono8, outputMono16);
         } else if (psgMono8.length == 0) {
-            intStereo14ToByteStereo16Mix(fmStereo16, outputMono16, inputLen);
+            intStereo16ToByteStereo16Mix(fmStereo16, outputMono16, inputLen);
         } else {
             intStereo14ToByteStereo16Mix(fmStereo16, outputMono16, psgMono8, inputLen);
         }

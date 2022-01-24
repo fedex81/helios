@@ -19,13 +19,13 @@
 
 package omegadrive.cpu.m68k;
 
+import com.google.common.base.Strings;
 import m68k.cpu.Cpu;
 import m68k.cpu.DisassembledInstruction;
 import m68k.cpu.Instruction;
 import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
 import omegadrive.cpu.m68k.debug.MC68000WrapperDebug;
-import omegadrive.util.Util;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +33,8 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static omegadrive.util.Util.th;
 
 public class MC68000Helper {
 
@@ -113,32 +115,32 @@ public class MC68000Helper {
         } else {
             sb2.append(String.format("%08x   ????", wrapPc));
         }
-        return sb.append(String.format("\n==> %s\n\n", sb2.toString())).toString();
+        return sb.append(String.format("\n==> %s\n\n", sb2)).toString();
     }
 
     public static String dumpInfo(Cpu cpu, MC68000WrapperDebug.M68kState state, int memorySize) {
         StringBuilder sb = new StringBuilder("\n");
         int wrapPc = state.pc & 0xFF_FFFF;
-        sb.append("D0: " + Util.toHex(state.dr[0]) +
-                "   D4: " + Util.toHex(state.dr[4]) +
-                "   A0: " + Util.toHex(state.ar[0]) +
-                "   A4: " + Util.toHex(state.ar[4]) +
-                "     PC: " + Util.toHex(wrapPc) + "\n");
-        sb.append("D1: " + Util.toHex(state.dr[1]) +
-                "   D5: " + Util.toHex(state.dr[5]) +
-                "   A1: " + Util.toHex(state.ar[1]) +
-                "   A5: " + Util.toHex(state.ar[5]) +
-                "     SR: " + Util.toHex(state.sr, 4) + " " + makeFlagView(cpu) + "\n");
-        sb.append("D2: " + Util.toHex(state.dr[2]) +
-                "   D6: " + Util.toHex(state.dr[6]) +
-                "   A2: " + Util.toHex(state.ar[2]) +
-                "   A6: " + Util.toHex(state.ar[6]) +
-                "    USP: " + Util.toHex(state.usp) + "\n");
-        sb.append("D3: " + Util.toHex(state.dr[3]) +
-                "   D7: " + Util.toHex(state.dr[7]) +
-                "   A3: " + Util.toHex(state.ar[3]) +
-                "   A7: " + Util.toHex(state.ar[7]) +
-                "    SSP: " + Util.toHex(state.ssp) + "\n");
+        sb.append("D0: " + th(state.dr[0]) +
+                "   D4: " + th(state.dr[4]) +
+                "   A0: " + th(state.ar[0]) +
+                "   A4: " + th(state.ar[4]) +
+                "     PC: " + th(wrapPc) + "\n");
+        sb.append("D1: " + th(state.dr[1]) +
+                "   D5: " + th(state.dr[5]) +
+                "   A1: " + th(state.ar[1]) +
+                "   A5: " + th(state.ar[5]) +
+                "     SR: " + toHex(state.sr, 4) + " " + makeFlagView(cpu) + "\n");
+        sb.append("D2: " + th(state.dr[2]) +
+                "   D6: " + th(state.dr[6]) +
+                "   A2: " + th(state.ar[2]) +
+                "   A6: " + th(state.ar[6]) +
+                "    USP: " + th(state.usp) + "\n");
+        sb.append("D3: " + th(state.dr[3]) +
+                "   D7: " + th(state.dr[7]) +
+                "   A3: " + th(state.ar[3]) +
+                "   A7: " + th(state.ar[7]) +
+                "    SSP: " + th(state.ssp) + "\n");
         StringBuilder sb2 = new StringBuilder();
         if (wrapPc >= 0 && wrapPc < memorySize) {
             int opcode = cpu.readMemoryWord(wrapPc);
@@ -146,9 +148,13 @@ public class MC68000Helper {
             DisassembledInstruction di = i.disassemble(wrapPc, opcode);
             di.formatInstruction(sb2);
         }
-        sb.append("\n==> " + sb2.toString() + "\n\n");
+        sb.append("\n==> " + sb2 + "\n\n");
         sb.append(state.memAccess);
         return sb.toString();
+    }
+
+    public static String toHex(int val, int digits) {
+        return Strings.padStart(Integer.toHexString(val), digits, '0');
     }
 
     protected static String makeFlagView(Cpu cpu) {

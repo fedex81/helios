@@ -23,6 +23,8 @@ public enum Size {
 
     BYTE(0x80, 0xFF), WORD(0x8000, 0xFFFF), LONG(0x8000_0000L, 0xFFFF_FFFFL);
 
+    public static final Size[] vals = Size.values();
+
     long msb;
     long max;
 

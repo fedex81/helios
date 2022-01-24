@@ -25,7 +25,6 @@ import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.MC68000AddressSpace;
 import omegadrive.cpu.m68k.MC68000Helper;
 import omegadrive.util.Size;
-import omegadrive.util.Util;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +33,8 @@ import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.stream.IntStream;
+
+import static omegadrive.util.Util.th;
 
 public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
 
@@ -236,7 +237,7 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
             }
 
             private final void traceAndCheck(String head, Size size, int address, int data) {
-                sb.append(head + size + ", " + Util.toHex(address) + ", " + Util.toHex(data) + "\n");
+                sb.append(head + size + ", " + th(address) + ", " + th(data) + "\n");
                 if (address == logAddressAccess) {
                     dump = true;
                 }

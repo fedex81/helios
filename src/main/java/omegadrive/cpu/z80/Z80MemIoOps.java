@@ -23,8 +23,9 @@ import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.bus.model.GenesisZ80BusProvider;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.util.Size;
-import omegadrive.util.Util;
 import z80core.IMemIoOps;
+
+import static omegadrive.util.Util.th;
 
 public class Z80MemIoOps implements IMemIoOps {
 
@@ -115,7 +116,7 @@ public class Z80MemIoOps implements IMemIoOps {
             }
 
             private final void traceAndCheck(String head, Size size, int address, int data) {
-                sb.append(head + size + ", " + Util.toHex(address) + ", " + Util.toHex(data) + "\n");
+                sb.append(head + size + ", " + th(address) + ", " + th(data) + "\n");
                 if (logAddressAccess >= 0 && address == logAddressAccess) {
                     //do something
                 }
