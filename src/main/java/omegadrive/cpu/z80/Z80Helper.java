@@ -122,7 +122,7 @@ public class Z80Helper {
         return state;
     }
 
-    static class Z80StateExt extends Z80State {
+    public static class Z80StateExt extends Z80State {
         public String memAccess;
     }
 

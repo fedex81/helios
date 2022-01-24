@@ -23,6 +23,7 @@ import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,7 +56,7 @@ public class MC68000Wrapper implements M68kProvider {
     }
 
     public static MC68000Wrapper createInstance(GenesisBusProvider busProvider) {
-        return MC68000Helper.M68K_DEBUG ? new MC68000WrapperDebug(busProvider) : new MC68000Wrapper(busProvider);
+        return MC68000Helper.M68K_DEBUG ? new MC68000WrapperFastDebug(busProvider) : new MC68000Wrapper(busProvider);
     }
 
     @Override

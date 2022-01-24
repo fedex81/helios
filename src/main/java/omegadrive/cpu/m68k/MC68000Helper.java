@@ -24,6 +24,7 @@ import m68k.cpu.DisassembledInstruction;
 import m68k.cpu.Instruction;
 import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
+import omegadrive.cpu.m68k.debug.MC68000WrapperDebug;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -175,13 +176,17 @@ public class MC68000Helper {
         return sb.toString();
     }
 
-    public static void printCpuState(Cpu cpu, Level level, String head, int memorySize) {
+    public static String getCpuState(Cpu cpu, String head, int memorySize) {
         try {
-            String str = MC68000Helper.dumpInfo(cpu, cpu.getPC(), true, memorySize);
-            LOG.log(level, head + str);
+            return head + MC68000Helper.dumpInfo(cpu, cpu.getPC(), true, memorySize);
         } catch (Exception e) {
             String pc = Long.toHexString(cpu.getPC() & 0xFF_FFFF);
             LOG.warn("Unable to dump the state, pc: {}", pc, e);
         }
+        return "????";
+    }
+
+    public static void printCpuState(Cpu cpu, Level level, String head, int memorySize) {
+        LOG.log(level, "{}{}", head, getCpuState(cpu, head, memorySize));
     }
 }

@@ -17,11 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.cpu.m68k;
+package omegadrive.cpu.m68k.debug;
 
 import m68k.cpu.Cpu;
 import m68k.memory.AddressSpace;
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.cpu.m68k.MC68000AddressSpace;
+import omegadrive.cpu.m68k.MC68000Helper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.Level;
@@ -33,7 +35,7 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.stream.IntStream;
 
-public class MC68000WrapperDebug extends MC68000Wrapper {
+public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
 
     private static final Logger LOG = LogManager.getLogger(MC68000WrapperDebug.class.getSimpleName());
 
@@ -289,7 +291,7 @@ public class MC68000WrapperDebug extends MC68000Wrapper {
         }
     }
 
-    static class M68kState {
+    public static class M68kState {
         public int sr, pc, ssp, usp, opcode;
         public int[] dr = new int[8], ar = new int[8];
         public String memAccess;

@@ -199,7 +199,7 @@ public class Z80MemIoOps implements IMemIoOps {
         return ram[address];
     }
 
-    static abstract class Z80MemIoOpsDbg extends Z80MemIoOps {
+    public static abstract class Z80MemIoOpsDbg extends Z80MemIoOps {
         public abstract void poke8Ext(int address, int value);
 
         public abstract int peek8Ext(int address);

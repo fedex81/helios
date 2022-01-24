@@ -22,6 +22,7 @@ package omegadrive.cpu.z80;
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.bus.model.GenesisZ80BusProvider;
+import omegadrive.cpu.z80.debug.Z80CoreWrapperFastDebug;
 import omegadrive.savestate.StateUtil;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -56,14 +57,13 @@ public class Z80CoreWrapper implements Z80Provider {
     public static Z80CoreWrapper createInstance(SystemLoader.SystemType systemType, BaseBusProvider busProvider) {
         switch (systemType) {
             case GENESIS:
-                return Z80_DEBUG ? Z80CoreWrapperDebug.createGenesisInstance(busProvider) :
-                        createGenesisInstanceInternal(busProvider);
+                return createGenesisInstanceInternal(busProvider);
             case GG:
             case SMS:
             case COLECO:
             case SG_1000:
             case MSX:
-                return Z80_DEBUG ? Z80CoreWrapperDebug.createInstance(busProvider) : createInstanceInternal(busProvider);
+                return createInstanceInternal(busProvider);
             default:
                 LOG.error("Unexpected system: {}", systemType);
         }
@@ -73,29 +73,29 @@ public class Z80CoreWrapper implements Z80Provider {
     protected Z80CoreWrapper() {
     }
 
-    protected static Z80CoreWrapper setupInternal(Z80CoreWrapper w, Z80State z80State) {
-        w.z80Core = new Z80(w.memIoOps, null);
-        w.z80BusProvider.attachDevice(w);
+    protected Z80CoreWrapper setupInternal(Z80State z80State) {
+        z80Core = new Z80(memIoOps, null);
+        z80BusProvider.attachDevice(this);
         if (z80State != null) {
-            w.z80Core.setZ80State(z80State);
+            z80Core.setZ80State(z80State);
         }
-        w.z80Core.setRegSP(w.memIoOps.getPcUpperLimit()); //md: fixes Z80 WAV Player v0.1
-        w.memPtrInitVal = w.memIoOps.getPcUpperLimit();
-        return w;
+        z80Core.setRegSP(memIoOps.getPcUpperLimit()); //md: fixes Z80 WAV Player v0.1
+        memPtrInitVal = memIoOps.getPcUpperLimit();
+        return this;
     }
 
     private static Z80CoreWrapper createInstanceInternal(BaseBusProvider busProvider) {
-        Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperDebug() : new Z80CoreWrapper();
+        Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperFastDebug() : new Z80CoreWrapper();
         w.z80BusProvider = busProvider;
         w.memIoOps = Z80MemIoOps.createInstance(w.z80BusProvider);
-        return setupInternal(w, null);
+        return w.setupInternal(null);
     }
 
     private static Z80CoreWrapper createGenesisInstanceInternal(BaseBusProvider busProvider) {
-        Z80CoreWrapper w = new Z80CoreWrapper();
+        Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperFastDebug() : new Z80CoreWrapper();
         w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider);
         w.memIoOps = Z80MemIoOps.createGenesisInstance(w.z80BusProvider);
-        return setupInternal(w, null);
+        return w.setupInternal(null);
     }
 
     //NOTE: halt sets PC = PC - 1
