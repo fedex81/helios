@@ -49,7 +49,7 @@ public class AutomatedGameTester {
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
 
-    private static String romFolder = ".";
+    private static String romFolder = "/home/fede/roms/md";
 
     private static boolean noIntro = true;
     private static String header = "rom;boot;sound";
@@ -114,7 +114,7 @@ public class AutomatedGameTester {
     private void bootRecursiveRoms(boolean shuffle) throws IOException {
         Path folder = Paths.get(romFolder);
         List<Path> testRoms = Files.walk(folder, FileVisitOption.FOLLOW_LINKS).
-                filter(p -> testAllRomsPredicate.test(p)).collect(Collectors.toList());
+                filter(p -> testGenRomsPredicate.test(p)).collect(Collectors.toList());
         System.out.println("Loaded files: " + testRoms.size());
         System.out.println("Randomizer seed: " + seed);
         if (shuffle) {

@@ -23,6 +23,11 @@ public interface Fifo<T> {
 
     boolean isFull();
 
+    /**
+     * @return the current size of the fifo
+     */
+    int getLevel();
+
     default int isEmptyBit() {
         return isEmpty() ? 1 : 0;
     }
@@ -99,6 +104,11 @@ public interface Fifo<T> {
         @Override
         public boolean isFull() {
             return currentSize >= fifoSize;
+        }
+
+        @Override
+        public int getLevel() {
+            return currentSize;
         }
 
         protected void logState(T entry, String type) {

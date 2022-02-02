@@ -253,9 +253,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         if (!SystemLoader.showFps) {
             return Optional.empty();
         }
-
-        double lastFps = (1.0 * Util.SECOND_IN_NS) / ((nowNs - prevStartNs));
-        telemetry.newFrame(lastFps, driftNs).ifPresent(statsConsumer);
+        telemetry.newFrame(nowNs - prevStartNs, driftNs).ifPresent(statsConsumer);
         return stats;
     }
 

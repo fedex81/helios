@@ -43,8 +43,7 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
 
     int DEFAULT_BUFFER_SIZE_MS = 50;
     //TODO max latency seems to be AUDIO_BUFFER_LEN_MS*3
-    int AUDIO_BUFFER_LEN_MS = 30; //Integer.parseInt(System.getProperty("audio.buffer.length.ms",
-//            String.valueOf(DEFAULT_BUFFER_SIZE_MS)));
+    int AUDIO_BUFFER_LEN_MS = Integer.parseInt(System.getProperty("audio.buffer.length.ms", String.valueOf(DEFAULT_BUFFER_SIZE_MS)));
 
     boolean ENABLE_SOUND = Boolean.parseBoolean(System.getProperty("helios.enable.sound", "true"));
 

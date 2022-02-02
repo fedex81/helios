@@ -16,12 +16,14 @@ public interface BaseVdpAdapterEventSupport {
     }
 
     default void fireVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
-        getVdpEventListenerList().forEach(l -> l.onVdpEvent(event, value));
+        for (VdpEventListener l : getVdpEventListenerList()) {
+            l.onVdpEvent(event, value);
+        }
     }
 
     default void fireVdpEventOnChange(BaseVdpProvider.VdpEvent event, Object prev, Object value) {
         if (prev != value) {
-            getVdpEventListenerList().forEach(l -> l.onVdpEvent(event, value));
+            fireVdpEvent(event, value);
         }
     }
 

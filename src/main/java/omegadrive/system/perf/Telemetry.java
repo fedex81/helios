@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 public class Telemetry {
     private final static Logger LOG = LogManager.getLogger(Telemetry.class.getSimpleName());
     public static final boolean enable = false;
+
     private static final Function<Map<?, Double>, String> toStringFn = map -> {
         String res = Arrays.toString(map.values().stream().toArray());
         return res.substring(1, res.length() - 2);
@@ -52,7 +53,6 @@ public class Telemetry {
     private Path telemetryFile;
     private long frameCounter = 0;
     private final Table<String, Long, Double> data = TreeBasedTable.create();
-    private double fpsAccum = 0;
     private final Map<Long, Timing> frameTimeStamp = new HashMap<>();
 
     private void addFrameTimestamp() {
@@ -74,11 +74,6 @@ public class Telemetry {
         }
     }
 
-    public void addFpsSample(double value) {
-        fpsAccum += value;
-        addSample("fps", value);
-    }
-
     public void addSample(String type, double value) {
         if (!enable) {
             return;
@@ -88,11 +83,14 @@ public class Telemetry {
         }
     }
 
-    private String getAvgFpsRounded() {
-        double r = fpsAccum / STATS_EVERY_FRAMES;
-        r = ((int) (r * 100)) / 100d;
-        fpsAccum = 0;
-        return fpsFormatter.format(r);
+    private String getAvgFpsRounded(double avgFrameTimeMs) {
+        return fpsFormatter.format(1000.0 / avgFrameTimeMs);
+    }
+
+    private double getAvgFrameTimeMs() {
+        Timing current = frameTimeStamp.get(frameCounter);
+        Timing prev = frameTimeStamp.getOrDefault(frameCounter - STATS_EVERY_FRAMES, NO_TIMING);
+        return 1.0 * (current.instantNow - prev.instantNow) / STATS_EVERY_FRAMES;
     }
 
     public boolean hasNewStats() {
@@ -103,7 +101,9 @@ public class Telemetry {
         Optional<String> o = Optional.empty();
         if (hasNewStats()) {
             Optional<String> arc = AudioRateControl.getLatestStats();
-            o = Optional.of(getAvgFpsRounded() + "fps" + (arc.isPresent() ? ", " + arc.get() : ""));
+            double ft = getAvgFrameTimeMs();
+            o = Optional.of(fpsFormatter.format(ft) + "ms (" + getAvgFpsRounded(ft) + "fps)"
+                    + (arc.isPresent() ? ", " + arc.get() : ""));
         }
         return o;
     }
@@ -115,9 +115,9 @@ public class Telemetry {
         telemetryFile = null;
     }
 
-    public Optional<String> newFrame(double lastFps, double driftNs) {
+    public Optional<String> newFrame(double frameTimeNs, double driftNs) {
         addFrameTimestamp();
-        addFpsSample(lastFps);
+        addSample("fps", (1.0 * Util.SECOND_IN_NS) / frameTimeNs);
         addSample("driftNs", driftNs);
         Optional<String> os = getNewStats();
         newFrame();
