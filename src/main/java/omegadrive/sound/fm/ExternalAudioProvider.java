@@ -29,7 +29,7 @@ public class ExternalAudioProvider implements FmProvider {
     }
 
     @Override
-    public int update(int[] buf_lr, int offset, int count) {
+    public int updateStereo16(int[] buf_lr, int offset, int count) {
         if (!running) {
             return 0;
         }
@@ -50,7 +50,8 @@ public class ExternalAudioProvider implements FmProvider {
             }
         }
         queueLen.addAndGet(-sampleNum);
-        return sampleNum;
+        //we've been counting mono samples, we need to double them
+        return sampleNum << 1;
     }
 
     protected void addStereoSample(int left, int right) {

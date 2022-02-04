@@ -34,16 +34,12 @@ public class SN76489Psg implements PsgProvider {
     }
 
     @Override
-    public void init() {
-    }
-
-    @Override
     public void write(int data) {
         psg.write(data);
     }
 
     @Override
-    public void output(byte[] output, int offset, int end) {
+    public void updateMono8(byte[] output, int offset, int end) {
         psg.update(output, offset, end - offset);
     }
 

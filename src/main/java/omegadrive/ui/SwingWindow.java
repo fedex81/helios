@@ -589,7 +589,9 @@ public class SwingWindow implements DisplayWindow {
         Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);
         Optional.ofNullable(mainEmu).ifPresent(sp -> {
             setTitle("");
-            joypadTypeMenu.setEnabled(mainEmu.getSystemType() == SystemLoader.SystemType.GENESIS);
+            boolean en = mainEmu.getSystemType() == SystemLoader.SystemType.GENESIS ||
+                    mainEmu.getSystemType() == SystemLoader.SystemType.S32X;
+            joypadTypeMenu.setEnabled(en);
         });
     }
 

@@ -1,8 +1,10 @@
 package omegadrive.system;
 
 import omegadrive.Device;
-import omegadrive.SystemLoader;
+import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;
+import omegadrive.sound.PwmProvider;
+import omegadrive.sound.SoundDevice;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.fm.ym2413.Ym2413Provider;
@@ -10,18 +12,15 @@ import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.gb.GbSoundWrapper;
 import omegadrive.system.nes.NesSoundWrapper;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import omegadrive.vdp.model.BaseVdpAdapter;
 import omegadrive.vdp.model.BaseVdpProvider;
 
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
+import static omegadrive.sound.SoundDevice.SoundDeviceType.*;
 import static omegadrive.sound.SoundProvider.SAMPLE_RATE_HZ;
+import static omegadrive.util.RegionDetector.Region;
 
 /**
  * Federico Berti
@@ -30,8 +29,21 @@ import static omegadrive.sound.SoundProvider.SAMPLE_RATE_HZ;
  */
 public class SysUtil {
 
-    public static PsgProvider getPsgProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
-        PsgProvider psgProvider = PsgProvider.NO_SOUND;
+
+    public static Map<SoundDevice.SoundDeviceType, SoundDevice> getSoundDevices(SystemType systemType, Region region) {
+        Map<SoundDevice.SoundDeviceType, SoundDevice> m = new HashMap<>();
+        m.put(PSG, getPsgProvider(systemType, region));
+        m.put(FM, getFmProvider(systemType, region));
+        m.put(PWM, getPwmProvider(systemType, region));
+        return m;
+    }
+
+    public static SoundDevice getPwmProvider(SystemType systemType, Region region) {
+        return PwmProvider.NO_SOUND;
+    }
+
+    public static SoundDevice getPsgProvider(SystemType systemType, Region region) {
+        SoundDevice psgProvider = PsgProvider.NO_SOUND;
         switch (systemType) {
             case MSX:
                 psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
@@ -47,10 +59,11 @@ public class SysUtil {
         return psgProvider;
     }
 
-    public static FmProvider getFmProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
-        FmProvider fmProvider = FmProvider.NO_SOUND;
+    public static SoundDevice getFmProvider(SystemType systemType, Region region) {
+        SoundDevice fmProvider = FmProvider.NO_SOUND;
         switch (systemType) {
             case GENESIS:
+            case S32X:
                 fmProvider = MdFmProvider.createInstance(region, AbstractSoundManager.audioFormat);
                 break;
             case SMS:
@@ -107,29 +120,4 @@ public class SysUtil {
         }
     };
     public static final BaseVdpProvider NO_OP_VDP_PROVIDER = new BaseVdpAdapter();
-
-    static class OptionalKeyListener implements KeyListener {
-        KeyListener target;
-
-        @Override
-        public void keyTyped(KeyEvent e) {
-            if (target != null) target.keyTyped(e);
-        }
-
-        @Override
-        public void keyPressed(KeyEvent e) {
-            if (target != null) target.keyPressed(e);
-        }
-
-        @Override
-        public void keyReleased(KeyEvent e) {
-            if (target != null) target.keyReleased(e);
-        }
-
-        public void setTarget(KeyListener target) {
-            this.target = target;
-        }
-    }
-
-
 }

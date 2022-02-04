@@ -19,8 +19,6 @@
 
 package omegadrive.sound.javasound;
 
-import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Sleeper;
@@ -30,6 +28,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 
+import static omegadrive.sound.SoundDevice.SoundDeviceType.FM;
+
 public class JavaSoundManager extends AbstractSoundManager {
 
     private static final Logger LOG = LogManager.getLogger(JavaSoundManager.class.getSimpleName());
@@ -37,7 +37,7 @@ public class JavaSoundManager extends AbstractSoundManager {
     public static int sleepTotal = 0;
     public static final long EMPTY_QUEUE_SLEEP_NS = 500_000;
 
-    volatile int[] fm_buf_ints;
+    volatile int[] fm_buf_ints, pwm_buf_ints;
     volatile byte[] mix_buf_bytes16Stereo;
     volatile byte[] psg_buf_bytes;
     volatile int fmSizeMono;
@@ -50,31 +50,32 @@ public class JavaSoundManager extends AbstractSoundManager {
     public void init(RegionDetector.Region region) {
         super.init(region);
         fm_buf_ints = new int[fmSize];
+        pwm_buf_ints = new int[fmSize];
         mix_buf_bytes16Stereo = new byte[fm_buf_ints.length << 1];
         psg_buf_bytes = new byte[psgSize];
         fmSizeMono = (int) Math.round(fmSize / 2d);
-        hasFm = getFm() != FmProvider.NO_SOUND;
-        hasPsg = getPsg() != PsgProvider.NO_SOUND;
-        fm_buf_ints = hasFm ? fm_buf_ints : EMPTY_FM;
-        psg_buf_bytes = hasPsg ? psg_buf_bytes : EMPTY_PSG;
         telemetry = Telemetry.getInstance();
         executorService.submit(getRunnable());
     }
 
     private int playOnceStereo(int fmBufferLenMono) {
-        int fmMonoActual = fm.update(fm_buf_ints, 0, fmBufferLenMono);
+        int fmMonoActual = fm.updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;
         //if FM is present load a matching number of psg samples
-        fmBufferLenMono = hasFm ? fmMonoActual : fmBufferLenMono;
-        psg.output(psg_buf_bytes, 0, fmBufferLenMono);
-        int fmBufferLenStereo = fmBufferLenMono << 1;
-        int bufferBytesMono = fmBufferLenMono << 1;
-        int bufferBytesStereo = bufferBytesMono << 1;
+        fmBufferLenMono = (soundDeviceSetup & FM.getBit()) > 0 ? fmMonoActual : fmBufferLenMono;
+        psg.updateMono8(psg_buf_bytes, 0, fmBufferLenMono);
+        pwm.updateStereo16(pwm_buf_ints, 0, fmBufferLenMono);
+
+        final int fmBufferLenStereo = fmBufferLenMono << 1;
+        /**
+         * bufferBytesMono = fmBufferLenMono << 1;
+         * bufferBytesStereo = bufferBytesMono << 1
+         */
+        final int bufferBytesStereo = fmBufferLenMono << 2;
         samplesProducedCount += fmBufferLenStereo;
 
         try {
             Arrays.fill(mix_buf_bytes16Stereo, SoundUtil.ZERO_BYTE);
-            //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
-            SoundUtil.mixFmPsgStereo(fm_buf_ints, mix_buf_bytes16Stereo, psg_buf_bytes, fmBufferLenStereo);
+            mixAudioProviders(fmBufferLenStereo);
             if (!isMute()) {
                 SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, bufferBytesStereo);
             }
@@ -110,6 +111,30 @@ public class JavaSoundManager extends AbstractSoundManager {
             psg.reset();
             fm.reset();
         };
+    }
+
+    //FM,PWM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
+    protected void mixAudioProviders(int inputLen) {
+        switch (soundDeviceSetup) {
+            case 1: //fm only
+                SoundUtil.intStereo16ToByteStereo16Mix(fm_buf_ints, mix_buf_bytes16Stereo, inputLen);
+                break;
+            case 2: //psg only
+                SoundUtil.byteMono8ToByteStereo16Mix(psg_buf_bytes, mix_buf_bytes16Stereo);
+                break;
+            case 3: //fm + psg
+                SoundUtil.intStereo14ToByteStereo16Mix(fm_buf_ints, mix_buf_bytes16Stereo, psg_buf_bytes, inputLen);
+                break;
+            case 6: //pwm + psg
+                SoundUtil.intStereo14ToByteStereo16Mix(pwm_buf_ints, mix_buf_bytes16Stereo, psg_buf_bytes, inputLen);
+                break;
+            case 7: //fm + psg + pwm
+                SoundUtil.intStereo14ToByteStereo16PwmMix(mix_buf_bytes16Stereo, fm_buf_ints, pwm_buf_ints, psg_buf_bytes, inputLen);
+                break;
+            default:
+                LOG.error("Unable to mix the sound setup: {}", soundDeviceSetup);
+                break;
+        }
     }
 
     @Override

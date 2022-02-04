@@ -19,8 +19,6 @@
 
 package omegadrive.sound.javasound;
 
-import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +34,8 @@ import org.jaudiolibs.audioservers.javasound.JSTimingMode;
 import java.nio.FloatBuffer;
 import java.util.List;
 import java.util.ServiceLoader;
+
+import static omegadrive.sound.SoundDevice.SoundDeviceType.FM;
 
 public class JalSoundManager extends AbstractSoundManager implements AudioClient {
 
@@ -64,10 +64,6 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
         mix_buf_bytes16Stereo = new byte[fm_buf_ints.length << 1];
         psg_buf_bytes = new byte[psgSize];
         fmSizeMono = (int) Math.round(fmSize / 2d);
-        hasFm = getFm() != FmProvider.NO_SOUND;
-        hasPsg = getPsg() != PsgProvider.NO_SOUND;
-        fm_buf_ints = hasFm ? fm_buf_ints : EMPTY_FM;
-        psg_buf_bytes = hasPsg ? psg_buf_bytes : EMPTY_PSG;
         telemetry = Telemetry.getInstance();
         startAudio();
     }
@@ -132,10 +128,10 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     }
 
     private int playOnceStereo(int fmBufferLenMono) {
-        int fmMonoActual = fm.update(fm_buf_ints, 0, fmBufferLenMono);
+        int fmMonoActual = fm.updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;
         //if FM is present load a matching number of psg samples
-        fmBufferLenMono = hasFm ? fmMonoActual : fmBufferLenMono;
-        psg.output(psg_buf_bytes, 0, fmBufferLenMono);
+        fmBufferLenMono = (soundDeviceSetup & FM.getBit()) > 0 ? fmMonoActual : fmBufferLenMono;
+        psg.updateMono8(psg_buf_bytes, 0, fmBufferLenMono);
         int fmBufferLenStereo = fmBufferLenMono << 1;
         samplesProducedCount += fmBufferLenStereo;
 

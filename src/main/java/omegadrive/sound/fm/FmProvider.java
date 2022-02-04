@@ -19,61 +19,15 @@
 
 package omegadrive.sound.fm;
 
-import omegadrive.Device;
+import omegadrive.sound.SoundDevice;
 import omegadrive.vdp.model.BaseVdpProvider;
 
-public interface FmProvider extends Device, BaseVdpProvider.VdpEventListener {
+public interface FmProvider extends SoundDevice, BaseVdpProvider.VdpEventListener {
 
-    FmProvider NO_SOUND = new FmProvider() {
-
-        @Override
-        public int read() {
-            return 0;
-        }
-
-        @Override
-        public void init() {
-
-        }
-
-        @Override
-        public void reset() {
-
-        }
-
-        @Override
-        public void write(int addr, int data) {
-
-        }
-
-        @Override
-        public void setMicrosPerTick(double microsPerTick) {
-
-        }
-
-        @Override
-        public int readRegister(int type, int regNumber) {
-            return 0;
-        }
-
-        @Override
-        public int update(int[] buf_lr, int offset, int end) {
-            return 0;
-        }
-
-        @Override
-        public void tick() {
-        }
-
-        @Override
-        public void output(int[] buf_lr) {
-
-        }
-    };
-
-    void reset();
-
-    int update(int[] buf_lr, int offset, int count);
+    /**
+     * @return stereo samples effectively added to the buffer
+     */
+    int updateStereo16(int[] buf_lr, int offset, int count);
 
     int readRegister(int type, int regNumber);
 
@@ -92,10 +46,42 @@ public interface FmProvider extends Device, BaseVdpProvider.VdpEventListener {
     }
 
     default void output(int[] buf_lr) {
-        update(buf_lr, 0, buf_lr.length / 2);
+        updateStereo16(buf_lr, 0, buf_lr.length / 2);
     }
 
-    default void init() {
-        throw new RuntimeException("Invalid");
+    default SoundDeviceType getType() {
+        return SoundDeviceType.FM;
     }
+
+    FmProvider NO_SOUND = new FmProvider() {
+
+        @Override
+        public int read() {
+            return 0;
+        }
+
+        @Override
+        public void write(int addr, int data) {
+
+        }
+
+        @Override
+        public void setMicrosPerTick(double microsPerTick) {
+
+        }
+
+        @Override
+        public int readRegister(int type, int regNumber) {
+            return 0;
+        }
+
+        @Override
+        public int updateStereo16(int[] buf_lr, int offset, int end) {
+            return 0;
+        }
+
+        @Override
+        public void tick() {
+        }
+    };
 }

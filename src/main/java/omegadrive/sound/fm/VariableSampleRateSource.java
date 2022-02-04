@@ -80,7 +80,7 @@ public abstract class VariableSampleRateSource implements FmProvider {
     }
 
     @Override
-    public int update(int[] buf_lr, int offset, int count) {
+    public int updateStereo16(int[] buf_lr, int offset, int count) {
         offset <<= 1;
         int end = (count << 1) + offset;
         final int initialQueueSize = queueLen.get();
@@ -97,7 +97,7 @@ public abstract class VariableSampleRateSource implements FmProvider {
             buf_lr[i] = ((short) (stereoSamples[0] & 0xFFFF)) << audioScaleBits;
             buf_lr[i + 1] = ((short) (stereoSamples[1] & 0xFFFF)) << audioScaleBits;
         }
-        return i >> 1;
+        return i;
     }
 
     private boolean fillStereoSamples(Integer[] stereoSamples) {

@@ -49,7 +49,7 @@ public class Ay38910Psg implements PsgProvider {
     }
 
     @Override
-    public void output(byte[] output, int offset, int end) {
+    public void updateMono8(byte[] output, int offset, int end) {
         for (int i = offset; i < end; i++) {
             output[i] = (byte) psg.getSoundSigned();
         }

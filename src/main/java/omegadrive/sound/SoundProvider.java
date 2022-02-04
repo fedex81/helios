@@ -56,6 +56,8 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
 
     FmProvider getFm();
 
+    PwmProvider getPwm();
+
     static int getPsgBufferByteSize(AudioFormat audioFormat) {
         return getFmBufferIntSize(audioFormat) >> 1;
     }
@@ -81,6 +83,11 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
         @Override
         public FmProvider getFm() {
             return FmProvider.NO_SOUND;
+        }
+
+        @Override
+        public PwmProvider getPwm() {
+            return PwmProvider.NO_SOUND;
         }
 
         @Override

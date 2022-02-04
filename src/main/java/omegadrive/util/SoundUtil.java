@@ -160,17 +160,26 @@ public class SoundUtil {
         }
     }
 
-    public static void mixFmPsgStereo(int[] fmStereo16, byte[] outputMono16, byte[] psgMono8, int inputLen) {
-        if (fmStereo16.length == 0) {
-            byteMono8ToByteStereo16Mix(psgMono8, outputMono16);
-        } else if (psgMono8.length == 0) {
-            intStereo16ToByteStereo16Mix(fmStereo16, outputMono16, inputLen);
-        } else {
-            intStereo14ToByteStereo16Mix(fmStereo16, outputMono16, psgMono8, inputLen);
+    public static void intStereo14ToByteStereo16PwmMix(byte[] output, int[] fmStereo16, int[] pwmStereo16,
+                                                       byte[] psgMono8, int inputLen) {
+        int j = 0; //psg index
+        int k = 0; //output index
+        for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
+            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
+            int psg = psgMono8[j];
+            psg = DEFAULT_PSG_SHIFT_BITS > 0 ? psg << DEFAULT_PSG_SHIFT_BITS : psg >> -DEFAULT_PSG_SHIFT_BITS;
+            int out16L = (fmStereo16[i] + pwmStereo16[i] + psg);
+            int out16R = (fmStereo16[i + 1] + pwmStereo16[i + 1] + psg);
+            out16L = Math.min(Math.max(out16L, Short.MIN_VALUE), Short.MAX_VALUE);
+            out16R = Math.min(Math.max(out16R, Short.MIN_VALUE), Short.MAX_VALUE);
+            output[k] = (byte) (out16L & 0xFF); //lsb left
+            output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
+            output[k + 2] = (byte) (out16R & 0xFF); //lsb right
+            output[k + 3] = (byte) ((out16R >> 8) & 0xFF); //msb right
         }
     }
 
-    private static void intStereo14ToByteStereo16Mix(int[] input, byte[] output, byte[] psgMono8, int inputLen) {
+    public static void intStereo14ToByteStereo16Mix(int[] input, byte[] output, byte[] psgMono8, int inputLen) {
         int j = 0; //psg index
         int k = 0; //output index
         for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
@@ -210,7 +219,7 @@ public class SoundUtil {
         }
     }
 
-    private static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output) {
+    public static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output) {
         for (int j = 0, i = 0; j < psgMono8.length; j++, i += 4) {
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
             int psg16 = psgMono8[j] << 7;

@@ -19,7 +19,7 @@
 
 package omegadrive.sound.psg;
 
-import omegadrive.Device;
+import omegadrive.sound.SoundDevice;
 import omegadrive.sound.psg.msx.Ay38910Psg;
 import omegadrive.sound.psg.white.SN76489Psg;
 import omegadrive.util.RegionDetector;
@@ -27,7 +27,7 @@ import omegadrive.util.RegionDetector;
 import static omegadrive.sound.SoundProvider.LOG;
 import static omegadrive.sound.SoundProvider.getPsgSoundClock;
 
-public interface PsgProvider extends Device {
+public interface PsgProvider extends SoundDevice {
 
     static PsgProvider createSnInstance(RegionDetector.Region region, int sampleRate) {
         int clockHz = (int) getPsgSoundClock(region);
@@ -44,8 +44,6 @@ public interface PsgProvider extends Device {
     //SN style PSG
     void write(int data);
 
-    void output(byte[] output, int offset, int end);
-
     //AY style psg
     default void write(int register, int data) {
         write(data);
@@ -56,20 +54,18 @@ public interface PsgProvider extends Device {
         return 0xFF;
     }
 
-    default void output(byte[] output) {
-        output(output, 0, output.length);
+    @Override
+    default SoundDeviceType getType() {
+        return SoundDeviceType.PSG;
     }
 
     PsgProvider NO_SOUND = new PsgProvider() {
-
         @Override
         public void write(int data) {
-
         }
 
         @Override
-        public void output(byte[] output, int offset, int end) {
-
+        public void updateMono8(byte[] output, int offset, int end) {
         }
     };
 }

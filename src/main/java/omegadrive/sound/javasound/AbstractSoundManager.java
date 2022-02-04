@@ -21,6 +21,9 @@ package omegadrive.sound.javasound;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
+import omegadrive.sound.PwmProvider;
+import omegadrive.sound.SoundDevice;
+import omegadrive.sound.SoundDevice.SoundDeviceType;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.persist.FileSoundPersister;
@@ -36,6 +39,7 @@ import org.apache.logging.log4j.Logger;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -43,25 +47,24 @@ public abstract class AbstractSoundManager implements SoundProvider {
     private static final Logger LOG = LogManager.getLogger(JavaSoundManager.class.getSimpleName());
 
     protected static SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
-
-    protected ExecutorService executorService;
-
     private static final int OUTPUT_SAMPLE_SIZE = 16;
     private static final int OUTPUT_CHANNELS = 2;
+    public static AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
     public volatile boolean close;
+
+    protected ExecutorService executorService;
+    protected volatile Map<SoundDeviceType, SoundDevice> soundDeviceMap;
     protected volatile PsgProvider psg;
     protected volatile FmProvider fm;
+    protected volatile PwmProvider pwm;
     protected SoundPersister soundPersister;
-    int fmSize;
-    int psgSize;
-    public static AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
+    protected int fmSize, psgSize;
+
     protected SourceDataLine dataLine;
     private boolean mute = false;
     private SystemLoader.SystemType type;
     protected RegionDetector.Region region;
-
-    protected volatile boolean hasFm;
-    protected volatile boolean hasPsg;
+    protected volatile int soundDeviceSetup = SoundDeviceType.NONE.getBit();
 
     public static SoundProvider createSoundProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
         if (!ENABLE_SOUND) {
@@ -69,27 +72,18 @@ public abstract class AbstractSoundManager implements SoundProvider {
             return NO_SOUND;
         }
         AbstractSoundManager jsm = JAL_SOUND_MGR ? new JalSoundManager() : new JavaSoundManager();
-        jsm.fm = jsm.getFmProvider(systemType, region);
-        jsm.psg = jsm.getPsgProvider(systemType, region);
         jsm.type = systemType;
         jsm.init(region);
         return jsm;
     }
 
-    PsgProvider getPsgProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
-        PsgProvider psgProvider = SysUtil.getPsgProvider(systemType, region);
-        hasPsg = psg != PsgProvider.NO_SOUND;
-        return psgProvider;
-    }
-
-    FmProvider getFmProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
-        FmProvider fmProvider = SysUtil.getFmProvider(systemType, region);
-        hasFm = fm != FmProvider.NO_SOUND;
-        return fmProvider;
-    }
-
     protected void init(RegionDetector.Region region) {
         this.region = region;
+        soundDeviceMap = SysUtil.getSoundDevices(type, region);
+        psg = (PsgProvider) soundDeviceMap.get(SoundDeviceType.PSG);
+        fm = (FmProvider) soundDeviceMap.get(SoundDeviceType.FM);
+        pwm = (PwmProvider) soundDeviceMap.get(SoundDeviceType.PWM);
+        updateSoundDeviceSetup();
         soundPersister = new FileSoundPersister();
         fmSize = SoundProvider.getFmBufferIntSize(audioFormat);
         psgSize = SoundProvider.getPsgBufferByteSize(audioFormat);
@@ -99,13 +93,16 @@ public abstract class AbstractSoundManager implements SoundProvider {
         LOG.info("Output audioFormat: " + audioFormat + ", bufferSize: " + fmSize);
     }
 
+    protected void updateSoundDeviceSetup() {
+        soundDeviceSetup = 0;
+        soundDeviceSetup |= (fm != FmProvider.NO_SOUND) ? SoundDeviceType.FM.getBit() : 0;
+        soundDeviceSetup |= (psg != PsgProvider.NO_SOUND) ? SoundDeviceType.PSG.getBit() : 0;
+        soundDeviceSetup |= (pwm != PwmProvider.NO_SOUND) ? SoundDeviceType.PWM.getBit() : 0;
+    }
+
     @Override
     public void init() {
         dataLine = SoundUtil.createDataLine(audioFormat);
-    }
-
-    public void setSystemType(SystemLoader.SystemType type) {
-        this.type = type;
     }
 
     @Override
@@ -113,17 +110,14 @@ public abstract class AbstractSoundManager implements SoundProvider {
         return psg;
     }
 
-    public void setPsg(PsgProvider psg) {
-        this.psg = psg;
-    }
-
     @Override
     public FmProvider getFm() {
         return fm;
     }
 
-    public void setFm(FmProvider fm) {
-        this.fm = fm;
+    @Override
+    public PwmProvider getPwm() {
+        return pwm;
     }
 
     @Override
@@ -166,18 +160,21 @@ public abstract class AbstractSoundManager implements SoundProvider {
         LOG.info("Set mute: {}", mute);
     }
 
+    //SMS only
     @Override
     public void setEnabled(Device device, boolean enabled) {
         if (fm == device) {
             boolean isEnabled = fm != FmProvider.NO_SOUND;
             if (isEnabled != enabled) {
-                this.fm = enabled ? getFmProvider(type, region) : FmProvider.NO_SOUND;
+                this.fm = enabled ? (FmProvider) soundDeviceMap.get(SoundDeviceType.FM) : FmProvider.NO_SOUND;
+                updateSoundDeviceSetup();
                 LOG.info("FM enabled: {}", enabled);
             }
         } else if (psg == device) {
             boolean isEnabled = psg != PsgProvider.NO_SOUND;
             if (isEnabled != enabled) {
-                this.psg = enabled ? getPsgProvider(type, region) : PsgProvider.NO_SOUND;
+                this.psg = (PsgProvider) (enabled ? soundDeviceMap.get(SoundDeviceType.PSG) : PsgProvider.NO_SOUND);
+                updateSoundDeviceSetup();
                 LOG.info("PSG enabled: {}", enabled);
             }
         }

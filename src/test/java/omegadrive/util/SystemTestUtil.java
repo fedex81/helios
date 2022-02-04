@@ -14,6 +14,7 @@ import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.sound.PwmProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
@@ -118,8 +119,12 @@ public class SystemTestUtil {
         }
 
         @Override
-        public void close() {
+        public PwmProvider getPwm() {
+            return null;
+        }
 
+        @Override
+        public void close() {
         }
 
         @Override
@@ -129,12 +134,10 @@ public class SystemTestUtil {
 
         @Override
         public void setEnabled(boolean mute) {
-
         }
 
         @Override
         public void setEnabled(Device device, boolean enabled) {
-
         }
     }
 }

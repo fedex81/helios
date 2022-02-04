@@ -51,8 +51,8 @@ import org.apache.logging.log4j.Logger;
 public class Genesis extends BaseSystem<GenesisBusProvider> {
 
     public final static boolean verbose = false;
-    //NTSC_MCLOCK_MHZ = 53693175;
-    //PAL_MCLOCK_MHZ = 53203424;
+    public final static int NTSC_MCLOCK_MHZ = 53693175;
+    public final static int PAL_MCLOCK_MHZ = 53203424;
     //the emulation runs at MCLOCK_MHZ/MCLK_DIVIDER
     protected final static int MCLK_DIVIDER = 7;
     protected final static double VDP_RATIO = 4.0 / MCLK_DIVIDER;  //16 -> MCLK/4, 20 -> MCLK/5

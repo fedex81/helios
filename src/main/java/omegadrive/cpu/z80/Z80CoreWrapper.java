@@ -57,6 +57,7 @@ public class Z80CoreWrapper implements Z80Provider {
     public static Z80CoreWrapper createInstance(SystemLoader.SystemType systemType, BaseBusProvider busProvider) {
         switch (systemType) {
             case GENESIS:
+            case S32X:
                 return createGenesisInstanceInternal(busProvider);
             case GG:
             case SMS:
