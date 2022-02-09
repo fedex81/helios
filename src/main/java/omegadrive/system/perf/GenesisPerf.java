@@ -105,10 +105,10 @@ public class GenesisPerf extends Genesis {
         do {
             try {
                 prevVdpCycle = nextVdpCycle;
-                run68k(counter);
-                runZ80(counter);
-                runFM(counter);
-                runVdp(counter);
+                run68k();
+                runZ80();
+                runFM();
+                runVdp();
                 doCounting(prevVdpCycle);
                 counter++;
             } catch (Exception e) {

@@ -1,6 +1,7 @@
 package omegadrive.vdp.model;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EventListener;
 import java.util.List;
 
@@ -28,7 +29,11 @@ public interface BaseVdpAdapterEventSupport {
     }
 
     default boolean addVdpEventListener(BaseVdpProvider.VdpEventListener l) {
-        return getVdpEventListenerList().add(l);
+        List<BaseVdpProvider.VdpEventListener> l1 = getVdpEventListenerList();
+        boolean res = l1.add(l);
+        //NOTE: make sure the baseSystem's is the last listener to be called
+        Collections.sort(l1, Comparator.comparingInt(VdpEventListener::order));
+        return res;
     }
 
     default boolean removeVdpEventListener(BaseVdpProvider.VdpEventListener l) {
@@ -42,6 +47,10 @@ public interface BaseVdpAdapterEventSupport {
     }
 
     interface VdpEventListener extends EventListener {
+
+        default int order() {
+            return 0;
+        }
 
         default void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
         }

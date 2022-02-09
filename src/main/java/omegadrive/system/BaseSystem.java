@@ -32,6 +32,7 @@ import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.util.*;
+import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEventListener;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -284,6 +285,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
             handlePause();
         }
         if (isRomRunning()) {
+            futureDoneFlag = true;
             runningRomFuture.cancel(true);
             while (isRomRunning()) {
                 Util.sleep(100);
@@ -298,10 +300,15 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     }
 
     protected void createAndAddVdpEventListener() {
-        vdp.addVdpEventListener(new BaseVdpProvider.VdpEventListener() {
+        vdp.addVdpEventListener(new VdpEventListener() {
             @Override
             public void onNewFrame() {
                 newFrame();
+            }
+
+            @Override
+            public int order() {
+                return 100;
             }
         });
     }

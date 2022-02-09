@@ -48,6 +48,8 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Objects;
 
+import static omegadrive.util.Util.th;
+
 public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad> implements GenesisBusProvider, RomMapper {
 
 
@@ -507,14 +509,12 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             case 0xC:
                 data = joypadProvider.readControlRegister3();
                 break;
-            case 0x12:
-            case 0x18:
-            case 0x1E:
-                int scNumber = address == 0x12 ? 1 : ((address == 0x18) ? 2 : 3);
-                LOG.info("Reading serial control{}, {}", scNumber, Long.toHexString(address));
-                break;
             default:
-                LOG.warn("Unexpected ioRead: {}", Long.toHexString(addressL));
+                if (address >= 0xE && address < 0x20) {
+                    LOG.info("Reading serial control: {}", Long.toHexString(address));
+                } else {
+                    LOG.error("Unexpected ioRead: {}", Long.toHexString(addressL));
+                }
                 break;
         }
         return data;
@@ -557,16 +557,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             case 0xC:
                 joypadProvider.writeControlRegister3(data & 0xFF);
                 break;
-            case 0x12:
-            case 0x18:
-            case 0x1E:
-                int scNumber = address == 0x12 ? 1 : ((address == 0x18) ? 2 : 3);
-                LOG.debug("Write to controller {} serial: {}, data: {}",
-                        scNumber, Long.toHexString(addressL), Long.toHexString(data));
-                break;
             default:
-                if (address >= 0x20) { //Reserved
-                    LOG.warn("Unexpected ioWrite {}, data {}",
+                if (address >= 0xE && address < 0x20) {
+                    LOG.info("Write serial control: {}, data: {}", Long.toHexString(address), th((int) data));
+                } else { //Reserved
+                    LOG.error("Unexpected ioWrite {}, data {}",
                             Long.toHexString(address), Long.toHexString(data));
                 }
                 break;

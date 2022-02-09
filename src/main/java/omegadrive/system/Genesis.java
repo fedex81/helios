@@ -25,6 +25,7 @@ import omegadrive.bus.md.SvpMapper;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
+import omegadrive.cpu.ssp16.Ssp16;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.input.InputProvider;
@@ -64,6 +65,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
 
     protected Z80Provider z80;
     protected M68kProvider cpu;
+    protected Ssp16 ssp16 = Ssp16.NO_SVP;
+    protected boolean hasSvp = ssp16 != Ssp16.NO_SVP;
     protected double nextVdpCycle = vdpVals[0];
     private int next68kCycle = M68K_DIVIDER;
     private int nextZ80Cycle = Z80_DIVIDER;
@@ -100,7 +103,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         createAndAddVdpEventListener();
     }
 
-    static final int SVP_CYCLES = 100;
+    static final int SVP_CYCLES = 128;
+    static final int SVP_CYCLES_MASK = SVP_CYCLES - 1;
     static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
 
 
@@ -111,13 +115,12 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
 
         try {
             do {
-                cnt = counter;
-                run68k(cnt);
-                runZ80(cnt);
-                runFM(cnt);
-                runVdp(cnt);
-                if (cnt % SVP_CYCLES == 0) {
-                    SvpMapper.ssp16.ssp1601_run(SVP_RUN_CYCLES);
+                run68k();
+                runZ80();
+                runFM();
+                runVdp();
+                if (hasSvp && (counter & SVP_CYCLES_MASK) == 0) {
+                    ssp16.ssp1601_run(SVP_RUN_CYCLES);
                 }
                 counter++;
             } while (!futureDoneFlag);
@@ -127,14 +130,14 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         LOG.info("Exiting rom thread loop");
     }
 
-    protected final void runVdp(int counter) {
+    protected final void runVdp() {
         if (counter >= nextVdpCycle) {
             int vdpMclk = vdp.runSlot();
             nextVdpCycle += vdpVals[vdpMclk - 4];
         }
     }
 
-    protected final void run68k(int counter) {
+    protected final void run68k() {
         if (counter == next68kCycle) {
             boolean isRunning = bus.is68kRunning();
             boolean canRun = !cpu.isStopped() && isRunning;
@@ -153,7 +156,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         }
     }
 
-    protected final void runZ80(int counter) {
+    protected final void runZ80() {
         if (counter == nextZ80Cycle) {
             int cycleDelay = 0;
             boolean running = bus.isZ80Running();
@@ -166,8 +169,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         }
     }
 
-    protected final void runFM(int counter) {
-        if (counter % FM_DIVIDER == 0) {
+    protected final void runFM() {
+        if ((counter & 1) == 0 && (counter % FM_DIVIDER) == 0) { //perf, avoid some divs
             bus.getFm().tick();
         }
     }
@@ -197,6 +200,17 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
             romRegion = ovrRegion;
         }
         return romRegion;
+    }
+
+    @Override
+    public void newFrame() {
+        checkSvp();
+        super.newFrame();
+    }
+
+    private void checkSvp() {
+        ssp16 = SvpMapper.ssp16;
+        hasSvp = ssp16 != Ssp16.NO_SVP;
     }
 
     @Override
