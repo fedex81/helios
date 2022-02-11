@@ -38,7 +38,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
     public MC68000WrapperFastDebug(GenesisBusProvider busProvider) {
         super(busProvider);
         fastDebug = new CpuFastDebug(this, createContext());
-        fastDebug.debugMode = CpuFastDebug.DebugMode.NEW_INST_ONLY;
+        fastDebug.debugMode = CpuFastDebug.DebugMode.NONE;
         init();
     }
 
@@ -59,6 +59,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
             currentPC = m68k.getPC(); //needs to be set
             opcode = m68k.readMemoryWord(currentPC);
             fastDebug.printDebugMaybe();
+            fastDebug.isBusyLoop(currentPC, opcode);
             res = super.runInstruction();
 
         } catch (Exception e) {
