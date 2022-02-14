@@ -76,9 +76,8 @@ public class JavaSoundManager extends AbstractSoundManager {
         try {
             Arrays.fill(mix_buf_bytes16Stereo, SoundUtil.ZERO_BYTE);
             mixAudioProviders(fmBufferLenStereo);
-            if (!isMute()) {
-                SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, bufferBytesStereo);
-            }
+            SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, bufferBytesStereo);
+
             if (isRecording()) {
                 soundPersister.persistSound(DEFAULT_SOUND_TYPE, mix_buf_bytes16Stereo);
             }
@@ -115,6 +114,9 @@ public class JavaSoundManager extends AbstractSoundManager {
 
     //FM,PWM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
     protected void mixAudioProviders(int inputLen) {
+        if (mute) {
+            return;
+        }
         switch (soundDeviceSetup) {
             case 1: //fm only
                 SoundUtil.intStereo16ToByteStereo16Mix(fm_buf_ints, mix_buf_bytes16Stereo, inputLen);

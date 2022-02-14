@@ -40,7 +40,7 @@ import java.time.Duration;
 @Ignore
 public class VdpPerformanceTest {
 
-    static Path testFilePath = Paths.get("./test_roms", "s1.zip");
+    static Path testFilePath = Paths.get("./test_roms", "t1.bin");
     //    static Path testFilePath = Paths.get("./test_roms", "s1.zip");
     //    static Path testFilePath = Paths.get("./test_roms", "zax.col");
     static int fps = 60;
@@ -80,17 +80,41 @@ public class VdpPerformanceTest {
         Util.waitForever();
     }
 
+    private long prevFrameNs;
+    private double maxFrameNs = 19 * Util.MILLI_IN_NS;
+    private int limit = 300;
+
     private void doStats() {
         if (--ignoreFramceCounter >= 0) {
             start = System.nanoTime();
             last = start - 1;
+//            MC68000WrapperDebug.countHits = true;
+            prevFrameNs = System.nanoTime();
             return;
         }
         frameCnt++;
-        if (frameCnt % fps == 0) {
-            hitCounter(0, -1);
-            long now = System.nanoTime();
+        if (frameCnt > limit) {
+            long ns = System.nanoTime();
+            long diffNs = ns - prevFrameNs;
+            double diffMs = (1.0 * diffNs / Util.MILLI_IN_NS);
+            if (diffNs > maxFrameNs && diffMs < 100) {
+//                maxFrameNs = diffNs;
+//                System.out.println("Frame: " + frameCnt + ", timeMs: " + diffMs);
+                if (MC68000WrapperDebug.countHits) {
+                    MC68000WrapperDebug.dumpHitCounter(100);
+                }
+            } else if (diffMs > 100 && frameCnt > limit + 1) {
+                System.out.println("!!!! SLOW Frame: " + frameCnt + ", timeMs: " + diffMs);
+            }
+            if (MC68000WrapperDebug.countHits) {
+                MC68000WrapperDebug.clearHitCounterStats();
+            }
+            prevFrameNs = System.nanoTime();
+        }
 
+        if (frameCnt % fps == 0) {
+//            hitCounter(0, -1);
+            long now = System.nanoTime();
             printFramePerf(sampleCnt, now, last, start, frameCnt);
             last = now;
             sampleCnt++;
@@ -102,7 +126,7 @@ public class VdpPerformanceTest {
             return;
         }
         if (MC68000WrapperDebug.countHits) {
-            MC68000WrapperDebug.dumpHitCounter();
+            MC68000WrapperDebug.dumpHitCounter(100);
         }
         if (sampleCnt == startFrame) {
             MC68000WrapperDebug.countHits = true;

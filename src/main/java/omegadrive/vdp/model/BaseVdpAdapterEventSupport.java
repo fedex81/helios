@@ -17,8 +17,9 @@ public interface BaseVdpAdapterEventSupport {
     }
 
     default void fireVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
-        for (VdpEventListener l : getVdpEventListenerList()) {
-            l.onVdpEvent(event, value);
+        final List<VdpEventListener> l = getVdpEventListenerList();
+        for (int i = 0; i < l.size(); i++) {
+            l.get(i).onVdpEvent(event, value);
         }
     }
 

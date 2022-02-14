@@ -8,8 +8,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
+import static omegadrive.util.Util.th;
 
 /**
  * Federico Berti
@@ -33,6 +35,8 @@ public class CpuFastDebug {
     public static class CpuDebugContext {
         public int[] pcAreas;
         public int pcAreasNumber, pcAreaSize, pcMask, pcAreaShift;
+        public Predicate<Integer> isLoopOpcode = i -> false;
+        public Predicate<Integer> isIgnoreOpcode = i -> true;
     }
 
     public enum DebugMode {NONE, INST_ONLY, NEW_INST_ONLY, STATE}
@@ -42,6 +46,9 @@ public class CpuFastDebug {
     private final int pcAreaMask, pcMask, pcAreaShift;
     public DebugMode debugMode = DebugMode.NONE;
     private CpuDebugInfoProvider debugInfoProvider;
+    private int delay;
+    private final static boolean VERBOSE = false;
+    public static int CK_DELAY_ON_LOOP = 50;
 
     public CpuFastDebug(CpuDebugInfoProvider debugInfoProvider, CpuDebugContext ctx) {
         this.debugInfoProvider = debugInfoProvider;
@@ -106,13 +113,8 @@ public class CpuFastDebug {
     private int pcHistoryPointer = 0, loops;
     private boolean looping = false, isKnownLoop;
     private int loopsCounter = 0;
-    private boolean[] validOpcodes = new boolean[0x10000];
 
-    {
-        validOpcodes[0x4e71] = validOpcodes[0x6000] = true; //mars demos
-    }
-
-    public void isBusyLoop(int pc, int opcode) {
+    public int isBusyLoop(int pc, int opcode) {
         pcHistory[FRONT][pcHistoryPointer] = pc;
         opcodesHistory[FRONT][pcHistoryPointer] = opcode;
         pcHistoryPointer = (pcHistoryPointer + 1) % pcHistorySize;
@@ -120,55 +122,96 @@ public class CpuFastDebug {
             if (Arrays.equals(pcHistory[FRONT], pcHistory[BACK])) {
                 if (Arrays.equals(opcodesHistory[FRONT], opcodesHistory[BACK])) {
                     loops++;
-                    if (loops > pcHistorySize) {
+                    if (!looping && loops > pcHistorySize) {
                         handleLoop(pc);
                         looping = true;
                     }
                 } else { //opcodes are different
-                    looping = false;
-                    loops = 0;
+                    handleStopLoop(pc);
                 }
             } else {
                 if (looping) {
                     handleStopLoop(pc);
-                    looping = false;
                 }
                 loops = 0;
             }
             FRONT = (FRONT + 1) & 1;
             BACK = (BACK + 1) & 1;
-            if (FRONT == BACK) {
-                System.out.println("wtf");
+        }
+        return delay;
+    }
+
+    private void handleStopLoop(int pc) {
+        looping = false;
+        loops = 0;
+        delay = 0;
+        if (!isKnownLoop) {
+            if (VERBOSE) {
+                String s = debugInfoProvider.getInstructionOnly();
+                LOG.info("Stop loop: {}", s);
+                System.out.println("Stop loop: " + s);
             }
         }
     }
 
-    private void handleStopLoop(int pc) {
-        if (!isKnownLoop) {
-            MC68000WrapperFastDebug d = (MC68000WrapperFastDebug) debugInfoProvider;
-            LOG.info("Stop loop: {}", MC68000Helper.dumpOp(d.getM68k(), pc));
-        }
-    }
-
     private void handleLoop(int pc) {
-        if (pcLoops[pc >> pcAreaShift][pc >> pcMask] > 0) {
-//            LOG.info("Known loop at: {}", th(pc));
+        final int[] opcodes = Arrays.stream(opcodesHistory[FRONT]).distinct().sorted().toArray();
+        final boolean isBusy = isBusyLoop(ctx.isLoopOpcode, opcodes);
+        delay = isBusy ? CK_DELAY_ON_LOOP : 0;
+        if (pcLoops[pc >> pcAreaShift][pc & pcMask] > 0) {
             isKnownLoop = true;
+            if (VERBOSE && isBusy) {
+                LOG.info("Known loop at: {}, busy: {}", th(pc), isBusy);
+                System.out.println("Known loop at: " + th(pc) + ", busy: " + isBusy);
+            }
             return;
         }
         isKnownLoop = false;
-        MC68000WrapperFastDebug d = (MC68000WrapperFastDebug) debugInfoProvider;
-        String s = IntStream.range(0, pcHistorySize).
-                mapToObj(i -> MC68000Helper.dumpOp(d.getM68k(), pcHistory[FRONT][i])).collect(Collectors.joining("\n"));
-        int distinct = (int) Arrays.stream(pcHistory[FRONT]).distinct().count();
-        if (distinct > 2) {
-            LOG.error("Loop: \n{}\n{}", s, d.getCpuState(""));
-        }
-//        System.out.println("Loop: \n" + s + "\n" + d.getCpuState(""));
         loopsCounter++;
         for (int i = 0; i < pcHistorySize; i++) {
             int pci = pcHistory[FRONT][i];
-            pcLoops[pci >> pcAreaShift][pci >> pcMask] = loopsCounter;
+            pcLoops[pci >> pcAreaShift][pci & pcMask] = loopsCounter;
         }
+        if (VERBOSE) {
+            boolean ignore = isIgnore(ctx.isIgnoreOpcode, opcodes);
+            if (!ignore) {
+                int[] pcs = Arrays.stream(pcHistory[FRONT]).distinct().sorted().toArray();
+                String s = Arrays.stream(pcs).mapToObj(this::getInstString).collect(Collectors.joining("\n"));
+//                if(pcs.length < 4 && !isBusy) {
+                System.out.println(pcs.length + " Loop, isBusy: " + isBusy + "\n" + s + "\n" + debugInfoProvider.getCpuState(""));
+//                }
+            }
+        }
+    }
+
+    //TODO
+    private String getInstString(int pc) {
+        if (debugInfoProvider instanceof MC68000WrapperFastDebug) {
+            MC68000WrapperFastDebug d = (MC68000WrapperFastDebug) debugInfoProvider;
+            return MC68000Helper.dumpOp(d.getM68k(), pc);
+        }
+//        } else if(debugInfoProvider instanceof Sh2Debug){
+//            Sh2Debug d = (Sh2Debug) debugInfoProvider;
+//            return d.getInstString(pc);
+//        }
+        return "???";
+    }
+
+    public static boolean isBusyLoop(final Predicate<Integer> isLoopOpcode, final int[] opcodes) {
+        for (int i = 0; i < opcodes.length; i++) {
+            if (!isLoopOpcode.test(opcodes[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isIgnore(final Predicate<Integer> isIgnoredOpcode, final int[] opcodes) {
+        for (int i = 0; i < opcodes.length; i++) {
+            if (isIgnoredOpcode.test(opcodes[i])) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -61,7 +61,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     protected int fmSize, psgSize;
 
     protected SourceDataLine dataLine;
-    private boolean mute = false;
+    protected boolean mute = false;
     private SystemLoader.SystemType type;
     protected RegionDetector.Region region;
     protected volatile int soundDeviceSetup = SoundDeviceType.NONE.getBit();

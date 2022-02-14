@@ -614,7 +614,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         } else {
             //longword access to Z80 like "Stuck Somewhere In Time" does
             //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
-            LOG.debug("Unexpected long write, addr: {}, data: {}", address, dataL);
+//            LOG.debug("Unexpected long write, addr: {}, data: {}", address, dataL);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
             z80MemoryWriteWord(address, data >> 16);
             z80MemoryWriteWord(address + 2, data & 0xFFFF);

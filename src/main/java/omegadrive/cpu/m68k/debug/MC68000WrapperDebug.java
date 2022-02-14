@@ -51,7 +51,7 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
     private M68kState current = new M68kState();
 
     public static boolean countHits = false;
-    private static long[] hitsTable = new long[0xFF_FFFF];
+    private static long[] hitsTable;
     private static Cpu cpu;
 
     private int logAddressAccess = -1;
@@ -97,6 +97,9 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
 
     private void hitCounter(int pc) {
         if (countHits) {
+            if (hitsTable == null) {
+                hitsTable = new long[0xFF_FFFF];
+            }
             hitsTable[pc & 0xFF_FFFF]++;
 //            if(hitsTable[pc & 0xFF_FFFF] > 1000 && hitsTable[prev] > 1000){
 //                System.out.println("Loop: " + MC68000Helper.dumpOp(cpu, prev) +
@@ -165,10 +168,14 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
         }
     }
 
-    public static void dumpHitCounter() {
+    public static void clearHitCounterStats() {
+        Arrays.fill(hitsTable, 0);
+    }
+
+    public static void dumpHitCounter(int limit) {
         Map<Integer, Long> vmap = new TreeMap<>();
         for (int i = 0; i < hitsTable.length; i++) {
-            if (hitsTable[i] > 100) {
+            if (hitsTable[i] > limit) {
                 vmap.put(i, hitsTable[i]);
             }
         }
