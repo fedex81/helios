@@ -1,5 +1,6 @@
-package omegadrive.cpu;
+package omegadrive.cpu.m68k;
 
+import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

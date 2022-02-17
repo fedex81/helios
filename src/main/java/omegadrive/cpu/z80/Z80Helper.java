@@ -4,8 +4,11 @@ import omegadrive.cpu.z80.disasm.Z80Dasm;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import z80core.IMemIoOps;
+import z80core.MemIoOps;
 import z80core.Z80;
 import z80core.Z80State;
+
+import java.util.Arrays;
 
 /**
  * Z80Helper
@@ -19,6 +22,7 @@ public class Z80Helper {
     private final static Logger LOG = LogManager.getLogger(Z80Helper.class.getSimpleName());
 
     private static final Z80.IntMode[] values = Z80.IntMode.values();
+    public static boolean[][] isBusyOpcode = generateBLOpcodes();
 
     public static Z80.IntMode parseIntMode(int ordinal) {
         return ordinal < values.length ? values[ordinal] : null;
@@ -128,5 +132,39 @@ public class Z80Helper {
 
     public static String dumpInfo(Z80Dasm z80Disasm, IMemIoOps memIoOps, int pc) {
         return z80Disasm.disassemble(pc, memIoOps);
+    }
+
+    public static boolean isBusyLoop(int opByte1, int opByte2) {
+        return isBusyOpcode[opByte1][opByte2];
+    }
+
+    private static boolean[][] generateBLOpcodes() {
+        boolean[][] isBusyOpcode = new boolean[0x100][0x100];
+        IMemIoOps memIoOps = new MemIoOps();
+        for (int i = 0; i < 0x100; i++) {
+            memIoOps.poke8(0, i);
+            if (i == 0xCB || i == 0xED) {
+                for (int j = 0; j < 0x100; j++) {
+                    memIoOps.poke8(1, j);
+                    isBusyOpcode[i][j] = isBusyLoopOpcode(memIoOps);
+                }
+            } else {
+                boolean res = isBusyLoopOpcode(memIoOps);
+                Arrays.fill(isBusyOpcode[i], res);
+            }
+        }
+        return isBusyOpcode;
+    }
+
+    private static boolean isBusyLoopOpcode(IMemIoOps memIoOps) {
+        boolean res = false;
+        int[] opcodes = new int[5];
+        String s = Z80Dasm.disassemble(0, opcodes, memIoOps);
+        if (s.contains(" ld ") || s.contains(" nop") || s.contains(" jr ") || s.contains("halt") || s.contains("and")
+                || s.contains(" or ") || s.contains(" jp ") || s.contains(" bit ")) {
+            res = true;
+        }
+//        System.out.println(s + ": " + res);
+        return res;
     }
 }

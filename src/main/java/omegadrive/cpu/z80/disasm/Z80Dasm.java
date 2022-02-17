@@ -6,9 +6,8 @@ package omegadrive.cpu.z80.disasm;
  * Java translation
  * Federico Berti 2020
  */
-import z80core.IMemIoOps;
 
-import java.util.Arrays;
+import z80core.IMemIoOps;
 
 import static omegadrive.cpu.z80.disasm.Z80DasmIntf.e_mnemonics.zDB;
 
@@ -29,24 +28,26 @@ public class Z80Dasm extends Z80DasmIntf {
 		return sb.toString();
 	}
 
-	char sign(int offset) {
+	static char sign(int offset) {
 		return (offset < 0) ? '-' : '+';
 	}
 
-	int offs(int offset) {
+	static int offs(int offset) {
 		if (offset < 0)
 			return -offset;
 		return offset;
 	}
 
 	public String disassemble(int pc, IMemIoOps memIoOps) {
-		int offset = 0, opIdx = 0;
-		StringBuilder stream = new StringBuilder();
-		Arrays.fill(opcodes, -1);
-		int pos = pc;
-		String ixy = "oops!!";
+		return disassemble(pc, opcodes, memIoOps);
+	}
 
+	public static String disassemble(int pc, int[] opcodes, IMemIoOps memIoOps) {
+		int offset = 0, opIdx = 0, pos = pc;
+		StringBuilder stream = new StringBuilder();
+		String ixy = "oops!!";
 		z80dasmStruct d = null;
+
 		int op = memIoOps.peek8(pos++);
 		opcodes[opIdx++] = op;
 		switch (op) {

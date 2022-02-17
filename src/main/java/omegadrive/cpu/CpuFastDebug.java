@@ -1,8 +1,6 @@
 package omegadrive.cpu;
 
 import com.google.common.collect.ImmutableSet;
-import omegadrive.cpu.m68k.MC68000Helper;
-import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,13 +21,17 @@ public class CpuFastDebug {
     private static final Logger LOG = LogManager.getLogger(CpuFastDebug.class.getSimpleName());
 
     public interface CpuDebugInfoProvider {
-        String getInstructionOnly();
+        String getInstructionOnly(int pc);
 
         String getCpuState(String head);
 
         int getPc();
 
         int getOpcode();
+
+        default String getInstructionOnly() {
+            return getInstructionOnly(getPc());
+        }
     }
 
     public static class CpuDebugContext {
@@ -176,25 +178,12 @@ public class CpuFastDebug {
             boolean ignore = isIgnore(ctx.isIgnoreOpcode, opcodes);
             if (!ignore) {
                 int[] pcs = Arrays.stream(pcHistory[FRONT]).distinct().sorted().toArray();
-                String s = Arrays.stream(pcs).mapToObj(this::getInstString).collect(Collectors.joining("\n"));
+                String s = Arrays.stream(pcs).mapToObj(debugInfoProvider::getInstructionOnly).collect(Collectors.joining("\n"));
 //                if(pcs.length < 4 && !isBusy) {
                 System.out.println(pcs.length + " Loop, isBusy: " + isBusy + "\n" + s + "\n" + debugInfoProvider.getCpuState(""));
 //                }
             }
         }
-    }
-
-    //TODO
-    private String getInstString(int pc) {
-        if (debugInfoProvider instanceof MC68000WrapperFastDebug) {
-            MC68000WrapperFastDebug d = (MC68000WrapperFastDebug) debugInfoProvider;
-            return MC68000Helper.dumpOp(d.getM68k(), pc);
-        }
-//        } else if(debugInfoProvider instanceof Sh2Debug){
-//            Sh2Debug d = (Sh2Debug) debugInfoProvider;
-//            return d.getInstString(pc);
-//        }
-        return "???";
     }
 
     public static boolean isBusyLoop(final Predicate<Integer> isLoopOpcode, final int[] opcodes) {

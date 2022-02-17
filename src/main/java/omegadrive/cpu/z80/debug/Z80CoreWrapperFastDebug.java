@@ -27,6 +27,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import z80core.Z80State;
 
+import java.util.function.Predicate;
+
 public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDebug.CpuDebugInfoProvider {
 
     private final static Logger LOG = LogManager.getLogger(Z80CoreWrapperFastDebug.class.getSimpleName());
@@ -47,11 +49,14 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
     //NOTE: halt sets PC = PC - 1
     @Override
     public int executeInstruction() {
+        printDebugMaybe();
+        return fastDebug.isBusyLoop(pc, opcode) + super.executeInstruction();
+    }
+
+    private void printDebugMaybe() {
         pc = z80Core.getRegPC();
         opcode = memIoOps.fetchOpcode(pc);
         fastDebug.printDebugMaybe();
-        int res = super.executeInstruction();
-        return res;
     }
 
     private CpuFastDebug.CpuDebugContext createContext() {
@@ -61,12 +66,14 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
         ctx.pcAreaSize = 0x1_0000;
         ctx.pcAreaShift = 31;
         ctx.pcMask = ctx.pcAreaSize - 1;
+        ctx.isLoopOpcode = isLoopOpcode;
+        ctx.isIgnoreOpcode = isIgnoreOpcode;
         return ctx;
     }
 
     @Override
-    public String getInstructionOnly() {
-        return Z80Helper.dumpInfo(z80Disasm, memIoOps, z80Core.getRegPC());
+    public String getInstructionOnly(int pc) {
+        return Z80Helper.dumpInfo(z80Disasm, memIoOps, pc);
     }
 
     @Override
@@ -83,4 +90,15 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
     public int getOpcode() {
         return opcode;
     }
+
+    public static final Predicate<Integer> isLoopOpcode = op -> {
+        int byte2 = 0;
+        if (op == 0xCB || op == 0xDD || op == 0xED || op == 0xFD) { //TODO limitation
+            return false;
+        }
+        return Z80Helper.isBusyLoop(op, byte2);
+    };
+
+    //TODO limitation
+    public static final Predicate<Integer> isIgnoreOpcode = op -> op == 0xCB || op == 0xDD || op == 0xED || op == 0xFD;
 }

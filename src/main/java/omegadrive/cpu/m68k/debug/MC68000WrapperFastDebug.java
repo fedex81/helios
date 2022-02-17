@@ -30,6 +30,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.function.Predicate;
 
+import static omegadrive.util.Util.th;
+
 public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDebug.CpuDebugInfoProvider {
 
     private static final Logger LOG = LogManager.getLogger(MC68000WrapperFastDebug.class.getSimpleName());
@@ -88,12 +90,11 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
     }
 
     @Override
-    public String getInstructionOnly() {
+    public String getInstructionOnly(int pc) {
         try {
-            return MC68000Helper.dumpOp(m68k);
+            return MC68000Helper.dumpOp(m68k, pc);
         } catch (Exception e) {
-            String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
-            LOG.warn("Unable to dump the instruction: {}", pc, e);
+            LOG.warn("Unable to dump the instruction: {}", th(pc & 0xFF_FFFF), e);
         }
         return "????";
     }
