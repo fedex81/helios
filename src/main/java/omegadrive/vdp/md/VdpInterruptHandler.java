@@ -23,7 +23,6 @@ import omegadrive.Device;
 import omegadrive.bus.md.BusArbiter;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.*;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -170,11 +169,11 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
             vIntPending = true;
             vdpEvent.fireVdpEvent(INTERRUPT, BusArbiter.InterruptEvent.Z80_INT_ON);
             vdpEvent.fireVdpEvent(VDP_VINT_PENDING, true);
-            logVerbose("Set VIP: true");
+            if (verbose) LOG.info("Set VIP: true");
         } else if (vCounterInternal == vdpCounterMode.vBlankSet + 1 &&
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
             vdpEvent.fireVdpEvent(INTERRUPT, BusArbiter.InterruptEvent.Z80_INT_OFF);
-            logVerbose("Set Z80Int: false");
+            if (verbose) LOG.info("Set Z80Int: false");
         }
         return hCounterInternal;
     }
@@ -186,7 +185,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
         }
         if (hLinePassed < 0) {
             hIntPending = true;
-            logVerbose("Set HIP: true, hLinePassed: %s", hLinePassed);
+            if (verbose) LOG.info("Set HIP: true, hLinePassed: {}", hLinePassed);
             vdpEvent.fireVdpEvent(H_LINE_UNDERFLOW, vCounterInternal);
             resetHLinesCounter();
         }
@@ -230,7 +229,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
 
     public void setvIntPending(boolean vIntPending) {
         this.vIntPending = vIntPending;
-        logVerbose("Set VIP: %s", vIntPending);
+        if (verbose) LOG.info("Set VIP: {}", vIntPending);
     }
 
     public boolean isHIntPending() {
@@ -238,7 +237,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
     }
 
     public void setHIntPending(boolean hIntPending) {
-        logVerbose("Set HIP: %s", hIntPending);
+        if (verbose) LOG.info("Set HIP: {}", hIntPending);
         this.hIntPending = hIntPending;
     }
 
@@ -267,7 +266,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
 
     public int resetHLinesCounter() {
         this.hLinePassed = hLinesCounter;
-        logVerbose("Reset hLinePassed: %s", hLinePassed);
+        if (verbose) LOG.info("Reset hLinePassed: {}", hLinePassed);
         return hLinePassed;
     }
 
@@ -288,30 +287,6 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
         }
     }
 
-    private void logVerbose(String str) {
-        if (verbose && LOG.isEnabled(Level.INFO)) {
-            printStateString(str);
-        }
-    }
-
-    protected final void logVerbose(String str, long arg) {
-        if (verbose && LOG.isEnabled(Level.INFO)) {
-            printStateString(String.format(str, arg));
-        }
-    }
-
-    private void logVerbose(String str, int arg) {
-        if (verbose && LOG.isEnabled(Level.INFO)) {
-            printStateString(String.format(str, arg));
-        }
-    }
-
-    private void logVerbose(String str, boolean arg) {
-        if (verbose && LOG.isEnabled(Level.INFO)) {
-            printStateString(String.format(str, arg));
-        }
-    }
-
     private static final String STATE_FMT_STR =
             "%s, slot=0x%x, hce=0x%x(0x%x), vce=0x%x(0x%x), hb%d, vb%d, VINTPend%d, HINTPend%d, hLines=%d";
 
@@ -319,9 +294,5 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
         return String.format(STATE_FMT_STR,
                 head, slotNumber, (hCounterInternal >> 1) & 0xFF, hCounterInternal, vCounterInternal & 0xFF, vCounterInternal,
                 (hBlankSet ? 1 : 0), (vBlankSet ? 1 : 0), (vIntPending ? 1 : 0), (hIntPending ? 1 : 0), hLinesCounter);
-    }
-
-    private void printStateString(String head) {
-        LOG.info(getStateString(head));
     }
 }

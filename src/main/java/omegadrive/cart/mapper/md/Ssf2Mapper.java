@@ -22,10 +22,8 @@ package omegadrive.cart.mapper.md;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -67,7 +65,7 @@ public abstract class Ssf2Mapper implements RomMapper {
     private int[] banks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
     protected RomMapper baseMapper;
     protected IMemoryProvider memory;
-    private final boolean verbose = false;
+    private final static boolean verbose = false;
 
     @Override
     public long readData(long addressL, Size size) {
@@ -75,8 +73,8 @@ public abstract class Ssf2Mapper implements RomMapper {
             int address = (int) (addressL & 0xFF_FFFF);
             //bankSelector = address >> BANK_SHIFT;
             address = (banks[address >> BANK_SHIFT] << BANK_SHIFT) | (address & 0x7_FFFF);
-            LogHelper.printLevel(LOG, Level.INFO, "Bank read: {} -> {}",
-                    addressL, address, verbose);
+            if (verbose) LOG.info("Bank read: {} -> {}",
+                    addressL, address);
             return Util.readData(memory.getRomData(), size, address);
         }
         return baseMapper.readData(addressL, size);
@@ -98,7 +96,7 @@ public abstract class Ssf2Mapper implements RomMapper {
         if (val % 2 == 1 && index > 0) {
             int dataI = (int) (data & 0x3F);
             banks[index] = dataI;
-            LogHelper.printLevel(LOG, Level.INFO, "Bank write to: {}, {}", addressL, dataI, verbose);
+            if (verbose) LOG.info("Bank write to: {}, {}", addressL, dataI);
         } else if (val == 1) { //0xA130F1 goes to timeControlWrite
             baseMapper.writeData(addressL, data, Size.BYTE);
         }

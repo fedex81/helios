@@ -20,14 +20,12 @@
 package omegadrive.vdp;
 
 import omegadrive.Device;
-import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.Tms9918a;
 import omegadrive.vdp.model.VdpMemory;
 import omegadrive.vdp.model.VdpMisc.RenderType;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -351,7 +349,7 @@ public class Tms9918aVdp implements Tms9918a, Device {
     public final byte readVRAMData() {
         byte result = readAhead;
         readAhead = (byte) mem[readWriteAddr];
-        LogHelper.printLevel(LOG, Level.INFO, "vdpRead addr: {}, data: {}", readWriteAddr, readAhead, verbose);
+        if (verbose) LOG.info("vdpRead addr: {}, data: {}", readWriteAddr, readAhead);
         increaseReadWriteAddr();
         secondByteFlag = false;
         return result;
@@ -365,7 +363,7 @@ public class Tms9918aVdp implements Tms9918a, Device {
     public final void writeVRAMData(byte value) {
         readAhead = value;
         mem[readWriteAddr] = readAhead;
-        LogHelper.printLevel(LOG, Level.INFO, "vdpWrite addr: {} , data: {}", readWriteAddr, value & 0xFF, verbose);
+        if (verbose) LOG.info("vdpWrite addr: {} , data: {}", readWriteAddr, value & 0xFF);
         increaseReadWriteAddr();
         secondByteFlag = false;
     }
@@ -409,7 +407,7 @@ public class Tms9918aVdp implements Tms9918a, Device {
 
     private void updateRegister(int regNum, int value) {
         if (regNum < REGISTERS && registers[regNum] != value) {
-            LogHelper.printLevel(LOG, Level.INFO, "vdpWriteReg {}, data: {}", regNum, value & 0xFF, verbose);
+            if (verbose) LOG.info("vdpWriteReg {}, data: {}", regNum, value & 0xFF);
             registers[regNum] = value;
             if (regNum < 2) {
                 updateTmsMode();

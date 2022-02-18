@@ -90,6 +90,9 @@ public class Telemetry {
     private double getAvgFrameTimeMs() {
         Timing current = frameTimeStamp.get(frameCounter);
         Timing prev = frameTimeStamp.getOrDefault(frameCounter - STATS_EVERY_FRAMES, NO_TIMING);
+        if (prev == NO_TIMING) { //first frame gets a huge frame delay
+            return 16.6;
+        }
         return 1.0 * (current.instantNow - prev.instantNow) / STATS_EVERY_FRAMES;
     }
 

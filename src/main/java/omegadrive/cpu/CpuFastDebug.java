@@ -75,10 +75,10 @@ public class CpuFastDebug {
     public void printDebugMaybe() {
         switch (debugMode) {
             case STATE:
-                LOG.info(debugInfoProvider.getCpuState(""));
+                log(debugInfoProvider.getCpuState(""), "");
                 break;
             case INST_ONLY:
-                LOG.info(debugInfoProvider.getInstructionOnly());
+                log(debugInfoProvider.getInstructionOnly(), "");
                 break;
             case NEW_INST_ONLY:
                 printNewInstruction();
@@ -99,11 +99,11 @@ public class CpuFastDebug {
             opc[pc & pcAreaMask] = opcode;
             pcv[pc & pcAreaMask] = 1;
             String val = prevOpcode == -1 ? " [NEW]" : " [NEW-R]";
-            logNewInst(debugInfoProvider.getInstructionOnly(), val);
+            log(debugInfoProvider.getInstructionOnly(), val);
         }
     }
 
-    private void logNewInst(String s1, String s2) {
+    private void log(String s1, String s2) {
         LOG.info("{}{}", s1, s2);
 //        System.out.println(s1 + s2);
     }

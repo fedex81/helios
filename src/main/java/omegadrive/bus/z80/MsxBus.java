@@ -34,11 +34,9 @@ import omegadrive.joypad.MsxPad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.StateUtil;
 import omegadrive.util.FileUtil;
-import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.Tms9918aVdp;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -155,7 +153,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
     public void writeIoPort(int port, int value) {
         port &= 0xFF;
         byte byteVal = (byte) (value & 0XFF);
-        LogHelper.printLevel(LOG, Level.INFO, "Write IO port: {}, value: {}", port, value, verbose);
+        if (verbose) LOG.info("Write IO port: {}, value: {}", port, value);
         switch (port) {
             case 0x80:
             case 0xC0: //MSX-AUDIO, RS232 - ignore
@@ -238,7 +236,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
 
         }
         res &= 0xFF;
-        LogHelper.printLevel(LOG, Level.INFO, "Read IO port: {}, value: {}", port, res, verbose);
+        if (verbose) LOG.info("Read IO port: {}, value: {}", port, res);
         return res;
     }
 

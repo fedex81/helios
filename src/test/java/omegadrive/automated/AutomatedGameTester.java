@@ -29,10 +29,8 @@ import omegadrive.util.Util;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitOption;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.channels.FileChannel;
+import java.nio.file.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -49,11 +47,12 @@ public class AutomatedGameTester {
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
 
-    private static String romFolder = "/home/fede/roms/md";
+    private static String romFolder = "/home/fede/roms/md/nointro2020";
 
     private static boolean noIntro = true;
     private static String header = "rom;boot;sound";
     private static int BOOT_DELAY_MS = 500;
+    private static int LOG_CHECK_DELAY_MS = 30;
     private static int AUDIO_DELAY_MS = 25000;
 
     private static String romList = "";
@@ -61,7 +60,8 @@ public class AutomatedGameTester {
             , "blacklist.txt"));
 
     private static Predicate<Path> testGenRomsPredicate = p ->
-            Arrays.stream(SystemLoader.mdBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(SystemLoader.mdBinaryTypes).anyMatch(p.toString()::endsWith) ||
+                    Arrays.stream(SystemLoader.compressedBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testSgRomsPredicate = p ->
             Arrays.stream(SystemLoader.sgBinaryTypes).anyMatch(p.toString()::endsWith);
@@ -87,6 +87,7 @@ public class AutomatedGameTester {
 
     static {
         System.setProperty("helios.headless", "false");
+        System.setProperty("helios.enable.sound", "false");
         System.setProperty("md.sram.folder", "/tmp/helios/md/sram");
         new File(System.getProperty("md.sram.folder")).mkdirs();
     }
@@ -121,7 +122,6 @@ public class AutomatedGameTester {
             Collections.shuffle(testRoms, random);
         }
         try {
-            SystemLoader.main(new String[0]);
             bootRoms(testRoms);
         } catch (Exception | Error e) {
             e.printStackTrace();
@@ -201,19 +201,30 @@ public class AutomatedGameTester {
             if (system.isRomRunning()) {
                 do {
                     tooManyErrors = checkLogFileSize(logFile, name, logFileLen);
-                    Util.sleep(BOOT_DELAY_MS);
-                    totalDelay += BOOT_DELAY_MS;
+                    logFileLen = logFileLength(logFile);
+                    Util.sleep(LOG_CHECK_DELAY_MS);
+                    totalDelay += LOG_CHECK_DELAY_MS;
                 } while (totalDelay < RUN_DELAY_MS && !tooManyErrors);
                 system.handleSystemEvent(CLOSE_ROM, null);
             }
-
-            logFileLen = logFileLength(logFile);
-            Util.sleep(500);
+            Util.sleep(750);
             long lenByte = logFileLength(logFile);
             if (lenByte > 10 * 1024 * 1024) { //10Mbytes
-                System.out.println("Log file too big: " + lenByte);
+                fileTooBig(logFile);
                 break;
             }
+        }
+    }
+
+    private void fileTooBig(File logFile) {
+        long lenByte = logFileLength(logFile);
+        System.out.println("Log file too big: " + lenByte);
+        try {
+            FileChannel.open(logFile.toPath(), StandardOpenOption.WRITE).truncate(0).close();
+            lenByte = logFileLength(logFile);
+            System.out.println("Truncating log file, size: " + lenByte);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

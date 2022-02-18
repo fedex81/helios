@@ -42,7 +42,7 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
         super.setupInternal(z80State);
         z80Disasm = new Z80Dasm();
         fastDebug = new CpuFastDebug(this, createContext());
-        fastDebug.debugMode = CpuFastDebug.DebugMode.NEW_INST_ONLY;
+        fastDebug.debugMode = CpuFastDebug.DebugMode.NONE;
         return this;
     }
 

@@ -33,7 +33,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
 
     private final static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
 
-    public static boolean verbose = false;
+    private static final boolean verbose = false;
     public static final BusArbiter NO_OP = createNoOp();
 
     private static final int VDP_IPL1 = 2;
@@ -80,7 +80,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         if (vdpBusyState != state) {
             state68k = state == VdpBusyState.MEM_TO_VRAM
                     ? CpuState.HALTED : CpuState.RUNNING;
-            logInfo("Vdp State {} -> {} , 68k {}", vdpBusyState, state, state68k);
+            if (verbose) logInfo("Vdp State {} -> {} , 68k {}", vdpBusyState, state, state68k);
             vdpBusyState = state;
             if (state68k == CpuState.RUNNING && vdpBusyState == VdpBusyState.NOT_BUSY
                     && runLater68k != null) {
@@ -130,7 +130,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     }
 
     private void resetZ80Int() {
-        if (z80Int != IntState.NONE) {
+        if (verbose && z80Int != IntState.NONE) {
             logInfo("Z80 INT expired, state {}", z80Int);
         }
         z80Int = IntState.NONE;
@@ -141,7 +141,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
         z80.interrupt(true);
         if (z80Int != IntState.ASSERTED) {
             z80Int = IntState.ASSERTED;
-            logInfo("Z80 INT: {}", z80Int);
+            if (verbose) logInfo("Z80 INT: {}", z80Int);
         }
     }
 
@@ -151,7 +151,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
 
     public void setZ80Int(InterruptEvent event) {
         z80IntLineVdp = event;
-        logInfo("Z80Int line: {}", event);
+        if (verbose) logInfo("Z80Int line: {}", event);
     }
 
     public void addCyclePenalty(CpuType cpuType, int value) {
@@ -188,9 +188,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
 
     private void raiseInterrupts68k() {
         boolean res = m68k.raiseInterrupt(getLevel68k());
-        if (res) {
-            logInfo("68k int{}: {}", getLevel68k(), "was " + IntState.ASSERTED);
-        }
+        if (verbose && res) logInfo("68k int{}: {}", getLevel68k(), "was " + IntState.ASSERTED);
     }
 
     public void ackInterrupt68k(int level) {
@@ -214,14 +212,14 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
                 break;
         }
         int68k = IntState.NONE;
-        logInfo("68k int{}: {} (ACKED)", level, int68k);
+        if (verbose) logInfo("68k int{}: {} (ACKED)", level, int68k);
     }
 
     public void checkInterrupts68k() {
         if (isVdpVInt() || isVdpHInt()) {
             int68k = IntState.PENDING;
             vdpLevel |= isVdpVInt() ? (VDP_IPL1 + VDP_IPL2) : isVdpHInt() ? VDP_IPL2 : 0;
-            logInfo("68k int{}, vdpLevel{}: {}", getLevel68k(), vdpLevel, int68k);
+            if (verbose) logInfo("68k int{}, vdpLevel{}: {}", getLevel68k(), vdpLevel, int68k);
         }
     }
 
@@ -233,7 +231,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
                 setZ80Int(ievent);
                 break;
             case NEW_FRAME:
-                logInfo("NewFrame");
+                if (verbose) logInfo("NewFrame");
                 break;
         }
     }
@@ -241,7 +239,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     public void runLater68k(Runnable r) {
         runLater68k = r;
         state68k = CpuState.HALTED;
-        logInfo("68k State {} , vdp {}", state68k, vdpBusyState);
+        if (verbose) logInfo("68k State {} , vdp {}", state68k, vdpBusyState);
     }
 
     protected boolean isVdpVInt() {
@@ -258,10 +256,8 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     }
 
     private void logInfo(String str, Object... args) {
-        if (verbose) {
-            String msg = ParameterizedMessage.format(str, args);
-            LOG.info("{}{}", msg, vdp.getVdpStateString());
-        }
+        String msg = ParameterizedMessage.format(str, args);
+        LOG.info("{}{}", msg, vdp.getVdpStateString());
     }
 
     private static BusArbiter createNoOp() {

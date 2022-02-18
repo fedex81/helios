@@ -1,11 +1,9 @@
 package omegadrive.sound.msumd;
 
 import com.google.common.io.Files;
-import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.SoundUtil;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.digitalmediaserver.cuelib.CueSheet;
@@ -99,7 +97,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                     LOG.warn("Unable to parse loop point for pos #{}: {}", index, str);
                 }
             }
-            LogHelper.printLevel(LOG, Level.INFO, "CueFile has loop info for pos #{}: " + str, index, verbose);
+            if (verbose) LOG.info("CueFile has loop info for pos #{}: " + str, index);
         }
         return h;
     }
@@ -140,7 +138,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
 
     private int handleFirstRead() {
         init = true;
-        LogHelper.printLevel(LOG, Level.INFO, "Read MCD_STATUS: {}", MCD_STATE.INIT, verbose);
+        if (verbose) LOG.info("Read MCD_STATUS: {}", MCD_STATE.INIT);
         return MCD_STATE.INIT.ordinal();
     }
 
@@ -165,7 +163,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private int lastPlayed = -1;
 
     public void setBusy(boolean busy) {
-        LogHelper.printLevel(LOG, Level.INFO, "Busy: {} -> {}", this.busy ? 1 : 0, busy ? 1 : 0, verbose);
+        if (verbose) LOG.info("Busy: {} -> {}", this.busy ? 1 : 0, busy ? 1 : 0);
         this.busy = busy;
     }
 
@@ -181,7 +179,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private void handleMsuMdWriteByte(int address, int data, Size size) {
         switch (address) {
             case CLOCK_ADDR:
-                LogHelper.printLevel(LOG, Level.INFO, "Cmd clock: {} -> {}", clock, data, verbose);
+                if (verbose) LOG.info("Cmd clock: {} -> {}", clock, data);
                 processCommand(commandArg);
                 clock = data;
                 break;
@@ -191,13 +189,13 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 if (size == Size.WORD) {
                     commandArg.arg = data & 0xFF;
                 }
-                LogHelper.printLevel(LOG, Level.INFO, "Cmd: {}, arg {}, arg1 {}", commandArg.command, commandArg.arg,
-                        commandArg.arg1, verbose);
+                if (verbose) LOG.info("Cmd: {}, arg {}, arg1 {}", commandArg.command, commandArg.arg,
+                        commandArg.arg1);
                 break;
             case CMD_ARG_ADDR:
                 commandArg.arg1 = data;
-                LogHelper.printLevel(LOG, Level.INFO, "Cmd Arg: {}, arg {}, arg1 {}", commandArg.command, commandArg.arg,
-                        commandArg.arg1, verbose);
+                if (verbose) LOG.info("Cmd Arg: {}, arg {}, arg1 {}", commandArg.command, commandArg.arg,
+                        commandArg.arg1);
                 break;
             default:
                 handleIgnoredMcdWrite(address, data);
@@ -213,10 +211,10 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                     return handleFirstRead();
                 }
                 MCD_STATE m = busy ? MCD_STATE.CMD_BUSY : MCD_STATE.READY;
-                LogHelper.printLevel(LOG, Level.INFO, "Read MCD_STATUS: {}, busy: " + busy, m, verbose);
+                if (verbose) LOG.info("Read MCD_STATUS: {}, busy: " + busy, m);
                 return m.ordinal();
             case CLOCK_ADDR:
-                LogHelper.printLevel(LOG, Level.INFO, "Read CLOCK_ADDR: {}", clock, verbose);
+                if (verbose) LOG.info("Read CLOCK_ADDR: {}", clock);
                 return clock;
             default:
                 return handleIgnoredMcdRead(address, size);
@@ -226,16 +224,16 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private void handleIgnoredMcdWrite(int address, int data) {
         switch (address) {
             case MCD_GATE_ARRAY_START:
-                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_GATE_ARRAY_START: {}", data, verbose);
+                if (verbose) LOG.info("Write MCD_GATE_ARRAY_START: {}", data);
                 break;
             case MCD_MMOD:
-                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_MMOD: {}", data, verbose);
+                if (verbose) LOG.info("Write MCD_MMOD: {}", data);
                 break;
             case MCD_COMF:
-                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_COMF: {}", data, verbose);
+                if (verbose) LOG.info("Write MCD_COMF: {}", data);
                 break;
             case MCD_MEMWP:
-                LogHelper.printLevel(LOG, Level.INFO, "Write MCD_MEMWP: {}", data, verbose);
+                if (verbose) LOG.info("Write MCD_MEMWP: {}", data);
                 break;
             default:
                 LOG.error("Unexpected bus write: {}, data {} {}",
@@ -247,7 +245,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private int handleIgnoredMcdRead(int address, Size size) {
         switch (address) {
             case MCD_GATE_ARRAY_START:
-                LogHelper.printLevel(LOG, Level.INFO, "Read MCD_GATE_ARRAY_START: {}", 0xFF, verbose);
+                if (verbose) LOG.info("Read MCD_GATE_ARRAY_START: {}", 0xFF);
                 return (int) size.getMask(); //ignore
             default:
                 LOG.warn("Unexpected MegaCD address range read at: {}, {}",
@@ -267,8 +265,8 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             } else {
                 commandArg.command = MsuCommand.PLAY_LOOP;
             }
-            LogHelper.printLevel(LOG, Level.INFO, str + " to: {} 0x{} 0x{}", commandArg.command, commandArg.arg,
-                    commandArg.arg1, verbose);
+            if (verbose) LOG.info(str + " to: {} 0x{} 0x{}", commandArg.command, commandArg.arg,
+                    commandArg.arg1);
         }
         return commandArg;
     }
@@ -276,7 +274,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     private void processCommand(MsuCommandArg commandArg) {
         int arg = commandArg.arg;
         Runnable r = null;
-        LogHelper.printLevel(LOG, Level.INFO, "{} track: {}", commandArg.command, arg, verbose);
+        if (verbose) LOG.info("{} track: {}", commandArg.command, arg);
         commandArg = injectCueLoopSetup(commandArg);
         switch (commandArg.command) {
             case PLAY:
@@ -334,7 +332,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             clip.removeLineListener(lineListenerRef.getAndSet(null));
         }
         setBusy(busy);
-        LogHelper.printLevel(LOG, Level.INFO, "Track stopped", verbose);
+        if (verbose) LOG.info("Track stopped");
     }
 
     private Runnable pauseTrack(final double fadeMs) {
@@ -391,7 +389,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 } else {
                     clipContext.positionMicros = 0;
                 }
-                LogHelper.printLevel(LOG, Level.INFO, "Track started: {}", track, verbose);
+                if (verbose) LOG.info("Track started: {}", track);
             } catch (Exception e) {
                 LOG.error(e);
                 e.printStackTrace();
@@ -408,14 +406,14 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     }
 
     private void handleClipEvent(LineEvent event) {
-        LogHelper.printLevel(LOG, Level.INFO, "Clip event: {}", event.getType(), verbose);
+        if (verbose) LOG.info("Clip event: {}", event.getType());
     }
 
     private void startClipInternal(Clip clip, ClipContext context) {
         if (clip == null) {
             return;
         }
-        LogHelper.printLevel(LOG, Level.INFO, "Playing clip: {}", context, verbose);
+        if (verbose) LOG.info("Playing clip: {}", context);
         if (clipContext.positionMicros > 0) {
             clip.setMicrosecondPosition(clipContext.positionMicros);
         }

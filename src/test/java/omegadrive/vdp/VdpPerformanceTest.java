@@ -40,7 +40,7 @@ import java.time.Duration;
 @Ignore
 public class VdpPerformanceTest {
 
-    static Path testFilePath = Paths.get("./test_roms", "t1.bin");
+    static Path testFilePath = Paths.get("./test_roms", "s1.zip");
     //    static Path testFilePath = Paths.get("./test_roms", "s1.zip");
     //    static Path testFilePath = Paths.get("./test_roms", "zax.col");
     static int fps = 60;
@@ -52,11 +52,11 @@ public class VdpPerformanceTest {
 
     @BeforeClass
     public static void beforeTest() {
-        System.setProperty("helios.headless", "false");
+        System.setProperty("helios.headless", "true");
         System.setProperty("helios.fullSpeed", "true");
         System.setProperty("helios.enable.sound", "true");
-        System.setProperty("68k.debug", "false");
-        System.setProperty("z80.debug", "false");
+//        System.setProperty("68k.debug", "true");
+//        System.setProperty("z80.debug", "true");
 //        System.setProperty("md.show.vdp.debug.viewer", "true");
     }
 

@@ -64,12 +64,6 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         return mapper;
     }
 
-    public static void logInfo(String str, Object... res) {
-        if (verbose) {
-            LOG.info(str, res);
-        }
-    }
-
     @Override
     public void setSramMode(SramMode sramMode) {
         if (this.sramMode != sramMode) {
@@ -100,7 +94,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         if (sramRead) {
             initBackupFileIfNecessary();
             long res = Util.readData(sram, size, (int) (address & 0xFFFF));
-            logInfo("SRAM read at: {} {}, result: {} ", address & 0xFFFF, size, res);
+            if (verbose) LOG.info("SRAM read at: {} {}, result: {} ", address & 0xFFFF, size, res);
             return res;
         }
         return baseMapper.readData(address, size);
@@ -115,7 +109,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         } else if (sramWrite) {
             initBackupFileIfNecessary();
             address = (address & 0xFFFF);
-            logInfo("SRAM write at: {} {}, data: {} ", address, size, data);
+            if (verbose) LOG.info("SRAM write at: {} {}, data: {} ", address, size, data);
             Util.writeData(sram, size, (int) address, data);
         }
     }
@@ -127,7 +121,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         if (eepromRead) {
             initBackupFileIfNecessary();
             long res = i2c.eeprom_i2c_out();
-            logInfo("EEPROM read at: {} {}, result: {} ", address, size, res);
+            if (verbose) LOG.info("EEPROM read at: {} {}, result: {} ", address, size, res);
             return res;
         }
         return baseMapper.readData(address, size);
@@ -140,7 +134,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         if (eepromWrite) {
             initBackupFileIfNecessary();
             i2c.eeprom_i2c_in((int) (data & 0xFF));
-            logInfo("EEPROM write at: {} {}, data: {} ", address, size, data);
+            if (verbose) LOG.info("EEPROM write at: {} {}, data: {} ", address, size, data);
         } else {
             baseMapper.writeData(address, data, size);
         }

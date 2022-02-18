@@ -22,10 +22,8 @@ package omegadrive.cart.mapper.md;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -69,7 +67,7 @@ import org.apache.logging.log4j.Logger;
 //TODO savestate stuff
 public class ExSsfMapper extends Ssf2Mapper {
 
-    private final boolean verbose = false;
+    private final static boolean verbose = false;
 
     public static final int BANK_SET_START_ADDRESS = 0xA130F0;
     public static final int BANK_SET_END_ADDRESS = 0xA130FE;
@@ -93,7 +91,7 @@ public class ExSsfMapper extends Ssf2Mapper {
             if (mapRom) {
                 return super.readData(address, size);
             }
-            LogHelper.printLevel(LOG, Level.INFO, "Bank read: {}", address, verbose);
+            if (verbose) LOG.info("Bank read: {}", address);
             int bankSelector = (int) (address >> BANK_SHIFT);
             address &= (BANK_SIZE - 1);
             return Util.readData(moreRam[moreBanks[bankSelector]], size, (int) address);
@@ -118,7 +116,7 @@ public class ExSsfMapper extends Ssf2Mapper {
     public void writeData(long address, long data, Size size) {
         address &= 0xFF_FFFF;
         if (address >= BANKABLE_START_ADDRESS && address <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
-            LogHelper.printLevel(LOG, Level.INFO, "Bank write: {}", address, verbose);
+            if (verbose) LOG.info("Bank write: {}", address);
             int bankSelector = (int) (address >> BANK_SHIFT);
             address &= (BANK_SIZE - 1);
             Util.writeData(moreRam[moreBanks[bankSelector]], size, (int) address, data);
@@ -145,7 +143,7 @@ public class ExSsfMapper extends Ssf2Mapper {
         int index = val >> 1;
         int dataI = (int) (data & 0x3F);
         moreBanks[index] = dataI;
-        LogHelper.printLevel(LOG, Level.INFO, "Setting bankSelector {}: {}, {}", index, addressL, dataI, verbose);
+        if (verbose) LOG.info("Setting bankSelector {}: {}, {}", index, addressL, dataI);
         if (index == 0) {
             reg_ctrl0 = (int) (data & 0xFFFF);
             mapRom = (reg_ctrl0 >> 15) == 0;
