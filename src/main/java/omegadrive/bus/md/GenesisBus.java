@@ -165,6 +165,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     protected int[] ram, rom;
+    protected int romMask;
 
     @Override
     public void init() {
@@ -178,15 +179,16 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         LOG.info("Bus state: {}", busState);
         ram = memoryProvider.getRamData();
         rom = memoryProvider.getRomData();
+        romMask = memoryProvider.getRomMask();
     }
 
     @Override
     public long readData(long addressL, Size size) {
         int address = (int) (addressL & 0xFF_FFFF);
         if (address < ROM_END_ADDRESS) {  //ROM
-            return Util.readData(rom, size, address);
+            return Util.readDataMask(rom, size, address, romMask);
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            return Util.readData(ram, size, address & M68K_RAM_MASK);
+            return Util.readDataMask(ram, size, address, M68K_RAM_MASK);
         } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
             return reservedRead(address, size);
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
@@ -212,7 +214,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         int address = (int) (addressL & 0xFF_FFFF);
         data &= size.getMask();
         if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            Util.writeData(ram, size, address & M68K_RAM_MASK, data);
+            Util.writeDataMask(ram, size, address, data, M68K_RAM_MASK);
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             z80MemoryWrite(address, size, data);
         } else if (address >= IO_ADDRESS_SPACE_START && address <= IO_ADDRESS_SPACE_END) {    //	IO addressing space
@@ -260,7 +262,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return size.getMax();
         } else {
             //reads rom at 0x40_0000 MegaCD mirror
-            return Util.readData(rom, size, (int) (address & DEFAULT_ROM_END_ADDRESS));
+            return Util.readDataMask(rom, size, address, (int) DEFAULT_ROM_END_ADDRESS);
         }
     }
 

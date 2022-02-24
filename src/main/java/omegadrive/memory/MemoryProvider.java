@@ -41,7 +41,7 @@ public class MemoryProvider implements IMemoryProvider {
     private int[] rom;
     private int[] ram;
 
-    private long romMask;
+    private int romMask;
     private int romSize;
     private int ramSize = M68K_RAM_SIZE;
 
@@ -105,7 +105,7 @@ public class MemoryProvider implements IMemoryProvider {
     public void setRomData(int[] data) {
         this.rom = data;
         this.romSize = data.length;
-        this.romMask = (long) Math.pow(2, Util.log2(romSize) + 1) - 1;
+        this.romMask = Util.getRomMask(romSize);
     }
 
     @Override
@@ -123,6 +123,11 @@ public class MemoryProvider implements IMemoryProvider {
     @Override
     public int[] getRamData() {
         return ram;
+    }
+
+    @Override
+    public int getRomMask() {
+        return romMask;
     }
 
     @Override

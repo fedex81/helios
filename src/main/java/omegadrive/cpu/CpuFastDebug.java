@@ -89,15 +89,15 @@ public class CpuFastDebug {
     }
 
     private void printNewInstruction() {
-        final int pc = debugInfoProvider.getPc() & pcMask;
+        final int pcMasked = debugInfoProvider.getPc() & pcMask;
         final int opcode = debugInfoProvider.getOpcode();
-        final int area = pc >> pcAreaShift;
+        final int area = pcMasked >> pcAreaShift;
         final int[] pcv = pcVisited[area];
         final int[] opc = opcodes[area];
-        final int prevOpcode = opc[pc & pcAreaMask];
+        final int prevOpcode = opc[pcMasked & pcAreaMask];
         if (prevOpcode == -1 || prevOpcode != opcode) {
-            opc[pc & pcAreaMask] = opcode;
-            pcv[pc & pcAreaMask] = 1;
+            opc[pcMasked & pcAreaMask] = opcode;
+            pcv[pcMasked & pcAreaMask] = 1;
             String val = prevOpcode == -1 ? " [NEW]" : " [NEW-R]";
             log(debugInfoProvider.getInstructionOnly(), val);
         }

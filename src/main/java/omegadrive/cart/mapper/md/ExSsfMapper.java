@@ -93,8 +93,7 @@ public class ExSsfMapper extends Ssf2Mapper {
             }
             if (verbose) LOG.info("Bank read: {}", address);
             int bankSelector = (int) (address >> BANK_SHIFT);
-            address &= (BANK_SIZE - 1);
-            return Util.readData(moreRam[moreBanks[bankSelector]], size, (int) address);
+            return Util.readDataMask(moreRam[moreBanks[bankSelector]], size, (int) address, BANK_MASK);
         } else if (address >= MATH_ARG_HI && address <= MATH_ARG_LO) {
 //            LOG.info("Read: {}, {}, {}", Long.toHexString(address), Long.toHexString(mathReg[(int) (address & 0xF)]), opType);
             return mathReg[(int) (address & 0xF)];
@@ -119,7 +118,7 @@ public class ExSsfMapper extends Ssf2Mapper {
             if (verbose) LOG.info("Bank write: {}", address);
             int bankSelector = (int) (address >> BANK_SHIFT);
             address &= (BANK_SIZE - 1);
-            Util.writeData(moreRam[moreBanks[bankSelector]], size, (int) address, data);
+            Util.writeDataMask(moreRam[moreBanks[bankSelector]], size, (int) address, data, BANK_MASK);
             return;
         } else if (address >= MATH_ARG_HI && address <= MATH_DIV_LO) {
             writeMathRegs(address, data);

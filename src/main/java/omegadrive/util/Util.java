@@ -176,24 +176,25 @@ public class Util {
         return ((number & (1 << position)) != 0);
     }
 
-
-    public static long readData(int[] src, Size size, int address) {
+    public static long readDataMask(int[] src, Size size, int address, final int mask) {
         long data;
-        if (size == Size.BYTE) {
+        address &= mask;
+        if (size == Size.WORD) {
+            data = ((src[address] & 0xFF) << 8) | (src[address + 1] & 0xFF);
+        } else if (size == Size.BYTE) {
             data = src[address];
-        } else if (size == Size.WORD) {
-            data = (src[address] << 8) | src[address + 1];
         } else {
-            data = (src[address] << 24) |
-                    (src[address + 1] << 16) |
-                    (src[address + 2] << 8) |
-                    (src[address + 3]);
+            data = ((src[address] & 0xFF) << 24) |
+                    ((src[address + 1] & 0xFF) << 16) |
+                    ((src[(address + 2) & mask] & 0xFF) << 8) |
+                    (src[(address + 3) & mask] & 0xFF);
         }
 //        LogHelper.printLevel(LOG, Level.DEBUG, "Read SRAM: {}, {}: {}", address, data, size, verbose);
         return data;
     }
 
-    public static void writeData(int[] dest, Size size, int address, long data) {
+    public static void writeDataMask(int[] dest, Size size, int address, long data, final int mask) {
+        address &= mask;
         if (size == Size.BYTE) {
             dest[address] = (int) (data & 0xFF);
         } else if (size == Size.WORD) {
@@ -202,8 +203,8 @@ public class Util {
         } else {
             dest[address] = (int) ((data >> 24) & 0xFF);
             dest[address + 1] = (int) ((data >> 16) & 0xFF);
-            dest[address + 2] = (int) ((data >> 8) & 0xFF);
-            dest[address + 3] = (int) (data & 0xFF);
+            dest[(address + 2) & mask] = (int) ((data >> 8) & 0xFF);
+            dest[(address + 3) & mask] = (int) (data & 0xFF);
         }
 //        LogHelper.printLevel(LOG, Level.DEBUG, "Write SRAM: {}, {}: {}", address, data, size, verbose);
     }
@@ -213,8 +214,9 @@ public class Util {
         //checksum is computed starting from byte 0x200
         int i = 0x200;
         int size = memoryProvider.getRomSize();
+        final int mask = memoryProvider.getRomMask();
         for (; i < size - 1; i += 2) {
-            long val = Util.readData(memoryProvider.getRomData(), Size.WORD, i);
+            long val = Util.readDataMask(memoryProvider.getRomData(), Size.WORD, i, mask);
             res = (res + val) & 0xFFFF;
         }
         //read final byte ??
@@ -327,6 +329,16 @@ public class Util {
 
     public static String th(int pos) {
         return Integer.toHexString(pos);
+    }
+
+    public static int getRomMask(int size) {
+        int log2 = Util.log2(size);
+        int pow2 = (int) Math.pow(2, log2);
+        if (size == pow2) {
+            //size = 0x4000, mask = 0x3fff
+            return size - 1;
+        }
+        return (int) Math.pow(2, log2 + 1) - 1;
     }
 
     public static Integer getFromIntegerCache(int val) {

@@ -25,6 +25,8 @@ public interface IMemoryRom {
 
     int[] getRomData();
 
+    int getRomMask();
+
     default int getRomSize() {
         return getRomData().length;
     }

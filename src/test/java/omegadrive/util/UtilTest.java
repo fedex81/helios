@@ -13,9 +13,12 @@ import org.junit.Test;
  */
 public class UtilTest {
 
-    byte[] input = new byte[0x100];
-    int[] signIntInput = new int[0x100];
-    int[] unsignIntInput = new int[0x100];
+    private static final int SIZE = 0x100;
+    private static final int MASK = SIZE - 1;
+
+    byte[] input = new byte[SIZE];
+    int[] signIntInput = new int[SIZE];
+    int[] unsignIntInput = new int[SIZE];
 
     @Before
     public void setup() {
@@ -26,6 +29,33 @@ public class UtilTest {
             signIntInput[k] = i;
             unsignIntInput[k] = i & 0xFF;
         }
+    }
+
+    @Test
+    public void testReadNegative() {
+        long res = Util.readDataMask(signIntInput, Size.WORD, 0, MASK);
+        Assert.assertEquals(0x8081, res);
+
+        res = Util.readDataMask(signIntInput, Size.LONG, 0, MASK);
+        Assert.assertEquals(0x80818283, res);
+    }
+
+    @Test
+    public void testLongReadBoundary() {
+        int address = 0xFEFFFE;
+        int mask = signIntInput.length - 1;
+        long expect = 0x7e7f8081;
+        long res = Util.readDataMask(signIntInput, Size.LONG, address, mask);
+        Assert.assertEquals(expect, res);
+    }
+
+    @Test
+    public void testLongWriteBoundary() {
+        int address = 0xFEFFFE;
+        long value = 0x6e6f7071;
+        Util.writeDataMask(signIntInput, Size.LONG, address, value, MASK);
+        long res = Util.readDataMask(signIntInput, Size.LONG, address, MASK);
+        Assert.assertEquals(value, res);
     }
 
     @Test

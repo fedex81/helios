@@ -59,6 +59,7 @@ public abstract class Ssf2Mapper implements RomMapper {
     public static final int BANK_SET_END_ADDRESS = 0xA130FF;
 
     public static final int BANK_SIZE = 0x80000;
+    public static final int BANK_MASK = BANK_SIZE - 1;
     public static final int BANKABLE_START_ADDRESS = 0x80000;
     public static final int BANK_SHIFT = 19;
 
@@ -75,7 +76,7 @@ public abstract class Ssf2Mapper implements RomMapper {
             address = (banks[address >> BANK_SHIFT] << BANK_SHIFT) | (address & 0x7_FFFF);
             if (verbose) LOG.info("Bank read: {} -> {}",
                     addressL, address);
-            return Util.readData(memory.getRomData(), size, address);
+            return Util.readDataMask(memory.getRomData(), size, address, memory.getRomMask());
         }
         return baseMapper.readData(addressL, size);
     }
