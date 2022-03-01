@@ -17,12 +17,10 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.util.RegionDetector;
+import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +29,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 @Ignore
@@ -40,19 +39,14 @@ public class BaseVdpDmaHandlerTest {
 
     GenesisVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
-    VdpDmaHandler dmaHandler;
 
     @Before
     public void setup() {
-        GenesisBusProvider busProvider = new GenesisBus();
-        memoryInterface = GenesisVdpMemoryInterface.createInstance();
-        dmaHandler = new VdpDmaHandlerImpl();
-
-        vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface, dmaHandler, RegionDetector.Region.EUROPE);
-
-        ((VdpDmaHandlerImpl) dmaHandler).vdpProvider = vdpProvider;
-        ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
-        ((VdpDmaHandlerImpl) dmaHandler).busProvider = busProvider;
+        GenesisBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
+        Optional<GenesisVdpProvider> opt = busProvider.getBusDeviceIfAny(GenesisVdpProvider.class);
+        Assert.assertTrue(opt.isPresent());
+        vdpProvider = opt.get();
+        memoryInterface = (VdpMemoryInterface) vdpProvider.getVdpMemory();
         vdpProvider.updateRegisterData(1, 4); //mode5
     }
 

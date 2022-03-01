@@ -19,13 +19,9 @@
 
 package omegadrive.vdp;
 
-import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.input.GamepadTest;
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.system.SystemProvider;
-import omegadrive.vdp.md.GenesisVdp;
+import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.md.TestGenesisVdpMemoryInterface;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpSlotType;
@@ -36,6 +32,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
@@ -73,14 +70,14 @@ public class BaseVdpDmaBandwidthTest {
 
     @Before
     public void setup() {
-        memoryProvider = MemoryProvider.createGenesisInstance();
-        SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
-        GenesisBusProvider busProvider = new GenesisBus();
         memoryInterface = new TestGenesisVdpMemoryInterface();
-        vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface);
-        busProvider.attachDevice(emu).attachDevice(memoryProvider).
-                attachDevice(vdpProvider).attachDevice(GamepadTest.createTestJoypadProvider());
-        busProvider.init();
+        GenesisBusProvider busProvider = SystemTestUtil.setupNewMdSystem(memoryInterface);
+        Optional<GenesisVdpProvider> opt = busProvider.getBusDeviceIfAny(GenesisVdpProvider.class);
+        Optional<IMemoryProvider> optMem = busProvider.getBusDeviceIfAny(IMemoryProvider.class);
+        Assert.assertTrue(opt.isPresent());
+        Assert.assertTrue(optMem.isPresent());
+        vdpProvider = opt.get();
+        memoryProvider = optMem.get();
         vdpProvider.updateRegisterData(1, 4); //mode5
     }
 

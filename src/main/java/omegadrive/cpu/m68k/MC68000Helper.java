@@ -25,7 +25,6 @@ import m68k.cpu.DisassembledInstruction;
 import m68k.cpu.Instruction;
 import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
-import omegadrive.cpu.m68k.debug.MC68000WrapperDebug;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -118,7 +117,7 @@ public class MC68000Helper {
         return sb.append(String.format("\n==> %s\n\n", sb2)).toString();
     }
 
-    public static String dumpInfo(Cpu cpu, MC68000WrapperDebug.M68kState state, int memorySize) {
+    public static String dumpInfo(Cpu cpu, M68kState state, int memorySize) {
         StringBuilder sb = new StringBuilder("\n");
         int wrapPc = state.pc & 0xFF_FFFF;
         sb.append("D0: " + th(state.dr[0]) +
@@ -194,5 +193,52 @@ public class MC68000Helper {
 
     public static void printCpuState(Cpu cpu, Level level, String head, int memorySize) {
         LOG.log(level, "{}{}", head, getCpuState(cpu, head, memorySize));
+    }
+
+    public static class M68kState {
+        public int sr, pc, ssp, usp, opcode;
+        public int[] dr = new int[8], ar = new int[8];
+        public String memAccess;
+
+        @Override
+        public String toString() {
+            return "M68kState{" +
+                    "sr=" + th(sr) +
+                    ", pc=" + th(pc) +
+                    ", ssp=" + th(ssp) +
+                    ", usp=" + th(usp) +
+                    ", opcode=" + th(opcode) +
+                    ", dr=" + Arrays.toString(dr) +
+                    ", ar=" + Arrays.toString(ar) +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            M68kState state = (M68kState) o;
+
+            if (sr != state.sr) return false;
+            if (pc != state.pc) return false;
+            if (ssp != state.ssp) return false;
+            if (usp != state.usp) return false;
+            if (opcode != state.opcode) return false;
+            if (!Arrays.equals(dr, state.dr)) return false;
+            return Arrays.equals(ar, state.ar);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = sr;
+            result = 31 * result + pc;
+            result = 31 * result + ssp;
+            result = 31 * result + usp;
+            result = 31 * result + opcode;
+            result = 31 * result + Arrays.hashCode(dr);
+            result = 31 * result + Arrays.hashCode(ar);
+            return result;
+        }
     }
 }

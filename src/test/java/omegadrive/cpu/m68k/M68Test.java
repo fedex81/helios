@@ -1,15 +1,12 @@
 package omegadrive.cpu.m68k;
 
-import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.system.SystemProvider;
-import omegadrive.vdp.MdVdpTestUtil;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.util.SystemTestUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Optional;
 
 /**
  * M68Test
@@ -24,15 +21,10 @@ public class M68Test {
 
     @Before
     public void setup() {
-        GenesisBusProvider bus = new GenesisBus();
-        IMemoryProvider memoryProvider = MemoryProvider.createGenesisInstance();
-        GenesisVdpProvider vdpProvider = GenesisVdpProvider.createVdp(bus);
-        memoryProvider.setRomData(new int[1024]);
-        memoryProvider.getRomData()[0x3c] = 1;
-        provider = MC68000Wrapper.createInstance(bus);
-        SystemProvider systemProvider = MdVdpTestUtil.createTestGenesisProvider();
-        bus.attachDevice(memoryProvider).attachDevice(provider).attachDevice(systemProvider).attachDevice(vdpProvider);
-        bus.init();
+        GenesisBusProvider bus = SystemTestUtil.setupNewMdSystem();
+        Optional<M68kProvider> optM = bus.getBusDeviceIfAny(M68kProvider.class);
+        Assert.assertTrue(optM.isPresent());
+        provider = optM.get();
     }
 
     @Test

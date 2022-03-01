@@ -17,17 +17,9 @@
 
 package omegadrive.bus;
 
-import omegadrive.SystemLoader;
-import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.cpu.m68k.MC68000Wrapper;
-import omegadrive.cpu.z80.Z80CoreWrapper;
-import omegadrive.joypad.GenesisJoypad;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.sound.SoundProvider;
 import omegadrive.util.Size;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.util.SystemTestUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,18 +35,7 @@ public class GenesisBusTest {
 
     @Before
     public void init() {
-        bus = new GenesisBus();
-        IMemoryProvider memory = MemoryProvider.createGenesisInstance();
-        GenesisJoypad joypad = new GenesisJoypad();
-
-        GenesisVdpProvider vdp = GenesisVdpProvider.createVdp(bus);
-        MC68000Wrapper cpu = new MC68000Wrapper(bus);
-        Z80CoreWrapper z80 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, bus);
-        //sound attached later
-        SoundProvider sound = SoundProvider.NO_SOUND;
-        bus.attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
-                attachDevice(cpu).attachDevice(z80).attachDevice(sound);
-//        bus.init();
+        bus = SystemTestUtil.setupNewMdSystem();
     }
 
     /**
@@ -63,7 +44,8 @@ public class GenesisBusTest {
     @Test
     public void test68kWriteToZ80() {
         int value = 1;
-        bus.write(0xA11100, value, Size.BYTE);
+        bus.setZ80ResetState(false);
+        bus.write(0xA11100, value, Size.BYTE); //busReq
         bus.write(GenesisBusProvider.Z80_ADDRESS_SPACE_START, value, Size.BYTE);
         long res = bus.read(GenesisBusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
         Assert.assertEquals(value, res);

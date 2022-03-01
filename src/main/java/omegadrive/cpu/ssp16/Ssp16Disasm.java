@@ -105,7 +105,7 @@ public class Ssp16Disasm {
         return sb.toString();
     }
 
-    static int dasm_ssp1601(StringBuilder sb, int pc, int[] oprom) {
+    public static int dasm_ssp1601(StringBuilder sb, int pc, int[] oprom) {
         int[] base_oprom;
         int op;
         int size = 1;

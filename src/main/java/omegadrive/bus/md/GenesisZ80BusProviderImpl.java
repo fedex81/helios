@@ -88,7 +88,6 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
             address = romBank68kSerial | (address & M68K_BANK_MASK);
-            //this seems to be not allowed
             if (address >= GenesisBusProvider.ADDRESS_RAM_MAP_START && address < GenesisBusProvider.ADDRESS_UPPER_LIMIT) {
                 LOG.warn("Z80 reading from 68k RAM");
                 return 0xFF;

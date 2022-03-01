@@ -19,24 +19,20 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.input.GamepadTest;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.system.SystemProvider;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
+import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.VdpDmaHandlerTest;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Optional;
 
 import static omegadrive.bus.model.GenesisBusProvider.VDP_ADDRESS_SPACE_START;
 import static omegadrive.vdp.model.GenesisVdpProvider.VramMode.*;
@@ -47,28 +43,17 @@ public class GenesisVdpTest2 {
 
     GenesisVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
-    VdpDmaHandler dmaHandler;
     GenesisBusProvider busProvider;
 
     static final long VDP_CONTROL_PORT = VDP_ADDRESS_SPACE_START + 4;
 
     @Before
     public void setup() {
-        SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
-        IMemoryProvider memory = MemoryProvider.createGenesisInstance();
-        busProvider = new GenesisBus();
-        busProvider.attachDevice(memory);
-        memoryInterface = GenesisVdpMemoryInterface.createInstance();
-        dmaHandler = new VdpDmaHandlerImpl();
-
-        vdpProvider = GenesisVdp.createInstance(busProvider, memoryInterface, dmaHandler, RegionDetector.Region.EUROPE);
-        busProvider.attachDevice(emu).attachDevice(vdpProvider).attachDevice(GamepadTest.createTestJoypadProvider());
-        busProvider.init();
-
-        ((VdpDmaHandlerImpl) dmaHandler).vdpProvider = vdpProvider;
-        ((VdpDmaHandlerImpl) dmaHandler).memoryInterface = memoryInterface;
-        ((VdpDmaHandlerImpl) dmaHandler).busProvider = busProvider;
-        vdpProvider.init();
+        busProvider = SystemTestUtil.setupNewMdSystem();
+        Optional<GenesisVdpProvider> opt = busProvider.getBusDeviceIfAny(GenesisVdpProvider.class);
+        Assert.assertTrue(opt.isPresent());
+        vdpProvider = opt.get();
+        memoryInterface = (VdpMemoryInterface) vdpProvider.getVdpMemory();
     }
 
 

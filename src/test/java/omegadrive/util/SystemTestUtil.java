@@ -2,8 +2,11 @@ package omegadrive.util;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
+import omegadrive.bus.md.BusArbiter;
 import omegadrive.bus.md.GenesisBus;
+import omegadrive.bus.md.GenesisZ80BusProviderImpl;
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.GenesisZ80BusProvider;
 import omegadrive.bus.model.Z80BusProvider;
 import omegadrive.bus.z80.ColecoBus;
 import omegadrive.bus.z80.MsxBus;
@@ -12,6 +15,7 @@ import omegadrive.bus.z80.SmsBus;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
+import omegadrive.joypad.GenesisJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.PwmProvider;
@@ -26,7 +30,10 @@ import omegadrive.ui.DisplayWindow;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.vdp.Tms9918aVdp;
+import omegadrive.vdp.md.GenesisVdp;
+import omegadrive.vdp.md.GenesisVdpMemoryInterface;
 import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.VdpMemoryInterface;
 import org.junit.Assert;
 
 import static omegadrive.SystemLoader.SystemType.SMS;
@@ -39,21 +46,31 @@ import static omegadrive.SystemLoader.SystemType.SMS;
 public class SystemTestUtil {
 
     public static GenesisBusProvider setupNewMdSystem() {
-        return setupNewMdSystem(MemoryProvider.createGenesisInstance());
+        return setupNewMdSystem(MemoryProvider.createGenesisInstance(), GenesisVdpMemoryInterface.createInstance());
     }
 
-    public static GenesisBusProvider setupNewMdSystem(IMemoryProvider cpuMem1) {
+    public static GenesisBusProvider setupNewMdSystem(VdpMemoryInterface vdpMem) {
+        return setupNewMdSystem(MemoryProvider.createGenesisInstance(), vdpMem);
+    }
+
+    public static GenesisBusProvider setupNewMdSystem(IMemoryProvider cpuMem) {
+        return setupNewMdSystem(cpuMem, GenesisVdpMemoryInterface.createInstance());
+    }
+
+    public static GenesisBusProvider setupNewMdSystem(IMemoryProvider cpuMem1, VdpMemoryInterface vdpMem) {
         GenesisBusProvider busProvider = new GenesisBus();
-
-        GenesisVdpProvider vdpProvider1 = GenesisVdpProvider.createVdp(busProvider);
+        GenesisZ80BusProvider z80bus = new GenesisZ80BusProviderImpl();
+        GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider, vdpMem);
         MC68000Wrapper cpu = new MC68000Wrapper(busProvider);
-
+        GenesisJoypad joypad = new GenesisJoypad();
         Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, busProvider);
         FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
         SoundProvider sp1 = getSoundProvider(fm1);
         SystemProvider systemProvider = MdVdpTestUtil.createTestGenesisProvider();
-        busProvider.attachDevice(vdpProvider1).attachDevice(cpu).
+        z80bus.attachDevice(BusArbiter.NO_OP).attachDevice(busProvider);
+        busProvider.attachDevice(vdpProvider1).attachDevice(cpu).attachDevice(joypad).attachDevice(z80bus).
                 attachDevice(cpuMem1).attachDevice(z80p1).attachDevice(sp1).attachDevice(systemProvider);
+        busProvider.init();
         return busProvider;
     }
 

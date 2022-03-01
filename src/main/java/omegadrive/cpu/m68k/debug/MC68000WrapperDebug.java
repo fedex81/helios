@@ -24,6 +24,7 @@ import m68k.memory.AddressSpace;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.MC68000AddressSpace;
 import omegadrive.cpu.m68k.MC68000Helper;
+import omegadrive.cpu.m68k.MC68000Helper.M68kState;
 import omegadrive.util.Size;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -297,11 +298,5 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
             String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
             LOG.warn("Unable to dump the instruction: {}", pc, e);
         }
-    }
-
-    public static class M68kState {
-        public int sr, pc, ssp, usp, opcode;
-        public int[] dr = new int[8], ar = new int[8];
-        public String memAccess;
     }
 }
