@@ -331,6 +331,10 @@ public class Util {
         return Integer.toHexString(pos);
     }
 
+    public static String th(long pos) {
+        return Long.toHexString(pos);
+    }
+
     public static int getRomMask(int size) {
         int log2 = Util.log2(size);
         int pow2 = (int) Math.pow(2, log2);

@@ -536,9 +536,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         }
     }
 
-    private void ioWriteInternal(int addressL, long data) {
+    private void ioWriteInternal(int addressL, long dataL) {
         //both even and odd addresses
         int address = addressL & 0xFFE;
+        int data = (int) (dataL & 0xFF);
         switch (address) {
             case 2:
                 joypadProvider.writeDataRegister1(data);
@@ -547,24 +548,22 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 joypadProvider.writeDataRegister2(data);
                 break;
             case 6:
-                LOG.debug("Write to expansion port: {}, data: {}", Long.toHexString(address),
-                        Long.toHexString(data));
+                if (LOG.isDebugEnabled()) LOG.debug("Write to expansion port: {}, data: {}", th(address), th(data));
                 break;
             case 8:
-                joypadProvider.writeControlRegister1(data & 0xFF);
+                joypadProvider.writeControlRegister1(data);
                 break;
             case 0xA:
-                joypadProvider.writeControlRegister2(data & 0xFF);
+                joypadProvider.writeControlRegister2(data);
                 break;
             case 0xC:
-                joypadProvider.writeControlRegister3(data & 0xFF);
+                joypadProvider.writeControlRegister3(data);
                 break;
             default:
                 if (address >= 0xE && address < 0x20) {
-                    LOG.info("Write serial control: {}, data: {}", Long.toHexString(address), th((int) data));
+                    LOG.info("Write serial control: {}, data: {}", th(address), th(data));
                 } else { //Reserved
-                    LOG.error("Unexpected ioWrite {}, data {}",
-                            Long.toHexString(address), Long.toHexString(data));
+                    LOG.error("Unexpected ioWrite {}, data {}", th(address), th(data));
                 }
                 break;
         }

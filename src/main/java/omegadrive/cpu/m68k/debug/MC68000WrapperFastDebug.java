@@ -94,7 +94,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
         try {
             return MC68000Helper.dumpOp(m68k, pc);
         } catch (Exception e) {
-            LOG.warn("Unable to dump the instruction: {}", th(pc & 0xFF_FFFF), e);
+            LOG.warn("Unable to dump the instruction at PC: {}", th(pc & 0xFF_FFFF), e);
         }
         return "????";
     }

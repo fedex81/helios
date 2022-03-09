@@ -19,9 +19,6 @@
 
 package omegadrive.joypad;
 
-//	http://md.squee.co/315-5309
-//	http://md.squee.co/Howto:Read_Control_Pads
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import omegadrive.input.InputProvider.PlayerNumber;
@@ -32,6 +29,7 @@ import static omegadrive.input.InputProvider.PlayerNumber.P1;
 import static omegadrive.input.InputProvider.PlayerNumber.P2;
 import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
+import static omegadrive.util.Util.th;
 
 /**
  * 6-button controller steps
@@ -50,6 +48,8 @@ public class GenesisJoypad extends BasePadAdapter {
 
     private static final Logger LOG = LogManager.getLogger(GenesisJoypad.class.getSimpleName());
 
+    private static final boolean verbose = false;
+
     static final int SIX_BUTTON_STEPS = 9;
     static final int SIX_BUTTON_START_A_ONLY_STEP = 6;
     static final int SIX_BUTTON_XYZ_STEP = 7;
@@ -58,16 +58,31 @@ public class GenesisJoypad extends BasePadAdapter {
     public static JoypadType P1_DEFAULT_TYPE = JoypadType.BUTTON_6;
     public static JoypadType P2_DEFAULT_TYPE = JoypadType.BUTTON_6;
 
-    //SGDK needs 0 here, otherwise it is considered a RESET
-    long control1 = 0;
-    long control2 = 0;
-    long control3 = 0;
+    static class MdPadContext {
+        int control = 0, //SGDK needs 0 here, otherwise it is considered a RESET
+                data, readStep;
+        boolean high;
+        int player;
 
-    int readStep1 = 0;
-    int readStep2 = 0;
+        MdPadContext(int p) {
+            this.player = p;
+        }
 
-    boolean high1;
-    boolean high2;
+        @Override
+        public String toString() {
+            return "MdPadContext{" +
+                    "control=" + th(control) +
+                    ", data=" + th(data) +
+                    ", readStep=" + readStep +
+                    ", high=" + high +
+                    ", player=" + player +
+                    '}';
+        }
+    }
+
+    protected MdPadContext ctx1 = new MdPadContext(1);
+    protected MdPadContext ctx2 = new MdPadContext(2);
+    protected MdPadContext ctx3 = new MdPadContext(3);
 
     @Override
     public void init() {
@@ -99,45 +114,48 @@ public class GenesisJoypad extends BasePadAdapter {
         LOG.info("Setting {} joypad type to: {}", pn, jt);
     }
 
-    public void writeDataRegister1(long data) {
-        boolean h1 = (data & 0x40) == 0x40;
-        if (h1 != high1) {
-            readStep1 = (readStep1 + 1) % SIX_BUTTON_STEPS;
-            high1 = h1;
-        }
-//        LOG.info("write p1: high : {}, step : {}, data: {}", high1, readStep1, data);
+    public void writeDataRegister1(int data) {
+        writeDataRegister(ctx1, data);
     }
 
-    public void writeDataRegister2(long data) {
-        boolean h2 = (data & 0x40) == 0x40;
-        if (h2 != high2) {
-            readStep2 = (readStep2 + 1) % SIX_BUTTON_STEPS;
-            high2 = h2;
+    public void writeDataRegister2(int data) {
+        writeDataRegister(ctx2, data);
+    }
+
+    private void writeDataRegister(MdPadContext ctx, int data) {
+        ctx.data = data & 0xFF;
+        boolean h = (ctx.data & 0x40) == 0x40;
+        if (h != ctx.high) {
+            ctx.readStep = (ctx.readStep + 1) % SIX_BUTTON_STEPS;
+            ctx.high = h;
         }
-//        LOG.info("write p2: high : {}, step : {}, data: {}", high2, readStep2, data);
+        if (verbose) LOG.info("writeDataReg: data {}, {}", th(data), ctx);
     }
 
     public int readDataRegister1() {
-        return readDataRegister(P1, p1Type, high1, readStep1);
-//        LOG.info("read p1: high : {}, step : {}, result: {}", high1, readStep1, res);
+        return readDataRegister(P1, p1Type, ctx1);
     }
 
     public int readDataRegister2() {
-        return readDataRegister(P2, p2Type, high2, readStep2);
-//        LOG.info("read p2: high : {}, step : {}, result: {}", high2, readStep2, res);
+        return readDataRegister(P2, p2Type, ctx2);
     }
 
     public int readDataRegister3() {
+        if (verbose) LOG.info("read p3: result: {}", th(0xFF));
         return 0xFF;
     }
 
-    private int readDataRegister(PlayerNumber n, JoypadType type, boolean high, int readStep) {
+    private int readDataRegister(PlayerNumber n, JoypadType type, MdPadContext ctx) {
+        if (verbose) LOG.info("readDataReg: {}", ctx);
+        if ((ctx.control & 0x40) != 0x40) {
+            return (ctx.data | ~ctx.control) & 0xFF;
+        }
         boolean is6Button = type == JoypadType.BUTTON_6;
         if (!is6Button) {
-            return high ? get11CBRLDU(n) : get00SA00DU(n);
+            return (ctx.high ? get11CBRLDU(n) : get00SA00DU(n));
         }
-        if (!high) {
-            switch (readStep) {
+        if (!ctx.high) {
+            switch (ctx.readStep) {
                 case SIX_BUTTON_START_A_FINAL_STEP:
                     return get00SA1111(n);
                 case SIX_BUTTON_START_A_ONLY_STEP:
@@ -146,31 +164,33 @@ public class GenesisJoypad extends BasePadAdapter {
                     return get00SA00DU(n);
             }
         } else {
-            return readStep == SIX_BUTTON_XYZ_STEP ? get11CBMXYZ(n) : get11CBRLDU(n);
+            return (ctx.readStep == SIX_BUTTON_XYZ_STEP ? get11CBMXYZ(n) : get11CBRLDU(n));
         }
     }
 
-    private void writeControlCheck(int port, long data) {
+    private void writeControlCheck(int port, int data) {
+        if (verbose) LOG.info("Setting ctrlPort{} to {}", port, th(data));
         if (data != 0x40 && data != 0) {
-//            LOG.info("Setting ctrlPort{} to {}", port, Long.toHexString(data));
+            LOG.warn("Setting ctrlPort{} to {}", port, th(data));
         }
     }
 
-    public void writeControlRegister1(long data) {
-        writeControlCheck(1, data);
-        control1 = data;
+    public void writeControlRegister1(int data) {
+        writeControlRegister(ctx1, data);
     }
 
-    public void writeControlRegister2(long data) {
-        writeControlCheck(2, data);
-        control2 = data;
+    public void writeControlRegister2(int data) {
+        writeControlRegister(ctx2, data);
     }
 
-    public void writeControlRegister3(long data) {
-        writeControlCheck(3, data);
-        control3 = data;
+    public void writeControlRegister3(int data) {
+        writeControlRegister(ctx3, data);
     }
 
+    private void writeControlRegister(MdPadContext ctx, int data) {
+        writeControlCheck(ctx.player, data);
+        ctx.control = data;
+    }
 
     private int get00SA0000(PlayerNumber n) {
         return (getValue(n, S) << 5) | (getValue(n, A) << 4);
@@ -196,24 +216,28 @@ public class GenesisJoypad extends BasePadAdapter {
                 (getValue(n, X) << 2) | (getValue(n, Y) << 1) | (getValue(n, Z));
     }
 
-
-    public long readControlRegister1() {
-        return control1;
+    public int readControlRegister1() {
+        return readControlRegister(ctx1);
     }
 
-    public long readControlRegister2() {
-        return control2;
+    public int readControlRegister2() {
+        return readControlRegister(ctx2);
     }
 
-    public long readControlRegister3() {
-        return control3;
+    public int readControlRegister3() {
+        return readControlRegister(ctx3);
+    }
+
+    private int readControlRegister(MdPadContext ctx) {
+        if (verbose) LOG.info("Read ctrlPort{}: ", ctx.player, ctx);
+        return ctx.control;
     }
 
     @Override
     public void newFrame() {
         super.newFrame();
-        readStep1 = p1Type == JoypadType.BUTTON_6 && high1 ? 1 : 0;
-        readStep2 = p2Type == JoypadType.BUTTON_6 && high2 ? 1 : 0;
+        ctx1.readStep = p1Type == JoypadType.BUTTON_6 && ctx1.high ? 1 : 0;
+        ctx2.readStep = p2Type == JoypadType.BUTTON_6 && ctx2.high ? 1 : 0;
 //        LOG.info("new frame");
     }
 }

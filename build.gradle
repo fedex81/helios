@@ -135,7 +135,7 @@ task jarWithSources dependsOn jar {
                 'Main-Class': 'omegadrive.SystemLoader',
                 'Class-Path': configurations.compile.collect { "lib/" + it.getName() }.join(' ')
     }
-    archivesBaseName = rootProject.name + "-src"
+    archivesBaseName = rootProject.name + "-binsrc"
     destinationDir = file("$buildDir/packageDir")
     doLast {
         println("Creating jar in folder: " + destinationDir)
