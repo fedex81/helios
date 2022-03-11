@@ -46,7 +46,7 @@ public class MC68000Helper {
 
     static {
         STOP_ON_EXCEPTION =
-                Boolean.parseBoolean(System.getProperty("68k.stop.on.exception", "true"));
+                Boolean.parseBoolean(System.getProperty("68k.stop.on.exception", "false"));
         GENESIS_TAS_BROKEN = Boolean.parseBoolean(System.getProperty("68k.broken.tas", "true"));
         M68K_DEBUG = Boolean.parseBoolean(System.getProperty("68k.debug", "false"));
         OVERCLOCK_FACTOR = Integer.parseInt(System.getProperty("68k.overclock.factor", "0"));

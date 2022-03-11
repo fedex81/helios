@@ -60,7 +60,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
 
     @Override
     public int runInstruction() {
-        //printDebugMaybe();
+        printDebugMaybe();
         return fastDebug.isBusyLoop(m68k.getPC() & 0xFF_FFFF, m68k.getOpcode()) + super.runInstruction();
     }
 

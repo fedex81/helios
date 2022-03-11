@@ -68,7 +68,7 @@ public class MC68000Wrapper implements M68kProvider {
             instCycles = 0;
         } catch (Exception e) {
             LOG.error("68k error", e);
-            handleException(ILLEGAL_ACCESS_EXCEPTION);
+            m68k.raiseException(ILLEGAL_ACCESS_EXCEPTION); //avoid the intack dance
             if (MC68000Helper.STOP_ON_EXCEPTION) {
                 MC68000Helper.printCpuState(m68k, Level.ERROR, "", addressSpace.size());
                 throw e;
@@ -140,9 +140,7 @@ public class MC68000Wrapper implements M68kProvider {
         return new MC68000() {
             @Override
             public void raiseException(int vector) {
-                handleException(vector);
                 super.raiseException(vector);
-                handleException(vector);
                 handleIntAck(vector);
                 setStop(false);
             }
@@ -177,10 +175,7 @@ public class MC68000Wrapper implements M68kProvider {
             //interrupt processing time, the Ack happens after ~10cycles, we make it happen immediately
             instCycles += 44;
             busProvider.ackInterrupt68k(vector - EXCEPTION_OFFSET);
+            setStop(false);
         }
-    }
-
-    protected void handleException(int vector) {
-        //DO NOTHING
     }
 }

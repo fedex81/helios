@@ -157,18 +157,6 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
         return raise;
     }
 
-    protected void handleException(int vector) {
-        if (vector == LEV4_EXCEPTION || vector == LEV6_EXCEPTION) {
-            return;
-        }
-        if (vector == ILLEGAL_ACCESS_EXCEPTION) {
-            printCpuState("Exception: " + vector);
-            if (MC68000Helper.STOP_ON_EXCEPTION) {
-                setStop(true);
-            }
-        }
-    }
-
     public static void clearHitCounterStats() {
         Arrays.fill(hitsTable, 0);
     }
