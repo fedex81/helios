@@ -75,7 +75,7 @@ public class SwingWindow implements DisplayWindow {
     private SystemProvider mainEmu;
 
     private List<AbstractButton> regionItems;
-    private JCheckBoxMenuItem fullScreenItem, debugInfoItem;
+    private JCheckBoxMenuItem fullScreenItem, debugInfoItem, soundEnItem;
     private JMenu recentFilesMenu, joypadTypeMenu;
     private JMenuItem[] recentFilesItems;
     private final Map<PlayerNumber, JMenu> inputMenusMap;
@@ -283,9 +283,9 @@ public class SwingWindow implements DisplayWindow {
         addKeyAction(debugInfoItem, SHOW_FPS, this::showDebugInfo);
         menuView.add(debugInfoItem);
 
-        JCheckBoxMenuItem muteItem = new JCheckBoxMenuItem("Enable Sound", true);
-        addKeyAction(muteItem, TOGGLE_MUTE, e -> handleSystemEvent(TOGGLE_MUTE, null, null));
-        setting.add(muteItem);
+        soundEnItem = new JCheckBoxMenuItem("Enable Sound", true);
+        addKeyAction(soundEnItem, SOUND_ENABLED, e -> handleSystemEvent(SOUND_ENABLED, soundEnItem.getState(), null));
+        setting.add(soundEnItem);
 
         JMenu helpMenu = new JMenu("Help");
         bar.add(helpMenu);
@@ -592,6 +592,7 @@ public class SwingWindow implements DisplayWindow {
             boolean en = mainEmu.getSystemType() == SystemLoader.SystemType.GENESIS ||
                     mainEmu.getSystemType() == SystemLoader.SystemType.S32X;
             joypadTypeMenu.setEnabled(en);
+            mainEmu.handleSystemEvent(SOUND_ENABLED, soundEnItem.getState());
         });
     }
 

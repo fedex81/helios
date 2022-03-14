@@ -56,7 +56,7 @@ public interface SystemProvider extends Device {
         QUICK_SAVE,
         QUICK_LOAD,
         TOGGLE_PAUSE,
-        TOGGLE_MUTE,
+        SOUND_ENABLED,
         TOGGLE_FULL_SCREEN,
         TOGGLE_THROTTLE,
         CONTROLLER_CHANGE,

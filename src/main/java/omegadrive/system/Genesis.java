@@ -68,8 +68,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     protected Ssp16 ssp16 = Ssp16.NO_SVP;
     protected boolean hasSvp = ssp16 != Ssp16.NO_SVP;
     protected double nextVdpCycle = vdpVals[0];
-    private int next68kCycle = M68K_DIVIDER;
-    private int nextZ80Cycle = Z80_DIVIDER;
+    protected int next68kCycle = M68K_DIVIDER;
+    protected int nextZ80Cycle = Z80_DIVIDER;
 
     protected Genesis(DisplayWindow emuFrame) {
         super(emuFrame);
@@ -109,25 +109,17 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
 
 
     protected void loop() {
-        LOG.info("Starting game loop");
         updateVideoMode(true);
-        int cnt;
-
-        try {
-            do {
-                run68k();
-                runZ80();
-                runFM();
-                runVdp();
-                if (hasSvp && (counter & SVP_CYCLES_MASK) == 0) {
-                    ssp16.ssp1601_run(SVP_RUN_CYCLES);
-                }
-                counter++;
-            } while (!futureDoneFlag);
-        } catch (Exception e) {
-            LOG.error("Error main cycle", e);
-        }
-        LOG.info("Exiting rom thread loop");
+        do {
+            run68k();
+            runZ80();
+            runFM();
+            runVdp();
+            if (hasSvp && (counter & SVP_CYCLES_MASK) == 0) {
+                ssp16.ssp1601_run(SVP_RUN_CYCLES);
+            }
+            counter++;
+        } while (!futureDoneFlag);
     }
 
     protected final void runVdp() {
@@ -213,11 +205,14 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         hasSvp = ssp16 != Ssp16.NO_SVP;
     }
 
+    /**
+     * Counters can go negative when the video mode changes
+     */
     @Override
     protected void resetCycleCounters(int counter) {
-        nextZ80Cycle -= counter;
-        next68kCycle -= counter;
-        nextVdpCycle -= counter;
+        nextZ80Cycle = Math.max(1, nextZ80Cycle - counter);
+        next68kCycle = Math.max(1, next68kCycle - counter);
+        nextVdpCycle = Math.max(1, nextVdpCycle - counter);
     }
 
     @Override

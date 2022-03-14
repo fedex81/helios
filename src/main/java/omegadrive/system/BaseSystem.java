@@ -75,6 +75,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     private volatile boolean pauseFlag = false;
     protected volatile boolean futureDoneFlag = false;
     protected volatile boolean softReset = false;
+    private boolean soundEnFlag = true;
 
     //frame pacing stuff
     protected Telemetry telemetry = Telemetry.getInstance();
@@ -129,8 +130,9 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
             case TOGGLE_PAUSE:
                 handlePause();
                 break;
-            case TOGGLE_MUTE:
-                sound.setEnabled(!sound.isMute());
+            case SOUND_ENABLED:
+                soundEnFlag = (boolean) parameter;
+                Optional.ofNullable(sound).ifPresent(s -> s.setEnabled(soundEnFlag));
                 break;
             case TOGGLE_SOUND_RECORD:
                 sound.setRecording(!sound.isRecording());
@@ -360,7 +362,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
                 region = getRegionInternal(memory, emuFrame.getRegionOverride());
                 LOG.info("Running rom: {}, region: {}", romName, region);
                 initAfterRomLoad();
+                sound.setEnabled(soundEnFlag);
+                LOG.info("Starting game loop");
                 loop();
+                LOG.info("Exiting rom thread loop");
             } catch (Exception | Error e) {
                 e.printStackTrace();
                 LOG.error(e);

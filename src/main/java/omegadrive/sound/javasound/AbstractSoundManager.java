@@ -61,7 +61,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     protected int fmSize, psgSize;
 
     protected SourceDataLine dataLine;
-    protected boolean mute = false;
+    protected boolean soundEnabled = true;
     private SystemLoader.SystemType type;
     protected RegionDetector.Region region;
     protected volatile int soundDeviceSetup = SoundDeviceType.NONE.getBit();
@@ -151,13 +151,13 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     @Override
     public boolean isMute() {
-        return mute;
+        return !soundEnabled;
     }
 
     @Override
-    public void setEnabled(boolean mute) {
-        this.mute = mute;
-        LOG.info("Set mute: {}", mute);
+    public void setEnabled(boolean enabled) {
+        this.soundEnabled = enabled;
+        LOG.info("Set sound enabled: {}", enabled);
     }
 
     //SMS only

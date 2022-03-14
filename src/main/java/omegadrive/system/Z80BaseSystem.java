@@ -108,21 +108,13 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     @Override
     protected void loop() {
-        LOG.info("Starting game loop");
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         updateVideoMode(true);
-
         do {
-            try {
-                runZ80(counter);
-                runVdp(counter);
-                counter++;
-            } catch (Exception e) {
-                LOG.error("Error main cycle", e);
-                break;
-            }
+            runZ80(counter);
+            runVdp(counter);
+            counter++;
         } while (!runningRomFuture.isDone());
-        LOG.info("Exiting rom thread loop");
     }
 
     @Override

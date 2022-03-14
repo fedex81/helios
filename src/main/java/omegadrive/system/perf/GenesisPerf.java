@@ -99,24 +99,17 @@ public class GenesisPerf extends Genesis {
 
     @Override
     protected void loop() {
-        LOG.info("Starting game loop");
         updateVideoMode(true);
         double prevVdpCycle = 0;
         do {
-            try {
-                prevVdpCycle = nextVdpCycle;
-                run68k();
-                runZ80();
-                runFM();
-                runVdp();
-                doCounting(prevVdpCycle);
-                counter++;
-            } catch (Exception e) {
-                LOG.error("Error main cycle", e);
-                break;
-            }
+            prevVdpCycle = nextVdpCycle;
+            run68k();
+            runZ80();
+            runFM();
+            runVdp();
+            doCounting(prevVdpCycle);
+            counter++;
         } while (!runningRomFuture.isDone());
-        LOG.info("Exiting rom thread loop");
     }
 
     private void doCounting(double prevVdpCycle) {

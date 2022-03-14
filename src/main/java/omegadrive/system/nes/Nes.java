@@ -97,13 +97,11 @@ public class Nes extends BaseSystem<BaseBusProvider> {
 
     @Override
     protected void loop() {
-        LOG.info("Starting game loop");
         targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         videoMode = vdp.getVideoMode();
         gui = NesHelper.createNes(romFile, this, (AudioOutInterface) sound.getFm());
         vdp = gui.getVdpProvider();
         gui.run(); //blocking
-        LOG.info("Exiting rom thread loop");
     }
 
     @Override

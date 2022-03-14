@@ -114,7 +114,7 @@ public class JavaSoundManager extends AbstractSoundManager {
 
     //FM,PWM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
     protected void mixAudioProviders(int inputLen) {
-        if (mute) {
+        if (!soundEnabled) {
             return;
         }
         switch (soundDeviceSetup) {
