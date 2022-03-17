@@ -84,6 +84,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     private boolean z80BusRequested;
     private boolean z80ResetState;
+    private int sramLockValue;
     private final boolean enableTmss;
 
     public GenesisBus() {
@@ -302,7 +303,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return msuMdHandler.handleMsuMdRead(address, size);
         } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {
             //NOTE genTest does: cmpi.l #'MARS',$A130EC  ;32X
-            LOG.warn("Unexpected /TIME or mapper read at: {}", Long.toHexString(address));
+            timeLineControlRead(address, size);
         } else if (address >= TMSS_AREA1_START && address <= TMSS_AREA1_END) {
             LOG.warn("TMSS read enable cart");
         } else if (address >= TMSS_AREA2_START && address <= TMSS_AREA2_END) {
@@ -390,11 +391,20 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 //                SramMode sramMode = (data & 2) > 0 ? SramMode.READ_WRITE : SramMode.READ_ONLY;
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
             }
+            sramLockValue = (int) data;
             LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
             LOG.warn("Unexpected mapper set, address: {}, data: {}", Long.toHexString(addressL),
                     Integer.toHexString((int) data));
         }
+    }
+
+    private int timeLineControlRead(int addressL, Size size) {
+        if (addressL == SRAM_LOCK && size == Size.BYTE) { //chaotix
+            return sramLockValue;
+        }
+        LOG.warn("Unexpected /TIME or mapper read at: {} {}", th(addressL), size);
+        return (int) size.getMask();
     }
 
     //	if the Z80 is required to be reset (for example, to load a new program to it's memory)

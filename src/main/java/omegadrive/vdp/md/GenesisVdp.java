@@ -28,7 +28,6 @@ import omegadrive.vdp.model.*;
 import omegadrive.vdp.util.UpdatableViewer;
 import omegadrive.vdp.util.VdpDebugView;
 import omegadrive.vdp.util.VdpPortAccessLogger;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -424,8 +423,8 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         boolean invalidEntry = entry.vdpRamMode == null || !entry.vdpRamMode.isWriteMode();
 
         if (invalidEntry) {
-            LOG.printf(Level.WARN, "FIFO write on invalid target: %s, data: %x, address: %x",
-                    entry.vdpRamMode, entry.data, entry.addressRegister);
+//            LOG.printf(Level.WARN, "FIFO write on invalid target: %s, data: %x, address: %x",
+//                    entry.vdpRamMode, entry.data, entry.addressRegister);
             fifoPop();
             doWrite = false;
             evaluateVdpBusyState();

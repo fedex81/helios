@@ -99,6 +99,10 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
         return "????";
     }
 
+    public CpuFastDebug getFastDebug() {
+        return fastDebug;
+    }
+
     private static final Predicate<Integer> isBranch = op -> (op & 0x6000) == 0x6000 || (op & 0xFFC0) == 0x4ec0;
     //btst     #imm,dX; btst     #imm,addr; btst     dX,(aY)
     private static final Predicate<Integer> isTest = op -> (op & 0xFFC0) == 0x800 || (op & 0xFF00) == 0x4a00 || (op & 0xFFC0) == 0x500;

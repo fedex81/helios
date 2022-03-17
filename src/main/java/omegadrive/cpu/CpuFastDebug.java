@@ -20,6 +20,8 @@ public class CpuFastDebug {
 
     private static final Logger LOG = LogManager.getLogger(CpuFastDebug.class.getSimpleName());
 
+    private static final boolean logToSysOut = Boolean.parseBoolean(System.getProperty("helios.logToSysOut", "false"));
+
     public interface CpuDebugInfoProvider {
         String getInstructionOnly(int pc);
 
@@ -105,7 +107,9 @@ public class CpuFastDebug {
 
     private void log(String s1, String s2) {
         LOG.info("{}{}", s1, s2);
-//        System.out.println(s1 + s2);
+        if (logToSysOut) {
+            System.out.println(s1 + s2);
+        }
     }
 
     private static int pcHistorySize = 12;

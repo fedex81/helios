@@ -29,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 
 import static omegadrive.sound.SoundDevice.SoundDeviceType.FM;
+import static omegadrive.sound.SoundDevice.SoundDeviceType.PWM;
 
 public class JavaSoundManager extends AbstractSoundManager {
 
@@ -62,8 +63,9 @@ public class JavaSoundManager extends AbstractSoundManager {
         int fmMonoActual = fm.updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;
         //if FM is present load a matching number of psg samples
         fmBufferLenMono = (soundDeviceSetup & FM.getBit()) > 0 ? fmMonoActual : fmBufferLenMono;
+        int pwmMonoActual = pwm.updateStereo16(pwm_buf_ints, 0, fmBufferLenMono) >> 1;
+        fmBufferLenMono = (soundDeviceSetup & PWM.getBit()) > 0 ? pwmMonoActual : fmBufferLenMono;
         psg.updateMono8(psg_buf_bytes, 0, fmBufferLenMono);
-        pwm.updateStereo16(pwm_buf_ints, 0, fmBufferLenMono);
 
         final int fmBufferLenStereo = fmBufferLenMono << 1;
         /**
