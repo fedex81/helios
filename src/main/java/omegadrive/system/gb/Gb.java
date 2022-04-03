@@ -38,7 +38,6 @@ public class Gb extends BaseSystem<BaseBusProvider> {
 
     private static final Logger LOG = LogManager.getLogger(Gb.class.getSimpleName());
 
-    private final SystemLoader.SystemType systemType;
     private Emulator emulator;
     private HeliosDisplay display;
     private final Properties properties;
@@ -128,10 +127,5 @@ public class Gb extends BaseSystem<BaseBusProvider> {
     @Override
     protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOverride) {
         return RegionDetector.Region.USA;
-    }
-
-    @Override
-    public SystemLoader.SystemType getSystemType() {
-        return systemType;
     }
 }

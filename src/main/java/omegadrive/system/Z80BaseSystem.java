@@ -47,7 +47,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     private static final Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
 
     protected Z80Provider z80;
-    private final SystemLoader.SystemType systemType;
     private final Z80Provider.Interrupt vdpInterruptType;
 
     protected Z80BaseSystem(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
@@ -185,10 +184,5 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     private void handleInterrupt(){
         bus.handleInterrupts(vdpInterruptType);
-    }
-
-    @Override
-    public SystemLoader.SystemType getSystemType() {
-        return systemType;
     }
 }

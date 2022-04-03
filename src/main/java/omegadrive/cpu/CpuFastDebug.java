@@ -41,9 +41,12 @@ public class CpuFastDebug {
         public int pcAreasNumber, pcAreaSize, pcMask, pcAreaShift;
         public Predicate<Integer> isLoopOpcode = i -> false;
         public Predicate<Integer> isIgnoreOpcode = i -> true;
+        public int debugMode;
     }
 
     public enum DebugMode {NONE, INST_ONLY, NEW_INST_ONLY, STATE}
+
+    public final static DebugMode[] debugModeVals = DebugMode.values();
 
     private final CpuDebugContext ctx;
     private final int[][] pcVisited, opcodes, pcLoops;
@@ -72,6 +75,8 @@ public class CpuFastDebug {
             Arrays.stream(ctx.pcAreas).forEach(idx -> ((int[][]) o)[idx] = new int[ctx.pcAreaSize]);
         }
         Arrays.stream(ctx.pcAreas).forEach(i -> Arrays.fill(opcodes[i], -1));
+        assert ctx.debugMode >= 0 && ctx.debugMode < debugModeVals.length;
+        debugMode = debugModeVals[ctx.debugMode];
     }
 
     public void printDebugMaybe() {

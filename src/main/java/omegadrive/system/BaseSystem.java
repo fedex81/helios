@@ -21,6 +21,7 @@ package omegadrive.system;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
+import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInput;
@@ -57,6 +58,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     protected SoundProvider sound;
     protected InputProvider inputProvider;
     protected BUS bus;
+    protected SystemType systemType;
 
     protected RegionDetector.Region region = RegionDetector.Region.USA;
     protected VideoMode videoMode = VideoMode.PAL_H40_V30;
@@ -322,7 +324,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         elapsedWaitNs = syncCycle(startNs) - startWaitNs;
         startNs = System.nanoTime();
         updateVideoMode(false);
-        renderScreenLinearInternal(vdp.getScreenDataLinear(), getStats(startNs, prevStartNs));
+        doRendering(vdp.getScreenDataLinear(), getStats(startNs, prevStartNs));
         frameProcessingDelayNs = startNs - startWaitNs - elapsedWaitNs;
         handleVdpDumpScreenData();
         processSaveState();
@@ -381,7 +383,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         }
     }
 
-    protected void renderScreenLinearInternal(int[] data, Optional<String> label) {
+    protected void doRendering(int[] data, Optional<String> label) {
         emuFrame.renderScreenLinear(data, label, videoMode);
     }
 
@@ -407,5 +409,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         vdp.init();
         bus.init();
         futureDoneFlag = false;
+    }
+
+    @Override
+    public final SystemType getSystemType() {
+        return systemType;
     }
 }

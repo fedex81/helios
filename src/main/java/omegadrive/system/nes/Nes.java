@@ -49,8 +49,6 @@ public class Nes extends BaseSystem<BaseBusProvider> {
         ControllerImpl.JINPUT_ENABLE = false;
         LOG.info("Disabling halfNes jinput");
     }
-
-    private final SystemLoader.SystemType systemType;
     private NesHelper.NesGUIInterface gui;
 
     protected Nes(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
@@ -124,10 +122,5 @@ public class Nes extends BaseSystem<BaseBusProvider> {
     @Override
     protected void updateVideoMode(boolean force) {
         videoMode = vdp.getVideoMode();
-    }
-
-    @Override
-    public SystemLoader.SystemType getSystemType() {
-        return systemType;
     }
 }

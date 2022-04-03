@@ -10,14 +10,22 @@ import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.fm.ym2413.Ym2413Provider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.system.gb.Gb;
 import omegadrive.system.gb.GbSoundWrapper;
+import omegadrive.system.nes.Nes;
 import omegadrive.system.nes.NesSoundWrapper;
+import omegadrive.ui.DisplayWindow;
 import omegadrive.util.Size;
 import omegadrive.vdp.model.BaseVdpAdapter;
 import omegadrive.vdp.model.BaseVdpProvider;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
 
+import static omegadrive.SystemLoader.handleCompressedFiles;
 import static omegadrive.sound.SoundDevice.SoundDeviceType.*;
 import static omegadrive.sound.SoundProvider.SAMPLE_RATE_HZ;
 import static omegadrive.util.RegionDetector.Region;
@@ -28,6 +36,64 @@ import static omegadrive.util.RegionDetector.Region;
  * Copyright 2021
  */
 public class SysUtil {
+
+    private final static Logger LOG = LogManager.getLogger(SysUtil.class.getSimpleName());
+
+    public static final String SMD_INTERLEAVED_EXT = ".smd";
+
+    public static final String[] mdBinaryTypes = {".md", ".bin", SMD_INTERLEAVED_EXT};
+    public static final String[] sgBinaryTypes = {".sg", ".sc"};
+    public static final String[] cvBinaryTypes = {".col"};
+    public static final String[] msxBinaryTypes = {".rom"};
+    public static final String[] smsBinaryTypes = {".sms"};
+    public static final String[] ggBinaryTypes = {".gg"};
+    public static final String[] nesBinaryTypes = {".nes"};
+    public static final String[] gbBinaryTypes = {".gb"};
+    public static final String[] compressedBinaryTypes = {".gz", ".zip"};
+
+    public static final String[] binaryTypes = Stream.of(
+            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes, nesBinaryTypes,
+            gbBinaryTypes,
+            compressedBinaryTypes
+    ).flatMap(Stream::of).toArray(String[]::new);
+
+    public static SystemProvider createSystemProvider(Path file, DisplayWindow display, boolean debugPerf) {
+        String lowerCaseName = handleCompressedFiles(file, file.toString().toLowerCase());
+        if (lowerCaseName == null) {
+            LOG.error("Unable to load file: " + file != null ? file.toAbsolutePath() : "null");
+            return null;
+        }
+        SystemProvider systemProvider = null;
+        boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isNes = Arrays.stream(nesBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isGb = Arrays.stream(gbBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        if (isGen) {
+            systemProvider = Genesis.createNewInstance(display, debugPerf);
+        } else if (isSg) {
+            systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, display);
+        } else if (isCv) {
+            systemProvider = Z80BaseSystem.createNewInstance(SystemType.COLECO, display);
+        } else if (isMsx) {
+            systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, display);
+        } else if (isSms) {
+            systemProvider = Sms.createNewInstance(SystemType.SMS, display, debugPerf);
+        } else if (isGg) {
+            systemProvider = Sms.createNewInstance(SystemType.GG, display, debugPerf);
+        } else if (isNes) {
+            systemProvider = Nes.createNewInstance(SystemType.NES, display);
+        } else if (isGb) {
+            systemProvider = Gb.createNewInstance(SystemType.GB, display);
+        }
+        if (systemProvider == null) {
+            LOG.error("Unable to find a system to load: {}", file.toAbsolutePath());
+        }
+        return systemProvider;
+    }
 
 
     public static Map<SoundDevice.SoundDeviceType, SoundDevice> getSoundDevices(SystemType systemType, Region region) {

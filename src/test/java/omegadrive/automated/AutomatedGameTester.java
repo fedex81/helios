@@ -38,6 +38,7 @@ import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static omegadrive.system.SysUtil.*;
 import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_ROM;
 
 public class AutomatedGameTester {
@@ -60,33 +61,33 @@ public class AutomatedGameTester {
             , "blacklist.txt"));
 
     private static Predicate<Path> testGenRomsPredicate = p ->
-            Arrays.stream(SystemLoader.mdBinaryTypes).anyMatch(p.toString()::endsWith) ||
-                    Arrays.stream(SystemLoader.compressedBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(mdBinaryTypes).anyMatch(p.toString()::endsWith) ||
+                    Arrays.stream(compressedBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testSgRomsPredicate = p ->
-            Arrays.stream(SystemLoader.sgBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(sgBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testColecoRomsPredicate = p ->
-            Arrays.stream(SystemLoader.cvBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(cvBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testMsxRomsPredicate = p ->
-            Arrays.stream(SystemLoader.msxBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(msxBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testSmsRomsPredicate = p ->
-            Arrays.stream(SystemLoader.smsBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(smsBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testGgRomsPredicate = p ->
-            Arrays.stream(SystemLoader.ggBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(ggBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testAllRomsPredicate = p ->
-            Arrays.stream(SystemLoader.binaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(binaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testVerifiedRomsPredicate = p ->
             testGenRomsPredicate.test(p) &&
                     (noIntro || p.getFileName().toString().contains("[!]"));
 
     static {
-        System.setProperty("helios.headless", "false");
+        System.setProperty("helios.headless", "true");
         System.setProperty("helios.enable.sound", "false");
         System.setProperty("md.sram.folder", "/tmp/helios/md/sram");
         new File(System.getProperty("md.sram.folder")).mkdirs();

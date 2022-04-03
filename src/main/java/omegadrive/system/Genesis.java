@@ -73,6 +73,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
 
     protected Genesis(DisplayWindow emuFrame) {
         super(emuFrame);
+        systemType = SystemLoader.SystemType.GENESIS;
     }
 
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
@@ -90,7 +91,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         inputProvider = InputProvider.createInstance(joypad);
 
         memory = MemoryProvider.createGenesisInstance();
-        bus = new GenesisBus();
+        bus = createBus();
         vdp = GenesisVdpProvider.createVdp(bus);
         cpu = MC68000Wrapper.createInstance(bus);
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
@@ -114,10 +115,11 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
             run68k();
             runZ80();
             runFM();
-            runVdp();
             if (hasSvp && (counter & SVP_CYCLES_MASK) == 0) {
                 ssp16.ssp1601_run(SVP_RUN_CYCLES);
             }
+            //this should be last as it could change the counter
+            runVdp();
             counter++;
         } while (!futureDoneFlag);
     }
@@ -165,6 +167,10 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         if ((counter & 1) == 0 && (counter % FM_DIVIDER) == 0) { //perf, avoid some divs
             bus.getFm().tick();
         }
+    }
+
+    protected GenesisBusProvider createBus() {
+        return new GenesisBus();
     }
 
     @Override
@@ -236,10 +242,5 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
             cpu.softReset();
         }
         super.handleSoftReset();
-    }
-
-    @Override
-    public SystemLoader.SystemType getSystemType() {
-        return SystemLoader.SystemType.GENESIS;
     }
 }

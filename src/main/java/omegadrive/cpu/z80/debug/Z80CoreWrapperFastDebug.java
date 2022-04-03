@@ -32,6 +32,7 @@ import java.util.function.Predicate;
 public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDebug.CpuDebugInfoProvider {
 
     private final static Logger LOG = LogManager.getLogger(Z80CoreWrapperFastDebug.class.getSimpleName());
+    private static final int debugMode = Integer.parseInt(System.getProperty("helios.z80.debug.mode", "0"));
 
     protected Z80Dasm z80Disasm;
     private CpuFastDebug fastDebug;
@@ -42,7 +43,6 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
         super.setupInternal(z80State);
         z80Disasm = new Z80Dasm();
         fastDebug = new CpuFastDebug(this, createContext());
-        fastDebug.debugMode = CpuFastDebug.DebugMode.NONE;
         return this;
     }
 
@@ -68,6 +68,7 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
         ctx.pcMask = ctx.pcAreaSize - 1;
         ctx.isLoopOpcode = isLoopOpcode;
         ctx.isIgnoreOpcode = isIgnoreOpcode;
+        ctx.debugMode = debugMode;
         return ctx;
     }
 

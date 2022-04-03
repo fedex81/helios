@@ -60,7 +60,6 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     protected Z80Provider z80;
     int nextZ80Cycle = Z80_DIVIDER;
     int nextVdpCycle = VDP_DIVIDER;
-    private final SystemLoader.SystemType systemType;
 
     protected Sms(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);
@@ -171,10 +170,5 @@ public class Sms extends BaseSystem<Z80BusProvider> {
 
     private void handleNmi() {
         bus.handleInterrupts(Z80Provider.Interrupt.NMI);
-    }
-
-    @Override
-    public SystemLoader.SystemType getSystemType() {
-        return systemType;
     }
 }

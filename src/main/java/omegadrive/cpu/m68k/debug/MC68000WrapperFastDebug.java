@@ -35,6 +35,7 @@ import static omegadrive.util.Util.th;
 public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDebug.CpuDebugInfoProvider {
 
     private static final Logger LOG = LogManager.getLogger(MC68000WrapperFastDebug.class.getSimpleName());
+    private static final int debugMode = Integer.parseInt(System.getProperty("helios.68k.debug.mode", "0"));
 
     private CpuFastDebug fastDebug;
     private int opcode;
@@ -42,7 +43,6 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
     public MC68000WrapperFastDebug(GenesisBusProvider busProvider) {
         super(busProvider);
         fastDebug = new CpuFastDebug(this, createContext());
-        fastDebug.debugMode = CpuFastDebug.DebugMode.NONE;
         init();
     }
 
@@ -55,6 +55,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
         ctx.pcMask = 0xF_FFFF;
         ctx.isLoopOpcode = isLoopOpcode;
         ctx.isIgnoreOpcode = isIgnoreOpcode;
+        ctx.debugMode = debugMode;
         return ctx;
     }
 

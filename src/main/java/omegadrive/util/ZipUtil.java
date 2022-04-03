@@ -1,7 +1,7 @@
 package omegadrive.util;
 
 import com.google.common.io.ByteStreams;
-import omegadrive.SystemLoader;
+import omegadrive.system.SysUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,7 +44,7 @@ public class ZipUtil {
     }
 
     public static Optional<? extends ZipEntry> getSupportedZipEntryIfAny(Path zipFilePath, String... ext) {
-        String[] extArray = ext == null || ext.length == 0 ? SystemLoader.binaryTypes : ext;
+        String[] extArray = ext == null || ext.length == 0 ? SysUtil.binaryTypes : ext;
         Optional<? extends ZipEntry> entry = Optional.empty();
         try (ZipFile zipFile = new ZipFile(zipFilePath.toFile())) {
             entry = zipFile.stream().filter(e -> isSupportedBinaryType.test(e, extArray)).findFirst();

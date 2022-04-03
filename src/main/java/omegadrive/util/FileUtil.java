@@ -20,6 +20,7 @@
 package omegadrive.util;
 
 import omegadrive.SystemLoader;
+import omegadrive.system.SysUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -57,7 +58,7 @@ public class FileUtil {
     public static final int SMD_HEADER_SIZE = 512;
     public static final int SMD_CHUNK_SIZE = 16384;
 
-    public static String[] extBinaryTypesList = Arrays.stream(SystemLoader.binaryTypes).
+    public static String[] extBinaryTypesList = Arrays.stream(SysUtil.binaryTypes).
             map(s -> s.replace(".", "")).toArray(String[]::new);
     public static FileFilter ROM_FILTER = new FileNameExtensionFilter(
             Arrays.toString(extBinaryTypesList) + " files", extBinaryTypesList);
@@ -197,7 +198,7 @@ public class FileUtil {
         } else {
             data = readFileSafe(file);
         }
-        if (smdFileAsInterleaved && fileName.toLowerCase().contains(SystemLoader.SMD_INTERLEAVED_EXT)) {
+        if (smdFileAsInterleaved && fileName.toLowerCase().contains(SysUtil.SMD_INTERLEAVED_EXT)) {
             LOG.info("SMD interleaved file detected: {}", fileName);
             data = unscrambleSmd(data);
         }

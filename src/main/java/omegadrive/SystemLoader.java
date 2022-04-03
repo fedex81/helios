@@ -22,12 +22,8 @@ package omegadrive;
 import omegadrive.input.KeyboardInputHelper;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.joypad.JoypadProvider.JoypadType;
-import omegadrive.system.Genesis;
-import omegadrive.system.Sms;
+import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
-import omegadrive.system.Z80BaseSystem;
-import omegadrive.system.gb.Gb;
-import omegadrive.system.nes.Nes;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.ui.SwingWindow;
@@ -43,11 +39,9 @@ import java.awt.*;
 import java.io.FileReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 import static omegadrive.input.InputProvider.PlayerNumber;
@@ -63,24 +57,6 @@ public class SystemLoader {
     public static final SystemLoader INSTANCE = new SystemLoader();
 
     private static final String PROPERTIES_FILENAME = "./helios.properties";
-
-    public static final String SMD_INTERLEAVED_EXT = ".smd";
-
-    public static String[] mdBinaryTypes = {".md", ".bin", SMD_INTERLEAVED_EXT};
-    public static String[] sgBinaryTypes = {".sg", ".sc"};
-    public static String[] cvBinaryTypes = {".col"};
-    public static String[] msxBinaryTypes = {".rom"};
-    public static String[] smsBinaryTypes = {".sms"};
-    public static String[] ggBinaryTypes = {".gg"};
-    public static String[] nesBinaryTypes = {".nes"};
-    public static String[] gbBinaryTypes = {".gb"};
-    public static String[] compressedBinaryTypes = {".gz", ".zip"};
-
-    public static String[] binaryTypes = Stream.of(
-            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes, nesBinaryTypes,
-            gbBinaryTypes,
-            compressedBinaryTypes
-    ).flatMap(Stream::of).toArray(String[]::new);
 
     public static boolean debugPerf = false;
     public static boolean showFps = false;
@@ -263,7 +239,7 @@ public class SystemLoader {
         return createSystemProvider(file, false);
     }
 
-    private static String handleCompressedFiles(Path file, String lowerCaseName) {
+    public static String handleCompressedFiles(Path file, String lowerCaseName) {
         if (ZipUtil.isZipArchiveByteStream(file)) {
             Optional<? extends ZipEntry> optEntry = ZipUtil.getSupportedZipEntryIfAny(file);
             if (!optEntry.isPresent()) {
@@ -280,39 +256,8 @@ public class SystemLoader {
     }
 
     public SystemProvider createSystemProvider(Path file, boolean debugPerf) {
-        String lowerCaseName = handleCompressedFiles(file, file.toString().toLowerCase());
-        if (lowerCaseName == null) {
-            LOG.error("Unable to load file: " + file != null ? file.toAbsolutePath() : "null");
-            return null;
-        }
-        boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isNes = Arrays.stream(nesBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isGb = Arrays.stream(gbBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        if (isGen) {
-            systemProvider = Genesis.createNewInstance(emuFrame, debugPerf);
-        } else if (isSg) {
-            systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, emuFrame);
-        } else if (isCv) {
-            systemProvider = Z80BaseSystem.createNewInstance(SystemType.COLECO, emuFrame);
-        } else if (isMsx) {
-            systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, emuFrame);
-        } else if (isSms) {
-            systemProvider = Sms.createNewInstance(SystemType.SMS, emuFrame, debugPerf);
-        } else if (isGg) {
-            systemProvider = Sms.createNewInstance(SystemType.GG, emuFrame, debugPerf);
-        } else if (isNes) {
-            systemProvider = Nes.createNewInstance(SystemType.NES, emuFrame);
-        } else if (isGb) {
-            systemProvider = Gb.createNewInstance(SystemType.GB, emuFrame);
-        }
-        if (systemProvider == null) {
-            LOG.error("Unable to find a system to load: {}", file.toAbsolutePath());
-        }
+        systemProvider = SysUtil.createSystemProvider(file, emuFrame, debugPerf);
+        ;
         return systemProvider;
     }
 
