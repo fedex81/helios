@@ -25,7 +25,6 @@ import omegadrive.vdp.md.VdpScrollHandler.HSCROLL;
 import omegadrive.vdp.md.VdpScrollHandler.ScrollContext;
 import omegadrive.vdp.md.VdpScrollHandler.VSCROLL;
 import omegadrive.vdp.model.*;
-import omegadrive.vdp.model.VdpMisc.PriorityType;
 import omegadrive.vdp.model.VdpMisc.RenderType;
 import omegadrive.vdp.model.VdpMisc.ShadowHighlightType;
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.function.BiConsumer;
 
 import static omegadrive.vdp.model.BaseVdpProvider.VdpEventListener;
@@ -307,7 +307,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         for (int i = RenderPriority.enums.length - 1; i > 0; i--) {
             RenderPriority rp = RenderPriority.enums[i];
             final int rt = rp.getRenderType().ordinal();
-            if (pxData.priorityMap[rt] == rp.getPriorityType()
+            if (pxData.priorityMap.get(rt) == rp.getPriorityType().ordinal() > 0
                     && (pxData.cramIndexMap[rt] & CRAM_TRANSP_PIXEL_MASK) != 0) {
                 cramIndex = pxData.cramIndexMap[rt];
                 blanking = 0;
@@ -355,10 +355,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             }
         }
         boolean spritePalette14 = !spriteTransparent && spriteCramIndex % 0x1C == 0;
-        boolean anyLayerHighPrio =
-                pxData.priorityMap[RenderType.PLANE_A.ordinal()] == PriorityType.YES ||
-                        pxData.priorityMap[RenderType.PLANE_B.ordinal()] == PriorityType.YES ||
-                        (!spriteTransparent && pxData.priorityMap[spriteRt] == PriorityType.YES);
+        final BitSet pmap = pxData.priorityMap;
+        boolean anyLayerHighPrio = !pmap.isEmpty() && (
+                pmap.get(RenderType.PLANE_A.ordinal()) ||
+                        pmap.get(RenderType.PLANE_B.ordinal()) ||
+                        (!spriteTransparent && pmap.get(spriteRt)));
         if (!anyLayerHighPrio && !spritePalette14) {
             shadowHighlight = shadowHighlight.darker();
         }
@@ -574,7 +575,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private void updatePixelData(int pixel, RenderPriority rp, int cramIndex) {
         final int rto = rp.getRenderType().ordinal();
         final PixelData pixelData = linePixelData[pixel];
-        pixelData.priorityMap[rto] = rp.getPriorityType();
+        pixelData.priorityMap.set(rto, rp.getPriorityType().ordinal() > 0);
         pixelData.cramIndexMap[rto] = cramIndex;
         //if non transparent and of higher priority
         if ((cramIndex & CRAM_TRANSP_PIXEL_MASK) != 0 && rp.ordinal() > pixelData.pixelPriority.ordinal()) {

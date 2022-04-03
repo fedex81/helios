@@ -19,10 +19,10 @@
 
 package omegadrive.vdp.model;
 
-import omegadrive.vdp.model.VdpMisc.PriorityType;
 import omegadrive.vdp.model.VdpMisc.RenderType;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Objects;
 
 import static omegadrive.vdp.model.BaseVdpProvider.*;
@@ -240,13 +240,13 @@ public interface VdpRenderHandler {
     }
 
     class PixelData {
-        public PriorityType[] priorityMap = new PriorityType[RenderType.values().length];
+        public BitSet priorityMap = new BitSet();
         public int[] cramIndexMap = new int[RenderType.values().length];
         public RenderPriority pixelPriority = RenderPriority.BACK_PLANE; //shadow/highlight off
 
         public void reset(boolean sh) {
             if (sh) {
-                Arrays.fill(priorityMap, PriorityType.NO);
+                priorityMap.clear();
                 Arrays.fill(cramIndexMap, 0);
             }
             pixelPriority = RenderPriority.BACK_PLANE;
