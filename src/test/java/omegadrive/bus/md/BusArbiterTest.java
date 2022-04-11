@@ -129,7 +129,7 @@ public class BusArbiterTest {
         //disable hint
         vdp.writeControlPort(0x8AFF);
         vdp.writeControlPort(0x8004);
-        vdp.writeControlPort(0x8144); //enable display
+        MdVdpTestUtil.vdpDisplayEnableAndMode5(vdp);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         do {
@@ -180,7 +180,7 @@ public class BusArbiterTest {
     public void testVBlankFlagWhenDisplayDisabled() {
         vdp.writeControlPort(0x8AFF);
         vdp.writeControlPort(0x8004);
-        vdp.writeControlPort(0x8144); //enable display
+        MdVdpTestUtil.vdpDisplayEnableAndMode5(vdp);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         do {
@@ -188,12 +188,12 @@ public class BusArbiterTest {
         } while (MdVdpTestUtil.isVBlank(vdp));
 
         //disable display -> vblank on
-        vdp.writeControlPort(0x8104);
+        MdVdpTestUtil.vdpDisplayEnable(vdp, false);
         MdVdpTestUtil.runVdpSlot(vdp);
         Assert.assertTrue(MdVdpTestUtil.isVBlank(vdp));
 
         //enable display
-        vdp.writeControlPort(0x8144);
+        MdVdpTestUtil.vdpDisplayEnable(vdp, true);
         MdVdpTestUtil.runVdpSlot(vdp);
         Assert.assertFalse(MdVdpTestUtil.isVBlank(vdp));
     }
@@ -202,7 +202,7 @@ public class BusArbiterTest {
     public void testHBlankFlagWhenDisplayDisabled() {
         vdp.writeControlPort(0x8AFF);
         vdp.writeControlPort(0x8004);
-        vdp.writeControlPort(0x8144); //enable display
+        MdVdpTestUtil.vdpDisplayEnableAndMode5(vdp);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         do {
@@ -210,7 +210,7 @@ public class BusArbiterTest {
         } while (MdVdpTestUtil.isHBlank(vdp));
 
         //disable display -> hblank doesnt change
-        vdp.writeControlPort(0x8104);
+        MdVdpTestUtil.vdpDisplayEnable(vdp, false);
         MdVdpTestUtil.runVdpSlot(vdp);
         Assert.assertFalse(MdVdpTestUtil.isHBlank(vdp));
     }
@@ -243,7 +243,7 @@ public class BusArbiterTest {
         checkIntAccepted(false);
 
         //disable VINT
-        vdp.writeControlPort(0x8144);
+        MdVdpTestUtil.vdpDisplayEnable(vdp, true);
         //enable HINT
         vdp.writeControlPort(0x8A01); //hint every line
         vdp.writeControlPort(0x8014);
@@ -278,7 +278,7 @@ public class BusArbiterTest {
         vdp.writeControlPort(0x8A01); //hint every line
         vdp.writeControlPort(0x8014);
         //disable VINT
-        vdp.writeControlPort(0x8144);
+        MdVdpTestUtil.vdpDisplayEnable(vdp, true);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
 

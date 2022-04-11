@@ -53,14 +53,14 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
 
     public final static boolean verbose = false;
     //the emulation runs at MCLOCK_MHZ/MCLK_DIVIDER
-    protected final static int MCLK_DIVIDER = 7;
+    public final static int MCLK_DIVIDER = 7;
     protected final static double VDP_RATIO = 4.0 / MCLK_DIVIDER;  //16 -> MCLK/4, 20 -> MCLK/5
     protected final static int M68K_DIVIDER = 7 / MCLK_DIVIDER;
-    final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
+    public final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
     protected final static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
     protected final static int FM_DIVIDER = 42 / MCLK_DIVIDER;
-    static final int SVP_CYCLES = 100;
-    static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
+    protected static final int SVP_CYCLES = 100;
+    protected static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
 
     private final static Logger LOG = LogManager.getLogger(Genesis.class.getSimpleName());
 
@@ -124,7 +124,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         } while (!futureDoneFlag);
     }
 
-    private int runSvp(int untilClock) { //TODO
+    private final int runSvp(int untilClock) {
         while (nextSvpCycle <= untilClock) {
             ssp16.ssp1601_run(SVP_RUN_CYCLES);
             nextSvpCycle += SVP_CYCLES;
@@ -132,16 +132,18 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         return untilClock;
     }
 
-    protected final int runVdp(int untilClock) {
+    private final int runVdp(int untilClock) {
         while (nextVdpCycle <= untilClock) {
             int vdpMclk = vdp.runSlot();
             nextVdpCycle += vdpVals[vdpMclk - 4];
-            untilClock = counter; //counter could be reset to 0 when calling vdp::runSlot
+            if (counter == 0) { //counter could be reset to 0 when calling vdp::runSlot
+                untilClock = counter;
+            }
         }
         return (int) Math.max(untilClock, nextVdpCycle);
     }
 
-    protected final int run68k(int untilClock) {
+    private final int run68k(int untilClock) {
         while (next68kCycle <= untilClock) {
             boolean isRunning = bus.is68kRunning();
             boolean canRun = !cpu.isStopped() && isRunning;
@@ -150,8 +152,6 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
                 cycleDelay = cpu.runInstruction();
             }
             //interrupts are processed after the current instruction
-            //TODO check: interrupt shouldnt be processed when 68k is frozen but are
-            //TODO prcessed when 68k is stopped
             if (isRunning) {
                 bus.handleVdpInterrupts68k();
             }
@@ -161,7 +161,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         return untilClock;
     }
 
-    protected final int runZ80(int untilClock) {
+    private final int runZ80(int untilClock) {
         while (nextZ80Cycle <= untilClock) {
             int cycleDelay = 0;
             boolean running = bus.isZ80Running();
@@ -175,10 +175,10 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         return untilClock;
     }
 
-    protected final int runFM(int untilClock) {
+    private final int runFM(int untilClock) {
         while (nextFMCycle <= untilClock) {
             bus.getFm().tick();
-            nextFMCycle += 6;
+            nextFMCycle += FM_DIVIDER;
         }
         return Math.max(untilClock, nextFMCycle);
     }

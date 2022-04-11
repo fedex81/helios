@@ -78,7 +78,7 @@ public class BaseVdpDmaBandwidthTest {
         Assert.assertTrue(optMem.isPresent());
         vdpProvider = opt.get();
         memoryProvider = optMem.get();
-        vdpProvider.updateRegisterData(1, 4); //mode5
+        MdVdpTestUtil.vdpMode5(vdpProvider);
     }
 
     private void setup68kRam() {
@@ -191,7 +191,8 @@ public class BaseVdpDmaBandwidthTest {
 
 
     protected int startDMACopy(int increment, int dmaLen, boolean waitVBlank) {
-        vdpProvider.writeControlPort(0x8154); //display enable + dma enable
+        MdVdpTestUtil.vdpDisplayEnableAndMode5(vdpProvider);
+        MdVdpTestUtil.vdpEnableDma(vdpProvider, true);
         if (waitVBlank) {
             MdVdpTestUtil.runVdpUntilVBlank(vdpProvider);
             System.out.println("VBlank start" + vdpProvider.getVdpStateString());

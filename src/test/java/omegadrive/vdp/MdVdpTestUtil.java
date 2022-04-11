@@ -43,6 +43,15 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 public class MdVdpTestUtil {
 
+    static final int DISP_EN_BIT_POS = 6;
+    static final int DMA_EN_BIT_POS = 4;
+    static final int MODE_5_BIT_POS = 2;
+    static final int CTRL_PORT_MODE_2 = 0x8100;
+    static final int CTRL_PORT_MODE_4 = 0x8C00;
+
+    static Function<Integer, Integer> toMaskFn = bp -> 1 << bp;
+    static Function<Integer, Integer> toResetMaskFn = bp -> ~(1 << bp);
+
     public static void runCounterToStartFrame(VdpInterruptHandler h) {
         boolean isStart;
         do {
@@ -135,15 +144,37 @@ public class MdVdpTestUtil {
     public static void setH32(GenesisVdpProvider vdp) {
         //        Set Video mode: PAL_H32_V28
         int val = vdp.getRegisterData(MODE_4);
-        vdp.writeControlPort(0x8C00 | (val & 0x7E));
+        vdp.writeControlPort(CTRL_PORT_MODE_4 | (val & 0x7E));
         vdp.resetVideoMode(true);
     }
 
     public static void setH40(GenesisVdpProvider vdp) {
         //        Set Video mode: PAL_H40_V28
         int val = vdp.getRegisterData(MODE_4);
-        vdp.writeControlPort(0x8C00 | (val | 0x81));
+        vdp.writeControlPort(CTRL_PORT_MODE_4 | (val | 0x81));
         vdp.resetVideoMode(true);
+    }
+
+    public static void vdpMode5(GenesisVdpProvider vdp) {
+        int val = vdp.getRegisterData(MODE_2) | toMaskFn.apply(MODE_5_BIT_POS);
+        vdp.writeControlPort(CTRL_PORT_MODE_2 | val);
+    }
+
+    public static void vdpDisplayEnable(GenesisVdpProvider vdp, boolean en) {
+        int val = vdp.getRegisterData(MODE_2) & toResetMaskFn.apply(DISP_EN_BIT_POS);
+        int den = en ? toMaskFn.apply(DISP_EN_BIT_POS) : 0;
+        vdp.writeControlPort(CTRL_PORT_MODE_2 | (val | den));
+    }
+
+    public static void vdpDisplayEnableAndMode5(GenesisVdpProvider vdp) {
+        vdpDisplayEnable(vdp, true);
+        vdpMode5(vdp);
+    }
+
+    public static void vdpEnableDma(GenesisVdpProvider vdp, boolean en) {
+        int val = vdp.getRegisterData(MODE_2) & toResetMaskFn.apply(DMA_EN_BIT_POS);
+        int den = en ? toMaskFn.apply(DMA_EN_BIT_POS) : 0;
+        vdp.writeControlPort(CTRL_PORT_MODE_2 | (val | den));
     }
 
     public static String printVdpMemory(VdpMemoryInterface memoryInterface, GenesisVdpProvider.VdpRamType type, int from, int to) {

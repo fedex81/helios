@@ -47,7 +47,7 @@ public class BaseVdpDmaHandlerTest {
         Assert.assertTrue(opt.isPresent());
         vdpProvider = opt.get();
         memoryInterface = (VdpMemoryInterface) vdpProvider.getVdpMemory();
-        vdpProvider.updateRegisterData(1, 4); //mode5
+        MdVdpTestUtil.vdpMode5(vdpProvider);
     }
 
     protected void testDMAFillInternal(long dmaFillLong, int increment,
@@ -59,8 +59,9 @@ public class BaseVdpDmaHandlerTest {
                                         int[] expected) {
         int toAddress = baseAddress + expected.length;
 
+        MdVdpTestUtil.vdpDisplayEnableAndMode5(vdpProvider);
+        MdVdpTestUtil.vdpEnableDma(vdpProvider, true);
         vdpProvider.writeControlPort(0x8F00 + increment);
-        vdpProvider.writeControlPort(0x8154);
         vdpProvider.writeControlPort(0x9300);
         vdpProvider.writeControlPort(0x9400);
         vdpProvider.writeControlPort(0x9780);
@@ -120,8 +121,9 @@ public class BaseVdpDmaHandlerTest {
         String str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, baseAddress, toAddress);
         System.out.println(str);
 
+        MdVdpTestUtil.vdpDisplayEnableAndMode5(vdpProvider);
+        MdVdpTestUtil.vdpEnableDma(vdpProvider, true);
         vdpProvider.writeControlPort(0x8F00 + increment);
-        vdpProvider.writeControlPort(0x8154);
         vdpProvider.writeControlPort(0x9305);
         vdpProvider.writeControlPort(0x9400);
         vdpProvider.writeControlPort(0x9500);
@@ -194,8 +196,9 @@ public class BaseVdpDmaHandlerTest {
         str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x9000, 0x9016);
         System.out.println(str);
 
+        MdVdpTestUtil.vdpDisplayEnableAndMode5(vdpProvider);
+        MdVdpTestUtil.vdpEnableDma(vdpProvider, true);
         vdpProvider.writeControlPort(0x8F00 + increment);
-        vdpProvider.writeControlPort(0x8154);
         vdpProvider.writeControlPort(0x9303);
         vdpProvider.writeControlPort(0x9400);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
