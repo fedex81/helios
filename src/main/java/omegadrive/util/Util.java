@@ -72,6 +72,13 @@ public class Util {
         random = new Random(seed);
         LOG.info("Creating Random with seed: {}", seed);
         LOG.info("Init RAM with random values: {}", randomInitRam);
+        Thread.setDefaultUncaughtExceptionHandler(Util::uncaughtException);
+    }
+
+    private static void uncaughtException(Thread t, Throwable e) {
+        LOG.error("uncaughtException fot thread: " + t.getName(), e);
+        LOG.throwing(e);
+        e.printStackTrace();
     }
 
     public static void sleep(long ms) {

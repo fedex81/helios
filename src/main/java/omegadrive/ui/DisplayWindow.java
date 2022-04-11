@@ -93,6 +93,12 @@ public interface DisplayWindow {
 
     void reloadSystem(SystemProvider systemProvider);
 
+    void addKeyListener(KeyListener keyAdapter);
+
+    default void close() {
+        //DO NOTHING
+    }
+
     default void reloadControllers(Collection<String> list) {
         //DO NOTHING
     }
@@ -110,8 +116,6 @@ public interface DisplayWindow {
         res += "\n\nReleased under GPL v.3.0 license.";
         return res;
     }
-
-    void addKeyListener(KeyListener keyAdapter);
 
 
 }

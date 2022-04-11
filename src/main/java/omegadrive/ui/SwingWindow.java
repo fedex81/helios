@@ -45,6 +45,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import static omegadrive.system.SystemProvider.SystemEvent.*;
@@ -56,10 +60,10 @@ public class SwingWindow implements DisplayWindow {
 
     private static final Logger LOG = LogManager.getLogger(SwingWindow.class.getSimpleName());
 
+    private static final boolean UI_SCALE_ON_THREAD
+            = Boolean.parseBoolean(System.getProperty("ui.scale.on.thread", "false"));
+
     private Dimension fullScreenSize;
-    //when scaling is slow set this to FALSE
-    private static final boolean UI_SCALE_ON_EDT
-            = Boolean.parseBoolean(System.getProperty("ui.scale.on.edt", "true"));
     private Dimension outputNonScaledScreenSize = DEFAULT_SCALED_SCREEN_SIZE;
     private Dimension outputScreenSize = DEFAULT_SCALED_SCREEN_SIZE;
 
@@ -89,25 +93,22 @@ public class SwingWindow implements DisplayWindow {
     private Optional<String> actionInfo = Optional.empty();
     private MouseCursorHandler cursorHandler;
     private AWTEventListener awtEventListener;
-
+    private final ExecutorService executorService;
 
     public SwingWindow(SystemProvider mainEmu) {
         this.mainEmu = mainEmu;
         this.inputMenusMap = new LinkedHashMap<>();
         Arrays.stream(PlayerNumber.values()).
                 forEach(pn -> inputMenusMap.put(pn, new JMenu(pn.name())));
-    }
-
-    public static void main(String[] args) {
-        SwingWindow frame = new SwingWindow(null);
-        frame.init();
+        executorService = UI_SCALE_ON_THREAD ?
+                Executors.newSingleThreadExecutor(new PriorityThreadFactory("frameSubmitter")) :
+                null;
     }
 
     public void setTitle(String title) {
         jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() + " " + VERSION + " - " + title);
         reloadRecentFiles();
     }
-
 
     private void addKeyAction(AbstractButton component, SystemProvider.SystemEvent event, ActionListener l) {
         AbstractAction action = toAbstractAction(component.getText(), l);
@@ -200,6 +201,8 @@ public class SwingWindow implements DisplayWindow {
                 map(AbstractButton::getText).findFirst().orElse(null);
     }
 
+    private Future<?> previousFrame = CompletableFuture.completedFuture(null);
+
     //NOTE: this will copy the input array
     @Override
     public void renderScreenLinear(int[] data, Optional<String> label, VideoMode videoMode) {
@@ -207,8 +210,9 @@ public class SwingWindow implements DisplayWindow {
             pixelsSrc = data.clone();
         }
         System.arraycopy(data, 0, pixelsSrc, 0, data.length);
-        if (UI_SCALE_ON_EDT) {
-            SwingUtilities.invokeLater(() -> renderScreenLinearInternal(pixelsSrc, label, videoMode));
+        if (UI_SCALE_ON_THREAD) {
+            assert previousFrame.isDone();
+            previousFrame = executorService.submit(() -> renderScreenLinearInternal(pixelsSrc, label, videoMode));
         } else {
             renderScreenLinearInternal(pixelsSrc, label, videoMode);
         }
@@ -736,6 +740,11 @@ public class SwingWindow implements DisplayWindow {
             }
             joypadTypeMenu.add(pMenu);
         }
+    }
+
+    @Override
+    public void close() {
+        Optional.ofNullable(executorService).ifPresent(ExecutorService::shutdownNow);
     }
 
     private static class MyAbstractAction extends AbstractAction {

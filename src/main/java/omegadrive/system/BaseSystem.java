@@ -181,6 +181,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
 
     private void handleCloseApp() {
         try {
+            emuFrame.close();
             handleCloseRom();
             sound.close();
             Util.executorService.shutdown();

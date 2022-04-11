@@ -45,11 +45,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Megadrive main class
- *
- * @author Federico Berti
+ * TODO Check VR audio
  */
-public class Genesis extends BaseSystem<GenesisBusProvider> {
+@Deprecated
+public class GenesisOld extends BaseSystem<GenesisBusProvider> {
 
     public final static boolean verbose = false;
     //the emulation runs at MCLOCK_MHZ/MCLK_DIVIDER
@@ -59,9 +58,6 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
     protected final static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
     protected final static int FM_DIVIDER = 42 / MCLK_DIVIDER;
-    static final int SVP_CYCLES = 100;
-    static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
-
     private final static Logger LOG = LogManager.getLogger(Genesis.class.getSimpleName());
 
     protected Z80Provider z80;
@@ -71,10 +67,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     protected double nextVdpCycle = vdpVals[0];
     protected int next68kCycle = M68K_DIVIDER;
     protected int nextZ80Cycle = Z80_DIVIDER;
-    protected int nextFMCycle = FM_DIVIDER;
-    protected int nextSvpCycle = SVP_CYCLES;
 
-    protected Genesis(DisplayWindow emuFrame) {
+    protected GenesisOld(DisplayWindow emuFrame) {
         super(emuFrame);
         systemType = SystemLoader.SystemType.GENESIS;
     }
@@ -107,42 +101,35 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         createAndAddVdpEventListener();
     }
 
+    static final int SVP_CYCLES = 128;
+    static final int SVP_CYCLES_MASK = SVP_CYCLES - 1;
+    static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
+
+
     protected void loop() {
         updateVideoMode(true);
-        int cnt;
         do {
-            cnt = counter;
-            cnt = runZ80(cnt);
-            cnt = run68k(cnt);
-            cnt = runFM(cnt);
-            if (hasSvp) {
-                runSvp(cnt);
+            run68k();
+            runZ80();
+            runFM();
+            if (hasSvp && (counter & SVP_CYCLES_MASK) == 0) {
+                ssp16.ssp1601_run(SVP_RUN_CYCLES);
             }
             //this should be last as it could change the counter
-            cnt = runVdp(cnt);
-            counter = cnt;
+            runVdp();
+            counter++;
         } while (!futureDoneFlag);
     }
 
-    private int runSvp(int untilClock) { //TODO
-        while (nextSvpCycle <= untilClock) {
-            ssp16.ssp1601_run(SVP_RUN_CYCLES);
-            nextSvpCycle += SVP_CYCLES;
-        }
-        return untilClock;
-    }
-
-    protected final int runVdp(int untilClock) {
-        while (nextVdpCycle <= untilClock) {
+    protected final void runVdp() {
+        if (counter >= nextVdpCycle) {
             int vdpMclk = vdp.runSlot();
             nextVdpCycle += vdpVals[vdpMclk - 4];
-            untilClock = counter; //counter could be reset to 0 when calling vdp::runSlot
         }
-        return (int) Math.max(untilClock, nextVdpCycle);
     }
 
-    protected final int run68k(int untilClock) {
-        while (next68kCycle <= untilClock) {
+    protected final void run68k() {
+        if (counter == next68kCycle) {
             boolean isRunning = bus.is68kRunning();
             boolean canRun = !cpu.isStopped() && isRunning;
             int cycleDelay = 1;
@@ -158,11 +145,10 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
             cycleDelay = Math.max(1, cycleDelay);
             next68kCycle += M68K_DIVIDER * cycleDelay;
         }
-        return untilClock;
     }
 
-    protected final int runZ80(int untilClock) {
-        while (nextZ80Cycle <= untilClock) {
+    protected final void runZ80() {
+        if (counter == nextZ80Cycle) {
             int cycleDelay = 0;
             boolean running = bus.isZ80Running();
             if (running) {
@@ -172,15 +158,12 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
         }
-        return untilClock;
     }
 
-    protected final int runFM(int untilClock) {
-        while (nextFMCycle <= untilClock) {
+    protected final void runFM() {
+        if ((counter & 1) == 0 && (counter % FM_DIVIDER) == 0) { //perf, avoid some divs
             bus.getFm().tick();
-            nextFMCycle += 6;
         }
-        return Math.max(untilClock, nextFMCycle);
     }
 
     protected GenesisBusProvider createBus() {
@@ -230,11 +213,9 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
      */
     @Override
     protected void resetCycleCounters(int counter) {
-        nextZ80Cycle = Math.max(1, counter - nextZ80Cycle);
-        next68kCycle = Math.max(1, counter - next68kCycle);
-        nextVdpCycle = Math.max(1, counter - nextVdpCycle);
-        nextFMCycle = Math.max(1, counter - nextFMCycle);
-        nextSvpCycle = Math.max(1, counter - nextSvpCycle);
+        nextZ80Cycle = Math.max(1, nextZ80Cycle - counter);
+        next68kCycle = Math.max(1, next68kCycle - counter);
+        nextVdpCycle = Math.max(1, nextVdpCycle - counter);
     }
 
     @Override

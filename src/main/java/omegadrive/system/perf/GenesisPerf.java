@@ -31,11 +31,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-/**
- * Genesis emulator main class
- * <p>
- * MEMORY MAP:	https://en.wikibooks.org/wiki/Genesis_Programming
- */
 public class GenesisPerf extends Genesis {
 
     static int mclkHz, m68kRef, vdpRef, z80Ref, fmRef;
@@ -103,10 +98,10 @@ public class GenesisPerf extends Genesis {
         double prevVdpCycle = 0;
         do {
             prevVdpCycle = nextVdpCycle;
-            run68k();
-            runZ80();
-            runFM();
-            runVdp();
+//            run68k();
+//            runZ80();
+//            runFM();
+//            runVdp();
             doCounting(prevVdpCycle);
             counter++;
         } while (!runningRomFuture.isDone());

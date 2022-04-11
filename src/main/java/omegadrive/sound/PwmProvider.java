@@ -1,6 +1,6 @@
 package omegadrive.sound;
 
-import omegadrive.system.Genesis;
+import omegadrive.util.Util;
 
 /**
  * Federico Berti
@@ -9,8 +9,8 @@ import omegadrive.system.Genesis;
  */
 public interface PwmProvider extends SoundDevice {
 
-    int NTSC_SH2CLOCK_MHZ = (int) (Genesis.NTSC_MCLOCK_MHZ * 3.0 / 7);
-    int PAL_SH2CLOCK_MHZ = (int) (Genesis.PAL_MCLOCK_MHZ * 3.0 / 7);
+    int NTSC_SH2CLOCK_MHZ = (int) (Util.GEN_NTSC_MCLOCK_MHZ * 3.0 / 7);
+    int PAL_SH2CLOCK_MHZ = (int) (Util.GEN_PAL_MCLOCK_MHZ * 3.0 / 7);
 
     void updatePwmCycle(int cycle);
 
