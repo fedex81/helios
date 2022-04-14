@@ -19,6 +19,8 @@
 
 package omegadrive.memory;
 
+import omegadrive.util.RomHolder;
+import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,49 +40,45 @@ public class MemoryProvider implements IMemoryProvider {
     public static final int SMS_Z80_RAM_SIZE = 0x2000;
     public static final int CHECKSUM_START_ADDRESS = 0x18E;
 
-    private int[] rom;
     private int[] ram;
-
-    private int romMask;
-    private int romSize;
     private int ramSize = M68K_RAM_SIZE;
+
+    private RomHolder romHolder;
 
     private MemoryProvider() {
     }
 
-
     public static IMemoryProvider createGenesisInstance() {
-        return createInstance(new int[1], M68K_RAM_SIZE);
+        return createInstance(RomHolder.EMPTY_ROM, M68K_RAM_SIZE);
     }
 
     public static IMemoryProvider createSg1000Instance() {
-        return createInstance(new int[1], SG1K_Z80_RAM_SIZE);
+        return createInstance(RomHolder.EMPTY_ROM, SG1K_Z80_RAM_SIZE);
     }
 
     public static IMemoryProvider createMsxInstance() {
-        return createInstance(new int[1], MSX_Z80_RAM_SIZE);
+        return createInstance(RomHolder.EMPTY_ROM, MSX_Z80_RAM_SIZE);
     }
 
     public static IMemoryProvider createSmsInstance() {
-        return createInstance(new int[1], SMS_Z80_RAM_SIZE);
+        return createInstance(RomHolder.EMPTY_ROM, SMS_Z80_RAM_SIZE);
     }
 
+    public static IMemoryProvider createInstance(RomHolder romHolder, int ramSize) {
+        MemoryProvider m = new MemoryProvider();
+        m.romHolder = romHolder;
+        m.ram = Util.initMemoryRandomBytes(new int[ramSize]);
+        m.ramSize = ramSize;
+        return m;
+    }
 
     public static IMemoryProvider createInstance(int[] rom, int ramSize) {
-        MemoryProvider memory = new MemoryProvider();
-        memory.setRomData(rom);
-        memory.ram = Util.initMemoryRandomBytes(new int[ramSize]);
-        memory.ramSize = ramSize;
-        return memory;
+        return createInstance(new RomHolder(rom), ramSize);
     }
 
     @Override
     public int readRomByte(int address) {
-        if (address > romSize - 1) {
-            address &= romMask;
-            address = address > romSize - 1 ? address - (romSize) : address;
-        }
-        return rom[address];
+        return (int) Util.readDataMask(romHolder.data, Size.BYTE, address, romHolder.romMask);
     }
 
     @Override
@@ -103,21 +101,13 @@ public class MemoryProvider implements IMemoryProvider {
 
     @Override
     public void setRomData(int[] data) {
-        this.rom = data;
-        this.romSize = data.length;
-        this.romMask = Util.getRomMask(romSize);
+        this.romHolder = new RomHolder(data);
     }
 
     @Override
     public void setChecksumRomValue(long value) {
-        this.rom[CHECKSUM_START_ADDRESS] = (byte) ((value >> 8) & 0xFF);
-        this.rom[CHECKSUM_START_ADDRESS + 1] = (byte) (value & 0xFF);
-    }
-
-
-    @Override
-    public int[] getRomData() {
-        return rom;
+        Util.writeDataMask(romHolder.data, Size.BYTE, CHECKSUM_START_ADDRESS, (byte) ((value >> 8) & 0xFF), romHolder.romMask);
+        Util.writeDataMask(romHolder.data, Size.BYTE, CHECKSUM_START_ADDRESS + 1, (byte) (value & 0xFF), romHolder.romMask);
     }
 
     @Override
@@ -126,8 +116,8 @@ public class MemoryProvider implements IMemoryProvider {
     }
 
     @Override
-    public int getRomMask() {
-        return romMask;
+    public RomHolder getRomHolder() {
+        return romHolder;
     }
 
     @Override

@@ -35,6 +35,8 @@ import static omegadrive.util.Util.th;
 public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDebug.CpuDebugInfoProvider {
 
     private static final Logger LOG = LogManager.getLogger(MC68000WrapperFastDebug.class.getSimpleName());
+
+    //see CpuFastDebug.DebugMode
     private static final int debugMode = Integer.parseInt(System.getProperty("helios.68k.debug.mode", "0"));
 
     private CpuFastDebug fastDebug;
@@ -67,7 +69,6 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
 
     private void printDebugMaybe() {
         currentPC = m68k.getPC(); //needs to be set
-        opcode = getOpcode();
         fastDebug.printDebugMaybe();
     }
 

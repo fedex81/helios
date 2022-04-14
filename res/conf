@@ -1,7 +1,7 @@
 #linux
 sudo usermod -a -G audio <user>
 sudo usermod -a -G pulse-rt <user>
-sudo usermod -a -G jackuser <user>
+sudo usermod -a -G pipewire <user>
 
 #set Pulse latency
 export PULSE_LATENCY_MSEC=50
@@ -9,10 +9,6 @@ export PULSE_LATENCY_MSEC=50
 #show current latency
 pactl list sinks | grep Lat
 
-run visudo
-add: <user> ALL=NOPASSWD:/usr/bin/nice
-start the process: nice -n -5 <cmdLine>
-
-#see /etc/pulse/daemon.conf
-default-fragments = 2
-default-fragment-size-msec = 25
+#
+cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor

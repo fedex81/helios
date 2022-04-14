@@ -187,12 +187,12 @@ public class Util {
         long data;
         address &= mask;
         if (size == Size.WORD) {
-            data = ((src[address] & 0xFF) << 8) | (src[address + 1] & 0xFF);
+            data = ((src[address] & 0xFF) << 8) | (src[(address + 1) & mask] & 0xFF);
         } else if (size == Size.BYTE) {
             data = src[address];
         } else {
             data = ((src[address] & 0xFF) << 24) |
-                    ((src[address + 1] & 0xFF) << 16) |
+                    ((src[(address + 1) & mask] & 0xFF) << 16) |
                     ((src[(address + 2) & mask] & 0xFF) << 8) |
                     (src[(address + 3) & mask] & 0xFF);
         }
@@ -340,6 +340,18 @@ public class Util {
 
     public static String th(long pos) {
         return Long.toHexString(pos);
+    }
+
+    public static int[] getPaddedRom(int[] data) {
+        int romSize = data.length;
+        int mask = getRomMask(romSize);
+        if (mask >= romSize) {
+            int[] newrom = new int[mask + 1];
+            Arrays.fill(newrom, 0xFF);
+            System.arraycopy(data, 0, newrom, 0, romSize);
+            return newrom;
+        }
+        return data;
     }
 
     public static int getRomMask(int size) {

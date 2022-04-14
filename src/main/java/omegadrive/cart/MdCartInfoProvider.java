@@ -30,8 +30,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Optional;
 
-import static omegadrive.util.Util.th;
-
 public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     public static final int ROM_HEADER_START = 0x100;
@@ -89,7 +87,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(systemType + ", serial: " + serial);
-        sb.append(", ROM size: " + th(romSize) + ", ROM mask: " + th(memoryProvider.getRomMask()));
+        sb.append(", " + memoryProvider.getRomHolder().toString());
         sb.append(", SRAM flag: " + sramEnabled).append("\n");
         sb.append(super.toString());
         if (sramEnabled) {

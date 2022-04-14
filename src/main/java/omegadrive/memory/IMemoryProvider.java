@@ -19,9 +19,24 @@
 
 package omegadrive.memory;
 
+import omegadrive.util.RomHolder;
+
 public interface IMemoryProvider extends IMemoryRam, IMemoryRom {
 
     void setChecksumRomValue(long value);
 
     void setRomData(int[] data);
+
+    RomHolder getRomHolder();
+
+    @Override
+    default int[] getRomData() {
+        return getRomHolder().data;
+    }
+
+    @Override
+    default int getRomMask() {
+        return getRomHolder().romMask;
+    }
+
 }
