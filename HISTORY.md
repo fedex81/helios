@@ -1,3 +1,14 @@
+## 22.0417
+68k: handle edge case for int ack
+68k: refactor int handling, add processing delay
+helios: default to padding roms to a reasonable size
+md: tweak cycle counting, should be less resource intensive
+md: s/h perf tweak
+helios: fix sound enabled ui, minor Federico Berti
+md: encode per pixel blanking info in the vdp color output
+md: add flag to init RAM with random values, defaults to false
+md: allow to busy-wait when set so
+
 ## 21.1007
 * 68k: update lib, fixes a few bugs
 * helios: include jinput libs by default

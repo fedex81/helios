@@ -33,9 +33,9 @@ public class GenesisMemoryProviderTest {
 
     @Test
     public void testRomWrapping01() {
-        int size = 4896;
-        int address = 32767;
-        int expected = 3295;
+        int size = 0x1320;
+        int address = 0x7FFF;
+        int expected = 0xFF;
         testRowWrappingInternal(size, address, expected);
     }
 
