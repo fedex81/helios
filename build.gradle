@@ -100,14 +100,15 @@ jar {
                    'Main-Class': 'omegadrive.SystemLoader',
                    'Class-Path': configurations.compileClasspath.collect { "lib/" + it.getName() }.join(' ')
     }
-    archivesBaseName = rootProject.name
+    getArchiveBaseName().set(rootProject.name)
     destinationDirectory = file("$buildDir/packageDir")
     doLast {
-        println("Creating jar: " + jar.getArchiveName() + " in folder: " + jar.getDestinationDir())
+        println("Creating jar: " + getArchiveFileName().getOrNull() +
+                " in folder: " + getDestinationDirectory().getOrNull())
     }
 }
 
-task jarWithSources dependsOn jar {
+task jarWithSources(type: org.gradle.jvm.tasks.Jar) {
     from sourceSets.main.allSource
     manifest {
         attributes 'Implementation-Title': 'Helios',
@@ -115,13 +116,14 @@ task jarWithSources dependsOn jar {
                 'Main-Class': 'omegadrive.SystemLoader',
                 'Class-Path': configurations.compileClasspath.collect { "lib/" + it.getName() }.join(' ')
     }
-    archivesBaseName = rootProject.name + "-binsrc"
+    getArchiveFileName().set(rootProject.name + "-binsrc-${project.version}.jar")
     destinationDirectory = file("$buildDir/packageDir")
+    with jar
     doLast {
-        println("Creating jar with sources: "+jar.getArchiveName()+" in folder: " + jar.getDestinationDir())
+        println("Creating jar with sources: " + getArchiveFileName().getOrNull() +
+                " in folder: " + getDestinationDirectory().getOrNull())
     }
 }
-
 
 task packageDistribution(type: Zip) {
     dependsOn "test", "jar", "copyRes", "writeToFile"
@@ -130,8 +132,8 @@ task packageDistribution(type: Zip) {
 
     from "$buildDir/packageDir"
     doLast {
-        println("Creating package: " + packageDistribution.getArchiveName() +
-                ", folder: " + packageDistribution.getDestinationDir())
+        println("Creating package: " + getArchiveFileName().getOrNull() +
+                ", folder: " + getDestinationDirectory().getOrNull())
     }
 }
 

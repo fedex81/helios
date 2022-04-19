@@ -69,6 +69,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
 
     private void printDebugMaybe() {
         currentPC = m68k.getPC(); //needs to be set
+        opcode = getOpcode();
         fastDebug.printDebugMaybe();
     }
 

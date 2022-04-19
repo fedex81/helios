@@ -96,9 +96,10 @@ public class CpuFastDebug {
     }
 
     private void printNewInstruction() {
-        final int pcMasked = debugInfoProvider.getPc() & pcMask;
+        final int pc = debugInfoProvider.getPc();
+        final int pcMasked = pc & pcMask;
         final int opcode = debugInfoProvider.getOpcode();
-        final int area = pcMasked >> pcAreaShift;
+        final int area = pc >>> pcAreaShift;
         final int[] pcv = pcVisited[area];
         final int[] opc = opcodes[area];
         final int prevOpcode = opc[pcMasked & pcAreaMask];

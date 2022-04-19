@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.EnumSet;
 
-import static omegadrive.vdp.model.GenesisVdpProvider.*;
+import static omegadrive.vdp.model.BaseVdpProvider.*;
 
 public enum VdpCounterMode {
     PAL_H32_V28(VideoMode.PAL_H32_V28),

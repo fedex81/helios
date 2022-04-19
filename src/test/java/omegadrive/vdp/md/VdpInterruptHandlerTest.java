@@ -120,4 +120,26 @@ public class VdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
             }
         } while (lineCount < totalCount);
     }
+
+    /**
+     * Note: Spiderman 32x briefly switches to NTSC_H40_V30 and
+     * if we do not trigger vblank it remains stuck.
+     */
+    @Test
+    public void testVBlankNTSC_V30() {
+        BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
+        VdpInterruptHandler h = VdpInterruptHandler.createMdInstance(vdp);
+
+        int totalCount = GenesisVdpProvider.NTSC_SCANLINES * 10 + 5;
+        prepareVdp(vdp, h, VideoMode.NTSCU_H40_V30);
+        boolean atLeastOneVInt = false;
+        Assert.assertFalse(h.isvBlankSet());
+        do {
+            h.increaseHCounter();
+            if (h.isvBlankSet()) {
+                atLeastOneVInt = true;
+            }
+        } while (lineCount < totalCount);
+        Assert.assertTrue(atLeastOneVInt);
+    }
 }

@@ -68,7 +68,7 @@ public interface BaseVdpProvider extends Device, BaseVdpAdapterEventSupport {
     int V28_PAL_JUMP = 0x102;
     int V28_NTSC_JUMP = 0xEA;
     int V30_PAL_JUMP = 0x10A;
-    int V30_NTSC_JUMP = -1; //never
+    int V30_NTSC_JUMP = 0xF2; //should be never (-1) but needed by Spiderman 32x
     int H32_SLOTS = H32_PIXELS / 2;
     int H40_SLOTS = H40_PIXELS / 2;
     int H40_SLOW_CLOCK = 0x1E2;
