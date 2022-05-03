@@ -19,6 +19,7 @@
 
 package omegadrive.vdp.md;
 
+import omegadrive.util.FastBitSet;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.VdpRenderDump;
 import omegadrive.vdp.md.VdpScrollHandler.HSCROLL;
@@ -32,7 +33,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.function.BiConsumer;
 
 import static omegadrive.vdp.model.BaseVdpProvider.VdpEventListener;
@@ -355,7 +355,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             }
         }
         boolean spritePalette14 = !spriteTransparent && spriteCramIndex % 0x1C == 0;
-        final BitSet pmap = pxData.priorityMap;
+        final FastBitSet pmap = pxData.priorityMap;
         boolean anyLayerHighPrio = !pmap.isEmpty() && (
                 pmap.get(RenderType.PLANE_A.ordinal()) ||
                         pmap.get(RenderType.PLANE_B.ordinal()) ||
