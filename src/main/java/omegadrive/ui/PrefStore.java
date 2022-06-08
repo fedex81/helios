@@ -35,9 +35,7 @@ public class PrefStore {
     private static final String RECENT_FILE = "recent";
     public static int recentFileTotal = 10;
     private static final Properties uiProperties = new Properties();
-
-    public static String lastRomFolder = FileUtil.basePath;
-    public static String lastSaveFolder = FileUtil.basePath;
+    public static String lastSaveFile = FileUtil.basePath, lastRomFile = FileUtil.basePath;
 
     private static final LinkedHashMap<Integer, String> map = new LinkedHashMap<>(recentFileTotal, 1, true);
 

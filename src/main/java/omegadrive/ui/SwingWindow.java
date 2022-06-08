@@ -478,11 +478,15 @@ public class SwingWindow implements DisplayWindow {
     private Optional<File> fileDialog(Component parent, FileResourceType type, boolean load) {
         int dialogType = load ? JFileChooser.OPEN_DIALOG : JFileChooser.SAVE_DIALOG;
         FileFilter filter = type == FileResourceType.SAVE_STATE_RES ? FileUtil.SAVE_STATE_FILTER : FileUtil.ROM_FILTER;
-        String location = type == FileResourceType.SAVE_STATE_RES ? PrefStore.lastSaveFolder : PrefStore.lastRomFolder;
+        String lastFileStr = type == FileResourceType.SAVE_STATE_RES ? PrefStore.lastSaveFile : PrefStore.lastRomFile;
+        File lastFile = new File(lastFileStr);
         Optional<File> res = Optional.empty();
-        JFileChooser fileChooser = new JFileChooser(location);
+        JFileChooser fileChooser = new JFileChooser(lastFile);
         fileChooser.setFileFilter(filter);
         fileChooser.setDialogType(dialogType);
+        if (lastFile.isFile()) {
+            fileChooser.setSelectedFile(lastFile);
+        }
         int result = fileChooser.showDialog(parent, null);
         if (result == JFileChooser.APPROVE_OPTION) {
             res = Optional.ofNullable(fileChooser.getSelectedFile());
@@ -509,7 +513,7 @@ public class SwingWindow implements DisplayWindow {
         if (optFile.isPresent()) {
             Path file = optFile.get().toPath();
             handleSystemEvent(LOAD_STATE, file, file.getFileName().toString());
-            PrefStore.lastSaveFolder = file.getParent().toAbsolutePath().toString();
+            PrefStore.lastSaveFile = file.toAbsolutePath().toString();
         }
     }
 
@@ -541,7 +545,7 @@ public class SwingWindow implements DisplayWindow {
             SystemLoader.getInstance().handleNewRomFile(file);
             reloadRecentFiles();
             showInfo(NEW_ROM + ": " + file.getFileName());
-            PrefStore.lastRomFolder = file.getParent().toAbsolutePath().toString();
+            PrefStore.lastRomFile = file.toAbsolutePath().toString();
         }
     }
 
@@ -549,6 +553,7 @@ public class SwingWindow implements DisplayWindow {
         Path p = Paths.get(path);
         showInfo(NEW_ROM + ": " + p.getFileName());
         SystemLoader.getInstance().handleNewRomFile(p);
+        PrefStore.lastRomFile = p.toAbsolutePath().toString();
     }
 
     private void addDndListener(Component component) {

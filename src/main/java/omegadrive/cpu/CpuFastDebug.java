@@ -3,6 +3,7 @@ package omegadrive.cpu;
 import com.google.common.collect.ImmutableSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.filter.AbstractFilterable;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -77,6 +78,7 @@ public class CpuFastDebug {
         Arrays.stream(ctx.pcAreas).forEach(i -> Arrays.fill(opcodes[i], -1));
         assert ctx.debugMode >= 0 && ctx.debugMode < debugModeVals.length;
         debugMode = debugModeVals[ctx.debugMode];
+        checkLog4jBurstFilter();
     }
 
     public void printDebugMaybe() {
@@ -212,5 +214,23 @@ public class CpuFastDebug {
             }
         }
         return false;
+    }
+
+    private static void checkLog4jBurstFilter() {
+        //NOTE: ugly but I've wasted so much time due to this ...
+        if (LOG instanceof org.apache.logging.log4j.core.Logger) {
+            var loglog = (org.apache.logging.log4j.core.Logger) LOG;
+            loglog.getAppenders().entrySet().forEach(e -> {
+                if (e.getValue() instanceof AbstractFilterable) {
+                    var af = (AbstractFilterable) e.getValue();
+                    if (af.hasFilter()) {
+                        LOG.error("***********");
+                        LOG.error("{} appender has a filter set, " +
+                                "if it is a burstFilter it will impact verbose logging", e.getKey());
+                        LOG.error("***********");
+                    }
+                }
+            });
+        }
     }
 }
