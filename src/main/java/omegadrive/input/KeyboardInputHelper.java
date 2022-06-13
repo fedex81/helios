@@ -21,6 +21,7 @@ package omegadrive.input;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import omegadrive.joypad.JoypadProvider.JoypadButton;
 import omegadrive.ui.KeyBindingsHandler;
@@ -29,6 +30,8 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static java.awt.event.InputEvent.CTRL_DOWN_MASK;
 import static java.awt.event.InputEvent.SHIFT_DOWN_MASK;
@@ -51,10 +54,10 @@ public class KeyboardInputHelper {
             put(M.name(), VK_L).
             put(S.name(), VK_ENTER).build();
     public static final Map<String, Integer> DEFAULT_P2_KEY_BINDINGS = ImmutableMap.<String, Integer>builder().
-            put(U.name(), VK_W).
-            put(D.name(), VK_S).
-            put(L.name(), VK_A).
-            put(R.name(), VK_D).
+            put(U.name(), VK_T).
+            put(D.name(), VK_G).
+            put(L.name(), VK_F).
+            put(R.name(), VK_G).
             put(A.name(), VK_C).
             put(B.name(), VK_V).
             put(C.name(), VK_B).
@@ -93,11 +96,36 @@ public class KeyboardInputHelper {
     }
 
     public static void updatePlayerMappings(PlayerNumber number, Map<String, Integer> map) {
+        keyboardStringBindings.row(number).clear();
+        keyboardInverseStringBindings.row(number).clear();
+        keyboardInverseBindings.row(number).clear();
+        keyboardBindings.row(number).clear();
         map.entrySet().stream().forEach(e -> {
             keyboardStringBindings.put(number, e.getKey(), e.getValue());
             keyboardInverseStringBindings.put(number, e.getValue(), e.getKey());
             keyboardInverseBindings.put(number, e.getValue(), JoypadButton.valueOf(e.getKey()));
             keyboardBindings.put(number, JoypadButton.valueOf(e.getKey()), e.getValue());
         });
+        consistencyCheck(number);
+    }
+
+    private static void consistencyCheck(PlayerNumber number) {
+        Set<Integer> pSet = new TreeSet<>(keyboardBindings.row(number).values());
+        for (PlayerNumber pn : PlayerNumber.values()) {
+            if (pn == number) {
+                continue;
+            }
+            Set<Integer> pSet2 = new TreeSet<>(keyboardBindings.row(pn).values());
+            Set<Integer> s = Sets.intersection(pSet, pSet2);
+            if (!s.isEmpty()) {
+                LOG.error("Illegal controller setup, {} vs {}", number, pn);
+                for (Integer key : s) {
+                    KeyStroke ks = KeyStroke.getKeyStroke((char) key.intValue());
+                    LOG.error("{}  button {}->{}, {} button {}->{}", number,
+                            keyboardInverseBindings.get(number, key).getMnemonic(), ks,
+                            pn, keyboardInverseBindings.get(pn, key).getMnemonic(), ks);
+                }
+            }
+        }
     }
 }

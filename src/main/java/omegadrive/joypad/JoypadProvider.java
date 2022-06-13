@@ -36,6 +36,7 @@ public interface JoypadProvider extends Device {
     }
 
     enum JoypadType {
+        NONE,
         BUTTON_2,
         BUTTON_3,
         BUTTON_6

@@ -32,17 +32,16 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 import static omegadrive.util.Util.th;
 
 /**
- * 6-button controller steps
- * Bit 5	Bit 4	Bit 3	Bit 2	Bit 1	Bit 0
- * 1st step (write $40)	    C	B	    Right	Left	Down	Up
- * 2nd step (write $00)	Start	A	    0	    0	    Down	Up
- * 3rd step (write $40)	    C	B	    Right	Left	Down	Up
- * 4th step (write $00)	Start	A	    0	    0	    Down	Up
- * 5th step (write $40)	    C	B	    Right	Left	Down	Up
- * 6th step (write $00)	Start	A	    0	    0	    0	    0
- * 7th step (write $40)	    C	B	    Mode	X	    Y	    Z
- * 8th step (write $00)	Start	A	    1	    1	    1	    1
+ * GenesisJoypad
+ *
+ * @author Federico Berti
  * <p>
+ * Most of the code adapted from GenesisPlusGx joypad.c
+ * <p>
+ * wwf raw 32x, GreatestHeavyweights, Sf2, sgdk joytest
+ * TODO
+ * - Decap Attack, 3btn and 6btn ko
+ * - GreatestHeavyweights, 3Btn ok, 6btn ko
  */
 public class GenesisJoypad extends BasePadAdapter {
 
@@ -50,17 +49,13 @@ public class GenesisJoypad extends BasePadAdapter {
 
     private static final boolean verbose = false;
 
-    static final int SIX_BUTTON_STEPS = 9;
-    static final int SIX_BUTTON_START_A_ONLY_STEP = 6;
-    static final int SIX_BUTTON_XYZ_STEP = 7;
-    static final int SIX_BUTTON_START_A_FINAL_STEP = 8;
-
     public static JoypadType P1_DEFAULT_TYPE = JoypadType.BUTTON_6;
     public static JoypadType P2_DEFAULT_TYPE = JoypadType.BUTTON_6;
 
     static class MdPadContext {
         int control = 0, //SGDK needs 0 here, otherwise it is considered a RESET
-                data, readStep;
+                data,
+                readStep;
         boolean high;
         int player;
 
@@ -86,8 +81,6 @@ public class GenesisJoypad extends BasePadAdapter {
 
     @Override
     public void init() {
-        writeDataRegister1(0x40);
-        writeDataRegister2(0x40);
         stateMap1 = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
                 put(D, RELEASED).put(U, RELEASED).
                 put(L, RELEASED).put(R, RELEASED).
@@ -98,6 +91,13 @@ public class GenesisJoypad extends BasePadAdapter {
         stateMap2 = Maps.newHashMap(stateMap1);
         setPadSetupChange(P1, P1_DEFAULT_TYPE.name());
         setPadSetupChange(P2, P2_DEFAULT_TYPE.name());
+        reset();
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+        ctx1.data = ctx2.data = ctx3.data = 0x40;
     }
 
     @Override
@@ -114,30 +114,19 @@ public class GenesisJoypad extends BasePadAdapter {
         LOG.info("Setting {} joypad type to: {}", pn, jt);
     }
 
-    public void writeDataRegister1(int data) {
-        writeDataRegister(ctx1, data);
-    }
-
-    public void writeDataRegister2(int data) {
-        writeDataRegister(ctx2, data);
-    }
-
-    private void writeDataRegister(MdPadContext ctx, int data) {
-        ctx.data = data & 0xFF;
-        boolean h = (ctx.data & 0x40) == 0x40;
-        if (h != ctx.high) {
-            ctx.readStep = (ctx.readStep + 1) % SIX_BUTTON_STEPS;
-            ctx.high = h;
-        }
-        if (verbose) LOG.info("writeDataReg: data {}, {}", th(data), ctx);
-    }
-
     public int readDataRegister1() {
-        return readDataRegister(P1, p1Type, ctx1);
+        //TODO check
+//        int mask = 0x80 | ctx1.control;
+//        int data = readPad(P1, p1Type, ctx1);
+//        return (ctx1.data & mask) | (data & ~mask);
+        return readPad(P1, p1Type, ctx1);
     }
 
     public int readDataRegister2() {
-        return readDataRegister(P2, p2Type, ctx2);
+//        int mask = 0x80 | ctx2.control;
+//        int data = readPad(P2, p2Type, ctx2);
+//        return (ctx2.data & mask) | (data & ~mask);
+        return readPad(P2, p2Type, ctx2);
     }
 
     public int readDataRegister3() {
@@ -145,74 +134,96 @@ public class GenesisJoypad extends BasePadAdapter {
         return 0xFF;
     }
 
-    private int readDataRegister(PlayerNumber n, JoypadType type, MdPadContext ctx) {
-        if (verbose) LOG.info("readDataReg: {}", ctx);
-        if ((ctx.control & 0x40) != 0x40) {
-            return (ctx.data | ~ctx.control) & 0xFF;
-        }
-        boolean is6Button = type == JoypadType.BUTTON_6;
-        if (!is6Button) {
-            return (ctx.high ? get11CBRLDU(n) : get00SA00DU(n));
-        }
-        if (!ctx.high) {
-            switch (ctx.readStep) {
-                case SIX_BUTTON_START_A_FINAL_STEP:
-                    return get00SA1111(n);
-                case SIX_BUTTON_START_A_ONLY_STEP:
-                    return get00SA0000(n);
-                default:
-                    return get00SA00DU(n);
+    public void writeDataRegister1(int data) {
+        writePad(ctx1, p1Type, ctx1.control, data);
+    }
+
+    public void writeDataRegister2(int data) {
+        writePad(ctx2, p2Type, ctx2.control, data);
+    }
+
+    private void writePad(MdPadContext ctx, JoypadType type, int control, int data) {
+        boolean thPinHigh = (control & 0x40) > 0;
+        if (thPinHigh) {
+            data &= 0xC0; //keep D7 bit
+            if (type == JoypadType.BUTTON_6 && ctx.readStep < 8) {
+                //0->1 transition
+                if ((ctx.data & 0x40) == 0 && data > 0) {
+                    ctx.readStep += 2;
+                }
             }
         } else {
-            return (ctx.readStep == SIX_BUTTON_XYZ_STEP ? get11CBMXYZ(n) : get11CBRLDU(n));
+            data |= 0x40;
+        }
+        ctx.data = data;
+        ctx.control = control;
+        if (verbose) LOG.info("writeDataReg: data {}, {}", th(data), ctx);
+    }
+
+    private int readPad(PlayerNumber n, JoypadType type, MdPadContext ctx) {
+        if (type == JoypadType.NONE) {
+            return 0xFF;
+        }
+        if ((ctx.control & 0x40) != 0x40) { //WwfRaw 32x
+            return logReadDataReg((ctx.data | ~ctx.control) & 0xFF, ctx);
+        }
+        int data = ctx.data | 0x3f;
+        int step = ctx.readStep | (data >> 6);
+
+        switch (step) {
+            case 4:
+                return get00SA0000(n, ctx);
+            case 7:
+                return get11CBMXYZ(n, ctx);
+            case 6:
+                return get00SA1111(n, ctx);
+            default:
+                return (step & 1) > 0 ? get11CBRLDU(n, ctx) : get00SA00DU(n, ctx);
         }
     }
 
-    private void writeControlCheck(int port, int data) {
-        if (verbose) LOG.info("Setting ctrlPort{} to {}", port, th(data));
-        if (data != 0x40 && data != 0) {
-            LOG.warn("Setting ctrlPort{} to {}", port, th(data));
+    private void writeControlCheck(int port, int value) {
+        if (verbose) LOG.info("Setting ctrlPort{} to {}", port, th(value));
+        if (value != 0x40 && value != 0) {
+            LOG.warn("Setting ctrlPort{} to {}", port, th(value));
         }
     }
 
-    public void writeControlRegister1(int data) {
-        writeControlRegister(ctx1, data);
+    public void writeControlRegister1(int value) {
+        writeControlCheck(ctx1.player, value);
+        writePad(ctx1, p1Type, value, ctx1.data);
     }
 
-    public void writeControlRegister2(int data) {
-        writeControlRegister(ctx2, data);
+    public void writeControlRegister2(int value) {
+        writeControlCheck(ctx2.player, value);
+        writePad(ctx2, p2Type, value, ctx2.data);
     }
 
-    public void writeControlRegister3(int data) {
-        writeControlRegister(ctx3, data);
+    public void writeControlRegister3(int value) {
+        writeControlCheck(ctx3.player, value);
     }
 
-    private void writeControlRegister(MdPadContext ctx, int data) {
-        writeControlCheck(ctx.player, data);
-        ctx.control = data;
-    }
-
-    private int get00SA0000(PlayerNumber n) {
+    private int get00SA0000(PlayerNumber n, MdPadContext ctx) {
         return (getValue(n, S) << 5) | (getValue(n, A) << 4);
     }
 
-    private int get00SA1111(PlayerNumber n) {
+    private int get00SA1111(PlayerNumber n, MdPadContext ctx) {
         return (getValue(n, S) << 5) | (getValue(n, A) << 4) | 0xF;
     }
 
     //6 buttons
-    private int get00SA00DU(PlayerNumber n) {
+    private int get00SA00DU(PlayerNumber n, MdPadContext ctx) {
         return (getValue(n, S) << 5) | (getValue(n, A) << 4) | (getValue(n, D) << 1) | (getValue(n, U));
     }
 
-    private int get11CBRLDU(PlayerNumber n) {
-        return 0xC0 | (getValue(n, C) << 5) | (getValue(n, B) << 4) | (getValue(n, R) << 3) |
+    private int get11CBRLDU(PlayerNumber n, MdPadContext ctx) {
+        return 0x80 | (getValue(n, C) << 5) | (getValue(n, B) << 4) | (getValue(n, R) << 3) |
                 (getValue(n, L) << 2) | (getValue(n, D) << 1) | (getValue(n, U));
     }
 
     //6 buttons
-    private int get11CBMXYZ(PlayerNumber n) {
-        return 0xC0 | (getValue(n, C) << 5) | (getValue(n, B) << 4) | (getValue(n, M) << 3) |
+    private int get11CBMXYZ(PlayerNumber n, MdPadContext ctx) {
+        return 0x80 | (getValue(n, C) << 5) | (getValue(n, B) << 4) | (getValue(n, M) << 3) |
                 (getValue(n, X) << 2) | (getValue(n, Y) << 1) | (getValue(n, Z));
     }
 
@@ -229,15 +240,19 @@ public class GenesisJoypad extends BasePadAdapter {
     }
 
     private int readControlRegister(MdPadContext ctx) {
-        if (verbose) LOG.info("Read ctrlPort{}: ", ctx.player, ctx);
+        if (verbose) LOG.info("Read ctrlPort{}: {}", ctx.player, ctx);
         return ctx.control;
+    }
+
+    private int logReadDataReg(int res, MdPadContext ctx) {
+        if (verbose) LOG.info("readDataReg: {}, {}", th(res), ctx);
+        return res;
     }
 
     @Override
     public void newFrame() {
         super.newFrame();
-        ctx1.readStep = p1Type == JoypadType.BUTTON_6 && ctx1.high ? 1 : 0;
-        ctx2.readStep = p2Type == JoypadType.BUTTON_6 && ctx2.high ? 1 : 0;
-//        LOG.info("new frame");
+        ctx1.readStep = ctx2.readStep = ctx3.readStep = 0;
+        if (verbose) LOG.info("new frame");
     }
 }
