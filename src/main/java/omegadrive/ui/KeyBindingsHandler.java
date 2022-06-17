@@ -19,6 +19,7 @@
 
 package omegadrive.ui;
 
+import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
 import omegadrive.input.InputProvider;
 import omegadrive.input.InputProvider.PlayerNumber;
@@ -149,7 +150,7 @@ public class KeyBindingsHandler {
             l.add(keyMap.get(ks).toString() + DIV + ks.toString());
         }
         Collections.sort(l);
-        var table = TreeBasedTable.<PlayerNumber, JoypadButton, Integer>create();
+        Table<PlayerNumber, JoypadButton, Integer> table = TreeBasedTable.create();
         table.putAll(KeyboardInputHelper.keyboardBindings);
         table.cellSet().forEach(cell -> {
             String tk = PLAYER_LINE_HEAD + cell.getRowKey().name().substring(1) + ".";

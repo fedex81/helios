@@ -219,10 +219,10 @@ public class CpuFastDebug {
     private static void checkLog4jBurstFilter() {
         //NOTE: ugly but I've wasted so much time due to this ...
         if (LOG instanceof org.apache.logging.log4j.core.Logger) {
-            var loglog = (org.apache.logging.log4j.core.Logger) LOG;
+            org.apache.logging.log4j.core.Logger loglog = (org.apache.logging.log4j.core.Logger) LOG;
             loglog.getAppenders().entrySet().forEach(e -> {
                 if (e.getValue() instanceof AbstractFilterable) {
-                    var af = (AbstractFilterable) e.getValue();
+                    AbstractFilterable af = (AbstractFilterable) e.getValue();
                     if (af.hasFilter()) {
                         LOG.error("***********");
                         LOG.error("{} appender has a filter set, " +
