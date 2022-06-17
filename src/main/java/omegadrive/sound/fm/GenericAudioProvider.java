@@ -1,0 +1,141 @@
+package omegadrive.sound.fm;
+
+import omegadrive.util.Util;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jctools.queues.atomic.SpscAtomicArrayQueue;
+
+import javax.sound.sampled.AudioFormat;
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static omegadrive.util.Util.th;
+
+/**
+ * GenericAudioProvider
+ * <p>
+ * Federico Berti
+ * <p>
+ * Copyright 2020
+ */
+public class GenericAudioProvider implements FmProvider {
+
+    private static final Logger LOG = LogManager.getLogger(GenericAudioProvider.class.getSimpleName());
+    protected AtomicInteger queueLen = new AtomicInteger();
+    //NOTE: each element represent a 16 bit sample for one channel
+    protected final Queue<Integer> sampleQueue;
+    protected volatile boolean running = false;
+    private AudioFormat inputFormat;
+    private final Integer[] stereoSamples = new Integer[2]; //[0] left, [1] right
+    private final int audioScaleBits;
+    private int sampleShift;
+
+    public GenericAudioProvider(AudioFormat inputAudioFormat) {
+        this(inputAudioFormat, 0);
+    }
+
+    public GenericAudioProvider(AudioFormat inputAudioFormat, int audioScaleBits) {
+        inputFormat = inputAudioFormat;
+        sampleQueue = new SpscAtomicArrayQueue<>(((int) inputFormat.getSampleRate()) << 2);
+        sampleShift = 16 - inputFormat.getSampleSizeInBits();
+        this.audioScaleBits = audioScaleBits;
+        LOG.info("Input sound source format: {}, audioScaleBits: {}", inputAudioFormat, audioScaleBits);
+    }
+
+    @Override
+    public int updateStereo16(int[] buf_lr, int offset, int count) {
+        if (!running) {
+            return 0;
+        }
+        offset <<= 1;
+        int end = (count << 1) + offset;
+        final int initialQueueSize = queueLen.get();
+        int queueIndicativeLen = initialQueueSize;
+        int i = offset;
+        for (; i < end && queueIndicativeLen > 0; i += 2) {
+            //when using mono we process two samples
+            if (!fillStereoSamples(stereoSamples)) {
+                LOG.warn("Null left sample QL{} P{}", queueIndicativeLen, i);
+                break;
+            }
+            queueIndicativeLen = queueLen.addAndGet(-2);
+            //Integer -> short -> int
+            buf_lr[i] = ((short) (stereoSamples[0] & 0xFFFF)) << audioScaleBits;
+            buf_lr[i + 1] = ((short) (stereoSamples[1] & 0xFFFF)) << audioScaleBits;
+        }
+        return i;
+    }
+
+    private boolean fillStereoSamples(Integer[] stereoSamples) {
+        stereoSamples[0] = sampleQueue.peek();
+        if (stereoSamples[0] == null) {
+            return false;
+        }
+        sampleQueue.poll();
+        stereoSamples[1] = sampleQueue.poll();
+        if (stereoSamples[1] == null) {
+            stereoSamples[1] = stereoSamples[0];
+            LOG.warn("Null right sample, left: {}", stereoSamples[0]);
+        }
+        //sanity check
+        assert (stereoSamples[0] & 1) == 1 && (stereoSamples[1] & 1) == 0;
+        return true;
+    }
+
+    protected void addStereoSample(int left, int right) {
+        if (!running) {
+            return;
+        }
+        boolean res = sampleQueue.offer(Util.getFromIntegerCache((left << sampleShift) | 1)); //sampleL is always odd
+        boolean res2 = sampleQueue.offer(Util.getFromIntegerCache((right << sampleShift) & ~1)); //sampleR is always even
+        queueLen.addAndGet(2);
+        if (!res) {
+            LOG.warn("Left sample dropped: {}", th(left));
+            queueLen.decrementAndGet();
+        }
+        if (!res2) {
+            LOG.warn("Right sample dropped: {}", th(right));
+            queueLen.decrementAndGet();
+        }
+    }
+
+    protected void addMonoSample(int sample) {
+        if (!running) {
+            return;
+        }
+        addStereoSample(sample, sample);
+    }
+
+    public void start() {
+        running = true;
+        LOG.debug("Running: {}", running);
+    }
+
+    public void stop() {
+        running = false;
+        LOG.debug("Running: {}", running);
+    }
+
+    @Override
+    public void init() {
+        reset();
+    }
+
+    @Override
+    public int readRegister(int type, int regNumber) {
+        return 0;
+    }
+
+    @Override
+    public void tick() {
+
+    }
+
+    @Override
+    public void reset() {
+        stop();
+        sampleQueue.clear();
+        queueLen.set(0);
+        start();
+    }
+}

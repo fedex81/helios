@@ -101,7 +101,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     private void addSample() {
         if (cycleAccum > fmCalcsPerMicros) {
-            super.addStereoSamples(prevL, prevR);
+            super.addStereoSample(prevL, prevR);
             cycleAccum -= fmCalcsPerMicros;
         }
     }
