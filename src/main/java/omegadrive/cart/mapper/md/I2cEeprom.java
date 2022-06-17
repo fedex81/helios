@@ -30,6 +30,10 @@ public class I2cEeprom {
     };
     private final static Logger LOG = LogManager.getLogger(I2cEeprom.class.getSimpleName());
     private static final boolean verbose = false;
+
+    private static final int SCL_IN_BIT_POS = 1;
+    private static final int SDA_IN_BIT_POS = 0, SDA_OUT_BIT_POS = 0;
+
     private int scl, prevScl;
     private int sda, prevSda;
     private int cycles, rw;
@@ -61,15 +65,15 @@ public class I2cEeprom {
             int val = writes[i];
             if (val < 0) {
                 i2c.eeprom_i2c_out();
-                break;
+            } else {
+                i2c.eeprom_i2c_in(val);
             }
-            i2c.eeprom_i2c_in(val);
         }
     }
 
     public void eeprom_i2c_in(int data) {
-        scl = (data & 2) >> 1;
-        sda = data & 1;
+        scl = (data >> SCL_IN_BIT_POS) & 1;
+        sda = (data >> SDA_IN_BIT_POS) & 1;
         if (verbose) LOG.info("SCL {}, SDA {}", scl, sda);
         if (state == EepromState.STANDBY) {
             checkStart();
@@ -97,12 +101,12 @@ public class I2cEeprom {
             }
         } else if (cycles == 9) {
             /* ACK cycle */
-            if (verbose) LOG.info("{}, ack on cycle {}", state, cycles);
+            if (verbose) LOG.info("{}, SDA {}, ack on cycle {}, res: {}", state, sda, cycles, 0);
             return 0;
         }
 
         /* return latched /SDA input by default */
-        return sda;
+        return (sda >> SDA_OUT_BIT_POS) & 1;
     }
 
     private void writeData() {
@@ -156,6 +160,11 @@ public class I2cEeprom {
         if (prevScl > scl) {
             if (cycles < 9) {
                 cycles++;
+//                if(cycles == 9){
+//                    prevSda = sda;
+//                    sda = 0;
+//                    if (verbose) LOG.info("{} receiver ack, SDA: {}", state, sda);
+//                }
             } else {
                 cycles = 1;
                 state = rw > 0 ? EepromState.READ : EepromState.WRITE;
@@ -167,11 +176,12 @@ public class I2cEeprom {
             if (cycles < 8) {
                 /* latch Word Address bits 6-0 */
                 address |= (sda << (7 - cycles));
-                if (verbose) LOG.info("{}, address: {}, cycles: {}", state, address, cycles, verbose);
+                if (verbose)
+                    LOG.info("{}, address: {}({}), cycles: {}", state, address, Integer.toBinaryString(address), cycles);
             } else if (cycles == 8) {
                 /* latch R/W bit */
                 rw = sda;
-                if (verbose) LOG.info("{}, rw latch: {}", state, rw, verbose);
+                if (verbose) LOG.info("{}, rw latch: {} {}", state, rw, rw > 0 ? EepromState.READ : EepromState.WRITE);
             }
         }
     }
@@ -181,7 +191,8 @@ public class I2cEeprom {
         if ((prevScl & scl) > 0 && (prevSda > sda)) {
             state = EepromState.GET_WORD_ADDR;
             cycles = 0;
-            if (verbose) LOG.info("{}", state);
+            address = 0;
+            if (verbose) LOG.info("START {}", state);
         }
     }
 
@@ -189,7 +200,7 @@ public class I2cEeprom {
         /* detect SDA LOW to HIGH transition while SCL is held HIGH */
         if (((prevScl & scl) > 0) && (sda > prevSda)) {
             state = EepromState.STANDBY;
-            if (verbose) LOG.info("{}", state);
+            if (verbose) LOG.info("STOP {}", state);
         }
     }
 

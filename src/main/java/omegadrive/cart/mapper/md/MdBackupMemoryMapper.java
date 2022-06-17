@@ -31,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 
 import static omegadrive.cart.MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
 import static omegadrive.cart.MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS;
+import static omegadrive.util.Util.th;
 
 public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMapper {
 
@@ -120,7 +121,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         if (eepromRead) {
             initBackupFileIfNecessary();
             long res = i2c.eeprom_i2c_out();
-            if (verbose) LOG.info("EEPROM read at: {} {}, result: {} ", address, size, res);
+            if (verbose) LOG.info("EEPROM read at: {} {}, result: {} ", th(address), size, th(res));
             return res;
         }
         return baseMapper.readData(address, size);
@@ -133,7 +134,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         if (eepromWrite) {
             initBackupFileIfNecessary();
             i2c.eeprom_i2c_in((int) (data & 0xFF));
-            if (verbose) LOG.info("EEPROM write at: {} {}, data: {} ", address, size, data);
+            if (verbose) LOG.info("EEPROM write at: {} {}, data: {} ", th(address), size, th(data));
         } else {
             baseMapper.writeData(address, data, size);
         }
