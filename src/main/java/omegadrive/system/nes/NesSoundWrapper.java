@@ -43,9 +43,9 @@ public class NesSoundWrapper extends GenericAudioProvider implements AudioOutInt
     }
 
     @Override
-    public boolean bufferHasLessThan(int samples) {
+    public boolean bufferHasLessThan(int monoSamples) { //TODO check it is mono
 //        LOG.info("bufferHasLessThan: {}, actual: {}", samples, queueLen.get());
-        return queueLen.get() < samples;
+        return stereoQueueLen.get() < (monoSamples << 1);
     }
 
     @Override

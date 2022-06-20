@@ -19,7 +19,6 @@
 
 package omegadrive.sound.fm;
 
-import omegadrive.util.SoundUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,16 +42,15 @@ public abstract class VariableSampleRateSource extends GenericAudioProvider {
 
     protected VariableSampleRateSource(double sourceSampleRate, AudioFormat audioFormat,
                                        String sourceName, int audioScaleBits) {
-        super(audioFormat, audioScaleBits);
+        super(audioFormat, audioScaleBits, (int) audioFormat.getSampleRate()); //500ms maxQueueLen
+        assert audioFormat.getChannels() == 2;
         this.outputSampleRate = audioFormat.getSampleRate();
         this.sourceSampleRate = sourceSampleRate;
         this.microsPerOutputSample = (1_000_000.0 / outputSampleRate);
         this.microsPerInputSample = (1_000_000.0 / sourceSampleRate);
         this.fmCalcsPerMicros = microsPerOutputSample;
-        this.audioRateControl = new AudioRateControl(sourceName, SoundUtil.getMonoSamplesBufferSize(audioFormat));
+        this.audioRateControl = new AudioRateControl(sourceName, audioFormat);
         start();
-        //TODO check, md was using see below; now queueSize = SoundProvider.SAMPLE_RATE_HZ << 2
-//        sampleQueue = new SpscAtomicArrayQueue<>(SoundProvider.SAMPLE_RATE_HZ);
     }
 
     protected abstract void spinOnce();
@@ -75,7 +73,7 @@ public abstract class VariableSampleRateSource extends GenericAudioProvider {
 
     @Override
     public void onNewFrame() {
-        fmCalcsPerMicros = audioRateControl.adaptiveRateControl(queueLen.get(), fmCalcsPerMicros, sampleRatePerFrame);
+        fmCalcsPerMicros = audioRateControl.adaptiveRateControl(stereoQueueLen.get(), fmCalcsPerMicros, sampleRatePerFrame);
         sampleRatePerFrame = 0;
     }
 }

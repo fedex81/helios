@@ -21,7 +21,7 @@ import static omegadrive.util.Util.th;
 public class GenericAudioProvider implements FmProvider {
 
     private static final Logger LOG = LogManager.getLogger(GenericAudioProvider.class.getSimpleName());
-    protected AtomicInteger queueLen = new AtomicInteger();
+    protected AtomicInteger stereoQueueLen = new AtomicInteger();
     //NOTE: each element represent a 16 bit sample for one channel
     protected final Queue<Integer> sampleQueue;
     protected volatile boolean running = false;
@@ -31,12 +31,13 @@ public class GenericAudioProvider implements FmProvider {
     private int sampleShift;
 
     public GenericAudioProvider(AudioFormat inputAudioFormat) {
-        this(inputAudioFormat, 0);
+        //2 frames maxQueueLen
+        this(inputAudioFormat, 0, ((int) inputAudioFormat.getSampleRate()) << 2);
     }
 
-    public GenericAudioProvider(AudioFormat inputAudioFormat, int audioScaleBits) {
+    public GenericAudioProvider(AudioFormat inputAudioFormat, int audioScaleBits, int maxQueueLen) {
         inputFormat = inputAudioFormat;
-        sampleQueue = new SpscAtomicArrayQueue<>(((int) inputFormat.getSampleRate()) << 2);
+        sampleQueue = new SpscAtomicArrayQueue<>(maxQueueLen);
         sampleShift = 16 - inputFormat.getSampleSizeInBits();
         this.audioScaleBits = audioScaleBits;
         LOG.info("Input sound source format: {}, audioScaleBits: {}", inputAudioFormat, audioScaleBits);
@@ -49,7 +50,7 @@ public class GenericAudioProvider implements FmProvider {
         }
         offset <<= 1;
         int end = (count << 1) + offset;
-        final int initialQueueSize = queueLen.get();
+        final int initialQueueSize = stereoQueueLen.get();
         int queueIndicativeLen = initialQueueSize;
         int i = offset;
         for (; i < end && queueIndicativeLen > 0; i += 2) {
@@ -58,7 +59,7 @@ public class GenericAudioProvider implements FmProvider {
                 LOG.warn("Null left sample QL{} P{}", queueIndicativeLen, i);
                 break;
             }
-            queueIndicativeLen = queueLen.addAndGet(-2);
+            queueIndicativeLen = stereoQueueLen.addAndGet(-2);
             //Integer -> short -> int
             buf_lr[i] = ((short) (stereoSamples[0] & 0xFFFF)) << audioScaleBits;
             buf_lr[i + 1] = ((short) (stereoSamples[1] & 0xFFFF)) << audioScaleBits;
@@ -88,14 +89,14 @@ public class GenericAudioProvider implements FmProvider {
         }
         boolean res = sampleQueue.offer(Util.getFromIntegerCache((left << sampleShift) | 1)); //sampleL is always odd
         boolean res2 = sampleQueue.offer(Util.getFromIntegerCache((right << sampleShift) & ~1)); //sampleR is always even
-        queueLen.addAndGet(2);
+        stereoQueueLen.addAndGet(2);
         if (!res) {
             LOG.warn("Left sample dropped: {}", th(left));
-            queueLen.decrementAndGet();
+            stereoQueueLen.decrementAndGet();
         }
         if (!res2) {
             LOG.warn("Right sample dropped: {}", th(right));
-            queueLen.decrementAndGet();
+            stereoQueueLen.decrementAndGet();
         }
     }
 
@@ -135,7 +136,7 @@ public class GenericAudioProvider implements FmProvider {
     public void reset() {
         stop();
         sampleQueue.clear();
-        queueLen.set(0);
+        stereoQueueLen.set(0);
         start();
     }
 }
