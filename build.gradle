@@ -24,6 +24,7 @@ dependencies {
     implementation group: 'com.github.trilarion', name: 'java-vorbis-support', version: '1.2.1'
     // https://mvnrepository.com/artifact/org.jaudiolibs/audioservers-javasound
     implementation group: 'org.jaudiolibs', name: 'audioservers-javasound', version: '2.0.0'
+    implementation 'com.google.code.gson:gson:2.9.0'
 
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api

@@ -26,6 +26,7 @@ import omegadrive.bus.model.SvpBus;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.loader.MdRomDbModel;
+import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.md.ExSsfMapper;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
@@ -64,7 +65,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private RomMapper backupMemMapper = RomMapper.NO_OP_MAPPER;
     private SvpBus svpMapper = SvpBus.NO_OP;
     protected MsuMdHandler msuMdHandler = MsuMdHandler.NO_OP_HANDLER;
-    private MdRomDbModel.Entry entry;
+    private RomDbEntry entry;
 
     private BusArbiter busArbiter = BusArbiter.NO_OP;
 
@@ -95,7 +96,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     void initializeRomData() {
         ROM_END_ADDRESS = Math.min(cartridgeInfoProvider.getRomSize(), Z80_ADDRESS_SPACE_START);
         entry = MdLoader.getEntry(cartridgeInfoProvider.getSerial());
-        if (cartridgeInfoProvider.isSramEnabled() || entry.hasEeprom()) {
+        if (entry.hasEeprom()) {
+            checkBackupMemoryMapper(SramMode.READ_WRITE, entry);
+        } else if (cartridgeInfoProvider.isSramEnabled()) {
             checkBackupMemoryMapper(SramMode.READ_WRITE);
         }
         if (cartridgeInfoProvider.isSsfMapper()) {
@@ -810,10 +813,14 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         checkBackupMemoryMapper(sramMode, false);
     }
 
-    private void checkBackupMemoryMapper(SramMode sramMode, boolean forceCreate) {
+    private void checkBackupMemoryMapper(SramMode sramMode, boolean forceCreateSram) {
+        checkBackupMemoryMapper(sramMode, forceCreateSram ? entry : MdRomDbModel.NO_ENTRY);
+    }
+
+    private void checkBackupMemoryMapper(SramMode sramMode, RomDbEntry entry) {
         if (backupMemMapper == RomMapper.NO_OP_MAPPER) {
-            MdRomDbModel.Entry entry = forceCreate ? this.entry : MdLoader.NO_ENTRY;
-            this.backupMemMapper = MdBackupMemoryMapper.createInstance(this, cartridgeInfoProvider, sramMode, entry);
+            this.backupMemMapper = MdBackupMemoryMapper.createInstance(this,
+                    cartridgeInfoProvider, sramMode, entry);
         }
         backupMemMapper.setSramMode(sramMode);
         this.mapper = backupMemMapper;

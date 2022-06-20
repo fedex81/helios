@@ -19,89 +19,97 @@
 
 package omegadrive.cart.loader;
 
-import com.google.common.collect.Maps;
+import omegadrive.cart.loader.MdRomDbModel.RomDbEntry.EepromEntry;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.StringJoiner;
 
 /**
- * Roms db from blastem
+ * Roms db from blastem, genesis plus gx
  * https://www.retrodev.com/repos/blastem/file/tip/rom.db
+ * https://github.com/ekeeke/Genesis-Plus-GX/blob/cea418ece8152520faf1a9aea2d17a89906a6dc7/core/cart_hw/eeprom_i2c.c
+ * <p>
+ * Last updated: 202206
  */
 public class MdRomDbModel {
 
-    public static final EEPROM NO_EEPROM = new EEPROM();
+    public static final RomDbEntry NO_ENTRY = new RomDbEntry();
+    public static final EepromEntry NO_EEPROM = new EepromEntry();
 
-    public static final String START_OBJ_TOKEN = "{";
-    public static final String END_OBJ_TOKEN = "}";
-    public static final String COMMENT_TOKEN = "#";
-    public static final String FIELD_SEP_TOKEN = " ";
+    public enum EepromType {
+        X24C01(7, 0x7F, 3);
 
-    private static EEPROM toEEPROM(Map<String, Object> map) {
-        if (map.isEmpty()) {
-            return NO_EEPROM;
-        }
-        EEPROM eeprom = new EEPROM();
-        eeprom.data = Maps.transformValues(map, String::valueOf);
-        return eeprom;
-    }
+        public final int addressBits, sizeMask, pagewriteMask;
 
-    public static class Base {
-        Map<String, Object> data = new HashMap<>();
-
-        public Map<String, Object> getData() {
-            return data;
-        }
-
-        protected String getStringValue(String key, String defaultValue) {
-            return String.valueOf(data.getOrDefault(key, defaultValue));
-        }
-
-        protected int getIntValue(String key, int defaultValue) {
-            return Integer.parseInt(String.valueOf(data.getOrDefault(key, defaultValue)));
-        }
-
-        protected Map<String, Object> getMapValue(String key) {
-            return (Map<String, Object>) data.getOrDefault(key, Collections.emptyMap());
+        EepromType(int ab, int sm, int pm) {
+            this.addressBits = ab;
+            this.sizeMask = sm;
+            this.pagewriteMask = pm;
         }
     }
 
-    public static class Entry extends Base {
-        public String getId() {
-            return getStringValue("id", "");
-        }
+    public enum EepromLineMap {
+        SEGA(1, 0, 0),
+        EA(6, 7, 7);
 
-        public String getName() {
-            return getStringValue("name", "");
+        public final int scl_in_bit, sda_in_bit, sda_out_bit;
+
+        EepromLineMap(int scl_in_bit, int sda_in_bit, int sda_out_bit) {
+            this.scl_in_bit = scl_in_bit;
+            this.sda_in_bit = sda_in_bit;
+            this.sda_out_bit = sda_out_bit;
         }
+    }
+
+    public static class RomDbEntry {
+        public String id, name, forceRegion, notes;
+        public Integer sp, check;
+        public Boolean force3Btn;
+        //note: json sets this to null when missing
+        public EepromEntry eeprom;
 
         public boolean hasEeprom() {
-            return getEeprom() != NO_EEPROM;
+            return eeprom != null && eeprom != NO_EEPROM;
         }
 
-        public EEPROM getEeprom() {
-            return toEEPROM(getMapValue("EEPROM"));
+        public static class EepromEntry {
+            public String type, lineMap;
+
+            @Override
+            public String toString() {
+                return new StringJoiner(", ", EepromEntry.class.getSimpleName() + "[", "]")
+                        .add("type='" + type + "'")
+                        .add("lineMap='" + lineMap + "'")
+                        .toString();
+            }
+
+            public EepromLineMap getEepromLineMap() {
+                EepromLineMap l = EepromLineMap.valueOf(lineMap);
+                assert l != null;
+                return l;
+            }
+
+            public EepromType getEepromType() {
+                EepromType t = EepromType.valueOf(type);
+                assert t != null;
+                return t;
+            }
+
+            public int getEepromSize() {
+                return getEepromType().sizeMask + 1;
+            }
         }
 
         @Override
         public String toString() {
-            return "Entry{id=" + getId() + ", name=" + getName() + ", eeprom=" + getEeprom() + "}";
-        }
-    }
-
-    public static class EEPROM extends Base {
-        public String getType() {
-            return getStringValue("type", "NO_EEPROM");
-        }
-
-        public int getSize() {
-            return getIntValue("size", 0);
-        }
-
-        @Override
-        public String toString() {
-            return "EEPROM{type=" + getType() + ", size=" + getSize() + "}";
+            return new StringJoiner(", ", RomDbEntry.class.getSimpleName() + "[", "]")
+                    .add("id='" + id + "'")
+                    .add("name='" + name + "'")
+                    .add("forceRegion='" + forceRegion + "'")
+                    .add("sp=" + sp)
+                    .add("check=" + check)
+                    .add("force3Btn=" + force3Btn)
+                    .add("eeprom=" + eeprom)
+                    .toString();
         }
     }
 }

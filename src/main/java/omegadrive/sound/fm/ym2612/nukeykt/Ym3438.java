@@ -912,6 +912,7 @@ public class Ym3438 implements IYm3438 {
         /* Ch 6 */
         if ((((cycles >> 2) == 1) && chip.dacen > 0) || test_dac > 0) {
             out = (short) chip.dacdata;
+            //limit to [-256;255]
             out <<= 7;
             out >>= 7;
         } else {
@@ -982,6 +983,7 @@ public class Ym3438 implements IYm3438 {
         } else {
             output = output ^ (chip.mode_test_21[4] << 13);
         }
+        //limit to [ -0x2000, 0x1FFF]
         output <<= 2;
         output >>= 2;
         chip.fm_out[slot] = output;

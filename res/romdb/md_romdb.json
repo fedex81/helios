@@ -1,0 +1,146 @@
+[
+  {
+    "id": "G-004130",
+    "name": "Alien Soldier",
+    "notes": "Japanese version of this game seems to indicate support for European consoles in the header. While the game does indeed run, most people probably expect 60Hz if they are running the Japanese version rather than the European one",
+    "forceRegion": "J"
+  },
+  {
+    "id": "T-70106-",
+    "name": "Another World",
+    "notes": "European version of this game has EUROPE in the region field rather than just E",
+    "forceRegion": "E"
+  },
+  {
+    "id": "T-50176",
+    "name": "Rings of Power",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "EA"
+    }
+  },
+  {
+    "id": "T-50396",
+    "name": "NHLPA Hockey 93",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "EA"
+    }
+  },
+  {
+    "id": "T-50446",
+    "name": "John Madden Football '93",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "EA"
+    }
+  },
+  {
+    "id": "T-50516",
+    "name": "John Madden Football 93 (Championship Ed.)",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "EA"
+    }
+  },
+  {
+    "id": "T-50516",
+    "name": "Bill Walsh College Football",
+    "notes": "warning: invalid SRAM header!",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "EA"
+    }
+  },
+  {
+    "id": "T-12046",
+    "name": "Megaman - The Wily Wars",
+    "notes": "warning: SRAM hack exists!",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  },
+  {
+    "id": "T-12053",
+    "name": "Rockman Mega World",
+    "notes": "warning: SRAM hack exists!",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  },
+  {
+    "id": "MK-1215",
+    "name": "Evander 'Real Deal' Holyfield's Boxing",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  },
+  {
+    "id": "MK-1228",
+    "name": "Greatest Heavyweights of the Ring (U)(E)",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  },
+  {
+    "id": "G-5538",
+    "name": "Greatest Heavyweights of the Ring (J)",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  },
+  {
+    "id": "PR-1993",
+    "name": "Greatest Heavyweights of the Ring (Prototype)",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  },
+  {
+    "id": "G-4060",
+    "name": "Wonderboy in Monster World",
+    "notes": "warning: SRAM hack exists!",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  },
+  {
+    "id": "00001211",
+    "name": "Sports Talk Baseball",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  },
+  {
+    "id": "00004076",
+    "name": "Honoo no Toukyuuji Dodge Danpei",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  },
+  {
+    "id": "G-4524",
+    "name": "Ninja Burai Densetsu",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  },
+  {
+    "id": "00054503",
+    "name": "Game Toshokan",
+    "eeprom": {
+      "type": "X24C01",
+      "lineMap": "SEGA"
+    }
+  }
+]

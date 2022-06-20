@@ -19,102 +19,61 @@
 
 package omegadrive.cart.loader;
 
+import com.google.common.base.Strings;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.util.FileUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.*;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static omegadrive.cart.loader.MdRomDbModel.NO_ENTRY;
 
 /**
- * Roms db from blastem
+ * Roms db from blastem, genesis plus gx
  * https://www.retrodev.com/repos/blastem/file/tip/rom.db
+ * https://github.com/ekeeke/Genesis-Plus-GX/blob/cea418ece8152520faf1a9aea2d17a89906a6dc7/core/cart_hw/eeprom_i2c.c
+ * <p>
+ * Last updated: 202206
  */
 public class MdLoader {
 
-    public static final MdRomDbModel.Entry NO_ENTRY = new MdRomDbModel.Entry();
     private static final Logger LOG = LogManager.getLogger(MdLoader.class.getSimpleName());
-    static String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "rom.db";
-    private static final Set<MdRomDbModel.Entry> entrySet = new HashSet<>();
-    private static final Map<String, MdRomDbModel.Entry> map = new HashMap<>();
+    static String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "md_romdb.json";
 
-    private static Map<String, MdRomDbModel.Entry> getMap() {
+    private static final Map<String, RomDbEntry> map = new HashMap<>();
+
+    private static Map<String, RomDbEntry> getMap() {
         if (map.isEmpty()) {
             init();
         }
         return map;
     }
 
-    public static MdRomDbModel.Entry getEntry(String serial) {
+    public static RomDbEntry getEntry(String serial) {
         final String sn = serial.substring(3, serial.length() - 3).trim();
         return getMap().getOrDefault(sn, NO_ENTRY);
     }
 
-    public static void main(String[] args) {
-        init();
-        entrySet.stream().forEach(System.out::println);
-    }
-
     private static void init() {
-        List<String> lines = FileUtil.readFileContent(fileName);
-        processData(lines);
+        String json = FileUtil.readFileContentAsString(fileName);
+        if (Strings.isNullOrEmpty(json)) {
+            LOG.warn("Missing romDb file: {}", fileName);
+            map.put("NONE", NO_ENTRY);
+            return;
+        }
+        Gson gson = new Gson();
+        Type listOfMyClassObject = new TypeToken<ArrayList<RomDbEntry>>() {
+        }.getType();
+        List<RomDbEntry> l = gson.fromJson(json, listOfMyClassObject);
         map.clear();
-        entrySet.forEach(e -> map.put(e.getId(), e));
-    }
-
-    private static void processData(List<String> lines) {
-        for (int i = 0; i < lines.size(); i++) {
-            String s = lines.get(i);
-            boolean start = s.length() > 0 && Character.isLetterOrDigit(s.charAt(0));
-            if (start) {
-                try {
-                    i = processEntry(lines, i);
-                } catch (Exception e) {
-                    LOG.error("Unable to process entry {}, at line: {}", s, i, e);
-                }
-            }
-        }
-    }
-
-    private static int processEntry(List<String> lines, int start) {
-        String id = lines.get(start).replace(MdRomDbModel.START_OBJ_TOKEN, "").trim();
-        MdRomDbModel.Entry e = new MdRomDbModel.Entry();
-        e.data.put("id", id);
-        entrySet.add(e);
-        return processLine(lines, e.data, start);
-    }
-
-    private static int processLine(List<String> lines, Map<String, Object> map, int start) {
-        boolean stop = false;
-        int i = start + 1;
-        for (; !stop; i++) {
-            String line = lines.get(i).trim();
-            if (line.startsWith(MdRomDbModel.COMMENT_TOKEN) || line.isEmpty()) {
-                continue;
-            }
-            if (line.contains(MdRomDbModel.START_OBJ_TOKEN)) {
-                String id = line.replace(MdRomDbModel.START_OBJ_TOKEN, "").trim();
-                i = processObject(lines, map, id, i);
-            } else if (line.startsWith(MdRomDbModel.END_OBJ_TOKEN)) {
-                stop = true;
-            } else {
-                int idx = line.indexOf(MdRomDbModel.FIELD_SEP_TOKEN);
-                if (idx > 0) {
-                    String key = line.substring(0, idx).trim();
-                    String value = line.substring(idx).trim();
-                    map.put(key, value);
-                } else {
-                    LOG.warn("Unable to parse line: {}", line);
-                }
-            }
-        }
-        return i - 1;
-    }
-
-    private static int processObject(List<String> lines, Map<String, Object> parentMap, String id, int start) {
-        Map<String, Object> childMap = new HashMap<>();
-        parentMap.put(id.toUpperCase(), childMap);
-        start = processLine(lines, childMap, start);
-        return start;
+        l.forEach(e -> map.put(e.id, e));
     }
 }

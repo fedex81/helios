@@ -413,4 +413,12 @@ public class Util {
     public static <T, V extends Device> Set<V> getAllDevices(Collection<T> deviceSet, Class<V> clazz) {
         return deviceSet.stream().filter(t -> clazz.isAssignableFrom(t.getClass())).map(clazz::cast).collect(Collectors.toSet());
     }
+
+    //from Guava, Files::getNameWithoutExtension
+    public static String getNameWithoutExtension(String file) {
+        Objects.requireNonNull(file);
+        String fileName = new File(file).getName();
+        int dotIndex = fileName.lastIndexOf('.');
+        return (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
+    }
 }

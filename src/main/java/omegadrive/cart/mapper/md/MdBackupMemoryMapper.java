@@ -22,12 +22,16 @@ package omegadrive.cart.mapper.md;
 import omegadrive.SystemLoader;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.loader.MdRomDbModel;
+import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
+import omegadrive.cart.loader.MdRomDbModel.RomDbEntry.EepromEntry;
 import omegadrive.cart.mapper.BackupMemoryMapper;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Optional;
 
 import static omegadrive.cart.MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
 import static omegadrive.cart.MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS;
@@ -41,25 +45,25 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private static final String fileType = "srm";
     private RomMapper baseMapper;
     private SramMode sramMode = SramMode.DISABLE;
-    private MdRomDbModel.EEPROM eeprom = MdRomDbModel.NO_EEPROM;
+    private EepromEntry eeprom = MdRomDbModel.NO_EEPROM;
     private I2cEeprom i2c = I2cEeprom.NO_OP;
 
     private MdBackupMemoryMapper(String romName, int size) {
         super(SystemLoader.SystemType.GENESIS, fileType, romName, size);
     }
 
-    public static RomMapper createInstance(RomMapper baseMapper, MdCartInfoProvider cart, MdRomDbModel.Entry entry) {
+    public static RomMapper createInstance(RomMapper baseMapper, MdCartInfoProvider cart, RomDbEntry entry) {
         return createInstance(baseMapper, cart, SramMode.DISABLE, entry);
     }
 
     public static RomMapper createInstance(RomMapper baseMapper, MdCartInfoProvider cart,
-                                           SramMode sramMode, MdRomDbModel.Entry entry) {
-        int size = !entry.hasEeprom() ? MdCartInfoProvider.DEFAULT_SRAM_BYTE_SIZE : entry.getEeprom().getSize();
+                                           SramMode sramMode, RomDbEntry entry) {
+        int size = !entry.hasEeprom() ? MdCartInfoProvider.DEFAULT_SRAM_BYTE_SIZE : entry.eeprom.getEepromSize();
         MdBackupMemoryMapper mapper = new MdBackupMemoryMapper(cart.getRomName(), size);
         mapper.baseMapper = baseMapper;
         mapper.sramMode = SramMode.READ_WRITE;
-        mapper.eeprom = entry.getEeprom();
-        mapper.i2c = I2cEeprom.createInstance(entry);
+        mapper.eeprom = Optional.ofNullable(entry.eeprom).orElse(MdRomDbModel.NO_EEPROM);
+        mapper.i2c = I2cEeprom.createInstance(entry, mapper.sram);
         LOG.info("BackupMemoryMapper created, using folder: {}", mapper.sramFolder);
         mapper.initBackupFileIfNecessary();
         return mapper;
@@ -120,7 +124,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         eepromRead &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (eepromRead) {
             initBackupFileIfNecessary();
-            long res = i2c.eeprom_i2c_out();
+            long res = i2c.readEeprom((int) address, size);
             if (verbose) LOG.info("EEPROM read at: {} {}, result: {} ", th(address), size, th(res));
             return res;
         }
@@ -133,11 +137,17 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         eepromWrite &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (eepromWrite) {
             initBackupFileIfNecessary();
-            i2c.eeprom_i2c_in((int) (data & 0xFF));
+            i2c.writeEeprom((int) address, (int) (data & 0xFF), size);
             if (verbose) LOG.info("EEPROM write at: {} {}, data: {} ", th(address), size, th(data));
         } else {
             baseMapper.writeData(address, data, size);
         }
+    }
+
+    @Override
+    protected void initBackupFileIfNecessary() {
+        super.initBackupFileIfNecessary();
+        i2c.setSram(sram);
     }
 
     @Override
