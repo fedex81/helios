@@ -36,7 +36,19 @@ public class MdRomDbModel {
     public static final EepromEntry NO_EEPROM = new EepromEntry();
 
     public enum EepromType {
-        X24C01(7, 0x7F, 3);
+        EEPROM_X24C01(7, 0x7F, 3),
+        EEPROM_X24C02(8, 0xFF, 3),
+        EEPROM_24C02(8, 0xFF, 7),
+        EEPROM_24C04(8, 0x1FF, 0x0F),
+        EEPROM_24C08(8, 0x3FF, 0x0F),
+        EEPROM_24C16(8, 0x7FF, 0x0F),
+        EEPROM_24C32(16, 0xFFF, 0x01F),
+        EEPROM_24C64(16, 0x1FFF, 0x01F),
+        EEPROM_24C65(16, 0x1FFF, 0x03F),
+        EEPROM_24C128(16, 0x3FFF, 0x03F),
+        EEPROM_24C256(16, 0x7FFF, 0x03F),
+        EEPROM_24C512(16, 0xFFFF, 0x07F),
+        ;
 
         public final int addressBits, sizeMask, pagewriteMask;
 
@@ -49,7 +61,10 @@ public class MdRomDbModel {
 
     public enum EepromLineMap {
         SEGA(1, 0, 0),
-        EA(6, 7, 7);
+        EA(6, 7, 7),
+        ACCLAIM_16M(1, 0, 1),
+        ACCLAIM_32M(0, 0, 0) //TODO cartridge ROM mapping is reinitialized on reset
+        ;
 
         public final int scl_in_bit, sda_in_bit, sda_out_bit;
 

@@ -13,7 +13,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static omegadrive.cart.loader.MdRomDbModel.EepromType.X24C01;
+import static omegadrive.cart.loader.MdRomDbModel.EepromType.EEPROM_X24C01;
+import static omegadrive.cart.loader.MdRomDbModel.EepromType.EEPROM_X24C02;
+
 
 public class I2cEepromTest {
 
@@ -41,18 +43,24 @@ public class I2cEepromTest {
 
     @Test
     public void testXC2401_Sega() {
-        testXC2401("wb3_read_empty.dat", EepromLineMap.SEGA);
-        testXC2401("wb3_save.dat", EepromLineMap.SEGA);
-        testXC2401("wb3_read_save.dat", EepromLineMap.SEGA);
+        testEeprom("wb3_read_empty.dat", EEPROM_X24C01, EepromLineMap.SEGA);
+        testEeprom("wb3_save.dat", EEPROM_X24C01, EepromLineMap.SEGA);
+        testEeprom("wb3_read_save.dat", EEPROM_X24C01, EepromLineMap.SEGA);
     }
 
     @Test
     public void testXC2401_EA() {
-        testXC2401("jmf93_access01.dat", EepromLineMap.EA);
-        testXC2401("jmf93_access02.dat", EepromLineMap.EA);
+        testEeprom("jmf93_access01.dat", EEPROM_X24C01, EepromLineMap.EA);
+        testEeprom("jmf93_access02.dat", EEPROM_X24C01, EepromLineMap.EA);
     }
 
-    private void testXC2401(String fileName, EepromLineMap lineMap) {
+    @Test
+    public void testXC2402_ACCLAIM16M() {
+        testEeprom("nj_init.dat", EEPROM_X24C02, EepromLineMap.ACCLAIM_16M);
+        testEeprom("nj_read_save.dat", EEPROM_X24C02, EepromLineMap.ACCLAIM_16M);
+    }
+
+    private void testEeprom(String fileName, EepromType type, EepromLineMap lineMap) {
         Path p = Paths.get(baseFolder.toAbsolutePath().toString(), fileName);
         Path eepromBefore = Paths.get(eepromFolder.toAbsolutePath().toString(), getFileEepromBefore(fileName));
         Path eepromAfter = Paths.get(eepromFolder.toAbsolutePath().toString(), getFileEepromAfter(fileName));
@@ -61,7 +69,7 @@ public class I2cEepromTest {
         Assertions.assertTrue(eepromAfter.toFile().exists());
         List<String> lines = FileUtil.readFileContent(p);
         Assertions.assertFalse(lines.isEmpty());
-        I2cEeprom eeprom = createInstance(X24C01, lineMap);
+        I2cEeprom eeprom = createInstance(type, lineMap);
         setInitialEepromState(eeprom, eepromBefore);
         for (String l : lines) {
             if (l.isEmpty()) {

@@ -60,7 +60,7 @@ import static omegadrive.util.Util.th;
  * Copyright (C) 2022 Federico Berti
  *
  * <p>
- * TODO only supports 24C01 7 bits
+ * TODO jcart, add more tests
  */
 /* Some notes from 8BitWizard (http://gendev.spritesmind.net/forum/viewtopic.php?t=206):
  *
