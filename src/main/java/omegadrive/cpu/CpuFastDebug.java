@@ -24,6 +24,10 @@ public class CpuFastDebug {
     private static final boolean logToSysOut = Boolean.parseBoolean(System.getProperty("helios.logToSysOut", "false"));
 
     public interface CpuDebugInfoProvider {
+        default String getInstructionOnly(int pc, int opcode) {
+            throw new RuntimeException("Not implemented!");
+        }
+
         String getInstructionOnly(int pc);
 
         String getCpuState(String head);
@@ -33,7 +37,7 @@ public class CpuFastDebug {
         int getOpcode();
 
         default String getInstructionOnly() {
-            return getInstructionOnly(getPc());
+            return getInstructionOnly(getPc(), getOpcode());
         }
     }
 

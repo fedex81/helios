@@ -37,6 +37,7 @@ import java.util.stream.IntStream;
 
 import static omegadrive.util.Util.th;
 
+@Deprecated
 public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
 
     private static final Logger LOG = LogManager.getLogger(MC68000WrapperDebug.class.getSimpleName());
@@ -265,7 +266,7 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
             return;
         }
         try {
-            LOG.info(MC68000Helper.dumpOp(m68k));
+            LOG.info(MC68000Helper.dumpOp(m68k, currentPC));
         } catch (Exception e) {
             String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
             LOG.warn("Unable to dump the instruction: {}", pc, e);
@@ -277,7 +278,7 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
             return;
         }
         try {
-            String res = MC68000Helper.dumpOp(m68k);
+            String res = MC68000Helper.dumpOp(m68k, currentPC);
             LOG.info(res);
             if (MC68000Helper.addToInstructionSet(m68k)) {
                 LOG.info(MC68000Helper.dumpInstructionSet());

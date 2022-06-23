@@ -63,6 +63,19 @@ public class MC68000Helper {
 
     private static Set<String> instSet = new TreeSet<>();
 
+    private static StringBuilder dumpOp(StringBuilder sb, Cpu cpu, int pc, int opcode) {
+        int wrapPc = pc & 0xFF_FFFF; //PC is 24 bits
+        if (wrapPc >= 0) {
+            Instruction i = cpu.getInstructionFor(opcode);
+            DisassembledInstruction di = i.disassemble(wrapPc, opcode);
+            di.formatInstruction(sb);
+//            di.shortFormat(this.buffer);
+        } else {
+            sb.append(String.format("%08x   ????", wrapPc));
+        }
+        return sb;
+    }
+
     private static StringBuilder dumpOp(StringBuilder sb, Cpu cpu, int pc) {
         int wrapPc = pc & 0xFF_FFFF; //PC is 24 bits
         if (wrapPc >= 0) {
@@ -77,12 +90,13 @@ public class MC68000Helper {
         return sb;
     }
 
-    public static String dumpOp(Cpu cpu, int pc) {
-        return dumpOp(new StringBuilder(), cpu, pc).toString();
+    public static String dumpOp(Cpu cpu, int pc, int opcode) {
+        return dumpOp(new StringBuilder(), cpu, pc, opcode).toString();
     }
 
-    public static String dumpOp(Cpu cpu) {
-        return dumpOp(cpu, cpu.getPC());
+    public static String dumpOp(Cpu cpu, int pc) {
+        assert cpu.getPC() == pc;
+        return dumpOp(new StringBuilder(), cpu, pc).toString();
     }
 
     public static String dumpInfo(Cpu cpu, int pc, boolean showBytes, int memorySize) {

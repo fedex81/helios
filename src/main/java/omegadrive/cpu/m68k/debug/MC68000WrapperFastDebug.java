@@ -37,7 +37,9 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
     private static final Logger LOG = LogManager.getLogger(MC68000WrapperFastDebug.class.getSimpleName());
 
     //see CpuFastDebug.DebugMode
+    //DebugMode {NONE, INST_ONLY, NEW_INST_ONLY, STATE}
     private static final int debugMode = Integer.parseInt(System.getProperty("helios.68k.debug.mode", "0"));
+    private static final boolean busyLoopDetection = Boolean.parseBoolean(System.getProperty("helios.68k.busy.loop", "false"));
 
     private CpuFastDebug fastDebug;
     private int opcode;
@@ -63,14 +65,13 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
 
     @Override
     public int runInstruction() {
-        printDebugMaybe();
-        return fastDebug.isBusyLoop(currentPC, m68k.getOpcode()) + super.runInstruction();
-    }
-
-    private void printDebugMaybe() {
         currentPC = m68k.getPC() & 0xFF_FFFF; //needs to be set
-        opcode = getOpcode();
+        opcode = m68k.readMemoryWord(currentPC); //TODO
         fastDebug.printDebugMaybe();
+        if (!busyLoopDetection) {
+            return super.runInstruction();
+        }
+        return fastDebug.isBusyLoop(currentPC, opcode) + super.runInstruction();
     }
 
     protected void printCpuState(String head) {
@@ -90,6 +91,16 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
     @Override
     public int getOpcode() {
         return opcode;
+    }
+
+    @Override
+    public String getInstructionOnly(int pc, int opcode) {
+        try {
+            return MC68000Helper.dumpOp(m68k, pc, opcode);
+        } catch (Exception e) {
+            LOG.warn("Unable to dump the instruction at PC: {}", th(pc & 0xFF_FFFF), e);
+        }
+        return "????";
     }
 
     @Override
