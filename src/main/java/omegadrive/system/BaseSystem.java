@@ -246,10 +246,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         if (!pauseFlag) {
             return;
         }
-        LOG.info("Pause: {}", pauseFlag);
+        LOG.info("Pause start: {}", pauseFlag);
         try {
             Util.waitOnBarrier(pauseBarrier);
-            LOG.info("Pause: {}", pauseFlag);
+            LOG.info("Pause end: {}", pauseFlag);
         } finally {
             pauseBarrier.reset();
         }
@@ -389,10 +389,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     }
 
     private void handlePause() {
-        boolean isPausing = pauseFlag;
-        pauseFlag = !isPausing;
-        sound.setEnabled(pauseFlag);
-        if (isPausing) {
+        boolean wasPausing = pauseFlag;
+        pauseFlag = !wasPausing;
+        sound.setEnabled(wasPausing);
+        LOG.info("Pausing: {}, soundEn: {}", pauseFlag, wasPausing);
+        if (wasPausing) {
             Util.waitOnBarrier(pauseBarrier);
         }
     }
