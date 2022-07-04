@@ -378,12 +378,7 @@ public class SwingWindow implements DisplayWindow {
         jFrame.add(screenLabel, -1);
 
         jFrame.pack();
-
-        //get the center location and then reset it
-        jFrame.setLocationRelativeTo(null);
-        Point centerPoint = jFrame.getLocation();
-        jFrame.setLocation(gd.getDefaultConfiguration().getBounds().x + centerPoint.x,
-                gd.getDefaultConfiguration().getBounds().y + centerPoint.y);
+        SwingScreenSupport.centerWindow(jFrame);
 
         jFrame.setVisible(true);
         showDebugInfo(SystemLoader.showFps);
@@ -466,6 +461,7 @@ public class SwingWindow implements DisplayWindow {
             jFrame.setPreferredSize(isFullScreen ? fullScreenSize : nativeScreenSize);
             jFrame.getJMenuBar().setVisible(!isFullScreen);
             jFrame.pack();
+            SwingScreenSupport.centerWindow(jFrame);
             LOG.info("Emulation Viewport size: {}", outputScreenSize);
             LOG.info("Application size: {}", jFrame.getSize());
         };

@@ -59,6 +59,16 @@ public class SwingScreenSupport {
         return currentScreen;
     }
 
+    //get the center location and then reset it
+    public static void centerWindow(Window w) {
+        //get the center location and then reset it
+        GraphicsDevice gd = getGraphicsDevice();
+        w.setLocationRelativeTo(null);
+        Point centerPoint = w.getLocation();
+        w.setLocation(gd.getDefaultConfiguration().getBounds().x + centerPoint.x,
+                gd.getDefaultConfiguration().getBounds().y + centerPoint.y);
+    }
+
     public static void showOnScreen(int screen, JFrame frame) {
         GraphicsDevice[] gd = graphicsDevices;
         int width = 0, height = 0;
