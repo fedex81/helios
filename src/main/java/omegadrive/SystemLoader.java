@@ -58,10 +58,7 @@ public class SystemLoader {
 
     private static final String PROPERTIES_FILENAME = "./helios.properties";
 
-    public static boolean debugPerf = false;
-    public static boolean showFps = false;
-    public static boolean headless = false;
-    public static boolean smdFileAsInterleaved = false;
+    public static boolean debugPerf, showFps, headless, smdFileAsInterleaved, testMode;
     public static String biosFolder = "./res/bios";
     public static String biosNameMsx1 = "cbios_main_msx1.rom";
     public static String biosNameColeco = "bios_coleco.col";
@@ -83,6 +80,7 @@ public class SystemLoader {
         biosNameMsx1 = String.valueOf(java.lang.System.getProperty("bios.name.msx1", biosNameMsx1));
         biosNameColeco = String.valueOf(java.lang.System.getProperty("bios.name.coleco", biosNameColeco));
         smdFileAsInterleaved = Boolean.parseBoolean(java.lang.System.getProperty("md.enable.smd.handling", "false"));
+        testMode = Boolean.parseBoolean(java.lang.System.getProperty("helios.test.mode", "false"));
         PrefStore.initPrefs();
     }
 

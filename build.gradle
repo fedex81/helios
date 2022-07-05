@@ -5,6 +5,8 @@ group 'com.fbdev.helios'
 version dateString + '-SNAPSHOT'
 def jarNameHead = rootProject.name + "-" + version
 
+assert JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) : "Java 17 or newer is required"
+
 apply plugin: 'java'
 
 repositories {

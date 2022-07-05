@@ -19,6 +19,7 @@
 
 package omegadrive.vdp.md;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
@@ -34,6 +35,7 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_FIELD_CHANGE;
@@ -212,7 +214,8 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private int lastHCounter = 0;
 
     private void setupVdp() {
-        this.list = new ArrayList<>();
+        //NOTE avoid a CMExc that only triggers when testing
+        this.list = SystemLoader.testMode ? new CopyOnWriteArrayList<>() : new ArrayList<>();
         list.add(this);
         this.interruptHandler = VdpInterruptHandler.createMdInstance(this);
         this.renderHandler = VdpRenderHandlerImpl.createInstance(this, memoryInterface);

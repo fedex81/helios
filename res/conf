@@ -12,3 +12,6 @@ pactl list sinks | grep Lat
 #
 cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+
+alternatives --display java
+alternatives --config java

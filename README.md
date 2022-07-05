@@ -14,7 +14,7 @@ the following systems:
 - NES
 
 # How to Run
-Requires java 8+ installed.
+Requires java 17+ installed.
 
 Get the most recent zip file from the download section,  
 for example `helios-19.1108.zip` and extract to a folder.
