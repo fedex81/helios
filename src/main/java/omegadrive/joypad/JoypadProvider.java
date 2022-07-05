@@ -46,6 +46,8 @@ public interface JoypadProvider extends Device {
         A, B, C, X, Y, Z, M("MODE"), S("START"), U("UP"), D("DOWN"), L("LEFT"), R("RIGHT"),
         K0, K1, K2, K3, K4, K5, K6, K7, K8, K9, K_AST, K_HASH;
 
+        public static final JoypadButton[] vals = JoypadButton.values();
+
         String mnemonic;
 
         JoypadButton() {
@@ -70,14 +72,6 @@ public interface JoypadProvider extends Device {
         JoypadDirection(JoypadButton b1, JoypadButton b2) {
             this.b1 = b1;
             this.b2 = b2;
-        }
-
-        public JoypadButton getB1() {
-            return b1;
-        }
-
-        public JoypadButton getB2() {
-            return b2;
         }
     }
 

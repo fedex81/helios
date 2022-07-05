@@ -15,7 +15,9 @@ import omegadrive.bus.z80.SmsBus;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
+import omegadrive.input.InputProvider;
 import omegadrive.joypad.GenesisJoypad;
+import omegadrive.joypad.JoypadProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.PwmProvider;
@@ -156,5 +158,34 @@ public class SystemTestUtil {
         @Override
         public void setEnabled(Device device, boolean enabled) {
         }
+    }
+
+    public static JoypadProvider createTestJoypadProvider() {
+        return new GenesisJoypad() {
+
+            @Override
+            public void init() {
+            }
+
+            @Override
+            public void setButtonAction(InputProvider.PlayerNumber number, JoypadButton button, JoypadAction action) {
+                System.out.println(number + "," + button + "," + action);
+            }
+
+            @Override
+            public boolean hasDirectionPressed(InputProvider.PlayerNumber number) {
+                return false;
+            }
+
+            @Override
+            public String getState(InputProvider.PlayerNumber number) {
+                return "test";
+            }
+
+            @Override
+            public void newFrame() {
+
+            }
+        };
     }
 }

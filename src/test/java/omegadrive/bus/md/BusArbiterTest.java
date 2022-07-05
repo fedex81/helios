@@ -22,7 +22,6 @@ import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
-import omegadrive.input.GamepadTest;
 import omegadrive.system.SystemProvider;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -31,6 +30,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static omegadrive.util.SystemTestUtil.createTestJoypadProvider;
 
 public class BusArbiterTest {
 
@@ -71,7 +72,7 @@ public class BusArbiterTest {
         busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
 
         bus.attachDevice(vdp).attachDevice(cpu).attachDevice(busArbiter).
-                attachDevice(GamepadTest.createTestJoypadProvider()).
+                attachDevice(createTestJoypadProvider()).
                 attachDevice(emu);
     }
 

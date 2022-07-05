@@ -46,9 +46,18 @@ public interface InputProvider {
         P1, P2
     }
 
+    interface InputEventCallback {
+        void update(Object ctx);
+    }
+
     InputProvider NO_OP = new InputProvider() {
         @Override
         public void handleEvents() {
+
+        }
+
+        @Override
+        public void handleAllEvents(InputEventCallback callback) {
 
         }
 
@@ -95,6 +104,8 @@ public interface InputProvider {
 
 
     void handleEvents();
+
+    void handleAllEvents(InputEventCallback callback);
 
     void setPlayerController(PlayerNumber player, String controllerName);
 

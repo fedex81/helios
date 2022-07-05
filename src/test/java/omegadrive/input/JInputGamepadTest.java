@@ -19,20 +19,16 @@
 
 package omegadrive.input;
 
-import net.java.games.input.Controller;
-import omegadrive.joypad.GenesisJoypad;
-import omegadrive.joypad.JoypadProvider;
+import omegadrive.util.Util;
 
 import java.io.File;
 import java.util.List;
 
 import static omegadrive.input.InputProvider.PlayerNumber;
 import static omegadrive.input.InputProvider.createInstance;
+import static omegadrive.util.SystemTestUtil.createTestJoypadProvider;
 
-public class GamepadTest {
-
-    private static Controller controller;
-    public static float ON = 1.0f;
+public class JInputGamepadTest {
 
     public static void main(String[] args) {
         String lib = new File(".").getAbsolutePath() + File.separator + "lib"
@@ -44,49 +40,18 @@ public class GamepadTest {
         System.setProperty("net.java.games.input.librarypath", lib);
         InputProvider inputProvider = createInstance(createTestJoypadProvider());
         List<String> l = inputProvider.getAvailableControllers();
+        GamepadSetupView gsw = GamepadSetupView.createInstance(inputProvider);
         if (l.size() > 1) {
             inputProvider.setPlayerController(PlayerNumber.P1, inputProvider.getAvailableControllers().get(2));
-            pollInputs(inputProvider);
+            pollInputs(inputProvider, gsw);
         }
     }
 
-    public static JoypadProvider createTestJoypadProvider() {
-        return new GenesisJoypad() {
-            @Override
-            public void init() {
-            }
-
-            @Override
-            public void setButtonAction(PlayerNumber number, JoypadButton button, JoypadAction action) {
-                System.out.println(number + "," + button + "," + action);
-            }
-
-            @Override
-            public boolean hasDirectionPressed(PlayerNumber number) {
-                return false;
-            }
-
-            @Override
-            public String getState(PlayerNumber number) {
-                return "test";
-            }
-
-            @Override
-            public void newFrame() {
-
-            }
-        };
-    }
-
-    private static void pollInputs(InputProvider inputProvider) {
+    private static void pollInputs(InputProvider inputProvider, GamepadSetupView gsw) {
         while (true) {
-            inputProvider.handleEvents();
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            inputProvider.handleAllEvents(gsw);
+            gsw.updateDone();
+            Util.sleep(20);
         }
     }
 }

@@ -20,7 +20,6 @@
 package omegadrive.vdp;
 
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.input.GamepadTest;
 import omegadrive.input.InputProvider;
 import omegadrive.save.MdSavestateTest;
 import omegadrive.system.Genesis;
@@ -34,6 +33,8 @@ import org.junit.Ignore;
 
 import java.awt.*;
 import java.nio.file.Path;
+
+import static omegadrive.util.SystemTestUtil.createTestJoypadProvider;
 
 @Ignore
 public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
@@ -63,7 +64,7 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
     protected GenesisVdpProvider prepareVdp(Path saveFile) {
         SystemProvider genesisProvider = createTestProvider();
         GenesisBusProvider busProvider = MdSavestateTest.loadSaveState(saveFile);
-        busProvider.attachDevice(genesisProvider).attachDevice(GamepadTest.createTestJoypadProvider());
+        busProvider.attachDevice(genesisProvider).attachDevice(createTestJoypadProvider());
         busProvider.init();
         vdpProvider = busProvider.getVdp();
         vdpProvider.addVdpEventListener(this);

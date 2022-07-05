@@ -52,22 +52,28 @@ public class JinputGamepadInputProvider implements InputProvider {
 
     private volatile JoypadProvider joypadProvider;
     private volatile boolean stop = false;
-    private String pov = Axis.POV.getName();
+    public static final String POV = Axis.POV.getName();
 
     private static InputProvider INSTANCE = NO_OP;
-    private static final int AXIS_p1 = 1;
-    private static final int AXIS_0 = 0;
-    private static final int AXIS_m1 = -1;
+    public static final int AXIS_p1 = 1;
+    public static final int AXIS_0 = 0;
+    public static final int AXIS_m1 = -1;
 
     private List<String> controllerNames;
     private List<Controller> controllers;
+    private UpdatedGamepadCtx gamepadCtx;
 
     private Map<PlayerNumber, String> playerControllerMap = Maps.newHashMap(
             ImmutableMap.of(PlayerNumber.P1, KEYBOARD_CONTROLLER,
                     PlayerNumber.P2, KEYBOARD_CONTROLLER
             ));
 
-    private JinputGamepadInputProvider() {
+    public static class UpdatedGamepadCtx {
+        public Controller c;
+        public net.java.games.input.Event event;
+    }
+
+    public JinputGamepadInputProvider() {
         controllerNames = new ArrayList<>(DEFAULT_CONTROLLERS);
         controllers = new ArrayList<>();
     }
@@ -89,6 +95,7 @@ public class JinputGamepadInputProvider implements InputProvider {
             g.joypadProvider = joypadProvider;
             g.controllerNames.addAll(controllers.stream().map(Controller::getName).collect(Collectors.toList()));
             g.controllers = controllers;
+            g.gamepadCtx = new UpdatedGamepadCtx();
             g.initPollingThreadMaybe();
             INSTANCE = g;
         }
@@ -106,7 +113,7 @@ public class JinputGamepadInputProvider implements InputProvider {
     }
 
 
-    static List<Controller> detectControllers() {
+    public static List<Controller> detectControllers() {
         Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
         List<Controller> l = Arrays.stream(ca).filter(c -> c.getType() == Controller.Type.GAMEPAD).collect(Collectors.toList());
         if (DEBUG_DETECTION || l.isEmpty()) {
@@ -132,6 +139,29 @@ public class JinputGamepadInputProvider implements InputProvider {
     public void handleEvents() {
         if (!USE_POLLING_THREAD) {
             handleEventsInternal();
+        }
+    }
+
+    @Override
+    public void handleAllEvents(InputEventCallback callback) {
+        for (Controller controller : controllers) {
+            String ctrlName = controller.getName();
+            boolean ok = controller.poll();
+            if (!ok) {
+                return;
+            }
+            net.java.games.input.EventQueue eventQueue = controller.getEventQueue();
+
+            boolean hasEvents;
+            do {
+                net.java.games.input.Event event = new Event();
+                hasEvents = eventQueue.getNextEvent(event);
+                if (hasEvents) {
+                    gamepadCtx.c = controller;
+                    gamepadCtx.event = event;
+                    callback.update(gamepadCtx);
+                }
+            } while (hasEvents);
         }
     }
 
@@ -248,7 +278,7 @@ public class JinputGamepadInputProvider implements InputProvider {
             }
         }
 
-        if (pov.equals(id.getName())) {
+        if (POV.equals(id.getName())) {
             JoypadAction action = JoypadAction.PRESSED;
             //release directions previously pressed - only on the first event
             boolean off = resetDirections || value == Component.POV.OFF;
