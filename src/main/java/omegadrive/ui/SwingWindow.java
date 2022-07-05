@@ -41,6 +41,7 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -49,6 +50,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static omegadrive.system.SystemProvider.SystemEvent.*;
@@ -62,6 +65,9 @@ public class SwingWindow implements DisplayWindow {
 
     private static final boolean UI_SCALE_ON_THREAD
             = Boolean.parseBoolean(System.getProperty("ui.scale.on.thread", "false"));
+    private static final Path WINDOW_ICONS_PATH = Paths.get("./res", "icon");
+    private static final Predicate<Path> ICONS_FILE_FILTER = (p) -> p.getFileName().toString().startsWith("helios") &&
+            p.getFileName().toString().endsWith(".jpg");
 
     private Dimension fullScreenSize;
     private Dimension outputNonScaledScreenSize = DEFAULT_SCALED_SCREEN_SIZE;
@@ -370,6 +376,7 @@ public class SwingWindow implements DisplayWindow {
         screenLabel.setHorizontalAlignment(SwingConstants.CENTER);
         screenLabel.setVerticalAlignment(SwingConstants.CENTER);
         this.cursorHandler = new MouseCursorHandler(jFrame);
+        setIcons(jFrame);
 
         jFrame.setMinimumSize(DEFAULT_FRAME_SIZE);
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -740,6 +747,22 @@ public class SwingWindow implements DisplayWindow {
                 pMenu.add(it);
             }
             joypadTypeMenu.add(pMenu);
+        }
+    }
+
+    private void setIcons(Window w) {
+        if (!WINDOW_ICONS_PATH.toFile().exists()) {
+            LOG.warn("Unable to find icons at: {}", WINDOW_ICONS_PATH.toAbsolutePath());
+            return;
+        }
+        try {
+            List<Path> paths = Files.list(WINDOW_ICONS_PATH).filter(ICONS_FILE_FILTER).collect(Collectors.toList());
+            LOG.info("Window icons found: {}", Arrays.toString(paths.toArray()));
+            List<Image> l = paths.stream().map
+                    (p -> new ImageIcon(p.toAbsolutePath().toString()).getImage()).collect(Collectors.toList());
+            w.setIconImages(l);
+        } catch (Exception e) {
+            LOG.warn("Unable to load icons from: {}", WINDOW_ICONS_PATH.toAbsolutePath());
         }
     }
 
