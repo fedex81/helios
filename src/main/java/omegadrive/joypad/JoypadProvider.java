@@ -61,6 +61,11 @@ public interface JoypadProvider extends Device {
         public String getMnemonic() {
             return mnemonic;
         }
+
+        public boolean isDirection() {
+            return JoypadButton.D == this || JoypadButton.U == this ||
+                    JoypadButton.R == this || JoypadButton.L == this;
+        }
     }
 
     enum JoypadDirection {

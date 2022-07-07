@@ -42,6 +42,9 @@ import java.util.stream.Collectors;
 import static net.java.games.input.Component.Identifier.Button.Axis;
 import static omegadrive.input.jinput.JinputGamepadMapping.DEFAULT_PAD_NAME;
 
+/**
+ * TODO both keyboard and joypad can be STICK
+ */
 public class JinputGamepadInputProvider implements InputProvider {
 
     private static final Logger LOG = LogManager.getLogger(JinputGamepadInputProvider.class.getSimpleName());
@@ -115,9 +118,11 @@ public class JinputGamepadInputProvider implements InputProvider {
 
     public static List<Controller> detectControllers() {
         Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
-        List<Controller> l = Arrays.stream(ca).filter(c -> c.getType() == Controller.Type.GAMEPAD).collect(Collectors.toList());
+        List<Controller> l = Arrays.stream(ca).filter(c ->
+                        c.getType() == Controller.Type.GAMEPAD).
+                collect(Collectors.toList());
         if (DEBUG_DETECTION || l.isEmpty()) {
-            LOG.info("Controller detection: {}", detectControllerVerbose());
+            LOG.info("Controller detection: {}", detectAllControllerVerbose());
         }
         return l;
     }
@@ -319,8 +324,7 @@ public class JinputGamepadInputProvider implements InputProvider {
         }
     }
 
-    private static String detectControllerVerbose() {
-        Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
+    public static String detectControllerVerbose(Controller[] ca) {
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < ca.length; i++) {
@@ -352,5 +356,13 @@ public class JinputGamepadInputProvider implements InputProvider {
             }
         }
         return sb.toString();
+    }
+
+    public static String detectControllerVerbose(Controller controller) {
+        return detectControllerVerbose(new Controller[]{controller});
+    }
+
+    public static String detectAllControllerVerbose() {
+        return detectControllerVerbose(ControllerEnvironment.getDefaultEnvironment().getControllers());
     }
 }
