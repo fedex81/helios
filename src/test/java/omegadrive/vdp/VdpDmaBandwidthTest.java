@@ -19,14 +19,14 @@
 
 package omegadrive.vdp;
 
+import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.Test;
+import org.slf4j.Logger;
 
 public class VdpDmaBandwidthTest extends BaseVdpDmaBandwidthTest {
 
-    private static final Logger LOG = LogManager.getLogger(VdpDmaBandwidthTest.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(VdpDmaBandwidthTest.class.getSimpleName());
 
     @Test
     public void test68kToCramBlankingH40() {

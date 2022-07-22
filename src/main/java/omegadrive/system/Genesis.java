@@ -37,12 +37,12 @@ import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.perf.GenesisPerf;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * Megadrive main class
@@ -62,7 +62,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     protected static final int SVP_CYCLES = 100;
     protected static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
 
-    private final static Logger LOG = LogManager.getLogger(Genesis.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(Genesis.class.getSimpleName());
 
     protected Z80Provider z80;
     protected M68kProvider cpu;

@@ -15,11 +15,11 @@ import omegadrive.system.gb.GbSoundWrapper;
 import omegadrive.system.nes.Nes;
 import omegadrive.system.nes.NesSoundWrapper;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.vdp.model.BaseVdpAdapter;
 import omegadrive.vdp.model.BaseVdpProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -37,7 +37,7 @@ import static omegadrive.util.RegionDetector.Region;
  */
 public class SysUtil {
 
-    private final static Logger LOG = LogManager.getLogger(SysUtil.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(SysUtil.class.getSimpleName());
 
     public static final String SMD_INTERLEAVED_EXT = ".smd";
 
@@ -60,7 +60,7 @@ public class SysUtil {
     public static SystemProvider createSystemProvider(Path file, DisplayWindow display, boolean debugPerf) {
         String lowerCaseName = handleCompressedFiles(file, file.toString().toLowerCase());
         if (lowerCaseName == null) {
-            LOG.error("Unable to load file: " + file != null ? file.toAbsolutePath() : "null");
+            LOG.error("Unable to load file: " + (file != null ? file.toAbsolutePath() : "null"));
             return null;
         }
         SystemProvider systemProvider = null;

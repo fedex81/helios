@@ -25,8 +25,7 @@ import com.google.common.io.BaseEncoding;
 import omegadrive.Device;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.IMemoryRom;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.*;
 import java.time.Duration;
@@ -41,7 +40,7 @@ import java.util.zip.CRC32;
 
 public class Util {
 
-    private final static Logger LOG = LogManager.getLogger(Util.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(Util.class.getSimpleName());
 
     public static boolean verbose = false;
 
@@ -77,7 +76,6 @@ public class Util {
 
     private static void uncaughtException(Thread t, Throwable e) {
         LOG.error("uncaughtException fot thread: " + t.getName(), e);
-        LOG.throwing(e);
         e.printStackTrace();
     }
 

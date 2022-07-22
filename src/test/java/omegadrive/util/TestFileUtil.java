@@ -1,7 +1,6 @@
 package omegadrive.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -23,7 +22,7 @@ import java.util.zip.ZipOutputStream;
  */
 public class TestFileUtil {
 
-    private static final Logger LOG = LogManager.getLogger(TestFileUtil.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(TestFileUtil.class.getSimpleName());
 
     public static Path compressAndSaveToZipFile(Path srcFilePath) {
         String fileName = srcFilePath.getFileName().toString();

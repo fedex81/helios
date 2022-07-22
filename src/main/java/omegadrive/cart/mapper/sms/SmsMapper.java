@@ -24,9 +24,9 @@ import omegadrive.bus.z80.SmsBus;
 import omegadrive.cart.mapper.BackupMemoryMapper;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Arrays;
 
@@ -36,7 +36,7 @@ public class SmsMapper {
 
     private static final Type[] list = Type.values();
 
-    private static final Logger LOG = LogManager.getLogger(SmsMapper.class);
+    private static final Logger LOG = LogHelper.getLogger(SmsMapper.class);
 
     private static final boolean verbose = false;
 

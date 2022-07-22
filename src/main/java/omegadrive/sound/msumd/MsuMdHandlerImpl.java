@@ -1,14 +1,14 @@
 package omegadrive.sound.msumd;
 
 import com.google.common.io.Files;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.SoundUtil;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.digitalmediaserver.cuelib.CueSheet;
 import org.digitalmediaserver.cuelib.Message;
 import org.digitalmediaserver.cuelib.TrackData;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.*;
 import java.io.IOException;
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class MsuMdHandlerImpl implements MsuMdHandler {
 
-    private static final Logger LOG = LogManager.getLogger(MsuMdHandlerImpl.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MsuMdHandlerImpl.class.getSimpleName());
     private static final boolean verbose = false;
 
     private final MsuCommandArg commandArg = new MsuCommandArg();
@@ -154,7 +154,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             Path binPath = romPath.resolveSibling(sheet.getFileData().get(0).getFile());
             binFile = new RandomAccessFile(binPath.toFile(), "r");
         } catch (Exception e) {
-            LOG.error(e);
+            LOG.error("Error", e);
         }
         return binFile;
     }
@@ -391,7 +391,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 }
                 if (verbose) LOG.info("Track started: {}", track);
             } catch (Exception e) {
-                LOG.error(e);
+                LOG.error("Error", e);
                 e.printStackTrace();
             } finally {
                 setBusy(false);
@@ -438,7 +438,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             binFile.seek(h.startFrame.get() * CueFileParser.SECTOR_SIZE_BYTES);
             binFile.readFully(buffer, 0, numBytes);
         } catch (IOException e) {
-            LOG.error(e);
+            LOG.error("Error", e);
         }
     }
 

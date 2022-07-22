@@ -8,8 +8,8 @@ import omegadrive.input.KeyboardInputHelper;
 import omegadrive.input.jinput.JinputGamepadInputProvider;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.joypad.JoypadProvider.JoypadButton;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,7 +40,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
  */
 public class GamepadSetupView implements InputEventCallback {
 
-    private static final Logger LOG = LogManager.getLogger(GamepadSetupView.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(GamepadSetupView.class.getSimpleName());
 
     enum ButtonAction {EXIT, SAVE_EXIT, SAVE}
 

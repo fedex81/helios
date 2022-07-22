@@ -1,7 +1,7 @@
 package omegadrive.ui;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MouseCursorHandler extends MouseMotionAdapter {
 
-    private static final Logger LOG = LogManager.getLogger(MouseCursorHandler.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MouseCursorHandler.class.getSimpleName());
 
     private final int hideMouseDelayFrames =
             Integer.parseInt(System.getProperty("ui.hide.mouse.delay.frames", "180"));

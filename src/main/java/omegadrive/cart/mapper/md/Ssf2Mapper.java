@@ -22,10 +22,10 @@ package omegadrive.cart.mapper.md;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Arrays;
 
@@ -53,7 +53,7 @@ import java.util.Arrays;
  **/
 public abstract class Ssf2Mapper implements RomMapper {
 
-    private static final Logger LOG = LogManager.getLogger(Ssf2Mapper.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(Ssf2Mapper.class.getSimpleName());
 
     public static final int BANK_SET_START_ADDRESS = 0xA130F3;
     public static final int BANK_SET_END_ADDRESS = 0xA130FF;

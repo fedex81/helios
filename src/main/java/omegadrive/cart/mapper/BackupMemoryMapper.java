@@ -21,9 +21,9 @@ package omegadrive.cart.mapper;
 
 import omegadrive.SystemLoader;
 import omegadrive.util.FileUtil;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -33,7 +33,7 @@ import java.util.Arrays;
 
 public abstract class BackupMemoryMapper {
 
-    private final static Logger LOG = LogManager.getLogger(BackupMemoryMapper.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(BackupMemoryMapper.class.getSimpleName());
 
     protected String defaultSramFolder;
 

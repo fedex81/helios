@@ -20,13 +20,13 @@
 package omegadrive.vdp.md;
 
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
@@ -35,7 +35,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     public static final boolean verbose = false;
     public static final boolean lessVerbose = false || verbose;
     public static final boolean printToSysOut = false;
-    private final static Logger LOG = LogManager.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
 
     protected GenesisVdpProvider vdpProvider;
     protected VdpMemoryInterface memoryInterface;

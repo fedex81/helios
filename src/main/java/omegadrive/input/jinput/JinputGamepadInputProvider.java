@@ -26,10 +26,10 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.joypad.JoypadProvider.JoypadAction;
 import omegadrive.joypad.JoypadProvider.JoypadButton;
+import omegadrive.util.LogHelper;
 import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +47,7 @@ import static omegadrive.input.jinput.JinputGamepadMapping.DEFAULT_PAD_NAME;
  */
 public class JinputGamepadInputProvider implements InputProvider {
 
-    private static final Logger LOG = LogManager.getLogger(JinputGamepadInputProvider.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(JinputGamepadInputProvider.class.getSimpleName());
 
     private final static boolean USE_POLLING_THREAD = Boolean.parseBoolean(System.getProperty("jinput.polling.thread", "false"));
     private final static long POLLING_INTERVAL_MS = Long.parseLong(System.getProperty("jinput.polling.interval.ms", "5"));

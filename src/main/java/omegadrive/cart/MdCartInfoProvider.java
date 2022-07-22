@@ -21,10 +21,10 @@ package omegadrive.cart;
 
 import omegadrive.cart.mapper.md.MdMapperType;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -42,7 +42,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     //see https://github.com/jdesiloniz/svpdev/wiki/Internal-ROM
     public static final int SVP_SV_TOKEN_ADDRESS = 0x1C8;
     public static final String SVP_SV_TOKEN = "SV";
-    private static final Logger LOG = LogManager.getLogger(MdCartInfoProvider.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MdCartInfoProvider.class.getSimpleName());
     public static final int SRAM_FLAG_ADDRESS = 0x1B0;
     public static final int SRAM_START_ADDRESS = 0x1B4;
     public static final int SRAM_END_ADDRESS = 0x1B8;

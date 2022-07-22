@@ -20,9 +20,8 @@
 package omegadrive.sound.javasound;
 
 import omegadrive.system.perf.Telemetry;
+import omegadrive.util.LogHelper;
 import omegadrive.util.SoundUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jaudiolibs.audioservers.AudioClient;
 import org.jaudiolibs.audioservers.AudioConfiguration;
 import org.jaudiolibs.audioservers.AudioServer;
@@ -30,6 +29,7 @@ import org.jaudiolibs.audioservers.AudioServerProvider;
 import org.jaudiolibs.audioservers.ext.ClientID;
 import org.jaudiolibs.audioservers.ext.Connections;
 import org.jaudiolibs.audioservers.javasound.JSTimingMode;
+import org.slf4j.Logger;
 
 import java.nio.FloatBuffer;
 import java.util.List;
@@ -39,7 +39,7 @@ import static omegadrive.sound.SoundDevice.SoundDeviceType.FM;
 
 public class JalSoundManager extends AbstractSoundManager implements AudioClient {
 
-    private static final Logger LOG = LogManager.getLogger(JalSoundManager.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(JalSoundManager.class.getSimpleName());
 
     //in sample per channels, ie divide by 4 (4 bytes per channel)
     private static final int bufferSize = SoundUtil.getAudioLineBufferSize(audioFormat) >> 2;
@@ -98,7 +98,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
             executorService.submit(getServerRunnable(server));
             LOG.info("Audio Max buffer size (in samples per channel): {}", bufferSize);
         } catch (Throwable t) {
-            LOG.error(t);
+            LOG.error("Error", t);
             t.printStackTrace();
         }
     }
@@ -121,7 +121,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
                 LOG.info("interrupted");
                 return;
             } catch (Exception | Error ex) {
-                LOG.error(ex);
+                LOG.error("Error", ex);
                 ex.printStackTrace();
             }
         };

@@ -1,6 +1,7 @@
 package omegadrive.vdp.util;
 
 import omegadrive.util.ImageUtil;
+import omegadrive.util.LogHelper;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.VdpRenderDump;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -8,8 +9,7 @@ import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpMisc.RenderType;
 import omegadrive.vdp.model.VdpRenderHandler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,7 +26,7 @@ import java.util.Arrays;
  */
 public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventListener {
 
-    private static final Logger LOG = LogManager.getLogger(PlaneViewer.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(PlaneViewer.class.getSimpleName());
 
     private static final int PANEL_TEXT_HEIGHT = 20;
     private static final int PANEL_HEIGHT = 256 + PANEL_TEXT_HEIGHT;

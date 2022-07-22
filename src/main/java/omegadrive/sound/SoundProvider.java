@@ -22,17 +22,17 @@ package omegadrive.sound;
 import omegadrive.Device;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 
 public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener {
-    Logger LOG = LogManager.getLogger(SoundProvider.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(SoundProvider.class.getSimpleName());
 
     long PAL_PSG_CLOCK = Util.GEN_PAL_MCLOCK_MHZ / 15; // 3546893
     long NTSC_PSG_CLOCK = Util.GEN_NTSC_MCLOCK_MHZ / 15; //3579545;

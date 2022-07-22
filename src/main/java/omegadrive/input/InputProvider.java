@@ -22,16 +22,16 @@ package omegadrive.input;
 import com.google.common.collect.ImmutableList;
 import omegadrive.input.jinput.JinputGamepadInputProvider;
 import omegadrive.joypad.JoypadProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.util.List;
 
 public interface InputProvider {
 
-    Logger LOG = LogManager.getLogger(InputProvider.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(InputProvider.class.getSimpleName());
 
     String KEYBOARD_CONTROLLER = "Default (Keyboard)";
     String NO_CONTROLLER = "Disable";

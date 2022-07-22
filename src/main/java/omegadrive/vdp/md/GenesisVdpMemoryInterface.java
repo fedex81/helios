@@ -19,11 +19,11 @@
 
 package omegadrive.vdp.md;
 
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.stream.IntStream;
 
@@ -32,7 +32,7 @@ import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_FRAME_H40;
 public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     public final static boolean verbose = false;
-    private final static Logger LOG = LogManager.getLogger(GenesisVdpMemoryInterface.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(GenesisVdpMemoryInterface.class.getSimpleName());
     private static final int EVEN_VALUE_MASK = ~1;
 
     private int[] vram;

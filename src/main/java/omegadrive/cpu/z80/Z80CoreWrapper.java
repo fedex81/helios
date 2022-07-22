@@ -24,10 +24,10 @@ import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.bus.model.GenesisZ80BusProvider;
 import omegadrive.cpu.z80.debug.Z80CoreWrapperFastDebug;
 import omegadrive.savestate.StateUtil;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 import z80core.Z80;
 import z80core.Z80State;
 
@@ -37,7 +37,7 @@ public class Z80CoreWrapper implements Z80Provider {
 
     public final static boolean STOP_ON_EXCEPTION;
     public static final boolean Z80_DEBUG;
-    private final static Logger LOG = LogManager.getLogger(Z80CoreWrapper.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(Z80CoreWrapper.class.getSimpleName());
 
     static {
         STOP_ON_EXCEPTION =

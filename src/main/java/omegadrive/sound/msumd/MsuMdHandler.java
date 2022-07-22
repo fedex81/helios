@@ -1,9 +1,9 @@
 package omegadrive.sound.msumd;
 
 import omegadrive.bus.md.GenesisBus;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 import java.io.File;
@@ -16,7 +16,7 @@ import java.util.Optional;
  */
 public interface MsuMdHandler {
 
-    Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(GenesisBus.class.getSimpleName());
 
     int CLOCK_ADDR = 0xa1201f;
     int CMD_ADDR = 0xa12010;

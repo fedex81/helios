@@ -16,8 +16,6 @@ repositories {
 dependencies {
     // https://mvnrepository.com/artifact/net.java.jinput/jinput
     implementation group: 'net.java.jinput', name: 'jinput', version: '2.0.9'
-    // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.18.0'
     // https://mvnrepository.com/artifact/com.google.guava/guava
     implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
     implementation group: 'org.jctools', name: 'jctools-core', version: '3.3.0'
@@ -28,10 +26,16 @@ dependencies {
     implementation group: 'org.jaudiolibs', name: 'audioservers-javasound', version: '2.0.0'
     implementation 'com.google.code.gson:gson:2.9.0'
 
+    implementation 'org.tinylog:tinylog-api:2.4.1'
+    implementation 'org.tinylog:tinylog-impl:2.4.1'
+    implementation 'org.tinylog:slf4j-tinylog:2.4.1'
+
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.2'
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.8.2'
+
+
 
     //include local jars
     implementation fileTree(dir: 'lib', include: ['*.jar'])
@@ -147,7 +151,7 @@ task writeToFile {
     //win: default to busy wait
     List<String> winOpts = ["-Dhelios.busy.wait=true"]
     List<String> sampleBase = [ "java",
-                            "-Dlog4j.configurationFile=./log4j2.properties",
+                            "-Dtinylog.configuration=./tinylog.properties",
                                 "-Djinput.enable=true -Djinput.native.location=lib",
                             "-jar", "$jarName"] as String[]
     sampleBase.addAll(1, javaAdvOpts)

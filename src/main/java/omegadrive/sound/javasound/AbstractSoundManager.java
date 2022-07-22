@@ -30,11 +30,11 @@ import omegadrive.sound.persist.FileSoundPersister;
 import omegadrive.sound.persist.SoundPersister;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SysUtil;
+import omegadrive.util.LogHelper;
 import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
@@ -44,7 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public abstract class AbstractSoundManager implements SoundProvider {
-    private static final Logger LOG = LogManager.getLogger(JavaSoundManager.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(JavaSoundManager.class.getSimpleName());
 
     protected static SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
     private static final int OUTPUT_SAMPLE_SIZE = 16;

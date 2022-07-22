@@ -22,8 +22,8 @@ package omegadrive.sound.fm.ym2612.nukeykt;
 import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.fm.VariableSampleRateSource;
 import omegadrive.sound.fm.ym2612.Ym2612RegSupport;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 import java.io.Serializable;
@@ -41,7 +41,7 @@ import java.util.Arrays;
  */
 public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider {
 
-    private static final Logger LOG = LogManager.getLogger(Ym2612Nuke.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(Ym2612Nuke.class.getSimpleName());
 
     private final static int AUDIO_SCALE_BITS = 3;
 

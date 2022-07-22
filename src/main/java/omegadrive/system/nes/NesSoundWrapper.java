@@ -3,9 +3,9 @@ package omegadrive.system.nes;
 import com.grapeshot.halfnes.audio.AudioOutInterface;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.GenericAudioProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -18,7 +18,7 @@ import javax.sound.sampled.AudioFormat;
  */
 public class NesSoundWrapper extends GenericAudioProvider implements AudioOutInterface {
 
-    private static final Logger LOG = LogManager.getLogger(NesSoundWrapper.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(NesSoundWrapper.class.getSimpleName());
 
     private static final double VOLUME = 13107 / 16384.;
     public static AudioFormat nesAudioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, 16, 1, true, false);

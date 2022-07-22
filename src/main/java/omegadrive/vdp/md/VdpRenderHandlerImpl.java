@@ -20,6 +20,7 @@
 package omegadrive.vdp.md;
 
 import omegadrive.util.FastBitSet;
+import omegadrive.util.LogHelper;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.VdpRenderDump;
 import omegadrive.vdp.md.VdpScrollHandler.HSCROLL;
@@ -28,8 +29,7 @@ import omegadrive.vdp.md.VdpScrollHandler.VSCROLL;
 import omegadrive.vdp.model.*;
 import omegadrive.vdp.model.VdpMisc.RenderType;
 import omegadrive.vdp.model.VdpMisc.ShadowHighlightType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -41,7 +41,7 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener {
 
-    private final static Logger LOG = LogManager.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
     private final GenesisVdpProvider vdpProvider;
     private final VdpMemoryInterface memoryInterface;
     private final VdpScrollHandler scrollHandler;

@@ -16,12 +16,12 @@ import omegadrive.system.BaseSystem;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.BaseVdpAdapter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +36,7 @@ import java.util.Properties;
  */
 public class Gb extends BaseSystem<BaseBusProvider> {
 
-    private static final Logger LOG = LogManager.getLogger(Gb.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(Gb.class.getSimpleName());
 
     private Emulator emulator;
     private HeliosDisplay display;

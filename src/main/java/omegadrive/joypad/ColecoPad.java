@@ -22,8 +22,8 @@ package omegadrive.joypad;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.Optional;
@@ -40,7 +40,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
  */
 public class ColecoPad extends BasePadAdapter {
 
-    private static final Logger LOG = LogManager.getLogger(ColecoPad.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(ColecoPad.class.getSimpleName());
 
     private final Map<JoypadButton, JoypadAction> stateMapKeypad = Maps.newHashMap(ImmutableMap.<JoypadButton, JoypadAction>builder().
             put(K0, RELEASED).put(K1, RELEASED).

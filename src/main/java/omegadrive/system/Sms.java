@@ -32,16 +32,16 @@ import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.perf.SmsPerf;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 public class Sms extends BaseSystem<Z80BusProvider> {
 
     public static final boolean ENABLE_FM = Boolean.parseBoolean(System.getProperty("sms.enable.fm", "false"));
-    private static final Logger LOG = LogManager.getLogger(Sms.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(Sms.class.getSimpleName());
 
     public static final int MCLK_PAL = 53203424;
     public static final int MCLK_NTSC = 53693175;

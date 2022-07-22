@@ -23,8 +23,8 @@ import com.google.common.collect.ImmutableMap;
 import omegadrive.SystemLoader;
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.cart.mapper.sms.SmsMapper;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,7 +45,7 @@ public class SmsLoader {
             SmsMapper.Type.CODEM.name(), "/EMU_MAPPER=3",
             SmsMapper.Type.KOREA.name(), "/EMU_MAPPER=9"
     );
-    private static final Logger LOG = LogManager.getLogger(SmsLoader.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(SmsLoader.class.getSimpleName());
 
     public static void main(String[] args) {
         Map<String, MapperSelector.Entry> m = loadData(SystemLoader.SystemType.SMS);

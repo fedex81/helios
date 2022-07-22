@@ -28,13 +28,9 @@ import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.sms.SmsMapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.TwoButtonsJoypad;
-import omegadrive.util.FileUtil;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
+import omegadrive.util.*;
 import omegadrive.vdp.SmsVdp;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -48,7 +44,7 @@ import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.DATA_REG;
  */
 public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements Z80BusProvider, RomMapper {
 
-    private static final Logger LOG = LogManager.getLogger(SmsBus.class);
+    private static final Logger LOG = LogHelper.getLogger(SmsBus.class);
 
     private static final boolean verbose = false;
 

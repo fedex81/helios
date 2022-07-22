@@ -26,9 +26,9 @@ import omegadrive.bus.z80.MsxBus;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.FileUtil;
+import omegadrive.util.LogHelper;
 import omegadrive.vdp.Tms9918aVdp;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
@@ -40,7 +40,7 @@ import java.util.Set;
 public class Z80StateBaseHandler implements BaseStateHandler {
 
     protected static final Z80SavestateVersion CURRENT_SAVE_VERSION = Z80SavestateVersion.VER_1;
-    private static final Logger LOG = LogManager.getLogger(Z80StateBaseHandler.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(Z80StateBaseHandler.class.getSimpleName());
     private static final String MAGIC_WORD_STR = "HELIOS-Z80";
     private static final byte[] MAGIC_WORD = MAGIC_WORD_STR.getBytes();
     private static final int SYS_NAME_LEN = 16;

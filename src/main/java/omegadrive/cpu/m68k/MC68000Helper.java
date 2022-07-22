@@ -25,9 +25,8 @@ import m68k.cpu.DisassembledInstruction;
 import m68k.cpu.Instruction;
 import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -37,7 +36,7 @@ import static omegadrive.util.Util.th;
 
 public class MC68000Helper {
 
-    private final static Logger LOG = LogManager.getLogger(MC68000Helper.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(MC68000Helper.class.getSimpleName());
 
     public static final boolean STOP_ON_EXCEPTION;
     public static final boolean GENESIS_TAS_BROKEN;
@@ -205,8 +204,8 @@ public class MC68000Helper {
         return "????";
     }
 
-    public static void printCpuState(Cpu cpu, Level level, String head, int memorySize) {
-        LOG.log(level, "{}{}", head, getCpuState(cpu, head, memorySize));
+    public static void printCpuState(Cpu cpu, String head, int memorySize) {
+        LOG.info("{}{}", head, getCpuState(cpu, head, memorySize));
     }
 
     public static class M68kState {

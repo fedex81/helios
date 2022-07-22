@@ -35,8 +35,7 @@ import omegadrive.ui.PrefStore;
 import omegadrive.util.*;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEventListener;
 import omegadrive.vdp.model.BaseVdpProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -47,7 +46,7 @@ import java.util.function.Consumer;
 
 public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemProvider, SystemProvider.NewFrameListener {
 
-    private final static Logger LOG = LogManager.getLogger(BaseSystem.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(BaseSystem.class.getSimpleName());
 
     static final long MAX_DRIFT_NS = Duration.ofMillis(10).toNanos();
     private static final long DRIFT_THRESHOLD_NS = Util.MILLI_IN_NS / 10;
@@ -371,7 +370,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
                 LOG.info("Exiting rom thread loop");
             } catch (Exception | Error e) {
                 e.printStackTrace();
-                LOG.error(e);
+                LOG.error("Error", e);
             }
             handleCloseRom();
         }

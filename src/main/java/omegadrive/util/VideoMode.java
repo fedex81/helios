@@ -19,8 +19,7 @@
 
 package omegadrive.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.awt.*;
 import java.util.EnumSet;
@@ -56,7 +55,7 @@ public enum VideoMode {
 
     NTSCU_H32_V32(USA, H32, V32_CELL);
 
-    private static final Logger LOG = LogManager.getLogger(VideoMode.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(VideoMode.class.getSimpleName());
 
     private static final Set<VideoMode> values = new HashSet<>(EnumSet.allOf(VideoMode.class));
 

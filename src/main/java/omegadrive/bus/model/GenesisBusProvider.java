@@ -22,10 +22,10 @@ package omegadrive.bus.model;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import static omegadrive.memory.MemoryProvider.M68K_RAM_SIZE;
 
@@ -68,7 +68,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     int NUM_MAPPER_BANKS = 8;
 
-    Logger LOG = LogManager.getLogger(GenesisBusProvider.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(GenesisBusProvider.class.getSimpleName());
 
     abstract class VdpRunnable implements Runnable {
         public int vdpAddress;

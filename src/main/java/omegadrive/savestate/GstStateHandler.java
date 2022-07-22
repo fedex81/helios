@@ -31,14 +31,12 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.MdFmProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemory;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
+import org.slf4j.Logger;
 import z80core.Z80;
 import z80core.Z80State;
 
@@ -53,7 +51,7 @@ import static omegadrive.savestate.StateUtil.*;
 
 public class GstStateHandler implements BaseStateHandler {
 
-    private static final Logger LOG = LogManager.getLogger(GstStateHandler.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(GstStateHandler.class.getSimpleName());
 
     private static final int FM_REG_OFFSET = 0x1E4;
     public static int FM_DATA_SIZE = 0x200;
@@ -105,7 +103,7 @@ public class GstStateHandler implements BaseStateHandler {
 
     @Override
     public void processState() {
-        Level prev = LogManager.getRootLogger().getLevel();
+//        Level prev = LogManager.getRootLogger().getLevel();
         GenesisBusProvider bus = StateUtil.getInstanceOrThrow(deviceList, GenesisBusProvider.class);
         BaseVdpProvider vdp = StateUtil.getInstanceOrThrow(deviceList, BaseVdpProvider.class);
         Z80Provider z80 = StateUtil.getInstanceOrThrow(deviceList, Z80Provider.class);
@@ -113,7 +111,7 @@ public class GstStateHandler implements BaseStateHandler {
         MC68000Wrapper cpu = StateUtil.getInstanceOrThrow(deviceList, MC68000Wrapper.class);
         SoundProvider sound = StateUtil.getInstanceOrThrow(deviceList, SoundProvider.class);
         try {
-            Configurator.setRootLevel(Level.ERROR);
+//            Configurator.setRootLevel(Level.ERROR);
             if (getType() == Type.LOAD) {
                 loadFmState(sound.getFm());
                 loadVdpState(vdp);
@@ -126,7 +124,7 @@ public class GstStateHandler implements BaseStateHandler {
                 saveVdp(vdp);
             }
         } finally {
-            Configurator.setRootLevel(prev);
+//            Configurator.setRootLevel(prev);
         }
         if (getType() == Type.LOAD) {
             LOG.info("Savestate loaded from: {}", getFileName());

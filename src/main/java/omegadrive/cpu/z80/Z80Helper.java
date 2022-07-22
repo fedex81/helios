@@ -1,8 +1,8 @@
 package omegadrive.cpu.z80;
 
 import omegadrive.cpu.z80.disasm.Z80Dasm;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 import z80core.IMemIoOps;
 import z80core.MemIoOps;
 import z80core.Z80;
@@ -19,7 +19,7 @@ import java.util.Arrays;
  */
 public class Z80Helper {
 
-    private final static Logger LOG = LogManager.getLogger(Z80Helper.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(Z80Helper.class.getSimpleName());
 
     private static final Z80.IntMode[] values = Z80.IntMode.values();
     public static boolean[][] isBusyOpcode = generateBLOpcodes();

@@ -22,8 +22,8 @@ package omegadrive.joypad;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import omegadrive.input.InputProvider.PlayerNumber;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import static omegadrive.input.InputProvider.PlayerNumber.P1;
 import static omegadrive.input.InputProvider.PlayerNumber.P2;
@@ -45,7 +45,7 @@ import static omegadrive.util.Util.th;
  */
 public class GenesisJoypad extends BasePadAdapter {
 
-    private static final Logger LOG = LogManager.getLogger(GenesisJoypad.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(GenesisJoypad.class.getSimpleName());
 
     private static final boolean verbose = false;
 

@@ -19,21 +19,21 @@
 
 package omegadrive.vdp;
 
+import omegadrive.util.LogHelper;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEventListener;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.slf4j.Logger;
 
 @Ignore
 public class BaseVdpInterruptHandlerTest {
 
-    private static final Logger LOG = LogManager.getLogger(BaseVdpInterruptHandlerTest.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(BaseVdpInterruptHandlerTest.class.getSimpleName());
     static boolean verbose = false;
 
     protected boolean enableListener;

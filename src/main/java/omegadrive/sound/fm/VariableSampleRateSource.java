@@ -19,14 +19,14 @@
 
 package omegadrive.sound.fm;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 
 public abstract class VariableSampleRateSource extends GenericAudioProvider {
 
-    private static final Logger LOG = LogManager.getLogger(VariableSampleRateSource.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(VariableSampleRateSource.class.getSimpleName());
     final static int DEFAULT_AUDIO_SCALE_BITS = 5;
     protected double microsPerOutputSample;
     protected double microsPerInputSample;

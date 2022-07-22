@@ -28,9 +28,9 @@ import omegadrive.cpu.ssp16.Ssp16Types;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -39,7 +39,7 @@ import java.util.Set;
 
 public class GshStateHandler extends GstStateHandler {
 
-    private static final Logger LOG = LogManager.getLogger(GshStateHandler.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(GshStateHandler.class.getSimpleName());
 
     protected static final String MAGIC_WORD = "GSH";
     protected static final String MAGIC_WORD_GST = "GST";

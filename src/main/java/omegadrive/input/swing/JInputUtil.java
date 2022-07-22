@@ -2,8 +2,8 @@ package omegadrive.input.swing;
 
 import net.java.games.input.*;
 import omegadrive.joypad.JoypadProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
@@ -18,7 +18,7 @@ import java.util.*;
  */
 public class JInputUtil {
 
-    private static final Logger LOG = LogManager.getLogger(JInputUtil.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(JInputUtil.class.getSimpleName());
 
     private final static String manualAwtJInputMap = "PAGEUP=VK_PAGE_UP,PAGEDOWN=VK_PAGE_DOWN,LBRACKET=VK_OPEN_BRACKET," +
             "RBRACKET=VK_CLOSE_BRACKET,CAPITAL=VK_CAPS_LOCK,LCONTROL=VK_CONTROL,RCONTROL=VK_CONTROL,LSHIFT=VK_SHIFT,RSHIFT=VK_SHIFT," +

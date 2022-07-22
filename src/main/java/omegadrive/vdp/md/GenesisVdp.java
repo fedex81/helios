@@ -21,17 +21,12 @@ package omegadrive.vdp.md;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
-import omegadrive.util.VideoMode;
+import omegadrive.util.*;
 import omegadrive.vdp.model.*;
 import omegadrive.vdp.util.UpdatableViewer;
 import omegadrive.vdp.util.VdpDebugView;
 import omegadrive.vdp.util.VdpPortAccessLogger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +49,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 
     public final static boolean verbose = false;
     public final static boolean regVerbose = false;
-    private final static Logger LOG = LogManager.getLogger(GenesisVdp.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(GenesisVdp.class.getSimpleName());
 
     //TODO true breaks a good number of VdpFifoTests
     private static final boolean ENABLE_READ_AHEAD = Boolean.parseBoolean(System.getProperty("vdp.enable.read.ahead", "false"));
@@ -571,8 +566,8 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         int current = registers[reg];
         //&& reg < 0x13 && interruptHandler.isActiveScreen()
         if (regVerbose && current != data && reg < 0x13) {
-            String msg = new ParameterizedMessage("{} changed from: {}, to: {} -- de{}",
-                    getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (displayEnable ? 1 : 0)).getFormattedMessage();
+            String msg = LogHelper.formatMessage("{} changed from: {}, to: {} -- de{}",
+                    getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (displayEnable ? 1 : 0));
             LOG.info(getVdpStateString(msg));
         }
     }

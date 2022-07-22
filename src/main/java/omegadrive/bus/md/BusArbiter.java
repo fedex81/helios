@@ -22,16 +22,15 @@ package omegadrive.bus.md;
 import omegadrive.Device;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.z80.Z80Provider;
+import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider.VdpBusyState;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.slf4j.Logger;
 
 public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
 
-    private final static Logger LOG = LogManager.getLogger(BusArbiter.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(BusArbiter.class.getSimpleName());
 
     private static final boolean verbose = false;
     public static final BusArbiter NO_OP = createNoOp();
@@ -256,8 +255,7 @@ public class BusArbiter implements Device, BaseVdpProvider.VdpEventListener {
     }
 
     private void logInfo(String str, Object... args) {
-        String msg = ParameterizedMessage.format(str, args);
-        LOG.info("{}{}", msg, vdp.getVdpStateString());
+        LOG.info("{}{}", LogHelper.formatMessage(str, args), vdp.getVdpStateString());
     }
 
     private static BusArbiter createNoOp() {

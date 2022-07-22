@@ -31,8 +31,8 @@
  */
 package omegadrive.sound.fm.ym2612.nukeykt;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -40,7 +40,7 @@ import java.util.Arrays;
 
 public interface IYm3438 {
 
-    Logger LOG = LogManager.getLogger(IYm3438.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(IYm3438.class.getSimpleName());
 
     void OPN2_Reset(IYm3438_Type chip);
 

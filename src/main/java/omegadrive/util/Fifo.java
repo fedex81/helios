@@ -1,8 +1,6 @@
 package omegadrive.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.slf4j.Logger;
 
 import java.util.Arrays;
 
@@ -51,7 +49,7 @@ public interface Fifo<T> {
 
     class FixedSizeFifo<T> implements Fifo<T> {
 
-        protected final static Logger LOG = LogManager.getLogger(FixedSizeFifo.class.getSimpleName());
+        protected final static Logger LOG = LogHelper.getLogger(FixedSizeFifo.class.getSimpleName());
         public static final boolean logEnable = false;
 
         public static final boolean printToSysOut = false;
@@ -113,10 +111,8 @@ public interface Fifo<T> {
 
         protected void logState(T entry, String type) {
             if (logEnable) {
-                ParameterizedMessage pm = new ParameterizedMessage(
-                        "Fifo {}: {}, push: {}, pop: {}, size: {}\nstate: {}", type,
+                String str = LogHelper.formatMessage("Fifo {}: {}, push: {}, pop: {}, size: {}\nstate: {}", type,
                         entry, pushPointer, popPointer, currentSize, Arrays.toString(fifo));
-                String str = pm.getFormattedMessage();
                 LOG.info(str);
                 if (printToSysOut) {
                     System.out.println(str);

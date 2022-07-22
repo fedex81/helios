@@ -22,8 +22,8 @@ package omegadrive.joypad;
 
 import com.google.common.collect.Maps;
 import omegadrive.input.KeyboardInputHelper;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -34,7 +34,7 @@ import static omegadrive.input.InputProvider.PlayerNumber;
 
 public class ExternalPad extends BasePadAdapter {
 
-    private static final Logger LOG = LogManager.getLogger(ExternalPad.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(ExternalPad.class.getSimpleName());
 
     private final KeyListener p1Listener;
     private final KeyListener p2Listener;

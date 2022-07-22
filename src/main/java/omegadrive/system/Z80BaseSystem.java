@@ -35,16 +35,16 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.Tms9918aVdp;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
-    private static final Logger LOG = LogManager.getLogger(Z80BaseSystem.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(Z80BaseSystem.class.getSimpleName());
 
     protected Z80Provider z80;
     private final Z80Provider.Interrupt vdpInterruptType;

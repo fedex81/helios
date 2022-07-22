@@ -25,10 +25,9 @@ import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.MC68000AddressSpace;
 import omegadrive.cpu.m68k.MC68000Helper;
 import omegadrive.cpu.m68k.MC68000Helper.M68kState;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
@@ -40,7 +39,7 @@ import static omegadrive.util.Util.th;
 @Deprecated
 public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
 
-    private static final Logger LOG = LogManager.getLogger(MC68000WrapperDebug.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MC68000WrapperDebug.class.getSimpleName());
 
     public static boolean verbose = false;
     StringBuilder sb = new StringBuilder();
@@ -251,14 +250,14 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
     }
 
     protected void printCpuState(String head) {
-        MC68000Helper.printCpuState(m68k, Level.INFO, head, addressSpace.size());
+        MC68000Helper.printCpuState(m68k, head, addressSpace.size());
     }
 
     protected void printCpuStateIfVerbose(String head) {
         if (!verbose) {
             return;
         }
-        MC68000Helper.printCpuState(m68k, Level.INFO, head, addressSpace.size());
+        MC68000Helper.printCpuState(m68k, head, addressSpace.size());
     }
 
     protected void printInstOnly() {

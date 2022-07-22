@@ -21,9 +21,9 @@ package omegadrive.sound.persist;
 
 import com.google.common.io.Files;
 import omegadrive.sound.javasound.AbstractSoundManager;
+import omegadrive.util.LogHelper;
 import omegadrive.util.SoundUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +32,7 @@ import java.nio.file.Paths;
 
 public class FileSoundPersister implements SoundPersister {
 
-    private static final Logger LOG = LogManager.getLogger(FileSoundPersister.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(FileSoundPersister.class.getSimpleName());
 
     /**
      * For Recording Sound to Disk.

@@ -4,9 +4,9 @@ import eu.rekawek.coffeegb.Gameboy;
 import eu.rekawek.coffeegb.sound.SoundOutput;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.GenericAudioProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -19,7 +19,7 @@ import javax.sound.sampled.AudioFormat;
  */
 public class GbSoundWrapper extends GenericAudioProvider implements SoundOutput {
 
-    private static final Logger LOG = LogManager.getLogger(GbSoundWrapper.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(GbSoundWrapper.class.getSimpleName());
     public static AudioFormat gbAudioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, 8, 2, true, false);
     private final int divider;
     private int tick;

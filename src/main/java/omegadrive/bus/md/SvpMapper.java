@@ -23,9 +23,9 @@ import omegadrive.bus.model.SvpBus;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cpu.ssp16.Ssp16;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import static omegadrive.cpu.ssp16.Ssp16.*;
 import static omegadrive.cpu.ssp16.Ssp16Types.Ssp1601_t;
@@ -35,7 +35,7 @@ import static omegadrive.cpu.ssp16.Ssp16Types.Svp_t;
 
 public class SvpMapper implements RomMapper, SvpBus {
 
-    private static final Logger LOG = LogManager.getLogger(SvpMapper.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(SvpMapper.class.getSimpleName());
 
     private static final boolean verbose = false;
     private static final boolean VR_TEST_MODE = false;

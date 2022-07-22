@@ -27,11 +27,11 @@ import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.ui.SwingWindow;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.ZipUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 import ru.krlvm.swingdpi.SwingDPI;
 
 import javax.swing.*;
@@ -52,7 +52,7 @@ public class SystemLoader {
 
     protected DisplayWindow emuFrame;
 
-    private final static Logger LOG = LogManager.getLogger(SystemLoader.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(SystemLoader.class.getSimpleName());
 
     public static final SystemLoader INSTANCE = new SystemLoader();
 

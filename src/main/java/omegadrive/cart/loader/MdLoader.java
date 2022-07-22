@@ -25,8 +25,8 @@ import com.google.gson.reflect.TypeToken;
 import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.util.FileUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ import static omegadrive.cart.loader.MdRomDbModel.NO_ENTRY;
  */
 public class MdLoader {
 
-    private static final Logger LOG = LogManager.getLogger(MdLoader.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MdLoader.class.getSimpleName());
     static String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "md_romdb.json";
 
     private static final Map<String, RomDbEntry> map = new HashMap<>();

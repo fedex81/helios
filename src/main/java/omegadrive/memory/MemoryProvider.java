@@ -19,18 +19,18 @@
 
 package omegadrive.memory;
 
+import omegadrive.util.LogHelper;
 import omegadrive.util.RomHolder;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.util.stream.IntStream;
 
 public class MemoryProvider implements IMemoryProvider {
 
-    private final static Logger LOG = LogManager.getLogger(MemoryProvider.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(MemoryProvider.class.getSimpleName());
 
     public static final MemoryProvider NO_MEMORY = new MemoryProvider();
 

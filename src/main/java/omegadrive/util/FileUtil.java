@@ -21,8 +21,7 @@ package omegadrive.util;
 
 import omegadrive.SystemLoader;
 import omegadrive.system.SysUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -43,7 +42,7 @@ import static omegadrive.SystemLoader.smdFileAsInterleaved;
 
 public class FileUtil {
 
-    private static final Logger LOG = LogManager.getLogger(FileUtil.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(FileUtil.class.getSimpleName());
 
     private static final int[] EMPTY = new int[0];
 
@@ -258,7 +257,7 @@ public class FileUtil {
                 n = m + " (" + n + ")";
             }
         } catch (Exception e) {
-            LOG.throwing(e);
+            LOG.error("Error", e);
         }
         return n;
     }

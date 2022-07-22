@@ -34,16 +34,16 @@ import omegadrive.system.BaseSystem;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
 
 public class Nes extends BaseSystem<BaseBusProvider> {
 
-    private static final Logger LOG = LogManager.getLogger(Nes.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(Nes.class.getSimpleName());
 
     static {
         ControllerImpl.JINPUT_ENABLE = false;

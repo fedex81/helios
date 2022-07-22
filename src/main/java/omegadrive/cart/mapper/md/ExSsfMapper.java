@@ -22,10 +22,10 @@ package omegadrive.cart.mapper.md;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * Extended-SSF mapper description
@@ -77,7 +77,7 @@ public class ExSsfMapper extends Ssf2Mapper {
     public static final int MATH_MUL_LO = 0xA130D6; //write only
     public static final int MATH_DIV_HI = 0xA130D8; //write only
     public static final int MATH_DIV_LO = 0xA130DA; //write only
-    private static final Logger LOG = LogManager.getLogger(ExSsfMapper.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(ExSsfMapper.class.getSimpleName());
     private final long[] mathReg = new long[0xB];
     private final int[] moreBanks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
     private final int[][] moreRam = new int[moreBanks.length][BANK_SIZE];

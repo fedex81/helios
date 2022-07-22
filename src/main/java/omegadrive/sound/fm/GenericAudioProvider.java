@@ -1,9 +1,9 @@
 package omegadrive.sound.fm;
 
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jctools.queues.atomic.SpscAtomicArrayQueue;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 import java.util.Queue;
@@ -20,7 +20,7 @@ import static omegadrive.util.Util.th;
  */
 public class GenericAudioProvider implements FmProvider {
 
-    private static final Logger LOG = LogManager.getLogger(GenericAudioProvider.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(GenericAudioProvider.class.getSimpleName());
     protected AtomicInteger stereoQueueLen = new AtomicInteger();
     //NOTE: each element represent a 16 bit sample for one channel
     protected final Queue<Integer> sampleQueue;

@@ -19,13 +19,13 @@
 
 package omegadrive.vdp.model;
 
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 public interface VdpMemoryInterface extends VdpMemory {
 
-    Logger LOG = LogManager.getLogger(VdpMemoryInterface.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(VdpMemoryInterface.class.getSimpleName());
 
     void writeVramByte(int address, int data);
 

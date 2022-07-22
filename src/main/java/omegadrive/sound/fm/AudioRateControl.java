@@ -22,9 +22,9 @@ package omegadrive.sound.fm;
 import com.google.common.collect.Maps;
 import omegadrive.sound.SoundProvider;
 import omegadrive.system.perf.Telemetry;
+import omegadrive.util.LogHelper;
 import omegadrive.util.SoundUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 import java.text.DecimalFormat;
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
  */
 public class AudioRateControl {
     public static final double FM_CALCS_PER_MICROS = (1_000_000.0 / SoundProvider.SAMPLE_RATE_HZ);
-    private static final Logger LOG = LogManager.getLogger(AudioRateControl.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(AudioRateControl.class.getSimpleName());
     private static final boolean DEBUG = false;
     private static final double HALF_LIMIT = 0.0125;
     private static final double LOWER_LIMIT = FM_CALCS_PER_MICROS * (1 - HALF_LIMIT);

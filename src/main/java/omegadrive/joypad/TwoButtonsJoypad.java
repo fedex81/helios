@@ -21,8 +21,8 @@ package omegadrive.joypad;
 
 
 import com.google.common.collect.Maps;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import static omegadrive.input.InputProvider.PlayerNumber;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
@@ -53,7 +53,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
  */
 public class TwoButtonsJoypad extends BasePadAdapter {
 
-    private static final Logger LOG = LogManager.getLogger(TwoButtonsJoypad.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(TwoButtonsJoypad.class.getSimpleName());
 
     //only for SMS, 1 - unpressed, 0 - pressed
     private int pauseButton1 = 1;

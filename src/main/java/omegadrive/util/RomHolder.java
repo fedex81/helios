@@ -1,7 +1,6 @@
 package omegadrive.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import static omegadrive.util.Util.th;
 
@@ -12,7 +11,7 @@ import static omegadrive.util.Util.th;
  */
 public class RomHolder {
 
-    private final static Logger LOG = LogManager.getLogger(RomHolder.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(RomHolder.class.getSimpleName());
 
     public static final RomHolder EMPTY_ROM = new RomHolder(new int[1]);
 
@@ -26,7 +25,7 @@ public class RomHolder {
         this.romMask = Util.getRomMask(size);
         assert romMask == size - 1;
         if (baseSize != size) {
-            LOG.info(this::toString);
+            LOG.info(toString());
         }
     }
 

@@ -25,11 +25,11 @@ import omegadrive.bus.model.Z80BusProvider;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.ColecoPad;
 import omegadrive.util.FileUtil;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.Tms9918aVdp;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,7 +41,7 @@ import java.nio.file.Paths;
  */
 public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements Z80BusProvider {
 
-    private static final Logger LOG = LogManager.getLogger(ColecoBus.class);
+    private static final Logger LOG = LogHelper.getLogger(ColecoBus.class);
 
     static final boolean verbose = false;
 

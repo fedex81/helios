@@ -38,14 +38,13 @@ import omegadrive.sound.msumd.MsuMdHandler;
 import omegadrive.sound.msumd.MsuMdHandlerImpl;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider.VdpBusyState;
 import omegadrive.vdp.model.GenesisVdpProvider.VdpPortType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.slf4j.Logger;
 
 import java.util.Objects;
 
@@ -54,7 +53,7 @@ import static omegadrive.util.Util.th;
 public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad> implements GenesisBusProvider, RomMapper {
 
 
-    private static final Logger LOG = LogManager.getLogger(GenesisBus.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(GenesisBus.class.getSimpleName());
 
     public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
@@ -908,7 +907,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     private static void logInfo(String str, Object... args) {
         if (verbose) {
-            LOG.info(new ParameterizedMessage(str, args));
+            LOG.info(LogHelper.formatMessage(str, args));
         }
     }
 

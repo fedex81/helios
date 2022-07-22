@@ -23,12 +23,12 @@ import omegadrive.bus.md.GenesisZ80BusProviderImpl;
 import omegadrive.cpu.z80.Z80Memory;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryRam;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 public interface GenesisZ80BusProvider extends BaseBusProvider {
 
-    Logger LOG = LogManager.getLogger(GenesisZ80BusProvider.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(GenesisZ80BusProvider.class.getSimpleName());
 
     int END_RAM = 0x3FFF;
     int START_YM2612 = 0x4000;

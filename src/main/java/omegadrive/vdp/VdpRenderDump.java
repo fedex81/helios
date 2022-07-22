@@ -20,10 +20,10 @@
 package omegadrive.vdp;
 
 import omegadrive.util.ImageUtil;
+import omegadrive.util.LogHelper;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.VdpMisc.RenderType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -33,7 +33,7 @@ import java.nio.file.Paths;
 
 public class VdpRenderDump {
 
-    private static final Logger LOG = LogManager.getLogger(VdpRenderDump.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(VdpRenderDump.class.getSimpleName());
 
     public static GraphicsDevice gd;
     static boolean isHeadless;

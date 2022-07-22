@@ -7,10 +7,10 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.cpu.z80.Z80Helper;
 import omegadrive.util.FileUtil;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import omegadrive.util.ZipUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 import z80core.Z80;
 import z80core.Z80State;
 
@@ -42,7 +42,7 @@ public class StateUtil {
         b.get(arr2);
         return Util.getUInt32LE(arr2);
     };
-    private final static Logger LOG = LogManager.getLogger(StateUtil.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(StateUtil.class.getSimpleName());
 
     public static final BiFunction<ByteBuffer, Integer, Integer> getInt4Fn = (b, pos) -> {
         b.position(pos);

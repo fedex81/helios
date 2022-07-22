@@ -34,11 +34,11 @@ import omegadrive.joypad.MsxPad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.StateUtil;
 import omegadrive.util.FileUtil;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.Tms9918aVdp;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -57,7 +57,7 @@ import static omegadrive.input.InputProvider.PlayerNumber.P2;
  */
 public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80BusProvider, Device {
 
-    private static final Logger LOG = LogManager.getLogger(MsxBus.class);
+    private static final Logger LOG = LogHelper.getLogger(MsxBus.class);
 
     static final boolean verbose = false;
 

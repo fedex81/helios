@@ -21,8 +21,8 @@ package omegadrive.joypad;
 
 import com.google.common.collect.ImmutableMap;
 import omegadrive.input.InputProvider.PlayerNumber;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,7 +34,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 
 public abstract class BasePadAdapter implements JoypadProvider {
 
-    private static final Logger LOG = LogManager.getLogger(BasePadAdapter.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(BasePadAdapter.class.getSimpleName());
 
     JoypadProvider.JoypadType p1Type;
     JoypadProvider.JoypadType p2Type;

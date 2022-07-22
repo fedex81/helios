@@ -20,14 +20,14 @@
 package omegadrive.vdp.model;
 
 import omegadrive.Device;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 public interface BaseVdpProvider extends Device, BaseVdpAdapterEventSupport {
 
-    Logger LOG = LogManager.getLogger(BaseVdpProvider.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(BaseVdpProvider.class.getSimpleName());
 
     int MCLK_DIVIDER_FAST_VDP = 4;
     int MCLK_DIVIDER_SLOW_VDP = 5;

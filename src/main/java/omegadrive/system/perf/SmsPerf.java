@@ -22,9 +22,9 @@ package omegadrive.system.perf;
 import omegadrive.SystemLoader;
 import omegadrive.system.Sms;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -34,7 +34,7 @@ import java.util.stream.IntStream;
 public class SmsPerf extends Sms {
 
     static int mclkHz, vdpHz, vdpRef, z80Ref, fmRef;
-    private static final Logger LOG = LogManager.getLogger(GenesisPerf.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(GenesisPerf.class.getSimpleName());
     int[] cycleVdpFrame = new int[RegionDetector.Region.USA.getFps()];
     int[] cycleZ80Frame = new int[RegionDetector.Region.USA.getFps()];
     int[] cycleFmFrame = new int[RegionDetector.Region.USA.getFps()];

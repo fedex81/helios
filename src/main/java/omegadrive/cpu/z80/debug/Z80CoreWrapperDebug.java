@@ -23,8 +23,8 @@ import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Helper;
 import omegadrive.cpu.z80.Z80MemIoOps;
 import omegadrive.cpu.z80.disasm.Z80Dasm;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 import z80core.Z80State;
 
 import java.util.stream.IntStream;
@@ -35,7 +35,7 @@ import java.util.stream.IntStream;
  */
 public class Z80CoreWrapperDebug extends Z80CoreWrapperFastDebug {
 
-    private final static Logger LOG = LogManager.getLogger(Z80CoreWrapperDebug.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(Z80CoreWrapperDebug.class.getSimpleName());
     public static boolean verbose = false;
 
     protected Z80Dasm z80Disasm;

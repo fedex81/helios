@@ -3,9 +3,9 @@ package omegadrive.cart.mapper.md;
 import omegadrive.cart.loader.MdRomDbModel.EepromLineMap;
 import omegadrive.cart.loader.MdRomDbModel.EepromType;
 import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import static omegadrive.cart.mapper.md.I2cEeprom.EepromState.*;
 import static omegadrive.util.Util.th;
@@ -83,7 +83,7 @@ public class I2cEeprom {
         public void writeEeprom(int address, int data, Size size) {
         }
     };
-    private final static Logger LOG = LogManager.getLogger(I2cEeprom.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(I2cEeprom.class.getSimpleName());
     private static final boolean verbose = false;
     private static final boolean logReadWrite = verbose || false;
 

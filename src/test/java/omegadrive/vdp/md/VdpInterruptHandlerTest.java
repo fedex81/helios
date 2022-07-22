@@ -17,6 +17,7 @@
 
 package omegadrive.vdp.md;
 
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.BaseVdpInterruptHandlerTest;
@@ -24,15 +25,14 @@ import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
 
 public class VdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
 
-    private static final Logger LOG = LogManager.getLogger(VdpInterruptHandlerTest.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(VdpInterruptHandlerTest.class.getSimpleName());
 
     @Test
     @Ignore

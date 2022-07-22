@@ -24,9 +24,8 @@ import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 /**
  *
@@ -38,7 +37,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class MC68000Wrapper implements M68kProvider {
 
-    private final static Logger LOG = LogManager.getLogger(MC68000Wrapper.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(MC68000Wrapper.class.getSimpleName());
 
     protected MC68000 m68k;
     protected AddressSpace addressSpace;
@@ -70,7 +69,7 @@ public class MC68000Wrapper implements M68kProvider {
             LOG.error("68k error", e);
             m68k.raiseException(ILLEGAL_ACCESS_EXCEPTION); //avoid the intack dance
             if (MC68000Helper.STOP_ON_EXCEPTION) {
-                MC68000Helper.printCpuState(m68k, Level.ERROR, "", addressSpace.size());
+                LOG.error(MC68000Helper.getCpuState(m68k, "", addressSpace.size()));
                 throw e;
             }
         }

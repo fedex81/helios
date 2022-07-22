@@ -2,8 +2,7 @@ package omegadrive.util;
 
 import com.google.common.io.ByteStreams;
 import omegadrive.system.SysUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,7 +32,7 @@ public class ZipUtil {
     public static final Predicate<String> isGZipFile = n -> n.endsWith(GZIP_EXT);
     static final BiPredicate<ZipEntry, String[]> isSupportedBinaryType =
             (ze, ext) -> Arrays.stream(ext).anyMatch(t -> ze.getName().contains(t));
-    private final static Logger LOG = LogManager.getLogger(ZipUtil.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(ZipUtil.class.getSimpleName());
 
     public static boolean isZipArchiveByteStream(Path path) {
         return isZipFile.test(path.getFileName().toString().toLowerCase());

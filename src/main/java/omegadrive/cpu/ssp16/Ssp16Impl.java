@@ -17,8 +17,8 @@ package omegadrive.cpu.ssp16;
  * @author Federico Berti
  */
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -205,7 +205,7 @@ import static omegadrive.cpu.ssp16.Ssp16Types.Ssp16Reg.*;
  *   'ld d, (a)' loads from program ROM
  */
 public class Ssp16Impl implements Ssp16 {
-    private final static Logger LOG = LogManager.getLogger(Ssp16Impl.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(Ssp16Impl.class.getSimpleName());
     /*#define USE_DEBUGGER*/
     public static final boolean LOG_SVP = false;
     /* flags */

@@ -19,9 +19,9 @@ package omegadrive.cpu.z80;
 
 import omegadrive.cpu.z80.disasm.Z80Dasm;
 import omegadrive.memory.IMemoryRam;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 import z80core.MemIoOps;
 import z80core.NotifyOps;
 import z80core.Z80;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 public class Z80Exerciser implements NotifyOps {
 
-    private static final Logger LOG = LogManager.getLogger(Z80Exerciser.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(Z80Exerciser.class.getSimpleName());
 
     private static String resourcesPath = "./src/test/java/omegadrive/z80/";
 
@@ -71,7 +71,7 @@ public class Z80Exerciser implements NotifyOps {
             fileBytes = Files.readAllBytes(file);
             System.out.println("Read " + fileBytes.length + " bytes from " + testName);
         } catch (IOException ex) {
-            LOG.error(ex);
+            LOG.error("Error", ex);
             return;
         }
 

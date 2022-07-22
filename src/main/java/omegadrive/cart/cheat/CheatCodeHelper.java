@@ -20,15 +20,15 @@
 package omegadrive.cart.cheat;
 
 import omegadrive.bus.model.GenesisBusProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CheatCodeHelper {
 
-    private static final Logger LOG = LogManager.getLogger(CheatCodeHelper.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(CheatCodeHelper.class.getSimpleName());
 
     /**
      * Pattern for recognizing Genesis Raw Codes.

@@ -1,11 +1,11 @@
 package omegadrive.vdp.util;
 
+import omegadrive.util.LogHelper;
 import omegadrive.util.PriorityThreadFactory;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpRenderHandler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
  */
 public class VdpDebugView implements UpdatableViewer {
 
-    private static final Logger LOG = LogManager.getLogger(VdpDebugView.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(VdpDebugView.class.getSimpleName());
     private ExecutorService service = Executors.newSingleThreadExecutor(
             new PriorityThreadFactory(Thread.MIN_PRIORITY, this));
 

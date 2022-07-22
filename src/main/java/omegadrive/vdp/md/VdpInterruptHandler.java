@@ -21,10 +21,10 @@ package omegadrive.vdp.md;
 
 import omegadrive.Device;
 import omegadrive.bus.md.BusArbiter;
+import omegadrive.util.LogHelper;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.*;
 
@@ -39,7 +39,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
      * Kawasaki, Outrun, Gunstar Heroes,Lotus II,Legend of Galahad, wobble.bin, Vscrollexperiment,
      * Road rash, lemmings, Bram Stoker Dracula
      */
-    private final static Logger LOG = LogManager.getLogger(VdpInterruptHandler.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(VdpInterruptHandler.class.getSimpleName());
 
     public static final int COUNTER_LIMIT = 0x1FF;
     public static final int VBLANK_CLEAR = COUNTER_LIMIT;

@@ -20,9 +20,9 @@
 package omegadrive.cart.mapper.msx;
 
 import omegadrive.cart.mapper.RomMapper;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import static omegadrive.cart.mapper.msx.MsxAsciiMapper.*;
 
@@ -32,7 +32,7 @@ import static omegadrive.cart.mapper.msx.MsxAsciiMapper.*;
  */
 public class MsxAsciiMapper extends AsciiMapperImpl {
 
-    private static final Logger LOG = LogManager.getLogger(MsxAsciiMapper.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MsxAsciiMapper.class.getSimpleName());
 
     public static final int BLOCK_NUM = 32;
     public static final int MAPPER_START_ADDRESS = 0x4000;

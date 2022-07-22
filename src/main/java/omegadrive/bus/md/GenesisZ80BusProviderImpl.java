@@ -26,12 +26,12 @@ import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.bus.model.GenesisZ80BusProvider;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements GenesisZ80BusProvider {
-    private static final Logger LOG = LogManager.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
 
     //    To specify which 32k section you want to access, write the upper nine
     //    bits of the complete 24-bit address into bit 0 of the bank address

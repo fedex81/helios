@@ -22,17 +22,17 @@ package omegadrive.vdp.model;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Maps;
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.vdp.md.GenesisVdp;
 import omegadrive.vdp.md.VdpFifo;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.EnumSet;
 import java.util.Map;
 
 public interface GenesisVdpProvider extends BaseVdpProvider {
 
-    Logger LOG = LogManager.getLogger(GenesisVdpProvider.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(GenesisVdpProvider.class.getSimpleName());
 
     int MAX_SPRITES_PER_FRAME_H40 = 80;
     int MAX_SPRITES_PER_FRAME_H32 = 64;

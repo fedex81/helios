@@ -20,8 +20,7 @@
 package omegadrive.util;
 
 import omegadrive.sound.SoundProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.*;
 import java.io.File;
@@ -31,7 +30,7 @@ import java.lang.reflect.Field;
 
 public class SoundUtil {
 
-    private static final Logger LOG = LogManager.getLogger(SoundUtil.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(SoundUtil.class.getSimpleName());
 
     public static byte ZERO_BYTE = 0;
 

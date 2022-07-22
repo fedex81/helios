@@ -20,8 +20,8 @@
 package omegadrive.ui;
 
 import omegadrive.util.FileUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -30,7 +30,7 @@ import java.util.*;
 public class PrefStore {
     protected static String PREF_FILENAME = "./helios.prefs";
 
-    private static final Logger LOG = LogManager.getLogger(PrefStore.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(PrefStore.class.getSimpleName());
 
     private static final String RECENT_FILE = "recent";
     public static int recentFileTotal = 10;

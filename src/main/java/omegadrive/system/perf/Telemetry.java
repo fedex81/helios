@@ -3,9 +3,9 @@ package omegadrive.system.perf;
 import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
 import omegadrive.sound.fm.AudioRateControl;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * Copyright 2020
  */
 public class Telemetry {
-    private final static Logger LOG = LogManager.getLogger(Telemetry.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(Telemetry.class.getSimpleName());
     public static final boolean enable = false;
 
     private static final Function<Map<?, Double>, String> toStringFn = map -> {

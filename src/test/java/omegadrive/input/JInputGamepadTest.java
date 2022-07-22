@@ -35,7 +35,7 @@ public class JInputGamepadTest {
         String lib = new File(".").getAbsolutePath() + File.separator + "lib"
                 + File.separator + "linux";
         System.out.println(lib);
-        System.setProperty("log4j.configurationFile", "./res/log4j2-info.properties");
+        System.setProperty("tinylog.configuration", "./res/tinylog-info.properties");
         System.setProperty("jinput.enable", "true");
         System.setProperty("jinput.detect.debug", "true");
         System.setProperty("net.java.games.input.librarypath", lib);

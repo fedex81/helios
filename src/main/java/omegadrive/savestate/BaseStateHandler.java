@@ -22,8 +22,8 @@ package omegadrive.savestate;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.util.FileUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -32,7 +32,7 @@ import java.util.Set;
 
 public interface BaseStateHandler {
 
-    Logger LOG = LogManager.getLogger(BaseStateHandler.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(BaseStateHandler.class.getSimpleName());
 
     BaseStateHandler EMPTY_STATE = new BaseStateHandler() {
         @Override

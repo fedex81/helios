@@ -26,10 +26,10 @@ import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.cart.loader.MdRomDbModel.RomDbEntry.EepromEntry;
 import omegadrive.cart.mapper.BackupMemoryMapper;
 import omegadrive.cart.mapper.RomMapper;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Optional;
 
@@ -39,7 +39,7 @@ import static omegadrive.util.Util.th;
 
 public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMapper {
 
-    private final static Logger LOG = LogManager.getLogger(MdBackupMemoryMapper.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(MdBackupMemoryMapper.class.getSimpleName());
 
     private final static boolean verbose = false;
     private static final String fileType = "srm";

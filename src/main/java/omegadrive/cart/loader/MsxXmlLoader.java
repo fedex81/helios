@@ -21,8 +21,8 @@ package omegadrive.cart.loader;
 
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.cart.mapper.RomMapper;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -42,7 +42,7 @@ import java.util.Map;
  */
 public class MsxXmlLoader {
 
-    private static final Logger LOG = LogManager.getLogger(MsxXmlLoader.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MsxXmlLoader.class.getSimpleName());
 
     static DocumentBuilderFactory dbf;
 

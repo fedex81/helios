@@ -22,14 +22,14 @@ package omegadrive.sound.fm.ym2413;
 
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.VariableSampleRateSource;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 
 public class Ym2413Provider extends VariableSampleRateSource {
 
-    private static final Logger LOG = LogManager.getLogger(Ym2413Provider.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(Ym2413Provider.class.getSimpleName());
 
     public static final double FM_RATE = 49716.0;
     // Input clock

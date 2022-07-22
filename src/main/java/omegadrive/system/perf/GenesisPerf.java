@@ -21,11 +21,11 @@ package omegadrive.system.perf;
 
 import omegadrive.system.Genesis;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -64,7 +64,7 @@ public class GenesisPerf extends Genesis {
         }
     }
 
-    private static final Logger LOG = LogManager.getLogger(GenesisPerf.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(GenesisPerf.class.getSimpleName());
 
     static final String statsFormat = "%s mCycles: %f, ref: %d, ipf: %d, mCycles(errorPerc): %f%n";
 

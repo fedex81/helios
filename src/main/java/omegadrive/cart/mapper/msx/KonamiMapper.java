@@ -20,9 +20,9 @@
 package omegadrive.cart.mapper.msx;
 
 import omegadrive.cart.mapper.RomMapper;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.function.Predicate;
 
@@ -39,7 +39,7 @@ public class KonamiMapper extends KonamiMapperImpl {
     public static final int MAPPER_END_ADDRESS = 0xBFFF;
     public static final int PAGES_8KB = 4;
     private static final KonamiType[] list = KonamiType.values();
-    private static final Logger LOG = LogManager.getLogger(KonamiMapper.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(KonamiMapper.class.getSimpleName());
 
     private KonamiMapper(int[] rom, KonamiType type) {
         super(rom, type);

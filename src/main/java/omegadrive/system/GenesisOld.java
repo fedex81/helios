@@ -37,12 +37,12 @@ import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.perf.GenesisPerf;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * TODO Check VR audio
@@ -58,7 +58,7 @@ public class GenesisOld extends BaseSystem<GenesisBusProvider> {
     final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
     protected final static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
     protected final static int FM_DIVIDER = 42 / MCLK_DIVIDER;
-    private final static Logger LOG = LogManager.getLogger(Genesis.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(Genesis.class.getSimpleName());
 
     protected Z80Provider z80;
     protected M68kProvider cpu;

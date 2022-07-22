@@ -20,11 +20,11 @@
 package omegadrive.sound.javasound;
 
 import omegadrive.system.perf.Telemetry;
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Sleeper;
 import omegadrive.util.SoundUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Arrays;
 
@@ -33,7 +33,7 @@ import static omegadrive.sound.SoundDevice.SoundDeviceType.PWM;
 
 public class JavaSoundManager extends AbstractSoundManager {
 
-    private static final Logger LOG = LogManager.getLogger(JavaSoundManager.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(JavaSoundManager.class.getSimpleName());
 
     public static int sleepTotal = 0;
     public static final long EMPTY_QUEUE_SLEEP_NS = 500_000;

@@ -1,9 +1,8 @@
 package omegadrive.cpu;
 
 import com.google.common.collect.ImmutableSet;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.filter.AbstractFilterable;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -19,7 +18,7 @@ import static omegadrive.util.Util.th;
  */
 public class CpuFastDebug {
 
-    private static final Logger LOG = LogManager.getLogger(CpuFastDebug.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(CpuFastDebug.class.getSimpleName());
 
     private static final boolean logToSysOut = Boolean.parseBoolean(System.getProperty("helios.logToSysOut", "false"));
 
@@ -82,7 +81,6 @@ public class CpuFastDebug {
         Arrays.stream(ctx.pcAreas).forEach(i -> Arrays.fill(opcodes[i], -1));
         assert ctx.debugMode >= 0 && ctx.debugMode < debugModeVals.length;
         debugMode = debugModeVals[ctx.debugMode];
-        checkLog4jBurstFilter();
     }
 
     public void printDebugMaybe() {
@@ -218,23 +216,5 @@ public class CpuFastDebug {
             }
         }
         return false;
-    }
-
-    private static void checkLog4jBurstFilter() {
-        //NOTE: ugly but I've wasted so much time due to this ...
-        if (LOG instanceof org.apache.logging.log4j.core.Logger) {
-            org.apache.logging.log4j.core.Logger loglog = (org.apache.logging.log4j.core.Logger) LOG;
-            loglog.getAppenders().entrySet().forEach(e -> {
-                if (e.getValue() instanceof AbstractFilterable) {
-                    AbstractFilterable af = (AbstractFilterable) e.getValue();
-                    if (af.hasFilter()) {
-                        LOG.error("***********");
-                        LOG.error("{} appender has a filter set, " +
-                                "if it is a burstFilter it will impact verbose logging", e.getKey());
-                        LOG.error("***********");
-                    }
-                }
-            });
-        }
     }
 }

@@ -18,15 +18,15 @@
 package omegadrive.vdp.md;
 
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.slf4j.Logger;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -35,7 +35,7 @@ import java.util.stream.IntStream;
 @Ignore
 public class BaseVdpDmaHandlerTest {
 
-    private static final Logger LOG = LogManager.getLogger(BaseVdpDmaHandlerTest.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(BaseVdpDmaHandlerTest.class.getSimpleName());
 
     GenesisVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;

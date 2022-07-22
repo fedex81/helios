@@ -19,9 +19,9 @@
 
 package omegadrive.vdp.model;
 
+import omegadrive.util.LogHelper;
 import omegadrive.util.VideoMode;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.EnumSet;
 
@@ -51,7 +51,7 @@ public enum VdpCounterMode {
     ;
 
     private final static EnumSet<VdpCounterMode> values = EnumSet.allOf(VdpCounterMode.class);
-    private final static Logger LOG = LogManager.getLogger(VdpCounterMode.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(VdpCounterMode.class.getSimpleName());
 
     public final int hTotalCount;
     public final int hJumpTrigger;

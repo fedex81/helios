@@ -18,17 +18,17 @@
  */
 package omegadrive.sound.msumd;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
 import org.digitalmediaserver.cuelib.CueParser;
 import org.digitalmediaserver.cuelib.CueSheet;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 
 public class CueFileParser {
-    private static final Logger LOG = LogManager.getLogger(CueFileParser.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(CueFileParser.class.getSimpleName());
     public static final int MAX_TRACKS = 100; //0-99
     static int SECTOR_SIZE_BYTES = 2352;
 

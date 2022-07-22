@@ -19,18 +19,18 @@
 
 package omegadrive.vdp.util;
 
+import omegadrive.util.LogHelper;
 import omegadrive.vdp.md.VdpColorMapper;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class CramViewer implements UpdatableViewer {
 
-    private static final Logger LOG = LogManager.getLogger(CramViewer.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(CramViewer.class.getSimpleName());
 
     private static final int CRAM_ENTRIES = GenesisVdpProvider.VDP_CRAM_SIZE / 2;
     private static final int LABEL_HEIGHT = 100;

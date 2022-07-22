@@ -27,8 +27,7 @@ import omegadrive.joypad.JoypadProvider.JoypadType;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.*;
 import omegadrive.util.FileUtil.FileResourceType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -61,7 +60,7 @@ import static omegadrive.util.ScreenSizeHelper.*;
 
 public class SwingWindow implements DisplayWindow {
 
-    private static final Logger LOG = LogManager.getLogger(SwingWindow.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(SwingWindow.class.getSimpleName());
 
     private static final boolean UI_SCALE_ON_THREAD
             = Boolean.parseBoolean(System.getProperty("ui.scale.on.thread", "false"));

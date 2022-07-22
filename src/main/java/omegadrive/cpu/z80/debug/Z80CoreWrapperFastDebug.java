@@ -23,15 +23,15 @@ import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Helper;
 import omegadrive.cpu.z80.disasm.Z80Dasm;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 import z80core.Z80State;
 
 import java.util.function.Predicate;
 
 public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDebug.CpuDebugInfoProvider {
 
-    private final static Logger LOG = LogManager.getLogger(Z80CoreWrapperFastDebug.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(Z80CoreWrapperFastDebug.class.getSimpleName());
     private static final int debugMode = Integer.parseInt(System.getProperty("helios.z80.debug.mode", "0"));
 
     protected Z80Dasm z80Disasm;

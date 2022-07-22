@@ -1,7 +1,7 @@
 package omegadrive.ui;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,7 +20,7 @@ public class SwingScreenSupport {
 
     public static final int DEFAULT_SCREEN = 1;
 
-    private static final Logger LOG = LogManager.getLogger(SwingScreenSupport.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(SwingScreenSupport.class.getSimpleName());
 
     private static final GraphicsDevice[] graphicsDevices =
             GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();

@@ -23,8 +23,8 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import net.java.games.input.Component;
 import net.java.games.input.Component.Identifier.Button;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import static net.java.games.input.Component.Identifier.Button.Axis;
 import static omegadrive.joypad.JoypadProvider.JoypadButton;
@@ -39,7 +39,7 @@ public class JinputGamepadMapping {
     public static final String DEFAULT_PAD_NAME = "Default Pad Name";
 
     public static Table<String, Component.Identifier, Object> deviceMappings = HashBasedTable.create();
-    private static final Logger LOG = LogManager.getLogger(JinputGamepadMapping.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(JinputGamepadMapping.class.getSimpleName());
 
     static {
         deviceMappings.put(SONY_PSX_CLASSIC_PAD_NAME, Axis.Y, JoypadDirection.UP_DOWN);

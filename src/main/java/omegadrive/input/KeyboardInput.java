@@ -22,8 +22,8 @@ package omegadrive.input;
 import omegadrive.SystemLoader;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.joypad.JoypadProvider.JoypadButton;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -35,7 +35,7 @@ import static omegadrive.input.InputProvider.PlayerNumber;
 
 public class KeyboardInput extends KeyAdapter {
 
-    protected static final Logger LOG = LogManager.getLogger(KeyboardInput.class.getSimpleName());
+    protected static final Logger LOG = LogHelper.getLogger(KeyboardInput.class.getSimpleName());
 
     protected JoypadProvider provider;
     protected SystemLoader.SystemType systemType;

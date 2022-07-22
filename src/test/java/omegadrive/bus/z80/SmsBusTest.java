@@ -8,11 +8,11 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
 
 /**
  * ${FILE}
@@ -23,7 +23,7 @@ import org.junit.Test;
  */
 public class SmsBusTest {
 
-    private final static Logger LOG = LogManager.getLogger(SmsBusTest.class);
+    private final static Logger LOG = LogHelper.getLogger(SmsBusTest.class);
     private SmsBus bus;
 
     @Before

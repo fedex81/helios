@@ -20,16 +20,16 @@
 package omegadrive.cart;
 
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.util.Optional;
 
 public class CartridgeInfoProvider {
 
-    private static final Logger LOG = LogManager.getLogger(CartridgeInfoProvider.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(CartridgeInfoProvider.class.getSimpleName());
 
     public static final boolean AUTOFIX_CHECKSUM = false;
 

@@ -1,7 +1,6 @@
 package omegadrive.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.concurrent.locks.LockSupport;
 
@@ -14,7 +13,7 @@ public class Sleeper {
 
     public static final boolean BUSY_WAIT;
     public static final long SLEEP_LIMIT_NS = 10_000;
-    private final static Logger LOG = LogManager.getLogger(Util.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(Util.class.getSimpleName());
 
     static {
         startSleeperThread();

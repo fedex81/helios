@@ -26,10 +26,10 @@ import omegadrive.bus.z80.SmsBus;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.FileUtil;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
@@ -53,7 +53,7 @@ public class MekaStateHandler implements BaseStateHandler {
     private static final Function<Integer, String> toCrcStringFn = v -> (v < 16 ? "0" : "") +
             Integer.toHexString(v);
     private final static String fileExtension = "s00";
-    private static final Logger LOG = LogManager.getLogger(MekaStateHandler.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MekaStateHandler.class.getSimpleName());
     private static final Set<Class<? extends Device>> deviceClassSet = ImmutableSet.of(Z80Provider.class,
             SmsVdp.class, IMemoryProvider.class, SmsBus.class);
 

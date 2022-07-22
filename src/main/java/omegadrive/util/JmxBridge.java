@@ -19,14 +19,13 @@
 
 package omegadrive.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Method;
 
 public class JmxBridge {
 
-    private static final Logger LOG = LogManager.getLogger(JmxBridge.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(JmxBridge.class.getSimpleName());
 
     private static boolean JMX_SUPPORT_FLAG;
     private static JmxLauncherProxy proxy;

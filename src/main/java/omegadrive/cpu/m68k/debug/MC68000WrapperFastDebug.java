@@ -24,9 +24,8 @@ import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.CpuDebugContext;
 import omegadrive.cpu.m68k.MC68000Helper;
 import omegadrive.cpu.m68k.MC68000Wrapper;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.util.function.Predicate;
 
@@ -34,7 +33,7 @@ import static omegadrive.util.Util.th;
 
 public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDebug.CpuDebugInfoProvider {
 
-    private static final Logger LOG = LogManager.getLogger(MC68000WrapperFastDebug.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MC68000WrapperFastDebug.class.getSimpleName());
 
     //see CpuFastDebug.DebugMode
     //DebugMode {NONE, INST_ONLY, NEW_INST_ONLY, STATE}
@@ -72,10 +71,6 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
             return super.runInstruction();
         }
         return fastDebug.isBusyLoop(currentPC, opcode) + super.runInstruction();
-    }
-
-    protected void printCpuState(String head) {
-        MC68000Helper.printCpuState(m68k, Level.INFO, head, addressSpace.size());
     }
 
     @Override

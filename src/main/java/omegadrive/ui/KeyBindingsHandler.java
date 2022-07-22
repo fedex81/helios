@@ -27,8 +27,8 @@ import omegadrive.input.KeyboardInputHelper;
 import omegadrive.joypad.JoypadProvider.JoypadButton;
 import omegadrive.system.SystemProvider.SystemEvent;
 import omegadrive.util.FileUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
@@ -38,7 +38,7 @@ import static javax.swing.KeyStroke.getKeyStroke;
 
 public class KeyBindingsHandler {
 
-    private static final Logger LOG = LogManager.getLogger(KeyBindingsHandler.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(KeyBindingsHandler.class.getSimpleName());
 
     protected static final String DIV = "=";
     protected static final String PLAYER_DIV = "\\.";
