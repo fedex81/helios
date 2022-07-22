@@ -394,7 +394,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
             }
             sramLockValue = (int) data;
-            LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
+            //LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
             LOG.warn("Unexpected mapper set, address: {}, data: {}", Long.toHexString(addressL),
                     Integer.toHexString((int) data));
@@ -425,13 +425,13 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 z80Provider.reset();
                 z80ResetState = true;
                 getFm().reset();
-                LOG.debug("Reset while busRequested: {}", z80BusRequested);
+                //LOG.debug("Reset while busRequested: {}", z80BusRequested);
             } else {
-                LOG.debug("Reset while busUnrequested, ignoring");
+                //LOG.debug("Reset while busUnrequested, ignoring");
             }
         } else {
             z80ResetState = false;
-            LOG.debug("Disable reset, busReq : {}", z80BusRequested);
+            //LOG.debug("Disable reset, busReq : {}", z80BusRequested);
         }
     }
 
@@ -448,17 +448,17 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         if (busReq) {
             boolean isReset = z80ResetState;
             if (!z80BusRequested) {
-                LOG.debug("busRequested, reset: {}", isReset);
+                //LOG.debug("busRequested, reset: {}", isReset);
                 z80BusRequested = true;
             } else {
-                LOG.debug("busRequested, ignored, reset: {}", isReset);
+                //LOG.debug("busRequested, ignored, reset: {}", isReset);
             }
         } else {
             if (z80BusRequested) {
                 z80BusRequested = false;
-                LOG.debug("busUnrequested, reset : {}", z80ResetState);
+                //LOG.debug("busUnrequested, reset : {}", z80ResetState);
             } else {
-                LOG.debug("busUnrequested ignored");
+                //LOG.debug("busUnrequested ignored");
             }
         }
     }
@@ -560,7 +560,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 joypadProvider.writeDataRegister2(data);
                 break;
             case 6:
-                if (LOG.isDebugEnabled()) LOG.debug("Write to expansion port: {}, data: {}", th(address), th(data));
+                //LOG.debug("Write to expansion port: {}, data: {}", th(address), th(data));
                 break;
             case 8:
                 joypadProvider.writeControlRegister1(data);

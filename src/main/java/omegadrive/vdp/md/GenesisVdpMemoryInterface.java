@@ -158,7 +158,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
             vsram[address] = data & 0xFF;
         } else {
             //Arrow Flash
-            LOG.debug("Ignoring vsram write to address: {}", Integer.toHexString(address));
+            //LOG.debug("Ignoring vsram write to address: {}", Integer.toHexString(address));
         }
     }
 

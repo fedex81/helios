@@ -69,7 +69,7 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
     @Override
     default int readIoPort(int port) {
         //TF4 calls this by mistake
-        LOG.debug("inPort: {}", port);
+        //LOG.debug("inPort: {}", port);
         return 0xFF;
     }
 

@@ -172,7 +172,7 @@ public class SvpMapper implements RomMapper, SvpBus {
                 sspCtx.setEmu_status(es & ~SSP_WAIT_PM0);
                 break;
             default:
-                LOG.debug("Svp unexpected register write {}, {}", Integer.toHexString(address), Long.toHexString(data));
+                //LOG.debug("Svp unexpected register write {}, {}", Integer.toHexString(address), Long.toHexString(data));
         }
     }
 

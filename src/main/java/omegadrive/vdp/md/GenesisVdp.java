@@ -460,7 +460,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         }
         if (!fifo.isEmpty()) {
             //Bonkers, Subterrania
-            LOG.debug("readDataPort with FIFO not empty {}, address: {}", vramMode, addressRegister);
+            //LOG.debug("readDataPort with FIFO not empty {}, address: {}", vramMode, addressRegister);
         }
         //TODO need to stop 68k until the result is available
         int value = readDataPortInternal();
@@ -659,7 +659,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
                 boolean ext = ((data >> 7) & 1) == 1;
                 if (exVram != ext) {
                     exVram = ext;
-                    LOG.debug("128kb VRAM: {}", exVram);
+                    //LOG.debug("128kb VRAM: {}", exVram);
                 }
                 displayEnable = ((data >> 6) & 1) == 1;
                 ie0 = ((data >> 5) & 1) == 1;
@@ -678,7 +678,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
                 h40 = rs0 && rs1;
                 boolean val = Util.bitSetTest(data, 3);
                 if (val != ste) {
-                    LOG.debug("Shadow highlight: {}", val);
+                    //LOG.debug("Shadow highlight: {}", val);
                 }
                 ste = val;
                 InterlaceMode prev = interlaceMode;

@@ -768,7 +768,7 @@ public class Ssp16Impl implements Ssp16 {
                     int inc = get_inc(mode);
                     svpCtx.iram_rom[addr & 0x3FF] = d;
                     sspCtx.pmac[write][reg] += inc;
-//                    LOG.debug("svp iram write {}, {}", Integer.toHexString(addr & 0x3FF),
+//                    //LOG.debug("svp iram write {}, {}", Integer.toHexString(addr & 0x3FF),
 //                            Integer.toHexString(svp.iram_rom[addr & 0x3FF]));
                 } else {
                     LOG.info(String.format("ssp FIXME: PM%x unhandled write mode %04x, [%06x] %04x @ %04x",

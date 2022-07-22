@@ -239,7 +239,7 @@ public class JinputGamepadInputProvider implements InputProvider {
         } else if (res instanceof JoypadProvider.JoypadDirection) {
             handleDPad(playerNumber, id, value);
         } else {
-            LOG.debug("Unhandled event: {}", event);
+            //LOG.debug("Unhandled event: {}", event);
         }
     }
 

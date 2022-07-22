@@ -2,7 +2,7 @@ package omegadrive.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.helpers.FormattingTuple;
+import org.slf4j.helpers.MessageFormatter;
 
 /**
  * Federico Berti
@@ -20,7 +20,6 @@ public class LogHelper {
     }
 
     public static String formatMessage(String s, Object... o) {
-        FormattingTuple ft = new FormattingTuple(s, o, null);
-        return ft.getMessage();
+        return MessageFormatter.arrayFormat(s, o).getMessage();
     }
 }

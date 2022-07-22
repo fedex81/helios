@@ -208,7 +208,7 @@ public class SmsMapper {
             switch (val){
                 case 0:
                     if (mappingControl != data) {
-                        LOG.debug("Mapping control: {}", data);
+                        //LOG.debug("Mapping control: {}", data);
                         mappingControl = data;
                         handleSramState(data);
                     }

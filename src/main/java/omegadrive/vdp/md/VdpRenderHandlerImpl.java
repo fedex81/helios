@@ -182,7 +182,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     @Override
     public void initLineData(int line) {
         if (line == 0) {
-            LOG.debug("New Frame");
+            //LOG.debug("New Frame");
             initVideoMode();
             //need to do this here so I can dump data just after rendering the frame
             clearDataFrame();

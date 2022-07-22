@@ -109,12 +109,12 @@ public class GenericAudioProvider implements FmProvider {
 
     public void start() {
         running = true;
-        LOG.debug("Running: {}", running);
+        //LOG.debug("Running: {}", running);
     }
 
     public void stop() {
         running = false;
-        LOG.debug("Running: {}", running);
+        //LOG.debug("Running: {}", running);
     }
 
     @Override
