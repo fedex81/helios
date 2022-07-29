@@ -29,6 +29,8 @@ import org.slf4j.Logger;
 
 import java.util.Arrays;
 
+import static omegadrive.util.Util.th;
+
 /**
  * A page is specified with 6 bits (bits 7 and 6 are always 0) thus allowing a possible 64 pages
  * (SSFII only has 10, though.)
@@ -49,7 +51,7 @@ import java.util.Arrays;
  * 0xA130FD -> 0x300000 - 0x37FFFF
  * 0xA130FF -> 0x380000 - 0x3FFFFF
  * <p>
- * https://github.com/Emu-Docs/Emu-Docs/blob/master/Genesis/ssf2.txt
+ * see: ssf2.txt
  **/
 public abstract class Ssf2Mapper implements RomMapper {
 
@@ -63,19 +65,32 @@ public abstract class Ssf2Mapper implements RomMapper {
     public static final int BANKABLE_START_ADDRESS = 0x80000;
     public static final int BANK_SHIFT = 19;
 
-    private int[] banks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
+    public static final int BANK_REG_MASK = 0xF;
+
+    //6 bits
+    public static final int SSF2_BANKS_TOTAL = 64;
+
+    protected int[] banks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
+    protected final int bankSelMask;
     protected RomMapper baseMapper;
     protected IMemoryProvider memory;
     private final static boolean verbose = false;
+
+    protected Ssf2Mapper() {
+        this(SSF2_BANKS_TOTAL);
+    }
+
+    protected Ssf2Mapper(int banksTotal) {
+        this.bankSelMask = banksTotal - 1;
+    }
 
     @Override
     public long readData(long addressL, Size size) {
         if (addressL >= BANKABLE_START_ADDRESS && addressL <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
             int address = (int) (addressL & 0xFF_FFFF);
             //bankSelector = address >> BANK_SHIFT;
-            address = (banks[address >> BANK_SHIFT] << BANK_SHIFT) | (address & 0x7_FFFF);
-            if (verbose) LOG.info("Bank read: {} -> {}",
-                    addressL, address);
+            address = (banks[address >> BANK_SHIFT] << BANK_SHIFT) | (address & BANK_MASK);
+            if (verbose) LOG.info("Bank read: {} -> {} {}", th(addressL), th(address), size);
             return Util.readDataMask(memory.getRomData(), size, address, memory.getRomMask());
         }
         return baseMapper.readData(addressL, size);
@@ -94,17 +109,17 @@ public abstract class Ssf2Mapper implements RomMapper {
     public void writeBankData(long addressL, long data) {
         int val = (int) (addressL & 0xF);
         int index = val >> 1;
-        if (val % 2 == 1 && index > 0) {
-            int dataI = (int) (data & 0x3F);
-            banks[index] = dataI;
-            if (verbose) LOG.info("Bank write to: {}, {}", addressL, dataI);
+        if ((val & 1) == 1 && index > 0) {
+            banks[index] = (int) (data & bankSelMask);
+            if (verbose) LOG.info("Bank write to: {}, {}", th(addressL), th(banks[index]));
         } else if (val == 1) { //0xA130F1 goes to timeControlWrite
             baseMapper.writeData(addressL, data, Size.BYTE);
         }
     }
 
-
+    //NOTE: this needs to be bytes due to savestate compatibility
     public int[] getState() {
+        assert Arrays.stream(banks).allMatch(v -> v == (byte) v);
         return banks;
     }
 

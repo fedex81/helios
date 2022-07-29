@@ -21,6 +21,7 @@ package omegadrive.cart.mapper.md;
 
 public enum MdMapperType {
     SEGA_SSF("SEGA SSF"),
+    SEGA_SSF2("SEGA SSF2"),
     SEGA_EVERDRIVE("SEGA EVERDRIVE");
 
     String name;

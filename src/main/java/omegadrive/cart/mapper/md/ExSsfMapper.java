@@ -27,81 +27,34 @@ import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
+import static omegadrive.util.Util.th;
+
 /**
- * Extended-SSF mapper description
+ * ExSsfMapper
  * <p>
- * -------cartridge memory map-------
- * 0x000000: BANK0
- * 0x080000: BANK1
- * 0x100000: BANK2
- * 0x180000: BANK3
- * 0x200000: BANK4
- * 0x280000: BANK5
- * 0x300000: BANK6
- * 0x380000: BANK7
- * <p>
- * <p>
- * ---------Control registers---------
- * 0xA130F0: [P.WLC... ...RRRRR] CTRL0
- * 0xA130F2: [........ ...RRRRR] CTRL1
- * 0xA130F4: [........ ...RRRRR] CTRL2
- * 0xA130F6: [........ ...RRRRR] CTRL3
- * 0xA130F8: [........ ...RRRRR] CTRL4
- * 0xA130FA: [........ ...RRRRR] CTRL5
- * 0xA130FC: [........ ...RRRRR] CTRL6
- * 0xA130FE: [........ ...RRRRR] CTRL7
- * P is protection bit. P always should be set for access to the reg 0xA130F0 (CTRL0).Word access only
- * W Memory write protection (0=protected, 1=unprotected)
- * L LED (0=off, 1=on)
- * C #CART signal control. This bit goes directly to the #CART wire.
- * It can map expansion port to the cartridge memory space if set
- * R 512Kbyte bank. 32 banks total
- * <p>
- * Every CTRLx register controls corresponding 512K cartridge BANKx. CTRL0 has extra functions listed above.
- * All registers is write only
- * Mapper supports up to 16Mbyte of memory (32 banks total). Backup ram mapped to the last 31th bank
+ * NOTE: we only support CTRL0 remapping
  *
- * - extended ssf vs ssf mapper, https://krikzz.com/pub/support/mega-everdrive/x3x5x7/dev/extended_ssf-v2.txt
- * https://github.com/krikzz/MEGA-PRO/blob/master/samples/mappers-se/extended-ssf.txt
+ * @author Federico Berti
  */
-//TODO savestate stuff
 public class ExSsfMapper extends Ssf2Mapper {
-
+    private static final Logger LOG = LogHelper.getLogger(ExSsfMapper.class.getSimpleName());
     private final static boolean verbose = false;
-
     public static final int BANK_SET_START_ADDRESS = 0xA130F0;
     public static final int BANK_SET_END_ADDRESS = 0xA130FE;
-    public static final int MATH_ARG_HI = 0xA130D0; //read/write
-    public static final int MATH_ARG_LO = 0xA130D2; //read/write
-    public static final int MATH_MUL_HI = 0xA130D4; //write only
-    public static final int MATH_MUL_LO = 0xA130D6; //write only
-    public static final int MATH_DIV_HI = 0xA130D8; //write only
-    public static final int MATH_DIV_LO = 0xA130DA; //write only
-    private static final Logger LOG = LogHelper.getLogger(ExSsfMapper.class.getSimpleName());
-    private final long[] mathReg = new long[0xB];
-    private final int[] moreBanks = new int[]{0, 1, 2, 3, 4, 5, 6, 7};
-    private final int[][] moreRam = new int[moreBanks.length][BANK_SIZE];
-    private int reg_ctrl0 = 0; //protection on, read-only
-    private boolean mapRom = true;
 
     @Override
     public long readData(long address, Size size) {
         address &= 0xFF_FFFF;
         if (address >= BANKABLE_START_ADDRESS && address <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
-            if (mapRom) {
-                return super.readData(address, size);
-            }
-            if (verbose) LOG.info("Bank read: {}", address);
-            int bankSelector = (int) (address >> BANK_SHIFT);
-            return Util.readDataMask(moreRam[moreBanks[bankSelector]], size, (int) address, BANK_MASK);
-        } else if (address >= MATH_ARG_HI && address <= MATH_ARG_LO) {
-//            LOG.info("Read: {}, {}, {}", Long.toHexString(address), Long.toHexString(mathReg[(int) (address & 0xF)]), opType);
-            return mathReg[(int) (address & 0xF)];
+            return super.readData(address, size);
+        } else if (address < BANKABLE_START_ADDRESS) { //exSSf can remap < 0x80000
+
+            int addressI = (int) ((banks[0] << BANK_SHIFT) | (address & BANK_MASK));
+            if (verbose) LOG.info("Bank read: {} {} -> {}", th(addressI), size, th(address));
+            return Util.readDataMask(memory.getRomData(), size, addressI, memory.getRomMask());
         }
         return baseMapper.readData(address, size);
     }
-
-    private OP_TYPE opType = OP_TYPE.NONE;
 
     public static ExSsfMapper createInstance(RomMapper baseMapper, IMemoryProvider memoryProvider) {
         ExSsfMapper mapper = new ExSsfMapper();
@@ -114,23 +67,24 @@ public class ExSsfMapper extends Ssf2Mapper {
     @Override
     public void writeData(long address, long data, Size size) {
         address &= 0xFF_FFFF;
-        if (address >= BANKABLE_START_ADDRESS && address <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
-            if (verbose) LOG.info("Bank write: {}", address);
-            int bankSelector = (int) (address >> BANK_SHIFT);
-            address &= (BANK_SIZE - 1);
-            Util.writeDataMask(moreRam[moreBanks[bankSelector]], size, (int) address, data, BANK_MASK);
-            return;
-        } else if (address >= MATH_ARG_HI && address <= MATH_DIV_LO) {
-            writeMathRegs(address, data);
-            opType = address <= MATH_ARG_LO ? OP_TYPE.NONE : (address <= MATH_MUL_LO ? OP_TYPE.MULT : OP_TYPE.DIV);
-            recalc(opType);
-            return;
-        } else if (address >= BANK_SET_START_ADDRESS && address <= BANK_SET_END_ADDRESS) {
+        if (address >= BANK_SET_START_ADDRESS && address <= BANK_SET_END_ADDRESS) {
+            int ctrlNum = (int) (address & 7);
             //odd addresses go to SSF2 mapper
-            if ((address & 1) == 1) {
+            if ((ctrlNum & 1) == 1) {
+                assert size == Size.BYTE;
                 writeBankData(address, data);
             } else {
-                writeBankDataExSsf(address, data);
+                assert size != Size.LONG;
+                if (size == Size.BYTE) {
+                    if (ctrlNum == 0) {
+                        writeBankDataExSsf(address, data);
+                    } else {
+                        writeBankData(address + 1, data & 0xFF);
+                    }
+                } else if (size == Size.WORD) {
+//                    assert false : "untested";
+                    writeBankData(address + 1, data & 0xFF);
+                }
             }
             return;
         }
@@ -140,45 +94,50 @@ public class ExSsfMapper extends Ssf2Mapper {
     private void writeBankDataExSsf(long addressL, long data) {
         int val = (int) (addressL & 0xF);
         int index = val >> 1;
-        int dataI = (int) (data & 0x3F);
-        moreBanks[index] = dataI;
-        if (verbose) LOG.info("Setting bankSelector {}: {}, {}", index, addressL, dataI);
-        if (index == 0) {
-            reg_ctrl0 = (int) (data & 0xFFFF);
-            mapRom = (reg_ctrl0 >> 15) == 0;
-        }
+        int dataI = (int) (data & bankSelMask);
+        banks[0] = dataI;
+        if (verbose) LOG.info("Setting bankSelector {}: {}, {}", index, th(addressL), th(dataI));
     }
 
-    public void writeMathRegs(long address, long data) {
-//        LOG.info("Write: {}, {}", Long.toHexString(address), Long.toHexString(data));
-        long d = Integer.toUnsignedLong((int) data);
-        int addr = (int) address;
-        switch (addr) {
-            case MATH_DIV_LO:
-            case MATH_MUL_LO:
-            case MATH_ARG_LO:
-                mathReg[addr & 0xF] = d & 0xFFFF;
-                break;
-            case MATH_DIV_HI:
-            case MATH_MUL_HI:
-            case MATH_ARG_HI:
-                mathReg[addr & 0xF] = d;
-                mathReg[(addr + 2) & 0xF] = d & 0xFFFF;
-                break;
-        }
-    }
+    /**
+     * Extended-SSF mapper description
+     * <p>
+     * -------cartridge memory map-------
+     * 0x000000: BANK0
+     * 0x080000: BANK1
+     * 0x100000: BANK2
+     * 0x180000: BANK3
+     * 0x200000: BANK4
+     * 0x280000: BANK5
+     * 0x300000: BANK6
+     * 0x380000: BANK7
+     * <p>
 
-    private void recalc(OP_TYPE opType) {
-        if (opType == OP_TYPE.MULT) {
-            mathReg[0] = (mathReg[0] * mathReg[4]) & 0xFFFF_FFFF;
-            mathReg[2] = (mathReg[2] * mathReg[6]) & 0xFFFF;
-        } else if (opType == OP_TYPE.DIV) {
-            mathReg[0] = mathReg[0] / Math.max(1, mathReg[8]);
-            mathReg[2] = mathReg[2] / Math.max(1, mathReg[0xA]);
-        }
-    }
-
-    enum OP_TYPE {NONE, MULT, DIV}
-
-
+     for (int j = 2; j <= BANK_REG_MASK; j+=2) {
+     mapper.writeData(BANK_SET_START_ADDRESS + j, i, Size.WORD);
+     Assert.assertEquals(val, banksState[0]);
+     Assert.assertEquals(i & mapper.bankSelMask, banksState[j >> 1]);
+     }
+     * <p>
+     * ---------Control registers---------
+     * 0xA130F0: [P.WLC... ...RRRRR] CTRL0
+     * 0xA130F2: [........ ...RRRRR] CTRL1
+     * 0xA130F4: [........ ...RRRRR] CTRL2
+     * 0xA130F6: [........ ...RRRRR] CTRL3
+     * 0xA130F8: [........ ...RRRRR] CTRL4
+     * 0xA130FA: [........ ...RRRRR] CTRL5
+     * 0xA130FC: [........ ...RRRRR] CTRL6
+     * 0xA130FE: [........ ...RRRRR] CTRL7
+     * P is protection bit. P always should be set for access to the reg 0xA130F0 (CTRL0).Word access only
+     * W Memory write protection (0=protected, 1=unprotected)
+     * L LED (0=off, 1=on)
+     * C #CART signal control. This bit goes directly to the #CART wire.
+     * It can map expansion port to the cartridge memory space if set
+     * R 512Kbyte bank. 32 banks total
+     * <p>
+     * Every CTRLx register controls corresponding 512K cartridge BANKx. CTRL0 has extra functions listed above.
+     * All registers is write only
+     * Mapper supports up to 16Mbyte of memory (32 banks total). Backup ram mapped to the last 31th bank
+     *
+     */
 }
