@@ -917,7 +917,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             mapper.closeRom();
         }
         exSsfMapper.closeRom();
-        backupMemMapper.closeRom();
+        if (mapper != backupMemMapper) {
+            backupMemMapper.closeRom();
+        }
         msuMdHandler.close();
     }
 

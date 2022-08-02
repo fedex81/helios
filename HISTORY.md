@@ -1,3 +1,16 @@
+## 22.0802
+
+NOTE: requires java 17 or later
+
+helios: migrate to tinylog
+helios: require java 17+, update gradle to 7.4.2
+helios: add app icons
+md: add support for most eeprom types, X24C01 family
+md: improve exSSf mapper compat
+md: improve 6 button pad detection
+ui: store the last opened file, fix the soundEnabled toggle when un/pausing,
+    recenter the screen when switching to fullscreen
+
 ## 22.0417
 68k: handle edge case for int ack
 68k: refactor int handling, add processing delay
