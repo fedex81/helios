@@ -1,11 +1,12 @@
 package omegadrive.cpu;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.base.Objects;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
 import java.util.Arrays;
-import java.util.Set;
+import java.util.Map;
+import java.util.StringJoiner;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -23,10 +24,6 @@ public class CpuFastDebug {
     private static final boolean logToSysOut = Boolean.parseBoolean(System.getProperty("helios.logToSysOut", "false"));
 
     public interface CpuDebugInfoProvider {
-        default String getInstructionOnly(int pc, int opcode) {
-            throw new RuntimeException("Not implemented!");
-        }
-
         String getInstructionOnly(int pc);
 
         String getCpuState(String head);
@@ -36,25 +33,61 @@ public class CpuFastDebug {
         int getOpcode();
 
         default String getInstructionOnly() {
-            return getInstructionOnly(getPc(), getOpcode());
+            return getInstructionOnly(getPc());
         }
     }
 
     public static class CpuDebugContext {
-        public int[] pcAreas;
-        public int pcAreasNumber, pcAreaSize, pcMask, pcAreaShift;
+        public int[] pcAreasMaskMap;
+        public int pcAreasNumber, pcAreaShift;
         public Predicate<Integer> isLoopOpcode = i -> false;
         public Predicate<Integer> isIgnoreOpcode = i -> true;
         public int debugMode;
+
+        public CpuDebugContext(Map<Integer, Integer> areaMaskMap) {
+            pcAreasNumber = 1 + areaMaskMap.keySet().stream().mapToInt(Integer::intValue).max().orElseThrow();
+            pcAreasMaskMap = new int[pcAreasNumber];
+            for (var e : areaMaskMap.entrySet()) {
+                pcAreasMaskMap[e.getKey()] = e.getValue();
+            }
+        }
+    }
+
+    public static class PcInfoWrapper {
+        public int area, pcMasked, opcode, pcLooops, hits;
+
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", PcInfoWrapper.class.getSimpleName() + "[", "]")
+                    .add("area=" + area)
+                    .add("pcMasked=" + pcMasked)
+                    .add("opcode=" + opcode)
+                    .add("pcLooops=" + pcLooops)
+                    .add("hits=" + hits)
+                    .toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PcInfoWrapper that = (PcInfoWrapper) o;
+            return area == that.area && pcMasked == that.pcMasked;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(area, pcMasked);
+        }
     }
 
     public enum DebugMode {NONE, INST_ONLY, NEW_INST_ONLY, STATE}
 
     public final static DebugMode[] debugModeVals = DebugMode.values();
+    public final static PcInfoWrapper NOT_VISITED = new PcInfoWrapper();
 
     private final CpuDebugContext ctx;
-    private final int[][] pcVisited, opcodes, pcLoops;
-    private final int pcAreaMask, pcMask, pcAreaShift;
+    public final PcInfoWrapper[][] pcInfoWrapper;
     public DebugMode debugMode = DebugMode.NONE;
     private CpuDebugInfoProvider debugInfoProvider;
     private int delay;
@@ -64,23 +97,25 @@ public class CpuFastDebug {
     public CpuFastDebug(CpuDebugInfoProvider debugInfoProvider, CpuDebugContext ctx) {
         this.debugInfoProvider = debugInfoProvider;
         this.ctx = ctx;
-        this.pcVisited = new int[ctx.pcAreasNumber][];
-        this.pcLoops = new int[ctx.pcAreasNumber][];
-        this.opcodes = new int[ctx.pcAreasNumber][];
-        this.pcAreaMask = ctx.pcAreaSize - 1;
-        this.pcMask = ctx.pcMask;
-        this.pcAreaShift = ctx.pcAreaShift;
+        this.pcInfoWrapper = createWrapper(ctx);
         init();
     }
 
     public void init() {
-        Set<Object> arraySet = ImmutableSet.of(pcVisited, pcLoops, opcodes);
-        for (Object o : arraySet) {
-            Arrays.stream(ctx.pcAreas).forEach(idx -> ((int[][]) o)[idx] = new int[ctx.pcAreaSize]);
-        }
-        Arrays.stream(ctx.pcAreas).forEach(i -> Arrays.fill(opcodes[i], -1));
-        assert ctx.debugMode >= 0 && ctx.debugMode < debugModeVals.length;
+        assert ctx.debugMode < debugModeVals.length : ctx.debugMode;
         debugMode = debugModeVals[ctx.debugMode];
+    }
+
+    public static PcInfoWrapper[][] createWrapper(CpuDebugContext ctx) {
+        PcInfoWrapper[][] pcInfoWrapper = new PcInfoWrapper[ctx.pcAreasNumber][0];
+        for (int i = 0; i < ctx.pcAreasMaskMap.length; i++) {
+            int pcAreaSize = ctx.pcAreasMaskMap[i] + 1;
+            if (pcAreaSize > 1) {
+                pcInfoWrapper[i] = new PcInfoWrapper[pcAreaSize];
+                Arrays.fill(pcInfoWrapper[i], NOT_VISITED);
+            }
+        }
+        return pcInfoWrapper;
     }
 
     public void printDebugMaybe() {
@@ -101,18 +136,27 @@ public class CpuFastDebug {
 
     private void printNewInstruction() {
         final int pc = debugInfoProvider.getPc();
-        final int pcMasked = pc & pcMask;
+        final int area = pc >>> ctx.pcAreaShift;
+        final int mask = ctx.pcAreasMaskMap[area];
+        final int pcMasked = pc & mask;
         final int opcode = debugInfoProvider.getOpcode();
-        final int area = pc >>> pcAreaShift;
-        final int[] pcv = pcVisited[area];
-        final int[] opc = opcodes[area];
-        final int prevOpcode = opc[pcMasked & pcAreaMask];
-        if (prevOpcode == -1 || prevOpcode != opcode) {
-            opc[pcMasked & pcAreaMask] = opcode;
-            pcv[pcMasked & pcAreaMask] = 1;
-            String val = prevOpcode == -1 ? " [NEW]" : " [NEW-R]";
-            log(debugInfoProvider.getInstructionOnly(), val);
+
+        PcInfoWrapper piw = pcInfoWrapper[area][pcMasked];
+        if (piw != NOT_VISITED && piw.opcode != opcode) {
+            piw.opcode = opcode;
+            log(debugInfoProvider.getInstructionOnly(), " [NEW-R]");
+        } else if (piw == NOT_VISITED) {
+            pcInfoWrapper[area][pcMasked] = createPcWrapper(pcMasked, area, opcode);
+            log(debugInfoProvider.getInstructionOnly(), " [NEW]");
         }
+    }
+
+    private PcInfoWrapper createPcWrapper(int pcMasked, int area, int opcode) {
+        PcInfoWrapper piw = new PcInfoWrapper();
+        piw.pcMasked = pcMasked;
+        piw.area = area;
+        piw.opcode = opcode;
+        return piw;
     }
 
     private void log(String s1, String s2) {
@@ -139,7 +183,7 @@ public class CpuFastDebug {
                 if (Arrays.equals(opcodesHistory[FRONT], opcodesHistory[BACK])) {
                     loops++;
                     if (!looping && loops > pcHistorySize) {
-                        handleLoop(pc);
+                        handleLoop(pc, opcode);
                         looping = true;
                     }
                 } else { //opcodes are different
@@ -170,25 +214,30 @@ public class CpuFastDebug {
         }
     }
 
-    private void handleLoop(int pc) {
+    private void handleLoop(int pc, int opcode) {
         final int[] opcodes = Arrays.stream(opcodesHistory[FRONT]).distinct().sorted().toArray();
         final boolean isBusy = isBusyLoop(ctx.isLoopOpcode, opcodes);
         delay = isBusy ? CK_DELAY_ON_LOOP : 0;
-        if (pcLoops[pc >> pcAreaShift][pc & pcMask] > 0) {
+        final int area = pc >>> ctx.pcAreaShift;
+        final int mask = ctx.pcAreasMaskMap[area];
+        final int pcMasked = pc & mask;
+        PcInfoWrapper piw = pcInfoWrapper[area][pcMasked];
+        if (piw != NOT_VISITED && piw.pcLooops > 0) {
             isKnownLoop = true;
             if (VERBOSE && isBusy) {
                 LOG.info("Known loop at: {}, busy: {}", th(pc), isBusy);
                 System.out.println("Known loop at: " + th(pc) + ", busy: " + isBusy);
             }
             return;
+        } else if (piw == NOT_VISITED) {
+            piw = createPcWrapper(pcMasked, area, opcode);
+            pcInfoWrapper[area][pcMasked] = piw;
         }
+        assert piw != NOT_VISITED : th(pc) + "," + piw;
         isKnownLoop = false;
         loopsCounter++;
-        for (int i = 0; i < pcHistorySize; i++) {
-            int pci = pcHistory[FRONT][i];
-            pcLoops[pci >> pcAreaShift][pci & pcMask] = loopsCounter;
-        }
-        if (VERBOSE) {
+        piw.pcLooops = loopsCounter;
+        if (VERBOSE || true) {
             boolean ignore = isIgnore(ctx.isIgnoreOpcode, opcodes);
             if (!ignore) {
                 int[] pcs = Arrays.stream(pcHistory[FRONT]).distinct().sorted().toArray();

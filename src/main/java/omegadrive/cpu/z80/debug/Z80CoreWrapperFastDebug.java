@@ -19,6 +19,7 @@
 
 package omegadrive.cpu.z80.debug;
 
+import com.google.common.collect.ImmutableMap;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Helper;
@@ -27,6 +28,7 @@ import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import z80core.Z80State;
 
+import java.util.Map;
 import java.util.function.Predicate;
 
 public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDebug.CpuDebugInfoProvider {
@@ -34,6 +36,8 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
     private final static Logger LOG = LogHelper.getLogger(Z80CoreWrapperFastDebug.class.getSimpleName());
     private static final int debugMode = Integer.parseInt(System.getProperty("helios.z80.debug.mode", "0"));
 
+    private static final Map<Integer, Integer> areaMaskMap = ImmutableMap.of(
+            0, 0xFFFF);
     protected Z80Dasm z80Disasm;
     private CpuFastDebug fastDebug;
     private int pc, opcode;
@@ -60,12 +64,8 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
     }
 
     private CpuFastDebug.CpuDebugContext createContext() {
-        CpuFastDebug.CpuDebugContext ctx = new CpuFastDebug.CpuDebugContext();
-        ctx.pcAreas = new int[]{0};
-        ctx.pcAreasNumber = 1;
-        ctx.pcAreaSize = 0x1_0000;
+        CpuFastDebug.CpuDebugContext ctx = new CpuFastDebug.CpuDebugContext(areaMaskMap);
         ctx.pcAreaShift = 31;
-        ctx.pcMask = ctx.pcAreaSize - 1;
         ctx.isLoopOpcode = isLoopOpcode;
         ctx.isIgnoreOpcode = isIgnoreOpcode;
         ctx.debugMode = debugMode;

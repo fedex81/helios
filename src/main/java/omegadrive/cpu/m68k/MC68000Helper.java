@@ -94,7 +94,7 @@ public class MC68000Helper {
     }
 
     public static String dumpOp(Cpu cpu, int pc) {
-        assert cpu.getPC() == pc;
+//        assert cpu.getPC() == pc;
         return dumpOp(new StringBuilder(), cpu, pc).toString();
     }
 

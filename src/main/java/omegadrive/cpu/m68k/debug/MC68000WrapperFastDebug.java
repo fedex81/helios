@@ -19,6 +19,7 @@
 
 package omegadrive.cpu.m68k.debug;
 
+import com.google.common.collect.ImmutableMap;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.CpuDebugContext;
@@ -27,6 +28,7 @@ import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
+import java.util.Map;
 import java.util.function.Predicate;
 
 import static omegadrive.util.Util.th;
@@ -43,6 +45,9 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
     private CpuFastDebug fastDebug;
     private int opcode;
 
+    private static final Map<Integer, Integer> areaMaskMap = ImmutableMap.of(
+            0, 0xF_FFFF, 1, 0xF_FFFF, 2, 0xF_FFFF, 3, 0xF_FFFF, 8, 0xF_FFFF, 9, 0xF_FFFF, 0xF, 0xF_FFFF);
+
     public MC68000WrapperFastDebug(GenesisBusProvider busProvider) {
         super(busProvider);
         fastDebug = new CpuFastDebug(this, createContext());
@@ -50,12 +55,8 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
     }
 
     public static CpuDebugContext createContext() {
-        CpuDebugContext ctx = new CpuDebugContext();
-        ctx.pcAreas = new int[]{0, 1, 2, 3, 8, 9, 0xF};
-        ctx.pcAreasNumber = 0x10;
-        ctx.pcAreaSize = 0x10_0000;
+        CpuDebugContext ctx = new CpuDebugContext(areaMaskMap);
         ctx.pcAreaShift = 20;
-        ctx.pcMask = 0xF_FFFF;
         ctx.isLoopOpcode = isLoopOpcode;
         ctx.isIgnoreOpcode = isIgnoreOpcode;
         ctx.debugMode = debugMode;
@@ -86,16 +87,6 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDe
     @Override
     public int getOpcode() {
         return opcode;
-    }
-
-    @Override
-    public String getInstructionOnly(int pc, int opcode) {
-        try {
-            return MC68000Helper.dumpOp(m68k, pc, opcode);
-        } catch (Exception e) {
-            LOG.warn("Unable to dump the instruction at PC: {}", th(pc & 0xFF_FFFF), e);
-        }
-        return "????";
     }
 
     @Override
