@@ -48,6 +48,7 @@ import java.util.Arrays;
 
 import static omegadrive.input.InputProvider.PlayerNumber.P1;
 import static omegadrive.input.InputProvider.PlayerNumber.P2;
+import static omegadrive.util.Util.th;
 
 /**
  * see
@@ -112,7 +113,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         } else if (address < secondarySlot[secSlotNumber].length) {
             res = secondarySlot[secSlotNumber][address];
         } else {
-            LOG.error("Unexpected read: {}, slot: {}", Long.toHexString(addressL), secSlotNumber);
+            LOG.error("Unexpected read: {}, slot: {}", th(addressL), secSlotNumber);
         }
         return res;
     }
@@ -138,8 +139,8 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         } else if (mapper != RomMapper.NO_OP_MAPPER && secSlotNumber > 0 && secSlotNumber < 3) {
             mapper.writeData(addressL, data, size);
         } else {
-            LOG.error("Unexpected write: {}, data: {}, slot: {}", Long.toHexString(addressL),
-                    Long.toHexString(data), secSlotNumber);
+            LOG.error("Unexpected write: {}, data: {}, slot: {}", th(addressL),
+                    th(data), secSlotNumber);
         }
     }
 
@@ -189,10 +190,10 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
             case 0xFE:
             case 0xFF:
                 LOG.warn("Ignoring MSX2 memMapper write: {}, data {}",
-                        Integer.toHexString(port), Integer.toHexString(value));
+                        th(port), th(value));
                 break;
             default:
-                LOG.warn("outPort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
+                LOG.warn("outPort: {}, data {}", th(port), th(value));
                 break;
         }
     }
@@ -231,7 +232,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
                 res = ctx.ppiC_Keyboard;
                 break;
             default:
-                LOG.warn("inPort: {}", Integer.toHexString(port & 0xFF));
+                LOG.warn("inPort: {}", th(port & 0xFF));
                 break;
 
         }

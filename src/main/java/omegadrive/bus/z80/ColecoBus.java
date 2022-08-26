@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static omegadrive.util.Util.th;
+
 /**
  * see
  * https://atarihq.com/danb/files/CV-Tech.txt
@@ -81,7 +83,7 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements
             address = (address - ROM_START);// & (rom.length - 1);
             return memoryProvider.readRomByte(address);
         }
-        LOG.error("Unexpected Z80 memory read: {}", Long.toHexString(address));
+        LOG.error("Unexpected Z80 memory read: {}", th(address));
         return 0xFF;
     }
 
@@ -102,18 +104,18 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements
                 joypadProvider.writeDataRegister1(port);
                 break;
             case 0xA0:
-                //                LOG.warn("write vdp vram: {}", Integer.toHexString(value));
+                //                LOG.warn("write vdp vram: {}", th(value));
                 vdpProvider.writeVRAMData(byteVal);
                 break;
             case 0xA1:
-                //                LOG.warn("write: vdp address: {}", Integer.toHexString(value));
+                //                LOG.warn("write: vdp address: {}", th(value));
                 vdpProvider.writeRegister(byteVal);
                 break;
             case 0xE1:
                 soundProvider.getPsg().write(byteVal);
                 break;
             default:
-                LOG.warn("outPort: {} ,data {}", Integer.toHexString(port), Integer.toHexString(value));
+                LOG.warn("outPort: {} ,data {}", th(port), th(value));
                 break;
         }
     }
@@ -135,7 +137,7 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements
             case 0xE1:
                 return joypadProvider.readDataRegister2();
             default:
-                LOG.warn("inPort: {}", Integer.toHexString(port & 0xFF));
+                LOG.warn("inPort: {}", th(port & 0xFF));
                 break;
 
         }

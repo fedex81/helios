@@ -267,7 +267,7 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
         try {
             LOG.info(MC68000Helper.dumpOp(m68k, currentPC));
         } catch (Exception e) {
-            String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
+            String pc = th(m68k.getPC() & 0xFF_FFFF);
             LOG.warn("Unable to dump the instruction: {}", pc, e);
         }
     }
@@ -283,7 +283,7 @@ public class MC68000WrapperDebug extends MC68000WrapperFastDebug {
                 LOG.info(MC68000Helper.dumpInstructionSet());
             }
         } catch (Exception e) {
-            String pc = Long.toHexString(m68k.getPC() & 0xFF_FFFF);
+            String pc = th(m68k.getPC() & 0xFF_FFFF);
             LOG.warn("Unable to dump the instruction: {}", pc, e);
         }
     }

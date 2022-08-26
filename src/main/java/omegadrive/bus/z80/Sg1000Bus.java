@@ -28,6 +28,8 @@ import omegadrive.util.Size;
 import omegadrive.vdp.Tms9918aVdp;
 import org.slf4j.Logger;
 
+import static omegadrive.util.Util.th;
+
 public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> implements Z80BusProvider {
 
     private static final Logger LOG = LogHelper.getLogger(Sg1000Bus.class);
@@ -53,7 +55,7 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> imp
             address &= RAM_SIZE - 1;
             return memoryProvider.readRamByte(address);
         }
-        LOG.error("Unexpected Z80 memory read: {}", Long.toHexString(address));
+        LOG.error("Unexpected Z80 memory read: {}", th(address));
         return 0xFF;
     }
 
@@ -91,33 +93,33 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> imp
     public void writeIoPort(int port, int value) {
         port &= 0xFF;
         byte byteVal = (byte) (value & 0XFF);
-//        LOG.info("Write port: {}, value: {}", Integer.toHexString(port), Integer.toHexString(value));
+//        LOG.info("Write port: {}, value: {}", th(port), th(value));
         switch (port & 0xC1) {
             case 0x40:
             case 0x41:
                 soundProvider.getPsg().write(byteVal);
                 break;
             case 0x80:
-                //                LOG.warn("write vdp vram: {}", Integer.toHexString(value));
+                //                LOG.warn("write vdp vram: {}", th(value));
                 vdpProvider.writeVRAMData(byteVal);
                 break;
             case 0x81:
-                //                LOG.warn("write: vdp address: {}", Integer.toHexString(value));
+                //                LOG.warn("write: vdp address: {}", th(value));
                 vdpProvider.writeRegister(byteVal);
                 break;
             case 0xC0: //aka $DE
 //                if (port == 0xDE) { //sc-3000, can be ignored
-//                    LOG.debug("write 0xDE: {}", Integer.toHexString(value & 0xFF));
+//                    LOG.debug("write 0xDE: {}", th(value & 0xFF));
 //                    lastDE = value;
 //                }
                 break;
             case 0xC1: //aka $DF
                 if (port == 0xDF) {
-                    LOG.warn("write 0xDF: {}", Integer.toHexString(value & 0xFF));
+                    LOG.warn("write 0xDF: {}", th(value & 0xFF));
                 }
                 break;
             default:
-                LOG.warn("outPort: {} ,data {}", Integer.toHexString(port), Integer.toHexString(value));
+                LOG.warn("outPort: {} ,data {}", th(port), th(value));
                 break;
         }
     }
@@ -125,7 +127,7 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> imp
     @Override
     public int readIoPort(int port) {
         port &= 0xFF;
-//        LOG.info("Read port: {}", Integer.toHexString(port));
+//        LOG.info("Read port: {}", th(port));
         switch (port & 0xC1) {
             case 0x40:
                 LOG.warn("VCounter read");
@@ -141,7 +143,7 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> imp
                 return vdpProvider.readStatus();
             case 0xC0:
 //                if (port == 0xDE) {
-//                    LOG.debug("read 0xDE: {}", Integer.toHexString(lastDE));
+//                    LOG.debug("read 0xDE: {}", th(lastDE));
 //                    return lastDE;
 //                }
                 LOG.debug("read: joy1");
@@ -156,7 +158,7 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> imp
                 LOG.debug("read: joy2");
                 return joypadProvider.readDataRegister2();
             default:
-                LOG.warn("inPort: {}", Integer.toHexString(port & 0xFF));
+                LOG.warn("inPort: {}", th(port & 0xFF));
                 break;
 
         }

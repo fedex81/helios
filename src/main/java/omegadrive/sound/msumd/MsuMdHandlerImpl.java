@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static omegadrive.util.Util.th;
+
 /**
  * MsuMdHandlerImpl
  * TODO fadeOut
@@ -237,7 +239,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 break;
             default:
                 LOG.error("Unexpected bus write: {}, data {} {}",
-                        Long.toHexString(address), Long.toHexString(data), Size.BYTE);
+                        th(address), th(data), Size.BYTE);
                 break;
         }
     }
@@ -249,7 +251,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 return (int) size.getMask(); //ignore
             default:
                 LOG.warn("Unexpected MegaCD address range read at: {}, {}",
-                        Long.toHexString(address), size);
+                        th(address), size);
                 return (int) size.getMask();
         }
     }

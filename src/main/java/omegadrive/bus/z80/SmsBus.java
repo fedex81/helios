@@ -38,6 +38,7 @@ import java.nio.file.Paths;
 
 import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.ADDR_LATCH_REG;
 import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.DATA_REG;
+import static omegadrive.util.Util.th;
 
 /**
  * TODO: add support for port 3E
@@ -191,7 +192,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
                 }
                 break;
             default:
-                LOG.warn("Unexpected writePort: {}, data {}", Integer.toHexString(port), Integer.toHexString(value));
+                LOG.warn("Unexpected writePort: {}, data {}", th(port), th(value));
                 break;
         }
     }
@@ -250,7 +251,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
             case 0xC1:
                 return portAB & 0x80 | (portAB & 0x20) << 1 | (joypadProvider.readDataRegister2() & 0x3F);
             default:
-                LOG.warn("Unexpected readPort: {}", Integer.toHexString(port));
+                LOG.warn("Unexpected readPort: {}", th(port));
                 break;
         }
 

@@ -30,6 +30,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Optional;
 
+import static omegadrive.util.Util.th;
+
 public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     public static final int ROM_HEADER_START = 0x100;
@@ -91,8 +93,8 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         sb.append(", SRAM flag: " + sramEnabled).append("\n");
         sb.append(super.toString());
         if (sramEnabled) {
-            sb.append("\nSRAM size: " + getSramSizeBytes() + " bytes, start-end: " + Long.toHexString(sramStart) + " - " +
-                    Long.toHexString(sramEnd));
+            sb.append("\nSRAM size: " + getSramSizeBytes() + " bytes, start-end: " + th(sramStart) + " - " +
+                    th(sramEnd));
         }
         return sb.toString();
     }
@@ -179,8 +181,8 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         boolean adjust = sramEnd < MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
         adjust &= address > sramEnd && address < MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
         if (adjust) {
-            LOG.warn("Adjusting SRAM limit from: {} to: {}", Long.toHexString(sramEnd),
-                    Long.toHexString(MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS));
+            LOG.warn("Adjusting SRAM limit from: {} to: {}", th(sramEnd),
+                    th(MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS));
             sramEnd = MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
         }
         return adjust;

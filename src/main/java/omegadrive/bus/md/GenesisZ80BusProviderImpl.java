@@ -30,6 +30,8 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
+import static omegadrive.util.Util.th;
+
 public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements GenesisZ80BusProvider {
     private static final Logger LOG = LogHelper.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
 
@@ -78,11 +80,11 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             }
             return getFm().read();
         } else if (address >= START_ROM_BANK_ADDRESS && address <= END_UNUSED) {
-            LOG.warn("Z80 read bank switching/unused: {}", Integer.toHexString(address));
+            LOG.warn("Z80 read bank switching/unused: {}", th(address));
             return 0xFF;
         } else if (address >= START_VDP && address <= END_VDP_VALID) {
             int vdpAddress = (VDP_BASE_ADDRESS + address);
-            //   LOG.info("Z80 read VDP memory , address {}",Integer.toHexString(address));
+            //   LOG.info("Z80 read VDP memory , address {}",th(address));
             return (int) mainBusProvider.read(vdpAddress, Size.BYTE);
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
@@ -94,7 +96,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             }
             return (int) mainBusProvider.read(address, Size.BYTE);
         } else {
-            LOG.error("Illegal Z80 memory read: {}", Integer.toHexString(address));
+            LOG.error("Illegal Z80 memory read: {}", th(address));
         }
         return 0xFF;
     }
@@ -107,7 +109,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             address &= (ram.length - 1);
             ram[address] = dataInt & 0xFF;
         } else if (address >= START_YM2612 && address <= END_YM2612) {
-            //LOG.info("Writing " + Integer.toHexString(address) + " data: " + data);
+            //LOG.info("Writing " + th(address) + " data: " + data);
             if (mainBusProvider.isZ80ResetState()) {
                 LOG.warn("Illegal write to FM while Z80 reset");
                 return;
@@ -116,13 +118,13 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
         } else if (address >= START_ROM_BANK_ADDRESS && address <= END_ROM_BANK_ADDRESS) {
             romBanking(dataInt);
         } else if (address >= START_UNUSED && address <= END_UNUSED) {
-            LOG.warn("Write to unused memory: {}", Integer.toHexString(address));
+            LOG.warn("Write to unused memory: {}", th(address));
         } else if (address >= START_VDP && address <= END_VDP_VALID) {
             int vdpAddress = VDP_BASE_ADDRESS + address;
             mainBusProvider.write(vdpAddress, dataInt, Size.BYTE);
         } else if (address > END_VDP_VALID && address <= END_VDP) {
             //Rambo III (W) (REV01) [h1C]
-            LOG.error("Machine should be locked, write to address: {}", Integer.toHexString(address));
+            LOG.error("Machine should be locked, write to address: {}", th(address));
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
@@ -130,7 +132,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             //NOTE: Z80 write to 68k RAM - this seems to be allowed (Mamono)
             mainBusProvider.write(address, dataInt, Size.BYTE);
         } else {
-            LOG.error("Illegal Z80 memory write:  {}, {}", Integer.toHexString(address), dataInt);
+            LOG.error("Illegal Z80 memory write:  {}, {}", th(address), dataInt);
         }
     }
 

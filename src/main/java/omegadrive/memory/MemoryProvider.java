@@ -28,6 +28,8 @@ import org.slf4j.Logger;
 import java.nio.ByteBuffer;
 import java.util.stream.IntStream;
 
+import static omegadrive.util.Util.th;
+
 public class MemoryProvider implements IMemoryProvider {
 
     private final static Logger LOG = LogHelper.getLogger(MemoryProvider.class.getSimpleName());
@@ -86,7 +88,7 @@ public class MemoryProvider implements IMemoryProvider {
         if (address < ramSize) {
             return ram[address];
         }
-        LOG.error("Invalid RAM read, address : {}", Integer.toHexString(address));
+        LOG.error("Invalid RAM read, address : {}", th(address));
         return 0;
     }
 
@@ -95,7 +97,7 @@ public class MemoryProvider implements IMemoryProvider {
         if (address < ramSize) {
             ram[address] = data;
         } else {
-            LOG.error("Invalid RAM write, address : {}, data: {}", Integer.toHexString(address), data);
+            LOG.error("Invalid RAM write, address : {}, data: {}", th(address), data);
         }
     }
 

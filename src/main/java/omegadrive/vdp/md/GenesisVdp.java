@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 
+import static omegadrive.util.Util.th;
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_FIELD_CHANGE;
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_MODE_CHANGE;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.getRegisterName;
@@ -556,7 +557,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private void updateSatLocation() {
         int res = VdpRenderHandler.getSpriteTableLocation(this, videoMode.isH40());
         if (res != satStart) {
-//            LOG.info("Sat location: {} -> {}", Integer.toHexString(satStart), Integer.toHexString(res));
+//            LOG.info("Sat location: {} -> {}", th(satStart), th(res));
             satStart = res;
             memoryInterface.setSatBaseAddress(satStart);
         }
@@ -567,7 +568,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         //&& reg < 0x13 && interruptHandler.isActiveScreen()
         if (regVerbose && current != data && reg < 0x13) {
             String msg = LogHelper.formatMessage("{} changed from: {}, to: {} -- de{}",
-                    getRegisterName(reg), Long.toHexString(current), Long.toHexString(data), (displayEnable ? 1 : 0));
+                    getRegisterName(reg), th(current), th(data), (displayEnable ? 1 : 0));
             LOG.info(getVdpStateString(msg));
         }
     }

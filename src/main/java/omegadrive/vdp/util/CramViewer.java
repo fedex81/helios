@@ -28,6 +28,8 @@ import org.slf4j.Logger;
 import javax.swing.*;
 import java.awt.*;
 
+import static omegadrive.util.Util.th;
+
 public class CramViewer implements UpdatableViewer {
 
     private static final Logger LOG = LogHelper.getLogger(CramViewer.class.getSimpleName());
@@ -63,7 +65,7 @@ public class CramViewer implements UpdatableViewer {
             cramPanel.setSize(FRAME_WIDTH - 25, FRAME_HEIGHT - 25);
             cramPanel.add(new JLabel());
             for (int i = 0; i < labelPerLine; i++) {
-                JLabel label = new JLabel(Integer.toHexString(i));
+                JLabel label = new JLabel(th(i));
                 label.setHorizontalAlignment(SwingConstants.CENTER);
                 label.setBackground(Color.WHITE);
                 label.setForeground(Color.BLACK);
@@ -73,7 +75,7 @@ public class CramViewer implements UpdatableViewer {
             int rowCnt = 0;
             for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
                 if (k % labelPerLine == 0) {
-                    JLabel label = new JLabel(Integer.toHexString(rowCnt * labelPerLine));
+                    JLabel label = new JLabel(th(rowCnt * labelPerLine));
                     label.setHorizontalAlignment(SwingConstants.CENTER);
                     label.setBackground(Color.WHITE);
                     label.setForeground(Color.BLACK);

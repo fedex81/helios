@@ -28,6 +28,7 @@ import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.slf4j.Logger;
 
+import static omegadrive.util.Util.th;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 public class VdpDmaHandlerImpl implements VdpDmaHandler {
@@ -152,11 +153,11 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private String getDmaStateString(String head, long srcAddress) {
         int dmaLen = getDmaLength();
         String str = dmaMode + " " + head;
-        String src = Long.toHexString(srcAddress > Long.MIN_VALUE ? srcAddress : getSourceAddress());
-        String dest = Long.toHexString(getDestAddress());
+        String src = th(srcAddress > Long.MIN_VALUE ? srcAddress : getSourceAddress());
+        String dest = th(getDestAddress());
         int destAddressIncrement = getDestAddressIncrement();
 
-        str += dmaMode == DmaMode.VRAM_FILL ? " fillData: " + Long.toHexString(dmaFillData) : " srcAddr: " + src;
+        str += dmaMode == DmaMode.VRAM_FILL ? " fillData: " + th(dmaFillData) : " srcAddr: " + src;
         str += ", destAddr: " + dest + ", destAddrInc: " + destAddressIncrement +
                 ", dmaLen: " + dmaLen + ", vramMode: " + vdpProvider.getVramMode();
         str += vdpProvider.getVdpStateString();

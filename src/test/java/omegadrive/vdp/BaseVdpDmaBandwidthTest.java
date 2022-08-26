@@ -166,7 +166,7 @@ public class BaseVdpDmaBandwidthTest {
     }
 
     protected int startDmaFill(int dmaLen, boolean h32, boolean waitVBlank) {
-//        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
+//        System.out.println("DestAddress: " + th(vdpProvider.getAddressRegisterValue()));
         int refreshSlots = h32 ? REFRESH_SLOTS_H32 : REFRESH_SLOTS_H40;
         if (waitVBlank) {
             MdVdpTestUtil.runVdpUntilVBlank(vdpProvider);

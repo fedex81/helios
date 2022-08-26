@@ -133,11 +133,11 @@ public class BaseVdpDmaHandlerTest {
         vdpProvider.writeControlPort(dmaFillLong >> 16);
         vdpProvider.writeControlPort(dmaFillLong & 0xFFFF);
 
-//        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
+//        System.out.println("DestAddress: " + th(vdpProvider.getAddressRegisterValue()));
 
         vdpProvider.writeDataPort(fillValueWord);
 
-//        System.out.println("DestAddress: " + Integer.toHexString(vdpProvider.getAddressRegisterValue()));
+//        System.out.println("DestAddress: " + th(vdpProvider.getAddressRegisterValue()));
 
         str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, baseAddress, toAddress);
         System.out.println(str);

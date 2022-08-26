@@ -38,6 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static omegadrive.util.Util.th;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpPortType.CONTROL;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
@@ -183,7 +184,7 @@ public class MdVdpTestUtil {
             return addr % 2 == 0 ? word >> 8 : word & 0xFF;
         };
         Function<Integer, String> toStringFn = v -> {
-            String s = Integer.toHexString(v).toUpperCase();
+            String s = th(v).toUpperCase();
             return s.length() < 2 ? '0' + s : s;
         };
         return IntStream.range(from, to).mapToObj(addr -> toStringFn.apply(getByteFn.apply(addr))).
@@ -192,7 +193,7 @@ public class MdVdpTestUtil {
 
     public static String print68kMemory(IMemoryProvider memoryProvider, int from, int to) {
         Function<Integer, String> toStringFn = v -> {
-            String s = Integer.toHexString(memoryProvider.readRamByte(v)).toUpperCase();
+            String s = th(memoryProvider.readRamByte(v)).toUpperCase();
             return s.length() < 2 ? '0' + s : s;
         };
         return IntStream.range(from, to).mapToObj(addr -> toStringFn.apply(addr)).

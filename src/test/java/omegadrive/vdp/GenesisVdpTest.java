@@ -26,6 +26,8 @@ import org.junit.Test;
 
 import java.util.stream.IntStream;
 
+import static omegadrive.util.Util.th;
+
 public class GenesisVdpTest {
 
     VdpMemoryInterface mem = GenesisVdpMemoryInterface.createInstance();
@@ -90,11 +92,11 @@ public class GenesisVdpTest {
 
         mem.writeVideoRamWord(GenesisVdpProvider.VdpRamType.VSRAM, (int) data, GenesisVdpProvider.VDP_VSRAM_SIZE);
         res = mem.readVideoRamWord(GenesisVdpProvider.VdpRamType.VSRAM, GenesisVdpProvider.VDP_VSRAM_SIZE);
-        Assert.assertEquals(Long.toHexString(0x1111), Long.toHexString(res));
+        Assert.assertEquals(th(0x1111), th(res));
 
         mem.writeVideoRamWord(GenesisVdpProvider.VdpRamType.VSRAM, 0x3344, GenesisVdpProvider.VDP_VSRAM_SIZE - 2);
         res = readVideoRamAddressLong(GenesisVdpProvider.VdpRamType.VSRAM, GenesisVdpProvider.VDP_VSRAM_SIZE - 2);
-        Assert.assertEquals(Long.toHexString(0x33441111), Long.toHexString(res));
+        Assert.assertEquals(th(0x33441111), th(res));
     }
 
     @Test
@@ -136,39 +138,39 @@ public class GenesisVdpTest {
         long readData = byteSwap ? byteSwapData : data;
 
         long res = mem.readVideoRamWord(vdpRamType, address);
-        Assert.assertEquals(Long.toHexString(readData), Long.toHexString(res));
+        Assert.assertEquals(th(readData), th(res));
 
         res = mem.readVideoRamWord(vdpRamType, address - 1);
         expected = even ? 0 : readData;
-        Assert.assertEquals(Long.toHexString(expected), Long.toHexString(res));
+        Assert.assertEquals(th(expected), th(res));
 
         res = mem.readVideoRamWord(vdpRamType, address - 2);
-        Assert.assertEquals(Long.toHexString(0), Long.toHexString(res));
+        Assert.assertEquals(th(0), th(res));
 
         res = mem.readVideoRamWord(vdpRamType, address + 1);
         expected = even ? readData : 0;
-        Assert.assertEquals(Long.toHexString(expected), Long.toHexString(res));
+        Assert.assertEquals(th(expected), th(res));
 
         res = mem.readVideoRamWord(vdpRamType, address + 2);
-        Assert.assertEquals(Long.toHexString(0), Long.toHexString(res));
+        Assert.assertEquals(th(0), th(res));
 
         res = readVideoRamAddressLong(vdpRamType, address);
         expected = readData << 16;
-        Assert.assertEquals(Long.toHexString(expected), Long.toHexString(res));
+        Assert.assertEquals(th(expected), th(res));
 
         res = readVideoRamAddressLong(vdpRamType, address - 1);
         expected = even ? readData : readData << 16;
-        Assert.assertEquals(Long.toHexString(expected), Long.toHexString(res));
+        Assert.assertEquals(th(expected), th(res));
 
         res = readVideoRamAddressLong(vdpRamType, address - 2);
-        Assert.assertEquals(Long.toHexString(readData), Long.toHexString(res));
+        Assert.assertEquals(th(readData), th(res));
 
         res = readVideoRamAddressLong(vdpRamType, address + 1);
         expected = even ? readData << 16 : 0;
-        Assert.assertEquals(Long.toHexString(expected), Long.toHexString(res));
+        Assert.assertEquals(th(expected), th(res));
 
         res = readVideoRamAddressLong(vdpRamType, address + 2);
-        Assert.assertEquals(Long.toHexString(0), Long.toHexString(res));
+        Assert.assertEquals(th(0), th(res));
     }
 
     private long readVideoRamAddressLong(GenesisVdpProvider.VdpRamType vdpRamType, int address) {

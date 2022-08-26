@@ -19,6 +19,8 @@
 
 package omegadrive.cart.cheat;
 
+import static omegadrive.util.Util.th;
+
 public class BasicGenesisRawCode {
 
     public static BasicGenesisRawCode INVALID_CODE = new BasicGenesisRawCode(-1, -1);
@@ -75,7 +77,7 @@ public class BasicGenesisRawCode {
     }
 
     public String toHexString(int number, int minLength) {
-        String hex = Integer.toHexString(number).toUpperCase();
+        String hex = th(number).toUpperCase();
 
         while (hex.length() < minLength) {
             hex = "0" + hex;

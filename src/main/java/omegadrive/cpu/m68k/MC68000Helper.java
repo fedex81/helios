@@ -166,7 +166,7 @@ public class MC68000Helper {
     }
 
     public static String toHex(int val, int digits) {
-        return Strings.padStart(Integer.toHexString(val), digits, '0');
+        return Strings.padStart(th(val), digits, '0');
     }
 
     protected static String makeFlagView(Cpu cpu) {
@@ -198,7 +198,7 @@ public class MC68000Helper {
         try {
             return head + MC68000Helper.dumpInfo(cpu, cpu.getPC(), true, memorySize);
         } catch (Exception e) {
-            String pc = Long.toHexString(cpu.getPC() & 0xFF_FFFF);
+            String pc = th(cpu.getPC() & 0xFF_FFFF);
             LOG.warn("Unable to dump the state, pc: {}", pc, e);
         }
         return "????";

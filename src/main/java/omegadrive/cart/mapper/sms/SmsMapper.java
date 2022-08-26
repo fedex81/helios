@@ -30,6 +30,8 @@ import org.slf4j.Logger;
 
 import java.util.Arrays;
 
+import static omegadrive.util.Util.th;
+
 public class SmsMapper {
 
     public enum Type{NONE, SEGA, CODEM, KOREA}
@@ -128,7 +130,7 @@ public class SmsMapper {
             address &= SmsBus.RAM_SIZE - 1;
             return memoryProvider.readRamByte(address);
         }
-        LOG.error("Unexpected Z80 memory read: {}", Long.toHexString(address));
+        LOG.error("Unexpected Z80 memory read: {}", th(address));
         return 0xFF;
     }
 

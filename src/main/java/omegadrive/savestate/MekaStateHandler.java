@@ -41,6 +41,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static omegadrive.savestate.StateUtil.skip;
+import static omegadrive.util.Util.th;
 
 public class MekaStateHandler implements BaseStateHandler {
 
@@ -51,7 +52,7 @@ public class MekaStateHandler implements BaseStateHandler {
     private static final int VDP_MISC_LEN = 20;
     private static final MekaSavestateVersion DEFAULT_SAVE_VERSION = MekaSavestateVersion.VER_D;
     private static final Function<Integer, String> toCrcStringFn = v -> (v < 16 ? "0" : "") +
-            Integer.toHexString(v);
+            th(v);
     private final static String fileExtension = "s00";
     private static final Logger LOG = LogHelper.getLogger(MekaStateHandler.class.getSimpleName());
     private static final Set<Class<? extends Device>> deviceClassSet = ImmutableSet.of(Z80Provider.class,

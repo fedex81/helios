@@ -71,7 +71,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     GenesisBus.VdpRunnable vdpRunnable = new GenesisBus.VdpRunnable() {
         @Override
         public void run() {
-//            LOG.info("{}, {} {}", Integer.toHexString(vdpAddress), vpdData, vdpSize);
+//            LOG.info("{}, {} {}", th(vdpAddress), vpdData, vdpSize);
             write(vdpAddress, vpdData, vdpSize);
         }
     };
@@ -152,7 +152,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         if (verbose) {
             long res = mapper.readData(address, size);
             logInfo("Read address: {}, size: {}, result: {}",
-                    Long.toHexString(address), size, Long.toHexString(res));
+                    th(address), size, th(res));
             return res;
         }
         return mapper.readData(address, size);
@@ -161,8 +161,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     @Override
     public void write(long address, long data, Size size) {
         if (verbose) {
-            logInfo("Write address: {}, data: {}, size: {}", Long.toHexString(address),
-                    Long.toHexString(data), size);
+            logInfo("Write address: {}, data: {}, size: {}", th(address),
+                    th(data), size);
         }
         mapper.writeData(address, data, size);
     }
@@ -207,7 +207,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return mapper.readData(address, size);
         } else {
             LOG.error("Unexpected bus read: {}, 68k PC: {}",
-                    Long.toHexString(address), Long.toHexString(m68kProvider.getPC()));
+                    th(address), th(m68kProvider.getPC()));
         }
         return size.getMask();
     }
@@ -238,22 +238,22 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     private void cartWrite(long addressL, long data, Size size) {
         if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
-            LOG.info("Unexpected Sram write: {}, value : {}", Long.toHexString(addressL), data);
+            LOG.info("Unexpected Sram write: {}, value : {}", th(addressL), data);
             boolean adjust = cartridgeInfoProvider.adjustSramLimits(addressL);
             checkBackupMemoryMapper(SramMode.READ_WRITE, adjust);
             mapper.writeData(addressL, data, size);
             return;
         }
         //Batman&Robin writes to address 0 - tries to enable debug mode?
-        LOG.warn("Unexpected write to ROM address {}, value {} {}", Long.toHexString(addressL),
-                Long.toHexString(data), size);
+        LOG.warn("Unexpected write to ROM address {}, value {} {}", th(addressL),
+                th(data), size);
     }
 
     private void reservedWrite(long addressL, long data, Size size) {
         if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
             LOG.error("Unexpected bus write: {}, data {} {}, 68k PC: {}",
-                    Long.toHexString(addressL), Long.toHexString(data), size,
-                    Long.toHexString(m68kProvider.getPC()));
+                    th(addressL), th(data), size,
+                    th(m68kProvider.getPC()));
         } else {
             msuMdHandler.handleMsuMdWrite((int) addressL, (int) data, size);
         }
@@ -261,7 +261,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     private long reservedRead(int address, Size size) {
         if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
-            LOG.warn("Read on reserved address: {}, {}", Integer.toHexString(address), size);
+            LOG.warn("Read on reserved address: {}, {}", th(address), size);
             return size.getMax();
         } else {
             //reads rom at 0x40_0000 MegaCD mirror
@@ -271,7 +271,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     private void logVdpCounter(int v, int h) {
         if (verbose) {
-            LOG.info("Read HV counter, hce={}, vce={}", Long.toHexString(h), Long.toHexString(v));
+            LOG.info("Read HV counter, hce={}, vce={}", th(h), th(v));
         }
     }
 
@@ -300,7 +300,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return z80BusReqRead(size);
         } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
             //NOTE few roms read a11200
-            LOG.warn("Unexpected Z80 read at: {}, {}", Long.toHexString(address), size);
+            LOG.warn("Unexpected Z80 read at: {}, {}", th(address), size);
         } else if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
             return msuMdHandler.handleMsuMdRead(address, size);
         } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {
@@ -316,7 +316,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             checkSvpMapper();
             return svpMapper.m68kSvpRegRead(address, size);
         } else {
-            LOG.error("Unexpected internalRegRead: {} , {}", Long.toHexString(address), size);
+            LOG.error("Unexpected internalRegRead: {} , {}", th(address), size);
         }
         return 0xFF;
     }
@@ -336,7 +336,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             timeLineControlWrite(address, data);
         } else if (address >= TMSS_AREA1_START && address <= TMSS_AREA1_END) {
             // used to lock/unlock the VDP by writing either "SEGA" to unlock it or anything else to lock it.
-            LOG.warn("TMSS write, vdp lock: {}", Integer.toHexString((int) data));
+            LOG.warn("TMSS write, vdp lock: {}", th((int) data));
         } else if (address == TMSS_AREA2_START || address == TMSS_AREA2_END) {
 //            control the bankswitching between the cart and the TMSS rom.
 //            Setting the first bit to 1 enable the cart, and setting it to 0 enable the TMSS.
@@ -347,8 +347,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         } else if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
             msuMdHandler.handleMsuMdWrite(address, (int) data, size);
         } else {
-            LOG.warn("Unexpected internalRegWrite: {}, {}, {}", Integer.toHexString(address),
-                    Long.toHexString(data), size);
+            LOG.warn("Unexpected internalRegWrite: {}, {}, {}", th(address),
+                    th(data), size);
         }
     }
 
@@ -362,7 +362,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             //NOTE: Time Killers is buggy and needs bit0 !=0
             value = (value << 8) | (prefetch & 0xFEFF);
         }
-//        LOG.debug("Read Z80 busReq: {} {}", Integer.toHexString(value), size);
+//        LOG.debug("Read Z80 busReq: {} {}", th(value), size);
         return value;
     }
 
@@ -380,8 +380,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
      */
     private void timeLineControlWrite(int addressL, long data) {
         if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= Ssf2Mapper.BANK_SET_END_ADDRESS) {
-            LOG.info("Mapper bank set, address: {} , data: {}", Long.toHexString(addressL),
-                    Integer.toHexString((int) data));
+            LOG.info("Mapper bank set, address: {} , data: {}", th(addressL),
+                    th((int) data));
             checkExSsfMapper();
             mapper.writeBankData(addressL, data);
         } else if (addressL == SRAM_LOCK) {
@@ -396,8 +396,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             sramLockValue = (int) data;
             //LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
-            LOG.warn("Unexpected mapper set, address: {}, data: {}", Long.toHexString(addressL),
-                    Integer.toHexString((int) data));
+            LOG.warn("Unexpected mapper set, address: {}, data: {}", th(addressL),
+                    th((int) data));
         }
     }
 
@@ -414,7 +414,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     //	After returning the bus after loading the new program to it's memory,
     //	the Z80 may be let go from reset by writing #$0100 to $A11200.
     private void z80ResetControlWrite(long data, Size size) {
-//        LOG.info("Write Z80 resetControl: {}, {} {}", Integer.toHexString(address), Long.toHexString(data), size);
+//        LOG.info("Write Z80 resetControl: {}, {} {}", th(address), th(data), size);
         if (size == Size.WORD) {
             data >>= 8;
         }
@@ -439,7 +439,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     //	 #$0000 needs to be written to $A11100 to return the bus back to the Z80
     //NOTE: Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF, Slap Fight 0xFF
     private void z80BusReqWrite(long data, Size size) {
-//        LOG.info("Write Z80 busReq: {}, {} {}", Integer.toHexString(address), Long.toHexString(data), size);
+//        LOG.info("Write Z80 busReq: {}, {} {}", th(address), th(data), size);
         if (size == Size.WORD) {
             data >>= 8;
         }
@@ -525,9 +525,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 break;
             default:
                 if (address >= 0xE && address < 0x20) {
-                    LOG.info("Reading serial control: {}", Long.toHexString(address));
+                    LOG.info("Reading serial control: {}", th(address));
                 } else {
-                    LOG.error("Unexpected ioRead: {}", Long.toHexString(addressL));
+                    LOG.error("Unexpected ioRead: {}", th(addressL));
                 }
                 break;
         }
@@ -683,7 +683,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private int vdpReadInternal(int addressL, Size size) {
         boolean valid = (addressL & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
         if (!valid) {
-            LOG.error("Illegal VDP read, address {}, size {}", Long.toHexString(addressL), size);
+            LOG.error("Illegal VDP read, address {}, size {}", th(addressL), size);
             return 0xFF;
         }
         int address = addressL & 0x1F; //low 5 bits
@@ -696,7 +696,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                     boolean even = address % 2 == 0;
                     return even ? vdpData >> 8 : vdpData & 0xFF;
             }
-            LOG.error("Unexpected {} vdp port read: {}", size, Integer.toHexString(addressL));
+            LOG.error("Unexpected {} vdp port read: {}", size, th(addressL));
             return 0xFF;
         } else if (address <= 0x0E) { //	VDP HV counter
 //            Reading the HV counter will return the following data:
@@ -721,12 +721,12 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 return even ? v : h;
             }
         } else if (address == 0x1C) {
-            LOG.warn("Ignoring VDP debug register read, address : {}", Long.toHexString(addressL));
+            LOG.warn("Ignoring VDP debug register read, address : {}", th(addressL));
         } else if (address > 0x17) {
-            LOG.info("vdpRead on unused address: {}", Long.toHexString(addressL));
+            LOG.info("vdpRead on unused address: {}", th(addressL));
 //            return 0xFF;
         } else {
-            LOG.warn("Unexpected vdpRead, address: {}", Long.toHexString(addressL));
+            LOG.warn("Unexpected vdpRead, address: {}", th(addressL));
         }
         return 0xFF;
     }
@@ -744,7 +744,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         boolean valid = (addressLong & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
         if (!valid) {
             LOG.error("Illegal VDP write, address {}, data {}, size {}",
-                    Long.toHexString(addressLong), Long.toHexString(data), size);
+                    th(addressLong), th(data), size);
             throw new RuntimeException("Illegal VDP write");
         }
 
@@ -772,11 +772,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         else if (address >= 0x10 && address < 0x18) {
             int psgData = (int) (data & 0xFF);
             if (size == Size.WORD) {
-                LOG.warn("PSG word write, address: {}, data: {}", Long.toHexString(address), data);
+                LOG.warn("PSG word write, address: {}, data: {}", th(address), data);
             }
             soundProvider.getPsg().write(psgData);
         } else {
-            LOG.warn("Unexpected vdpWrite, address: {}, data: {}", Long.toHexString(address), data);
+            LOG.warn("Unexpected vdpWrite, address: {}, data: {}", th(address), data);
         }
     }
 
