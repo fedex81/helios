@@ -63,7 +63,8 @@ public class MC68000Wrapper implements M68kProvider {
         int res = 0;
         try {
             currentPC = m68k.getPC();
-            res = m68k.execute() + instCycles;
+            res = m68k.execute();
+            res = M68kCycles.getCycles(m68k.getOpcode(), res) + instCycles;
             instCycles = 0;
         } catch (Exception e) {
             LOG.error("68k error", e);
