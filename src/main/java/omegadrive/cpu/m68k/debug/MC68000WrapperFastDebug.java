@@ -31,15 +31,18 @@ import org.slf4j.Logger;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static omegadrive.cpu.CpuFastDebug.CpuDebugInfoProvider;
+import static omegadrive.cpu.CpuFastDebug.DebugMode;
 import static omegadrive.util.Util.th;
 
-public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuFastDebug.CpuDebugInfoProvider {
+public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugInfoProvider {
 
     private static final Logger LOG = LogHelper.getLogger(MC68000WrapperFastDebug.class.getSimpleName());
 
     //see CpuFastDebug.DebugMode
     //DebugMode {NONE, INST_ONLY, NEW_INST_ONLY, STATE}
-    private static final int debugMode = Integer.parseInt(System.getProperty("helios.68k.debug.mode", "0"));
+    private static final int debugMode = Integer.parseInt(System.getProperty("helios.68k.debug.mode",
+            String.valueOf(DebugMode.NONE.ordinal())));
     private static final boolean busyLoopDetection = Boolean.parseBoolean(System.getProperty("helios.68k.busy.loop", "false"));
 
     private CpuFastDebug fastDebug;

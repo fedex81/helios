@@ -68,7 +68,6 @@ public class MC68000Helper {
             Instruction i = cpu.getInstructionFor(opcode);
             DisassembledInstruction di = i.disassemble(wrapPc, opcode);
             di.formatInstruction(sb);
-//            di.shortFormat(this.buffer);
         } else {
             sb.append(String.format("%08x   ????", wrapPc));
         }
@@ -82,7 +81,6 @@ public class MC68000Helper {
             Instruction i = cpu.getInstructionFor(opcode);
             DisassembledInstruction di = i.disassemble(wrapPc, opcode);
             di.formatInstruction(sb);
-//            di.shortFormat(this.buffer);
         } else {
             sb.append(String.format("%08x   ????", wrapPc));
         }

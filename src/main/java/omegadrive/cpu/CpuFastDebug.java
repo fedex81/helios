@@ -21,7 +21,7 @@ public class CpuFastDebug {
 
     private static final Logger LOG = LogHelper.getLogger(CpuFastDebug.class.getSimpleName());
 
-    private static final boolean logToSysOut = Boolean.parseBoolean(System.getProperty("helios.logToSysOut", "false"));
+    private static final boolean logToSysOut = Boolean.parseBoolean(System.getProperty("helios.logToSysOut", "true"));
 
     public interface CpuDebugInfoProvider {
         String getInstructionOnly(int pc);
@@ -144,11 +144,15 @@ public class CpuFastDebug {
         PcInfoWrapper piw = pcInfoWrapper[area][pcMasked];
         if (piw != NOT_VISITED && piw.opcode != opcode) {
             piw.opcode = opcode;
-            log(debugInfoProvider.getInstructionOnly(), " [NEW-R]");
+            doPrintInst(" [NEW-R]");
         } else if (piw == NOT_VISITED) {
             pcInfoWrapper[area][pcMasked] = createPcWrapper(pcMasked, area, opcode);
-            log(debugInfoProvider.getInstructionOnly(), " [NEW]");
+            doPrintInst(" [NEW]");
         }
+    }
+
+    private void doPrintInst(String tail) {
+        log(debugInfoProvider.getInstructionOnly(), tail);
     }
 
     private PcInfoWrapper createPcWrapper(int pcMasked, int area, int opcode) {
@@ -160,9 +164,10 @@ public class CpuFastDebug {
     }
 
     private void log(String s1, String s2) {
-        LOG.info("{}{}", s1, s2);
         if (logToSysOut) {
             System.out.println(s1 + s2);
+        } else {
+            LOG.info("{}{}", s1, s2);
         }
     }
 
