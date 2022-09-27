@@ -416,4 +416,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     public final SystemType getSystemType() {
         return systemType;
     }
+
+    public long getFrameCounter() {
+        return telemetry.getFrameCounter();
+    }
 }

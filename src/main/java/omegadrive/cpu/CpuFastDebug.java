@@ -54,7 +54,14 @@ public class CpuFastDebug {
     }
 
     public static class PcInfoWrapper {
-        public int area, pcMasked, opcode, pcLooops, hits;
+        public final int area, pcMasked, hc;
+        public int opcode, pcLoops;
+
+        public PcInfoWrapper(int area, int pcMasked) {
+            this.area = area;
+            this.pcMasked = pcMasked;
+            this.hc = Objects.hashCode(area, pcMasked);
+        }
 
         @Override
         public String toString() {
@@ -62,8 +69,7 @@ public class CpuFastDebug {
                     .add("area=" + area)
                     .add("pcMasked=" + pcMasked)
                     .add("opcode=" + opcode)
-                    .add("pcLooops=" + pcLooops)
-                    .add("hits=" + hits)
+                    .add("pcLooops=" + pcLoops)
                     .toString();
         }
 
@@ -77,14 +83,14 @@ public class CpuFastDebug {
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(area, pcMasked);
+            return hc;
         }
     }
 
     public enum DebugMode {NONE, INST_ONLY, NEW_INST_ONLY, STATE}
 
     public final static DebugMode[] debugModeVals = DebugMode.values();
-    public final static PcInfoWrapper NOT_VISITED = new PcInfoWrapper();
+    public final static PcInfoWrapper NOT_VISITED = new PcInfoWrapper(0, 0);
 
     private final CpuDebugContext ctx;
     public final PcInfoWrapper[][] pcInfoWrapper;
@@ -156,9 +162,7 @@ public class CpuFastDebug {
     }
 
     private PcInfoWrapper createPcWrapper(int pcMasked, int area, int opcode) {
-        PcInfoWrapper piw = new PcInfoWrapper();
-        piw.pcMasked = pcMasked;
-        piw.area = area;
+        PcInfoWrapper piw = new PcInfoWrapper(area, pcMasked);
         piw.opcode = opcode;
         return piw;
     }
@@ -227,7 +231,7 @@ public class CpuFastDebug {
         final int mask = ctx.pcAreasMaskMap[area];
         final int pcMasked = pc & mask;
         PcInfoWrapper piw = pcInfoWrapper[area][pcMasked];
-        if (piw != NOT_VISITED && piw.pcLooops > 0) {
+        if (piw != NOT_VISITED && piw.pcLoops > 0) {
             isKnownLoop = true;
             if (VERBOSE && isBusy) {
                 LOG.info("Known loop at: {}, busy: {}", th(pc), isBusy);
@@ -241,7 +245,7 @@ public class CpuFastDebug {
         assert piw != NOT_VISITED : th(pc) + "," + piw;
         isKnownLoop = false;
         loopsCounter++;
-        piw.pcLooops = loopsCounter;
+        piw.pcLoops = loopsCounter;
         if (VERBOSE || true) {
             boolean ignore = isIgnore(ctx.isIgnoreOpcode, opcodes);
             if (!ignore) {

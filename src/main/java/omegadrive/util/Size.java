@@ -27,10 +27,12 @@ public enum Size {
 
     long msb;
     long max;
+    int byteSize;
 
     Size(long msb, long maxSize) {
         this.msb = msb;
         this.max = maxSize;
+        this.byteSize = Math.max(1, ordinal() << 1);
     }
 
     public long getMsb() {
@@ -43,6 +45,10 @@ public enum Size {
 
     public long getMask() {
         return this.max;
+    }
+
+    public int getByteSize() {
+        return byteSize;
     }
 
     public static long getMaxFromByteCount(int byteCount) {
