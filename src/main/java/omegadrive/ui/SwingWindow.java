@@ -25,6 +25,7 @@ import omegadrive.input.InputProvider;
 import omegadrive.input.InputProvider.PlayerNumber;
 import omegadrive.joypad.JoypadProvider.JoypadType;
 import omegadrive.system.SystemProvider;
+import omegadrive.ui.flatlaf.FlatLafHelper;
 import omegadrive.util.*;
 import omegadrive.util.FileUtil.FileResourceType;
 import org.slf4j.Logger;
@@ -291,6 +292,13 @@ public class SwingWindow implements DisplayWindow {
         debugInfoItem = new JCheckBoxMenuItem("Debug Info", false);
         addKeyAction(debugInfoItem, SHOW_FPS, this::showDebugInfo);
         menuView.add(debugInfoItem);
+
+        JMenu themeMenu = new JMenu("Themes");
+        List<AbstractButton> themeItems = createThemeItems();
+        themeItems.forEach(themeMenu::add);
+        if (!themeItems.isEmpty()) {
+            menuView.add(themeMenu);
+        }
 
         soundEnItem = new JCheckBoxMenuItem("Enable Sound", true);
         addKeyAction(soundEnItem, SOUND_ENABLED, e -> handleSystemEvent(SOUND_ENABLED, soundEnItem.getState(), null));
@@ -675,6 +683,39 @@ public class SwingWindow implements DisplayWindow {
             addKeyAction(screenItems.get(i), NONE, e -> handleScreenChange(screenItems, num));
         }
         return screenItems;
+    }
+
+    private List<AbstractButton> createThemeItems() {
+        List<AbstractButton> l = new ArrayList<>();
+        FlatLafHelper.lafMap.keySet().stream().
+                forEach(r -> l.add(new JRadioButtonMenuItem(r, false)));
+        ButtonGroup bg = new ButtonGroup();
+        l.forEach(bg::add);
+        for (int i = 0; i < l.size(); i++) {
+            AbstractButton ab = l.get(i);
+            final int idx = i;
+            addKeyAction(ab, NONE, e -> setLaf(l, idx, false));
+        }
+        //init look and feel
+        SwingUtilities.invokeLater(() -> setLaf(l, PrefStore.getSwingUiThemeIndex(), true));
+        return l;
+    }
+
+    private void setLaf(List<AbstractButton> l, int idx, boolean initSelection) {
+        if (l.isEmpty()) {
+            LOG.warn("Empty list of lookAndFeels");
+            return;
+        }
+        if (idx < 0 || idx >= l.size()) {
+            LOG.warn("Unable to set index: {}, size: {}", idx, l.size());
+            idx = 0;
+        }
+        final AbstractButton btn = l.get(idx);
+        if (initSelection) {
+            btn.setSelected(true);
+        }
+        FlatLafHelper.handleLafChange(btn.getText());
+        PrefStore.setSwingUiThemeIndex(idx);
     }
 
     private void handleScreenChange(List<AbstractButton> items, int newScreen) {
