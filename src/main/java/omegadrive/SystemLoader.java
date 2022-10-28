@@ -32,7 +32,6 @@ import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.ZipUtil;
 import org.slf4j.Logger;
-import ru.krlvm.swingdpi.SwingDPI;
 
 import javax.swing.*;
 import java.awt.*;
@@ -127,33 +126,9 @@ public class SystemLoader {
          LOG.info("Headless mode: {}", isHeadless);
          SystemLoader.setHeadless(isHeadless);
          KeyboardInputHelper.init();
-         initLookAndFeel();
          INSTANCE.createFrame(isHeadless);
          init.set(true);
      }
-
-    private static void initLookAndFeel() {
-        try {
-            String lf = UIManager.getSystemLookAndFeelClassName();
-            UIManager.setLookAndFeel(lf);
-            if (lf.equals("com.sun.java.swing.plaf.windows.WindowsLookAndFeel")) {
-                SwingDPI.excludeDefaults(
-                        "RadioButtonMenuItem.font",
-                        "CheckBoxMenuItem.font",
-                        "MenuBar.font",
-                        "PopupMenu.font",
-                        "MenuItem.font",
-                        "Menu.font"
-                );
-            }
-        } catch (Exception e) {
-            LOG.error("Failed to set SwingUI native Look and Feel", e);
-        }
-        UIDefaults defaults = UIManager.getLookAndFeelDefaults();
-        defaults.put("TextArea.font", ((Font) defaults.get("TextArea.font")).deriveFont(13 * SwingDPI.getScaleFactor()));
-        SwingDPI.applyScalingAutomatically();
-        LOG.info("SwingUI DPI Scale factor: {}", SwingDPI.getScaleFactor());
-    }
 
     // Create the frame on the event dispatching thread
     protected void createFrame(boolean isHeadless) {
@@ -200,8 +175,9 @@ public class SystemLoader {
                         handleNewRomFile((Path) parameter);
                         break;
                     case CLOSE_ROM:
+                        break;
                     case CLOSE_APP:
-                        //do nothing
+                        PrefStore.close();
                         break;
                     case PAD_SETUP_CHANGE:
                         String[] s1 = parameter.toString().split(":");
