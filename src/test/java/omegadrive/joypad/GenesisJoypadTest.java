@@ -23,7 +23,6 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.JoypadProvider.JoypadType;
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static omegadrive.joypad.JoypadProvider.JoypadType.*;
@@ -61,18 +60,66 @@ public class GenesisJoypadTest {
         testDisabledInternal(BUTTON_6);
     }
 
+    /**
+     * 0 TH = 1 : ?1CBRLDU    3-button pad return value
+     * 1 TH = 0 : ?0SA00DU    3-button pad return value (D3,D2 are forced to 0, indicates the presence of a controller)
+     * 2 TH = 1 : ?1CBRLDU    3-button pad return value
+     * 3 TH = 0 : ?0SA00DU    3-button pad return value
+     * 4 TH = 1 : ?1CBRLDU    3-button pad return value
+     * 5 TH = 0 : ?0SA0000    D3-0 are forced to '0' (indicate 6 buttons)
+     * 6 TH = 1 : ?1CBMXYZ    Extra buttons returned in D3-0
+     * 7 TH = 0 : ?0SA1111    D3-0 are forced to '1'
+     * (0 TH = 1 : ?1CBRLDU    3-button pad return value)
+     */
+    @Test
+    public void testSimpleSequence() {
+        int[] sequence3 = {0x7f, 0x33, 0x7f, 0x33, 0x7f, 0x33, 0x7f, 0x33};
+        int[] sequence6 = {0x7f, 0x33, 0x7f, 0x33, 0x7f, 0x30, 0x7f, 0x3f};
+        testSimpleSequenceInternal(BUTTON_3, sequence3);
+        testSimpleSequenceInternal(BUTTON_6, sequence6);
+    }
+
+    private void testSimpleSequenceInternal(JoypadType type, int[] sequence) {
+        System.out.println(type);
+        GenesisJoypad j = createBoth(type);
+        Assert.assertEquals(0, j.ctx1.control);
+
+        int thControl = 0x40;
+        int res, thHigh = 0x40, thLow = 0;
+        j.writeControlRegister1(thControl);
+        j.newFrame();
+        for (int i = 0; i < 2; i++) {
+            //idle state thHigh
+            res = j.readDataRegister1();
+            Assert.assertEquals(thHigh, res & thHigh);
+            Assert.assertEquals(sequence[0], res);
+            //no button pressed
+            int cnt = 1;
+            do {
+                System.out.println(cnt);
+                int thVal = (cnt & 1) == 0 ? thHigh : thLow;
+                j.writeDataRegister1(thVal);
+                res = j.readDataRegister1();
+                Assert.assertEquals(thVal, res & thVal);
+                Assert.assertEquals(sequence[cnt], res);
+                cnt++;
+            } while (cnt < 8);
+            j.newFrame();
+        }
+    }
+
     @Test
     public void testWwfRaw32x() {
         testWwfRaw32xInternal(BUTTON_3);
         testWwfRaw32xInternal(BUTTON_6);
     }
 
-    //TODO fix
+
     @Test
-    @Disabled
     public void testGreatestHeavyweights() {
         testGreatestHeavyweightsInternal(BUTTON_3);
-        testGreatestHeavyweightsInternal(BUTTON_6);
+        //TODO fix
+//        testGreatestHeavyweightsInternal(BUTTON_6);
     }
 
     private void testInitAndResetInternal(JoypadType type) {
@@ -191,82 +238,118 @@ public class GenesisJoypadTest {
     }
 
     /**
-     * //6 BUTTON sequence
-     * Setting ctrlPort1 to 41
-     * Setting ctrlPort1 to 41
-     * writeDataReg: data 0, MdPadContext{control=41, data=0, readStep=1, high=false, player=1}
-     * readDataReg: 33, MdPadContext{control=41, data=0, readStep=1, high=false, player=1}
-     * writeDataReg: data 40, MdPadContext{control=41, data=40, readStep=2, high=true, player=1}
+     * new frame
+     * writeCtrlReg: data 41, MdPadContext{control=40, data=40, readStep=0, player=1}
+     * writeCtrlReg: data 41, MdPadContext{control=41, data=40, readStep=0, player=1}
      * <p>
-     * Setting ctrlPort1 to 40
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=2, high=true, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=2, high=true, player=1}
-     * readDataReg: ff, MdPadContext{control=40, data=40, readStep=2, high=true, player=1}
-     * writeDataReg: data 0, MdPadContext{control=40, data=0, readStep=3, high=false, player=1}
-     * readDataReg: 33, MdPadContext{control=40, data=0, readStep=3, high=false, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=4, high=true, player=1}
-     * <p>
-     * Setting ctrlPort1 to 40
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=4, high=true, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=4, high=true, player=1}
-     * readDataReg: ff, MdPadContext{control=40, data=40, readStep=4, high=true, player=1}
-     * writeDataReg: data 0, MdPadContext{control=40, data=0, readStep=5, high=false, player=1}
-     * readDataReg: 33, MdPadContext{control=40, data=0, readStep=5, high=false, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=6, high=true, player=1}
-     * readDataReg: ff, MdPadContext{control=40, data=40, readStep=6, high=true, player=1}
-     * writeDataReg: data 0, MdPadContext{control=40, data=0, readStep=7, high=false, player=1}
-     * readDataReg: 33, MdPadContext{control=40, data=0, readStep=7, high=false, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=8, high=true, player=1}
-     * readDataReg: ff, MdPadContext{control=40, data=40, readStep=8, high=true, player=1}
-     * writeDataReg: data 0, MdPadContext{control=40, data=0, readStep=0, high=false, player=1}
-     * readDataReg: 33, MdPadContext{control=40, data=0, readStep=0, high=false, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=1, high=true, player=1}
-     * readDataReg: ff, MdPadContext{control=40, data=40, readStep=1, high=true, player=1}
-     * writeDataReg: data 0, MdPadContext{control=40, data=0, readStep=2, high=false, player=1}
-     * readDataReg: 33, MdPadContext{control=40, data=0, readStep=2, high=false, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=3, high=true, player=1}
+     * writeCtrlReg: data 41, MdPadContext{control=41, data=40, readStep=0, player=1}
+     * writeDataReg: data 0, MdPadContext{control=41, data=0, readStep=1, player=1}
+     * readDataReg: data 33, MdPadContext{control=41, data=0, readStep=1, player=1}
+     * writeDataReg: data 40, MdPadContext{control=41, data=40, readStep=2, player=1}
+     * writeCtrlReg: data 40, MdPadContext{control=40, data=40, readStep=2, player=1}
+     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=2, player=1}
+     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=2, player=1}
+     * readDataReg: data 7f, MdPadContext{control=40, data=40, readStep=2, player=1}
+     * writeDataReg: data 0, MdPadContext{control=40, data=0, readStep=3, player=1}
+     * readDataReg: data 30, MdPadContext{control=40, data=0, readStep=3, player=1}
+     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=4, player=1}
+     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=4, player=1}
      */
     private void testGreatestHeavyweightsInternal(JoypadType type) {
         GenesisJoypad j = createBoth(type);
+        int seqCnt = 0;
 
         j.newFrame();
         j.writeControlRegister1(0x41);
+
+        j.writeDataRegister1(0);
+        Assert.assertEquals(0x33, j.readDataRegister1());
+
+        j.writeDataRegister1(0x40);
+        j.writeControlRegister1(0x40);
+        j.writeDataRegister1(0x40);
+        j.writeDataRegister1(0x40);
+        Assert.assertEquals(0x7F, j.readDataRegister1());
+
+        j.writeDataRegister1(0);
+        Assert.assertEquals(0x33, j.readDataRegister1());
+
+        j.writeDataRegister1(0x40);
         j.writeControlRegister1(0x41);
-
-        j.writeDataRegister1(0);
-        Assert.assertEquals(0x33, j.readDataRegister1());
         j.writeDataRegister1(0x40);
+    }
+
+
+    /**
+     * Decap' Attack controller code is buggy and wrongly writes 0x00 to I/O CTRL port before acquiring START & A buttons
+     * (instead of just writing to I/O DATA port and leave CTRL port untouched like all other games do), which causes
+     * TH pin to be configured as an input and consequently pulled HIGH (as verified on real hardware and emulated
+     * by Genesis Plus GX since 1cf6882), causing the controller to report B & C buttons status on TL/TR pins
+     * instead of START & A buttons.
+     *
+     * It works on real hardware because there is some delay before TH internal state actually changes from LOW to HIGH
+     * when TH pin direction is switched to input and I was able to verify with a test ROM that START & A buttons
+     * remain accessible on I/O DATA port for a few cycles before B & C buttons start being reported instead.
+     * That game accidentally takes advantage of this because it reads the I/O DATA port immediately without any delay.
+     */
+    /**
+     * new frame
+     * writeDataReg: data 0, MdPadContext{control=40, data=0, readStep=1, player=1}
+     * writeCtrlReg: data 0, MdPadContext{control=40, data=0, readStep=1, player=1}
+     * readDataReg: data 33, MdPadContext{control=0, data=0, readStep=1, player=1}
+     * <p>
+     * writeDataReg: data 40, MdPadContext{control=0, data=40, readStep=2, player=1}
+     * writeCtrlReg: data 40, MdPadContext{control=0, data=40, readStep=2, player=1}
+     * readDataReg: data 3f, MdPadContext{control=40, data=40, readStep=2, player=1}
+     * <p>
+     * writeCtrlReg: data 40, MdPadContext{control=40, data=40, readStep=2, player=1}
+     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=2, player=1}
+     * readDataReg: data 7f, MdPadContext{control=40, data=40, readStep=2, player=1}
+     * <p>
+     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=2, player=1}
+     * readDataReg: data 7f, MdPadContext{control=40, data=40, readStep=2, player=1}
+     * <p>
+     * writeDataReg: data 0, MdPadContext{control=40, data=0, readStep=3, player=1}
+     * readDataReg: data 30, MdPadContext{control=40, data=0, readStep=3, player=1}
+     * <p>
+     * writeDataReg: data 0, MdPadContext{control=40, data=0, readStep=3, player=1}
+     * readDataReg: data 30, MdPadContext{control=40, data=0, readStep=3, player=1}
+     * <p>
+     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=4, player=1}
+     * new frame
+     */
+    @Test
+    public void testDecapAttack() {
+        GenesisJoypad.DECAP_HACK = true;
+        GenesisJoypad j = createBoth(BUTTON_3);
+        Assert.assertEquals(0, j.ctx1.control);
+        j.writeControlRegister1(0x40);
+
+        j.newFrame();
+        //due to delays this write will cause the data register to change after the next read is performed
+        j.writeDataRegister1(0);
+        j.writeControlRegister1(0);
+        Assert.assertEquals(0x33, j.readDataRegister1());
+
+        j.writeDataRegister1(0x40);
+        //reset ctrlReg to 0x40, all is fine from now on
+        j.writeControlRegister1(0x40);
+        Assert.assertEquals(0x3F, j.readDataRegister1());
 
         j.writeControlRegister1(0x40);
         j.writeDataRegister1(0x40);
+        Assert.assertEquals(0x7F, j.readDataRegister1());
         j.writeDataRegister1(0x40);
+        Assert.assertEquals(0x7F, j.readDataRegister1());
 
-        Assert.assertEquals(0xFF, j.readDataRegister1());
         j.writeDataRegister1(0);
         Assert.assertEquals(0x33, j.readDataRegister1());
-        j.writeDataRegister1(0x40);
 
-        j.writeControlRegister1(0x40);
-        j.writeDataRegister1(0x40);
-        j.writeDataRegister1(0x40);
-        Assert.assertEquals(0xFF, j.readDataRegister1());
         j.writeDataRegister1(0);
         Assert.assertEquals(0x33, j.readDataRegister1());
+
         j.writeDataRegister1(0x40);
-        j.writeDataRegister1(0x40);
-        Assert.assertEquals(0xFF, j.readDataRegister1());
-        j.writeDataRegister1(0);
-        Assert.assertEquals(type == BUTTON_6 ? 0x30 : 0x33, j.readDataRegister1());
-        j.writeDataRegister1(0x40);
-        Assert.assertEquals(0xFF, j.readDataRegister1());
-        j.writeDataRegister1(0);
-        Assert.assertEquals(type == BUTTON_6 ? 0x3f : 0x33, j.readDataRegister1());
-        j.writeDataRegister1(0x40);
-        j.writeDataRegister1(0x40);
-        Assert.assertEquals(0xFF, j.readDataRegister1());
-        j.writeDataRegister1(0);
-        Assert.assertEquals(0x33, j.readDataRegister1());
-        j.writeDataRegister1(0x40);
+        GenesisJoypad.DECAP_HACK = false;
     }
 
     private static GenesisJoypad createBoth(JoypadType type) {
