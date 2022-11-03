@@ -29,6 +29,7 @@ import omegadrive.joypad.JoypadProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
+import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
@@ -92,7 +93,9 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
 
     protected abstract void loop();
 
-    protected abstract void initAfterRomLoad();
+    protected void initAfterRomLoad() {
+        sound = AbstractSoundManager.createSoundProvider(getSystemType(), romContext.region);
+    }
 
     protected abstract void resetCycleCounters(int counter);
 

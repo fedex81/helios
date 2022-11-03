@@ -33,7 +33,6 @@ import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -118,10 +117,9 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(systemType, getRegion());
+        super.initAfterRomLoad();
         z80 = Z80CoreWrapper.createInstance(systemType, bus);
         bus.attachDevice(sound).attachDevice(z80);
-
         resetAfterRomLoad();
     }
 

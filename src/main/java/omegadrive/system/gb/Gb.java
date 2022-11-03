@@ -11,7 +11,6 @@ import omegadrive.joypad.ExternalPad;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
@@ -99,7 +98,7 @@ public class Gb extends BaseSystem<BaseBusProvider> {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(systemType, getRegion());
+        super.initAfterRomLoad();
         resetAfterRomLoad();
     }
 

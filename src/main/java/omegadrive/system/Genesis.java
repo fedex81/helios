@@ -36,7 +36,6 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
-import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.perf.GenesisPerf;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
@@ -257,7 +256,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(getSystemType(), romContext.region);
+        super.initAfterRomLoad();
         bus.attachDevice(sound);
         vdp.addVdpEventListener(sound);
         resetAfterRomLoad();

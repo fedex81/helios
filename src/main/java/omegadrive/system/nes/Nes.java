@@ -29,7 +29,6 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.NesStateHandler;
-import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
@@ -110,7 +109,7 @@ public class Nes extends BaseSystem<BaseBusProvider> {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(systemType, getRegion());
+        super.initAfterRomLoad();
         resetAfterRomLoad();
     }
 
