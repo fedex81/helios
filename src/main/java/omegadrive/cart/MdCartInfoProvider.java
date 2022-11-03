@@ -19,6 +19,8 @@
 
 package omegadrive.cart;
 
+import omegadrive.cart.loader.MdLoader;
+import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.mapper.md.MdMapperType;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.LogHelper;
@@ -59,6 +61,8 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     private int romSize;
     private String systemType;
     private MdMapperType forceMapper = null;
+
+    private MdRomDbModel.RomDbEntry entry = MdRomDbModel.NO_ENTRY;
     private boolean isSvp;
     private String serial = "MISSING";
 
@@ -83,6 +87,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     protected void init() {
         this.initMemoryLayout(memoryProvider);
         super.init();
+        entry = MdLoader.getEntry(getSerial());
     }
 
     @Override
@@ -95,6 +100,9 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         if (sramEnabled) {
             sb.append("\nSRAM size: " + getSramSizeBytes() + " bytes, start-end: " + th(sramStart) + " - " +
                     th(sramEnd));
+        }
+        if (entry != MdRomDbModel.NO_ENTRY) {
+            sb.append("\n" + entry);
         }
         return sb.toString();
     }
@@ -166,6 +174,10 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         if (rom.length > SVP_SV_TOKEN_ADDRESS + 1) {
             isSvp = SVP_SV_TOKEN.equals(new String(rom, SVP_SV_TOKEN_ADDRESS, 2).trim());
         }
+    }
+
+    public MdRomDbModel.RomDbEntry getEntry() {
+        return entry;
     }
 
     public boolean isSsfMapper() {

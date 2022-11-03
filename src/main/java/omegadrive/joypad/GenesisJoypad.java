@@ -116,8 +116,8 @@ public class GenesisJoypad extends BasePadAdapter {
                 put(M, RELEASED).put(X, RELEASED).
                 put(Y, RELEASED).put(Z, RELEASED).build());
         stateMap2 = Maps.newHashMap(stateMap1);
-        setPadSetupChange(P1, P1_DEFAULT_TYPE.name());
-        setPadSetupChange(P2, P2_DEFAULT_TYPE.name());
+        setPadSetupChange(P1, P1_DEFAULT_TYPE.name(), false);
+        setPadSetupChange(P2, P2_DEFAULT_TYPE.name(), false);
         reset();
     }
 
@@ -128,17 +128,45 @@ public class GenesisJoypad extends BasePadAdapter {
     }
 
     @Override
-    public void setPadSetupChange(PlayerNumber pn, String info) {
+    public void setPadSetupChange(PlayerNumber pn, String info, boolean force) {
+        setPadSetupChangeStatic(pn, info, force);
         JoypadType jt = JoypadType.valueOf(info);
-        switch (pn) {
-            case P1:
-                P1_DEFAULT_TYPE = p1Type = jt;
-                break;
-            case P2:
-                P2_DEFAULT_TYPE = p2Type = jt;
-                break;
+        if (force) {
+            boolean change1 = force ? p1Type != JoypadType.NONE : true;
+            p1Type = change1 ? jt : p1Type;
+            boolean change2 = force ? p2Type != JoypadType.NONE : true;
+            p2Type = change2 ? jt : p2Type;
+        } else {
+            switch (pn) {
+                case P1 -> p1Type = jt;
+                case P2 -> p2Type = jt;
+            }
         }
-        LOG.info("Setting {} joypad type to: {}", pn, jt);
+
+    }
+
+    //TODO remove
+    @Deprecated
+    public static void setPadSetupChangeStatic(PlayerNumber pn, String info, boolean force) {
+        JoypadType jt = JoypadType.valueOf(info);
+        if (force) {
+            boolean change1 = force ? P1_DEFAULT_TYPE != JoypadType.NONE : true;
+            P1_DEFAULT_TYPE = change1 ? jt : P1_DEFAULT_TYPE;
+            boolean change2 = force ? P2_DEFAULT_TYPE != JoypadType.NONE : true;
+            P2_DEFAULT_TYPE = change2 ? jt : P2_DEFAULT_TYPE;
+            LOG.info("Force setting joypad type to: {}", jt);
+        } else {
+            switch (pn) {
+                case P1:
+                    P1_DEFAULT_TYPE = jt;
+                    break;
+                case P2:
+                    P2_DEFAULT_TYPE = jt;
+                    break;
+            }
+            LOG.info("Setting {} joypad type to: {}", pn, jt);
+        }
+
     }
 
     public int readDataRegister1() {

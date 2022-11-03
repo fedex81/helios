@@ -12,6 +12,36 @@
     "forceRegion": "E"
   },
   {
+    "id": "T-48036",
+    "name": "Ms. Pac-Man",
+    "notes": "Ms. Pac-Man doesn't like 6-button controllers",
+    "force3Btn": "true"
+  },
+  {
+    "id": "T-103026",
+    "name": "King of the Monsters",
+    "notes": "This game won't work at all with a properly emulated 6-button controller",
+    "force3Btn": "true"
+  },
+  {
+    "id": "T-119106",
+    "name": "Combat Cars",
+    "notes": "Routine in the main game seems to work fine with 6-button controllers, but options menu has problems.",
+    "force3Btn": "true"
+  },
+  {
+    "id": "T-113106",
+    "name": "Second Samurai",
+    "notes": "Pause doesn't work right with a 6-button controller",
+    "force3Btn": "true"
+  },
+  {
+    "id": "MK-1304",
+    "name": "Dungeons & Dragons - Warriors of the Eternal Sun",
+    "notes": "Switching characters cycles too fast with a 6-button controller",
+    "force3Btn": "true"
+  },
+  {
     "id": "T-50176",
     "name": "Rings of Power",
     "eeprom": {

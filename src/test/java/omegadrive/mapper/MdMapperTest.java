@@ -63,7 +63,6 @@ public class MdMapperTest {
     }
 
     @Test
-//    @Ignore("fails in github actions")
     public void testNoMapperSram() {
         Assume.assumeTrue(runAllTests);
         prepareRomData(0x10_0000, "SEGA GENESIS"); //8 Mbit
@@ -72,7 +71,6 @@ public class MdMapperTest {
     }
 
     @Test
-//    @Ignore("fails in github actions")
     public void testMapper() {
         Assume.assumeTrue(runAllTests);
         prepareRomData(0x50_0000, "SEGA GENESIS"); //40 Mbit

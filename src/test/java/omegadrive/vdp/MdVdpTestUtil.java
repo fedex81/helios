@@ -20,7 +20,9 @@
 package omegadrive.vdp;
 
 import omegadrive.SystemLoader;
+import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.memory.MemoryProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
@@ -265,7 +267,18 @@ public class MdVdpTestUtil {
     }
 
     public static SystemProvider createTestGenesisProvider() {
+        return createTestGenesisProvider(MemoryProvider.createGenesisInstance());
+    }
+
+    public static SystemProvider createTestGenesisProvider(IMemoryProvider memoryProvider) {
         return new SystemProvider() {
+
+            private RomContext romContext;
+
+            {
+                romContext = new RomContext();
+                romContext.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, null);
+            }
 
             @Override
             public void handleSystemEvent(SystemEvent event, Object parameter) {
@@ -279,7 +292,7 @@ public class MdVdpTestUtil {
 
             @Override
             public RomContext getRomContext() {
-                return NO_ROM;
+                return romContext;
             }
 
             @Override

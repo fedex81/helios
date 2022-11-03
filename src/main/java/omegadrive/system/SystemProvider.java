@@ -22,7 +22,7 @@ package omegadrive.system;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.cart.CartridgeInfoProvider;
-import omegadrive.cart.loader.MdRomDbModel;
+import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.util.RegionDetector;
 
 import java.nio.file.Path;
@@ -34,20 +34,25 @@ public interface SystemProvider extends Device {
         public RegionDetector.Region region;
         public Path romPath;
         public CartridgeInfoProvider cartridgeInfoProvider;
-        public MdRomDbModel.RomDbEntry entry;
+
+        public static final RomContext NO_ROM;
+
+        static {
+            NO_ROM = new RomContext();
+            NO_ROM.region = RegionDetector.Region.USA;
+            NO_ROM.romPath = Path.of("NO_PATH");
+            NO_ROM.cartridgeInfoProvider = new MdCartInfoProvider();
+        }
 
         @Override
         public String toString() {
             return new StringJoiner(", ", RomContext.class.getSimpleName() + "[", "]")
                     .add("region=" + region)
                     .add("romPath=" + romPath)
-                    .add("cartridgeInfoProvider=" + cartridgeInfoProvider)
-                    .add("entry=" + entry)
+                    .add("\ncartridgeInfoProvider=" + cartridgeInfoProvider)
                     .toString();
         }
     }
-
-    RomContext NO_ROM = new RomContext();
 
     void handleSystemEvent(SystemEvent event, Object parameter);
 
@@ -91,7 +96,8 @@ public interface SystemProvider extends Device {
         SHOW_FPS,
         TOGGLE_SOUND_RECORD,
         SOFT_RESET,
-        PAD_SETUP_CHANGE
+        PAD_SETUP_CHANGE,
+        FORCE_PAD_TYPE;
     }
 
     interface NewFrameListener {

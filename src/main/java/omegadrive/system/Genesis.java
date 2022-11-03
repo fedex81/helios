@@ -24,7 +24,6 @@ import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.md.SvpMapper;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
-import omegadrive.cart.loader.MdLoader;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.ssp16.Ssp16;
@@ -224,8 +223,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         rc.romPath = rom;
         MdCartInfoProvider mcip = MdCartInfoProvider.createInstance(memory, rc.romPath);
         rc.cartridgeInfoProvider = mcip;
-        rc.entry = MdLoader.getEntry(mcip.getSerial());
-        String regionOverride = Optional.ofNullable(rc.entry.forceRegion).
+        String regionOverride = Optional.ofNullable(mcip.getEntry().forceRegion).
                 orElse(emuFrame.getRegionOverride());
         rc.region = getRegionInternal(memory, regionOverride);
         return rc;

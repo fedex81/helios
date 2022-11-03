@@ -45,6 +45,8 @@ import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
+import static omegadrive.system.SystemProvider.RomContext.NO_ROM;
+
 public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemProvider, SystemProvider.NewFrameListener {
 
     private final static Logger LOG = LogHelper.getLogger(BaseSystem.class.getSimpleName());
@@ -150,10 +152,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
                 break;
             case PAD_SETUP_CHANGE:
                 String[] s1 = parameter.toString().split(":");
-                joypad.setPadSetupChange(InputProvider.PlayerNumber.valueOf(s1[0]), s1[1]);
+                joypad.setPadSetupChange(InputProvider.PlayerNumber.valueOf(s1[0]), s1[1], false);
+                break;
+            case FORCE_PAD_TYPE:
+                joypad.setPadSetupChange(InputProvider.PlayerNumber.P1, parameter.toString(), true);
                 break;
             default:
-                LOG.warn("Unable to handle event: {}, with parameter: {}", event, Objects.toString(parameter));
+                LOG.warn("Unable to handle event: {}, with parameter: {}", event, parameter);
                 break;
         }
     }
@@ -346,7 +351,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
                 }
                 memory.setRomData(data);
                 romContext = createRomContext(memory, file);
-                String romName = file.getFileName().toString();
+                String romName = FileUtil.getFileName(file);
+                emuFrame.setTitle(romName);
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
                 LOG.info("Running rom: {},\n{}", romName, romContext);

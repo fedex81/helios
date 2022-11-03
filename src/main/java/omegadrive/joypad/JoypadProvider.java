@@ -92,7 +92,7 @@ public interface JoypadProvider extends Device {
         setButtonAction(number, button, action);
     }
 
-    default void setPadSetupChange(InputProvider.PlayerNumber playerNumber, String info) {
+    default void setPadSetupChange(InputProvider.PlayerNumber playerNumber, String info, boolean force) {
         //DO NOTHING
     }
 }

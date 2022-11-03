@@ -48,6 +48,8 @@ import org.slf4j.Logger;
 
 import java.util.Objects;
 
+import static omegadrive.joypad.JoypadProvider.JoypadType.BUTTON_3;
+import static omegadrive.system.SystemProvider.SystemEvent.FORCE_PAD_TYPE;
 import static omegadrive.util.Util.th;
 
 public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad> implements GenesisBusProvider, RomMapper {
@@ -95,8 +97,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         romContext = systemProvider.getRomContext();
         cartridgeInfoProvider = (MdCartInfoProvider) romContext.cartridgeInfoProvider;
         ROM_END_ADDRESS = Math.min(cartridgeInfoProvider.getRomSize(), Z80_ADDRESS_SPACE_START);
-        if (romContext.entry.hasEeprom()) {
-            checkBackupMemoryMapper(SramMode.READ_WRITE, romContext.entry);
+        assert ROM_END_ADDRESS > 0;
+        if (cartridgeInfoProvider.getEntry().hasEeprom()) {
+            checkBackupMemoryMapper(SramMode.READ_WRITE, cartridgeInfoProvider.getEntry());
         } else if (cartridgeInfoProvider.isSramEnabled()) {
             checkBackupMemoryMapper(SramMode.READ_WRITE);
         }
@@ -110,6 +113,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         }
         if (cartridgeInfoProvider.isSvp()) {
             checkSvpMapper();
+        }
+        if (cartridgeInfoProvider.getEntry().hasForce3Btn()) {
+            systemProvider.handleSystemEvent(FORCE_PAD_TYPE, BUTTON_3.name());
         }
     }
 
@@ -811,7 +817,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     private void checkBackupMemoryMapper(SramMode sramMode, boolean forceCreateSram) {
-        checkBackupMemoryMapper(sramMode, forceCreateSram ? romContext.entry : MdRomDbModel.NO_ENTRY);
+        checkBackupMemoryMapper(sramMode, forceCreateSram ? cartridgeInfoProvider.getEntry() : MdRomDbModel.NO_ENTRY);
     }
 
     private void checkBackupMemoryMapper(SramMode sramMode, RomDbEntry entry) {
