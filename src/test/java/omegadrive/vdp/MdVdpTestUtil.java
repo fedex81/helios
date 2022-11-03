@@ -31,7 +31,6 @@ import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.InterlaceMode;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -267,10 +266,6 @@ public class MdVdpTestUtil {
 
     public static SystemProvider createTestGenesisProvider() {
         return new SystemProvider() {
-            @Override
-            public RegionDetector.Region getRegion() {
-                return null;
-            }
 
             @Override
             public void handleSystemEvent(SystemEvent event, Object parameter) {
@@ -283,25 +278,15 @@ public class MdVdpTestUtil {
             }
 
             @Override
-            public void init() {
-
+            public RomContext getRomContext() {
+                return NO_ROM;
             }
-
-            @Override
-            public Path getRomPath() {
-                return null;
-            }
-
 
             @Override
             public SystemLoader.SystemType getSystemType() {
                 return SystemLoader.SystemType.GENESIS;
             }
 
-            @Override
-            public void reset() {
-
-            }
         };
     }
 

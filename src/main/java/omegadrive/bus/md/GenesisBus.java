@@ -24,7 +24,6 @@ import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.bus.model.SvpBus;
 import omegadrive.cart.MdCartInfoProvider;
-import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.cart.mapper.RomMapper;
@@ -38,6 +37,7 @@ import omegadrive.sound.msumd.MsuMdHandler;
 import omegadrive.sound.msumd.MsuMdHandlerImpl;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
+import omegadrive.system.SystemProvider.RomContext;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -58,14 +58,13 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
 
+    private RomContext romContext;
     private MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private RomMapper exSsfMapper = RomMapper.NO_OP_MAPPER;
     private RomMapper backupMemMapper = RomMapper.NO_OP_MAPPER;
     private SvpBus svpMapper = SvpBus.NO_OP;
     protected MsuMdHandler msuMdHandler = MsuMdHandler.NO_OP_HANDLER;
-    private RomDbEntry entry;
-
     private BusArbiter busArbiter = BusArbiter.NO_OP;
 
     GenesisBus.VdpRunnable vdpRunnable = new GenesisBus.VdpRunnable() {
@@ -93,10 +92,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     void initializeRomData() {
+        romContext = systemProvider.getRomContext();
+        cartridgeInfoProvider = (MdCartInfoProvider) romContext.cartridgeInfoProvider;
         ROM_END_ADDRESS = Math.min(cartridgeInfoProvider.getRomSize(), Z80_ADDRESS_SPACE_START);
-        entry = MdLoader.getEntry(cartridgeInfoProvider.getSerial());
-        if (entry.hasEeprom()) {
-            checkBackupMemoryMapper(SramMode.READ_WRITE, entry);
+        if (romContext.entry.hasEeprom()) {
+            checkBackupMemoryMapper(SramMode.READ_WRITE, romContext.entry);
         } else if (cartridgeInfoProvider.isSramEnabled()) {
             checkBackupMemoryMapper(SramMode.READ_WRITE);
         }
@@ -172,9 +172,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     @Override
     public void init() {
-        this.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
         initializeRomData();
-        LOG.info(cartridgeInfoProvider.toString());
         attachDevice(BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider));
         this.z80BusRequested = false;
         this.z80ResetState = true;
@@ -813,7 +811,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     private void checkBackupMemoryMapper(SramMode sramMode, boolean forceCreateSram) {
-        checkBackupMemoryMapper(sramMode, forceCreateSram ? entry : MdRomDbModel.NO_ENTRY);
+        checkBackupMemoryMapper(sramMode, forceCreateSram ? romContext.entry : MdRomDbModel.NO_ENTRY);
     }
 
     private void checkBackupMemoryMapper(SramMode sramMode, RomDbEntry entry) {

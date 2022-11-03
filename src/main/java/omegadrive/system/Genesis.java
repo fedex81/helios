@@ -23,6 +23,8 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.md.SvpMapper;
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.cart.loader.MdLoader;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.ssp16.Ssp16;
@@ -43,6 +45,9 @@ import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import org.slf4j.Logger;
+
+import java.nio.file.Path;
+import java.util.Optional;
 
 /**
  * Megadrive main class
@@ -193,7 +198,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
             videoMode = vdp.getVideoMode();
             double microsPerTick = getMicrosPerTick();
             sound.getFm().setMicrosPerTick(microsPerTick);
-            targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
+            targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
             LOG.info("Video mode changed: {}, microsPerTick: {}", videoMode, microsPerTick);
         }
     }
@@ -212,6 +217,19 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
             romRegion = ovrRegion;
         }
         return romRegion;
+    }
+
+    @Override
+    protected RomContext createRomContext(IMemoryProvider memoryProvider, Path rom) {
+        RomContext rc = new RomContext();
+        rc.romPath = rom;
+        MdCartInfoProvider mcip = MdCartInfoProvider.createInstance(memory, rc.romPath);
+        rc.cartridgeInfoProvider = mcip;
+        rc.entry = MdLoader.getEntry(mcip.getSerial());
+        String regionOverride = Optional.ofNullable(rc.entry.forceRegion).
+                orElse(emuFrame.getRegionOverride());
+        rc.region = getRegionInternal(memory, regionOverride);
+        return rc;
     }
 
     @Override
@@ -239,7 +257,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(getSystemType(), region);
+        sound = AbstractSoundManager.createSoundProvider(getSystemType(), romContext.region);
         bus.attachDevice(sound);
         vdp.addVdpEventListener(sound);
         resetAfterRomLoad();

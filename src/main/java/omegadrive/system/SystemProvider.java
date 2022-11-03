@@ -21,11 +21,33 @@ package omegadrive.system;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
+import omegadrive.cart.CartridgeInfoProvider;
+import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.util.RegionDetector;
 
 import java.nio.file.Path;
+import java.util.StringJoiner;
 
 public interface SystemProvider extends Device {
+
+    class RomContext {
+        public RegionDetector.Region region;
+        public Path romPath;
+        public CartridgeInfoProvider cartridgeInfoProvider;
+        public MdRomDbModel.RomDbEntry entry;
+
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", RomContext.class.getSimpleName() + "[", "]")
+                    .add("region=" + region)
+                    .add("romPath=" + romPath)
+                    .add("cartridgeInfoProvider=" + cartridgeInfoProvider)
+                    .add("entry=" + entry)
+                    .toString();
+        }
+    }
+
+    RomContext NO_ROM = new RomContext();
 
     void handleSystemEvent(SystemEvent event, Object parameter);
 
@@ -35,15 +57,21 @@ public interface SystemProvider extends Device {
 
     boolean isRomRunning();
 
-    RegionDetector.Region getRegion();
+    RomContext getRomContext();
+
+    SystemLoader.SystemType getSystemType();
+
+    default RegionDetector.Region getRegion() {
+        return getRomContext().region;
+    }
 
     default long getRegionCode() {
         return getRegion().getVersionCode();
     }
 
-    Path getRomPath();
-
-    SystemLoader.SystemType getSystemType();
+    default Path getRomPath() {
+        return getRomContext().romPath;
+    }
 
     enum SystemEvent {
         NONE,

@@ -71,8 +71,8 @@ public class Gb extends BaseSystem<BaseBusProvider> {
     @Override
     protected void loop() {
         LOG.info("Starting game loop");
-        targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
-        String[] args = new String[]{romFile.toAbsolutePath().toString()};
+        targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
+        String[] args = new String[]{getRomPath().toAbsolutePath().toString()};
         emulator = createEmulator(args);
         emulator.runOnCurrentThread();
         LOG.info("Exiting rom thread loop");
@@ -84,7 +84,7 @@ public class Gb extends BaseSystem<BaseBusProvider> {
             emulator = new Emulator(args, display, (SoundOutput) sound.getFm(), controller);
             vdp = BaseVdpAdapter.getVdpProviderWrapper(VideoMode.NTSCJ_H20_V18, display);
         } catch (Exception e) {
-            LOG.error("Unable to start emulation: {}", romFile, e);
+            LOG.error("Unable to start emulation: {}", getRomPath(), e);
         }
         return emulator;
     }
@@ -99,7 +99,7 @@ public class Gb extends BaseSystem<BaseBusProvider> {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(systemType, region);
+        sound = AbstractSoundManager.createSoundProvider(systemType, getRegion());
         resetAfterRomLoad();
     }
 

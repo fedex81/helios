@@ -89,8 +89,6 @@ public class CartridgeInfoProvider {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-//        sb.append("ROM header checksum: " + checksum + ", computed: " +
-//        computedChecksum + ", match: " + hasCorrectChecksum()).append("\n");
         sb.append("ROM sha1: " + sha1 + " - ROM CRC32: " + crc32);
         return sb.toString();
     }

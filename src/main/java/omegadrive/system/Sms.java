@@ -106,7 +106,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
 
     @Override
     protected void loop() {
-        targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
+        targetNs = (long) (romContext.region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         do {
             runZ80(counter);
             runVdp(counter);
@@ -122,7 +122,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(systemType, region);
+        sound = AbstractSoundManager.createSoundProvider(systemType, getRegion());
         z80 = Z80CoreWrapper.createInstance(systemType, bus);
         bus.attachDevice(sound).attachDevice(z80);
         vdp.addVdpEventListener(sound);

@@ -59,12 +59,9 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     protected BUS bus;
     protected SystemType systemType;
 
-    protected RegionDetector.Region region = RegionDetector.Region.USA;
     protected VideoMode videoMode = VideoMode.PAL_H40_V30;
-    private Path romPath;
-
+    protected RomContext romContext = NO_ROM;
     protected Future<Void> runningRomFuture;
-    protected Path romFile;
     protected DisplayWindow emuFrame;
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -172,7 +169,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
 
     public void handleNewRom(Path file) {
         init();
-        this.romFile = file;
         Runnable runnable = new RomRunnable(file);
         PrefStore.addRecentFile(file.toAbsolutePath().toString());
         runningRomFuture = executorService.submit(runnable, null);
@@ -229,16 +225,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     @Override
     public boolean isRomRunning() {
         return runningRomFuture != null && !runningRomFuture.isDone();
-    }
-
-    @Override
-    public RegionDetector.Region getRegion() {
-        return region;
-    }
-
-    @Override
-    public Path getRomPath() {
-        return romPath;
     }
 
     protected void pauseAndWait() {
@@ -356,13 +342,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
                     return;
                 }
                 memory.setRomData(data);
-                romPath = file;
+                romContext = createRomContext(memory, file);
                 String romName = file.getFileName().toString();
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
-                emuFrame.setTitle(FileUtil.getFileName(romPath));
-                region = getRegionInternal(memory, emuFrame.getRegionOverride());
-                LOG.info("Running rom: {}, region: {}", romName, region);
+                LOG.info("Running rom: {},\n{}", romName, romContext);
                 initAfterRomLoad();
                 sound.setEnabled(soundEnFlag);
                 LOG.info("Starting game loop");
@@ -374,6 +358,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
             }
             handleCloseRom();
         }
+    }
+
+    protected RomContext createRomContext(IMemoryProvider memoryProvider, Path rom) {
+        RomContext rc = new RomContext();
+        rc.romPath = rom;
+        rc.region = getRegionInternal(memory, emuFrame.getRegionOverride());
+        return rc;
     }
 
     protected void handleVdpDumpScreenData() {
@@ -400,11 +391,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     @Override
     public void reset() {
         handleCloseRom();
-        handleNewRom(romFile);
+        handleNewRom(romContext.romPath);
     }
 
     protected void resetAfterRomLoad() {
-        vdp.setRegion(region);
+        vdp.setRegion(romContext.region);
         //detect ROM first
         joypad.init();
         vdp.init();
@@ -415,6 +406,12 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     @Override
     public final SystemType getSystemType() {
         return systemType;
+    }
+
+    @Override
+    public RomContext getRomContext() {
+        assert romContext != null;
+        return romContext;
     }
 
     public long getFrameCounter() {

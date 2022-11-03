@@ -107,7 +107,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     @Override
     protected void loop() {
-        targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
+        targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
         updateVideoMode(true);
         do {
             runZ80(counter);
@@ -118,7 +118,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(systemType, region);
+        sound = AbstractSoundManager.createSoundProvider(systemType, getRegion());
         z80 = Z80CoreWrapper.createInstance(systemType, bus);
         bus.attachDevice(sound).attachDevice(z80);
 

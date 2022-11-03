@@ -95,9 +95,9 @@ public class Nes extends BaseSystem<BaseBusProvider> {
 
     @Override
     protected void loop() {
-        targetNs = (long) (region.getFrameIntervalMs() * Util.MILLI_IN_NS);
+        targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
         videoMode = vdp.getVideoMode();
-        gui = NesHelper.createNes(romFile, this, (AudioOutInterface) sound.getFm());
+        gui = NesHelper.createNes(getRomPath(), this, (AudioOutInterface) sound.getFm());
         vdp = gui.getVdpProvider();
         gui.run(); //blocking
     }
@@ -110,7 +110,7 @@ public class Nes extends BaseSystem<BaseBusProvider> {
 
     @Override
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(systemType, region);
+        sound = AbstractSoundManager.createSoundProvider(systemType, getRegion());
         resetAfterRomLoad();
     }
 

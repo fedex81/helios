@@ -28,7 +28,6 @@ import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.ui.SwingWindow;
 import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.ZipUtil;
 import org.slf4j.Logger;
@@ -162,10 +161,6 @@ public class SystemLoader {
 
     SystemProvider getSystemAdapter(){
         return new SystemProvider() {
-            @Override
-            public RegionDetector.Region getRegion() {
-                return null;
-            }
 
             @Override
             public void handleSystemEvent(SystemEvent event, Object parameter) {
@@ -198,8 +193,8 @@ public class SystemLoader {
             }
 
             @Override
-            public Path getRomPath() {
-                return null;
+            public RomContext getRomContext() {
+                return NO_ROM;
             }
 
             @Override

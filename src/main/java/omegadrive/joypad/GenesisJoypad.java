@@ -48,7 +48,7 @@ public class GenesisJoypad extends BasePadAdapter {
 
     protected static boolean DECAP_HACK =
             Boolean.parseBoolean(System.getProperty("helios.md.pad.decap.hack", "false"));
-    private static final boolean verbose = true;
+    private static final boolean verbose = false;
 
     public static JoypadType P1_DEFAULT_TYPE = JoypadType.BUTTON_6;
     public static JoypadType P2_DEFAULT_TYPE = JoypadType.BUTTON_6;
