@@ -485,8 +485,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
      */
     private long ioRead(long address, Size size) {
         long data = 0;
-        if ((address & 0xFFF) <= 1) {    //	Version register (read-only word-long)
-            data = systemProvider.getRegionCode() | (enableTmss ? 1 : 0);
+        //	Version register (read-only word-long)
+        if ((address & 0xFFF) <= 1) {
+            //expansion unit not connected
+            data = 0x20 | systemProvider.getRegionCode() | (enableTmss ? 1 : 0);
             data = size == Size.WORD ? (data << 8) | data : data;
             return data;
         }
