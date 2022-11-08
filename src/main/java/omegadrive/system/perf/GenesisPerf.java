@@ -89,7 +89,7 @@ public class GenesisPerf extends Genesis {
         frameWaitNs += elapsedWaitNs;
         frameProcessingNs += frameProcessingDelayNs;
         frameCnt++;
-        totalCycles += counter;
+        totalCycles += telemetry.cycleCounter;
 
         if (frameCnt == videoMode.getRegion().getFps()) {
             long nowNs = System.nanoTime();
@@ -130,7 +130,7 @@ public class GenesisPerf extends Genesis {
         updateVideoMode(true);
         int cnt;
         do {
-            cnt = counter;
+            cnt = telemetry.cycleCounter;
             cnt = runZ80(cnt);
             cnt = run68k(cnt);
             cnt = runFM(cnt);
@@ -139,7 +139,7 @@ public class GenesisPerf extends Genesis {
             }
             //this should be last as it could change the counter
             cnt = runVdp(cnt);
-            counter = cnt;
+            telemetry.cycleCounter = cnt;
         } while (!runningRomFuture.isDone());
     }
 
@@ -159,8 +159,8 @@ public class GenesisPerf extends Genesis {
             nextVdpCycle += vdpVals[vdpMclk - 4];
             addMCycles(VDP, vdpVals[vdpMclk - 4]);
             addIps(VDP, 1);
-            if (counter == 0) { //counter could be reset to 0 when calling vdp::runSlot
-                untilClock = counter;
+            if (telemetry.cycleCounter == 0) { //counter could be reset to 0 when calling vdp::runSlot
+                untilClock = telemetry.cycleCounter;
             }
         }
         return (int) Math.max(untilClock, nextVdpCycle);

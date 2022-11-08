@@ -63,7 +63,7 @@ public class SmsPerf extends Sms {
 
         frameWaitNs += elapsedWaitNs;
         frameCnt++;
-        totalCycles += counter;
+        totalCycles += telemetry.cycleCounter;
 
         if (frameCnt == videoMode.getRegion().getFps()) {
             long nowNs = System.nanoTime();

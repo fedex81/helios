@@ -79,12 +79,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     private boolean soundEnFlag = true;
 
     //frame pacing stuff
-    protected Telemetry telemetry = Telemetry.getInstance();
+    protected final Telemetry telemetry = Telemetry.getInstance();
     private static final boolean fullThrottle;
     protected long elapsedWaitNs, frameProcessingDelayNs;
     protected long targetNs, startNs = 0;
     private long driftNs = 0;
-    protected int counter = 1;
     private Optional<String> stats = Optional.empty();
 
     private final CyclicBarrier pauseBarrier = new CyclicBarrier(2);
@@ -323,8 +322,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         handleVdpDumpScreenData();
         processSaveState();
         pauseAndWait();
-        resetCycleCounters(counter);
-        counter = 0;
+        resetCycleCounters(telemetry.cycleCounter);
+        telemetry.cycleCounter = 0;
         futureDoneFlag = runningRomFuture.isDone();
         handleSoftReset();
         inputProvider.handleEvents();

@@ -114,7 +114,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         updateVideoMode(true);
         int cnt;
         do {
-            cnt = counter;
+            cnt = telemetry.cycleCounter;
             cnt = runZ80(cnt);
             cnt = run68k(cnt);
             cnt = runFM(cnt);
@@ -123,7 +123,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
             }
             //this should be last as it could change the counter
             cnt = runVdp(cnt);
-            counter = cnt;
+            telemetry.cycleCounter = cnt;
         } while (!futureDoneFlag);
     }
 
@@ -139,8 +139,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         while (nextVdpCycle <= untilClock) {
             int vdpMclk = vdp.runSlot();
             nextVdpCycle += vdpVals[vdpMclk - 4];
-            if (counter == 0) { //counter could be reset to 0 when calling vdp::runSlot
-                untilClock = counter;
+            if (telemetry.cycleCounter == 0) { //counter could be reset to 0 when calling vdp::runSlot
+                untilClock = 0;
             }
         }
         return (int) Math.max(untilClock, nextVdpCycle);

@@ -107,10 +107,10 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     protected void loop() {
         targetNs = (long) (romContext.region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         do {
-            runZ80(counter);
-            runVdp(counter);
-            runFM(counter);
-            counter++;
+            runZ80(telemetry.cycleCounter);
+            runVdp(telemetry.cycleCounter);
+            runFM(telemetry.cycleCounter);
+            telemetry.cycleCounter++;
         } while (!runningRomFuture.isDone());
     }
 

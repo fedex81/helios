@@ -21,6 +21,7 @@ package omegadrive.joypad;
 
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.JoypadProvider.JoypadType;
+import omegadrive.system.perf.Telemetry;
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,6 @@ import static omegadrive.util.Util.th;
  * wwf raw 32x, GreatestHeavyweights, Sf2, sgdk joytest
  * TODO
  * - Decap Attack, 3btn and 6btn ko
- * - GreatestHeavyweights, 3Btn ok, 6btn ko
  */
 public class GenesisJoypadTest {
 
@@ -117,9 +117,8 @@ public class GenesisJoypadTest {
 
     @Test
     public void testGreatestHeavyweights() {
-        testGreatestHeavyweightsInternal(BUTTON_3);
-        //TODO fix
-//        testGreatestHeavyweightsInternal(BUTTON_6);
+        testGreatestHeavyweightsInternal(BUTTON_3, new int[]{0x33, 0x33, 0x33});
+        testGreatestHeavyweightsInternal(BUTTON_6, new int[]{0x30, 0x3f, 0x33});
     }
 
     private void testInitAndResetInternal(JoypadType type) {
@@ -211,9 +210,11 @@ public class GenesisJoypadTest {
      * 008817d2   6000 fffffffe               bra.w    $008817d2 [NEW]
      */
     private void testWwfRaw32xInternal(JoypadType type) {
+        GenesisJoypad.WWF32X_HACK = true;
         int r2;
         GenesisJoypad j = createBoth(type);
         j.writeControlRegister2(0x39);
+//        Telemetry.getInstance().cycleCounter += 15;
         System.out.println("ctrl:   " + Integer.toBinaryString(0x39));
         j.writeDataRegister2(0);
         r2 = j.readDataRegister2();
@@ -235,48 +236,58 @@ public class GenesisJoypadTest {
         Assertions.assertTrue((r2 & 0x30) == 0);
         // bits 1100_0000 are input bits and they are not being driven, assumes pulled-up
         Assertions.assertEquals(0xC0, r2 & 0xC0);
+        GenesisJoypad.WWF32X_HACK = false;
     }
 
     /**
      * new frame
-     * writeCtrlReg: data 41, MdPadContext{control=40, data=40, readStep=0, player=1}
-     * writeCtrlReg: data 41, MdPadContext{control=41, data=40, readStep=0, player=1}
+     * writeCtrlReg: data 40, MdPadContext{control=40, data=40, readStep=0, player=1}
+     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=0, player=1}
      * <p>
-     * writeCtrlReg: data 41, MdPadContext{control=41, data=40, readStep=0, player=1}
-     * writeDataReg: data 0, MdPadContext{control=41, data=0, readStep=1, player=1}
-     * readDataReg: data 33, MdPadContext{control=41, data=0, readStep=1, player=1}
-     * writeDataReg: data 40, MdPadContext{control=41, data=40, readStep=2, player=1}
-     * writeCtrlReg: data 40, MdPadContext{control=40, data=40, readStep=2, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=2, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=2, player=1}
-     * readDataReg: data 7f, MdPadContext{control=40, data=40, readStep=2, player=1}
-     * writeDataReg: data 0, MdPadContext{control=40, data=0, readStep=3, player=1}
-     * readDataReg: data 30, MdPadContext{control=40, data=0, readStep=3, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=4, player=1}
-     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=4, player=1}
+     * wait for a long time, resets readStep to 0
+     * <p>
+     * writeDataReg: data 40, MdPadContext{control=40, data=40, readStep=0, player=1}
+     * readDataReg: data 33, MdPadContext{control=40, data=40, readStep=0, player=1}
      */
-    private void testGreatestHeavyweightsInternal(JoypadType type) {
+    private void testGreatestHeavyweightsInternal(JoypadType type, int[] expect) {
         GenesisJoypad j = createBoth(type);
-        int seqCnt = 0;
 
         j.newFrame();
-        j.writeControlRegister1(0x41);
-
-        j.writeDataRegister1(0);
-        Assert.assertEquals(0x33, j.readDataRegister1());
-
-        j.writeDataRegister1(0x40);
         j.writeControlRegister1(0x40);
         j.writeDataRegister1(0x40);
+
+        //wait
+        Telemetry.getInstance().cycleCounter += 16_000;
+
         j.writeDataRegister1(0x40);
-        Assert.assertEquals(0x7F, j.readDataRegister1());
+        Assert.assertEquals(0x7f, j.readDataRegister1());
 
         j.writeDataRegister1(0);
         Assert.assertEquals(0x33, j.readDataRegister1());
 
         j.writeDataRegister1(0x40);
-        j.writeControlRegister1(0x41);
+        Assert.assertEquals(0x7f, j.readDataRegister1());
+
+        j.writeDataRegister1(0);
+        Assert.assertEquals(0x33, j.readDataRegister1());
+
         j.writeDataRegister1(0x40);
+        Assert.assertEquals(0x7f, j.readDataRegister1());
+
+        j.writeDataRegister1(0);
+        Assert.assertEquals(expect[0], j.readDataRegister1());
+
+        j.writeDataRegister1(0x40);
+        Assert.assertEquals(0x7f, j.readDataRegister1());
+
+        j.writeDataRegister1(0);
+        Assert.assertEquals(expect[1], j.readDataRegister1());
+
+        j.writeDataRegister1(0x40);
+        Assert.assertEquals(0x7f, j.readDataRegister1());
+
+        j.writeDataRegister1(0);
+        Assert.assertEquals(expect[2], j.readDataRegister1());
     }
 
 
@@ -320,7 +331,7 @@ public class GenesisJoypadTest {
      */
     @Test
     public void testDecapAttack() {
-        GenesisJoypad.DECAP_HACK = true;
+//        GenesisJoypad.WWF32X_HACK = true;
         GenesisJoypad j = createBoth(BUTTON_3);
         Assert.assertEquals(0, j.ctx1.control);
         j.writeControlRegister1(0x40);
@@ -349,7 +360,7 @@ public class GenesisJoypadTest {
         Assert.assertEquals(0x33, j.readDataRegister1());
 
         j.writeDataRegister1(0x40);
-        GenesisJoypad.DECAP_HACK = false;
+//        GenesisJoypad.WWF32X_HACK = false;
     }
 
     private static GenesisJoypad createBoth(JoypadType type) {

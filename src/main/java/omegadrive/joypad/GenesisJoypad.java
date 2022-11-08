@@ -22,9 +22,11 @@ package omegadrive.joypad;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import omegadrive.input.InputProvider.PlayerNumber;
+import omegadrive.system.perf.Telemetry;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
+import java.util.StringJoiner;
 import java.util.function.Predicate;
 
 import static omegadrive.input.InputProvider.PlayerNumber.P1;
@@ -46,8 +48,10 @@ public class GenesisJoypad extends BasePadAdapter {
 
     private static final Logger LOG = LogHelper.getLogger(GenesisJoypad.class.getSimpleName());
 
-    protected static boolean DECAP_HACK =
-            Boolean.parseBoolean(System.getProperty("helios.md.pad.decap.hack", "false"));
+    private static final int M68K_CYCLES_PAD_RESET = 12000; //~1.6ms @ 7.5mhz
+
+    protected static boolean WWF32X_HACK =
+            Boolean.parseBoolean(System.getProperty("helios.md.pad.wwf32x.hack", "false"));
     private static final boolean verbose = false;
 
     public static JoypadType P1_DEFAULT_TYPE = JoypadType.BUTTON_6;
@@ -81,6 +85,7 @@ public class GenesisJoypad extends BasePadAdapter {
         int control = 0, //SGDK needs 0 here, otherwise it is considered a RESET
                 data, readMask, readStep;
         int player;
+        int latestWriteCycleCounter;
 
         MdPadContext(int p) {
             this.player = p;
@@ -88,12 +93,14 @@ public class GenesisJoypad extends BasePadAdapter {
 
         @Override
         public String toString() {
-            return "MdPadContext{" +
-                    "control=" + th(control) +
-                    ", data=" + th(data) +
-                    ", readStep=" + readStep +
-                    ", player=" + player +
-                    '}';
+            return new StringJoiner(", ", MdPadContext.class.getSimpleName() + "[", "]")
+                    .add("control=" + control)
+                    .add("data=" + data)
+                    .add("readMask=" + readMask)
+                    .add("readStep=" + readStep)
+                    .add("player=" + player)
+                    .add("latestWriteCycleCounter=" + latestWriteCycleCounter)
+                    .toString();
         }
     }
 
@@ -193,7 +200,7 @@ public class GenesisJoypad extends BasePadAdapter {
     private void writeControlPad(MdPadContext ctx, int control) {
         ctx.control = control;
         //set thPin as input -> TH goes high
-        if (!DECAP_HACK && isCtrlThInput.test(control)) {
+        if (WWF32X_HACK && isCtrlThInput.test(control)) {
             ctx.data |= DATA_TH_HIGH;
             if (verbose) LOG.warn("writeCtrlReg: data {}, {}", th(control), ctx);
         }
@@ -201,6 +208,7 @@ public class GenesisJoypad extends BasePadAdapter {
     }
 
     private void writePad(MdPadContext ctx, JoypadType type, int data) {
+        checkResetState(ctx, type);
         boolean thPinHigh = isDataThHigh.test(data);
         boolean wasThPinHigh = isDataThHigh.test(ctx.data);
         if (thPinHigh != wasThPinHigh) {
@@ -214,13 +222,25 @@ public class GenesisJoypad extends BasePadAdapter {
         if (verbose) LOG.info("writeDataReg: data {}, {}", th(data), ctx);
     }
 
+    private void checkResetState(MdPadContext ctx, JoypadType type) {
+        if (type != JoypadType.BUTTON_6) {
+            return;
+        }
+        int fc = Telemetry.getInstance().cycleCounter;
+        if (fc - ctx.latestWriteCycleCounter > M68K_CYCLES_PAD_RESET) {
+            if (verbose) LOG.debug("{} {}", fc - ctx.latestWriteCycleCounter, ctx);
+            ctx.readStep = 0;
+        }
+        ctx.latestWriteCycleCounter = fc;
+    }
+
     private int readPad(PlayerNumber n, JoypadType type, MdPadContext ctx) {
         int res;
         if (type == JoypadType.NONE) {
             if (verbose) LOG.info("readDataReg: data {}, {}", th(0xFF), ctx);
             return 0xFF;
         }
-        if (!DECAP_HACK && isCtrlThInput.test(ctx.control)) {
+        if (WWF32X_HACK && isCtrlThInput.test(ctx.control)) {
             res = (ctx.data | ~ctx.control) & 0xFF;
             if (verbose) LOG.info("readDataReg: data {}, {}", th(res), ctx);
             return res;
@@ -240,7 +260,7 @@ public class GenesisJoypad extends BasePadAdapter {
                 res = getSA1111(n);
                 break;
             default:
-                assert (step & 1) == 0 ? isDataThHigh.test(ctx.data) : !isDataThHigh.test(ctx.data) : ctx;
+//                assert (step & 1) == 0 ? isDataThHigh.test(ctx.data) : !isDataThHigh.test(ctx.data) : ctx;
                 res = (step & 1) == 0 ? getCBRLDU(n) : getSA00DU(n);
                 break;
         }
@@ -313,6 +333,7 @@ public class GenesisJoypad extends BasePadAdapter {
     private void newFrame(MdPadContext ctx) {
         writePad(ctx, ctx.player == 1 ? p1Type : p2Type, 0x40);
         ctx.readStep = 0;
+        ctx.latestWriteCycleCounter = 0;
     }
 
     @Override
