@@ -52,7 +52,7 @@ public class Telemetry {
     private static final Timing NO_TIMING = new Timing();
     private Path telemetryFile;
     private long frameCounter = 0;
-    public int cycleCounter = 0;
+    public int cycleCounter = 1;
     private final Table<String, Long, Double> data = TreeBasedTable.create();
     private final Map<Long, Timing> frameTimeStamp = new HashMap<>();
 
@@ -117,6 +117,7 @@ public class Telemetry {
         data.clear();
         frameTimeStamp.clear();
         telemetryFile = null;
+        cycleCounter = 1;
     }
 
     public Optional<String> newFrame(double frameTimeNs, double driftNs) {

@@ -21,7 +21,6 @@ package omegadrive.vdp;
 
 import omegadrive.SystemLoader;
 import omegadrive.cpu.m68k.MC68000Helper;
-import omegadrive.cpu.m68k.debug.MC68000WrapperDebug;
 import omegadrive.input.InputProvider;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
@@ -100,14 +99,8 @@ public class VdpPerformanceTest {
             if (diffNs > maxFrameNs && diffMs < 100) {
 //                maxFrameNs = diffNs;
 //                System.out.println("Frame: " + frameCnt + ", timeMs: " + diffMs);
-                if (MC68000WrapperDebug.countHits) {
-                    MC68000WrapperDebug.dumpHitCounter(100);
-                }
             } else if (diffMs > 100 && frameCnt > limit + 1) {
                 System.out.println("!!!! SLOW Frame: " + frameCnt + ", timeMs: " + diffMs);
-            }
-            if (MC68000WrapperDebug.countHits) {
-                MC68000WrapperDebug.clearHitCounterStats();
             }
             prevFrameNs = System.nanoTime();
         }
@@ -124,14 +117,6 @@ public class VdpPerformanceTest {
     private void hitCounter(int startFrame, int endFrame) {
         if (!MC68000Helper.M68K_DEBUG) {
             return;
-        }
-        if (MC68000WrapperDebug.countHits) {
-            MC68000WrapperDebug.dumpHitCounter(100);
-        }
-        if (sampleCnt == startFrame) {
-            MC68000WrapperDebug.countHits = true;
-        } else if (sampleCnt == endFrame) {
-            MC68000WrapperDebug.countHits = false;
         }
     }
 
