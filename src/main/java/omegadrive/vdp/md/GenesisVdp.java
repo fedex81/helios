@@ -727,6 +727,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
                 if (!(boolean) value) {
                     handleEndOfActiveDisplay();
                 }
+                break;
             case H_BLANK_CHANGE:
                 hb = (boolean) value ? 1 : 0;
                 break;
