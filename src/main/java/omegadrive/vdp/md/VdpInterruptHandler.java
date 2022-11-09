@@ -37,7 +37,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
     /**
      * Relevant Games:
      * Kawasaki, Outrun, Gunstar Heroes,Lotus II,Legend of Galahad, wobble.bin, Vscrollexperiment,
-     * Road rash, lemmings, Bram Stoker Dracula
+     * Road rash, lemmings, Bram Stoker Dracula, Chuck Rock, dashing desperadoes, iss deluxe
      */
     private final static Logger LOG = LogHelper.getLogger(VdpInterruptHandler.class.getSimpleName());
 
@@ -180,7 +180,12 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
 
     private void handleHLinesCounterDecrement() {
         hLinePassed--;
-        if (vCounterInternal >= vdpCounterMode.vBlankSet - 1) {
+        //this breaks Chuck Rock
+//        if (vCounterInternal >= vdpCounterMode.vBlankSet - 1) {
+//            resetHLinesCounter();
+//        }
+        //this breaks??
+        if (vBlankSet) {
             resetHLinesCounter();
         }
         if (hLinePassed < 0) {
