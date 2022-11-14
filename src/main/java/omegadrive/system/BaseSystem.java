@@ -22,6 +22,7 @@ package omegadrive.system;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.SystemLoader.SystemType;
+import omegadrive.UserConfigHolder;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInput;
@@ -153,11 +154,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
                 softReset = true;
                 break;
             case PAD_SETUP_CHANGE:
-                String[] s1 = parameter.toString().split(":");
-                joypad.setPadSetupChange(InputProvider.PlayerNumber.valueOf(s1[0]), s1[1], false);
-                break;
             case FORCE_PAD_TYPE:
-                joypad.setPadSetupChange(InputProvider.PlayerNumber.P1, parameter.toString(), true);
+                UserConfigHolder.addUserConfig(event, parameter);
                 break;
             default:
                 LOG.warn("Unable to handle event: {}, with parameter: {}", event, parameter);

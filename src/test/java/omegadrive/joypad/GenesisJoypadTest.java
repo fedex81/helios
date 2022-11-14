@@ -196,19 +196,19 @@ public class GenesisJoypadTest {
         Assertions.assertEquals(0x33, j.readDataRegister1());
         Assertions.assertEquals(0x33, j.readDataRegister2());
 
-        j.setPadSetupChange(InputProvider.PlayerNumber.P2, NONE.name(), false);
+        j.setPadSetupChange(InputProvider.PlayerNumber.P2, NONE.name());
         Assertions.assertEquals(0x33, j.readDataRegister1());
         Assertions.assertEquals(0xFF, j.readDataRegister2());
 
-        j.setPadSetupChange(InputProvider.PlayerNumber.P1, NONE.name(), false);
+        j.setPadSetupChange(InputProvider.PlayerNumber.P1, NONE.name());
         Assertions.assertEquals(0xFF, j.readDataRegister1());
         Assertions.assertEquals(0xFF, j.readDataRegister2());
 
-        j.setPadSetupChange(InputProvider.PlayerNumber.P1, type.name(), false);
+        j.setPadSetupChange(InputProvider.PlayerNumber.P1, type.name());
         Assertions.assertEquals(0x33, j.readDataRegister1());
         Assertions.assertEquals(0xFF, j.readDataRegister2());
 
-        j.setPadSetupChange(InputProvider.PlayerNumber.P2, type.name(), false);
+        j.setPadSetupChange(InputProvider.PlayerNumber.P2, type.name());
         Assertions.assertEquals(0x33, j.readDataRegister1());
         Assertions.assertEquals(0x33, j.readDataRegister2());
     }
@@ -395,8 +395,8 @@ public class GenesisJoypadTest {
 
     private static GenesisJoypad create(JoypadType p1Type, JoypadType p2Type, SystemProvider.SystemClock clock) {
         GenesisJoypad j = new GenesisJoypad(clock);
-        j.setPadSetupChange(InputProvider.PlayerNumber.P1, p1Type.name(), false);
-        j.setPadSetupChange(InputProvider.PlayerNumber.P2, p2Type.name(), false);
+        j.setPadSetupChange(InputProvider.PlayerNumber.P1, p1Type.name());
+        j.setPadSetupChange(InputProvider.PlayerNumber.P2, p2Type.name());
         j.init();
         return j;
     }

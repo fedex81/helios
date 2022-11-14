@@ -21,8 +21,10 @@ package omegadrive.joypad;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import omegadrive.UserConfigHolder;
 import omegadrive.input.InputProvider.PlayerNumber;
 import omegadrive.system.SystemProvider;
+import omegadrive.system.SystemProvider.SystemEvent;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
@@ -53,9 +55,6 @@ public class GenesisJoypad extends BasePadAdapter {
     protected static boolean WWF32X_HACK =
             Boolean.parseBoolean(System.getProperty("helios.md.pad.wwf32x.hack", "false"));
     private static final boolean verbose = false;
-
-    public static JoypadType P1_DEFAULT_TYPE = JoypadType.BUTTON_6;
-    public static JoypadType P2_DEFAULT_TYPE = JoypadType.BUTTON_6;
 
     /**
      * 0 TH = 1 : ?1CBRLDU    3-button pad return value (default state)
@@ -129,8 +128,12 @@ public class GenesisJoypad extends BasePadAdapter {
                 put(M, RELEASED).put(X, RELEASED).
                 put(Y, RELEASED).put(Z, RELEASED).build());
         stateMap2 = Maps.newHashMap(stateMap1);
-        setPadSetupChange(P1, P1_DEFAULT_TYPE.name(), false);
-        setPadSetupChange(P2, P2_DEFAULT_TYPE.name(), false);
+        for (PlayerNumber pn : PlayerNumber.values()) {
+            Object obj = UserConfigHolder.userEventObjectMap.get(pn, SystemEvent.PAD_SETUP_CHANGE);
+            if (obj != null) {
+                setPadSetupChange(pn, obj.toString());
+            }
+        }
         reset();
     }
 
@@ -141,45 +144,13 @@ public class GenesisJoypad extends BasePadAdapter {
     }
 
     @Override
-    public void setPadSetupChange(PlayerNumber pn, String info, boolean force) {
-        setPadSetupChangeStatic(pn, info, force);
+    public void setPadSetupChange(PlayerNumber pn, String info) {
         JoypadType jt = JoypadType.valueOf(info);
-        if (force) {
-            boolean change1 = force ? p1Type != JoypadType.NONE : true;
-            p1Type = change1 ? jt : p1Type;
-            boolean change2 = force ? p2Type != JoypadType.NONE : true;
-            p2Type = change2 ? jt : p2Type;
-        } else {
-            switch (pn) {
-                case P1 -> p1Type = jt;
-                case P2 -> p2Type = jt;
-            }
+        switch (pn) {
+            case P1 -> p1Type = jt;
+            case P2 -> p2Type = jt;
         }
-
-    }
-
-    //TODO remove
-    @Deprecated
-    public static void setPadSetupChangeStatic(PlayerNumber pn, String info, boolean force) {
-        JoypadType jt = JoypadType.valueOf(info);
-        if (force) {
-            boolean change1 = force ? P1_DEFAULT_TYPE != JoypadType.NONE : true;
-            P1_DEFAULT_TYPE = change1 ? jt : P1_DEFAULT_TYPE;
-            boolean change2 = force ? P2_DEFAULT_TYPE != JoypadType.NONE : true;
-            P2_DEFAULT_TYPE = change2 ? jt : P2_DEFAULT_TYPE;
-            LOG.info("Force setting joypad type to: {}", jt);
-        } else {
-            switch (pn) {
-                case P1:
-                    P1_DEFAULT_TYPE = jt;
-                    break;
-                case P2:
-                    P2_DEFAULT_TYPE = jt;
-                    break;
-            }
-            LOG.info("Setting {} joypad type to: {}", pn, jt);
-        }
-
+        LOG.info("Setting {} joypad type to: {}", pn, jt);
     }
 
     public int readDataRegister1() {

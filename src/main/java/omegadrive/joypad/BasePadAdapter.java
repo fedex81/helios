@@ -42,7 +42,6 @@ public abstract class BasePadAdapter implements JoypadProvider {
     Map<JoypadButton, JoypadAction> stateMap2 = Collections.emptyMap();
     int value1 = 0xFF;
     int value2 = 0xFF;
-//    InputStrategy inputStrategy = InputStrategy.NO_STRATEGY; //new InputStrategy(stateMap1);
 
     static Map<JoypadButton, JoypadAction> releasedMap = ImmutableMap.<JoypadButton, JoypadAction>builder().
             put(D, RELEASED).put(U, RELEASED).

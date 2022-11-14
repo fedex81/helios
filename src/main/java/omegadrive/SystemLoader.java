@@ -19,9 +19,7 @@
 
 package omegadrive;
 
-import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInputHelper;
-import omegadrive.joypad.GenesisJoypad;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
@@ -37,7 +35,6 @@ import java.awt.*;
 import java.io.FileReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipEntry;
@@ -164,7 +161,7 @@ public class SystemLoader {
 
             @Override
             public void handleSystemEvent(SystemEvent event, Object parameter) {
-                LOG.info("Event: {}, with parameter: {}", event, Objects.toString(parameter));
+                LOG.info("Event: {}, with parameter: {}", event, parameter);
                 switch (event) {
                     case NEW_ROM:
                         handleNewRomFile((Path) parameter);
@@ -175,13 +172,9 @@ public class SystemLoader {
                         PrefStore.close();
                         break;
                     case PAD_SETUP_CHANGE:
-                        String[] s1 = parameter.toString().split(":");
-                        GenesisJoypad.setPadSetupChangeStatic(InputProvider.PlayerNumber.valueOf(s1[0]), s1[1], false);
+                    case FORCE_PAD_TYPE:
+                        UserConfigHolder.addUserConfig(event, parameter);
                         break;
-//                    case FORCE_PAD_TYPE: {
-//                        GenesisJoypad.setPadSetupChangeStatic(null, parameter.toString(), true);
-//                        break;
-//                    }
                     default:
                         LOG.warn("Unable to handle event: {}, with parameter: {}", event, parameter);
                         break;
