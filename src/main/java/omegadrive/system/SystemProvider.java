@@ -103,4 +103,22 @@ public interface SystemProvider extends Device {
     interface NewFrameListener {
         void newFrame();
     }
+
+    interface SystemClock {
+        int getCycleCounter();
+
+        long getFrameCounter();
+    }
+
+    SystemClock NO_CLOCK = new SystemClock() {
+        @Override
+        public int getCycleCounter() {
+            return 0;
+        }
+
+        @Override
+        public long getFrameCounter() {
+            return 0;
+        }
+    };
 }

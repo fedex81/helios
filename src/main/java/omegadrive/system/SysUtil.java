@@ -73,7 +73,7 @@ public class SysUtil {
         boolean isNes = Arrays.stream(nesBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isGb = Arrays.stream(gbBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if (isGen) {
-            systemProvider = Genesis.createNewInstance(display, debugPerf);
+            systemProvider = Genesis.createNewInstance(display);
         } else if (isSg) {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, display);
         } else if (isCv) {
@@ -81,9 +81,9 @@ public class SysUtil {
         } else if (isMsx) {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, display);
         } else if (isSms) {
-            systemProvider = Sms.createNewInstance(SystemType.SMS, display, debugPerf);
+            systemProvider = Sms.createNewInstance(SystemType.SMS, display);
         } else if (isGg) {
-            systemProvider = Sms.createNewInstance(SystemType.GG, display, debugPerf);
+            systemProvider = Sms.createNewInstance(SystemType.GG, display);
         } else if (isNes) {
             systemProvider = Nes.createNewInstance(SystemType.NES, display);
         } else if (isGb) {

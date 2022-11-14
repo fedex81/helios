@@ -29,7 +29,6 @@ import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.system.perf.SmsPerf;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -65,12 +64,8 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         this.systemType = systemType;
     }
 
-    public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, DisplayWindow emuFrame, boolean debugPerf) {
-        return debugPerf ? new SmsPerf(systemType, emuFrame) : new Sms(systemType, emuFrame);
-    }
-
     public static SystemProvider createNewInstance(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
-        return createNewInstance(systemType, emuFrame, false);
+        return new Sms(systemType, emuFrame);
     }
 
     private void initCommon() {
@@ -107,10 +102,10 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     protected void loop() {
         targetNs = (long) (romContext.region.getFrameIntervalMs() * Util.MILLI_IN_NS);
         do {
-            runZ80(telemetry.cycleCounter);
-            runVdp(telemetry.cycleCounter);
-            runFM(telemetry.cycleCounter);
-            telemetry.cycleCounter++;
+            runZ80(cycleCounter);
+            runVdp(cycleCounter);
+            runFM(cycleCounter);
+            cycleCounter++;
         } while (!runningRomFuture.isDone());
     }
 

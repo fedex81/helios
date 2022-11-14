@@ -109,9 +109,9 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
         targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
         updateVideoMode(true);
         do {
-            runZ80(telemetry.cycleCounter);
-            runVdp(telemetry.cycleCounter);
-            telemetry.cycleCounter++;
+            runZ80(cycleCounter);
+            runVdp(cycleCounter);
+            cycleCounter++;
         } while (!runningRomFuture.isDone());
     }
 

@@ -47,7 +47,8 @@ import java.util.function.Consumer;
 
 import static omegadrive.system.SystemProvider.RomContext.NO_ROM;
 
-public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemProvider, SystemProvider.NewFrameListener {
+public abstract class BaseSystem<BUS extends BaseBusProvider> implements
+        SystemProvider, SystemProvider.NewFrameListener, SystemProvider.SystemClock {
 
     private final static Logger LOG = LogHelper.getLogger(BaseSystem.class.getSimpleName());
 
@@ -77,6 +78,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
     protected volatile boolean futureDoneFlag = false;
     protected volatile boolean softReset = false;
     private boolean soundEnFlag = true;
+
+    protected int cycleCounter = 1;
 
     //frame pacing stuff
     protected final Telemetry telemetry = Telemetry.getInstance();
@@ -322,8 +325,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         handleVdpDumpScreenData();
         processSaveState();
         pauseAndWait();
-        resetCycleCounters(telemetry.cycleCounter);
-        telemetry.cycleCounter = 0;
+        resetCycleCounters(cycleCounter);
+        cycleCounter = 0;
         futureDoneFlag = runningRomFuture.isDone();
         handleSoftReset();
         inputProvider.handleEvents();
@@ -422,6 +425,12 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements SystemP
         return romContext;
     }
 
+    @Override
+    public int getCycleCounter() {
+        return cycleCounter;
+    }
+
+    @Override
     public long getFrameCounter() {
         return telemetry.getFrameCounter();
     }

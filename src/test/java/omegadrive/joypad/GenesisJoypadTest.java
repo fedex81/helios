@@ -21,12 +21,14 @@ package omegadrive.joypad;
 
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.JoypadProvider.JoypadType;
-import omegadrive.system.perf.Telemetry;
+import omegadrive.system.SystemProvider;
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static omegadrive.joypad.JoypadProvider.JoypadType.*;
+import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.util.Util.th;
 
 /**
@@ -35,6 +37,24 @@ import static omegadrive.util.Util.th;
  * - Decap Attack, 3btn and 6btn ko
  */
 public class GenesisJoypadTest {
+
+    private SystemProvider.SystemClock clock;
+    private int cycleCounter = 0;
+
+    @BeforeEach
+    public void beforeEach() {
+        clock = new SystemProvider.SystemClock() {
+            @Override
+            public int getCycleCounter() {
+                return cycleCounter;
+            }
+
+            @Override
+            public long getFrameCounter() {
+                return 0;
+            }
+        };
+    }
 
     @Test
     public void testInitAndReset() {
@@ -81,7 +101,7 @@ public class GenesisJoypadTest {
 
     private void testSimpleSequenceInternal(JoypadType type, int[] sequence) {
         System.out.println(type);
-        GenesisJoypad j = createBoth(type);
+        GenesisJoypad j = createBoth(type, clock);
         Assert.assertEquals(0, j.ctx1.control);
 
         int thControl = 0x40;
@@ -214,7 +234,6 @@ public class GenesisJoypadTest {
         int r2;
         GenesisJoypad j = createBoth(type);
         j.writeControlRegister2(0x39);
-//        Telemetry.getInstance().cycleCounter += 15;
         System.out.println("ctrl:   " + Integer.toBinaryString(0x39));
         j.writeDataRegister2(0);
         r2 = j.readDataRegister2();
@@ -250,14 +269,14 @@ public class GenesisJoypadTest {
      * readDataReg: data 33, MdPadContext{control=40, data=40, readStep=0, player=1}
      */
     private void testGreatestHeavyweightsInternal(JoypadType type, int[] expect) {
-        GenesisJoypad j = createBoth(type);
+        GenesisJoypad j = createBoth(type, clock);
 
         j.newFrame();
         j.writeControlRegister1(0x40);
         j.writeDataRegister1(0x40);
 
         //wait
-        Telemetry.getInstance().cycleCounter += 16_000;
+        cycleCounter += 16_000;
 
         j.writeDataRegister1(0x40);
         Assert.assertEquals(0x7f, j.readDataRegister1());
@@ -331,8 +350,12 @@ public class GenesisJoypadTest {
      */
     @Test
     public void testDecapAttack() {
-//        GenesisJoypad.WWF32X_HACK = true;
-        GenesisJoypad j = createBoth(BUTTON_3);
+        testDecapAttackInternal(BUTTON_3);
+        testDecapAttackInternal(BUTTON_6);
+    }
+
+    private void testDecapAttackInternal(JoypadType type) {
+        GenesisJoypad j = createBoth(type);
         Assert.assertEquals(0, j.ctx1.control);
         j.writeControlRegister1(0x40);
 
@@ -360,15 +383,18 @@ public class GenesisJoypadTest {
         Assert.assertEquals(0x33, j.readDataRegister1());
 
         j.writeDataRegister1(0x40);
-//        GenesisJoypad.WWF32X_HACK = false;
     }
 
     private static GenesisJoypad createBoth(JoypadType type) {
-        return create(type, type);
+        return create(type, type, NO_CLOCK);
     }
 
-    private static GenesisJoypad create(JoypadType p1Type, JoypadType p2Type) {
-        GenesisJoypad j = new GenesisJoypad();
+    private static GenesisJoypad createBoth(JoypadType type, SystemProvider.SystemClock clock) {
+        return create(type, type, clock);
+    }
+
+    private static GenesisJoypad create(JoypadType p1Type, JoypadType p2Type, SystemProvider.SystemClock clock) {
+        GenesisJoypad j = new GenesisJoypad(clock);
         j.setPadSetupChange(InputProvider.PlayerNumber.P1, p1Type.name(), false);
         j.setPadSetupChange(InputProvider.PlayerNumber.P2, p2Type.name(), false);
         j.init();

@@ -22,7 +22,7 @@ package omegadrive.joypad;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import omegadrive.input.InputProvider.PlayerNumber;
-import omegadrive.system.perf.Telemetry;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
@@ -112,6 +112,12 @@ public class GenesisJoypad extends BasePadAdapter {
     protected MdPadContext ctx1 = new MdPadContext(1);
     protected MdPadContext ctx2 = new MdPadContext(2);
     protected MdPadContext ctx3 = new MdPadContext(3);
+
+    private SystemProvider.SystemClock clock;
+
+    public GenesisJoypad(SystemProvider.SystemClock clock) {
+        this.clock = clock;
+    }
 
     @Override
     public void init() {
@@ -226,7 +232,7 @@ public class GenesisJoypad extends BasePadAdapter {
         if (type != JoypadType.BUTTON_6) {
             return;
         }
-        int fc = Telemetry.getInstance().cycleCounter;
+        int fc = clock.getCycleCounter();
         if (fc - ctx.latestWriteCycleCounter > M68K_CYCLES_PAD_RESET) {
             if (verbose) LOG.debug("{} {}", fc - ctx.latestWriteCycleCounter, ctx);
             ctx.readStep = 0;

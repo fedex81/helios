@@ -35,7 +35,6 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
-import omegadrive.system.perf.GenesisPerf;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -83,17 +82,13 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     }
 
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
-        return createNewInstance(emuFrame, false);
-    }
-
-    public static SystemProvider createNewInstance(DisplayWindow emuFrame, boolean debugPerf) {
-        return debugPerf ? new GenesisPerf(emuFrame) : new Genesis(emuFrame);
+        return new Genesis(emuFrame);
     }
 
     @Override
     public void init() {
         stateHandler = BaseStateHandler.EMPTY_STATE;
-        joypad = new GenesisJoypad();
+        joypad = new GenesisJoypad(this);
         inputProvider = InputProvider.createInstance(joypad);
 
         memory = MemoryProvider.createGenesisInstance();
@@ -114,7 +109,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         updateVideoMode(true);
         int cnt;
         do {
-            cnt = telemetry.cycleCounter;
+            cnt = cycleCounter;
             cnt = runZ80(cnt);
             cnt = run68k(cnt);
             cnt = runFM(cnt);
@@ -123,7 +118,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
             }
             //this should be last as it could change the counter
             cnt = runVdp(cnt);
-            telemetry.cycleCounter = cnt;
+            cycleCounter = cnt;
         } while (!futureDoneFlag);
     }
 
@@ -139,7 +134,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         while (nextVdpCycle <= untilClock) {
             int vdpMclk = vdp.runSlot();
             nextVdpCycle += vdpVals[vdpMclk - 4];
-            if (telemetry.cycleCounter == 0) { //counter could be reset to 0 when calling vdp::runSlot
+            if (cycleCounter == 0) { //counter could be reset to 0 when calling vdp::runSlot
                 untilClock = 0;
             }
         }
