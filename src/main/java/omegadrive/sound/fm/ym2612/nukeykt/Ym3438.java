@@ -23,10 +23,10 @@
  *      OPLx decapsulated(Matthew Gambrell, Olli Niemitalo):
  *          OPL2 ROMs.
  *
- * version: 1.0.9
+ * version: 1.0.11
  */
 /*
- * 2018-2019 Federico Berti
+ * 2018-2022 Federico Berti
  * - Java translation
  */
 package omegadrive.sound.fm.ym2612.nukeykt;
@@ -628,7 +628,7 @@ public class Ym3438 implements IYm3438 {
                     }
                     break;
                 case eg_num_decay:
-                    if ((level >> 5) == chip.eg_sl[1]) {
+                    if ((level >> 4) == (chip.eg_sl[1] << 1)) {
                         nextstate = eg_num_sustain;
                     } else if (eg_off == 0 && chip.eg_inc > 0) {
                         inc = 1 << (chip.eg_inc - 1);
