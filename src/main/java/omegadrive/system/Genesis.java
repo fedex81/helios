@@ -88,7 +88,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     @Override
     public void init() {
         stateHandler = BaseStateHandler.EMPTY_STATE;
-        joypad = new GenesisJoypad(this);
+        joypad = GenesisJoypad.create(this);
         inputProvider = InputProvider.createInstance(joypad);
 
         memory = MemoryProvider.createGenesisInstance();

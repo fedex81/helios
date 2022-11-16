@@ -54,7 +54,10 @@ public class GenesisJoypad extends BasePadAdapter {
 
     protected static boolean WWF32X_HACK =
             Boolean.parseBoolean(System.getProperty("helios.md.pad.wwf32x.hack", "false"));
-    private static final boolean verbose = false;
+    protected static boolean ASTERIX_HACK =
+            Boolean.parseBoolean(System.getProperty("helios.md.pad.asterix.hack", "false"));
+
+    protected static final boolean verbose = false;
 
     /**
      * 0 TH = 1 : ?1CBRLDU    3-button pad return value (default state)
@@ -114,8 +117,14 @@ public class GenesisJoypad extends BasePadAdapter {
 
     private SystemProvider.SystemClock clock;
 
+    public static GenesisJoypad create(SystemProvider.SystemClock clock) {
+        return new GenesisJoypad(clock);
+    }
+
     public GenesisJoypad(SystemProvider.SystemClock clock) {
         this.clock = clock;
+        p1Type = JoypadType.BUTTON_6;
+        p2Type = JoypadType.BUTTON_6;
     }
 
     @Override
@@ -135,6 +144,7 @@ public class GenesisJoypad extends BasePadAdapter {
             }
         }
         reset();
+        assert p1Type != null && p2Type != null;
     }
 
     @Override
@@ -174,7 +184,7 @@ public class GenesisJoypad extends BasePadAdapter {
         writePad(ctx2, p2Type, data);
     }
 
-    private void writeControlPad(MdPadContext ctx, int control) {
+    private void writeControlPad(MdPadContext ctx, JoypadType type, int control) {
         ctx.control = control;
         //set thPin as input -> TH goes high
         if (WWF32X_HACK && isCtrlThInput.test(control)) {
@@ -199,14 +209,21 @@ public class GenesisJoypad extends BasePadAdapter {
         if (verbose) LOG.info("writeDataReg: data {}, {}", th(data), ctx);
     }
 
+    private void resetPad(MdPadContext ctx) {
+        ctx.data = ASTERIX_HACK ? 0 : 0x40;
+        ctx.readMask = 0x80 | (ctx.control & ctx.data); //bit 7 is latched from the latest data port write
+        ctx.readStep = ASTERIX_HACK ? 1 : 0;
+        ctx.latestWriteCycleCounter = 0;
+    }
+
     private void checkResetState(MdPadContext ctx, JoypadType type) {
         if (type != JoypadType.BUTTON_6) {
             return;
         }
         int fc = clock.getCycleCounter();
         if (fc - ctx.latestWriteCycleCounter > M68K_CYCLES_PAD_RESET) {
-            if (verbose) LOG.debug("{} {}", fc - ctx.latestWriteCycleCounter, ctx);
-            ctx.readStep = 0;
+            if (verbose) LOG.info("{} {}", fc - ctx.latestWriteCycleCounter, ctx);
+            resetPad(ctx);
         }
         ctx.latestWriteCycleCounter = fc;
     }
@@ -237,7 +254,7 @@ public class GenesisJoypad extends BasePadAdapter {
                 res = getSA1111(n);
                 break;
             default:
-//                assert (step & 1) == 0 ? isDataThHigh.test(ctx.data) : !isDataThHigh.test(ctx.data) : ctx;
+                assert (step & 1) == 0 ? isDataThHigh.test(ctx.data) : !isDataThHigh.test(ctx.data) : ctx;
                 res = (step & 1) == 0 ? getCBRLDU(n) : getSA00DU(n);
                 break;
         }
@@ -256,15 +273,15 @@ public class GenesisJoypad extends BasePadAdapter {
     }
 
     public void writeControlRegister1(int value) {
-        writeControlPad(ctx1, value);
+        writeControlPad(ctx1, p1Type, value);
     }
 
     public void writeControlRegister2(int value) {
-        writeControlPad(ctx2, value);
+        writeControlPad(ctx2, p2Type, value);
     }
 
     public void writeControlRegister3(int value) {
-        writeControlPad(ctx3, value);
+        writeControlPad(ctx3, JoypadType.BUTTON_3, value);
     }
 
     private int getSA0000(PlayerNumber n) {
@@ -307,17 +324,11 @@ public class GenesisJoypad extends BasePadAdapter {
         return ctx.control;
     }
 
-    private void newFrame(MdPadContext ctx) {
-        writePad(ctx, ctx.player == 1 ? p1Type : p2Type, 0x40);
-        ctx.readStep = 0;
-        ctx.latestWriteCycleCounter = 0;
-    }
-
     @Override
     public void newFrame() {
         super.newFrame();
-        newFrame(ctx1);
-        newFrame(ctx2);
+        resetPad(ctx1);
+        resetPad(ctx2);
         if (verbose) LOG.info("new frame");
     }
 }

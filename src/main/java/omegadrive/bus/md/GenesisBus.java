@@ -492,8 +492,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             data = size == Size.WORD ? (data << 8) | data : data;
             return data;
         }
+        //IO chip only got /LWR so it only reacts to byte-wide writes to low (odd) addresses or word-wide writes.
+        // In case of word-wide writes, LSB (D0-D7) is being used when accessing I/O registers.
         switch (size) {
             case BYTE:
+                assert (address & 1) == 1;
             case WORD:
                 data = ioReadInternal(address);
                 break;
