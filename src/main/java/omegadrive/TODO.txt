@@ -9,10 +9,6 @@
 - mdmappertest
 - realtec mapper
 
-dashing desp: broken before 21.0407, 20.1207 ok
-lemmings: hint vs vint issue
-iss deluxe: flickering
-
 savestate:
 md: broken {ssf2, virtua racing}
 
@@ -41,3 +37,6 @@ hook(U) (E works), Shadow of the Beast (UE) (J works), danny sullivan proto,
 time killers, swamp thing proto
 dracula: gameplay slow down, demo mode level missing graphics (planeA issue)
 Fatal Rewind - hint vs vint
+dashing desp: broken before 21.0407, 20.1207 ok
+lemmings: hint vs vint issue
+iss deluxe: flickering

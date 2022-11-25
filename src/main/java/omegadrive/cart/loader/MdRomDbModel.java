@@ -63,8 +63,9 @@ public class MdRomDbModel {
         SEGA(1, 0, 0),
         EA(6, 7, 7),
         ACCLAIM_16M(1, 0, 1),
-        ACCLAIM_32M(0, 0, 0) //TODO cartridge ROM mapping is reinitialized on reset
-        ;
+        //TODO cartridge ROM mapping is reinitialized on reset
+        ACCLAIM_32M(0, 0, 0), //TODO used?
+        ACCLAIM_32M_SCL8(8, 0, 0);
 
         public final int scl_in_bit, sda_in_bit, sda_out_bit;
 

@@ -5,6 +5,7 @@ import omegadrive.cart.loader.MdRomDbModel.EepromType;
 import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
+import omegadrive.util.Util;
 import org.slf4j.Logger;
 
 import static omegadrive.cart.mapper.md.I2cEeprom.EepromState.*;
@@ -94,7 +95,7 @@ public class I2cEeprom {
         public int scl, prevScl;
         public int sda, prevSda;
         public int cycles, rw;
-        public int buffer;
+        public int buffer, writeLatch;
         public int wordAddress = 0, deviceAddress = 0;
         public EepromState state = STAND_BY;
         public EepromType spec;
@@ -114,11 +115,11 @@ public class I2cEeprom {
     }
 
     public int readEeprom(int address, Size size) {
-        if (size == Size.BYTE && (address & 1) == 0) {
-            LOG.error("check");
-            return 0;
-        }
         int res = eeprom_i2c_out() << ctx.lineMap.sda_out_bit;
+        assert size != Size.LONG;
+        if (size == Size.BYTE) {
+            res = Util.getByteInWordBE(res, address & 1);
+        }
         if (logReadWrite)
             System.out.println("R," + th(address & 0xFF) + "," + size.name().substring(0, 1) + "," + th(res));
         return res;
@@ -127,10 +128,15 @@ public class I2cEeprom {
     public void writeEeprom(int address, int data, Size size) {
         if (logReadWrite)
             System.out.println("W," + th(address & 0xFF) + "," + size.name().substring(0, 1) + "," + th(data));
-        if (size == Size.BYTE && (address & 1) == 0) {
-            LOG.error("check");
-            return;
+        assert size != Size.LONG;
+        if (size == Size.BYTE) {
+            ctx.writeLatch = Util.setByteInWordBE(ctx.writeLatch, data & 0xFF, address & 1);
+            data = ctx.writeLatch;
         }
+        writeWordEeprom(data);
+    }
+
+    private void writeWordEeprom(int data) {
         ctx.scl = (data >> ctx.lineMap.scl_in_bit) & 1;
         ctx.sda = (data >> ctx.lineMap.sda_in_bit) & 1;
         eeprom_i2c_update();

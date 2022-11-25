@@ -254,6 +254,17 @@ public class Util {
         return 31 - Integer.numberOfLeadingZeros(n);
     }
 
+    // addr 0 -> [8bit][8bit] <- addr 1
+    public static int getByteInWordBE(int word, int bytePos) {
+        return (word >> (((bytePos + 1) & 1) << 3)) & 0xFF;
+    }
+
+    // addr 0 -> [8bit][8bit] <- addr 1
+    public static int setByteInWordBE(int word, int byteVal, int bytePos) {
+        final int shift = ((bytePos + 1) & 1 << 3);
+        return (word & ~(0xFF << shift)) | (byteVal << shift);
+    }
+
     public static int getUInt32LE(byte... bytes) {
         int value = (bytes[0] & 0xFF);
         value = bytes.length > 1 ? value | ((bytes[1] & 0xFF) << 8) : value;
