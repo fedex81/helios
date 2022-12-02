@@ -19,15 +19,10 @@
 
 package omegadrive.vdp.md;
 
-import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.Maps;
 import omegadrive.vdp.model.InterlaceMode;
 import omegadrive.vdp.model.RenderPriority;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpMisc.RenderType;
-
-import java.util.EnumSet;
-import java.util.Map;
 
 //A horizontal scroll mode setting of 01b is not valid; however the unlicensed version
 //                of Populous uses it. This mode is identical to per-line scrolling, however
@@ -105,8 +100,7 @@ public class VdpScrollHandler {
         LINE(0b11),
         INVALID(0b01);
 
-        private static final Map<Integer, HSCROLL> lookup = ImmutableBiMap.copyOf(
-                Maps.toMap(EnumSet.allOf(HSCROLL.class), HSCROLL::getRegValue)).inverse();
+        private static final HSCROLL[] lookupRegValue = {SCREEN, INVALID, CELL, LINE};
         private final int regValue;
 
         HSCROLL(int regValue) {
@@ -114,11 +108,7 @@ public class VdpScrollHandler {
         }
 
         public static HSCROLL getHScrollType(int regValue) {
-            return lookup.get(regValue);
-        }
-
-        public int getRegValue() {
-            return regValue;
+            return lookupRegValue[regValue];
         }
     }
 
@@ -126,8 +116,7 @@ public class VdpScrollHandler {
         SCREEN(0),
         TWO_CELLS(1);
 
-        private static final Map<Integer, VSCROLL> lookup = ImmutableBiMap.copyOf(
-                Maps.toMap(EnumSet.allOf(VSCROLL.class), VSCROLL::getRegValue)).inverse();
+        private static final VSCROLL[] lookupRegValue = {SCREEN, TWO_CELLS};
         private final int regValue;
 
         VSCROLL(int regValue) {
@@ -135,11 +124,7 @@ public class VdpScrollHandler {
         }
 
         public static VSCROLL getVScrollType(int regValue) {
-            return lookup.get(regValue);
-        }
-
-        public int getRegValue() {
-            return regValue;
+            return lookupRegValue[regValue];
         }
     }
 }

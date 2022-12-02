@@ -19,16 +19,11 @@
 
 package omegadrive.vdp.model;
 
-import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.Maps;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.md.GenesisVdp;
 import omegadrive.vdp.md.VdpFifo;
 import org.slf4j.Logger;
-
-import java.util.EnumSet;
-import java.util.Map;
 
 public interface GenesisVdpProvider extends BaseVdpProvider {
 
@@ -140,11 +135,10 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
         DMA_SOURCE_HIGH //23 - 0x17
         ;
 
-        private static final Map<Integer, VdpRegisterName> lookup = ImmutableBiMap.copyOf(
-                Maps.toMap(EnumSet.allOf(VdpRegisterName.class), VdpRegisterName::ordinal)).inverse();
+        private static final VdpRegisterName[] lookup = VdpRegisterName.values();
 
         public static VdpRegisterName getRegisterName(int index) {
-            return lookup.get(index);
+            return lookup[index];
         }
     }
 

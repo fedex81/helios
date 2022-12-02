@@ -19,17 +19,13 @@
 
 package omegadrive.vdp.model;
 
-import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.Maps;
-
-import java.util.EnumSet;
-import java.util.Map;
-
 public enum InterlaceMode {
     NONE,
     MODE_1,
     INVALID,
     MODE_2(1);
+
+    public static final InterlaceMode[] lookup = InterlaceMode.values();
 
     private int tileShift = 5;
     private int verticalScrollShift = 0;
@@ -48,11 +44,8 @@ public enum InterlaceMode {
         this.tileIndexMask = 0xFFFF - interlaceAdjust;
     }
 
-    private static final Map<Integer, InterlaceMode> lookup = ImmutableBiMap.copyOf(
-            Maps.toMap(EnumSet.allOf(InterlaceMode.class), InterlaceMode::ordinal)).inverse();
-
     public static InterlaceMode getInterlaceMode(int index) {
-        return lookup.get(index);
+        return lookup[index];
     }
 
     public int tileShift() {
