@@ -1,3 +1,13 @@
+## 22.1205
+68k: support cycle table from genPlusGx
+68k: fix *bcd, link corner cases
+fm: fix sustain level check
+i2c: fix read/write when byte sized
+md: fix bug on hblank toggling, tweak hint occurrence
+md: further tweaks to controller emulation
+md: version reg, set expansion unit not connected
+ui: add flatlaf and theme selector (dark theme)
+
 ## 22.0802
 
 NOTE: requires java 17 or later
