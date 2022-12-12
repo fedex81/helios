@@ -84,7 +84,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
     //frame pacing stuff
     protected final Telemetry telemetry = Telemetry.getInstance();
-    private static final boolean fullThrottle;
+    protected static final boolean fullThrottle;
     protected long elapsedWaitNs, frameProcessingDelayNs;
     protected long targetNs, startNs = 0;
     private long driftNs = 0;
@@ -256,7 +256,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         return stats;
     }
 
-    protected final long syncCycle(long startCycle) {
+    protected long syncCycle(long startCycle) {
         long now = System.nanoTime();
         if (fullThrottle) {
             return now;
