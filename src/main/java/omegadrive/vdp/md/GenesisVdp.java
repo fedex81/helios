@@ -21,7 +21,10 @@ package omegadrive.vdp.md;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.util.*;
+import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector;
+import omegadrive.util.Size;
+import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.*;
 import omegadrive.vdp.util.UpdatableViewer;
 import omegadrive.vdp.util.VdpDebugView;
@@ -33,6 +36,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 
+import static omegadrive.util.Util.bitSetTest;
 import static omegadrive.util.Util.th;
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_FIELD_CHANGE;
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_MODE_CHANGE;
@@ -649,24 +653,21 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         VdpRegisterName reg = getRegisterName(regNumber);
         switch (reg) {
             case MODE_1:
-                boolean newLcb = ((data >> 5) & 1) == 1;
-                updateLcb(newLcb);
-                boolean newM3 = ((data >> 1) & 1) == 1;
-                updateM3(newM3);
-                boolean newIe1 = ((data >> 4) & 1) == 1;
-                updateIe1(newIe1);
+                updateLcb(bitSetTest(data, 5));
+                updateM3(bitSetTest(data, 1));
+                updateIe1(bitSetTest(data, 4));
                 break;
             case MODE_2:
-                boolean ext = ((data >> 7) & 1) == 1;
+                boolean ext = bitSetTest(data, 7);
                 if (exVram != ext) {
                     exVram = ext;
                     //LOG.debug("128kb VRAM: {}", exVram);
                 }
-                displayEnable = ((data >> 6) & 1) == 1;
-                ie0 = ((data >> 5) & 1) == 1;
-                m1 = ((data >> 4) & 1) == 1;
-                m2 = ((data >> 3) & 1) == 1;
-                boolean mode5 = ((data >> 2) & 1) == 1;
+                displayEnable = bitSetTest(data, 6);
+                ie0 = bitSetTest(data, 5);
+                m1 = bitSetTest(data, 4);
+                m2 = bitSetTest(data, 3);
+                boolean mode5 = bitSetTest(data, 2);
                 if (m5 != mode5) {
                     LOG.info("Mode5: {}", mode5);
                     m5 = mode5;
@@ -674,10 +675,10 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
                 handleDisplayEnabled();
                 break;
             case MODE_4:
-                boolean rs0 = Util.bitSetTest(data, 7);
-                boolean rs1 = Util.bitSetTest(data, 0);
+                boolean rs0 = bitSetTest(data, 7);
+                boolean rs1 = bitSetTest(data, 0);
                 h40 = rs0 && rs1;
-                boolean val = Util.bitSetTest(data, 3);
+                boolean val = bitSetTest(data, 3);
                 if (val != ste) {
                     //LOG.debug("Shadow highlight: {}", val);
                 }

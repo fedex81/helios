@@ -21,6 +21,7 @@ package omegadrive.vdp.md;
 
 import omegadrive.util.FastBitSet;
 import omegadrive.util.LogHelper;
+import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.VdpRenderDump;
 import omegadrive.vdp.md.VdpScrollHandler.HSCROLL;
@@ -170,9 +171,9 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         holder.tileIndex = ((((byte4 & 0x7) << 8) | byte5) << interlaceMode.tileShift()) &
                 interlaceMode.getTileIndexMask();
         holder.paletteLineIndex = ((byte4 >> 5) & 0x3) << PALETTE_INDEX_SHIFT;
-        holder.priority = ((byte4 >> 7) & 0x1) == 1;
-        holder.vertFlip = ((byte4 >> 4) & 0x1) == 1;
-        holder.horFlip = ((byte4 >> 3) & 0x1) == 1;
+        holder.priority = Util.bitSetTest(byte4, 7);
+        holder.vertFlip = Util.bitSetTest(byte4, 4);
+        holder.horFlip = Util.bitSetTest(byte4, 3);
         holder.horizontalPos = ((byte6 & 0x1) << 8) | byte7;
         holder.horFlipAmount = holder.horFlip ? (holder.horizontalCellSize << 3) - 1 : 0;
         holder.vertFlipAmount = holder.vertFlip ? (holder.verticalCellSize << 3) - 1 : 0;
