@@ -69,7 +69,7 @@ public class MC68000Wrapper implements M68kProvider {
             LOG.error("68k error", e);
             m68k.raiseException(ILLEGAL_ACCESS_EXCEPTION); //avoid the intack dance
             if (MC68000Helper.STOP_ON_EXCEPTION) {
-                LOG.error(MC68000Helper.getCpuState(m68k, "", addressSpace.size()));
+                LOG.error(MC68000Helper.getCpuState(m68k, ""));
                 throw e;
             }
         }

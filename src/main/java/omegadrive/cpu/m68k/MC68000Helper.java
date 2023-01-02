@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.Util.th;
 
 public class MC68000Helper {
@@ -63,7 +64,7 @@ public class MC68000Helper {
     private static Set<String> instSet = new TreeSet<>();
 
     private static StringBuilder dumpOp(StringBuilder sb, Cpu cpu, int pc, int opcode) {
-        int wrapPc = pc & 0xFF_FFFF; //PC is 24 bits
+        int wrapPc = pc & MD_PC_MASK;
         if (wrapPc >= 0) {
             Instruction i = cpu.getInstructionFor(opcode);
             DisassembledInstruction di = i.disassemble(wrapPc, opcode);
@@ -75,7 +76,7 @@ public class MC68000Helper {
     }
 
     private static StringBuilder dumpOp(StringBuilder sb, Cpu cpu, int pc) {
-        int wrapPc = pc & 0xFF_FFFF; //PC is 24 bits
+        int wrapPc = pc & MD_PC_MASK;
         if (wrapPc >= 0) {
             int opcode = cpu.readMemoryWord(wrapPc);
             Instruction i = cpu.getInstructionFor(opcode);
@@ -96,9 +97,9 @@ public class MC68000Helper {
         return dumpOp(new StringBuilder(), cpu, pc).toString();
     }
 
-    public static String dumpInfo(Cpu cpu, int pc, boolean showBytes, int memorySize) {
+    public static String dumpInfo(Cpu cpu, int pc, boolean showBytes) {
         StringBuilder sb = new StringBuilder("\n");
-        int wrapPc = pc & 0xFF_FFFF; //PC is 24 bits
+        int wrapPc = pc & Cpu.PC_MASK; //PC is 24 bits
 
         sb.append(String.format("D0: %08x   D4: %08x   A0: %08x   A4: %08x     PC:  %08x\n",
                 cpu.getDataRegisterLong(0), cpu.getDataRegisterLong(4), cpu.getAddrRegisterLong(0),
@@ -113,7 +114,7 @@ public class MC68000Helper {
                 cpu.getDataRegisterLong(3), cpu.getDataRegisterLong(7), cpu.getAddrRegisterLong(3),
                 cpu.getAddrRegisterLong(7), cpu.getSSP()));
         StringBuilder sb2 = new StringBuilder();
-        if (wrapPc >= 0 && wrapPc < memorySize) {
+        if (wrapPc >= 0 && wrapPc < Cpu.PC_MASK + 1) {
             int opcode = cpu.readMemoryWord(wrapPc);
             Instruction i = cpu.getInstructionFor(opcode);
             DisassembledInstruction di = i.disassemble(wrapPc, opcode);
@@ -130,7 +131,7 @@ public class MC68000Helper {
 
     public static String dumpInfo(Cpu cpu, M68kState state, int memorySize) {
         StringBuilder sb = new StringBuilder("\n");
-        int wrapPc = state.pc & 0xFF_FFFF;
+        int wrapPc = state.pc & MD_PC_MASK;
         sb.append("D0: " + th(state.dr[0]) +
                 "   D4: " + th(state.dr[4]) +
                 "   A0: " + th(state.ar[0]) +
@@ -178,7 +179,7 @@ public class MC68000Helper {
     }
 
     public static boolean addToInstructionSet(MC68000 cpu) {
-        int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
+        int wrapPc = cpu.getPC() & MD_PC_MASK;
         int opcode = cpu.readMemoryWord(wrapPc);
         Instruction i = cpu.getInstructionFor(opcode);
         String name = i.getClass().getTypeName();
@@ -192,18 +193,18 @@ public class MC68000Helper {
         return sb.toString();
     }
 
-    public static String getCpuState(Cpu cpu, String head, int memorySize) {
+    public static String getCpuState(Cpu cpu, String head) {
         try {
-            return head + MC68000Helper.dumpInfo(cpu, cpu.getPC(), true, memorySize);
+            return head + MC68000Helper.dumpInfo(cpu, cpu.getPC(), true);
         } catch (Exception e) {
-            String pc = th(cpu.getPC() & 0xFF_FFFF);
+            String pc = th(cpu.getPC() & Cpu.PC_MASK);
             LOG.warn("Unable to dump the state, pc: {}", pc, e);
         }
         return "????";
     }
 
-    public static void printCpuState(Cpu cpu, String head, int memorySize) {
-        LOG.info("{}{}", head, getCpuState(cpu, head, memorySize));
+    public static void printCpuState(Cpu cpu, String head) {
+        LOG.info("{}{}", head, getCpuState(cpu, head));
     }
 
     public static class M68kState {

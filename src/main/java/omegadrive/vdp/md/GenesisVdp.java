@@ -385,15 +385,17 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 //            addressRegister = data & 0x3FFF;
 
         }
-        boolean verbose = !isRegisterWrite && writePendingControlPort;
-        vramMode = VramMode.getVramMode(codeRegister & 0xF, verbose);
+        boolean verboseCheck = !isRegisterWrite && writePendingControlPort;
+        vramMode = VramMode.getVramMode(codeRegister & 0xF, verboseCheck);
+        if (verbose) LOG.info("Vdp vramMode {}, data {}, codeReg {}, addrReg {}", vramMode, th(data),
+                th(codeRegister), th(addressRegister));
     }
 
     protected void writeDataPortInternal(int data) {
         writePendingControlPort = false;
         if (vramMode == null) {
             LOG.warn("Invalid writeDataPort, vramMode {}, data: {}, address: {}",
-                    vramMode, data, addressRegister);
+                    vramMode, th(data), th(addressRegister));
         }
         fifoPush(addressRegister, data);
         addressRegister += autoIncrementData;
@@ -426,8 +428,8 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         boolean invalidEntry = entry.vdpRamMode == null || !entry.vdpRamMode.isWriteMode();
 
         if (invalidEntry) {
-//            LOG.printf(Level.WARN, "FIFO write on invalid target: %s, data: %x, address: %x",
-//                    entry.vdpRamMode, entry.data, entry.addressRegister);
+            if (verbose) LOG.warn("FIFO write on invalid target: {}, data: {}, address: {}",
+                    entry.vdpRamMode, th(entry.data), th(entry.addressRegister));
             fifoPop();
             doWrite = false;
             evaluateVdpBusyState();
@@ -437,12 +439,12 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
             entry.firstByteWritten = true;
             doWrite = false;
             if (verbose) LOG.info("writeVram first byte: {}, data: {}, address: {}",
-                    entry.vdpRamMode, entry.data, entry.addressRegister);
+                    entry.vdpRamMode, th(entry.data), th(entry.addressRegister));
         }
         if (doWrite) {
             fifoPop();
             if (verbose) LOG.info("writeVram: {}, data: {}, address: {}",
-                    entry.vdpRamMode, entry.data, entry.addressRegister);
+                    entry.vdpRamMode, th(entry.data), th(entry.addressRegister));
             if (exVram && entry.vdpRamMode == VramMode.vramWrite) {
                 memoryInterface.writeVramByte(entry.addressRegister, entry.data & 0xFF);
             } else {
@@ -513,19 +515,19 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
             firstWrite = data;
             writePendingControlPort = true;
             if (verbose) LOG.info("writeAddr-1, firstWord: {}, address: {}, code: {}"
-                    , firstWrite, addressRegister, codeRegister);
+                    , firstWrite, th(addressRegister), th(codeRegister));
         } else {
             writePendingControlPort = false;
             long all = ((firstWrite << 16) | data);
             if (verbose) LOG.info("writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}, mode: {}"
-                    , data, addressRegister, codeRegister, all, vramMode);
+                    , th(data), th(addressRegister), th(codeRegister), th(all), vramMode);
             if ((codeRegister & 0b10_0000) > 0) { // DMA
                 VdpDmaHandler.DmaMode dmaMode = dmaHandler.setupDma(vramMode, all, m1);
                 if (dmaMode == VdpDmaHandler.DmaMode.MEM_TO_VRAM) {
                     bus.setVdpBusyState(VdpBusyState.MEM_TO_VRAM);
                 }
                 if (verbose) LOG.info("After DMA setup, writeAddr: {}, data: {}, firstWrite: {}"
-                        , addressRegister, all, writePendingControlPort);
+                        , th(addressRegister), th(all), writePendingControlPort);
             } else if (ENABLE_READ_AHEAD && (codeRegister & 1) == 0) { //vdp read
                 pendingReadEntry.data = readDataPortInternal();
                 pendingReadEntry.vdpRamMode = vramMode;
@@ -638,6 +640,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         if (vdpPortAccessLogger != VdpPortAccessLogger.NO_LOGGER) {
             vdpPortAccessLogger.logVdpWrite(type, data);
         }
+        if (verbose) LOG.info("Vdp write {}: {} {}", type, th(data), getVdpStateString());
         switch (type) {
             case DATA:
                 writeDataPortInternal(data);

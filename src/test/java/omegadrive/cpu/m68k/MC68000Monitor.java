@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
 
+import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
+
 /**
  * MC68000Monitor
  *
@@ -380,7 +382,7 @@ public class MC68000Monitor implements Runnable {
 
     public static String dumpInfo(Cpu cpu, boolean showBytes, int memorySize) {
         StringBuilder sb = new StringBuilder("\n");
-        int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
+        int wrapPc = cpu.getPC() & MD_PC_MASK; //PC is 24 bits
 
         sb.append(String.format("D0: %08x   D4: %08x   A0: %08x   A4: %08x     PC:  %08x\n",
                 cpu.getDataRegisterLong(0), cpu.getDataRegisterLong(4), cpu.getAddrRegisterLong(0),
@@ -441,7 +443,7 @@ public class MC68000Monitor implements Runnable {
 
     protected void handlePC(String[] tokens) {
         if (tokens.length == 1) {
-            int wrapPc = cpu.getPC() & 0xFF_FFFF; //PC is 24 bits
+            int wrapPc = cpu.getPC() & MD_PC_MASK; //PC is 24 bits
             this.writer.printf("PC: %08x\n", wrapPc);
         } else if (tokens.length == 2) {
             int value;

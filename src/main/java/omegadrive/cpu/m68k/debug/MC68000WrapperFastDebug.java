@@ -68,8 +68,8 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
 
     @Override
     public int runInstruction() {
-        currentPC = m68k.getPC() & 0xFF_FFFF; //needs to be set
-        opcode = m68k.readMemoryWord(currentPC); //TODO
+        currentPC = m68k.getPC() & MD_PC_MASK; //needs to be set
+        opcode = m68k.getPrefetchWord();
         fastDebug.printDebugMaybe();
         if (!busyLoopDetection) {
             return super.runInstruction();
@@ -79,7 +79,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
 
     @Override
     public String getCpuState(String head) {
-        return MC68000Helper.getCpuState(m68k, head, addressSpace.size());
+        return MC68000Helper.getCpuState(m68k, head);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         try {
             return MC68000Helper.dumpOp(m68k, pc);
         } catch (Exception e) {
-            LOG.warn("Unable to dump the instruction at PC: {}", th(pc & 0xFF_FFFF), e);
+            LOG.warn("Unable to dump the instruction at PC: {}", th(pc & MD_PC_MASK), e);
         }
         return "????";
     }

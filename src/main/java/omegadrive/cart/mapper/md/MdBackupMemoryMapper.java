@@ -35,6 +35,7 @@ import java.util.Optional;
 
 import static omegadrive.cart.MdCartInfoProvider.DEFAULT_SRAM_END_ADDRESS;
 import static omegadrive.cart.MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS;
+import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.Util.th;
 
 public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMapper {
@@ -93,7 +94,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     }
 
     private long readDataSram(long address, Size size) {
-        address = address & 0xFF_FFFF;
+        address = address & MD_PC_MASK;
         boolean sramRead = sramMode != SramMode.DISABLE;
         sramRead &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (sramRead) {
@@ -106,7 +107,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     }
 
     private void writeDataSram(long address, long data, Size size) {
-        address = address & 0xFF_FFFF;
+        address = address & MD_PC_MASK;
         boolean sramWrite = sramMode == SramMode.READ_WRITE;
         sramWrite &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (!sramWrite) {
@@ -119,7 +120,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     }
 
     private long readDataEeprom(long address, Size size) {
-        address = address & 0xFF_FFFF;
+        address = address & MD_PC_MASK;
         boolean eepromRead = sramMode != SramMode.DISABLE;
         eepromRead &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (eepromRead) {
@@ -132,7 +133,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     }
 
     private void writeDataEeprom(long address, long data, Size size) {
-        address = address & 0xFF_FFFF;
+        address = address & MD_PC_MASK;
         boolean eepromWrite = sramMode == SramMode.READ_WRITE;
         eepromWrite &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (eepromWrite) {

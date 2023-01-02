@@ -27,6 +27,7 @@ import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
+import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.Util.th;
 
 /**
@@ -44,7 +45,7 @@ public class ExSsfMapper extends Ssf2Mapper {
 
     @Override
     public long readData(long address, Size size) {
-        address &= 0xFF_FFFF;
+        address &= MD_PC_MASK;
         if (address >= BANKABLE_START_ADDRESS && address <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
             return super.readData(address, size);
         } else if (address < BANKABLE_START_ADDRESS) { //exSSf can remap < 0x80000
@@ -66,7 +67,7 @@ public class ExSsfMapper extends Ssf2Mapper {
 
     @Override
     public void writeData(long address, long data, Size size) {
-        address &= 0xFF_FFFF;
+        address &= MD_PC_MASK;
         if (address >= BANK_SET_START_ADDRESS && address <= BANK_SET_END_ADDRESS) {
             int ctrlNum = (int) (address & 7);
             //odd addresses go to SSF2 mapper

@@ -19,6 +19,7 @@
 
 package omegadrive.cpu.m68k;
 
+import m68k.cpu.Cpu;
 import omegadrive.Device;
 
 public interface M68kProvider extends Device {
@@ -29,6 +30,9 @@ public interface M68kProvider extends Device {
     int ILLEGAL_ACCESS_EXCEPTION = 4;
     int LEV4_EXCEPTION = EXCEPTION_OFFSET + HBLANK_INTERRUPT_LEVEL;
     int LEV6_EXCEPTION = EXCEPTION_OFFSET + VBLANK_INTERRUPT_LEVEL;
+
+    //PC is 24 bits
+    int MD_PC_MASK = Cpu.PC_MASK;
 
     long getPC();
 

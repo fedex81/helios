@@ -27,6 +27,7 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
+import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.cpu.ssp16.Ssp16.*;
 import static omegadrive.cpu.ssp16.Ssp16Types.Ssp1601_t;
 import static omegadrive.cpu.ssp16.Ssp16Types.Ssp16Reg.SSP_PM0;
@@ -127,7 +128,7 @@ public class SvpMapper implements RomMapper, SvpBus {
     }
 
     protected final long m68kSvpReadData(Svp_t svpCtx, long addressL, Size size) {
-        int address = (int) (addressL & 0xFF_FFFF);
+        int address = (int) (addressL & MD_PC_MASK);
         if (address >= SVP_MAP_DRAM_START_ADDR_BYTE && address < SVP_MAP_DRAM_END_ADDR_BYTE) {
             //        LOG.debug("svp DRAM read: {}", th(addressWord));
             switch (size) {
@@ -207,7 +208,7 @@ public class SvpMapper implements RomMapper, SvpBus {
     }
 
     protected final void m68kSvpWriteData(Svp_t svpCtx, long addressL, long data, Size size) {
-        int address = (int) (addressL & 0xFF_FFFF);
+        int address = (int) (addressL & MD_PC_MASK);
         data &= size.getMask();
         if (address >= SVP_MAP_DRAM_START_ADDR_BYTE && address < SVP_MAP_DRAM_END_ADDR_BYTE) {
             switch (size) {

@@ -48,6 +48,7 @@ import org.slf4j.Logger;
 
 import java.util.Objects;
 
+import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.joypad.JoypadProvider.JoypadType.BUTTON_3;
 import static omegadrive.system.SystemProvider.SystemEvent.FORCE_PAD_TYPE;
 import static omegadrive.util.Util.th;
@@ -191,7 +192,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     @Override
     public long readData(long addressL, Size size) {
-        int address = (int) (addressL & 0xFF_FFFF);
+        int address = (int) (addressL & MD_PC_MASK);
+        long data = size.getMask();
         if (address < ROM_END_ADDRESS) {  //ROM
             return Util.readDataMask(rom, size, address, romMask);
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
@@ -218,7 +220,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     @Override
     public void writeData(long addressL, long data, Size size) {
-        int address = (int) (addressL & 0xFF_FFFF);
+        //RegAccessLogger.regAccess("M68K", (int) addressL, (int) data, size, false);
+        int address = (int) (addressL & MD_PC_MASK);
         data &= size.getMask();
         if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             Util.writeDataMask(ram, size, address, data, M68K_RAM_MASK);
@@ -450,12 +453,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         //only data bit0 is connected to the bus arbiter
         boolean busReq = (data & 1) > 0;
         if (busReq) {
-            boolean isReset = z80ResetState;
             if (!z80BusRequested) {
-                //LOG.debug("busRequested, reset: {}", isReset);
+                //LOG.debug("busRequested, reset: {}", z80ResetState);
                 z80BusRequested = true;
             } else {
-                //LOG.debug("busRequested, ignored, reset: {}", isReset);
+                //LOG.debug("busRequested, ignored, reset: {}", z80ResetState);
             }
         } else {
             if (z80BusRequested) {
@@ -492,11 +494,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             data = size == Size.WORD ? (data << 8) | data : data;
             return data;
         }
-        //IO chip only got /LWR so it only reacts to byte-wide writes to low (odd) addresses or word-wide writes.
-        // In case of word-wide writes, LSB (D0-D7) is being used when accessing I/O registers.
         switch (size) {
             case BYTE:
-                assert (address & 1) == 1;
             case WORD:
                 data = ioReadInternal(address);
                 break;
@@ -543,9 +542,12 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         return data;
     }
 
+    //IO chip only got /LWR so it only reacts to byte-wide writes to low (odd) addresses or word-wide writes.
+    // In case of word-wide writes, LSB (D0-D7) is being used when accessing I/O registers.
     private void ioWrite(int address, Size size, long data) {
         switch (size) {
             case BYTE:
+                assert (address & 1) == 1;
             case WORD:
                 ioWriteInternal(address, data);
                 break;

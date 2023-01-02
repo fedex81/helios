@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 
 import java.util.Arrays;
 
+import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.Util.th;
 
 /**
@@ -87,7 +88,7 @@ public abstract class Ssf2Mapper implements RomMapper {
     @Override
     public long readData(long addressL, Size size) {
         if (addressL >= BANKABLE_START_ADDRESS && addressL <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
-            int address = (int) (addressL & 0xFF_FFFF);
+            int address = (int) (addressL & MD_PC_MASK);
             //bankSelector = address >> BANK_SHIFT;
             address = (banks[address >> BANK_SHIFT] << BANK_SHIFT) | (address & BANK_MASK);
             if (verbose) LOG.info("Bank read: {} -> {} {}", th(addressL), th(address), size);
