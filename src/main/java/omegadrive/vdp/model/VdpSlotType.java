@@ -30,8 +30,8 @@ public enum VdpSlotType {
     REFRESH,
     EXTERNAL;
 
-    public static VdpSlotType[] h32Slots = new VdpSlotType[H32_SLOTS];
-    public static VdpSlotType[] h40Slots = new VdpSlotType[H40_SLOTS];
+    public static final VdpSlotType[] h32Slots = new VdpSlotType[H32_SLOTS];
+    public static final VdpSlotType[] h40Slots = new VdpSlotType[H40_SLOTS];
 
     private static final int[] refreshSlotsH32 = {
             32 * 0 + 38,

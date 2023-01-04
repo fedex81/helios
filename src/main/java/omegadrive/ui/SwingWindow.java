@@ -687,7 +687,7 @@ public class SwingWindow implements DisplayWindow {
 
     private List<AbstractButton> createThemeItems() {
         List<AbstractButton> l = new ArrayList<>();
-        FlatLafHelper.lafMap.keySet().stream().
+        FlatLafHelper.lafMap.keySet().
                 forEach(r -> l.add(new JRadioButtonMenuItem(r, false)));
         ButtonGroup bg = new ButtonGroup();
         l.forEach(bg::add);
@@ -796,7 +796,7 @@ public class SwingWindow implements DisplayWindow {
             return;
         }
         try {
-            List<Path> paths = Files.list(WINDOW_ICONS_PATH).filter(ICONS_FILE_FILTER).collect(Collectors.toList());
+            List<Path> paths = Files.list(WINDOW_ICONS_PATH).filter(ICONS_FILE_FILTER).toList();
             LOG.info("Window icons found: {}", Arrays.toString(paths.toArray()));
             List<Image> l = paths.stream().map
                     (p -> new ImageIcon(p.toAbsolutePath().toString()).getImage()).collect(Collectors.toList());

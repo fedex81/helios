@@ -62,9 +62,9 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private VramMode vramMode;
     private InterlaceMode interlaceMode;
 
-    int[] registers = new int[VDP_REGISTERS_SIZE];
+    final int[] registers = new int[VDP_REGISTERS_SIZE];
 
-    VdpFifo.VdpFifoEntry pendingReadEntry = new VdpFifo.VdpFifoEntry();
+    final VdpFifo.VdpFifoEntry pendingReadEntry = new VdpFifo.VdpFifoEntry();
 
     //    This flag is updated when these conditions are met:
 //
@@ -360,15 +360,14 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 
     private void writeControlPortInternal(long dataL) {
         long mode = (dataL >> 14);
-        int data = (int) dataL;
         //genvdp.txt writePendingControlPort has precedence,
         boolean isRegisterWrite = !writePendingControlPort && mode == 0b10;
-        updateStateFromControlPortWrite(isRegisterWrite, data);
+        updateStateFromControlPortWrite(isRegisterWrite, (int) dataL);
         if (isRegisterWrite) {
             writePendingControlPort = false;
-            writeRegister(data);
+            writeRegister((int) dataL);
         } else {
-            writeControlReg(data);
+            writeControlReg((int) dataL);
         }
     }
 
@@ -862,7 +861,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         this.list.clear();
     }
 
-    private final String getVdpStateString(String head) {
+    private String getVdpStateString(String head) {
         return interruptHandler.getStateString(head + " - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
     }
 }

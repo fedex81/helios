@@ -97,7 +97,7 @@ public interface SystemProvider extends Device {
         TOGGLE_SOUND_RECORD,
         SOFT_RESET,
         PAD_SETUP_CHANGE,
-        FORCE_PAD_TYPE;
+        FORCE_PAD_TYPE
     }
 
     interface NewFrameListener {

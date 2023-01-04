@@ -38,7 +38,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     public static final int ROM_HEADER_START = 0x100;
 
-    static int SERIAL_NUMBER_START = 0x180;
+    static final int SERIAL_NUMBER_START = 0x180;
     public static final long DEFAULT_SRAM_START_ADDRESS = 0x20_0000;
     public static final long DEFAULT_SRAM_END_ADDRESS = 0x20_FFFF;
     public static final int DEFAULT_SRAM_BYTE_SIZE = (int) (DEFAULT_SRAM_END_ADDRESS - DEFAULT_SRAM_START_ADDRESS) + 1;
@@ -57,7 +57,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     private long sramStart;
     private long sramEnd;
     private boolean sramEnabled;
-    static int SERIAL_NUMBER_END = SERIAL_NUMBER_START + 14;
+    static final int SERIAL_NUMBER_END = SERIAL_NUMBER_START + 14;
     private int romSize;
     private String systemType;
     private MdMapperType forceMapper = null;
@@ -93,16 +93,15 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(systemType + ", serial: " + serial);
-        sb.append(", " + memoryProvider.getRomHolder().toString());
-        sb.append(", SRAM flag: " + sramEnabled).append("\n");
+        sb.append(systemType).append(", serial: ").append(serial);
+        sb.append(", ").append(memoryProvider.getRomHolder().toString());
+        sb.append(", SRAM flag: ").append(sramEnabled).append("\n");
         sb.append(super.toString());
         if (sramEnabled) {
-            sb.append("\nSRAM size: " + getSramSizeBytes() + " bytes, start-end: " + th(sramStart) + " - " +
-                    th(sramEnd));
+            sb.append("\nSRAM size: ").append(getSramSizeBytes()).append(" bytes, start-end: ").append(th(sramStart)).append(" - ").append(th(sramEnd));
         }
         if (entry != MdRomDbModel.NO_ENTRY) {
-            sb.append("\n" + entry);
+            sb.append("\n").append(entry);
         }
         return sb.toString();
     }
@@ -151,7 +150,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
                 sramEnd = readData(memoryProvider.getRomData(), Size.WORD, SRAM_END_ADDRESS) << 16;
                 sramEnd |= readData(memoryProvider.getRomData(), Size.WORD, SRAM_END_ADDRESS + 2);
                 if (sramEnd - sramStart < 0) {
-                    LOG.error("Unexpected SRAM setup: {}", toString());
+                    LOG.error("Unexpected SRAM setup: {}", this);
                     sramStart = DEFAULT_SRAM_START_ADDRESS;
                     sramEnd = DEFAULT_SRAM_END_ADDRESS;
                 }

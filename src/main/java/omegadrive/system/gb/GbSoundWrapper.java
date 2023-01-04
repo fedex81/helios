@@ -20,7 +20,7 @@ import javax.sound.sampled.AudioFormat;
 public class GbSoundWrapper extends GenericAudioProvider implements SoundOutput {
 
     private static final Logger LOG = LogHelper.getLogger(GbSoundWrapper.class.getSimpleName());
-    public static AudioFormat gbAudioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, 8, 2, true, false);
+    public static final AudioFormat gbAudioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, 8, 2, true, false);
     private final int divider;
     private int tick;
 

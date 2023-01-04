@@ -1,5 +1,6 @@
 package omegadrive.util;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
 
@@ -31,6 +32,7 @@ import java.util.Arrays;
  */
 public class FastBitSet implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -511,7 +513,7 @@ public class FastBitSet implements Serializable {
      * @param n the number to divide by 64.
      * @return <b>n</b> / 64.
      */
-    public static final int divideSize(final int n) {
+    public static int divideSize(final int n) {
         return n >>> LOG_2_SIZE;
     }
 
@@ -522,7 +524,7 @@ public class FastBitSet implements Serializable {
      * @param n the number to multiply by 64.
      * @return <b>n</b> * 64.
      */
-    public static final int multiplySize(final int n) {
+    public static int multiplySize(final int n) {
         return n << LOG_2_SIZE;
     }
 
@@ -533,7 +535,7 @@ public class FastBitSet implements Serializable {
      * @param n the number to modulo by 64.
      * @return the result of the modulo operation.
      */
-    public static final int modSize(final int n) {
+    public static int modSize(final int n) {
         return n & MOD_SIZE_MASK;
     }
 
@@ -544,7 +546,7 @@ public class FastBitSet implements Serializable {
      * @param index the index to represent as a bit.
      * @return the bit that represents the position of an index within a word.
      */
-    public static final long bitMask(final int index) {
+    public static long bitMask(final int index) {
         return 1L << index;
     }
 

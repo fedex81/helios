@@ -71,11 +71,8 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
     protected static final int OVERSEAS = 0x40;
     protected static final int DOMESTIC = 0;
 
-    private CartridgeInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private SmsMapper smsMapper;
-    private int BIOS_END;
-    private int[] bios;
     private int audioControl = 0;
     //https://www.smspower.org/Development/Port3E
     private int portAB, port3E;
@@ -85,7 +82,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
     protected int countryValue = DOMESTIC;
 
     private boolean isGG = false;
-    private boolean ioEnable = true, biosEnable = false, cartEnabled = true;
+    private boolean ioEnable = true;
 
     @Override
     public void init() {
@@ -98,16 +95,16 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
 
         if (HW_ENABLE_BIOS) {
             Path p = Paths.get(SystemLoader.biosFolder, "bios.sms");
-            bios = Util.toUnsignedIntArray(FileUtil.loadBiosFile(p));
-            BIOS_END = bios.length;
-            LOG.info("Loading Sms bios from: {}", p.toAbsolutePath().toString());
+            int[] bios = Util.toUnsignedIntArray(FileUtil.loadBiosFile(p));
+            int BIOS_END = bios.length;
+            LOG.info("Loading Sms bios from: {}", p.toAbsolutePath());
         }
 
         setupCartHw();
     }
 
     protected void setupCartHw() {
-        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
+        CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
         MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(),
                 cartridgeInfoProvider.getCrc32());
         LOG.info(cartridgeInfoProvider.toString());
@@ -278,8 +275,8 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
                 bEn = false;
             }
             ioEnable = (value & 4) == 0;
-            biosEnable = bEn;
-            cartEnabled = (value & 32) == 0 || (value & 64) == 0; //cart and card ports
+            boolean biosEnable = bEn;
+            boolean cartEnabled = (value & 32) == 0 || (value & 64) == 0; //cart and card ports
             LOG.info("Setting port3E, {} -> {},  cartEn: {}, biosEn: {}, ioEn: {}", value, port3E,
                     cartEnabled, biosEnable, ioEnable);
             if (bEn && !HW_ENABLE_BIOS) {

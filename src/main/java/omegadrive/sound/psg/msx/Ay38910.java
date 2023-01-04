@@ -194,14 +194,12 @@ public class Ay38910 {
      */
     private int _envelopeState = 0;
 
-    /**
-     * The sampling frequency for playing sounds with the speaker or AY chip.
-     */
-    private final float sampleFreq;
     private int freqScale = 1;
 
     public Ay38910(int sampleRateHz){
-        this.sampleFreq = sampleRateHz;
+        /**
+         * The sampling frequency for playing sounds with the speaker or AY chip.
+         */
         this.freqScale = AY8912_FREQ / sampleRateHz;
     }
 

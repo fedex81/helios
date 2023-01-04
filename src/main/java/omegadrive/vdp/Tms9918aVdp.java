@@ -478,7 +478,7 @@ public class Tms9918aVdp implements Tms9918a, Device {
         }
     }
 
-    private final void setPixel(int px, int py, Color color) {
+    private void setPixel(int px, int py, Color color) {
         screenDataLinear[py * VDP_WIDTH + px] = color.getRGB() & 0xFF_FFFF; //24 bit RGB
         if (verbose) {
             LOG.info("{},{}: {}", px, py, screenDataLinear[py * VDP_WIDTH + px]);

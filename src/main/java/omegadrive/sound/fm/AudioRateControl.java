@@ -51,17 +51,15 @@ public class AudioRateControl {
     private static final double HALF_LIMIT = 0.0125;
     private static final double LOWER_LIMIT = FM_CALCS_PER_MICROS * (1 - HALF_LIMIT);
     private static final double UPPER_LIMIT = FM_CALCS_PER_MICROS * (1 + HALF_LIMIT);
-    static double fastPace = 0.05; //max distortion ~60hz/frame
-    static double slowPace = fastPace / 2;
+    static final double fastPace = 0.05; //max distortion ~60hz/frame
+    static final double slowPace = fastPace / 2;
     private static final double targetBufferFactor = 0.75;
 
     private final StatsHolder statsHolder;
     private final int stereoBufferSize;
     private final int stereoTargetBufferSize;
-    private final AudioFormat audioFormat;
 
     public AudioRateControl(String sourceName, AudioFormat audioFormat) {
-        this.audioFormat = audioFormat;
         this.stereoBufferSize = SoundUtil.getStereoSamplesBufferSize(audioFormat);
         this.stereoTargetBufferSize = (int) (stereoBufferSize * targetBufferFactor);
         //176400 bytes = 88200 16 bit samples
@@ -93,7 +91,7 @@ public class AudioRateControl {
             fm += tooSmall ? -fastPace : 0;
         }
         //limit
-        fm = fm > UPPER_LIMIT ? UPPER_LIMIT : (fm < LOWER_LIMIT ? LOWER_LIMIT : fm);
+        fm = fm > UPPER_LIMIT ? UPPER_LIMIT : (Math.max(fm, LOWER_LIMIT));
         if (stereoQueueLen > statsHolder.maxLen) {
             if (DEBUG) {
                 LOG.info("{}hz, q_av {}, b_size {}, steady {}", sampleRate, stereoQueueLen, stereoBufferSize, steadyState);
@@ -107,13 +105,13 @@ public class AudioRateControl {
     }
 
     private static class StatsHolder {
-        public static Map<String, StatsHolder> statsHolderMap = Maps.newHashMap();
+        public static final Map<String, StatsHolder> statsHolderMap = Maps.newHashMap();
         private static final NumberFormat bufferMsFormatter = new DecimalFormat("000");
         public long maxLen = 0;
         public long latestLen = 0;
         public long audioDelayMs = 0;
         public double fmCalcPerMicros = 0;
-        public String sourceName;
+        public final String sourceName;
         public String infoString;
         private final int samplesPerSecond;
 

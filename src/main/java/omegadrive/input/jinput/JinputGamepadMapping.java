@@ -38,7 +38,7 @@ public class JinputGamepadMapping {
     public static final String GOOGLE_STADIA_PAD_NAME = "Google Inc. Stadia Controller";
     public static final String DEFAULT_PAD_NAME = "Default Pad Name";
 
-    public static Table<String, Component.Identifier, Object> deviceMappings = HashBasedTable.create();
+    public static final Table<String, Component.Identifier, Object> deviceMappings = HashBasedTable.create();
     private static final Logger LOG = LogHelper.getLogger(JinputGamepadMapping.class.getSimpleName());
 
     static {

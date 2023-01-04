@@ -33,8 +33,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static java.awt.event.InputEvent.CTRL_DOWN_MASK;
-import static java.awt.event.InputEvent.SHIFT_DOWN_MASK;
 import static java.awt.event.KeyEvent.*;
 import static javax.swing.KeyStroke.getKeyStroke;
 import static omegadrive.input.InputProvider.PlayerNumber;
@@ -100,7 +98,7 @@ public class KeyboardInputHelper {
         keyboardInverseStringBindings.row(number).clear();
         keyboardInverseBindings.row(number).clear();
         keyboardBindings.row(number).clear();
-        map.entrySet().stream().forEach(e -> {
+        map.entrySet().forEach(e -> {
             keyboardStringBindings.put(number, e.getKey(), e.getValue());
             keyboardInverseStringBindings.put(number, e.getValue(), e.getKey());
             keyboardInverseBindings.put(number, e.getValue(), JoypadButton.valueOf(e.getKey()));

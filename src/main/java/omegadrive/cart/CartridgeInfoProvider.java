@@ -88,9 +88,7 @@ public class CartridgeInfoProvider {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("ROM sha1: " + sha1 + " - ROM CRC32: " + crc32);
-        return sb.toString();
+        return "ROM sha1: " + sha1 + " - ROM CRC32: " + crc32;
     }
 
 }

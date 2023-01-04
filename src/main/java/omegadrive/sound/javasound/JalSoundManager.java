@@ -161,7 +161,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     }
 
     @Override
-    public void configure(AudioConfiguration context) throws Exception {
+    public void configure(AudioConfiguration context) {
         LOG.info("configure");
     }
 

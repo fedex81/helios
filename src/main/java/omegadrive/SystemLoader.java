@@ -205,7 +205,7 @@ public class SystemLoader {
     public static String handleCompressedFiles(Path file, String lowerCaseName) {
         if (ZipUtil.isZipArchiveByteStream(file)) {
             Optional<? extends ZipEntry> optEntry = ZipUtil.getSupportedZipEntryIfAny(file);
-            if (!optEntry.isPresent()) {
+            if (optEntry.isEmpty()) {
                 LOG.error("Unable to find a system to load: {}", file.toAbsolutePath());
                 return null;
             }
@@ -220,7 +220,6 @@ public class SystemLoader {
 
     public SystemProvider createSystemProvider(Path file, boolean debugPerf) {
         systemProvider = SysUtil.createSystemProvider(file, emuFrame, debugPerf);
-        ;
         return systemProvider;
     }
 

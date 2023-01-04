@@ -29,7 +29,6 @@ public class TileViewer implements UpdatableViewer {
     private static final int PLANE_IMG_WIDTH = MAX_TILES_PER_LINE * 8;
     private static final int PANEL_WIDTH = PLANE_IMG_WIDTH;
 
-    private final VdpRenderHandlerImpl renderHandler;
     private final VdpMemoryInterface memoryInterface;
     private final GenesisVdpProvider vdp;
     private int[] javaPalette;
@@ -39,7 +38,7 @@ public class TileViewer implements UpdatableViewer {
 
     private TileViewer(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.vdp = vdp;
-        this.renderHandler = (VdpRenderHandlerImpl) renderHandler;
+        VdpRenderHandlerImpl renderHandler1 = (VdpRenderHandlerImpl) renderHandler;
         this.memoryInterface = memoryInterface;
         this.javaPalette = memoryInterface.getJavaColorPalette();
         this.panel = new JPanel();

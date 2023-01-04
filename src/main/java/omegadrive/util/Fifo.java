@@ -41,7 +41,7 @@ public interface Fifo<T> {
     }
 
     static Fifo<Integer> createIntegerFixedSizeFifo(int fifoSize) {
-        FixedSizeFifo<Integer> f = new FixedSizeFifo<Integer>(fifoSize);
+        FixedSizeFifo<Integer> f = new FixedSizeFifo<>(fifoSize);
         f.fifo = new Integer[fifoSize];
         Arrays.fill(f.fifo, 0);
         return f;

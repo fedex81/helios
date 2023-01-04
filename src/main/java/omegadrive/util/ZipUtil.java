@@ -48,7 +48,7 @@ public class ZipUtil {
         try (ZipFile zipFile = new ZipFile(zipFilePath.toFile())) {
             entry = zipFile.stream().filter(e -> isSupportedBinaryType.test(e, extArray)).findFirst();
         } catch (Exception e) {
-            LOG.error("Unable to parse contents {}", zipFilePath.toAbsolutePath().toString(), e);
+            LOG.error("Unable to parse contents {}", zipFilePath.toAbsolutePath(), e);
         }
         return entry;
     }
@@ -69,7 +69,7 @@ public class ZipUtil {
             res = ByteStreams.toByteArray(is);
             LOG.info("Using zipEntry: {}", entry.getName());
         } catch (Exception e) {
-            LOG.error("Unable to parse contents {}", path.toAbsolutePath().toString(), e);
+            LOG.error("Unable to parse contents {}", path.toAbsolutePath(), e);
         }
         return res;
     }
@@ -80,7 +80,7 @@ public class ZipUtil {
              InputStream zis = new GZIPInputStream(fis)) {
             res = ByteStreams.toByteArray(zis);
         } catch (Exception e) {
-            LOG.error("Unable to parse contents {}", path.toAbsolutePath().toString(), e);
+            LOG.error("Unable to parse contents {}", path.toAbsolutePath(), e);
         }
         return res;
     }

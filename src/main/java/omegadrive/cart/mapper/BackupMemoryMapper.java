@@ -35,17 +35,17 @@ public abstract class BackupMemoryMapper {
 
     private final static Logger LOG = LogHelper.getLogger(BackupMemoryMapper.class.getSimpleName());
 
-    protected String defaultSramFolder;
+    protected final String defaultSramFolder;
 
-    protected String sramFolder;
-    protected String sramFolderProp;
+    protected final String sramFolder;
+    protected final String sramFolderProp;
 
     protected Path backupFile;
     protected int[] sram = new int[0];
-    protected String fileType;
-    protected String romName;
+    protected final String fileType;
+    protected final String romName;
 
-    protected int sramSize;
+    protected final int sramSize;
 
     protected BackupMemoryMapper(SystemLoader.SystemType systemType, String fileType, String romName, int sramSize) {
         sramFolderProp = systemType.getShortName().toLowerCase() + ".sram.folder";

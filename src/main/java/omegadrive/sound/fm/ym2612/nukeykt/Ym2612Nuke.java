@@ -26,6 +26,7 @@ import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
 
@@ -120,7 +121,7 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
         }
     }
 
-    private final void spin() {
+    private void spin() {
         for (int i = 0; i < syncAudioCnt; i++) {
             cycleAccum += microsPerInputSample;
             spinOnce();
@@ -175,11 +176,12 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     public static class Ym3438Context implements Serializable {
 
+        @Serial
         private static final long serialVersionUID = -2921159132727518547L;
 
         int ym3438_cycles = 0;
         int ym3438_diffLR_sampleL = 0;
-        int[][] ym3438_accm = new int[24][2];
+        final int[][] ym3438_accm = new int[24][2];
         IYm3438.IYm3438_Type chip;
 
         public void reset() {

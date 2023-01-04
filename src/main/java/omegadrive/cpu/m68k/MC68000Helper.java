@@ -61,7 +61,7 @@ public class MC68000Helper {
         }
     }
 
-    private static Set<String> instSet = new TreeSet<>();
+    private static final Set<String> instSet = new TreeSet<>();
 
     private static StringBuilder dumpOp(StringBuilder sb, Cpu cpu, int pc, int opcode) {
         int wrapPc = pc & MD_PC_MASK;
@@ -132,26 +132,10 @@ public class MC68000Helper {
     public static String dumpInfo(Cpu cpu, M68kState state, int memorySize) {
         StringBuilder sb = new StringBuilder("\n");
         int wrapPc = state.pc & MD_PC_MASK;
-        sb.append("D0: " + th(state.dr[0]) +
-                "   D4: " + th(state.dr[4]) +
-                "   A0: " + th(state.ar[0]) +
-                "   A4: " + th(state.ar[4]) +
-                "     PC: " + th(wrapPc) + "\n");
-        sb.append("D1: " + th(state.dr[1]) +
-                "   D5: " + th(state.dr[5]) +
-                "   A1: " + th(state.ar[1]) +
-                "   A5: " + th(state.ar[5]) +
-                "     SR: " + toHex(state.sr, 4) + " " + makeFlagView(cpu) + "\n");
-        sb.append("D2: " + th(state.dr[2]) +
-                "   D6: " + th(state.dr[6]) +
-                "   A2: " + th(state.ar[2]) +
-                "   A6: " + th(state.ar[6]) +
-                "    USP: " + th(state.usp) + "\n");
-        sb.append("D3: " + th(state.dr[3]) +
-                "   D7: " + th(state.dr[7]) +
-                "   A3: " + th(state.ar[3]) +
-                "   A7: " + th(state.ar[7]) +
-                "    SSP: " + th(state.ssp) + "\n");
+        sb.append("D0: ").append(th(state.dr[0])).append("   D4: ").append(th(state.dr[4])).append("   A0: ").append(th(state.ar[0])).append("   A4: ").append(th(state.ar[4])).append("     PC: ").append(th(wrapPc)).append("\n");
+        sb.append("D1: ").append(th(state.dr[1])).append("   D5: ").append(th(state.dr[5])).append("   A1: ").append(th(state.ar[1])).append("   A5: ").append(th(state.ar[5])).append("     SR: ").append(toHex(state.sr, 4)).append(" ").append(makeFlagView(cpu)).append("\n");
+        sb.append("D2: ").append(th(state.dr[2])).append("   D6: ").append(th(state.dr[6])).append("   A2: ").append(th(state.ar[2])).append("   A6: ").append(th(state.ar[6])).append("    USP: ").append(th(state.usp)).append("\n");
+        sb.append("D3: ").append(th(state.dr[3])).append("   D7: ").append(th(state.dr[7])).append("   A3: ").append(th(state.ar[3])).append("   A7: ").append(th(state.ar[7])).append("    SSP: ").append(th(state.ssp)).append("\n");
         StringBuilder sb2 = new StringBuilder();
         if (wrapPc >= 0 && wrapPc < memorySize) {
             int opcode = cpu.readMemoryWord(wrapPc);
@@ -159,7 +143,7 @@ public class MC68000Helper {
             DisassembledInstruction di = i.disassemble(wrapPc, opcode);
             di.formatInstruction(sb2);
         }
-        sb.append("\n==> " + sb2 + "\n\n");
+        sb.append("\n==> ").append(sb2).append("\n\n");
         sb.append(state.memAccess);
         return sb.toString();
     }
@@ -169,13 +153,12 @@ public class MC68000Helper {
     }
 
     protected static String makeFlagView(Cpu cpu) {
-        StringBuilder sb = new StringBuilder(5);
-        sb.append(cpu.isFlagSet(16) ? 'X' : '-');
-        sb.append(cpu.isFlagSet(8) ? 'N' : '-');
-        sb.append(cpu.isFlagSet(4) ? 'Z' : '-');
-        sb.append(cpu.isFlagSet(2) ? 'V' : '-');
-        sb.append(cpu.isFlagSet(1) ? 'C' : '-');
-        return sb.toString();
+        String sb = String.valueOf(cpu.isFlagSet(16) ? 'X' : '-') +
+                (cpu.isFlagSet(8) ? 'N' : '-') +
+                (cpu.isFlagSet(4) ? 'Z' : '-') +
+                (cpu.isFlagSet(2) ? 'V' : '-') +
+                (cpu.isFlagSet(1) ? 'C' : '-');
+        return sb;
     }
 
     public static boolean addToInstructionSet(MC68000 cpu) {
@@ -188,9 +171,7 @@ public class MC68000Helper {
     }
 
     public static String dumpInstructionSet() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Instruction set: " + instSet.size() + "\n").append(Arrays.toString(instSet.toArray()));
-        return sb.toString();
+        return "Instruction set: " + instSet.size() + "\n" + Arrays.toString(instSet.toArray());
     }
 
     public static String getCpuState(Cpu cpu, String head) {
@@ -209,7 +190,8 @@ public class MC68000Helper {
 
     public static class M68kState {
         public int sr, pc, ssp, usp, opcode;
-        public int[] dr = new int[8], ar = new int[8];
+        public final int[] dr = new int[8];
+        public final int[] ar = new int[8];
         public String memAccess;
 
         @Override

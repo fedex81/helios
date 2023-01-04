@@ -12,49 +12,49 @@ import static omegadrive.cpu.z80.disasm.Z80DasmIntf.e_mnemonics.*;
 public class Z80DasmIntf {
 
 
-	// Disassembler constants for the return value
-	static int SUPPORTED = 0x80000000;   // are disassembly flags supported?
-	static int STEP_OUT = 0x40000000;   // this instruction should be the end of a step out sequence
-	static int STEP_OVER = 0x20000000;   // this instruction should be stepped over by setting a breakpoint afterwards
-	static int OVERINSTMASK = 0x18000000;   // number of extra instructions to skip when stepping over
-	static int OVERINSTSHIFT = 27;           // bits to shift after masking to get the value
-	static int LENGTHMASK = 0x0000ffff;   // the low 16-bits contain the actual length
-	static String[] s_mnemonic =
-			{
-					"adc", "add", "and", "bit", "call", "ccf", "cp", "cpd",
-					"cpdr", "cpi", "cpir", "cpl", "daa", "db", "dec", "di",
-					"djnz", "ei", "ex", "exx", "halt", "im", "in", "inc",
-					"ind", "indr", "ini", "inir", "jp", "jr", "ld", "ldd",
-					"lddr", "ldi", "ldir", "neg", "nop", "or", "otdr", "otir",
-					"out", "outd", "outi", "pop", "push", "res", "ret", "reti",
-					"retn", "rl", "rla", "rlc", "rlca", "rld", "rr", "rra",
-					"rrc", "rrca", "rrd", "rst", "sbc", "scf", "set", "sla",
-					"sll", "sra", "srl", "sub", "xor "
+    // Disassembler constants for the return value
+    static int SUPPORTED = 0x80000000;   // are disassembly flags supported?
+    static final int STEP_OUT = 0x40000000;   // this instruction should be the end of a step out sequence
+    static final int STEP_OVER = 0x20000000;   // this instruction should be stepped over by setting a breakpoint afterwards
+    static int OVERINSTMASK = 0x18000000;   // number of extra instructions to skip when stepping over
+    static int OVERINSTSHIFT = 27;           // bits to shift after masking to get the value
+    static int LENGTHMASK = 0x0000ffff;   // the low 16-bits contain the actual length
+    static final String[] s_mnemonic =
+            {
+                    "adc", "add", "and", "bit", "call", "ccf", "cp", "cpd",
+                    "cpdr", "cpi", "cpir", "cpl", "daa", "db", "dec", "di",
+                    "djnz", "ei", "ex", "exx", "halt", "im", "in", "inc",
+                    "ind", "indr", "ini", "inir", "jp", "jr", "ld", "ldd",
+                    "lddr", "ldi", "ldir", "neg", "nop", "or", "otdr", "otir",
+                    "out", "outd", "outi", "pop", "push", "res", "ret", "reti",
+                    "retn", "rl", "rla", "rlc", "rlca", "rld", "rr", "rra",
+                    "rrc", "rrca", "rrd", "rst", "sbc", "scf", "set", "sla",
+                    "sll", "sra", "srl", "sub", "xor "
 			};
 	//const u32 z80_disassembler::s_flags[] =
 	static int[] s_flags =
 			{
-					0, 0, 0, 0, STEP_OVER, 0, 0, 0,
-					STEP_OVER, 0, STEP_OVER, 0, 0, 0, 0, 0,
-					STEP_OVER, 0, 0, 0, STEP_OVER, 0, 0, 0,
-					0, STEP_OVER, 0, STEP_OVER, 0, 0, 0, 0,
-					STEP_OVER, 0, STEP_OVER, 0, 0, 0, STEP_OVER, STEP_OVER,
-					0, 0, 0, 0, 0, 0, STEP_OUT, STEP_OUT,
-					STEP_OUT, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, STEP_OVER, 0, 0, 0, 0,
-					0, 0, 0, 0, 0
-			};
-	static z80dasmStruct[] mnemonic_xx_cb = {
-			new z80dasmStruct(zRLC, "b=Y"), new z80dasmStruct(zRLC, "c=Y"), new z80dasmStruct(zRLC, "d=Y"), new z80dasmStruct(zRLC, "e=Y"),
-			new z80dasmStruct(zRLC, "h=Y"), new z80dasmStruct(zRLC, "l=Y"), new z80dasmStruct(zRLC, "Y"), new z80dasmStruct(zRLC, "a=Y"),
-			new z80dasmStruct(zRRC, "b=Y"), new z80dasmStruct(zRRC, "c=Y"), new z80dasmStruct(zRRC, "d=Y"), new z80dasmStruct(zRRC, "e=Y"),
-			new z80dasmStruct(zRRC, "h=Y"), new z80dasmStruct(zRRC, "l=Y"), new z80dasmStruct(zRRC, "Y"), new z80dasmStruct(zRRC, "a=Y"),
-			new z80dasmStruct(zRL, "b=Y"), new z80dasmStruct(zRL, "c=Y"), new z80dasmStruct(zRL, "d=Y"), new z80dasmStruct(zRL, "e=Y"),
-			new z80dasmStruct(zRL, "h=Y"), new z80dasmStruct(zRL, "l=Y"), new z80dasmStruct(zRL, "Y"), new z80dasmStruct(zRL, "a=Y"),
-			new z80dasmStruct(zRR, "b=Y"), new z80dasmStruct(zRR, "c=Y"), new z80dasmStruct(zRR, "d=Y"), new z80dasmStruct(zRR, "e=Y"),
-			new z80dasmStruct(zRR, "h=Y"), new z80dasmStruct(zRR, "l=Y"), new z80dasmStruct(zRR, "Y"), new z80dasmStruct(zRR, "a=Y"),
-			new z80dasmStruct(zSLA, "b=Y"), new z80dasmStruct(zSLA, "c=Y"), new z80dasmStruct(zSLA, "d=Y"), new z80dasmStruct(zSLA, "e=Y"),
-			new z80dasmStruct(zSLA, "h=Y"), new z80dasmStruct(zSLA, "l=Y"), new z80dasmStruct(zSLA, "Y"), new z80dasmStruct(zSLA, "a=Y"),
+                    0, 0, 0, 0, STEP_OVER, 0, 0, 0,
+                    STEP_OVER, 0, STEP_OVER, 0, 0, 0, 0, 0,
+                    STEP_OVER, 0, 0, 0, STEP_OVER, 0, 0, 0,
+                    0, STEP_OVER, 0, STEP_OVER, 0, 0, 0, 0,
+                    STEP_OVER, 0, STEP_OVER, 0, 0, 0, STEP_OVER, STEP_OVER,
+                    0, 0, 0, 0, 0, 0, STEP_OUT, STEP_OUT,
+                    STEP_OUT, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, STEP_OVER, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0
+            };
+    static final z80dasmStruct[] mnemonic_xx_cb = {
+            new z80dasmStruct(zRLC, "b=Y"), new z80dasmStruct(zRLC, "c=Y"), new z80dasmStruct(zRLC, "d=Y"), new z80dasmStruct(zRLC, "e=Y"),
+            new z80dasmStruct(zRLC, "h=Y"), new z80dasmStruct(zRLC, "l=Y"), new z80dasmStruct(zRLC, "Y"), new z80dasmStruct(zRLC, "a=Y"),
+            new z80dasmStruct(zRRC, "b=Y"), new z80dasmStruct(zRRC, "c=Y"), new z80dasmStruct(zRRC, "d=Y"), new z80dasmStruct(zRRC, "e=Y"),
+            new z80dasmStruct(zRRC, "h=Y"), new z80dasmStruct(zRRC, "l=Y"), new z80dasmStruct(zRRC, "Y"), new z80dasmStruct(zRRC, "a=Y"),
+            new z80dasmStruct(zRL, "b=Y"), new z80dasmStruct(zRL, "c=Y"), new z80dasmStruct(zRL, "d=Y"), new z80dasmStruct(zRL, "e=Y"),
+            new z80dasmStruct(zRL, "h=Y"), new z80dasmStruct(zRL, "l=Y"), new z80dasmStruct(zRL, "Y"), new z80dasmStruct(zRL, "a=Y"),
+            new z80dasmStruct(zRR, "b=Y"), new z80dasmStruct(zRR, "c=Y"), new z80dasmStruct(zRR, "d=Y"), new z80dasmStruct(zRR, "e=Y"),
+            new z80dasmStruct(zRR, "h=Y"), new z80dasmStruct(zRR, "l=Y"), new z80dasmStruct(zRR, "Y"), new z80dasmStruct(zRR, "a=Y"),
+            new z80dasmStruct(zSLA, "b=Y"), new z80dasmStruct(zSLA, "c=Y"), new z80dasmStruct(zSLA, "d=Y"), new z80dasmStruct(zSLA, "e=Y"),
+            new z80dasmStruct(zSLA, "h=Y"), new z80dasmStruct(zSLA, "l=Y"), new z80dasmStruct(zSLA, "Y"), new z80dasmStruct(zSLA, "a=Y"),
 			new z80dasmStruct(zSRA, "b=Y"), new z80dasmStruct(zSRA, "c=Y"), new z80dasmStruct(zSRA, "d=Y"), new z80dasmStruct(zSRA, "e=Y"),
 			new z80dasmStruct(zSRA, "h=Y"), new z80dasmStruct(zSRA, "l=Y"), new z80dasmStruct(zSRA, "Y"), new z80dasmStruct(zSRA, "a=Y"),
 			new z80dasmStruct(zSLL, "b=Y"), new z80dasmStruct(zSLL, "c=Y"), new z80dasmStruct(zSLL, "d=Y"), new z80dasmStruct(zSLL, "e=Y"),
@@ -100,27 +100,27 @@ public class Z80DasmIntf {
 			new z80dasmStruct(zSET, "b=2,Y"), new z80dasmStruct(zSET, "c=2,Y"), new z80dasmStruct(zSET, "d=2,Y"), new z80dasmStruct(zSET, "e=2,Y"),
 			new z80dasmStruct(zSET, "h=2,Y"), new z80dasmStruct(zSET, "l=2,Y"), new z80dasmStruct(zSET, "2,Y"), new z80dasmStruct(zSET, "a=2,Y"),
 			new z80dasmStruct(zSET, "b=3,Y"), new z80dasmStruct(zSET, "c=3,Y"), new z80dasmStruct(zSET, "d=3,Y"), new z80dasmStruct(zSET, "e=3,Y"),
-			new z80dasmStruct(zSET, "h=3,Y"), new z80dasmStruct(zSET, "l=3,Y"), new z80dasmStruct(zSET, "3,Y"), new z80dasmStruct(zSET, "a=3,Y"),
-			new z80dasmStruct(zSET, "b=4,Y"), new z80dasmStruct(zSET, "c=4,Y"), new z80dasmStruct(zSET, "d=4,Y"), new z80dasmStruct(zSET, "e=4,Y"),
-			new z80dasmStruct(zSET, "h=4,Y"), new z80dasmStruct(zSET, "l=4,Y"), new z80dasmStruct(zSET, "4,Y"), new z80dasmStruct(zSET, "a=4,Y"),
-			new z80dasmStruct(zSET, "b=5,Y"), new z80dasmStruct(zSET, "c=5,Y"), new z80dasmStruct(zSET, "d=5,Y"), new z80dasmStruct(zSET, "e=5,Y"),
-			new z80dasmStruct(zSET, "h=5,Y"), new z80dasmStruct(zSET, "l=5,Y"), new z80dasmStruct(zSET, "5,Y"), new z80dasmStruct(zSET, "a=5,Y"),
-			new z80dasmStruct(zSET, "b=6,Y"), new z80dasmStruct(zSET, "c=6,Y"), new z80dasmStruct(zSET, "d=6,Y"), new z80dasmStruct(zSET, "e=6,Y"),
-			new z80dasmStruct(zSET, "h=6,Y"), new z80dasmStruct(zSET, "l=6,Y"), new z80dasmStruct(zSET, "6,Y"), new z80dasmStruct(zSET, "a=6,Y"),
-			new z80dasmStruct(zSET, "b=7,Y"), new z80dasmStruct(zSET, "c=7,Y"), new z80dasmStruct(zSET, "d=7,Y"), new z80dasmStruct(zSET, "e=7,Y"),
-			new z80dasmStruct(zSET, "h=7,Y"), new z80dasmStruct(zSET, "l=7,Y"), new z80dasmStruct(zSET, "7,Y"), new z80dasmStruct(zSET, "a=7,Y")
-	};
-	static z80dasmStruct[] mnemonic_cb =
-			{
-					new z80dasmStruct(zRLC, "b"), new z80dasmStruct(zRLC, "c"), new z80dasmStruct(zRLC, "d"), new z80dasmStruct(zRLC, "e"),
-					new z80dasmStruct(zRLC, "h"), new z80dasmStruct(zRLC, "l"), new z80dasmStruct(zRLC, "(hl)"), new z80dasmStruct(zRLC, "a"),
-					new z80dasmStruct(zRRC, "b"), new z80dasmStruct(zRRC, "c"), new z80dasmStruct(zRRC, "d"), new z80dasmStruct(zRRC, "e"),
-					new z80dasmStruct(zRRC, "h"), new z80dasmStruct(zRRC, "l"), new z80dasmStruct(zRRC, "(hl)"), new z80dasmStruct(zRRC, "a"),
-					new z80dasmStruct(zRL, "b"), new z80dasmStruct(zRL, "c"), new z80dasmStruct(zRL, "d"), new z80dasmStruct(zRL, "e"),
-					new z80dasmStruct(zRL, "h"), new z80dasmStruct(zRL, "l"), new z80dasmStruct(zRL, "(hl)"), new z80dasmStruct(zRL, "a"),
-					new z80dasmStruct(zRR, "b"), new z80dasmStruct(zRR, "c"), new z80dasmStruct(zRR, "d"), new z80dasmStruct(zRR, "e"),
-					new z80dasmStruct(zRR, "h"), new z80dasmStruct(zRR, "l"), new z80dasmStruct(zRR, "(hl)"), new z80dasmStruct(zRR, "a"),
-					new z80dasmStruct(zSLA, "b"), new z80dasmStruct(zSLA, "c"), new z80dasmStruct(zSLA, "d"), new z80dasmStruct(zSLA, "e"),
+            new z80dasmStruct(zSET, "h=3,Y"), new z80dasmStruct(zSET, "l=3,Y"), new z80dasmStruct(zSET, "3,Y"), new z80dasmStruct(zSET, "a=3,Y"),
+            new z80dasmStruct(zSET, "b=4,Y"), new z80dasmStruct(zSET, "c=4,Y"), new z80dasmStruct(zSET, "d=4,Y"), new z80dasmStruct(zSET, "e=4,Y"),
+            new z80dasmStruct(zSET, "h=4,Y"), new z80dasmStruct(zSET, "l=4,Y"), new z80dasmStruct(zSET, "4,Y"), new z80dasmStruct(zSET, "a=4,Y"),
+            new z80dasmStruct(zSET, "b=5,Y"), new z80dasmStruct(zSET, "c=5,Y"), new z80dasmStruct(zSET, "d=5,Y"), new z80dasmStruct(zSET, "e=5,Y"),
+            new z80dasmStruct(zSET, "h=5,Y"), new z80dasmStruct(zSET, "l=5,Y"), new z80dasmStruct(zSET, "5,Y"), new z80dasmStruct(zSET, "a=5,Y"),
+            new z80dasmStruct(zSET, "b=6,Y"), new z80dasmStruct(zSET, "c=6,Y"), new z80dasmStruct(zSET, "d=6,Y"), new z80dasmStruct(zSET, "e=6,Y"),
+            new z80dasmStruct(zSET, "h=6,Y"), new z80dasmStruct(zSET, "l=6,Y"), new z80dasmStruct(zSET, "6,Y"), new z80dasmStruct(zSET, "a=6,Y"),
+            new z80dasmStruct(zSET, "b=7,Y"), new z80dasmStruct(zSET, "c=7,Y"), new z80dasmStruct(zSET, "d=7,Y"), new z80dasmStruct(zSET, "e=7,Y"),
+            new z80dasmStruct(zSET, "h=7,Y"), new z80dasmStruct(zSET, "l=7,Y"), new z80dasmStruct(zSET, "7,Y"), new z80dasmStruct(zSET, "a=7,Y")
+    };
+    static final z80dasmStruct[] mnemonic_cb =
+            {
+                    new z80dasmStruct(zRLC, "b"), new z80dasmStruct(zRLC, "c"), new z80dasmStruct(zRLC, "d"), new z80dasmStruct(zRLC, "e"),
+                    new z80dasmStruct(zRLC, "h"), new z80dasmStruct(zRLC, "l"), new z80dasmStruct(zRLC, "(hl)"), new z80dasmStruct(zRLC, "a"),
+                    new z80dasmStruct(zRRC, "b"), new z80dasmStruct(zRRC, "c"), new z80dasmStruct(zRRC, "d"), new z80dasmStruct(zRRC, "e"),
+                    new z80dasmStruct(zRRC, "h"), new z80dasmStruct(zRRC, "l"), new z80dasmStruct(zRRC, "(hl)"), new z80dasmStruct(zRRC, "a"),
+                    new z80dasmStruct(zRL, "b"), new z80dasmStruct(zRL, "c"), new z80dasmStruct(zRL, "d"), new z80dasmStruct(zRL, "e"),
+                    new z80dasmStruct(zRL, "h"), new z80dasmStruct(zRL, "l"), new z80dasmStruct(zRL, "(hl)"), new z80dasmStruct(zRL, "a"),
+                    new z80dasmStruct(zRR, "b"), new z80dasmStruct(zRR, "c"), new z80dasmStruct(zRR, "d"), new z80dasmStruct(zRR, "e"),
+                    new z80dasmStruct(zRR, "h"), new z80dasmStruct(zRR, "l"), new z80dasmStruct(zRR, "(hl)"), new z80dasmStruct(zRR, "a"),
+                    new z80dasmStruct(zSLA, "b"), new z80dasmStruct(zSLA, "c"), new z80dasmStruct(zSLA, "d"), new z80dasmStruct(zSLA, "e"),
 					new z80dasmStruct(zSLA, "h"), new z80dasmStruct(zSLA, "l"), new z80dasmStruct(zSLA, "(hl)"), new z80dasmStruct(zSLA, "a"),
 					new z80dasmStruct(zSRA, "b"), new z80dasmStruct(zSRA, "c"), new z80dasmStruct(zSRA, "d"), new z80dasmStruct(zSRA, "e"),
 					new z80dasmStruct(zSRA, "h"), new z80dasmStruct(zSRA, "l"), new z80dasmStruct(zSRA, "(hl)"), new z80dasmStruct(zSRA, "a"),
@@ -167,27 +167,27 @@ public class Z80DasmIntf {
 					new z80dasmStruct(zSET, "2,b"), new z80dasmStruct(zSET, "2,c"), new z80dasmStruct(zSET, "2,d"), new z80dasmStruct(zSET, "2,e"),
 					new z80dasmStruct(zSET, "2,h"), new z80dasmStruct(zSET, "2,l"), new z80dasmStruct(zSET, "2,(hl)"), new z80dasmStruct(zSET, "2,a"),
 					new z80dasmStruct(zSET, "3,b"), new z80dasmStruct(zSET, "3,c"), new z80dasmStruct(zSET, "3,d"), new z80dasmStruct(zSET, "3,e"),
-					new z80dasmStruct(zSET, "3,h"), new z80dasmStruct(zSET, "3,l"), new z80dasmStruct(zSET, "3,(hl)"), new z80dasmStruct(zSET, "3,a"),
-					new z80dasmStruct(zSET, "4,b"), new z80dasmStruct(zSET, "4,c"), new z80dasmStruct(zSET, "4,d"), new z80dasmStruct(zSET, "4,e"),
-					new z80dasmStruct(zSET, "4,h"), new z80dasmStruct(zSET, "4,l"), new z80dasmStruct(zSET, "4,(hl)"), new z80dasmStruct(zSET, "4,a"),
-					new z80dasmStruct(zSET, "5,b"), new z80dasmStruct(zSET, "5,c"), new z80dasmStruct(zSET, "5,d"), new z80dasmStruct(zSET, "5,e"),
-					new z80dasmStruct(zSET, "5,h"), new z80dasmStruct(zSET, "5,l"), new z80dasmStruct(zSET, "5,(hl)"), new z80dasmStruct(zSET, "5,a"),
-					new z80dasmStruct(zSET, "6,b"), new z80dasmStruct(zSET, "6,c"), new z80dasmStruct(zSET, "6,d"), new z80dasmStruct(zSET, "6,e"),
-					new z80dasmStruct(zSET, "6,h"), new z80dasmStruct(zSET, "6,l"), new z80dasmStruct(zSET, "6,(hl)"), new z80dasmStruct(zSET, "6,a"),
-					new z80dasmStruct(zSET, "7,b"), new z80dasmStruct(zSET, "7,c"), new z80dasmStruct(zSET, "7,d"), new z80dasmStruct(zSET, "7,e"),
-					new z80dasmStruct(zSET, "7,h"), new z80dasmStruct(zSET, "7,l"), new z80dasmStruct(zSET, "7,(hl)"), new z80dasmStruct(zSET, "7,a")
-			};
-	static z80dasmStruct[] mnemonic_ed =
-			{
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zSET, "3,h"), new z80dasmStruct(zSET, "3,l"), new z80dasmStruct(zSET, "3,(hl)"), new z80dasmStruct(zSET, "3,a"),
+                    new z80dasmStruct(zSET, "4,b"), new z80dasmStruct(zSET, "4,c"), new z80dasmStruct(zSET, "4,d"), new z80dasmStruct(zSET, "4,e"),
+                    new z80dasmStruct(zSET, "4,h"), new z80dasmStruct(zSET, "4,l"), new z80dasmStruct(zSET, "4,(hl)"), new z80dasmStruct(zSET, "4,a"),
+                    new z80dasmStruct(zSET, "5,b"), new z80dasmStruct(zSET, "5,c"), new z80dasmStruct(zSET, "5,d"), new z80dasmStruct(zSET, "5,e"),
+                    new z80dasmStruct(zSET, "5,h"), new z80dasmStruct(zSET, "5,l"), new z80dasmStruct(zSET, "5,(hl)"), new z80dasmStruct(zSET, "5,a"),
+                    new z80dasmStruct(zSET, "6,b"), new z80dasmStruct(zSET, "6,c"), new z80dasmStruct(zSET, "6,d"), new z80dasmStruct(zSET, "6,e"),
+                    new z80dasmStruct(zSET, "6,h"), new z80dasmStruct(zSET, "6,l"), new z80dasmStruct(zSET, "6,(hl)"), new z80dasmStruct(zSET, "6,a"),
+                    new z80dasmStruct(zSET, "7,b"), new z80dasmStruct(zSET, "7,c"), new z80dasmStruct(zSET, "7,d"), new z80dasmStruct(zSET, "7,e"),
+                    new z80dasmStruct(zSET, "7,h"), new z80dasmStruct(zSET, "7,l"), new z80dasmStruct(zSET, "7,(hl)"), new z80dasmStruct(zSET, "7,a")
+            };
+    static final z80dasmStruct[] mnemonic_ed =
+            {
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
 					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
 					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
 					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
@@ -234,27 +234,27 @@ public class Z80DasmIntf {
 					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
 					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
 					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?")
-			};
-	static z80dasmStruct[] mnemonic_xx =
-			{
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zADD, "I,bc"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zADD, "I,de"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zLD, "I,N"), new z80dasmStruct(zLD, "(W),I"), new z80dasmStruct(zINC, "I"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?")
+            };
+    static final z80dasmStruct[] mnemonic_xx =
+            {
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zADD, "I,bc"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zADD, "I,de"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zLD, "I,N"), new z80dasmStruct(zLD, "(W),I"), new z80dasmStruct(zINC, "I"),
 					new z80dasmStruct(zINC, "Ih"), new z80dasmStruct(zDEC, "Ih"), new z80dasmStruct(zLD, "Ih,B"), new z80dasmStruct(zDB, "?"),
 					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zADD, "I,I"), new z80dasmStruct(zLD, "I,(W)"), new z80dasmStruct(zDEC, "I"),
 					new z80dasmStruct(zINC, "Il"), new z80dasmStruct(zDEC, "Il"), new z80dasmStruct(zLD, "Il,B"), new z80dasmStruct(zDB, "?"),
@@ -301,27 +301,27 @@ public class Z80DasmIntf {
 					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
 					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
 					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zPOP, "I"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zEX, "(sp),I"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zPUSH, "I"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zJP, "(I)"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zLD, "sp,I"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
-					new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?")
-			};
-	static z80dasmStruct[] mnemonic_main =
-			{
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zPOP, "I"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zEX, "(sp),I"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zPUSH, "I"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zJP, "(I)"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zLD, "sp,I"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"),
+                    new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?"), new z80dasmStruct(zDB, "?")
+            };
+    static final z80dasmStruct[] mnemonic_main =
+            {
 
-					new z80dasmStruct(zNOP, null), new z80dasmStruct(zLD, "bc,N"), new z80dasmStruct(zLD, "(bc),a"), new z80dasmStruct(zINC, "bc"),
-					new z80dasmStruct(zINC, "b"), new z80dasmStruct(zDEC, "b"), new z80dasmStruct(zLD, "b,B"), new z80dasmStruct(zRLCA, null),
-					new z80dasmStruct(zEX, "af,af'"), new z80dasmStruct(zADD, "hl,bc"), new z80dasmStruct(zLD, "a,(bc)"), new z80dasmStruct(zDEC, "bc"),
-					new z80dasmStruct(zINC, "c"), new z80dasmStruct(zDEC, "c"), new z80dasmStruct(zLD, "c,B"), new z80dasmStruct(zRRCA, null),
-					new z80dasmStruct(zDJNZ, "O"), new z80dasmStruct(zLD, "de,N"), new z80dasmStruct(zLD, "(de),a"), new z80dasmStruct(zINC, "de"),
-					new z80dasmStruct(zINC, "d"), new z80dasmStruct(zDEC, "d"), new z80dasmStruct(zLD, "d,B"), new z80dasmStruct(zRLA, null),
-					new z80dasmStruct(zJR, "O"), new z80dasmStruct(zADD, "hl,de"), new z80dasmStruct(zLD, "a,(de)"), new z80dasmStruct(zDEC, "de"),
-					new z80dasmStruct(zINC, "e"), new z80dasmStruct(zDEC, "e"), new z80dasmStruct(zLD, "e,B"), new z80dasmStruct(zRRA, null),
+                    new z80dasmStruct(zNOP, null), new z80dasmStruct(zLD, "bc,N"), new z80dasmStruct(zLD, "(bc),a"), new z80dasmStruct(zINC, "bc"),
+                    new z80dasmStruct(zINC, "b"), new z80dasmStruct(zDEC, "b"), new z80dasmStruct(zLD, "b,B"), new z80dasmStruct(zRLCA, null),
+                    new z80dasmStruct(zEX, "af,af'"), new z80dasmStruct(zADD, "hl,bc"), new z80dasmStruct(zLD, "a,(bc)"), new z80dasmStruct(zDEC, "bc"),
+                    new z80dasmStruct(zINC, "c"), new z80dasmStruct(zDEC, "c"), new z80dasmStruct(zLD, "c,B"), new z80dasmStruct(zRRCA, null),
+                    new z80dasmStruct(zDJNZ, "O"), new z80dasmStruct(zLD, "de,N"), new z80dasmStruct(zLD, "(de),a"), new z80dasmStruct(zINC, "de"),
+                    new z80dasmStruct(zINC, "d"), new z80dasmStruct(zDEC, "d"), new z80dasmStruct(zLD, "d,B"), new z80dasmStruct(zRLA, null),
+                    new z80dasmStruct(zJR, "O"), new z80dasmStruct(zADD, "hl,de"), new z80dasmStruct(zLD, "a,(de)"), new z80dasmStruct(zDEC, "de"),
+                    new z80dasmStruct(zINC, "e"), new z80dasmStruct(zDEC, "e"), new z80dasmStruct(zLD, "e,B"), new z80dasmStruct(zRRA, null),
 					new z80dasmStruct(zJR, "nz,O"), new z80dasmStruct(zLD, "hl,N"), new z80dasmStruct(zLD, "(W),hl"), new z80dasmStruct(zINC, "hl"),
 					new z80dasmStruct(zINC, "h"), new z80dasmStruct(zDEC, "h"), new z80dasmStruct(zLD, "h,B"), new z80dasmStruct(zDAA, null),
 					new z80dasmStruct(zJR, "z,O"), new z80dasmStruct(zADD, "hl,hl"), new z80dasmStruct(zLD, "hl,(W)"), new z80dasmStruct(zDEC, "hl"),
@@ -392,15 +392,15 @@ public class Z80DasmIntf {
 		zSLL, zSRA, zSRL, zSUB, zXOR
 	}
 
-	static class z80dasmStruct {
-		e_mnemonics mnemonic;
-		String arguments;
+    static class z80dasmStruct {
+        final e_mnemonics mnemonic;
+        final String arguments;
 
-		public z80dasmStruct(e_mnemonics mnemonic, String arguments) {
-			this.mnemonic = mnemonic;
-			this.arguments = arguments;
-		}
-	}
+        public z80dasmStruct(e_mnemonics mnemonic, String arguments) {
+            this.mnemonic = mnemonic;
+            this.arguments = arguments;
+        }
+    }
 }
 
 

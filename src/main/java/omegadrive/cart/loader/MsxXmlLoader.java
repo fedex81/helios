@@ -44,23 +44,23 @@ public class MsxXmlLoader {
 
     private static final Logger LOG = LogHelper.getLogger(MsxXmlLoader.class.getSimpleName());
 
-    static DocumentBuilderFactory dbf;
+    static final DocumentBuilderFactory dbf;
 
-    static String softwareXPath = "//software";
-    static String titleXPath = "title/text()";
-    static String romXPath = "dump/rom";
-    static String megaromXPath = "dump/megarom";
-    static String typeEl = "type";
-    static String hashEl = "hash";
+    static final String softwareXPath = "//software";
+    static final String titleXPath = "title/text()";
+    static final String romXPath = "dump/rom";
+    static final String megaromXPath = "dump/megarom";
+    static final String typeEl = "type";
+    static final String hashEl = "hash";
 
-    static String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "msx_sw_db.xml";
+    static final String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "msx_sw_db.xml";
 
     static {
         dbf = DocumentBuilderFactory.newInstance();
         dbf.setValidating(false);
         dbf.setNamespaceAware(true);
 
-        try{
+        try {
             dbf.setFeature("http://xml.org/sax/features/namespaces", false);
             dbf.setFeature("http://xml.org/sax/features/validation", false);
             dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);

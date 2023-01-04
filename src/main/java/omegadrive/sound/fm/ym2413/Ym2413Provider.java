@@ -34,7 +34,9 @@ public class Ym2413Provider extends VariableSampleRateSource {
     public static final double FM_RATE = 49716.0;
     // Input clock
     private static final int CLOCK_HZ = 3579545;
-    double ratio, rateAccum, adjustedRatio;
+    final double ratio;
+    double rateAccum;
+    double adjustedRatio;
 
     private OPLL opll;
     private int sample;

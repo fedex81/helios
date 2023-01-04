@@ -115,8 +115,8 @@ public class Z80MemIoOps implements IMemIoOps {
                 super.poke8(address + 1, word >>> 8);
             }
 
-            private final void traceAndCheck(String head, Size size, int address, int data) {
-                sb.append(head + size + ", " + th(address) + ", " + th(data) + "\n");
+            private void traceAndCheck(String head, Size size, int address, int data) {
+                sb.append(head).append(size).append(", ").append(th(address)).append(", ").append(th(data)).append("\n");
                 if (logAddressAccess >= 0 && address == logAddressAccess) {
                     //do something
                 }

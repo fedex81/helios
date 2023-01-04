@@ -32,18 +32,17 @@ public class SoundUtil {
 
     private static final Logger LOG = LogHelper.getLogger(SoundUtil.class.getSimpleName());
 
-    public static byte ZERO_BYTE = 0;
+    public static final byte ZERO_BYTE = 0;
 
     private static final int DEFAULT_PSG_SHIFT_BITS = 6;
-    public static double PSG_ATTENUATION = Double.parseDouble(System.getProperty("sound.psg.attenuation", "1.0"));
+    public static final double PSG_ATTENUATION = Double.parseDouble(System.getProperty("sound.psg.attenuation", "1.0"));
     private static final int USER_PSG_ATT_BITS;
     private static final int PSG_SHIFT_BITS;
 
     static {
-        double val = PSG_ATTENUATION;
         double res = 4; // start from 2 bit volume increase
         int shift = -2;
-        while (res > val && shift < 16) {
+        while (res > PSG_ATTENUATION && shift < 16) {
             res /= 2;
             shift++;
         }

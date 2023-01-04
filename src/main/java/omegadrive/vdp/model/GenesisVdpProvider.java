@@ -70,7 +70,7 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
         private final VdpRamType ramType;
         private final int addressMode;
 
-        private static VramMode[] lookup = new VramMode[0x10];
+        private static final VramMode[] lookup = new VramMode[0x10];
 
         static {
             for (VramMode v : VramMode.values()) {

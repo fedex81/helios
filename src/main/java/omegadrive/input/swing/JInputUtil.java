@@ -66,7 +66,7 @@ public class JInputUtil {
     }
 
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         awtJInputMappingGenerator();
         parseMappings();
     }
@@ -88,8 +88,8 @@ public class JInputUtil {
     };
 
     public static class JInputId {
-        String name;
-        Class<? extends Component.Identifier> type;
+        final String name;
+        final Class<? extends Component.Identifier> type;
 
         public JInputId(String name, Class<? extends Component.Identifier> type) {
             this.name = name;
@@ -107,12 +107,12 @@ public class JInputUtil {
     }
 
     public static class ActiveControllerCtx {
-        public Controller c;
+        public final Controller c;
         public String[] joyNames;
         public JLabel[] padLabels, consolePadLabels;
         public JComboBox<String>[] padSelectedBox;
-        public JoypadProvider.JoypadButton[] jb;
-        public Map<String, Boolean> invertedMap;
+        public final JoypadProvider.JoypadButton[] jb;
+        public final Map<String, Boolean> invertedMap;
 
         public ActiveControllerCtx(Controller c) {
             this.c = c;

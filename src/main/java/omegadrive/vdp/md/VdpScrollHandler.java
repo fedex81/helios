@@ -101,10 +101,8 @@ public class VdpScrollHandler {
         INVALID(0b01);
 
         private static final HSCROLL[] lookupRegValue = {SCREEN, INVALID, CELL, LINE};
-        private final int regValue;
 
         HSCROLL(int regValue) {
-            this.regValue = regValue;
         }
 
         public static HSCROLL getHScrollType(int regValue) {
@@ -117,10 +115,8 @@ public class VdpScrollHandler {
         TWO_CELLS(1);
 
         private static final VSCROLL[] lookupRegValue = {SCREEN, TWO_CELLS};
-        private final int regValue;
 
         VSCROLL(int regValue) {
-            this.regValue = regValue;
         }
 
         public static VSCROLL getVScrollType(int regValue) {

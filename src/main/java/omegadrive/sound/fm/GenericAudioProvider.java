@@ -21,14 +21,13 @@ import static omegadrive.util.Util.th;
 public class GenericAudioProvider implements FmProvider {
 
     private static final Logger LOG = LogHelper.getLogger(GenericAudioProvider.class.getSimpleName());
-    protected AtomicInteger stereoQueueLen = new AtomicInteger();
+    protected final AtomicInteger stereoQueueLen = new AtomicInteger();
     //NOTE: each element represent a 16 bit sample for one channel
     protected final Queue<Integer> sampleQueue;
     protected volatile boolean running = false;
-    private AudioFormat inputFormat;
     private final Integer[] stereoSamples = new Integer[2]; //[0] left, [1] right
     private final int audioScaleBits;
-    private int sampleShift;
+    private final int sampleShift;
 
     public GenericAudioProvider(AudioFormat inputAudioFormat) {
         //2 frames maxQueueLen
@@ -36,9 +35,8 @@ public class GenericAudioProvider implements FmProvider {
     }
 
     public GenericAudioProvider(AudioFormat inputAudioFormat, int audioScaleBits, int maxQueueLen) {
-        inputFormat = inputAudioFormat;
         sampleQueue = new SpscAtomicArrayQueue<>(maxQueueLen);
-        sampleShift = 16 - inputFormat.getSampleSizeInBits();
+        sampleShift = 16 - inputAudioFormat.getSampleSizeInBits();
         this.audioScaleBits = audioScaleBits;
         LOG.info("Input sound source format: {}, audioScaleBits: {}", inputAudioFormat, audioScaleBits);
     }
@@ -50,8 +48,7 @@ public class GenericAudioProvider implements FmProvider {
         }
         offset <<= 1;
         int end = (count << 1) + offset;
-        final int initialQueueSize = stereoQueueLen.get();
-        int queueIndicativeLen = initialQueueSize;
+        int queueIndicativeLen = stereoQueueLen.get();
         int i = offset;
         for (; i < end && queueIndicativeLen > 0; i += 2) {
             //when using mono we process two samples

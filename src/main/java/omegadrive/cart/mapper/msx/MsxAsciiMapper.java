@@ -77,18 +77,18 @@ public class MsxAsciiMapper extends AsciiMapperImpl {
 
 class AsciiMapperImpl implements RomMapper {
 
-    int pageNum;
-    int pageSize;
-    int readShiftMask;
-    int[] pageBlockMapper;
-    int[] rom;
-    AsciiType type;
+    final int pageNum;
+    final int pageSize;
+    final int readShiftMask;
+    final int[] pageBlockMapper;
+    final int[] rom;
+    final AsciiType type;
 
-    protected AsciiMapperImpl(int[] rom, AsciiType type){
+    protected AsciiMapperImpl(int[] rom, AsciiType type) {
         this.rom = rom;
         this.type = type;
         this.pageNum = type == AsciiType.ASCII8 ? PAGES_8KB : PAGES_16KB;
-        this.pageSize = BLOCK_NUM*1024/pageNum;
+        this.pageSize = BLOCK_NUM * 1024 / pageNum;
         this.pageBlockMapper = new int[pageNum];
         this.readShiftMask = type == AsciiType.ASCII8 ? 0xE000 : 0xC000;
     }

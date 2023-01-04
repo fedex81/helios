@@ -49,7 +49,7 @@ public class SvpMapper implements RomMapper, SvpBus {
     protected Svp_t svpCtx;
     protected Ssp1601_t sspCtx;
 
-    protected RomMapper baseMapper;
+    protected final RomMapper baseMapper;
 
     protected SvpMapper(RomMapper baseMapper, Ssp16 ssp16p) {
         this.baseMapper = baseMapper;
@@ -178,7 +178,7 @@ public class SvpMapper implements RomMapper, SvpBus {
         }
     }
 
-    private final long svpRegReadWord(Ssp1601_t sspCtx, int address) {
+    private long svpRegReadWord(Ssp1601_t sspCtx, int address) {
         int res;
         switch (address & 0xF) {
             case 0:

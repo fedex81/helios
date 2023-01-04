@@ -102,7 +102,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     }
 
     private int nextZ80Cycle = Z80_DIVIDER;
-    private int nextVdpCycle = VDP_DIVIDER;
 
     @Override
     protected void loop() {
@@ -131,7 +130,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     @Override
     protected void resetCycleCounters(int counter) {
         nextZ80Cycle -= counter;
-        nextVdpCycle -= counter;
     }
 
     @Override

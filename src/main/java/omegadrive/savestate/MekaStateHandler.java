@@ -58,7 +58,7 @@ public class MekaStateHandler implements BaseStateHandler {
     private static final Set<Class<? extends Device>> deviceClassSet = ImmutableSet.of(Z80Provider.class,
             SmsVdp.class, IMemoryProvider.class, SmsBus.class);
 
-    int[] vdpState = new int[3];
+    final int[] vdpState = new int[3];
     private ByteBuffer buffer;
     private int version;
     private int softwareId;
@@ -73,9 +73,8 @@ public class MekaStateHandler implements BaseStateHandler {
 
     public static BaseStateHandler createInstance(SystemLoader.SystemType systemType,
                                                   String fileName, Type type, Set<Device> deviceSet) {
-        BaseStateHandler h = type == Type.LOAD ? createLoadInstance(fileName, deviceSet) :
+        return type == Type.LOAD ? createLoadInstance(fileName, deviceSet) :
                 createSaveInstance(fileName, systemType, deviceSet);
-        return h;
     }
 
     private static BaseStateHandler createLoadInstance(String fileName, Set<Device> deviceSet) {

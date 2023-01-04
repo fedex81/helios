@@ -52,8 +52,8 @@ public class RenderingStrategy {
         }
     }
 
-    protected static final void renderNearestNew(final int[] srcPixels, final int[] outputPixels,
-                                                 Dimension src, Dimension dest) {
+    protected static void renderNearestNew(final int[] srcPixels, final int[] outputPixels,
+                                           Dimension src, Dimension dest) {
         if (dest != transferFnHolder.dest || src != transferFnHolder.src) {
             System.out.println("recalc");
             //recalc

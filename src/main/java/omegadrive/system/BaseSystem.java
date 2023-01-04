@@ -41,7 +41,6 @@ import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -114,7 +113,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
     @Override
     public void handleSystemEvent(SystemEvent event, Object parameter) {
-        LOG.info("Event: {}, with parameter: {}", event, Objects.toString(parameter));
+        LOG.info("Event: {}, with parameter: {}", event, parameter);
         switch (event) {
             case NEW_ROM:
                 handleNewRom((Path) parameter);
@@ -346,11 +345,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
             try {
                 int[] data = Util.toUnsignedIntArray(FileUtil.readBinaryFile(file, getSystemType()));
                 if (data.length == 0) {
-                    LOG.error("Unable to open/access file: {}", file.toAbsolutePath().toString());
+                    LOG.error("Unable to open/access file: {}", file.toAbsolutePath());
                     return;
                 }
                 memory.setRomData(data);
-                romContext = createRomContext(memory, file);
+                romContext = createRomContext(file);
                 String romName = FileUtil.getFileName(file);
                 emuFrame.setTitle(romName);
                 Thread.currentThread().setName(threadNamePrefix + romName);
@@ -369,7 +368,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         }
     }
 
-    protected RomContext createRomContext(IMemoryProvider memoryProvider, Path rom) {
+    protected RomContext createRomContext(Path rom) {
         RomContext rc = new RomContext();
         rc.romPath = rom;
         rc.region = getRegionInternal(memory, emuFrame.getRegionOverride());

@@ -32,7 +32,6 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * SMS roms db from the MEKA project
@@ -40,8 +39,8 @@ import java.util.stream.Collectors;
  */
 public class SmsLoader {
 
-    static String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "meka.nam";
-    static Map<String, String> mapperIdMap = ImmutableMap.of(
+    static final String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "meka.nam";
+    static final Map<String, String> mapperIdMap = ImmutableMap.of(
             SmsMapper.Type.CODEM.name(), "/EMU_MAPPER=3",
             SmsMapper.Type.KOREA.name(), "/EMU_MAPPER=9"
     );
@@ -58,7 +57,7 @@ public class SmsLoader {
         try {
             Path p = Paths.get(fileName);
             List<String> smsList = Files.readAllLines(p).stream().
-                    filter(l -> l.startsWith(systemType.name())).collect(Collectors.toList());
+                    filter(l -> l.startsWith(systemType.name())).toList();
             for (Map.Entry<String, String> e : mapperIdMap.entrySet()) {
                 smsList.stream().filter(l -> l.contains(e.getValue())).forEach(l -> {
                     MapperSelector.Entry en = getEntry(l, e.getKey());

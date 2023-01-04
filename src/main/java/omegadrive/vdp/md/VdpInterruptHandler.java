@@ -43,7 +43,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
 
     public static final int COUNTER_LIMIT = 0x1FF;
     public static final int VBLANK_CLEAR = COUNTER_LIMIT;
-    public static int VINT_SET_ON_HCOUNTER_VALUE = 1; // TODO SMS = 0x1EA??
+    public static final int VINT_SET_ON_HCOUNTER_VALUE = 1; // TODO SMS = 0x1EA??
 
     protected int hCounterInternal;
     protected int vCounterInternal;
@@ -55,7 +55,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
     private VideoMode videoMode;
     private InterlaceMode interlaceMode = InterlaceMode.NONE;
     protected VdpCounterMode vdpCounterMode;
-    protected BaseVdpAdapterEventSupport vdpEvent;
+    protected final BaseVdpAdapterEventSupport vdpEvent;
     protected boolean h40;
 
     protected boolean vBlankSet;

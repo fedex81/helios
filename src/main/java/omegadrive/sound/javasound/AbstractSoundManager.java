@@ -46,10 +46,10 @@ import java.util.concurrent.Executors;
 public abstract class AbstractSoundManager implements SoundProvider {
     private static final Logger LOG = LogHelper.getLogger(JavaSoundManager.class.getSimpleName());
 
-    protected static SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
+    protected static final SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
     private static final int OUTPUT_SAMPLE_SIZE = 16;
     private static final int OUTPUT_CHANNELS = 2;
-    public static AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
+    public static final AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
     public volatile boolean close;
 
     protected ExecutorService executorService;

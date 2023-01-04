@@ -10,7 +10,7 @@ Java translation by Federico Berti
 */
 public class Ssp16Disasm {
 
-    static String[] reg =
+    static final String[] reg =
             {
                     "-", "X", "Y", "A",
                     "ST", "STACK", "PC", "P",
@@ -18,22 +18,22 @@ public class Ssp16Disasm {
                     "EXT4", "EXT5", "EXT6", "AL"
             };
 
-    static String[] rij =
+    static final String[] rij =
             {
                     "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"
             };
 
-    static String[] modifier =
+    static final String[] modifier =
             {
                     "", "+!", "-", "+"
             };
 
-    static String[] modifier_sf =
+    static final String[] modifier_sf =
             {
                     "|00", "|01", "|10", "|11"
             };
 
-    static String[] cond =
+    static final String[] cond =
             {
                     "always", "RESERVED", "gpi0", "gpi1",
                     "l", "z", "ov", "n",
@@ -41,24 +41,24 @@ public class Ssp16Disasm {
                     "RESERVED", "RESERVED", "RESERVED", "RESERVED",
             };
 
-    static String[] acc_op =
+    static final String[] acc_op =
             {
                     "ror", "rol", "shr", "shl", "inc", "dec", "neg", "abs"
             };
 
     // pag. 81 uses different addresses!
-    static String[] flag_op =
+    static final String[] flag_op =
             {
                     "?", "?", "resl", "setl", "resie", "setie", "?", "?", "resop", "setop", "?", "?", "?", "?", "res", "set"
             };
 
-    static String[] arith_ops =
+    static final String[] arith_ops =
             {
                     "", "sub", "", "cmp", "add", "and", "or", "eor"
             };
-    static int DASMFLAG_STEP_OUT = 1 << 3;
-    static int DASMFLAG_STEP_OVER = 1 << 4;
-    static int DASMFLAG_SUPPORTED = 1 << 5;
+    static final int DASMFLAG_STEP_OUT = 1 << 3;
+    static final int DASMFLAG_STEP_OVER = 1 << 4;
+    static final int DASMFLAG_SUPPORTED = 1 << 5;
 
     static int BIT_B(int op) {
         return ((op >> 8) & 1);

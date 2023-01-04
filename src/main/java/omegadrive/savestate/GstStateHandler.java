@@ -54,7 +54,7 @@ public class GstStateHandler implements BaseStateHandler {
     private static final Logger LOG = LogHelper.getLogger(GstStateHandler.class.getSimpleName());
 
     private static final int FM_REG_OFFSET = 0x1E4;
-    public static int FM_DATA_SIZE = 0x200;
+    public static final int FM_DATA_SIZE = 0x200;
     private static final int VDP_REG_OFFSET = 0xFA;
     private static final int CRAM_DATA_OFFSET = 0x112;
     private static final int VRAM_DATA_OFFSET = 0x12478;
@@ -63,7 +63,7 @@ public class GstStateHandler implements BaseStateHandler {
     private static final int M68K_RAM_DATA_OFFSET = 0x2478;
     private static final int M68K_REGD_OFFSET = 0x80;
     private static final int M68K_REGA_OFFSET = 0xA0;
-    public static int FILE_SIZE = 0x22478;
+    public static final int FILE_SIZE = 0x22478;
 
     protected static final String extension = ".gs";
 
@@ -110,8 +110,6 @@ public class GstStateHandler implements BaseStateHandler {
         IMemoryProvider mem = StateUtil.getInstanceOrThrow(deviceList, IMemoryProvider.class);
         MC68000Wrapper cpu = StateUtil.getInstanceOrThrow(deviceList, MC68000Wrapper.class);
         SoundProvider sound = StateUtil.getInstanceOrThrow(deviceList, SoundProvider.class);
-        try {
-//            Configurator.setRootLevel(Level.ERROR);
             if (getType() == Type.LOAD) {
                 loadFmState(sound.getFm());
                 loadVdpState(vdp);
@@ -123,9 +121,6 @@ public class GstStateHandler implements BaseStateHandler {
                 save68k(cpu, mem);
                 saveVdp(vdp);
             }
-        } finally {
-//            Configurator.setRootLevel(prev);
-        }
         if (getType() == Type.LOAD) {
             LOG.info("Savestate loaded from: {}", getFileName());
         }

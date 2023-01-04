@@ -81,7 +81,7 @@ public class PrefStore {
     }
 
     public static int getSwingUiThemeIndex() {
-        return Integer.valueOf(uiProperties.getProperty(UI_SWING_THEME));
+        return Integer.parseInt(uiProperties.getProperty(UI_SWING_THEME));
     }
 
     public static void setSwingUiThemeIndex(int value) {

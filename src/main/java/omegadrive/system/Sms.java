@@ -51,9 +51,9 @@ public class Sms extends BaseSystem<Z80BusProvider> {
      * Z80 and PSG clock is 53203424 / 15 or VDP clock / 3.
      * NTSC Master clock is 53693175 Hz.
      */
-    protected static int VDP_DIVIDER = 2;  //10.738635 Mhz
-    protected static int Z80_DIVIDER = 3; //3.579545 Mhz
-    protected static int FM_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
+    protected static final int VDP_DIVIDER = 2;  //10.738635 Mhz
+    protected static final int Z80_DIVIDER = 3; //3.579545 Mhz
+    protected static final int FM_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
 
     protected Z80Provider z80;
     int nextZ80Cycle = Z80_DIVIDER;

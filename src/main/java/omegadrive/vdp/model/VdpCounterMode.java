@@ -65,8 +65,8 @@ public enum VdpCounterMode {
     public final int vBlankSet;
     public final int vCounterIncrementOn;
     public final int slotsPerLine;
-    VideoMode videoMode;
-    VdpSlotType[] slotTypes;
+    final VideoMode videoMode;
+    final VdpSlotType[] slotTypes;
 
     VdpCounterMode(VideoMode videoMode) {
         boolean isH32 = videoMode.isH32();

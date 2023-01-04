@@ -84,7 +84,7 @@ public class ExternalPad extends BasePadAdapter {
         super.setButtonAction(number, button, action);
         Map<JoypadButton, Integer> btnMap = KeyboardInputHelper.keyboardBindings.row(number);
         KeyListener keyListener = number == PlayerNumber.P1 ? p1Listener : p2Listener;
-        if (btnMap != null && btnMap.containsKey(button)) {
+        if (btnMap.containsKey(button)) {
             event.setKeyCode(btnMap.get(button));
             if (action == JoypadAction.PRESSED) {
                 keyListener.keyPressed(event);

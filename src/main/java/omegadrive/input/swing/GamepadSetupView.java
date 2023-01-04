@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.awt.event.KeyEvent.KEY_PRESSED;
-import static omegadrive.input.InputProvider.ON;
 import static omegadrive.input.jinput.JinputGamepadInputProvider.*;
 import static omegadrive.input.swing.JInputUtil.NO_CONTROLLER;
 import static omegadrive.input.swing.JInputUtil.*;
@@ -45,11 +44,11 @@ public class GamepadSetupView implements InputEventCallback {
     enum ButtonAction {EXIT, SAVE_EXIT, SAVE}
 
     private JFrame frame;
-    public InputProvider inputProvider;
-    private List<Controller> controllers;
+    public final InputProvider inputProvider;
+    private final List<Controller> controllers;
     private JComboBox<Controller> controllerSelector;
     private JInputUtil.ActiveControllerCtx ctrCtx;
-    private GamepadSetupGui swingGui;
+    private final GamepadSetupGui swingGui;
 
     private GamepadSetupView(InputProvider inputProvider) {
         controllers = new ArrayList<>(detectControllers());

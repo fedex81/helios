@@ -45,7 +45,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
             String.valueOf(DebugMode.NONE.ordinal())));
     private static final boolean busyLoopDetection = Boolean.parseBoolean(System.getProperty("helios.68k.busy.loop", "false"));
 
-    private CpuFastDebug fastDebug;
+    private final CpuFastDebug fastDebug;
     private int opcode;
 
     private static final Map<Integer, Integer> areaMaskMap = ImmutableMap.of(

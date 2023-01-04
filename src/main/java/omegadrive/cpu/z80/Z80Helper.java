@@ -22,18 +22,17 @@ public class Z80Helper {
     private final static Logger LOG = LogHelper.getLogger(Z80Helper.class.getSimpleName());
 
     private static final Z80.IntMode[] values = Z80.IntMode.values();
-    public static boolean[][] isBusyOpcode = generateBLOpcodes();
+    public static final boolean[][] isBusyOpcode = generateBLOpcodes();
 
     public static Z80.IntMode parseIntMode(int ordinal) {
         return ordinal < values.length ? values[ordinal] : null;
     }
 
     public static String toStringExt(Z80StateExt state, Z80Dasm disasm, IMemIoOps memIoOps) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(toString(state)).append("\n\n");
-        sb.append(dumpInfo(disasm, memIoOps, state.getRegPC())).append("\n");
-        sb.append(state.memAccess);
-        return sb.toString();
+        String sb = toString(state) + "\n\n" +
+                dumpInfo(disasm, memIoOps, state.getRegPC()) + "\n" +
+                state.memAccess;
+        return sb;
     }
 
     public static String toString(Z80State state) {

@@ -64,7 +64,7 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements
     public ColecoBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameColeco);
         bios = Util.toUnsignedIntArray(FileUtil.loadBiosFile(p));
-        LOG.info("Loading Coleco bios from: {}", p.toAbsolutePath().toString());
+        LOG.info("Loading Coleco bios from: {}", p.toAbsolutePath());
     }
 
     @Override

@@ -215,7 +215,7 @@ public class Ssp16Impl implements Ssp16 {
     static final int SSP_FLAG_V = (1 << 0xe);
     static final int SSP_FLAG_N = (1 << 0xf);
 
-    Set<Integer> pcSet = new HashSet<>();
+    final Set<Integer> pcSet = new HashSet<>();
     private int g_cycles;
     private Cart cart = null;
     /* context */
@@ -251,7 +251,7 @@ public class Ssp16Impl implements Ssp16 {
         return s;
     }
 
-    static final int overwrite_write(int currentVal, int newVal) {
+    static int overwrite_write(int currentVal, int newVal) {
         if ((newVal & 0xf000) > 0) {
             currentVal &= ~0xf000;
             currentVal |= newVal & 0xf000;
@@ -345,7 +345,7 @@ public class Ssp16Impl implements Ssp16 {
     }
 
     /* update ZN according to 32bit ACC. */
-    private final void UPD_ACC_ZN() {
+    private void UPD_ACC_ZN() {
         rST.setH(rST.h & ~(SSP_FLAG_Z | SSP_FLAG_N));
         if (rA32.v == 0) rST.setH(rST.h | SSP_FLAG_Z);
         else rST.setH(rST.h | ((rA32.v >> 16) & SSP_FLAG_N));
@@ -1174,7 +1174,7 @@ public class Ssp16Impl implements Ssp16 {
             StringBuilder sb = new StringBuilder();
             int opcode = svpCtx.iram_rom[PC] & 0xFFFF;
             sb.setLength(0);
-            sb.append("PC: " + th(PC) + ", opcode: " + th(opcode));
+            sb.append("PC: ").append(th(PC)).append(", opcode: ").append(th(opcode));
 //            System.out.println(sb);
             Ssp16Disasm.dasm_ssp1601(sb.append(" - "), PC, svpCtx.iram_rom);
             LOG.info(sb.toString());
@@ -1613,24 +1613,23 @@ public class Ssp16Impl implements Ssp16 {
         if (!LOG_SVP && !force) {
             return;
         }
-        StringBuilder sb = new StringBuilder("\n\n");
-        sb.append(String.format("GR0:   %04x    X: %04x    Y: %04x  A: %08x\n", sspCtx.gr[SSP_GR0.ordinal()].h, rX.h, rY.h,
-                sspCtx.gr[SSP_A.ordinal()].v));
-        sb.append(String.format("PC:    %04x  (%04x)                P: %08x\n", GET_PC(), GET_PC() << 1,
-                sspCtx.gr[SSP_P.ordinal()].v));
-        sb.append(String.format("PM0:   %04x  PM1: %04x  PM2: %04x\n", rPM0.h, rPM1.h, rPM2.h));
-        sb.append(String.format("XST:   %04x  PM4: %04x  PMC: %08x\n", rXST.h, rPM4.h, sspCtx.gr[SSP_PMC.ordinal()].v));
-        sb.append(String.format(" ST:   %04x  %c%c%c%c,  GP0_0 %x,  GP0_1 %x\n", rST.h,
-                (rST.h & SSP_FLAG_N) > 0 ? 'N' : 'n', (rST.h & SSP_FLAG_V) > 0 ? 'V' : 'v',
-                (rST.h & SSP_FLAG_Z) > 0 ? 'Z' : 'z', (rST.h & SSP_FLAG_L) > 0 ? 'L' : 'l',
-                (rST.h >> 5) & 1, (rST.h >> 6) & 1));
-        sb.append(String.format("STACK: %d %04x %04x %04x %04x %04x %04x\n", rSTACK.h, sspCtx.stack[0], sspCtx.stack[1],
-                sspCtx.stack[2], sspCtx.stack[3], sspCtx.stack[4], sspCtx.stack[5]));
-        sb.append(String.format("r0-r2: %02x %02x %02x  r4-r6: %02x %02x %02x\n",
-                sspCtx.ptr.getPointerVal(0), sspCtx.ptr.getPointerVal(1), sspCtx.ptr.getPointerVal(2),
-                sspCtx.ptr.getPointerVal(4), sspCtx.ptr.getPointerVal(5), sspCtx.ptr.getPointerVal(6)));
-        sb.append(String.format("cycles: %d, emu_status: %x\n\n", g_cycles, sspCtx.emu_status));
-        LOG.info(sb.toString());
+        String sb = "\n\n" + String.format("GR0:   %04x    X: %04x    Y: %04x  A: %08x\n", sspCtx.gr[SSP_GR0.ordinal()].h, rX.h, rY.h,
+                sspCtx.gr[SSP_A.ordinal()].v) +
+                String.format("PC:    %04x  (%04x)                P: %08x\n", GET_PC(), GET_PC() << 1,
+                        sspCtx.gr[SSP_P.ordinal()].v) +
+                String.format("PM0:   %04x  PM1: %04x  PM2: %04x\n", rPM0.h, rPM1.h, rPM2.h) +
+                String.format("XST:   %04x  PM4: %04x  PMC: %08x\n", rXST.h, rPM4.h, sspCtx.gr[SSP_PMC.ordinal()].v) +
+                String.format(" ST:   %04x  %c%c%c%c,  GP0_0 %x,  GP0_1 %x\n", rST.h,
+                        (rST.h & SSP_FLAG_N) > 0 ? 'N' : 'n', (rST.h & SSP_FLAG_V) > 0 ? 'V' : 'v',
+                        (rST.h & SSP_FLAG_Z) > 0 ? 'Z' : 'z', (rST.h & SSP_FLAG_L) > 0 ? 'L' : 'l',
+                        (rST.h >> 5) & 1, (rST.h >> 6) & 1) +
+                String.format("STACK: %d %04x %04x %04x %04x %04x %04x\n", rSTACK.h, sspCtx.stack[0], sspCtx.stack[1],
+                        sspCtx.stack[2], sspCtx.stack[3], sspCtx.stack[4], sspCtx.stack[5]) +
+                String.format("r0-r2: %02x %02x %02x  r4-r6: %02x %02x %02x\n",
+                        sspCtx.ptr.getPointerVal(0), sspCtx.ptr.getPointerVal(1), sspCtx.ptr.getPointerVal(2),
+                        sspCtx.ptr.getPointerVal(4), sspCtx.ptr.getPointerVal(5), sspCtx.ptr.getPointerVal(6)) +
+                String.format("cycles: %d, emu_status: %x\n\n", g_cycles, sspCtx.emu_status);
+        LOG.info(sb);
 //        System.out.println(sb.toString());
     }
 

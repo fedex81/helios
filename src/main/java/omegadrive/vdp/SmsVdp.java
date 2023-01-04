@@ -234,7 +234,6 @@ public class SmsVdp implements BaseVdpProvider {
     private final boolean isSms;
     private VideoMode ggVideoMode = VideoMode.NTSCU_H20_V18;
     private RegionDetector.Region region;
-    private SystemLoader.SystemType systemType;
     private VideoMode videoMode;
     private final List<VdpEventListener> list;
 
@@ -316,7 +315,6 @@ public class SmsVdp implements BaseVdpProvider {
      *  Set SMS/GG Mode
      */
     private void setSystemType(SystemLoader.SystemType type){
-        systemType = type;
 
         h_start = isSms ? 0 : 5;
         h_end   = isSms ? 32 : 27;
@@ -658,7 +656,7 @@ public class SmsVdp implements BaseVdpProvider {
         }
     }
 
-    private final void drawBg(int lineno) {
+    private void drawBg(int lineno) {
         // Horizontal Scroll
         int hscroll = vdpreg[8];
 
@@ -744,14 +742,14 @@ public class SmsVdp implements BaseVdpProvider {
     }
 
     /**
-     *  Render Line of Sprite Layer
-     *
+     * Render Line of Sprite Layer
+     * <p>
      * - Notes: Sprites do not wrap on the x-axis.
      *
-     *  @param  lineno  Line Number to Render
+     * @param lineno Line Number to Render
      */
 
-    private final void drawSprite(int lineno) {
+    private void drawSprite(int lineno) {
         // Reference to the sprites that should appear on this line
         int[] sprites = lineSprites[lineno];
 
@@ -854,16 +852,16 @@ public class SmsVdp implements BaseVdpProvider {
 
 
     /**
-     *  Draw a Line of the current Background Colour
+     * Draw a Line of the current Background Colour
      *
-     *  @param  lineno  Line Number to Render
+     * @param lineno Line Number to Render
      */
 
-    private final void drawBGColour(int lineno) {
-        int colour = CRAM[16 + (vdpreg[7]&0x0F)];
+    private void drawBGColour(int lineno) {
+        int colour = CRAM[16 + (vdpreg[7] & 0x0F)];
         int row_precal = lineno << 8;
 
-        for (int x = SMS_WIDTH; x-- != 0;)
+        for (int x = SMS_WIDTH; x-- != 0; )
             display[row_precal++] = colour;
     }
 
@@ -880,7 +878,7 @@ public class SmsVdp implements BaseVdpProvider {
     //       0000BBBB   (2nd byte)
     // --------------------------------------------------------------------------------------------
 
-    private final void generateConvertedPals() {
+    private void generateConvertedPals() {
         if (isSms && SMS_JAVA == null) {
             SMS_JAVA = new int[0x40];
 
@@ -929,13 +927,13 @@ public class SmsVdp implements BaseVdpProvider {
     // n = pattern index (0 - 512)
     // --------------------------------------------------------------------------------------------
 
-    private final void createCachedImages() {
+    private void createCachedImages() {
         tiles = new int[TOTAL_TILES][TILE_SIZE * TILE_SIZE];
         isTileDirty = new boolean[TOTAL_TILES];
     }
 
     // Note we should try not to update the bgt/sat locations?
-    private final void decodeTiles() {
+    private void decodeTiles() {
         //System.out.println("["+line+"]"+" min dirty:" +minDirty+" max: "+maxDirty);
 
         for (int i = minDirty; i <= maxDirty; i++) {
@@ -1015,14 +1013,14 @@ public class SmsVdp implements BaseVdpProvider {
      * Creates a list of sprites per scanline
      */
 
-    private final void decodeSat() {
+    private void decodeSat() {
         isSatDirty = false;
 
         // ----------------------------------------------------------------------------------------
         // Clear Existing Table
         // ----------------------------------------------------------------------------------------
 
-        for (int i = lineSprites.length; i-- != 0;)
+        for (int i = lineSprites.length; i-- != 0; )
             lineSprites[i][SPRITE_COUNT] = 0;
 
         // Height of Sprites (8x8 or 8x16)
@@ -1212,7 +1210,7 @@ public class SmsVdp implements BaseVdpProvider {
         return screenData;
     }
 
-    int[] vdpState = new int[3];
+    final int[] vdpState = new int[3];
 
     //NOTE: vdp memory is not saved
     @Override

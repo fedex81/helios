@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 public class VdpDebugView implements UpdatableViewer {
 
     private static final Logger LOG = LogHelper.getLogger(VdpDebugView.class.getSimpleName());
-    private ExecutorService service = Executors.newSingleThreadExecutor(
+    private final ExecutorService service = Executors.newSingleThreadExecutor(
             new PriorityThreadFactory(Thread.MIN_PRIORITY, this));
 
     private static final boolean DEBUG_VIEWER_ENABLED;
@@ -35,8 +35,6 @@ public class VdpDebugView implements UpdatableViewer {
         }
     }
 
-    private final VdpRenderHandler renderHandler;
-    private final VdpMemoryInterface memoryInterface;
     private final CramViewer cramViewer;
     private final PlaneViewer planeViewer;
     private final TileViewer tileViewer;
@@ -47,8 +45,6 @@ public class VdpDebugView implements UpdatableViewer {
     private boolean s32xMode = false;
 
     private VdpDebugView(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
-        this.memoryInterface = memoryInterface;
-        this.renderHandler = renderHandler;
         this.cramViewer = CramViewer.createInstance(memoryInterface);
         this.planeViewer = PlaneViewer.createInstance(vdp, memoryInterface, renderHandler);
         this.tileViewer = TileViewer.createInstance(vdp, memoryInterface, renderHandler);

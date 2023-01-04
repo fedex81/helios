@@ -206,18 +206,18 @@ public class GameGenieHelper {
         genie <<= 4;
         genie |= temp;
 
-        String ggcode = "";
+        StringBuilder ggcode = new StringBuilder();
         char[] alphabet = GENESIS_ALPHABET;
 
         for (int i = 0; i < 8; i++) {
             if (i == 4) {
-                ggcode = "-" + ggcode;
+                ggcode.insert(0, "-");
             }
 
-            ggcode = alphabet[(int) ((genie >> (i * 5)) & 0x1F)] + ggcode;
+            ggcode.insert(0, alphabet[(int) ((genie >> (i * 5)) & 0x1F)]);
         }
 
-        return ggcode;
+        return ggcode.toString();
     }
 
     /**

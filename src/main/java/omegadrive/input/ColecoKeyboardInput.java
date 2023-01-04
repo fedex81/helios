@@ -79,7 +79,7 @@ public class ColecoKeyboardInput extends KeyboardInput {
                 button = JoypadProvider.JoypadButton.K_HASH;
                 break;
         }
-        if (number != null && button != null) {
+        if (button != null) {
             joypad.setButtonAction(number, button, action);
         }
     }

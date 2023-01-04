@@ -15,8 +15,10 @@ public class RomHolder {
 
     public static final RomHolder EMPTY_ROM = new RomHolder(new int[1]);
 
-    public int baseSize, size, romMask;
-    public int[] data;
+    public final int baseSize;
+    public final int size;
+    public final int romMask;
+    public final int[] data;
 
     public RomHolder(int[] rom) {
         this.data = Util.getPaddedRom(rom);

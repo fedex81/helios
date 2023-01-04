@@ -122,7 +122,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         } while (!futureDoneFlag);
     }
 
-    private final int runSvp(int untilClock) {
+    private int runSvp(int untilClock) {
         while (nextSvpCycle <= untilClock) {
             ssp16.ssp1601_run(SVP_RUN_CYCLES);
             nextSvpCycle += SVP_CYCLES;
@@ -130,7 +130,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         return untilClock;
     }
 
-    private final int runVdp(int untilClock) {
+    private int runVdp(int untilClock) {
         while (nextVdpCycle <= untilClock) {
             int vdpMclk = vdp.runSlot();
             nextVdpCycle += vdpVals[vdpMclk - 4];
@@ -141,7 +141,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         return (int) Math.max(untilClock, nextVdpCycle);
     }
 
-    private final int run68k(int untilClock) {
+    private int run68k(int untilClock) {
         while (next68kCycle <= untilClock) {
             boolean isRunning = bus.is68kRunning();
             boolean canRun = !cpu.isStopped() && isRunning;
@@ -159,7 +159,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         return untilClock;
     }
 
-    private final int runZ80(int untilClock) {
+    private int runZ80(int untilClock) {
         while (nextZ80Cycle <= untilClock) {
             int cycleDelay = 0;
             boolean running = bus.isZ80Running();
@@ -173,12 +173,12 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         return untilClock;
     }
 
-    private final int runFM(int untilClock) {
+    private int runFM(int untilClock) {
         while (nextFMCycle <= untilClock) {
             bus.getFm().tick();
             nextFMCycle += FM_DIVIDER;
         }
-        return Math.max(untilClock, nextFMCycle);
+        return nextFMCycle;
     }
 
     protected GenesisBusProvider createBus() {
@@ -213,7 +213,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     }
 
     @Override
-    protected RomContext createRomContext(IMemoryProvider memoryProvider, Path rom) {
+    protected RomContext createRomContext(Path rom) {
         RomContext rc = new RomContext();
         rc.romPath = rom;
         MdCartInfoProvider mcip = MdCartInfoProvider.createInstance(memory, rc.romPath);

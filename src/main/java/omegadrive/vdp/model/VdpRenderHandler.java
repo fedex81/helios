@@ -25,7 +25,6 @@ import omegadrive.vdp.model.VdpMisc.RenderType;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static omegadrive.vdp.model.BaseVdpProvider.*;
 import static omegadrive.vdp.model.GenesisVdpProvider.*;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
@@ -240,8 +239,8 @@ public interface VdpRenderHandler {
     }
 
     class PixelData {
-        public FastBitSet priorityMap = new FastBitSet(8); //see RenderType
-        public int[] cramIndexMap = new int[RenderType.values().length];
+        public final FastBitSet priorityMap = new FastBitSet(8); //see RenderType
+        public final int[] cramIndexMap = new int[RenderType.values().length];
         public RenderPriority pixelPriority = RenderPriority.BACK_PLANE; //shadow/highlight off
 
         public void reset(boolean sh) {

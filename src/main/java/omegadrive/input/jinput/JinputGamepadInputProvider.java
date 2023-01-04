@@ -62,11 +62,11 @@ public class JinputGamepadInputProvider implements InputProvider {
     public static final int AXIS_0 = 0;
     public static final int AXIS_m1 = -1;
 
-    private List<String> controllerNames;
+    private final List<String> controllerNames;
     private List<Controller> controllers;
     private UpdatedGamepadCtx gamepadCtx;
 
-    private Map<PlayerNumber, String> playerControllerMap = Maps.newHashMap(
+    private final Map<PlayerNumber, String> playerControllerMap = Maps.newHashMap(
             ImmutableMap.of(PlayerNumber.P1, KEYBOARD_CONTROLLER,
                     PlayerNumber.P2, KEYBOARD_CONTROLLER
             ));
@@ -96,7 +96,7 @@ public class JinputGamepadInputProvider implements InputProvider {
         if (INSTANCE == NO_OP) {
             JinputGamepadInputProvider g = new JinputGamepadInputProvider();
             g.joypadProvider = joypadProvider;
-            g.controllerNames.addAll(controllers.stream().map(Controller::getName).collect(Collectors.toList()));
+            g.controllerNames.addAll(controllers.stream().map(Controller::getName).toList());
             g.controllers = controllers;
             g.gamepadCtx = new UpdatedGamepadCtx();
             g.initPollingThreadMaybe();
@@ -329,18 +329,18 @@ public class JinputGamepadInputProvider implements InputProvider {
 
         for (int i = 0; i < ca.length; i++) {
             /* Get the name of the controller */
-            sb.append("\n" + ca[i].getName() + "\n");
-            sb.append("Position: [" + i + "]\n");
-            sb.append("Type: " + ca[i].getType().toString() + "\n");
+            sb.append("\n").append(ca[i].getName()).append("\n");
+            sb.append("Position: [").append(i).append("]\n");
+            sb.append("Type: ").append(ca[i].getType().toString()).append("\n");
 
             /* Get this controllers components (buttons and axis) */
             Component[] components = ca[i].getComponents();
-            sb.append("Component Count: " + components.length + "\n");
+            sb.append("Component Count: ").append(components.length).append("\n");
             for (int j = 0; j < components.length; j++) {
 
                 /* Get the components name */
-                sb.append("Component " + j + ": " + components[j].getName() + "\n");
-                sb.append("    Identifier: " + components[j].getIdentifier().getName() + "\n");
+                sb.append("Component ").append(j).append(": ").append(components[j].getName()).append("\n");
+                sb.append("    Identifier: ").append(components[j].getIdentifier().getName()).append("\n");
                 sb.append("    ComponentType: ");
                 if (components[j].isRelative()) {
                     sb.append("Relative");

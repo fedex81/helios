@@ -52,7 +52,7 @@ public class MapperSelector {
         return cache.get(type).getOrDefault(code, MISSING_DATA);
     }
 
-    static Map<SystemLoader.SystemType, Map<String, Entry>> cache = new HashMap<>();
+    static final Map<SystemLoader.SystemType, Map<String, Entry>> cache = new HashMap<>();
 
     public static class Entry {
         public String title;

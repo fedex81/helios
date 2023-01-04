@@ -32,7 +32,6 @@ public abstract class VariableSampleRateSource extends GenericAudioProvider {
     protected double microsPerInputSample;
     protected double sourceSampleRate;
     protected volatile double fmCalcsPerMicros;
-    private final double outputSampleRate;
     private final AudioRateControl audioRateControl;
     private int sampleRatePerFrame = 0;
 
@@ -44,7 +43,7 @@ public abstract class VariableSampleRateSource extends GenericAudioProvider {
                                        String sourceName, int audioScaleBits) {
         super(audioFormat, audioScaleBits, (int) audioFormat.getSampleRate()); //500ms maxQueueLen
         assert audioFormat.getChannels() == 2;
-        this.outputSampleRate = audioFormat.getSampleRate();
+        double outputSampleRate = audioFormat.getSampleRate();
         this.sourceSampleRate = sourceSampleRate;
         this.microsPerOutputSample = (1_000_000.0 / outputSampleRate);
         this.microsPerInputSample = (1_000_000.0 / sourceSampleRate);

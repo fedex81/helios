@@ -33,7 +33,7 @@ public interface BaseVdpAdapterEventSupport {
         List<BaseVdpProvider.VdpEventListener> l1 = getVdpEventListenerList();
         boolean res = l1.add(l);
         //NOTE: make sure the baseSystem's is the last listener to be called
-        Collections.sort(l1, Comparator.comparingInt(VdpEventListener::order));
+        l1.sort(Comparator.comparingInt(VdpEventListener::order));
         return res;
     }
 

@@ -60,8 +60,8 @@ public class Util {
     public static final Random random;
 
     static final int CACHE_LIMIT = Short.MIN_VALUE;
-    static Integer[] negativeCache = new Integer[Short.MAX_VALUE + 2];
-    public static ExecutorService executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory("util"));
+    static final Integer[] negativeCache = new Integer[Short.MAX_VALUE + 2];
+    public static final ExecutorService executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory("util"));
 
     static {
         for (int i = 0, j = 0; i < negativeCache.length; i++) {
@@ -296,11 +296,11 @@ public class Util {
     }
 
     public static String toStringValue(int... data) {
-        String value = "";
+        StringBuilder value = new StringBuilder();
         for (int datum : data) {
-            value += (char) (datum & 0xFF);
+            value.append((char) (datum & 0xFF));
         }
-        return value;
+        return value.toString();
     }
 
     public static int[] toUnsignedIntArray(byte[] bytes) {

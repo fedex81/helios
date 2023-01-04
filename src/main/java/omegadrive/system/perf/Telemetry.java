@@ -38,7 +38,7 @@ public class Telemetry {
     public static final boolean enable = false;
 
     private static final Function<Map<?, Double>, String> toStringFn = map -> {
-        String res = Arrays.toString(map.values().stream().toArray());
+        String res = Arrays.toString(map.values().toArray());
         return res.substring(1, res.length() - 2);
     };
 
@@ -106,7 +106,7 @@ public class Telemetry {
             Optional<String> arc = AudioRateControl.getLatestStats();
             double ft = getAvgFrameTimeMs();
             o = Optional.of(fpsFormatter.format(ft) + "ms (" + getAvgFpsRounded(ft) + "fps)"
-                    + (arc.isPresent() ? ", " + arc.get() : ""));
+                    + (arc.map(s -> ", " + s).orElse("")));
         }
         return o;
     }
@@ -135,7 +135,7 @@ public class Telemetry {
         if (frameCounter == 2) {
             telemetryFile = Paths.get(".", "tel_" + System.currentTimeMillis() + ".log");
             String header = String.format("frame,%s,frameTimeMs,frameEndTime",
-                    data.rowKeySet().stream().collect(Collectors.joining(",")));
+                    String.join(",", data.rowKeySet()));
             LOG.info("Logging telemetry file to: {}", telemetryFile.toAbsolutePath());
             Util.executorService.submit(() -> writeToFile(telemetryFile, header));
         }

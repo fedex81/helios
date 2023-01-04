@@ -70,8 +70,6 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
 
     private static final int[] emptySlot = new int[SLOT_SIZE];
 
-    private final int[] bios;
-
     private final int[][] secondarySlot = new int[SLOTS][];
     private final boolean[] secondarySlotWritable = new boolean[SLOTS];
 
@@ -79,7 +77,6 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
     private InputProvider.PlayerNumber joypadSelect = P1;
 
     private RomMapper mapper;
-    private CartridgeInfoProvider cartridgeInfoProvider;
 
     public MsxBusContext getCtx() {
         return ctx;
@@ -87,8 +84,8 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
 
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
-        bios = Util.toUnsignedIntArray(FileUtil.loadBiosFile(p));
-        LOG.info("Loading Msx bios from: {}", p.toAbsolutePath().toString());
+        int[] bios = Util.toUnsignedIntArray(FileUtil.loadBiosFile(p));
+        LOG.info("Loading Msx bios from: {}", p.toAbsolutePath());
         Arrays.fill(emptySlot, 0xFF);
         ctx = new MsxBusContext();
 
@@ -280,7 +277,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
 
     private void setupCartHw() {
         int len = memoryProvider.getRomSize();
-        this.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
+        CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
         MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(), cartridgeInfoProvider.getSha1());
         if (e != MapperSelector.MISSING_DATA) {
             LOG.info("Cart Hw match:\n{}", e);
@@ -322,8 +319,8 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         public int psgAddressLatch = 0;
         public int slotSelect = 0;
         public int ppiC_Keyboard = 0;
-        public int[] pageStartAddress = {0, 0, 0, 0};
-        public int[] pageSlotMapper = {0, 0, 0, 0};
+        public final int[] pageStartAddress = {0, 0, 0, 0};
+        public final int[] pageSlotMapper = {0, 0, 0, 0};
     }
 
 

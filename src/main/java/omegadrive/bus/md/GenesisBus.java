@@ -61,7 +61,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
 
-    private RomContext romContext;
     private MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private RomMapper exSsfMapper = RomMapper.NO_OP_MAPPER;
@@ -70,7 +69,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     protected MsuMdHandler msuMdHandler = MsuMdHandler.NO_OP_HANDLER;
     private BusArbiter busArbiter = BusArbiter.NO_OP;
 
-    GenesisBus.VdpRunnable vdpRunnable = new GenesisBus.VdpRunnable() {
+    final GenesisBus.VdpRunnable vdpRunnable = new GenesisBus.VdpRunnable() {
         @Override
         public void run() {
 //            LOG.info("{}, {} {}", th(vdpAddress), vpdData, vdpSize);
@@ -95,7 +94,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     void initializeRomData() {
-        romContext = systemProvider.getRomContext();
+        RomContext romContext = systemProvider.getRomContext();
         cartridgeInfoProvider = (MdCartInfoProvider) romContext.cartridgeInfoProvider;
         ROM_END_ADDRESS = Math.min(cartridgeInfoProvider.getRomSize(), Z80_ADDRESS_SPACE_START);
         assert ROM_END_ADDRESS > 0;
@@ -193,7 +192,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     @Override
     public long readData(long addressL, Size size) {
         int address = (int) (addressL & MD_PC_MASK);
-        long data = size.getMask();
         if (address < ROM_END_ADDRESS) {  //ROM
             return Util.readDataMask(rom, size, address, romMask);
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
@@ -630,18 +628,17 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return;
         }
         address &= GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK;
-        int data = (int) dataL;
         if (size == Size.BYTE) {
-            z80Provider.writeMemory(address, data);
+            z80Provider.writeMemory(address, (int) dataL);
         } else if (size == Size.WORD) {
-            z80MemoryWriteWord(address, data);
+            z80MemoryWriteWord(address, (int) dataL);
         } else {
             //longword access to Z80 like "Stuck Somewhere In Time" does
             //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
 //            LOG.debug("Unexpected long write, addr: {}, data: {}", address, dataL);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-            z80MemoryWriteWord(address, data >> 16);
-            z80MemoryWriteWord(address + 2, data & 0xFFFF);
+            z80MemoryWriteWord(address, (int) dataL >> 16);
+            z80MemoryWriteWord(address + 2, (int) dataL & 0xFFFF);
         }
     }
 

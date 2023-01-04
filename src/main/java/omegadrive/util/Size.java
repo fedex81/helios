@@ -25,9 +25,9 @@ public enum Size {
 
     public static final Size[] vals = Size.values();
 
-    long msb;
-    long max;
-    int byteSize;
+    final long msb;
+    final long max;
+    final int byteSize;
 
     Size(long msb, long maxSize) {
         this.msb = msb;

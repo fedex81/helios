@@ -15,7 +15,7 @@ import static omegadrive.cpu.z80.disasm.Z80DasmIntf.e_mnemonics.zDB;
 public class Z80Dasm extends Z80DasmIntf {
 
 
-	private int[] opcodes = new int[5];
+	private final int[] opcodes = new int[5];
 
 	private static String toOpcodesStr(int[] opcodes) {
 		StringBuilder sb = new StringBuilder();
@@ -152,7 +152,7 @@ public class Z80Dasm extends Z80DasmIntf {
 		} else {
 			stream.append(String.format("%s", s_mnemonic[d.mnemonic.ordinal()]));
 		}
-		return String.format("%08x   %12s   %s", pc, toOpcodesStr(opcodes), stream.toString());
+        return String.format("%08x   %12s   %s", pc, toOpcodesStr(opcodes), stream);
 	}
 }
 

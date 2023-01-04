@@ -127,7 +127,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         long binLen = 0;
         try {
             if ((binLen = binFile.length()) == 0) {
-                throw new Exception("Zero length file: " + binFile.toString());
+                throw new Exception("Zero length file: " + binFile);
             }
         } catch (Exception e) {
             LOG.error("Disabling MSU-MD handling, unable to find BIN file");
@@ -348,9 +348,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
     }
 
     private Runnable resumeTrack() {
-        return () -> {
-            startClipInternal(clip, clipContext);
-        };
+        return () -> startClipInternal(clip, clipContext);
     }
 
     private Runnable playTrack(ClipContext context) {

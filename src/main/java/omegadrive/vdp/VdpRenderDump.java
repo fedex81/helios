@@ -36,7 +36,7 @@ public class VdpRenderDump {
     private static final Logger LOG = LogHelper.getLogger(VdpRenderDump.class.getSimpleName());
 
     public static GraphicsDevice gd;
-    static boolean isHeadless;
+    static final boolean isHeadless;
 
     static {
         isHeadless = GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance();
@@ -69,7 +69,7 @@ public class VdpRenderDump {
 
     private void saveImageToFile(BufferedImage bi, String fileName) {
         Path file = Paths.get(folder.toAbsolutePath().toString(), fileName);
-        LOG.info("Saving render to: {}", file.toAbsolutePath().toString());
+        LOG.info("Saving render to: {}", file.toAbsolutePath());
         ImageUtil.saveImageToFile(bi, file.toFile());
     }
 

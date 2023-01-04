@@ -789,26 +789,26 @@ public final class Emu2413 {
     internal_refresh();
   }
 
-  public static final OPLL OPLL_new() {
+  public static OPLL OPLL_new() {
 
-    OPLL opll = new OPLL();
+      OPLL opll = new OPLL();
 
-    for (int i = 0; i < 19 * 2; i++) {
-      opll.patch[i] = new OPLL_PATCH();
-    }
+      for (int i = 0; i < 19 * 2; i++) {
+          opll.patch[i] = new OPLL_PATCH();
+      }
 
-    OPLL_reset(opll);
-    OPLL_reset_patch(opll);
+      OPLL_reset(opll);
+      OPLL_reset_patch(opll);
 
     return opll;
   }
 
-  // Reset patch datas by system default.
-  public static final void OPLL_reset_patch(final OPLL opll) {
-    for (int i = 0; i < 19 * 2; i++) {
-      OPLL_copyPatch(opll, i, default_patch[i]);
+    // Reset patch datas by system default.
+    public static void OPLL_reset_patch(final OPLL opll) {
+        for (int i = 0; i < 19 * 2; i++) {
+            OPLL_copyPatch(opll, i, default_patch[i]);
+        }
     }
-  }
 
   private static OPLL_SLOT CAR(final OPLL o, final int x) {
     return o.slot[(x << 1) | 1];
@@ -1069,18 +1069,18 @@ public final class Emu2413 {
     OPLL_init();
   }
 
-  // Reset whole of OPLL except patch datas.
-  public static final void OPLL_reset(final OPLL opll) {
+    // Reset whole of OPLL except patch datas.
+    public static void OPLL_reset(final OPLL opll) {
 
-    if (opll == null) {
-      return;
-    }
+        if (opll == null) {
+            return;
+        }
 
-    opll.adr = 0;
-    opll.out = 0;
+        opll.adr = 0;
+        opll.out = 0;
 
-    opll.pm_phase = 0;
-    opll.am_phase = 0;
+        opll.pm_phase = 0;
+        opll.am_phase = 0;
 
     opll.noise_seed = 0xffff;
 
@@ -1387,28 +1387,28 @@ public final class Emu2413 {
               break;
           }
         } else {
-          setPatch(opll, reg - 0x30, i);
+            setPatch(opll, reg - 0x30, i);
         }
-        setVolume(opll, reg - 0x30, v << 2);
-        UPDATE_ALL(MOD(opll, reg - 0x30));
-        UPDATE_ALL(CAR(opll, reg - 0x30));
-        break;
+          setVolume(opll, reg - 0x30, v << 2);
+          UPDATE_ALL(MOD(opll, reg - 0x30));
+          UPDATE_ALL(CAR(opll, reg - 0x30));
+          break;
       }
     }
   }
 
-  public static final void OPLL_writeIO(final OPLL opll, final int adr,
-                                        final int val) {
-    if ((adr & 1) != 0) {
-      OPLL_writeReg(opll, opll.adr, val);
-    } else {
-      opll.adr = val;
+    public static void OPLL_writeIO(final OPLL opll, final int adr,
+                                    final int val) {
+        if ((adr & 1) != 0) {
+            OPLL_writeReg(opll, opll.adr, val);
+        } else {
+            opll.adr = val;
+        }
     }
-  }
 
-  public static int OPLL_calc(final OPLL opll) {
+    public static int OPLL_calc(final OPLL opll) {
 
-    while (opll.realstep > opll.oplltime) {
+        while (opll.realstep > opll.oplltime) {
       opll.oplltime += opll.opllstep;
       update_output(opll);
     }

@@ -35,11 +35,11 @@ public enum RenderPriority { //implements Comparable<RenderPriority> {
     SPRITE_PRIO(RenderType.SPRITE, PriorityType.YES, 8),
     ;
 
-    RenderType renderType;
-    PriorityType priorityType;
-    int priorityOrder;
+    final RenderType renderType;
+    final PriorityType priorityType;
+    final int priorityOrder;
 
-    public static RenderPriority[] enums = RenderPriority.class.getEnumConstants();
+    public static final RenderPriority[] enums = RenderPriority.class.getEnumConstants();
 
     RenderPriority(RenderType renderType, PriorityType priorityType, int priorityOrder) {
         this.renderType = renderType;

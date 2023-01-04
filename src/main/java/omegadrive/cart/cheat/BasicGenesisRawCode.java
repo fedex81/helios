@@ -23,7 +23,7 @@ import static omegadrive.util.Util.th;
 
 public class BasicGenesisRawCode {
 
-    public static BasicGenesisRawCode INVALID_CODE = new BasicGenesisRawCode(-1, -1);
+    public static final BasicGenesisRawCode INVALID_CODE = new BasicGenesisRawCode(-1, -1);
 
     private int address;
     private int value;
@@ -77,13 +77,13 @@ public class BasicGenesisRawCode {
     }
 
     public String toHexString(int number, int minLength) {
-        String hex = th(number).toUpperCase();
+        StringBuilder hex = new StringBuilder(th(number).toUpperCase());
 
         while (hex.length() < minLength) {
-            hex = "0" + hex;
+            hex.insert(0, "0");
         }
 
-        return hex;
+        return hex.toString();
     }
 
 

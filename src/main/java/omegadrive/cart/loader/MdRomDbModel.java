@@ -88,7 +88,7 @@ public class MdRomDbModel {
         }
 
         public boolean hasForce3Btn() {
-            return force3Btn != null && force3Btn.booleanValue();
+            return force3Btn != null && force3Btn;
         }
 
         public static class EepromEntry {
@@ -104,13 +104,11 @@ public class MdRomDbModel {
 
             public EepromLineMap getEepromLineMap() {
                 EepromLineMap l = EepromLineMap.valueOf(lineMap);
-                assert l != null;
                 return l;
             }
 
             public EepromType getEepromType() {
                 EepromType t = EepromType.valueOf(type);
-                assert t != null;
                 return t;
             }
 

@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 public class UserConfigHolder {
 
     private static final Logger LOG = LogHelper.getLogger(UserConfigHolder.class.getSimpleName());
-    public static Table<PlayerNumber, SystemEvent, Object> userEventObjectMap = HashBasedTable.create();
+    public static final Table<PlayerNumber, SystemEvent, Object> userEventObjectMap = HashBasedTable.create();
 
     public static void addUserConfig(SystemEvent event, Object parameter) {
         switch (event) {

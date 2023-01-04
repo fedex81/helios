@@ -38,14 +38,12 @@ public class Gb extends BaseSystem<BaseBusProvider> {
     private static final Logger LOG = LogHelper.getLogger(Gb.class.getSimpleName());
 
     private Emulator emulator;
-    private HeliosDisplay display;
-    private final Properties properties;
     private final SwingController controller;
 
     protected Gb(SystemLoader.SystemType systemType, DisplayWindow emuFrame) {
         super(emuFrame);
         this.systemType = systemType;
-        properties = addKeyboardBindings(new Properties());
+        Properties properties = addKeyboardBindings(new Properties());
         controller = SwingController.createIntController(properties);
     }
 
@@ -79,7 +77,7 @@ public class Gb extends BaseSystem<BaseBusProvider> {
 
     private Emulator createEmulator(String[] args) {
         try {
-            display = new HeliosDisplay(this, emuFrame);
+            HeliosDisplay display = new HeliosDisplay(this, emuFrame);
             emulator = new Emulator(args, display, (SoundOutput) sound.getFm(), controller);
             vdp = BaseVdpAdapter.getVdpProviderWrapper(VideoMode.NTSCJ_H20_V18, display);
         } catch (Exception e) {
@@ -90,9 +88,7 @@ public class Gb extends BaseSystem<BaseBusProvider> {
 
     private Properties addKeyboardBindings(Properties properties) {
         Map<JoypadProvider.JoypadButton, Integer> map = KeyboardInputHelper.keyboardBindings.row(InputProvider.PlayerNumber.P1);
-        map.forEach((k, v) -> {
-            properties.put("btn_" + k.getMnemonic(), v);
-        });
+        map.forEach((k, v) -> properties.put("btn_" + k.getMnemonic(), v));
         return properties;
     }
 

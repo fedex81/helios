@@ -43,7 +43,7 @@ public abstract class BasePadAdapter implements JoypadProvider {
     int value1 = 0xFF;
     int value2 = 0xFF;
 
-    static Map<JoypadButton, JoypadAction> releasedMap = ImmutableMap.<JoypadButton, JoypadAction>builder().
+    static final Map<JoypadButton, JoypadAction> releasedMap = ImmutableMap.<JoypadButton, JoypadAction>builder().
             put(D, RELEASED).put(U, RELEASED).
             put(L, RELEASED).put(R, RELEASED).
             put(A, RELEASED).put(B, RELEASED).

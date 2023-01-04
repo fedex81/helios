@@ -46,7 +46,7 @@ import static omegadrive.cart.loader.MdRomDbModel.NO_ENTRY;
 public class MdLoader {
 
     private static final Logger LOG = LogHelper.getLogger(MdLoader.class.getSimpleName());
-    static String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "md_romdb.json";
+    static final String fileName = MapperSelector.ROM_DB_BASE_FOLDER + "md_romdb.json";
 
     private static final Map<String, RomDbEntry> map = new HashMap<>();
 

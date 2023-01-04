@@ -38,8 +38,9 @@ public class CpuFastDebug {
     }
 
     public static class CpuDebugContext {
-        public int[] pcAreasMaskMap;
-        public int pcAreasNumber, pcAreaShift;
+        public final int[] pcAreasMaskMap;
+        public final int pcAreasNumber;
+        public int pcAreaShift;
         public Predicate<Integer> isLoopOpcode = i -> false;
         public Predicate<Integer> isIgnoreOpcode = i -> true;
         public int debugMode;
@@ -95,10 +96,10 @@ public class CpuFastDebug {
     private final CpuDebugContext ctx;
     public final PcInfoWrapper[][] pcInfoWrapper;
     public DebugMode debugMode = DebugMode.NONE;
-    private CpuDebugInfoProvider debugInfoProvider;
+    private final CpuDebugInfoProvider debugInfoProvider;
     private int delay;
     private final static boolean VERBOSE = false;
-    public static int CK_DELAY_ON_LOOP = 50;
+    public static final int CK_DELAY_ON_LOOP = 50;
 
     public CpuFastDebug(CpuDebugInfoProvider debugInfoProvider, CpuDebugContext ctx) {
         this.debugInfoProvider = debugInfoProvider;
@@ -175,10 +176,10 @@ public class CpuFastDebug {
         }
     }
 
-    private static int pcHistorySize = 12;
+    private static final int pcHistorySize = 12;
     private int FRONT = 0, BACK = 1;
-    private int[][] opcodesHistory = new int[2][pcHistorySize];
-    private int[][] pcHistory = new int[2][pcHistorySize];
+    private final int[][] opcodesHistory = new int[2][pcHistorySize];
+    private final int[][] pcHistory = new int[2][pcHistorySize];
     private int pcHistoryPointer = 0, loops;
     private boolean looping = false, isKnownLoop;
     private int loopsCounter = 0;
@@ -246,7 +247,7 @@ public class CpuFastDebug {
         isKnownLoop = false;
         loopsCounter++;
         piw.pcLoops = loopsCounter;
-        if (VERBOSE || true) {
+        if (true) {
             boolean ignore = isIgnore(ctx.isIgnoreOpcode, opcodes);
             if (!ignore) {
                 int[] pcs = Arrays.stream(pcHistory[FRONT]).distinct().sorted().toArray();

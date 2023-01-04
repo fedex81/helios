@@ -23,8 +23,6 @@ public interface PwmProvider extends SoundDevice {
     default void newFrame() {
     }
 
-    ;
-
     PwmProvider NO_SOUND = new PwmProvider() {
         @Override
         public void updatePwmCycle(int cycle) {

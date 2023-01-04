@@ -24,7 +24,7 @@ public enum MdMapperType {
     SEGA_SSF2("SEGA SSF2"),
     SEGA_EVERDRIVE("SEGA EVERDRIVE");
 
-    String name;
+    final String name;
 
     MdMapperType(String s) {
         this.name = s;

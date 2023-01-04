@@ -226,8 +226,7 @@ public class StateUtil {
 
     public static ByteBuffer loadStateFile(String fileName, String... exts) {
         String ext = Files.getFileExtension(getStateFileName(fileName, exts));
-        ByteBuffer buffer = ByteBuffer.wrap(FileUtil.readBinaryFile(Paths.get(fileName), ext));
-        return buffer;
+        return ByteBuffer.wrap(FileUtil.readBinaryFile(Paths.get(fileName), ext));
     }
 
     public static <T extends Device> T getInstanceOrThrow(List<Device> deviceList, Class<T> clazz) {

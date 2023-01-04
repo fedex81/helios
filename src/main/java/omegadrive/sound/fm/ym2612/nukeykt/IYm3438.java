@@ -34,6 +34,7 @@ package omegadrive.sound.fm.ym2612.nukeykt;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -78,6 +79,7 @@ public interface IYm3438 {
 
 
     class IYm3438_Type implements Serializable {
+        @Serial
         private static final long serialVersionUID = 4240243017432259918L;
 
         int cycles;   //32 bit unsigned
@@ -111,9 +113,9 @@ public interface IYm3438 {
         /* 16 bit unsigned */ int pg_fnum;
         /* 8 bit unsigned */ int pg_block;
         /* 8 bit unsigned */ int pg_kcode;
-        /*32 bit unsigned */ int[] pg_inc = new int[24];
-        /*32 bit unsigned */ int[] pg_phase = new int[24];
-        /* 8 bit unsigned */ boolean[] pg_reset = new boolean[24];
+        /*32 bit unsigned */ final int[] pg_inc = new int[24];
+        /*32 bit unsigned */ final int[] pg_phase = new int[24];
+        /* 8 bit unsigned */ final boolean[] pg_reset = new boolean[24];
         /*32 bit unsigned */ int pg_read;
         /* Envelope generator */
         /* 8 bit unsigned */ int eg_cycle;
@@ -129,32 +131,32 @@ public interface IYm3438 {
         /* 8 bit unsigned */ int eg_ksv;
         /* 8 bit unsigned */ int eg_inc;
         /* 8 bit unsigned */ int eg_ratemax;
-        /* 8 bit unsigned */ int[] eg_sl = new int[2];
+        /* 8 bit unsigned */ final int[] eg_sl = new int[2];
         /* 8 bit unsigned */ int eg_lfo_am;
-        /* 8 bit unsigned */ int[] eg_tl = new int[2];
-        /* 8 bit unsigned */ int[] eg_state = new int[24];
-        /* 16 bit unsigned */ int[] eg_level = new int[24];
-        /* 16 bit unsigned */ int[] eg_out = new int[24];
-        /* 8 bit unsigned */ int[] eg_kon = new int[24];
-        /* 8 bit unsigned */ int[] eg_kon_csm = new int[24];
-        /* 8 bit unsigned */ int[] eg_kon_latch = new int[24];
+        /* 8 bit unsigned */ final int[] eg_tl = new int[2];
+        /* 8 bit unsigned */ final int[] eg_state = new int[24];
+        /* 16 bit unsigned */ final int[] eg_level = new int[24];
+        /* 16 bit unsigned */ final int[] eg_out = new int[24];
+        /* 8 bit unsigned */ final int[] eg_kon = new int[24];
+        /* 8 bit unsigned */ final int[] eg_kon_csm = new int[24];
+        /* 8 bit unsigned */ final int[] eg_kon_latch = new int[24];
         /* 8 bit unsigned */ int[] eg_csm_mode = new int[24];
-        /* 8 bit unsigned */ boolean[] eg_ssg_enable = new boolean[24];
-        /* 8 bit unsigned */ int[] eg_ssg_pgrst_latch = new int[24];
-        /* 8 bit unsigned */ int[] eg_ssg_repeat_latch = new int[24];
-        /* 8 bit unsigned */ int[] eg_ssg_hold_up_latch = new int[24];
-        /* 8 bit unsigned */ int[] eg_ssg_dir = new int[24];
-        /* 8 bit unsigned */ int[] eg_ssg_inv = new int[24];
-        /*32 bit unsigned */ int[] eg_read = new int[2];
+        /* 8 bit unsigned */ final boolean[] eg_ssg_enable = new boolean[24];
+        /* 8 bit unsigned */ final int[] eg_ssg_pgrst_latch = new int[24];
+        /* 8 bit unsigned */ final int[] eg_ssg_repeat_latch = new int[24];
+        /* 8 bit unsigned */ final int[] eg_ssg_hold_up_latch = new int[24];
+        /* 8 bit unsigned */ final int[] eg_ssg_dir = new int[24];
+        /* 8 bit unsigned */ final int[] eg_ssg_inv = new int[24];
+        /*32 bit unsigned */ final int[] eg_read = new int[2];
         /* 8 bit unsigned */ int eg_read_inc;
         /* FM */
-        /* 16 bit signed */ int[][] fm_op1 = new int[6][2];
-        /* 16 bit signed */ int[] fm_op2 = new int[6];
-        /* 16 bit signed */ int[] fm_out = new int[24];
-        /* 16 bit unsigned */ int[] fm_mod = new int[24];
+        /* 16 bit signed */ final int[][] fm_op1 = new int[6][2];
+        /* 16 bit signed */ final int[] fm_op2 = new int[6];
+        /* 16 bit signed */ final int[] fm_out = new int[24];
+        /* 16 bit unsigned */ final int[] fm_mod = new int[24];
         /* Channel */
-        /* 16 bit signed */ int[] ch_acc = new int[6];
-        /* 16 bit signed */ int[] ch_out = new int[6];
+        /* 16 bit signed */ final int[] ch_acc = new int[6];
+        /* 16 bit signed */ final int[] ch_out = new int[6];
         /* 16 bit signed */ int ch_lock;
         /* 8 bit unsigned */ int ch_lock_l;
         /* 8 bit unsigned */ int ch_lock_r;
@@ -182,42 +184,43 @@ public interface IYm3438 {
         /* 8 bit unsigned */ int timer_b_overflow;
 
         /* Register set */
-        /* 8 bit unsigned */ int[] mode_test_21 = new int[8];
-        /* 8 bit unsigned */ int[] mode_test_2c = new int[8];
+        /* 8 bit unsigned */ final int[] mode_test_21 = new int[8];
+        /* 8 bit unsigned */ final int[] mode_test_2c = new int[8];
         /* 8 bit unsigned */ int mode_ch3;
         /* 8 bit unsigned */ int mode_kon_channel;
-        /* 8 bit unsigned */ int[] mode_kon_operator = new int[4];
-        /* 8 bit unsigned */ int[] mode_kon = new int[24];
+        /* 8 bit unsigned */ final int[] mode_kon_operator = new int[4];
+        /* 8 bit unsigned */ final int[] mode_kon = new int[24];
         /* 8 bit unsigned */ boolean mode_csm;
         /* 8 bit unsigned */ boolean mode_kon_csm;
         /* 8 bit unsigned */ int dacen;
         /* 16 bit signed */ int dacdata;
 
-        /* 8 bit unsigned */ int[] ks = new int[24];
-        /* 8 bit unsigned */ int[] ar = new int[24];
-        /* 8 bit unsigned */ int[] sr = new int[24];
-        /* 8 bit unsigned */ int[] dt = new int[24];
-        /* 8 bit unsigned */ int[] multi = new int[24];
-        /* 8 bit unsigned */ int[] sl = new int[24];
-        /* 8 bit unsigned */ int[] rr = new int[24];
-        /* 8 bit unsigned */ int[] dr = new int[24];
-        /* 8 bit unsigned */ int[] am = new int[24];
-        /* 8 bit unsigned */ int[] tl = new int[24];
-        /* 8 bit unsigned */ int[] ssg_eg = new int[24];
+        /* 8 bit unsigned */ final int[] ks = new int[24];
+        /* 8 bit unsigned */ final int[] ar = new int[24];
+        /* 8 bit unsigned */ final int[] sr = new int[24];
+        /* 8 bit unsigned */ final int[] dt = new int[24];
+        /* 8 bit unsigned */ final int[] multi = new int[24];
+        /* 8 bit unsigned */ final int[] sl = new int[24];
+        /* 8 bit unsigned */ final int[] rr = new int[24];
+        /* 8 bit unsigned */ final int[] dr = new int[24];
+        /* 8 bit unsigned */ final int[] am = new int[24];
+        /* 8 bit unsigned */ final int[] tl = new int[24];
+        /* 8 bit unsigned */ final int[] ssg_eg = new int[24];
 
-        /* 16 bit unsigned */ int[] fnum = new int[6];
-        /* 8 bit unsigned */ int[] block = new int[6];
-        /* 8 bit unsigned */ int[] kcode = new int[6];
-        /* 16 bit unsigned */ int[] fnum_3ch = new int[6];
-        /* 8 bit unsigned */ int[] block_3ch = new int[6];
-        /* 8 bit unsigned */ int[] kcode_3ch = new int[6];
+        /* 16 bit unsigned */ final int[] fnum = new int[6];
+        /* 8 bit unsigned */ final int[] block = new int[6];
+        /* 8 bit unsigned */ final int[] kcode = new int[6];
+        /* 16 bit unsigned */ final int[] fnum_3ch = new int[6];
+        /* 8 bit unsigned */ final int[] block_3ch = new int[6];
+        /* 8 bit unsigned */ final int[] kcode_3ch = new int[6];
         /* 8 bit unsigned */ int reg_a4;
         /* 8 bit unsigned */ int reg_ac;
-        /* 8 bit unsigned */ int[] connect = new int[6];
-        /* 8 bit unsigned */ int[] fb = new int[6];
-        /* 8 bit unsigned */ int[] pan_l = new int[6], pan_r = new int[6];
-        /* 8 bit unsigned */ int[] ams = new int[6];
-        /* 8 bit unsigned */ int[] pms = new int[6];
+        /* 8 bit unsigned */ final int[] connect = new int[6];
+        /* 8 bit unsigned */ final int[] fb = new int[6];
+        /* 8 bit unsigned */ final int[] pan_l = new int[6];
+        final int[] pan_r = new int[6];
+        /* 8 bit unsigned */ final int[] ams = new int[6];
+        /* 8 bit unsigned */ final int[] pms = new int[6];
         /* 8 bit unsigned */ int status;
         /*32 bit unsigned */ int status_time;
 

@@ -39,9 +39,9 @@ public class MC68000Wrapper implements M68kProvider {
 
     private final static Logger LOG = LogHelper.getLogger(MC68000Wrapper.class.getSimpleName());
 
-    protected MC68000 m68k;
-    protected AddressSpace addressSpace;
-    protected GenesisBusProvider busProvider;
+    protected final MC68000 m68k;
+    protected final AddressSpace addressSpace;
+    protected final GenesisBusProvider busProvider;
     private boolean stop;
     protected int currentPC;
     protected int instCycles = 0;

@@ -54,7 +54,7 @@ public class GenesisJoypad extends BasePadAdapter {
 
     protected static boolean WWF32X_HACK =
             Boolean.parseBoolean(System.getProperty("helios.md.pad.wwf32x.hack", "false"));
-    protected static boolean ASTERIX_HACK =
+    protected static final boolean ASTERIX_HACK =
             Boolean.parseBoolean(System.getProperty("helios.md.pad.asterix.hack", "false"));
 
     protected static final boolean verbose = false;
@@ -86,7 +86,7 @@ public class GenesisJoypad extends BasePadAdapter {
     static class MdPadContext {
         int control = 0, //SGDK needs 0 here, otherwise it is considered a RESET
                 data, readMask, readStep;
-        int player;
+        final int player;
         int latestWriteCycleCounter;
 
         MdPadContext(int p) {
@@ -111,11 +111,11 @@ public class GenesisJoypad extends BasePadAdapter {
     private static final Predicate<Integer> isCtrlThInput = v -> (v & TH_MASK) == CTRL_PIN_INPUT;
     private static final Predicate<Integer> isDataThHigh = v -> (v & TH_MASK) == DATA_TH_HIGH;
 
-    protected MdPadContext ctx1 = new MdPadContext(1);
-    protected MdPadContext ctx2 = new MdPadContext(2);
-    protected MdPadContext ctx3 = new MdPadContext(3);
+    protected final MdPadContext ctx1 = new MdPadContext(1);
+    protected final MdPadContext ctx2 = new MdPadContext(2);
+    protected final MdPadContext ctx3 = new MdPadContext(3);
 
-    private SystemProvider.SystemClock clock;
+    private final SystemProvider.SystemClock clock;
 
     public static GenesisJoypad create(SystemProvider.SystemClock clock) {
         return new GenesisJoypad(clock);
@@ -254,7 +254,7 @@ public class GenesisJoypad extends BasePadAdapter {
                 res = getSA1111(n);
                 break;
             default:
-                assert (step & 1) == 0 ? isDataThHigh.test(ctx.data) : !isDataThHigh.test(ctx.data) : ctx;
+                assert ((step & 1) == 0) == isDataThHigh.test(ctx.data) : ctx;
                 res = (step & 1) == 0 ? getCBRLDU(n) : getSA00DU(n);
                 break;
         }

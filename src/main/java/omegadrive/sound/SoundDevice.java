@@ -12,7 +12,7 @@ public interface SoundDevice extends Device {
     enum SoundDeviceType {
         NONE(0), FM(1), PSG(2), PWM(4);
 
-        private int bit;
+        private final int bit;
 
         SoundDeviceType(int b) {
             this.bit = b;

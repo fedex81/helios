@@ -48,7 +48,7 @@ public interface JoypadProvider extends Device {
 
         public static final JoypadButton[] vals = JoypadButton.values();
 
-        String mnemonic;
+        final String mnemonic;
 
         JoypadButton() {
             this.mnemonic = name();
@@ -72,7 +72,8 @@ public interface JoypadProvider extends Device {
         UP_DOWN(U, D),
         LEFT_RIGHT(L, R);
 
-        JoypadButton b1, b2;
+        final JoypadButton b1;
+        final JoypadButton b2;
 
         JoypadDirection(JoypadButton b1, JoypadButton b2) {
             this.b1 = b1;

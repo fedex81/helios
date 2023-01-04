@@ -34,6 +34,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
@@ -46,25 +47,25 @@ public class FileUtil {
 
     private static final int[] EMPTY = new int[0];
 
-    public static String basePath = System.getProperty("user.home") + File.separatorChar + "roms";
+    public static final String basePath = System.getProperty("user.home") + File.separatorChar + "roms";
 
     private static final String SNAPSHOT_VERSION = "SNAPSHOT";
     private static final String MANIFEST_RELATIVE_PATH = "/META-INF/MANIFEST.MF";
     private static final String BIOS_JAR_PATH = ".";
-    public static String QUICK_SAVE_FILENAME = "quick_save";
-    public static String QUICK_SAVE_PATH = System.getProperty("quick.save.path", ".");
+    public static final String QUICK_SAVE_FILENAME = "quick_save";
+    public static final String QUICK_SAVE_PATH = System.getProperty("quick.save.path", ".");
 
     public static final int SMD_HEADER_SIZE = 512;
     public static final int SMD_CHUNK_SIZE = 16384;
 
-    public static String[] extBinaryTypesList = Arrays.stream(SysUtil.binaryTypes).
+    public static final String[] extBinaryTypesList = Arrays.stream(SysUtil.binaryTypes).
             map(s -> s.replace(".", "")).toArray(String[]::new);
-    public static FileFilter ROM_FILTER = new FileNameExtensionFilter(
+    public static final FileFilter ROM_FILTER = new FileNameExtensionFilter(
             Arrays.toString(extBinaryTypesList) + " files", extBinaryTypesList);
 
     public enum FileResourceType {ROM, SAVE_STATE_RES}
 
-    public static FileFilter SAVE_STATE_FILTER = new FileFilter() {
+    public static final FileFilter SAVE_STATE_FILTER = new FileFilter() {
         @Override
         public String getDescription() {
             return "state files";
@@ -84,7 +85,7 @@ public class FileUtil {
                 Files.write(file, data);
             } catch (IOException e) {
                 LOG.error("Unable to write file {}, #data {}",
-                        file.toAbsolutePath().toString(), data.length, e);
+                        file.toAbsolutePath(), data.length, e);
             }
         });
     }
@@ -136,7 +137,7 @@ public class FileUtil {
             String fileName = file.getFileName().toString();
             return readFileFromJar(fileName);
         }
-        LOG.error("Unable to load: {}", file.toAbsolutePath().toString());
+        LOG.error("Unable to load: {}", file.toAbsolutePath());
         return new byte[0];
     }
 
@@ -145,6 +146,7 @@ public class FileUtil {
         try (
                 InputStream inputStream = FileUtil.class.getResourceAsStream("/" + fileName)
         ) {
+            assert inputStream != null;
             buffer = ByteBuffer.allocate(inputStream.available());
             while (inputStream.available() > 0) {
                 buffer.put((byte) inputStream.read());
@@ -159,7 +161,7 @@ public class FileUtil {
         List<String> lines = Collections.emptyList();
         try (
                 InputStream inputStream = FileUtil.class.getResourceAsStream("/" + fileName);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))
+                BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(inputStream)))
         ) {
             lines = reader.lines().collect(Collectors.toList());
         } catch (Exception e) {
@@ -240,7 +242,7 @@ public class FileUtil {
     private static String getCurrentClasspath() {
         Class<?> clazz = FileUtil.class;
         String className = clazz.getSimpleName() + ".class";
-        return clazz.getResource(className).toString();
+        return Objects.requireNonNull(clazz.getResource(className)).toString();
     }
 
     private static boolean isRunningInJar(String classPath) {

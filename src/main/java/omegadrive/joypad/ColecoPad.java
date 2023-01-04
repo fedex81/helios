@@ -127,7 +127,4 @@ public class ColecoPad extends BasePadAdapter {
 
     //UNUSED
 
-    @Override
-    public void newFrame() {
-    }
 }

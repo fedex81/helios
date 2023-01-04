@@ -88,7 +88,7 @@ public class I2cEeprom {
     private static final boolean verbose = false;
     private static final boolean logReadWrite = verbose || false;
 
-    protected EepromContext ctx = new EepromContext();
+    protected final EepromContext ctx = new EepromContext();
     private int[] sram;
 
     protected static class EepromContext {
@@ -121,13 +121,13 @@ public class I2cEeprom {
             res = Util.getByteInWordBE(res, address & 1);
         }
         if (logReadWrite)
-            System.out.println("R," + th(address & 0xFF) + "," + size.name().substring(0, 1) + "," + th(res));
+            System.out.println("R," + th(address & 0xFF) + "," + size.name().charAt(0) + "," + th(res));
         return res;
     }
 
     public void writeEeprom(int address, int data, Size size) {
         if (logReadWrite)
-            System.out.println("W," + th(address & 0xFF) + "," + size.name().substring(0, 1) + "," + th(data));
+            System.out.println("W," + th(address & 0xFF) + "," + size.name().charAt(0) + "," + th(data));
         assert size != Size.LONG;
         if (size == Size.BYTE) {
             ctx.writeLatch = Util.setByteInWordBE(ctx.writeLatch, data & 0xFF, address & 1);
@@ -158,7 +158,6 @@ public class I2cEeprom {
         } else if (ctx.cycles == 9) {
             /* ACK cycle */
             if (verbose) LOG.info("{}, SDA {}, ack on cycle {}, res: {}", ctx.state, ctx.sda, ctx.cycles, 0);
-            res = 0;
         } else {
             /* return latched /SDA input by default */
             res = (ctx.sda >> ctx.lineMap.sda_out_bit) & 1;

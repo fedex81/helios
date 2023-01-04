@@ -21,7 +21,7 @@ public class NesSoundWrapper extends GenericAudioProvider implements AudioOutInt
     private static final Logger LOG = LogHelper.getLogger(NesSoundWrapper.class.getSimpleName());
 
     private static final double VOLUME = 13107 / 16384.;
-    public static AudioFormat nesAudioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, 16, 1, true, false);
+    public static final AudioFormat nesAudioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, 16, 1, true, false);
 
     public NesSoundWrapper(RegionDetector.Region region) {
         super(nesAudioFormat);

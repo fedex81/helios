@@ -78,12 +78,12 @@ class KonamiMapperImpl implements RomMapper {
     final static Predicate<Long> isMapperWriteKonami = add -> add >= 0x6000 && add < 0xC000;
     final static Predicate<Long> isMapperWriteKonamiScc = add -> add >= 0x5000 && add < 0xB800;
     final Predicate<Long> isMapperWrite;
-    int pageNum;
-    int pageSize;
-    int readShiftMask;
-    int[] pageBlockMapper;
-    int[] rom;
-    KonamiMapper.KonamiType type;
+    final int pageNum;
+    final int pageSize;
+    final int readShiftMask;
+    final int[] pageBlockMapper;
+    final int[] rom;
+    final KonamiMapper.KonamiType type;
 
 
     protected KonamiMapperImpl(int[] rom, KonamiMapper.KonamiType type) {

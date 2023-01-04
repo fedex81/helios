@@ -51,7 +51,6 @@ public class Z80StateBaseHandler implements BaseStateHandler {
     protected int version;
     protected String fileName;
     protected Type type;
-    private Z80SavestateVersion pmVersion;
     protected int FIXED_SIZE_LIMIT = 0x5000;
     private List<Device> deviceList = Collections.emptyList();
 
@@ -139,7 +138,7 @@ public class Z80StateBaseHandler implements BaseStateHandler {
             return false;
         }
         version = buffer.get();
-        pmVersion = Z80SavestateVersion.parseVersion(version);
+        Z80SavestateVersion pmVersion = Z80SavestateVersion.parseVersion(version);
         if (pmVersion != CURRENT_SAVE_VERSION) {
             LOG.error("Unable to handle savestate version: {}", CURRENT_SAVE_VERSION);
             return false;

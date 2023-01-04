@@ -112,7 +112,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         sramWrite &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (!sramWrite) {
             baseMapper.writeData(address, data, size);
-        } else if (sramWrite) {
+        } else {
             initBackupFileIfNecessary();
             if (verbose) LOG.info("SRAM write at: {} {}, data: {} ", address, size, data);
             Util.writeDataMask(sram, size, (int) address, data, 0xFFFF);
