@@ -573,18 +573,16 @@ public class SwingWindow implements DisplayWindow {
                 try {
                     e.acceptDrop(DnDConstants.ACTION_COPY);
                     Object data = e.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
-                    if (!(data instanceof List)) {
+                    if (!(data instanceof List<?> droppedFiles)) {
                         return;
                     }
-                    List<?> droppedFiles = (List<?>) data;
                     if (droppedFiles.isEmpty()) {
                         return;
                     }
                     Object firstElement = droppedFiles.get(0);
-                    if (!(firstElement instanceof File)) {
+                    if (!(firstElement instanceof File file)) {
                         return;
                     }
-                    File file = ((File) firstElement);
                     Path path = file.toPath();
                     if (FileUtil.ROM_FILTER.accept(file)) {
                         SystemLoader.getInstance().handleNewRomFile(path);
@@ -621,8 +619,7 @@ public class SwingWindow implements DisplayWindow {
             Toolkit.getDefaultToolkit().removeAWTEventListener(awtEventListener);
         }
         awtEventListener = e -> {
-            if (e instanceof KeyEvent) {
-                KeyEvent ke = (KeyEvent) e;
+            if (e instanceof KeyEvent ke) {
                 handleSystemInputEvent(keyAdapter, ke);
                 handleUiEvent(ke);
             }

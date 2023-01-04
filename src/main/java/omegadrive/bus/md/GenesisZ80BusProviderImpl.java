@@ -54,8 +54,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             this.mainBusProvider = (GenesisBusProvider) device;
             this.mainBusProvider.getBusDeviceIfAny(BusArbiter.class).ifPresent(this::attachDevice);
         }
-        if (device instanceof IMemoryRam) {
-            IMemoryRam z80Memory = (IMemoryRam) device;
+        if (device instanceof IMemoryRam z80Memory) {
             this.ram = z80Memory.getRamData();
             this.ramMask = ram.length - 1;
         }

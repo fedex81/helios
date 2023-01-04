@@ -75,8 +75,7 @@ public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventLis
                     @Override
                     protected void paintComponent(Graphics g) {
                         super.paintComponent(g);
-                        if (g instanceof Graphics2D) {
-                            Graphics2D g2 = (Graphics2D) g;
+                        if (g instanceof Graphics2D g2) {
                             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                                     RenderingHints.VALUE_ANTIALIAS_ON);
 

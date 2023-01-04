@@ -77,8 +77,7 @@ public class TileViewer implements UpdatableViewer {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D) g;
+                if (g instanceof Graphics2D g2) {
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                             RenderingHints.VALUE_ANTIALIAS_ON);
                     g2.setColor(Color.white);

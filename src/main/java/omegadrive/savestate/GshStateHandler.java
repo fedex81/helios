@@ -98,8 +98,7 @@ public class GshStateHandler extends GstStateHandler {
     public void loadFmState(FmProvider fm) {
         byte[] ba = buffer.array();
         int fmNukeStart = Bytes.indexOf(ba, FM_MAGIC_WORD_NUKE.getBytes());
-        if (fmNukeStart > -1 && fm instanceof Ym2612Nuke) {
-            Ym2612Nuke nukeFm = (Ym2612Nuke) fm;
+        if (fmNukeStart > -1 && fm instanceof Ym2612Nuke nukeFm) {
             Optional<Serializable> res = StateUtil.loadSerializedData(FM_MAGIC_WORD_NUKE, fmNukeStart, ba);
             res.ifPresent(ser -> nukeFm.setState((Ym2612Nuke.Ym3438Context) ser));
         } else {

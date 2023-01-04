@@ -861,7 +861,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         this.list.clear();
     }
 
-    private final String getVdpStateString(String head) {
+    private String getVdpStateString(String head) {
         return interruptHandler.getStateString(head + " - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
     }
 }

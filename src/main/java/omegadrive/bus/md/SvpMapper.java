@@ -178,7 +178,7 @@ public class SvpMapper implements RomMapper, SvpBus {
         }
     }
 
-    private final int svpRegReadWord(Ssp1601_t sspCtx, int address) {
+    private int svpRegReadWord(Ssp1601_t sspCtx, int address) {
         int res;
         switch (address & 0xF) {
             case 0:

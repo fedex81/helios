@@ -80,8 +80,7 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
     }
 
     static int getRomBank68kSerial(Z80Provider z80) {
-        if (z80.getZ80BusProvider() instanceof GenesisZ80BusProvider) {
-            GenesisZ80BusProvider g = (GenesisZ80BusProvider) z80.getZ80BusProvider();
+        if (z80.getZ80BusProvider() instanceof GenesisZ80BusProvider g) {
             return g.getRomBank68kSerial();
         }
         return -1;
@@ -89,8 +88,7 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
 
     static void setRomBank68kSerial(Z80Provider z80, int romBank68kSerial) {
         BaseBusProvider bus = z80.getZ80BusProvider();
-        if (bus instanceof GenesisZ80BusProvider) {
-            GenesisZ80BusProvider genBus = (GenesisZ80BusProvider) bus;
+        if (bus instanceof GenesisZ80BusProvider genBus) {
             genBus.setRomBank68kSerial(romBank68kSerial);
         }
     }
