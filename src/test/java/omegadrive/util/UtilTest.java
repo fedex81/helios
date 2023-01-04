@@ -52,7 +52,7 @@ public class UtilTest {
     @Test
     public void testLongWriteBoundary() {
         int address = 0xFEFFFE;
-        long value = 0x6e6f7071;
+        int value = 0x6e6f7071;
         Util.writeDataMask(signIntInput, Size.LONG, address, value, MASK);
         long res = Util.readDataMask(signIntInput, Size.LONG, address, MASK);
         Assert.assertEquals(value, res);

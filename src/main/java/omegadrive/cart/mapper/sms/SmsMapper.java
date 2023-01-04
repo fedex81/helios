@@ -110,19 +110,19 @@ public class SmsMapper {
         return frameReg;
     }
 
-    private void init(){
+    private void init() {
         numPages = Math.max(1, memoryProvider.getRomSize() >> 14);
         frameReg = Arrays.copyOf(FRAME_REG_DEFAULT, FRAME_REG_DEFAULT.length);
     }
 
-    public long readDataMapper(long addressL, Size size) {
-        int address = (int) (addressL & 0xFFFF);
+    public int readDataMapper(int addressL, Size size) {
+        int address = (addressL & 0xFFFF);
         if (size != Size.BYTE) {
             LOG.error("Unexpected read, addr : {} , size: {}", address, size);
             return 0xFF;
         }
         int page = (address >> 14);
-        if(page < FRAME_REG_DEFAULT.length) { //rom
+        if (page < FRAME_REG_DEFAULT.length) { //rom
             int block16k = frameReg[page] << 14;
             int newAddr = block16k + (address & 0x3FFF);
             return memoryProvider.readRomByte(newAddr);
@@ -148,7 +148,7 @@ public class SmsMapper {
         }
 
         @Override
-        public long readData(long address, Size size) {
+        public int readData(int address, Size size) {
 //            LogHelper.printLevel(LOG, Level.INFO,"readData: {}", address, verbose);
             if (sramSlot2Enable) {
                 return readSramDataMaybe(address, size);
@@ -157,23 +157,23 @@ public class SmsMapper {
         }
 
         @Override
-        public void writeData(long addressL, long dataL, Size size) {
+        public void writeData(int addressL, int dataL, Size size) {
 //            LogHelper.printLevel(LOG, Level.INFO,"writeData: {} , data: {}", addressL, dataL, verbose);
             if (sramSlot2Enable && sramWriteEnable) {
                 if (writeSramDataMaybe(addressL, dataL, size)) {
                     return;
                 }
             }
-            int address = (int) (addressL & SmsBus.RAM_MASK);
-            int data = (int) (dataL & 0xFF);
+            int address = (addressL & SmsBus.RAM_MASK);
+            int data = (dataL & 0xFF);
             memoryProvider.writeRamByte(address, data);
             if (addressL >= SmsBus.SEGA_MAPPING_CONTROL_ADDRESS) {
                 writeBankData(addressL, data);
             }
         }
 
-        private long readSramDataMaybe(long addressL, Size size) {
-            int address = (int) (addressL & 0xFFFF);
+        private int readSramDataMaybe(int addressL, Size size) {
+            int address = (addressL & 0xFFFF);
             int page = address >> 14;
             if (sramSlot2Enable && page == 2) {
                 return sram[address & 0x3FFF];
@@ -181,11 +181,11 @@ public class SmsMapper {
             return readDataMapper(addressL, size);
         }
 
-        private boolean writeSramDataMaybe(long addressL, long dataL, Size size) {
-            int address = (int) (addressL & 0xFFFF);
+        private boolean writeSramDataMaybe(int addressL, int dataL, Size size) {
+            int address = (addressL & 0xFFFF);
             int page = address >> 14;
             if (sramSlot2Enable && page == 2) {
-                sram[address & 0x3FFF] = (int) (dataL & 0xFF);
+                sram[address & 0x3FFF] = (dataL & 0xFF);
                 return true;
             }
             return false;
@@ -204,10 +204,10 @@ public class SmsMapper {
          * D0 : Bank shift, bit 0
          */
         @Override
-        public void writeBankData(long addressL, long dataL) {
-            int val = (int) (addressL & 3);
-            int data = (int) (dataL & 0xFF);
-            switch (val){
+        public void writeBankData(int addressL, int dataL) {
+            int val = (addressL & 3);
+            int data = (dataL & 0xFF);
+            switch (val) {
                 case 0:
                     if (mappingControl != data) {
                         //LOG.debug("Mapping control: {}", data);
@@ -245,49 +245,49 @@ public class SmsMapper {
     class CodeMapper implements RomMapper {
 
         @Override
-        public long readData(long address, Size size) {
+        public int readData(int address, Size size) {
             return readDataMapper(address, size);
         }
 
         @Override
-        public void writeData(long addressL, long dataL, Size size) {
-            int address = (int) (addressL & 0xFFFF);
+        public void writeData(int addressL, int dataL, Size size) {
+            int address = (addressL & 0xFFFF);
             int page = address >> 14;
             boolean isMappingControl = page < 3 && (address % SmsBus.CODEM_MAPPING_BASE_ADDRESS) == 0;
-            if(isMappingControl){
+            if (isMappingControl) {
                 writeBankData(page, dataL);
             } else {
-                memoryProvider.writeRamByte(address & SmsBus.RAM_MASK, (int) (dataL & 0xFF));
+                memoryProvider.writeRamByte(address & SmsBus.RAM_MASK, (dataL & 0xFF));
             }
         }
 
         @Override
-        public void writeBankData(long page, long data) {
-            frameReg[(int) page] = (int) (data & 0xFF);
+        public void writeBankData(int page, int data) {
+            frameReg[page] = (data & 0xFF);
         }
     }
 
     class KoreaMapper implements RomMapper {
 
         @Override
-        public long readData(long address, Size size) {
+        public int readData(int address, Size size) {
             return readDataMapper(address, size);
         }
 
         @Override
-        public void writeData(long addressL, long dataL, Size size) {
-            int address = (int) (addressL & 0xFFFF);
+        public void writeData(int addressL, int dataL, Size size) {
+            int address = (addressL & 0xFFFF);
             boolean isMappingControl = address == SmsBus.KOREA_MAPPING_CONTROL_ADDRESS;
-            if(isMappingControl){
+            if (isMappingControl) {
                 writeBankData(addressL, dataL);
             } else {
-                memoryProvider.writeRamByte(address & SmsBus.RAM_MASK, (int) (dataL & 0xFF));
+                memoryProvider.writeRamByte(address & SmsBus.RAM_MASK, (dataL & 0xFF));
             }
         }
 
         @Override
-        public void writeBankData(long addressL, long dataL) {
-            frameReg[2] = (int) (dataL & 0xFF);
+        public void writeBankData(int addressL, int dataL) {
+            frameReg[2] = (dataL & 0xFF);
         }
     }
 }

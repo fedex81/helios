@@ -70,7 +70,7 @@ public interface SystemProvider extends Device {
         return getRomContext().region;
     }
 
-    default long getRegionCode() {
+    default int getRegionCode() {
         return getRegion().getVersionCode();
     }
 

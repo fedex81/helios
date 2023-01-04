@@ -73,7 +73,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 // - It is cleared when the data port is written to or read from.
 // - It is cleared when the control port is read.
     boolean writePendingControlPort = false;
-    long firstWrite;
+    int firstWrite;
     int addressRegister;
     int codeRegister;
 
@@ -358,16 +358,16 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         return control;
     }
 
-    private void writeControlPortInternal(long dataL) {
-        long mode = (dataL >> 14);
+    private void writeControlPortInternal(int data) {
+        int mode = (data >>> 14);
         //genvdp.txt writePendingControlPort has precedence,
         boolean isRegisterWrite = !writePendingControlPort && mode == 0b10;
-        updateStateFromControlPortWrite(isRegisterWrite, (int) dataL);
+        updateStateFromControlPortWrite(isRegisterWrite, data);
         if (isRegisterWrite) {
             writePendingControlPort = false;
-            writeRegister((int) dataL);
+            writeRegister(data);
         } else {
-            writeControlReg((int) dataL);
+            writeControlReg(data);
         }
     }
 
@@ -517,7 +517,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
                     , firstWrite, th(addressRegister), th(codeRegister));
         } else {
             writePendingControlPort = false;
-            long all = ((firstWrite << 16) | data);
+            int all = ((firstWrite << 16) | data);
             if (verbose) LOG.info("writeAddr-2: secondWord: {}, address: {}, code: {}, dataLong: {}, mode: {}"
                     , th(data), th(addressRegister), th(codeRegister), th(all), vramMode);
             if ((codeRegister & 0b10_0000) > 0) { // DMA
@@ -861,7 +861,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         this.list.clear();
     }
 
-    private String getVdpStateString(String head) {
+    private final String getVdpStateString(String head) {
         return interruptHandler.getStateString(head + " - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
     }
 }

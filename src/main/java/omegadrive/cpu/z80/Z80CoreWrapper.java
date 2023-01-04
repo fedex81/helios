@@ -156,7 +156,7 @@ public class Z80CoreWrapper implements Z80Provider {
 
     @Override
     public int readMemory(int address) {
-        return (int) z80BusProvider.read(address, Size.BYTE);
+        return z80BusProvider.read(address, Size.BYTE);
     }
 
     @Override

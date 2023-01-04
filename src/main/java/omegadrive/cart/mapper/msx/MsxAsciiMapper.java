@@ -94,14 +94,14 @@ class AsciiMapperImpl implements RomMapper {
     }
 
     @Override
-    public long readData(long addressL, Size size) {
+    public int readData(int addressL, Size size) {
         int res = 0xFF;
-        int address = (int) (addressL & 0xFFFF);
-        if(address < MAPPER_START_ADDRESS || address > MAPPER_END_ADDRESS){
+        int address = (addressL & 0xFFFF);
+        if (address < MAPPER_START_ADDRESS || address > MAPPER_END_ADDRESS) {
             return -1;
         }
         int pagePointer = getPageRead(address);
-        if(pagePointer >= 0 && pagePointer < pageNum) {
+        if (pagePointer >= 0 && pagePointer < pageNum) {
             int shift = address & readShiftMask;
             int blockPointer = pageBlockMapper[pagePointer];
             int index = (address - shift) + blockPointer * pageSize;
@@ -111,13 +111,13 @@ class AsciiMapperImpl implements RomMapper {
     }
 
     @Override
-    public void writeData(long addressL, long data, Size size) {
+    public void writeData(int addressL, int data, Size size) {
         if (!isMapperWrite(addressL)) {
             return;
         }
         int pagePointer = getPageWrite(addressL);
-        if(pagePointer >= 0 && pagePointer < pageNum) {
-            int blockPointer = (int) ((data & 0xFF) % BLOCK_NUM);
+        if (pagePointer >= 0 && pagePointer < pageNum) {
+            int blockPointer = ((data & 0xFF) % BLOCK_NUM);
             pageBlockMapper[pagePointer] = blockPointer;
         }
     }
@@ -127,12 +127,12 @@ class AsciiMapperImpl implements RomMapper {
                 (addressL >= 0x6000 && addressL < 0x6800) || (addressL >= 0x7000 && addressL < 0x7800);
     }
 
-    private int getPageWrite(long addressL){
-        int address = (int) (addressL & 0x7FFF);
+    private int getPageWrite(int addressL) {
+        int address = (addressL & 0x7FFF);
         return type == AsciiType.ASCII8 ? ((address & 0x7800) >> 11) & 3 : ((address & 0x7000) >> 12) & 1;
     }
 
-    private int getPageRead(int address){
+    private int getPageRead(int address) {
         return type == AsciiType.ASCII8 ? (address & 0x8000) >> 14 | (address & 0x2000) >> 13 : (address & 0x8000) >> 15;
     }
 }

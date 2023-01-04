@@ -75,9 +75,9 @@ public class KonamiMapper extends KonamiMapperImpl {
 
 class KonamiMapperImpl implements RomMapper {
 
-    final static Predicate<Long> isMapperWriteKonami = add -> add >= 0x6000 && add < 0xC000;
-    final static Predicate<Long> isMapperWriteKonamiScc = add -> add >= 0x5000 && add < 0xB800;
-    final Predicate<Long> isMapperWrite;
+    final static Predicate<Integer> isMapperWriteKonami = add -> add >= 0x6000 && add < 0xC000;
+    final static Predicate<Integer> isMapperWriteKonamiScc = add -> add >= 0x5000 && add < 0xB800;
+    final Predicate<Integer> isMapperWrite;
     final int pageNum;
     final int pageSize;
     final int readShiftMask;
@@ -97,9 +97,9 @@ class KonamiMapperImpl implements RomMapper {
     }
 
     @Override
-    public long readData(long addressL, Size size) {
+    public int readData(int addressL, Size size) {
         int res = 0xFF;
-        int address = (int) (addressL & 0xFFFF);
+        int address = (addressL & 0xFFFF);
         if (address < MAPPER_START_ADDRESS || address > MAPPER_END_ADDRESS) {
             return -1;
         }
@@ -114,19 +114,19 @@ class KonamiMapperImpl implements RomMapper {
     }
 
     @Override
-    public void writeData(long addressL, long data, Size size) {
+    public void writeData(int addressL, int data, Size size) {
         if (!isMapperWrite.test(addressL)) {
             return;
         }
         int pagePointer = getPageWrite(addressL);
         if (pagePointer >= 0 && pagePointer < pageNum) {
-            int blockPointer = (int) ((data & 0xFF) % BLOCK_NUM);
+            int blockPointer = ((data & 0xFF) % BLOCK_NUM);
             pageBlockMapper[pagePointer] = blockPointer;
         }
     }
 
-    private int getPageWrite(long addressL) {
-        int address = (int) (addressL & readShiftMask) >> 13;
+    private int getPageWrite(int addressL) {
+        int address = (addressL & readShiftMask) >> 13;
         return address - 2;
     }
 

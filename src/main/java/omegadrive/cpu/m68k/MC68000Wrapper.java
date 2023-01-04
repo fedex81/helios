@@ -92,7 +92,7 @@ public class MC68000Wrapper implements M68kProvider {
 
     //this is the next instr PC
     @Override
-    public long getPC() {
+    public int getPC() {
         return m68k.getPC();
     }
 

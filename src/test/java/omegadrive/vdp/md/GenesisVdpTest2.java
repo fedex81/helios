@@ -45,7 +45,7 @@ public class GenesisVdpTest2 {
     VdpMemoryInterface memoryInterface;
     GenesisBusProvider busProvider;
 
-    static final long VDP_CONTROL_PORT = VDP_ADDRESS_SPACE_START + 4;
+    static final int VDP_CONTROL_PORT = VDP_ADDRESS_SPACE_START + 4;
 
     @Before
     public void setup() {

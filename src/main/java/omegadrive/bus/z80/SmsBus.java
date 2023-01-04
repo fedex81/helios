@@ -120,27 +120,27 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
     }
 
     @Override
-    public long read(long addressL, Size size) {
+    public int read(int addressL, Size size) {
         //TODO should be in the mapper?
 //        if (HW_ENABLE_BIOS && biosEnable && addressL < BIOS_END) {
-//            return Util.readData(bios, size, (int) addressL);
+//            return Util.readData(bios, size,  addressL);
 //        }
         return mapper.readData(addressL, size);
     }
 
     @Override
-    public void write(long addressL, long dataL, Size size) {
+    public void write(int addressL, int dataL, Size size) {
         mapper.writeData(addressL, dataL, size);
     }
 
     @Override
-    public long readData(long addressL, Size size) {
+    public int readData(int addressL, Size size) {
         return smsMapper.readDataMapper(addressL, size);
     }
 
     @Override
-    public void writeData(long address, long data, Size size) {
-        memoryProvider.writeRamByte((int)(address & RAM_MASK), (int)(data & 0xFF));
+    public void writeData(int address, int data, Size size) {
+        memoryProvider.writeRamByte((address & RAM_MASK), (data & 0xFF));
     }
 
     @Override

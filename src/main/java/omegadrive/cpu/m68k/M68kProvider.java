@@ -34,7 +34,7 @@ public interface M68kProvider extends Device {
     //PC is 24 bits
     int MD_PC_MASK = Cpu.PC_MASK;
 
-    long getPC();
+    int getPC();
 
     boolean isStopped();
 

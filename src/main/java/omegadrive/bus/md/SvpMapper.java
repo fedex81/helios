@@ -68,41 +68,41 @@ public class SvpMapper implements RomMapper, SvpBus {
     }
 
     @Override
-    public long readData(long addressL, Size size) {
+    public int readData(int addressL, Size size) {
         return m68kSvpReadData(addressL, size);
     }
 
     //68k writing data
     @Override
-    public void writeData(long addressL, long data, Size size) {
+    public void writeData(int addressL, int data, Size size) {
         m68kSvpWriteData(addressL, data, size);
     }
 
     @Override
-    public long m68kSvpRegRead(int address, Size size) {
+    public int m68kSvpRegRead(int address, Size size) {
         return m68kSvpRegRead(sspCtx, address, size);
     }
 
     @Override
-    public void m68kSvpRegWrite(int address, long data, Size size) {
+    public void m68kSvpRegWrite(int address, int data, Size size) {
         m68kSvpRegWrite(sspCtx, address, data, size);
     }
 
     //68k writing data
     @Override
-    public void m68kSvpWriteData(long addressL, long data, Size size) {
+    public void m68kSvpWriteData(int addressL, int data, Size size) {
         m68kSvpWriteData(svpCtx, addressL, data, size);
     }
 
     @Override
-    public long m68kSvpReadData(long addressL, Size size) {
+    public int m68kSvpReadData(int addressL, Size size) {
         return m68kSvpReadData(svpCtx, addressL, size);
     }
 
-    protected final long m68kSvpRegRead(Ssp1601_t sspCtx, int address, Size size) {
+    protected final int m68kSvpRegRead(Ssp1601_t sspCtx, int address, Size size) {
         switch (size) {
             case BYTE:
-                long val = svpRegReadWord(sspCtx, address & ~1);
+                int val = svpRegReadWord(sspCtx, address & ~1);
                 return (address & 1) > 0 ? (val & 0xFF) : (val >> 8);
             case WORD:
                 return svpRegReadWord(sspCtx, address);
@@ -121,13 +121,13 @@ public class SvpMapper implements RomMapper, SvpBus {
                 svpRegWriteWord(sspCtx, address, data);
                 break;
             case LONG:
-                svpRegWriteWord(sspCtx, address, data >> 16);
+                svpRegWriteWord(sspCtx, address, data >>> 16);
                 svpRegWriteWord(sspCtx, address + 2, data & 0xFFFF);
                 break;
         }
     }
 
-    protected final long m68kSvpReadData(Svp_t svpCtx, long addressL, Size size) {
+    protected final int m68kSvpReadData(Svp_t svpCtx, int addressL, Size size) {
         int address = (int) (addressL & MD_PC_MASK);
         if (address >= SVP_MAP_DRAM_START_ADDR_BYTE && address < SVP_MAP_DRAM_END_ADDR_BYTE) {
             //        LOG.debug("svp DRAM read: {}", th(addressWord));
@@ -135,7 +135,7 @@ public class SvpMapper implements RomMapper, SvpBus {
                 case WORD:
                     return svpCtx.readRamWord(address >> 1);
                 case LONG:
-                    return (long) svpCtx.readRamWord(address >> 1) << 16 |
+                    return svpCtx.readRamWord(address >> 1) << 16 |
                             svpCtx.readRamWord((address >> 1) + 1);
                 case BYTE:
                     LOG.error("Unexpected byte-wide read: {}", th(address));
@@ -178,7 +178,7 @@ public class SvpMapper implements RomMapper, SvpBus {
         }
     }
 
-    private long svpRegReadWord(Ssp1601_t sspCtx, int address) {
+    private final int svpRegReadWord(Ssp1601_t sspCtx, int address) {
         int res;
         switch (address & 0xF) {
             case 0:
@@ -207,17 +207,17 @@ public class SvpMapper implements RomMapper, SvpBus {
 //        LOG.info("svp write word {}_w, value {}", th(addressByte >> 1), th(data));
     }
 
-    protected final void m68kSvpWriteData(Svp_t svpCtx, long addressL, long data, Size size) {
-        int address = (int) (addressL & MD_PC_MASK);
+    protected final void m68kSvpWriteData(Svp_t svpCtx, int addressL, int data, Size size) {
+        int address = (addressL & MD_PC_MASK);
         data &= size.getMask();
         if (address >= SVP_MAP_DRAM_START_ADDR_BYTE && address < SVP_MAP_DRAM_END_ADDR_BYTE) {
             switch (size) {
                 case WORD:
-                    svpMemoryWriteWord(svpCtx, address, (int) data);
+                    svpMemoryWriteWord(svpCtx, address, data);
                     break;
                 case LONG:
-                    svpMemoryWriteWord(svpCtx, address, (int) (data >> 16));
-                    svpMemoryWriteWord(svpCtx, address + 2, (int) (data & 0xFFFF));
+                    svpMemoryWriteWord(svpCtx, address, (data >>> 16));
+                    svpMemoryWriteWord(svpCtx, address + 2, (data & 0xFFFF));
                     break;
                 case BYTE:
                     LOG.error("Unexpected byte-wide write: {}, {}", th(address), th(data));

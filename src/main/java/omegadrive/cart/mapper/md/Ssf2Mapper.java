@@ -86,9 +86,9 @@ public abstract class Ssf2Mapper implements RomMapper {
     }
 
     @Override
-    public long readData(long addressL, Size size) {
+    public int readData(int addressL, Size size) {
         if (addressL >= BANKABLE_START_ADDRESS && addressL <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
-            int address = (int) (addressL & MD_PC_MASK);
+            int address = (addressL & MD_PC_MASK);
             //bankSelector = address >> BANK_SHIFT;
             address = (banks[address >> BANK_SHIFT] << BANK_SHIFT) | (address & BANK_MASK);
             if (verbose) LOG.info("Bank read: {} -> {} {}", th(addressL), th(address), size);
@@ -98,7 +98,7 @@ public abstract class Ssf2Mapper implements RomMapper {
     }
 
     @Override
-    public void writeData(long addressL, long data, Size size) {
+    public void writeData(int addressL, int data, Size size) {
         if (addressL >= BANK_SET_START_ADDRESS && addressL <= BANK_SET_END_ADDRESS) {
             writeBankData(addressL, data);
             return;
@@ -107,11 +107,11 @@ public abstract class Ssf2Mapper implements RomMapper {
     }
 
     @Override
-    public void writeBankData(long addressL, long data) {
-        int val = (int) (addressL & 0xF);
+    public void writeBankData(int addressL, int data) {
+        int val = (addressL & 0xF);
         int index = val >> 1;
         if ((val & 1) == 1 && index > 0) {
-            banks[index] = (int) (data & bankSelMask);
+            banks[index] = (data & bankSelMask);
             if (verbose) LOG.info("Bank write to: {}, {}", th(addressL), th(banks[index]));
         } else if (val == 1) { //0xA130F1 goes to timeControlWrite
             baseMapper.writeData(addressL, data, Size.BYTE);

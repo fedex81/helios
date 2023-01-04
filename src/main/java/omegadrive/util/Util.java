@@ -181,8 +181,8 @@ public class Util {
         return ((number & (1 << position)) != 0);
     }
 
-    public static long readDataMask(int[] src, Size size, int address, final int mask) {
-        long data;
+    public static int readDataMask(int[] src, Size size, int address, final int mask) {
+        int data;
         address &= mask;
         if (size == Size.WORD) {
             data = ((src[address] & 0xFF) << 8) | (src[(address + 1) & mask] & 0xFF);
@@ -198,30 +198,30 @@ public class Util {
         return data;
     }
 
-    public static void writeDataMask(int[] dest, Size size, int address, long data, final int mask) {
+    public static void writeDataMask(int[] dest, Size size, int address, int data, final int mask) {
         address &= mask;
         if (size == Size.BYTE) {
-            dest[address] = (int) (data & 0xFF);
+            dest[address] = (data & 0xFF);
         } else if (size == Size.WORD) {
-            dest[address] = (int) ((data >> 8) & 0xFF);
-            dest[address + 1] = (int) (data & 0xFF);
+            dest[address] = ((data >> 8) & 0xFF);
+            dest[address + 1] = (data & 0xFF);
         } else {
-            dest[address] = (int) ((data >> 24) & 0xFF);
-            dest[address + 1] = (int) ((data >> 16) & 0xFF);
-            dest[(address + 2) & mask] = (int) ((data >> 8) & 0xFF);
-            dest[(address + 3) & mask] = (int) (data & 0xFF);
+            dest[address] = ((data >> 24) & 0xFF);
+            dest[address + 1] = ((data >> 16) & 0xFF);
+            dest[(address + 2) & mask] = ((data >> 8) & 0xFF);
+            dest[(address + 3) & mask] = (data & 0xFF);
         }
 //        LogHelper.printLevel(LOG, Level.DEBUG, "Write SRAM: {}, {}: {}", address, data, size, verbose);
     }
 
-    public static long computeChecksum(IMemoryProvider memoryProvider) {
-        long res = 0;
+    public static int computeChecksum(IMemoryProvider memoryProvider) {
+        int res = 0;
         //checksum is computed starting from byte 0x200
         int i = 0x200;
         int size = memoryProvider.getRomSize();
         final int mask = memoryProvider.getRomMask();
         for (; i < size - 1; i += 2) {
-            long val = Util.readDataMask(memoryProvider.getRomData(), Size.WORD, i, mask);
+            int val = Util.readDataMask(memoryProvider.getRomData(), Size.WORD, i, mask);
             res = (res + val) & 0xFFFF;
         }
         //read final byte ??

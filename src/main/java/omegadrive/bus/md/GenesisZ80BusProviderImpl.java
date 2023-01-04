@@ -45,7 +45,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
     private BusArbiter busArbiter;
     private FmProvider fmProvider;
     private int[] ram;
-    private int ramSize;
+    private int ramMask;
 
 
     @Override
@@ -57,7 +57,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
         if (device instanceof IMemoryRam) {
             IMemoryRam z80Memory = (IMemoryRam) device;
             this.ram = z80Memory.getRamData();
-            this.ramSize = ram.length;
+            this.ramMask = ram.length - 1;
         }
         if (device instanceof BusArbiter) {
             this.busArbiter = (BusArbiter) device;
@@ -67,46 +67,44 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
     }
 
     @Override
-    public long read(long addressL, Size size) {
-        int address = (int) addressL;
+    public int read(final int address, final Size size) {
+        int data = 0xFF;
         if (address <= END_RAM) {
-            address &= (ram.length - 1);
-            return ram[address];
+            data = ram[address & ramMask];
         } else if (address >= START_YM2612 && address <= END_YM2612) {
             if (mainBusProvider.isZ80ResetState()) {
                 LOG.warn("FM read while Z80 reset");
-                return 1;
+                data = 1;
+            } else {
+                data = getFm().read();
             }
-            return getFm().read();
         } else if (address >= START_ROM_BANK_ADDRESS && address <= END_UNUSED) {
             LOG.warn("Z80 read bank switching/unused: {}", th(address));
-            return 0xFF;
         } else if (address >= START_VDP && address <= END_VDP_VALID) {
             int vdpAddress = (VDP_BASE_ADDRESS + address);
             //   LOG.info("Z80 read VDP memory , address {}",th(address));
-            return (int) mainBusProvider.read(vdpAddress, Size.BYTE);
+            data = mainBusProvider.read(vdpAddress, Size.BYTE);
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-            address = romBank68kSerial | (address & M68K_BANK_MASK);
-            if (address >= GenesisBusProvider.ADDRESS_RAM_MAP_START && address < GenesisBusProvider.ADDRESS_UPPER_LIMIT) {
+            int addressB = romBank68kSerial | (address & M68K_BANK_MASK);
+            if (addressB >= GenesisBusProvider.ADDRESS_RAM_MAP_START && addressB < GenesisBusProvider.ADDRESS_UPPER_LIMIT) {
                 LOG.warn("Z80 reading from 68k RAM");
-                return 0xFF;
+            } else {
+                data = mainBusProvider.read(addressB, Size.BYTE);
             }
-            return (int) mainBusProvider.read(address, Size.BYTE);
         } else {
             LOG.error("Illegal Z80 memory read: {}", th(address));
         }
-        return 0xFF;
+//        RegAccessLogger.regAccess("Z80", address, data, size, true);
+        return data;
     }
 
     @Override
-    public void write(long addressL, long data, Size size) {
-        int dataInt = (int) data;
-        int address = (int) addressL;
+    public void write(final int address, final int dataInt, final Size size) {
+//        RegAccessLogger.regAccess("Z80", addressL, data, size, false);
         if (address <= END_RAM) {
-            address &= (ram.length - 1);
-            ram[address] = dataInt & 0xFF;
+            ram[address & ramMask] = dataInt & 0xFF;
         } else if (address >= START_YM2612 && address <= END_YM2612) {
             //LOG.info("Writing " + th(address) + " data: " + data);
             if (mainBusProvider.isZ80ResetState()) {
@@ -127,9 +125,8 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-            address = romBank68kSerial | (address & M68K_BANK_MASK);
             //NOTE: Z80 write to 68k RAM - this seems to be allowed (Mamono)
-            mainBusProvider.write(address, dataInt, Size.BYTE);
+            mainBusProvider.write(romBank68kSerial | (address & M68K_BANK_MASK), dataInt, Size.BYTE);
         } else {
             LOG.error("Illegal Z80 memory write:  {}, {}", th(address), dataInt);
         }

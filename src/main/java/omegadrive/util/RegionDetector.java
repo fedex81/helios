@@ -96,12 +96,12 @@ public class RegionDetector {
         private static final EnumSet<Region> values = EnumSet.allOf(Region.class);
 
         private final char region;
-        private final long versionCode;
+        private final int versionCode;
         private final int fps;
         private final int order;
         private final double frameIntervalMs;
 
-        Region(char region, int order, long versionCode, int fps) {
+        Region(char region, int order, int versionCode, int fps) {
             this.region = region;
             this.versionCode = versionCode;
             this.fps = fps;
@@ -125,7 +125,7 @@ public class RegionDetector {
             return frameIntervalMs;
         }
 
-        public long getVersionCode() {
+        public int getVersionCode() {
             return versionCode;
         }
     }

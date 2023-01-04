@@ -58,7 +58,7 @@ public class MdMapperTest {
         buffer.putInt(address1, val1);
         GenesisBusProvider bus = loadRomData();
 
-        testBusRead(bus, address, 0xFFFF_FFFFL); //read to unmapped address space
+        testBusRead(bus, address, 0xFFFF_FFFF); //read to unmapped address space
         testBusRead(bus, address1, val1);
     }
 
@@ -147,7 +147,7 @@ public class MdMapperTest {
         GenesisBusProvider bus = loadRomData();
 
         //unmapped read
-        testBusRead(bus, address, 0xFFFF_FFFFL);
+        testBusRead(bus, address, 0xFFFF_FFFF);
         testBusRead(bus, address1, val1);
         testBusRead(bus, address2, 0); //sram contains 0s
 
@@ -157,7 +157,7 @@ public class MdMapperTest {
         testBusRead(bus, address2, val2);
     }
 
-    private void testBusRead(GenesisBusProvider bus, int address, final long expectedLong) {
+    private void testBusRead(GenesisBusProvider bus, int address, final int expectedLong) {
         for (Size size : Size.values()) {
             switch (size) {
                 case BYTE:

@@ -51,17 +51,17 @@ public class MC68000AddressSpace implements AddressSpace {
 
     @Override
     public int readByte(int addr) {
-        return (int) busProvider.read(addr, Size.BYTE);
+        return busProvider.read(addr, Size.BYTE);
     }
 
     @Override
     public int readWord(int addr) {
-        return (int) busProvider.read(addr, Size.WORD);
+        return busProvider.read(addr, Size.WORD);
     }
 
     @Override
     public int readLong(int addr) {
-        return (int) busProvider.read(addr, Size.LONG);
+        return busProvider.read(addr, Size.LONG);
     }
 
     @Override

@@ -50,12 +50,12 @@ public class BaseVdpDmaHandlerTest {
         MdVdpTestUtil.vdpMode5(vdpProvider);
     }
 
-    protected void testDMAFillInternal(long dmaFillLong, int increment,
+    protected void testDMAFillInternal(int dmaFillLong, int increment,
                                        int[] expected) {
         testDMAFillInternal(dmaFillLong, 0x8000, increment, 0x68ac, expected);
     }
 
-    protected void testDMAFillInternal2(long dmaFillLong, int baseAddress, int increment, int fillValueWord,
+    protected void testDMAFillInternal2(int dmaFillLong, int baseAddress, int increment, int fillValueWord,
                                         int[] expected) {
         int toAddress = baseAddress + expected.length;
 
@@ -88,7 +88,7 @@ public class BaseVdpDmaHandlerTest {
         Assert.assertArrayEquals(exp, actual);
     }
 
-    protected void testDMAFillInternal(long dmaFillLong, int baseAddress, int increment, int fillValueWord,
+    protected void testDMAFillInternal(int dmaFillLong, int baseAddress, int increment, int fillValueWord,
                                        int[] expected) {
         int toAddress = baseAddress + expected.length;
         vdpProvider.writeControlPort(0x8F02);

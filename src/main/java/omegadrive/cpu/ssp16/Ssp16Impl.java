@@ -411,7 +411,7 @@ public class Ssp16Impl implements Ssp16 {
         if (t == 0) {
             rST.setH(rST.h | SSP_FLAG_Z);
         } else {
-            rST.setH((int) (rST.h | ((t >> 16) & SSP_FLAG_N)));
+            rST.setH((rST.h | ((t >> 16) & SSP_FLAG_N)));
         }
     }
 
@@ -419,7 +419,7 @@ public class Ssp16Impl implements Ssp16 {
         int t = rA32.v - x;
         rST.setH(rST.h & ~(SSP_FLAG_L | SSP_FLAG_Z | SSP_FLAG_V | SSP_FLAG_N));
         if (t == 0) rST.setH(rST.h | SSP_FLAG_Z);
-        else rST.setH((int) (rST.h | ((t >> 16) & SSP_FLAG_N)));
+        else rST.setH((rST.h | ((t >> 16) & SSP_FLAG_N)));
     }
 
     void OP_ADDA(int x) {

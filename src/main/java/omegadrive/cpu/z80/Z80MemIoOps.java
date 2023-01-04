@@ -126,7 +126,7 @@ public class Z80MemIoOps implements IMemIoOps {
 
     protected final int fetchOpcodeBus(int address) {
         tstatesCount += 4;
-        lastFetch = (int) z80BusProvider.read(address, Size.BYTE) & 0xFF;
+        lastFetch = z80BusProvider.read(address, Size.BYTE) & 0xFF;
         return lastFetch;
     }
 
@@ -138,7 +138,7 @@ public class Z80MemIoOps implements IMemIoOps {
     @Override
     public int peek8(int address) {
         tstatesCount += 3;
-        return (int) z80BusProvider.read(address, Size.BYTE) & 0xFF;
+        return z80BusProvider.read(address, Size.BYTE) & 0xFF;
     }
 
     @Override

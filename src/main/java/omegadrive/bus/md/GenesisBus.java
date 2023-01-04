@@ -61,6 +61,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
 
+    private RomContext romContext;
     private MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private RomMapper exSsfMapper = RomMapper.NO_OP_MAPPER;
@@ -154,9 +155,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     @Override
-    public long read(long address, Size size) {
+    public int read(int address, Size size) {
         if (verbose) {
-            long res = mapper.readData(address, size);
+            int res = mapper.readData(address, size);
             logInfo("Read address: {}, size: {}, result: {}",
                     th(address), size, th(res));
             return res;
@@ -165,7 +166,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     @Override
-    public void write(long address, long data, Size size) {
+    public void write(int address, int data, Size size) {
         if (verbose) {
             logInfo("Write address: {}, data: {}, size: {}", th(address),
                     th(data), size);
@@ -190,36 +191,38 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     @Override
-    public long readData(long addressL, Size size) {
-        int address = (int) (addressL & MD_PC_MASK);
+    public int readData(int address, final Size size) {
+        address &= MD_PC_MASK;
+        int data;
         if (address < ROM_END_ADDRESS) {  //ROM
-            return Util.readDataMask(rom, size, address, romMask);
+            data = Util.readDataMask(rom, size, address, romMask);
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            return Util.readDataMask(ram, size, address, M68K_RAM_MASK);
+            data = Util.readDataMask(ram, size, address, M68K_RAM_MASK);
         } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
-            return reservedRead(address, size);
+            data = reservedRead(address, size);
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
-            return z80MemoryRead(address, size);
+            data = z80MemoryRead(address, size);
         } else if (address >= IO_ADDRESS_SPACE_START && address <= IO_ADDRESS_SPACE_END) {    //IO Addressing space
-            return ioRead(address, size);
+            data = ioRead(address, size);
         } else if (address >= INTERNAL_REG_ADDRESS_SPACE_START && address <= INTERNAL_REG_ADDRESS_SPACE_END) {
-            return internalRegRead(address, size);
+            data = internalRegRead(address, size);
         } else if (address >= VDP_ADDRESS_SPACE_START && address <= VDP_ADDRESS_SPACE_END) { // VDP
-            return vdpRead(address, size);
+            data = vdpRead(address, size);
         } else if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
             checkBackupMemoryMapper(SramMode.READ_WRITE);
-            return mapper.readData(address, size);
+            data = mapper.readData(address, size);
         } else {
             LOG.error("Unexpected bus read: {}, 68k PC: {}",
                     th(address), th(m68kProvider.getPC()));
+            data = (int) size.getMask();
         }
-        return size.getMask();
+        return data;
     }
 
     @Override
-    public void writeData(long addressL, long data, Size size) {
-        //RegAccessLogger.regAccess("M68K", (int) addressL, (int) data, size, false);
-        int address = (int) (addressL & MD_PC_MASK);
+    public void writeData(int address, int data, final Size size) {
+        //RegAccessLogger.regAccess("M68K",  addressL,  data, size, false);
+        address &= MD_PC_MASK;
         data &= size.getMask();
         if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             Util.writeDataMask(ram, size, address, data, M68K_RAM_MASK);
@@ -237,11 +240,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             checkBackupMemoryMapper(SramMode.READ_WRITE);
             mapper.writeData(address, data, size);
         } else {
-            reservedWrite(addressL, data, size);
+            reservedWrite(address, data, size);
         }
     }
 
-    private void cartWrite(long addressL, long data, Size size) {
+    private void cartWrite(int addressL, int data, Size size) {
         if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(addressL)) { // Buck Rogers
             LOG.info("Unexpected Sram write: {}, value : {}", th(addressL), data);
             boolean adjust = cartridgeInfoProvider.adjustSramLimits(addressL);
@@ -254,20 +257,20 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 th(data), size);
     }
 
-    private void reservedWrite(long addressL, long data, Size size) {
+    private void reservedWrite(int addressL, int data, Size size) {
         if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
             LOG.error("Unexpected bus write: {}, data {} {}, 68k PC: {}",
                     th(addressL), th(data), size,
                     th(m68kProvider.getPC()));
         } else {
-            msuMdHandler.handleMsuMdWrite((int) addressL, (int) data, size);
+            msuMdHandler.handleMsuMdWrite(addressL, data, size);
         }
     }
 
-    private long reservedRead(int address, Size size) {
+    private int reservedRead(int address, Size size) {
         if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
             LOG.warn("Read on reserved address: {}, {}", th(address), size);
-            return size.getMax();
+            return (int) size.getMax();
         } else {
             //reads rom at 0x40_0000 MegaCD mirror
             return Util.readDataMask(rom, size, address, (int) DEFAULT_ROM_END_ADDRESS);
@@ -300,7 +303,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 //            have the bus) it will also return 1. The only time it will switch from
 //            1 to 0 is right after the bus is requested, and if the Z80 is still
 //            busy accessing memory or not.
-    private long internalRegRead(int address, Size size) {
+    private int internalRegRead(int address, Size size) {
         if (address >= Z80_BUS_REQ_CONTROL_START && address <= Z80_BUS_REQ_CONTROL_END) {
             return z80BusReqRead(size);
         } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
@@ -326,7 +329,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         return 0xFF;
     }
 
-    private void internalRegWrite(int address, Size size, long data) {
+    private void internalRegWrite(int address, Size size, int data) {
         if (address >= MEMORY_MODE_START && address <= MEMORY_MODE_END) {
 //            Only D8 of address $A11OO0 is effective and for WRITE ONLY.
 //            $A11OO0 D8 ( W)
@@ -341,7 +344,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             timeLineControlWrite(address, data);
         } else if (address >= TMSS_AREA1_START && address <= TMSS_AREA1_END) {
             // used to lock/unlock the VDP by writing either "SEGA" to unlock it or anything else to lock it.
-            LOG.warn("TMSS write, vdp lock: {}", th((int) data));
+            LOG.warn("TMSS write, vdp lock: {}", th(data));
         } else if (address == TMSS_AREA2_START || address == TMSS_AREA2_END) {
 //            control the bankswitching between the cart and the TMSS rom.
 //            Setting the first bit to 1 enable the cart, and setting it to 0 enable the TMSS.
@@ -350,7 +353,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             checkSvpMapper();
             svpMapper.m68kSvpRegWrite(address, data, size);
         } else if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
-            msuMdHandler.handleMsuMdWrite(address, (int) data, size);
+            msuMdHandler.handleMsuMdWrite(address, data, size);
         } else {
             LOG.warn("Unexpected internalRegWrite: {}, {}, {}", th(address),
                     th(data), size);
@@ -383,10 +386,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
      * * WP:     Write protect -- 0 = writable, 1 = not writable
      * * <p>
      */
-    private void timeLineControlWrite(int addressL, long data) {
+    private void timeLineControlWrite(int addressL, int data) {
         if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= Ssf2Mapper.BANK_SET_END_ADDRESS) {
             LOG.info("Mapper bank set, address: {} , data: {}", th(addressL),
-                    th((int) data));
+                    th(data));
             checkExSsfMapper();
             mapper.writeBankData(addressL, data);
         } else if (addressL == SRAM_LOCK) {
@@ -398,11 +401,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 //                SramMode sramMode = (data & 2) > 0 ? SramMode.READ_WRITE : SramMode.READ_ONLY;
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
             }
-            sramLockValue = (int) data;
+            sramLockValue = data;
             //LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
             LOG.warn("Unexpected mapper set, address: {}, data: {}", th(addressL),
-                    th((int) data));
+                    th(data));
         }
     }
 
@@ -418,10 +421,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     //	this may be done by writing #$0000 to $A11200, but only when the Z80 bus is requested
     //	After returning the bus after loading the new program to it's memory,
     //	the Z80 may be let go from reset by writing #$0100 to $A11200.
-    private void z80ResetControlWrite(long data, Size size) {
+    private void z80ResetControlWrite(int data, Size size) {
 //        LOG.info("Write Z80 resetControl: {}, {} {}", th(address), th(data), size);
         if (size == Size.WORD) {
-            data >>= 8;
+            data >>>= 8;
         }
         //only data bit0 is connected to the bus arbiter
         boolean reset = (data & 1) == 0;
@@ -443,10 +446,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     //	To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
     //	 #$0000 needs to be written to $A11100 to return the bus back to the Z80
     //NOTE: Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF, Slap Fight 0xFF
-    private void z80BusReqWrite(long data, Size size) {
+    private void z80BusReqWrite(int data, Size size) {
 //        LOG.info("Write Z80 busReq: {}, {} {}", th(address), th(data), size);
         if (size == Size.WORD) {
-            data >>= 8;
+            data >>>= 8;
         }
         //only data bit0 is connected to the bus arbiter
         boolean busReq = (data & 1) > 0;
@@ -483,8 +486,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
      * <p>
      * TMSS = REGION_CODE + 1
      */
-    private long ioRead(long address, Size size) {
-        long data = 0;
+    private int ioRead(int address, Size size) {
+        int data = 0;
         //	Version register (read-only word-long)
         if ((address & 0xFFF) <= 1) {
             //expansion unit not connected
@@ -506,10 +509,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         return data;
     }
 
-    private long ioReadInternal(long addressL) {
-        long data = 0;
+    private int ioReadInternal(int addressL) {
+        int data = 0;
         //both even and odd addresses
-        int address = (int) (addressL & 0xFFE);
+        int address = (addressL & 0xFFE);
         switch (address) {
             case 2:
                 data = joypadProvider.readDataRegister1();
@@ -542,7 +545,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     //IO chip only got /LWR so it only reacts to byte-wide writes to low (odd) addresses or word-wide writes.
     // In case of word-wide writes, LSB (D0-D7) is being used when accessing I/O registers.
-    private void ioWrite(int address, Size size, long data) {
+    private void ioWrite(int address, Size size, int data) {
         switch (size) {
             case BYTE:
                 assert (address & 1) == 1;
@@ -551,16 +554,16 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 break;
             case LONG:
                 //Flink
-                ioWriteInternal(address, data >> 16);
+                ioWriteInternal(address, data >>> 16);
                 ioWriteInternal(address + 2, data & 0xFFFF);
                 break;
         }
     }
 
-    private void ioWriteInternal(int addressL, long dataL) {
+    private void ioWriteInternal(int addressL, int dataL) {
         //both even and odd addresses
         int address = addressL & 0xFFE;
-        int data = (int) (dataL & 0xFF);
+        int data = (dataL & 0xFF);
         switch (address) {
             case 2:
                 joypadProvider.writeDataRegister1(data);
@@ -600,14 +603,14 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 //
 //            Addresses A08000-A0FFFFh mirror A00000-A07FFFh, so the 68000 cannot
 //            access it's own banked memory.
-    private long z80MemoryRead(long address, Size size) {
+    private int z80MemoryRead(int address, Size size) {
         busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
         if (!z80BusRequested || z80ResetState) {
             //uwol
             LOG.warn("68k read access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
             return 0; //TODO this should return z80 open bus (ie. prefetch?)
         }
-        int addressZ = (int) (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
+        int addressZ = (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
         if (size == Size.BYTE) {
             return z80Provider.readMemory(addressZ);
         } else if (size == Size.WORD) {
@@ -615,37 +618,38 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         } else {
             //Mahjong Cop Ryuu - Shiro Ookami no Yabou (J) [h1C]
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-            long dataHigh = z80MemoryReadWord(addressZ);
-            long dataLow = z80MemoryReadWord(addressZ + 2);
+            int dataHigh = z80MemoryReadWord(addressZ);
+            int dataLow = z80MemoryReadWord(addressZ + 2);
             return dataHigh << 16 | dataLow;
         }
     }
 
-    private void z80MemoryWrite(int address, Size size, long dataL) {
+    private void z80MemoryWrite(int address, Size size, int dataL) {
         busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
         if (!z80BusRequested || z80ResetState) {
             LOG.warn("68k write access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
             return;
         }
         address &= GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK;
+        int data = dataL;
         if (size == Size.BYTE) {
-            z80Provider.writeMemory(address, (int) dataL);
+            z80Provider.writeMemory(address, data);
         } else if (size == Size.WORD) {
-            z80MemoryWriteWord(address, (int) dataL);
+            z80MemoryWriteWord(address, data);
         } else {
             //longword access to Z80 like "Stuck Somewhere In Time" does
             //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
 //            LOG.debug("Unexpected long write, addr: {}, data: {}", address, dataL);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-            z80MemoryWriteWord(address, (int) dataL >> 16);
-            z80MemoryWriteWord(address + 2, (int) dataL & 0xFFFF);
+            z80MemoryWriteWord(address, data >>> 16);
+            z80MemoryWriteWord(address + 2, data & 0xFFFF);
         }
     }
 
     //	https://emu-docs.org/Genesis/gen-hw.txt
     //	When doing word-wide writes to Z80 RAM, only the MSB is written, and the LSB is ignored
     private void z80MemoryWriteWord(int address, int data) {
-        z80Provider.writeMemory(address, (data & 0xFFFF) >> 8);
+        z80Provider.writeMemory(address, (data >> 8) & 0xFF);
     }
 
     //    A word-wide read from Z80 RAM has the LSB of the data duplicated in the MSB
@@ -658,20 +662,20 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 //
 //    Reading from even VDP addresses returns the MSB of the 16-bit data,
 //    and reading from odd address returns the LSB:
-    private long vdpRead(int address, Size size) {
+    private int vdpRead(int address, Size size) {
         switch (size) {
             case WORD:
             case BYTE:
                 return vdpReadInternal(address, size);
             case LONG:
-                long res = (long) vdpReadInternal(address, Size.WORD) << 16;
+                int res = vdpReadInternal(address, Size.WORD) << 16;
                 return res | vdpReadInternal(address + 2, Size.WORD);
         }
         return 0xFF;
     }
 
 
-    private void vdpWrite(int address, Size size, long data) {
+    private void vdpWrite(int address, Size size, int data) {
         switch (size) {
             case WORD:
             case BYTE:
@@ -682,7 +686,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 if (address1 < 0x8 && checkVdpBusy(address, size, data)) {
                     return;
                 }
-                vdpWriteWord(address, Size.WORD, data >> 16);
+                vdpWriteWord(address, Size.WORD, data >>> 16);
                 vdpWriteWord(address + 2, Size.WORD, data & 0xFFFF);
                 break;
         }
@@ -702,7 +706,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                     return vdpData;
                 case BYTE:
                     boolean even = address % 2 == 0;
-                    return even ? vdpData >> 8 : vdpData & 0xFF;
+                    return even ? vdpData >>> 8 : vdpData & 0xFF;
             }
             LOG.error("Unexpected {} vdp port read: {}", size, th(addressL));
             return 0xFF;
@@ -748,7 +752,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     //      Doing an 8-bit write to the control or data port is interpreted by
 //                the VDP as a 16-bit word, with the data written used for both halfs
 //                of the word.
-    private void vdpWriteWord(int addressLong, Size size, long data) {
+    private void vdpWriteWord(int addressLong, Size size, int data) {
         boolean valid = (addressLong & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
         if (!valid) {
             LOG.error("Illegal VDP write, address {}, data {}, size {}",
@@ -766,7 +770,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             if (size == Size.BYTE) {
                 data = data << 8 | data;
             }
-            vdpProvider.writeVdpPortWord(portType, (int) data);
+            vdpProvider.writeVdpPortWord(portType, data);
         } else if (address < 0x0F) {   //HV Counter
             LOG.warn("HV counter write");
         }
@@ -778,7 +782,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 //            move.b      (a4)+, d0       ; PSG data in LSB
 //            move.w      d0, $C00010     ; Write to PSG
         else if (address >= 0x10 && address < 0x18) {
-            int psgData = (int) (data & 0xFF);
+            int psgData = (data & 0xFF);
             if (size == Size.WORD) {
                 LOG.warn("PSG word write, address: {}, data: {}", th(address), data);
             }
@@ -789,7 +793,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     //NOTE: this assumes that only 68k writes on the vpdDataPort
-    private boolean checkVdpBusy(int address, Size size, long data) {
+    private boolean checkVdpBusy(int address, Size size, int data) {
         if (busArbiter.getVdpBusyState() == VdpBusyState.FIFO_FULL ||
                 busArbiter.getVdpBusyState() == VdpBusyState.MEM_TO_VRAM) {
             vdpRunnable.vdpAddress = address;

@@ -32,35 +32,35 @@ public interface SvpBus extends RomMapper {
 
     SvpBus NO_OP = new SvpBus() {
         @Override
-        public long readData(long address, Size size) {
+        public int readData(int address, Size size) {
             return 0;
         }
 
         @Override
-        public void writeData(long address, long data, Size size) {
+        public void writeData(int address, int data, Size size) {
 
         }
 
         @Override
-        public long m68kSvpReadData(long address, Size size) {
+        public int m68kSvpReadData(int address, Size size) {
             return 0;
         }
 
         @Override
-        public void m68kSvpWriteData(long address, long data, Size size) {
+        public void m68kSvpWriteData(int address, int data, Size size) {
 
         }
     };
 
-    long m68kSvpReadData(long address, Size size);
+    int m68kSvpReadData(int address, Size size);
 
-    void m68kSvpWriteData(long address, long data, Size size);
+    void m68kSvpWriteData(int address, int data, Size size);
 
-    default long m68kSvpRegRead(int address, Size size) {
+    default int m68kSvpRegRead(int address, Size size) {
         return m68kSvpReadData(address, size);
     }
 
-    default void m68kSvpRegWrite(int address, long data, Size size) {
+    default void m68kSvpRegWrite(int address, int data, Size size) {
         m68kSvpWriteData(address, data, size);
     }
 }

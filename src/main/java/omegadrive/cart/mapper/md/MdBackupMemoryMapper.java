@@ -79,13 +79,13 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     }
 
     @Override
-    public long readData(long address, Size size) {
+    public int readData(int address, Size size) {
         return eeprom == MdRomDbModel.NO_EEPROM ? readDataSram(address, size) : readDataEeprom(address, size);
     }
 
 
     @Override
-    public void writeData(long address, long data, Size size) {
+    public void writeData(int address, int data, Size size) {
         if (eeprom == MdRomDbModel.NO_EEPROM) {
             writeDataSram(address, data, size);
         } else {
@@ -93,20 +93,20 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         }
     }
 
-    private long readDataSram(long address, Size size) {
+    private int readDataSram(int address, Size size) {
         address = address & MD_PC_MASK;
         boolean sramRead = sramMode != SramMode.DISABLE;
         sramRead &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (sramRead) {
             initBackupFileIfNecessary();
-            long res = Util.readDataMask(sram, size, (int) address, 0xFFFF);
+            int res = Util.readDataMask(sram, size, address, 0xFFFF);
             if (verbose) LOG.info("SRAM read at: {} {}, result: {} ", address & 0xFFFF, size, res);
             return res;
         }
         return baseMapper.readData(address, size);
     }
 
-    private void writeDataSram(long address, long data, Size size) {
+    private void writeDataSram(int address, int data, Size size) {
         address = address & MD_PC_MASK;
         boolean sramWrite = sramMode == SramMode.READ_WRITE;
         sramWrite &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
@@ -115,30 +115,30 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         } else {
             initBackupFileIfNecessary();
             if (verbose) LOG.info("SRAM write at: {} {}, data: {} ", address, size, data);
-            Util.writeDataMask(sram, size, (int) address, data, 0xFFFF);
+            Util.writeDataMask(sram, size, address, data, 0xFFFF);
         }
     }
 
-    private long readDataEeprom(long address, Size size) {
+    private int readDataEeprom(int address, Size size) {
         address = address & MD_PC_MASK;
         boolean eepromRead = sramMode != SramMode.DISABLE;
         eepromRead &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (eepromRead) {
             initBackupFileIfNecessary();
-            long res = i2c.readEeprom((int) address, size);
+            int res = i2c.readEeprom(address, size);
             if (verbose) LOG.info("EEPROM read at: {} {}, result: {} ", th(address), size, th(res));
             return res;
         }
         return baseMapper.readData(address, size);
     }
 
-    private void writeDataEeprom(long address, long data, Size size) {
+    private void writeDataEeprom(int address, int data, Size size) {
         address = address & MD_PC_MASK;
         boolean eepromWrite = sramMode == SramMode.READ_WRITE;
         eepromWrite &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (eepromWrite) {
             initBackupFileIfNecessary();
-            i2c.writeEeprom((int) address, (int) (data & 0xFF), size);
+            i2c.writeEeprom(address, (data & 0xFF), size);
             if (verbose) LOG.info("EEPROM write at: {} {}, data: {} ", th(address), size, th(data));
         } else {
             baseMapper.writeData(address, data, size);

@@ -98,15 +98,15 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
     }
 
     @Override
-    public long read(long addressL, Size size) {
-        int addressI = (int) (addressL & 0xFFFF);
+    public int read(int addressL, Size size) {
+        int addressI = (addressL & 0xFFFF);
         int page = addressI >> 14;
         int secSlotNumber = ctx.pageSlotMapper[page];
         int res = 0xFF;
         int address = (addressI & PAGE_MASK) + ctx.pageStartAddress[page];
 
         if (mapper != RomMapper.NO_OP_MAPPER && secSlotNumber > 0 && secSlotNumber < 3) {
-            res = (int) mapper.readData(addressL, Size.BYTE);
+            res = mapper.readData(addressL, Size.BYTE);
         } else if (address < secondarySlot[secSlotNumber].length) {
             res = secondarySlot[secSlotNumber][address];
         } else {
@@ -126,13 +126,13 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
     }
 
     @Override
-    public void write(long addressL, long data, Size size) {
-        int addressI = (int) (addressL & 0xFFFF);
+    public void write(int addressL, int data, Size size) {
+        int addressI = (addressL & 0xFFFF);
         int page = addressI >> 14;
         int secSlotNumber = ctx.pageSlotMapper[page];
         if (secondarySlotWritable[secSlotNumber]) {
             int address = (addressI & PAGE_MASK) + ctx.pageStartAddress[page];
-            writeSlot(secondarySlot[secSlotNumber], address, (int) data);
+            writeSlot(secondarySlot[secSlotNumber], address, data);
         } else if (mapper != RomMapper.NO_OP_MAPPER && secSlotNumber > 0 && secSlotNumber < 3) {
             mapper.writeData(addressL, data, size);
         } else {

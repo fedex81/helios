@@ -27,9 +27,9 @@ import java.util.Set;
 
 public interface BaseBusProvider extends Device {
 
-    long read(long address, Size size);
+    int read(int address, Size size);
 
-    void write(long address, long data, Size size);
+    void write(int address, int data, Size size);
 
     void writeIoPort(int port, int value);
 

@@ -72,7 +72,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     abstract class VdpRunnable implements Runnable {
         public int vdpAddress;
-        public long vpdData;
+        public int vpdData;
         public Size vdpSize;
     }
 

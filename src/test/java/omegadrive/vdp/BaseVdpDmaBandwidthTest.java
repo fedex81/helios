@@ -127,7 +127,7 @@ public class BaseVdpDmaBandwidthTest {
 
     protected void testDMAFillDuringActiveScreen(int dmaLen, boolean h32) {
         int slotsPerLine = h32 ? GenesisVdpProvider.H32_SLOTS : GenesisVdpProvider.H40_SLOTS;
-        long dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
+        int dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
         setupDMAFillInternal(dmaFillCommand, 2, dmaLen);
         int slots = startDmaFill(dmaLen, h32, false);
         // more than one line
@@ -148,7 +148,7 @@ public class BaseVdpDmaBandwidthTest {
         }
     }
 
-    protected void setupDMAFillInternal(long dmaFillLong, int increment, int dmaLength) {
+    protected void setupDMAFillInternal(int dmaFillLong, int increment, int dmaLength) {
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
         vdpProvider.updateRegisterData(MODE_2, 0x54); //display enable + dma enable
 

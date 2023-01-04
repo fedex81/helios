@@ -228,12 +228,12 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
         updateRegisterData(registerName.ordinal(), data);
     }
 
-    default void writeControlPort(long data) {
-        writeVdpPortWord(VdpPortType.CONTROL, (int) data);
+    default void writeControlPort(int data) {
+        writeVdpPortWord(VdpPortType.CONTROL, data);
     }
 
-    default void writeDataPort(long data) {
-        writeVdpPortWord(VdpPortType.DATA, (int) data);
+    default void writeDataPort(int data) {
+        writeVdpPortWord(VdpPortType.DATA, data);
     }
 
     default void fifoPush(int addressRegister, int data) {

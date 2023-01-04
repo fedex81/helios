@@ -151,12 +151,12 @@ public class SysUtil {
 
     public static final BaseBusProvider NO_OP_BUS = new BaseBusProvider() {
         @Override
-        public long read(long address, Size size) {
+        public int read(int address, Size size) {
             return 0;
         }
 
         @Override
-        public void write(long address, long data, Size size) {
+        public void write(int address, int data, Size size) {
 
         }
 

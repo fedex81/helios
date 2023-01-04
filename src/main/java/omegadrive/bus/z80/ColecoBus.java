@@ -68,8 +68,8 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements
     }
 
     @Override
-    public long read(long addressL, Size size) {
-        int address = (int) addressL;
+    public int read(int addressL, Size size) {
+        int address = addressL;
         if (size != Size.BYTE) {
             LOG.error("Unexpected read, addr : {} , size: {}", address, size);
             return 0xFF;
@@ -88,9 +88,9 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements
     }
 
     @Override
-    public void write(long address, long data, Size size) {
+    public void write(int address, int data, Size size) {
         address &= RAM_SIZE - 1;
-        memoryProvider.writeRamByte((int) address, (int) (data & 0xFF));
+        memoryProvider.writeRamByte(address, (data & 0xFF));
     }
 
     @Override

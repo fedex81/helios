@@ -27,23 +27,23 @@ public interface RomMapper {
 
     RomMapper NO_OP_MAPPER = new RomMapper() {
         @Override
-        public long readData(long address, Size size) {
+        public int readData(int address, Size size) {
             return -1;
         }
 
         @Override
-        public void writeData(long address, long data, Size size) {
+        public void writeData(int address, int data, Size size) {
 
         }
     };
 
     enum SramMode {DISABLE, READ_ONLY, READ_WRITE}
 
-    long readData(long address, Size size);
+    int readData(int address, Size size);
 
-    void writeData(long address, long data, Size size);
+    void writeData(int address, int data, Size size);
 
-    default void writeBankData(long addressL, long data) {
+    default void writeBankData(int addressL, int data) {
         //DO NOTHING
     }
 

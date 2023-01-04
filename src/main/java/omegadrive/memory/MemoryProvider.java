@@ -80,7 +80,7 @@ public class MemoryProvider implements IMemoryProvider {
 
     @Override
     public int readRomByte(int address) {
-        return (int) Util.readDataMask(romHolder.data, Size.BYTE, address, romHolder.romMask);
+        return Util.readDataMask(romHolder.data, Size.BYTE, address, romHolder.romMask);
     }
 
     @Override

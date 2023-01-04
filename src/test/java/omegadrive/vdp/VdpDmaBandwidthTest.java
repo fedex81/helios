@@ -128,7 +128,7 @@ public class VdpDmaBandwidthTest extends BaseVdpDmaBandwidthTest {
     public void testDMAFillDuringVblankH32() {
         MdVdpTestUtil.setH32(vdpProvider);
         int dmaLen = BLANKING_VRAM_DMA_PER_LINE_H32_WORDS + 1;
-        long dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
+        int dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
         setupDMAFillInternal(dmaFillCommand, 2, dmaLen);
         startDmaFill(dmaLen, true, true);
     }
@@ -137,7 +137,7 @@ public class VdpDmaBandwidthTest extends BaseVdpDmaBandwidthTest {
     public void testDMAFillDuringVblankH40() {
         MdVdpTestUtil.setH40(vdpProvider);
         int dmaLen = BLANKING_VRAM_DMA_PER_LINE_H40_WORDS + 1;
-        long dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
+        int dmaFillCommand = 0x40020082; //DMA fill at VRAM address 0x8002
         setupDMAFillInternal(dmaFillCommand, 2, dmaLen);
         startDmaFill(dmaLen, false, true);
     }

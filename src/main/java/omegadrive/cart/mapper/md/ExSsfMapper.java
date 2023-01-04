@@ -44,13 +44,13 @@ public class ExSsfMapper extends Ssf2Mapper {
     public static final int BANK_SET_END_ADDRESS = 0xA130FE;
 
     @Override
-    public long readData(long address, Size size) {
+    public int readData(int address, Size size) {
         address &= MD_PC_MASK;
         if (address >= BANKABLE_START_ADDRESS && address <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
             return super.readData(address, size);
         } else if (address < BANKABLE_START_ADDRESS) { //exSSf can remap < 0x80000
 
-            int addressI = (int) ((banks[0] << BANK_SHIFT) | (address & BANK_MASK));
+            int addressI = ((banks[0] << BANK_SHIFT) | (address & BANK_MASK));
             if (verbose) LOG.info("Bank read: {} {} -> {}", th(addressI), size, th(address));
             return Util.readDataMask(memory.getRomData(), size, addressI, memory.getRomMask());
         }
@@ -66,10 +66,10 @@ public class ExSsfMapper extends Ssf2Mapper {
     }
 
     @Override
-    public void writeData(long address, long data, Size size) {
+    public void writeData(int address, int data, Size size) {
         address &= MD_PC_MASK;
         if (address >= BANK_SET_START_ADDRESS && address <= BANK_SET_END_ADDRESS) {
-            int ctrlNum = (int) (address & 7);
+            int ctrlNum = (address & 7);
             //odd addresses go to SSF2 mapper
             if ((ctrlNum & 1) == 1) {
                 assert size == Size.BYTE;
@@ -92,10 +92,10 @@ public class ExSsfMapper extends Ssf2Mapper {
         super.writeData(address, data, size);
     }
 
-    private void writeBankDataExSsf(long addressL, long data) {
-        int val = (int) (addressL & 0xF);
+    private void writeBankDataExSsf(int addressL, int data) {
+        int val = (addressL & 0xF);
         int index = val >> 1;
-        int dataI = (int) (data & bankSelMask);
+        int dataI = (data & bankSelMask);
         banks[0] = dataI;
         if (verbose) LOG.info("Setting bankSelector {}: {}, {}", index, th(addressL), th(dataI));
     }
