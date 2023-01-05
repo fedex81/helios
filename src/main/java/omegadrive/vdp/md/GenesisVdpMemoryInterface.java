@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 
 import java.util.stream.IntStream;
 
+import static omegadrive.util.Util.th;
 import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_FRAME_H40;
 
 public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
@@ -158,7 +159,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
             vsram[address] = data & 0xFF;
         } else {
             //Arrow Flash
-            //LOG.debug("Ignoring vsram write to address: {}", th(address));
+            if (verbose) LOG.debug("Ignoring vsram byte-write to address: {}, val: {}", th(address), th(data));
         }
     }
 

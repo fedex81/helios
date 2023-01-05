@@ -466,7 +466,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         }
         if (!fifo.isEmpty()) {
             //Bonkers, Subterrania
-            //LOG.debug("readDataPort with FIFO not empty {}, address: {}", vramMode, addressRegister);
+            if (verbose) LOG.debug("readDataPort with FIFO not empty {}, address: {}", vramMode, addressRegister);
         }
         //TODO need to stop 68k until the result is available
         int value = readDataPortInternal();
@@ -562,7 +562,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private void updateSatLocation() {
         int res = VdpRenderHandler.getSpriteTableLocation(this, videoMode.isH40());
         if (res != satStart) {
-//            LOG.info("Sat location: {} -> {}", th(satStart), th(res));
+            if (verbose) LOG.info("Sat location: {} -> {}", th(satStart), th(res));
             satStart = res;
             memoryInterface.setSatBaseAddress(satStart);
         }
@@ -627,7 +627,6 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 
     @Override
     public int runSlot() {
-//        LogHelper.printLevel(LOG, Level.INFO, "Start slot: {}", interruptHandler.getSlotNumber(), verbose);
         //slot granularity -> 2 H counter increases per cycle
         interruptHandler.increaseHCounterSlot();
         processExternalSlot();
@@ -663,7 +662,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
                 boolean ext = bitSetTest(data, 7);
                 if (exVram != ext) {
                     exVram = ext;
-                    //LOG.debug("128kb VRAM: {}", exVram);
+                    if (verbose) LOG.debug("128kb VRAM: {}", exVram);
                 }
                 displayEnable = bitSetTest(data, 6);
                 ie0 = bitSetTest(data, 5);
@@ -682,7 +681,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
                 h40 = rs0 && rs1;
                 boolean val = bitSetTest(data, 3);
                 if (val != ste) {
-                    //LOG.debug("Shadow highlight: {}", val);
+                    if (verbose) LOG.debug("Shadow highlight: {}", val);
                 }
                 ste = val;
                 InterlaceMode prev = interlaceMode;
@@ -834,7 +833,11 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 
     @Override
     public String getVdpStateString() {
-        return interruptHandler.getStateString(" - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
+        return getVdpStateString("");
+    }
+
+    private String getVdpStateString(String head) {
+        return interruptHandler.getStateString(head + " - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
     }
 
     //NOTE: used by helios32x
@@ -861,7 +864,5 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         this.list.clear();
     }
 
-    private String getVdpStateString(String head) {
-        return interruptHandler.getStateString(head + " - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
-    }
+
 }

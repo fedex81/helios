@@ -21,29 +21,29 @@ package omegadrive.util;
 
 public enum Size {
 
-    BYTE(0x80, 0xFF), WORD(0x8000, 0xFFFF), LONG(0x8000_0000L, 0xFFFF_FFFFL);
+    BYTE(0x80, 0xFF), WORD(0x8000, 0xFFFF), LONG(0x8000_0000, 0xFFFF_FFFF);
 
     public static final Size[] vals = Size.values();
 
-    final long msb;
-    final long max;
+    final int msb;
+    final int max;
     final int byteSize;
 
-    Size(long msb, long maxSize) {
+    Size(int msb, int maxSize) {
         this.msb = msb;
         this.max = maxSize;
         this.byteSize = Math.max(1, ordinal() << 1);
     }
 
-    public long getMsb() {
+    public int getMsb() {
         return this.msb;
     }
 
-    public long getMax() {
+    public int getMax() {
         return this.max;
     }
 
-    public long getMask() {
+    public int getMask() {
         return this.max;
     }
 
@@ -51,7 +51,7 @@ public enum Size {
         return byteSize;
     }
 
-    public static long getMaxFromByteCount(int byteCount) {
+    public static int getMaxFromByteCount(int byteCount) {
         switch (byteCount) {
             case 1:
                 return BYTE.max;

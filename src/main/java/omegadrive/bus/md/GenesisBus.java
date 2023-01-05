@@ -60,8 +60,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
-
-    private RomContext romContext;
     private MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private RomMapper exSsfMapper = RomMapper.NO_OP_MAPPER;
@@ -214,7 +212,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         } else {
             LOG.error("Unexpected bus read: {}, 68k PC: {}",
                     th(address), th(m68kProvider.getPC()));
-            data = (int) size.getMask();
+            data = size.getMask();
         }
         return data;
     }
@@ -270,7 +268,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private int reservedRead(int address, Size size) {
         if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
             LOG.warn("Read on reserved address: {}, {}", th(address), size);
-            return (int) size.getMax();
+            return size.getMax();
         } else {
             //reads rom at 0x40_0000 MegaCD mirror
             return Util.readDataMask(rom, size, address, (int) DEFAULT_ROM_END_ADDRESS);
@@ -402,7 +400,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 checkBackupMemoryMapper(SramMode.READ_WRITE);
             }
             sramLockValue = data;
-            //LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
+            if (verbose) LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
             LOG.warn("Unexpected mapper set, address: {}, data: {}", th(addressL),
                     th(data));
@@ -414,7 +412,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return sramLockValue;
         }
         LOG.warn("Unexpected /TIME or mapper read at: {} {}", th(addressL), size);
-        return (int) size.getMask();
+        return size.getMask();
     }
 
     //	if the Z80 is required to be reset (for example, to load a new program to it's memory)
@@ -422,7 +420,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     //	After returning the bus after loading the new program to it's memory,
     //	the Z80 may be let go from reset by writing #$0100 to $A11200.
     private void z80ResetControlWrite(int data, Size size) {
-//        LOG.info("Write Z80 resetControl: {}, {} {}", th(address), th(data), size);
+        if (verbose) LOG.info("Write Z80 resetControl: {} {}", th(data), size);
         if (size == Size.WORD) {
             data >>>= 8;
         }
@@ -433,13 +431,13 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 z80Provider.reset();
                 z80ResetState = true;
                 getFm().reset();
-                //LOG.debug("Reset while busRequested: {}", z80BusRequested);
+                if (verbose) LOG.debug("Reset while busRequested: {}", z80BusRequested);
             } else {
-                //LOG.debug("Reset while busUnrequested, ignoring");
+                if (verbose) LOG.debug("Reset while busUnrequested, ignoring");
             }
         } else {
             z80ResetState = false;
-            //LOG.debug("Disable reset, busReq : {}", z80BusRequested);
+            if (verbose) LOG.debug("Disable reset, busReq : {}", z80BusRequested);
         }
     }
 
@@ -447,7 +445,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     //	 #$0000 needs to be written to $A11100 to return the bus back to the Z80
     //NOTE: Street Fighter 2 sends 0xFFFF, Monster World 0xFEFF, Slap Fight 0xFF
     private void z80BusReqWrite(int data, Size size) {
-//        LOG.info("Write Z80 busReq: {}, {} {}", th(address), th(data), size);
+        if (verbose) LOG.info("Write Z80 busReq: {} {}", th(data), size);
         if (size == Size.WORD) {
             data >>>= 8;
         }
@@ -455,17 +453,17 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         boolean busReq = (data & 1) > 0;
         if (busReq) {
             if (!z80BusRequested) {
-                //LOG.debug("busRequested, reset: {}", z80ResetState);
+                if (verbose) LOG.debug("busRequested, reset: {}", z80ResetState);
                 z80BusRequested = true;
             } else {
-                //LOG.debug("busRequested, ignored, reset: {}", z80ResetState);
+                if (verbose) LOG.debug("busRequested, ignored, reset: {}", z80ResetState);
             }
         } else {
             if (z80BusRequested) {
                 z80BusRequested = false;
-                //LOG.debug("busUnrequested, reset : {}", z80ResetState);
+                if (verbose) LOG.debug("busUnrequested, reset : {}", z80ResetState);
             } else {
-                //LOG.debug("busUnrequested ignored");
+                if (verbose) LOG.debug("busUnrequested ignored");
             }
         }
     }
@@ -572,7 +570,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 joypadProvider.writeDataRegister2(data);
                 break;
             case 6:
-                //LOG.debug("Write to expansion port: {}, data: {}", th(address), th(data));
+                if (verbose) LOG.debug("Write to expansion port: {}, data: {}", th(address), th(data));
                 break;
             case 8:
                 joypadProvider.writeControlRegister1(data);
@@ -631,18 +629,17 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return;
         }
         address &= GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK;
-        int data = dataL;
         if (size == Size.BYTE) {
-            z80Provider.writeMemory(address, data);
+            z80Provider.writeMemory(address, dataL);
         } else if (size == Size.WORD) {
-            z80MemoryWriteWord(address, data);
+            z80MemoryWriteWord(address, dataL);
         } else {
             //longword access to Z80 like "Stuck Somewhere In Time" does
             //(where every other byte goes nowhere, it was done because it made bulk transfers faster)
-//            LOG.debug("Unexpected long write, addr: {}, data: {}", address, dataL);
+            if (verbose) LOG.debug("Unexpected long write, addr: {}, data: {}", address, dataL);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-            z80MemoryWriteWord(address, data >>> 16);
-            z80MemoryWriteWord(address + 2, data & 0xFFFF);
+            z80MemoryWriteWord(address, dataL >>> 16);
+            z80MemoryWriteWord(address + 2, dataL & 0xFFFF);
         }
     }
 

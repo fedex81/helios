@@ -35,6 +35,8 @@ import static omegadrive.util.Util.th;
 public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements GenesisZ80BusProvider {
     private static final Logger LOG = LogHelper.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
 
+    private final static boolean verbose = false;
+
     //    To specify which 32k section you want to access, write the upper nine
     //    bits of the complete 24-bit address into bit 0 of the bank address
     //    register, which is at 6000h (Z80) or A06000h (68000), starting with
@@ -81,7 +83,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             LOG.warn("Z80 read bank switching/unused: {}", th(address));
         } else if (address >= START_VDP && address <= END_VDP_VALID) {
             int vdpAddress = (VDP_BASE_ADDRESS + address);
-            //   LOG.info("Z80 read VDP memory , address {}",th(address));
+            if (verbose) LOG.info("Z80 read VDP memory , address {}", th(address));
             data = mainBusProvider.read(vdpAddress, Size.BYTE);
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
@@ -95,17 +97,14 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
         } else {
             LOG.error("Illegal Z80 memory read: {}", th(address));
         }
-//        RegAccessLogger.regAccess("Z80", address, data, size, true);
         return data;
     }
 
     @Override
     public void write(final int address, final int dataInt, final Size size) {
-//        RegAccessLogger.regAccess("Z80", addressL, data, size, false);
         if (address <= END_RAM) {
             ram[address & ramMask] = dataInt & 0xFF;
         } else if (address >= START_YM2612 && address <= END_YM2612) {
-            //LOG.info("Writing " + th(address) + " data: " + data);
             if (mainBusProvider.isZ80ResetState()) {
                 LOG.warn("Illegal write to FM while Z80 reset");
                 return;
