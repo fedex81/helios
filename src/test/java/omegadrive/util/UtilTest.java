@@ -4,6 +4,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  * UtilTest
  * <p>
@@ -15,6 +19,17 @@ public class UtilTest {
 
     private static final int SIZE = 0x100;
     private static final int MASK = SIZE - 1;
+
+    private static final String sentinelPath = "src/test/resources/misc/";
+
+    public static final boolean RUNNING_IN_GITHUB;
+
+    static {
+        System.out.println(new File(".").getAbsolutePath());
+        Path p = Paths.get(".", sentinelPath);
+        RUNNING_IN_GITHUB = !p.toFile().exists();
+        System.err.println("Ignore tests failing in GitHub: " + RUNNING_IN_GITHUB);
+    }
 
     byte[] input = new byte[SIZE];
     int[] signIntInput = new int[SIZE];

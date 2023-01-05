@@ -9,15 +9,12 @@ import omegadrive.util.SystemTestUtil;
 import omegadrive.util.Util;
 import org.junit.Assert;
 import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.File;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static omegadrive.bus.model.GenesisBusProvider.SRAM_LOCK;
+import static omegadrive.util.UtilTest.RUNNING_IN_GITHUB;
 
 /**
  * Federico Berti
@@ -28,17 +25,6 @@ public class MdMapperTest {
 
     IMemoryProvider mem;
     ByteBuffer buffer;
-
-    static String sentinelPath = "src/test/resources/misc/test_issues";
-    static boolean runAllTests = false;
-
-    @BeforeClass
-    public static void beforeClass() {
-        System.out.println(new File(".").getAbsolutePath());
-        Path p = Paths.get(".", sentinelPath);
-        runAllTests = p.toFile().exists();
-        System.out.println("runAllTests: " + runAllTests);
-    }
 
     private void prepareRomData(int size, String systemType) {
         buffer = ByteBuffer.allocate(size);
@@ -64,7 +50,7 @@ public class MdMapperTest {
 
     @Test
     public void testNoMapperSram() {
-        Assume.assumeTrue(runAllTests);
+        Assume.assumeFalse(RUNNING_IN_GITHUB);
         prepareRomData(0x10_0000, "SEGA GENESIS"); //8 Mbit
         prepareSramHeader();
         testSramInternal();
@@ -72,7 +58,7 @@ public class MdMapperTest {
 
     @Test
     public void testMapper() {
-        Assume.assumeTrue(runAllTests);
+        Assume.assumeFalse(RUNNING_IN_GITHUB);
         prepareRomData(0x50_0000, "SEGA GENESIS"); //40 Mbit
 
         int address = 0x20_00FF;
@@ -113,9 +99,9 @@ public class MdMapperTest {
     //NOTE: there is no overlap between rom vs sram address space
     //Buck Rogers
     @Test
-//    @Ignore("fails in github actions")
+    //NOTE: fails in github actions
     public void testNoMapperSramDodgy() {
-        Assume.assumeTrue(runAllTests);
+        Assume.assumeFalse(RUNNING_IN_GITHUB);
         prepareRomData(0x20_0000, "SEGA GENESIS"); //16 Mbit
         testSramInternal();
     }
