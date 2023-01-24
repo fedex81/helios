@@ -20,12 +20,13 @@
 package omegadrive.bus.model;
 
 import omegadrive.Device;
+import omegadrive.memory.ReadableByteMemory;
 import omegadrive.util.Size;
 
 import java.util.Optional;
 import java.util.Set;
 
-public interface BaseBusProvider extends Device {
+public interface BaseBusProvider extends Device, ReadableByteMemory {
 
     int read(int address, Size size);
 

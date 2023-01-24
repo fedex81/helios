@@ -41,6 +41,8 @@ import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.util.MemView;
+import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
@@ -69,6 +71,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     protected Z80Provider z80;
     protected M68kProvider cpu;
     protected Ssp16 ssp16 = Ssp16.NO_SVP;
+    protected UpdatableViewer memView;
     protected boolean hasSvp = ssp16 != Ssp16.NO_SVP;
     protected double nextVdpCycle = vdpVals[0];
     protected int next68kCycle = M68K_DIVIDER;
@@ -227,12 +230,17 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     @Override
     public void newFrame() {
         checkSvp();
+        memView.update();
         super.newFrame();
     }
 
     private void checkSvp() {
         ssp16 = SvpMapper.ssp16;
         hasSvp = ssp16 != Ssp16.NO_SVP;
+    }
+
+    protected UpdatableViewer createMemView() {
+        return MemView.createInstance(bus, vdp.getVdpMemory());
     }
 
     /**
@@ -253,6 +261,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         bus.attachDevice(sound);
         vdp.addVdpEventListener(sound);
         resetAfterRomLoad();
+        memView = createMemView();
     }
 
     @Override

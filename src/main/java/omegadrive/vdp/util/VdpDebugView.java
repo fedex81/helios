@@ -11,6 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * VdpDebugView
@@ -25,7 +26,7 @@ public class VdpDebugView implements UpdatableViewer {
     private final ExecutorService service = Executors.newSingleThreadExecutor(
             new PriorityThreadFactory(Thread.MIN_PRIORITY, this));
 
-    private static final boolean DEBUG_VIEWER_ENABLED;
+    public static final boolean DEBUG_VIEWER_ENABLED;
 
     static {
         DEBUG_VIEWER_ENABLED =
@@ -93,8 +94,16 @@ public class VdpDebugView implements UpdatableViewer {
         frame.pack();
     }
 
+    private AtomicInteger qLen = new AtomicInteger(0);
+
     @Override
     public void update() {
+        int res = qLen.incrementAndGet();
+        if (res > 1) {
+//            System.out.println("Too slow: " + res);
+            qLen.decrementAndGet();
+            return;
+        }
         //need to do it now, as the render will be changed by the 32x layer
         if (s32xMode) {
             planeViewer.update();
@@ -105,6 +114,7 @@ public class VdpDebugView implements UpdatableViewer {
             if (!s32xMode) {
                 planeViewer.update();
             }
+            qLen.decrementAndGet();
         });
     }
 
