@@ -27,7 +27,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.formdev:flatlaf:3.0'
 
-    implementation 'org.tinylog:tinylog-api:2.5.0'
+    implementation 'org.tinylog:tinylog-api:2.6.0'
     implementation 'org.tinylog:tinylog-impl:2.5.0'
     implementation 'org.tinylog:slf4j-tinylog:2.5.0'
 
