@@ -32,7 +32,7 @@ public class Z80MemIoOps implements IMemIoOps {
     private BaseBusProvider z80BusProvider;
     private long tstatesCount = 0;
     private boolean activeInterrupt;
-    private int[] ram;
+    private byte[] ram;
     private int ramSizeMask;
     private int pcUpperLimit = 0xFFFF;
     public int lastFetch;
@@ -144,7 +144,7 @@ public class Z80MemIoOps implements IMemIoOps {
     @Override
     public void poke8(int address, int value) {
         tstatesCount += 3;
-        z80BusProvider.write(address, value, Size.BYTE);
+        z80BusProvider.write(address, value & 0xFF, Size.BYTE);
     }
 
     @Override
@@ -156,7 +156,7 @@ public class Z80MemIoOps implements IMemIoOps {
     @Override
     public void outPort(int port, int value) {
         tstatesCount += 4;
-        z80BusProvider.writeIoPort(port, value);
+        z80BusProvider.writeIoPort(port, value & 0xFF);
     }
 
     @Override
@@ -196,8 +196,7 @@ public class Z80MemIoOps implements IMemIoOps {
     @Override
     public int fetchOpcode(int address) {
         tstatesCount += 4;
-        address &= ramSizeMask;
-        return ram[address];
+        return ram[address & ramSizeMask] & 0xFF;
     }
 
     public static abstract class Z80MemIoOpsDbg extends Z80MemIoOps {

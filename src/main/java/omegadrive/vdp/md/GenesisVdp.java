@@ -40,6 +40,8 @@ import static omegadrive.util.Util.bitSetTest;
 import static omegadrive.util.Util.th;
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_FIELD_CHANGE;
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_MODE_CHANGE;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.CRAM;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.getRegisterName;
 
 /**
@@ -445,7 +447,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
             if (verbose) LOG.info("writeVram: {}, data: {}, address: {}",
                     entry.vdpRamMode, th(entry.data), th(entry.addressRegister));
             if (exVram && entry.vdpRamMode == VramMode.vramWrite) {
-                memoryInterface.writeVramByte(entry.addressRegister, entry.data & 0xFF);
+                memoryInterface.writeVideoRamByte(VRAM, entry.addressRegister, (byte) entry.data);
             } else {
                 memoryInterface.writeVideoRamWord(entry.vdpRamMode, entry.data, entry.addressRegister);
             }
@@ -488,7 +490,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         int fifoData = fifo.peek().data;
         switch (vramMode) {
             case vramRead_8bit:
-                res = memoryInterface.readVramByte(addressRegister ^ 1);
+                res = memoryInterface.readVideoRamByte(VRAM, addressRegister ^ 1);
                 res = (fifoData & 0xFF00) | (res & 0xFF);
                 break;
             case cramRead:
@@ -817,7 +819,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     }
 
     @Override
-    public VdpMemory getVdpMemory() {
+    public VdpMemoryInterface getVdpMemory() {
         return memoryInterface;
     }
 
@@ -854,7 +856,8 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     public void reload() {
         initMode();
         //force javaPalette update
-        IntStream.range(0, VDP_CRAM_SIZE).forEach(i -> memoryInterface.writeCramByte(i, memoryInterface.readCramByte(i)));
+        IntStream.range(0, VDP_CRAM_SIZE).forEach(i ->
+                memoryInterface.writeVideoRamByte(CRAM, i, memoryInterface.readVideoRamByte(CRAM, i)));
         renderHandler.initLineData(0);
     }
 

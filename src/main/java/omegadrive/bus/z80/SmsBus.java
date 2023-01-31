@@ -28,7 +28,10 @@ import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.sms.SmsMapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.TwoButtonsJoypad;
-import omegadrive.util.*;
+import omegadrive.util.FileUtil;
+import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector;
+import omegadrive.util.Size;
 import omegadrive.vdp.SmsVdp;
 import org.slf4j.Logger;
 
@@ -38,6 +41,8 @@ import java.nio.file.Paths;
 
 import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.ADDR_LATCH_REG;
 import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.DATA_REG;
+import static omegadrive.util.ArrayEndianUtil.toUnsignedIntArray;
+import static omegadrive.util.ArrayEndianUtil.unsignedToByteArray;
 import static omegadrive.util.Util.th;
 
 /**
@@ -95,7 +100,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
 
         if (HW_ENABLE_BIOS) {
             Path p = Paths.get(SystemLoader.biosFolder, "bios.sms");
-            int[] bios = Util.toUnsignedIntArray(FileUtil.loadBiosFile(p));
+            int[] bios = toUnsignedIntArray(FileUtil.loadBiosFile(p));
             int BIOS_END = bios.length;
             LOG.info("Loading Sms bios from: {}", p.toAbsolutePath());
         }
@@ -140,7 +145,8 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
 
     @Override
     public void writeData(int address, int data, Size size) {
-        memoryProvider.writeRamByte((address & RAM_MASK), (data & 0xFF));
+        assert size == Size.BYTE;
+        memoryProvider.writeRamByte((address & RAM_MASK), (byte) data);
     }
 
     @Override
@@ -161,7 +167,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
                 break;
             // 0xBE VDP Data port
             case 0x80:
-                vdpProvider.dataWrite(value);
+                vdpProvider.dataWrite((byte) value);
                 break;
 
             // 0xBD / 0xBF VDP Control port (Mirrored at two locations)
@@ -425,7 +431,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
     public void saveContext(ByteBuffer buffer) {
 //        LOG.info("mapperControl: {}, frameReg: {}", control, Arrays.toString(frameReg));
         buffer.put((byte) (smsMapper.getMapperControl() & 0xFF));
-        buffer.put(Util.unsignedToByteArray(smsMapper.getFrameReg()));
+        buffer.put(unsignedToByteArray(smsMapper.getFrameReg()));
     }
 
     @Override

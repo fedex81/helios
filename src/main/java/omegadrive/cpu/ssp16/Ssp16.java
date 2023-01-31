@@ -86,7 +86,7 @@ public interface Ssp16 {
         return ssp16;
     }
 
-    static void loadCart(Cart cart, int[] romBytes) {
+    static void loadCart(Cart cart, byte[] romBytes) {
         cart.rom = new int[romBytes.length >> 1]; //words
         int k = 0;
         for (int i = 0; i < romBytes.length; i += 2) {

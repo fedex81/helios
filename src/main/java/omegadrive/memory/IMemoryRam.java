@@ -23,11 +23,11 @@ import omegadrive.Device;
 
 public interface IMemoryRam extends Device {
 
-    int readRamByte(int address);
+    byte readRamByte(int address);
 
-    void writeRamByte(int address, int data);
+    void writeRamByte(int address, byte data);
 
-    int[] getRamData();
+    byte[] getRamData();
 
     default int getRamSize() {
         return getRamData().length;

@@ -55,15 +55,15 @@ public class RomMaskTest {
 
     @Test
     public void testRomPadding() {
-        int romVal = 0x22;
-        int padVal = 0xFF;
+        byte romVal = 0x22;
+        byte padVal = (byte) 0xFF;
         for (Map.Entry<Integer, Integer> entry : maskMap.entrySet()) {
             int romSize = entry.getKey();
             int mask = entry.getValue();
-            int[] baseRom = new int[romSize];
+            byte[] baseRom = new byte[romSize];
             Arrays.fill(baseRom, romVal);
             RomHolder h = new RomHolder(baseRom);
-            int[] rom = h.data;
+            byte[] rom = h.data;
             int size = h.size;
             boolean isPadded = size > romSize;
 //            System.out.println(th(entry.getKey()) + "," + th(entry.getValue()) + "," + th(size) + "," + isPadded);
@@ -72,8 +72,9 @@ public class RomMaskTest {
             Assert.assertEquals(isPadded ? padVal : romVal, b1);
             int b2 = (int) Util.readDataMask(rom, Size.BYTE, size, mask); //this maps to address 0
             Assert.assertEquals(romVal, b2);
-            int w1 = (int) Util.readDataMask(rom, Size.WORD, size - 1, mask);
-            Assert.assertEquals(isPadded ? 0xFF22 : 0x2222, w1);
+            //NOTE not supported as only homebrews do this
+//            int w1 = (int) Util.readDataMask(rom, Size.WORD, size - 1, mask);
+//            Assert.assertEquals(isPadded ? 0xFF22 : 0x2222, w1);
             int w2 = (int) Util.readDataMask(rom, Size.WORD, size, mask);
             Assert.assertEquals(0x2222, w2);
             int ln = (int) Util.readDataMask(rom, Size.LONG, size, mask);
@@ -82,15 +83,16 @@ public class RomMaskTest {
                 continue;
             }
             int w3 = (int) Util.readDataMask(rom, Size.WORD, size - 2, mask);
-            Assert.assertEquals(isPadded ? 0xFFFF : 0x2222, w3);
+            Assert.assertEquals(isPadded ? 0xFFFF : 0x2222, w3 & 0xFFFF);
             int l0 = (int) Util.readDataMask(rom, Size.LONG, size - 4, mask);
             Assert.assertEquals(isPadded ? 0xFFFFFFFF : 0x22222222, l0);
-            int l1 = (int) Util.readDataMask(rom, Size.LONG, size - 3, mask);
-            Assert.assertEquals(isPadded ? 0xFFFFFF22 : 0x22222222, l1);
-            int l2 = (int) Util.readDataMask(rom, Size.LONG, size - 2, mask);
-            Assert.assertEquals(isPadded ? 0xFFFF2222 : 0x22222222, l2);
-            int l3 = (int) Util.readDataMask(rom, Size.LONG, size - 1, mask);
-            Assert.assertEquals(isPadded ? 0xFF222222 : 0x22222222, l3);
+            //NOTE not supported as only homebrews do this
+//            int l1 = (int) Util.readDataMask(rom, Size.LONG, size - 3, mask);
+//            Assert.assertEquals(isPadded ? 0xFFFFFF22 : 0x22222222, l1);
+//            int l2 = (int) Util.readDataMask(rom, Size.LONG, size - 2, mask);
+//            Assert.assertEquals(isPadded ? 0xFFFF2222 : 0x22222222, l2);
+//            int l3 = (int) Util.readDataMask(rom, Size.LONG, size - 1, mask);
+//            Assert.assertEquals(isPadded ? 0xFF222222 : 0x22222222, l3);
         }
     }
 }

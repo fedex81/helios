@@ -25,12 +25,12 @@ public interface IMemoryProvider extends IMemoryRam, IMemoryRom {
 
     void setChecksumRomValue(long value);
 
-    void setRomData(int[] data);
+    void setRomData(byte[] data);
 
     RomHolder getRomHolder();
 
     @Override
-    default int[] getRomData() {
+    default byte[] getRomData() {
         return getRomHolder().data;
     }
 

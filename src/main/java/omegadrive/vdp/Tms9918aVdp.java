@@ -22,10 +22,10 @@ package omegadrive.vdp;
 import omegadrive.Device;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.Tms9918a;
-import omegadrive.vdp.model.VdpMemory;
 import omegadrive.vdp.model.VdpMisc.RenderType;
 import org.slf4j.Logger;
 
@@ -57,13 +57,12 @@ public class Tms9918aVdp implements Tms9918a, Device {
 
     private TmsMode vdpMode;
     private VdpInterruptHandler interruptHandler;
-    private VdpMemory memory;
     private VdpRenderDump renderDump;
     private java.util.List<VdpEventListener> list;
     private int[] screenDataLinear;
 
     /* VRAM */
-    public int[] mem;
+    public byte[] mem;
 
     /* Registers */
     private final int[] registers = new int[REGISTERS];
@@ -86,7 +85,7 @@ public class Tms9918aVdp implements Tms9918a, Device {
 
     public void reset() {
         Arrays.fill(registers, 0);
-        Arrays.fill(mem, 0);
+        Arrays.fill(mem, (byte) 0);
         registers[1] = 0x10;
 
         readWriteAddr = 0;
@@ -105,10 +104,9 @@ public class Tms9918aVdp implements Tms9918a, Device {
 
     private void setupVdp() {
         this.list = new ArrayList<>();
-        memory = SimpleVdpMemoryInterface.createInstance(RAM_SIZE);
         screenDataLinear = new int[VDP_WIDTH * VDP_HEIGHT];
         interruptHandler = VdpInterruptHandlerHelper.createTmsInstance(this);
-        mem = memory.getVram();
+        mem = Util.initMemoryRandomBytes(new byte[RAM_SIZE]);
         renderDump = new VdpRenderDump();
     }
 
@@ -150,11 +148,6 @@ public class Tms9918aVdp implements Tms9918a, Device {
     @Override
     public void setRegion(RegionDetector.Region region) {
         //do nothing
-    }
-
-    @Override
-    public VdpMemory getVdpMemory() {
-        return memory;
     }
 
     public VdpInterruptHandler getInterruptHandler() {
@@ -698,8 +691,8 @@ public class Tms9918aVdp implements Tms9918a, Device {
 
     @Override
     public void loadContext(ByteBuffer buffer) {
-        IntStream.range(0, Tms9918a.RAM_SIZE).forEach(i -> mem[i] = buffer.get() & 0xFF);
-        IntStream.range(0, Tms9918a.REGISTERS).forEach(i -> updateRegisterData(i, buffer.get() & 0xFF));
+        IntStream.range(0, Tms9918a.RAM_SIZE).forEach(i -> mem[i] = buffer.get());
+        IntStream.range(0, Tms9918a.REGISTERS).forEach(i -> updateRegisterData(i, buffer.get()));
     }
 
     @Override
@@ -711,6 +704,10 @@ public class Tms9918aVdp implements Tms9918a, Device {
     @Override
     public List<VdpEventListener> getVdpEventListenerList() {
         return list;
+    }
+
+    public byte[] getVram() {
+        return mem;
     }
 
     @Override

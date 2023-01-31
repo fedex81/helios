@@ -26,7 +26,6 @@ import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.VdpMemory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -101,7 +100,7 @@ public class SmsVdp implements BaseVdpProvider {
     /**
      * Video RAM
      */
-    private final int[] VRAM;
+    private final byte[] VRAM;
 
     /**
      * Colour RAM
@@ -230,7 +229,6 @@ public class SmsVdp implements BaseVdpProvider {
     // --------------------------------------------------------------------------------------------
 
     private final VdpInterruptHandler interruptHandler;
-    private final VdpMemory memory;
     private final boolean isSms;
     private VideoMode ggVideoMode = VideoMode.NTSCU_H20_V18;
     private RegionDetector.Region region;
@@ -265,9 +263,8 @@ public class SmsVdp implements BaseVdpProvider {
         // Note, we don't directly emulate CRAM but actually store the converted Java palette
         // in it. Therefore the length is different to on the real GameGear where it's actually
         // 64 bytes.
-        memory = SimpleVdpMemoryInterface.createInstance(VDP_VRAM_SIZE, VDP_CRAM_SIZE);
-        VRAM = memory.getVram();
-        CRAM = memory.getCram();
+        VRAM = Util.initMemoryRandomBytes(new byte[VDP_VRAM_SIZE]);
+        CRAM = new int[VDP_CRAM_SIZE];
         resetVideoMode(true);
         LOG.info("Initial video mode: {}, {}", videoMode, videoMode.getDimension());
     }
@@ -370,7 +367,6 @@ public class SmsVdp implements BaseVdpProvider {
     /**
      * Force full redraw of entire cache
      */
-
     public final void forceFullRedraw() {
         refreshBgtAddress(vdpreg[2]);
         minDirty = 0;
@@ -433,7 +429,7 @@ public class SmsVdp implements BaseVdpProvider {
 
             // Read value from VRAM
             if (operation == 0) {
-                readBuffer = VRAM[(location++) & 0x3FFF];
+                readBuffer = VRAM[(location++) & 0x3FFF] & 0xFF;
             }
             // Set VDP Register
             else if (operation == 2) {
@@ -506,23 +502,23 @@ public class SmsVdp implements BaseVdpProvider {
         firstByte = true; // Reset flag
 
         int value = readBuffer; // Stores value to be returned
-        readBuffer = VRAM[(location++) & 0x3FFF];
+        readBuffer = VRAM[(location++) & 0x3FFF] & 0xFF;
 
         return value;
     }
 
     /**
-     *  Write to VDP Data Port (0xBE)
+     * Write to VDP Data Port (0xBE)
      *
-     *  @param  value   Value to Write
+     * @param value Value to Write
      */
 
-    public final void dataWrite(int value) {
+    public final void dataWrite(byte val) {
         // Reset flag
         firstByte = true;
-        value &= 0xFF;
+        int value = val & 0xFF;
 
-        switch(operation) {
+        switch (operation) {
             // VRAM Write
             case 0x00:
             case 0x01:
@@ -544,7 +540,7 @@ public class SmsVdp implements BaseVdpProvider {
                         if (tileIndex > maxDirty) maxDirty = tileIndex;
                     }
 
-                    VRAM[address] = value;
+                    VRAM[address] = val;
                 }
             }
 
@@ -691,7 +687,7 @@ public class SmsVdp implements BaseVdpProvider {
         // Cycle through background table
         for (int tx = h_start; tx < h_end; tx++) {
             int tile_props = bgt + ((tile_column & 0x1F) << 1) + (tile_row << 6);
-            int secondbyte = VRAM[tile_props+1];
+            int secondbyte = VRAM[tile_props + 1] & 0xFF;
 
             // Select Palette (Either 0 or 16)
             int pal = (secondbyte & 0x08) << 1;
@@ -703,7 +699,7 @@ public class SmsVdp implements BaseVdpProvider {
             int pixY = ((secondbyte & 0x04) == 0) ? tile_y : ((7 << 3) - tile_y);
 
             // Pattern Number (0 - 512)
-            int[] tile = tiles[VRAM[tile_props] + ((secondbyte & 0x01) << 8)];
+            int[] tile = tiles[(VRAM[tile_props] & 0xFF) + ((secondbyte & 0x01) << 8)];
 
             // -----------------------------------------------------------------------------------
             // Plot 8 Pixel Row (No H-Flip)
@@ -953,13 +949,13 @@ public class SmsVdp implements BaseVdpProvider {
 
             // Plot column of 8 pixels
             for (int y = 0; y < TILE_SIZE; y++) {
-                int address0 = VRAM[address++];
-                int address1 = VRAM[address++];
-                int address2 = VRAM[address++];
-                int address3 = VRAM[address++];
+                int address0 = VRAM[address++] & 0xFF;
+                int address1 = VRAM[address++] & 0xFF;
+                int address2 = VRAM[address++] & 0xFF;
+                int address3 = VRAM[address++] & 0xFF;
 
                 // Plot row of 8 pixels
-                for (int bit = 0x80; bit != 0; bit>>=1) {
+                for (int bit = 0x80; bit != 0; bit >>= 1) {
                     int colour = 0;
 
                     // Set Colour of Pixel (0-15)
@@ -1036,7 +1032,7 @@ public class SmsVdp implements BaseVdpProvider {
         // ----------------------------------------------------------------------------------------
         for (int spriteno = 0; spriteno < 0x40; spriteno++) {
             // Sprite Y Position
-            int y = VRAM[sat + spriteno];
+            int y = VRAM[sat + spriteno] & 0xFF;
 
             // VDP stops drawing if y == 208, only for v24
             if (isV24 && y == 208) {
@@ -1067,13 +1063,13 @@ public class SmsVdp implements BaseVdpProvider {
                         int address = sat + (spriteno<<1) + 0x80;
 
                         // Sprite X Position
-                        sprites[off++] = VRAM[address++];
+                        sprites[off++] = VRAM[address++] & 0xFF;
 
                         // Sprite Y Position
                         sprites[off++] = y;
 
                         // Sprite Pattern Index
-                        sprites[off++] = VRAM[address];
+                        sprites[off++] = VRAM[address] & 0xFF;
 
                         // Increment number of sprites on this scanline
                         sprites[SPRITE_COUNT]++;
@@ -1200,9 +1196,12 @@ public class SmsVdp implements BaseVdpProvider {
         return isSms ? videoMode : ggVideoMode;
     }
 
-    @Override
-    public VdpMemory getVdpMemory() {
-        return memory;
+    public byte[] getVRAM() {
+        return VRAM;
+    }
+
+    public int[] getCRAM() {
+        return CRAM;
     }
 
     @Override

@@ -34,7 +34,7 @@ import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.VdpMemory;
+import omegadrive.vdp.model.VdpMemoryInterface;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -115,14 +115,14 @@ public class MdSavestateTest extends BaseSavestateTest {
         IntStream.range(0, 24).forEach(i ->
                 Assert.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
 
-        VdpMemory vm1 = vdp1.getVdpMemory();
-        VdpMemory vm2 = vdp2.getVdpMemory();
+        VdpMemoryInterface vm1 = vdp1.getVdpMemory();
+        VdpMemoryInterface vm2 = vdp2.getVdpMemory();
         IntStream.range(0, GenesisVdpProvider.VDP_VRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vram" + i, vm1.getVram()[i], vm2.getVram()[i]));
+                Assert.assertEquals("Vram" + i, vm1.getVram().get(i), vm2.getVram().get(i)));
         IntStream.range(0, GenesisVdpProvider.VDP_VSRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vsram" + i, vm1.getVsram()[i], vm2.getVsram()[i]));
+                Assert.assertEquals("Vsram" + i, vm1.getVsram().get(i), vm2.getVsram().get(i)));
         IntStream.range(0, GenesisVdpProvider.VDP_CRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Cram" + i, vm1.getCram()[i], vm2.getCram()[i]));
+                Assert.assertEquals("Cram" + i, vm1.getCram().get(i), vm2.getCram().get(i)));
     }
 
     @Override

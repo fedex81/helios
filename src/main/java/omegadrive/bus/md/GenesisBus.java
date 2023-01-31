@@ -82,6 +82,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     private BusState busState = BusState.NOT_READY;
 
+    protected byte[] rom, ram;
+    protected int romMask;
     private boolean z80BusRequested;
     private boolean z80ResetState;
     private int sramLockValue;
@@ -171,10 +173,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         }
         mapper.writeData(address, data, size);
     }
-
-    protected int[] ram, rom;
-    protected int romMask;
-
     @Override
     public void init() {
         initializeRomData();
@@ -214,7 +212,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                     th(address), th(m68kProvider.getPC()));
             data = size.getMask();
         }
-        return data;
+        return data & size.getMask();
     }
 
     @Override

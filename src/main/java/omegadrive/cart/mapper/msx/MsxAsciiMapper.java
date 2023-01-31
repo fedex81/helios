@@ -41,20 +41,20 @@ public class MsxAsciiMapper extends AsciiMapperImpl {
     public static final int PAGES_8KB = 4;
     public static final int PAGES_16KB = 2;
 
-    private MsxAsciiMapper(int[] rom, AsciiType type) {
+    private MsxAsciiMapper(byte[] rom, AsciiType type) {
         super(rom, type);
     }
 
-    public static RomMapper createMapper(int[] rom, String type){
+    public static RomMapper createMapper(byte[] rom, String type) {
         AsciiType t = getMapperType(type);
-        if(t == null){
+        if (t == null) {
             LOG.error("Mapper not supported: {}", type);
             return NO_OP_MAPPER;
         }
         return createMapper(rom, t);
     }
 
-    public static RomMapper createMapper(int[] rom, AsciiType type){
+    public static RomMapper createMapper(byte[] rom, AsciiType type) {
         return new AsciiMapperImpl(rom, type);
     }
 
@@ -81,10 +81,10 @@ class AsciiMapperImpl implements RomMapper {
     final int pageSize;
     final int readShiftMask;
     final int[] pageBlockMapper;
-    final int[] rom;
+    final byte[] rom;
     final AsciiType type;
 
-    protected AsciiMapperImpl(int[] rom, AsciiType type) {
+    protected AsciiMapperImpl(byte[] rom, AsciiType type) {
         this.rom = rom;
         this.type = type;
         this.pageNum = type == AsciiType.ASCII8 ? PAGES_8KB : PAGES_16KB;

@@ -25,10 +25,13 @@ import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.slf4j.Logger;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.stream.IntStream;
 
+import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
-import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_FRAME_H40;
+import static omegadrive.vdp.model.GenesisVdpProvider.*;
 
 public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
@@ -36,9 +39,9 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     private final static Logger LOG = LogHelper.getLogger(GenesisVdpMemoryInterface.class.getSimpleName());
     private static final int EVEN_VALUE_MASK = ~1;
 
-    private int[] vram;
-    private int[] cram;
-    private int[] vsram;
+    private ByteBuffer vram;
+    private ByteBuffer cram;
+    private ByteBuffer vsram;
     private int[] javaPalette;
     private final int[] satCache = new int[MAX_SPRITES_PER_FRAME_H40 * 8]; //8 bytes per sprite
     private int satBaseAddress = 0, satEndAddress = satBaseAddress + satCache.length;
@@ -56,41 +59,52 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     }
 
     protected void init() {
-        vram = Util.initMemoryRandomBytes(new int[GenesisVdpProvider.VDP_VRAM_SIZE]);
-        cram = Util.initMemoryRandomBytes(new int[GenesisVdpProvider.VDP_CRAM_SIZE]);
-        vsram = Util.initMemoryRandomBytes(new int[GenesisVdpProvider.VDP_VSRAM_SIZE]);
+        vram = Util.initMemoryRandomBytes(ByteBuffer.allocate(VDP_VRAM_SIZE).order(ByteOrder.BIG_ENDIAN));
+        cram = Util.initMemoryRandomBytes(ByteBuffer.allocate(VDP_CRAM_SIZE).order(ByteOrder.BIG_ENDIAN));
+        vsram = Util.initMemoryRandomBytes(ByteBuffer.allocate(VDP_VSRAM_SIZE).order(ByteOrder.BIG_ENDIAN));
         initPalette();
     }
 
     private void paletteUpdate(int cramAddress) {
-        javaPalette[cramAddress >> 1] = colorMapper.getColor(cram[cramAddress] << 8 | cram[cramAddress + 1]);
+        javaPalette[cramAddress >> 1] = colorMapper.getColor(readBufferWord(cram, cramAddress));
     }
 
     private void initPalette() {
-        javaPalette = new int[cram.length / 2];
+        javaPalette = new int[cram.capacity() / 2];
         IntStream.range(0, javaPalette.length).forEach(i -> paletteUpdate(i << 1));
     }
 
     //TODO: shouldnt this flip the byte like in readVramWord
     //TODO: DMA is doing it but it should be done here
-    @Override
-    public int readVramByte(int address) {
-        address &= (GenesisVdpProvider.VDP_VRAM_SIZE - 1);
-        return vram[address];
+    protected byte readVramByte(int address) {
+        return vram.get(address & VDP_VRAM_MASK);
     }
 
     //    The address register wraps past address FFFFh.
+    protected void writeVramByte(int address, byte data) {
+        vram.put(address & VDP_VRAM_MASK, data);
+        updateSatCache(address, data);
+    }
+
     @Override
-    public void writeVramByte(int address, int data) {
-        address &= (GenesisVdpProvider.VDP_VRAM_SIZE - 1);
-        vram[address] = data & 0xFF;
-        updateSatCache(address, data & 0xFF);
+    public int readVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int address) {
+        switch (vramType) {
+            case VRAM:
+                return readVramWord(address);
+            case VSRAM:
+                return readVsramWord(address);
+            case CRAM:
+                return readCramWord(address);
+            default:
+                LOG.warn("Unexpected videoRam read: {}", vramType);
+        }
+        return 0;
     }
 
     @Override
     public void writeVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int data, int address) {
-        int data1 = (data >> 8);
-        int data2 = data & 0xFF;
+        byte data1 = (byte) (data >> 8);
+        byte data2 = (byte) data;
         //ignore A0
         int index = address & EVEN_VALUE_MASK;
 
@@ -113,9 +127,27 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
         }
     }
 
-    private void updateSatCache(int vramAddress, int value) {
+    @Override
+    public void writeVideoRamByte(VdpRamType vramType, int address, byte data) {
+        switch (vramType) {
+            case VRAM -> writeVramByte(address, data);
+            case CRAM -> writeCramByte(address, data);
+            case VSRAM -> writeVsramByte(address, data);
+        }
+    }
+
+    @Override
+    public byte readVideoRamByte(VdpRamType vramType, int address) {
+        return switch (vramType) {
+            case VRAM -> readVramByte(address);
+            case CRAM -> readCramByte(address);
+            case VSRAM -> readVsramByte(address);
+        };
+    }
+
+    private void updateSatCache(int vramAddress, byte value) {
         if (vramAddress >= satBaseAddress && vramAddress < satEndAddress) {
-            satCache[vramAddress - satBaseAddress] = value;
+            satCache[vramAddress - satBaseAddress] = value & 0xFF;
         }
     }
 
@@ -131,17 +163,17 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     }
 
     @Override
-    public int[] getCram() {
+    public ByteBuffer getCram() {
         return cram;
     }
 
     @Override
-    public int[] getVram() {
+    public ByteBuffer getVram() {
         return vram;
     }
 
     @Override
-    public int[] getVsram() {
+    public ByteBuffer getVsram() {
         return vsram;
     }
 
@@ -152,11 +184,10 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     //    Even though there are 40 words of VSRAM, the address register will wrap
 //    when it passes 7Fh. Writes to the addresses beyond 50h are ignored.
-    @Override
-    public void writeVsramByte(int address, int data) {
+    protected void writeVsramByte(int address, byte data) {
         address &= 0x7F;
         if (address < GenesisVdpProvider.VDP_VSRAM_SIZE) {
-            vsram[address] = data & 0xFF;
+            vsram.put(address, data);
         } else {
             //Arrow Flash
             if (verbose) LOG.debug("Ignoring vsram byte-write to address: {}, val: {}", th(address), th(data));
@@ -164,48 +195,38 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     }
 
     //    The address register wraps past address 7Fh.
-    @Override
-    public void writeCramByte(int address, int data) {
-        address &= (GenesisVdpProvider.VDP_CRAM_SIZE - 1);
-        cram[address] = data & 0xFF;
-        paletteUpdate(address & EVEN_VALUE_MASK);
+    protected void writeCramByte(int address, byte data) {
+        cram.put(address & VDP_CRAM_MASK, data);
+        paletteUpdate(address & VDP_CRAM_MASK & EVEN_VALUE_MASK);
     }
 
-
-    @Override
-    public int readCramByte(int address) {
-        address &= (GenesisVdpProvider.VDP_CRAM_SIZE - 1);
-        return cram[address];
+    protected byte readCramByte(int address) {
+        return cram.get(address & VDP_CRAM_MASK);
     }
 
-
-    @Override
-    public int readVsramByte(int address) {
+    protected byte readVsramByte(int address) {
         address &= 0x7F;
         if (address >= GenesisVdpProvider.VDP_VSRAM_SIZE) {
             address = 0;
         }
-        return vsram[address];
+        return vsram.get(address);
     }
 
-    @Override
-    public int readVramWord(int address) {
+    protected int readVramWord(int address) {
         //ignore A0, always use an even address
         address &= EVEN_VALUE_MASK;
-        return readVramByte(address) << 8 | readVramByte(address + 1);
+        return (readVramByte(address) & 0xFF) << 8 | (readVramByte(address + 1) & 0xFF);
     }
 
-    @Override
-    public int readVsramWord(int address) {
+    protected int readVsramWord(int address) {
         //ignore A0, always use an even address
         address &= EVEN_VALUE_MASK;
-        return readVsramByte(address) << 8 | readVsramByte(address + 1);
+        return (readVsramByte(address) & 0xFF) << 8 | (readVsramByte(address + 1) & 0xFF);
     }
 
-    @Override
-    public int readCramWord(int address) {
+    protected int readCramWord(int address) {
         //ignore A0, always use an even address
         address &= EVEN_VALUE_MASK;
-        return readCramByte(address) << 8 | readCramByte(address + 1);
+        return (readCramByte(address) & 0xFF) << 8 | (readCramByte(address + 1) & 0xFF);
     }
 }

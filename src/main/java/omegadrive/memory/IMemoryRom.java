@@ -23,7 +23,7 @@ public interface IMemoryRom {
 
     int readRomByte(int address);
 
-    int[] getRomData();
+    byte[] getRomData();
 
     int getRomMask();
 

@@ -33,9 +33,11 @@ import omegadrive.vdp.model.VdpMisc.ShadowHighlightType;
 import org.slf4j.Logger;
 
 import java.awt.*;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 
+import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.vdp.model.BaseVdpProvider.VdpEventListener;
 import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_LINE_H40;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
@@ -76,8 +78,8 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private final ScrollContext scrollContextB;
     private final WindowPlaneContext windowPlaneContext;
     private InterlaceMode interlaceMode = InterlaceMode.NONE;
-    private final int[] vram;
-    private final int[] cram;
+    private final ByteBuffer vram;
+    private final ByteBuffer cram;
     private final int[] javaPalette;
     private int activeLines = 0;
     private SpriteDataHolder[] spriteDataHoldersNext = new SpriteDataHolder[MAX_SPRITES_PER_LINE_H40];
@@ -161,12 +163,12 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         composeImageLinearLine(line);
     }
 
-    public static SpriteDataHolder getSpriteData(int[] vram, int vramOffset,
+    public static SpriteDataHolder getSpriteData(ByteBuffer vram, int vramOffset,
                                                  InterlaceMode interlaceMode, SpriteDataHolder holder) {
-        int byte4 = vram[vramOffset + 4];
-        int byte5 = vram[vramOffset + 5];
-        int byte6 = vram[vramOffset + 6];
-        int byte7 = vram[vramOffset + 7];
+        int byte4 = vram.get(vramOffset + 4) & 0xFF;
+        int byte5 = vram.get(vramOffset + 5) & 0xFF;
+        int byte6 = vram.get(vramOffset + 6) & 0xFF;
+        int byte7 = vram.get(vramOffset + 7) & 0xFF;
 
         holder.tileIndex = ((((byte4 & 0x7) << 8) | byte5) << interlaceMode.tileShift()) &
                 interlaceMode.getTileIndexMask();
@@ -315,8 +317,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 break;
             }
         }
-        int color = colorMapper.getColor(cram[cramIndex] << 8 | cram[cramIndex + 1],
-                shadowHighlight) & ~1;
+        int color = colorMapper.getColor(readBufferWord(cram, cramIndex), shadowHighlight) & ~1;
         return color | blanking;
     }
 
@@ -500,7 +501,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
                 int xPosCell = (pixel + hScrollPixelOffset) % CELL_WIDTH;
                 if (tileLocatorVram != latestTileLocatorVram) {
                     //one word per 8x8 tile
-                    int tileNameTable = vram[tileLocatorVram] << 8 | vram[tileLocatorVram + 1];
+                    int tileNameTable = readBufferWord(vram, tileLocatorVram);
                     tileDataHolder = getTileData(tileNameTable, tileDataHolder);
                     latestTileLocatorVram = tileLocatorVram;
                     rp = tileDataHolder.priority ? sc.highPrio : sc.lowPrio;
@@ -536,7 +537,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         TileDataHolder tileDataHolder = spriteDataHolder;
 
         for (int hCell = hCellStart; hCell < hCellEnd; hCell++, tileLocatorVram += 2) {
-            int tileNameTable = vram[tileLocatorVram] << 8 | vram[tileLocatorVram + 1];
+            int tileNameTable = readBufferWord(vram, tileLocatorVram);
             tileDataHolder = getTileData(tileNameTable, tileDataHolder);
             int pixelVPosTile = tileDataHolder.vertFlip ? CELL_WIDTH - 1 - rowInTile : rowInTile;
             RenderPriority rp = tileDataHolder.priority ? RenderPriority.PLANE_A_PRIO :
@@ -568,7 +569,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
 
     private int getPixelIndexColor(int tileBytePointer, int pixelInTile, int horFlipAmount) {
         //1 byte represents 2 pixels, 1 pixel = 4 bit = 16 color gamut
-        int twoPixelsData = vram[tileBytePointer & 0xFFFF];
+        int twoPixelsData = vram.get(tileBytePointer & 0xFFFF) & 0xFF;
         boolean isFirstPixel = (pixelInTile & 1) == (~horFlipAmount & 1);
         return isFirstPixel ? twoPixelsData & 0x0F : (twoPixelsData & 0xF0) >> 4;
     }

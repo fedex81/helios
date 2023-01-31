@@ -24,14 +24,18 @@ import omegadrive.vdp.model.RenderPriority;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpMisc.RenderType;
 
+import java.nio.ByteBuffer;
+
+import static omegadrive.util.Util.readBufferWord;
+
 //A horizontal scroll mode setting of 01b is not valid; however the unlicensed version
 //                of Populous uses it. This mode is identical to per-line scrolling, however
 //                the VDP will only read the first sixteen entries in the scroll table for
 //                every line of the display.
 public class VdpScrollHandler {
 
-    protected int[] vram;
-    protected int[] vsram;
+    protected ByteBuffer vram;
+    protected ByteBuffer vsram;
 
     public static VdpScrollHandler createInstance(VdpMemoryInterface memoryInterface) {
         VdpScrollHandler v = new VdpScrollHandler();
@@ -57,7 +61,7 @@ public class VdpScrollHandler {
         final int scrollDataShift = sc.planeWidth << 3;
         final int scrollMask = scrollDataShift - 1;
         vramOffset = sc.planeType == RenderType.PLANE_A ? vramOffset : vramOffset + 2;
-        int scrollAmount = ((vram[vramOffset] << 8) | vram[vramOffset + 1]) & scrollMask;
+        int scrollAmount = readBufferWord(vram, vramOffset) & scrollMask;
         return scrollDataShift - scrollAmount;
     }
 
@@ -65,8 +69,7 @@ public class VdpScrollHandler {
         int scrollMask = (sc.planeHeight << 3) - 1;
         int vramOffset = sc.planeType == RenderType.PLANE_A ? 0 : 2;
         vramOffset += sc.vScrollType == VSCROLL.TWO_CELLS ? twoCell << 2 : 0;
-        int scrollAmount = ((vsram[vramOffset] << 8) | vsram[vramOffset + 1])
-                >> sc.interlaceMode.verticalScrollShift();
+        int scrollAmount = readBufferWord(vsram, vramOffset) >> sc.interlaceMode.verticalScrollShift();
         return scrollAmount & scrollMask;
     }
 

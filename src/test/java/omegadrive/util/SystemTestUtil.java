@@ -79,7 +79,7 @@ public class SystemTestUtil {
     public static SmsBus setupNewSmsSystem(SystemProvider sp) {
         SmsBus busProvider1 = new SmsBus();
         IMemoryProvider cpuMem1 = MemoryProvider.createSmsInstance();
-        cpuMem1.setRomData(new int[0xFFFF]);
+        cpuMem1.setRomData(new byte[0xFFFF]);
 
         SmsVdp vdp1 = new SmsVdp(SMS, RegionDetector.Region.USA);
         Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.SMS, busProvider1);

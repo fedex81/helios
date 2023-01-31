@@ -97,8 +97,10 @@ public class SmsSavestateTest extends BaseSavestateTest {
         IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i ->
                 Assert.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
         IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vram" + i, vdp1.getVdpMemory().getVram()[i], vdp2.getVdpMemory().getVram()[i]));
+                Assert.assertEquals("Vram" + i, vdp1.getVRAM()[i],
+                        vdp2.getVRAM()[i]));
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Cram" + i, vdp1.getVdpMemory().getCram()[i], vdp2.getVdpMemory().getCram()[i]));
+                Assert.assertEquals("Cram" + i, vdp1.getCRAM()[i],
+                        vdp2.getCRAM()[i]));
     }
 }

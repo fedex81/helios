@@ -38,7 +38,7 @@ public class SmsVdpTest {
     private void testInternal(RegionDetector.Region region, boolean isPal) {
         SmsVdp vdp = new SmsVdp(SystemLoader.SystemType.SMS, region);
         vdp.controlWrite(0b0110_0000);
-        vdp.dataWrite(0x81); //screen on
+        vdp.dataWrite((byte) 0x81); //screen on
         SmsVdpTestUtil.runToVint(vdp, true);
         SmsVdpTestUtil.runToVint(vdp, true);
         int cycles = SmsVdpTestUtil.runToVint(vdp, true);

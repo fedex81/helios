@@ -46,7 +46,7 @@ public class BaseVdpAdapter implements BaseVdpProvider {
     }
 
     @Override
-    public VdpMemory getVdpMemory() {
+    public VdpMemoryInterface getVdpMemory() {
         return null;
     }
 

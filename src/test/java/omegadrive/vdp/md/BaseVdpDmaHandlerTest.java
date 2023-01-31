@@ -32,6 +32,8 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
+
 @Ignore
 public class BaseVdpDmaHandlerTest {
 
@@ -78,7 +80,7 @@ public class BaseVdpDmaHandlerTest {
         MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
         String[] actual = IntStream.range(baseAddress, toAddress).
-                mapToObj(memoryInterface::readVramByte).map(Integer::toHexString).toArray(String[]::new);
+                mapToObj(addr -> memoryInterface.readVideoRamByte(VRAM, addr)).map(Integer::toHexString).toArray(String[]::new);
 
         String[] exp = Arrays.stream(expected).mapToObj(Integer::toHexString).toArray(String[]::new);
 
@@ -118,7 +120,7 @@ public class BaseVdpDmaHandlerTest {
         vdpProvider.writeDataPort(1216);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
-        String str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, baseAddress, toAddress);
+        String str = MdVdpTestUtil.printVdpMemory(memoryInterface, VRAM, baseAddress, toAddress);
         System.out.println(str);
 
         MdVdpTestUtil.vdpDisplayEnableAndMode5(vdpProvider);
@@ -139,16 +141,16 @@ public class BaseVdpDmaHandlerTest {
 
 //        System.out.println("DestAddress: " + th(vdpProvider.getAddressRegisterValue()));
 
-        str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, baseAddress, toAddress);
+        str = MdVdpTestUtil.printVdpMemory(memoryInterface, VRAM, baseAddress, toAddress);
         System.out.println(str);
 
         MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
-        str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, baseAddress, toAddress);
+        str = MdVdpTestUtil.printVdpMemory(memoryInterface, VRAM, baseAddress, toAddress);
         System.out.println(str);
 
         String[] actual = IntStream.range(baseAddress, toAddress).
-                mapToObj(memoryInterface::readVramByte).map(Integer::toHexString).toArray(String[]::new);
+                mapToObj(addr -> memoryInterface.readVideoRamByte(VRAM, addr)).map(v -> Integer.toHexString(v & 0xFF)).toArray(String[]::new);
 
         String[] exp = Arrays.stream(expected).mapToObj(Integer::toHexString).toArray(String[]::new);
 
@@ -190,10 +192,10 @@ public class BaseVdpDmaHandlerTest {
         vdpProvider.writeDataPort(0xff00);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
-        String str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        String str = MdVdpTestUtil.printVdpMemory(memoryInterface, VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
-        str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x9000, 0x9016);
+        str = MdVdpTestUtil.printVdpMemory(memoryInterface, VRAM, 0x9000, 0x9016);
         System.out.println(str);
 
         MdVdpTestUtil.vdpDisplayEnableAndMode5(vdpProvider);
@@ -214,12 +216,12 @@ public class BaseVdpDmaHandlerTest {
 
         MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
 
-        str = MdVdpTestUtil.printVdpMemory(memoryInterface, GenesisVdpProvider.VdpRamType.VRAM, 0x8000, 0x8016);
+        str = MdVdpTestUtil.printVdpMemory(memoryInterface, VRAM, 0x8000, 0x8016);
         System.out.println(str);
 
         String[] exp = Arrays.stream(expected).mapToObj(Integer::toHexString).toArray(String[]::new);
         String[] actual = IntStream.range(0x8000, 0x8000 + expected.length).
-                mapToObj(memoryInterface::readVramByte).map(Integer::toHexString).toArray(String[]::new);
+                mapToObj(addr -> memoryInterface.readVideoRamByte(VRAM, addr)).map(v -> Integer.toHexString(v & 0xFF)).toArray(String[]::new);
 
         System.out.println("Expected: " + Arrays.toString(exp));
         System.out.println("Actual:   " + Arrays.toString(actual));

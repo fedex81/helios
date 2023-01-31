@@ -82,10 +82,10 @@ public class BaseVdpDmaBandwidthTest {
     }
 
     private void setup68kRam() {
-        int val = 0xFF;
+        byte val = (byte) 0xFF;
         for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i++) {
             memoryProvider.writeRamByte(i, val);
-            val = (val - 1) & 0xFF;
+            val = (byte) ((val - 1) & 0xFF);
         }
     }
 

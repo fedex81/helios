@@ -161,14 +161,14 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     }
 
     private void detectHeaderMetadata() {
-        int[] rom = memoryProvider.getRomData();
+        byte[] rom = memoryProvider.getRomData();
         if (rom.length < SERIAL_NUMBER_END) {
             return;
         }
 
         systemType = new String(rom, ROM_HEADER_START, 16).trim();
         forceMapper = MdMapperType.getMdMapperType(systemType);
-        int[] serialArray = Arrays.copyOfRange(memoryProvider.getRomData(), SERIAL_NUMBER_START, SERIAL_NUMBER_END);
+        byte[] serialArray = Arrays.copyOfRange(memoryProvider.getRomData(), SERIAL_NUMBER_START, SERIAL_NUMBER_END);
         this.serial = Util.toStringValue(serialArray);
         if (rom.length > SVP_SV_TOKEN_ADDRESS + 1) {
             isSvp = SVP_SV_TOKEN.equals(new String(rom, SVP_SV_TOKEN_ADDRESS, 2).trim());
@@ -199,7 +199,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         return adjust;
     }
 
-    private static long readData(int[] src, Size size, int address) {
+    private static long readData(byte[] src, Size size, int address) {
         return Util.readDataMask(src, size, address, Integer.MAX_VALUE);
     }
 }

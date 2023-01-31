@@ -27,7 +27,6 @@ import omegadrive.joypad.ColecoPad;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import omegadrive.util.Util;
 import omegadrive.vdp.Tms9918aVdp;
 import org.slf4j.Logger;
 
@@ -57,13 +56,13 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements
     private static final int RAM_SIZE = 0x400;  //1Kb
     private static final int ROM_SIZE = ROM_END + 1; //48kb
 
-    private final int[] bios;
+    private final byte[] bios;
 
     private boolean isNmiSet = false;
 
     public ColecoBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameColeco);
-        bios = Util.toUnsignedIntArray(FileUtil.loadBiosFile(p));
+        bios = FileUtil.loadBiosFile(p);
         LOG.info("Loading Coleco bios from: {}", p.toAbsolutePath());
     }
 
@@ -89,8 +88,9 @@ public class ColecoBus extends DeviceAwareBus<Tms9918aVdp, ColecoPad> implements
 
     @Override
     public void write(int address, int data, Size size) {
+        assert size == Size.BYTE;
         address &= RAM_SIZE - 1;
-        memoryProvider.writeRamByte(address, (data & 0xFF));
+        memoryProvider.writeRamByte(address, (byte) data);
     }
 
     @Override

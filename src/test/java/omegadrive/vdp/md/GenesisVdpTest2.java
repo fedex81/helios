@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import java.util.Optional;
 
 import static omegadrive.bus.model.GenesisBusProvider.VDP_ADDRESS_SPACE_START;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.*;
 import static omegadrive.vdp.model.GenesisVdpProvider.VramMode.*;
 
 public class GenesisVdpTest2 {
@@ -120,7 +121,7 @@ public class GenesisVdpTest2 {
         vdpProvider.writeControlPort(0); //addrReg = 0, codeReg = 0 (vramRead)
         vdpProvider.writeControlPort(0);
 
-        memoryInterface.writeVramByte(0xf02, 0xFF);
+        memoryInterface.writeVideoRamByte(VRAM, 0xf02, (byte) 0xFF);
 
         vdpProvider.writeControlPort(0x8f02); //set autoInc = 2, addressRegister -> 0xF02, codeReg = 2 (invalid)
         //codeReg should now be 2
@@ -154,12 +155,12 @@ public class GenesisVdpTest2 {
 
         int addrReg = 0xf02;
 
-        int vram0 = memoryInterface.readVramByte(addrReg);
-        int vram2 = memoryInterface.readVramByte(addrReg + autoInc);
-        int cram0 = memoryInterface.readCramByte(addrReg);
-        int cram2 = memoryInterface.readCramByte(addrReg + autoInc);
-        int vsram0 = memoryInterface.readVsramByte(addrReg);
-        int vsram2 = memoryInterface.readVsramByte(addrReg + autoInc);
+        int vram0 = memoryInterface.readVideoRamByte(VRAM, addrReg);
+        int vram2 = memoryInterface.readVideoRamByte(VRAM, addrReg + autoInc);
+        int cram0 = memoryInterface.readVideoRamByte(CRAM, addrReg);
+        int cram2 = memoryInterface.readVideoRamByte(CRAM, addrReg + autoInc);
+        int vsram0 = memoryInterface.readVideoRamByte(VSRAM, addrReg);
+        int vsram2 = memoryInterface.readVideoRamByte(VSRAM, addrReg + autoInc);
 
         //do work
         vdpProvider.writeControlPort(0x8f02); //set autoInc = 2, addressRegister -> 0xF02, codeReg = 2 (invalid)
@@ -168,12 +169,12 @@ public class GenesisVdpTest2 {
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         //verify nothing was written to mem
-        Assert.assertEquals(vram0, memoryInterface.readVramByte(addrReg));
-        Assert.assertEquals(vram2, memoryInterface.readVramByte(addrReg + autoInc));
-        Assert.assertEquals(vsram0, memoryInterface.readVsramByte(addrReg));
-        Assert.assertEquals(vsram2, memoryInterface.readVsramByte(addrReg + autoInc));
-        Assert.assertEquals(cram0, memoryInterface.readCramByte(addrReg));
-        Assert.assertEquals(cram2, memoryInterface.readCramByte(addrReg + autoInc));
+        Assert.assertEquals(vram0, memoryInterface.readVideoRamByte(VRAM, addrReg));
+        Assert.assertEquals(vram2, memoryInterface.readVideoRamByte(VRAM, addrReg + autoInc));
+        Assert.assertEquals(vsram0, memoryInterface.readVideoRamByte(VSRAM, addrReg));
+        Assert.assertEquals(vsram2, memoryInterface.readVideoRamByte(VSRAM, addrReg + autoInc));
+        Assert.assertEquals(cram0, memoryInterface.readVideoRamByte(CRAM, addrReg));
+        Assert.assertEquals(cram2, memoryInterface.readVideoRamByte(CRAM, addrReg + autoInc));
     }
 
     /**

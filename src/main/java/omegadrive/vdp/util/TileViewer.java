@@ -11,6 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
@@ -150,7 +151,7 @@ public class TileViewer implements UpdatableViewer {
     }
 
     private void showPlaneTiles(int[] pixels, int nameTableLocation, int nameTableEnd) {
-        int[] vram = vdp.getVdpMemory().getVram();
+        byte[] vram = vdp.getVdpMemory().getVram().array();
         int tileLinearShift = 0;
         int shownTiles = 0;
         Arrays.fill(pixels, 0);
@@ -175,17 +176,17 @@ public class TileViewer implements UpdatableViewer {
     }
 
     private void showSpriteTiles(int[] pixels, int satLoc) {
-        int[] vram = vdp.getVdpMemory().getVram();
+        ByteBuffer vram = vdp.getVdpMemory().getVram();
         int tileLinearShift = 0;
         int shownTiles = 0;
-        int satEnd = Math.min(satLoc + 640, vram.length - 8);
+        int satEnd = Math.min(satLoc + 640, vram.capacity() - 8);
         Arrays.fill(pixels, 0);
         VdpRenderHandler.SpriteDataHolder spriteDataHolder = new VdpRenderHandler.SpriteDataHolder();
         try {
             for (int vramOffset = satLoc; vramOffset < satEnd; vramOffset += 8) {  //8 bytes per sprite
                 //8x8 pixels
                 spriteDataHolder = VdpRenderHandlerImpl.getSpriteData(vram, vramOffset, InterlaceMode.NONE, spriteDataHolder);
-                boolean nonBlank = renderInternal(spriteDataHolder, pixels, vram, tileLinearShift);
+                boolean nonBlank = renderInternal(spriteDataHolder, pixels, vram.array(), tileLinearShift);
                 if (nonBlank) {
                     tileLinearShift += 8;
                     shownTiles++;
@@ -199,7 +200,7 @@ public class TileViewer implements UpdatableViewer {
         }
     }
 
-    private boolean renderInternal(VdpRenderHandler.TileDataHolder tileDataHolder, int[] pixels, int[] vram, int tileLinearShift) {
+    private boolean renderInternal(VdpRenderHandler.TileDataHolder tileDataHolder, int[] pixels, byte[] vram, int tileLinearShift) {
         int tileRowShift = 0;
         boolean nonBlank = false;
         for (int j = 0; j < 8; j++) { //for each tile row

@@ -22,6 +22,9 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.zip.ZipEntry;
 
+import static omegadrive.util.ArrayEndianUtil.getUInt32LE;
+import static omegadrive.util.ArrayEndianUtil.setUInt32LE;
+
 /**
  * Federico Berti
  * <p>
@@ -40,18 +43,18 @@ public class StateUtil {
     public static final BiFunction<ByteBuffer, Integer, Integer> getInt2Fn = (b, pos) -> {
         b.position(pos);
         b.get(arr2);
-        return Util.getUInt32LE(arr2);
+        return getUInt32LE(arr2);
     };
     private final static Logger LOG = LogHelper.getLogger(StateUtil.class.getSimpleName());
 
     public static final BiFunction<ByteBuffer, Integer, Integer> getInt4Fn = (b, pos) -> {
         b.position(pos);
         b.get(arr4);
-        return Util.getUInt32LE(arr4);
+        return getUInt32LE(arr4);
     };
 
     public static void setInt4LEFn(ByteBuffer b, int pos, int val) {
-        Util.setUInt32LE(val, arr4, 0);
+        setUInt32LE(val, arr4, 0);
         b.position(pos);
         b.put(arr4);
     }
@@ -97,18 +100,18 @@ public class StateUtil {
 
     public static Z80State loadZ80State(ByteBuffer data) {
         Z80State z80State = new Z80State();
-        z80State.setRegAF(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegBC(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegDE(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegHL(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegIX(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegIY(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegPC(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegSP(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegAFx(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegBCx(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegDEx(Util.getUInt32LE(data.get(), data.get()));
-        z80State.setRegHLx(Util.getUInt32LE(data.get(), data.get()));
+        z80State.setRegAF(getUInt32LE(data.get(), data.get()));
+        z80State.setRegBC(getUInt32LE(data.get(), data.get()));
+        z80State.setRegDE(getUInt32LE(data.get(), data.get()));
+        z80State.setRegHL(getUInt32LE(data.get(), data.get()));
+        z80State.setRegIX(getUInt32LE(data.get(), data.get()));
+        z80State.setRegIY(getUInt32LE(data.get(), data.get()));
+        z80State.setRegPC(getUInt32LE(data.get(), data.get()));
+        z80State.setRegSP(getUInt32LE(data.get(), data.get()));
+        z80State.setRegAFx(getUInt32LE(data.get(), data.get()));
+        z80State.setRegBCx(getUInt32LE(data.get(), data.get()));
+        z80State.setRegDEx(getUInt32LE(data.get(), data.get()));
+        z80State.setRegHLx(getUInt32LE(data.get(), data.get()));
         z80State.setRegI(data.get() & 0xFF); //note breaking change
 
         int val = data.get();

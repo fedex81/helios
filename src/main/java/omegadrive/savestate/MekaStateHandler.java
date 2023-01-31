@@ -41,6 +41,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static omegadrive.savestate.StateUtil.skip;
+import static omegadrive.util.ArrayEndianUtil.getUInt32LE;
 import static omegadrive.util.Util.th;
 
 public class MekaStateHandler implements BaseStateHandler {
@@ -218,7 +219,7 @@ public class MekaStateHandler implements BaseStateHandler {
         skip(buffer, toSkip);
         bus.loadContext(buffer); //loadMappers
         if (version >= 0xD) {
-            int vdpLine = Util.getUInt32LE(buffer.get(), buffer.get());
+            int vdpLine = getUInt32LE(buffer.get(), buffer.get());
             LOG.info("vdpLine: {}", vdpLine);
         }
     }
@@ -232,9 +233,9 @@ public class MekaStateHandler implements BaseStateHandler {
     }
 
     private void loadVdpMemory(SmsVdp vdp) {
-        int[] vram = vdp.getVdpMemory().getVram();
-        int[] cram = vdp.getVdpMemory().getCram();
-        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vram[i] = buffer.get() & 0xFF);
+        byte[] vram = vdp.getVRAM();
+        int[] cram = vdp.getCRAM();
+        IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> vram[i] = buffer.get());
         //SMS CRAM = 0x20, GG = 0x40
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
             int smsCol = buffer.get();
@@ -247,8 +248,8 @@ public class MekaStateHandler implements BaseStateHandler {
     }
 
     private void saveVdpMemory(SmsVdp vdp) {
-        int[] vram = vdp.getVdpMemory().getVram();
-        int[] cram = vdp.getVdpMemory().getCram();
+        byte[] vram = vdp.getVRAM();
+        int[] cram = vdp.getCRAM();
         IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i -> buffer.put((byte) (vram[i] & 0xFF)));
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i -> {
             //0xAARRGGBB (4 bytes) Java colour
