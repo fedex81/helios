@@ -36,7 +36,6 @@ import omegadrive.savestate.StateUtil;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import omegadrive.util.Util;
 import omegadrive.vdp.Tms9918aVdp;
 import org.slf4j.Logger;
 
@@ -48,6 +47,7 @@ import java.util.Arrays;
 
 import static omegadrive.input.InputProvider.PlayerNumber.P1;
 import static omegadrive.input.InputProvider.PlayerNumber.P2;
+import static omegadrive.util.ArrayEndianUtil.toUnsignedIntArray;
 import static omegadrive.util.Util.th;
 
 /**
@@ -84,12 +84,12 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
 
     public MsxBus() {
         Path p = Paths.get(SystemLoader.biosFolder, SystemLoader.biosNameMsx1);
-        int[] bios = Util.toUnsignedIntArray(FileUtil.loadBiosFile(p));
+        byte[] bios = FileUtil.loadBiosFile(p);
         LOG.info("Loading Msx bios from: {}", p.toAbsolutePath());
         Arrays.fill(emptySlot, 0xFF);
         ctx = new MsxBusContext();
 
-        secondarySlot[0] = bios;
+        secondarySlot[0] = toUnsignedIntArray(bios);
         secondarySlot[1] = emptySlot;
         secondarySlot[2] = emptySlot;
         secondarySlot[3] = emptySlot;
@@ -119,7 +119,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
     public Z80BusProvider attachDevice(Device device) {
         super.attachDevice(device);
         if (device instanceof IMemoryProvider) {
-            secondarySlot[3] = this.memoryProvider.getRamData();
+            secondarySlot[3] = toUnsignedIntArray(memoryProvider.getRamData());
             secondarySlotWritable[3] = true;
         }
         return this;
@@ -254,9 +254,10 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
     public void init() {
         setupCartHw();
         int len = memoryProvider.getRomSize();
-        secondarySlot[1] = memoryProvider.getRomData();
+        int[] rom = toUnsignedIntArray(memoryProvider.getRomData());
+        secondarySlot[1] = rom;
         if (len > PAGE_SIZE) {
-            secondarySlot[2] = memoryProvider.getRomData();
+            secondarySlot[2] = rom;
             ctx.pageStartAddress[2] = PAGE_SIZE;
         }
     }

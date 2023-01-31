@@ -34,7 +34,6 @@ import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.VdpMemory;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.slf4j.Logger;
 import z80core.Z80;
@@ -48,6 +47,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import static omegadrive.savestate.StateUtil.*;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
 
 public class GstStateHandler implements BaseStateHandler {
 
@@ -154,26 +154,25 @@ public class GstStateHandler implements BaseStateHandler {
     protected void loadVdpState(BaseVdpProvider vdp) {
         IntStream.range(0, GenesisVdpProvider.VDP_REGISTERS_SIZE).forEach(
                 i -> vdp.updateRegisterData(i, buffer.get(i + VDP_REG_OFFSET) & 0xFF));
-        loadVdpMemory((VdpMemoryInterface) vdp.getVdpMemory());
+        loadVdpMemory(vdp.getVdpMemory());
         vdp.reload();
     }
 
-    protected void loadVdpMemory(VdpMemoryInterface vdpMemoryInterface) {
+    protected void loadVdpMemory(VdpMemoryInterface vmi) {
         for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i += 2) {
-            vdpMemoryInterface.writeVramByte(i, buffer.get(i + VRAM_DATA_OFFSET) & 0xFF);
-            vdpMemoryInterface.writeVramByte(i + 1, buffer.get(i + VRAM_DATA_OFFSET + 1) & 0xFF);
+            vmi.writeVideoRamByte(VRAM, i, buffer.get(i + VRAM_DATA_OFFSET));
+            vmi.writeVideoRamByte(VRAM, i + 1, buffer.get(i + VRAM_DATA_OFFSET + 1));
         }
         //cram is swapped
-        int[] cram = vdpMemoryInterface.getCram();
+        byte[] cram = vmi.getCram().array();
         for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
-            cram[i] = buffer.get(i + CRAM_DATA_OFFSET + 1) & 0xFF;
-            cram[i + 1] = buffer.get(i + CRAM_DATA_OFFSET) & 0xFF;
+            cram[i] = buffer.get(i + CRAM_DATA_OFFSET + 1);
+            cram[i + 1] = buffer.get(i + CRAM_DATA_OFFSET);
         }
-
-        int[] vsram = vdpMemoryInterface.getVsram();
+        byte[] vsram = vmi.getVsram().array();
         for (int i = 0; i < GenesisVdpProvider.VDP_VSRAM_SIZE; i += 2) {
-            vsram[i] = buffer.get(i + VSRAM_DATA_OFFSET) & 0xFF;
-            vsram[i + 1] = buffer.get(i + VSRAM_DATA_OFFSET + 1) & 0xFF;
+            vsram[i] = buffer.get(i + VSRAM_DATA_OFFSET);
+            vsram[i + 1] = buffer.get(i + VSRAM_DATA_OFFSET + 1);
         }
     }
 
@@ -204,8 +203,8 @@ public class GstStateHandler implements BaseStateHandler {
     //TODO should use M68kProvider
     protected void load68k(MC68000Wrapper m68kProvider, IMemoryProvider memoryProvider) {
         for (int i = 0; i < MemoryProvider.M68K_RAM_SIZE; i += 2) {
-            memoryProvider.writeRamByte(i, buffer.get(i + M68K_RAM_DATA_OFFSET) & 0xFF);
-            memoryProvider.writeRamByte(i + 1, buffer.get(i + M68K_RAM_DATA_OFFSET + 1) & 0xFF);
+            memoryProvider.writeRamByte(i, buffer.get(i + M68K_RAM_DATA_OFFSET));
+            memoryProvider.writeRamByte(i + 1, buffer.get(i + M68K_RAM_DATA_OFFSET + 1));
         }
 
         MC68000 m68k = m68kProvider.getM68k();
@@ -237,24 +236,24 @@ public class GstStateHandler implements BaseStateHandler {
     }
 
     protected void saveVdp(BaseVdpProvider vdp) {
-        VdpMemory vdpMemoryInterface = vdp.getVdpMemory();
-        int[] vram = vdpMemoryInterface.getVram();
+        VdpMemoryInterface vdpMemoryInterface = vdp.getVdpMemory();
+        byte[] vram = vdpMemoryInterface.getVram().array();
         for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i += 2) {
-            buffer.put(i + VRAM_DATA_OFFSET, (byte) vram[i]);
-            buffer.put(i + VRAM_DATA_OFFSET + 1, (byte) vram[i + 1]);
+            buffer.put(i + VRAM_DATA_OFFSET, vram[i]);
+            buffer.put(i + VRAM_DATA_OFFSET + 1, vram[i + 1]);
         }
-        int[] cram = vdpMemoryInterface.getCram();
+        byte[] cram = vdpMemoryInterface.getCram().array();
         //cram is swapped
         for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
-            buffer.put(i + CRAM_DATA_OFFSET + 1, (byte) cram[i]);
-            buffer.put(i + CRAM_DATA_OFFSET, (byte) cram[i + 1]);
+            buffer.put(i + CRAM_DATA_OFFSET + 1, cram[i]);
+            buffer.put(i + CRAM_DATA_OFFSET, cram[i + 1]);
 
         }
 
-        int[] vsram = vdpMemoryInterface.getVsram();
+        byte[] vsram = vdpMemoryInterface.getVsram().array();
         for (int i = 0; i < GenesisVdpProvider.VDP_VSRAM_SIZE; i += 2) {
-            buffer.put(i + VSRAM_DATA_OFFSET, (byte) vsram[i]);
-            buffer.put(i + VSRAM_DATA_OFFSET + 1, (byte) vsram[i + 1]);
+            buffer.put(i + VSRAM_DATA_OFFSET, vsram[i]);
+            buffer.put(i + VSRAM_DATA_OFFSET + 1, vsram[i + 1]);
         }
         IntStream.range(0, 24).forEach(i -> buffer.put(i + VDP_REG_OFFSET, (byte) vdp.getRegisterData(i)));
     }

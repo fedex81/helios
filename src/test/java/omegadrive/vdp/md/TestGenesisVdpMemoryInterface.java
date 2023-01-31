@@ -20,37 +20,42 @@ public class TestGenesisVdpMemoryInterface extends GenesisVdpMemoryInterface {
     }
 
     @Override
-    public int readVramByte(int address) {
+    public byte readVramByte(int address) {
         vramReads++;
         return super.readVramByte(address);
     }
 
     @Override
-    public int readCramByte(int address) {
+    public byte readCramByte(int address) {
         cramReads++;
         return super.readCramByte(address);
     }
 
     @Override
-    public int readVsramByte(int address) {
+    public byte readVsramByte(int address) {
         vsramReads++;
         return super.readVsramByte(address);
     }
 
     @Override
-    public void writeVramByte(int address, int data) {
+    public void writeVideoRamByte(GenesisVdpProvider.VdpRamType vramType, int address, byte data) {
+        super.writeVideoRamByte(vramType, address, data);
+    }
+
+    @Override
+    public void writeVramByte(int address, byte data) {
         super.writeVramByte(address, data);
         vramWrites++;
     }
 
     @Override
-    public void writeCramByte(int address, int data) {
+    public void writeCramByte(int address, byte data) {
         super.writeCramByte(address, data);
         cramWrites++;
     }
 
     @Override
-    public void writeVsramByte(int address, int data) {
+    public void writeVsramByte(int address, byte data) {
         super.writeVsramByte(address, data);
         vsramWrites++;
     }

@@ -164,11 +164,11 @@ public class SmsMapper {
                     return;
                 }
             }
+            assert size == Size.BYTE;
             int address = (addressL & SmsBus.RAM_MASK);
-            int data = (dataL & 0xFF);
-            memoryProvider.writeRamByte(address, data);
+            memoryProvider.writeRamByte(address, (byte) dataL);
             if (addressL >= SmsBus.SEGA_MAPPING_CONTROL_ADDRESS) {
-                writeBankData(addressL, data);
+                writeBankData(addressL, dataL);
             }
         }
 
@@ -182,10 +182,11 @@ public class SmsMapper {
         }
 
         private boolean writeSramDataMaybe(int addressL, int dataL, Size size) {
+            assert size == Size.BYTE;
             int address = (addressL & 0xFFFF);
             int page = address >> 14;
             if (sramSlot2Enable && page == 2) {
-                sram[address & 0x3FFF] = (dataL & 0xFF);
+                sram[address & 0x3FFF] = (byte) dataL;
                 return true;
             }
             return false;
@@ -251,13 +252,14 @@ public class SmsMapper {
 
         @Override
         public void writeData(int addressL, int dataL, Size size) {
+            assert size == Size.BYTE;
             int address = (addressL & 0xFFFF);
             int page = address >> 14;
             boolean isMappingControl = page < 3 && (address % SmsBus.CODEM_MAPPING_BASE_ADDRESS) == 0;
             if (isMappingControl) {
                 writeBankData(page, dataL);
             } else {
-                memoryProvider.writeRamByte(address & SmsBus.RAM_MASK, (dataL & 0xFF));
+                memoryProvider.writeRamByte(address & SmsBus.RAM_MASK, (byte) dataL);
             }
         }
 
@@ -276,12 +278,13 @@ public class SmsMapper {
 
         @Override
         public void writeData(int addressL, int dataL, Size size) {
+            assert size == Size.BYTE;
             int address = (addressL & 0xFFFF);
             boolean isMappingControl = address == SmsBus.KOREA_MAPPING_CONTROL_ADDRESS;
             if (isMappingControl) {
                 writeBankData(addressL, dataL);
             } else {
-                memoryProvider.writeRamByte(address & SmsBus.RAM_MASK, (dataL & 0xFF));
+                memoryProvider.writeRamByte(address & SmsBus.RAM_MASK, (byte) dataL);
             }
         }
 

@@ -35,7 +35,7 @@ public class GenesisMemoryProviderTest {
     public void testRomWrapping01() {
         int size = 0x1320;
         int address = 0x7FFF;
-        int expected = 0xFF;
+        byte expected = (byte) 0xFF;
         testRowWrappingInternal(size, address, expected);
     }
 
@@ -43,7 +43,7 @@ public class GenesisMemoryProviderTest {
     public void testRomWrapping02() {
         int size = 1048576;
         int address = 1048576;
-        int expected = 0;
+        byte expected = 0;
         testRowWrappingInternal(size, address, expected);
     }
 
@@ -51,7 +51,7 @@ public class GenesisMemoryProviderTest {
     public void testRomWrapping03() {
         int size = 1048576;
         int address = 1048576 * 2;
-        int expected = 0;
+        byte expected = 0;
         testRowWrappingInternal(size, address, expected);
     }
 
@@ -59,7 +59,7 @@ public class GenesisMemoryProviderTest {
     public void testRomWrapping04() {
         int size = 1048576;
         int address = 1048576 * 2 + 1;
-        int expected = 1;
+        byte expected = 1;
         testRowWrappingInternal(size, address, expected);
     }
 
@@ -67,7 +67,7 @@ public class GenesisMemoryProviderTest {
     public void testRomWrapping05() {
         int size = 1048576;
         int address = 1048576 - 1;
-        int expected = address;
+        byte expected = (byte) address;
         testRowWrappingInternal(size, address, expected);
     }
 
@@ -76,12 +76,12 @@ public class GenesisMemoryProviderTest {
         int size = 1048576;
         int address = 1048576 * 2 - 1;
         int expected = size - 1;
-        testRowWrappingInternal(size, address, expected);
+        testRowWrappingInternal(size, address, (byte) (expected & 0xFF));
     }
 
-    private void testRowWrappingInternal(int size, int address, int expected) {
-        int[] data = new int[size];
-        IntStream.range(0, size).forEach(i -> data[i] = i);
+    private void testRowWrappingInternal(int size, int address, byte expected) {
+        byte[] data = new byte[size];
+        IntStream.range(0, size).forEach(i -> data[i] = (byte) i);
         provider.setRomData(data);
 
         long res = provider.readRomByte(address);

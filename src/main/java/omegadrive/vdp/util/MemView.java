@@ -8,7 +8,7 @@ import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import omegadrive.vdp.model.VdpMemory;
+import omegadrive.vdp.model.VdpMemoryInterface;
 import org.slf4j.Logger;
 
 import javax.swing.*;
@@ -58,7 +58,7 @@ public class MemView implements Device, UpdatableViewer {
     private JTextArea textArea;
     private JComboBox<MemViewData> listComp;
 
-    private volatile int[] data;
+    private volatile byte[] data;
     private AtomicReference<MemViewData> currentViewRef = new AtomicReference<>(MdMemViewType.values()[0]);
     private final Map<MemViewOwner, BiFunction<MemViewData, Integer, Integer>> readerMap;
     private final StringBuilder sb = new StringBuilder();
@@ -127,15 +127,15 @@ public class MemView implements Device, UpdatableViewer {
     }
 
     public static class MdVdpReadableMem {
-        private final int[] vram, vsram, cram;
+        private final byte[] vram, vsram, cram;
 
-        private MdVdpReadableMem(VdpMemory memory) {
-            vram = memory.getVram();
-            vsram = memory.getVsram();
-            cram = memory.getCram();
+        private MdVdpReadableMem(VdpMemoryInterface memory) {
+            vram = memory.getVram().array();
+            vsram = memory.getVsram().array();
+            cram = memory.getCram().array();
         }
 
-        public int read(MemViewData m, int a) {
+        public byte read(MemViewData m, int a) {
             return switch (m.getVdpRamType()) {
                 case VRAM -> vram[a];
                 case CRAM -> cram[a];
@@ -144,12 +144,12 @@ public class MemView implements Device, UpdatableViewer {
         }
     }
 
-    public static UpdatableViewer createInstance(GenesisBusProvider m, VdpMemory vdpMem) {
+    public static UpdatableViewer createInstance(GenesisBusProvider m, VdpMemoryInterface vdpMem) {
         return createInstance(mdMemViewData, m, null, vdpMem);
     }
 
     public static UpdatableViewer createInstance(MemViewData[] memViewData, GenesisBusProvider m,
-                                                 ReadableByteMemory s32x, VdpMemory vdpMem) {
+                                                 ReadableByteMemory s32x, VdpMemoryInterface vdpMem) {
         return VdpDebugView.DEBUG_VIEWER_ENABLED ? new MemView(memViewData, m, s32x, vdpMem) : NO_MEMVIEW;
     }
 
@@ -158,7 +158,7 @@ public class MemView implements Device, UpdatableViewer {
     }
 
 
-    protected MemView(MemViewData[] memViewData, GenesisBusProvider m, ReadableByteMemory s32x, VdpMemory vdpMem) {
+    protected MemView(MemViewData[] memViewData, GenesisBusProvider m, ReadableByteMemory s32x, VdpMemoryInterface vdpMem) {
         this.memViewData = memViewData;
         if (!VdpDebugView.DEBUG_VIEWER_ENABLED || m == null) {
             readerMap = Collections.emptyMap();
@@ -172,9 +172,9 @@ public class MemView implements Device, UpdatableViewer {
                 SH2, (v, i) -> s32x.read(i, Size.BYTE),
                 M68K, (v, i) -> m.read(i, Size.BYTE),
                 Z80, (v, i) -> z80b.read(i, Size.BYTE),
-                MD_VDP, (v, i) -> mdVdpMem.read(v, i)
+                MD_VDP, (v, i) -> (int) mdVdpMem.read(v, i)
         );
-        data = new int[0];
+        data = new byte[0];
     }
 
     @Override
@@ -221,10 +221,10 @@ public class MemView implements Device, UpdatableViewer {
 
     private void export(ActionEvent actionEvent) {
         MemViewData mvd = currentViewRef.get();
-        int[] local = Arrays.copyOf(data, mvd.getEnd() - mvd.getStart());
+        byte[] local = Arrays.copyOf(data, mvd.getEnd() - mvd.getStart());
         String name = "MemView_" + mvd + "_" + System.currentTimeMillis() + ".dat";
         Path p = Path.of(".", name);
-        FileUtil.writeFileSafe(p, Util.unsignedToByteArray(local));
+        FileUtil.writeFileSafe(p, local);
         LOG.info("Exported to: {}", p.toAbsolutePath());
     }
 
@@ -251,7 +251,7 @@ public class MemView implements Device, UpdatableViewer {
         BiFunction<MemViewData, Integer, Integer> readerFn = readerMap.get(current.getOwner());
         int len = current.getEnd() - current.getStart();
         if (len > data.length) {
-            data = new int[len];
+            data = new byte[len];
         }
         doMemoryRead(current, len, readerFn);
         Util.executorService.submit(() -> updateFromMemory(current.getStart(), current.getEnd()));
@@ -269,7 +269,7 @@ public class MemView implements Device, UpdatableViewer {
         String asciiStr = "";
         int k = 0;
         for (int i = start; i < end; i++) {
-            final int d = data[k++];
+            final int d = data[k++] & 0xFF;
             String s = (d < 0x10 ? "0" : "") + th(d);
             if ((i & 0xF) == 0) {
                 sb.append("  ").append(asciiStr);
@@ -286,7 +286,8 @@ public class MemView implements Device, UpdatableViewer {
 
     protected void doMemoryRead(MemViewData current, int len, BiFunction<MemViewData, Integer, Integer> readerFn) {
         for (int i = 0; i < len; i++) {
-            data[i] = readerFn.apply(current, current.getStart() + i);
+            int val = readerFn.apply(current, current.getStart() + i) & 0xFF;
+            data[i] = (byte) val;
         }
     }
 

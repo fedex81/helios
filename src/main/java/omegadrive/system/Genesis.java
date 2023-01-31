@@ -68,6 +68,12 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
 
     private final static Logger LOG = LogHelper.getLogger(Genesis.class.getSimpleName());
 
+    static {
+//        System.setProperty("68k.debug", "true");
+//        System.setProperty("helios.68k.debug.mode", "2");
+//        System.setProperty("z80.debug", "true");
+    }
+
     protected Z80Provider z80;
     protected M68kProvider cpu;
     protected Ssp16 ssp16 = Ssp16.NO_SVP;

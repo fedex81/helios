@@ -46,7 +46,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
     private GenesisBusProvider mainBusProvider;
     private BusArbiter busArbiter;
     private FmProvider fmProvider;
-    private int[] ram;
+    private byte[] ram;
     private int ramMask;
 
 
@@ -69,6 +69,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
 
     @Override
     public int read(final int address, final Size size) {
+        assert size == Size.BYTE;
         int data = 0xFF;
         if (address <= END_RAM) {
             data = ram[address & ramMask];
@@ -102,8 +103,9 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
 
     @Override
     public void write(final int address, final int dataInt, final Size size) {
+        assert size == Size.BYTE;
         if (address <= END_RAM) {
-            ram[address & ramMask] = dataInt & 0xFF;
+            ram[address & ramMask] = (byte) dataInt;
         } else if (address >= START_YM2612 && address <= END_YM2612) {
             if (mainBusProvider.isZ80ResetState()) {
                 LOG.warn("Illegal write to FM while Z80 reset");

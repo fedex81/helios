@@ -42,7 +42,7 @@ public class MemoryProvider implements IMemoryProvider {
     public static final int SMS_Z80_RAM_SIZE = 0x2000;
     public static final int CHECKSUM_START_ADDRESS = 0x18E;
 
-    private int[] ram;
+    private byte[] ram;
     private int ramSize = M68K_RAM_SIZE;
 
     private RomHolder romHolder;
@@ -69,12 +69,12 @@ public class MemoryProvider implements IMemoryProvider {
     public static IMemoryProvider createInstance(RomHolder romHolder, int ramSize) {
         MemoryProvider m = new MemoryProvider();
         m.romHolder = romHolder;
-        m.ram = Util.initMemoryRandomBytes(new int[ramSize]);
+        m.ram = Util.initMemoryRandomBytes(new byte[ramSize]);
         m.ramSize = ramSize;
         return m;
     }
 
-    public static IMemoryProvider createInstance(int[] rom, int ramSize) {
+    public static IMemoryProvider createInstance(byte[] rom, int ramSize) {
         return createInstance(new RomHolder(rom), ramSize);
     }
 
@@ -84,7 +84,7 @@ public class MemoryProvider implements IMemoryProvider {
     }
 
     @Override
-    public int readRamByte(int address) {
+    public byte readRamByte(int address) {
         if (address < ramSize) {
             return ram[address];
         }
@@ -93,7 +93,7 @@ public class MemoryProvider implements IMemoryProvider {
     }
 
     @Override
-    public void writeRamByte(int address, int data) {
+    public void writeRamByte(int address, byte data) {
         if (address < ramSize) {
             ram[address] = data;
         } else {
@@ -102,7 +102,7 @@ public class MemoryProvider implements IMemoryProvider {
     }
 
     @Override
-    public void setRomData(int[] data) {
+    public void setRomData(byte[] data) {
         this.romHolder = new RomHolder(data);
     }
 
@@ -113,7 +113,7 @@ public class MemoryProvider implements IMemoryProvider {
     }
 
     @Override
-    public int[] getRamData() {
+    public byte[] getRamData() {
         return ram;
     }
 
@@ -129,6 +129,6 @@ public class MemoryProvider implements IMemoryProvider {
 
     @Override
     public void loadContext(ByteBuffer buffer) {
-        IntStream.range(0, ram.length).forEach(i -> ram[i] = buffer.get() & 0xFF);
+        IntStream.range(0, ram.length).forEach(i -> ram[i] = buffer.get());
     }
 }

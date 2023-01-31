@@ -108,7 +108,7 @@ public class VdpFifoTesting {
                 + passTest + " < " + SUCCESS_BASELINE, passTest >= SUCCESS_BASELINE);
     }
 
-    private static long readData(int[] src, Size size, int address) {
+    private static long readData(byte[] src, Size size, int address) {
         return Util.readDataMask(src, size, address, Integer.MAX_VALUE);
     }
 }

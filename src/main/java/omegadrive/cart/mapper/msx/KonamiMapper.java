@@ -41,11 +41,11 @@ public class KonamiMapper extends KonamiMapperImpl {
     private static final KonamiType[] list = KonamiType.values();
     private static final Logger LOG = LogHelper.getLogger(KonamiMapper.class.getSimpleName());
 
-    private KonamiMapper(int[] rom, KonamiType type) {
+    private KonamiMapper(byte[] rom, KonamiType type) {
         super(rom, type);
     }
 
-    public static RomMapper createMapper(int[] rom, String type) {
+    public static RomMapper createMapper(byte[] rom, String type) {
         KonamiType t = getMapperType(type);
         if (t == null) {
             LOG.error("Mapper not supported: {}", type);
@@ -54,7 +54,7 @@ public class KonamiMapper extends KonamiMapperImpl {
         return createMapper(rom, t);
     }
 
-    public static RomMapper createMapper(int[] rom, KonamiType type) {
+    public static RomMapper createMapper(byte[] rom, KonamiType type) {
         return new KonamiMapperImpl(rom, type);
     }
 
@@ -82,11 +82,11 @@ class KonamiMapperImpl implements RomMapper {
     final int pageSize;
     final int readShiftMask;
     final int[] pageBlockMapper;
-    final int[] rom;
+    final byte[] rom;
     final KonamiMapper.KonamiType type;
 
 
-    protected KonamiMapperImpl(int[] rom, KonamiMapper.KonamiType type) {
+    protected KonamiMapperImpl(byte[] rom, KonamiMapper.KonamiType type) {
         this.rom = rom;
         this.type = type;
         this.pageNum = PAGES_8KB;

@@ -5,10 +5,11 @@ import omegadrive.cart.loader.MdRomDbModel.EepromType;
 import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import omegadrive.util.Util;
 import org.slf4j.Logger;
 
 import static omegadrive.cart.mapper.md.I2cEeprom.EepromState.*;
+import static omegadrive.util.ArrayEndianUtil.getByteInWordBE;
+import static omegadrive.util.ArrayEndianUtil.setByteInWordBE;
 import static omegadrive.util.Util.th;
 
 /****************************************************************************
@@ -89,20 +90,20 @@ public class I2cEeprom {
     private static final boolean logReadWrite = verbose || false;
 
     protected final EepromContext ctx = new EepromContext();
-    private int[] sram;
+    private byte[] sram;
 
     protected static class EepromContext {
         public int scl, prevScl;
         public int sda, prevSda;
-        public int cycles, rw;
-        public int buffer, writeLatch;
+        public int cycles, rw, writeLatch;
+        public byte buffer;
         public int wordAddress = 0, deviceAddress = 0;
         public EepromState state = STAND_BY;
         public EepromType spec;
         public EepromLineMap lineMap;
     }
 
-    public static I2cEeprom createInstance(RomDbEntry entry, int[] sram) {
+    public static I2cEeprom createInstance(RomDbEntry entry, byte[] sram) {
         I2cEeprom e = NO_OP;
         if (entry.hasEeprom()) {
             e = new I2cEeprom();
@@ -118,7 +119,7 @@ public class I2cEeprom {
         int res = eeprom_i2c_out() << ctx.lineMap.sda_out_bit;
         assert size != Size.LONG;
         if (size == Size.BYTE) {
-            res = Util.getByteInWordBE(res, address & 1);
+            res = getByteInWordBE(res, address & 1);
         }
         if (logReadWrite)
             System.out.println("R," + th(address & 0xFF) + "," + size.name().charAt(0) + "," + th(res));
@@ -130,7 +131,7 @@ public class I2cEeprom {
             System.out.println("W," + th(address & 0xFF) + "," + size.name().charAt(0) + "," + th(data));
         assert size != Size.LONG;
         if (size == Size.BYTE) {
-            ctx.writeLatch = Util.setByteInWordBE(ctx.writeLatch, data & 0xFF, address & 1);
+            ctx.writeLatch = setByteInWordBE(ctx.writeLatch, data & 0xFF, address & 1);
             data = ctx.writeLatch;
         }
         writeWordEeprom(data);
@@ -434,7 +435,7 @@ public class I2cEeprom {
         }
     }
 
-    public void setSram(int[] sram) {
+    public void setSram(byte[] sram) {
         this.sram = sram;
     }
 

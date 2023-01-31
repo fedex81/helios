@@ -6,7 +6,6 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
-import omegadrive.util.Util;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -152,8 +151,8 @@ public class MdMapperTest {
                     Assert.assertEquals(address + "," + size, exp, res);
                     break;
                 case WORD:
-                    int iexp = (int) ((expectedLong >> 16) & 0xFFFF);
-                    int ires = (int) bus.read(address, size);
+                    short iexp = (short) ((expectedLong >> 16) & 0xFFFF);
+                    short ires = (short) bus.read(address, size);
                     Assert.assertEquals(address + "," + size, iexp, ires);
                     break;
                 default:
@@ -173,7 +172,7 @@ public class MdMapperTest {
     }
 
     private GenesisBusProvider loadRomData() {
-        mem.setRomData(Util.toUnsignedIntArray(buffer.array()));
+        mem.setRomData(buffer.array());
         GenesisBusProvider bus = SystemTestUtil.setupNewMdSystem(mem);
         bus.init();
         return bus;

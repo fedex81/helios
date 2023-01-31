@@ -20,7 +20,6 @@ package omegadrive.cpu.z80;
 import omegadrive.cpu.z80.disasm.Z80Dasm;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.util.LogHelper;
-import omegadrive.util.Util;
 import org.slf4j.Logger;
 import z80core.MemIoOps;
 import z80core.NotifyOps;
@@ -50,7 +49,7 @@ public class Z80Exerciser implements NotifyOps {
     private Z80 z80;
     private IMemoryRam memory;
     private MemIoOps memIo;
-    private byte[] bram = new byte[MEMORY_SIZE];
+    private byte[] bram;
     private Set<String> unknownCodes = new HashSet<>();
     private Z80Dasm z80Dasm = new Z80Dasm();
 
@@ -59,7 +58,7 @@ public class Z80Exerciser implements NotifyOps {
     public Z80Exerciser() {
         memory = new Z80Memory(MEMORY_SIZE);
         memIo = new MemIoOps();
-        bram = Util.unsignedToByteArray(memory.getRamData());
+        bram = memory.getRamData();
         memIo.setRam(bram);
         z80 = new Z80(memIo, this);
     }

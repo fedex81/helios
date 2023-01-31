@@ -34,7 +34,7 @@ public class SavestateSerializeTest {
     private static final String nukeSavestateName = "nuke_serialized_test.gsh";
     private static final String svpSavestateName = "svp_serialized_test_01.gsh";
 
-    private static final IMemoryProvider NO_MEMORY = MemoryProvider.createInstance(new int[2], 0);
+    private static final IMemoryProvider NO_MEMORY = MemoryProvider.createInstance(new byte[2], 0);
 
     /**
      * Has the serialization format been changed?
@@ -43,7 +43,6 @@ public class SavestateSerializeTest {
     @Test
     public void testSerialFormatUnchangedNuke() {
         Path p = Paths.get(fileFolder, nukeSavestateName);
-//        GstStateHandler stateHandler = (GstStateHandler) GshStateHandler.createLoadInstance(p.toAbsolutePath().toString());
         GstStateHandler stateHandler = (GstStateHandler) BaseStateHandler.createInstance(
                 GENESIS, p.toAbsolutePath().toString(), BaseStateHandler.Type.LOAD, Collections.emptySet());
         Ym2612Nuke nuke = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
@@ -64,7 +63,6 @@ public class SavestateSerializeTest {
     @Test
     public void testSerialFormatUnchangedSvp() {
         Path p = Paths.get(fileFolder, svpSavestateName);
-//        GshStateHandler stateHandler = (GshStateHandler) GshStateHandler.createLoadInstance(p.toAbsolutePath().toString());
         GshStateHandler stateHandler = (GshStateHandler) BaseStateHandler.createInstance(
                 GENESIS, p.toAbsolutePath().toString(), BaseStateHandler.Type.LOAD, Collections.emptySet());
         SvpMapper svpMapper = SvpMapper.createInstance(RomMapper.NO_OP_MAPPER, NO_MEMORY);

@@ -83,11 +83,13 @@ public interface BaseVdpProvider extends Device, BaseVdpAdapterEventSupport {
 
     VideoMode getVideoMode();
 
-    VdpMemory getVdpMemory();
-
     int[] getScreenDataLinear();
 
     void setRegion(RegionDetector.Region region);
+
+    default VdpMemoryInterface getVdpMemory() {
+        throw new RuntimeException("VdpMemory not available!");
+    }
 
     //after loading a state
     default void reload() {

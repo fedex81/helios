@@ -29,6 +29,7 @@ import omegadrive.vdp.model.VdpMemoryInterface;
 import org.slf4j.Logger;
 
 import static omegadrive.util.Util.th;
+import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 public class VdpDmaHandlerImpl implements VdpDmaHandler {
@@ -197,13 +198,13 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     private void dmaFillSingleByte() {
-        dmaVramWriteByte((dmaFillData >> 8) & 0xFF);
+        dmaVramWriteByte((byte) (dmaFillData >> 8));
     }
 
-    private void dmaVramWriteByte(int data) {
+    private void dmaVramWriteByte(byte data) {
         int destAddress = getDestAddress() ^ 1;
         printInfo("IN PROGRESS - WRITE");
-        memoryInterface.writeVramByte(destAddress, data);
+        memoryInterface.writeVideoRamByte(VRAM, destAddress, data);
         postDmaRegisters();
     }
 
@@ -220,12 +221,12 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         //needs two slots, first slot reads, second writes
         if (pendingReadEntry.vdpRamMode == null) {
             int sourceAddress = getSourceAddress() ^ 1;
-            int data = memoryInterface.readVramByte(sourceAddress);
+            int data = memoryInterface.readVideoRamByte(VRAM, sourceAddress);
             pendingReadEntry.vdpRamMode = GenesisVdpProvider.VramMode.vramWrite;
             pendingReadEntry.data = data;
             printInfo("IN PROGRESS - READ");
         } else {
-            dmaVramWriteByte(pendingReadEntry.data);
+            dmaVramWriteByte((byte) pendingReadEntry.data);
             pendingReadEntry.vdpRamMode = null;
             pendingReadEntry.data = 0;
         }

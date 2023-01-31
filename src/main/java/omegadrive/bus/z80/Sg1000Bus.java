@@ -61,8 +61,9 @@ public class Sg1000Bus extends DeviceAwareBus<Tms9918aVdp, TwoButtonsJoypad> imp
 
     @Override
     public void write(int address, int data, Size size) {
+        assert size == Size.BYTE;
         address &= RAM_SIZE - 1;
-        memoryProvider.writeRamByte(address, (data & 0xFF));
+        memoryProvider.writeRamByte(address, (byte) data);
     }
 
     /**

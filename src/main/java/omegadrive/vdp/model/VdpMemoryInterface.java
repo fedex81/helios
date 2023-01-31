@@ -23,31 +23,31 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
-public interface VdpMemoryInterface extends VdpMemory {
+import java.nio.ByteBuffer;
+
+public interface VdpMemoryInterface {
 
     Logger LOG = LogHelper.getLogger(VdpMemoryInterface.class.getSimpleName());
 
-    void writeVramByte(int address, int data);
-
-    void writeVsramByte(int address, int data);
-
-    void writeCramByte(int address, int data);
-
-    int readVramByte(int address);
-
-    int readCramByte(int address);
-
-    int readVsramByte(int address);
-
-    int readVramWord(int address);
-
-    int readCramWord(int address);
-
-    int readVsramWord(int address);
-
     void writeVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int data, int address);
 
+    void writeVideoRamByte(GenesisVdpProvider.VdpRamType vramType, int address, byte data);
+
+    byte readVideoRamByte(GenesisVdpProvider.VdpRamType vramType, int address);
+
+    int readVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int address);
+
     int[] getJavaColorPalette();
+
+    ByteBuffer getVram();
+
+    default ByteBuffer getCram() {
+        throw new RuntimeException("Cram not available");
+    }
+
+    default ByteBuffer getVsram() {
+        throw new RuntimeException("Vsram not available");
+    }
 
     default int[] getSatCache() {
         return new int[0];
@@ -55,20 +55,6 @@ public interface VdpMemoryInterface extends VdpMemory {
 
     default void setSatBaseAddress(int address) {
         //DO NOTHING
-    }
-
-    default int readVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int address) {
-        switch (vramType) {
-            case VRAM:
-                return readVramWord(address);
-            case VSRAM:
-                return readVsramWord(address);
-            case CRAM:
-                return readCramWord(address);
-            default:
-                LOG.warn("Unexpected videoRam read: {}", vramType);
-        }
-        return 0;
     }
 
     default void writeVideoRamWord(GenesisVdpProvider.VramMode mode, int data, int address) {

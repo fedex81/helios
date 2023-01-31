@@ -23,24 +23,24 @@ import omegadrive.memory.IMemoryRam;
 
 public class Z80Memory implements IMemoryRam {
 
-    private final int[] memory;
+    private final byte[] memory;
 
     public Z80Memory(int size) {
-        memory = new int[size];
+        memory = new byte[size];
     }
 
     @Override
-    public int readRamByte(int address) {
-        return memory[address] & 0xFF;
+    public byte readRamByte(int address) {
+        return memory[address];
     }
 
     @Override
-    public void writeRamByte(int address, int data) {
-        memory[address] = data & 0xFF;
+    public void writeRamByte(int address, byte data) {
+        memory[address] = data;
     }
 
     @Override
-    public int[] getRamData() {
+    public byte[] getRamData() {
         return memory;
     }
 }

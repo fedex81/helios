@@ -119,6 +119,6 @@ public class Z80SavestateTest extends BaseSavestateTest {
         IntStream.range(0, Tms9918a.REGISTERS).forEach(i ->
                 Assert.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
         IntStream.range(0, Tms9918a.RAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vram" + i, vdp1.getVdpMemory().getVram()[i], vdp2.getVdpMemory().getVram()[i]));
+                Assert.assertEquals("Vram" + i, vdp1.getVram()[i], vdp2.getVram()[i]));
     }
 }

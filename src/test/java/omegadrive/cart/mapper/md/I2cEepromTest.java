@@ -25,7 +25,7 @@ public class I2cEepromTest {
     //binary files representing the eeprom before and after running the simulation
     public static Path eepromFolder = Paths.get(baseFolder.toAbsolutePath().toString(), "compare");
 
-    private int[] sram;
+    private byte[] sram;
 
     private String getFileEepromBefore(String name) {
         return Util.getNameWithoutExtension(name) + ".bf.bin";
@@ -36,7 +36,7 @@ public class I2cEepromTest {
     }
 
     private void setInitialEepromState(I2cEeprom eeprom, Path file) {
-        sram = Util.toUnsignedIntArray(FileUtil.readFileSafe(file));
+        sram = FileUtil.readFileSafe(file);
         Assertions.assertEquals(sram.length, eeprom.ctx.spec.sizeMask + 1);
         eeprom.setSram(sram);
     }
@@ -87,7 +87,7 @@ public class I2cEepromTest {
                 Assertions.assertEquals(data, res, l);
             }
         }
-        int[] exp = Util.toUnsignedIntArray(FileUtil.readFileSafe(eepromAfter));
+        byte[] exp = FileUtil.readFileSafe(eepromAfter);
         Assertions.assertArrayEquals(exp, sram);
     }
 

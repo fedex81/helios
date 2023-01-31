@@ -343,7 +343,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         @Override
         public void run() {
             try {
-                int[] data = Util.toUnsignedIntArray(FileUtil.readBinaryFile(file, getSystemType()));
+                byte[] data = FileUtil.readBinaryFile(file, getSystemType());
                 if (data.length == 0) {
                     LOG.error("Unable to open/access file: {}", file.toAbsolutePath());
                     return;

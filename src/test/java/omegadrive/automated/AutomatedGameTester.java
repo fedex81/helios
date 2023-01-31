@@ -246,7 +246,7 @@ public class AutomatedGameTester {
             if (skip) {
                 continue;
             }
-            int[] data = Util.toUnsignedIntArray(FileUtil.readBinaryFile(rom));
+            byte[] data = FileUtil.readBinaryFile(rom);
             IMemoryProvider memoryProvider = MemoryProvider.createInstance(data, 0);
             try {
                 CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,

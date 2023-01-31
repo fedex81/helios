@@ -38,10 +38,14 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
     //	The CRAM contains 128 bytes, addresses 0 to 7F
     int VDP_CRAM_SIZE = 0x80;
 
+    int VDP_CRAM_MASK = VDP_CRAM_SIZE - 1;
+
     //	The VSRAM contains 80 bytes, addresses 0 to 4F
     int VDP_VSRAM_SIZE = 0x50;
 
     int VDP_VRAM_SIZE = 0x10000;
+
+    int VDP_VRAM_MASK = VDP_VRAM_SIZE - 1;
 
     int VDP_REGISTERS_SIZE = 24;
 

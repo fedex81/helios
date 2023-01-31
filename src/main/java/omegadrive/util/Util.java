@@ -28,6 +28,10 @@ import omegadrive.memory.IMemoryRom;
 import org.slf4j.Logger;
 
 import java.io.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CyclicBarrier;
@@ -36,6 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.zip.CRC32;
 
 public class Util {
@@ -60,6 +65,11 @@ public class Util {
     public static final Random random;
 
     static final int CACHE_LIMIT = Short.MIN_VALUE;
+
+    public static final VarHandle SHORT_BYTEARR_HANDLE = MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.BIG_ENDIAN);
+    public static final VarHandle INT_BYTEARR_HANDLE = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.BIG_ENDIAN);
+    public static final VarHandle SHORT_BYTEBUF_HANDLE = MethodHandles.byteBufferViewVarHandle(short[].class, ByteOrder.BIG_ENDIAN);
+    public static final VarHandle INT_BYTEBUF_HANDLE = MethodHandles.byteBufferViewVarHandle(int[].class, ByteOrder.BIG_ENDIAN);
     static final Integer[] negativeCache = new Integer[Short.MAX_VALUE + 2];
     public static final ExecutorService executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory("util"));
 
@@ -162,12 +172,22 @@ public class Util {
         }
     }
 
-    public static int[] initMemoryRandomBytes(int[] mem) {
+    public static byte[] initMemoryRandomBytes(byte[] mem) {
         if (!randomInitRam) {
             return mem;
         }
         for (int i = 0; i < mem.length; i++) {
-            mem[i] = Util.random.nextInt(0x100);
+            mem[i] = (byte) Util.random.nextInt(0x100);
+        }
+        return mem;
+    }
+
+    public static ByteBuffer initMemoryRandomBytes(ByteBuffer mem) {
+        if (!randomInitRam) {
+            return mem;
+        }
+        for (int i = 0; i < mem.capacity(); i++) {
+            mem.put((byte) Util.random.nextInt(0x100));
         }
         return mem;
     }
@@ -181,39 +201,25 @@ public class Util {
         return ((number & (1 << position)) != 0);
     }
 
-    public static int readDataMask(int[] src, Size size, int address, final int mask) {
-        int data;
-        address &= mask;
-        if (size == Size.WORD) {
-            data = ((src[address] & 0xFF) << 8) | (src[(address + 1) & mask] & 0xFF);
-        } else if (size == Size.BYTE) {
-            data = src[address];
-        } else {
-            data = ((src[address] & 0xFF) << 24) |
-                    ((src[(address + 1) & mask] & 0xFF) << 16) |
-                    ((src[(address + 2) & mask] & 0xFF) << 8) |
-                    (src[(address + 3) & mask] & 0xFF);
+    public static int readDataMask(byte[] src, Size size, int address, final int mask) {
+        return switch (size) {
+            case WORD -> (int) SHORT_BYTEARR_HANDLE.get(src, address & mask);
+            case LONG -> (int) INT_BYTEARR_HANDLE.get(src, address & mask);
+            case BYTE -> src[address & mask];
+
+        };
+    }
+    public static void writeDataMask(byte[] dest, Size size, int address, int data, final int mask) {
+        switch (size) {
+            case WORD -> SHORT_BYTEARR_HANDLE.set(dest, address & mask, (short) data);
+            case LONG -> INT_BYTEARR_HANDLE.set(dest, address & mask, data);
+            case BYTE -> dest[address & mask] = (byte) data;
+
         }
-//        LogHelper.printLevel(LOG, Level.DEBUG, "Read SRAM: {}, {}: {}", address, data, size, verbose);
-        return data;
+        ;
     }
 
-    public static void writeDataMask(int[] dest, Size size, int address, int data, final int mask) {
-        address &= mask;
-        if (size == Size.BYTE) {
-            dest[address] = (data & 0xFF);
-        } else if (size == Size.WORD) {
-            dest[address] = ((data >> 8) & 0xFF);
-            dest[address + 1] = (data & 0xFF);
-        } else {
-            dest[address] = ((data >> 24) & 0xFF);
-            dest[address + 1] = ((data >> 16) & 0xFF);
-            dest[(address + 2) & mask] = ((data >> 8) & 0xFF);
-            dest[(address + 3) & mask] = (data & 0xFF);
-        }
-//        LogHelper.printLevel(LOG, Level.DEBUG, "Write SRAM: {}, {}: {}", address, data, size, verbose);
-    }
-
+    @Deprecated
     public static int computeChecksum(IMemoryProvider memoryProvider) {
         int res = 0;
         //checksum is computed starting from byte 0x200
@@ -229,9 +235,9 @@ public class Util {
         return res;
     }
 
-    public static String computeSha1Sum(int[] data){
+    public static String computeSha1Sum(byte[] data) {
         Hasher h = Hashing.sha1().newHasher();
-        Arrays.stream(data).forEach(d -> h.putByte((byte) d));
+        IntStream.range(0, data.length).forEach(i -> h.putByte(data[i]));
         return BaseEncoding.base16().lowerCase().encode(h.hash().asBytes());
     }
 
@@ -239,9 +245,9 @@ public class Util {
         return computeSha1Sum(rom.getRomData());
     }
 
-    public static String computeCrc32(int[] data) {
+    public static String computeCrc32(byte[] data) {
         CRC32 crc32 = new CRC32();
-        Arrays.stream(data).forEach(crc32::update);
+        IntStream.range(0, data.length).forEach(i -> crc32.update(data[i]));
         return Long.toHexString(crc32.getValue());
     }
 
@@ -254,93 +260,13 @@ public class Util {
         return 31 - Integer.numberOfLeadingZeros(n);
     }
 
-    // addr 0 -> [8bit][8bit] <- addr 1
-    public static int getByteInWordBE(int word, int bytePos) {
-        return (word >> (((bytePos + 1) & 1) << 3)) & 0xFF;
+    public static String toStringValue(byte... data) {
+        return new String(data);
     }
 
-    // addr 0 -> [8bit][8bit] <- addr 1
-    public static int setByteInWordBE(int word, int byteVal, int bytePos) {
-        final int shift = ((bytePos + 1) & 1 << 3);
-        return (word & ~(0xFF << shift)) | (byteVal << shift);
-    }
 
-    public static int getUInt32LE(byte... bytes) {
-        int value = (bytes[0] & 0xFF);
-        value = bytes.length > 1 ? value | ((bytes[1] & 0xFF) << 8) : value;
-        value = bytes.length > 2 ? value | ((bytes[2] & 0xFF) << 16) : value;
-        value = bytes.length > 3 ? value | ((bytes[3] & 0xFF) << 24) : value;
-        return value;
-    }
-
-    public static int getUInt32LE(int... bytes) {
-        int value = (bytes[0] & 0xFF);
-        value = bytes.length > 1 ? value | ((bytes[1] & 0xFF) << 8) : value;
-        value = bytes.length > 2 ? value | ((bytes[2] & 0xFF) << 16) : value;
-        value = bytes.length > 3 ? value | ((bytes[3] & 0xFF) << 24) : value;
-        return value;
-    }
-
-    public static void setUInt32LE(int value, int[] data, int startIndex) {
-        data[startIndex + 3] = (value >> 24) & 0xFF;
-        data[startIndex + 2] = (value >> 16) & 0xFF;
-        data[startIndex + 1] = (value >> 8) & 0xFF;
-        data[startIndex] = (value) & 0xFF;
-    }
-
-    public static void setUInt32LE(int value, byte[] data, int startIndex) {
-        data[startIndex + 3] = (byte) ((value >> 24) & 0xFF);
-        data[startIndex + 2] = (byte) ((value >> 16) & 0xFF);
-        data[startIndex + 1] = (byte) ((value >> 8) & 0xFF);
-        data[startIndex] = (byte) ((value) & 0xFF);
-    }
-
-    public static String toStringValue(int... data) {
-        StringBuilder value = new StringBuilder();
-        for (int datum : data) {
-            value.append((char) (datum & 0xFF));
-        }
-        return value.toString();
-    }
-
-    public static int[] toUnsignedIntArray(byte[] bytes) {
-        int[] data = new int[bytes.length];
-        for (int i = 0; i < bytes.length; i++) {
-            data[i] = bytes[i] & 0xFF;
-        }
-        return data;
-    }
-
-    public static int[] toSignedIntArray(byte[] bytes) {
-        int[] data = new int[bytes.length];
-        for (int i = 0; i < bytes.length; i++) {
-            data[i] = bytes[i];
-        }
-        return data;
-    }
-
-    /**
-     * NOTE: input int[] must contain values representable as bytes
-     */
-    public static byte[] unsignedToByteArray(int[] bytes) {
-        return toByteArray(bytes, false);
-    }
-
-    public static byte[] signedToByteArray(int[] bytes) {
-        return toByteArray(bytes, true);
-    }
-
-    private static byte[] toByteArray(int[] bytes, boolean signed) {
-        int min = signed ? Byte.MIN_VALUE : 0;
-        int max = signed ? Byte.MAX_VALUE : 0xFF;
-        byte[] data = new byte[bytes.length];
-        for (int i = 0; i < bytes.length; i++) {
-            data[i] = (byte) (bytes[i] & 0xFF);
-            if (bytes[i] < min || bytes[i] > max) {
-                throw new IllegalArgumentException("Invalid value at pos " + i + ", it doesn't represent a byte: " + bytes[i]);
-            }
-        }
-        return data;
+    public static int readBufferWord(ByteBuffer b, int pos) {
+        return (int) SHORT_BYTEBUF_HANDLE.get(b, pos) & 0xFFFF;
     }
 
     public static String th(int pos) {
@@ -351,12 +277,12 @@ public class Util {
         return Long.toHexString(pos);
     }
 
-    public static int[] getPaddedRom(int[] data) {
+    public static byte[] getPaddedRom(byte[] data) {
         int romSize = data.length;
         int mask = getRomMask(romSize);
         if (mask >= romSize) {
-            int[] newrom = new int[mask + 1];
-            Arrays.fill(newrom, 0xFF);
+            byte[] newrom = new byte[mask + 1];
+            Arrays.fill(newrom, (byte) 0xFF);
             System.arraycopy(data, 0, newrom, 0, romSize);
             return newrom;
         }
