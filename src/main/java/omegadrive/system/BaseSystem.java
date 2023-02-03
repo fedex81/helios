@@ -317,7 +317,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         elapsedWaitNs = syncCycle(startNs) - startWaitNs;
         startNs = System.nanoTime();
         updateVideoMode(false);
-        doRendering(vdp.getScreenDataLinear(), getStats(startNs, prevStartNs));
+        doRendering(videoMode, vdp.getScreenDataLinear(), getStats(startNs, prevStartNs));
         frameProcessingDelayNs = startNs - startWaitNs - elapsedWaitNs;
         handleVdpDumpScreenData();
         processSaveState();
@@ -382,7 +382,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         }
     }
 
-    protected void doRendering(int[] data, Optional<String> label) {
+    protected void doRendering(VideoMode videoMode, int[] data, Optional<String> label) {
         emuFrame.renderScreenLinear(data, label, videoMode);
     }
 

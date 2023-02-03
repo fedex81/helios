@@ -86,7 +86,7 @@ public class MemView implements Device, UpdatableViewer {
         MD_VDP_VSRAM(MD_VDP, 0, VDP_VSRAM_SIZE, VdpRamType.VSRAM),
         MD_VDP_CRAM(MD_VDP, 0, VDP_CRAM_SIZE, VdpRamType.CRAM),
         M68K_SDRAM(M68K, ADDRESS_UPPER_LIMIT - M68K_RAM_MASK, ADDRESS_UPPER_LIMIT + 1),
-        Z80_RAM(Z80, 0, END_RAM),
+        Z80_RAM(Z80, 0, END_RAM / 2),
         ;
 
         private int start, end;

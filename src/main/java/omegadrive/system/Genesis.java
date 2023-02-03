@@ -266,6 +266,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         super.initAfterRomLoad();
         bus.attachDevice(sound);
         vdp.addVdpEventListener(sound);
+        SvpMapper.ssp16 = Ssp16.NO_SVP;
         resetAfterRomLoad();
         memView = createMemView();
     }
