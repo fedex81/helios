@@ -102,7 +102,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         if (cartridgeInfoProvider.getEntry().hasEeprom()) {
             checkBackupMemoryMapper(SramMode.READ_WRITE, cartridgeInfoProvider.getEntry());
         } else if (cartridgeInfoProvider.isSramEnabled()) {
-            checkBackupMemoryMapper(SramMode.READ_WRITE);
+            //default disable, see Vr 32x
+            checkBackupMemoryMapper(SramMode.DISABLE);
         }
         if (cartridgeInfoProvider.isSsfMapper()) {
             checkExSsfMapper();
@@ -337,6 +338,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
             z80ResetControlWrite(data, size);
         } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {
+            assert size == Size.BYTE;
             timeLineControlWrite(address, data);
         } else if (address >= TMSS_AREA1_START && address <= TMSS_AREA1_END) {
             // used to lock/unlock the VDP by writing either "SEGA" to unlock it or anything else to lock it.
@@ -389,15 +391,17 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             checkExSsfMapper();
             mapper.writeBankData(addressL, data);
         } else if (addressL == SRAM_LOCK) {
+            sramLockValue = data;
             boolean rom = (data & 1) == 0;
+            boolean writable = (data & 2) > 0;
             if (rom) {
                 checkExSsfMapper();
             } else {
-                //NOTE: seems like 1 allows sram writes
-//                SramMode sramMode = (data & 2) > 0 ? SramMode.READ_WRITE : SramMode.READ_ONLY;
-                checkBackupMemoryMapper(SramMode.READ_WRITE);
+                checkBackupMemoryMapper(writable ? SramMode.READ_WRITE : SramMode.READ_ONLY);
             }
-            sramLockValue = data;
+            if (backupMemMapper != NO_OP_MAPPER) {
+                backupMemMapper.setSramMode(writable ? SramMode.READ_WRITE : SramMode.READ_ONLY);
+            }
             if (verbose) LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
             LOG.warn("Unexpected mapper set, address: {}, data: {}", th(addressL),

@@ -55,6 +55,7 @@ public class MdMapperTest {
         testSramInternal();
     }
 
+    //see VR 32x japan
     @Test
     public void testMapper() {
         Assume.assumeFalse(RUNNING_IN_GITHUB);
@@ -73,7 +74,7 @@ public class MdMapperTest {
         bus.write(address, 0x55, Size.BYTE); //write to cart ignored
         testBusRead(bus, address, val);
 
-        bus.write(SRAM_LOCK, 1, Size.BYTE); //enable SRAM, disable ssfMapper
+        bus.write(SRAM_LOCK, 3, Size.BYTE); //enable SRAM (RW mode), disable ssfMapper
         testBusRead(bus, address, 0); //read SRAM = 0
         testBusRead(bus, address1, val);
 
@@ -92,6 +93,12 @@ public class MdMapperTest {
         bus.write(SRAM_LOCK, 0, Size.BYTE); //enable ssfMapper, disable SRAM
         testBusRead(bus, address, val);
         testBusRead(bus, address1, val);
+
+        bus.write(SRAM_LOCK, 1, Size.BYTE); //enable SRAM READ-ONLY, disable ssfMapper
+        testBusRead(bus, address, sramData); //read SRAM
+        testBusRead(bus, address1, val);
+        bus.write(address, 0x99, Size.BYTE); //write BYTE to cart, ignored
+        testBusRead(bus, address, sramData); //read SRAM
     }
 
     //tries to use sram without declaring it in the header
