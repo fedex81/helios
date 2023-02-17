@@ -168,19 +168,26 @@ public class StateUtil {
     }
 
     public static ByteBuffer storeSerializedData(String magicWord, Serializable object, ByteBuffer buffer) {
+        return storeSerializedData(magicWord, magicWord, object, buffer);
+    }
+
+    public static ByteBuffer storeSerializedData(String magicWordStart, String magicWordEnd, Serializable object,
+                                                 ByteBuffer buffer) {
         int prevPos = buffer.position();
-        int len = magicWord.length() << 1;
+        int len = magicWordStart.length() + magicWordEnd.length();
         byte[] data = Util.serializeObject(object);
         buffer = extendBuffer(buffer, data.length + len);
+
         try {
-            buffer.put(magicWord.getBytes());
+            buffer.put(magicWordStart.getBytes());
             buffer.put(data);
-            buffer.put(magicWord.getBytes());
-        } catch (Exception e) {
-            LOG.error("Unable to save {} data", magicWord);
+            buffer.put(magicWordEnd.getBytes());
+        } catch (Exception var10) {
+            LOG.error("Unable to save {} data", magicWordStart);
         } finally {
             buffer.position(prevPos);
         }
+
         return buffer;
     }
 

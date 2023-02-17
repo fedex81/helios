@@ -129,6 +129,51 @@ public class MC68000Helper {
         return sb.append(String.format("\n==> %s\n\n", sb2)).toString();
     }
 
+    /**
+     * CPU  880ca0  48e7  movem.l d6-d7/a6-a7,-(a7)
+     * d0:0000ffa0 d1:00000000 d2:00000009 d3:00000000 d4:00000000 d5:00000000 d6:00000000 d7:00000000
+     * a0:00ffec12 a1:00ffd04e a2:00000000 a3:00000000 a4:00000000 a5:00a15130 a6:00ffcffe a7:00fffffa sp:00000000 tS7cvZnx
+     */
+    public static String dumpInfoShort(int pc, Cpu cpu) {
+        int wrapPc = pc & 0xFF_FFFF;
+        int opcode = cpu.readMemoryWord(wrapPc);
+        Instruction i = cpu.getInstructionFor(opcode);
+        DisassembledInstruction di = i.disassemble(wrapPc, opcode);
+        StringBuilder sb = new StringBuilder("CPU  ");
+        formatInstruction(di, sb);
+        sb.append("\t");
+        for (int j = 0; j < 8; j++) {
+            sb.append("d" + j + ":" + String.format("%08x", cpu.getDataRegisterLong(j)) + " ");
+        }
+        for (int j = 0; j < 8; j++) {
+            sb.append("a" + j + ":" + String.format("%08x", cpu.getAddrRegisterLong(j)) + " ");
+        }
+        sb.append("ssp:" + String.format("%08x", cpu.getSSP()));
+        sb.append(" t" + (cpu.isSupervisorMode() ? "S" : "s"));
+        sb.append((cpu.getSR() >> 8) & 0xF);
+        sb.append(cpu.isFlagSet(1) ? 'C' : 'c');
+        sb.append(cpu.isFlagSet(2) ? 'V' : 'v');
+        sb.append(cpu.isFlagSet(4) ? 'Z' : 'z');
+        sb.append(cpu.isFlagSet(8) ? 'N' : 'n');
+        sb.append(cpu.isFlagSet(16) ? 'X' : 'x');
+        return sb.toString();
+    }
+
+    public static void formatInstruction(DisassembledInstruction di, StringBuilder buffer) {
+        buffer.append(String.format("%06x  %04x  ", di.address, di.opcode));
+        String instName = String.format("%-9s", di.instruction);
+        String str = instName;
+        switch (di.num_operands) {
+            case 1:
+                str += di.op1.operand;
+                break;
+            case 2:
+                str += di.op1.operand + "," + di.op2.operand;
+                break;
+        }
+        buffer.append(String.format("%-30s", str));
+    }
+
     public static String dumpInfo(Cpu cpu, M68kState state, int memorySize) {
         StringBuilder sb = new StringBuilder("\n");
         int wrapPc = state.pc & MD_PC_MASK;
@@ -153,12 +198,13 @@ public class MC68000Helper {
     }
 
     protected static String makeFlagView(Cpu cpu) {
-        String sb = String.valueOf(cpu.isFlagSet(16) ? 'X' : '-') +
-                (cpu.isFlagSet(8) ? 'N' : '-') +
-                (cpu.isFlagSet(4) ? 'Z' : '-') +
-                (cpu.isFlagSet(2) ? 'V' : '-') +
-                (cpu.isFlagSet(1) ? 'C' : '-');
-        return sb;
+        StringBuilder sb = new StringBuilder(5);
+        sb.append(cpu.isFlagSet(16) ? 'X' : '-');
+        sb.append(cpu.isFlagSet(8) ? 'N' : '-');
+        sb.append(cpu.isFlagSet(4) ? 'Z' : '-');
+        sb.append(cpu.isFlagSet(2) ? 'V' : '-');
+        sb.append(cpu.isFlagSet(1) ? 'C' : '-');
+        return sb.toString();
     }
 
     public static boolean addToInstructionSet(MC68000 cpu) {

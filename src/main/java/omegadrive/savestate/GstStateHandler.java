@@ -63,6 +63,9 @@ public class GstStateHandler implements BaseStateHandler {
     private static final int M68K_RAM_DATA_OFFSET = 0x2478;
     private static final int M68K_REGD_OFFSET = 0x80;
     private static final int M68K_REGA_OFFSET = 0xA0;
+
+    protected static final int VERSION_OFFSET = 0x50;
+    protected static final int SWID_OFFSET = 0x51;
     public static final int FILE_SIZE = 0x22478;
 
     protected static final String extension = ".gs";

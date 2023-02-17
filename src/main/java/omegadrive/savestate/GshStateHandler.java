@@ -86,8 +86,8 @@ public class GshStateHandler extends GstStateHandler {
             LOG.error("Unable to load save state of type: {}, size: {}", fileType, buffer.capacity());
             return BaseStateHandler.EMPTY_STATE;
         }
-        version = buffer.get(0x50) & 0xFF;
-        softwareId = buffer.get(0x51) & 0xFF;
+        version = buffer.get(VERSION_OFFSET) & 0xFF;
+        softwareId = buffer.get(SWID_OFFSET) & 0xFF;
         LOG.info("Savestate type {}, version: {}, softwareId: {}", fileType, version, softwareId);
         if (MAGIC_WORD_GST.equalsIgnoreCase(fileType)) {
             LOG.warn("Loading a {} savestate, fm sound may not work correctly!", fileType);

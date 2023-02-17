@@ -2,6 +2,8 @@ package omegadrive.util;
 
 import org.slf4j.Logger;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
@@ -9,8 +11,7 @@ import java.util.Arrays;
  * <p>
  * Copyright 2022
  */
-public interface Fifo<T> {
-
+public interface Fifo<T> extends Serializable {
     void push(T data);
 
     T pop();
@@ -48,6 +49,9 @@ public interface Fifo<T> {
     }
 
     class FixedSizeFifo<T> implements Fifo<T> {
+
+        @Serial
+        private static final long serialVersionUID = -3596142249449303723L;
 
         protected final static Logger LOG = LogHelper.getLogger(FixedSizeFifo.class.getSimpleName());
         public static final boolean logEnable = false;

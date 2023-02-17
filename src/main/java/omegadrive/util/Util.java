@@ -316,12 +316,16 @@ public class Util {
             oos.flush();
             res = bos.toByteArray();
         } catch (Exception e) {
-            LOG.error("Unable to serialize object: {}", obj.getClass().getSimpleName());
+            LOG.error("Unable to serialize object: {}, {}", obj.getClass().getSimpleName(), e.getMessage());
         }
         if (res.length == 0) {
             LOG.error("Unable to serialize object: {}", obj.getClass().getSimpleName());
         }
         return res;
+    }
+
+    public static Serializable deserializeObject(byte[] data) {
+        return deserializeObject(data, 0, data.length);
     }
 
     public static Serializable deserializeObject(byte[] data, int offset, int len) {

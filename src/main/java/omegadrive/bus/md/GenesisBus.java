@@ -687,6 +687,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 }
                 vdpWriteWord(address, Size.WORD, data >>> 16);
                 vdpWriteWord(address + 2, Size.WORD, data & 0xFFFF);
+                //TODO fixes Bubba but breaks Fatal Rewind
+//                m68kProvider.addCyclePenalty(22);
                 break;
         }
     }
