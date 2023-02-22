@@ -201,6 +201,14 @@ public class Util {
         return ((number & (1 << position)) != 0);
     }
 
+    public static int readData(byte[] src, Size size, int address) {
+        return readDataMask(src, size, address, size.getMask());
+    }
+
+    public static void writeData(byte[] dest, Size size, int address, int data) {
+        writeDataMask(dest, size, address, data, size.getMask());
+    }
+
     public static int readDataMask(byte[] src, Size size, int address, final int mask) {
         return switch (size) {
             case WORD -> (int) SHORT_BYTEARR_HANDLE.get(src, address & mask);
@@ -209,6 +217,7 @@ public class Util {
 
         };
     }
+
     public static void writeDataMask(byte[] dest, Size size, int address, int data, final int mask) {
         switch (size) {
             case WORD -> SHORT_BYTEARR_HANDLE.set(dest, address & mask, (short) data);

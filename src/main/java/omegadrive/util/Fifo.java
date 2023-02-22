@@ -51,7 +51,7 @@ public interface Fifo<T> extends Serializable {
     class FixedSizeFifo<T> implements Fifo<T> {
 
         @Serial
-        private static final long serialVersionUID = -3596142249449303723L;
+        private static final long serialVersionUID = -6191940032925879269L;
 
         protected final static Logger LOG = LogHelper.getLogger(FixedSizeFifo.class.getSimpleName());
         public static final boolean logEnable = false;

@@ -99,7 +99,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         sramRead &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (sramRead) {
             initBackupFileIfNecessary();
-            int res = Util.readDataMask(sram, size, address, 0xFFFF);
+            int res = Util.readDataMask(sram, size, address, sramMask);
             if (verbose) LOG.info("SRAM read at: {} {}, result: {} ", address & 0xFFFF, size, res);
             return res;
         }
@@ -115,7 +115,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         } else {
             initBackupFileIfNecessary();
             if (verbose) LOG.info("SRAM write at: {} {}, data: {} ", address, size, data);
-            Util.writeDataMask(sram, size, address, data, 0xFFFF);
+            Util.writeDataMask(sram, size, address, data, sramMask);
         }
     }
 

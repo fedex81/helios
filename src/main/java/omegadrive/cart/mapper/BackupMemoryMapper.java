@@ -22,6 +22,7 @@ package omegadrive.cart.mapper;
 import omegadrive.SystemLoader;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.Util;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -44,7 +45,7 @@ public abstract class BackupMemoryMapper {
     protected final String fileType;
     protected final String romName;
 
-    protected final int sramSize;
+    protected final int sramSize, sramMask;
 
     protected BackupMemoryMapper(SystemLoader.SystemType systemType, String fileType, String romName, int sramSize) {
         sramFolderProp = systemType.getShortName().toLowerCase() + ".sram.folder";
@@ -53,6 +54,7 @@ public abstract class BackupMemoryMapper {
         this.romName = romName;
         this.fileType = fileType;
         this.sramSize = sramSize;
+        sramMask = Util.getRomMask(sramSize);
     }
 
     protected String getDefaultBackupFileFolder(SystemLoader.SystemType type) {

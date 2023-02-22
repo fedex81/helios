@@ -98,7 +98,7 @@ public class VdpFifoTesting {
                     buttonEvent(joypadProvider, A, RELEASED);
                 }
                 totalDelay += BOOT_DELAY_MS;
-                passTest = readData(memoryProvider.getRamData(), Size.WORD, SUCCESS_TEST_RAM_LOCATION);
+                passTest = Util.readData(memoryProvider.getRamData(), Size.WORD, SUCCESS_TEST_RAM_LOCATION);
                 System.out.println("MS: " + totalDelay + ", PASS: " + passTest);
             } while (passTest < SUCCESS_BASELINE && totalDelay < RUN_DELAY_MS);
             system.handleSystemEvent(CLOSE_ROM, null);
@@ -106,9 +106,5 @@ public class VdpFifoTesting {
         }
         Assert.assertTrue("Number of test passed is less than baseline: "
                 + passTest + " < " + SUCCESS_BASELINE, passTest >= SUCCESS_BASELINE);
-    }
-
-    private static long readData(byte[] src, Size size, int address) {
-        return Util.readDataMask(src, size, address, Integer.MAX_VALUE);
     }
 }

@@ -1,5 +1,6 @@
 package omegadrive.vdp.util;
 
+import com.google.common.base.Ascii;
 import omegadrive.Device;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.z80.Z80Provider;
@@ -17,6 +18,7 @@ import java.awt.event.ActionEvent;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,7 +27,6 @@ import java.util.function.BiFunction;
 import static omegadrive.bus.model.GenesisBusProvider.ADDRESS_UPPER_LIMIT;
 import static omegadrive.bus.model.GenesisBusProvider.M68K_RAM_MASK;
 import static omegadrive.bus.model.GenesisZ80BusProvider.END_RAM;
-import static omegadrive.util.Util.th;
 import static omegadrive.vdp.model.GenesisVdpProvider.*;
 import static omegadrive.vdp.util.MemView.MemViewOwner.*;
 
@@ -266,29 +267,33 @@ public class MemView implements Device, UpdatableViewer {
     }
 
     private void updateFromMemory(int start, int end) {
-        String asciiStr = "";
-        int k = 0;
-        for (int i = start; i < end; i++) {
-            final int d = data[k++] & 0xFF;
-            String s = (d < 0x10 ? "0" : "") + th(d);
-            if ((i & 0xF) == 0) {
-                sb.append("  ").append(asciiStr);
-                sb.append("\n").append(String.format("%4x", i)).append(": ");
-                asciiStr = "";
+        try {
+            HexFormat hf = HexFormat.of().withSuffix(" ");
+            sb.append(String.format("%4x", 0)).append(": ");
+            for (int i = 0; i < end - start; i += 0x10) {
+                hf.formatHex(sb, data, i, i + 0xF).append("  ");
+                for (int j = i; j <= i + 0xF; j++) {
+                    sb.append(toAsciiChar(data[j])).append(" ");
+                }
+                sb.append("\n").append(String.format("%4x", i + 0x10)).append(": ");
             }
-            asciiStr += d > 0x20 && d < 0x80 ? (char) d : '.';
-            sb.append(s).append(" ");
+            textArea.setText(sb.toString());
+            sb.setLength(0);
+            qLen.decrementAndGet();
+        } catch (Exception e) {
+            LOG.error("Error", e);
+            e.printStackTrace();
         }
-        textArea.setText(sb.toString());
-        sb.setLength(0);
-        qLen.decrementAndGet();
     }
 
     protected void doMemoryRead(MemViewData current, int len, BiFunction<MemViewData, Integer, Integer> readerFn) {
         for (int i = 0; i < len; i++) {
-            int val = readerFn.apply(current, current.getStart() + i) & 0xFF;
-            data[i] = (byte) val;
+            data[i] = (byte) readerFn.apply(current, current.getStart() + i).intValue();
         }
+    }
+
+    private static char toAsciiChar(int val) {
+        return val >= Ascii.SPACE && val <= Ascii.MAX ? (char) val : '.';
     }
 
     @Override
@@ -297,5 +302,3 @@ public class MemView implements Device, UpdatableViewer {
         frame.dispose();
     }
 }
-
-
