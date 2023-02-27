@@ -177,6 +177,13 @@ public abstract class AbstractSoundManager implements SoundProvider {
                 updateSoundDeviceSetup();
                 LOG.info("PSG enabled: {}", enabled);
             }
+        } else if (pwm == device) {
+            boolean isEnabled = pwm != PwmProvider.NO_SOUND;
+            if (isEnabled != enabled) {
+                this.pwm = (PwmProvider) (enabled ? soundDeviceMap.get(SoundDeviceType.PWM) : PwmProvider.NO_SOUND);
+                updateSoundDeviceSetup();
+                LOG.info("PWM enabled: {}", enabled);
+            }
         }
     }
 }

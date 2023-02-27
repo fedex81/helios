@@ -201,8 +201,42 @@ public class Util {
         return ((number & (1 << position)) != 0);
     }
 
+    /**
+     * NOTE: jdk17, this seems equivalent (tiny bit slower) to the array unpacking below
+     */
+    public static int readDataVarHandle(byte[] src, Size size, int address) {
+        return switch (size) {
+            //perf: needs to cast to short (not int)
+            case WORD -> (short) SHORT_BYTEARR_HANDLE.get(src, address);
+            case LONG -> (int) INT_BYTEARR_HANDLE.get(src, address);
+            case BYTE -> src[address];
+        };
+    }
+
     public static int readData(byte[] src, Size size, int address) {
-        return readDataMask(src, size, address, size.getMask());
+        return switch (size) {
+            //perf: needs to cast to short (not int)
+            case WORD -> ((src[address] & 0xFF) << 8) | (src[address + 1] & 0xFF);
+            case LONG -> ((src[address] & 0xFF) << 24) | (src[address + 1] & 0xFF) << 16 |
+                    (src[address + 2] & 0xFF) << 8 | (src[address + 3] & 0xFF);
+            case BYTE -> src[address];
+        };
+    }
+
+    public static int readBufferByte(ByteBuffer b, int pos) {
+        return b.get(pos);
+    }
+
+    public static int readBufferWord(ByteBuffer b, int pos) {
+        assert (pos & 1) == 0;
+        //perf: needs to cast to short (not int)
+        return b.getShort(pos);
+    }
+
+    public static int readBufferLong(ByteBuffer b, int pos) {
+        assert (pos & 1) == 0;
+        //perf: needs to cast to int
+        return b.getInt(pos);
     }
 
     public static void writeData(byte[] dest, Size size, int address, int data) {
@@ -210,12 +244,7 @@ public class Util {
     }
 
     public static int readDataMask(byte[] src, Size size, int address, final int mask) {
-        return switch (size) {
-            case WORD -> (int) SHORT_BYTEARR_HANDLE.get(src, address & mask);
-            case LONG -> (int) INT_BYTEARR_HANDLE.get(src, address & mask);
-            case BYTE -> src[address & mask];
-
-        };
+        return readData(src, size, address & mask);
     }
 
     public static void writeDataMask(byte[] dest, Size size, int address, int data, final int mask) {
@@ -223,9 +252,7 @@ public class Util {
             case WORD -> SHORT_BYTEARR_HANDLE.set(dest, address & mask, (short) data);
             case LONG -> INT_BYTEARR_HANDLE.set(dest, address & mask, data);
             case BYTE -> dest[address & mask] = (byte) data;
-
         }
-        ;
     }
 
     @Deprecated
@@ -271,11 +298,6 @@ public class Util {
 
     public static String toStringValue(byte... data) {
         return new String(data);
-    }
-
-
-    public static int readBufferWord(ByteBuffer b, int pos) {
-        return (int) SHORT_BYTEBUF_HANDLE.get(b, pos) & 0xFFFF;
     }
 
     public static String th(int pos) {

@@ -64,7 +64,7 @@ public class SwingWindow implements DisplayWindow {
     private static final Logger LOG = LogHelper.getLogger(SwingWindow.class.getSimpleName());
 
     private static final boolean UI_SCALE_ON_THREAD
-            = Boolean.parseBoolean(System.getProperty("ui.scale.on.thread", "false"));
+            = Boolean.parseBoolean(System.getProperty("ui.scale.on.thread", "true"));
     private static final Path WINDOW_ICONS_PATH = Paths.get("./res", "icon");
     private static final Predicate<Path> ICONS_FILE_FILTER = (p) -> p.getFileName().toString().startsWith("helios") &&
             p.getFileName().toString().endsWith(".jpg");
