@@ -276,6 +276,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return size.getMax();
         } else {
             //reads rom at 0x40_0000 MegaCD mirror
+            assert false; //TODO check this
             return Util.readDataMask(rom, address, DEFAULT_ROM_END_ADDRESS, size);
         }
     }

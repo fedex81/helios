@@ -1,0 +1,9 @@
+//main cpu
+ Read MEGA_CD_EXP: a12001, 0, BYTE
+ Write MEGA_CD_EXP: a12001, 2, BYTE //request sub-cpu bus
+ Write MEGA_CD_EXP: a12002, 42, WORD
+ Unexpected bus write: 20000, data 0 LONG, 68k PC: 71e  //SUB-CPU 1MRAM(SUB,HALT status)
+ Write MEGA_CD_EXP: a12002, 82, WORD //memory mode, write protect reg
+ Read MEGA_CD_EXP: a12003, 0, BYTE
+
+ Read on reserved address: 400100, LONG

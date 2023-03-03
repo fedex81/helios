@@ -103,7 +103,7 @@ public class MC68000Wrapper implements M68kProvider {
         return m68k.getPC();
     }
 
-    protected void setStop(boolean value) {
+    public void setStop(boolean value) {
 //        LOG.debug("M68K stop: {}", value);
         this.stop = value;
     }

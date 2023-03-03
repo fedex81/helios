@@ -2,6 +2,8 @@ package s32x.bus;
 
 import omegadrive.Device;
 import omegadrive.bus.md.GenesisBus;
+import omegadrive.bus.megacd.MegaCdMainCpuBus;
+import omegadrive.bus.megacd.MegaCdMemoryContext;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.sound.PwmProvider;
 import omegadrive.util.*;
@@ -31,7 +33,7 @@ import static omegadrive.util.Util.th;
  * <p>
  * Copyright 2021
  */
-public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
+public class S32xBus extends MegaCdMainCpuBus implements Sh2Bus.MdRomAccess {
 
     private static final Logger LOG = LogHelper.getLogger(S32xBus.class.getSimpleName());
     static final boolean verboseMd = false;
@@ -50,6 +52,11 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
     }
 
     public S32xBus() {
+        this(MegaCdMemoryContext.NO_CONTEXT);
+    }
+
+    public S32xBus(MegaCdMemoryContext megaCdMemoryContext) {
+        super(megaCdMemoryContext);
         busContext = new S32xBusContext();
         bankSetShift = busContext.bankSetValue << 20;
         Util.writeData(busContext.writeableHint, 0, -1, Size.LONG);
