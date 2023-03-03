@@ -67,7 +67,7 @@ public class MemView implements Device, UpdatableViewer {
     private final MemViewData[] memViewData;
 
     public enum MemViewOwner {
-        SH2, M68K, Z80, MD_VDP, SH2_WORD;
+        SH2, M68K, Z80, MD_VDP, SH2_WORD, MCD_SUB_CPU;
     }
 
     public interface MemViewData {
@@ -159,7 +159,7 @@ public class MemView implements Device, UpdatableViewer {
     }
 
 
-    protected MemView(MemViewData[] memViewData, GenesisBusProvider m, ReadableByteMemory s32x, VdpMemoryInterface vdpMem) {
+    protected MemView(MemViewData[] memViewData, GenesisBusProvider m, ReadableByteMemory bus, VdpMemoryInterface vdpMem) {
         this.memViewData = memViewData;
         if (!VdpDebugView.DEBUG_VIEWER_ENABLED || m == null) {
             readerMap = Collections.emptyMap();
@@ -170,11 +170,12 @@ public class MemView implements Device, UpdatableViewer {
         ReadableByteMemory z80b = z80.getZ80BusProvider();
         MdVdpReadableMem mdVdpMem = new MdVdpReadableMem(vdpMem);
         readerMap = Map.of(
-                SH2, (v, i) -> s32x.read(i, Size.BYTE),
+                MCD_SUB_CPU, (v, i) -> bus.read(i, Size.BYTE),
+                SH2, (v, i) -> bus.read(i, Size.BYTE),
                 M68K, (v, i) -> m.read(i, Size.BYTE),
                 Z80, (v, i) -> z80b.read(i, Size.BYTE),
                 MD_VDP, (v, i) -> (int) mdVdpMem.read(v, i),
-                SH2_WORD, (v, i) -> s32x.read(i, Size.WORD)
+                SH2_WORD, (v, i) -> bus.read(i, Size.WORD)
         );
         data = new byte[0];
     }

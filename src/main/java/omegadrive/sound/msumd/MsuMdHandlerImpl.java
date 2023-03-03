@@ -32,7 +32,7 @@ import static omegadrive.util.Util.th;
 public class MsuMdHandlerImpl implements MsuMdHandler {
 
     private static final Logger LOG = LogHelper.getLogger(MsuMdHandlerImpl.class.getSimpleName());
-    private static final boolean verbose = false;
+    private static final boolean verbose = true;
 
     private final MsuCommandArg commandArg = new MsuCommandArg();
     private int clock = 0;

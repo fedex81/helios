@@ -284,6 +284,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
 
     @Override
     public void setHip(boolean value) {
+        assert !value;
         interruptHandler.setHIntPending(false);
     }
 

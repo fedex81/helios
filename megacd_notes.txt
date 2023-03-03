@@ -1,0 +1,187 @@
+MODE 1
+https://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=1018
+https://plutiedev.com/subcpu-in-mode1
+https://bitbucket.org/eke/genesis-plus-gx/issues/29/mega-cd-support
+
+bios_us.bin
+- main calls sub_16D2 (Wait for sub-CPU to set flag 6) and loops,
+then vblank happens -> main does its stuff
+main never leaves the loop (never hits 0x16dc)
+- sub is supposed to set GA_SUBFLAG6 (6) in GA_COMM_SUBFLAGS ($FFFF800F)
+
+- subcpu resets CDD and then waits for peripheral reset to complete (RES0 ff8001)
+then cddWatchdog overflows -> error triggered?, see checkCddWatchdog
+
+0xef4: subCpu copies CommWithCDD to RAM (see cddStatusCache), read long 8038, 804c,...
+cdd
+- read STAL from CDD (status), we should set NO_CD
+-- let's try 0xB see CDD_inf.txt
+- then master decompresses something using nemesis (0xF12) <- load starfield to vram etc
+- sub cpu calls CDBSTAT from the BIOS (see fn writeCddStatus), is it returning NO_DISC?
+
+
+msu-md-sample.bin
+https://github.com/krikzz/msu-md/tree/master/msu-md-sample
+- gets to CDD readtoc command, unsupported
+
+Mode1Player.bin
+see /test_roms/roms/megacd/mcd_test/Mode1Example-20120104/mode1/Mode1Player.bin
+
+md-mode1-mcd-asic-test.bin
+https://github.com/jvisser/md-mode1-mcd-asic-test
+WRAM
+stamps: 0 - 0xA800
+16x16 stamps = 128 bytes = 336 tiles
+first tile 0 - 0x80
+
+StampMapsEnd - StampMaps = 0x20000
+StampMaps: 0xA800
+StampMapsEnd: 0x2A800
+4096 lines 32 bytes each
+
+dma to vdp vram: sourceAddress 60A800
+
+writes word 0001 to 62_0000 -> bank0, address = 1_0000
+writes word 0002 to 62_0002 -> bank1, address = 1_0000
+
+//copies 0x1000 words
+68M 00000324   41f9 00620000           lea      $00620000,a0 [NEW]
+68M 0000032a   43f9 0000c538           lea      $0000c538,a1 [NEW]
+68M 00000330   303c ffff               move.w   #$ffff,d0 [NEW]
+68M 00000334   30d9                    move.w   (a1)+,(a0)+ [NEW]
+68M 00000336   51c8 fffc               dbra     d0,$00000334 [NEW]
+
+
+MCD Mode 1 Graphics Test.bin
+NOTE: I don't think the binary matches the source code
+https://github.com/DevsArchive/sega-cd-asic-demo
+
+
+mcd_verificator
+regression word ram testing,
+0c841489 Federico Berti <fberti146+git@gmail.com> on 18/12/2023 at 13:54
+stops at CDC Init
+
+SUB_M68K reading WRAM but setup is: W_2M_MAIN
+seems harmless, see delay: in sub_bios.s
+
+https://github.com/OrionNavattan/MegaCDErrorHandlerTest
+https://github.com/matteusbeus/ModPlayer
+https://github.com/matteusbeus/RaycastDemo
+https://github.com/TannicArcher/Batman_Returns_SegaCD_Project_Package
+https://github.com/LukeUsher/ProjectCD
+https://github.com/DarkMorford/scd-bios-disassembly
+https://github.com/drojaazu/mmd_loader
+
+--
+/**
+     * Word RAM is, officially, a buffer shared between the two CPUs.
+     * You can execute code from this region, and many games do just that,
+     * but it should never be used for low level code (i.e. the kernel) on either CPU.
+     * Similarly, be careful when running your vertical/horizontal interrupts from
+     * Word RAM and be sure to repoint them to default handlers in the kernel (in Work RAM)
+     * when loading another module. This is because Word RAM is only available to one CPU at a time,
+     * and if an integral piece of code suddenly becomes unavailable due to the buffer ownership
+     * changing, the system will crash.
+     * <p>
+     * Word RAM also has two modes. In one mode, all 2Mbits is "owned" by one of the CPUs
+     * and is inaccessible to the other. One of the main aspects of syncing the Main and Sub CPU
+     * is reconciling ownership of Word RAM in this mode. In the other mode, Word RAM is split
+     * into 1Mbit banks, of which each is owned by one CPU. The ownership can be readily switched,
+     * making this mode useful for streaming data (such as video) which is loaded from disc
+     * via the Sub CPU into one bank while the Main CPU copies the data from the other bank to VRAM,
+     * and then switching banks to continue the process.
+     * <p>
+     * $440000-$5FFFFF repeatedly mirrors the $400000-$43FFFF area. (7 copies of Boot ROM / PRG RAM)
+     * $640000-$7FFFFF repeatedly mirrors the $600000-$63FFFF area. (7 copies of Word RAM)
+     * $A12040-$A120FF repeatedly mirrors the $A12000-$A1203F area. (3 copies of SCD registers)
+     */
+
+ASIC
+https://forums.sonicretro.org/index.php?threads/scd-graphics-documentation.40560/
+https://gendev.spritesmind.net/forum/viewtopic.php?t=908
+
+MISC
+https://forums.sonicretro.org/index.php?threads/sega-cd.41344/
+
+PCM
+https://gendev.spritesmind.net/forum/viewtopic.php?t=792
+https://segaxtreme.net/threads/sega-cd-pcm-format.13267/
+
+CDC
+https://gendev.spritesmind.net/forum/viewtopic.php?t=1650
+
+CD BOOTING
+https://gendev.spritesmind.net/forum/viewtopic.php?t=2996
+
+1M DMNA
+https://gendev.spritesmind.net/forum/viewtopic.php?t=1208
+
+2M WRAM
+https://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=3080
+
+MEMORY MAP MIRRORS
+https://gendev.spritesmind.net/forum/viewtopic.php?t=1276
+
+
+    /*
+	 * Reset the Gate Array - this specific sequence of writes is recognized by
+	 * the gate array as a reset sequence, clearing the entire internal state -
+	 * this is needed for the LaserActive
+	 */
+	write_word(0xA12002, 0xFF00);
+	write_byte(0xA12001, 0x03);
+	write_byte(0xA12001, 0x02);
+	write_byte(0xA12001, 0x00);
+
+
+	-- FIXED --
+    Mode1PCM.bin
+    https://github.com/viciious/SegaCDMode1PCM.git
+    SubCpu starts from prog0_bios.asm at _start
+    _LEVEL2 (MD VINT) is defined at loc $00005F7C, jump table that point to mdInterrupt (0x5f2)
+    cddWatchdog overflows -> error triggered?, see checkCddWatchdog
+    gets to the playing screen
+
+    stereo_test_u8.wav
+    http://www.topherlee.com/software/pcm-tut-wavformat.html
+    first 0x2C bytes are header info
+    waveData len = 0x0165BC = 91580 bytes
+    no loop marker (0xFF)
+    sampleRate = 8000hz
+    8 bits per sample
+
+    file is embedded in ROM at position 0x2710, data starts at 0x2730
+    MAIN code at 0x000489a0 is copying from ROM to 0x60_0000 WORD RAM BANK0 (W_1M_WR0_MAIN)
+    ~ 0x165E bytes
+
+    SUB code at 0x6674 copies from 1M WRAM BANK1 (0xC0004) to PRG_RAM ~0x23E3C
+    but W_1M_WR0_MAIN so pointless
+
+    then SUB switches to W_1M_WR0_SUB
+    SUB at 0x6684 copies 0x165e bytes to PRG_RAM 0x3B_BD8
+
+    SUB at 0x6818 (pcm_load_stereo_samples_u8) copies to PCM RAM 0xFF_3001
+    each sample is transformed using a lookup table (pcm_u8_to_sm_lut), the result is either 0x80 or 0x1 (0x80 -> +0, 1 -> -1)
+    this is the right channel
+
+    looks like it's writing 0x200 bytes (0.5 Kbyte, see CHBUF_SIZE) chunks to PCM RAM and then set 32 loop markers after them
+    (at 0x400, 0x1400, 0x2400, 0x3400)
+    then writes right channel 0x200 bytes (all 0x80 and 0x1 - silence) , PCM RAM 0 - 0x200
+    then PCM RAM 0x200 - 0x400, looks like right channel again
+    left channel is not written?
+    source 1 doesn't even get copied to PCM_RAM
+    updates_suspend should be true so we call S_Src_Paint ??
+
+    No more data is written to PCM RAM, there must be a timer triggering?
+
+    PCM Chan#0 is on addrCounter = 0x1228D2
+    freqDelta= 0x1F7 (repeat sample 4.X times) -> ~8Khz
+    0x1228D2 >> 11 = 0x245
+    (0x1228D2 + (4*0x1F7)) >> 11 = 0x246
+    startAddr: 0
+
+    PCM Chan#0 is on addrCounter = 0x528B10
+    freqDelta= 0x1F7 (repeat sample 4.X times) -> ~8Khz
+    startAddr: 0x800
+    gets to 0xA51

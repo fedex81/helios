@@ -1,5 +1,6 @@
 package omegadrive.system;
 
+import mcd.MegaCd;
 import omegadrive.Device;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;
@@ -80,7 +81,8 @@ public class SysUtil {
         boolean isNes = Arrays.stream(nesBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isGb = Arrays.stream(gbBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if (isGen) {
-            systemProvider = Megadrive.createNewInstance(display);
+            //TODO fix
+            systemProvider = MegaCd.createNewInstance(display);
         } else if (isSg) {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, display);
         } else if (isCv) {

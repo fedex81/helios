@@ -32,6 +32,7 @@ import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.GenesisJoypad;
+import omegadrive.joypad.JoypadProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.msumd.MsuMdHandler;
 import omegadrive.sound.msumd.MsuMdHandlerImpl;
@@ -47,6 +48,7 @@ import omegadrive.vdp.model.GenesisVdpProvider.VdpPortType;
 import org.slf4j.Logger;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import static omegadrive.cart.mapper.md.Ssf2Mapper.BANK_SET_END_ADDRESS;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
@@ -64,7 +66,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
-    private MdCartInfoProvider cartridgeInfoProvider;
+    protected MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private RomMapper exSsfMapper = RomMapper.NO_OP_MAPPER;
     private RomMapper backupMemMapper = RomMapper.NO_OP_MAPPER;
@@ -257,7 +259,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return;
         }
         //Batman&Robin writes to address 0 - tries to enable debug mode?
-        logWarnOnce(LOG, "Unexpected write to ROM address {}, value {} {}", th(addressL),
+        LogHelper.logWarnOnce(LOG, "Unexpected write to ROM address {}, value {} {}", th(addressL),
                 th(data), size);
     }
 
@@ -276,6 +278,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return size.getMax();
         } else {
             //reads rom at 0x40_0000 MegaCD mirror
+            assert false; //TODO check this
             return Util.readDataMask(rom, address, DEFAULT_ROM_END_ADDRESS, size);
         }
     }
@@ -957,6 +960,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     @Override
     public void onNewFrame() {
-        joypadProvider.newFrame();
+        Optional.ofNullable(joypadProvider).ifPresent(JoypadProvider::newFrame);
     }
 }

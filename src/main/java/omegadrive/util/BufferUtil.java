@@ -121,10 +121,6 @@ public class BufferUtil {
             case WORD -> readBufferWord(b, pos);
             case LONG -> readBufferLong(b, pos);
             case BYTE -> readBufferByte(b, pos);
-            default -> {
-                LOG.error("Unexpected size: {}", size);
-                yield size.getMask();
-            }
         };
     }
 
@@ -137,6 +133,7 @@ public class BufferUtil {
      * @return true - has changed, false - otherwise
      */
     public static boolean setBit(ByteBuffer b, int pos, int bitPos, int bitValue, Size size) {
+        assert (bitValue & 1) == bitValue;
         int val = readBuffer(b, pos, size);
         //clear bit and then set it
         int newVal = (val & ~(1 << bitPos)) | (bitValue << bitPos);
