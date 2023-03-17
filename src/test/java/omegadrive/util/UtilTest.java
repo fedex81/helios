@@ -47,8 +47,7 @@ public class UtilTest {
     @Test
     public void testReadNegative() {
         long res = Util.readDataMask(input, Size.WORD, 0, MASK);
-        Assert.assertNotEquals(0x8081, res);
-        Assert.assertEquals(0x8081, res & 0xFFFF);
+        Assert.assertEquals(0x8081, res);
 
         res = Util.readDataMask(input, Size.LONG, 0, MASK);
         Assert.assertEquals(0x80818283, res);
