@@ -201,21 +201,8 @@ public class Util {
         return ((number & (1 << position)) != 0);
     }
 
-    /**
-     * NOTE: jdk17, this seems equivalent (tiny bit slower) to the array unpacking below
-     */
-    public static int readDataVarHandle(byte[] src, Size size, int address) {
-        return switch (size) {
-            //perf: needs to cast to short (not int)
-            case WORD -> (short) SHORT_BYTEARR_HANDLE.get(src, address);
-            case LONG -> (int) INT_BYTEARR_HANDLE.get(src, address);
-            case BYTE -> src[address];
-        };
-    }
-
     public static int readData(byte[] src, Size size, int address) {
         return switch (size) {
-            //perf: needs to cast to short (not int)
             case WORD -> ((src[address] & 0xFF) << 8) | (src[address + 1] & 0xFF);
             case LONG -> ((src[address] & 0xFF) << 24) | (src[address + 1] & 0xFF) << 16 |
                     (src[address + 2] & 0xFF) << 8 | (src[address + 3] & 0xFF);
@@ -229,13 +216,11 @@ public class Util {
 
     public static int readBufferWord(ByteBuffer b, int pos) {
         assert (pos & 1) == 0;
-        //perf: needs to cast to short (not int)
         return b.getShort(pos);
     }
 
     public static int readBufferLong(ByteBuffer b, int pos) {
         assert (pos & 1) == 0;
-        //perf: needs to cast to int
         return b.getInt(pos);
     }
 

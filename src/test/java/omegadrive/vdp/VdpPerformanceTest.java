@@ -75,6 +75,7 @@ public class VdpPerformanceTest {
     @Test
     public void testVdpPerf() {
         SystemProvider system = createTestProvider();
+        assert system != null;
         createAndAddVdpListener(system);
         Util.waitForever();
     }

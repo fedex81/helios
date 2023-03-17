@@ -1,5 +1,6 @@
 package omegadrive.sound.fm;
 
+import omegadrive.system.BaseSystem;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.jctools.queues.atomic.SpscAtomicArrayQueue;
@@ -88,11 +89,12 @@ public class GenericAudioProvider implements FmProvider {
         boolean res2 = sampleQueue.offer(Util.getFromIntegerCache((right << sampleShift) & ~1)); //sampleR is always even
         stereoQueueLen.addAndGet(2);
         if (!res) {
-            LOG.warn("Left sample dropped: {}", th(left));
+            //NOTE when running at > 60 fps we expect to drop samples
+            if (!BaseSystem.fullThrottle) LOG.warn("Left sample dropped: {}", th(left));
             stereoQueueLen.decrementAndGet();
         }
         if (!res2) {
-            LOG.warn("Right sample dropped: {}", th(right));
+            if (!BaseSystem.fullThrottle) LOG.warn("Right sample dropped: {}", th(right));
             stereoQueueLen.decrementAndGet();
         }
     }
