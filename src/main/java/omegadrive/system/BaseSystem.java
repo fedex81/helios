@@ -183,8 +183,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
     private void handleCloseApp() {
         try {
-            emuFrame.close();
             handleCloseRom();
+            emuFrame.close();
             sound.close();
             Util.executorService.shutdown();
             Util.executorService.awaitTermination(1, TimeUnit.SECONDS);

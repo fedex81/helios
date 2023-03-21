@@ -48,6 +48,7 @@ import org.slf4j.Logger;
 
 import java.util.Objects;
 
+import static omegadrive.cart.mapper.md.Ssf2Mapper.BANK_SET_END_ADDRESS;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.joypad.JoypadProvider.JoypadType.BUTTON_3;
 import static omegadrive.system.SystemProvider.SystemEvent.FORCE_PAD_TYPE;
@@ -338,8 +339,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
             z80ResetControlWrite(data, size);
         } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {
-            assert size == Size.BYTE;
-            timeLineControlWrite(address, data);
+            assert address <= BANK_SET_END_ADDRESS ? size == Size.BYTE : true;
+            timeLineControlWrite(address, data, size);
         } else if (address >= TMSS_AREA1_START && address <= TMSS_AREA1_END) {
             // used to lock/unlock the VDP by writing either "SEGA" to unlock it or anything else to lock it.
             LOG.warn("TMSS write, vdp lock: {}", th(data));
@@ -384,8 +385,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
      * * WP:     Write protect -- 0 = writable, 1 = not writable
      * * <p>
      */
-    private void timeLineControlWrite(int addressL, int data) {
-        if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= Ssf2Mapper.BANK_SET_END_ADDRESS) {
+    private void timeLineControlWrite(int addressL, int data, Size size) {
+        if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= BANK_SET_END_ADDRESS) {
             LOG.info("Mapper bank set, address: {} , data: {}", th(addressL),
                     th(data));
             checkExSsfMapper();
@@ -404,8 +405,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             }
             if (verbose) LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
-            LOG.warn("Unexpected mapper set, address: {}, data: {}", th(addressL),
-                    th(data));
+            LOG.warn("Unexpected mapper set, address: {}, data: {}", th(addressL), th(data), size);
         }
     }
 
