@@ -79,7 +79,7 @@ public class SysUtil {
         boolean isNes = Arrays.stream(nesBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isGb = Arrays.stream(gbBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if (isGen) {
-            systemProvider = Genesis.createNewInstance(display);
+            systemProvider = Megadrive.createNewInstance(display);
         } else if (isSg) {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, display);
         } else if (isCv) {

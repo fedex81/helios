@@ -20,7 +20,7 @@
 package omegadrive.vdp.md;
 
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.system.Genesis;
+import omegadrive.system.Megadrive;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SystemTestUtil;
@@ -55,7 +55,7 @@ public class GenesisVdpSpeedTest {
 
     static double MCLK_PER_LINE = 3420.0;
     //the emulator runs a 7.68Mhz
-    static double M68KCLK_PER_LINE = MCLK_PER_LINE / Genesis.MCLK_DIVIDER;
+    static double M68KCLK_PER_LINE = MCLK_PER_LINE / Megadrive.MCLK_DIVIDER;
 
     final static double EPSILON = 1e-10;
 
@@ -98,7 +98,7 @@ public class GenesisVdpSpeedTest {
             do {
                 cnt++;
                 vdpSpeedDivider = vdpProvider.runSlot();
-                clocks_7_68Mhz += Genesis.vdpVals[vdpSpeedDivider - 4];
+                clocks_7_68Mhz += Megadrive.vdpVals[vdpSpeedDivider - 4];
                 isStart = vdpProvider.getHCounter() == 0;
             } while (!isStart);
             Assert.assertTrue(Math.abs(clocks_7_68Mhz - M68KCLK_PER_LINE) < EPSILON);
