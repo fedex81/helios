@@ -1,0 +1,11 @@
+32X - Genesis BIOS
+dc_
+esoteric
+[BIOS
+poormans
+32x_hbrew_bios
+gg_
+Sega SDK
+SH2src
+m68k.bin
+track01.bin
