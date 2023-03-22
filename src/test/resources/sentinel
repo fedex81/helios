@@ -1,0 +1,2 @@
+some tests rely on the presence of this file to decide whether to run or not.
+ie. a test might fail to run in github (for some reason...) but succeed locally
