@@ -56,37 +56,48 @@ import static s32x.util.S32xUtil.CpuDeviceAccess.Z80;
  * Megadrive main class
  *
  * @author Federico Berti
+ *
+ * TODO this is used by 32x as a base class, unify with the other variants
  */
-public class Genesis32x extends BaseSystem<GenesisBusProvider> {
+public class Megadrive extends BaseSystem<GenesisBusProvider> {
 
     public final static boolean verbose = false;
-    public final static int NTSC_MCLOCK_MHZ = 53693175;
-    public final static int PAL_MCLOCK_MHZ = 53203424;
     //the emulation runs at MCLOCK_MHZ/MCLK_DIVIDER
-    protected final static int MCLK_DIVIDER = 7;
+    public final static int MCLK_DIVIDER = 7;
     protected final static double VDP_RATIO = 4.0 / MCLK_DIVIDER;  //16 -> MCLK/4, 20 -> MCLK/5
     protected final static int M68K_DIVIDER = 7 / MCLK_DIVIDER;
-    final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
+    public final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
     protected final static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
     protected final static int FM_DIVIDER = 42 / MCLK_DIVIDER;
-    private final static Logger LOG = LogHelper.getLogger(Genesis32x.class.getSimpleName());
+    protected static final int SVP_CYCLES = 100;
+    protected static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
+    static final int SVP_CYCLES_MASK = SVP_CYCLES - 1;
+
+    private final static Logger LOG = LogHelper.getLogger(Megadrive.class.getSimpleName());
+
+    static {
+//        System.setProperty("68k.debug", "true");
+//        System.setProperty("helios.68k.debug.mode", "2");
+//        System.setProperty("z80.debug", "true");
+    }
 
     protected Z80Provider z80;
     protected M68kProvider cpu;
     protected Ssp16 ssp16 = Ssp16.NO_SVP;
     protected UpdatableViewer memView;
+    protected Md32xRuntimeData rt;
     protected boolean hasSvp = ssp16 != Ssp16.NO_SVP;
     protected double nextVdpCycle = vdpVals[0];
     protected int next68kCycle = M68K_DIVIDER;
     protected int nextZ80Cycle = Z80_DIVIDER;
 
-    protected Genesis32x(DisplayWindow emuFrame) {
+    protected Megadrive(DisplayWindow emuFrame) {
         super(emuFrame);
         systemType = SystemLoader.SystemType.GENESIS;
     }
 
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
-        return new Genesis32x(emuFrame);
+        return new Megadrive(emuFrame);
     }
 
     @Override
@@ -108,11 +119,6 @@ public class Genesis32x extends BaseSystem<GenesisBusProvider> {
         reloadWindowState();
         createAndAddVdpEventListener();
     }
-
-    static final int SVP_CYCLES = 128;
-    static final int SVP_CYCLES_MASK = SVP_CYCLES - 1;
-    static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
-
 
     protected void loop() {
         updateVideoMode(true);
@@ -241,6 +247,7 @@ public class Genesis32x extends BaseSystem<GenesisBusProvider> {
      */
     @Override
     protected void resetCycleCounters(int counter) {
+        assert nextZ80Cycle >= counter && next68kCycle >= counter && nextVdpCycle + 1 >= counter;
         nextZ80Cycle = Math.max(1, nextZ80Cycle - counter);
         next68kCycle = Math.max(1, next68kCycle - counter);
         nextVdpCycle = Math.max(1, nextVdpCycle - counter);
@@ -251,6 +258,7 @@ public class Genesis32x extends BaseSystem<GenesisBusProvider> {
         super.initAfterRomLoad();
         bus.attachDevice(sound);
         vdp.addVdpEventListener(sound);
+        SvpMapper.ssp16 = Ssp16.NO_SVP;
         resetAfterRomLoad();
         memView = createMemView();
     }
@@ -258,6 +266,8 @@ public class Genesis32x extends BaseSystem<GenesisBusProvider> {
     @Override
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
+        Md32xRuntimeData.releaseInstance();
+        rt = Md32xRuntimeData.newInstance();
         cpu.reset();
         z80.reset(); //TODO confirm this is needed
     }

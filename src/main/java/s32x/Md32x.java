@@ -4,7 +4,7 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.sound.PwmProvider;
-import omegadrive.system.Genesis32x;
+import omegadrive.system.Megadrive;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
@@ -40,7 +40,7 @@ import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
  * <p>
  * Copyright 2021
  */
-public class Md32x extends Genesis32x implements PollSysEventManager.SysEventListener {
+public class Md32x extends Megadrive implements PollSysEventManager.SysEventListener {
 
     private static final Logger LOG = LogHelper.getLogger(Md32x.class.getSimpleName());
 
@@ -88,7 +88,6 @@ public class Md32x extends Genesis32x implements PollSysEventManager.SysEventLis
     }
 
     public int nextMSh2Cycle = 0, nextSSh2Cycle = 0;
-    private Md32xRuntimeData rt;
     private Sh2LaunchContext launchCtx;
     private Sh2 sh2;
     private Sh2Context masterCtx, slaveCtx;
@@ -101,6 +100,7 @@ public class Md32x extends Genesis32x implements PollSysEventManager.SysEventLis
 
     @Override
     protected void initAfterRomLoad() {
+        rt = Md32xRuntimeData.newInstance();
         launchCtx = MarsLauncherHelper.setupRom((S32xBus) bus, memory.getRomHolder());
         masterCtx = launchCtx.masterCtx;
         slaveCtx = launchCtx.slaveCtx;
@@ -190,10 +190,12 @@ public class Md32x extends Genesis32x implements PollSysEventManager.SysEventLis
         super.resetCycleCounters(counter);
         assert counter >= 0;
         if (nextMSh2Cycle >= 0) {
+            assert (launchCtx.s32XMMREG.aden & 1) > 0 ? nextMSh2Cycle - counter > 0 : true;
             //NOTE Sh2s will only start at the next vblank, not immediately when aden switches
             nextMSh2Cycle = Math.max(launchCtx.s32XMMREG.aden & 1, nextMSh2Cycle - counter);
         }
         if (nextSSh2Cycle >= 0) {
+            assert (launchCtx.s32XMMREG.aden & 1) > 0 ? nextSSh2Cycle - counter > 0 : true;
             nextSSh2Cycle = Math.max(launchCtx.s32XMMREG.aden & 1, nextSSh2Cycle - counter);
         }
         launchCtx.pwm.newFrame();
@@ -237,13 +239,11 @@ public class Md32x extends Genesis32x implements PollSysEventManager.SysEventLis
         super.handleCloseRom();
         Optional.ofNullable(marsVdp).ifPresent(Device::reset);
         launchCtx.pwm.reset();
-        Md32xRuntimeData.releaseInstance();
     }
 
     @Override
     public void handleNewRom(Path file) {
         super.handleNewRom(file);
-        rt = Md32xRuntimeData.newInstance();
         StaticBootstrapSupport.initStatic(this);
     }
 

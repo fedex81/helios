@@ -22,7 +22,7 @@ package omegadrive.vdp;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.save.MdSavestateTest;
-import omegadrive.system.Genesis;
+import omegadrive.system.Megadrive;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.TestRenderUtil;
@@ -52,7 +52,7 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
 
     private static SystemProvider createTestProvider() {
         InputProvider.bootstrap();
-        return Genesis.createNewInstance(DisplayWindow.HEADLESS_INSTANCE);
+        return Megadrive.createNewInstance(DisplayWindow.HEADLESS_INSTANCE);
     }
 
     protected Image testSavestateViewerSingle(Path saveFile) {

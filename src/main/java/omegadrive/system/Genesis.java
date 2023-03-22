@@ -52,6 +52,8 @@ import java.util.Optional;
  * Megadrive main class
  *
  * @author Federico Berti
+ *
+ * TODO this is used by MD only, should be removed, perf vs Megadrive?
  */
 @Deprecated
 public class Genesis extends BaseSystem<GenesisBusProvider> {
