@@ -20,6 +20,10 @@ import omegadrive.util.Size;
 import omegadrive.vdp.model.BaseVdpAdapter;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
+import s32x.Md32x;
+import s32x.pwm.BlipPwmProvider;
+import s32x.pwm.Pwm;
+import s32x.pwm.S32xPwmProvider;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -49,11 +53,12 @@ public class SysUtil {
     public static final String[] ggBinaryTypes = {".gg"};
     public static final String[] nesBinaryTypes = {".nes"};
     public static final String[] gbBinaryTypes = {".gb"};
+    public static final String[] s32xBinaryTypes = {".32x", ".bin", ".md"};
     public static final String[] compressedBinaryTypes = {".gz", ".zip"};
 
     public static final String[] binaryTypes = Stream.of(
             mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes, nesBinaryTypes,
-            gbBinaryTypes,
+            gbBinaryTypes, s32xBinaryTypes,
             compressedBinaryTypes
     ).flatMap(Stream::of).toArray(String[]::new);
 
@@ -65,6 +70,7 @@ public class SysUtil {
         }
         SystemProvider systemProvider = null;
         boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean is32x = Arrays.stream(s32xBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
@@ -88,6 +94,8 @@ public class SysUtil {
             systemProvider = Nes.createNewInstance(SystemType.NES, display);
         } else if (isGb) {
             systemProvider = Gb.createNewInstance(SystemType.GB, display);
+        } else if (is32x) {
+            systemProvider = Md32x.createNewInstance32x(display, debugPerf);
         }
         if (systemProvider == null) {
             LOG.error("Unable to find a system to load: {}", file.toAbsolutePath());
@@ -105,7 +113,10 @@ public class SysUtil {
     }
 
     public static SoundDevice getPwmProvider(SystemType systemType, Region region) {
-        return PwmProvider.NO_SOUND;
+        return switch (systemType) {
+            case S32X -> Pwm.PWM_USE_BLIP ? new BlipPwmProvider(region) : new S32xPwmProvider(region);
+            default -> PwmProvider.NO_SOUND;
+        };
     }
 
     public static SoundDevice getPsgProvider(SystemType systemType, Region region) {

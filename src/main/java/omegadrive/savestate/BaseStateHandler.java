@@ -24,6 +24,7 @@ import omegadrive.SystemLoader;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
+import s32x.savestate.Gs32xStateHandler;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -68,6 +69,9 @@ public interface BaseStateHandler {
         switch (systemType) {
             case GENESIS:
                 h = GshStateHandler.createInstance(fileName, type, devices);
+                break;
+            case S32X:
+                h = Gs32xStateHandler.createInstance(fileName, type, devices);
                 break;
             case SMS:
             case GG:

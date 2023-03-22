@@ -95,7 +95,7 @@ public class FileUtil {
         try {
             rom = Files.readAllBytes(file);
         } catch (IOException e) {
-            LOG.error("Unable to load file: {}", file.getFileName());
+            LOG.error("Unable to load file: {}", file.toAbsolutePath());
         }
         return rom;
     }
