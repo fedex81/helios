@@ -2,16 +2,20 @@
 
 # Helios
 
-A Java-based multi-system emulator.
+A Java-based multi-system emulator mainly focused on Sega 16-bit systems.
 
 Initially created as a Sega Megadrive/Genesis emulator and then evolved to emulate
 the following systems:
-- Sega Megadrive/Genesis
+- Sega Megadrive/32x
 - Sega Master System/Game Gear
 - Sega Sg-1000
 - Colecovision
 - MSX v1
 - NES
+
+# Performance for Sega 32x
+ 
+The target is a modern mobile cpu capable of boosting ~4Ghz (ie. [AMD Ryzen 5 PRO 5650U](https://www.amd.com/en/products/apu/amd-ryzen-5-pro-5650u)), this should allow perf close to 60fps for most titles, YMMV.
 
 # How to Run
 Requires java 17+ installed.
@@ -74,6 +78,9 @@ Andrew Hoffman, NES emulator: [halfnes](https://github.com/andrew-hoffman/halfne
 Tomek Rekawek, GameBoy emulator: [coffee-gb](https://github.com/trekawek/coffee-gb)
 
 C-BIOS Association for their open source [MSX bios](http://cbios.sourceforge.net/)
+
+Hitachi SH2 cpu emulator adapted from [esoteric_emu](https://github.com/fedex81/esoteric_emu)'s
+SH4 implementation
 
 # License
 Released under GPL v3.0
