@@ -13,9 +13,11 @@ the following systems:
 - MSX v1
 - NES
 
-# Performance for Sega 32x
+## Performance for Sega 32x
  
-The target is a modern mobile cpu capable of boosting ~4Ghz (ie. [AMD Ryzen 5 PRO 5650U](https://www.amd.com/en/products/apu/amd-ryzen-5-pro-5650u)), this should allow perf close to 60fps for most titles, YMMV.
+The target is a modern mobile cpu capable of boosting ~4Ghz 
+(ie. [AMD Ryzen 5 PRO 5650U](https://www.amd.com/en/products/apu/amd-ryzen-5-pro-5650u)),   
+this should allow perf close to 60fps for most titles, YMMV.
 
 # How to Run
 Requires java 17+ installed.
