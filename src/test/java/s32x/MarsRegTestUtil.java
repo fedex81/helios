@@ -1,6 +1,7 @@
 package s32x;
 
 import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.mapper.MdMapperTest;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.RomHolder;
@@ -55,7 +56,7 @@ public class MarsRegTestUtil {
                 rom[i] = (byte) (1 + rnd.nextInt(0xFE)); //avoid 0 and 0xFF
             }
         }
-        System.arraycopy("SEGA MEGADRIVE  ".getBytes(), 0, rom, MdCartInfoProvider.ROM_HEADER_START, 16);
+        System.arraycopy("SEGA MEGADRIVE  ".getBytes(), 0, rom, MdMapperTest.ROM_HEADER_START, 16);
         System.arraycopy("  ".getBytes(), 0, rom, MdCartInfoProvider.SVP_SV_TOKEN_ADDRESS, 2);
         return rom;
     }

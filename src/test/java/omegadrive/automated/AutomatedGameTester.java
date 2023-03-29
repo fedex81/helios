@@ -20,9 +20,6 @@
 package omegadrive.automated;
 
 import omegadrive.SystemLoader;
-import omegadrive.cart.CartridgeInfoProvider;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
@@ -60,7 +57,7 @@ public class AutomatedGameTester {
     private static List<String> blackList = FileUtil.readFileContent(Paths.get(resFolder.toAbsolutePath().toString()
             , "blacklist.txt"));
 
-    private static Predicate<Path> testGenRomsPredicate = p ->
+    public static Predicate<Path> testGenRomsPredicate = p ->
             Arrays.stream(mdBinaryTypes).anyMatch(p.toString()::endsWith) ||
                     Arrays.stream(compressedBinaryTypes).anyMatch(p.toString()::endsWith);
 
@@ -102,7 +99,6 @@ public class AutomatedGameTester {
         System.out.println("Current folder: " + new File(".").getAbsolutePath());
         System.out.println("Blacklist entries: " + blackList.size());
 //        new AutomatedGameTester().testAll(false);
-//        new AutomatedGameTester().testCartridgeInfo();
 //        new AutomatedGameTester().testList();
 //        new AutomatedGameTester().bootRomsGenesis(true);
 //        new AutomatedGameTester().bootRomsSg1000(true);
@@ -227,36 +223,6 @@ public class AutomatedGameTester {
             System.out.println("Truncating log file, size: " + lenByte);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void testCartridgeInfo() throws Exception {
-        Path folder = Paths.get(romFolder);
-        List<Path> testRoms = Files.list(folder).
-                filter(testGenRomsPredicate).
-                sorted().collect(Collectors.toList());
-        String str = testRoms.stream().map(p -> p.getFileName().toString()).sorted().collect(Collectors.joining("\n"));
-//        System.out.println(str);
-        System.out.println("Roms to test: " + testRoms.size());
-        String header = "roms;sramEnabled;start;end;sizeKb,romChecksum";
-        System.out.println(header);
-        boolean skip = true;
-        for (Path rom : testRoms) {
-            skip &= shouldSkip(rom);
-            if (skip) {
-                continue;
-            }
-            byte[] data = FileUtil.readBinaryFile(rom);
-            IMemoryProvider memoryProvider = MemoryProvider.createInstance(data, 0);
-            try {
-                CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider,
-                        rom);
-                if (!cartridgeInfoProvider.hasCorrectChecksum()) {
-                    System.out.println(rom.getFileName().toString() + ";" + cartridgeInfoProvider.toString());
-                }
-            } catch (Exception e) {
-                System.err.println("Exception: " + rom.getFileName());
-            }
         }
     }
 

@@ -62,7 +62,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
     int M68K_TO_Z80_MEMORY_MASK = 0x7FFF;
     int VDP_VALID_ADDRESS_MASK = 0xE700E0;
 
-    long DEFAULT_ROM_END_ADDRESS = 0x3F_FFFF;
+    int DEFAULT_ROM_END_ADDRESS = 0x3F_FFFF;
 
     int M68K_RAM_MASK = M68K_RAM_SIZE - 1;
 

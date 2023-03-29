@@ -28,38 +28,119 @@ import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.Optional;
 
+import static omegadrive.cart.MdCartInfoProvider.MdRomHeaderField.*;
 import static omegadrive.util.Util.th;
 
 public class MdCartInfoProvider extends CartridgeInfoProvider {
 
-    public static final int ROM_HEADER_START = 0x100;
+    public static Charset SHIFT_JIS;
 
-    static final int SERIAL_NUMBER_START = 0x180;
+    static {
+        try {
+            SHIFT_JIS = Charset.forName("SHIFT-JIS");
+        } catch (Exception e) {
+            System.out.println("Charset SHIFT-JIS not supported");
+            SHIFT_JIS = null;
+        }
+    }
+
+    //from https://plutiedev.com/rom-header
+    public enum MdRomHeaderField {
+        SYSTEM_TYPE(0x100, 16),
+        COPYRIGHT_RELEASE_DATE(0x110, 16),
+        TITLE_DOMESTIC(0x120, 48),
+        TITLE_OVERSEAS(0x150, 48),
+        SERIAL_NUMBER(0x180, 14),
+        ROM_CHECKSUM(0x18E, 2, true),
+        DEVICE_SUPPORT(0x190, 16),
+        ROM_ADDR_RANGE(0x1A0, 8, true),
+        RAM_ADDR_RANGE(0x1A8, 8, true),
+        EXTRA_MEMORY(0x1B0, 12),
+        MODEM_SUPPORT(0x1BC, 12),
+        RESERVED1(0x1C8, 40),
+        REGION_SUPPORT(0x1F0, 3),
+        RESERVED2(0x1F3, 13);
+
+        static HexFormat hf = HexFormat.of().withSuffix(" ");
+
+        public final int startOffset;
+        public final int len;
+        public final boolean rawNumber;
+
+        MdRomHeaderField(int so, int l) {
+            this(so, l, false);
+        }
+
+        MdRomHeaderField(int so, int l, boolean rn) {
+            startOffset = so;
+            len = l;
+            rawNumber = rn;
+        }
+
+        public String getStringView(byte[] data) {
+            if (this == EXTRA_MEMORY) {
+                return extraMemStr(data);
+            }
+            if (this == TITLE_DOMESTIC) {
+                return titleDomesticStr(data);
+            }
+            return this + ": " + (rawNumber
+                    ? hf.formatHex(data, startOffset, startOffset + len).trim()
+                    : new String(data, startOffset, len, StandardCharsets.UTF_8)
+            );
+        }
+
+        private static String titleDomesticStr(byte[] data) {
+            String s1 = new String(data, TITLE_DOMESTIC.startOffset, TITLE_DOMESTIC.len);
+            if (SHIFT_JIS != null) {
+                String s2 = new String(data, TITLE_DOMESTIC.startOffset, TITLE_DOMESTIC.len, SHIFT_JIS);
+                if (!s1.equals(s2)) {
+                    s1 = s2;
+                }
+            }
+            return TITLE_DOMESTIC + ": " + s1;
+        }
+
+
+        private static String extraMemStr(byte[] data) {
+            int skipRaOffset = 2;
+            String s = new String(data, EXTRA_MEMORY.startOffset, skipRaOffset) + " ";
+            if (s.trim().length() == 0) {
+                skipRaOffset = 0;
+            }
+            s += hf.formatHex(data, EXTRA_MEMORY.startOffset + skipRaOffset,
+                    EXTRA_MEMORY.startOffset + EXTRA_MEMORY.len).trim();
+            return EXTRA_MEMORY + ": " + s;
+        }
+    }
+
+    public static final MdRomHeaderField[] rhf = MdRomHeaderField.values();
     public static final long DEFAULT_SRAM_START_ADDRESS = 0x20_0000;
     public static final long DEFAULT_SRAM_END_ADDRESS = 0x20_FFFF;
     public static final int DEFAULT_SRAM_BYTE_SIZE = (int) (DEFAULT_SRAM_END_ADDRESS - DEFAULT_SRAM_START_ADDRESS) + 1;
 
     //see https://github.com/jdesiloniz/svpdev/wiki/Internal-ROM
-    public static final int SVP_SV_TOKEN_ADDRESS = 0x1C8;
+    public static final int SVP_SV_TOKEN_ADDRESS = RESERVED1.startOffset;
     public static final String SVP_SV_TOKEN = "SV";
     private static final Logger LOG = LogHelper.getLogger(MdCartInfoProvider.class.getSimpleName());
-    public static final int SRAM_FLAG_ADDRESS = 0x1B0;
+    public static final int SRAM_FLAG_ADDRESS = EXTRA_MEMORY.startOffset;
     public static final int SRAM_START_ADDRESS = 0x1B4;
     public static final int SRAM_END_ADDRESS = 0x1B8;
-    public static final int CHECKSUM_START_ADDRESS = 0x18E;
-
     public static final String EXTERNAL_RAM_FLAG_VALUE = "RA";
 
     private long sramStart;
     private long sramEnd;
     private boolean sramEnabled;
-    static final int SERIAL_NUMBER_END = SERIAL_NUMBER_START + 14;
     private int romSize;
     private String systemType;
+
+    private String headerInfo = "";
     private MdMapperType forceMapper = null;
 
     private MdRomDbModel.RomDbEntry entry = MdRomDbModel.NO_ENTRY;
@@ -80,7 +161,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     @Override
     public int getChecksumStartAddress() {
-        return CHECKSUM_START_ADDRESS;
+        return MdRomHeaderField.ROM_CHECKSUM.startOffset;
     }
 
     @Override
@@ -103,7 +184,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         if (entry != MdRomDbModel.NO_ENTRY) {
             sb.append("\n").append(entry);
         }
-        return sb.toString();
+        return sb.append(headerInfo).toString();
     }
 
     public static MdCartInfoProvider createInstance(IMemoryProvider memoryProvider, Path rom) {
@@ -152,7 +233,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
                     sramStart = DEFAULT_SRAM_START_ADDRESS;
                     sramEnd = DEFAULT_SRAM_END_ADDRESS;
                 }
-            } else if (!isBackup && isSramType) {
+            } else if (isSramType) {
                 LOG.warn("Volatile SRAM? {}", romName);
             }
         }
@@ -160,14 +241,18 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     private void detectHeaderMetadata() {
         byte[] rom = memoryProvider.getRomData();
-        if (rom.length < SERIAL_NUMBER_END) {
+        int send = SERIAL_NUMBER.startOffset + SERIAL_NUMBER.len;
+        if (rom.length < send) {
             return;
         }
-
-        systemType = new String(rom, ROM_HEADER_START, 16).trim();
+        StringBuilder sb = new StringBuilder("\nRom header:\n");
+        for (MdRomHeaderField f : rhf) {
+            sb.append(f.getStringView(rom)).append("\n");
+        }
+        headerInfo = sb.toString();
+        systemType = SYSTEM_TYPE.getStringView(rom).trim();
         forceMapper = MdMapperType.getMdMapperType(systemType);
-        byte[] serialArray = Arrays.copyOfRange(memoryProvider.getRomData(), SERIAL_NUMBER_START, SERIAL_NUMBER_END);
-        this.serial = Util.toStringValue(serialArray);
+        serial = SERIAL_NUMBER.getStringView(rom);
         if (rom.length > SVP_SV_TOKEN_ADDRESS + 1) {
             isSvp = SVP_SV_TOKEN.equals(new String(rom, SVP_SV_TOKEN_ADDRESS, 2).trim());
         }
