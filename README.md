@@ -6,14 +6,14 @@ A Java-based multi-system emulator mainly focused on Sega 16-bit systems.
 
 Initially created as a Sega Megadrive/Genesis emulator and then evolved to emulate
 the following systems:
-- Sega Megadrive/32x
+- Sega Megadrive
 - Sega Master System/Game Gear
 - Sega Sg-1000
 - Colecovision
 - MSX v1
 - NES
 
-## Performance for Sega 32x
+## Performance
  
 The target is a modern mobile cpu capable of boosting ~4Ghz 
 (ie. [AMD Ryzen 5 PRO 5650U](https://www.amd.com/en/products/apu/amd-ryzen-5-pro-5650u)),   
