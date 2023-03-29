@@ -239,14 +239,8 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     }
 
     @Override
-    protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOvr) {
-        RegionDetector.Region romRegion = RegionDetector.detectRegion(memory);
-        RegionDetector.Region ovrRegion = RegionDetector.getRegion(regionOvr);
-        if (ovrRegion != null && ovrRegion != romRegion) {
-            LOG.info("Setting region override from: {} to {}", romRegion, ovrRegion);
-            romRegion = ovrRegion;
-        }
-        return romRegion;
+    protected RegionDetector.Region getRomRegion() {
+        return RegionDetector.detectRegion((MdCartInfoProvider) romContext.cartridgeInfoProvider);
     }
 
     @Override
@@ -257,7 +251,8 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         rc.cartridgeInfoProvider = mcip;
         String regionOverride = Optional.ofNullable(mcip.getEntry().forceRegion).
                 orElse(emuFrame.getRegionOverride());
-        rc.region = getRegionInternal(memory, regionOverride);
+        romContext = rc;
+        rc.region = getRegionInternal(regionOverride);
         return rc;
     }
 
