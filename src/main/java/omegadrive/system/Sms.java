@@ -26,12 +26,10 @@ import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.TwoButtonsJoypad;
-import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
 import org.slf4j.Logger;
@@ -75,17 +73,6 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp);
         reloadWindowState();
         createAndAddVdpEventListener();
-    }
-
-    @Override
-    protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOvr) {
-        RegionDetector.Region romRegion = RegionDetector.Region.JAPAN;
-        RegionDetector.Region ovrRegion = RegionDetector.getRegion(regionOvr);
-        if (ovrRegion != null && ovrRegion != romRegion) {
-            LOG.info("Setting region override from: {} to {}", romRegion, ovrRegion);
-            romRegion = ovrRegion;
-        }
-        return romRegion;
     }
 
     @Override

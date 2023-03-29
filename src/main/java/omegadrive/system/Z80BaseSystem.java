@@ -30,12 +30,10 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.ColecoPad;
 import omegadrive.joypad.MsxPad;
 import omegadrive.joypad.TwoButtonsJoypad;
-import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.Tms9918aVdp;
@@ -82,12 +80,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     }
 
     private static final int VDP_DIVIDER = 1;  //10.738635 Mhz
-
-    @Override
-    protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOvr) {
-        return RegionDetector.Region.JAPAN;
-    }
-
     private static final int Z80_DIVIDER = 3; //3.579545 Mhz
 
     private void initCommon() {

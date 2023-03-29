@@ -9,7 +9,6 @@ import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInputHelper;
 import omegadrive.joypad.ExternalPad;
 import omegadrive.joypad.JoypadProvider;
-import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.system.BaseSystem;
 import omegadrive.system.SysUtil;
@@ -120,7 +119,7 @@ public class Gb extends BaseSystem<BaseBusProvider> {
     }
 
     @Override
-    protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOverride) {
+    protected RegionDetector.Region getRomRegion() {
         return RegionDetector.Region.USA;
     }
 }

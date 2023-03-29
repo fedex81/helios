@@ -83,17 +83,20 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
             rawNumber = rn;
         }
 
-        public String getStringView(byte[] data) {
+        public String getValue(byte[] data) {
             if (this == EXTRA_MEMORY) {
                 return extraMemStr(data);
             }
             if (this == TITLE_DOMESTIC) {
                 return titleDomesticStr(data);
             }
-            return this + ": " + (rawNumber
+            return rawNumber
                     ? hf.formatHex(data, startOffset, startOffset + len).trim()
-                    : new String(data, startOffset, len, StandardCharsets.UTF_8)
-            );
+                    : new String(data, startOffset, len, StandardCharsets.US_ASCII);
+        }
+
+        public String getStringView(byte[] data) {
+            return this + ": " + getValue(data);
         }
 
         private static String titleDomesticStr(byte[] data) {
@@ -104,7 +107,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
                     s1 = s2;
                 }
             }
-            return TITLE_DOMESTIC + ": " + s1;
+            return s1;
         }
 
 
@@ -116,7 +119,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
             }
             s += hf.formatHex(data, EXTRA_MEMORY.startOffset + skipRaOffset,
                     EXTRA_MEMORY.startOffset + EXTRA_MEMORY.len).trim();
-            return EXTRA_MEMORY + ": " + s;
+            return s;
         }
     }
 
@@ -138,7 +141,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     private long sramEnd;
     private boolean sramEnabled;
     private int romSize;
-    private String systemType;
+    private String systemType, region = "";
 
     private String headerInfo = "";
     private MdMapperType forceMapper = null;
@@ -250,9 +253,10 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
             sb.append(f.getStringView(rom)).append("\n");
         }
         headerInfo = sb.toString();
-        systemType = SYSTEM_TYPE.getStringView(rom).trim();
+        systemType = SYSTEM_TYPE.getValue(rom).trim();
+        region = REGION_SUPPORT.getValue(rom);
         forceMapper = MdMapperType.getMdMapperType(systemType);
-        serial = SERIAL_NUMBER.getStringView(rom);
+        serial = SERIAL_NUMBER.getValue(rom);
         if (rom.length > SVP_SV_TOKEN_ADDRESS + 1) {
             isSvp = SVP_SV_TOKEN.equals(new String(rom, SVP_SV_TOKEN_ADDRESS, 2).trim());
         }
@@ -260,6 +264,10 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     public MdRomDbModel.RomDbEntry getEntry() {
         return entry;
+    }
+
+    public String getRegion() {
+        return region;
     }
 
     public boolean isSsfMapper() {

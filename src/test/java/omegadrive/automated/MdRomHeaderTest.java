@@ -5,6 +5,7 @@ import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.FileUtil;
+import omegadrive.util.RegionDetector;
 
 import java.io.File;
 import java.nio.file.FileVisitOption;
@@ -45,8 +46,10 @@ public class MdRomHeaderTest {
                 CartridgeInfoProvider cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider,
                         rom);
                 System.out.println(cartridgeInfoProvider);
+                System.out.println(RegionDetector.detectRegion((MdCartInfoProvider) cartridgeInfoProvider));
             } catch (Exception e) {
                 System.err.println("Exception: " + rom.getFileName());
+                e.printStackTrace();
             }
         }
     }

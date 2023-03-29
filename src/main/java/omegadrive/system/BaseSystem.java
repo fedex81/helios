@@ -35,6 +35,7 @@ import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.util.*;
+import omegadrive.util.RegionDetector.Region;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEventListener;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
@@ -105,7 +106,19 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
     protected abstract void updateVideoMode(boolean force);
 
-    protected abstract RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOverride);
+    protected Region getRomRegion() {
+        return Region.JAPAN;
+    }
+
+    protected final Region getRegionInternal(String regionOvr) {
+        Region romRegion = getRomRegion();
+        Region ovrRegion = RegionDetector.getRegion(regionOvr);
+        if (ovrRegion != null && ovrRegion != romRegion) {
+            LOG.info("Setting region override from: {} to {}", romRegion, ovrRegion);
+            romRegion = ovrRegion;
+        }
+        return romRegion;
+    }
 
     protected BaseSystem(DisplayWindow emuFrame) {
         this.emuFrame = emuFrame;
@@ -371,7 +384,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     protected RomContext createRomContext(Path rom) {
         RomContext rc = new RomContext();
         rc.romPath = rom;
-        rc.region = getRegionInternal(memory, emuFrame.getRegionOverride());
+        rc.region = getRomRegion();
         return rc;
     }
 

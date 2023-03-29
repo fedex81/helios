@@ -25,7 +25,6 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.ExternalPad;
-import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.NesStateHandler;
@@ -34,7 +33,6 @@ import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
@@ -62,17 +60,6 @@ public class Nes extends BaseSystem<BaseBusProvider> {
     private void initCommon() {
         inputProvider = InputProvider.createInstance(joypad);
         reloadWindowState();
-    }
-
-    @Override
-    protected RegionDetector.Region getRegionInternal(IMemoryProvider memory, String regionOvr) {
-        RegionDetector.Region romRegion = RegionDetector.Region.JAPAN;
-        RegionDetector.Region ovrRegion = RegionDetector.getRegion(regionOvr);
-        if (ovrRegion != null && ovrRegion != romRegion) {
-            LOG.info("Setting region override from: {} to {}", romRegion, ovrRegion);
-            romRegion = ovrRegion;
-        }
-        return romRegion;
     }
 
     @Override

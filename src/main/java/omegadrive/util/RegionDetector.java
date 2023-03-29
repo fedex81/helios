@@ -19,7 +19,8 @@
 
 package omegadrive.util;
 
-import omegadrive.memory.IMemoryProvider;
+import com.google.common.base.Strings;
+import omegadrive.cart.MdCartInfoProvider;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -33,24 +34,19 @@ public class RegionDetector {
     public final static int PAL_FPS = 50;
     public final static int NTSC_FPS = 60;
 
-    public final static int FIRST_REGION_ADDRESS = 0x1f0;
-    public final static int SECOND_REGION_ADDRESS = 0x1f1;
-    public final static int THIRD_REGION_ADDRESS = 0x1f2;
-
-    public static Region detectRegion(IMemoryProvider memoryProvider, boolean verbose) {
-        char char1 = (char) memoryProvider.readRomByte(FIRST_REGION_ADDRESS);
-        char char2 = (char) memoryProvider.readRomByte(SECOND_REGION_ADDRESS);
-        char char3 = (char) memoryProvider.readRomByte(THIRD_REGION_ADDRESS);
-        String s = String.valueOf(char1) + char2 + char3;
+    public static Region detectRegion(MdCartInfoProvider cartInfoProvider, boolean verbose) {
+        String s = cartInfoProvider.getRegion();
+        s = Strings.padEnd(s, 3, ' ');
+        assert s.length() == 3;
 
         Region[] regions = new Region[3];
-        regions[0] = Region.getRegion(char1);
-        regions[1] = Region.getRegion(char2);
-        regions[2] = Region.getRegion(char3);
+        regions[0] = Region.getRegion(s.charAt(0));
+        regions[1] = Region.getRegion(s.charAt(1));
+        regions[2] = Region.getRegion(s.charAt(2));
 
         Optional<Region> optRegion = Arrays.stream(regions).filter(Objects::nonNull).min(REGION_COMPARATOR);
 
-        Region res = optRegion.orElse(detectRegionFallBack(memoryProvider).orElse(null));
+        Region res = optRegion.orElse(detectRegionFallBack(s).orElse(null));
         if (res == null) {
             LOG.warn("Unable to find a region, defaulting to USA");
             res = Region.USA;
@@ -62,8 +58,8 @@ public class RegionDetector {
         return res;
     }
 
-    public static Region detectRegion(IMemoryProvider memoryProvider) {
-        return detectRegion(memoryProvider, false);
+    public static Region detectRegion(MdCartInfoProvider cartInfo) {
+        return detectRegion(cartInfo, false);
     }
 
     /**
@@ -72,9 +68,8 @@ public class RegionDetector {
      * Bit 2: Overseas, NTSC (America)
      * Bit 3: Overseas, PAL (Europe)
      */
-    private static Optional<Region> detectRegionFallBack(IMemoryProvider memoryProvider) {
-        char cval = (char) memoryProvider.readRomByte(FIRST_REGION_ADDRESS);
-        int val = Character.getNumericValue(cval);
+    private static Optional<Region> detectRegionFallBack(String regionStr) {
+        int val = Character.getNumericValue(regionStr.charAt(0));
         Region region = null;
         if (val < 0x10) {
             region = (val & 4) > 0 ? Region.USA : region;
