@@ -64,6 +64,9 @@ public class GstStateHandler implements BaseStateHandler {
     private static final int M68K_REGD_OFFSET = 0x80;
     private static final int M68K_REGA_OFFSET = 0xA0;
 
+    public static final int M68K_SSP_OFFSET = 0xD2;
+    public static final int M68K_USP_OFFSET = 0xD6;
+
     protected static final int VERSION_OFFSET = 0x50;
     protected static final int SWID_OFFSET = 0x51;
     public static final int FILE_SIZE = 0x22478;
@@ -220,8 +223,8 @@ public class GstStateHandler implements BaseStateHandler {
                 m68k.setAddrRegisterLong(i, getInt4Fn.apply(buffer, M68K_REGA_OFFSET + i * 4))
         );
         m68k.setPC(getInt4Fn.apply(buffer, 0xC8));
-        int ssp = getInt4Fn.apply(buffer, 0xD2);
-        int usp = getInt4Fn.apply(buffer, 0xD6);
+        int ssp = getInt4Fn.apply(buffer, M68K_SSP_OFFSET);
+        int usp = getInt4Fn.apply(buffer, M68K_USP_OFFSET);
         if (usp > 0) {
             LOG.warn("USP is not 0: {}", usp);
         }
@@ -283,8 +286,8 @@ public class GstStateHandler implements BaseStateHandler {
         MC68000 m68k = mc68000Wrapper.getM68k();
         setInt4LEFn(buffer, 0xC8, m68k.getPC());
         setInt2LEFn(buffer, 0xD0, m68k.getSR());
-        setInt4LEFn(buffer, 0xD2, m68k.getSSP());
-        setInt4LEFn(buffer, 0xD6, m68k.getUSP());
+        setInt4LEFn(buffer, M68K_SSP_OFFSET, m68k.getSSP());
+        setInt4LEFn(buffer, M68K_USP_OFFSET, m68k.getUSP());
 
         IntStream.range(0, 8).forEach(i ->
                 setInt4LEFn(buffer, M68K_REGD_OFFSET + i * 4, m68k.getDataRegisterLong(i)));

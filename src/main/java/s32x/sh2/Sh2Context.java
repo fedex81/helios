@@ -43,7 +43,7 @@ public class Sh2Context implements Device, Serializable {
     public final String sh2TypeCode;
     public boolean delaySlot;
     public final boolean debug;
-    public FetchResult fetchResult;
+    public transient FetchResult fetchResult;
 
     public transient Sh2DeviceContext devices;
 
@@ -90,6 +90,7 @@ public class Sh2Context implements Device, Serializable {
         PR = ctx.PR;
         cycles = ctx.cycles;
         cycles_ran = ctx.cycles_ran;
+        //invalidate on load
         fetchResult.block = Sh2Block.INVALID_BLOCK;
         fetchResult.pc = 0;
         fetchResult.opcode = 0;

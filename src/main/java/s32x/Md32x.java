@@ -40,7 +40,7 @@ import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
  * <p>
  * Copyright 2021
  */
-public class Md32x extends Megadrive implements PollSysEventManager.SysEventListener {
+public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycleResettable {
 
     private static final Logger LOG = LogHelper.getLogger(Md32x.class.getSimpleName());
 

@@ -37,7 +37,7 @@ public class Gs32xStateHandler extends GshStateHandler {
 
     protected static final String START_32X_TOKEN = "START_GS32X";
     protected static final String END_32X_TOKEN = "END_GS32X";
-    protected static final String fileExtension32x = "gs32x";
+    public static final String fileExtension32x = "gs32x";
 
     private static final Map<String, Device> s32xDeviceSet = new WeakHashMap<String, Device>();
     private static final Sh2ContextWrap wrap = new Sh2ContextWrap();
@@ -156,6 +156,10 @@ public class Gs32xStateHandler extends GshStateHandler {
             StaticBootstrapSupport.setNextCycleExt(MASTER, 0);
             StaticBootstrapSupport.setNextCycleExt(SLAVE, 0);
         }
+    }
+
+    public static Sh2ContextWrap getSh2ContextWrap() {
+        return wrap;
     }
 
     @Deprecated

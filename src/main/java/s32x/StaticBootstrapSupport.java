@@ -2,7 +2,7 @@ package s32x;
 
 import s32x.event.PollSysEventManager;
 import s32x.sh2.Sh2Helper;
-import s32x.util.S32xUtil;
+import s32x.util.S32xUtil.CpuDeviceAccess;
 
 /**
  * Federico Berti
@@ -11,13 +11,17 @@ import s32x.util.S32xUtil;
  */
 public class StaticBootstrapSupport {
 
-    public static Md32x instance;
+    public interface NextCycleResettable extends PollSysEventManager.SysEventListener {
+        void setNextCycle(CpuDeviceAccess cpu, int value);
+    }
+
+    public static NextCycleResettable instance;
 
     /**
      * TODO remove
      * one-stop shop for all the hacky bits...
      */
-    public static void initStatic(Md32x instance) {
+    public static void initStatic(NextCycleResettable instance) {
         PollSysEventManager.instance.reset();
         PollSysEventManager.instance.addSysEventListener(instance.getClass().getSimpleName(), instance);
         DmaFifo68k.rv = false;
@@ -25,7 +29,7 @@ public class StaticBootstrapSupport {
         StaticBootstrapSupport.instance = instance;
     }
 
-    public static void setNextCycleExt(S32xUtil.CpuDeviceAccess cpu, int value) {
+    public static void setNextCycleExt(CpuDeviceAccess cpu, int value) {
         instance.setNextCycle(cpu, value);
     }
 }

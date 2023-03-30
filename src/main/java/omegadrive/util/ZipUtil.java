@@ -58,6 +58,8 @@ public class ZipUtil {
     }
 
     public static byte[] readZipFileContents(Path path, String... ext) {
+        //extension of the file inside the archive, NOT the ext of the archive itself!
+        assert Arrays.stream(ext).noneMatch(ex -> ex.endsWith(".zip"));
         Optional<? extends ZipEntry> entry = getSupportedZipEntryIfAny(path, ext);
         return entry.map(e -> readZipFileImpl(path, e)).orElse(new byte[0]);
     }
