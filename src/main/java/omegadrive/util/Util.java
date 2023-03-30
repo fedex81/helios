@@ -201,14 +201,7 @@ public class Util {
         return ((number & (1 << position)) != 0);
     }
 
-    public static int readData(byte[] src, Size size, int address) {
-        return switch (size) {
-            case WORD -> ((src[address] & 0xFF) << 8) | (src[address + 1] & 0xFF);
-            case LONG -> ((src[address] & 0xFF) << 24) | (src[address + 1] & 0xFF) << 16 |
-                    (src[address + 2] & 0xFF) << 8 | (src[address + 3] & 0xFF);
-            case BYTE -> src[address];
-        };
-    }
+
 
     public static int readBufferByte(ByteBuffer b, int pos) {
         return b.get(pos);
@@ -224,20 +217,29 @@ public class Util {
         return b.getInt(pos);
     }
 
-    public static void writeData(byte[] dest, Size size, int address, int data) {
-        writeDataMask(dest, size, address, data, size.getMask());
-    }
-
     public static int readDataMask(byte[] src, Size size, int address, final int mask) {
         return readData(src, size, address & mask);
     }
 
-    public static void writeDataMask(byte[] dest, Size size, int address, int data, final int mask) {
+    public static int readData(byte[] src, Size size, int address) {
+        return switch (size) {
+            case WORD -> ((src[address] & 0xFF) << 8) | (src[address + 1] & 0xFF);
+            case LONG -> ((src[address] & 0xFF) << 24) | (src[address + 1] & 0xFF) << 16 |
+                    (src[address + 2] & 0xFF) << 8 | (src[address + 3] & 0xFF);
+            case BYTE -> src[address];
+        };
+    }
+
+    public static void writeData(byte[] dest, Size size, int address, int data) {
         switch (size) {
-            case WORD -> SHORT_BYTEARR_HANDLE.set(dest, address & mask, (short) data);
-            case LONG -> INT_BYTEARR_HANDLE.set(dest, address & mask, data);
-            case BYTE -> dest[address & mask] = (byte) data;
+            case WORD -> SHORT_BYTEARR_HANDLE.set(dest, address, (short) data);
+            case LONG -> INT_BYTEARR_HANDLE.set(dest, address, data);
+            case BYTE -> dest[address] = (byte) data;
         }
+    }
+
+    public static void writeDataMask(byte[] dest, Size size, int address, int data, final int mask) {
+        writeData(dest, size, address & mask, data);
     }
 
     @Deprecated
