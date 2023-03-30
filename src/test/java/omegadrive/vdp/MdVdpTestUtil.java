@@ -23,9 +23,11 @@ import omegadrive.SystemLoader;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.md.GenesisVdp;
 import omegadrive.vdp.md.VdpFifo;
 import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -33,6 +35,7 @@ import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.InterlaceMode;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -210,6 +213,13 @@ public class MdVdpTestUtil {
     public static void updateVideoMode(BaseVdpProvider vdp, VideoMode videoMode) {
         MdVdpTestUtil.holder[0] = videoMode;
         vdp.updateRegisterData(0, 0);
+    }
+
+    public static GenesisVdp getVdpProvider(SystemProvider systemProvider) throws Exception {
+        BaseSystem system = (BaseSystem) systemProvider;
+        Field f = BaseSystem.class.getDeclaredField("vdp");
+        f.setAccessible(true);
+        return (GenesisVdp) f.get(system);
     }
 
     private void dumpTiles() {

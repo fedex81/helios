@@ -25,7 +25,7 @@ public class ScreenSizeHelper {
 
     public static final double FOUR_BY_THREE = 4.0 / 3.0;
 
-    public static final int DEFAULT_X = Integer.parseInt(System.getProperty("helios.defaultx", "320"));
+    public static final int DEFAULT_X = Integer.parseInt(System.getProperty("helios.default", "320"));
     public static final int DEFAULT_Y = 256;
 
     public static final int DEFAULT_SCALE_FACTOR =

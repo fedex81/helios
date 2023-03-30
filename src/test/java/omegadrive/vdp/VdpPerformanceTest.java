@@ -22,19 +22,18 @@ package omegadrive.vdp;
 import omegadrive.SystemLoader;
 import omegadrive.cpu.m68k.MC68000Helper;
 import omegadrive.input.InputProvider;
-import omegadrive.system.BaseSystem;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
-import omegadrive.vdp.md.GenesisVdp;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+
+import static omegadrive.vdp.MdVdpTestUtil.getVdpProvider;
 
 @Ignore
 public class VdpPerformanceTest {
@@ -119,13 +118,6 @@ public class VdpPerformanceTest {
         if (!MC68000Helper.M68K_DEBUG) {
             return;
         }
-    }
-
-    protected GenesisVdp getVdpProvider(SystemProvider systemProvider) throws Exception {
-        BaseSystem system = (BaseSystem) systemProvider;
-        Field f = BaseSystem.class.getDeclaredField("vdp");
-        f.setAccessible(true);
-        return (GenesisVdp) f.get(system);
     }
 
     protected void createAndAddVdpListener(SystemProvider systemProvider) {

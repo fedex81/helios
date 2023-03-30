@@ -34,6 +34,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static omegadrive.vdp.MdVdpTestUtil.getVdpProvider;
+
 
 @Ignore
 public class VdpRasterDataGeneratorTest extends VdpPerformanceTest {
