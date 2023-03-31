@@ -10,6 +10,7 @@ import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -199,7 +200,7 @@ public class IntControlImplNew implements IntControl {
 
     private void resetInterruptLevel() {
         int maxLevel = s32xInt.values().stream().filter(s -> s.intState > INT_TRIGGER_MASK).
-                max((c1, c2) -> Integer.compare(c1.level, c2.level)).map(ctx -> ctx.level).orElse(0);
+                max(Comparator.comparingInt(c -> c.level)).map(ctx -> ctx.level).orElse(0);
         assert maxLevel >= 0;
         if (maxLevel > 0) {
 //            assert s32xInt.values().stream().filter(c -> c.level == maxLevel).count() < 2; //TODO debug if it happens

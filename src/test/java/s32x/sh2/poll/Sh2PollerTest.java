@@ -3,9 +3,9 @@ package s32x.sh2.poll;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.*;
 import s32x.event.PollSysEventManager;
-import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.drc.Ow2DrcOptimizer.PollType;
 import s32x.util.MarsLauncherHelper;
@@ -33,7 +33,7 @@ import static s32x.sh2.drc.Ow2DrcOptimizer.POLLER_ACTIVATE_LIMIT;
  */
 public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
     private static MarsLauncherHelper.Sh2LaunchContext lc;
-    protected static Sh2.Sh2Config configDrcEn = new Sh2.Sh2Config(true, true, true, true);
+    protected static Sh2Config configDrcEn = new Sh2Config(true, true, true, true);
 
     private CpuDeviceAccess lastCpuEvent;
     private PollSysEventManager.SysEvent lastEvent;
@@ -47,7 +47,7 @@ public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
 
     @BeforeAll
     public static void beforeAll() {
-        Sh2.Sh2Config.reset(configDrcEn);
+        Sh2Config.reset(configDrcEn);
         lc = createTestInstance();
     }
 

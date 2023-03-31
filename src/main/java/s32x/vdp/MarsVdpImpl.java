@@ -18,6 +18,7 @@ import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
 import s32x.vdp.debug.MarsVdpDebugView;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
@@ -43,6 +44,8 @@ public class MarsVdpImpl implements MarsVdp {
     private static final Logger LOG = LogHelper.getLogger(MarsVdpImpl.class.getSimpleName());
 
     private static class MarsVdpSaveContext implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -7332632984301857483L;
         public MarsVdpRenderContext renderContext;
 
         private final byte[] fb0 = new byte[DRAM_SIZE];
@@ -124,7 +127,7 @@ public class MarsVdpImpl implements MarsVdp {
                 case WORD, LONG ->
                         S32xUtil.writeBufferRaw(colorPalette, address & S32xDict.S32X_COLPAL_MASK, value, size);
                 default ->
-                        LOG.error(Md32xRuntimeData.getAccessTypeExt() + " write, unable to access colorPalette as " + size);
+                        LOG.error("{} write, unable to access colorPalette as {}", Md32xRuntimeData.getAccessTypeExt(), size);
             }
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.PALETTE);
         } else if (address >= S32xDict.START_DRAM_CACHE && address < S32xDict.END_DRAM_CACHE) {
@@ -151,7 +154,7 @@ public class MarsVdpImpl implements MarsVdp {
             if (size == Size.WORD) {
                 res = S32xUtil.readBuffer(colorPalette, address & S32xDict.S32X_COLPAL_MASK, size);
             } else {
-                LOG.error(Md32xRuntimeData.getAccessTypeExt() + " read, unable to access colorPalette as " + size);
+                LOG.error("{} read, unable to access colorPalette as {}", Md32xRuntimeData.getAccessTypeExt(), size);
             }
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.PALETTE);
         } else if (address >= S32xDict.START_DRAM_CACHE && address < S32xDict.END_DRAM_CACHE) {
@@ -616,7 +619,7 @@ public class MarsVdpImpl implements MarsVdp {
     @Override
     public void loadContext(ByteBuffer bb) {
         MarsVdp.super.loadContext(bb);
-        Serializable s = Util.deserializeObject(bb.array(), 0, bb.capacity());
+        Serializable s = Util.deserializeObject(bb);
         assert s instanceof MarsVdpSaveContext;
         ctx = (MarsVdpSaveContext) s;
         buffer = ctx.renderContext.screen;

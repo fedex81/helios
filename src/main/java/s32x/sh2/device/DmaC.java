@@ -174,7 +174,7 @@ public class DmaC implements S32xUtil.Sh2Device {
             memory.write(destAddress, val, c.trnSize);
             if (verbose)
                 LOG.info("{} DMA write, src: {}, dest: {}, val: {}, dmaLen: {}", cpu, th(srcAddress), th(destAddress),
-                        th((int) val), th(len));
+                        th(val), th(len));
             srcAddress += c.srcDelta;
             destAddress += c.destDelta;
             len = (len - 1) & 0xFF_FFFF;

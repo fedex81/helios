@@ -3,7 +3,7 @@ package s32x.bus;
 import omegadrive.util.Size;
 import s32x.Sh2MMREG;
 import s32x.dict.S32xDict;
-import s32x.sh2.Sh2;
+import s32x.sh2.Sh2Helper;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
@@ -85,12 +85,12 @@ public final class Sh2MemoryParallel implements Sh2Bus {
     }
 
     @Override
-    public void fetch(Sh2.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    public void fetch(Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
         memory.fetch(ft, cpu);
     }
 
     @Override
-    public int fetchDelaySlot(int pc, Sh2.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    public int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
         return memory.fetchDelaySlot(pc, ft, cpu);
     }
 

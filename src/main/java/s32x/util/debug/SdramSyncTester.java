@@ -69,9 +69,7 @@ public class SdramSyncTester {
                 (address & S32xDict.SH2_SDRAM_MASK) == 0x4c20 && clock.getCycleCounter() == 111787;
         if (check) {
             final int v = val;
-            valToWrite = () -> {
-                S32xUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, v, size);
-            };
+            valToWrite = () -> S32xUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, v, size);
         } else {
             S32xUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, val, size);
         }
@@ -85,7 +83,7 @@ public class SdramSyncTester {
             if (sdramAccess[i].accessMask > 2) {
                 SdramSync entry = sdramAccess[i];
                 int val = entry.accessMask;
-                int check = (int) ((val & (MAST_READ | SLAVE_WRITE)) | (val & (MAST_WRITE | SLAVE_READ)));
+                int check = (val & (MAST_READ | SLAVE_WRITE)) | (val & (MAST_WRITE | SLAVE_READ));
                 boolean ok = val != (MAST_READ | MAST_WRITE) && val != (SLAVE_READ | SLAVE_WRITE) && val != (MAST_READ | SLAVE_READ)
                         && val != (MAST_WRITE | SLAVE_WRITE);
                 if (check > 0 && ok) {

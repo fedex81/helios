@@ -110,7 +110,7 @@ public class VdpMarsRenderCompareFileTest extends VdpRenderCompareTest {
 
     private DebugMarsVdpRenderContext toMarsContext(Path datFile) {
         byte[] data = FileUtil.readBinaryFile(datFile, "dat");
-        Object o = Util.deserializeObject(data, 0, data.length);
+        Object o = Util.deserializeObject(data);
         DebugMarsVdpRenderContext mvrc = (DebugMarsVdpRenderContext) o;
         return mvrc;
     }

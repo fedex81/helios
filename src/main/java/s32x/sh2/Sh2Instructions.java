@@ -5,7 +5,6 @@ import s32x.sh2.prefetch.Sh2Prefetcher;
 
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static omegadrive.util.Util.th;
 import static s32x.sh2.Sh2Instructions.Sh2BaseInstruction.*;
@@ -1118,7 +1117,7 @@ public class Sh2Instructions {
             //Delayed branch instructions: JMP, JSR, BRA, BSR, RTS, RTE, BF/S, BT/S, BSRF,BRAF
             Predicate<String> isBranchDelaySlotPred = n -> n.startsWith("J") || n.startsWith("BRA") ||
                     n.startsWith("BSR") || n.startsWith("RT") || n.startsWith("BTS") || n.startsWith("BFS");
-            Map<Sh2BaseInstruction, String> instSet = new TreeMap<>();
+            Map<Sh2BaseInstruction, String> instSet = new EnumMap<>(Sh2BaseInstruction.class);
             for (Sh2BaseInstruction i : Sh2BaseInstruction.values()) {
                 boolean isBranch = isBranchPred.test(i.name());
                 String s = i + "(" + (isBranch ? 1 : 0) + "," +
@@ -1128,7 +1127,7 @@ public class Sh2Instructions {
                 instSet.put(i, s);
             }
             String header = "inst,isBranch,isBranchDelaySlot,isIllegal,cycles,cyclesBranchTaken";
-            String res = instSet.values().stream().collect(Collectors.joining("\n"));
+            String res = String.join("\n", instSet.values());
             System.out.println(header + "\n" + res);
         }
     }

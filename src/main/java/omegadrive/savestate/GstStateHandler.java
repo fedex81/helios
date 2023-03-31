@@ -116,7 +116,7 @@ public class GstStateHandler implements BaseStateHandler {
         IMemoryProvider mem = StateUtil.getInstanceOrThrow(deviceList, IMemoryProvider.class);
         MC68000Wrapper cpu = StateUtil.getInstanceOrThrow(deviceList, MC68000Wrapper.class);
         SoundProvider sound = StateUtil.getInstanceOrThrow(deviceList, SoundProvider.class);
-            if (getType() == Type.LOAD) {
+            if (type == Type.LOAD) {
                 loadFmState(sound.getFm());
                 loadVdpState(vdp);
                 loadZ80(z80, bus);
@@ -127,8 +127,8 @@ public class GstStateHandler implements BaseStateHandler {
                 save68k(cpu, mem);
                 saveVdp(vdp);
             }
-        if (getType() == Type.LOAD) {
-            LOG.info("Savestate loaded from: {}", getFileName());
+        if (type == Type.LOAD) {
+            LOG.info("Savestate loaded from: {}", fileName);
         }
     }
 
@@ -279,8 +279,8 @@ public class GstStateHandler implements BaseStateHandler {
 
     protected void save68k(MC68000Wrapper mc68000Wrapper, IMemoryProvider memoryProvider) {
         for (int i = 0; i < MemoryProvider.M68K_RAM_SIZE; i += 2) {
-            buffer.put(i + M68K_RAM_DATA_OFFSET, (byte) memoryProvider.readRamByte(i));
-            buffer.put(i + 1 + M68K_RAM_DATA_OFFSET, (byte) memoryProvider.readRamByte(i + 1));
+            buffer.put(i + M68K_RAM_DATA_OFFSET, memoryProvider.readRamByte(i));
+            buffer.put(i + 1 + M68K_RAM_DATA_OFFSET, memoryProvider.readRamByte(i + 1));
         }
 
         MC68000 m68k = mc68000Wrapper.getM68k();

@@ -443,7 +443,7 @@ public class Sh2CacheImpl implements Sh2Cache {
     @Override
     public void loadContext(ByteBuffer buffer) {
         Sh2Cache.super.loadContext(buffer);
-        Serializable s = Util.deserializeObject(buffer.array(), 0, buffer.capacity());
+        Serializable s = Util.deserializeObject(buffer);
         assert s instanceof Sh2CacheContext;
         ctx = (Sh2CacheContext) s;
         data_array.rewind().put(ctx.dataArray);

@@ -74,7 +74,7 @@ public class SmsLoader {
     private static MapperSelector.Entry getEntry(String str, String mapper) {
         String baseTok = str.split("/")[0];
         String[] tok = baseTok.split("\\s+");
-        String[] tok1 = baseTok.split("  ");
+        String[] tok1 = baseTok.split(" {2}");
         MapperSelector.Entry e = new MapperSelector.Entry();
         e.title = tok1[tok1.length - 1].trim();
         e.crc32 = tok[1].trim();

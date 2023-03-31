@@ -169,6 +169,7 @@ public interface VdpRenderHandler {
                     priority == that.priority;
         }
 
+        //TODO Objects::hashCode allocates an array!!
         @Override
         public int hashCode() {
             return Objects.hash(tileIndex, horFlip, vertFlip, paletteLineIndex, priority);

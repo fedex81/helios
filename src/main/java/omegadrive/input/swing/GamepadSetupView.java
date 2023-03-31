@@ -259,9 +259,9 @@ public class GamepadSetupView implements InputEventCallback {
                 return value == AXIS_0 ? RELEASED : PRESSED;
             }
         } else if (id instanceof Component.Identifier.Button) {
-            return value == ON ? JoypadProvider.JoypadAction.PRESSED : JoypadProvider.JoypadAction.RELEASED;
+            return value == ON ? PRESSED : RELEASED;
         } else if (id instanceof Key) {
-            return value == ON ? JoypadProvider.JoypadAction.PRESSED : JoypadProvider.JoypadAction.RELEASED;
+            return value == ON ? PRESSED : RELEASED;
         } else {
             throw new RuntimeException(id + ": " + value);
         }

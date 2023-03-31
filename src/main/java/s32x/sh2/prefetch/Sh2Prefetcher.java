@@ -3,7 +3,7 @@ package s32x.sh2.prefetch;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
-import s32x.sh2.Sh2;
+import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Instructions;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.util.S32xUtil;
@@ -21,9 +21,9 @@ public interface Sh2Prefetcher {
 
     boolean verbose = false;
 
-    void fetch(Sh2.FetchResult ft, S32xUtil.CpuDeviceAccess cpu);
+    void fetch(Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu);
 
-    int fetchDelaySlot(int pc, Sh2.FetchResult ft, S32xUtil.CpuDeviceAccess cpu);
+    int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu);
 
     void invalidateCachePrefetch(Sh2Cache.CacheInvalidateContext ctx);
 

@@ -110,7 +110,7 @@ public class MarsLauncherHelper {
         ctx.mDevCtx.sci.setOther(ctx.sDevCtx.sci);
         ctx.sh2 = (ctx.masterCtx.debug || ctx.slaveCtx.debug) ?
                 new Sh2Debug(ctx.memory) : new Sh2Impl(ctx.memory);
-        mDrcCtx.sh2 = sDrcCtx.sh2 = (Sh2Impl) ctx.sh2;
+        mDrcCtx.sh2 = sDrcCtx.sh2 = ctx.sh2;
         mDrcCtx.memory = sDrcCtx.memory = ctx.memory;
         ctx.pwm = new Pwm(ctx.s32XMMREG.regContext);
         ctx.masterCtx.devices = ctx.mDevCtx;

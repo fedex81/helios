@@ -67,7 +67,7 @@ public interface IntControl extends S32xUtil.Sh2Device {
                     return s;
                 }
             }
-            LOG.error("Unknown interrupt source: " + deviceType + ", " + subType);
+            LOG.error("Unknown interrupt source: {}, {}", deviceType, subType);
             return null;
         }
     }

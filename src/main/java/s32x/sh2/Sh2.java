@@ -3,11 +3,6 @@ package s32x.sh2;
 import omegadrive.Device;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
-import s32x.sh2.drc.Sh2Block;
-
-import java.io.Serializable;
-import java.util.StringJoiner;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Federico Berti
@@ -33,9 +28,6 @@ public interface Sh2 extends Device {
 
     int ILLEGAL_INST_VN = 4; //vector number
 
-    //NOTE: this only works when R[15] is not being rewritten ie. only push/pop modify it
-    int STACK_LIMIT_SIZE = 0x1000;
-
     void reset(Sh2Context context);
 
     void run(Sh2Context masterCtx);
@@ -44,71 +36,5 @@ public interface Sh2 extends Device {
 
     default void printDebugMaybe(int opcode) {
         //NO-OP
-    }
-
-    class FetchResult implements Serializable {
-        public int pc, opcode;
-        public transient Sh2Block block;
-        //TODO
-//        public Sh2Helper.Sh2PcInfoWrapper piw = Sh2Helper.SH2_NOT_VISITED;
-
-        @Override
-        public String toString() {
-            return new StringJoiner(", ", FetchResult.class.getSimpleName() + "[", "]")
-                    .add("pc=" + pc)
-                    .add("opcode=" + opcode)
-                    .add("block=" + block)
-                    .toString();
-        }
-    }
-
-    class Sh2Config {
-        public final static Sh2Config DEFAULT_CONFIG = new Sh2Config();
-        private static final AtomicReference<Sh2Config> instance = new AtomicReference<>(DEFAULT_CONFIG);
-        public final boolean prefetchEn, drcEn, pollDetectEn, ignoreDelays, tasQuirk;
-
-        private Sh2Config() {
-            tasQuirk = true;
-            prefetchEn = drcEn = pollDetectEn = ignoreDelays = false;
-            LOG.info("Default config: {}", this);
-        }
-
-        public Sh2Config(boolean prefetchEn, boolean drcEn, boolean pollDetectEn, boolean ignoreDelays) {
-            this(prefetchEn, drcEn, pollDetectEn, ignoreDelays, 1);
-        }
-
-
-        public Sh2Config(boolean prefetchEn, boolean drcEn, boolean pollDetectEn, boolean ignoreDelays, int tasQuirk) {
-            this.prefetchEn = prefetchEn;
-            this.drcEn = drcEn;
-            this.pollDetectEn = pollDetectEn;
-            this.ignoreDelays = ignoreDelays;
-            this.tasQuirk = tasQuirk > 0;
-            if (instance.compareAndSet(DEFAULT_CONFIG, this)) {
-                LOG.info("Using config: {}", this);
-            } else {
-                LOG.error("Ignoring config: {}, current: {}", this, instance);
-            }
-        }
-
-        public static Sh2Config get() {
-            return instance.get();
-        }
-
-        //force config, test only
-        public static void reset(Sh2Config config) {
-            instance.set(config);
-            LOG.warn("Overriding config: {}", config);
-        }
-
-        @Override
-        public String toString() {
-            return new StringJoiner(", ", Sh2Config.class.getSimpleName() + "[", "]")
-                    .add("prefetchEn=" + prefetchEn)
-                    .add("drcEn=" + drcEn)
-                    .add("pollDetectEn=" + pollDetectEn)
-                    .add("ignoreDelays=" + ignoreDelays)
-                    .toString();
-        }
     }
 }

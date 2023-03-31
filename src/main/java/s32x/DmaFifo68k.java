@@ -14,6 +14,7 @@ import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
 import s32x.util.S32xUtil.CpuDeviceAccess;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
@@ -45,6 +46,8 @@ public class DmaFifo68k implements Device {
     private static final boolean verbose = false;
 
     static class DmaFifo68kContext implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 5546641086954149096L;
         private final Fifo<Integer> fifo = Fifo.createIntegerFixedSizeFifo(DMA_FIFO_SIZE);
         private boolean m68S = false;
         private boolean rv = false;
@@ -211,7 +214,7 @@ public class DmaFifo68k implements Device {
     @Override
     public void loadContext(ByteBuffer buffer) {
         Device.super.loadContext(buffer);
-        Serializable s = Util.deserializeObject(buffer.array(), 0, buffer.capacity());
+        Serializable s = Util.deserializeObject(buffer);
         assert s instanceof DmaFifo68kContext;
         ctx = (DmaFifo68kContext) s;
         rv = ctx.rv;

@@ -3,7 +3,7 @@ package s32x.util;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.Md32x;
-import s32x.sh2.Sh2;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
@@ -26,7 +26,7 @@ public class Md32xRuntimeData {
     private static Md32xRuntimeData rt;
 
     private Md32xRuntimeData() {
-        ignoreDelays = Sh2.Sh2Config.get().ignoreDelays;
+        ignoreDelays = Sh2Config.get().ignoreDelays;
     }
 
     public static Md32xRuntimeData newInstance() {

@@ -12,6 +12,7 @@ import s32x.sh2.device.*;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -33,6 +34,8 @@ public class Sh2MMREG implements Device {
     public static final int SH2_REG_MASK = SH2_REG_SIZE - 1;
 
     public static class Sh2MMREGContext implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 7541275278019348341L;
         public final byte[] regsByte = new byte[SH2_REG_SIZE];
         public final Map<Integer, Integer> dramModeRegs = Maps.newHashMap(dramModeRegsSpec);
     }
@@ -248,7 +251,7 @@ public class Sh2MMREG implements Device {
     @Override
     public void loadContext(ByteBuffer buffer) {
         Device.super.loadContext(buffer);
-        Serializable s = Util.deserializeObject(buffer.array(), 0, buffer.capacity());
+        Serializable s = Util.deserializeObject(buffer);
         assert s instanceof Sh2MMREGContext;
         ctx = (Sh2MMREGContext) s;
         regs.rewind().put(ctx.regsByte).rewind();

@@ -33,6 +33,7 @@ public class S32xUtil {
 
     static {
         boolean res = false;
+        //noinspection AssertWithSideEffects
         assert res = true;
         assertionsEnabled = res;
     }
@@ -125,7 +126,7 @@ public class S32xUtil {
             case LONG -> readBufferLong(b, pos);
             case BYTE -> readBufferByte(b, pos);
             default -> {
-                LOG.error("Unexpected size: " + size);
+                LOG.error("Unexpected size: {}", size);
                 yield size.getMask();
             }
         };
@@ -249,7 +250,7 @@ public class S32xUtil {
 
     public static void assertPowerOf2Minus1(String name, int value) {
         if (!IntMath.isPowerOfTwo(value + 1)) {
-            LOG.error(name + " should be a (powerOf2 - 1), ie. 0xFF, actual: " + th(value - 1));
+            LOG.error("{} should be a (powerOf2 - 1), ie. 0xFF, actual: {}", name, th(value - 1));
         }
         assert IntMath.isPowerOfTwo(value + 1) :
                 name + " should be a (powerOf2 - 1), ie. 0xFF, actual: " + th(value - 1);

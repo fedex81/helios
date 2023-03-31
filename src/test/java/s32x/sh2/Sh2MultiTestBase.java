@@ -3,6 +3,7 @@ package s32x.sh2;
 import org.junit.jupiter.api.BeforeEach;
 import s32x.MarsRegTestUtil;
 import s32x.bus.Sh2BusImpl;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.prefetch.Sh2CacheTest;
 import s32x.util.MarsLauncherHelper;
 import s32x.util.Md32xRuntimeData;
@@ -28,20 +29,20 @@ public class Sh2MultiTestBase {
     protected static int RAM_SIZE = 0x100;
     protected static int ROM_SIZE = 0x1000;
 
-    public static final Sh2.Sh2Config configDrcEn = new Sh2.Sh2Config(true, true, true, true);
-    public static final Sh2.Sh2Config configCacheEn = new Sh2.Sh2Config(true, true, true, false);
-    public static final Sh2.Sh2Config[] configList;
-    protected static Sh2.Sh2Config config = configCacheEn;
+    public static final Sh2Config configDrcEn = new Sh2Config(true, true, true, true);
+    public static final Sh2Config configCacheEn = new Sh2Config(true, true, true, false);
+    public static final Sh2Config[] configList;
+    protected static Sh2Config config = configCacheEn;
 
     static {
         int parNumber = 4;
         int combinations = 1 << parNumber;
-        configList = new Sh2.Sh2Config[combinations];
+        configList = new Sh2Config[combinations];
         assert combinations < 0x100;
         int pn = parNumber;
         for (int i = 0; i < combinations; i++) {
             byte ib = (byte) i;
-            configList[i] = new Sh2.Sh2Config(S32xUtil.getBitFromByte(ib, pn - 1) > 0,
+            configList[i] = new Sh2Config(S32xUtil.getBitFromByte(ib, pn - 1) > 0,
                     S32xUtil.getBitFromByte(ib, pn - 2) > 0, S32xUtil.getBitFromByte(ib, pn - 3) > 0,
                     S32xUtil.getBitFromByte(ib, pn - 4) > 0);
         }
@@ -49,7 +50,7 @@ public class Sh2MultiTestBase {
 
     @BeforeEach
     public void before() {
-        Sh2.Sh2Config.reset(config);
+        Sh2Config.reset(config);
         lc = MarsRegTestUtil.createTestInstance(ROM_SIZE);
         rom = lc.memory.getMemoryDataCtx().rom;
         lc.s32XMMREG.aden = 1;
@@ -72,7 +73,8 @@ public class Sh2MultiTestBase {
         }
     }
 
-    protected void resetCacheConfig(Sh2.Sh2Config c) {
+    protected void
+    resetCacheConfig(Sh2Config c) {
         config = c;
         before();
         Sh2Helper.clear();

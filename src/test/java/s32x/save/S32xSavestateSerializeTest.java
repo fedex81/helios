@@ -13,7 +13,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import s32x.MarsRegTestUtil;
 import s32x.StaticBootstrapSupport;
 import s32x.savestate.Gs32xStateHandler;
-import s32x.sh2.Sh2;
+import s32x.sh2.Sh2Helper;
 import s32x.sh2.drc.Sh2Block;
 import s32x.util.MarsLauncherHelper;
 
@@ -87,7 +87,7 @@ public class S32xSavestateSerializeTest {
         checkFR(scw.sh2Ctx[1].fetchResult);
     }
 
-    private void checkFR(Sh2.FetchResult fr) {
+    private void checkFR(Sh2Helper.FetchResult fr) {
         Assertions.assertEquals(Sh2Block.INVALID_BLOCK, fr.block);
         Assertions.assertEquals(0, fr.pc);
         Assertions.assertEquals(0, fr.opcode);

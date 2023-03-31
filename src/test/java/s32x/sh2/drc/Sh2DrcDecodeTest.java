@@ -6,9 +6,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import s32x.bus.Sh2Bus;
-import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.Sh2MultiTestBase;
 import s32x.util.S32xUtil.CpuDeviceAccess;
 
@@ -87,13 +87,13 @@ public class Sh2DrcDecodeTest extends Sh2MultiTestBase {
         config = configCacheEn;
     }
 
-    protected static Stream<Sh2.Sh2Config> fileProvider() {
+    protected static Stream<Sh2Config> fileProvider() {
         return Arrays.stream(configList).filter(c -> c.prefetchEn && c.drcEn);
     }
 
     @ParameterizedTest
     @MethodSource("fileProvider")
-    public void testDrc(Sh2.Sh2Config c) {
+    public void testDrc(Sh2Config c) {
         System.out.println("Testing: " + c);
         Runnable r = () -> {
             resetCacheConfig(c);
@@ -107,7 +107,7 @@ public class Sh2DrcDecodeTest extends Sh2MultiTestBase {
 
     @ParameterizedTest
     @MethodSource("fileProvider")
-    public void testBlock(Sh2.Sh2Config c) {
+    public void testBlock(Sh2Config c) {
         System.out.println("Testing: " + c);
         resetCacheConfig(c);
         testBlockInternal(c, trace1, trace1Ranges);
@@ -135,7 +135,7 @@ public class Sh2DrcDecodeTest extends Sh2MultiTestBase {
         sh2.run(masterCtx);
     }
 
-    private void testBlockInternal(Sh2.Sh2Config c, int[] trace, Range<Integer>[] blockRanges) {
+    private void testBlockInternal(Sh2Config c, int[] trace, Range<Integer>[] blockRanges) {
         resetCacheConfig(c);
         setTrace(trace, masterCtx);
 

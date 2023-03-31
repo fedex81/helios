@@ -2,7 +2,6 @@ package s32x.sh2.device;
 
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import omegadrive.util.Util;
 import org.slf4j.Logger;
 import s32x.util.S32xUtil;
 
@@ -60,15 +59,16 @@ public class DivUnit implements S32xUtil.Sh2Device {
     @Override
     public int read(RegSpecSh2 regSpec, int reg, Size size) {
         if (verbose)
-            LOG.info("{} Read {} value: {} {}", cpu, regSpec.getName(), Util.th(S32xUtil.readBuffer(regs, reg, size)), size);
+            LOG.info("{} Read {} value: {} {}", cpu, regSpec.getName(), th(S32xUtil.readBuffer(regs, reg, size)), size);
         return S32xUtil.readBuffer(regs, reg, size);
     }
 
     //64/32 -> 32 only
+    @SuppressWarnings("NumericCastThatLosesPrecision")
     private void div64Dsp() {
         long dh = readBufferRegLong(regs, DIV_DVDNTH);
         long dl = readBufferRegLong(regs, DIV_DVDNTL);
-        long dvd = ((dh << 32) & 0xffffffff_ffffffffL) | (dl & 0xffffffffL);
+        long dvd = ((dh << 32)) | (dl & 0xffffffffL);
         int dvsr = readBufferRegLong(regs, DIV_DVSR);
         if (dvsr == 0) {
             handleOverflow(0, true, String.format(formatDivBy0, cpu, 64, dvd, dvsr));
@@ -79,7 +79,7 @@ public class DivUnit implements S32xUtil.Sh2Device {
         int rem = (int) (dvd - quot * dvsr);
         S32xUtil.writeBuffersLong(regs, DIV_DVDNTH, DIV_DVDNTUH, rem);
         if (verbose) LOG.info(String.format(formatDiv, cpu, 64, dvd, dvsr, quotL, quot, rem));
-        if ((long) quot != quotL) {
+        if (quot != quotL) {
             handleOverflow(quotL, false, String.format(formatOvf, cpu, 64, dvd, dvsr, quotL, quot, rem));
             if (verbose) checkTimings(64, DIV_OVF_CYCLES);
             return;
@@ -91,7 +91,7 @@ public class DivUnit implements S32xUtil.Sh2Device {
 
     //32/32 -> 32
     private void div32Dsp(int value) {
-        S32xUtil.writeBufferLong(regs, DIV_DVDNTH, (int) (value >> 31)); //sign extend MSB into DVDNTH
+        S32xUtil.writeBufferLong(regs, DIV_DVDNTH, value >> 31); //sign extend MSB into DVDNTH
         S32xUtil.writeBufferLong(regs, DIV_DVDNTL, value);
         int dvd = readBufferRegLong(regs, DIV_DVDNT);
         int dvsr = readBufferRegLong(regs, DIV_DVSR);
@@ -101,7 +101,7 @@ public class DivUnit implements S32xUtil.Sh2Device {
             return;
         }
         int quot = dvd / dvsr;
-        int rem = (int) (dvd - quot * dvsr);
+        int rem = (dvd - quot * dvsr);
         if (verbose) LOG.info(String.format(formatDiv, cpu, 32, dvd, dvsr, quot, quot, rem));
         S32xUtil.writeBuffersLong(regs, DIV_DVDNTH, DIV_DVDNTUH, rem);
         S32xUtil.writeBuffersLong(regs, DIV_DVDNT, DIV_DVDNTL, DIV_DVDNTUL, quot);
@@ -111,14 +111,14 @@ public class DivUnit implements S32xUtil.Sh2Device {
 
     private void checkTimings(int type, int ref) {
         assert frameCnt > 0;
-        long frameCnt = 0; //Md32x.systemClock.getFrameCounter();
-        int cycleCnt = 0; //Md32x.systemClock.getCycleCounter();
-        int diff = (int) ((cycleCnt - this.cycleCnt) * 3);
-        if (frameCnt == this.frameCnt && diff < ref) {
+        long nowFrameCnt = 0; //Md32x.systemClock.getFrameCounter();
+        int nowCycleCnt = 0; //Md32x.systemClock.getCycleCounter();
+        int diff = (int) ((nowCycleCnt - cycleCnt) * 3);
+        if (nowFrameCnt == frameCnt && diff < ref) {
             System.out.println("div" + type + "," + diff);
         }
-        this.frameCnt = frameCnt;
-        this.cycleCnt = cycleCnt;
+        frameCnt = nowFrameCnt;
+        cycleCnt = nowCycleCnt;
     }
 
     private void handleOverflow(long quot, boolean divBy0, String msg) {

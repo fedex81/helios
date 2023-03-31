@@ -128,7 +128,7 @@ public class SvpMapper implements RomMapper, SvpBus {
     }
 
     protected final int m68kSvpReadData(Svp_t svpCtx, int addressL, Size size) {
-        int address = (int) (addressL & MD_PC_MASK);
+        int address = addressL & MD_PC_MASK;
         if (address >= SVP_MAP_DRAM_START_ADDR_BYTE && address < SVP_MAP_DRAM_END_ADDR_BYTE) {
             //        LOG.debug("svp DRAM read: {}", th(addressWord));
             switch (size) {

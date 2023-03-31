@@ -109,7 +109,7 @@ public class I2cEeprom {
             e = new I2cEeprom();
             e.ctx.lineMap = entry.eeprom.getEepromLineMap();
             e.ctx.spec = entry.eeprom.getEepromType();
-            e.setSram(sram);
+            e.sram = sram;
             LOG.info("Init {}", entry.eeprom);
         }
         return e;

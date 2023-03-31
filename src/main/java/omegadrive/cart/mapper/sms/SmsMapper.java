@@ -139,7 +139,7 @@ public class SmsMapper {
 
         //This feature is not known to be used by any software.
         //Ys need this
-        private final boolean sramWriteEnable = true;
+        private static final boolean sramWriteEnable = true;
 
         private boolean sramSlot2Enable = false;
 

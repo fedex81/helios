@@ -21,6 +21,7 @@ import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
 import s32x.vdp.MarsVdp;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
@@ -44,6 +45,8 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
     private int bankSetShift;
 
     static class S32xBusContext implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 3705180248407931780L;
         public final byte[] writeableHint = new byte[4];
         public int bankSetValue;
     }
@@ -310,7 +313,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
     @Override
     public void loadContext(ByteBuffer buffer) {
         super.loadContext(buffer);
-        Serializable s = Util.deserializeObject(buffer.array(), 0, buffer.capacity());
+        Serializable s = Util.deserializeObject(buffer);
         assert s instanceof S32xBusContext;
         busContext = (S32xBusContext) s;
         bankSetShift = busContext.bankSetValue << 20;
@@ -323,7 +326,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
         sh2.reset(slaveCtx);
         masterCtx.devices.sh2MMREG.reset();
         slaveCtx.devices.sh2MMREG.reset();
-        getS32XMMREG().fm = 0;
+        s32XMMREG.fm = 0;
         Md32xRuntimeData.setAccessTypeExt(cpu);
     }
 }

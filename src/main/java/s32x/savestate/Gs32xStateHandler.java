@@ -9,11 +9,10 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 import s32x.StaticBootstrapSupport;
-import s32x.event.PollSysEventManager;
 import s32x.sh2.Sh2Context;
-import s32x.sh2.Sh2Helper;
 import s32x.sh2.cache.Sh2Cache;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
@@ -21,9 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import static omegadrive.savestate.StateUtil.extendBuffer;
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
+import static omegadrive.savestate.StateUtil.storeSerializedData;
 
 /**
  * Federico Berti
@@ -39,10 +36,12 @@ public class Gs32xStateHandler extends GshStateHandler {
     protected static final String END_32X_TOKEN = "END_GS32X";
     public static final String fileExtension32x = "gs32x";
 
-    private static final Map<String, Device> s32xDeviceSet = new WeakHashMap<String, Device>();
+    private static final Map<String, Device> s32xDeviceSet = new WeakHashMap<>();
     private static final Sh2ContextWrap wrap = new Sh2ContextWrap();
 
     static class S32xContainer implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 5388883919206790206L;
         public Map<String, byte[]> dataMap = new LinkedHashMap<>();
     }
 
@@ -90,9 +89,11 @@ public class Gs32xStateHandler extends GshStateHandler {
     }
 
     public static class Sh2ContextWrap implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -208048769448048274L;
+
         public Sh2Context[] sh2Ctx = new Sh2Context[2];
         public byte[][] sh2CacheCtx = new byte[2][];
-
         public transient Sh2Cache[] sh2Cache = new Sh2Cache[2];
     }
 
@@ -138,7 +139,7 @@ public class Gs32xStateHandler extends GshStateHandler {
                 assert s instanceof S32xContainer;
                 S32xContainer container = (S32xContainer) s;
                 byte[] data = container.dataMap.get(Sh2ContextWrap.class.getSimpleName());
-                s = Util.deserializeObject(data, 0, data.length);
+                s = Util.deserializeObject(data);
                 assert s instanceof Sh2ContextWrap;
                 Sh2ContextWrap w = (Sh2ContextWrap) s;
                 for (int i = 0; i < 2; i++) {
@@ -150,36 +151,11 @@ public class Gs32xStateHandler extends GshStateHandler {
                     d.loadContext(ByteBuffer.wrap(data));
                 }
             }
-            PollSysEventManager.instance.resetPoller(MASTER);
-            PollSysEventManager.instance.resetPoller(SLAVE);
-            Sh2Helper.clear();
-            StaticBootstrapSupport.setNextCycleExt(MASTER, 0);
-            StaticBootstrapSupport.setNextCycleExt(SLAVE, 0);
+            StaticBootstrapSupport.afterStateLoad();
         }
     }
 
     public static Sh2ContextWrap getSh2ContextWrap() {
         return wrap;
     }
-
-    @Deprecated
-    public static ByteBuffer storeSerializedData(String magicWordStart, String magicWordEnd, Serializable object, ByteBuffer buffer) {
-        int prevPos = buffer.position();
-        int len = magicWordStart.length() + magicWordEnd.length();
-        byte[] data = Util.serializeObject(object);
-        buffer = extendBuffer(buffer, data.length + len);
-
-        try {
-            buffer.put(magicWordStart.getBytes());
-            buffer.put(data);
-            buffer.put(magicWordEnd.getBytes());
-        } catch (Exception var10) {
-            LOG.error("Unable to save {} data", magicWordStart);
-        } finally {
-            buffer.position(prevPos);
-        }
-
-        return buffer;
-    }
-
 }

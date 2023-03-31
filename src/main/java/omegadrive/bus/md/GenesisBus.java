@@ -271,7 +271,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return size.getMax();
         } else {
             //reads rom at 0x40_0000 MegaCD mirror
-            return Util.readDataMask(rom, size, address, (int) DEFAULT_ROM_END_ADDRESS);
+            return Util.readDataMask(rom, size, address, DEFAULT_ROM_END_ADDRESS);
         }
     }
 
@@ -405,7 +405,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             }
             if (verbose) LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
-            LOG.warn("Unexpected mapper set, address: {}, data: {}", th(addressL), th(data), size);
+            LOG.warn("Unexpected mapper set, address: {}, data: {} {}", th(addressL), th(data), size);
         }
     }
 

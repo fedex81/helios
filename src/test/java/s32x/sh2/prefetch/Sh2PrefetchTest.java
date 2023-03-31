@@ -8,9 +8,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import s32x.sh2.Sh2;
-import s32x.sh2.Sh2.Sh2Config;
 import s32x.sh2.Sh2Helper;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.drc.Sh2Block;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil.CpuDeviceAccess;
@@ -437,7 +436,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
     //NOTE: this can trigger a cache fill
     private void checkFetch(CpuDeviceAccess cpu, int addr, int val) {
         Md32xRuntimeData.setAccessTypeExt(cpu);
-        Sh2.FetchResult ft = doCacheFetch(cpu, addr);
+        Sh2Helper.FetchResult ft = doCacheFetch(cpu, addr);
         int opcode = ft.opcode;
         Assertions.assertEquals(val, opcode, cpu + "," + th(addr) + ",\n" + ft.block
                 + "," + ft.block.isValid());

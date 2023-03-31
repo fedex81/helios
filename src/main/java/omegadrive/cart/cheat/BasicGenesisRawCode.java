@@ -93,7 +93,7 @@ public class BasicGenesisRawCode {
      * @return A String representation.
      */
     public String toString() {
-        return "GenesisRawCode[" + this.toHexString(this.getValue(), 4) +
-                ":" + this.toHexString(this.getAddress(), 6) + "]";
+        return "GenesisRawCode[" + this.toHexString(this.value, 4) +
+                ":" + this.toHexString(this.address, 6) + "]";
     }
 }

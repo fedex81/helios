@@ -85,7 +85,7 @@ public class Util {
     }
 
     private static void uncaughtException(Thread t, Throwable e) {
-        LOG.error("uncaughtException fot thread: " + t.getName(), e);
+        LOG.error("uncaughtException fot thread: {}", t.getName(), e);
         e.printStackTrace();
     }
 
@@ -116,7 +116,7 @@ public class Util {
             if (verbose) {
                 LOG.warn("Error on barrier", e);
             } else {
-                LOG.info("Leaving barrier: " + e.getClass().getName());
+                LOG.info("Leaving barrier: {}", e.getClass().getName());
             }
             barrier.reset();
         }
@@ -340,6 +340,10 @@ public class Util {
             LOG.error("Unable to serialize object: {}", obj.getClass().getSimpleName());
         }
         return res;
+    }
+
+    public static Serializable deserializeObject(ByteBuffer data) {
+        return deserializeObject(data.array(), 0, data.capacity());
     }
 
     public static Serializable deserializeObject(byte[] data) {

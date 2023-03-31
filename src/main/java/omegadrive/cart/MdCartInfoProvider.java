@@ -171,7 +171,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     protected void init() {
         this.initMemoryLayout(memoryProvider);
         super.init();
-        entry = MdLoader.getEntry(getSerial());
+        entry = MdLoader.getEntry(serial);
     }
 
     @Override

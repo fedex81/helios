@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions;
 import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.util.S32xUtil;
 
 import java.io.File;
@@ -82,7 +83,7 @@ public class DrcUtil {
 
     public static Collection<Sh2Block> getPrefetchBlocksAt(S32xUtil.CpuDeviceAccess cpu, int address) {
         Set<Sh2Block> l = new HashSet<>();
-        if (Sh2.Sh2Config.get().drcEn) {
+        if (Sh2Config.get().drcEn) {
             for (int i = address - SH2_DRC_MAX_BLOCK_LEN_BYTES; i <= address; i += 2) {
                 Sh2Block b = Sh2Helper.getOrDefault(i, cpu).block;
                 if (b != Sh2Block.INVALID_BLOCK) {
@@ -94,7 +95,7 @@ public class DrcUtil {
                 }
             }
         } else {
-            assert Sh2.Sh2Config.get().prefetchEn;
+            assert Sh2Config.get().prefetchEn;
             if (prefetchContexts[cpu.ordinal()].prefetchPc == address) {
                 Sh2Block block = new Sh2Block(address, cpu);
                 block.start = address;

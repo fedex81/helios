@@ -14,6 +14,7 @@ import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.device.DmaC;
 import s32x.sh2.device.IntControl;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
@@ -80,6 +81,8 @@ public class Pwm implements StepDevice {
     private final PwmChannelMap fifoMapRight = new PwmChannelMap();
 
     static class PwmContext implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -4421577765971810509L;
         private final Fifo<Integer> fifoLeft = Fifo.createIntegerFixedSizeFifo(PWM_FIFO_SIZE);
         private final Fifo<Integer> fifoRight = Fifo.createIntegerFixedSizeFifo(PWM_FIFO_SIZE);
         private final PwmChannelSetup[] channelMap = {OFF, OFF};
@@ -401,7 +404,7 @@ public class Pwm implements StepDevice {
     @Override
     public void loadContext(ByteBuffer buffer) {
         StepDevice.super.loadContext(buffer);
-        Serializable s = Util.deserializeObject(buffer.array(), 0, buffer.capacity());
+        Serializable s = Util.deserializeObject(buffer);
         assert s instanceof PwmContext;
         ctx = (PwmContext) s;
         updateChannelMap();

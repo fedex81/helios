@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.J2CoreTest;
 import s32x.bus.Sh2Bus;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
 
@@ -27,7 +28,7 @@ public class MovDelayBranchTest {
 
     @BeforeEach
     public void before() {
-        Sh2.Sh2Config.reset(Sh2.Sh2Config.DEFAULT_CONFIG);
+        Sh2Config.reset(Sh2Config.DEFAULT_CONFIG);
         Sh2Bus memory = J2CoreTest.getMemory(rom);
         sh2 = J2CoreTest.getSh2Interpreter(memory, sh2Debug);
         ctx = J2CoreTest.createContext(S32xUtil.CpuDeviceAccess.MASTER, memory);
@@ -37,7 +38,7 @@ public class MovDelayBranchTest {
         Sh2Context.burstCycles = 1;
         sh2.reset(ctx);
         System.out.println("Reset, PC: " + ctx.PC + ", SP: " + ctx.registers[15]);
-        Assertions.assertFalse(Sh2.Sh2Config.get().drcEn);
+        Assertions.assertFalse(Sh2Config.get().drcEn);
     }
 
     /**

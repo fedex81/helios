@@ -155,10 +155,10 @@ public final class BlipBuffer implements BlipBufferIntf {
 
 // internal
 
-    final int timeBits = 16;
-    final int phaseBits = (muchFaster ? 8 : 5);
+    static final int timeBits = 16;
+    static final int phaseBits = (muchFaster ? 8 : 5);
     final int phaseCount = 1 << phaseBits;
-    final int halfWidth = 8;
+    static final int halfWidth = 8;
     final int stepWidth = halfWidth * 2;
 
     int factor;

@@ -18,6 +18,7 @@ import s32x.event.PollSysEventManager;
 import s32x.pwm.Pwm;
 import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.drc.Ow2DrcOptimizer;
 import s32x.util.MarsLauncherHelper;
 import s32x.util.MarsLauncherHelper.Sh2LaunchContext;
@@ -54,7 +55,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     private static final double SH2_CYCLE_DIV = 1 / Double.parseDouble(System.getProperty("helios.32x.sh2.cycle.div", "3.0"));
     private static final int CYCLE_TABLE_LEN_MASK = 0xFF;
     private final static int[] sh2CycleTable = new int[CYCLE_TABLE_LEN_MASK + 1];
-    private final static Sh2.Sh2Config sh2Config;
+    private final static Sh2Config sh2Config;
 
     public static final int SH2_SLEEP_VALUE = -10000;
 
@@ -67,7 +68,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         boolean drcEn = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.drc", "true"));
         boolean pollEn = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.poll.detect", "true"));
         boolean ignoreDelays = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.ignore.delays", "false"));
-        sh2Config = new Sh2.Sh2Config(prefEn, drcEn, pollEn, ignoreDelays);
+        sh2Config = new Sh2Config(prefEn, drcEn, pollEn, ignoreDelays);
 
         Pwm.PWM_USE_BLIP = Boolean.parseBoolean(System.getProperty("helios.32x.pwm.use.blip", "false"));
         SH2_DEBUG_DRC = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.drc.debug", "false"));

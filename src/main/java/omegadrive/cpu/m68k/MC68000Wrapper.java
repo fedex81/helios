@@ -174,7 +174,7 @@ public class MC68000Wrapper implements M68kProvider {
             //interrupt processing time, the Ack happens after ~10cycles, we make it happen immediately
             instCycles += 44;
             busProvider.ackInterrupt68k(vector - EXCEPTION_OFFSET);
-            setStop(false);
+            stop = false;
         }
     }
 }

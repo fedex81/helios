@@ -204,21 +204,6 @@ public class Ow2DrcOptimizer {
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            BlockPollData that = (BlockPollData) o;
-            return memLoadPos == that.memLoadPos && memLoadOpcode == that.memLoadOpcode &&
-                    cmpPos == that.cmpPos && cmpOpcode == that.cmpOpcode &&
-                    branchPos == that.branchPos && branchOpcode == that.branchOpcode && branchPc == that.branchPc && branchDestPc == that.branchDestPc && pc == that.pc && memLoadTarget == that.memLoadTarget && isPoller == that.isPoller && memLoadTargetSize == that.memLoadTargetSize && com.google.common.base.Objects.equal(words, that.words) && com.google.common.base.Objects.equal(ctx, that.ctx);
-        }
-
-        @Override
-        public int hashCode() {
-            return com.google.common.base.Objects.hashCode(memLoadPos, memLoadOpcode, cmpPos, cmpOpcode, branchPos, branchOpcode, branchPc, branchDestPc, pc, memLoadTarget, memLoadTargetSize, words, ctx, isPoller);
-        }
-
-        @Override
         public String toString() {
             return new StringJoiner(", ", BlockPollData.class.getSimpleName() + "[", "]")
                     .add("memLoadPos=" + th(memLoadPos))

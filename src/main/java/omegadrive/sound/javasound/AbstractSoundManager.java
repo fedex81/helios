@@ -44,7 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public abstract class AbstractSoundManager implements SoundProvider {
-    private static final Logger LOG = LogHelper.getLogger(JavaSoundManager.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(AbstractSoundManager.class.getSimpleName());
 
     protected static final SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
     private static final int OUTPUT_SAMPLE_SIZE = 16;
@@ -90,7 +90,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         executorService = Executors.newSingleThreadExecutor
                 (new PriorityThreadFactory(Thread.MAX_PRIORITY, AbstractSoundManager.class.getSimpleName()));
         init();
-        LOG.info("Output audioFormat: " + audioFormat + ", bufferSize: " + fmSize);
+        LOG.info("Output audioFormat: {}, bufferSize: {}", audioFormat, fmSize);
     }
 
     protected void updateSoundDeviceSetup() {

@@ -11,7 +11,8 @@ import s32x.dict.S32xDict;
 import s32x.dict.S32xMemAccessDelay;
 import s32x.event.PollSysEventManager;
 import s32x.savestate.Gs32xStateHandler;
-import s32x.sh2.Sh2;
+import s32x.sh2.Sh2Helper;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.sh2.cache.Sh2CacheImpl;
 import s32x.sh2.prefetch.Sh2Prefetch;
@@ -48,7 +49,7 @@ public final class Sh2BusImpl implements Sh2Bus {
     private final S32XMMREG s32XMMREG;
     private final MdRomAccess mdBus;
     private final MemoryDataCtx memoryDataCtx;
-    private final Sh2.Sh2Config config;
+    private final Sh2Config config;
 
     private final SdramSyncTester sdramSyncTester;
 
@@ -61,7 +62,7 @@ public final class Sh2BusImpl implements Sh2Bus {
         bios[S32xUtil.CpuDeviceAccess.SLAVE.ordinal()] = biosHolder.getBiosData(S32xUtil.CpuDeviceAccess.SLAVE);
         memoryDataCtx.bios = bios;
         memoryDataCtx.sdram = sdram = ByteBuffer.allocate(S32xDict.SH2_SDRAM_SIZE);
-        Sh2.Sh2Config sh2Config = Sh2.Sh2Config.get();
+        Sh2Config sh2Config = Sh2Config.get();
         cache[S32xUtil.CpuDeviceAccess.MASTER.ordinal()] = new Sh2CacheImpl(S32xUtil.CpuDeviceAccess.MASTER, this);
         cache[S32xUtil.CpuDeviceAccess.SLAVE.ordinal()] = new Sh2CacheImpl(S32xUtil.CpuDeviceAccess.SLAVE, this);
         sh2MMREGS[S32xUtil.CpuDeviceAccess.MASTER.ordinal()] = new Sh2MMREG(S32xUtil.CpuDeviceAccess.MASTER, cache[S32xUtil.CpuDeviceAccess.MASTER.ordinal()]);
@@ -70,7 +71,7 @@ public final class Sh2BusImpl implements Sh2Bus {
         memoryDataCtx.romSize = romSize = rom.capacity();
         memoryDataCtx.romMask = romMask = Util.getRomMask(romSize);
         prefetch = sh2Config.drcEn ? new Sh2Prefetch(this, cache, drcCtx) : new Sh2PrefetchSimple(this, cache);
-        config = Sh2.Sh2Config.get();
+        config = Sh2Config.get();
         sdramSyncTester = SDRAM_SYNC_TESTER ? new SdramSyncTester(sdram) : SdramSyncTester.NO_OP;
         Gs32xStateHandler.addDevice(this);
         LOG.info("Rom size: {}, mask: {}", th(romSize), th(romMask));
@@ -220,12 +221,12 @@ public final class Sh2BusImpl implements Sh2Bus {
         prefetch.invalidateCachePrefetch(ctx);
     }
 
-    public void fetch(Sh2.FetchResult fetchResult, S32xUtil.CpuDeviceAccess cpu) {
+    public void fetch(Sh2Helper.FetchResult fetchResult, S32xUtil.CpuDeviceAccess cpu) {
         prefetch.fetch(fetchResult, cpu);
     }
 
     @Override
-    public int fetchDelaySlot(int pc, Sh2.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    public int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
         return prefetch.fetchDelaySlot(pc, ft, cpu);
     }
 

@@ -65,7 +65,7 @@ public class SysUtil {
     public static SystemProvider createSystemProvider(Path file, DisplayWindow display, boolean debugPerf) {
         String lowerCaseName = handleCompressedFiles(file, file.toString().toLowerCase());
         if (lowerCaseName == null) {
-            LOG.error("Unable to load file: " + (file != null ? file.toAbsolutePath() : "null"));
+            LOG.error("Unable to load file: {}", file != null ? file.toAbsolutePath() : "null");
             return null;
         }
         SystemProvider systemProvider = null;
@@ -105,7 +105,7 @@ public class SysUtil {
 
 
     public static Map<SoundDevice.SoundDeviceType, SoundDevice> getSoundDevices(SystemType systemType, Region region) {
-        Map<SoundDevice.SoundDeviceType, SoundDevice> m = new HashMap<>();
+        Map<SoundDevice.SoundDeviceType, SoundDevice> m = new EnumMap<>(SoundDevice.SoundDeviceType.class);
         m.put(PSG, getPsgProvider(systemType, region));
         m.put(FM, getFmProvider(systemType, region));
         m.put(PWM, getPwmProvider(systemType, region));

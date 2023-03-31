@@ -4,7 +4,7 @@ import omegadrive.Device;
 import omegadrive.memory.ReadableByteMemory;
 import omegadrive.util.Size;
 import s32x.Sh2MMREG;
-import s32x.sh2.Sh2;
+import s32x.sh2.Sh2Helper;
 import s32x.sh2.cache.Sh2Cache.CacheInvalidateContext;
 import s32x.sh2.prefetch.Sh2Prefetcher;
 import s32x.util.BiosHolder;
@@ -40,11 +40,11 @@ public interface Sh2Bus extends Sh2Prefetcher, ReadableByteMemory, Device {
         return EMPTY;
     }
 
-    default void fetch(Sh2.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    default void fetch(Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
         ft.opcode = read16(ft.pc) & 0xFFFF;
     }
 
-    default int fetchDelaySlot(int pc, Sh2.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    default int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
         return read16(pc) & 0xFFFF;
     }
 

@@ -9,8 +9,10 @@ import s32x.bus.Sh2Bus;
 import s32x.dict.S32xDict;
 import s32x.dict.S32xMemAccessDelay;
 import s32x.event.PollSysEventManager;
-import s32x.sh2.*;
-import s32x.sh2.Sh2Helper.Sh2PcInfoWrapper;
+import s32x.sh2.Sh2;
+import s32x.sh2.Sh2Context;
+import s32x.sh2.Sh2Debug;
+import s32x.sh2.Sh2Instructions;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.sh2.drc.Ow2DrcOptimizer;
 import s32x.sh2.drc.Sh2Block;
@@ -24,6 +26,7 @@ import java.util.Arrays;
 
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
+import static s32x.sh2.Sh2Helper.*;
 import static s32x.sh2.Sh2Helper.Sh2PcInfoWrapper.HASH_CODE_MASK;
 
 /**
@@ -46,7 +49,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
     private final Sh2Bus memory;
     private final Sh2Cache[] cache;
     private final Sh2DrcContext[] drcContext;
-    private final Sh2.Sh2Config sh2Config;
+    private final Sh2Config sh2Config;
     private final int[] opcodeWords;
 
     public final int romSize, romMask;
@@ -85,7 +88,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         rom = mdc.rom;
         bios = mdc.bios;
         opcodeWords = new int[Sh2Block.MAX_INST_LEN];
-        sh2Config = Sh2.Sh2Config.get();
+        sh2Config = Sh2Config.get();
         baseBlock = new Sh2Block(0, CpuDeviceAccess.MASTER);
     }
 
@@ -105,7 +108,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
             assert prev == null;
         }
         if (verbose) LOG.info("{} prefetch block at pc: {}, len: {}\n{}", cpu,
-                th(pc), block.prefetchLenWords, Sh2Helper.toListOfInst(block));
+                th(pc), block.prefetchLenWords, toListOfInst(block));
         return block;
     }
 
@@ -126,7 +129,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
                 entry.nextBlock = Sh2Block.INVALID_BLOCK;
                 if (verbose && entry.isPollingBlock()) {
                     LOG.info("{} recycle block at pc: {}, len: {}\n{}", piw.block.getCpu(),
-                            th(piw.block.prefetchPc), entry.prefetchLenWords, Sh2Helper.toListOfInst(entry));
+                            th(piw.block.prefetchPc), entry.prefetchLenWords, toListOfInst(entry));
                     LOG.info("{}\n{}\n{}", th(piw.block.prefetchPc), entry, entry.poller);
                 }
 //                    assert !rec.isPollingBlock() : th(pc) + "\n" + rec + "\n" + rec.poller;
@@ -253,12 +256,12 @@ public class Sh2Prefetch implements Sh2Prefetcher {
     }
 
 
-    private void checkBlock(Sh2.FetchResult fetchResult, CpuDeviceAccess cpu) {
+    private void checkBlock(FetchResult fetchResult, CpuDeviceAccess cpu) {
         final int pc = fetchResult.pc;
-        Sh2PcInfoWrapper piw = Sh2Helper.get(pc, cpu);
+        Sh2PcInfoWrapper piw = get(pc, cpu);
         assert piw != null;
-        if (piw == Sh2Helper.SH2_NOT_VISITED) {
-            piw = Sh2Helper.getOrCreate(pc, cpu);
+        if (piw == SH2_NOT_VISITED) {
+            piw = getOrCreate(pc, cpu);
         }
         if (piw.block != Sh2Block.INVALID_BLOCK && piw.block.isValid()) {
             assert fetchResult.pc == piw.block.prefetchPc : th(fetchResult.pc);
@@ -271,7 +274,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         Sh2Block prev = piw.block;
         assert prev != null;
         assert block != null && block.isValid();
-        assert Sh2Helper.SH2_NOT_VISITED.block == Sh2Block.INVALID_BLOCK : cpu + "," + th(pc) + "," + Sh2Helper.SH2_NOT_VISITED.block;
+        assert SH2_NOT_VISITED.block == Sh2Block.INVALID_BLOCK : cpu + "," + th(pc) + "," + SH2_NOT_VISITED.block;
         if (prev != Sh2Block.INVALID_BLOCK && !block.equals(prev)) {
             LOG.warn("{} New block generated at PC: {}\nPrev: {}\nNew : {}", cpu, th(pc), prev, block);
         }
@@ -280,7 +283,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
     }
 
     @Override
-    public void fetch(Sh2.FetchResult fetchResult, CpuDeviceAccess cpu) {
+    public void fetch(FetchResult fetchResult, CpuDeviceAccess cpu) {
         final int pc = fetchResult.pc;
         if (!sh2Config.prefetchEn) {
             fetchResult.opcode = memory.read(pc, Size.WORD);
@@ -304,7 +307,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
     }
 
     @Override
-    public int fetchDelaySlot(int pc, Sh2.FetchResult ft, CpuDeviceAccess cpu) {
+    public int fetchDelaySlot(int pc, FetchResult ft, CpuDeviceAccess cpu) {
         if (!sh2Config.prefetchEn) {
             return memory.read(pc, Size.WORD);
         }
@@ -389,9 +392,9 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         final int addrEven = (addr & ~1);
         //find closest block, long requires starting at +2
         for (int i = addrEven + 2; i > addrEven - Sh2Block.SH2_DRC_MAX_BLOCK_LEN_BYTES; i -= 2) {
-            Sh2PcInfoWrapper piw = Sh2Helper.getOrDefault(i, blockOwner);
+            Sh2PcInfoWrapper piw = getOrDefault(i, blockOwner);
             assert piw != null;
-            if (piw == Sh2Helper.SH2_NOT_VISITED || !piw.block.isValid()) {
+            if (piw == SH2_NOT_VISITED || !piw.block.isValid()) {
                 continue;
             }
             final Sh2Block b = piw.block;
@@ -409,19 +412,19 @@ public class Sh2Prefetch implements Sh2Prefetcher {
 
     private void invalidateMemoryLocationForCpu(CpuDeviceAccess cpu, Sh2PcInfoWrapper piw, int addr, int i, int val) {
         final boolean isCpuCacheOff = cache[cpu.ordinal()].getCacheContext().cacheEn == 0;
-        if (piw != Sh2Helper.SH2_NOT_VISITED && piw.block.isValid()) {
+        if (piw != SH2_NOT_VISITED && piw.block.isValid()) {
             invalidateWrapper(addr, piw, false, val);
         }
         if (isCpuCacheOff) {
-            piw = Sh2Helper.getOrDefault(i & S32xDict.SH2_CACHE_THROUGH_MASK, cpu);
-            if (piw != Sh2Helper.SH2_NOT_VISITED && piw.block.isValid()) {
+            piw = getOrDefault(i & S32xDict.SH2_CACHE_THROUGH_MASK, cpu);
+            if (piw != SH2_NOT_VISITED && piw.block.isValid()) {
                 invalidateWrapper(addr, piw, false, val);
             }
         }
     }
 
     private void invalidateMemoryLocationForCpu(CpuDeviceAccess cpu, int addr, int i, int val) {
-        invalidateMemoryLocationForCpu(cpu, Sh2Helper.getOrDefault(i, cpu), addr, i, val);
+        invalidateMemoryLocationForCpu(cpu, getOrDefault(i, cpu), addr, i, val);
     }
 
     static final int RANGE_MASK = 0xFFF_FFFF;
@@ -439,7 +442,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
     }
 
     private void invalidateWrapper(final int addr, final Sh2PcInfoWrapper pcInfoWrapper, final boolean cacheOnly, final int val) {
-        assert pcInfoWrapper != Sh2Helper.SH2_NOT_VISITED;
+        assert pcInfoWrapper != SH2_NOT_VISITED;
         if (cacheOnly && !pcInfoWrapper.block.isCacheFetch()) {
             return;
         }
@@ -491,9 +494,9 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         }
         final int addrEven = end;
         for (int i = addrEven; i > addr - Sh2Block.SH2_DRC_MAX_BLOCK_LEN_BYTES; i -= 2) {
-            Sh2PcInfoWrapper piw = Sh2Helper.getOrDefault(i, ctx.cpu);
+            Sh2PcInfoWrapper piw = getOrDefault(i, ctx.cpu);
             assert piw != null;
-            if (piw == Sh2Helper.SH2_NOT_VISITED || !piw.block.isValid()) {
+            if (piw == SH2_NOT_VISITED || !piw.block.isValid()) {
                 continue;
             }
             invalidateWrapper(i, piw, true, -1);

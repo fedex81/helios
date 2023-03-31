@@ -40,7 +40,7 @@ public class RegAccessLogger {
         String s = Md32xRuntimeData.getAccessTypeExt() + "," + (read ? "R," : "W,") + regSpec + "," + th(address) + "," + size;
         Integer v = log.get(s);
         if (v == null || v != val) {
-            LOG.info(s + "," + th(val));
+            LOG.info("{},{}", s, th(val));
             log.put(s, val);
         }
     }
@@ -57,11 +57,7 @@ public class RegAccessLogger {
             }
             return;
         }
-        Set<String> set = logUniq.get(regSpec);
-        if (set == null) {
-            set = new HashSet<>();
-            logUniq.put(regSpec, set);
-        }
+        Set<String> set = logUniq.computeIfAbsent(regSpec, k -> new HashSet<>());
         String str = th(address) + "," + th(val) + "," + size;
         if (set.add(str)) {
             System.out.println(regSpec + ":" + str);

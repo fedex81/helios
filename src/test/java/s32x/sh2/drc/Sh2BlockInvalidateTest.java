@@ -8,9 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import s32x.bus.Sh2Bus;
-import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.Sh2MultiTestBase;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
@@ -40,13 +40,13 @@ public class Sh2BlockInvalidateTest extends Sh2MultiTestBase {
         config = configCacheEn;
     }
 
-    protected static Stream<Sh2.Sh2Config> fileProvider() {
+    protected static Stream<Sh2Config> fileProvider() {
         return Arrays.stream(configList).filter(c -> c.prefetchEn && c.drcEn);//.limit(1);
     }
 
     @ParameterizedTest
     @MethodSource("fileProvider")
-    public void testDrc(Sh2.Sh2Config c) {
+    public void testDrc(Sh2Config c) {
         System.out.println("Testing: " + c);
         resetCacheConfig(c);
         testDrcTrace(Sh2DrcDecodeTest.trace1, Sh2DrcDecodeTest.trace1Ranges);
@@ -58,7 +58,7 @@ public class Sh2BlockInvalidateTest extends Sh2MultiTestBase {
 
     @ParameterizedTest
     @MethodSource("fileProvider")
-    public void testInstructionRewrite(Sh2.Sh2Config c) {
+    public void testInstructionRewrite(Sh2Config c) {
         Assumptions.assumeFalse(RUNNING_IN_GITHUB);
         resetCacheConfig(c);
         testAfterBurner(c);
@@ -77,7 +77,7 @@ public class Sh2BlockInvalidateTest extends Sh2MultiTestBase {
      * <p>
      * TODO test cache disabled, test both wt and cache blocks
      */
-    private void testAfterBurner(Sh2.Sh2Config c) {
+    private void testAfterBurner(Sh2Config c) {
         int[] trace1 = {0x339c, 0xe420, 0xbfa5, 0x9};
         int[] trace2 = {0x2020, 0xa054, 0x9};
 

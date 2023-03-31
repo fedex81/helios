@@ -7,10 +7,10 @@ import s32x.dict.S32xDict;
 import s32x.sh2.drc.Sh2Block;
 import s32x.util.S32xUtil.CpuDeviceAccess;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static omegadrive.util.Util.th;
 import static s32x.sh2.Sh2Debug.createContext;
@@ -227,5 +227,74 @@ public class Sh2Helper {
         sb.append(String.format("PR : %08x\t", ctx.PR));
         sb.append("\n");
         return sb.toString();
+    }
+
+    public static class Sh2Config {
+        public final static Sh2Config DEFAULT_CONFIG = new Sh2Config();
+        private static final AtomicReference<Sh2Config> instance = new AtomicReference<>(DEFAULT_CONFIG);
+        public final boolean prefetchEn, drcEn, pollDetectEn, ignoreDelays, tasQuirk;
+
+        private Sh2Config() {
+            tasQuirk = true;
+            prefetchEn = drcEn = pollDetectEn = ignoreDelays = false;
+            LOG.info("Default config: {}", this);
+        }
+
+        public Sh2Config(boolean prefetchEn, boolean drcEn, boolean pollDetectEn, boolean ignoreDelays) {
+            this(prefetchEn, drcEn, pollDetectEn, ignoreDelays, 1);
+        }
+
+
+        public Sh2Config(boolean prefetchEn, boolean drcEn, boolean pollDetectEn, boolean ignoreDelays, int tasQuirk) {
+            this.prefetchEn = prefetchEn;
+            this.drcEn = drcEn;
+            this.pollDetectEn = pollDetectEn;
+            this.ignoreDelays = ignoreDelays;
+            this.tasQuirk = tasQuirk > 0;
+            if (instance.compareAndSet(DEFAULT_CONFIG, this)) {
+                LOG.info("Using config: {}", this);
+            } else {
+                LOG.error("Ignoring config: {}, current: {}", this, instance);
+            }
+        }
+
+        public static Sh2Config get() {
+            return instance.get();
+        }
+
+        //force config, test only
+        public static void reset(Sh2Config config) {
+            instance.set(config);
+            LOG.warn("Overriding config: {}", config);
+        }
+
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", Sh2Config.class.getSimpleName() + "[", "]")
+                    .add("prefetchEn=" + prefetchEn)
+                    .add("drcEn=" + drcEn)
+                    .add("pollDetectEn=" + pollDetectEn)
+                    .add("ignoreDelays=" + ignoreDelays)
+                    .toString();
+        }
+    }
+
+    public static class FetchResult implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 6381334821051653354L;
+
+        public int pc, opcode;
+        public transient Sh2Block block;
+        //TODO
+//        public Sh2Helper.Sh2PcInfoWrapper piw = Sh2Helper.SH2_NOT_VISITED;
+
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", FetchResult.class.getSimpleName() + "[", "]")
+                    .add("pc=" + pc)
+                    .add("opcode=" + opcode)
+                    .add("block=" + block)
+                    .toString();
+        }
     }
 }

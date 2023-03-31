@@ -19,6 +19,7 @@ import s32x.vdp.MarsVdp;
 import s32x.vdp.MarsVdp.MarsVdpContext;
 import s32x.vdp.MarsVdpImpl;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
@@ -72,6 +73,8 @@ public class S32XMMREG implements Device {
     private int deviceAccessType;
 
     private static class S32XMMREGContext implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 8103806630860480125L;
         private int cart = CART_NOT_INSERTED;
         //0 = md access, 1 = sh2 access
         public int fm = 0;
@@ -440,7 +443,7 @@ public class S32XMMREG implements Device {
     @Override
     public void loadContext(ByteBuffer buffer) {
         Device.super.loadContext(buffer);
-        Serializable s = Util.deserializeObject(buffer.array(), 0, buffer.capacity());
+        Serializable s = Util.deserializeObject(buffer);
         assert s instanceof S32XMMREGContext;
         ctx = (S32XMMREGContext) s;
         regContext.sysRegsMd.rewind().put(ctx.sysRegsMd).rewind();

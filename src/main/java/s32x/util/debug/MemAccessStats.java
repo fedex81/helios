@@ -54,8 +54,8 @@ public class MemAccessStats {
                     }
                 }
             }
-            LOG.info(th(cnt) + "\n" + mapToStr.apply(rm));
-            LOG.info(th(cnt) + "\n" + mapToStr.apply(wm));
+            LOG.info("{}\n{}", th(cnt), mapToStr.apply(rm));
+            LOG.info("{}\n{}", th(cnt), mapToStr.apply(wm));
         }
     }
 

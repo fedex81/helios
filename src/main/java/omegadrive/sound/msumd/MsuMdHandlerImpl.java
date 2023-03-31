@@ -99,7 +99,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                     LOG.warn("Unable to parse loop point for pos #{}: {}", index, str);
                 }
             }
-            if (verbose) LOG.info("CueFile has loop info for pos #{}: " + str, index);
+            if (verbose) LOG.info("CueFile has loop info for pos #{}: {}", index, str);
         }
         return h;
     }
@@ -127,7 +127,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         long binLen = 0;
         try {
             if ((binLen = binFile.length()) == 0) {
-                throw new Exception("Zero length file: " + binFile);
+                throw new Exception("Zero length file: " + romPath);
             }
         } catch (Exception e) {
             LOG.error("Disabling MSU-MD handling, unable to find BIN file");
@@ -213,7 +213,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                     return handleFirstRead();
                 }
                 MCD_STATE m = busy ? MCD_STATE.CMD_BUSY : MCD_STATE.READY;
-                if (verbose) LOG.info("Read MCD_STATUS: {}, busy: " + busy, m);
+                if (verbose) LOG.info("Read MCD_STATUS: {}, busy: {}", m, busy);
                 return m.ordinal();
             case CLOCK_ADDR:
                 if (verbose) LOG.info("Read CLOCK_ADDR: {}", clock);
@@ -248,11 +248,11 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         switch (address) {
             case MCD_GATE_ARRAY_START:
                 if (verbose) LOG.info("Read MCD_GATE_ARRAY_START: {}", 0xFF);
-                return (int) size.getMask(); //ignore
+                return size.getMask(); //ignore
             default:
                 LOG.warn("Unexpected MegaCD address range read at: {}, {}",
                         th(address), size);
-                return (int) size.getMask();
+                return size.getMask();
         }
     }
 
@@ -267,8 +267,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             } else {
                 commandArg.command = MsuCommand.PLAY_LOOP;
             }
-            if (verbose) LOG.info(str + " to: {} 0x{} 0x{}", commandArg.command, commandArg.arg,
-                    commandArg.arg1);
+            if (verbose) LOG.info("{} to: {} 0x{} 0x{}", str, commandArg.command, commandArg.arg, commandArg.arg1);
         }
         return commandArg;
     }

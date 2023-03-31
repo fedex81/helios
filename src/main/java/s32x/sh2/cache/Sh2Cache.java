@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
 import s32x.util.S32xUtil.CpuDeviceAccess;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
@@ -56,12 +57,16 @@ public interface Sh2Cache extends Device {
     int DATA_ARRAY_MASK = DATA_ARRAY_SIZE - 1;
 
     class Sh2CacheLine implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -8588821133794717884L;
         public int tag; //u32
         public int v;
         public byte[] data = new byte[CACHE_BYTES_PER_LINE]; //u8
     }
 
     class Sh2CacheEntry implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 4340652925400702503L;
         int enable; //u32
         int[] lru = new int[CACHE_LINES]; //u32
         Sh2CacheLine[][] way = new Sh2CacheLine[CACHE_WAYS][CACHE_LINES];
@@ -119,6 +124,8 @@ public interface Sh2Cache extends Device {
     }
 
     class CacheRegContext implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -5571586968550411713L;
 
         public CpuDeviceAccess cpu;
         public int ccr;
@@ -143,6 +150,8 @@ public interface Sh2Cache extends Device {
     }
 
     class Sh2CacheContext implements Serializable {
+        @Serial
+        private static final long serialVersionUID = -7850221349320557387L;
         public Sh2CacheEntry ca;
         public CacheRegContext cacheContext;
 

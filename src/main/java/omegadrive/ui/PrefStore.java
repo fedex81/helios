@@ -38,7 +38,7 @@ public class PrefStore {
     private static final Properties uiProperties = new Properties();
     public static String lastSaveFile = FileUtil.basePath, lastRomFile = FileUtil.basePath;
 
-    private static final LinkedHashMap<Integer, String> map = new LinkedHashMap<>(recentFileTotal, 1, true);
+    private static final Map<Integer, String> map = new LinkedHashMap<>(recentFileTotal, 1, true);
     private static int uiSwingThemeIndex = 0;
 
     public static void initPrefs() {
@@ -61,7 +61,7 @@ public class PrefStore {
             uiProperties.putIfAbsent(key, "");
             addRecentFile(uiProperties.getProperty(key));
         }
-        uiProperties.putIfAbsent(UI_SWING_THEME, "" + uiSwingThemeIndex);
+        uiProperties.putIfAbsent(UI_SWING_THEME, String.valueOf(uiSwingThemeIndex));
     }
 
     public static void addRecentFile(String path) {
@@ -96,7 +96,7 @@ public class PrefStore {
             String val = it.hasNext() ? it.next() : "";
             uiProperties.put(RECENT_FILE + "." + i, val);
         }
-        uiProperties.setProperty(UI_SWING_THEME, "" + uiSwingThemeIndex);
+        uiProperties.setProperty(UI_SWING_THEME, String.valueOf(uiSwingThemeIndex));
     }
 
     public static void close() {

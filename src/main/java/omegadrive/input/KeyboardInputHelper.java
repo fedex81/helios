@@ -98,11 +98,11 @@ public class KeyboardInputHelper {
         keyboardInverseStringBindings.row(number).clear();
         keyboardInverseBindings.row(number).clear();
         keyboardBindings.row(number).clear();
-        map.entrySet().forEach(e -> {
-            keyboardStringBindings.put(number, e.getKey(), e.getValue());
-            keyboardInverseStringBindings.put(number, e.getValue(), e.getKey());
-            keyboardInverseBindings.put(number, e.getValue(), JoypadButton.valueOf(e.getKey()));
-            keyboardBindings.put(number, JoypadButton.valueOf(e.getKey()), e.getValue());
+        map.forEach((key, value) -> {
+            keyboardStringBindings.put(number, key, value);
+            keyboardInverseStringBindings.put(number, value, key);
+            keyboardInverseBindings.put(number, value, JoypadButton.valueOf(key));
+            keyboardBindings.put(number, JoypadButton.valueOf(key), value);
         });
         consistencyCheck(number);
     }

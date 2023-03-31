@@ -112,7 +112,7 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
     protected Image[] toImages(Path datFile) {
         Image[] img = new Image[3];
         byte[] data = FileUtil.readBinaryFile(datFile, "dat");
-        Object o = Util.deserializeObject(data, 0, data.length);
+        Object o = Util.deserializeObject(data);
         DebugVideoRenderContext dvrc = (DebugVideoRenderContext) o;
         MarsVdp.MarsVdpRenderContext vrc = DebugVideoRenderContext.toMarsVdpRenderContext(dvrc);
         VideoMode vm = vrc.vdpContext.videoMode;

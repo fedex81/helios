@@ -43,22 +43,22 @@ public class FileSoundPersister implements SoundPersister {
 
     @Override
     public void persistSound(SoundType type, byte[] output) {
-        if (!isRecording()) {
+        if (!recording) {
             startRecording(type);
         }
         recordSound(output);
     }
 
     private void recordSound(byte[] buffer) {
-        if (isRecording()) {
-                try {
-                    //16 bit signed mono (little endian)
-                    fileStream.write(buffer);
-                } catch (IOException ioe) {
-                    LOG.error("An error occurred while writing the"
-                            + " sound file.");
-                }
+        if (recording) {
+            try {
+                //16 bit signed mono (little endian)
+                fileStream.write(buffer);
+            } catch (IOException ioe) {
+                LOG.error("An error occurred while writing the"
+                        + " sound file.");
             }
+        }
     }
 
 
@@ -87,7 +87,7 @@ public class FileSoundPersister implements SoundPersister {
      * Stop sound recording to WAV file.
      */
     public void stopRecording() {
-        if (isRecording()) {
+        if (recording) {
             try {
                 fileStream.flush();
                 fileStream.close();
@@ -102,7 +102,7 @@ public class FileSoundPersister implements SoundPersister {
 
     @Override
     public void startRecording(SoundType type) {
-        if (!isRecording()) {
+        if (!recording) {
             startRecordingInternal(type);
         }
     }

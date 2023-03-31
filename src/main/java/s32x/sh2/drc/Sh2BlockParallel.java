@@ -7,6 +7,7 @@ import s32x.bus.Sh2MemoryParallel;
 import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
 
@@ -40,7 +41,7 @@ public class Sh2BlockParallel extends Sh2Block {
         assert prefetchPc != -1;
         assert (blockFlags & VALID_FLAG) > 0;
         if (stage2Drc != null) {
-            if (Sh2.Sh2Config.get().pollDetectEn) {
+            if (Sh2Config.get().pollDetectEn) {
                 handlePoll(this);
             }
             prepareInterpreterParallel();

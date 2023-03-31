@@ -341,7 +341,7 @@ public class Tms9918aVdp implements Tms9918a, Device {
      */
     public final byte readVRAMData() {
         byte result = readAhead;
-        readAhead = (byte) mem[readWriteAddr];
+        readAhead = mem[readWriteAddr];
         if (verbose) LOG.info("vdpRead addr: {}, data: {}", readWriteAddr, readAhead);
         increaseReadWriteAddr();
         secondByteFlag = false;
@@ -382,7 +382,7 @@ public class Tms9918aVdp implements Tms9918a, Device {
 
                 /* In case of read: fill read ahead buffer and increase read/write address */
                 if (((ioByte1 & 0xC0) >> 6) == 0) {
-                    readAhead = (byte) mem[readWriteAddr];
+                    readAhead = mem[readWriteAddr];
                     increaseReadWriteAddr();
                 }
             }

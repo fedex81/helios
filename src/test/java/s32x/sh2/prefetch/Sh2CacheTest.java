@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import s32x.dict.S32xDict;
-import s32x.sh2.Sh2;
-import s32x.sh2.Sh2.Sh2Config;
+import s32x.sh2.Sh2Helper;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.Sh2MultiTestBase;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.sh2.cache.Sh2CacheImpl;
@@ -311,8 +311,8 @@ public class Sh2CacheTest extends Sh2MultiTestBase {
         Assertions.assertEquals(expVal, val, cpu + "," + th(addr));
     }
 
-    protected Sh2.FetchResult doCacheFetch(CpuDeviceAccess cpu, int cacheAddr) {
-        Sh2.FetchResult ft = new Sh2.FetchResult();
+    protected Sh2Helper.FetchResult doCacheFetch(CpuDeviceAccess cpu, int cacheAddr) {
+        Sh2Helper.FetchResult ft = new Sh2Helper.FetchResult();
         ft.block = Sh2Block.INVALID_BLOCK;
         ft.pc = cacheAddr;
         memory.fetch(ft, cpu);

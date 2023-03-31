@@ -6,6 +6,7 @@ import s32x.Sh2MMREG;
 import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.prefetch.Sh2Prefetch;
 import s32x.sh2.prefetch.Sh2Prefetcher;
 import s32x.util.Md32xRuntimeData;
@@ -99,7 +100,7 @@ public class Sh2Block {
             assert inst != null;
             if (verbose) LOG.info("{} HRC2 count: {}\n{}", "", th(hits), Sh2Helper.toListOfInst(this));
             stage2();
-            if (Sh2.Sh2Config.get().pollDetectEn) {
+            if (Sh2Config.get().pollDetectEn) {
                 Ow2DrcOptimizer.pollDetector(this);
             }
         }
@@ -128,7 +129,7 @@ public class Sh2Block {
     }
 
     public void stage2() {
-        if (Sh2.Sh2Config.get().drcEn) {
+        if (Sh2Config.get().drcEn) {
             assert drcContext != null;
             stage2Drc = Ow2Sh2BlockRecompiler.getInstance().createDrcClass(this, drcContext);
         }

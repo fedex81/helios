@@ -231,9 +231,9 @@ public class Ow2Sh2BlockRecompiler {
         Path bc = Paths.get(drcFolder.toAbsolutePath().toString(), (blockClass + ".bytecode"));
         Util.executorService.submit(() -> {
             printSource(bc, binc);
-            LOG.info("Bytecode Class written: " + bc.toAbsolutePath());
+            LOG.info("Bytecode Class written: {}", bc.toAbsolutePath());
             FileUtil.writeFileSafe(p, binc);
-            LOG.info("Drc Class written: " + p.toAbsolutePath());
+            LOG.info("Drc Class written: {}", p.toAbsolutePath());
         });
         LOG.info("{} job submitted", blockClass);
     }

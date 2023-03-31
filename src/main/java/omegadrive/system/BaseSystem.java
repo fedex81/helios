@@ -99,7 +99,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     protected abstract void loop();
 
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(getSystemType(), romContext.region);
+        sound = AbstractSoundManager.createSoundProvider(systemType, romContext.region);
     }
 
     protected abstract void resetCycleCounters(int counter);
@@ -183,7 +183,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     }
 
     protected void reloadWindowState() {
-        emuFrame.addKeyListener(KeyboardInput.createKeyAdapter(getSystemType(), joypad));
+        emuFrame.addKeyListener(KeyboardInput.createKeyAdapter(systemType, joypad));
         emuFrame.reloadControllers(inputProvider.getAvailableControllers());
     }
 
@@ -208,7 +208,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     }
 
     protected BaseStateHandler createStateHandler(Path file, BaseStateHandler.Type type) {
-        return BaseStateHandler.createInstance(getSystemType(), file, type, bus.getAllDevices(Device.class));
+        return BaseStateHandler.createInstance(systemType, file, type, bus.getAllDevices(Device.class));
     }
 
     private void handleLoadState(Path file) {

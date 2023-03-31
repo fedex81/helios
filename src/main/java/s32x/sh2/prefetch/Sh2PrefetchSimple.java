@@ -7,7 +7,8 @@ import s32x.bus.Sh2Bus;
 import s32x.bus.Sh2BusImpl;
 import s32x.dict.S32xDict;
 import s32x.dict.S32xMemAccessDelay;
-import s32x.sh2.Sh2;
+import s32x.sh2.Sh2Helper;
+import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.Sh2Instructions;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.util.BiosHolder;
@@ -72,7 +73,7 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
 
     private final Sh2Bus memory;
     private final Sh2Cache[] cache;
-    private final Sh2.Sh2Config sh2Config;
+    private final Sh2Config sh2Config;
     public final int romSize, romMask;
     public final BiosHolder.BiosData[] bios;
     public final ByteBuffer sdram;
@@ -88,7 +89,7 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
         sdram = memory.sdram;
         rom = memory.rom;
         bios = memory.bios;
-        sh2Config = Sh2.Sh2Config.get();
+        sh2Config = Sh2Config.get();
         prefetchContexts[0] = new PrefetchContext();
         prefetchContexts[1] = new PrefetchContext();
     }
@@ -173,7 +174,7 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
         assert prefetchContexts[cpu.ordinal()] != null;
     }
 
-    public void fetch(Sh2.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    public void fetch(Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
         ft.opcode = fetch(ft.pc, cpu);
     }
 
@@ -214,7 +215,7 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
     }
 
 
-    public int fetchDelaySlot(int pc, Sh2.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    public int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
         if (!sh2Config.prefetchEn) {
             assert cpu == Md32xRuntimeData.getAccessTypeExt();
             return memory.read(pc, Size.WORD) & 0xFFFF;
