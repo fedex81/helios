@@ -45,7 +45,7 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
     }
 
     //TODO check, ignoring BRAF (branch far), BSR, BSRF, JMP, JSR
-    public static final Predicate<Integer> isBranchOpcode = op ->
+    public static final Predicate<Integer> isBranchNearOpcode = op ->
             (op & 0xFF00) == 0x8900 //bt
                     || (op & 0xFF00) == 0x8B00 //bf
                     || (op & 0xFF00) == 0x8F00 //bf/s
@@ -87,7 +87,7 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
             ;
 
     private static final Predicate<Integer> isNopOpcode = op -> op == 9;
-    public static final Predicate<Integer> isLoopOpcode = isNopOpcode.or(isBranchOpcode).
+    public static final Predicate<Integer> isLoopOpcode = isNopOpcode.or(isBranchNearOpcode).
             or(isCmpOpcode).or(isTstOpcode).or(isMovOpcode);
     public static final Predicate<Integer> isIgnoreOpcode =
             op -> (op & 0xF0FF) == 0x4010 //dt

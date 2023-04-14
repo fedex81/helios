@@ -195,7 +195,6 @@ public class Ow2Sh2BlockRecompiler {
                 Ow2Sh2Bytecode.setPcExt(ctx, block.inst[limit - 1].pc + 2);
             }
             Ow2Sh2Bytecode.subCyclesExt(ctx, totCycles);
-            Ow2Sh2Bytecode.deviceStepFor(ctx, limit);
             mv.visitInsn(RETURN);
             mv.visitMaxs(0, 0);
             mv.visitEnd();

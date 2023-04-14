@@ -200,7 +200,7 @@ public class Ow2Sh2Helper {
 
     public static void printRegValue(Sh2Prefetch.BytecodeContext ctx, int reg) {
         ctx.mv.visitFieldInsn(GETSTATIC, Type.getInternalName(System.class), "out", Type.getDescriptor(PrintStream.class));
-        Ow2Sh2Bytecode.pushRegStack(ctx, reg);
+        Ow2Sh2Bytecode.pushRegRefStack(ctx, reg);
         ctx.mv.visitInsn(IALOAD);
         ctx.mv.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(PrintStream.class), "println",
                 Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(int.class)));
@@ -259,8 +259,7 @@ public class Ow2Sh2Helper {
         ctx.mv.visitVarInsn(ISTORE, valIdx);
         Ow2Sh2Bytecode.decReg(ctx, 15, 4);
         pushMemory(ctx);
-        Ow2Sh2Bytecode.pushRegStack(ctx, 15);
-        ctx.mv.visitInsn(IALOAD);
+        Ow2Sh2Bytecode.pushRegValStack(ctx, 15);
         ctx.mv.visitVarInsn(ILOAD, valIdx);
         Ow2Sh2Bytecode.writeMem(ctx, Size.LONG);
     }
@@ -271,11 +270,10 @@ public class Ow2Sh2Helper {
     public static void sh2PopReg15(Sh2Prefetch.BytecodeContext ctx) {
         int resIdx = ctx.mv.newLocal(Type.INT_TYPE);
         pushMemory(ctx);
-        Ow2Sh2Bytecode.pushRegStack(ctx, 15);
-        ctx.mv.visitInsn(IALOAD);
+        Ow2Sh2Bytecode.pushRegValStack(ctx, 15);
         Ow2Sh2Bytecode.readMem(ctx, Size.LONG);
         ctx.mv.visitVarInsn(ISTORE, resIdx);
-        Ow2Sh2Bytecode.pushRegStack(ctx, 15);
+        Ow2Sh2Bytecode.pushRegRefStack(ctx, 15);
         ctx.mv.visitInsn(DUP2);
         ctx.mv.visitInsn(IALOAD);
         ctx.mv.visitInsn(ICONST_4);

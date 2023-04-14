@@ -14,7 +14,6 @@ import s32x.sh2.Sh2Helper;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
@@ -82,8 +81,6 @@ public class Ow2DrcOptimizer {
         }
     }
 
-    private static final Predicate<Integer> isCmpTstOpcode = Sh2Debug.isTstOpcode.or(Sh2Debug.isCmpOpcode);
-
     public static final Predicate<Integer> isTasOpcode = op -> (op & 0xF0FF) == 0x401b;
     public static final Predicate<Integer> isMovtOpcode = op -> (op & 0xF0FF) == 0x0029;
     public static final Predicate<Integer> isMemLoadOpcode = op -> Sh2Debug.isMovOpcode.or(isTasOpcode).test(op);
@@ -94,6 +91,10 @@ public class Ow2DrcOptimizer {
 
     //opcode that modifies the T flag, ie. shlr
     private static final Predicate<Integer> isFlagOpcode = op -> (op & 0xF0FF) == 0x4001;
+
+    private static final Predicate<Integer> isCmpTstOpcode = Sh2Debug.isTstOpcode.or(Sh2Debug.isCmpOpcode);
+
+    public static final Predicate<Integer> isCmpTstFlagOpcode = isCmpTstOpcode.or(isFlagOpcode);
 
     private static final Predicate<Integer> isSwapOpcode = w -> ((w & 0xF00F) == 0x6008 || (w & 0xF00F) == 0x6009);
     private static final Predicate<Integer> isXorOpcode = w -> (w & 0xF00F) == 0x200A;
@@ -115,13 +116,11 @@ public class Ow2DrcOptimizer {
                 branchOpcode, branchPc, branchDestPc;
         public int pc;
         public int memLoadTarget = 0, memLoadTargetEnd;
-        public int numNops, numRegOnly;
         public Size memLoadTargetSize;
         public final int[] words;
         public final Sh2Context ctx;
         public final Sh2Block block;
         public boolean isPoller, isBusyLoop;
-        private int activeInstLen = 0;
 
         public BlockPollData(Sh2Block block, Sh2Context ctx, int pc, int[] prefetchWords) {
             this.words = prefetchWords;
@@ -131,31 +130,32 @@ public class Ow2DrcOptimizer {
         }
 
         public void init() {
-            numNops = (int) Arrays.stream(words).filter(op -> Sh2Disassembler.NOP == op).count();
-            int nonNopsLen = words.length - numNops;
-            detect(nonNopsLen);
+            detect();
         }
 
-        private void detect(int nonNopsLen) {
-            int memLoads = 0;
+        private void detect() {
+            int memLoads = 0, numNops = 0, numRegOnly = 0, pollInstLen = 0;
             for (int i = 0; i < words.length; i++) {
                 final int opcode = words[i];
+                numNops += opcode == Sh2Disassembler.NOP ? 1 : 0;
+                numRegOnly += isRegOnlyOpcode.test(opcode) ? 1 : 0;
                 if (isMemLoadOpcode.test(opcode)) {
                     memLoadPos = i;
                     memLoadOpcode = opcode;
-                    activeInstLen++;
+                    pollInstLen++;
                     memLoads++;
-                } else if (isCmpTstOpcode.test(opcode) || isFlagOpcode.test(opcode)) {
+                } else if (isCmpTstFlagOpcode.test(opcode)) {
                     cmpPos = i;
                     cmpOpcode = opcode;
-                    activeInstLen++;
-                } else if (Sh2Debug.isBranchOpcode.test(opcode)) {
+                    pollInstLen++;
+                } else if (Sh2Debug.isBranchNearOpcode.test(opcode)) {
                     branchPos = i;
                     branchOpcode = opcode;
                     branchPc = pc + (branchPos << 1);
-                    activeInstLen++;
+                    pollInstLen++;
                 }
             }
+            int nonNopsLen = words.length - numNops;
             if (memLoadPos >= 0) {
                 parseMemLoad(this, ctx, memLoadOpcode);
             }
@@ -168,8 +168,7 @@ public class Ow2DrcOptimizer {
                     memLoadPos = cmpPos;
                     memLoads++;
                 }
-            }
-            if (nonNopsLen == 1) {
+            } else if (nonNopsLen == 1) {
                 int endPc = pc + ((words.length - 1) << 1);
                 if (branchPos >= 0 && branchDestPc >= pc && branchDestPc <= endPc) {
                     isBusyLoop = true;
@@ -178,9 +177,8 @@ public class Ow2DrcOptimizer {
 //                            Sh2Helper.toListOfInst(block));
                 }
             }
-            numRegOnly = (int) Arrays.stream(words).filter(isRegOnlyOpcode::test).count();
             if (memLoads == 1) {
-                isPollerRecalc();
+                isPollerRecalc(pollInstLen, numNops + numRegOnly);
             }
             /**
              *  06002406	0009	nop
@@ -195,10 +193,10 @@ public class Ow2DrcOptimizer {
             }
         }
 
-        private boolean isPollerRecalc() {
+        private boolean isPollerRecalc(int pollInstLen, int numNopsAndRegOnly) {
             int len = words.length;
-            boolean okLen = activeInstLen + numNops + numRegOnly == len;
-            isPoller = (activeInstLen > 2 ? cmpPos >= 0 : true) && (activeInstLen > 1 ? memLoadPos >= 0 : true)
+            boolean okLen = pollInstLen + numNopsAndRegOnly == len;
+            isPoller = (pollInstLen > 2 ? cmpPos >= 0 : true) && (pollInstLen > 1 ? memLoadPos >= 0 : true)
                     && branchPos >= 0 && branchDestPc == pc && okLen;
             return isPoller;
         }
@@ -228,7 +226,6 @@ public class Ow2DrcOptimizer {
         public PollSysEventManager.SysEvent event;
         public PollState pollState = PollState.NO_POLL;
         public int spinCount = 0;
-        //only used when assertions are enabled
         public int pollValue = 0;
         public BlockPollData blockPollData;
         public Sh2Helper.Sh2PcInfoWrapper piw;
@@ -386,7 +383,7 @@ public class Ow2DrcOptimizer {
                 logPollBlock(block, bpd, supported);
             }
         } else if (bpd.isBusyLoop) {
-            LOG.info("{} BusyLoop detected: {}\n{}", block.drcContext.cpu, th(block.prefetchPc),
+            if (verbose) LOG.info("{} BusyLoop detected: {}\n{}", block.drcContext.cpu, th(block.prefetchPc),
                     Sh2Helper.toListOfInst(block));
             block.pollType = BUSY_LOOP;
             pctx.event = PollSysEventManager.SysEvent.INT;
@@ -396,13 +393,10 @@ public class Ow2DrcOptimizer {
             block.pollType = NONE;
         }
         if (LOG_POLL_DETECT_UNSUPPORTED && !block.pollType.supported && bpd.branchDestPc == bpd.pc) {
-            if (bpd.words.length - bpd.numNops < 10) {
+            if (bpd.words.length < 10) {
                 logPollBlock(block, bpd, false);
             }
         }
-//        if(block.pollType == NONE){
-//            detectDelayLoop(bpd);
-//        }
         assert block.pollType != UNKNOWN;
         assert toSet != null;
         return toSet;
@@ -414,25 +408,6 @@ public class Ow2DrcOptimizer {
                 supported ? "detected" : "ignored", th(block.prefetchPc),
                 th(bpd.memLoadTarget), block.pollType,
                 Sh2Helper.toListOfInst(block));
-    }
-
-    private static void detectDelayLoop(BlockPollData bpd) {
-        int decreaseOpPos = -1;
-        for (int i = 0; i < bpd.words.length; i++) {
-            if ((bpd.words[i] & 0xF0FF) == 0x4010) {
-                decreaseOpPos = i;
-            }
-        }
-        if (decreaseOpPos > 0 && bpd.memLoadPos < 0 &&
-                bpd.branchPos >= 0 && bpd.branchDestPc == bpd.pc) { // && bpd.numNops + 1 == bpd.words.length){
-            String instList = Sh2Helper.toListOfInst(bpd.block).toString();
-            boolean match = !instList.contains("mov");
-            if (match) {
-                LOG.error("{} Delay Loop?? at PC {}: {} {}\n{}", bpd.block.drcContext.cpu,
-                        th(bpd.block.prefetchPc),
-                        th(bpd.memLoadTarget), bpd.block.pollType, instList);
-            }
-        }
     }
 
     //TODO poll on cached address??? tas poll is allowed even on cached addresses
@@ -471,16 +446,14 @@ public class Ow2DrcOptimizer {
         final PollerCtx blockPoller = block.poller;
         assert blockPoller == Sh2Helper.get(block.prefetchPc, cpu).block.poller;
         if (currentPoller == NO_POLLER) {
-            PollType pollType = block.pollType;
             assert blockPoller != UNKNOWN_POLLER;
             if (blockPoller != NO_POLLER) {
                 PollSysEventManager.instance.setPoller(cpu, blockPoller);
             } else {
-                assert ENABLE_POLL_DETECT ? !pollType.supported : true : block + "\n" + blockPoller;
-                if (verbose)
-                    LOG.info("{} ignoring {} poll at PC {}, on address: {}", cpu, pollType,
-                            th(block.prefetchPc), th(blockPoller.blockPollData.memLoadTarget));
-                pollType = PollType.NONE;
+                //tempo
+                assert ENABLE_POLL_DETECT ? !block.pollType.supported : true : block + "\n" + blockPoller;
+                if (verbose) LOG.info("{} ignoring {} poll at PC {}", cpu, block.pollType, th(block.prefetchPc));
+                block.pollType = PollType.NONE;
             }
         } else if (!currentPoller.isPollingActive()) {
             if (blockPoller != currentPoller) {
@@ -529,25 +502,5 @@ public class Ow2DrcOptimizer {
             blockPoller.pollValue = blockPoller.spinCount = 0;
         }
         return res;
-    }
-
-    /**
-     * e142	mov H'42, R1
-     * 611c	extu.b R1, R1
-     */
-    static Predicate<Integer> isMoviuExtu = op -> isMoviOpcode.test(op >> 16) && isExtOpcode.test(op & 0xFFFF) &&
-            ((op >> 24) & 0xF) == ((op >> 4) & 0xF) && ((op >> 8) & 0xF) == ((op >> 4) & 0xF);
-
-
-    public static void checkOptBlock(Sh2Block block) {
-        final int[] ops = block.prefetchWords;
-        boolean match;
-        for (int i = 0; i < block.prefetchLenWords - 1; i += 2) {
-            if (isMoviuExtu.test(ops[i] << 16 | ops[i + 1])) {
-                System.out.println(Sh2Helper.toListOfInst(block.prefetchPc, ops[i], ops[i + 1]));
-            } else if (isExtOpcode.test(ops[i + 1]) && ((ops[i + 1] >> 8) & 0xF) == ((ops[i + 1] >> 4) & 0xF)) {
-                System.out.println("Check:\n" + Sh2Helper.toListOfInst(block.prefetchPc, ops[i], ops[i + 1]));
-            }
-        }
     }
 }

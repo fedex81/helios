@@ -239,7 +239,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     protected void handleCloseRom() {
         super.handleCloseRom();
         Optional.ofNullable(marsVdp).ifPresent(Device::reset);
-        launchCtx.pwm.reset();
+        Optional.ofNullable(launchCtx).ifPresent(lc -> lc.pwm.reset());
     }
 
     @Override

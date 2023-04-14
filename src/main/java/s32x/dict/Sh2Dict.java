@@ -5,7 +5,6 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.Sh2MMREG;
-import s32x.sh2.device.Sh2DeviceHelper;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.RegSpec;
 import s32x.util.S32xUtil;
@@ -14,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 
 import static omegadrive.util.Util.th;
+import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType;
 
 /**
  * Federico Berti
@@ -24,7 +24,7 @@ public class Sh2Dict {
 
     private static final Logger LOG = LogHelper.getLogger(Sh2Dict.class.getSimpleName());
 
-    public static Sh2DeviceHelper.Sh2DeviceType[] sh2RegDeviceMapping = new Sh2DeviceHelper.Sh2DeviceType[Sh2MMREG.SH2_REG_SIZE];
+    public static Sh2DeviceType[] sh2RegDeviceMapping = new Sh2DeviceType[Sh2MMREG.SH2_REG_SIZE];
     public static RegSpecSh2[] sh2RegMapping = new RegSpecSh2[Sh2MMREG.SH2_REG_SIZE];
 
     public static final int BSC_LONG_WRITE_MASK = 0xa55a << 16;
@@ -138,7 +138,7 @@ public class Sh2Dict {
             String device = regSpec.name.split("_")[0];
             for (int i = regSpec.bufferAddr; i < regSpec.bufferAddr + addrLen; i++) {
                 sh2RegMapping[i] = this;
-                sh2RegDeviceMapping[i] = Sh2DeviceHelper.Sh2DeviceType.valueOf(device);
+                sh2RegDeviceMapping[i] = Sh2DeviceType.valueOf(device);
             }
         }
 
