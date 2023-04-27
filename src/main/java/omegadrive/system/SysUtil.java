@@ -60,7 +60,7 @@ public class SysUtil {
             mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes, nesBinaryTypes,
             gbBinaryTypes, s32xBinaryTypes,
             compressedBinaryTypes
-    ).flatMap(Stream::of).toArray(String[]::new);
+    ).flatMap(Stream::of).distinct().toArray(String[]::new);
 
     public static SystemProvider createSystemProvider(Path file, DisplayWindow display, boolean debugPerf) {
         String lowerCaseName = handleCompressedFiles(file, file.toString().toLowerCase());
