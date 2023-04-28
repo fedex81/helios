@@ -1,3 +1,8 @@
+## 23.0506
+helios: add Sega 32x emulation by merging the helios32x project: https://github.com/fedex81/helios32x
+md: improve rom header parsing
+md: improve support for roms > 4Mbit with sram
+
 ## 22.1205
 68k: support cycle table from genPlusGx
 68k: fix *bcd, link corner cases

@@ -15,10 +15,7 @@ import s32x.sh2.cache.Sh2Cache;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.*;
 
 import static omegadrive.savestate.StateUtil.storeSerializedData;
 
@@ -38,6 +35,8 @@ public class Gs32xStateHandler extends GshStateHandler {
 
     private static final Map<String, Device> s32xDeviceSet = new WeakHashMap<>();
     private static final Sh2ContextWrap wrap = new Sh2ContextWrap();
+
+    private ByteBuffer b = ByteBuffer.allocate(FILE_SIZE << 4);
 
     static class S32xContainer implements Serializable {
         @Serial
@@ -112,7 +111,7 @@ public class Gs32xStateHandler extends GshStateHandler {
     @Override
     public void processState() {
         super.processState(); //do MD stuff
-        ByteBuffer b = ByteBuffer.allocate(FILE_SIZE << 4);
+        Arrays.fill(b.array(), (byte) 0);
         assert !s32xDeviceSet.isEmpty();
         if (type == Type.SAVE) {
             S32xContainer container = new S32xContainer();
