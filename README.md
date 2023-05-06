@@ -6,7 +6,7 @@ A Java-based multi-system emulator mainly focused on Sega 16-bit systems.
 
 Initially created as a Sega Megadrive/Genesis emulator and then evolved to emulate
 the following systems:
-- Sega Megadrive
+- Sega Megadrive/32X
 - Sega Master System/Game Gear
 - Sega Sg-1000
 - Colecovision
@@ -15,7 +15,7 @@ the following systems:
 
 ## Performance
  
-The target is a modern mobile cpu capable of boosting ~4Ghz 
+Sega 32x: The target is a modern mobile cpu capable of boosting ~4Ghz 
 (ie. [AMD Ryzen 5 PRO 5650U](https://www.amd.com/en/products/apu/amd-ryzen-5-pro-5650u)),   
 this should allow perf close to 60fps for most titles, YMMV.
 
@@ -76,6 +76,9 @@ notaz, SVP core: [Picodrive svp](https://notaz.gp2x.de/svp.php)
 Digital Sound Antiques, Ym2413 core: [emu2413](https://github.com/digital-sound-antiques/emu2413)
 
 Andrew Hoffman, NES emulator: [halfnes](https://github.com/andrew-hoffman/halfnes)
+
+Hitachi SH2 cpu emulator adapted from [esoteric_emu](https://github.com/fedex81/esoteric_emu)'s
+SH4 implementation
 
 Tomek Rekawek, GameBoy emulator: [coffee-gb](https://github.com/trekawek/coffee-gb)
 
