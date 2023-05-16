@@ -78,6 +78,7 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
 //        System.setProperty("68k.debug", "true");
 //        System.setProperty("helios.68k.debug.mode", "2");
 //        System.setProperty("z80.debug", "true");
+//        System.setProperty("helios.z80.debug.mode", "2");
     }
 
     protected Z80Provider z80;

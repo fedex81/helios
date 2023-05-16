@@ -430,17 +430,23 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         boolean reset = (data & 1) == 0;
         if (reset) {
             if (z80BusRequested) {
-                z80Provider.reset();
                 z80ResetState = true;
-                getFm().reset();
-                if (verbose) LOG.debug("Reset while busRequested: {}", z80BusRequested);
+                if (verbose) LOG.info("Reset while busRequested: {}", z80BusRequested);
             } else {
-                if (verbose) LOG.debug("Reset while busUnrequested, ignoring");
+                if (verbose) LOG.warn("Reset while busUnrequested, ignoring");
             }
         } else {
-            z80ResetState = false;
-            if (verbose) LOG.debug("Disable reset, busReq : {}", z80BusRequested);
+            if (z80ResetState) {
+                doZ80Reset();
+                z80ResetState = false;
+            }
+            if (verbose) LOG.info("Disable reset, busReq : {}", z80BusRequested);
         }
+    }
+
+    private void doZ80Reset() {
+        z80Provider.reset();
+        getFm().reset();
     }
 
     //	To stop the Z80 and send a bus request, #$0100 must be written to $A11100.
@@ -455,17 +461,17 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         boolean busReq = (data & 1) > 0;
         if (busReq) {
             if (!z80BusRequested) {
-                if (verbose) LOG.debug("busRequested, reset: {}", z80ResetState);
+                if (verbose) LOG.info("busRequested, reset: {}", z80ResetState);
                 z80BusRequested = true;
             } else {
-                if (verbose) LOG.debug("busRequested, ignored, reset: {}", z80ResetState);
+                if (verbose) LOG.info("busRequested, ignored, reset: {}", z80ResetState);
             }
         } else {
             if (z80BusRequested) {
                 z80BusRequested = false;
-                if (verbose) LOG.debug("busUnrequested, reset : {}", z80ResetState);
+                if (verbose) LOG.info("busUnrequested, reset : {}", z80ResetState);
             } else {
-                if (verbose) LOG.debug("busUnrequested ignored");
+                if (verbose) LOG.info("busUnrequested ignored");
             }
         }
     }
