@@ -340,6 +340,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         futureDoneFlag = runningRomFuture.isDone();
         handleSoftReset();
         inputProvider.handleEvents();
+//        LOG.info("Frame: {}", getFrameCounter());
 //        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
     }
 

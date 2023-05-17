@@ -217,11 +217,18 @@ public class SwingWindow implements DisplayWindow {
         }
         System.arraycopy(data, 0, pixelsSrc, 0, data.length);
         if (UI_SCALE_ON_THREAD) {
-            assert previousFrame.isDone();
+            assert checkSlowDown();
             previousFrame = executorService.submit(() -> renderScreenLinearInternal(pixelsSrc, label, videoMode));
         } else {
             renderScreenLinearInternal(pixelsSrc, label, videoMode);
         }
+    }
+
+    private boolean checkSlowDown() {
+        if (!previousFrame.isDone()) {
+            LOG.error("Slow frame!!");
+        }
+        return true;
     }
 
     public void init() {

@@ -128,18 +128,25 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         if (!lessVerbose) {
             return;
         }
-        printInfoLess(head, Integer.MIN_VALUE);
+        printInfoLess(head, Integer.MIN_VALUE, null);
+    }
+
+    private void printInfo(String head, int srcAddress, int data) {
+        if (!verbose) {
+            return;
+        }
+        printInfoLess(head, srcAddress, data);
     }
 
     private void printInfo(String head, int srcAddress) {
         if (!verbose) {
             return;
         }
-        printInfoLess(head, srcAddress);
+        printInfoLess(head, srcAddress, null);
     }
 
-    private void printInfoLess(String head, int srcAddress) {
-        String str = getDmaStateString(head, srcAddress);
+    private void printInfoLess(String head, int srcAddress, Integer data) {
+        String str = getDmaStateString(head, srcAddress, data);
         LOG.info(str);
         if (printToSysOut) {
             System.out.println(str);
@@ -148,10 +155,10 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     @Override
     public String getDmaStateString() {
-        return getDmaStateString("", Integer.MIN_VALUE);
+        return getDmaStateString("", Integer.MIN_VALUE, null);
     }
 
-    private String getDmaStateString(String head, int srcAddress) {
+    private String getDmaStateString(String head, int srcAddress, Integer data) {
         int dmaLen = getDmaLength();
         String str = dmaMode + " " + head;
         String src = th(srcAddress > Integer.MIN_VALUE ? srcAddress : getSourceAddress());
@@ -160,7 +167,8 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
         str += dmaMode == DmaMode.VRAM_FILL ? " fillData: " + th(dmaFillData) : " srcAddr: " + src;
         str += ", destAddr: " + dest + ", destAddrInc: " + destAddressIncrement +
-                ", dmaLen: " + dmaLen + ", vramMode: " + vdpProvider.getVramMode();
+                ", dmaLen: " + dmaLen + (data != null ? ", data: " + th(data.intValue()) : "")
+                + ", vramMode: " + vdpProvider.getVramMode();
         str += vdpProvider.getVdpStateString();
         return str;
     }
@@ -269,7 +277,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         int destAddress = getDestAddress();
         int dataWord = busProvider.read(sourceAddress, Size.WORD);
         vdpProvider.fifoPush(destAddress, dataWord);
-        printInfo("IN PROGRESS: ", sourceAddress);
+        printInfo("IN PROGRESS: ", sourceAddress, dataWord);
         //increase by 1, becomes 2 (bytes) when doubling
         postDmaRegisters();
     }

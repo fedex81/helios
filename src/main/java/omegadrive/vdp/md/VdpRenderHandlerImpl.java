@@ -100,7 +100,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         holder.vertFlip = (nameTable & TILE_VERT_FLIP_MASK) > 0;
         holder.paletteLineIndex = ((nameTable >> 13) & 0x3) << PALETTE_INDEX_SHIFT;
         holder.priority = (nameTable & TILE_PRIORITY_MASK) > 0;
-        holder.horFlipAmount = holder.horFlip ? CELL_WIDTH - 1 : 0;
+        holder.horFlipAmount = holder.horFlip ? CELL_WIDTH_MASK : 0;
         holder.vertFlipAmount = holder.vertFlip ? interlaceMode.getVerticalCellPixelSize() - 1 : 0;
         return holder;
     }
@@ -498,7 +498,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             for (int pixel = startPixel; pixel < startPixel + 16; pixel++) {
                 int planeCellHOffset = ((pixel + hScrollPixelOffset) >> 3) % sc.planeWidth;
                 int tileLocatorVram = nameTableLocation + ((planeCellHOffset + planeCellVOffset) << 1);
-                int xPosCell = (pixel + hScrollPixelOffset) % CELL_WIDTH;
+                int xPosCell = (pixel + hScrollPixelOffset) & CELL_WIDTH_MASK;
                 if (tileLocatorVram != latestTileLocatorVram) {
                     //one word per 8x8 tile
                     int tileNameTable = readBufferWord(vram, tileLocatorVram);
@@ -533,13 +533,13 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         int tileLocatorVram = nameTableLocation + (planeTileShift * lineVCell) + (hCellStart << 1);
 //        System.out.println(String.format("Line: %d, pW: %d, pH: %d, tileStart: %d, tileEnd: %d", line, sc.planeWidth,
 //                sc.planeHeight, tileStart, tileEnd));
-        int rowInTile = (line % CELL_WIDTH);
+        int rowInTile = (line & CELL_WIDTH_MASK);
         TileDataHolder tileDataHolder = spriteDataHolder;
 
         for (int hCell = hCellStart; hCell < hCellEnd; hCell++, tileLocatorVram += 2) {
             int tileNameTable = readBufferWord(vram, tileLocatorVram);
             tileDataHolder = getTileData(tileNameTable, tileDataHolder);
-            int pixelVPosTile = tileDataHolder.vertFlip ? CELL_WIDTH - 1 - rowInTile : rowInTile;
+            int pixelVPosTile = tileDataHolder.vertFlip ? CELL_WIDTH_MASK - rowInTile : rowInTile;
             RenderPriority rp = tileDataHolder.priority ? RenderPriority.PLANE_A_PRIO :
                     RenderPriority.PLANE_A_NO_PRIO;
 

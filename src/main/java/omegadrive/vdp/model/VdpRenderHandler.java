@@ -46,6 +46,7 @@ public interface VdpRenderHandler {
     int TILE_PRIORITY_MASK = 1 << 15;
     int TILE_INDEX_MASK = 0x7FF;
     int CELL_WIDTH = 8; //in pixels
+    int CELL_WIDTH_MASK = CELL_WIDTH - 1;
     int BYTES_PER_TILE = 4; //32 bit
     int CRAM_TRANSP_PIXEL_MASK = 0x1F; //transparent pixels are the first in the palette, (0x10 << 1) -1
 

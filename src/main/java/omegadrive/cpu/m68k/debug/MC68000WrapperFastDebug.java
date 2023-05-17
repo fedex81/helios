@@ -46,7 +46,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
     private static final boolean busyLoopDetection = Boolean.parseBoolean(System.getProperty("helios.68k.busy.loop", "false"));
 
     private final CpuFastDebug fastDebug;
-    private int opcode;
+    private int opcode, intLevel;
 
     private static final Map<Integer, Integer> areaMaskMap = ImmutableMap.of(
             0, 0xF_FFFF, 1, 0xF_FFFF, 2, 0xF_FFFF, 3, 0xF_FFFF, 8, 0xF_FFFF, 9, 0xF_FFFF, 0xF, 0xF_FFFF);
@@ -72,9 +72,19 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         opcode = m68k.getPrefetchWord();
         fastDebug.printDebugMaybe();
         if (!busyLoopDetection) {
-            return super.runInstruction();
+            int r = super.runInstruction();
+            checkInterruptLevelChange();
+            return r;
         }
         return fastDebug.isBusyLoop(currentPC, opcode) + super.runInstruction();
+    }
+
+    private void checkInterruptLevelChange() {
+        int pl = m68k.getInterruptLevel();
+        if (pl != intLevel) {
+            LOG.info("{}, intLevel: {} -> {}", getInfo(), intLevel, pl);
+            intLevel = pl;
+        }
     }
 
     @Override
