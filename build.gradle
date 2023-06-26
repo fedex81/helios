@@ -82,7 +82,7 @@ task copyRes {
     copy {
         from {
             ["CREDITS.md", "README.md", "HISTORY.md",
-             "LICENSE.md", "helios.properties"]
+             "LICENSE.md", "helios.properties", "key.config.1p"]
         }
         into "$buildDir/packageDir"
     }
