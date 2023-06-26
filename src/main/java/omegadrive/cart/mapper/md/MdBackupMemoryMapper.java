@@ -42,6 +42,9 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
 
     private final static Logger LOG = LogHelper.getLogger(MdBackupMemoryMapper.class.getSimpleName());
 
+    //astebros demo needs true
+    public final static boolean allowSramWritesWhenReadOnly =
+            Boolean.parseBoolean(java.lang.System.getProperty("md.sram.always.allow.writes", "true"));
     private final static boolean verbose = false;
     private static final String fileType = "srm";
     private RomMapper baseMapper;
@@ -108,7 +111,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
 
     private void writeDataSram(int address, int data, Size size) {
         address = address & MD_PC_MASK;
-        boolean sramWrite = sramMode == SramMode.READ_WRITE;
+        boolean sramWrite = allowSramWritesWhenReadOnly || sramMode == SramMode.READ_WRITE;
         sramWrite &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
         if (!sramWrite) {
             baseMapper.writeData(address, data, size);

@@ -30,6 +30,29 @@ public class Patches {
      * Code running between vblanks is too slow, if you reduce the delays for the 68k the problem is solved.
      * hblank is a noop (rte)
      *
+     * BaseSystem: Frame: 534
+     * 2023-05-19 11:33:30.303 INFO [Proto).zip] Megadrive: DDD, 56, 00005be6   48e7 e0e0               movem.l  d0-d2/a0-a2,-(a7)
+     * 2023-05-19 11:33:30.315 INFO [Proto).zip] BaseSystem: Frame: 535
+     * 2023-05-19 11:33:30.321 INFO [Proto).zip] Megadrive: DDD, 60, 00005c58   4cdf 0707               movem.l  (a7)+,d0-d2/a0-a2
+     * 2023-05-19 11:33:30.321 INFO [Proto).zip] Megadrive: DDD, 64, 0006b492   0c79 0003 00ff0000      cmpi.w   #$0003,$00ff0000
+     * 2023-05-19 11:33:30.321 INFO [Proto).zip] Megadrive: DDD, 128, 00000366   48e7 fffe               movem.l  d0-d7/a0-a6,-(a7)
+     * 2023-05-19 11:33:30.321 INFO [Proto).zip] MC68000WrapperFastDebug: 00003e84   52b8 8784               addq.l   #1,$8784, mem 0xffff8784: 1, intLevel: 6
+     * 2023-05-19 11:33:30.321 INFO [Proto).zip] Megadrive: DDD, 132, 00000370   4cdf 7fff               movem.l  (a7)+,d0-d7/a0-a6
+     * 2023-05-19 11:33:30.332 INFO [Proto).zip] BaseSystem: Frame: 536
+     * 2023-05-19 11:33:30.332 INFO [Proto).zip] Megadrive: DDD, 64, 0006b492   0c79 0003 00ff0000      cmpi.w   #$0003,$00ff0000
+     * 2023-05-19 11:33:30.332 INFO [Proto).zip] Megadrive: DDD, 128, 00000366   48e7 fffe               movem.l  d0-d7/a0-a6,-(a7)
+     * 2023-05-19 11:33:30.332 INFO [Proto).zip] MC68000WrapperFastDebug: 00003e84   52b8 8784               addq.l   #1,$8784, mem 0xffff8784: 2, intLevel: 6
+     * 2023-05-19 11:33:30.332 INFO [Proto).zip] Megadrive: DDD, 132, 00000370   4cdf 7fff               movem.l  (a7)+,d0-d7/a0-a6
+     * 2023-05-19 11:33:30.333 INFO [Proto).zip] Megadrive: DDD, 54, 000035ba   c1c2                    muls     d2,d0
+     * 2023-05-19 11:33:30.333 INFO [Proto).zip] Megadrive: DDD, 54, 000035ba   c1c2                    muls     d2,d0
+     * 2023-05-19 11:33:30.333 INFO [Proto).zip] Megadrive: DDD, 54, 000035ba   c1c2                    muls     d2,d0
+     * 2023-05-19 11:33:30.333 INFO [Proto).zip] Megadrive: DDD, 54, 000035ba   c1c2                    muls     d2,d0
+     * 2023-05-19 11:33:30.333 INFO [Proto).zip] Megadrive: DDD, 54, 000035ba   c1c2                    muls     d2,d0
+     * 2023-05-19 11:33:30.333 INFO [Proto).zip] Megadrive: DDD, 54, 000035ba   c1c2                    muls     d2,d0
+     * 2023-05-19 11:33:30.333 INFO [Proto).zip] Megadrive: DDD, 54, 000035ba   c1c2                    muls     d2,d0
+     * 2023-05-19 11:33:30.333 INFO [Proto).zip] Megadrive: DDD, 54, 000035ba   c1c2                    muls     d2,d0
+     * 2023-05-19 11:33:30.335 INFO [Proto).zip] MC68000WrapperFastDebug: 00003786   0cb8 00000001 8784      cmpi.l   #$00000001,$8784, mem 0xffff8784: 2, intLevel: 3
+     *
      */
 //    @Override
 //    public int runInstruction() {

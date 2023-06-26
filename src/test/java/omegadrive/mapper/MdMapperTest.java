@@ -2,6 +2,7 @@ package omegadrive.mapper;
 
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.Size;
@@ -101,7 +102,11 @@ public class MdMapperTest {
         testBusRead(bus, address, sramData); //read SRAM
         testBusRead(bus, address1, val);
         bus.write(address, 0x99, Size.BYTE); //write BYTE to cart, ignored
-        testBusRead(bus, address, sramData); //read SRAM
+
+        boolean ignore = !MdBackupMemoryMapper.allowSramWritesWhenReadOnly;
+        System.out.println("Ignoring sramWrite: " + ignore);
+        int exp = ignore ? sramData : 0x9926_1748;
+        testBusRead(bus, address, exp); //read SRAM
     }
 
     //tries to use sram without declaring it in the header
@@ -130,6 +135,30 @@ public class MdMapperTest {
 
         testBusRead(bus, address, val);
         testBusRead(bus, address1, val1);
+    }
+
+    /**
+     * Astebros demo, switches on sram but in read-only mode, it then expects to be able to write to it.
+     */
+    @Test
+    public void testSramReadOnlyFlag() {
+        prepareRomData(0x50_0000, "SEGA GENESIS"); //40 Mbit
+        GenesisBusProvider bus = loadRomData();
+        int address = 0x20_00FF;
+        int sramData = 0x1234_5678;
+        int val = 0x99_34_56_78;
+
+        bus.write(SRAM_LOCK, 3, Size.BYTE); //enable SRAM, disable ssfMapper
+        bus.write(address, sramData, Size.LONG); //write LONG to SRAM
+        testBusRead(bus, address, sramData); //read SRAM
+
+        bus.write(SRAM_LOCK, 1, Size.BYTE); //enable SRAM READ-ONLY, disable ssfMapper
+        bus.write(address, 0x99, Size.BYTE); //write BYTE to cart
+
+        boolean ignore = !MdBackupMemoryMapper.allowSramWritesWhenReadOnly;
+        System.out.println("Ignoring sramWrite: " + ignore);
+        int exp = ignore ? sramData : val;
+        testBusRead(bus, address, exp); //read SRAM
     }
 
     private void testSramInternal() {
