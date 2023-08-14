@@ -31,6 +31,7 @@ import static omegadrive.memory.MemoryProvider.M68K_RAM_SIZE;
 
 public interface GenesisBusProvider extends BaseBusProvider {
 
+    int[] EMPTY = new int[0];
     //http://gendev.spritesmind.net/forum/viewtopic.php?f=25&t=1283
     int Z80_ADDRESS_SPACE_START = 0xA00000;
     int Z80_ADDRESS_SPACE_END = 0xA0FFFF;
@@ -112,7 +113,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
     GenesisVdpProvider getVdp();
 
     default int[] getMapperData() {
-        return new int[0];
+        return EMPTY;
     }
 
     default void setMapperData(int[] data) {

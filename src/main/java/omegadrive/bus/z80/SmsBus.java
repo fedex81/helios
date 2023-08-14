@@ -159,7 +159,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
         switch (port & 0xC1) {
             case 0:
             case 0x01:
-                if (port % 2 == 0) {
+                if ((port & 1) == 0) {
                     handlePort3E(value);
                 } else {
                     handlePortAB(value);

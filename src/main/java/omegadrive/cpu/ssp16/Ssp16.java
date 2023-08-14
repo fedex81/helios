@@ -2,6 +2,7 @@ package omegadrive.cpu.ssp16;
 
 import omegadrive.cpu.ssp16.Ssp16Types.Ssp1601_t;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.util.ArrayEndianUtil;
 
 import static omegadrive.cpu.ssp16.Ssp16Types.Cart;
 import static omegadrive.cpu.ssp16.Ssp16Types.Svp_t;
@@ -89,8 +90,8 @@ public interface Ssp16 {
     static void loadCart(Cart cart, byte[] romBytes) {
         cart.rom = new int[romBytes.length >> 1]; //words
         int k = 0;
-        for (int i = 0; i < romBytes.length; i += 2) {
-            cart.rom[k++] = ((romBytes[i] << 8) | romBytes[i + 1]) & MASK_16BIT;
+        for (int i = 0; i < romBytes.length; i += 2, k++) {
+            ArrayEndianUtil.setWordFromBytesBE(romBytes, cart.rom, i, k);
         }
     }
 

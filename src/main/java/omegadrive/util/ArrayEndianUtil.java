@@ -7,6 +7,8 @@ package omegadrive.util;
  */
 public class ArrayEndianUtil {
 
+    public static final int MASK_16BIT = 0xFFFF;
+
     public static int getUInt32LE(byte... bytes) {
         int value = (bytes[0] & 0xFF);
         value = bytes.length > 1 ? value | ((bytes[1] & 0xFF) << 8) : value;
@@ -21,6 +23,14 @@ public class ArrayEndianUtil {
         value = bytes.length > 2 ? value | ((bytes[2] & 0xFF) << 16) : value;
         value = bytes.length > 3 ? value | ((bytes[3] & 0xFF) << 24) : value;
         return value;
+    }
+
+    /**
+     * [0xA0][0x12] -> [0xA012]
+     * [0x00][0xBB] -> [0x00BB]
+     */
+    public static void setWordFromBytesBE(byte[] src, int[] data, int srcIndex, int destIndex) {
+        data[destIndex] = (((src[srcIndex] & 0xFF) << 8) | (src[srcIndex + 1] & 0xFF)) & MASK_16BIT;
     }
 
     public static void setUInt32LE(int value, int[] data, int startIndex) {

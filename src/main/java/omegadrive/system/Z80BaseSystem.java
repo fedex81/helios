@@ -155,7 +155,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
 
     private void runVdp(long counter) {
-        if (counter % 2 == 1) {
+        if ((counter & 1) == 1) {
             vdp.runSlot();
         }
     }

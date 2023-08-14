@@ -712,8 +712,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 case WORD:
                     return vdpData;
                 case BYTE:
-                    boolean even = address % 2 == 0;
-                    return even ? vdpData >>> 8 : vdpData & 0xFF;
+                    return (address & 1) == 0 ? vdpData >>> 8 : vdpData & 0xFF; //even
             }
             LOG.error("Unexpected {} vdp port read: {}", size, th(addressL));
             return 0xFF;
@@ -736,8 +735,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             if (size == Size.WORD) {
                 return (v << 8) | h;
             } else if (size == Size.BYTE) {
-                boolean even = address % 2 == 0;
-                return even ? v : h;
+                return (address & 1) == 0 ? v : h; //even
             }
         } else if (address == 0x1C) {
             LOG.warn("Ignoring VDP debug register read, address : {}", th(addressL));
