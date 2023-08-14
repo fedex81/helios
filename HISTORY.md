@@ -1,3 +1,9 @@
+## 23.0814
+helios: add default keyboard mappings file, defaults to 1 player only
+md: add flag to allow sram writes when in read-only mode
+svp: fix cart loading as words (16 bits)
+z80: tweak zreset, zbusreq handling
+
 ## 23.0506
 helios: add Sega 32x emulation by merging the helios32x project: https://github.com/fedex81/helios32x
 md: improve rom header parsing
