@@ -23,10 +23,10 @@
  *      OPLx decapsulated(Matthew Gambrell, Olli Niemitalo):
  *          OPL2 ROMs.
  *
- * version: 1.0.11
+ * version: 1.0.12
  */
 /*
- * 2018-2022 Federico Berti
+ * 2018-2023 Federico Berti
  * - Java translation
  */
 package omegadrive.sound.fm.ym2612.nukeykt;
@@ -527,7 +527,6 @@ public class Ym3438 implements IYm3438 {
         chip.eg_ssg_pgrst_latch[slot] = 0;
         chip.eg_ssg_repeat_latch[slot] = 0;
         chip.eg_ssg_hold_up_latch[slot] = 0;
-        chip.eg_ssg_inv[slot] = 0;
         if ((chip.ssg_eg[slot] & 0x08) > 0) {
             direction = chip.eg_ssg_dir[slot];
             if ((chip.eg_level[slot] & 0x200) > 0) {
@@ -553,11 +552,12 @@ public class Ym3438 implements IYm3438 {
                 chip.eg_ssg_hold_up_latch[slot] = 1;
             }
             direction &= chip.eg_kon[slot];
-            chip.eg_ssg_inv[slot] = (chip.eg_ssg_dir[slot] ^ ((chip.ssg_eg[slot] >> 2) & 0x01))
-                    & chip.eg_kon[slot];
         }
         chip.eg_ssg_dir[slot] = direction;
         chip.eg_ssg_enable[slot] = ((chip.ssg_eg[slot] >> 3) & 0x01) > 0;
+        chip.eg_ssg_inv[slot] = (chip.eg_ssg_dir[slot] ^
+                (((chip.ssg_eg[slot] >> 2) & 0x01) & ((chip.ssg_eg[slot] >> 3) & 0x01)))
+                & chip.eg_kon[slot];
     }
 
     void OPN2_EnvelopeADSR(IYm3438.IYm3438_Type chip) {
