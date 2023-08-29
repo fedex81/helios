@@ -7,9 +7,7 @@ import org.slf4j.Logger;
 import s32x.Sh2MMREG;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.RegSpec;
-import s32x.util.S32xUtil;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 import static omegadrive.util.Util.th;
@@ -175,13 +173,5 @@ public class Sh2Dict {
         String s = Md32xRuntimeData.getAccessTypeExt() + " SH2 reg " + type + " " +
                 size + ", (" + sh2RegMapping[reg & Sh2MMREG.SH2_REG_MASK] + ") " + th(reg) + ": " + th(value);
         LOG.info(s);
-    }
-
-
-    @Deprecated
-    public static int writeBufferWithMask(ByteBuffer regs, RegSpecSh2 regSh2) {
-        int val = S32xUtil.readBuffer(regs, regSh2.regSpec.bufferAddr, regSh2.regSpec.regSize) & regSh2.regSpec.writableBitMask;
-        S32xUtil.writeBufferRaw(regs, regSh2.regSpec.bufferAddr, val, regSh2.regSpec.regSize);
-        return val;
     }
 }

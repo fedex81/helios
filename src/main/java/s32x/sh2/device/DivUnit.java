@@ -11,7 +11,6 @@ import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
-import static s32x.dict.Sh2Dict.writeBufferWithMask;
 import static s32x.util.S32xUtil.readBufferRegLong;
 
 /**
@@ -47,8 +46,7 @@ public class DivUnit implements S32xUtil.Sh2Device {
     @Override
     public void write(RegSpecSh2 reg, int pos, int value, Size size) {
         assert size == Size.LONG;
-        S32xUtil.writeBufferRaw(regs, pos, value, size);
-        writeBufferWithMask(regs, reg);
+        reg.regSpec.write(regs, value, Size.LONG);
         if (verbose) LOG.info("{} Write {} value: {} {}", cpu, reg.getName(), th(value), size);
         switch (reg) {
             case DIV_DVDNTL -> div64Dsp();

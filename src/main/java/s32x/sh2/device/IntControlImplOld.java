@@ -18,7 +18,6 @@ import java.util.Map;
 
 import static omegadrive.util.Util.*;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
-import static s32x.dict.Sh2Dict.writeBufferWithMask;
 import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.*;
 import static s32x.sh2.drc.Ow2DrcOptimizer.NO_POLLER;
 
@@ -68,25 +67,25 @@ public class IntControlImplOld implements IntControl {
     }
 
     @Override
-    public void write(RegSpecSh2 regSpec, int pos, int value, Size size) {
-        boolean changed = S32xUtil.writeBufferRaw(regs, pos, value, size);
-        int val = writeBufferWithMask(regs, regSpec);
+    public void write(RegSpecSh2 regSh2, int pos, int value, Size size) {
+        boolean changed = regSh2.regSpec.write(regs, pos, value, size);
         if (!changed) {
             return;
         }
-        switch (regSpec) {
+        int val = read(regSh2, Size.WORD);
+        switch (regSh2) {
             case INTC_IPRA:
                 onChipDevicePriority.put(DIV, (val >> 12) & 0xF);
                 onChipDevicePriority.put(DMA, (val >> 8) & 0xF);
                 onChipDevicePriority.put(WDT, (val >> 4) & 0xF);
                 onChipDevicePriority.values().forEach(lev -> onChipLevels[lev] = true);
-                logOnChipIntLevel(regSpec, val);
+                logOnChipIntLevel(regSh2, val);
                 break;
             case INTC_IPRB:
                 onChipDevicePriority.put(SCI, (val >> 12) & 0xF);
                 onChipDevicePriority.put(FRT, (val >> 8) & 0xF);
                 onChipDevicePriority.values().forEach(lev -> onChipLevels[lev] = true);
-                logOnChipIntLevel(regSpec, val);
+                logOnChipIntLevel(regSh2, val);
                 break;
             case INTC_ICR:
                 //TODO do not overwrite bit#15

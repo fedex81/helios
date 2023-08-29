@@ -23,6 +23,7 @@ import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.*;
  * <p>
  * Copyright 2021
  * <p>
+ * TODO check broken tests: Sh2PollerTest
  */
 public class IntControlImplNew implements IntControl {
 
@@ -77,31 +78,31 @@ public class IntControlImplNew implements IntControl {
     }
 
     @Override
-    public void write(RegSpecSh2 regSpec, int pos, int value, Size size) {
-        int val = 0;
-        S32xUtil.writeBufferRaw(regs, pos, value, size);
-        switch (regSpec) {
+    public void write(RegSpecSh2 regSh2, int pos, int value, Size size) {
+        boolean changed = regSh2.regSpec.write(regs, pos, value, size);
+        if (!changed) {
+            return;
+        }
+        int val = read(regSh2, Size.WORD);
+        switch (regSh2) {
             case INTC_IPRA -> {
-                val = S32xUtil.readBuffer(regs, regSpec.addr, Size.WORD);
                 onChipDevicePriority.put(DIV, (val >> 12) & 0xF);
                 onChipDevicePriority.put(DMA, (val >> 8) & 0xF);
                 onChipDevicePriority.put(WDT, (val >> 4) & 0xF);
-                logExternalIntLevel(regSpec, val);
+                logExternalIntLevel(regSh2, val);
             }
             case INTC_IPRB -> {
-                val = S32xUtil.readBuffer(regs, regSpec.addr, Size.WORD);
                 onChipDevicePriority.put(SCI, (val >> 12) & 0xF);
                 onChipDevicePriority.put(FRT, (val >> 8) & 0xF);
-                logExternalIntLevel(regSpec, val);
+                logExternalIntLevel(regSh2, val);
             }
             case INTC_ICR -> {
-                val = S32xUtil.readBuffer(regs, regSpec.addr, Size.WORD);
                 if ((val & 1) > 0) {
                     LOG.error("{} Not supported: IRL Interrupt vector mode: External Vector", cpu);
                 }
             }
             case INTC_VCRA, INTC_VCRB, INTC_VCRC, INTC_VCRD ->
-                    LOG.error("{} Not supported: {}, val {} {}", cpu, regSpec.getName(), th(value), size);
+                    LOG.error("{} Not supported: {}, val {} {}", cpu, regSh2.getName(), th(value), size);
         }
     }
 

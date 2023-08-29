@@ -9,7 +9,7 @@ import s32x.bus.Sh2Bus;
 import s32x.sh2.Sh2Disassembler;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.device.IntControl.Sh2Interrupt;
-import s32x.sh2.device.IntControlImplOld;
+import s32x.sh2.device.IntControlImplNew;
 import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.nio.ByteBuffer;
@@ -86,7 +86,7 @@ public class J2CoreInterruptsTest extends J2CoreTest {
     }
 
     public static IntControl createIntControl(CpuDeviceAccess cpu, ByteBuffer regs) {
-        return new IntControlImplOld(cpu, regs) {
+        return new IntControlImplNew(cpu, regs) {
             @Override
             public int getVectorNumber() {
                 if (vectorNumber > 0) {
