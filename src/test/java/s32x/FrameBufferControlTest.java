@@ -54,14 +54,12 @@ public class FrameBufferControlTest {
     @Test
     public void testFrameBufferSelect() {
         s32XMMREG.write(MarsRegTestUtil.SH2_BITMAP_MODE_OFFSET, 1, Size.WORD); //packed pixel
-        int res = s32XMMREG.read(MarsRegTestUtil.SH2_FBCR_OFFSET, Size.WORD);
-
         s32XMMREG.setVBlank(true);
         assertVBlank(true);
         assertFrameBufferDisplay(0);
 
         //change FB during vblank -> change immediately
-        res = s32XMMREG.read(MarsRegTestUtil.SH2_FBCR_OFFSET, Size.WORD);
+        int res = s32XMMREG.read(MarsRegTestUtil.SH2_FBCR_OFFSET, Size.WORD);
         s32XMMREG.write(MarsRegTestUtil.SH2_FBCR_OFFSET, res ^ 1, Size.WORD);
         assertVBlank(true);
         assertFrameBufferDisplay(1);

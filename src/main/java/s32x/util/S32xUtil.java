@@ -227,23 +227,6 @@ public class S32xUtil {
                     LOG.error("Unable to write buffer: {}, addr: {}, value: {} {}", reg.getName(), th(address), th(value), size);
         }
     }
-
-    @Deprecated
-    public static void writeBufferRegOld(RegContext rc, RegSpecS32x reg, int address, int value, Size size) {
-        address &= reg.getAddrMask();
-        if (reg.deviceType == S32xDict.S32xRegType.VDP) {
-            writeBufferRaw(rc.vdpRegs, address, value, size);
-            return;
-        }
-        switch (reg.regCpuType) {
-            case REG_BOTH -> writeBuffers(rc.sysRegsMd, rc.sysRegsSh2, address, value, size);
-            case REG_MD -> writeBufferRaw(rc.sysRegsMd, address, value, size);
-            case REG_SH2 -> writeBufferRaw(rc.sysRegsSh2, address, value, size);
-            default ->
-                    LOG.error("Unable to write buffer: {}, addr: {}, value: {} {}", reg.getName(), th(address), th(value), size);
-        }
-    }
-
     public static String toHexString(ByteBuffer b, int pos, Size size) {
         return Integer.toHexString(readBuffer(b, pos, size));
     }

@@ -28,7 +28,7 @@ public class Sh2Context implements Device, Serializable {
     public static int burstCycles = 1;
 
     /* System Registers */
-    public final int registers[];
+    public final int[] registers;
 
     public int GBR, VBR, SR;
     public int MACH, MACL, PR;
@@ -37,7 +37,7 @@ public class Sh2Context implements Device, Serializable {
     public int opcode, delayPC;
 
     /*
-     * defines the number of cycles we can ran before stopping the interpreter
+     * defines the number of cycles we can run before stopping the interpreter
      */
     public int cycles;
     public int cycles_ran;
