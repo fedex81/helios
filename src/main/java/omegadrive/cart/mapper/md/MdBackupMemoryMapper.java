@@ -124,8 +124,9 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
 
     private int readDataEeprom(int address, Size size) {
         address = address & MD_PC_MASK;
-        boolean eepromRead = sramMode != SramMode.DISABLE;
-        eepromRead &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
+        //NFL Qc 32x reads to 0x20_0000 LONG with SRAM enabled and expects to read from cart
+        boolean eepromRead = sramMode != SramMode.DISABLE && size != Size.LONG;
+        eepromRead &= address == DEFAULT_SRAM_START_ADDRESS || address == DEFAULT_SRAM_START_ADDRESS + 1;
         if (eepromRead) {
             initBackupFileIfNecessary();
             int res = i2c.readEeprom(address, size);
@@ -138,7 +139,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private void writeDataEeprom(int address, int data, Size size) {
         address = address & MD_PC_MASK;
         boolean eepromWrite = sramMode == SramMode.READ_WRITE;
-        eepromWrite &= address >= DEFAULT_SRAM_START_ADDRESS && address <= DEFAULT_SRAM_END_ADDRESS;
+        eepromWrite &= address == DEFAULT_SRAM_START_ADDRESS || address == DEFAULT_SRAM_START_ADDRESS + 1;
         if (eepromWrite) {
             initBackupFileIfNecessary();
             i2c.writeEeprom(address, (data & 0xFF), size);

@@ -228,5 +228,23 @@
       "type": "EEPROM_24C65",
       "lineMap": "ACCLAIM_32M"
     }
+  },
+  {
+    "id": "T-8104B",
+    "name": "NBA Jam TE 32x",
+    "notes": "according to Ares",
+    "eeprom": {
+      "type": "EEPROM_24C04",
+      "lineMap": "ACCLAIM_32M_SCL8"
+    }
+  },
+  {
+    "id": "T-8102B",
+    "name": "NFL Quarterback Club 32x",
+    "notes": "according to Ares",
+    "eeprom": {
+      "type": "EEPROM_24C02",
+      "lineMap": "ACCLAIM_32M"
+    }
   }
 ]
