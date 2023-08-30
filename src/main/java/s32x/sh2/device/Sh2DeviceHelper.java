@@ -34,7 +34,7 @@ public class Sh2DeviceHelper {
         Sh2DeviceContext ctx = new Sh2DeviceContext();
         ctx.cpu = cpu;
         ctx.sh2MMREG = sh2Regs;
-        ctx.intC = IntControlImplNew.createInstance(cpu, sh2Regs.getRegs());
+        ctx.intC = IntControlImpl.createInstance(cpu, sh2Regs.getRegs());
         ctx.dmaC = new DmaC(cpu, ctx.intC, memory, dmaFifo68k, sh2Regs.getRegs());
         ctx.sci = new SerialCommInterface(cpu, ctx.intC, sh2Regs.getRegs());
         ctx.divUnit = new DivUnit(cpu, ctx.intC, sh2Regs.getRegs());

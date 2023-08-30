@@ -27,6 +27,7 @@ import static s32x.sh2.drc.Ow2DrcOptimizer.NO_POLLER;
  * Copyright 2021
  * <p>
  */
+@Deprecated
 public class IntControlImplOld implements IntControl {
 
     private static final Logger LOG = LogHelper.getLogger(IntControlImplOld.class.getSimpleName());

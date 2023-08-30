@@ -6,6 +6,8 @@ import omegadrive.util.Util;
 import org.slf4j.Logger;
 import s32x.dict.S32xDict;
 import s32x.dict.Sh2Dict.RegSpecSh2;
+import s32x.event.PollSysEventManager;
+import s32x.sh2.drc.Ow2DrcOptimizer;
 import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
@@ -17,22 +19,24 @@ import java.util.Map;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
 import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.*;
+import static s32x.sh2.drc.Ow2DrcOptimizer.NO_POLLER;
 
 /**
  * Federico Berti
  * <p>
  * Copyright 2021
  * <p>
- * TODO check broken tests: Sh2PollerTest
  */
-public class IntControlImplNew implements IntControl {
+public class IntControlImpl implements IntControl {
 
-    private static final Logger LOG = LogHelper.getLogger(IntControlImplNew.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(IntControlImpl.class.getSimpleName());
 
     private static final boolean verbose = false;
 
     private final Map<Sh2DeviceHelper.Sh2DeviceType, Integer> onChipDevicePriority;
     private final Map<Sh2InterruptSource, InterruptContext> s32xInt;
+
+    private InterruptContext[] orderedIntCtx;
 
     static final int VALID_BIT_POS = 0;
     static final int PENDING_BIT_POS = 1;
@@ -49,13 +53,13 @@ public class IntControlImplNew implements IntControl {
     private final ByteBuffer regs;
     private final S32xUtil.CpuDeviceAccess cpu;
 
-    private static final boolean legacy = true;
+    private static final boolean legacy = false;
 
     public static IntControl createInstance(S32xUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
-        return legacy ? new IntControlImplOld(cpu, regs) : new IntControlImplNew(cpu, regs);
+        return legacy ? new IntControlImplOld(cpu, regs) : new IntControlImpl(cpu, regs);
     }
 
-    public IntControlImplNew(S32xUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
+    public IntControlImpl(S32xUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
         sh2_int_mask = ByteBuffer.allocate(2);
         this.regs = regs;
         this.cpu = cpu;
@@ -74,6 +78,7 @@ public class IntControlImplNew implements IntControl {
             intCtx.source = s;
             s32xInt.put(s, intCtx);
         });
+        orderedIntCtx = Arrays.stream(Sh2InterruptSource.vals).map(s32xInt::get).toArray(InterruptContext[]::new);
         setIntsMasked(0);
     }
 
@@ -203,10 +208,12 @@ public class IntControlImplNew implements IntControl {
         int maxLevel = s32xInt.values().stream().filter(s -> s.intState > INT_TRIGGER_MASK).
                 max(Comparator.comparingInt(c -> c.level)).map(ctx -> ctx.level).orElse(0);
         assert maxLevel >= 0;
+        InterruptContext prev = currentInterrupt;
         if (maxLevel > 0) {
-//            assert s32xInt.values().stream().filter(c -> c.level == maxLevel).count() < 2; //TODO debug if it happens
+            //TODO debug if it happens
+            assert s32xInt.values().stream().filter(c -> c.level == maxLevel).count() < 2;
             //order is important
-            InterruptContext ctx = Arrays.stream(Sh2InterruptSource.vals).map(s32xInt::get).filter(ic -> ic.level == maxLevel).
+            InterruptContext ctx = Arrays.stream(orderedIntCtx).filter(ic -> ic.level == maxLevel).
                     findFirst().orElse(null);
             assert ctx != null;
             if (verbose && currentInterrupt != ctx) {
@@ -216,7 +223,17 @@ public class IntControlImplNew implements IntControl {
         } else {
             currentInterrupt = LEV_0;
         }
+        fireInterruptSysEventMaybe(prev);
         assert currentInterrupt.level != Sh2Interrupt.VRES_14.ordinal();
+    }
+
+    private void fireInterruptSysEventMaybe(InterruptContext prev) {
+        if (currentInterrupt.level != prev.level && currentInterrupt.level > 0) {
+            Ow2DrcOptimizer.PollerCtx ctx = PollSysEventManager.instance.getPoller(cpu);
+            if (ctx != NO_POLLER && (ctx.isPollingActive() || ctx.isPollingBusyLoop())) {
+                PollSysEventManager.instance.fireSysEvent(cpu, PollSysEventManager.SysEvent.INT);
+            }
+        }
     }
 
     public void clearInterrupt(Sh2Interrupt intType) {
