@@ -150,8 +150,8 @@ public final class Sh2BusImpl implements Sh2Bus {
     public void write(int address, int val, Size size) {
         S32xUtil.CpuDeviceAccess cpuAccess = Md32xRuntimeData.getAccessTypeExt();
         val &= size.getMask();
-        assert size == Size.LONG ? (address & 3) == 0 : true;
-        assert size == Size.WORD ? (address & 1) == 0 : true;
+        assert size == Size.LONG ? (address & 3) == 0 : true : th(address) + "," + size;
+        assert size == Size.WORD ? (address & 1) == 0 : true : th(address) + "," + size;
         if (SH2_MEM_ACCESS_STATS) {
             memAccessStats.addMemHit(false, address, size);
         }

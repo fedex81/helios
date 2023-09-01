@@ -22,6 +22,7 @@ public class Sh2DeviceHelper {
         public SerialCommInterface sci;
         public DivUnit divUnit;
         public WatchdogTimer wdt;
+        public FreeRunningTimer frt;
         public Sh2MMREG sh2MMREG;
     }
 
@@ -39,6 +40,7 @@ public class Sh2DeviceHelper {
         ctx.sci = new SerialCommInterface(cpu, ctx.intC, sh2Regs.getRegs());
         ctx.divUnit = new DivUnit(cpu, ctx.intC, sh2Regs.getRegs());
         ctx.wdt = new WatchdogTimer(cpu, ctx.intC, sh2Regs.getRegs());
+        ctx.frt = new FreeRunningTimer(cpu, ctx.intC, sh2Regs.getRegs());
         return ctx;
     }
 }

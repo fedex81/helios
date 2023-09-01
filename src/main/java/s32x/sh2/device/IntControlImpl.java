@@ -107,7 +107,7 @@ public class IntControlImpl implements IntControl {
                 }
             }
             case INTC_VCRA, INTC_VCRB, INTC_VCRC, INTC_VCRD ->
-                    LOG.error("{} Not supported: {}, val {} {}", cpu, regSh2.getName(), th(value), size);
+                    LOG.info("{} uncommon: {}, val {} {}", cpu, regSh2.getName(), th(value), size);
         }
     }
 
@@ -224,7 +224,6 @@ public class IntControlImpl implements IntControl {
             currentInterrupt = LEV_0;
         }
         fireInterruptSysEventMaybe(prev);
-        assert currentInterrupt.level != Sh2Interrupt.VRES_14.ordinal();
     }
 
     private void fireInterruptSysEventMaybe(InterruptContext prev) {
@@ -272,18 +271,23 @@ public class IntControlImpl implements IntControl {
         //TODO the vector number should be coming from the device itself
         switch (ctx.source.deviceType) {
             case DMA:
+                //byte #3
                 int offset = ctx.source.subType == OnChipSubType.DMA_C0 ? 0 : 1;
                 vn = S32xUtil.readBuffer(regs, INTC_VCRDMA0.addr + (offset << 3), Size.LONG) & 0xFF;
                 break;
             case WDT:
-                vn = S32xUtil.readBuffer(regs, INTC_VCRWDT.addr, Size.BYTE) & 0xFF;
+                vn = S32xUtil.readBuffer(regs, INTC_VCRWDT.addr, Size.BYTE); //byte #0
                 break;
             case DIV:
-                vn = S32xUtil.readBuffer(regs, INTC_VCRDIV.addr, Size.BYTE) & 0xFF;
+                vn = S32xUtil.readBuffer(regs, INTC_VCRDIV.addr, Size.LONG) & 0x7F; //byte #3
                 break;
             case SCI:
+                //TODO fix
                 int pos = ctx.source.subType == OnChipSubType.RXI ? INTC_VCRA.addr + 1 : INTC_VCRB.addr;
-                vn = S32xUtil.readBuffer(regs, pos, Size.BYTE) & 0xFF;
+                vn = S32xUtil.readBuffer(regs, pos, Size.BYTE);
+                break;
+            case FRT:
+                vn = S32xUtil.readBuffer(regs, INTC_VCRD.addr, Size.BYTE) & 0x7F; //byte #0
                 break;
             case NONE:
                 break;

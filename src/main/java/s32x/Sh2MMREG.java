@@ -21,6 +21,7 @@ import java.util.stream.IntStream;
 import static omegadrive.util.Util.readBufferByte;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.*;
+import static s32x.sh2.device.FreeRunningTimer.SH2_ENABLE_FRT;
 
 /**
  * Federico Berti
@@ -47,6 +48,7 @@ public class Sh2MMREG implements Device {
     private DmaC dmaC;
     public IntControl intC;
     private WatchdogTimer wdt;
+    private FreeRunningTimer frt;
     private final Sh2Cache cache;
 
     private final S32xUtil.CpuDeviceAccess cpu;
@@ -67,6 +69,7 @@ public class Sh2MMREG implements Device {
         this.sci = ctx.sci;
         this.intC = ctx.intC;
         this.wdt = ctx.wdt;
+        this.frt = ctx.frt;
         reset();
     }
 
@@ -104,7 +107,7 @@ public class Sh2MMREG implements Device {
                 wdt.write(regSpec, pos, value, size);
                 break;
             case FRT:
-                handleWriteFRT(regSpec, pos, value, size);
+                frt.write(regSpec, pos, value, size);
                 break;
             case BSC:
                 handleWriteBSC(regSpec, pos, value, size);
@@ -154,12 +157,7 @@ public class Sh2MMREG implements Device {
                 case WDT -> res = wdt.read(regSpec, pos, size);
                 case SCI -> res = sci.read(regSpec, pos, size);
                 case DIV -> res = divUnit.read(regSpec, pos, size);
-                case FRT -> {
-                    res = S32xUtil.readBuffer(regs, pos, size);
-                    if (regSpec != RegSpecSh2.FRT_TIER && regSpec != RegSpecSh2.FRT_TOCR) {
-                        LOG.error("{} Unexpected FRT reg {} read: {} {}", cpu, regSpec, th(res), size);
-                    }
-                }
+                case FRT -> res = frt.read(regSpec, pos, size);
                 case BSC -> {
                     assert size != Size.BYTE;
                     res = S32xUtil.readBuffer(regs, pos, size);
@@ -191,19 +189,6 @@ public class Sh2MMREG implements Device {
             value |= (cpu.ordinal() & 1) << 15;
         }
         S32xUtil.writeRegBuffer(regSpec, regs, value, size);
-    }
-
-    private void handleWriteFRT(RegSpecSh2 r, int pos, int v, Size size) {
-//        assert size == Size.BYTE; //TODO sonic32x plus
-        assert pos == r.addr : th(pos) + ", " + th(r.addr);
-        if (r == RegSpecSh2.FRT_TIER) {
-            v = (v & 0x8e) | 1;
-        } else if (r == RegSpecSh2.FRT_TOCR) {
-            v |= 0xe0;
-        } else {
-//            LOG.error("{} Unexpected FRT reg {} write: {} {}", cpu, r, th(v) ,size);
-        }
-        S32xUtil.writeBufferRaw(regs, r.addr & SH2_REG_MASK, v, size);
     }
 
     private int handleWriteCCR(RegSpecSh2 r, int pos, int v, Size size) {
@@ -280,6 +265,9 @@ public class Sh2MMREG implements Device {
         assert cycles == 3;
         Md32xRuntimeData.setAccessTypeExt(cpu);
         wdt.step(cycles);
+        if (SH2_ENABLE_FRT) {
+            frt.step(cycles);
+        }
         dmaC.step(cycles);
         Md32xRuntimeData.resetCpuDelayExt(cpu, 0);
         if (verbose) sh2TicksPerFrame += cycles;
