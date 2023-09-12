@@ -306,6 +306,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
             bus.closeRom();
             telemetry.reset();
             Optional.ofNullable(vdp).ifPresent(Device::reset);
+            cycleCounter = 1;
         }
     }
 
