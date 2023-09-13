@@ -79,6 +79,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 //        System.setProperty("68k.debug", "true");
 //        System.setProperty("helios.68k.debug.mode", "2");
 //        System.setProperty("z80.debug", "true");
+//        System.setProperty("helios.z80.debug.mode", "2");
 //        System.setProperty("sh2.master.debug", "true");
 //        System.setProperty("sh2.slave.debug", "true");
         LOG.info("Enable FM: {}, Enable PWM: {}, Sh2Cycles: {}", ENABLE_FM, ENABLE_PWM, SH2_CYCLES_PER_STEP);

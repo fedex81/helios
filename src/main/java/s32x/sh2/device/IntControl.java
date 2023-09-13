@@ -23,7 +23,16 @@ public interface IntControl extends S32xUtil.Sh2Device {
     Logger LOG = LogHelper.getLogger(IntControl.class.getSimpleName());
 
     enum OnChipSubType {
-        S_NONE, RIE, TIE, DMA_C0, DMA_C1, D_OVFI, ERI, RXI, TXI, TEI, ICI, OCI, OVI;
+        S_NONE,
+        DMA_C0, //DMA Channel#0 interrupt requests
+        DMA_C1, //DMA Channel#1 interrupt requests
+        ERI,  //SCI receive-error interrupt requests
+        RXI,  //SCI Receive-data-full interrupt requests
+        TXI, //SCI transmit-data-empty interrupt request
+        TEI, //SCI transmit-end interrupt request
+        ICI, //FRT
+        OCI, //FRT
+        OVI; //FRT Timer Overflow Flag interrupt
     }
 
     enum Sh2InterruptSource {
@@ -88,6 +97,11 @@ public interface IntControl extends S32xUtil.Sh2Device {
         public Sh2InterruptSource source;
         public Sh2Interrupt interrupt;
         public int level = 0;
+        /**
+         * bit #0: valid
+         * bit #1: pending
+         * bit #2: trigger
+         */
         public int intState = 0;
 
         @Override

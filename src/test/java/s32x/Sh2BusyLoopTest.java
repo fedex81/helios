@@ -657,6 +657,13 @@ public class Sh2BusyLoopTest {
          *      00000566	e180	mov H'ffffff80, R1
          *      00000568	3100	cmp/eq R0, R1
          *      0000056a	8bfb	bf H'00000564
+         *
+         *      soulstar x
+         *      MASTER Poll ignored at PC 6000746: 20004020 NONE
+         *      06000746	d11e	mov.l @(H'060007c0), R1
+         *      00000748	6011	mov.w @R1, R0
+         *      0000074a	8800	cmp/eq H'00, R0
+         *      0000074c	89fb	bt H'00000746
          */
     }
 

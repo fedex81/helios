@@ -165,7 +165,7 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
             int scr = readBufferByte(regs, SCI_SCR.addr);
             sciData.isDataInTransit = false;
             if ((scr & 0x40) > 0) { //RIE
-                intControl.setOnChipDeviceIntPending(SCI, RXI);
+                intControl.setOnChipDeviceIntPending(SCI, RXI); //receive full
             }
         }
     }

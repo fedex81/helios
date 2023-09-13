@@ -209,6 +209,7 @@ public class IntControlImpl implements IntControl {
                 max(Comparator.comparingInt(c -> c.level)).map(ctx -> ctx.level).orElse(0);
         assert maxLevel >= 0;
         InterruptContext prev = currentInterrupt;
+        currentInterrupt = LEV_0;
         if (maxLevel > 0) {
             //TODO debug if it happens
             assert s32xInt.values().stream().filter(c -> c.level == maxLevel).count() < 2;
@@ -216,12 +217,10 @@ public class IntControlImpl implements IntControl {
             InterruptContext ctx = Arrays.stream(orderedIntCtx).filter(ic -> ic.level == maxLevel).
                     findFirst().orElse(null);
             assert ctx != null;
-            if (verbose && currentInterrupt != ctx) {
+            if (verbose && currentInterrupt != ctx && currentInterrupt.level > 0) {
                 LOG.info("{} Level change: {} -> {}", cpu, currentInterrupt, ctx);
             }
             currentInterrupt = ctx;
-        } else {
-            currentInterrupt = LEV_0;
         }
         fireInterruptSysEventMaybe(prev);
     }
@@ -251,7 +250,6 @@ public class IntControlImpl implements IntControl {
         //36 Great Holes Starring Fred Couples (Prototype - Nov 05, 1994) (32X).32x
         //doesn't clear VINT=12
         clearInterrupt(currentInterrupt);
-        currentInterrupt = LEV_0;  //TODO really??
     }
 
     public InterruptContext getInterruptContext() {
@@ -267,7 +265,6 @@ public class IntControlImpl implements IntControl {
 
     private int getOnChipDeviceVectorNumber(InterruptContext ctx) {
         int vn = -1;
-        if (verbose) LOG.info("{} {} interrupt exec: {}, vector: {}", cpu, ctx.source.deviceType, ctx.level, th(vn));
         //TODO the vector number should be coming from the device itself
         switch (ctx.source.deviceType) {
             case DMA:
@@ -276,6 +273,7 @@ public class IntControlImpl implements IntControl {
                 vn = S32xUtil.readBuffer(regs, INTC_VCRDMA0.addr + (offset << 3), Size.LONG) & 0xFF;
                 break;
             case WDT:
+                //we only support Watchdog Timer (WDT) Interval Interrupt Vector Number (WITV)
                 vn = S32xUtil.readBuffer(regs, INTC_VCRWDT.addr, Size.BYTE); //byte #0
                 break;
             case DIV:
@@ -295,6 +293,7 @@ public class IntControlImpl implements IntControl {
                 LOG.error("{} Unhandled interrupt for device: {}, level: {}", cpu, ctx.source.deviceType, ctx.level);
                 break;
         }
+        if (verbose) LOG.info("{} {} interrupt exec: {}, vector: {}", cpu, ctx.source.deviceType, ctx.level, th(vn));
         return vn;
     }
 
