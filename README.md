@@ -1,4 +1,5 @@
 ![Java CI](https://github.com/fedex81/helios/workflows/Java%20CI/badge.svg)
+[![CodeQL](https://github.com/fedex81/helios/actions/workflows/codeql.yml/badge.svg)](https://github.com/fedex81/helios/actions/workflows/codeql.yml)
 
 # Helios
 
