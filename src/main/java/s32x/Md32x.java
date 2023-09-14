@@ -61,7 +61,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 
     //NOTE vr helios.32x.sh2.cycles = 32
     //TODO chaotix,break with poll1, see startPollingMaybe
-    //TODO fifa, cycles=18 poll0 or cycles 12 poll1
+    //TODO fifa, poll0 or cycles 12 poll1
     //TODO brutal, cycles=12
     static {
         boolean prefEn = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.prefetch", "true"));

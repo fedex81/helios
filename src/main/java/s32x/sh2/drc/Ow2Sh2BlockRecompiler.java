@@ -239,9 +239,10 @@ public class Ow2Sh2BlockRecompiler {
 
     private static void printSource(Path file, byte[] code) {
         ClassReader reader;
-        try {
-            FileWriter fileWriter = new FileWriter(file.toFile());
-            PrintWriter pw = new PrintWriter(fileWriter);
+        try (
+                FileWriter fileWriter = new FileWriter(file.toFile());
+                PrintWriter pw = new PrintWriter(fileWriter);
+        ) {
             reader = new ClassReader(code);
             ClassVisitor visitor = new TraceClassVisitor(null, new Textifier(), pw);
             reader.accept(visitor, ClassReader.EXPAND_FRAMES);

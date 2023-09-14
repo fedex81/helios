@@ -57,6 +57,7 @@ public class PwmUtil {
                     reset();
                     LOG.info("PWM warmup done");
                 }
+                assert currentFactor < 1.0;
             }
         }
 
@@ -64,7 +65,7 @@ public class PwmUtil {
             if (isWarmup) {
                 int start = currentSamples & Warmup.stepSamples;
                 for (int i = 2; i < len; i += 2) {
-                    out[i] *= currentFactor;
+                    out[i] *= currentFactor; //currentFactor [0.0,1.0]
                     out[i + 1] *= currentFactor;
                 }
                 addSampleCount(len); //TODO check this

@@ -477,12 +477,12 @@ public class Ssp16Impl implements Ssp16 {
 
     /* 0-4, 13 */
     public int read_unknown() {
-        LOG.error("ssp FIXME: unknown read @ %04x", GET_PPC_OFFS());
+        LOG.error(String.format("ssp FIXME: unknown read @ %04x", GET_PPC_OFFS()));
         return 0;
     }
 
     void write_unknown(int d) {
-        LOG.error("ssp FIXME: unknown write @ %04x", GET_PPC_OFFS());
+        LOG.error(String.format("ssp FIXME: unknown write @ %04x", GET_PPC_OFFS()));
     }
 
     /* 4 */
@@ -575,7 +575,7 @@ public class Ssp16Impl implements Ssp16 {
         int r = pm_io(0, 1, d);
         if (r != -1) return;
         if (LOG_SVP) {
-            LOG.info("PM0 raw w %04x @ %04x", d, GET_PPC_OFFS());
+            LOG.info(String.format("PM0 raw w %04x @ %04x", d, GET_PPC_OFFS()));
         }
         rPM0.setH(d);
     }
@@ -586,7 +586,7 @@ public class Ssp16Impl implements Ssp16 {
         if (d != -1) return d;
         /* can be removed? */
         if (LOG_SVP) {
-            LOG.info("PM1 raw r %04x @ %04x", rPM1.h, GET_PPC_OFFS());
+            LOG.info(String.format("PM1 raw r %04x @ %04x", rPM1.h, GET_PPC_OFFS()));
         }
         return rPM1.h;
     }
@@ -596,7 +596,7 @@ public class Ssp16Impl implements Ssp16 {
         if (r != -1) return;
         /* can be removed? */
         if (LOG_SVP) {
-            LOG.info("PM1 raw w %04x @ %04x", d, GET_PPC_OFFS());
+            LOG.info(String.format("PM1 raw w %04x @ %04x", d, GET_PPC_OFFS()));
         }
         rPM1.setH(d);
     }
@@ -607,7 +607,7 @@ public class Ssp16Impl implements Ssp16 {
         if (d != -1) return d;
         /* can be removed? */
         if (LOG_SVP) {
-            LOG.info("PM2 raw r %04x @ %04x", rPM2.h, GET_PPC_OFFS());
+            LOG.info(String.format("PM2 raw r %04x @ %04x", rPM2.h, GET_PPC_OFFS()));
         }
         return rPM2.h;
     }
@@ -617,7 +617,7 @@ public class Ssp16Impl implements Ssp16 {
         if (r != -1) return;
         /* can be removed? */
         if (LOG_SVP) {
-            LOG.info("PM2 raw w %04x @ %04x", d, GET_PPC_OFFS());
+            LOG.info(String.format("PM2 raw w %04x @ %04x", d, GET_PPC_OFFS()));
         }
         rPM2.setH(d);
     }
@@ -628,7 +628,7 @@ public class Ssp16Impl implements Ssp16 {
         int d = pm_io(3, 0, 0);
         if (d != -1) return d;
         if (LOG_SVP) {
-            LOG.info("XST raw r %04x @ %04x", rXST.h, GET_PPC_OFFS());
+            LOG.info(String.format("XST raw r %04x @ %04x", rXST.h, GET_PPC_OFFS()));
         }
         return rXST.h;
     }
@@ -638,7 +638,7 @@ public class Ssp16Impl implements Ssp16 {
         int r = pm_io(3, 1, d);
         if (r != -1) return;
         if (LOG_SVP) {
-            LOG.info("XST raw w %04x @ %04x", d, GET_PPC_OFFS());
+            LOG.info(String.format("XST raw w %04x @ %04x", d, GET_PPC_OFFS()));
         }
         rPM0.setH(rPM0.h | 1);
         rXST.setH(d);
@@ -666,7 +666,7 @@ public class Ssp16Impl implements Ssp16 {
         if (d != -1) return d;
         /* can be removed? */
         if (LOG_SVP) {
-            LOG.info("PM4 raw r %04x @ %04x", rPM4.h, GET_PPC_OFFS());
+            LOG.info(String.format("PM4 raw r %04x @ %04x", rPM4.h, GET_PPC_OFFS()));
         }
         return rPM4.h;
     }
@@ -676,7 +676,7 @@ public class Ssp16Impl implements Ssp16 {
         if (r != -1) return;
         /* can be removed? */
         if (LOG_SVP) {
-            LOG.info("PM4 raw w %04x @ %04x", d, GET_PPC_OFFS());
+            LOG.info(String.format("PM4 raw w %04x @ %04x", d, GET_PPC_OFFS()));
         }
         rPM4.setH(d);
     }
@@ -684,8 +684,8 @@ public class Ssp16Impl implements Ssp16 {
     /* 14 */
     int read_PMC() {
         if (LOG_SVP) {
-            LOG.info("PMC r a %04x (st %c) @ %04x", rPMC.h,
-                    (sspCtx.emu_status & SSP_PMC_HAVE_ADDR) > 0 ? 'm' : 'a', GET_PPC_OFFS());
+            LOG.info(String.format("PMC r a %04x (st %c) @ %04x", rPMC.h,
+                    (sspCtx.emu_status & SSP_PMC_HAVE_ADDR) > 0 ? 'm' : 'a', GET_PPC_OFFS()));
         }
         if ((sspCtx.emu_status & SSP_PMC_HAVE_ADDR) > 0) {
             /* if (ssp.emu_status & SSP_PMC_SET) */
@@ -708,13 +708,13 @@ public class Ssp16Impl implements Ssp16 {
             sspCtx.emu_status &= ~SSP_PMC_HAVE_ADDR;
             rPMC.setH(d);
             if (LOG_SVP) {
-                LOG.info("PMC w m %04x @ %04x", rPMC.l, GET_PPC_OFFS());
+                LOG.info(String.format("PMC w m %04x @ %04x", rPMC.l, GET_PPC_OFFS()));
             }
         } else {
             sspCtx.emu_status |= SSP_PMC_HAVE_ADDR;
             rPMC.setL(d);
             if (LOG_SVP) {
-                LOG.info("PMC w a {} @ {}", rPMC.h, GET_PPC_OFFS());
+                LOG.info(String.format("PMC w a {} @ {}", rPMC.h, GET_PPC_OFFS()));
             }
         }
     }
@@ -794,8 +794,8 @@ public class Ssp16Impl implements Ssp16 {
 //                    LOG.info("svp dram read {}, {}", th(addr),
 //                            th(d));
                 } else {
-                    System.out.printf("ssp FIXME: PM%x unhandled read  mode %04x, [%06x] @ %04x",
-                            reg, mode, 0, GET_PPC_OFFS());
+                    LOG.info(String.format("ssp FIXME: PM%x unhandled read  mode %04x, [%06x] @ %04x",
+                            reg, mode, 0, GET_PPC_OFFS()));
                     d = 0;
                 }
             }
@@ -816,7 +816,7 @@ public class Ssp16Impl implements Ssp16 {
     int read_AL() {
         if (svpCtx.iram_rom[PC - 1] == 0x000f) {
             if (LOG_SVP) {
-                LOG.info("ssp dummy PM assign %08x @ %04x", rPMC.v, GET_PPC_OFFS());
+                LOG.info(String.format("ssp dummy PM assign %08x @ %04x", rPMC.v, GET_PPC_OFFS()));
             }
             sspCtx.emu_status &= ~(SSP_PMC_SET | SSP_PMC_HAVE_ADDR); /* ? */
         }
@@ -1081,7 +1081,7 @@ public class Ssp16Impl implements Ssp16 {
                 break;
             default:
                 if (LOG_SVP) {
-                    LOG.info("ssp FIXME: invalid mod in ((rX))? @ %04x", GET_PPC_OFFS());
+                    LOG.info(String.format("ssp FIXME: invalid mod in ((rX))? @ %04x", GET_PPC_OFFS()));
                 }
                 return 0;
         }
@@ -1313,8 +1313,8 @@ public class Ssp16Impl implements Ssp16 {
                                 break; /* abs */
                             default:
                                 if (LOG_SVP) {
-                                    LOG.info("ssp FIXME: unhandled mod %d @ %04x",
-                                            op & 7, GET_PPC_OFFS());
+                                    LOG.info(String.format("ssp FIXME: unhandled mod %d @ %04x",
+                                            op & 7, GET_PPC_OFFS()));
                                 }
                                 break;
                         }
@@ -1324,7 +1324,7 @@ public class Ssp16Impl implements Ssp16 {
                 /* mpys? */
                 case 0x1b:
                     if (LOG_SVP) {
-                        if ((op & 0x100) == 0) LOG.info("ssp FIXME: no b bit @ %04x", GET_PPC_OFFS());
+                        if ((op & 0x100) == 0) LOG.info(String.format("ssp FIXME: no b bit @ %04x", GET_PPC_OFFS()));
                     }
                     read_P(); /* update P */
                     rA32.setV(rA32.v - rP.v); /* maybe only upper word? */
@@ -1336,7 +1336,7 @@ public class Ssp16Impl implements Ssp16 {
                 /* mpya (rj), (ri), b */
                 case 0x4b:
                     if (LOG_SVP) {
-                        if ((op & 0x100) == 0) LOG.info("ssp FIXME: no b bit @ %04x", GET_PPC_OFFS());
+                        if ((op & 0x100) == 0) LOG.info(String.format("ssp FIXME: no b bit @ %04x", GET_PPC_OFFS()));
                     }
                     read_P(); /* update P */
                     rA32.setV(rA32.v + rP.v); /* confirmed to be 32bit */
@@ -1348,7 +1348,7 @@ public class Ssp16Impl implements Ssp16 {
                 /* mld (rj), (ri), b */
                 case 0x5b:
                     if (LOG_SVP) {
-                        if ((op & 0x100) == 0) LOG.info("ssp FIXME: no b bit @ %04x", GET_PPC_OFFS());
+                        if ((op & 0x100) == 0) LOG.info(String.format("ssp FIXME: no b bit @ %04x", GET_PPC_OFFS()));
                     }
                     rA32.setV(0);
                     rST.setH(rST.h & 0x0fff); /* ? */
@@ -1639,9 +1639,9 @@ public class Ssp16Impl implements Ssp16 {
         LOG.info("RAM0\n");
         for (h = 0; h < 32; h++) {
             if (h == 16) LOG.info("RAM1\n");
-            LOG.info("%03x:", h * 16);
+            LOG.info(String.format("%03x:", h * 16));
             for (i = 0; i < 16; i++)
-                LOG.info(" %04x", sspCtx.mem.readRAM(h * 16 + i));
+                LOG.info(String.format(" %04x", sspCtx.mem.readRAM(h * 16 + i)));
             LOG.info("\n");
         }
     }

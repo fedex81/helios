@@ -37,7 +37,6 @@ public class IntControlImplOld implements IntControl {
     private static final boolean verbose = false;
 
     private final Map<Sh2DeviceType, Integer> onChipDevicePriority = new HashMap<>();
-    private final Map<Integer, Sh2Interrupt> s32xInt = new HashMap<>(MAX_LEVEL);
 
     //valid = not masked
     private final boolean[] intValid = new boolean[MAX_LEVEL];

@@ -26,11 +26,12 @@ public class NesSoundWrapper extends GenericAudioProvider implements AudioOutInt
     public NesSoundWrapper(RegionDetector.Region region) {
         super(nesAudioFormat);
         start();
+        assert VOLUME <= 1.0;
     }
 
     @Override
     public void outputSample(int sample) {
-        sample *= VOLUME;
+        sample *= VOLUME; //VOLUME <= 1.0
         sample = sample < Short.MIN_VALUE ? Short.MIN_VALUE :
                 (sample > Short.MAX_VALUE ? Short.MAX_VALUE : sample);
         addMonoSample(sample);
