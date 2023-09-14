@@ -12,7 +12,6 @@ import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -204,24 +203,24 @@ public class IntControlImpl implements IntControl {
         }
     }
 
-    private void resetInterruptLevel() {
-        int maxLevel = s32xInt.values().stream().filter(s -> s.intState > INT_TRIGGER_MASK).
-                max(Comparator.comparingInt(c -> c.level)).map(ctx -> ctx.level).orElse(0);
-        assert maxLevel >= 0;
-        InterruptContext prev = currentInterrupt;
-        currentInterrupt = LEV_0;
-        if (maxLevel > 0) {
-            //TODO debug if it happens
-            assert s32xInt.values().stream().filter(c -> c.level == maxLevel).count() < 2;
-            //order is important
-            InterruptContext ctx = Arrays.stream(orderedIntCtx).filter(ic -> ic.level == maxLevel).
-                    findFirst().orElse(null);
-            assert ctx != null;
-            if (verbose && currentInterrupt != ctx && currentInterrupt.level > 0) {
-                LOG.info("{} Level change: {} -> {}", cpu, currentInterrupt, ctx);
+    private InterruptContext getCurrentInterrupt() {
+        InterruptContext current = LEV_0;
+        for (InterruptContext ctx : orderedIntCtx) { //order is important
+            if (ctx.intState > INT_TRIGGER_MASK && ctx.level > 0) {
+                current = ctx;
             }
-            currentInterrupt = ctx;
         }
+        return current;
+    }
+
+    private void resetInterruptLevel() {
+        InterruptContext prev = currentInterrupt;
+        InterruptContext current = getCurrentInterrupt();
+        assert current != LEV_0 ? current.level > 0 : true;
+        if (verbose && currentInterrupt != current && currentInterrupt.level > 0) {
+            LOG.info("{} Level change: {} -> {}", cpu, currentInterrupt, current);
+        }
+        currentInterrupt = current;
         fireInterruptSysEventMaybe(prev);
     }
 
