@@ -21,7 +21,7 @@ import static s32x.MarsRegTestUtil.createTestInstance;
 import static s32x.dict.S32xDict.SH2_START_ROM;
 import static s32x.dict.S32xDict.SH2_START_SDRAM;
 import static s32x.sh2.Sh2Disassembler.NOP;
-import static s32x.sh2.device.IntControl.Sh2Interrupt.PWM_6;
+import static s32x.sh2.device.IntControl.Sh2Interrupt.PWM_06;
 import static s32x.sh2.drc.DrcUtil.RUNNING_IN_GITHUB;
 import static s32x.sh2.drc.DrcUtil.loopUntilDrc;
 import static s32x.sh2.drc.Ow2DrcOptimizer.POLLER_ACTIVATE_LIMIT;
@@ -230,7 +230,7 @@ public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
         //runs the block
         runBlock(sh2Context, c.cyclesPerBlock);
         loopUntilDrcAndDetect(startRom, sh2Context, c.isPoll);
-        setInterrupt(PWM_6);
+        setInterrupt(PWM_06);
 
         //disables polling or busyLoop
         runBlock(sh2Context, c.cyclesPerBlock);
@@ -241,7 +241,7 @@ public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
         //re-enter polling
         loopUntilPollingActive(sh2Context);
 
-        clearInterrupt(PWM_6);
+        clearInterrupt(PWM_06);
     }
 
     private void testMemLoadInternal(LocalTestCtx c) {
@@ -384,7 +384,7 @@ public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
 
     private void clearInterrupt(IntControl.Sh2Interrupt interrupt) {
         IntControl intc = lc.mDevCtx.intC;
-        intc.clearInterrupt(interrupt);
+        intc.clearExternalInterrupt(interrupt);
     }
 
     private void loopUntilDrcAndBusyLoopDetect(int start, Sh2Context sh2Context) {

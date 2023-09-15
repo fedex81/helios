@@ -19,10 +19,6 @@ import static s32x.dict.S32xDict.RegSpecS32x.SH2_CMD_INT_CLEAR;
 import static s32x.dict.S32xDict.START_32X_SYSREG_CACHE;
 import static s32x.dict.Sh2Dict.RegSpecSh2.INTC_IPRA;
 import static s32x.sh2.device.IntControl.Sh2Interrupt.*;
-import static s32x.sh2.device.IntControl.Sh2InterruptSource;
-import static s32x.sh2.device.IntControl.Sh2InterruptSource.*;
-import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.DIV;
-import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.DMA;
 import static s32x.util.S32xUtil.CpuDeviceAccess.*;
 
 /**
@@ -33,7 +29,7 @@ import static s32x.util.S32xUtil.CpuDeviceAccess.*;
 public class IntCTest {
 
     private IntControl mInt, sInt;
-    private Sh2Interrupt[] vals = {PWM_6, CMD_8, HINT_10, VINT_12};
+    private Sh2Interrupt[] vals = {PWM_06, CMD_08, HINT_10, VINT_12};
     private MarsLauncherHelper.Sh2LaunchContext lc;
 
     private static final int BASE_M68K_SYS_REG = 0xA15100;
@@ -49,13 +45,13 @@ public class IntCTest {
     public void testInterrupt() {
         for (Sh2Interrupt sint : vals) {
             //regMask = (sh2Int - 6)/2
-            int regMask = 1 << ((sint.ordinal() - 6) >> 1);
+            int regMask = 1 << ((sint.level - 6) >> 1);
             mInt.setIntsMasked(regMask); //mask all but current
             mInt.setIntPending(sint, true);
             int actual = mInt.getInterruptLevel();
-            Assertions.assertEquals(sint.ordinal(), actual);
+            Assertions.assertEquals(sint.level, actual);
 
-            mInt.clearInterrupt(sint);
+            mInt.clearExternalInterrupt(sint);
             actual = mInt.getInterruptLevel();
             Assertions.assertEquals(0, actual);
         }
@@ -66,23 +62,23 @@ public class IntCTest {
         IntControl intc = mInt;
         for (Sh2Interrupt sint : vals) {
             //regMask = (sh2Int - 6)/2
-            int regMask = 1 << ((sint.ordinal() - 6) >> 1);
+            int regMask = 1 << ((sint.level - 6) >> 1);
             intc.setIntsMasked(regMask); //mask all but current
             intc.setIntPending(sint, true);
             int actual = intc.getInterruptLevel();
-            Assertions.assertEquals(sint.ordinal(), actual);
+            Assertions.assertEquals(sint.level, actual);
 
             //mask it
             intc.setIntsMasked(0);
             actual = intc.getInterruptLevel();
-            if (sint == CMD_8) {
+            if (sint == CMD_08) {
                 Assertions.assertEquals(0, actual);
             } else {
-                Assertions.assertEquals(sint.ordinal(), actual);
+                Assertions.assertEquals(sint.level, actual);
             }
 
             //clears it
-            intc.clearInterrupt(sint);
+            intc.clearExternalInterrupt(sint);
             actual = intc.getInterruptLevel();
             Assertions.assertEquals(0, actual);
         }
@@ -91,13 +87,13 @@ public class IntCTest {
     @Test
     public void testCMD_INT() {
         IntControl intc = mInt;
-        Sh2Interrupt sint = CMD_8;
+        Sh2Interrupt sint = CMD_08;
         //regMask = (sh2Int - 6)/2
-        int regMask = 1 << ((sint.ordinal() - 6) >> 1);
+        int regMask = 1 << ((sint.level - 6) >> 1);
         intc.setIntsMasked(regMask); //mask all but current
         intc.setIntPending(sint, true);
         int actual = intc.getInterruptLevel();
-        Assertions.assertEquals(sint.ordinal(), actual);
+        Assertions.assertEquals(sint.level, actual);
 
         //mask it
         intc.setIntsMasked(0);
@@ -107,10 +103,10 @@ public class IntCTest {
         //unmask it
         intc.setIntsMasked(regMask);
         actual = intc.getInterruptLevel();
-        Assertions.assertEquals(sint.ordinal(), actual);
+        Assertions.assertEquals(sint.level, actual);
 
         //clears it
-        intc.clearInterrupt(sint);
+        intc.clearExternalInterrupt(sint);
         actual = intc.getInterruptLevel();
         Assertions.assertEquals(0, actual);
     }
@@ -118,13 +114,13 @@ public class IntCTest {
     @Test
     public void testCMD_INT_M68KReg() {
         IntControl intc = mInt;
-        Sh2Interrupt sint = CMD_8;
+        Sh2Interrupt sint = CMD_08;
         //regMask = (sh2Int - 6)/2
-        int regMask = 1 << ((sint.ordinal() - 6) >> 1);
+        int regMask = 1 << ((sint.level - 6) >> 1);
         intc.setIntsMasked(regMask); //mask all but current
         intc.setIntPending(sint, true);
         int actual = intc.getInterruptLevel();
-        Assertions.assertEquals(sint.ordinal(), actual);
+        Assertions.assertEquals(sint.level, actual);
 
         //MASTER
         //trigger sh2 Master CMD interrupt from 68k by setting INTM
@@ -159,21 +155,21 @@ public class IntCTest {
     public void testSh2InterruptClearRegisterSeparate() {
         for (Sh2Interrupt sint : vals) {
             //regMask = (sh2Int - 6)/2
-            int regMask = 1 << ((sint.ordinal() - 6) >> 1);
+            int regMask = 1 << ((sint.level - 6) >> 1);
             mInt.setIntsMasked(regMask); //mask all but current
             sInt.setIntsMasked(regMask);
             mInt.setIntPending(sint, true);
             sInt.setIntPending(sint, true);
-            Assertions.assertEquals(sint.ordinal(), mInt.getInterruptLevel());
-            Assertions.assertEquals(sint.ordinal(), sInt.getInterruptLevel());
+            Assertions.assertEquals(sint.level, mInt.getInterruptLevel());
+            Assertions.assertEquals(sint.level, sInt.getInterruptLevel());
 
             //clear MASTER only
-            setSh2SysReg(MASTER, 0x22 - sint.ordinal(), 0xBB, Size.WORD);
+            setSh2SysReg(MASTER, 0x22 - sint.level, 0xBB, Size.WORD);
             Assertions.assertEquals(0, mInt.getInterruptLevel());
-            Assertions.assertEquals(sint.ordinal(), sInt.getInterruptLevel());
+            Assertions.assertEquals(sint.level, sInt.getInterruptLevel());
 
             //clear SLAVE
-            setSh2SysReg(SLAVE, 0x22 - sint.ordinal(), 0xBB, Size.WORD);
+            setSh2SysReg(SLAVE, 0x22 - sint.level, 0xBB, Size.WORD);
             Assertions.assertEquals(0, mInt.getInterruptLevel());
             Assertions.assertEquals(0, sInt.getInterruptLevel());
         }
@@ -192,7 +188,7 @@ public class IntCTest {
         Assertions.assertEquals(0, actual);
 
         //unmask vint
-        int regMask = (1 << ((vint.ordinal() - 6) >> 1));
+        int regMask = (1 << ((vint.level - 6) >> 1));
         intc.setIntsMasked(regMask);
 
         //no vint
@@ -208,7 +204,7 @@ public class IntCTest {
         intc.setIntPending(hint, true);
         intc.setIntPending(vint, true);
         //regMask = (sh2Int - 6)/2
-        int regMask = (1 << ((hint.ordinal() - 6) >> 1)) | (1 << ((vint.ordinal() - 6) >> 1));
+        int regMask = (1 << ((hint.level - 6) >> 1)) | (1 << ((vint.level - 6) >> 1));
         intc.setIntsMasked(regMask); //unmask VINT,HINT
         //no VINT, no hint
         int actual = intc.getInterruptLevel();
@@ -220,14 +216,14 @@ public class IntCTest {
 
         //VINT
         actual = intc.getInterruptLevel();
-        Assertions.assertEquals(vint.ordinal(), actual);
+        Assertions.assertEquals(vint.level, actual);
 
         //clears VINT
-        intc.clearInterrupt(vint);
+        intc.clearExternalInterrupt(vint);
 
         //HINT is left
         actual = intc.getInterruptLevel();
-        Assertions.assertEquals(hint.ordinal(), actual);
+        Assertions.assertEquals(hint.level, actual);
     }
 
     @Test
@@ -242,10 +238,10 @@ public class IntCTest {
         IntControl intc = mInt;
         Sh2Interrupt hint = HINT_10;
 
-        int regMask = (1 << ((hint.ordinal() - 6) >> 1));
+        int regMask = (1 << ((hint.level - 6) >> 1));
         intc.setIntsMasked(regMask); //unmask HINT
 
-        intc.setOnChipDeviceIntPending(DIV);
+        intc.setOnChipDeviceIntPending(DIVU);
         actual = intc.getInterruptLevel();
         Assertions.assertEquals(prio, actual);
         Assertions.assertEquals(DIVU, intc.getInterruptContext().source);
@@ -253,7 +249,7 @@ public class IntCTest {
         intc.setIntPending(hint, true);
         actual = intc.getInterruptLevel();
         Assertions.assertEquals(prio, actual);
-        Assertions.assertEquals(HINT10, intc.getInterruptContext().source);
+        Assertions.assertEquals(HINT_10, intc.getInterruptContext().source);
     }
 
     @Test
@@ -274,25 +270,25 @@ public class IntCTest {
         int iprA = divLev << 12 | dmaLev << 8;
         Sh2MMREG s = lc.mDevCtx.sh2MMREG;
         s.write(INTC_IPRA.addr, iprA, Size.WORD);
-        Map<Sh2InterruptSource, Integer> m = new HashMap<>();
+        Map<Sh2Interrupt, Integer> m = new HashMap<>();
         m.put(DIVU, divLev);
         m.put(DMAC0, dmaLev);
 
-        Sh2InterruptSource winner = divLev >= dmaLev ? DIVU : DMAC0;
+        Sh2Interrupt winner = divLev >= dmaLev ? DIVU : DMAC0;
 
         IntControl intc = mInt;
 
-        intc.setOnChipDeviceIntPending(DIV);
+        intc.setOnChipDeviceIntPending(DIVU);
         int actual = intc.getInterruptLevel();
         Assertions.assertEquals(divLev, actual);
         Assertions.assertEquals(DIVU, intc.getInterruptContext().source);
 
-        intc.setOnChipDeviceIntPending(DMA, IntControl.OnChipSubType.DMA_C0);
+        intc.setOnChipDeviceIntPending(DMAC0);
         actual = intc.getInterruptLevel();
         Assertions.assertEquals(m.get(winner), actual);
         Assertions.assertEquals(winner, intc.getInterruptContext().source);
 
-        Sh2InterruptSource remain = winner == DIVU ? DMAC0 : DIVU;
+        Sh2Interrupt remain = winner == DIVU ? DMAC0 : DIVU;
 
         intc.clearCurrentInterrupt();
         actual = intc.getInterruptLevel();

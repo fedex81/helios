@@ -12,9 +12,6 @@ import static omegadrive.util.Util.readBufferByte;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
-import static s32x.sh2.device.IntControl.OnChipSubType.RXI;
-import static s32x.sh2.device.IntControl.OnChipSubType.TXI;
-import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.SCI;
 
 /**
  * SCI
@@ -153,7 +150,7 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
             S32xUtil.setBit(regs, SCI_SSR.addr, SCI_SSR_TEND_BIT_POS, 1, Size.BYTE);
             sendData(data);
             if ((scr & 0x80) > 0) { //TIE
-                intControl.setOnChipDeviceIntPending(SCI, TXI);
+                intControl.setOnChipDeviceIntPending(IntControl.Sh2Interrupt.SCIT);
             }
             other.step(1);
             return;
@@ -165,7 +162,7 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
             int scr = readBufferByte(regs, SCI_SCR.addr);
             sciData.isDataInTransit = false;
             if ((scr & 0x40) > 0) { //RIE
-                intControl.setOnChipDeviceIntPending(SCI, RXI); //receive full
+                intControl.setOnChipDeviceIntPending(IntControl.Sh2Interrupt.SCIR); //receive full
             }
         }
     }

@@ -30,7 +30,7 @@ import static s32x.dict.S32xDict.*;
 import static s32x.dict.S32xDict.RegSpecS32x.*;
 import static s32x.event.PollSysEventManager.SysEvent.SH2_RESET_OFF;
 import static s32x.event.PollSysEventManager.SysEvent.SH2_RESET_ON;
-import static s32x.sh2.device.IntControl.Sh2Interrupt.CMD_8;
+import static s32x.sh2.device.IntControl.Sh2Interrupt.CMD_08;
 import static s32x.sh2.device.IntControl.Sh2Interrupt.VRES_14;
 import static s32x.util.S32xUtil.*;
 import static s32x.util.S32xUtil.CpuDeviceAccess.*;
@@ -256,11 +256,11 @@ public class S32XMMREG implements Device {
 
     private void handleIntClearWrite(CpuDeviceAccess cpu, RegSpecS32x regSpec, int reg, int value, Size size) {
         assert cpu == MASTER || cpu == SLAVE;
-        int intIdx = VRES_14.ordinal() - ((reg & ~1) - 0x14); //regEven
+        int intIdx = VRES_14.level - ((reg & ~1) - 0x14); //regEven
         IntControl.Sh2Interrupt intType = IntControl.intVals[intIdx];
-        interruptControls[cpu.ordinal()].clearInterrupt(intType);
+        interruptControls[cpu.ordinal()].clearExternalInterrupt(intType);
         //autoclear Int_control_reg too
-        if (intType == CMD_8) {
+        if (intType == CMD_08) {
             int newVal = readWordFromBuffer(MD_INT_CTRL) & ~(1 << cpu.ordinal());
             boolean change = handleIntControlWriteMd(MD_INT_CTRL.addr, newVal, Size.WORD);
             if (change && verbose) {
@@ -293,8 +293,8 @@ public class S32XMMREG implements Device {
             int newVal = readBufferWord(sysRegsMd, MD_INT_CTRL.addr);
             boolean intm = (newVal & 1) > 0;
             boolean ints = (newVal & 2) > 0;
-            interruptControls[0].setIntPending(CMD_8, intm);
-            interruptControls[1].setIntPending(CMD_8, ints);
+            interruptControls[0].setIntPending(CMD_08, intm);
+            interruptControls[1].setIntPending(CMD_08, ints);
         }
         return changed;
     }

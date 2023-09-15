@@ -10,8 +10,8 @@ import java.nio.ByteBuffer;
 
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
-import static s32x.sh2.device.IntControl.OnChipSubType.OVI;
-import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.FRT;
+import static s32x.sh2.device.IntControl.Sh2Interrupt.FRTO;
+import static s32x.sh2.device.IntControl.Sh2Interrupt.FRTOV;
 import static s32x.util.S32xUtil.*;
 
 /**
@@ -141,7 +141,7 @@ public class FreeRunningTimer implements S32xUtil.Sh2Device {
             if (cnt == 0) { //overflow
                 setBit(regs, FRT_FTCSR.addr, FTCSR_OVF_BIT, 1, Size.BYTE);
                 if (ovfEnabled) {
-                    intControl.setOnChipDeviceIntPending(FRT, OVI);
+                    intControl.setOnChipDeviceIntPending(FRTOV);
                 }
             }
             if (SH2_ENABLE_FRT_OCR) {
@@ -150,7 +150,7 @@ public class FreeRunningTimer implements S32xUtil.Sh2Device {
                     setBit(regs, FRT_FTCSR.addr, FTCSR_OCFA_BIT, 1, Size.BYTE);
                     boolean ociae = (read(FRT_TIER, Size.BYTE) & TIER_OCIAE_MASK) > 0;
                     if (ociae) {
-                        intControl.setOnChipDeviceIntPending(FRT);
+                        intControl.setOnChipDeviceIntPending(FRTO);
                     }
                     boolean cclra = (read(FRT_FTCSR, Size.BYTE) & FTCSR_CCLRA_MASK) > 0;
                     if (cclra) {
@@ -162,7 +162,7 @@ public class FreeRunningTimer implements S32xUtil.Sh2Device {
                     setBit(regs, FRT_FTCSR.addr, FTCSR_OCFB_BIT, 1, Size.BYTE);
                     boolean ocibe = (read(FRT_TIER, Size.BYTE) & TIER_OCIBE_MASK) > 0;
                     if (ocibe) {
-                        intControl.setOnChipDeviceIntPending(FRT);
+                        intControl.setOnChipDeviceIntPending(FRTO);
                     }
                 }
             }

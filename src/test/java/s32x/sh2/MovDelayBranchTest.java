@@ -3,9 +3,9 @@ package s32x.sh2;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import s32x.J2CoreTest;
 import s32x.bus.Sh2Bus;
 import s32x.sh2.Sh2Helper.Sh2Config;
+import s32x.sh2.j2core.J2CoreTest;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
 

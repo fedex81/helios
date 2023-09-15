@@ -89,7 +89,7 @@ public class VdpHintTest {
             lev = masterIntControl.getInterruptLevel();
             actualInt = IntControl.intVals[lev];
             if (actualInt == HINT_10) {
-                masterIntControl.clearInterrupt(HINT_10);
+                masterIntControl.clearExternalInterrupt(HINT_10);
                 hint++;
 //                System.out.println("frame: " + frame + ", line: " + line + ", num: "+ hint);
             }

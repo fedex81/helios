@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2.WDT_WTCNT;
 import static s32x.dict.Sh2Dict.RegSpecSh2.WDT_WTCSR;
+import static s32x.sh2.device.IntControl.Sh2Interrupt.WDTS;
 
 /**
  * Federico Berti
@@ -163,7 +164,7 @@ public class WatchdogTimer implements S32xUtil.Sh2Device {
             int cnt = increaseCount();
             if (cnt == 0) { //overflow
                 S32xUtil.setBit(regs, WTCSR_ADDR_READ, OVF_BIT_POS, 1, Size.BYTE);
-                intControl.setOnChipDeviceIntPending(Sh2DeviceHelper.Sh2DeviceType.WDT);
+                intControl.setOnChipDeviceIntPending(WDTS);
             }
         }
     }

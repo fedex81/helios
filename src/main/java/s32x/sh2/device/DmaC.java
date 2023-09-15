@@ -17,6 +17,8 @@ import static omegadrive.util.Util.readBufferLong;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
+import static s32x.sh2.device.IntControl.Sh2Interrupt.DMAC0;
+import static s32x.sh2.device.IntControl.Sh2Interrupt.DMAC1;
 
 /**
  * Federico Berti
@@ -204,7 +206,7 @@ public class DmaC implements S32xUtil.Sh2Device {
                 int chcr = setDmaChannelBitVal(c.channel, DMA_CHCR0.addr + 2, SH2_CHCR_TRANSFER_END_BIT, 1, Size.WORD);
                 DmaHelper.updateChannelControl(c, chcr);
                 if (c.chcr_intEn) {
-                    intControl.setOnChipDeviceIntPending(Sh2DeviceHelper.Sh2DeviceType.DMA, c.channel == 0 ? IntControl.OnChipSubType.DMA_C0 : IntControl.OnChipSubType.DMA_C1);
+                    intControl.setOnChipDeviceIntPending(c.channel == 0 ? DMAC0 : DMAC1);
                 }
             }
             if (verbose) LOG.info("{} DMA stop, aborted: {}, {}", cpu, !normal, c);

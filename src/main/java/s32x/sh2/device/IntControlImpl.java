@@ -35,7 +35,7 @@ public class IntControlImpl implements IntControl {
     private static final boolean verbose = false;
 
     private final Map<Sh2DeviceHelper.Sh2DeviceType, Integer> onChipDevicePriority;
-    private final Map<Sh2InterruptSource, InterruptContext> s32xInt;
+    private final Map<Sh2Interrupt, InterruptContext> s32xInt;
 
     private InterruptContext[] orderedIntCtx;
 
@@ -64,7 +64,7 @@ public class IntControlImpl implements IntControl {
         sh2_int_mask = ByteBuffer.allocate(2);
         this.regs = regs;
         this.cpu = cpu;
-        this.s32xInt = new HashMap<>(Sh2InterruptSource.values().length);
+        this.s32xInt = new HashMap<>(Sh2Interrupt.values().length);
         this.onChipDevicePriority = new HashMap<>();
         init();
     }
@@ -74,14 +74,16 @@ public class IntControlImpl implements IntControl {
         s32xInt.clear();
         onChipDevicePriority.clear();
         Arrays.stream(Sh2DeviceHelper.Sh2DeviceType.values()).forEach(d -> onChipDevicePriority.put(d, 0));
-        Arrays.stream(Sh2InterruptSource.values()).forEach(s -> {
+        Arrays.stream(Sh2Interrupt.values()).forEach(s -> {
             InterruptContext intCtx = new InterruptContext();
             intCtx.source = s;
+            intCtx.level = s.level;
             //OnChipDeviceInt are always valid
             setBit(intCtx, VALID_BIT_POS, 1);
             s32xInt.put(s, intCtx);
         });
-        orderedIntCtx = Arrays.stream(Sh2InterruptSource.vals).map(s32xInt::get).toArray(InterruptContext[]::new);
+        orderedIntCtx = Arrays.stream(Sh2Interrupt.vals).filter(si -> si.supported > 0).
+                map(s32xInt::get).toArray(InterruptContext[]::new);
         setIntsMasked(0);
     }
 
@@ -122,15 +124,9 @@ public class IntControlImpl implements IntControl {
     }
 
     private InterruptContext getContextFromExternalInterrupt(Sh2Interrupt intp) {
-        InterruptContext source = null;
-        for (var e : s32xInt.entrySet()) {
-            if (e.getKey().externalInterrupt == intp) {
-                source = e.getValue();
-                break;
-            }
-        }
-        assert source != null;
-        return source;
+        InterruptContext ctx = s32xInt.get(intp);
+        assert ctx != null && ctx.source == intp && ctx.level == intp.level && intp.external > 0 : ctx;
+        return ctx;
     }
 
     private void setIntMasked(int ipt, int isValid) {
@@ -141,7 +137,7 @@ public class IntControlImpl implements IntControl {
             setBit(source, VALID_BIT_POS, isValid);
             //TODO check
 //            if (!isTrigger || ipt == CMD_8.ordinal()) {
-            if (ipt == Sh2Interrupt.CMD_8.ordinal()) {
+            if (ipt == Sh2Interrupt.CMD_08.level) {
                 setBit(source, TRIGGER_BIT_POS, (isValid > 0) && (source.intState & INT_PENDING_MASK) > 0);
             }
             resetInterruptLevel();
@@ -149,6 +145,7 @@ public class IntControlImpl implements IntControl {
         }
     }
 
+    @Override
     public void setIntsMasked(int value) {
         for (int i = 0; i < 4; i++) {
             int imask = value & (1 << i);
@@ -164,22 +161,18 @@ public class IntControlImpl implements IntControl {
         setIntsMasked(newVal & 0xF);
     }
 
-    public void setIntPending(Sh2Interrupt interrupt, boolean isPending) {
-        setIntPending(interrupt.ordinal(), isPending);
-    }
-
-    public void setOnChipDeviceIntPending(Sh2DeviceHelper.Sh2DeviceType deviceType, OnChipSubType subType) {
-        int level = onChipDevicePriority.get(deviceType);
-        Sh2InterruptSource source = Sh2InterruptSource.getSh2InterruptSource(deviceType, subType);
+    @Override
+    public void setOnChipDeviceIntPending(Sh2Interrupt source) {
         assert source != null;
         InterruptContext intCtx = s32xInt.get(source);
         assert intCtx != null;
         intCtx.source = source;
-        intCtx.level = onChipDevicePriority.get(deviceType);
-        if (level > 0) {
+        intCtx.level = onChipDevicePriority.get(source.deviceType);
+        if (intCtx.level > 0) {
             setBit(intCtx, PENDING_BIT_POS, 1);
             setBit(intCtx, TRIGGER_BIT_POS, 1);
-            if (verbose) LOG.info("{} {}{} interrupt pending: {}", cpu, deviceType, subType, level);
+            if (verbose)
+                LOG.info("{} {}{} interrupt pending: {}", cpu, source.deviceType, source.subType, intCtx.level);
             resetInterruptLevel();
         }
     }
@@ -188,8 +181,10 @@ public class IntControlImpl implements IntControl {
         return S32xUtil.readBuffer(sh2_int_mask, pos, size);
     }
 
-    private void setIntPending(int ipt, boolean isPending) {
-        InterruptContext source = getContextFromExternalInterrupt(intVals[ipt]);
+    @Override
+    public void setIntPending(Sh2Interrupt intpt, boolean isPending) {
+        assert intpt.external > 0;
+        InterruptContext source = getContextFromExternalInterrupt(intpt);
         boolean val = (source.intState & INT_PENDING_MASK) > 0;
         if (val != isPending) {
             boolean valid = (source.intState & INT_VALID_MASK) > 0;
@@ -197,7 +192,7 @@ public class IntControlImpl implements IntControl {
                 setBit(source, PENDING_BIT_POS, isPending);
                 if (valid && isPending) {
                     setBit(source, TRIGGER_BIT_POS, 1);
-                    source.level = ipt;
+                    source.level = intpt.level;
                     resetInterruptLevel();
                 } else {
                     setBit(source, TRIGGER_BIT_POS, 0);
@@ -208,10 +203,10 @@ public class IntControlImpl implements IntControl {
     }
 
     private void checkMultiInterrupt() {
-        int cnt = (int) Arrays.stream(orderedIntCtx).filter(c -> c.level > 0).count();
+        int cnt = (int) Arrays.stream(orderedIntCtx).filter(c -> c.intState > INT_TRIGGER_MASK).count();
         if (cnt > 1) {
             String str =
-                    Arrays.stream(orderedIntCtx).filter(c -> c.level > 0).
+                    Arrays.stream(orderedIntCtx).filter(c -> c.intState > INT_TRIGGER_MASK).
                             map(InterruptContext::toString).collect(Collectors.joining(","));
             logWarnOnce(LOG, "Multiple interrupts: " + str);
         }
@@ -254,13 +249,14 @@ public class IntControlImpl implements IntControl {
         }
     }
 
-    public void clearInterrupt(Sh2Interrupt intType) {
+    @Override
+    public void clearExternalInterrupt(Sh2Interrupt intType) {
         clearInterrupt(getContextFromExternalInterrupt(intType));
     }
 
-    public void clearInterrupt(InterruptContext source) {
+    private void clearInterrupt(InterruptContext source) {
         source.intState &= ~(INT_PENDING_MASK | INT_TRIGGER_MASK);
-        source.level = 0;
+        source.clearLevel();
         resetInterruptLevel();
         logInfo("CLEAR", source);
     }
@@ -277,7 +273,7 @@ public class IntControlImpl implements IntControl {
     }
 
     public int getVectorNumber() {
-        if (currentInterrupt.source.externalInterrupt.internal == 0) {
+        if (currentInterrupt.source.external == 0) {
             return getOnChipDeviceVectorNumber(currentInterrupt);
         }
         return 64 + (currentInterrupt.level >> 1);

@@ -111,7 +111,7 @@ public class IntControlImplOld implements IntControl {
             boolean isTrigger = this.intTrigger[ipt];
             //TODO check
 //            if (!isTrigger || ipt == CMD_8.ordinal()) {
-            if (ipt == Sh2Interrupt.CMD_8.ordinal()) {
+            if (ipt == Sh2Interrupt.CMD_08.ordinal()) {
                 this.intTrigger[ipt] = isValid && isPending;
             }
             resetInterruptLevel();
@@ -135,10 +135,10 @@ public class IntControlImplOld implements IntControl {
     }
 
     @Override
-    public void setOnChipDeviceIntPending(Sh2DeviceType deviceType, OnChipSubType subType) {
-        int data = subType == OnChipSubType.DMA_C1 ? 1 : 0;
-        data = subType == OnChipSubType.RXI ? 1 : data;
-        setExternalIntPending(deviceType, data, true);
+    public void setOnChipDeviceIntPending(Sh2Interrupt source) {
+        int data = source.subType == OnChipSubType.DMA_C1 ? 1 : 0;
+        data = source.subType == OnChipSubType.RXI ? 1 : data;
+        setExternalIntPending(source.deviceType, data, true);
     }
 
     public void setIntPending(Sh2Interrupt interrupt, boolean isPending) {
@@ -199,8 +199,9 @@ public class IntControlImplOld implements IntControl {
         }
     }
 
-    public void clearInterrupt(Sh2Interrupt intType) {
-        clearInterrupt(intType.ordinal());
+    public void clearExternalInterrupt(Sh2Interrupt intType) {
+        assert intType.external > 0;
+        clearInterrupt(intType.level);
     }
 
     public void clearInterrupt(int ipt) {
@@ -226,14 +227,15 @@ public class IntControlImplOld implements IntControl {
     public int getVectorNumber() {
         Sh2Interrupt intType = intVals[interruptLevel];
         boolean onChipLevel = onChipLevels[interruptLevel];
-        if (onChipLevel && intType.internal != 0) { //sopwith32x
+        if (onChipLevel && intType.external != 0) { //sopwith32x
             LOG.warn("{} OnChipDevice interrupt using the same level as an internal interrupt: {}", cpu, interruptLevel);
         }
-        if (onChipLevel || intType.internal == 0) {
+        if (onChipLevel || intType.external == 0) {
             return getExternalDeviceVectorNumber();
-        } else if (intType == Sh2Interrupt.NMI_16) {
-            return 11;
         }
+//        else if (intType == Sh2Interrupt.NMI) {
+//            return 11;
+//        }
         return 64 + (interruptLevel >> 1);
     }
 

@@ -11,6 +11,7 @@ import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
+import static s32x.sh2.device.IntControl.Sh2Interrupt.DIVU;
 import static s32x.util.S32xUtil.readBufferRegLong;
 
 /**
@@ -127,7 +128,7 @@ public class DivUnit implements S32xUtil.Sh2Device {
         S32xUtil.writeBuffersLong(regs, DIV_DVDNT, DIV_DVDNTL, DIV_DVDNTUL, val);
         addCpuDelay(DIV_OVF_CYCLES);
         if ((dvcr & DIV_OVERFLOW_INT_EN_BIT) > 0) {
-            intControl.setOnChipDeviceIntPending(Sh2DeviceHelper.Sh2DeviceType.DIV);
+            intControl.setOnChipDeviceIntPending(DIVU);
             LOG.info(msg);
             LOG.warn("{} DivUnit interrupt", cpu); //not used by any sw?
         }

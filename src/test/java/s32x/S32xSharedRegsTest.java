@@ -52,7 +52,7 @@ public class S32xSharedRegsTest {
         System.out.println(cpu);
         IntControl intC = cpu == MASTER ? lc.masterCtx.devices.intC : lc.slaveCtx.devices.intC;
         IntControl otherIntC = other == MASTER ? lc.masterCtx.devices.intC : lc.slaveCtx.devices.intC;
-        Sh2Interrupt[] ints = {PWM_6, CMD_8, HINT_10, VINT_12};
+        Sh2Interrupt[] ints = {PWM_06, CMD_08, HINT_10, VINT_12};
 
         int reg = SH2_INT_MASK;
         int value = 0xF; //all valid ints
@@ -69,8 +69,8 @@ public class S32xSharedRegsTest {
         for (Sh2Interrupt inter : ints) {
             intC.setIntPending(inter, true);
             otherIntC.setIntPending(inter, true);
-            Assertions.assertEquals(intC.getInterruptLevel(), inter.ordinal());
-            Assertions.assertEquals(otherIntC.getInterruptLevel(), 0);
+            Assertions.assertEquals(inter.level, intC.getInterruptLevel());
+            Assertions.assertEquals(0, otherIntC.getInterruptLevel());
             intC.clearCurrentInterrupt();
             otherIntC.setIntPending(inter, false);
         }

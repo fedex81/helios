@@ -359,8 +359,8 @@ public class Pwm implements StepDevice {
                 playSupport.playSample(ctx.ls, ctx.rs);
             }
             if (--ctx.sh2ticksToNextPwmInterrupt == 0) {
-                intControls[MASTER.ordinal()].setIntPending(IntControl.Sh2Interrupt.PWM_6, true);
-                intControls[SLAVE.ordinal()].setIntPending(IntControl.Sh2Interrupt.PWM_6, true);
+                intControls[MASTER.ordinal()].setIntPending(IntControl.Sh2Interrupt.PWM_06, true);
+                intControls[SLAVE.ordinal()].setIntPending(IntControl.Sh2Interrupt.PWM_06, true);
                 ctx.sh2ticksToNextPwmInterrupt = ctx.interruptInterval;
                 dreq();
             }
