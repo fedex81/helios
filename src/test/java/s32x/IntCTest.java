@@ -3,7 +3,6 @@ package s32x;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import s32x.dict.S32xDict;
 import s32x.sh2.device.IntControl;
@@ -12,13 +11,18 @@ import s32x.util.MarsLauncherHelper;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static s32x.dict.S32xDict.RegSpecS32x.MD_INT_CTRL;
 import static s32x.dict.S32xDict.RegSpecS32x.SH2_CMD_INT_CLEAR;
 import static s32x.dict.S32xDict.START_32X_SYSREG_CACHE;
 import static s32x.dict.Sh2Dict.RegSpecSh2.INTC_IPRA;
 import static s32x.sh2.device.IntControl.Sh2Interrupt.*;
 import static s32x.sh2.device.IntControl.Sh2InterruptSource;
+import static s32x.sh2.device.IntControl.Sh2InterruptSource.*;
 import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.DIV;
+import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.DMA;
 import static s32x.util.S32xUtil.CpuDeviceAccess.*;
 
 /**
@@ -221,15 +225,12 @@ public class IntCTest {
         //clears VINT
         intc.clearInterrupt(vint);
 
-        //TODO check this
         //HINT is left
         actual = intc.getInterruptLevel();
         Assertions.assertEquals(hint.ordinal(), actual);
     }
 
     @Test
-    @Disabled
-    //TODO not supported
     public void testTwoInterruptsOneOnChip() {
         Sh2MMREG s = lc.mDevCtx.sh2MMREG;
         //DIV interrupt prio 12
@@ -247,12 +248,56 @@ public class IntCTest {
         intc.setOnChipDeviceIntPending(DIV);
         actual = intc.getInterruptLevel();
         Assertions.assertEquals(prio, actual);
-        Assertions.assertEquals(Sh2InterruptSource.DIVU, intc.getInterruptContext().source);
+        Assertions.assertEquals(DIVU, intc.getInterruptContext().source);
 
         intc.setIntPending(hint, true);
         actual = intc.getInterruptLevel();
-        Assertions.assertEquals(prio, 10);
-        Assertions.assertEquals(Sh2InterruptSource.HINT10, intc.getInterruptContext().source);
+        Assertions.assertEquals(prio, actual);
+        Assertions.assertEquals(HINT10, intc.getInterruptContext().source);
+    }
+
+    @Test
+    public void testTwoInterruptsOnChip() {
+        //DIV interrupt level 10
+        //DMA interrupt level 12
+        //and viceversa
+        testDivDmaInternal(10, 12);
+        testDivDmaInternal(12, 10);
+    }
+
+    @Test
+    public void testTwoInterruptsOnChipSameLevel() {
+        testDivDmaInternal(10, 10);
+    }
+
+    private void testDivDmaInternal(int divLev, int dmaLev) {
+        int iprA = divLev << 12 | dmaLev << 8;
+        Sh2MMREG s = lc.mDevCtx.sh2MMREG;
+        s.write(INTC_IPRA.addr, iprA, Size.WORD);
+        Map<Sh2InterruptSource, Integer> m = new HashMap<>();
+        m.put(DIVU, divLev);
+        m.put(DMAC0, dmaLev);
+
+        Sh2InterruptSource winner = divLev >= dmaLev ? DIVU : DMAC0;
+
+        IntControl intc = mInt;
+
+        intc.setOnChipDeviceIntPending(DIV);
+        int actual = intc.getInterruptLevel();
+        Assertions.assertEquals(divLev, actual);
+        Assertions.assertEquals(DIVU, intc.getInterruptContext().source);
+
+        intc.setOnChipDeviceIntPending(DMA, IntControl.OnChipSubType.DMA_C0);
+        actual = intc.getInterruptLevel();
+        Assertions.assertEquals(m.get(winner), actual);
+        Assertions.assertEquals(winner, intc.getInterruptContext().source);
+
+        Sh2InterruptSource remain = winner == DIVU ? DMAC0 : DIVU;
+
+        intc.clearCurrentInterrupt();
+        actual = intc.getInterruptLevel();
+        Assertions.assertEquals(m.get(remain), actual);
+        Assertions.assertEquals(remain, intc.getInterruptContext().source);
     }
 
     @Test

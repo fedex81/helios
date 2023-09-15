@@ -14,7 +14,9 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
 import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.*;
@@ -75,6 +77,8 @@ public class IntControlImpl implements IntControl {
         Arrays.stream(Sh2InterruptSource.values()).forEach(s -> {
             InterruptContext intCtx = new InterruptContext();
             intCtx.source = s;
+            //OnChipDeviceInt are always valid
+            setBit(intCtx, VALID_BIT_POS, 1);
             s32xInt.put(s, intCtx);
         });
         orderedIntCtx = Arrays.stream(Sh2InterruptSource.vals).map(s32xInt::get).toArray(InterruptContext[]::new);
@@ -203,11 +207,28 @@ public class IntControlImpl implements IntControl {
         }
     }
 
+    private void checkMultiInterrupt() {
+        int cnt = (int) Arrays.stream(orderedIntCtx).filter(c -> c.level > 0).count();
+        if (cnt > 1) {
+            String str =
+                    Arrays.stream(orderedIntCtx).filter(c -> c.level > 0).
+                            map(InterruptContext::toString).collect(Collectors.joining(","));
+            logWarnOnce(LOG, "Multiple interrupts: " + str);
+        }
+    }
     private InterruptContext getCurrentInterrupt() {
         InterruptContext current = LEV_0;
-        for (InterruptContext ctx : orderedIntCtx) { //order is important
-            if (ctx.intState > INT_TRIGGER_MASK && ctx.level > 0) {
+        if (S32xUtil.assertionsEnabled) {
+            checkMultiInterrupt();
+        }
+        //order is important, higher first
+        //when onChipDevice ints have the same level, follow the hardcoded order
+        int max = 0;
+        for (int i = 0; i < orderedIntCtx.length; i++) {
+            InterruptContext ctx = orderedIntCtx[i];
+            if (ctx.intState > INT_TRIGGER_MASK && ctx.level > max) {
                 current = ctx;
+                max = ctx.level;
             }
         }
         return current;

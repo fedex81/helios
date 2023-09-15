@@ -35,10 +35,11 @@ public interface IntControl extends S32xUtil.Sh2Device {
         OVI; //FRT Timer Overflow Flag interrupt
     }
 
+    //NOTE ignores
+    //NMI, USER_BREAK, IRL{N}
     enum Sh2InterruptSource {
-        NMI, USER_BREAK, IRL15, VRES14(VRES_14), IRL13, VINT12(VINT_12), IRL11, HINT10(HINT_10), IRL09,
-        CMD08(CMD_8), IRL07, PWM06(PWM_6), IRL05, IRL04,
-        IRL03, IRL02, IRL01, DIVU(DIV), DMAC0(DMA, DMA_C0), DMAC1(DMA, DMA_C1), WDTS(WDT),
+        VRES14(VRES_14), VINT12(VINT_12), HINT10(HINT_10), CMD08(CMD_8), PWM06(PWM_6),
+        DIVU(DIV), DMAC0(DMA, DMA_C0), DMAC1(DMA, DMA_C1), WDTS(WDT),
         REF(BSC), SCIE(SCI, ERI), SCIR(SCI, RXI), SCIT(SCI, TXI),
         SCITE(SCI, TEI), FRTI(FRT, ICI), FRTO(FRT, OCI), FRTOV(FRT, OVI);
 
@@ -50,10 +51,6 @@ public interface IntControl extends S32xUtil.Sh2Device {
 
         Sh2InterruptSource(Sh2Interrupt externalInterrupt) {
             this(NONE, S_NONE, externalInterrupt);
-        }
-
-        Sh2InterruptSource() {
-            this(NONE, S_NONE, NONE_0);
         }
 
         Sh2InterruptSource(Sh2DeviceType deviceType) {
@@ -118,8 +115,6 @@ public interface IntControl extends S32xUtil.Sh2Device {
 
     Sh2Interrupt[] intVals = Sh2Interrupt.values();
     InterruptContext LEV_0 = new InterruptContext();
-
-    int MAX_LEVEL = 17; //[0-16]
 
     default void setOnChipDeviceIntPending(Sh2DeviceType deviceType) {
         setOnChipDeviceIntPending(deviceType, S_NONE);
