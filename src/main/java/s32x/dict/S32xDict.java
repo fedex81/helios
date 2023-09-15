@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.S32xRegCpuType.*;
 import static s32x.dict.S32xDict.S32xRegType.*;
@@ -377,7 +378,7 @@ public class S32xDict {
     public static RegSpecS32x getRegSpec(S32xRegCpuType regCpuType, int address) {
         RegSpecS32x r = s32xRegMapping[regCpuType.ordinal()][address & S32X_REG_MASK];
         if (r == null) {
-            LOG.error("{} unknown register at address: {}", regCpuType, th(address));
+            logWarnOnce(LOG, "{} unknown register at address: {}", regCpuType, th(address));
         }
         return r;
     }
@@ -391,7 +392,7 @@ public class S32xDict {
         }
         r = s32xRegMapping[cpuToRegTypeMapper[cpu.ordinal()].ordinal()][address & S32X_REG_MASK];
         if (r == null) {
-            LOG.error("{} unknown register at address: {}", cpu, th(address));
+            logWarnOnce(LOG, "{} unknown register at address: {}", cpu, th(address));
             r = RegSpecS32x.INVALID;
         }
         assert cpu == Z80 ? r != RegSpecS32x.AFSAR && r != RegSpecS32x.AFDR && r != RegSpecS32x.AFLR : true;

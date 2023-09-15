@@ -24,7 +24,7 @@ import static omegadrive.vdp.MdVdpTestUtil.getVdpProvider;
 @Disabled
 public class S32XPerformanceTest {
 
-    static Path testFilePath = Paths.get("./res/misc/roms", "t1.zip");
+    static Path testFilePath = Paths.get("./test_roms", "t2.32x");
     static int fps = 60;
     protected int frameCnt = 0;
     int sampleCnt = 0;

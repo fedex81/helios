@@ -18,6 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.readBufferByte;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.*;
@@ -194,7 +195,7 @@ public class Sh2MMREG implements Device {
     private int handleWriteCCR(RegSpecSh2 r, int pos, int v, Size size) {
         assert size != Size.LONG;
         if (size == Size.WORD) { //xmen
-            LOG.warn("{} {} word write @ {}, val: {}, setting CCR to {}", cpu, r, th(pos), th(v), th(v >>> 8));
+            logWarnOnce(LOG, "{} {} word write @ {}, val: {}, setting CCR to {}", cpu, r, th(pos), th(v), th(v >>> 8));
             v >>>= 8;
         }
         assert pos == r.addr : th(pos) + ", " + th(r.addr);

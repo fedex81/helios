@@ -1,5 +1,6 @@
 package s32x;
 
+import omegadrive.util.LogHelper;
 import s32x.event.PollSysEventManager;
 import s32x.sh2.Sh2Helper;
 import s32x.util.S32xUtil.CpuDeviceAccess;
@@ -31,6 +32,7 @@ public class StaticBootstrapSupport {
         DmaFifo68k.rv = false;
         Sh2Helper.clear();
         StaticBootstrapSupport.instance = instance;
+        LogHelper.clear();
     }
 
     public static void afterStateLoad() {

@@ -25,6 +25,7 @@ import java.nio.ShortBuffer;
 import java.util.Arrays;
 import java.util.Optional;
 
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.readBufferByte;
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.DRAM_SIZE;
@@ -155,7 +156,7 @@ public class MarsVdpImpl implements MarsVdp {
             if (size == Size.WORD) {
                 res = S32xUtil.readBuffer(colorPalette, address & S32xDict.S32X_COLPAL_MASK, size);
             } else {
-                LOG.error("{} read, unable to access colorPalette as {}", Md32xRuntimeData.getAccessTypeExt(), size);
+                logWarnOnce(LOG, "{} read, unable to access colorPalette as {}", Md32xRuntimeData.getAccessTypeExt(), size);
             }
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.PALETTE);
         } else if (address >= S32xDict.START_DRAM_CACHE && address < S32xDict.END_DRAM_CACHE) {
@@ -239,7 +240,7 @@ public class MarsVdpImpl implements MarsVdp {
             vdpContext.priority = prio == 0 ? MD : S32X;
             if (verbose) LOG.info("Vdp priority: {} -> {}", prevPrio == 0 ? "MD" : "32x", vdpContext.priority);
             if (!vdpContext.vBlankOn) { //vf does this but I think it is harmless
-                LOG.warn("Illegal Vdp priority change outside VBlank: {} -> {}", prevPrio == 0 ? "MD" : "32x",
+                logWarnOnce(LOG, "Illegal Vdp priority change outside VBlank: {} -> {}", prevPrio == 0 ? "MD" : "32x",
                         vdpContext.priority);
             }
         }

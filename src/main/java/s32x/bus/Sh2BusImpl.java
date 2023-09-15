@@ -26,6 +26,7 @@ import s32x.util.debug.SdramSyncTester;
 
 import java.nio.ByteBuffer;
 
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 
 public final class Sh2BusImpl implements Sh2Bus {
@@ -191,7 +192,7 @@ public final class Sh2BusImpl implements Sh2Bus {
                     }
                     s32XMMREG.write(address, val, size);
                 } else {
-                    LOG.error("{} write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
+                    logWarnOnce(LOG, "{} write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
                 }
                 break;
             case Sh2Cache.CACHE_IO_H3: //0xF
@@ -200,11 +201,11 @@ public final class Sh2BusImpl implements Sh2Bus {
                 } else if (address >= S32xDict.SH2_START_DRAM_MODE && address < S32xDict.SH2_END_DRAM_MODE) {
                     sh2MMREGS[cpuAccess.ordinal()].writeDramMode(address & 0xFFFF, val, size);
                 } else {
-                    LOG.error("{} write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
+                    logWarnOnce(LOG, "{} write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
                 }
                 break;
             default:
-                LOG.error("{} write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
+                logWarnOnce(LOG, "{} write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
                 if (true) throw new RuntimeException();
                 break;
         }
@@ -268,7 +269,7 @@ public final class Sh2BusImpl implements Sh2Bus {
 
     private static boolean logWarnIllegalAccess(S32xUtil.CpuDeviceAccess cpu, String rw, String memType, String accessType,
                                                 Object val, int address, Size size) {
-        LOG.warn(ILLEGAL_ACCESS_STR, cpu, rw, memType, accessType, val, th(address), size);
+        logWarnOnce(LOG, ILLEGAL_ACCESS_STR, cpu, rw, memType, accessType, val, th(address), size);
         return true;
     }
 }

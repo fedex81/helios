@@ -26,6 +26,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 
 import static m68k.cpu.Cpu.PC_MASK;
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 
 /**
@@ -135,7 +136,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
             res = 0x4d415253; //'MARS'
         } else {
             if (!DmaFifo68k.rv && address <= GenesisBus.DEFAULT_ROM_END_ADDRESS) {
-                LOG.warn("Ignoring read access to ROM when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
+                logWarnOnce(LOG, "Ignoring read access to ROM when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return size.getMask();
             }
             res = super.read(address, size);
@@ -196,7 +197,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
             Util.writeData(busContext.writeableHint, size, address & 3, data);
         } else {
             if (address < S32xDict.M68K_END_VECTOR_ROM) {
-                LOG.warn("Ignoring write access to vector rom, RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
+                logWarnOnce(LOG, "Ignoring write access to vector rom, RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return;
             }
             if (!DmaFifo68k.rv && address <= GenesisBus.DEFAULT_ROM_END_ADDRESS) {

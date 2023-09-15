@@ -23,6 +23,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.*;
@@ -192,7 +193,7 @@ public class S32XMMREG implements Device {
                 dmaFifoControl.write(regSpec, cpu, reg, value, size);
             }
             default -> {
-                LOG.error("{} unexpected reg write, addr: {}, {} {}", cpu, th(address), th(value), size);
+                logWarnOnce(LOG, "{} unexpected reg write, addr: {}, {} {}", cpu, th(address), th(value), size);
                 regChanged = true;
             }
         }
