@@ -23,6 +23,10 @@ jobs:
         language: [ java ]
 
     steps:
+      - name: Setup Java JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.17
       - name: Checkout
         uses: actions/checkout@v3
 
