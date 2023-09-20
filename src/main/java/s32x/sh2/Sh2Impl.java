@@ -935,10 +935,11 @@ public class Sh2Impl implements Sh2 {
         int n = RN(code);
 
         long mult = (long) ctx.registers[n] * (long) ctx.registers[m];
-//		System.out.printf("####,DMULS,%8X,%8X,%16X\n", ctx.registers[n], ctx.registers[m], mult);
+        ctx.MACL = (int) mult;
+        ctx.MACH = (int) (mult >>> 32);
 
-        ctx.MACL = (int) (mult & 0xffffffff);
-        ctx.MACH = (int) ((mult >>> 32) & 0xffffffff);
+//        logWarnOnce(LOG,String.format("####,DMULS,%8X,%8X,%16X,%8X,%8X", ctx.registers[n], ctx.registers[m],
+//                mult, ctx.MACH, ctx.MACL));
 
         ctx.cycles -= 2;
         ctx.PC += 2;
@@ -950,11 +951,10 @@ public class Sh2Impl implements Sh2 {
 
         // this should be unsigned but oh well :/
         long mult = (ctx.registers[n] & 0xffffffffL) * (ctx.registers[m] & 0xffffffffL);
-
-//		System.out.printf("####,DMULU,%8X,%8X,%16X\n", ctx.registers[n], ctx.registers[m], mult);
-
         ctx.MACL = (int) (mult & 0xffffffff);
         ctx.MACH = (int) ((mult >>> 32) & 0xffffffff);
+//        logWarnOnce(LOG,String.format("####,DMULU,%8X,%8X,%16X,%8X,%8X", ctx.registers[n], ctx.registers[m],
+//                mult,ctx.MACH, ctx.MACL));
 
         ctx.cycles -= 2;
         ctx.PC += 2;
@@ -1019,6 +1019,7 @@ public class Sh2Impl implements Sh2 {
         ctx.registers[n] += 4;
         long regM = memory.read32(ctx.registers[m]);
         ctx.registers[m] += 4;
+//        String s = String.format("####,MACL,%8X,%8X,%8X,%8X,%d", regN, regM, ctx.MACH, ctx.MACL, ((ctx.SR & flagS) > 0) ? 1 : 0);
 
         long res = regM * regN;
         res += ((ctx.MACH & 0xFFFF_FFFFL) << 32) + (ctx.MACL & 0xFFFF_FFFFL);
@@ -1031,6 +1032,9 @@ public class Sh2Impl implements Sh2 {
         }
         ctx.MACH = (int) (res >> 32);
         ctx.MACL = (int) (res & 0xFFFF_FFFF);
+
+//        s += String.format(",%8X,%8X",ctx.MACH,ctx.MACL);
+//        logWarnOnce(LOG, s);
         ctx.cycles -= 2;
         ctx.PC += 2;
     }
@@ -1072,7 +1076,8 @@ public class Sh2Impl implements Sh2 {
         }
         ctx.cycles -= 2;
         ctx.PC += 2;
-//		System.out.println("1>>>>> " + th(ctx.MACH) + "," + th(ctx.MACL));
+//		s += "," + th(ctx.MACH) + "," + th(ctx.MACL);
+//        logWarnOnce(LOG, s);
     }
 
     protected final void MULL(int code) {
@@ -1080,8 +1085,7 @@ public class Sh2Impl implements Sh2 {
         int n = RN(code);
 
         ctx.MACL = (ctx.registers[n] * ctx.registers[m]) & 0xFFFF_FFFF;
-//		System.out.printf("####,MULL,%8X,%8X,%16X\n", ctx.registers[n], ctx.registers[m], ctx.MACL);
-
+//        logWarnOnce(LOG,String.format("####,MULL,%8X,%8X,%8X", ctx.registers[n], ctx.registers[m], ctx.MACL));
         ctx.cycles -= 2;
         ctx.PC += 2;
     }
@@ -1091,7 +1095,7 @@ public class Sh2Impl implements Sh2 {
         int n = RN(code);
 
         ctx.MACL = (int) (short) ctx.registers[n] * (int) (short) ctx.registers[m];
-//		System.out.printf("####,MULSW,%8X,%8X,%16X\n", ctx.registers[n], ctx.registers[m], ctx.MACL);
+//        logWarnOnce(LOG,String.format("####,MULSW,%8X,%8X,%8X", ctx.registers[n], ctx.registers[m], ctx.MACL));
         ctx.cycles -= 2;
         ctx.PC += 2;
     }
@@ -1101,6 +1105,7 @@ public class Sh2Impl implements Sh2 {
         int n = RN(code);
 
         ctx.MACL = ((ctx.registers[n] & 0xFFFF) * (ctx.registers[m] & 0xFFFF));
+//        logWarnOnce(LOG,String.format("####,MULSU,%8X,%8X,%16X", ctx.registers[n], ctx.registers[m], ctx.MACL));
 //		System.out.printf("####,MULSU,%8X,%8X,%16X\n", ctx.registers[n], ctx.registers[m], ctx.MACL);
 
         ctx.cycles -= 2;

@@ -3,6 +3,7 @@ package s32x.vdp.debug;
 import omegadrive.Device;
 import omegadrive.util.ImageUtil;
 import omegadrive.util.VideoMode;
+import omegadrive.vdp.util.VdpDebugView;
 import s32x.vdp.MarsVdp;
 
 import javax.swing.*;
@@ -42,21 +43,10 @@ public interface MarsVdpDebugView extends Device {
     }
 
     static MarsVdpDebugView createInstance() {
-        return MarsVdpDebugViewImpl.DEBUG_VIEWER_ENABLED ? new MarsVdpDebugViewImpl() : NO_OP;
+        return VdpDebugView.DEBUG_VIEWER_ENABLED ? new MarsVdpDebugViewImpl() : NO_OP;
     }
 
     class MarsVdpDebugViewImpl implements MarsVdpDebugView {
-
-        protected static final boolean DEBUG_VIEWER_ENABLED;
-
-        static {
-            DEBUG_VIEWER_ENABLED =
-                    Boolean.parseBoolean(System.getProperty("md.show.vdp.debug.viewer", "false"));
-            if (DEBUG_VIEWER_ENABLED) {
-//                LOG.info("Debug viewer enabled");
-            }
-        }
-
         public static GraphicsDevice gd;
         static boolean isHeadless;
         static Point lastLocation;

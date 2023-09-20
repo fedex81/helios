@@ -244,6 +244,7 @@ public class MarsVdpImpl implements MarsVdp {
                         vdpContext.priority);
             }
         }
+//        LOG.info("###### BitmapMode write: {} {} -> {}, {}", th(value), size, th(newVal), vdpContext);
         return val != newVal;
     }
 
@@ -264,7 +265,7 @@ public class MarsVdpImpl implements MarsVdp {
         writeBufferRaw(regContext.vdpRegs, FBCR.addr, regVal, Size.WORD);
         vdpContext.fsLatch = val1 & 1;
         assert (regVal & 0x1FFC) == 0;
-//            System.out.println("###### FBCR write: D" + frameBufferDisplay + "W" + frameBufferWritable + ", fsLatch: " + fsLatch + ", VB: " + vBlankOn);
+//        LOG.info("###### FBCR write: {} {} -> {}, {}", th(value), size, th(regVal), vdpContext);
         return val != regVal;
     }
 

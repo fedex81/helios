@@ -13,6 +13,7 @@ import java.util.function.BiFunction;
 
 import static omegadrive.vdp.util.MemView.MemViewOwner.M68K;
 import static omegadrive.vdp.util.MemView.MemViewOwner.SH2;
+import static s32x.util.S32xMemView.S32xMemViewType.S32X_PALETTE;
 
 /**
  * Federico Berti
@@ -35,7 +36,7 @@ public class S32xMemView extends MemView {
 
     enum S32xMemViewType implements MemViewData {
         S32X_SDRAM(SH2, S32xDict.SH2_START_SDRAM, S32xDict.SH2_END_SDRAM),
-        S32X_DRAM(SH2, S32xDict.START_DRAM, S32xDict.END_DRAM),
+        S32X_FRAMEBUFFER(SH2, S32xDict.START_DRAM, S32xDict.END_DRAM),
         S32X_PALETTE(SH2, S32xDict.START_32X_COLPAL, S32xDict.END_32X_COLPAL),
         M68K_ROM(M68K, S32xDict.M68K_START_ROM_MIRROR, S32xDict.M68K_END_ROM_MIRROR), //aden=1, in general
         M68K_VECTOR_ROM(M68K, 0, S32xDict.M68K_END_VECTOR_ROM),
@@ -70,7 +71,11 @@ public class S32xMemView extends MemView {
     @Override
     protected void doMemoryRead(MemViewData current, int len, BiFunction<MemViewData, Integer, Integer> readerFn) {
         int v = Md32xRuntimeData.getCpuDelayExt();
-        super.doMemoryRead(current, len, readerFn);
+        if (current == S32X_PALETTE) {
+            doMemoryRead_WordBE(current, len);
+        } else {
+            super.doMemoryRead(current, len, readerFn);
+        }
         Md32xRuntimeData.resetCpuDelayExt(v);
     }
 }

@@ -11,9 +11,11 @@ import s32x.sh2.device.IntControlImpl;
 import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static omegadrive.util.Util.th;
@@ -117,6 +119,11 @@ public class J2CoreInterruptsTest extends J2CoreTest {
 
     public static IntControl createIntControl(CpuDeviceAccess cpu, ByteBuffer regs) {
         return new IntControlImpl(cpu, regs) {
+            //supports all interrupts, NMI, level15, etc
+            {
+                orderedIntCtx = Arrays.stream(Sh2Interrupt.vals).map(s32xInt::get).toArray(InterruptContext[]::new);
+            }
+
             @Override
             public int getVectorNumber() {
                 if (vectorNumber > 0) {
@@ -169,9 +176,10 @@ public class J2CoreInterruptsTest extends J2CoreTest {
                         next = null;
                     }
                 } else if (address == TEST_RESULT_ADDRESS) {
-                    System.out.println("Failure test:  " + th(value));
                     expectedFail.set(value == 0xE);
-                    System.out.println("Failure expected for test: " + th(value) + "," + expectedFail.get());
+                    PrintStream ps = expectedFail.get() ? System.out : System.err;
+                    ps.println("Failure test:  " + th(value));
+                    ps.println("Failure expected for test: " + th(value) + "," + expectedFail.get());
                     next = Sh2Interrupt.NONE_0;
                 } else {
                     System.err.println("write: " + th(address) + " " + th(value) + " " + size);

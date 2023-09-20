@@ -73,7 +73,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         fastDebug.printDebugMaybe();
         if (!busyLoopDetection) {
             int r = super.runInstruction();
-            checkInterruptLevelChange();
+//            checkInterruptLevelChange();
             return r;
         }
         return fastDebug.isBusyLoop(currentPC, opcode) + super.runInstruction();

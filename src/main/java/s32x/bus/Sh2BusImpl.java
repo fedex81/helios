@@ -81,8 +81,8 @@ public final class Sh2BusImpl implements Sh2Bus {
     @Override
     public int read(int address, Size size) {
         S32xUtil.CpuDeviceAccess cpuAccess = Md32xRuntimeData.getAccessTypeExt();
-        assert size == Size.LONG ? (address & 3) == 0 : true;
-        assert size == Size.WORD ? (address & 1) == 0 : true;
+        assert (size == Size.LONG ? (address & 3) == 0 : true) : (th(address) + "," + size);
+        assert (size == Size.WORD ? (address & 1) == 0 : true) : (th(address) + "," + size);
         int res = 0;
         if (SH2_MEM_ACCESS_STATS) {
             memAccessStats.addMemHit(true, address, size);
@@ -125,7 +125,7 @@ public final class Sh2BusImpl implements Sh2Bus {
                     res = bios[cpuAccess.ordinal()].readBuffer(address, size);
                     S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.BOOT_ROM);
                 } else {
-                    LOG.error("{} read from addr: {}, {}", cpuAccess, th(address), size);
+                    logWarnOnce(LOG, "{} read from addr: {}, {}", cpuAccess, th(address), size);
                 }
                 break;
             case Sh2Cache.CACHE_IO_H3: //0xF
@@ -134,13 +134,13 @@ public final class Sh2BusImpl implements Sh2Bus {
                 } else if (address >= S32xDict.SH2_START_DRAM_MODE && address < S32xDict.SH2_END_DRAM_MODE) {
                     res = sh2MMREGS[cpuAccess.ordinal()].readDramMode(address & 0xFFFF, size);
                 } else {
-                    LOG.error("{} read from addr: {}, {}", cpuAccess, th(address), size);
-                    throw new RuntimeException();
+                    logWarnOnce(LOG, "{} read from addr: {}, {}", cpuAccess, th(address), size);
+//                    throw new RuntimeException();
                 }
                 break;
             default:
                 res = size.getMask();
-                LOG.error("{} read from addr: {}, {}", cpuAccess, th(address), size);
+                logWarnOnce(LOG, "{} read from addr: {}, {}", cpuAccess, th(address), size);
                 if (true) throw new RuntimeException();
                 break;
         }

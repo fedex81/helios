@@ -67,7 +67,7 @@ public class MemView implements Device, UpdatableViewer {
     private final MemViewData[] memViewData;
 
     public enum MemViewOwner {
-        SH2, M68K, Z80, MD_VDP;
+        SH2, M68K, Z80, MD_VDP, SH2_WORD;
     }
 
     public interface MemViewData {
@@ -173,7 +173,8 @@ public class MemView implements Device, UpdatableViewer {
                 SH2, (v, i) -> s32x.read(i, Size.BYTE),
                 M68K, (v, i) -> m.read(i, Size.BYTE),
                 Z80, (v, i) -> z80b.read(i, Size.BYTE),
-                MD_VDP, (v, i) -> (int) mdVdpMem.read(v, i)
+                MD_VDP, (v, i) -> (int) mdVdpMem.read(v, i),
+                SH2_WORD, (v, i) -> s32x.read(i, Size.WORD)
         );
         data = new byte[0];
     }
@@ -266,16 +267,18 @@ public class MemView implements Device, UpdatableViewer {
         updateNow();
     }
 
+    private static final int BYTES_PER_LINE = 0x10;
+
     private void updateFromMemory(int start, int end) {
         try {
             HexFormat hf = HexFormat.of().withSuffix(" ");
             sb.append(String.format("%4x", 0)).append(": ");
-            for (int i = 0; i < end - start; i += 0x10) {
-                hf.formatHex(sb, data, i, i + 0xF).append("  ");
-                for (int j = i; j <= i + 0xF; j++) {
+            for (int i = 0; i < end - start; i += BYTES_PER_LINE) {
+                hf.formatHex(sb, data, i, i + BYTES_PER_LINE).append("  ");
+                for (int j = i; j < i + BYTES_PER_LINE; j++) {
                     sb.append(toAsciiChar(data[j])).append(" ");
                 }
-                sb.append("\n").append(String.format("%4x", i + 0x10)).append(": ");
+                sb.append("\n").append(String.format("%4x", i + BYTES_PER_LINE)).append(": ");
             }
             textArea.setText(sb.toString());
             sb.setLength(0);
@@ -287,13 +290,23 @@ public class MemView implements Device, UpdatableViewer {
     }
 
     protected void doMemoryRead(MemViewData current, int len, BiFunction<MemViewData, Integer, Integer> readerFn) {
+        final int start = current.getStart();
         for (int i = 0; i < len; i++) {
-            data[i] = (byte) readerFn.apply(current, current.getStart() + i).intValue();
+            data[i] = (byte) readerFn.apply(current, start + i).intValue();
+        }
+    }
+
+    protected void doMemoryRead_WordBE(MemViewData current, int len) {
+        assert current.getOwner() == SH2;
+        final int start = current.getStart();
+        for (int i = 0; i < len; i += 2) {
+            int w = readerMap.get(SH2_WORD).apply(current, start + i).intValue();
+            Util.writeData(data, Size.WORD, i, w);
         }
     }
 
     private static char toAsciiChar(int val) {
-        return val >= Ascii.SPACE && val <= Ascii.MAX ? (char) val : '.';
+        return val >= Ascii.SPACE && val < Ascii.MAX ? (char) val : '.';
     }
 
     @Override

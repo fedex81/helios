@@ -35,9 +35,9 @@ public class IntControlImpl implements IntControl {
     private static final boolean verbose = false;
 
     private final Map<Sh2DeviceHelper.Sh2DeviceType, Integer> onChipDevicePriority;
-    private final Map<Sh2Interrupt, InterruptContext> s32xInt;
+    protected final Map<Sh2Interrupt, InterruptContext> s32xInt;
 
-    private InterruptContext[] orderedIntCtx;
+    protected InterruptContext[] orderedIntCtx;
 
     static final int VALID_BIT_POS = 0;
     static final int PENDING_BIT_POS = 1;
@@ -262,7 +262,7 @@ public class IntControlImpl implements IntControl {
     }
 
     public void clearCurrentInterrupt() {
-        //only autoclear external (ie.DMA,SCI, etc) interrupts? NO
+        //only autoclear onChip (ie.DMA,SCI, etc) interrupts? NO
         //36 Great Holes Starring Fred Couples (Prototype - Nov 05, 1994) (32X).32x
         //doesn't clear VINT=12
         clearInterrupt(currentInterrupt);

@@ -204,7 +204,7 @@ public class Sh2Helper {
 
     public static String toDebuggingString(Sh2Context ctx) {
         StringBuilder sb = new StringBuilder("\n");
-        sb.append(disasm.disassemble(ctx.PC, ctx.opcode)).append("\n");
+        sb.append(getInstString(ctx.sh2TypeCode, ctx.PC, ctx.opcode)).append("\n");
         sb.append(String.format("PC : %08x\t", ctx.PC));
         sb.append(String.format("GBR: %08x\t", ctx.GBR));
         sb.append(String.format("VBR: %08x\t", ctx.VBR));
