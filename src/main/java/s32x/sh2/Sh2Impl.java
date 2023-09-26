@@ -356,8 +356,8 @@ public class Sh2Impl implements Sh2 {
         int m = RM(code);
         int n = RN(code);
 
+        memory.write8(ctx.registers[n] - 1, (byte) ctx.registers[m]);
         ctx.registers[n] -= 1;
-        memory.write8(ctx.registers[n], (byte) ctx.registers[m]);
 
         ctx.cycles--;
         ctx.PC += 2;
@@ -367,9 +367,8 @@ public class Sh2Impl implements Sh2 {
         int m = RM(code);
         int n = RN(code);
 
+        memory.write16(ctx.registers[n] - 2, ctx.registers[m]);
         ctx.registers[n] -= 2;
-        memory.write16(ctx.registers[n], ctx.registers[m]);
-
         ctx.cycles--;
         ctx.PC += 2;
 
@@ -379,9 +378,8 @@ public class Sh2Impl implements Sh2 {
         int m = RM(code);
         int n = RN(code);
 
+        memory.write32(ctx.registers[n] - 4, ctx.registers[m]);
         ctx.registers[n] -= 4;
-        memory.write32(ctx.registers[n], ctx.registers[m]);
-
         ctx.cycles--;
         ctx.PC += 2;
 

@@ -2196,10 +2196,15 @@ public class Ow2Sh2Bytecode {
         int n = RN(ctx.opcode);
 
         int predecVal = size.getByteSize();
-        decReg(ctx, n, predecVal);
+        //write32(r[n] - predecVal, r[m])
         pushMemory(ctx);
-        pushTwoRegsValsStack(ctx, n, m);
+        pushRegValStack(ctx, n);
+        emitPushConstToStack(ctx, predecVal);
+        ctx.mv.visitInsn(ISUB);
+        pushRegValStack(ctx, m);
         writeMem(ctx, size);
+        //r[n] -= predecVal
+        decReg(ctx, n, predecVal);
     }
 
     public static void movMemToRegPostInc(BytecodeContext ctx, Size size) {

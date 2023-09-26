@@ -180,9 +180,9 @@ public class Sh2CacheImpl implements Sh2Cache {
                 assert addr < 0x4800_0000;
             }
             case CACHE_ADDRESS_ARRAY -> {
+                if (verbose) LOG.info("{} CACHE_ADDRESS_ARRAY write: {}, {} {}", cpu, th(addr), th(val), size);
                 //doomRes 1.4, vf
                 assert size == Size.LONG;
-                if (verbose) LOG.info("{} CACHE_ADDRESS_ARRAY write: {}, {} {}", cpu, th(addr), th(val), size);
                 writeAddressArray(addr, val);
             }
             default -> {
