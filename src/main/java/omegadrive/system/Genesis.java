@@ -80,7 +80,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     protected Z80Provider z80;
     protected M68kProvider cpu;
     protected Ssp16 ssp16 = Ssp16.NO_SVP;
-    protected UpdatableViewer memView;
+    protected UpdatableViewer memView = UpdatableViewer.NO_OP_VIEWER;
     protected boolean hasSvp = ssp16 != Ssp16.NO_SVP;
     protected double nextVdpCycle = vdpVals[0];
     protected int next68kCycle = M68K_DIVIDER;
@@ -266,6 +266,7 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
         vdp.addVdpEventListener(sound);
         SvpMapper.ssp16 = Ssp16.NO_SVP;
         resetAfterRomLoad();
+        memView.reset();
         memView = createMemView();
     }
 

@@ -504,18 +504,18 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         switch (size) {
             case BYTE:
             case WORD:
-                data = ioReadInternal(address);
+                data = ioReadInternal(address, size);
                 break;
             case LONG:
                 //Codemasters
-                data = ioReadInternal(address);
-                data = data << 16 | ioReadInternal(address + 2);
+                data = ioReadInternal(address, size);
+                data = data << 16 | ioReadInternal(address + 2, size);
                 break;
         }
         return data;
     }
 
-    private int ioReadInternal(int addressL) {
+    private int ioReadInternal(int addressL, Size size) {
         int data = 0;
         //both even and odd addresses
         int address = (addressL & 0xFFE);
@@ -540,7 +540,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 break;
             default:
                 if (address >= 0xE && address < 0x20) {
-                    LOG.info("Reading serial control: {}", th(address));
+                    LOG.info("Reading serial control: {} {}", th(address), size);
                 } else {
                     LOG.error("Unexpected ioRead: {}", th(addressL));
                 }
@@ -556,17 +556,17 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             case BYTE:
                 assert (address & 1) == 1;
             case WORD:
-                ioWriteInternal(address, data);
+                ioWriteInternal(address, data, size);
                 break;
             case LONG:
                 //Flink
-                ioWriteInternal(address, data >>> 16);
-                ioWriteInternal(address + 2, data & 0xFFFF);
+                ioWriteInternal(address, data >>> 16, size);
+                ioWriteInternal(address + 2, data & 0xFFFF, size);
                 break;
         }
     }
 
-    private void ioWriteInternal(int addressL, int dataL) {
+    private void ioWriteInternal(int addressL, int dataL, Size size) {
         //both even and odd addresses
         int address = addressL & 0xFFE;
         int data = (dataL & 0xFF);
@@ -591,7 +591,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 break;
             default:
                 if (address >= 0xE && address < 0x20) {
-                    LOG.info("Write serial control: {}, data: {}", th(address), th(data));
+                    LOG.info("Write serial control: {}, data: {} {}", th(address), th(data), size);
                 } else { //Reserved
                     LOG.error("Unexpected ioWrite {}, data {}", th(address), th(data));
                 }
