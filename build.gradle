@@ -28,7 +28,7 @@ dependencies {
     implementation 'com.formdev:flatlaf:3.2.1'
     implementation group: 'org.ow2.asm', name: 'asm', version: '9.5'
     implementation group: 'org.ow2.asm', name: 'asm-commons', version: '9.5'
-    implementation group: 'org.ow2.asm', name: 'asm-util', version: '9.5'
+    implementation group: 'org.ow2.asm', name: 'asm-util', version: '9.6'
 
     implementation 'org.tinylog:tinylog-api:2.6.2'
     implementation 'org.tinylog:tinylog-impl:2.6.2'
