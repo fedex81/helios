@@ -90,6 +90,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private int sramLockValue;
     private final boolean enableTmss;
 
+    //NOTE only a stub for serial ports, not supported
+    private byte[] serialPortData = new byte[20];
+
     public GenesisBus() {
         this.mapper = this;
         this.enableTmss = Boolean.parseBoolean(System.getProperty("md.enable.tmss", "false"));
@@ -516,7 +519,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     private int ioReadInternal(int addressL, Size size) {
-        int data = 0;
+        int data = 0xFF;
         //both even and odd addresses
         int address = (addressL & 0xFFE);
         switch (address) {
@@ -540,11 +543,15 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 break;
             default:
                 if (address >= 0xE && address < 0x20) {
-                    LOG.info("Reading serial control: {} {}", th(address), size);
+                    data = Util.readData(serialPortData, size, address - 0xE);
+                    LOG.info("Reading serial control: {} {}, data: {}", th(address), size, th(data));
                 } else {
                     LOG.error("Unexpected ioRead: {}", th(addressL));
                 }
                 break;
+        }
+        if (size == Size.WORD) {
+            data |= (data << 8) & 0xFF00;
         }
         return data;
     }
@@ -591,9 +598,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 break;
             default:
                 if (address >= 0xE && address < 0x20) {
-                    LOG.info("Write serial control: {}, data: {} {}", th(address), th(data), size);
+                    LOG.info("Write serial control: {}, data: {} {}", th(addressL), th(data), size);
+                    Util.writeData(serialPortData, size, address - 0xE, data);
                 } else { //Reserved
-                    LOG.error("Unexpected ioWrite {}, data {}", th(address), th(data));
+                    LOG.error("Unexpected ioWrite {}, data {}", th(addressL), th(data));
                 }
                 break;
         }

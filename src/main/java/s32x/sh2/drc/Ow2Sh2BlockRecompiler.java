@@ -50,7 +50,7 @@ public class Ow2Sh2BlockRecompiler {
     public static final String classConstructor = "<init>";
     public static final String runMethodName = "run";
 
-    //detect that memory is Sh2Memory vs IMemory and use a Sh2Memory field for the class
+    //detect that memory is Sh2BusImpl vs Sh2Bus and use a Sh2BusImpl field for the class
     //should be faster
     public static Class<?> memoryClass;
 
@@ -85,7 +85,8 @@ public class Ow2Sh2BlockRecompiler {
     }
 
     public Runnable createDrcClass(Sh2Block block, Sh2DrcContext drcCtx) {
-        String blockClass = drcPackage + "." + drcCtx.sh2Ctx.sh2TypeCode + "_" + th(block.prefetchPc) + "_" + System.nanoTime();
+        String blockClass = drcPackage + "." + drcCtx.sh2Ctx.sh2TypeCode + "_" + th(block.prefetchPc)
+                + "_" + th(block.hashCodeWords) + "_" + System.nanoTime();
         Runnable r;
         try {
             byte[] binc = createClassBinary(block, drcCtx, blockClass);

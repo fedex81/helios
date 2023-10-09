@@ -311,7 +311,9 @@ public class MemView implements Device, UpdatableViewer {
 
     @Override
     public void reset() {
-        frame.setVisible(false);
-        frame.dispose();
+        if (frame != null) {
+            frame.setVisible(false);
+            frame.dispose();
+        }
     }
 }

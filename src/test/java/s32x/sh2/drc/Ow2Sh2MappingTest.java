@@ -2,8 +2,8 @@ package s32x.sh2.drc;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import s32x.Sh2MMREG;
 import s32x.bus.Sh2Bus;
+import s32x.bus.Sh2BusImpl;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.device.Sh2DeviceHelper;
 import s32x.sh2.prefetch.Sh2Prefetch;
@@ -45,8 +45,11 @@ public class Ow2Sh2MappingTest {
 
     @Test
     public void testMethodMapping() {
-        Set<String> declMethods = getDeclMethods(Sh2MMREG.class);
-        declMethods = getDeclMethods(Sh2Bus.class);
+        Set<String> declMethods = getDeclMethods(Sh2Bus.class);
+        for (SH2MEMORY_METHOD m : SH2MEMORY_METHOD.values()) {
+            Assertions.assertTrue(declMethods.contains(m.name()), m.name());
+        }
+        declMethods = getDeclMethods(Sh2BusImpl.class);
         for (SH2MEMORY_METHOD m : SH2MEMORY_METHOD.values()) {
             Assertions.assertTrue(declMethods.contains(m.name()), m.name());
         }

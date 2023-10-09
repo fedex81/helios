@@ -32,9 +32,8 @@ import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.util.Util.th;
 
 /**
- * wwf raw 32x, GreatestHeavyweights, Sf2, sgdk joytest
- * TODO
- * - Decap Attack, 3btn and 6btn ko
+ * wwf raw 32x, GreatestHeavyweights, Sf2, sgdk joytest,
+ * Decap Attack, Asterix
  */
 public class GenesisJoypadTest {
 

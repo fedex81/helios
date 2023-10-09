@@ -1803,7 +1803,7 @@ public class Ow2Sh2Bytecode {
         }
         //if the delaySlot inst is a fallback the PC gets corrupted
         assert !ctx.delaySlot;
-        setContextPc(ctx);
+        setContextPcFallback(ctx);
         ctx.mv.visitFieldInsn(GETSTATIC, Type.getInternalName(Sh2Instructions.class), "instOpcodeMap",
                 Type.getDescriptor(Sh2Instructions.Sh2InstructionWrapper[].class));
         ctx.mv.visitLdcInsn(ctx.opcode);
@@ -2334,8 +2334,9 @@ public class Ow2Sh2Bytecode {
 
     /**
      * Set the context.PC to the current PC
+     * NOTE: Only for testing fallback mode.
      */
-    public static void setContextPc(BytecodeContext ctx) {
+    private static void setContextPcFallback(BytecodeContext ctx) {
         assert ctx.pc != 0;
         pushSh2Context(ctx);
         ctx.mv.visitLdcInsn(ctx.pc);
@@ -2348,6 +2349,8 @@ public class Ow2Sh2Bytecode {
      * }
      */
     public static void subCyclesExt(BytecodeContext ctx, int cycles) {
+        if (cycles == 0)
+            return;
         pushSh2Context(ctx);
         ctx.mv.visitInsn(DUP);
         ctx.mv.visitFieldInsn(GETFIELD, Type.getInternalName(Sh2Context.class), SH2CTX_CLASS_FIELD.cycles.name(), Ow2Sh2BlockRecompiler.intDesc);

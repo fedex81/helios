@@ -23,6 +23,7 @@ import omegadrive.util.SystemTestUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * GenesisBusTest
@@ -64,5 +65,33 @@ public class GenesisBusTest {
         bus.write(0xA00A00, value, Size.BYTE);
         res = bus.read(0xA08A00, Size.BYTE);
         Assert.assertEquals(value, res);
+    }
+
+    /**
+     * see md_softcheck.bin
+     */
+    @Test
+    public void testIoReadWord() {
+        int ctrlPort = 0xa10009;
+        testIoReadInternal(ctrlPort, 0x55, Size.BYTE);
+        testIoReadInternal(ctrlPort, 0xCC, Size.BYTE);
+        testIoReadInternal(ctrlPort, 0x4466, Size.BYTE);
+        testIoReadInternal(ctrlPort, 0xDDBB, Size.BYTE);
+        testIoReadInternal(ctrlPort, 0xCCDDAAFF, Size.BYTE);
+        testIoReadInternal(ctrlPort, 0x33, Size.WORD);
+        testIoReadInternal(ctrlPort, 0xAA, Size.WORD);
+        testIoReadInternal(ctrlPort, 0x2211, Size.WORD);
+        testIoReadInternal(ctrlPort, 0xEECC, Size.WORD);
+        testIoReadInternal(ctrlPort, 0xCCDDAAFF, Size.WORD);
+    }
+
+    private void testIoReadInternal(int ctrlPort, int val, Size size) {
+        int res, expWord, expByte = val & 0xFF;
+        bus.write(ctrlPort, val, size);
+        res = bus.read(ctrlPort, Size.BYTE);
+        Assertions.assertEquals(expByte, res);
+        res = bus.read(ctrlPort, Size.WORD);
+        expWord = expByte | ((expByte << 8) & 0xFF00);
+        Assertions.assertEquals(expWord, res);
     }
 }
