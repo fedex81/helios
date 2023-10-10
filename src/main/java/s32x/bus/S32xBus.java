@@ -267,7 +267,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
             if (verboseMd) LOG.info("HINT vector read, rv {}, address: {}, {} {}", DmaFifo68k.rv,
                     th(address), th(res), size);
         } else {
-            res = bios68k.readBuffer(address, size);
+            res = 0;
         }
         return res;
     }
