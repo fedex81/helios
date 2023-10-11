@@ -219,14 +219,12 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         switch (pc >> S32xDict.SH2_PC_AREA_SHIFT) {
             case 6:
             case 0x26:
-                block.start = Math.max(0, block.start) & S32xDict.SH2_SDRAM_MASK;
                 block.pcMasked = pc & S32xDict.SH2_SDRAM_MASK;
                 block.fetchMemAccessDelay = S32xMemAccessDelay.SDRAM;
                 block.fetchBuffer = sdram;
                 break;
             case 2:
             case 0x22:
-                block.start = Math.max(0, block.start) & romMask;
                 block.pcMasked = pc & romMask;
                 block.fetchMemAccessDelay = S32xMemAccessDelay.ROM;
                 block.fetchBuffer = rom;
@@ -234,7 +232,6 @@ public class Sh2Prefetch implements Sh2Prefetcher {
             case 0:
             case 0x20:
                 block.fetchBuffer = bios[cpu.ordinal()].buffer;
-                block.start = Math.max(0, block.start);
                 block.pcMasked = pc;
                 block.fetchMemAccessDelay = S32xMemAccessDelay.BOOT_ROM;
                 break;
@@ -263,7 +260,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         if (piw == SH2_NOT_VISITED) {
             piw = getOrCreate(pc, cpu);
         }
-        if (piw.block != Sh2Block.INVALID_BLOCK && piw.block.isValid()) {
+        if (piw.block.isValid()) {
             assert fetchResult.pc == piw.block.prefetchPc : th(fetchResult.pc);
             piw.block.addHit();
             fetchResult.block = piw.block;
@@ -394,7 +391,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         for (int i = addrEven + 2; i > addrEven - Sh2Block.SH2_DRC_MAX_BLOCK_LEN_BYTES; i -= 2) {
             Sh2PcInfoWrapper piw = getOrDefault(i, blockOwner);
             assert piw != null;
-            if (piw == SH2_NOT_VISITED || !piw.block.isValid()) {
+            if (!piw.block.isValid()) {
                 continue;
             }
             final Sh2Block b = piw.block;
@@ -411,13 +408,15 @@ public class Sh2Prefetch implements Sh2Prefetcher {
     }
 
     private void invalidateMemoryLocationForCpu(CpuDeviceAccess cpu, Sh2PcInfoWrapper piw, int addr, int i, int val) {
-        final boolean isCpuCacheOff = cache[cpu.ordinal()].getCacheContext().cacheEn == 0;
-        if (piw != SH2_NOT_VISITED && piw.block.isValid()) {
+        if (piw.block.isValid()) {
             invalidateWrapper(addr, piw, false, val);
         }
+        final boolean isCpuCacheOff = cache[cpu.ordinal()].getCacheContext().cacheEn == 0;
+        //TODO is anything using this? I don't think so
         if (isCpuCacheOff) {
+            LOG.error("Check!");
             piw = getOrDefault(i & S32xDict.SH2_CACHE_THROUGH_MASK, cpu);
-            if (piw != SH2_NOT_VISITED && piw.block.isValid()) {
+            if (piw.block.isValid()) {
                 invalidateWrapper(addr, piw, false, val);
             }
         }
@@ -462,7 +461,6 @@ public class Sh2Prefetch implements Sh2Prefetcher {
 
     private void invalidateBlock(Sh2PcInfoWrapper piw) {
         Sh2Block b = piw.block;
-        boolean isCacheArray = b.prefetchPc >>> S32xDict.SH2_PC_AREA_SHIFT == 0xC0;
         //Blackthorne lots of SDRAM invalidation
         if (ENABLE_BLOCK_RECYCLING) {
             assert b.getCpu() != null;
@@ -487,16 +485,16 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         if (addr >= 0 && addr < 0x100) { //Sangokushi
             return;
         }
-        int end = ctx.prevCacheAddr + Sh2Cache.CACHE_BYTES_PER_LINE;
         boolean ignore = addr >>> S32xDict.SH2_PC_AREA_SHIFT > 0xC0;
         if (ignore) {
             return;
         }
-        final int addrEven = end;
+        final int addrEven = ctx.prevCacheAddr + Sh2Cache.CACHE_BYTES_PER_LINE;
+        ;
         for (int i = addrEven; i > addr - Sh2Block.SH2_DRC_MAX_BLOCK_LEN_BYTES; i -= 2) {
             Sh2PcInfoWrapper piw = getOrDefault(i, ctx.cpu);
             assert piw != null;
-            if (piw == SH2_NOT_VISITED || !piw.block.isValid()) {
+            if (!piw.block.isValid()) {
                 continue;
             }
             invalidateWrapper(i, piw, true, -1);

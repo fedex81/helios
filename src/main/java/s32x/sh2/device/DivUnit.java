@@ -18,6 +18,8 @@ import static s32x.util.S32xUtil.readBufferRegLong;
  * Federico Berti
  * <p>
  * Copyright 2021
+ * <p>
+ * TODO more accurate timings -> check branch perf_test
  */
 public class DivUnit implements S32xUtil.Sh2Device {
 
@@ -36,7 +38,6 @@ public class DivUnit implements S32xUtil.Sh2Device {
     private final S32xUtil.CpuDeviceAccess cpu;
     private final ByteBuffer regs;
     private final IntControl intControl;
-    private long frameCnt, cycleCnt;
 
     public DivUnit(S32xUtil.CpuDeviceAccess cpu, IntControl intControl, ByteBuffer regs) {
         this.cpu = cpu;
@@ -80,12 +81,9 @@ public class DivUnit implements S32xUtil.Sh2Device {
         if (verbose) LOG.info(String.format(formatDiv, cpu, 64, dvd, dvsr, quotL, quot, rem));
         if (quot != quotL) {
             handleOverflow(quotL, false, String.format(formatOvf, cpu, 64, dvd, dvsr, quotL, quot, rem));
-            if (verbose) checkTimings(64, DIV_OVF_CYCLES);
             return;
         }
         S32xUtil.writeBuffersLong(regs, DIV_DVDNT, DIV_DVDNTL, DIV_DVDNTUL, quot);
-        if (verbose) checkTimings(64, DIV_CYCLES);
-        addCpuDelay(DIV_CYCLES);
     }
 
     //32/32 -> 32
@@ -96,7 +94,6 @@ public class DivUnit implements S32xUtil.Sh2Device {
         int dvsr = readBufferRegLong(regs, DIV_DVSR);
         if (dvsr == 0) {
             handleOverflow(0, true, String.format(formatDivBy0, cpu, 32, dvd, dvsr));
-            if (verbose) checkTimings(32, DIV_OVF_CYCLES);
             return;
         }
         int quot = dvd / dvsr;
@@ -104,20 +101,6 @@ public class DivUnit implements S32xUtil.Sh2Device {
         if (verbose) LOG.info(String.format(formatDiv, cpu, 32, dvd, dvsr, quot, quot, rem));
         S32xUtil.writeBuffersLong(regs, DIV_DVDNTH, DIV_DVDNTUH, rem);
         S32xUtil.writeBuffersLong(regs, DIV_DVDNT, DIV_DVDNTL, DIV_DVDNTUL, quot);
-        if (verbose) checkTimings(32, DIV_CYCLES);
-        addCpuDelay(DIV_CYCLES);
-    }
-
-    private void checkTimings(int type, int ref) {
-        assert frameCnt > 0;
-        long nowFrameCnt = 0; //Md32x.systemClock.getFrameCounter();
-        int nowCycleCnt = 0; //Md32x.systemClock.getCycleCounter();
-        int diff = (int) ((nowCycleCnt - cycleCnt) * 3);
-        if (nowFrameCnt == frameCnt && diff < ref) {
-            System.out.println("div" + type + "," + diff);
-        }
-        frameCnt = nowFrameCnt;
-        cycleCnt = nowCycleCnt;
     }
 
     private void handleOverflow(long quot, boolean divBy0, String msg) {
@@ -126,18 +109,11 @@ public class DivUnit implements S32xUtil.Sh2Device {
         int dvcr = readBufferWord(regs, DIV_DVCR.addr);
         int val = quot >= 0 ? Integer.MAX_VALUE : Integer.MIN_VALUE;
         S32xUtil.writeBuffersLong(regs, DIV_DVDNT, DIV_DVDNTL, DIV_DVDNTUL, val);
-        addCpuDelay(DIV_OVF_CYCLES);
         if ((dvcr & DIV_OVERFLOW_INT_EN_BIT) > 0) {
             intControl.setOnChipDeviceIntPending(DIVU);
             LOG.info(msg);
             LOG.warn("{} DivUnit interrupt", cpu); //not used by any sw?
         }
-    }
-
-    //TODO this is not correct, the CPU is delayed only if it is accessing the DivUnit before 39 cycles have passed,
-    //TODO or 6 cycles in case of overflow
-    private void addCpuDelay(int cycles) {
-//        Md32xRuntimeData.addCpuDelayExt(cycles);
     }
 
     @Override

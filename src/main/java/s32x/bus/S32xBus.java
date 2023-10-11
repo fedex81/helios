@@ -231,7 +231,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
 
     private void write32xWord(int address, int data, Size size) {
         if (s32XMMREG.fm > 0) {
-            LOG.warn("Ignoring access to S32X memory from MD when FM={}, addr: {} {}", s32XMMREG.fm, th(address), size);
+            logWarnOnce(LOG, "Ignoring access to S32X memory from MD when FM={}, addr: {} {}", s32XMMREG.fm, th(address), size);
             return;
         }
         write32xWordDirect(address, data, size);
