@@ -1,4 +1,4 @@
-package omegadrive.cart.mapper.md;
+package omegadrive.cart.mapper.md.eeprom;
 
 import omegadrive.cart.loader.MdRomDbModel.EepromLineMap;
 import omegadrive.cart.loader.MdRomDbModel.EepromType;

@@ -26,6 +26,8 @@ import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.cart.loader.MdRomDbModel.RomDbEntry.EepromEntry;
 import omegadrive.cart.mapper.BackupMemoryMapper;
 import omegadrive.cart.mapper.RomMapper;
+import omegadrive.cart.mapper.md.eeprom.EepromBase;
+import omegadrive.cart.mapper.md.eeprom.I2cEeprom;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -49,8 +51,8 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private static final String fileType = "srm";
     private RomMapper baseMapper;
     private SramMode sramMode = SramMode.DISABLE;
-    private EepromEntry eeprom = MdRomDbModel.NO_EEPROM;
-    private I2cEeprom i2c = I2cEeprom.NO_OP;
+    private EepromEntry eepromDbEntry = MdRomDbModel.NO_EEPROM;
+    private EepromBase eeprom = EepromBase.NO_OP;
 
     private MdBackupMemoryMapper(String romName, int size) {
         super(SystemLoader.SystemType.GENESIS, fileType, romName, size);
@@ -62,12 +64,16 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
 
     public static RomMapper createInstance(RomMapper baseMapper, MdCartInfoProvider cart,
                                            SramMode sramMode, RomDbEntry entry) {
+        boolean isStm95 = entry.hasEeprom() ? entry.eeprom.getEepromType() == MdRomDbModel.EepromType.STM_95 : false;
+        if (isStm95) {
+            return MdT5740Mapper.createInstance(cart.getRomName(), baseMapper);
+        }
         int size = !entry.hasEeprom() ? MdCartInfoProvider.DEFAULT_SRAM_BYTE_SIZE : entry.eeprom.getEepromSize();
         MdBackupMemoryMapper mapper = new MdBackupMemoryMapper(cart.getRomName(), size);
         mapper.baseMapper = baseMapper;
         mapper.sramMode = SramMode.READ_WRITE;
-        mapper.eeprom = Optional.ofNullable(entry.eeprom).orElse(MdRomDbModel.NO_EEPROM);
-        mapper.i2c = I2cEeprom.createInstance(entry, mapper.sram);
+        mapper.eepromDbEntry = Optional.ofNullable(entry.eeprom).orElse(MdRomDbModel.NO_EEPROM);
+        mapper.eeprom = I2cEeprom.createInstance(entry, mapper.sram);
         LOG.info("BackupMemoryMapper created, using folder: {}", mapper.sramFolder);
         mapper.initBackupFileIfNecessary();
         return mapper;
@@ -83,13 +89,13 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
 
     @Override
     public int readData(int address, Size size) {
-        return eeprom == MdRomDbModel.NO_EEPROM ? readDataSram(address, size) : readDataEeprom(address, size);
+        return eepromDbEntry == MdRomDbModel.NO_EEPROM ? readDataSram(address, size) : readDataEeprom(address, size);
     }
 
 
     @Override
     public void writeData(int address, int data, Size size) {
-        if (eeprom == MdRomDbModel.NO_EEPROM) {
+        if (eepromDbEntry == MdRomDbModel.NO_EEPROM) {
             writeDataSram(address, data, size);
         } else {
             writeDataEeprom(address, data, size);
@@ -129,7 +135,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         eepromRead &= address == DEFAULT_SRAM_START_ADDRESS || address == DEFAULT_SRAM_START_ADDRESS + 1;
         if (eepromRead) {
             initBackupFileIfNecessary();
-            int res = i2c.readEeprom(address, size);
+            int res = eeprom.readEeprom(address, size);
             if (verbose) LOG.info("EEPROM read at: {} {}, result: {} ", th(address), size, th(res));
             return res;
         }
@@ -142,7 +148,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         eepromWrite &= address == DEFAULT_SRAM_START_ADDRESS || address == DEFAULT_SRAM_START_ADDRESS + 1;
         if (eepromWrite) {
             initBackupFileIfNecessary();
-            i2c.writeEeprom(address, (data & 0xFF), size);
+            eeprom.writeEeprom(address, (data & 0xFF), size);
             if (verbose) LOG.info("EEPROM write at: {} {}, data: {} ", th(address), size, th(data));
         } else {
             baseMapper.writeData(address, data, size);
@@ -152,7 +158,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     @Override
     protected void initBackupFileIfNecessary() {
         super.initBackupFileIfNecessary();
-        i2c.setSram(sram);
+        eeprom.setSram(sram);
     }
 
     @Override

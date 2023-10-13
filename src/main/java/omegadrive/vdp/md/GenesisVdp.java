@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.bitSetTest;
 import static omegadrive.util.Util.th;
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_FIELD_CHANGE;
@@ -544,7 +545,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         //sms mode only affects reg [0 - 0xA]
         boolean invalidWrite = reg >= VDP_REGISTERS_SIZE || (!m5 && reg > 0xA);
         if (invalidWrite) {
-            LOG.warn("Ignoring write to invalid VPD register: {}, mode5: {}, value: {}", reg, m5, dataControl);
+            logWarnOnce(LOG, "Ignoring write to invalid VPD register: {}, mode5: {}", th(reg), m5);
             return;
         }
         if (verbose) LOG.info("writeReg: {}, data: {}", reg, dataControl);

@@ -54,4 +54,21 @@ public interface RomMapper {
     default void closeRom() {
         //DO NOTHING
     }
+
+    interface StateAwareMapper {
+        int[] getState();
+
+        void setState(int[] bankData);
+    }
+
+    StateAwareMapper NO_STATE = new StateAwareMapper() {
+        @Override
+        public int[] getState() {
+            return new int[0];
+        }
+
+        @Override
+        public void setState(int[] bankData) {
+        }
+    };
 }

@@ -57,6 +57,7 @@ public class CpuFastDebug {
     public static class PcInfoWrapper {
         public final int area, pcMasked, hc;
         public int opcode, pcLoops;
+        public String str;
 
         public PcInfoWrapper(int area, int pcMasked) {
             this.area = area;
@@ -141,8 +142,17 @@ public class CpuFastDebug {
         }
     }
 
+    /**
+     * TODO 68k
+     * 00ff1928   13fc 0009 00a13005      move.b   #$0009,$00a13005 [NEW]
+     * vs
+     * 00ff1928   13fc 0001 00a13005      move.b   #$0001,$00a13005 [NEW]
+     * <p>
+     * we don't detect the change as we only compare 13fc
+     */
     private void printNewInstruction() {
         final int pc = debugInfoProvider.getPc();
+
         final int area = pc >>> ctx.pcAreaShift;
         final int mask = ctx.pcAreasMaskMap[area];
         final int pcMasked = pc & mask;
@@ -151,10 +161,19 @@ public class CpuFastDebug {
         PcInfoWrapper piw = pcInfoWrapper[area][pcMasked];
         if (piw != NOT_VISITED && piw.opcode != opcode) {
             piw.opcode = opcode;
+            piw.str = debugInfoProvider.getInstructionOnly();
             doPrintInst(" [NEW-R]");
         } else if (piw == NOT_VISITED) {
             pcInfoWrapper[area][pcMasked] = createPcWrapper(pcMasked, area, opcode);
+            pcInfoWrapper[area][pcMasked].str = debugInfoProvider.getInstructionOnly();
             doPrintInst(" [NEW]");
+        } else {
+            String str = debugInfoProvider.getInstructionOnly();
+            if (!piw.str.equals(str)) {
+                piw.opcode = opcode;
+                piw.str = str;
+                doPrintInst(" [NEW-R]");
+            }
         }
     }
 

@@ -246,5 +246,19 @@
       "type": "EEPROM_24C02",
       "lineMap": "ACCLAIM_32M"
     }
+  },
+  {
+    "id": "T-574023",
+    "name": "Pier Solar Reprint A/B",
+    "eeprom": {
+      "type": "STM_95"
+    }
+  },
+  {
+    "id": "T-574013",
+    "name": "Pier Solar",
+    "eeprom": {
+      "type": "STM_95"
+    }
   }
 ]

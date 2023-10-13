@@ -382,4 +382,8 @@ public class Util {
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
     }
+
+    public static int getBitFromByte(byte b, int bitPos) {
+        return (b >> bitPos) & 1;
+    }
 }

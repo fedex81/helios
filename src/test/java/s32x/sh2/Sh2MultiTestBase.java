@@ -1,5 +1,6 @@
 package s32x.sh2;
 
+import omegadrive.util.Util;
 import org.junit.jupiter.api.BeforeEach;
 import s32x.MarsRegTestUtil;
 import s32x.bus.Sh2BusImpl;
@@ -7,7 +8,6 @@ import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.prefetch.Sh2CacheTest;
 import s32x.util.MarsLauncherHelper;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -42,9 +42,9 @@ public class Sh2MultiTestBase {
         int pn = parNumber;
         for (int i = 0; i < combinations; i++) {
             byte ib = (byte) i;
-            configList[i] = new Sh2Config(S32xUtil.getBitFromByte(ib, pn - 1) > 0,
-                    S32xUtil.getBitFromByte(ib, pn - 2) > 0, S32xUtil.getBitFromByte(ib, pn - 3) > 0,
-                    S32xUtil.getBitFromByte(ib, pn - 4) > 0);
+            configList[i] = new Sh2Config(Util.getBitFromByte(ib, pn - 1) > 0,
+                    Util.getBitFromByte(ib, pn - 2) > 0, Util.getBitFromByte(ib, pn - 3) > 0,
+                    Util.getBitFromByte(ib, pn - 4) > 0);
         }
     }
 

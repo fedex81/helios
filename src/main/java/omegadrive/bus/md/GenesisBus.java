@@ -29,6 +29,7 @@ import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.md.ExSsfMapper;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
+import omegadrive.cart.mapper.md.MdT5740Mapper;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.GenesisJoypad;
@@ -917,17 +918,22 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     @Override
     public int[] getMapperData() {
-        if (exSsfMapper instanceof Ssf2Mapper) {
-            return ((Ssf2Mapper) exSsfMapper).getState();
-        }
-        return new int[0];
+        return getStateAwareMapper().getState();
     }
 
     @Override
     public void setMapperData(int[] data) {
-        if (exSsfMapper instanceof Ssf2Mapper) {
-            ((Ssf2Mapper) exSsfMapper).setState(data);
+        getStateAwareMapper().setState(data);
+    }
+
+    private StateAwareMapper getStateAwareMapper() {
+        StateAwareMapper m = NO_STATE;
+        if (exSsfMapper instanceof StateAwareMapper) {
+            m = (StateAwareMapper) exSsfMapper;
+        } else if (mapper instanceof StateAwareMapper) { //MdT5740Mapper
+            m = (StateAwareMapper) mapper;
         }
+        return m;
     }
 
     private static void logInfo(String str, Object... args) {

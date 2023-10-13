@@ -1,4 +1,4 @@
-package omegadrive.cart.mapper.md;
+package omegadrive.cart.mapper.md.eeprom;
 
 import omegadrive.cart.loader.MdRomDbModel.EepromLineMap;
 import omegadrive.cart.loader.MdRomDbModel.EepromType;
@@ -7,7 +7,7 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
-import static omegadrive.cart.mapper.md.I2cEeprom.EepromState.*;
+import static omegadrive.cart.mapper.md.eeprom.I2cEeprom.EepromState.*;
 import static omegadrive.util.ArrayEndianUtil.getByteInWordBE;
 import static omegadrive.util.ArrayEndianUtil.setByteInWordBE;
 import static omegadrive.util.Util.th;
@@ -74,17 +74,8 @@ import static omegadrive.util.Util.th;
  * Mode 3 (16-bit) - the chip takes a 7-bit device address and R/W bit followed by a 16-bit memory address (24C32 and larger)
  *
  */
-public class I2cEeprom {
+public class I2cEeprom implements EepromBase {
 
-    public static final I2cEeprom NO_OP = new I2cEeprom() {
-
-        public int readEeprom(int address, Size size) {
-            return 0;
-        }
-
-        public void writeEeprom(int address, int data, Size size) {
-        }
-    };
     private final static Logger LOG = LogHelper.getLogger(I2cEeprom.class.getSimpleName());
     private static final boolean verbose = false;
     private static final boolean logReadWrite = verbose || false;
@@ -103,18 +94,20 @@ public class I2cEeprom {
         public EepromLineMap lineMap;
     }
 
-    public static I2cEeprom createInstance(RomDbEntry entry, byte[] sram) {
-        I2cEeprom e = NO_OP;
+    public static EepromBase createInstance(RomDbEntry entry, byte[] sram) {
+        EepromBase eb = NO_OP;
         if (entry.hasEeprom()) {
-            e = new I2cEeprom();
+            I2cEeprom e = new I2cEeprom();
             e.ctx.lineMap = entry.eeprom.getEepromLineMap();
             e.ctx.spec = entry.eeprom.getEepromType();
             e.sram = sram;
             LOG.info("Init {}", entry.eeprom);
+            eb = e;
         }
-        return e;
+        return eb;
     }
 
+    @Override
     public int readEeprom(int address, Size size) {
         int res = eeprom_i2c_out() << ctx.lineMap.sda_out_bit;
         assert size != Size.LONG;
@@ -126,6 +119,7 @@ public class I2cEeprom {
         return res;
     }
 
+    @Override
     public void writeEeprom(int address, int data, Size size) {
         if (logReadWrite)
             System.out.println("W," + th(address & 0xFF) + "," + size.name().charAt(0) + "," + th(data));
@@ -435,6 +429,7 @@ public class I2cEeprom {
         }
     }
 
+    @Override
     public void setSram(byte[] sram) {
         this.sram = sram;
     }

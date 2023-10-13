@@ -48,6 +48,7 @@ public class MdRomDbModel {
         EEPROM_24C128(16, 0x3FFF, 0x03F),
         EEPROM_24C256(16, 0x7FFF, 0x03F),
         EEPROM_24C512(16, 0xFFFF, 0x07F),
+        STM_95(0, 0, 0)
         ;
 
         public final int addressBits, sizeMask, pagewriteMask;

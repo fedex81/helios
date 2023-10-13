@@ -54,7 +54,7 @@ import static omegadrive.util.Util.th;
  * <p>
  * see: ssf2.txt
  **/
-public abstract class Ssf2Mapper implements RomMapper {
+public abstract class Ssf2Mapper implements RomMapper, RomMapper.StateAwareMapper {
 
     private static final Logger LOG = LogHelper.getLogger(Ssf2Mapper.class.getSimpleName());
 
@@ -119,11 +119,13 @@ public abstract class Ssf2Mapper implements RomMapper {
     }
 
     //NOTE: this needs to be bytes due to savestate compatibility
+    @Override
     public int[] getState() {
         assert Arrays.stream(banks).allMatch(v -> v == (byte) v);
         return banks;
     }
 
+    @Override
     public void setState(int[] bankData) {
         this.banks = Arrays.copyOf(bankData, bankData.length);
     }
