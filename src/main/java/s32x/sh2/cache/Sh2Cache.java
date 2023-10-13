@@ -104,23 +104,17 @@ public interface Sh2Cache extends Device {
         memory.write(address | CACHE_THROUGH, value, size);
     }
 
-    static Sh2Cache createNoCacheInstance(CpuDeviceAccess cpu, final Sh2Bus memory) {
-        return new Sh2CacheImpl(cpu, memory) {
-            @Override
-            public CacheRegContext updateState(int value) {
-                CacheRegContext ctx = super.updateState(value);
-                if (ctx.cacheEn > 0) {
-//                    LOG.warn("Ignoring cache enable, as cache emulation is not active");
-                }
-                ca.enable = 0; //always disabled
-                return ctx;
-            }
+    //set to false only for testing
+    boolean USE_CACHE = true;
 
-            @Override
-            public int readDirect(int addr, Size size) {
-                return memory.readMemoryUncachedNoDelay(addr, size);
-            }
-        };
+    static Sh2Cache createCacheInstance(CpuDeviceAccess cpu, final Sh2Bus memory) {
+        Sh2Cache c;
+        if (USE_CACHE) {
+            c = new Sh2CacheImpl(cpu, memory);
+        } else {
+            c = createNoCacheInstance(cpu, memory);
+        }
+        return c;
     }
 
     class CacheRegContext implements Serializable {
@@ -156,5 +150,25 @@ public interface Sh2Cache extends Device {
         public CacheRegContext cacheContext;
 
         public final byte[] dataArray = new byte[DATA_ARRAY_SIZE];
+    }
+
+    //TESTING ONLY
+    static Sh2Cache createNoCacheInstance(CpuDeviceAccess cpu, final Sh2Bus memory) {
+        return new Sh2CacheImpl(cpu, memory) {
+            @Override
+            public CacheRegContext updateState(int value) {
+                CacheRegContext ctx = super.updateState(value);
+                if (ctx.cacheEn > 0) {
+                    LogHelper.logWarnOnce(LOG, "Ignoring cache enable, as cache emulation is not active");
+                }
+                ca.enable = 0; //always disabled
+                return ctx;
+            }
+
+            @Override
+            public int readDirect(int addr, Size size) {
+                return memory.readMemoryUncachedNoDelay(addr, size);
+            }
+        };
     }
 }

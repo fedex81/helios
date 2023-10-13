@@ -16,7 +16,6 @@ import s32x.sh2.Sh2Debug;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.Sh2Impl;
 import s32x.sh2.cache.Sh2Cache;
-import s32x.sh2.cache.Sh2CacheImpl;
 import s32x.sh2.device.Sh2DeviceHelper;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
@@ -107,7 +106,7 @@ public class J2CoreTest {
     }
 
     public static Sh2Context createContext(S32xUtil.CpuDeviceAccess cpu, Sh2Bus memory) {
-        Sh2Cache cache = new Sh2CacheImpl(cpu, memory);
+        Sh2Cache cache = Sh2Cache.createCacheInstance(cpu, memory);
         Sh2MMREG sh2MMREG = new Sh2MMREG(cpu, cache);
         S32XMMREG s32XMMREG = new S32XMMREG();
         Sh2Context context = new Sh2Context(S32xUtil.CpuDeviceAccess.MASTER, sh2Debug);

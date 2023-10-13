@@ -14,13 +14,13 @@ import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.cache.Sh2Cache;
-import s32x.sh2.cache.Sh2CacheImpl;
 import s32x.sh2.prefetch.Sh2Prefetch;
 import s32x.sh2.prefetch.Sh2PrefetchSimple;
 import s32x.sh2.prefetch.Sh2Prefetcher;
 import s32x.util.BiosHolder;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
+import s32x.util.S32xUtil.CpuDeviceAccess;
 import s32x.util.debug.MemAccessStats;
 import s32x.util.debug.SdramSyncTester;
 
@@ -28,6 +28,8 @@ import java.nio.ByteBuffer;
 
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
+import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
+import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
 
 public final class Sh2BusImpl implements Sh2Bus {
 
@@ -59,15 +61,15 @@ public final class Sh2BusImpl implements Sh2Bus {
         this.s32XMMREG = s32XMMREG;
         this.mdBus = mdBus;
         memoryDataCtx.rom = this.rom = rom;
-        bios[S32xUtil.CpuDeviceAccess.MASTER.ordinal()] = biosHolder.getBiosData(S32xUtil.CpuDeviceAccess.MASTER);
-        bios[S32xUtil.CpuDeviceAccess.SLAVE.ordinal()] = biosHolder.getBiosData(S32xUtil.CpuDeviceAccess.SLAVE);
+        bios[MASTER.ordinal()] = biosHolder.getBiosData(MASTER);
+        bios[SLAVE.ordinal()] = biosHolder.getBiosData(SLAVE);
         memoryDataCtx.bios = bios;
         memoryDataCtx.sdram = sdram = ByteBuffer.allocate(S32xDict.SH2_SDRAM_SIZE);
         Sh2Config sh2Config = Sh2Config.get();
-        cache[S32xUtil.CpuDeviceAccess.MASTER.ordinal()] = new Sh2CacheImpl(S32xUtil.CpuDeviceAccess.MASTER, this);
-        cache[S32xUtil.CpuDeviceAccess.SLAVE.ordinal()] = new Sh2CacheImpl(S32xUtil.CpuDeviceAccess.SLAVE, this);
-        sh2MMREGS[S32xUtil.CpuDeviceAccess.MASTER.ordinal()] = new Sh2MMREG(S32xUtil.CpuDeviceAccess.MASTER, cache[S32xUtil.CpuDeviceAccess.MASTER.ordinal()]);
-        sh2MMREGS[S32xUtil.CpuDeviceAccess.SLAVE.ordinal()] = new Sh2MMREG(S32xUtil.CpuDeviceAccess.SLAVE, cache[S32xUtil.CpuDeviceAccess.SLAVE.ordinal()]);
+        cache[MASTER.ordinal()] = Sh2Cache.createCacheInstance(MASTER, this);
+        cache[SLAVE.ordinal()] = Sh2Cache.createCacheInstance(SLAVE, this);
+        sh2MMREGS[MASTER.ordinal()] = new Sh2MMREG(MASTER, cache[MASTER.ordinal()]);
+        sh2MMREGS[SLAVE.ordinal()] = new Sh2MMREG(SLAVE, cache[SLAVE.ordinal()]);
 
         memoryDataCtx.romSize = romSize = rom.capacity();
         memoryDataCtx.romMask = romMask = Util.getRomMask(romSize);
@@ -80,7 +82,7 @@ public final class Sh2BusImpl implements Sh2Bus {
 
     @Override
     public int read(int address, Size size) {
-        S32xUtil.CpuDeviceAccess cpuAccess = Md32xRuntimeData.getAccessTypeExt();
+        CpuDeviceAccess cpuAccess = Md32xRuntimeData.getAccessTypeExt();
         assert (size == Size.LONG ? (address & 3) == 0 : true) : (th(address) + "," + size);
         assert (size == Size.WORD ? (address & 1) == 0 : true) : (th(address) + "," + size);
         int res = 0;
@@ -149,7 +151,7 @@ public final class Sh2BusImpl implements Sh2Bus {
 
     @Override
     public void write(int address, int val, Size size) {
-        S32xUtil.CpuDeviceAccess cpuAccess = Md32xRuntimeData.getAccessTypeExt();
+        CpuDeviceAccess cpuAccess = Md32xRuntimeData.getAccessTypeExt();
         val &= size.getMask();
         assert size == Size.LONG ? (address & 3) == 0 : true : th(address) + "," + size;
         assert size == Size.WORD ? (address & 1) == 0 : true : th(address) + "," + size;
@@ -222,17 +224,17 @@ public final class Sh2BusImpl implements Sh2Bus {
         prefetch.invalidateCachePrefetch(ctx);
     }
 
-    public void fetch(Sh2Helper.FetchResult fetchResult, S32xUtil.CpuDeviceAccess cpu) {
+    public void fetch(Sh2Helper.FetchResult fetchResult, CpuDeviceAccess cpu) {
         prefetch.fetch(fetchResult, cpu);
     }
 
     @Override
-    public int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    public int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, CpuDeviceAccess cpu) {
         return prefetch.fetchDelaySlot(pc, ft, cpu);
     }
 
     @Override
-    public Sh2MMREG getSh2MMREGS(S32xUtil.CpuDeviceAccess cpu) {
+    public Sh2MMREG getSh2MMREGS(CpuDeviceAccess cpu) {
         return sh2MMREGS[cpu.ordinal()];
     }
 
@@ -251,8 +253,8 @@ public final class Sh2BusImpl implements Sh2Bus {
 
     @Override
     public void resetSh2() {
-        sh2MMREGS[S32xUtil.CpuDeviceAccess.MASTER.ordinal()].reset();
-        sh2MMREGS[S32xUtil.CpuDeviceAccess.SLAVE.ordinal()].reset();
+        sh2MMREGS[MASTER.ordinal()].reset();
+        sh2MMREGS[SLAVE.ordinal()].reset();
     }
 
     @Override
@@ -267,7 +269,7 @@ public final class Sh2BusImpl implements Sh2Bus {
         sdram.rewind().put(buffer);
     }
 
-    private static boolean logWarnIllegalAccess(S32xUtil.CpuDeviceAccess cpu, String rw, String memType, String accessType,
+    private static boolean logWarnIllegalAccess(CpuDeviceAccess cpu, String rw, String memType, String accessType,
                                                 Object val, int address, Size size) {
         logWarnOnce(LOG, ILLEGAL_ACCESS_STR, cpu, rw, memType, accessType, val, th(address), size);
         return true;

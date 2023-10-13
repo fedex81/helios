@@ -64,7 +64,7 @@ public class Sh2CacheImpl implements Sh2Cache {
     private final Sh2Bus memory;
     private final CacheInvalidateContext invalidCtx;
 
-    public Sh2CacheImpl(CpuDeviceAccess cpu, Sh2Bus memory) {
+    protected Sh2CacheImpl(CpuDeviceAccess cpu, Sh2Bus memory) {
         this.memory = memory;
         this.cpu = cpu;
         this.ctx = new Sh2CacheContext();
