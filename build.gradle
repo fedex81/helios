@@ -77,7 +77,7 @@ task copyRes {
             include "res/**"
         }
         into "$buildDir/packageDir"
-        exclude "**/*.col", "**/site/**"
+        exclude "**/*.col", "**/site/**", "**/misc/**"
     }
     copy {
         from {
@@ -95,11 +95,6 @@ task copyRes {
     copy {
         from configurations.runtimeClasspath
         into "$buildDir/packageDir/lib"
-    }
-    copy {
-        from ("res")
-            include "*.properties"
-        into "$buildDir/packageDir"
     }
 }
 
