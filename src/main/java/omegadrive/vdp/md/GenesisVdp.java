@@ -396,8 +396,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     protected void writeDataPortInternal(int data) {
         writePendingControlPort = false;
         if (vramMode == null) {
-            LOG.warn("Invalid writeDataPort, vramMode {}, data: {}, address: {}",
-                    vramMode, th(data), th(addressRegister));
+            logWarnOnce(LOG, "Invalid writeDataPort, vramMode: null");
         }
         fifoPush(addressRegister, data);
         addressRegister += autoIncrementData;

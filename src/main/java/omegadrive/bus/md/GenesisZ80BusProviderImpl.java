@@ -30,6 +30,7 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 
 public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements GenesisZ80BusProvider {
@@ -81,7 +82,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
                 data = getFm().read();
             }
         } else if (address >= START_ROM_BANK_ADDRESS && address <= END_UNUSED) {
-            LOG.warn("Z80 read bank switching/unused: {}", th(address));
+            logWarnOnce(LOG, "Z80 read bank switching/unused: {}", th(address));
         } else if (address >= START_VDP && address <= END_VDP_VALID) {
             int vdpAddress = (VDP_BASE_ADDRESS + address);
             if (verbose) LOG.info("Z80 read VDP memory , address {}", th(address));

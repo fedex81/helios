@@ -70,7 +70,7 @@ public class Sh2Helper {
             if (knownBlocks == Collections.EMPTY_MAP) {
                 knownBlocks = new HashMap<>(1);
             }
-            Sh2Block prev = knownBlocks.put(b.hashCodeWords & HASH_CODE_MASK, b);
+            Sh2Block prev = knownBlocks.putIfAbsent(b.hashCodeWords & HASH_CODE_MASK, b);
             //check for hash collisions
             assert prev != null ? prev == b : true;
             return prev;

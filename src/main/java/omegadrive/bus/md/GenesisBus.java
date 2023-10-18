@@ -29,7 +29,6 @@ import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.md.ExSsfMapper;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
-import omegadrive.cart.mapper.md.MdT5740Mapper;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.GenesisJoypad;
@@ -53,6 +52,7 @@ import static omegadrive.cart.mapper.md.Ssf2Mapper.BANK_SET_END_ADDRESS;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.joypad.JoypadProvider.JoypadType.BUTTON_3;
 import static omegadrive.system.SystemProvider.SystemEvent.FORCE_PAD_TYPE;
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 
 public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad> implements GenesisBusProvider, RomMapper {
@@ -214,7 +214,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             checkBackupMemoryMapper(SramMode.READ_WRITE);
             data = mapper.readData(address, size);
         } else {
-            LOG.error("Unexpected bus read: {}, 68k PC: {}",
+            logWarnOnce(LOG, "Unexpected bus read: {}, 68k PC: {}",
                     th(address), th(m68kProvider.getPC()));
             data = size.getMask();
         }
@@ -255,14 +255,13 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return;
         }
         //Batman&Robin writes to address 0 - tries to enable debug mode?
-        LOG.warn("Unexpected write to ROM address {}, value {} {}", th(addressL),
+        logWarnOnce(LOG, "Unexpected write to ROM address {}, value {} {}", th(addressL),
                 th(data), size);
     }
 
     private void reservedWrite(int addressL, int data, Size size) {
         if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
-            LOG.error("Unexpected bus write: {}, data {} {}, 68k PC: {}",
-                    th(addressL), th(data), size,
+            logWarnOnce(LOG, "Unexpected bus write: {}, 68k PC: {}", th(addressL),
                     th(m68kProvider.getPC()));
         } else {
             msuMdHandler.handleMsuMdWrite(addressL, data, size);
@@ -271,7 +270,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     private int reservedRead(int address, Size size) {
         if (msuMdHandler == MsuMdHandler.NO_OP_HANDLER) {
-            LOG.warn("Read on reserved address: {}, {}", th(address), size);
+            logWarnOnce(LOG, "Read on reserved address: {}, {}", th(address), size);
             return size.getMax();
         } else {
             //reads rom at 0x40_0000 MegaCD mirror
@@ -599,7 +598,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 break;
             default:
                 if (address >= 0xE && address < 0x20) {
-                    LOG.info("Write serial control: {}, data: {} {}", th(addressL), th(data), size);
+                    logWarnOnce(LOG, "Write serial control: {}", th(addressL));
                     Util.writeData(serialPortData, size, address - 0xE, data);
                 } else { //Reserved
                     LOG.error("Unexpected ioWrite {}, data {}", th(addressL), th(data));
@@ -642,7 +641,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private void z80MemoryWrite(int address, Size size, int dataL) {
         busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
         if (!z80BusRequested || z80ResetState) {
-            LOG.warn("68k write access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
+            logWarnOnce(LOG, "68k write access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
             return;
         }
         address &= GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK;

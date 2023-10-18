@@ -212,7 +212,7 @@ public class Sh2CacheImpl implements Sh2Cache {
         int lruway = selectWayToReplace(cacheRegCtx.twoWay, ca.lru[entry]);
         assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && lruway > 1);
         final Sh2CacheLine line = ca.way[lruway][entry];
-        invalidatePrefetcher(line, entry, addr);
+        invalidatePrefetcher(line, entry, addr); //MetalHead needs this
         updateLru(lruway, ca.lru, entry);
         line.tag = tagaddr;
 

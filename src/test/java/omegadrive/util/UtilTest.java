@@ -65,6 +65,15 @@ public class UtilTest {
         } //expected
     }
 
+    /**
+     * Chaotix 1994-12-07
+     * <p>
+     * 68k: LONG write to RAM 0xff_fffe, triggers an ArrayIndexOBE
+     * Hw is using two word writes: 0xFF_FFFE, and 0xFF_FFFE + 2 = 0x1_0000 = 0
+     * ie. the 2nd write goes to ROM area and it is ignored
+     * <p>
+     * works on hw
+     */
     @Test
     public void testLongWriteBoundary_NotSupported() {
         int address = 0xFEFFFE;
