@@ -30,6 +30,7 @@ public class Sleeper {
         if (isWindows()) {
             Runnable r = () -> Util.sleep(Long.MAX_VALUE);
             Thread t = new Thread(r);
+            t.setDaemon(true);
             t.setName("sleeperForWindows");
             t.start();
         }
@@ -54,6 +55,7 @@ public class Sleeper {
     }
 
     public static void parkExactly(final long intervalNs) {
+        assert intervalNs > 0;
         if (BUSY_WAIT) {
             long deadlineNs = System.nanoTime() + intervalNs;
             while (System.nanoTime() < deadlineNs) {
