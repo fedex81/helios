@@ -12,7 +12,10 @@ import java.util.concurrent.locks.LockSupport;
 public class Sleeper {
 
     public static final boolean BUSY_WAIT;
-    public static final long SLEEP_LIMIT_NS = 10_000;
+
+    //Linux has a timer slack of 50micros, windows is hopeless
+    //https://lwn.net/Articles/369549/
+    public static final long SLEEP_RESOLUTION_NS = 50_000;
     private final static Logger LOG = LogHelper.getLogger(Util.class.getSimpleName());
 
     static {
@@ -51,11 +54,17 @@ public class Sleeper {
 
     //sleeps for the given interval, doesn't mind returning a bit early
     public static void parkFuzzy(final long intervalNs) {
-        parkExactly(intervalNs - SLEEP_LIMIT_NS);
+        if (intervalNs < SLEEP_RESOLUTION_NS) {
+            return;
+        }
+        parkExactly(intervalNs - SLEEP_RESOLUTION_NS);
     }
 
-    public static void parkExactly(final long intervalNs) {
+    public static void parkExactly(long intervalNs) {
         assert intervalNs > 0;
+        if (intervalNs < SLEEP_RESOLUTION_NS) {
+            return;
+        }
         if (BUSY_WAIT) {
             long deadlineNs = System.nanoTime() + intervalNs;
             while (System.nanoTime() < deadlineNs) {
@@ -72,7 +81,9 @@ public class Sleeper {
         }
         do {
             LockSupport.parkNanos(intervalNs);
-            done = System.nanoTime() > deadlineNs;
+            long nowNs = System.nanoTime();
+            intervalNs = Math.max(deadlineNs - intervalNs, SLEEP_RESOLUTION_NS);
+            done = nowNs > deadlineNs;
         } while (!done);
         handleSlowdown("After", System.nanoTime(), deadlineNs);
     }
