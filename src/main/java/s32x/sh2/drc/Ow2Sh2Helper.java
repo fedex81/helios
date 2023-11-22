@@ -245,7 +245,7 @@ public class Ow2Sh2Helper {
     public static void pushMemory(Sh2Prefetch.BytecodeContext ctx) {
         ctx.mv.visitVarInsn(ALOAD, 0); //this
         ctx.mv.visitFieldInsn(GETFIELD, ctx.classDesc, DRC_CLASS_FIELD.memory.name(),
-                Type.getDescriptor(Ow2Sh2BlockRecompiler.memoryClass));
+                Type.getDescriptor(Sh2BlockRecompiler.memoryClass));
     }
 
     public static void pushSh2ContextIntField(Sh2Prefetch.BytecodeContext ctx, String name) {

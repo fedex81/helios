@@ -131,7 +131,7 @@ public class Sh2Block {
     public void stage2() {
         if (Sh2Config.get().drcEn) {
             assert drcContext != null;
-            stage2Drc = Ow2Sh2BlockRecompiler.getInstance().createDrcClass(this, drcContext);
+            stage2Drc = Sh2BlockRecompiler.getInstance().createDrcClass(this, drcContext);
         }
     }
 

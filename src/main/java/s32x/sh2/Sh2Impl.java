@@ -9,8 +9,8 @@ import s32x.dict.S32xDict;
 import s32x.event.PollSysEventManager;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.device.IntControl;
-import s32x.sh2.drc.Ow2Sh2BlockRecompiler;
 import s32x.sh2.drc.Sh2Block;
+import s32x.sh2.drc.Sh2BlockRecompiler;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
@@ -60,7 +60,7 @@ public class Sh2Impl implements Sh2 {
         this.sh2Config = Sh2Config.get();
         this.tasReadOffset = sh2Config.tasQuirk ? S32xDict.SH2_CACHE_THROUGH_OFFSET : 0;
         if (sh2Config.drcEn) {
-            Ow2Sh2BlockRecompiler.newInstance(String.valueOf(System.currentTimeMillis()));
+            Sh2BlockRecompiler.newInstance(String.valueOf(System.currentTimeMillis()));
         }
     }
 

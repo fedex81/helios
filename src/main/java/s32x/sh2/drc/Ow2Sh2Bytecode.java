@@ -2257,14 +2257,14 @@ public class Ow2Sh2Bytecode {
 
     public static void writeMem(BytecodeContext ctx, Size size) {
         ctx.mv.visitFieldInsn(GETSTATIC, Type.getInternalName(Size.class), size.name(), Type.getDescriptor(Size.class));
-        int invoke = Ow2Sh2BlockRecompiler.memoryClass.isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL;
+        int invoke = Sh2BlockRecompiler.memoryClass.isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL;
         ctx.mv.visitMethodInsn(invoke, Type.getInternalName(Sh2BusImpl.class), SH2MEMORY_METHOD.write.name(),
                 Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE, Type.INT_TYPE, Type.getType(Size.class)));
     }
 
     public static void readMem(BytecodeContext ctx, Size size) {
         ctx.mv.visitFieldInsn(GETSTATIC, Type.getInternalName(Size.class), size.name(), Type.getDescriptor(Size.class));
-        int invoke = Ow2Sh2BlockRecompiler.memoryClass.isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL;
+        int invoke = Sh2BlockRecompiler.memoryClass.isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL;
         ctx.mv.visitMethodInsn(invoke, Type.getInternalName(Sh2BusImpl.class), SH2MEMORY_METHOD.read.name(),
                 Type.getMethodDescriptor(Type.INT_TYPE, Type.INT_TYPE, Type.getType(Size.class)));
     }
