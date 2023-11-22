@@ -6,7 +6,7 @@ import static s32x.dict.S32xDict.S32xRegType;
 import static s32x.event.PollSysEventManager.SysEvent;
 import static s32x.event.PollSysEventManager.SysEvent.INT;
 import static s32x.event.PollSysEventManager.SysEvent.START_POLLING;
-import static s32x.sh2.drc.Ow2DrcOptimizer.PollType;
+import static s32x.sh2.drc.Sh2DrcBlockOptimizer.PollType;
 
 /**
  * Federico Berti

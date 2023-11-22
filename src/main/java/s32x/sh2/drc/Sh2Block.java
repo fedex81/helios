@@ -17,8 +17,8 @@ import java.util.Arrays;
 import java.util.StringJoiner;
 
 import static omegadrive.util.Util.th;
-import static s32x.sh2.drc.Ow2DrcOptimizer.*;
-import static s32x.sh2.drc.Ow2DrcOptimizer.PollType.NONE;
+import static s32x.sh2.drc.Sh2DrcBlockOptimizer.*;
+import static s32x.sh2.drc.Sh2DrcBlockOptimizer.PollType.NONE;
 
 /**
  * Federico Berti
@@ -101,7 +101,7 @@ public class Sh2Block {
             if (verbose) LOG.info("{} HRC2 count: {}\n{}", "", th(hits), Sh2Helper.toListOfInst(this));
             stage2();
             if (Sh2Config.get().pollDetectEn) {
-                Ow2DrcOptimizer.pollDetector(this);
+                Sh2DrcBlockOptimizer.pollDetector(this);
             }
         }
     }

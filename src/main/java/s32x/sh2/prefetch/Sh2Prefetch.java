@@ -14,8 +14,8 @@ import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Debug;
 import s32x.sh2.Sh2Instructions;
 import s32x.sh2.cache.Sh2Cache;
-import s32x.sh2.drc.Ow2DrcOptimizer;
 import s32x.sh2.drc.Sh2Block;
+import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.util.BiosHolder;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
@@ -348,22 +348,22 @@ public class Sh2Prefetch implements Sh2Prefetcher {
             return;
         }
         if ((res & 1) > 0) {
-            Ow2DrcOptimizer.PollerCtx c = PollSysEventManager.instance.getPoller(CpuDeviceAccess.MASTER);
+            Sh2DrcBlockOptimizer.PollerCtx c = PollSysEventManager.instance.getPoller(CpuDeviceAccess.MASTER);
             if (c.isPollingActive() && type == c.event) {
                 checkPollerInternal(c, cpuWrite, type, addr, val, size);
             }
         }
         if ((res & 2) > 0) {
-            Ow2DrcOptimizer.PollerCtx c = PollSysEventManager.instance.getPoller(CpuDeviceAccess.SLAVE);
+            Sh2DrcBlockOptimizer.PollerCtx c = PollSysEventManager.instance.getPoller(CpuDeviceAccess.SLAVE);
             if (c.isPollingActive() && type == c.event) {
                 checkPollerInternal(c, cpuWrite, type, addr, val, size);
             }
         }
     }
 
-    private static void checkPollerInternal(Ow2DrcOptimizer.PollerCtx c, CpuDeviceAccess cpuWrite, PollSysEventManager.SysEvent type,
+    private static void checkPollerInternal(Sh2DrcBlockOptimizer.PollerCtx c, CpuDeviceAccess cpuWrite, PollSysEventManager.SysEvent type,
                                             int addr, int val, Size size) {
-        final Ow2DrcOptimizer.BlockPollData bpd = c.blockPollData;
+        final Sh2DrcBlockOptimizer.BlockPollData bpd = c.blockPollData;
         //TODO check, cache vs cache-through
         addr = addr & S32xDict.SH2_CACHE_THROUGH_MASK;
         if (rangeIntersect(bpd.memLoadTarget & S32xDict.SH2_CACHE_THROUGH_MASK,

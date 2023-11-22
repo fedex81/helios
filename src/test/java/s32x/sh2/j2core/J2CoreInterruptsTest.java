@@ -114,7 +114,7 @@ public class J2CoreInterruptsTest extends J2CoreTest {
     @Override
     @Disabled
     public void testJ2() {
-        super.testJ2();
+        //do nothing
     }
 
     public static IntControl createIntControl(CpuDeviceAccess cpu, ByteBuffer regs) {

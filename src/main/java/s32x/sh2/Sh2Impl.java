@@ -9,9 +9,9 @@ import s32x.dict.S32xDict;
 import s32x.event.PollSysEventManager;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.device.IntControl;
-import s32x.sh2.drc.Ow2DrcOptimizer;
 import s32x.sh2.drc.Ow2Sh2BlockRecompiler;
 import s32x.sh2.drc.Sh2Block;
+import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
 
@@ -161,7 +161,7 @@ public class Sh2Impl implements Sh2 {
             block.nextBlock = fr.block;
             block.poller.spinCount++;
             if (sh2Config.pollDetectEn) {
-                Ow2DrcOptimizer.handlePoll(block);
+                Sh2DrcBlockOptimizer.handlePoll(block);
             }
             return;
         }

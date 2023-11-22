@@ -21,22 +21,15 @@ import java.util.function.Predicate;
 import static omegadrive.util.Util.th;
 import static s32x.sh2.Sh2Impl.RM;
 import static s32x.sh2.Sh2Impl.RN;
-import static s32x.sh2.drc.Ow2DrcOptimizer.PollType.*;
+import static s32x.sh2.drc.Sh2DrcBlockOptimizer.PollType.*;
 
 /**
  * Federico Berti
  * <p>
  * Copyright 2022
  */
-public class Ow2DrcOptimizer {
-
-    /**
-     * vf - sequence to optimize -> R1 = 0x80
-     * 00000538	e180	mov H'ffffff80, R1 (MOVI)
-     * 0000053a	611c	extu.b R1, R1
-     */
-
-    private final static Logger LOG = LogHelper.getLogger(Ow2DrcOptimizer.class.getSimpleName());
+public class Sh2DrcBlockOptimizer {
+    private final static Logger LOG = LogHelper.getLogger(Sh2DrcBlockOptimizer.class.getSimpleName());
 
     //toggle poll detection but keep busyLoop detection enabled
     public final static boolean ENABLE_POLL_DETECT = true;
@@ -314,7 +307,7 @@ public class Ow2DrcOptimizer {
         }
     }
 
-    public static int getBranchDestination(int jmpOpcode, int jmpPc) {
+    private static int getBranchDestination(int jmpOpcode, int jmpPc) {
         int branchDest = 0;
         if ((jmpOpcode & 0xF000) == 0x8000) { //BT, BF, BTS, BFS
             int d = (byte) (jmpOpcode & 0xFF) << 1;
@@ -326,7 +319,7 @@ public class Ow2DrcOptimizer {
         return branchDest;
     }
 
-    public static void parseMemLoad(BlockPollData bpd) {
+    private static void parseMemLoad(BlockPollData bpd) {
         parseMemLoad(bpd, bpd.ctx, bpd.memLoadOpcode);
     }
 
@@ -411,7 +404,7 @@ public class Ow2DrcOptimizer {
     }
 
     //TODO poll on cached address??? tas poll is allowed even on cached addresses
-    public static PollType getAccessType(int address) {
+    private static PollType getAccessType(int address) {
         switch (address >>> S32xDict.SH2_PC_AREA_SHIFT) {
             case 0x6:
             case 0x26:
@@ -475,7 +468,7 @@ public class Ow2DrcOptimizer {
                 LOG.info("{} avoid re-entering {} poll at PC {}, on address: {}", blockPoller.cpu, pollType,
                         th(blockPoller.pc), th(blockPoller.blockPollData.memLoadTarget));
             if (blockPoller.spinCount == POLLER_ACTIVATE_LIMIT - 1) {
-                Ow2DrcOptimizer.parseMemLoad(blockPoller.blockPollData);
+                Sh2DrcBlockOptimizer.parseMemLoad(blockPoller.blockPollData);
                 blockPoller.pollValue = PollSysEventManager.readPollValue(blockPoller);
             }
             return;

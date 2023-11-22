@@ -8,7 +8,7 @@ import s32x.dict.S32xDict;
 import s32x.dict.Sh2Dict.RegSpecSh2;
 import s32x.event.PollSysEventManager;
 import s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType;
-import s32x.sh2.drc.Ow2DrcOptimizer;
+import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
@@ -19,7 +19,7 @@ import java.util.Map;
 import static omegadrive.util.Util.*;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
 import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.*;
-import static s32x.sh2.drc.Ow2DrcOptimizer.NO_POLLER;
+import static s32x.sh2.drc.Sh2DrcBlockOptimizer.NO_POLLER;
 
 /**
  * Federico Berti
@@ -192,7 +192,7 @@ public class IntControlImplOld implements IntControl {
 
     private void fireInterruptSysEventMaybe(int prevLevel) {
         if (interruptLevel != prevLevel && interruptLevel > 0) {
-            Ow2DrcOptimizer.PollerCtx ctx = PollSysEventManager.instance.getPoller(cpu);
+            Sh2DrcBlockOptimizer.PollerCtx ctx = PollSysEventManager.instance.getPoller(cpu);
             if (ctx != NO_POLLER && (ctx.isPollingActive() || ctx.isPollingBusyLoop())) {
                 PollSysEventManager.instance.fireSysEvent(cpu, PollSysEventManager.SysEvent.INT);
             }

@@ -8,9 +8,9 @@ import s32x.dict.S32xDict;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Debug;
 import s32x.sh2.Sh2Helper;
-import s32x.sh2.drc.Ow2DrcOptimizer;
 import s32x.sh2.drc.Ow2Sh2Bytecode;
 import s32x.sh2.drc.Sh2Block;
+import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.sh2.prefetch.Sh2Prefetch;
 import s32x.util.S32xUtil;
 
@@ -765,14 +765,14 @@ public class Sh2BusyLoopTest {
     }
 
     private boolean isPollSequence(int[] opcodes) {
-        return getPollType(opcodes).ordinal() > Ow2DrcOptimizer.PollType.BUSY_LOOP.ordinal() && getPollType(opcodes).supported;
+        return getPollType(opcodes).ordinal() > Sh2DrcBlockOptimizer.PollType.BUSY_LOOP.ordinal() && getPollType(opcodes).supported;
     }
 
     private boolean isBusyLoopSequence(int[] opcodes) {
-        return getPollType(opcodes) == Ow2DrcOptimizer.PollType.BUSY_LOOP;
+        return getPollType(opcodes) == Sh2DrcBlockOptimizer.PollType.BUSY_LOOP;
     }
 
-    private Ow2DrcOptimizer.PollType getPollType(int[] opcodes) {
+    private Sh2DrcBlockOptimizer.PollType getPollType(int[] opcodes) {
         Sh2Helper.Sh2PcInfoWrapper piw = Sh2Helper.getOrCreate(sh2Context.PC, sh2Context.cpuAccess);
         Sh2Block block = new Sh2Block(sh2Context.PC, sh2Context.cpuAccess);
         block.prefetchWords = opcodes;
@@ -781,7 +781,7 @@ public class Sh2BusyLoopTest {
         block.drcContext.sh2Ctx = sh2Context;
         block.drcContext.cpu = sh2Context.cpuAccess;
         piw.block = block;
-        Ow2DrcOptimizer.pollDetector(block);
+        Sh2DrcBlockOptimizer.pollDetector(block);
         return block.pollType;
     }
 

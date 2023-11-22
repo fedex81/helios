@@ -7,7 +7,7 @@ import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.device.IntControl;
-import s32x.sh2.drc.Ow2DrcOptimizer.PollType;
+import s32x.sh2.drc.Sh2DrcBlockOptimizer.PollType;
 import s32x.util.MarsLauncherHelper;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil;
@@ -24,7 +24,7 @@ import static s32x.sh2.Sh2Disassembler.NOP;
 import static s32x.sh2.device.IntControl.Sh2Interrupt.PWM_06;
 import static s32x.sh2.drc.DrcUtil.RUNNING_IN_GITHUB;
 import static s32x.sh2.drc.DrcUtil.loopUntilDrc;
-import static s32x.sh2.drc.Ow2DrcOptimizer.POLLER_ACTIVATE_LIMIT;
+import static s32x.sh2.drc.Sh2DrcBlockOptimizer.POLLER_ACTIVATE_LIMIT;
 
 /**
  * Federico Berti

@@ -4,7 +4,7 @@ import omegadrive.Device;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
-import s32x.sh2.drc.Ow2DrcOptimizer.PollerCtx;
+import s32x.sh2.drc.Sh2DrcBlockOptimizer.PollerCtx;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xUtil.CpuDeviceAccess;
 
@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static omegadrive.util.Util.th;
-import static s32x.sh2.drc.Ow2DrcOptimizer.NO_POLLER;
+import static s32x.sh2.drc.Sh2DrcBlockOptimizer.NO_POLLER;
 import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
 import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
 

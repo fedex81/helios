@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import s32x.dict.S32xDict;
 import s32x.dict.Sh2Dict.RegSpecSh2;
 import s32x.event.PollSysEventManager;
-import s32x.sh2.drc.Ow2DrcOptimizer;
+import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
@@ -20,7 +20,7 @@ import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
 import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.*;
-import static s32x.sh2.drc.Ow2DrcOptimizer.NO_POLLER;
+import static s32x.sh2.drc.Sh2DrcBlockOptimizer.NO_POLLER;
 
 /**
  * Federico Berti
@@ -242,7 +242,7 @@ public class IntControlImpl implements IntControl {
 
     private void fireInterruptSysEventMaybe(InterruptContext prev) {
         if (currentInterrupt.level != prev.level && currentInterrupt.level > 0) {
-            Ow2DrcOptimizer.PollerCtx ctx = PollSysEventManager.instance.getPoller(cpu);
+            Sh2DrcBlockOptimizer.PollerCtx ctx = PollSysEventManager.instance.getPoller(cpu);
             if (ctx != NO_POLLER && (ctx.isPollingActive() || ctx.isPollingBusyLoop())) {
                 PollSysEventManager.instance.fireSysEvent(cpu, PollSysEventManager.SysEvent.INT);
             }

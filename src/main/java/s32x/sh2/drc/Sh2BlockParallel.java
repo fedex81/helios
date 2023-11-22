@@ -13,7 +13,7 @@ import s32x.util.S32xUtil;
 
 import java.util.Arrays;
 
-import static s32x.sh2.drc.Ow2DrcOptimizer.handlePoll;
+import static s32x.sh2.drc.Sh2DrcBlockOptimizer.handlePoll;
 
 /**
  * Test only

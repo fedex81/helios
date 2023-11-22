@@ -19,7 +19,7 @@ import s32x.pwm.Pwm;
 import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper.Sh2Config;
-import s32x.sh2.drc.Ow2DrcOptimizer;
+import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.util.MarsLauncherHelper;
 import s32x.util.MarsLauncherHelper.Sh2LaunchContext;
 import s32x.util.Md32xRuntimeData;
@@ -253,7 +253,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     public void onSysEvent(CpuDeviceAccess cpu, PollSysEventManager.SysEvent event) {
         switch (event) {
             case START_POLLING -> {
-                final Ow2DrcOptimizer.PollerCtx pc = PollSysEventManager.instance.getPoller(cpu);
+                final Sh2DrcBlockOptimizer.PollerCtx pc = PollSysEventManager.instance.getPoller(cpu);
                 assert pc.isPollingActive() : event + "," + pc;
                 setNextCycle(cpu, SH2_SLEEP_VALUE);
                 Md32xRuntimeData.resetCpuDelayExt(cpu, 0);
@@ -270,13 +270,13 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
                 Md32xRuntimeData.resetCpuDelayExt(SLAVE, 0);
             }
             default -> { //stop polling
-                final Ow2DrcOptimizer.PollerCtx pc = PollSysEventManager.instance.getPoller(cpu);
+                final Sh2DrcBlockOptimizer.PollerCtx pc = PollSysEventManager.instance.getPoller(cpu);
                 stopPolling(cpu, event, pc);
             }
         }
     }
 
-    private void stopPolling(CpuDeviceAccess cpu, PollSysEventManager.SysEvent event, Ow2DrcOptimizer.PollerCtx pctx) {
+    private void stopPolling(CpuDeviceAccess cpu, PollSysEventManager.SysEvent event, Sh2DrcBlockOptimizer.PollerCtx pctx) {
 //        assert event == SysEventManager.SysEvent.INT ? pc.isPollingBusyLoop() : true;
         boolean stopOk = event == pctx.event || event == PollSysEventManager.SysEvent.INT;
         if (stopOk) {
