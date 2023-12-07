@@ -89,6 +89,12 @@ public class Md32xRuntimeData {
         rt.cpuDelay[cpu.ordinal()] = value;
     }
 
+    public static void resetAllCpuDelayExt() {
+        for (CpuDeviceAccess v : cdaValues) {
+            rt.cpuDelay[v.ordinal()] = 0;
+        }
+    }
+
     public static int resetCpuDelayExt() {
         return resetCpuDelayExt(0);
     }

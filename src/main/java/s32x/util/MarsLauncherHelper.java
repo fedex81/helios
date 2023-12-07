@@ -150,5 +150,14 @@ public class MarsLauncherHelper {
             sh2.reset(slaveCtx);
             marsVdp = bus.getMarsVdp();
         }
+
+        public void reset() {
+            mDevCtx.sh2MMREG.reset();
+            sDevCtx.sh2MMREG.reset();
+            pwm.reset();
+            s32XMMREG.reset();
+            memory.reset();
+            dmaFifo68k.reset();
+        }
     }
 }

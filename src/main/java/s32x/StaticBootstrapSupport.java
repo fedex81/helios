@@ -29,6 +29,7 @@ public class StaticBootstrapSupport {
         assert instance != null;
         PollSysEventManager.instance.reset();
         PollSysEventManager.instance.addSysEventListener(instance.getClass().getSimpleName(), instance);
+        //TODO soft reset shouldn't do this
         DmaFifo68k.rv = false;
         Sh2Helper.clear();
         StaticBootstrapSupport.instance = instance;

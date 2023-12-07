@@ -298,4 +298,17 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
             nextSSh2Cycle = value;
         }
     }
+
+    //TODO buggy
+    @Override
+    protected void handleSoftReset() {
+        if (softReset) {
+            sh2.reset(masterCtx);
+            sh2.reset(slaveCtx);
+            launchCtx.reset();
+            Md32xRuntimeData.resetAllCpuDelayExt();
+            StaticBootstrapSupport.initStatic(this);
+        }
+        super.handleSoftReset();
+    }
 }
