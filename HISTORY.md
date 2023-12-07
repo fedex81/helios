@@ -1,3 +1,16 @@
+## 23.1207
+32x: improve handling of multiple interrupts
+32x: add FRT support, disabled by default
+32x: add eeprom games, tweak eeprom handling
+32x: default to new interrupt controller
+32x: uninitialised hInt vector should read 0 (tp)
+fm: minor ssg-eg fix, ssg inv bit fix
+helios: linux sleeps now considering timer slack
+helios: (try to) improve sound on win11
+md: add support for psolar mapper and eeprom
+md: fix io ports word-wide reads, duplicate lsb to msb; stub serial ports
+sh2: fix MOVBM, MOVWM, MOVLM when applied to the same register
+
 ## 23.0814
 helios: add default keyboard mappings file, defaults to 1 player only
 md: add flag to allow sram writes when in read-only mode
