@@ -2,12 +2,14 @@ package omegadrive.bus.megacd;
 
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.system.MegaCd;
+import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
-import java.util.Random;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static omegadrive.bus.megacd.MegaCdMemoryContext.*;
 import static omegadrive.util.S32xUtil.readBuffer;
@@ -23,15 +25,37 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     private static final Logger LOG = LogHelper.getLogger(MegaCdMainCpuBus.class.getSimpleName());
 
+    /**
+     * 3 states
+     * - mega cd disconnected
+     * - mega cd connected, cart inserted (mode 1)
+     * - mega cd connected, cd inserted
+     * <p>
+     * When a cart is inserted in the MD, the CD hardware is mapped to
+     * 0x400000 instead of 0x000000. So the BIOS ROM is at 0x400_000, the
+     * Program RAM bank is at 0x420_000, and the Word RAM is at 0x600_000.
+     */
     private static final int MCD_MAIN_PRG_RAM_WINDOW_SIZE = 0x20_000;
     public static final int MCD_MAIN_PRG_RAM_WINDOW_MASK = MCD_MAIN_PRG_RAM_WINDOW_SIZE - 1;
     private static final int START_MCD_MAIN_PRG_RAM = 0x20_000;
     private static final int END_MCD_MAIN_PRG_RAM = START_MCD_MAIN_PRG_RAM +
             MCD_MAIN_PRG_RAM_WINDOW_SIZE;
+
+    private static final int START_MCD_MAIN_PRG_RAM_MODE1 = 0x400_000 | START_MCD_MAIN_PRG_RAM;
+    private static final int END_MCD_MAIN_PRG_RAM_MODE1 = START_MCD_MAIN_PRG_RAM_MODE1 +
+            MCD_MAIN_PRG_RAM_WINDOW_SIZE;
     private static final int START_MCD_WORD_RAM = 0x200_000;
     private static final int END_MCD_WORD_RAM = START_MCD_WORD_RAM + MCD_WORD_RAM_SIZE;
-    private static final int START_MCD_BOOT_ROM = 0x400_000;
-    private static final int END_MCD_BOOT_ROM = 0x420_000;
+
+    private static final int START_MCD_WORD_RAM_MODE1 = 0x600_000;
+    private static final int END_MCD_WORD_RAM_MODE1 = START_MCD_WORD_RAM_MODE1 + MCD_WORD_RAM_SIZE;
+
+    private static final int MCD_BOOT_ROM_SIZE = 0x20_000;
+    private static final int MCD_BOOT_ROM_MASK = MCD_BOOT_ROM_SIZE - 1;
+    private static final int START_MCD_BOOT_ROM = 0;
+    private static final int END_MCD_BOOT_ROM = MCD_BOOT_ROM_SIZE;
+    private static final int START_MCD_BOOT_ROM_MODE1 = START_MCD_BOOT_ROM + 0x400_000;
+    private static final int END_MCD_BOOT_ROM_MODE1 = START_MCD_BOOT_ROM_MODE1 + MCD_BOOT_ROM_SIZE;
 
     private static final int START_MCD_MAIN_GA_COMM_R = MEGA_CD_EXP_START + 0x10;
     private static final int END_MCD_MAIN_GA_COMM_R = START_MCD_MAIN_GA_COMM_R + 0x20;
@@ -39,13 +63,30 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private static final int END_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_W + 0x10;
 
     //TODO ??
-    private static final int START_MCD_WORD_RAM_WINDOW = 0x600_000;
+
     private ByteBuffer prgRam, gateRegs, wordRam;
     private int prgRamBankValue = 0, prgRamBankShift = 0;
 
-    private boolean enableMCDBus = true;
+    private boolean enableMCDBus = true, enableMode1 = true;
 
-    Random random = new Random(0L);
+    static String biosBasePath = "res/bios/mcd";
+
+    static String masterBiosName = "bios_us.bin";
+    private static ByteBuffer bios;
+
+    static {
+        Path p = Paths.get(biosBasePath, masterBiosName);
+        try {
+            assert p.toFile().exists();
+            byte[] b = FileUtil.readFileSafe(p);
+            assert b.length > 0;
+            bios = ByteBuffer.wrap(b);
+            LOG.info("Loading bios at {}, size: {}", p.toAbsolutePath(), b.length);
+        } catch (Error | Exception e) {
+            LOG.error("Unable to load bios at {}", p.toAbsolutePath());
+            bios = ByteBuffer.allocate(MCD_BOOT_ROM_SIZE);
+        }
+    }
 
     public MegaCdMainCpuBus(MegaCdMemoryContext ctx) {
         prgRam = ByteBuffer.wrap(ctx.prgRam);
@@ -63,16 +104,24 @@ public class MegaCdMainCpuBus extends GenesisBus {
             return handleMegaCdExpRead(address, size);
         }
         if (enableMCDBus) {
-            if (address >= START_MCD_MAIN_PRG_RAM && address < END_MCD_MAIN_PRG_RAM) {
-                int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                return readBuffer(prgRam, addr, size);
-            } else if (address >= START_MCD_BOOT_ROM && address < END_MCD_BOOT_ROM) {
-                address &= DEFAULT_ROM_END_ADDRESS;
-                //cart not asserted, mode 1
-            } else if (address >= 0x420_000 && address < 0x420_000 + MCD_MAIN_PRG_RAM_WINDOW_SIZE) {
-                return read(address & DEFAULT_ROM_END_ADDRESS, size);
-            } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
-                return readBuffer(wordRam, address & MCD_WORD_RAM_MASK, size);
+            if (enableMode1) {
+                if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
+                    return readBuffer(wordRam, address & MCD_WORD_RAM_MASK, size);
+                } else if (address >= START_MCD_MAIN_PRG_RAM_MODE1 && address < END_MCD_MAIN_PRG_RAM_MODE1) {
+                    int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
+                    return readBuffer(prgRam, addr, size);
+                } else if (address >= START_MCD_BOOT_ROM_MODE1 && address < END_MCD_BOOT_ROM_MODE1) {
+                    return readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
+                }
+            } else {
+                if (address >= START_MCD_MAIN_PRG_RAM && address < END_MCD_MAIN_PRG_RAM) {
+                    int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
+                    return readBuffer(prgRam, addr, size);
+                } else if (address >= START_MCD_BOOT_ROM && address < END_MCD_BOOT_ROM) {
+                    return readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
+                } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
+                    return readBuffer(wordRam, address & MCD_WORD_RAM_MASK, size);
+                }
             }
         }
         return super.read(address, size);
