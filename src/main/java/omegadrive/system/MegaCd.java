@@ -33,7 +33,6 @@ import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.GenesisJoypad;
-import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
@@ -184,11 +183,10 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
                 Md32xRuntimeData.setAccessTypeExt(M68K);
                 cycleDelay = secCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
             }
-            //TODO
             //interrupts are processed after the current instruction
-//            if (isRunning) {
-//                bus.handleVdpInterrupts68k();
-//            }
+            if (bus.is68kRunning()) {
+                //TODO
+            }
             cycleDelay = Math.max(1, cycleDelay);
             nextSec68kCycle += M68K_DIVIDER * cycleDelay;
             assert Md32xRuntimeData.resetCpuDelayExt() == 0;
@@ -263,10 +261,11 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         if (secCpuResetFrameCounter == 1) {
             ((MC68000Wrapper) secCpu).setStop(false);
             secCpu.reset();
+            secCpuBus.resetDone();
             LOG.info("SecCpu reset completed: " + telemetry.getFrameCounter());
         }
         secCpuResetFrameCounter = Math.max(0, secCpuResetFrameCounter - 1);
-        LOG.info("Frame: " + telemetry.getFrameCounter());
+//        LOG.info("Frame: " + telemetry.getFrameCounter());
     }
 
     protected UpdatableViewer createMemView() {

@@ -33,6 +33,11 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private static final int START_MCD_BOOT_ROM = 0x400_000;
     private static final int END_MCD_BOOT_ROM = 0x420_000;
 
+    private static final int START_MCD_MAIN_GA_COMM_R = MEGA_CD_EXP_START + 0x10;
+    private static final int END_MCD_MAIN_GA_COMM_R = START_MCD_MAIN_GA_COMM_R + 0x20;
+    private static final int START_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_R;
+    private static final int END_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_W + 0x10;
+
     //TODO ??
     private static final int START_MCD_WORD_RAM_WINDOW = 0x600_000;
     private ByteBuffer prgRam, gateRegs, wordRam;
@@ -44,7 +49,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     public MegaCdMainCpuBus(MegaCdMemoryContext ctx) {
         prgRam = ByteBuffer.wrap(ctx.prgRam);
-        gateRegs = ByteBuffer.wrap(ctx.gateRegs);
+        gateRegs = ByteBuffer.wrap(ctx.mainGateRegs);
         wordRam = ByteBuffer.wrap(ctx.wordRam);
     }
 
@@ -96,24 +101,54 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     private int handleMegaCdExpRead(int address, Size size) {
         int res = readBuffer(gateRegs, address & MCD_GATE_REGS_MASK, size);
-        LOG.warn("M Read MEGA_CD_EXP: {}, {}, {}", th(address),
+        LOG.info("M Read MEGA_CD_EXP: {}, {}, {}", th(address),
                 th(res), size);
-        return (res & 0xFC) | random.nextInt(4); //TODO hack
+        if (address >= START_MCD_MAIN_GA_COMM_R && address < END_MCD_MAIN_GA_COMM_R) { //MAIN,SUB COMM
+            LOG.info("M Read MEGA_CD_COMM: {}, {}, {}", th(address), th(res), size);
+        }
+        return res;
     }
 
     private void handleMegaCdExpWrite(int address, int data, Size size) {
-        LOG.warn("M Write MEGA_CD_EXP: {}, {}, {}", th(address),
+        LOG.info("M Write MEGA_CD_EXP: {}, {}, {}", th(address),
                 th(data), size);
         writeBuffer(gateRegs, address & MCD_GATE_REGS_MASK, data, size);
-        //bk0,1
-        prgRamBankValue = (readBuffer(gateRegs, 3, Size.BYTE) >> 5) & 3;
-        prgRamBankShift = prgRamBankValue << 17;
-
-        int reg1 = readBuffer(gateRegs, 1, Size.BYTE) & 1;
-        LOG.info("M SubCpu reset: {}", reg1);
-        if (reg1 == 1 && MegaCd.secCpuResetFrameCounter == 0) {
-            MegaCd.secCpuResetFrameCounter = 7;
-            LOG.info("M SecCpu reset started");
+        if (address >= START_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_W) { //MAIN COMM
+            LOG.info("M Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
+            return;
+        }
+        assert size != Size.LONG;
+        int regEven = (address & MCD_GATE_REGS_MASK) & ~1;
+        int regVal = readBuffer(gateRegs, regEven, Size.WORD);
+        switch (regEven) {
+            case 0:
+                int sreset = regVal & 1;
+                int sbusreq = regVal & 2;
+                int secIntReg = (regVal >> 8) & 1;
+                LOG.info("M SubCpu reset: {}, busReq: {}", (sreset == 0 ? "Reset" : "Run"), (sbusreq == 0 ? "Cancel" : "Request"));
+                if (sreset == 0 && MegaCd.secCpuResetFrameCounter == 0) {
+                    MegaCd.secCpuResetFrameCounter = 7;
+                    LOG.info("M SecCpu reset started");
+                }
+                if (secIntReg > 0) {
+                    //TODO
+                    LOG.info("M trigger SubCpu int2 request");
+                }
+                break;
+            case 2:
+                //bk0,1
+                int bval = (regVal >> 5) & 3;
+                if (bval != prgRamBankValue) {
+                    prgRamBankValue = (regVal >> 5) & 3;
+                    prgRamBankShift = prgRamBankValue << 17;
+                    LOG.info("M PRG_RAM bank set: {} {}", prgRamBankValue, th(prgRamBankShift));
+                }
+                break;
+            case 0xE:
+                LOG.info("M write COMM_FLAG: {} {}", th(data), size);
+                break;
+            default:
+                LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
         }
     }
 }

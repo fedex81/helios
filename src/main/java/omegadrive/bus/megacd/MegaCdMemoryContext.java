@@ -22,11 +22,12 @@ public class MegaCdMemoryContext implements Serializable {
     public static final int MCD_WORD_RAM_MASK = MCD_WORD_RAM_SIZE - 1;
     public static final int MCD_PRG_RAM_MASK = MCD_PRG_RAM_SIZE - 1;
 
-    public byte[] prgRam, gateRegs, wordRam;
+    public byte[] prgRam, mainGateRegs, subGateRegs, wordRam;
 
     public MegaCdMemoryContext() {
         prgRam = new byte[MCD_PRG_RAM_SIZE];
         wordRam = new byte[MCD_WORD_RAM_SIZE];
-        gateRegs = new byte[MCD_GATE_REGS_SIZE];
+        mainGateRegs = new byte[MCD_GATE_REGS_SIZE];
+        subGateRegs = new byte[MCD_GATE_REGS_SIZE];
     }
 }
