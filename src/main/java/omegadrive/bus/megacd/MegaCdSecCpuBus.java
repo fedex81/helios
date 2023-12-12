@@ -1,7 +1,6 @@
 package omegadrive.bus.megacd;
 
 import omegadrive.bus.md.GenesisBus;
-import omegadrive.system.MegaCd;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
@@ -105,8 +104,8 @@ public class MegaCdSecCpuBus extends GenesisBus {
             case 0:
                 int sreset = newVal & 1;
                 LOG.info("S SubCpu reset: {}", (sreset == 0 ? "Reset" : "Ignore"));
-                if (sreset == 0 && MegaCd.secCpuResetFrameCounter == 0) {
-                    //TODO reset CD drive, part of cddinit
+                if (sreset == 0) {
+                    //TODO reset CD drive, part of cddinit, does it take 100ms??
                     LOG.info("S SecCpu peripheral reset started");
                     writeBuffer(gateRegs, 0, newVal | 1, Size.WORD); //cd drive done resetting
                 }
@@ -115,7 +114,7 @@ public class MegaCdSecCpuBus extends GenesisBus {
                 //sub can only write to MSB
                 assert size == Size.BYTE && (address & 1) == 1;
                 writeBuffer(mainGateRegs, address & SEC_CPU_REGS_MASK, data, size); //write to main reg copy
-                LOG.info("M write COMM_FLAG: {} {}", th(data), size);
+                LOG.info("S write COMM_FLAG: {} {}", th(data), size);
                 break;
             case 0x32:
                 LOG.info("S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);
@@ -124,7 +123,7 @@ public class MegaCdSecCpuBus extends GenesisBus {
                 LOG.info("S Write CDD control: {}, {}, {}", th(address), th(data), size);
                 break;
             default:
-                LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
+                LOG.error("S write unknown MEGA_CD_EXP reg: {}", th(address));
         }
     }
 

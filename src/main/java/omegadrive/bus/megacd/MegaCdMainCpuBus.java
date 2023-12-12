@@ -1,6 +1,8 @@
 package omegadrive.bus.megacd;
 
 import omegadrive.bus.md.GenesisBus;
+import omegadrive.cpu.m68k.M68kProvider;
+import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.system.MegaCd;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
@@ -191,9 +193,17 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 int sbusreq = regVal & 2;
                 int secIntReg = (regVal >> 8) & 1;
                 LOG.info("M SubCpu reset: {}, busReq: {}", (sreset == 0 ? "Reset" : "Run"), (sbusreq == 0 ? "Cancel" : "Request"));
-                if (sreset == 0 && MegaCd.secCpuResetFrameCounter == 0) {
-                    MegaCd.secCpuResetFrameCounter = 7;
-                    LOG.info("M SecCpu reset started");
+                MC68000Wrapper m68k = (MC68000Wrapper) MegaCd.secCpuBusHack.getBusDeviceIfAny(M68kProvider.class).get();
+                if (sreset > 0) {
+                    if (sbusreq == 0) {
+                        m68k.reset();
+                        MegaCd.secCpuBusHack.resetDone();
+                        LOG.info("M SubCpu reset done, now running");
+                    }
+                    m68k.setStop(sbusreq > 0);
+                } else { //sreset = 0
+                    m68k.setStop(true);
+                    LOG.info("M SubCpu stopped");
                 }
                 if (secIntReg > 0) {
                     //TODO
@@ -201,6 +211,23 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 }
                 break;
             case 2:
+                if ((regVal & 0xFF00) != 0) {
+                    LOG.warn("Mem Write protect bits set: {}", th(regVal));
+                }
+                int mode = regVal & 4;
+                int dmna = regVal & 2;
+                int ret = regVal & 1;
+                String str = mode == 0 ? "2M" : "1M";
+                assert ret == 0; //only SUB able to write to
+                //1M, only dmna = 1 is significant, 0 is set by hw when the request is done
+                if (mode > 0 && dmna > 0) {
+                    str += ",SWAP_REQ";
+                }
+                //2M
+                if (mode == 0 && dmna > 0) {
+                    str += dmna > 0 ? ",sub(2M WRAM)" : ",main(2M WRAM)";
+                }
+                LOG.info(str);
                 //bk0,1
                 int bval = (regVal >> 5) & 3;
                 if (bval != prgRamBankValue) {

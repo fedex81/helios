@@ -94,14 +94,15 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     public static String cpuCode = "M";
 
-    //6*16.6= 100ms
-    public static int secCpuResetFrameCounter = 0;
+    //TOOD hack
+    public static MegaCdSecCpuBus secCpuBusHack;
 
     protected MegaCd(DisplayWindow emuFrame) {
         super(emuFrame);
         systemType = SystemLoader.SystemType.GENESIS;
         megaCdMemoryContext = new MegaCdMemoryContext();
         secCpuBus = new MegaCdSecCpuBus(megaCdMemoryContext);
+        secCpuBusHack = secCpuBus;
     }
 
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
@@ -121,6 +122,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         cpu = MC68000Wrapper.createInstance(bus);
         cpuCode = "S";
         secCpu = MC68000Wrapper.createInstance(secCpuBus);
+        secCpuBus.attachDevice(secCpu);
         cpuCode = "M";
         ((MC68000Wrapper) secCpu).setStop(true);
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
@@ -258,14 +260,6 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     public void newFrame() {
         memView.update();
         super.newFrame();
-        if (secCpuResetFrameCounter == 1) {
-            ((MC68000Wrapper) secCpu).setStop(false);
-            secCpu.reset();
-            secCpuBus.resetDone();
-            LOG.info("SecCpu reset completed: " + telemetry.getFrameCounter());
-        }
-        secCpuResetFrameCounter = Math.max(0, secCpuResetFrameCounter - 1);
-//        LOG.info("Frame: " + telemetry.getFrameCounter());
     }
 
     protected UpdatableViewer createMemView() {
