@@ -18,6 +18,8 @@ public class MegaCdMemoryContext implements Serializable {
     public static final int MCD_PRG_RAM_SIZE = 0x80_000;
     public static final int MCD_GATE_REGS_SIZE = 0x40;
 
+    public static final int MDC_SUB_GATE_REGS_SIZE = 0x200;
+
     public static final int MCD_GATE_REGS_MASK = MCD_GATE_REGS_SIZE - 1;
     public static final int MCD_WORD_RAM_MASK = MCD_WORD_RAM_SIZE - 1;
     public static final int MCD_PRG_RAM_MASK = MCD_PRG_RAM_SIZE - 1;
@@ -28,6 +30,6 @@ public class MegaCdMemoryContext implements Serializable {
         prgRam = new byte[MCD_PRG_RAM_SIZE];
         wordRam = new byte[MCD_WORD_RAM_SIZE];
         mainGateRegs = new byte[MCD_GATE_REGS_SIZE];
-        subGateRegs = new byte[MCD_GATE_REGS_SIZE];
+        subGateRegs = new byte[MDC_SUB_GATE_REGS_SIZE];
     }
 }

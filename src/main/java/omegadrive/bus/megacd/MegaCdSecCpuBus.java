@@ -33,17 +33,16 @@ public class MegaCdSecCpuBus extends GenesisBus {
     private static final int END_MCD_SUB_GA_COMM_W = START_MCD_SUB_GA_COMM_W + 0x10;
     private static final int START_MCD_SUB_GA_COMM_R = START_MCD_SUB_GATE_ARRAY_REGS + 0x10;
     private static final int END_MCD_SUB_GA_COMM_R = END_MCD_SUB_GA_COMM_W;
-
-    private static final int SEC_CPU_REGS_SIZE = 0x200;
-    private static final int SEC_CPU_REGS_MASK = SEC_CPU_REGS_SIZE - 1;
-    private ByteBuffer subCpuRam, cpuRegs, wordRam;
+    private static final int SEC_CPU_REGS_MASK = MDC_SUB_GATE_REGS_SIZE - 1;
+    private ByteBuffer subCpuRam, gateRegs, wordRam, mainGateRegs;
 
     public MegaCdSecCpuBus(MegaCdMemoryContext ctx) {
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
-        cpuRegs = ByteBuffer.wrap(ctx.subGateRegs);
+        gateRegs = ByteBuffer.wrap(ctx.subGateRegs);
+        mainGateRegs = ByteBuffer.wrap(ctx.mainGateRegs);
         wordRam = ByteBuffer.wrap(ctx.wordRam);
 
-        writeBuffer(cpuRegs, 1, 1, Size.BYTE); //not reset
+        writeBuffer(gateRegs, 1, 1, Size.BYTE); //not reset
     }
 
     @Override
@@ -75,7 +74,7 @@ public class MegaCdSecCpuBus extends GenesisBus {
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
-        int res = readBuffer(cpuRegs, address & SEC_CPU_REGS_MASK, size);
+        int res = readBuffer(gateRegs, address & SEC_CPU_REGS_MASK, size);
         LOG.info("S Read MEGA_CD_EXP: {}, {}, {}", th(address),
                 th(res), size);
         if (address >= START_MCD_SUB_GA_COMM_R && address < END_MCD_SUB_GA_COMM_R) { //MAIN,SUB COMM
@@ -90,13 +89,15 @@ public class MegaCdSecCpuBus extends GenesisBus {
                 th(data), size);
         if (address >= START_MCD_SUB_GA_COMM_W && address < END_MCD_SUB_GA_COMM_W) { //MAIN COMM
             LOG.info("S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
+            writeBuffer(gateRegs, address & SEC_CPU_REGS_MASK, data, size);
+            writeBuffer(mainGateRegs, address & SEC_CPU_REGS_MASK, data, size); //write to main reg copy
             return;
         }
         assert size != Size.LONG;
         int regEven = (address & MCD_GATE_REGS_MASK) & ~1;
-        int regVal = readBuffer(cpuRegs, regEven, Size.WORD);
-        writeBuffer(cpuRegs, address & SEC_CPU_REGS_MASK, data, size);
-        int newVal = readBuffer(cpuRegs, regEven, Size.WORD);
+        int regVal = readBuffer(gateRegs, regEven, Size.WORD);
+        writeBuffer(gateRegs, address & SEC_CPU_REGS_MASK, data, size);
+        int newVal = readBuffer(gateRegs, regEven, Size.WORD);
         if (regVal == newVal) {
             return;
         }
@@ -107,8 +108,14 @@ public class MegaCdSecCpuBus extends GenesisBus {
                 if (sreset == 0 && MegaCd.secCpuResetFrameCounter == 0) {
                     //TODO reset CD drive, part of cddinit
                     LOG.info("S SecCpu peripheral reset started");
-                    writeBuffer(cpuRegs, 0, newVal | 1, Size.WORD); //cd drive done resetting
+                    writeBuffer(gateRegs, 0, newVal | 1, Size.WORD); //cd drive done resetting
                 }
+                break;
+            case 0xE:
+                //sub can only write to MSB
+                assert size == Size.BYTE && (address & 1) == 1;
+                writeBuffer(mainGateRegs, address & SEC_CPU_REGS_MASK, data, size); //write to main reg copy
+                LOG.info("M write COMM_FLAG: {} {}", th(data), size);
                 break;
             case 0x32:
                 LOG.info("S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);
@@ -127,8 +134,8 @@ public class MegaCdSecCpuBus extends GenesisBus {
     }
 
     public void resetDone() {
-        int regVal = readBuffer(cpuRegs, 0, Size.WORD) | 1;
-        writeBuffer(cpuRegs, 0, regVal, Size.WORD);
+        int regVal = readBuffer(gateRegs, 0, Size.WORD) | 1;
+        writeBuffer(gateRegs, 0, regVal, Size.WORD);
         LOG.info("S SecCpu reset done");
     }
 }

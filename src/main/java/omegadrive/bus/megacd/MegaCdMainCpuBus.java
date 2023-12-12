@@ -62,9 +62,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private static final int START_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_R;
     private static final int END_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_W + 0x10;
 
-    //TODO ??
-
-    private ByteBuffer prgRam, gateRegs, wordRam;
+    private ByteBuffer prgRam, gateRegs, wordRam, subGateRegs;
     private int prgRamBankValue = 0, prgRamBankShift = 0;
 
     private boolean enableMCDBus = true, enableMode1 = true;
@@ -91,6 +89,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     public MegaCdMainCpuBus(MegaCdMemoryContext ctx) {
         prgRam = ByteBuffer.wrap(ctx.prgRam);
         gateRegs = ByteBuffer.wrap(ctx.mainGateRegs);
+        subGateRegs = ByteBuffer.wrap(ctx.subGateRegs);
         wordRam = ByteBuffer.wrap(ctx.wordRam);
     }
 
@@ -114,6 +113,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     return readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
                 }
             } else {
+                //TODO test
                 if (address >= START_MCD_MAIN_PRG_RAM && address < END_MCD_MAIN_PRG_RAM) {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
                     return readBuffer(prgRam, addr, size);
@@ -130,19 +130,29 @@ public class MegaCdMainCpuBus extends GenesisBus {
     @Override
     public void write(int address, int data, Size size) {
         if (enableMCDBus) {
-            if (address >= START_MCD_MAIN_PRG_RAM && address < END_MCD_MAIN_PRG_RAM) {
-                int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                writeBuffer(prgRam, addr, data, size);
-                return;
-            } else if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
+            if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
                 handleMegaCdExpWrite(address, data, size);
                 return;
-            } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
-                writeBuffer(wordRam, address & MCD_WORD_RAM_MASK, data, size);
-                return;
-            } else if (address >= 0x420_000 && address < 0x420_000 + MCD_MAIN_PRG_RAM_WINDOW_SIZE) {
-                write(address & DEFAULT_ROM_END_ADDRESS, data, size);
-                return;
+            }
+            if (enableMode1) {
+                if (address >= START_MCD_MAIN_PRG_RAM_MODE1 && address < END_MCD_MAIN_PRG_RAM_MODE1) {
+                    int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
+                    writeBuffer(prgRam, addr, data, size);
+                    return;
+                } else if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
+                    writeBuffer(wordRam, address & MCD_WORD_RAM_MASK, data, size);
+                    return;
+                }
+            } else {
+                //TODO test
+                if (address >= START_MCD_MAIN_PRG_RAM && address < END_MCD_MAIN_PRG_RAM) {
+                    int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
+                    writeBuffer(prgRam, addr, data, size);
+                    return;
+                } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
+                    writeBuffer(wordRam, address & MCD_WORD_RAM_MASK, data, size);
+                    return;
+                }
             }
         }
         super.write(address, data, size);
@@ -161,14 +171,20 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private void handleMegaCdExpWrite(int address, int data, Size size) {
         LOG.info("M Write MEGA_CD_EXP: {}, {}, {}", th(address),
                 th(data), size);
-        writeBuffer(gateRegs, address & MCD_GATE_REGS_MASK, data, size);
         if (address >= START_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_W) { //MAIN COMM
             LOG.info("M Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
+            writeBuffer(gateRegs, address & MCD_GATE_REGS_MASK, data, size);
+            writeBuffer(subGateRegs, address & MDC_SUB_GATE_REGS_SIZE, data, size); //write to sub reg copy
             return;
         }
         assert size != Size.LONG;
         int regEven = (address & MCD_GATE_REGS_MASK) & ~1;
         int regVal = readBuffer(gateRegs, regEven, Size.WORD);
+        writeBuffer(gateRegs, address & MCD_GATE_REGS_MASK, data, size);
+        int newVal = readBuffer(gateRegs, regEven, Size.WORD);
+        if (regVal == newVal) {
+            return;
+        }
         switch (regEven) {
             case 0:
                 int sreset = regVal & 1;
@@ -194,6 +210,9 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 }
                 break;
             case 0xE:
+                //main can only write to MSB
+                assert size == Size.BYTE && (address & 1) == 0;
+                writeBuffer(subGateRegs, address & MDC_SUB_GATE_REGS_SIZE, data, size); //write to sub reg copy
                 LOG.info("M write COMM_FLAG: {} {}", th(data), size);
                 break;
             default:
