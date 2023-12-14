@@ -128,7 +128,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
         //sound attached later
         sound = SoundProvider.NO_SOUND;
-
+        vdp.addVdpEventListener(secCpuBus);
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(cpu).attachDevice(z80);
         reloadWindowState();

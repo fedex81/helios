@@ -32,6 +32,7 @@ import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.GenesisJoypad;
+import omegadrive.joypad.JoypadProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.msumd.MsuMdHandler;
 import omegadrive.sound.msumd.MsuMdHandlerImpl;
@@ -47,6 +48,7 @@ import omegadrive.vdp.model.GenesisVdpProvider.VdpPortType;
 import org.slf4j.Logger;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import static omegadrive.cart.mapper.md.Ssf2Mapper.BANK_SET_END_ADDRESS;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
@@ -958,6 +960,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     @Override
     public void onNewFrame() {
-        joypadProvider.newFrame();
+        Optional.ofNullable(joypadProvider).ifPresent(JoypadProvider::newFrame);
     }
 }

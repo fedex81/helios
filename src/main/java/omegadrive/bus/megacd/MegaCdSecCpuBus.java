@@ -1,8 +1,12 @@
 package omegadrive.bus.megacd;
 
 import omegadrive.bus.md.GenesisBus;
+import omegadrive.cpu.m68k.M68kProvider;
+import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
+import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
+import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
@@ -11,6 +15,7 @@ import static omegadrive.bus.megacd.MegaCdMemoryContext.*;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.S32xUtil.readBuffer;
 import static omegadrive.util.S32xUtil.writeBuffer;
+import static omegadrive.util.Util.readBufferByte;
 import static omegadrive.util.Util.th;
 
 /**
@@ -136,5 +141,20 @@ public class MegaCdSecCpuBus extends GenesisBus {
         int regVal = readBuffer(gateRegs, 0, Size.WORD) | 1;
         writeBuffer(gateRegs, 0, regVal, Size.WORD);
         LOG.info("S SecCpu reset done");
+    }
+
+    @Override
+    public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
+        super.onVdpEvent(event, value);
+        if (event == BaseVdpAdapterEventSupport.VdpEvent.V_BLANK_CHANGE) {
+            boolean val = (boolean) value;
+            if (val) {
+                LOG.info("VBlank On");
+                if ((readBufferByte(gateRegs, 0x33) & 4) > 0) {
+                    MC68000Wrapper m68k = (MC68000Wrapper) getBusDeviceIfAny(M68kProvider.class).get();
+                    m68k.raiseInterrupt(2);
+                }
+            }
+        }
     }
 }
