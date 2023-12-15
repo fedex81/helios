@@ -14,7 +14,9 @@ import java.util.Set;
  */
 public class LogHelper {
 
-    private static Set<String> msgCache = new HashSet<>();
+    private Set<String> msgCache = new HashSet<>();
+
+    private RepeaterDetector rd = new RepeaterDetector();
 
     public static Logger getLogger(String name) {
         return LoggerFactory.getLogger(name);
@@ -28,15 +30,50 @@ public class LogHelper {
         return MessageFormatter.arrayFormat(s, o).getMessage();
     }
 
-    public static void logWarnOnce(Logger log, String str, Object... o) {
+    public void logWarnOnce(Logger log, String str, Object... o) {
         String msg = formatMessage(str, o);
         if (msgCache.add(msg)) {
             log.warn(msg + " (ONCE)");
+        } else {
+            checkRepeat(log, msg);
         }
     }
 
-    public static void clear() {
+    private void checkRepeat(Logger log, String msg) {
+        if (rd.msg.equals(msg)) {
+            boolean logRepeat = rd.hit();
+            if (logRepeat) {
+                log.warn(msg + " - RP: " + rd.cnt);
+            }
+        } else {
+            rd.reset();
+            rd.msg = msg;
+        }
+    }
+
+    public void clear() {
         System.out.println("LogHelper: clearing msg cache, size: " + msgCache.size());
         msgCache.clear();
+        rd.reset();
+    }
+
+    private static class RepeaterDetector {
+        public String msg = "";
+        public long cnt = 0;
+        public long nextLog = 10;
+
+        public boolean hit() {
+            if ((++cnt % nextLog) == 0) {
+                nextLog *= 10;
+                return true;
+            }
+            return false;
+        }
+
+        public void reset() {
+            msg = "";
+            cnt = 0;
+            nextLog = 10;
+        }
     }
 }

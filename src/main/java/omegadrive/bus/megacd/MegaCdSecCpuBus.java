@@ -39,6 +39,7 @@ public class MegaCdSecCpuBus extends GenesisBus {
     private static final int END_MCD_SUB_GA_COMM_R = END_MCD_SUB_GA_COMM_W;
     private static final int SEC_CPU_REGS_MASK = MDC_SUB_GATE_REGS_SIZE - 1;
     private ByteBuffer subCpuRam, gateRegs, wordRam, mainGateRegs;
+    private LogHelper logHelper = new LogHelper();
 
     public MegaCdSecCpuBus(MegaCdMemoryContext ctx) {
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
@@ -79,7 +80,7 @@ public class MegaCdSecCpuBus extends GenesisBus {
 
     private int handleMegaCdExpRead(int address, Size size) {
         int res = readBuffer(gateRegs, address & SEC_CPU_REGS_MASK, size);
-        LOG.info("S Read MEGA_CD_EXP: {}, {}, {}", th(address),
+        logHelper.logWarnOnce(LOG, "S Read MEGA_CD_EXP: {}, {}, {}", th(address),
                 th(res), size);
         if (address >= START_MCD_SUB_GA_COMM_R && address < END_MCD_SUB_GA_COMM_R) { //MAIN,SUB COMM
             LOG.info("S Read MEGA_CD_COMM: {}, {}, {}", th(address), th(res), size);
@@ -149,8 +150,8 @@ public class MegaCdSecCpuBus extends GenesisBus {
         if (event == BaseVdpAdapterEventSupport.VdpEvent.V_BLANK_CHANGE) {
             boolean val = (boolean) value;
             if (val) {
-                LOG.info("VBlank On");
                 if ((readBufferByte(gateRegs, 0x33) & 4) > 0) {
+                    LOG.info("S VBlank On, int#2");
                     MC68000Wrapper m68k = (MC68000Wrapper) getBusDeviceIfAny(M68kProvider.class).get();
                     m68k.raiseInterrupt(2);
                 }

@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import static omegadrive.bus.megacd.MegaCdMemoryContext.*;
 import static omegadrive.util.S32xUtil.readBuffer;
 import static omegadrive.util.S32xUtil.writeBuffer;
+import static omegadrive.util.Util.random;
 import static omegadrive.util.Util.th;
 
 /**
@@ -73,6 +74,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     static String masterBiosName = "bios_us.bin";
     private static ByteBuffer bios;
+    private LogHelper logHelper = new LogHelper();
 
     static {
         Path p = Paths.get(biosBasePath, masterBiosName);
@@ -162,10 +164,14 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     private int handleMegaCdExpRead(int address, Size size) {
         int res = readBuffer(gateRegs, address & MCD_GATE_REGS_MASK, size);
-        LOG.info("M Read MEGA_CD_EXP: {}, {}, {}", th(address),
+        logHelper.logWarnOnce(LOG, "M Read MEGA_CD_EXP: {}, {}, {}", th(address),
                 th(res), size);
         if (address >= START_MCD_MAIN_GA_COMM_R && address < END_MCD_MAIN_GA_COMM_R) { //MAIN,SUB COMM
             LOG.info("M Read MEGA_CD_COMM: {}, {}, {}", th(address), th(res), size);
+        }
+        //TODO bios_us.bin RET bit
+        if (address == 0xA12003 && size == Size.BYTE) {
+            res |= random.nextInt(2);
         }
         return res;
     }
@@ -189,9 +195,9 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
         switch (regEven) {
             case 0:
-                int sreset = regVal & 1;
-                int sbusreq = regVal & 2;
-                int secIntReg = (regVal >> 8) & 1;
+                int sreset = newVal & 1;
+                int sbusreq = newVal & 2;
+                int secIntReg = (newVal >> 8) & 1;
                 LOG.info("M SubCpu reset: {}, busReq: {}", (sreset == 0 ? "Reset" : "Run"), (sbusreq == 0 ? "Cancel" : "Request"));
                 MC68000Wrapper m68k = (MC68000Wrapper) MegaCd.secCpuBusHack.getBusDeviceIfAny(M68kProvider.class).get();
                 if (sreset > 0) {
@@ -206,19 +212,20 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     LOG.info("M SubCpu stopped");
                 }
                 if (secIntReg > 0) {
-                    //TODO
                     LOG.info("M trigger SubCpu int2 request");
+                    m68k.raiseInterrupt(2);
                 }
                 break;
             case 2:
-                if ((regVal & 0xFF00) != 0) {
-                    LOG.warn("Mem Write protect bits set: {}", th(regVal));
+                if ((newVal & 0xFF00) != 0) {
+                    LOG.warn("M Mem Write protect bits set: {}", th(newVal));
                 }
-                int mode = regVal & 4;
-                int dmna = regVal & 2;
-                int ret = regVal & 1;
+                int mode = newVal & 4;
+                int dmna = newVal & 2;
+                int ret = newVal & 1;
                 String str = mode == 0 ? "2M" : "1M";
-                assert ret == 0; //only SUB able to write to
+                //MASTER bios sets it
+//                assert ret == 0; //only SUB able to write to
                 //1M, only dmna = 1 is significant, 0 is set by hw when the request is done
                 if (mode > 0 && dmna > 0) {
                     str += ",SWAP_REQ";
@@ -229,9 +236,9 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 }
                 LOG.info(str);
                 //bk0,1
-                int bval = (regVal >> 5) & 3;
+                int bval = (newVal >> 5) & 3;
                 if (bval != prgRamBankValue) {
-                    prgRamBankValue = (regVal >> 5) & 3;
+                    prgRamBankValue = (newVal >> 5) & 3;
                     prgRamBankShift = prgRamBankValue << 17;
                     LOG.info("M PRG_RAM bank set: {} {}", prgRamBankValue, th(prgRamBankShift));
                 }
