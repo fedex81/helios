@@ -8,6 +8,7 @@ import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
+import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -48,10 +49,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private static final int END_MCD_MAIN_PRG_RAM_MODE1 = START_MCD_MAIN_PRG_RAM_MODE1 +
             MCD_MAIN_PRG_RAM_WINDOW_SIZE;
     private static final int START_MCD_WORD_RAM = 0x200_000;
-    private static final int END_MCD_WORD_RAM = START_MCD_WORD_RAM + MCD_WORD_RAM_SIZE;
+    private static final int END_MCD_WORD_RAM = START_MCD_WORD_RAM + MCD_WORD_RAM_2M_SIZE;
 
     private static final int START_MCD_WORD_RAM_MODE1 = 0x600_000;
-    private static final int END_MCD_WORD_RAM_MODE1 = START_MCD_WORD_RAM_MODE1 + MCD_WORD_RAM_SIZE;
+    private static final int END_MCD_WORD_RAM_MODE1 = START_MCD_WORD_RAM_MODE1 + MCD_WORD_RAM_2M_SIZE;
 
     private static final int MCD_BOOT_ROM_SIZE = 0x20_000;
     private static final int MCD_BOOT_ROM_MASK = MCD_BOOT_ROM_SIZE - 1;
@@ -65,7 +66,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private static final int START_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_R;
     private static final int END_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_W + 0x10;
 
-    private ByteBuffer prgRam, gateRegs, wordRam, subGateRegs;
+    private ByteBuffer prgRam, gateRegs, subGateRegs;
     private int prgRamBankValue = 0, prgRamBankShift = 0;
 
     private boolean enableMCDBus = true, enableMode1 = true;
@@ -75,6 +76,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
     static String masterBiosName = "bios_us.bin";
     private static ByteBuffer bios;
     private LogHelper logHelper = new LogHelper();
+    private MegaCdMemoryContext memCtx;
+    private S32xUtil.CpuDeviceAccess cpu;
 
     static {
         Path p = Paths.get(biosBasePath, masterBiosName);
@@ -94,7 +97,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
         prgRam = ByteBuffer.wrap(ctx.prgRam);
         gateRegs = ByteBuffer.wrap(ctx.mainGateRegs);
         subGateRegs = ByteBuffer.wrap(ctx.subGateRegs);
-        wordRam = ByteBuffer.wrap(ctx.wordRam);
+        memCtx = ctx;
+        cpu = S32xUtil.CpuDeviceAccess.M68K;
     }
 
     @Override
@@ -109,7 +113,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         if (enableMCDBus) {
             if (enableMode1) {
                 if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
-                    return readBuffer(wordRam, address & MCD_WORD_RAM_MASK, size);
+                    return memCtx.readWordRam(cpu, address, size);
                 } else if (address >= START_MCD_MAIN_PRG_RAM_MODE1 && address < END_MCD_MAIN_PRG_RAM_MODE1) {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
                     return readBuffer(prgRam, addr, size);
@@ -124,7 +128,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 } else if (address >= START_MCD_BOOT_ROM && address < END_MCD_BOOT_ROM) {
                     return readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
-                    return readBuffer(wordRam, address & MCD_WORD_RAM_MASK, size);
+                    return memCtx.readWordRam(cpu, address, size);
                 }
             }
         }
@@ -144,7 +148,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     writeBuffer(prgRam, addr, data, size);
                     return;
                 } else if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
-                    writeBuffer(wordRam, address & MCD_WORD_RAM_MASK, data, size);
+                    memCtx.writeWordRam(cpu, address, data, size);
                     return;
                 }
             } else {
@@ -154,7 +158,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     writeBuffer(prgRam, addr, data, size);
                     return;
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
-                    writeBuffer(wordRam, address & MCD_WORD_RAM_MASK, data, size);
+                    memCtx.writeWordRam(cpu, address, data, size);
                     return;
                 }
             }
@@ -164,11 +168,12 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     private int handleMegaCdExpRead(int address, Size size) {
         int res = readBuffer(gateRegs, address & MCD_GATE_REGS_MASK, size);
-        logHelper.logWarnOnce(LOG, "M Read MEGA_CD_EXP: {}, {}, {}", th(address),
-                th(res), size);
+        String s = "MEGA_CD_EXP";
         if (address >= START_MCD_MAIN_GA_COMM_R && address < END_MCD_MAIN_GA_COMM_R) { //MAIN,SUB COMM
-            LOG.info("M Read MEGA_CD_COMM: {}, {}, {}", th(address), th(res), size);
+            s = "MEGA_CD_COMM";
         }
+        logHelper.logWarnOnce(LOG, "M Read {}: {}, {}, {}", s, th(address),
+                th(res), size);
         //TODO bios_us.bin RET bit
         if (address == 0xA12003 && size == Size.BYTE) {
             res |= random.nextInt(2);
@@ -220,6 +225,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 if ((newVal & 0xFF00) != 0) {
                     LOG.warn("M Mem Write protect bits set: {}", th(newVal));
                 }
+                memCtx.update(cpu, newVal);
                 int mode = newVal & 4;
                 int dmna = newVal & 2;
                 int ret = newVal & 1;

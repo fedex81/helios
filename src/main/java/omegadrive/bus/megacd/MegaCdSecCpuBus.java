@@ -8,6 +8,7 @@ import omegadrive.util.Size;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
+import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 
@@ -15,8 +16,7 @@ import static omegadrive.bus.megacd.MegaCdMemoryContext.*;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.S32xUtil.readBuffer;
 import static omegadrive.util.S32xUtil.writeBuffer;
-import static omegadrive.util.Util.readBufferByte;
-import static omegadrive.util.Util.th;
+import static omegadrive.util.Util.*;
 
 /**
  * Federico Berti
@@ -38,22 +38,29 @@ public class MegaCdSecCpuBus extends GenesisBus {
     private static final int START_MCD_SUB_GA_COMM_R = START_MCD_SUB_GATE_ARRAY_REGS + 0x10;
     private static final int END_MCD_SUB_GA_COMM_R = END_MCD_SUB_GA_COMM_W;
     private static final int SEC_CPU_REGS_MASK = MDC_SUB_GATE_REGS_SIZE - 1;
-    private ByteBuffer subCpuRam, gateRegs, wordRam, mainGateRegs;
+
+    private static final int START_MCD_SUB_WORD_RAM = 0x80_000;
+    private static final int END_MCD_SUB_WORD_RAM = START_MCD_SUB_WORD_RAM + MCD_WORD_RAM_2M_SIZE;
+    private ByteBuffer subCpuRam, gateRegs, mainGateRegs;
     private LogHelper logHelper = new LogHelper();
+    private MegaCdMemoryContext memCtx;
+    private S32xUtil.CpuDeviceAccess cpu;
 
     public MegaCdSecCpuBus(MegaCdMemoryContext ctx) {
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
         gateRegs = ByteBuffer.wrap(ctx.subGateRegs);
         mainGateRegs = ByteBuffer.wrap(ctx.mainGateRegs);
-        wordRam = ByteBuffer.wrap(ctx.wordRam);
-
+        memCtx = ctx;
+        cpu = S32xUtil.CpuDeviceAccess.SUB_M68K;
         writeBuffer(gateRegs, 1, 1, Size.BYTE); //not reset
     }
 
     @Override
     public int read(int address, Size size) {
         address &= MD_PC_MASK;
-        if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
+        if (address >= START_MCD_SUB_WORD_RAM && address < END_MCD_SUB_WORD_RAM) {
+            return memCtx.readWordRam(cpu, address, size);
+        } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
             return readBuffer(subCpuRam, address & MCD_PRG_RAM_MASK, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address < END_MCD_SUB_GATE_ARRAY_REGS) {
             return handleMegaCdExpRead(address, size);
@@ -66,7 +73,10 @@ public class MegaCdSecCpuBus extends GenesisBus {
     @Override
     public void write(int address, int data, Size size) {
         address &= MD_PC_MASK;
-        if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
+        if (address >= START_MCD_SUB_WORD_RAM && address < END_MCD_SUB_WORD_RAM) {
+            memCtx.writeWordRam(cpu, address, data, size);
+            return;
+        } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
             writeBuffer(subCpuRam, address & MCD_PRG_RAM_MASK, data, size);
             return;
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address <= END_MCD_SUB_GATE_ARRAY_REGS) {
@@ -80,11 +90,19 @@ public class MegaCdSecCpuBus extends GenesisBus {
 
     private int handleMegaCdExpRead(int address, Size size) {
         int res = readBuffer(gateRegs, address & SEC_CPU_REGS_MASK, size);
+        if (address >= START_MCD_SUB_GA_COMM_R && address < END_MCD_SUB_GA_COMM_R) { //MAIN,SUB COMM
+            logHelper.logWarnOnce(LOG, "S Read MEGA_CD_COMM: {}, {}, {}", th(address), th(res), size);
+            return res;
+        }
         logHelper.logWarnOnce(LOG, "S Read MEGA_CD_EXP: {}, {}, {}", th(address),
                 th(res), size);
-        if (address >= START_MCD_SUB_GA_COMM_R && address < END_MCD_SUB_GA_COMM_R) { //MAIN,SUB COMM
-            LOG.info("S Read MEGA_CD_COMM: {}, {}, {}", th(address), th(res), size);
-            return res;
+        //TODO bios_us.bin RES0 bit
+        if (address == 0xFF8001 && size == Size.BYTE) {
+            res |= random.nextInt(2);
+        }
+        //TODO md-mode1-mcd-asic-test.bin DMNA bit
+        if (address == 0xFF8003 && size == Size.BYTE) {
+            res |= random.nextInt(2) << 1;
         }
         return res;
     }
