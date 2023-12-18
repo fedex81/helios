@@ -14,7 +14,9 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static omegadrive.bus.megacd.MegaCdMemoryContext.*;
+import static omegadrive.bus.megacd.MegaCdDict.*;
+import static omegadrive.bus.megacd.MegaCdMemoryContext.MCD_GATE_REGS_MASK;
+import static omegadrive.bus.megacd.MegaCdMemoryContext.WramSetup;
 import static omegadrive.util.S32xUtil.*;
 import static omegadrive.util.Util.random;
 import static omegadrive.util.Util.th;
@@ -38,33 +40,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
      * 0x400000 instead of 0x000000. So the BIOS ROM is at 0x400_000, the
      * Program RAM bank is at 0x420_000, and the Word RAM is at 0x600_000.
      */
-    private static final int MCD_MAIN_PRG_RAM_WINDOW_SIZE = 0x20_000;
-    public static final int MCD_MAIN_PRG_RAM_WINDOW_MASK = MCD_MAIN_PRG_RAM_WINDOW_SIZE - 1;
-    private static final int START_MCD_MAIN_PRG_RAM = 0x20_000;
-    private static final int END_MCD_MAIN_PRG_RAM = START_MCD_MAIN_PRG_RAM +
-            MCD_MAIN_PRG_RAM_WINDOW_SIZE;
-
-    private static final int START_MCD_MAIN_PRG_RAM_MODE1 = 0x400_000 | START_MCD_MAIN_PRG_RAM;
-    private static final int END_MCD_MAIN_PRG_RAM_MODE1 = START_MCD_MAIN_PRG_RAM_MODE1 +
-            MCD_MAIN_PRG_RAM_WINDOW_SIZE;
-    private static final int START_MCD_WORD_RAM = 0x200_000;
-    private static final int END_MCD_WORD_RAM = START_MCD_WORD_RAM + MCD_WORD_RAM_2M_SIZE;
-
-    private static final int START_MCD_WORD_RAM_MODE1 = 0x600_000;
-    private static final int END_MCD_WORD_RAM_MODE1 = START_MCD_WORD_RAM_MODE1 + MCD_WORD_RAM_2M_SIZE;
-
-    private static final int MCD_BOOT_ROM_SIZE = 0x20_000;
-    private static final int MCD_BOOT_ROM_MASK = MCD_BOOT_ROM_SIZE - 1;
-    private static final int START_MCD_BOOT_ROM = 0;
-    private static final int END_MCD_BOOT_ROM = MCD_BOOT_ROM_SIZE;
-    private static final int START_MCD_BOOT_ROM_MODE1 = START_MCD_BOOT_ROM + 0x400_000;
-    private static final int END_MCD_BOOT_ROM_MODE1 = START_MCD_BOOT_ROM_MODE1 + MCD_BOOT_ROM_SIZE;
-
-    public static final int START_MCD_MAIN_GA_COMM_R = MEGA_CD_EXP_START + 0x10;
-    public static final int END_MCD_MAIN_GA_COMM_R = START_MCD_MAIN_GA_COMM_R + 0x20;
-    public static final int START_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_R;
-    public static final int END_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_W + 0x10;
-
     private ByteBuffer prgRam, gateRegs;
     private int prgRamBankValue = 0, prgRamBankShift = 0;
 
@@ -99,6 +74,15 @@ public class MegaCdMainCpuBus extends GenesisBus {
         cpu = S32xUtil.CpuDeviceAccess.M68K;
 
         writeBuffer(gateRegs, 3, 1, Size.BYTE); //DMNA=0, RET=1
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        //bios_us.bin
+        if ("BR 000006-2.00".equals(cartridgeInfoProvider.getSerial())) {
+            enableMode1 = false;
+        }
     }
 
     @Override
@@ -167,33 +151,39 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
-        int res = readBuffer(gateRegs, address & MCD_GATE_REGS_MASK, size);
-        String s = "MEGA_CD_EXP";
-        if (address >= START_MCD_MAIN_GA_COMM_R && address < END_MCD_MAIN_GA_COMM_R) { //MAIN,SUB COMM
-            s = "MEGA_CD_COMM";
+        RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpu, address);
+        logAccess(regSpec, cpu, address, 0, size, true);
+        if (regSpec == RegSpecMcd.INVALID) {
+            LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
+            return 0;
         }
-        logHelper.logWarnOnce(LOG, "M Read {}: {}, {}, {}", s, th(address),
-                th(res), size);
+        int res = readBuffer(gateRegs, address & MCD_GATE_REGS_MASK, size);
         //TODO bios_us.bin RET bit
         //TODO subCpu never returns WRAM to main as subCpu is stuck in CDD
-        if (address == 0xA12003 && size == Size.BYTE) {
+        if (!enableMode1 && address == 0xA12003 && size == Size.BYTE) {
             res |= random.nextInt(2);
         }
         return res;
     }
 
     private void handleMegaCdExpWrite(int address, int data, Size size) {
-        LOG.info("M Write MEGA_CD_EXP: {}, {}, {}", th(address),
-                th(data), size);
-        if (address >= START_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_W) { //MAIN COMM
-            LOG.info("M Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
-            writeBuffer(gateRegs, address & MCD_GATE_REGS_MASK, data, size);
+        RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpu, address);
+        MegaCdDict.logAccess(regSpec, cpu, address, data, size, false);
+        if (regSpec == RegSpecMcd.INVALID) {
+            LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
             return;
         }
-        if (address >= END_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_R) { //MAIN COMM READ ONLY
-            LOG.error("M illegal write read-only MEGA_CD_COMM reg: {}", th(address));
-            return;
+        switch (regSpec.deviceType) {
+            case SYS -> {
+                handleSysRegWrite(regSpec, address, data, size);
+                return;
+            }
+            case COMM -> handleCommWrite(regSpec, address, data, size);
+            default -> LOG.error("M illegal write MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, data, size);
         }
+    }
+
+    private void handleSysRegWrite(RegSpecMcd regSpec, int address, int data, Size size) {
         assert size != Size.LONG;
         int regEven = (address & MCD_GATE_REGS_MASK) & ~1;
         int regVal = readBuffer(gateRegs, regEven, Size.WORD);
@@ -202,21 +192,21 @@ public class MegaCdMainCpuBus extends GenesisBus {
         if (regVal == newVal) {
             return;
         }
-        switch (regEven) {
-            case 0:
+        switch (regSpec) {
+            case MCD_RESET -> {
                 int v = regVal & 0x8103;
-                int v2 = newVal & 0x8103;
-                writeBuffer(gateRegs, regEven, v, Size.WORD);
+                int v2 = data & 0x8103;
+                writeBuffer(gateRegs, regSpec.addr, v, Size.WORD);
                 if (v == v2) {
                     return;
                 }
                 int sreset = v2 & 1;
                 int sbusreq = (v2 >> 1) & 1;
                 int subIntReg = (v2 >> 8) & 1;
-                setBitVal(gateRegs, regEven, 0, sreset, Size.WORD);
-                setBitVal(gateRegs, regEven, 1, sbusreq, Size.WORD);
-                setBitVal(gateRegs, regEven, 8, subIntReg, Size.WORD);
-                int val = setBitVal(gateRegs, regEven, 15, (v2 >> 15) & 1, Size.WORD);
+                setBitVal(gateRegs, regSpec.addr, 0, sreset, Size.WORD);
+                setBitVal(gateRegs, regSpec.addr, 1, sbusreq, Size.WORD);
+                setBitVal(gateRegs, regSpec.addr, 8, subIntReg, Size.WORD);
+                int val = setBitVal(gateRegs, regSpec.addr, 15, (v2 >> 15) & 1, Size.WORD);
                 LOG.info("M SubCpu reset: {}, busReq: {}", (sreset == 0 ? "Reset" : "Run"), (sbusreq == 0 ? "Cancel" : "Request"));
                 MC68000Wrapper m68k = (MC68000Wrapper) MegaCd.subCpuBusHack.getBusDeviceIfAny(M68kProvider.class).get();
                 if (sreset > 0) {
@@ -234,10 +224,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     LOG.info("M trigger SubCpu int2 request");
                     m68k.raiseInterrupt(2);
                 }
-                break;
-            case 2:
-                if ((newVal & 0xFF00) != 0) {
-                    LOG.warn("M Mem Write protect bits set: {}", th(newVal));
+            }
+            case MCD_MEM_MODE -> {
+                if ((data & 0xFF00) != 0) {
+                    LOG.warn("M Mem Write protect bits set: {}", th(data));
                 }
                 WramSetup ws = memCtx.update(cpu, newVal);
                 if (ws == WramSetup.W_2M_SUB) { //set RET=0
@@ -251,15 +241,31 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     prgRamBankShift = prgRamBankValue << 17;
                     LOG.info("M PRG_RAM bank set: {} {}", prgRamBankValue, th(prgRamBankShift));
                 }
-                break;
-            case 0xE:
+            }
+            case MCD_COMM_FLAGS -> {
                 //main can only write to MSB
                 assert size == Size.BYTE && (address & 1) == 0;
                 LOG.info("M write COMM_FLAG: {} {}", th(data), size);
-                break;
-            default:
-                LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
+            }
+            default -> LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
         }
+    }
+
+    private void handleCommWrite(RegSpecMcd regSpec, int address, int data, Size size) {
+        if (address >= START_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_W) { //MAIN COMM
+            LOG.info("M Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
+            writeBuffer(gateRegs, address & MCD_GATE_REGS_MASK, data, size);
+            return;
+        }
+        if (address >= END_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_R) { //MAIN COMM READ ONLY
+            LOG.error("M illegal write read-only MEGA_CD_COMM reg: {}", th(address));
+            return;
+        }
+    }
+
+    public void logAccess(RegSpecMcd regSpec, S32xUtil.CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
+        logHelper.logWarnOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
+                size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
     }
 
     private void logWram(int newVal) {

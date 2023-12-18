@@ -7,9 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
+import static omegadrive.bus.megacd.MegaCdDict.*;
 import static omegadrive.bus.megacd.MegaCdMainCpuBus.MEGA_CD_EXP_START;
-import static omegadrive.bus.megacd.MegaCdMainCpuBus.*;
-import static omegadrive.bus.megacd.MegaCdSubCpuBus.*;
 import static omegadrive.util.Util.random;
 import static omegadrive.util.Util.th;
 

@@ -65,7 +65,7 @@ public class MegaCdMemoryContext implements Serializable {
         if (cpu == wramSetup.cpu) {
             writeWordRam(address & MCD_WORD_RAM_2M_MASK >> 17, address, value, size);
         } else {
-            System.out.println("wtf");
+            LOG.warn("{} writing WRAM but setup is: {}", cpu, wramSetup);
         }
     }
 
@@ -73,7 +73,7 @@ public class MegaCdMemoryContext implements Serializable {
         if (cpu == wramSetup.cpu) {
             return readWordRam(address & MCD_WORD_RAM_2M_MASK >> 17, address, size);
         } else {
-            System.out.println("wtf");
+            LOG.warn("{} reading WRAM but setup is: {}", cpu, wramSetup);
             return size.getMask();
         }
     }
@@ -91,7 +91,7 @@ public class MegaCdMemoryContext implements Serializable {
         int dmna = reg2 & 2;
         int ret = reg2 & 1;
         if (mode > 0) {
-            System.out.println("TODO");
+            assert false; //TODO
             return wramSetup;
         }
         if (c == M68K) {

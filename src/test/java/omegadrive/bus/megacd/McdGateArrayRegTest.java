@@ -4,7 +4,7 @@ import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static omegadrive.bus.megacd.MegaCdSubCpuBus.START_MCD_SUB_GATE_ARRAY_REGS;
+import static omegadrive.bus.megacd.MegaCdDict.START_MCD_SUB_GATE_ARRAY_REGS;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
 
 /**

@@ -66,7 +66,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
-    private MdCartInfoProvider cartridgeInfoProvider;
+    protected MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private RomMapper exSsfMapper = RomMapper.NO_OP_MAPPER;
     private RomMapper backupMemMapper = RomMapper.NO_OP_MAPPER;

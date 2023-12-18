@@ -73,7 +73,6 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         currentPC = m68k.getPC() & MD_PC_MASK; //needs to be set
         opcode = m68k.getPrefetchWord();
         fastDebug.printDebugMaybe();
-        assert opcode != 0;
         if (!busyLoopDetection) {
             int r = super.runInstruction();
 //            checkInterruptLevelChange();
