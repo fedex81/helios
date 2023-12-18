@@ -15,8 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static omegadrive.bus.megacd.MegaCdMemoryContext.*;
-import static omegadrive.util.S32xUtil.readBuffer;
-import static omegadrive.util.S32xUtil.writeBuffer;
+import static omegadrive.util.S32xUtil.*;
 import static omegadrive.util.Util.random;
 import static omegadrive.util.Util.th;
 
@@ -61,12 +60,12 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private static final int START_MCD_BOOT_ROM_MODE1 = START_MCD_BOOT_ROM + 0x400_000;
     private static final int END_MCD_BOOT_ROM_MODE1 = START_MCD_BOOT_ROM_MODE1 + MCD_BOOT_ROM_SIZE;
 
-    private static final int START_MCD_MAIN_GA_COMM_R = MEGA_CD_EXP_START + 0x10;
-    private static final int END_MCD_MAIN_GA_COMM_R = START_MCD_MAIN_GA_COMM_R + 0x20;
-    private static final int START_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_R;
-    private static final int END_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_W + 0x10;
+    public static final int START_MCD_MAIN_GA_COMM_R = MEGA_CD_EXP_START + 0x10;
+    public static final int END_MCD_MAIN_GA_COMM_R = START_MCD_MAIN_GA_COMM_R + 0x20;
+    public static final int START_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_R;
+    public static final int END_MCD_MAIN_GA_COMM_W = START_MCD_MAIN_GA_COMM_W + 0x10;
 
-    private ByteBuffer prgRam, gateRegs, subGateRegs;
+    private ByteBuffer prgRam, gateRegs;
     private int prgRamBankValue = 0, prgRamBankShift = 0;
 
     private boolean enableMCDBus = true, enableMode1 = true;
@@ -95,10 +94,11 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     public MegaCdMainCpuBus(MegaCdMemoryContext ctx) {
         prgRam = ByteBuffer.wrap(ctx.prgRam);
-        gateRegs = ByteBuffer.wrap(ctx.mainGateRegs);
-        subGateRegs = ByteBuffer.wrap(ctx.subGateRegs);
+        gateRegs = ByteBuffer.wrap(ctx.gateRegs);
         memCtx = ctx;
         cpu = S32xUtil.CpuDeviceAccess.M68K;
+
+        writeBuffer(gateRegs, 3, 1, Size.BYTE); //DMNA=0, RET=1
     }
 
     @Override
@@ -175,6 +175,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         logHelper.logWarnOnce(LOG, "M Read {}: {}, {}, {}", s, th(address),
                 th(res), size);
         //TODO bios_us.bin RET bit
+        //TODO subCpu never returns WRAM to main as subCpu is stuck in CDD
         if (address == 0xA12003 && size == Size.BYTE) {
             res |= random.nextInt(2);
         }
@@ -187,7 +188,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
         if (address >= START_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_W) { //MAIN COMM
             LOG.info("M Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
             writeBuffer(gateRegs, address & MCD_GATE_REGS_MASK, data, size);
-            writeBuffer(subGateRegs, address & MDC_SUB_GATE_REGS_SIZE, data, size); //write to sub reg copy
+            return;
+        }
+        if (address >= END_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_R) { //MAIN COMM READ ONLY
+            LOG.error("M illegal write read-only MEGA_CD_COMM reg: {}", th(address));
             return;
         }
         assert size != Size.LONG;
@@ -200,15 +204,25 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
         switch (regEven) {
             case 0:
-                int sreset = newVal & 1;
-                int sbusreq = newVal & 2;
-                int secIntReg = (newVal >> 8) & 1;
+                int v = regVal & 0x8103;
+                int v2 = newVal & 0x8103;
+                writeBuffer(gateRegs, regEven, v, Size.WORD);
+                if (v == v2) {
+                    return;
+                }
+                int sreset = v2 & 1;
+                int sbusreq = (v2 >> 1) & 1;
+                int subIntReg = (v2 >> 8) & 1;
+                setBitVal(gateRegs, regEven, 0, sreset, Size.WORD);
+                setBitVal(gateRegs, regEven, 1, sbusreq, Size.WORD);
+                setBitVal(gateRegs, regEven, 8, subIntReg, Size.WORD);
+                int val = setBitVal(gateRegs, regEven, 15, (v2 >> 15) & 1, Size.WORD);
                 LOG.info("M SubCpu reset: {}, busReq: {}", (sreset == 0 ? "Reset" : "Run"), (sbusreq == 0 ? "Cancel" : "Request"));
-                MC68000Wrapper m68k = (MC68000Wrapper) MegaCd.secCpuBusHack.getBusDeviceIfAny(M68kProvider.class).get();
+                MC68000Wrapper m68k = (MC68000Wrapper) MegaCd.subCpuBusHack.getBusDeviceIfAny(M68kProvider.class).get();
                 if (sreset > 0) {
                     if (sbusreq == 0) {
                         m68k.reset();
-                        MegaCd.secCpuBusHack.resetDone();
+                        MegaCd.subCpuBusHack.resetDone();
                         LOG.info("M SubCpu reset done, now running");
                     }
                     m68k.setStop(sbusreq > 0);
@@ -216,7 +230,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     m68k.setStop(true);
                     LOG.info("M SubCpu stopped");
                 }
-                if (secIntReg > 0) {
+                if (subIntReg > 0) {
                     LOG.info("M trigger SubCpu int2 request");
                     m68k.raiseInterrupt(2);
                 }
@@ -225,22 +239,11 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 if ((newVal & 0xFF00) != 0) {
                     LOG.warn("M Mem Write protect bits set: {}", th(newVal));
                 }
-                memCtx.update(cpu, newVal);
-                int mode = newVal & 4;
-                int dmna = newVal & 2;
-                int ret = newVal & 1;
-                String str = mode == 0 ? "2M" : "1M";
-                //MASTER bios sets it
-//                assert ret == 0; //only SUB able to write to
-                //1M, only dmna = 1 is significant, 0 is set by hw when the request is done
-                if (mode > 0 && dmna > 0) {
-                    str += ",SWAP_REQ";
+                WramSetup ws = memCtx.update(cpu, newVal);
+                if (ws == WramSetup.W_2M_SUB) { //set RET=0
+                    newVal = setBitVal(gateRegs, regEven + 1, 0, 0, Size.BYTE);
                 }
-                //2M
-                if (mode == 0 && dmna > 0) {
-                    str += dmna > 0 ? ",sub(2M WRAM)" : ",main(2M WRAM)";
-                }
-                LOG.info(str);
+                logWram(newVal);
                 //bk0,1
                 int bval = (newVal >> 5) & 3;
                 if (bval != prgRamBankValue) {
@@ -252,11 +255,28 @@ public class MegaCdMainCpuBus extends GenesisBus {
             case 0xE:
                 //main can only write to MSB
                 assert size == Size.BYTE && (address & 1) == 0;
-                writeBuffer(subGateRegs, address & MDC_SUB_GATE_REGS_SIZE, data, size); //write to sub reg copy
                 LOG.info("M write COMM_FLAG: {} {}", th(data), size);
                 break;
             default:
                 LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
         }
+    }
+
+    private void logWram(int newVal) {
+        int mode = newVal & 4;
+        int dmna = newVal & 2;
+        int ret = newVal & 1;
+        String str = mode == 0 ? "2M" : "1M";
+        //MASTER bios sets it
+//                assert ret == 0; //only SUB able to write to
+        //1M, only dmna = 1 is significant, 0 is set by hw when the request is done
+        if (mode > 0 && dmna > 0) {
+            str += ",SWAP_REQ";
+        }
+        //2M
+        if (mode == 0 && dmna > 0) {
+            str += dmna > 0 ? ",sub(2M WRAM)" : ",main(2M WRAM)";
+        }
+        LOG.info(str);
     }
 }

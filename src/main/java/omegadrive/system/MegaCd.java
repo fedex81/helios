@@ -23,7 +23,7 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.md.SvpMapper;
 import omegadrive.bus.megacd.MegaCdMainCpuBus;
 import omegadrive.bus.megacd.MegaCdMemoryContext;
-import omegadrive.bus.megacd.MegaCdSecCpuBus;
+import omegadrive.bus.megacd.MegaCdSubCpuBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
@@ -79,30 +79,30 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     protected Z80Provider z80;
     protected M68kProvider cpu;
-    protected M68kProvider secCpu;
+    protected M68kProvider subCpu;
     protected Md32xRuntimeData rt;
     protected MegaCdMemoryContext megaCdMemoryContext;
 
-    protected MegaCdSecCpuBus secCpuBus;
+    protected MegaCdSubCpuBus subCpuBus;
     protected UpdatableViewer memView;
     protected double nextVdpCycle = vdpVals[0];
     protected int next68kCycle = M68K_DIVIDER;
     protected int nextZ80Cycle = Z80_DIVIDER;
     protected int nextFMCycle = FM_DIVIDER;
 
-    protected int nextSec68kCycle = M68K_DIVIDER;
+    protected int nextSub68kCycle = M68K_DIVIDER;
 
     public static String cpuCode = "M";
 
     //TOOD hack
-    public static MegaCdSecCpuBus secCpuBusHack;
+    public static MegaCdSubCpuBus subCpuBusHack;
 
     protected MegaCd(DisplayWindow emuFrame) {
         super(emuFrame);
         systemType = SystemLoader.SystemType.GENESIS;
         megaCdMemoryContext = new MegaCdMemoryContext();
-        secCpuBus = new MegaCdSecCpuBus(megaCdMemoryContext);
-        secCpuBusHack = secCpuBus;
+        subCpuBus = new MegaCdSubCpuBus(megaCdMemoryContext);
+        subCpuBusHack = subCpuBus;
     }
 
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
@@ -121,14 +121,15 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         cpuCode = "M";
         cpu = MC68000Wrapper.createInstance(bus);
         cpuCode = "S";
-        secCpu = MC68000Wrapper.createInstance(secCpuBus);
-        secCpuBus.attachDevice(secCpu);
+        subCpu = MC68000Wrapper.createInstance(subCpuBus);
+        subCpuBus.attachDevice(subCpu);
         cpuCode = "M";
-        ((MC68000Wrapper) secCpu).setStop(true);
+        //TODO check
+        ((MC68000Wrapper) subCpu).setStop(true);
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
         //sound attached later
         sound = SoundProvider.NO_SOUND;
-        vdp.addVdpEventListener(secCpuBus);
+        vdp.addVdpEventListener(subCpuBus);
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(cpu).attachDevice(z80);
         reloadWindowState();
@@ -139,8 +140,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         updateVideoMode(true);
         do {
             runMain68k();
-            //TODO screen gets all garbled
-            runSec68k();
+            runSub68k();
             runZ80();
             runFM();
             //this should be last as it could change the counter
@@ -177,20 +177,20 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         }
     }
 
-    protected void runSec68k() {
-        while (nextSec68kCycle <= cycleCounter) {
-            boolean canRun = !secCpu.isStopped();
+    protected void runSub68k() {
+        while (nextSub68kCycle <= cycleCounter) {
+            boolean canRun = !subCpu.isStopped();
             int cycleDelay = 1;
             if (canRun) {
                 Md32xRuntimeData.setAccessTypeExt(M68K);
-                cycleDelay = secCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
+                cycleDelay = subCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
             }
             //interrupts are processed after the current instruction
             if (bus.is68kRunning()) {
                 //TODO
             }
             cycleDelay = Math.max(1, cycleDelay);
-            nextSec68kCycle += M68K_DIVIDER * cycleDelay;
+            nextSub68kCycle += M68K_DIVIDER * cycleDelay;
             assert Md32xRuntimeData.resetCpuDelayExt() == 0;
         }
     }
@@ -272,11 +272,11 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     @Override
     protected void resetCycleCounters(int counter) {
         assert nextZ80Cycle >= counter && next68kCycle >= counter &&
-                nextSec68kCycle >= counter &&
+                nextSub68kCycle >= counter &&
                 nextVdpCycle + 1 >= counter;
         nextZ80Cycle = Math.max(1, nextZ80Cycle - counter);
         next68kCycle = Math.max(1, next68kCycle - counter);
-        nextSec68kCycle = Math.max(1, nextSec68kCycle - counter);
+        nextSub68kCycle = Math.max(1, nextSub68kCycle - counter);
         nextVdpCycle = Math.max(1, nextVdpCycle - counter);
         nextFMCycle = Math.max(1, nextFMCycle - counter);
     }
@@ -297,7 +297,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         Md32xRuntimeData.releaseInstance();
         rt = Md32xRuntimeData.newInstance();
         cpu.reset();
-        secCpu.reset();
+        subCpu.reset();
         z80.reset(); //TODO confirm this is needed
     }
 

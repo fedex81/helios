@@ -1,0 +1,29 @@
+package omegadrive.bus.megacd;
+
+import omegadrive.cpu.m68k.MC68000Wrapper;
+import omegadrive.system.MegaCd;
+import org.junit.jupiter.api.BeforeEach;
+
+/**
+ * Federico Berti
+ * <p>
+ * Copyright 2023
+ */
+public class McdRegTestBase {
+
+    MegaCdMemoryContext ctx;
+    MegaCdMainCpuBus mainCpuBus;
+    MegaCdSubCpuBus subCpuBus;
+
+    MC68000Wrapper subCpu;
+
+    @BeforeEach
+    public void setup() {
+        ctx = new MegaCdMemoryContext();
+        mainCpuBus = new MegaCdMainCpuBus(ctx);
+        subCpuBus = new MegaCdSubCpuBus(ctx);
+        subCpu = new MC68000Wrapper(subCpuBus);
+        subCpuBus.attachDevice(subCpu);
+        MegaCd.subCpuBusHack = subCpuBus;
+    }
+}

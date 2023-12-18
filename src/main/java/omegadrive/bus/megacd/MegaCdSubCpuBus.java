@@ -5,6 +5,7 @@ import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
+import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
@@ -14,42 +15,40 @@ import java.nio.ByteBuffer;
 
 import static omegadrive.bus.megacd.MegaCdMemoryContext.*;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
-import static omegadrive.util.S32xUtil.readBuffer;
-import static omegadrive.util.S32xUtil.writeBuffer;
-import static omegadrive.util.Util.*;
+import static omegadrive.util.S32xUtil.*;
+import static omegadrive.util.Util.th;
 
 /**
  * Federico Berti
  * <p>
  * Copyright 2023
  */
-public class MegaCdSecCpuBus extends GenesisBus {
+public class MegaCdSubCpuBus extends GenesisBus {
 
-    private static final Logger LOG = LogHelper.getLogger(MegaCdSecCpuBus.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MegaCdSubCpuBus.class.getSimpleName());
 
     private static final int START_MCD_SUB_PRG_RAM = 0;
     private static final int END_MCD_SUB_PRG_RAM = START_MCD_SUB_PRG_RAM + MCD_PRG_RAM_SIZE;
 
-    private static final int START_MCD_SUB_GATE_ARRAY_REGS = 0xFF_8000;
+    public static final int START_MCD_SUB_GATE_ARRAY_REGS = 0xFF_8000;
     private static final int END_MCD_SUB_GATE_ARRAY_REGS = 0xFF_81FF;
 
-    private static final int START_MCD_SUB_GA_COMM_W = START_MCD_SUB_GATE_ARRAY_REGS + 0x20;
+    public static final int START_MCD_SUB_GA_COMM_W = START_MCD_SUB_GATE_ARRAY_REGS + 0x20;
     private static final int END_MCD_SUB_GA_COMM_W = START_MCD_SUB_GA_COMM_W + 0x10;
-    private static final int START_MCD_SUB_GA_COMM_R = START_MCD_SUB_GATE_ARRAY_REGS + 0x10;
-    private static final int END_MCD_SUB_GA_COMM_R = END_MCD_SUB_GA_COMM_W;
-    private static final int SEC_CPU_REGS_MASK = MDC_SUB_GATE_REGS_SIZE - 1;
+    public static final int START_MCD_SUB_GA_COMM_R = START_MCD_SUB_GATE_ARRAY_REGS + 0x10;
+    public static final int END_MCD_SUB_GA_COMM_R = END_MCD_SUB_GA_COMM_W;
+    private static final int SUB_CPU_REGS_MASK = MDC_SUB_GATE_REGS_SIZE - 1;
 
     private static final int START_MCD_SUB_WORD_RAM = 0x80_000;
     private static final int END_MCD_SUB_WORD_RAM = START_MCD_SUB_WORD_RAM + MCD_WORD_RAM_2M_SIZE;
-    private ByteBuffer subCpuRam, gateRegs, mainGateRegs;
+    private ByteBuffer subCpuRam, gateRegs;
     private LogHelper logHelper = new LogHelper();
     private MegaCdMemoryContext memCtx;
     private S32xUtil.CpuDeviceAccess cpu;
 
-    public MegaCdSecCpuBus(MegaCdMemoryContext ctx) {
+    public MegaCdSubCpuBus(MegaCdMemoryContext ctx) {
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
-        gateRegs = ByteBuffer.wrap(ctx.subGateRegs);
-        mainGateRegs = ByteBuffer.wrap(ctx.mainGateRegs);
+        gateRegs = ByteBuffer.wrap(ctx.gateRegs);
         memCtx = ctx;
         cpu = S32xUtil.CpuDeviceAccess.SUB_M68K;
         writeBuffer(gateRegs, 1, 1, Size.BYTE); //not reset
@@ -89,21 +88,13 @@ public class MegaCdSecCpuBus extends GenesisBus {
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
-        int res = readBuffer(gateRegs, address & SEC_CPU_REGS_MASK, size);
+        int res = readBuffer(gateRegs, address & SUB_CPU_REGS_MASK, size);
         if (address >= START_MCD_SUB_GA_COMM_R && address < END_MCD_SUB_GA_COMM_R) { //MAIN,SUB COMM
             logHelper.logWarnOnce(LOG, "S Read MEGA_CD_COMM: {}, {}, {}", th(address), th(res), size);
             return res;
         }
         logHelper.logWarnOnce(LOG, "S Read MEGA_CD_EXP: {}, {}, {}", th(address),
                 th(res), size);
-        //TODO bios_us.bin RES0 bit
-        if (address == 0xFF8001 && size == Size.BYTE) {
-            res |= random.nextInt(2);
-        }
-        //TODO md-mode1-mcd-asic-test.bin DMNA bit
-        if (address == 0xFF8003 && size == Size.BYTE) {
-            res |= random.nextInt(2) << 1;
-        }
         return res;
     }
 
@@ -112,32 +103,45 @@ public class MegaCdSecCpuBus extends GenesisBus {
                 th(data), size);
         if (address >= START_MCD_SUB_GA_COMM_W && address < END_MCD_SUB_GA_COMM_W) { //MAIN COMM
             LOG.info("S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
-            writeBuffer(gateRegs, address & SEC_CPU_REGS_MASK, data, size);
-            writeBuffer(mainGateRegs, address & SEC_CPU_REGS_MASK, data, size); //write to main reg copy
+            writeBuffer(gateRegs, address & SUB_CPU_REGS_MASK, data, size);
+            return;
+        }
+        if (address >= START_MCD_SUB_GA_COMM_R && address < START_MCD_SUB_GA_COMM_W) { //SUB COMM READ ONLY
+            LOG.error("S illegal write read-only MEGA_CD_COMM reg: {}", th(address));
             return;
         }
         assert size != Size.LONG;
         int regEven = (address & MCD_GATE_REGS_MASK) & ~1;
         int regVal = readBuffer(gateRegs, regEven, Size.WORD);
-        writeBuffer(gateRegs, address & SEC_CPU_REGS_MASK, data, size);
+        writeBuffer(gateRegs, address & SUB_CPU_REGS_MASK, data, size);
         int newVal = readBuffer(gateRegs, regEven, Size.WORD);
         if (regVal == newVal) {
             return;
         }
         switch (regEven) {
             case 0:
-                int sreset = newVal & 1;
+                writeBuffer(gateRegs, regEven, regVal, Size.WORD);
+                int sreset = data & 1;
+                //set RES0
+                setBit(gateRegs, 1, 0, sreset, Size.BYTE);
+                //set LEDR
+                setBit(gateRegs, 1, 7, (data >> 7) & 1, Size.BYTE);
                 LOG.info("S SubCpu reset: {}", (sreset == 0 ? "Reset" : "Ignore"));
                 if (sreset == 0) {
                     //TODO reset CD drive, part of cddinit, does it take 100ms??
-                    LOG.info("S SecCpu peripheral reset started");
-                    writeBuffer(gateRegs, 0, newVal | 1, Size.WORD); //cd drive done resetting
+                    LOG.info("S subCpu peripheral reset started");
+                    setBit(gateRegs, 1, 0, 1, Size.BYTE);//cd drive done resetting
+                }
+                break;
+            case 2:
+                WramSetup ws = memCtx.update(cpu, newVal);
+                if (ws == WramSetup.W_2M_MAIN) { //set DMNA=0
+                    setBitVal(gateRegs, regEven + 1, 1, 0, Size.BYTE);
                 }
                 break;
             case 0xE:
                 //sub can only write to MSB
                 assert size == Size.BYTE && (address & 1) == 1;
-                writeBuffer(mainGateRegs, address & SEC_CPU_REGS_MASK, data, size); //write to main reg copy
                 LOG.info("S write COMM_FLAG: {} {}", th(data), size);
                 break;
             case 0x32:
@@ -159,7 +163,7 @@ public class MegaCdSecCpuBus extends GenesisBus {
     public void resetDone() {
         int regVal = readBuffer(gateRegs, 0, Size.WORD) | 1;
         writeBuffer(gateRegs, 0, regVal, Size.WORD);
-        LOG.info("S SecCpu reset done");
+        LOG.info("S subCpu reset done");
     }
 
     @Override
@@ -168,7 +172,7 @@ public class MegaCdSecCpuBus extends GenesisBus {
         if (event == BaseVdpAdapterEventSupport.VdpEvent.V_BLANK_CHANGE) {
             boolean val = (boolean) value;
             if (val) {
-                if ((readBufferByte(gateRegs, 0x33) & 4) > 0) {
+                if ((Util.readBufferByte(gateRegs, 0x33) & 4) > 0) {
                     LOG.info("S VBlank On, int#2");
                     MC68000Wrapper m68k = (MC68000Wrapper) getBusDeviceIfAny(M68kProvider.class).get();
                     m68k.raiseInterrupt(2);

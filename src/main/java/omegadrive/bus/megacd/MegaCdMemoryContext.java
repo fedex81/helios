@@ -38,7 +38,7 @@ public class MegaCdMemoryContext implements Serializable {
     public static final int MCD_WORD_RAM_2M_MASK = MCD_WORD_RAM_2M_SIZE - 1;
     public static final int MCD_PRG_RAM_MASK = MCD_PRG_RAM_SIZE - 1;
 
-    public byte[] prgRam, mainGateRegs, subGateRegs;
+    public byte[] prgRam, gateRegs;
     public byte[][] wordRam01 = new byte[2][1];
 
     public WramSetup wramSetup = WramSetup.W_2M_MAIN;
@@ -58,8 +58,7 @@ public class MegaCdMemoryContext implements Serializable {
         prgRam = new byte[MCD_PRG_RAM_SIZE];
         wordRam01[0] = new byte[MCD_WORD_RAM_1M_SIZE];
         wordRam01[1] = new byte[MCD_WORD_RAM_1M_SIZE];
-        mainGateRegs = new byte[MCD_GATE_REGS_SIZE];
-        subGateRegs = new byte[MDC_SUB_GATE_REGS_SIZE];
+        gateRegs = new byte[MDC_SUB_GATE_REGS_SIZE];
     }
 
     public void writeWordRam(CpuDeviceAccess cpu, int address, int value, Size size) {
@@ -95,8 +94,11 @@ public class MegaCdMemoryContext implements Serializable {
             System.out.println("TODO");
             return wramSetup;
         }
-        //ret > 0, signal to SUB the swap ??
-        wramSetup = dmna == 0 ? WramSetup.W_2M_MAIN : WramSetup.W_2M_SUB;
+        if (c == M68K) {
+            wramSetup = dmna == 1 ? WramSetup.W_2M_SUB : wramSetup;
+        } else if (c == SUB_M68K) {
+            wramSetup = ret == 1 ? WramSetup.W_2M_MAIN : wramSetup;
+        }
         return wramSetup;
     }
 
