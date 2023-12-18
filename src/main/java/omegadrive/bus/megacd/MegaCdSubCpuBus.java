@@ -140,7 +140,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
                 }
                 break;
             case 0xE:
-                //sub can only write to MSB
+                //sub can only write to LSB
                 assert size == Size.BYTE && (address & 1) == 1;
                 LOG.info("S write COMM_FLAG: {} {}", th(data), size);
                 break;

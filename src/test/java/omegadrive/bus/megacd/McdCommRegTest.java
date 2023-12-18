@@ -7,9 +7,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
+import static omegadrive.bus.megacd.MegaCdMainCpuBus.MEGA_CD_EXP_START;
 import static omegadrive.bus.megacd.MegaCdMainCpuBus.*;
-import static omegadrive.bus.megacd.MegaCdSubCpuBus.START_MCD_SUB_GA_COMM_R;
-import static omegadrive.bus.megacd.MegaCdSubCpuBus.START_MCD_SUB_GA_COMM_W;
+import static omegadrive.bus.megacd.MegaCdSubCpuBus.*;
+import static omegadrive.util.Util.random;
 import static omegadrive.util.Util.th;
 
 /**
@@ -20,11 +21,55 @@ import static omegadrive.util.Util.th;
 public class McdCommRegTest extends McdRegTestBase {
 
     @Test
-    public void testRegs() {
+    public void testCommRegs() {
         testRegsSize(Size.BYTE);
         testRegsSize(Size.WORD);
         testRegsSize(Size.LONG);
     }
+
+    @Test
+    public void testCommFlags() {
+        int mreg = MEGA_CD_EXP_START + 0xE;
+        int sreg = START_MCD_SUB_GATE_ARRAY_REGS + 0xE;
+        int mval = mainCpuBus.read(mreg, Size.WORD);
+        int sval = subCpuBus.read(sreg, Size.WORD);
+        Assertions.assertEquals(mval, sval);
+
+        //main can write to MSB only
+        Assertions.assertThrowsExactly(AssertionError.class, () -> mainCpuBus.write(mreg, 1, Size.WORD));
+        Assertions.assertThrowsExactly(AssertionError.class, () -> mainCpuBus.write(mreg, 2, Size.LONG));
+        Assertions.assertThrowsExactly(AssertionError.class, () -> mainCpuBus.write(mreg + 1, 3, Size.BYTE));
+
+        int val = random.nextInt(0x100);
+        int mlsbval = mainCpuBus.read(mreg + 1, Size.BYTE);
+        int slsbval = subCpuBus.read(sreg + 1, Size.BYTE);
+        Assertions.assertEquals(mlsbval, slsbval);
+        mainCpuBus.write(mreg, val, Size.BYTE);
+        mval = mainCpuBus.read(mreg, Size.BYTE);
+        sval = subCpuBus.read(sreg, Size.BYTE);
+        Assertions.assertEquals(mval, sval);
+        //lsb has not changed
+        Assertions.assertEquals(mlsbval, mainCpuBus.read(mreg + 1, Size.BYTE));
+        Assertions.assertEquals(slsbval, subCpuBus.read(sreg + 1, Size.BYTE));
+
+        //sub can write to LSB only
+        Assertions.assertThrowsExactly(AssertionError.class, () -> subCpuBus.write(sreg, 1, Size.WORD));
+        Assertions.assertThrowsExactly(AssertionError.class, () -> subCpuBus.write(sreg, 2, Size.LONG));
+        Assertions.assertThrowsExactly(AssertionError.class, () -> subCpuBus.write(sreg, 3, Size.BYTE));
+
+        val = random.nextInt(0x100);
+        int mmsbval = mainCpuBus.read(mreg, Size.BYTE);
+        int smsbval = subCpuBus.read(sreg, Size.BYTE);
+        Assertions.assertEquals(mmsbval, smsbval);
+        subCpuBus.write(sreg + 1, val, Size.BYTE);
+        mval = mainCpuBus.read(mreg + 1, Size.BYTE);
+        sval = subCpuBus.read(sreg + 1, Size.BYTE);
+        Assertions.assertEquals(mval, sval);
+        //msb has not changed
+        Assertions.assertEquals(mlsbval, mainCpuBus.read(mreg, Size.BYTE));
+        Assertions.assertEquals(slsbval, subCpuBus.read(sreg, Size.BYTE));
+    }
+
 
     private void testRegsSize(Size size) {
         Arrays.fill(ctx.gateRegs, (byte) 0);
