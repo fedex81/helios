@@ -99,7 +99,7 @@ public class BusArbiterTest {
         vdp.resetVideoMode(true);
         do {
             MdVdpTestUtil.runVdpSlot(vdp);
-            if (busArbiter.isVdpVInt() && hCounterPending < 0) {
+            if (BusArbiterImpl.isVdpVInt(vdp) && hCounterPending < 0) {
                 hCounterPending = vdp.getHCounter();
                 vCounterPending = vdp.getVCounter();
             }

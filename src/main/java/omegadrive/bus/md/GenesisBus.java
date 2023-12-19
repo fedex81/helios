@@ -54,6 +54,8 @@ import static omegadrive.joypad.JoypadProvider.JoypadType.BUTTON_3;
 import static omegadrive.system.SystemProvider.SystemEvent.FORCE_PAD_TYPE;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
+import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
+import static s32x.util.S32xUtil.CpuDeviceAccess.Z80;
 
 public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad> implements GenesisBusProvider, RomMapper {
 
@@ -902,12 +904,12 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
 
     @Override
     public void handleVdpInterrupts68k() {
-        busArbiter.handleInterrupts68k();
+        busArbiter.handleInterrupts(M68K);
     }
 
     @Override
     public void handleVdpInterruptsZ80() {
-        busArbiter.handleInterruptZ80();
+        busArbiter.handleInterrupts(Z80);
     }
 
     @Override
