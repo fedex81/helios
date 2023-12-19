@@ -18,6 +18,8 @@ public class LogHelper {
 
     private RepeaterDetector rd = new RepeaterDetector();
 
+    private static Set<String> msgCacheShared = new HashSet<>();
+
     public static Logger getLogger(String name) {
         return LoggerFactory.getLogger(name);
     }
@@ -28,6 +30,13 @@ public class LogHelper {
 
     public static String formatMessage(String s, Object... o) {
         return MessageFormatter.arrayFormat(s, o).getMessage();
+    }
+
+    public static void logWarnOnceSh(Logger log, String str, Object... o) {
+        String msg = formatMessage(str, o);
+        if (msgCacheShared.add(msg)) {
+            log.warn(msg + " (ONCE)");
+        }
     }
 
     public void logWarnOnce(Logger log, String str, Object... o) {

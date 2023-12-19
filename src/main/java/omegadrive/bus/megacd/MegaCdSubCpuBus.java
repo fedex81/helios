@@ -1,5 +1,6 @@
 package omegadrive.bus.megacd;
 
+import omegadrive.bus.md.BusArbiter;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
@@ -38,6 +39,8 @@ public class MegaCdSubCpuBus extends GenesisBus {
         memCtx = ctx;
         cpu = S32xUtil.CpuDeviceAccess.SUB_M68K;
         writeBuffer(gateRegs, 1, 1, Size.BYTE); //not reset
+
+        attachDevice(BusArbiter.NO_OP);
     }
 
     @Override
@@ -142,12 +145,15 @@ public class MegaCdSubCpuBus extends GenesisBus {
     }
 
     private void handleCdRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
+        LOG.warn("S Write CDD {} : {}, {}, {}", regSpec, th(address), th(data), size);
+        writeBuffer(gateRegs, address & SUB_CPU_REGS_MASK, data, size);
         switch (regSpec) {
-            case MCD_CDD_CONTROL:
-                LOG.warn("S Write CDD control: {}, {}, {}", th(address), th(data), size);
-                break;
-            default:
-                LOG.error("S write unknown MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, th(data), size);
+            case MCD_CDD_CONTROL -> {
+                int v = readBuffer(gateRegs, regSpec.addr, Size.WORD);
+                if (((v & 4) > 0) && checkInterruptEnabled(4)) { //HOCK set
+                    m68kInterrupt(4); //trigger CDD interrupt
+                }
+            }
         }
     }
 
@@ -179,14 +185,22 @@ public class MegaCdSubCpuBus extends GenesisBus {
         super.onVdpEvent(event, value);
         if (event == BaseVdpAdapterEventSupport.VdpEvent.V_BLANK_CHANGE) {
             boolean val = (boolean) value;
-            if (val) {
-                if ((Util.readBufferByte(gateRegs, 0x33) & 4) > 0) {
-                    LOG.info("S VBlank On, int#2");
-                    MC68000Wrapper m68k = (MC68000Wrapper) getBusDeviceIfAny(M68kProvider.class).get();
-                    m68k.raiseInterrupt(2);
-                }
+            if (val && checkInterruptEnabled(2)) {
+                LOG.info("S VBlank On, int#2");
+                m68kInterrupt(2);
             }
         }
+    }
+
+    private boolean checkInterruptEnabled(int m68kLevel) {
+        int reg = Util.readBufferByte(gateRegs, 0x33);
+        if (reg == 0) return false;
+        return (reg & (m68kLevel << 1)) > 0;
+    }
+
+    private void m68kInterrupt(int num) {
+        MC68000Wrapper m68k = (MC68000Wrapper) getBusDeviceIfAny(M68kProvider.class).get();
+        m68k.raiseInterrupt(num);
     }
 
     public void logAccess(RegSpecMcd regSpec, S32xUtil.CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {

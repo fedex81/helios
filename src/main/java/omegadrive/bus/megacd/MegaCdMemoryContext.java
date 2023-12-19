@@ -9,7 +9,7 @@ import s32x.util.S32xUtil.CpuDeviceAccess;
 import java.io.Serial;
 import java.io.Serializable;
 
-import static omegadrive.util.Util.th;
+import static omegadrive.util.LogHelper.logWarnOnceSh;
 import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
 import static s32x.util.S32xUtil.CpuDeviceAccess.SUB_M68K;
 
@@ -65,7 +65,7 @@ public class MegaCdMemoryContext implements Serializable {
         if (cpu == wramSetup.cpu) {
             writeWordRam(address & MCD_WORD_RAM_2M_MASK >> 17, address, value, size);
         } else {
-            LOG.warn("{} writing WRAM but setup is: {}", cpu, wramSetup);
+            logWarnOnceSh(LOG, "{} writing WRAM but setup is: {}", cpu, wramSetup);
         }
     }
 
@@ -73,7 +73,7 @@ public class MegaCdMemoryContext implements Serializable {
         if (cpu == wramSetup.cpu) {
             return readWordRam(address & MCD_WORD_RAM_2M_MASK >> 17, address, size);
         } else {
-            LOG.warn("{} reading WRAM but setup is: {}", cpu, wramSetup);
+            logWarnOnceSh(LOG, "{} reading WRAM but setup is: {}", cpu, wramSetup);
             return size.getMask();
         }
     }
@@ -100,13 +100,5 @@ public class MegaCdMemoryContext implements Serializable {
             wramSetup = ret == 1 ? WramSetup.W_2M_MAIN : wramSetup;
         }
         return wramSetup;
-    }
-
-    public static void main(String[] args) {
-        int base = 0x600_000;
-        int start = base + MCD_WORD_RAM_1M_SIZE - 5;
-        for (int i = start; i < start + 10; i++) {
-            System.out.println(th(i) + "," + ((i & MCD_WORD_RAM_2M_MASK) >> 17));
-        }
     }
 }

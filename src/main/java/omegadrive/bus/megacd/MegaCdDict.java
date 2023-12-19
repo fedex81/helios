@@ -33,7 +33,7 @@ public class MegaCdDict {
 
     public enum McdRegCpuType {REG_MAIN, REG_SUB, REG_BOTH}
 
-    public enum McdRegType {NONE, SYS, COMM, CD}
+    public enum McdRegType {NONE, SYS, COMM, CD, ASIC}
 
     public static RegSpecMcd[][] mcdRegMapping = new RegSpecMcd[McdRegCpuType.values().length][MDC_SUB_GATE_REGS_MASK];
 
@@ -46,7 +46,7 @@ public class MegaCdDict {
     public enum RegSpecMcd {
         MCD_RESET(SYS, 0, 0x103, 0xFFFF),   //Reset
         MCD_MEM_MODE(SYS, 2, 0xFFC2, 0xFFFF), //Memory Mode, write protect
-        MCD_CDC_MODE(SYS, 4, 0, 0xFFFF), //CDC Mode, MAIN read-only
+        MCD_CDC_MODE(CD, 4, 0, 0xFFFF), //CDC Mode, MAIN read-only
 
         MCD_HINT_VECTOR(SYS, 6, 0xFFFF, 0xFFFF), //CDC Mode, MAIN read-only
 
@@ -86,6 +86,21 @@ public class MegaCdDict {
         MCD_FONT_DATA1(SYS, 0x52, 0, 0), //Font data
         MCD_FONT_DATA2(SYS, 0x54, 0, 0), //Font data
         MCD_FONT_DATA3(SYS, 0x56, 0, 0), //Font data
+
+        MCD_IMG_STAMP_SIZE(ASIC, 0x58, 0, 0x7), //Image Stamp Size
+
+        //TODO valid bits depend on setup
+        MCD_IMG_STAMP_MAP_ADDR(ASIC, 0x5A, 0, 0xFFE0), //Image Stamp map base address
+        MCD_IMG_VCELL(ASIC, 0x5C, 0, 0x1F), //Image buffer V cell size (0-32 cells)
+        MCD_IMG_START_ADDR(ASIC, 0x5E, 0, 0xFFF8), //Image buffer start address
+
+        MCD_IMG_OFFSET(ASIC, 0x60, 0, 0x3F), //Image buffer offset
+        MCD_IMG_HDOT(ASIC, 0x62, 0, 0x1FF), //Image buffer H dot size (horizontal dot size overwritten in the buffer)
+
+        MCD_IMG_VDOT(ASIC, 0x64, 0, 0xFF), //Image buffer V dot size (vertical dot size overwritten in the buffer)
+
+        MCD_IMG_TRACE_VECTOR_ADDR(ASIC, 0x66, 0, 0xFFFE),
+        //vector base address(Xstart, Ystart, (Dtita)X, <Del ta), table base address)
         INVALID(NONE, -1);
 
         public final RegSpec regSpec;
@@ -156,6 +171,7 @@ public class MegaCdDict {
             if (r == null) {
                 LOG.error("{} unknown register at address: {}", cpu, th(address));
                 r = RegSpecMcd.INVALID;
+                assert false;
             }
         }
         return r;

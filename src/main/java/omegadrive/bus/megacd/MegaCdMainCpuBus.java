@@ -174,10 +174,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             return;
         }
         switch (regSpec.deviceType) {
-            case SYS -> {
-                handleSysRegWrite(regSpec, address, data, size);
-                return;
-            }
+            case SYS -> handleSysRegWrite(regSpec, address, data, size);
             case COMM -> handleCommWrite(regSpec, address, data, size);
             default -> LOG.error("M illegal write MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, data, size);
         }
