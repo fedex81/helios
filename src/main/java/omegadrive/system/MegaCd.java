@@ -183,7 +183,9 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
             int cycleDelay = 1;
             if (canRun) {
                 Md32xRuntimeData.setAccessTypeExt(M68K);
-                cycleDelay = subCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
+                //TODO runs at 15Mhz
+                cycleDelay = subCpu.runInstruction();
+                cycleDelay = cycleDelay + subCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
             }
             //interrupts are processed after the current instruction
             if (bus.is68kRunning()) {

@@ -71,7 +71,7 @@ public class McdCommRegTest extends McdRegTestBase {
 
 
     private void testRegsSize(Size size) {
-        Arrays.fill(ctx.gateRegs, (byte) 0);
+        Arrays.fill(ctx.commonGateRegs, (byte) 0);
         int max = size.getMax() < 0 ? Integer.MAX_VALUE : size.getMax();
         for (int i = 0; i < END_MCD_MAIN_GA_COMM_R - START_MCD_MAIN_GA_COMM_R; i += size.getByteSize()) {
             System.out.println(th(i));

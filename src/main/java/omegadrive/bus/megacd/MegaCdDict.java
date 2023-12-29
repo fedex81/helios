@@ -17,6 +17,7 @@ import static omegadrive.bus.megacd.MegaCdMemoryContext.MCD_PRG_RAM_SIZE;
 import static omegadrive.bus.megacd.MegaCdMemoryContext.MCD_WORD_RAM_2M_SIZE;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
 import static omegadrive.util.Util.th;
+import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
 import static s32x.util.S32xUtil.CpuDeviceAccess.Z80;
 
 /**
@@ -44,13 +45,14 @@ public class MegaCdDict {
     }
 
     public enum RegSpecMcd {
-        MCD_RESET(SYS, 0, 0x103, 0xFFFF),   //Reset
+        MCD_RESET(SYS, 0, 0x103, 0x301),   //Reset
         MCD_MEM_MODE(SYS, 2, 0xFFC2, 0xFFFF), //Memory Mode, write protect
         MCD_CDC_MODE(CD, 4, 0, 0xFFFF), //CDC Mode, MAIN read-only
 
-        MCD_HINT_VECTOR(SYS, 6, 0xFFFF, 0xFFFF), //CDC Mode, MAIN read-only
+        MCD_HINT_VECTOR(SYS, REG_MAIN, 6, 0xFFFF, 0), //HINT vector (level 4)
+        MCD_CDC_REG_DATA(SYS, REG_SUB, 6, 0, 0xFF), //CDC Register data
 
-        MCD_CDC_HOST(SYS, 8, 0, 0xFFFF), //CDC host data
+        MCD_CDC_HOST(SYS, 8, 0, 0), //CDC host data
 
         MCD_STOPWATCH(SYS, 0xC, 0, 0xFFFF), //Stopwatch
 
@@ -79,6 +81,18 @@ public class MegaCdDict {
 
         MCD_CD_FADER(CD, 0x34, 0, 0x7FFE), //CD Fader
         MCD_CDD_CONTROL(CD, 0x36, 0, 0x7), //CDD Control
+
+        MCD_CDD_COMM0(CD, 0x38, 0, 0xFFFF), //CDD Comm
+        MCD_CDD_COMM1(CD, 0x3A, 0, 0xFFFF), //CDD Comm
+        MCD_CDD_COMM2(CD, 0x3C, 0, 0xFFFF), //CDD Comm
+        MCD_CDD_COMM3(CD, 0x3E, 0, 0xFFFF), //CDD Comm
+
+        MCD_CDD_COMM4(CD, 0x40, 0, 0xFFFF), //CDD Comm
+        MCD_CDD_COMM5(CD, 0x42, 0, 0xFFFF), //CDD Comm
+        MCD_CDD_COMM6(CD, 0x44, 0, 0xFFFF), //CDD Comm
+        MCD_CDD_COMM7(CD, 0x46, 0, 0xFFFF), //CDD Comm
+        MCD_CDD_COMM8(CD, 0x48, 0, 0xFFFF), //CDD Comm
+        MCD_CDD_COMM9(CD, 0x4A, 0, 0xFFFF), //CDD Comm
 
         MCD_FONT_COLOR(SYS, 0x4C, 0, 0xFF), //Font color
         MCD_FONT_BIT(SYS, 0x4E, 0, 0xFFFF), //Font bit
@@ -111,9 +125,13 @@ public class MegaCdDict {
 
         //defaults to 16 bit wide register
         RegSpecMcd(McdRegType deviceType, int addr, int writeAndMaskMain, int writeAndMaskSub) {
+            this(deviceType, REG_BOTH, addr, writeAndMaskMain, writeAndMaskSub);
+        }
+
+        RegSpecMcd(McdRegType deviceType, McdRegCpuType cpuType, int addr, int writeAndMaskMain, int writeAndMaskSub) {
             this.deviceType = deviceType;
             this.deviceAccessTypeDelay = S32xMemAccessDelay.SYS_REG;
-            this.regCpuType = getCpuTypeFromDevice(deviceType, name());
+            this.regCpuType = getCpuTypeFromDevice(deviceType, cpuType);
             this.regSpec = createRegSpec(addr, writeAndMaskMain, writeAndMaskSub);
             this.addr = regSpec.bufferAddr;
             init();
@@ -139,10 +157,10 @@ public class MegaCdDict {
             }
             int addrLen = regSpec.regSize.getByteSize();
             for (int i = regSpec.fullAddr; i < regSpec.fullAddr + addrLen; i++) {
-                mcdRegMapping[regCpuType.ordinal()][i] = this;
                 if (regCpuType == REG_BOTH) {
-                    mcdRegMapping[REG_MAIN.ordinal()][i] = this;
-                    mcdRegMapping[REG_SUB.ordinal()][i] = this;
+                    mcdRegMapping[REG_BOTH.ordinal()][i] = this;
+                } else {
+                    mcdRegMapping[regCpuType.ordinal()][i] = this;
                 }
             }
         }
@@ -152,8 +170,9 @@ public class MegaCdDict {
         }
     }
 
-    private static McdRegCpuType getCpuTypeFromDevice(McdRegType deviceType, String name) {
-        return deviceType == NONE || deviceType == COMM || deviceType == SYS ? McdRegCpuType.REG_BOTH : REG_SUB;
+    private static McdRegCpuType getCpuTypeFromDevice(McdRegType deviceType, McdRegCpuType baseType) {
+        //override ASIC as subOnly
+        return deviceType == ASIC ? REG_SUB : baseType;
     }
 
     public static void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
@@ -167,7 +186,8 @@ public class MegaCdDict {
         assert cpu != Z80; //TODO
         RegSpecMcd r = mcdRegMapping[REG_BOTH.ordinal()][address & MDC_SUB_GATE_REGS_MASK];
         if (r == null) {
-            r = mcdRegMapping[REG_SUB.ordinal()][address & MDC_SUB_GATE_REGS_MASK];
+            int idx = cpu == M68K ? REG_MAIN.ordinal() : REG_SUB.ordinal();
+            r = mcdRegMapping[idx][address & MDC_SUB_GATE_REGS_MASK];
             if (r == null) {
                 LOG.error("{} unknown register at address: {}", cpu, th(address));
                 r = RegSpecMcd.INVALID;

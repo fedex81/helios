@@ -38,7 +38,9 @@ public class MegaCdMemoryContext implements Serializable {
     public static final int MCD_WORD_RAM_2M_MASK = MCD_WORD_RAM_2M_SIZE - 1;
     public static final int MCD_PRG_RAM_MASK = MCD_PRG_RAM_SIZE - 1;
 
-    public byte[] prgRam, gateRegs;
+    public byte[] prgRam;
+    public byte[][] sysGateRegs;
+    public byte[] commonGateRegs;
     public byte[][] wordRam01 = new byte[2][1];
 
     public WramSetup wramSetup = WramSetup.W_2M_MAIN;
@@ -58,7 +60,8 @@ public class MegaCdMemoryContext implements Serializable {
         prgRam = new byte[MCD_PRG_RAM_SIZE];
         wordRam01[0] = new byte[MCD_WORD_RAM_1M_SIZE];
         wordRam01[1] = new byte[MCD_WORD_RAM_1M_SIZE];
-        gateRegs = new byte[MDC_SUB_GATE_REGS_SIZE];
+        sysGateRegs = new byte[2][8];
+        commonGateRegs = new byte[MDC_SUB_GATE_REGS_SIZE];
     }
 
     public void writeWordRam(CpuDeviceAccess cpu, int address, int value, Size size) {
@@ -100,5 +103,10 @@ public class MegaCdMemoryContext implements Serializable {
             wramSetup = ret == 1 ? WramSetup.W_2M_MAIN : wramSetup;
         }
         return wramSetup;
+    }
+
+    public byte[] getGateSysRegs(CpuDeviceAccess cpu) {
+        assert cpu == M68K || cpu == SUB_M68K;
+        return sysGateRegs[cpu == M68K ? 0 : 1];
     }
 }

@@ -259,7 +259,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return;
         }
         //Batman&Robin writes to address 0 - tries to enable debug mode?
-        logWarnOnce(LOG, "Unexpected write to ROM address {}, value {} {}", th(addressL),
+        LogHelper.logWarnOnceSh(LOG, "Unexpected write to ROM address {}, value {} {}", th(addressL),
                 th(data), size);
     }
 

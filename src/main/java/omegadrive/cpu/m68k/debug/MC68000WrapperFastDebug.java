@@ -20,6 +20,7 @@
 package omegadrive.cpu.m68k.debug;
 
 import com.google.common.collect.ImmutableMap;
+import m68k.cpu.Cpu;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.CpuDebugContext;
@@ -73,6 +74,16 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         currentPC = m68k.getPC() & MD_PC_MASK; //needs to be set
         opcode = m68k.getPrefetchWord();
         fastDebug.printDebugMaybe();
+        //BIOS CDD hack, set NO_DISC(0xB)
+        if (currentPC == 0x1098) {
+            m68k.setDataRegisterLong(0, 0xB);
+            System.out.println("BIOS CDD hack, set NO_DISC(0xB)");
+        }
+        //fix BIOS checksum
+        if (currentPC == 0xeac) {
+            m68k.setFlags(Cpu.Z_FLAG);
+            System.out.println("Skip BIOS checksum");
+        }
         if (!busyLoopDetection) {
             int r = super.runInstruction();
 //            checkInterruptLevelChange();
