@@ -288,7 +288,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     public void logAccess(RegSpecMcd regSpec, S32xUtil.CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
-        logHelper.logWarnOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
+        logHelper.logWarningOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
                 size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
     }
 

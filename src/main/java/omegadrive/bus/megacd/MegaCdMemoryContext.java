@@ -9,7 +9,7 @@ import s32x.util.S32xUtil.CpuDeviceAccess;
 import java.io.Serial;
 import java.io.Serializable;
 
-import static omegadrive.util.LogHelper.logWarnOnceSh;
+import static omegadrive.util.LogHelper.logWarnOnce;
 import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
 import static s32x.util.S32xUtil.CpuDeviceAccess.SUB_M68K;
 
@@ -68,7 +68,7 @@ public class MegaCdMemoryContext implements Serializable {
         if (cpu == wramSetup.cpu) {
             writeWordRam(address & MCD_WORD_RAM_2M_MASK >> 17, address, value, size);
         } else {
-            logWarnOnceSh(LOG, "{} writing WRAM but setup is: {}", cpu, wramSetup);
+            logWarnOnce(LOG, "{} writing WRAM but setup is: {}", cpu, wramSetup);
         }
     }
 
@@ -76,7 +76,7 @@ public class MegaCdMemoryContext implements Serializable {
         if (cpu == wramSetup.cpu) {
             return readWordRam(address & MCD_WORD_RAM_2M_MASK >> 17, address, size);
         } else {
-            logWarnOnceSh(LOG, "{} reading WRAM but setup is: {}", cpu, wramSetup);
+            logWarnOnce(LOG, "{} reading WRAM but setup is: {}", cpu, wramSetup);
             return size.getMask();
         }
     }

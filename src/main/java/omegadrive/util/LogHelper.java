@@ -32,14 +32,14 @@ public class LogHelper {
         return MessageFormatter.arrayFormat(s, o).getMessage();
     }
 
-    public static void logWarnOnceSh(Logger log, String str, Object... o) {
+    public static void logWarnOnce(Logger log, String str, Object... o) {
         String msg = formatMessage(str, o);
         if (msgCacheShared.add(msg)) {
             log.warn(msg + " (ONCE)");
         }
     }
 
-    public void logWarnOnce(Logger log, String str, Object... o) {
+    public void logWarningOnce(Logger log, String str, Object... o) {
         String msg = formatMessage(str, o);
         if (msgCache.add(msg)) {
             log.warn(msg + " (ONCE)");
@@ -60,10 +60,14 @@ public class LogHelper {
         }
     }
 
-    public void clear() {
+    public void clearData() {
         System.out.println("LogHelper: clearing msg cache, size: " + msgCache.size());
         msgCache.clear();
         rd.reset();
+    }
+
+    public static void clear() {
+        msgCacheShared.clear();
     }
 
     private static class RepeaterDetector {

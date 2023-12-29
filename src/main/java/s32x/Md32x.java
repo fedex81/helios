@@ -170,7 +170,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 
     @Override
     protected GenesisBusProvider createBus() {
-        return new S32xBus(megaCdMemoryContext);
+        return new S32xBus();
     }
 
     @Override
