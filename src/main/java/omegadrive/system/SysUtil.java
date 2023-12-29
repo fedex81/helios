@@ -1,5 +1,6 @@
 package omegadrive.system;
 
+import mcd.MegaCd;
 import omegadrive.Device;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;

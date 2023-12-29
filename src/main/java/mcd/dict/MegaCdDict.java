@@ -1,24 +1,23 @@
-package omegadrive.bus.megacd;
+package mcd.dict;
 
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegSpec;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
-import s32x.dict.S32xMemAccessDelay;
-import s32x.util.RegSpec;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static omegadrive.bus.megacd.MegaCdDict.McdRegCpuType.*;
-import static omegadrive.bus.megacd.MegaCdDict.McdRegType.*;
-import static omegadrive.bus.megacd.MegaCdDict.RegSpecMcd.MCD_RESET;
-import static omegadrive.bus.megacd.MegaCdMemoryContext.MCD_PRG_RAM_SIZE;
-import static omegadrive.bus.megacd.MegaCdMemoryContext.MCD_WORD_RAM_2M_SIZE;
+import static mcd.dict.MegaCdDict.McdRegCpuType.*;
+import static mcd.dict.MegaCdDict.McdRegType.*;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_RESET;
+import static mcd.dict.MegaCdMemoryContext.MCD_PRG_RAM_SIZE;
+import static mcd.dict.MegaCdMemoryContext.MCD_WORD_RAM_2M_SIZE;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
 import static omegadrive.util.Util.th;
-import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
-import static s32x.util.S32xUtil.CpuDeviceAccess.Z80;
 
 /**
  * Federico Berti
@@ -45,75 +44,75 @@ public class MegaCdDict {
     }
 
     public enum RegSpecMcd {
-        MCD_RESET(SYS, 0, 0x103, 0x301),   //Reset
-        MCD_MEM_MODE(SYS, 2, 0xFFC2, 0xFFFF), //Memory Mode, write protect
-        MCD_CDC_MODE(CD, 4, 0, 0xFFFF), //CDC Mode, MAIN read-only
+        MCD_RESET(SYS, 0),   //Reset
+        MCD_MEM_MODE(SYS, 2), //Memory Mode, write protect
+        MCD_CDC_MODE(CD, 4), //CDC Mode, MAIN read-only
 
-        MCD_HINT_VECTOR(SYS, REG_MAIN, 6, 0xFFFF, 0), //HINT vector (level 4)
-        MCD_CDC_REG_DATA(SYS, REG_SUB, 6, 0, 0xFF), //CDC Register data
+        MCD_HINT_VECTOR(SYS, REG_MAIN, 6), //HINT vector (level 4)
+        MCD_CDC_REG_DATA(SYS, REG_SUB, 6), //CDC Register data
 
-        MCD_CDC_HOST(SYS, 8, 0, 0), //CDC host data
+        MCD_CDC_HOST(SYS, 8), //CDC host data
 
-        MCD_STOPWATCH(SYS, 0xC, 0, 0xFFFF), //Stopwatch
+        MCD_STOPWATCH(SYS, 0xC), //Stopwatch
 
-        MCD_COMM_FLAGS(SYS, 0xE, 0xFF00, 0xFFFF), //Communication flags
+        MCD_COMM_FLAGS(SYS, 0xE), //Communication flags
 
-        MCD_COMM0(COMM, 0x10, 0xFFFF, 0), //Communication
-        MCD_COMM1(COMM, 0x12, 0xFFFF, 0), //Communication
-        MCD_COMM2(COMM, 0x14, 0xFFFF, 0), //Communication
-        MCD_COMM3(COMM, 0x16, 0xFFFF, 0), //Communication
-        MCD_COMM4(COMM, 0x18, 0xFFFF, 0), //Communication
-        MCD_COMM5(COMM, 0x1A, 0xFFFF, 0), //Communication
-        MCD_COMM6(COMM, 0x1C, 0xFFFF, 0), //Communication
-        MCD_COMM7(COMM, 0x1E, 0xFFFF, 0), //Communication
+        MCD_COMM0(COMM, 0x10), //Communication
+        MCD_COMM1(COMM, 0x12), //Communication
+        MCD_COMM2(COMM, 0x14), //Communication
+        MCD_COMM3(COMM, 0x16), //Communication
+        MCD_COMM4(COMM, 0x18), //Communication
+        MCD_COMM5(COMM, 0x1A), //Communication
+        MCD_COMM6(COMM, 0x1C), //Communication
+        MCD_COMM7(COMM, 0x1E), //Communication
 
-        MCD_COMM8(COMM, 0x20, 0, 0xFFFF), //Communication
-        MCD_COMM9(COMM, 0x22, 0, 0xFFFF), //Communication
-        MCD_COMMA(COMM, 0x24, 0, 0xFFFF), //Communication
-        MCD_COMMB(COMM, 0x26, 0, 0xFFFF), //Communication
-        MCD_COMMC(COMM, 0x28, 0, 0xFFFF), //Communication
-        MCD_COMMD(COMM, 0x2A, 0, 0xFFFF), //Communication
-        MCD_COMME(COMM, 0x2C, 0, 0xFFFF), //Communication
-        MCD_COMMF(COMM, 0x2E, 0, 0xFFFF), //Communication
+        MCD_COMM8(COMM, 0x20), //Communication
+        MCD_COMM9(COMM, 0x22), //Communication
+        MCD_COMMA(COMM, 0x24), //Communication
+        MCD_COMMB(COMM, 0x26), //Communication
+        MCD_COMMC(COMM, 0x28), //Communication
+        MCD_COMMD(COMM, 0x2A), //Communication
+        MCD_COMME(COMM, 0x2C), //Communication
+        MCD_COMMF(COMM, 0x2E), //Communication
 
-        MCD_TIMER_INT3(SYS, 0x30, 0, 0xFF), //General Use Timer W/INT3
-        MCD_INT_MASK(SYS, 0x32, 0, 0x7E), //Interrupt Mask control
+        MCD_TIMER_INT3(SYS, 0x30), //General Use Timer W/INT3
+        MCD_INT_MASK(SYS, 0x32), //Interrupt Mask control
 
-        MCD_CD_FADER(CD, 0x34, 0, 0x7FFE), //CD Fader
-        MCD_CDD_CONTROL(CD, 0x36, 0, 0x7), //CDD Control
+        MCD_CD_FADER(CD, 0x34), //CD Fader
+        MCD_CDD_CONTROL(CD, 0x36), //CDD Control
 
-        MCD_CDD_COMM0(CD, 0x38, 0, 0xFFFF), //CDD Comm
-        MCD_CDD_COMM1(CD, 0x3A, 0, 0xFFFF), //CDD Comm
-        MCD_CDD_COMM2(CD, 0x3C, 0, 0xFFFF), //CDD Comm
-        MCD_CDD_COMM3(CD, 0x3E, 0, 0xFFFF), //CDD Comm
+        MCD_CDD_COMM0(CD, 0x38), //CDD Comm
+        MCD_CDD_COMM1(CD, 0x3A), //CDD Comm
+        MCD_CDD_COMM2(CD, 0x3C), //CDD Comm
+        MCD_CDD_COMM3(CD, 0x3E), //CDD Comm
 
-        MCD_CDD_COMM4(CD, 0x40, 0, 0xFFFF), //CDD Comm
-        MCD_CDD_COMM5(CD, 0x42, 0, 0xFFFF), //CDD Comm
-        MCD_CDD_COMM6(CD, 0x44, 0, 0xFFFF), //CDD Comm
-        MCD_CDD_COMM7(CD, 0x46, 0, 0xFFFF), //CDD Comm
-        MCD_CDD_COMM8(CD, 0x48, 0, 0xFFFF), //CDD Comm
-        MCD_CDD_COMM9(CD, 0x4A, 0, 0xFFFF), //CDD Comm
+        MCD_CDD_COMM4(CD, 0x40), //CDD Comm
+        MCD_CDD_COMM5(CD, 0x42), //CDD Comm
+        MCD_CDD_COMM6(CD, 0x44), //CDD Comm
+        MCD_CDD_COMM7(CD, 0x46), //CDD Comm
+        MCD_CDD_COMM8(CD, 0x48), //CDD Comm
+        MCD_CDD_COMM9(CD, 0x4A), //CDD Comm
 
-        MCD_FONT_COLOR(SYS, 0x4C, 0, 0xFF), //Font color
-        MCD_FONT_BIT(SYS, 0x4E, 0, 0xFFFF), //Font bit
-        MCD_FONT_DATA0(SYS, 0x50, 0, 0), //Font data
-        MCD_FONT_DATA1(SYS, 0x52, 0, 0), //Font data
-        MCD_FONT_DATA2(SYS, 0x54, 0, 0), //Font data
-        MCD_FONT_DATA3(SYS, 0x56, 0, 0), //Font data
+        MCD_FONT_COLOR(SYS, 0x4C), //Font color
+        MCD_FONT_BIT(SYS, 0x4E), //Font bit
+        MCD_FONT_DATA0(SYS, 0x50), //Font data
+        MCD_FONT_DATA1(SYS, 0x52), //Font data
+        MCD_FONT_DATA2(SYS, 0x54), //Font data
+        MCD_FONT_DATA3(SYS, 0x56), //Font data
 
-        MCD_IMG_STAMP_SIZE(ASIC, 0x58, 0, 0x7), //Image Stamp Size
+        MCD_IMG_STAMP_SIZE(ASIC, 0x58), //Image Stamp Size
 
         //TODO valid bits depend on setup
-        MCD_IMG_STAMP_MAP_ADDR(ASIC, 0x5A, 0, 0xFFE0), //Image Stamp map base address
-        MCD_IMG_VCELL(ASIC, 0x5C, 0, 0x1F), //Image buffer V cell size (0-32 cells)
-        MCD_IMG_START_ADDR(ASIC, 0x5E, 0, 0xFFF8), //Image buffer start address
+        MCD_IMG_STAMP_MAP_ADDR(ASIC, 0x5A), //Image Stamp map base address
+        MCD_IMG_VCELL(ASIC, 0x5C), //Image buffer V cell size (0-32 cells)
+        MCD_IMG_START_ADDR(ASIC, 0x5E), //Image buffer start address
 
-        MCD_IMG_OFFSET(ASIC, 0x60, 0, 0x3F), //Image buffer offset
-        MCD_IMG_HDOT(ASIC, 0x62, 0, 0x1FF), //Image buffer H dot size (horizontal dot size overwritten in the buffer)
+        MCD_IMG_OFFSET(ASIC, 0x60), //Image buffer offset
+        MCD_IMG_HDOT(ASIC, 0x62), //Image buffer H dot size (horizontal dot size overwritten in the buffer)
 
-        MCD_IMG_VDOT(ASIC, 0x64, 0, 0xFF), //Image buffer V dot size (vertical dot size overwritten in the buffer)
+        MCD_IMG_VDOT(ASIC, 0x64), //Image buffer V dot size (vertical dot size overwritten in the buffer)
 
-        MCD_IMG_TRACE_VECTOR_ADDR(ASIC, 0x66, 0, 0xFFFE),
+        MCD_IMG_TRACE_VECTOR_ADDR(ASIC, 0x66),
         //vector base address(Xstart, Ystart, (Dtita)X, <Del ta), table base address)
         INVALID(NONE, -1);
 
@@ -124,31 +123,22 @@ public class MegaCdDict {
         public final int deviceAccessTypeDelay;
 
         //defaults to 16 bit wide register
-        RegSpecMcd(McdRegType deviceType, int addr, int writeAndMaskMain, int writeAndMaskSub) {
-            this(deviceType, REG_BOTH, addr, writeAndMaskMain, writeAndMaskSub);
+        RegSpecMcd(McdRegType deviceType, int addr) {
+            this(deviceType, REG_BOTH, addr);
         }
 
-        RegSpecMcd(McdRegType deviceType, McdRegCpuType cpuType, int addr, int writeAndMaskMain, int writeAndMaskSub) {
+        RegSpecMcd(McdRegType deviceType, McdRegCpuType cpuType, int addr) {
             this.deviceType = deviceType;
-            this.deviceAccessTypeDelay = S32xMemAccessDelay.SYS_REG;
+            this.deviceAccessTypeDelay = 1;
             this.regCpuType = getCpuTypeFromDevice(deviceType, cpuType);
-            this.regSpec = createRegSpec(addr, writeAndMaskMain, writeAndMaskSub);
+            this.regSpec = createRegSpec(addr);
             this.addr = regSpec.bufferAddr;
             init();
         }
 
-        RegSpecMcd(McdRegType deviceType, int addr) {
-            this(deviceType, addr, 0xFFFF, 0);
-        }
-
-        RegSpecMcd(McdRegType deviceType, int addr, int writeAndMask) {
-            this(deviceType, addr, writeAndMask, 0);
-        }
-
-        private RegSpec createRegSpec(int addr, int writeAndMask, int writeOrMask) {
+        private RegSpec createRegSpec(int addr) {
             return deviceType == NONE ? RegSpec.INVALID_REG :
-                    new RegSpec(name(), addr, MDC_SUB_GATE_REGS_MASK,
-                            writeAndMask, writeOrMask, Size.WORD);
+                    new RegSpec(name(), addr, MDC_SUB_GATE_REGS_MASK, Size.WORD);
         }
 
         private void init() {

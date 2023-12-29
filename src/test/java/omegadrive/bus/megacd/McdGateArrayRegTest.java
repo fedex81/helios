@@ -1,18 +1,19 @@
 package omegadrive.bus.megacd;
 
+import mcd.dict.MegaCdDict;
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
-import static omegadrive.bus.megacd.MegaCdDict.RegSpecMcd.MCD_HINT_VECTOR;
-import static omegadrive.bus.megacd.MegaCdDict.RegSpecMcd.MCD_RESET;
-import static omegadrive.bus.megacd.MegaCdDict.START_MCD_SUB_GATE_ARRAY_REGS;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_HINT_VECTOR;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_RESET;
+import static mcd.dict.MegaCdDict.START_MCD_SUB_GATE_ARRAY_REGS;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
-import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SUB_M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 
 /**
  * Federico Berti
@@ -58,16 +59,16 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         Assertions.assertEquals(1, mreg);
 
         //mainCpu busReq=0 (Cancel) and reset=1 (Run)
-        mainCpuBus.write(MAIN_RESET_REG, 0xFFFD, Size.WORD);
+        mainCpuBus.write(MAIN_RESET_REG, 0x7FFD, Size.WORD);
         mreg = mainCpuBus.read(MAIN_RESET_REG, Size.WORD);
         sreg = subCpuBus.read(SUB_RESET_REG, Size.WORD);
-        Assertions.assertEquals(mreg, sreg);
+        Assertions.assertEquals(mreg & 3, sreg & 3);
         Assertions.assertFalse(subCpu.isStopped()); //cpu running
         //RES0 geos back to 1
         Assertions.assertEquals(1, mreg & 1);
 
         //mainCpu reset=0 (Reset)
-        mainCpuBus.write(MAIN_RESET_REG, 0xFFFE, Size.WORD);
+        mainCpuBus.write(MAIN_RESET_REG, 0x7FFE, Size.WORD);
         mreg = mainCpuBus.read(MAIN_RESET_REG, Size.WORD);
         sreg = subCpuBus.read(SUB_RESET_REG, Size.WORD);
         Assertions.assertEquals(mreg, sreg);
@@ -93,6 +94,9 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         Assertions.assertEquals(1, mreg & 1);
     }
 
+    static int reg0MainMask = 0x103;
+    static int reg0SubMask = 0x301;
+
     @Test
     public void testReg0() {
         MegaCdDict.RegSpecMcd regSpec = MCD_RESET;
@@ -101,11 +105,10 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         Assertions.assertEquals(regSpec.addr, regSpec.addr);
         int mreg = readWordReg(M68K, mainAddr);
 
-        int mainMask = 0x103;
-        int subMask = 0x301;
+
 
         //SUB write doesn't change MAIN
-        int val = 0x103;
+        int val = reg0SubMask;
         subCpuBus.write(subAddr, val, Size.WORD);
         int mreg2 = readWordReg(M68K, mainAddr);
         int sreg2 = readWordReg(SUB_M68K, subAddr);
@@ -118,7 +121,7 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         mainCpuBus.write(mainAddr, val, Size.WORD);
         mreg2 = readWordReg(M68K, mainAddr);
         sreg2 = readWordReg(SUB_M68K, subAddr);
-        Assertions.assertEquals(val & mainMask, mreg2);
+        Assertions.assertEquals(val & reg0MainMask, mreg2);
         Assertions.assertEquals(sreg, sreg2);
     }
 
@@ -130,30 +133,55 @@ public class McdGateArrayRegTest extends McdRegTestBase {
 
     @Test
     public void testReg6() {
-        testRegInternal(MCD_HINT_VECTOR);
+        testReg6Internal(MCD_HINT_VECTOR);
     }
 
     @Test
     public void testReg0_A() {
-        testRegInternal(MCD_RESET);
+        testReg0Internal(MCD_RESET);
     }
 
-    private void testRegInternal(MegaCdDict.RegSpecMcd regSpec) {
+    private void testReg0Internal(MegaCdDict.RegSpecMcd regSpec) {
         int mainAddr = MEGA_CD_EXP_START + regSpec.addr;
         int subAddr = START_MCD_SUB_GATE_ARRAY_REGS + regSpec.addr;
         Assertions.assertEquals(regSpec.addr, regSpec.addr);
         int sreg = subCpuBus.read(subAddr, Size.WORD);
 
         //MAIN write doesnt change SUB
-        int val = 0xFEDC;
+        int val = 0x7EDC;
         mainCpuBus.write(mainAddr, val, Size.WORD);
         int mreg = mainCpuBus.read(mainAddr, Size.WORD);
         int sreg2 = subCpuBus.read(subAddr, Size.WORD);
-        Assertions.assertEquals(val, mreg & 0xFFFF);
+        Assertions.assertEquals(val & reg0MainMask, mreg);
         Assertions.assertEquals(sreg, sreg2);
 
         //SUB write doesnt change MAIN
-        val = 0x1234;
+        val = 0x300;
+        mreg = mainCpuBus.read(mainAddr, Size.WORD);
+        subCpuBus.write(subAddr, val, Size.WORD);
+        int mreg2 = mainCpuBus.read(mainAddr, Size.WORD);
+        sreg = subCpuBus.read(subAddr, Size.WORD);
+        //reset goes to 1 immediately
+        Assertions.assertEquals(val | 1, sreg & 0xFFFF);
+        Assertions.assertEquals(mreg, mreg2);
+    }
+
+    private void testReg6Internal(MegaCdDict.RegSpecMcd regSpec) {
+        int mainAddr = MEGA_CD_EXP_START + regSpec.addr;
+        int subAddr = START_MCD_SUB_GATE_ARRAY_REGS + regSpec.addr;
+        Assertions.assertEquals(regSpec.addr, regSpec.addr);
+        int sreg = subCpuBus.read(subAddr, Size.WORD);
+
+        //MAIN write doesnt change SUB
+        int val = 0x7EDC;
+        mainCpuBus.write(mainAddr, val, Size.WORD);
+        int mreg = mainCpuBus.read(mainAddr, Size.WORD);
+        int sreg2 = subCpuBus.read(subAddr, Size.WORD);
+        Assertions.assertEquals(val & 0xFFFF, mreg);
+        Assertions.assertEquals(sreg, sreg2);
+
+        //SUB write doesnt change MAIN
+        val = 0x300;
         mreg = mainCpuBus.read(mainAddr, Size.WORD);
         subCpuBus.write(subAddr, val, Size.WORD);
         int mreg2 = mainCpuBus.read(mainAddr, Size.WORD);

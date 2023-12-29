@@ -1,17 +1,23 @@
-package omegadrive.bus.megacd;
+package mcd.dict;
 
+import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.util.function.BiConsumer;
 
+import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersMain;
+import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersSub;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
+import static omegadrive.util.BufferUtil.readBuffer;
 import static omegadrive.util.LogHelper.logWarnOnce;
-import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SUB_M68K;
 
 /**
  * Federico Berti
@@ -38,10 +44,15 @@ public class MegaCdMemoryContext implements Serializable {
     public static final int MCD_WORD_RAM_2M_MASK = MCD_WORD_RAM_2M_SIZE - 1;
     public static final int MCD_PRG_RAM_MASK = MCD_PRG_RAM_SIZE - 1;
 
+    public static final int NUM_SYS_REG_NON_SHARED = 8;
+
     public byte[] prgRam;
     public byte[][] sysGateRegs;
     public byte[] commonGateRegs;
     public byte[][] wordRam01 = new byte[2][1];
+
+    public transient final ByteBuffer[] sysGateRegsBuf;
+    public transient final ByteBuffer commonGateRegsBuf;
 
     public WramSetup wramSetup = WramSetup.W_2M_MAIN;
 
@@ -60,8 +71,12 @@ public class MegaCdMemoryContext implements Serializable {
         prgRam = new byte[MCD_PRG_RAM_SIZE];
         wordRam01[0] = new byte[MCD_WORD_RAM_1M_SIZE];
         wordRam01[1] = new byte[MCD_WORD_RAM_1M_SIZE];
-        sysGateRegs = new byte[2][8];
+        sysGateRegs = new byte[2][NUM_SYS_REG_NON_SHARED];
         commonGateRegs = new byte[MDC_SUB_GATE_REGS_SIZE];
+        commonGateRegsBuf = ByteBuffer.wrap(commonGateRegs);
+        sysGateRegsBuf = new ByteBuffer[2];
+        sysGateRegsBuf[0] = ByteBuffer.wrap(sysGateRegs[0]);
+        sysGateRegsBuf[1] = ByteBuffer.wrap(sysGateRegs[1]);
     }
 
     public void writeWordRam(CpuDeviceAccess cpu, int address, int value, Size size) {
@@ -98,15 +113,51 @@ public class MegaCdMemoryContext implements Serializable {
             return wramSetup;
         }
         if (c == M68K) {
-            wramSetup = dmna == 1 ? WramSetup.W_2M_SUB : wramSetup;
+            wramSetup = dmna > 0 ? WramSetup.W_2M_SUB : wramSetup;
         } else if (c == SUB_M68K) {
-            wramSetup = ret == 1 ? WramSetup.W_2M_MAIN : wramSetup;
+            wramSetup = ret > 0 ? WramSetup.W_2M_MAIN : wramSetup;
         }
         return wramSetup;
     }
 
-    public byte[] getGateSysRegs(CpuDeviceAccess cpu) {
+    public ByteBuffer getGateSysRegs(CpuDeviceAccess cpu) {
         assert cpu == M68K || cpu == SUB_M68K;
-        return sysGateRegs[cpu == M68K ? 0 : 1];
+        return sysGateRegsBuf[cpu == M68K ? 0 : 1];
+    }
+
+    public enum SharedBit {RET, DMNA, MODE}
+
+    public void setSharedBit(CpuDeviceAccess cpu, SharedBit bit, int val) {
+        assert val <= 1;
+        assert cpu == M68K || cpu == SUB_M68K;
+        CpuDeviceAccess other = cpu == M68K ? SUB_M68K : M68K;
+        ByteBuffer regs = getGateSysRegs(other);
+        switch (bit) {
+            case MODE -> BufferUtil.setBit(regs, 3, 2, val, Size.BYTE);
+            case DMNA -> BufferUtil.setBit(regs, 3, 1, val, Size.BYTE);
+            case RET -> BufferUtil.setBit(regs, 3, 0, val, Size.BYTE);
+        }
+    }
+
+    public ByteBuffer getRegBuffer(CpuDeviceAccess cpu, MegaCdDict.RegSpecMcd regSpec) {
+        if (regSpec.addr >= NUM_SYS_REG_NON_SHARED) {
+            return commonGateRegsBuf;
+        }
+        return getGateSysRegs(cpu);
+    }
+
+    public int handleRegWrite(CpuDeviceAccess cpu, MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
+        var bh = cpu == M68K ? setByteHandlersMain : setByteHandlersSub;
+        BiConsumer<MegaCdMemoryContext, Integer>[] setByteRegHandler = bh[regSpec.addr];
+        ByteBuffer b = getRegBuffer(cpu, regSpec);
+        assert setByteRegHandler != null;
+        switch (size) {
+            case WORD -> {
+                setByteRegHandler[1].accept(this, data & 0xFF); //LSB
+                setByteRegHandler[0].accept(this, (data >> 8) & 0xFF); //MSB
+            }
+            case BYTE -> setByteRegHandler[address & 1].accept(this, data);
+        }
+        return readBuffer(b, regSpec.addr, Size.WORD);
     }
 }

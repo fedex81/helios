@@ -1,36 +1,33 @@
-package omegadrive.bus.megacd;
+package mcd.bus;
 
+import mcd.MegaCd;
+import mcd.dict.MegaCdDict;
+import mcd.dict.MegaCdMemoryContext;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
-import omegadrive.system.MegaCd;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.function.BiConsumer;
 
-import static omegadrive.bus.megacd.MegaCdDict.*;
-import static omegadrive.bus.megacd.MegaCdDict.RegSpecMcd.*;
-import static omegadrive.bus.megacd.MegaCdMemoryContext.MCD_GATE_REGS_MASK;
-import static omegadrive.bus.megacd.MegaCdMemoryContext.WramSetup;
-import static omegadrive.bus.megacd.MegaCdRegWriteHandlers.setByteHandlersMain;
-import static omegadrive.util.S32xUtil.*;
-import static omegadrive.util.Util.random;
+import static mcd.dict.MegaCdDict.*;
+import static mcd.dict.MegaCdDict.RegSpecMcd.*;
+import static mcd.dict.MegaCdMemoryContext.MCD_GATE_REGS_MASK;
+import static mcd.dict.MegaCdMemoryContext.WramSetup;
+import static omegadrive.util.BufferUtil.*;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.Util.th;
-import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
 
 /**
  * Federico Berti
  * <p>
  * Copyright 2023
  * <p>
- * TODO DMNA, RET etc bit/reg sync
  */
 public class MegaCdMainCpuBus extends GenesisBus {
 
@@ -57,7 +54,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private static ByteBuffer bios;
     private LogHelper logHelper = new LogHelper();
     private MegaCdMemoryContext memCtx;
-    private S32xUtil.CpuDeviceAccess cpu;
+    private CpuDeviceAccess cpu;
 
     static {
         Path p = Paths.get(biosBasePath, masterBiosName);
@@ -76,12 +73,12 @@ public class MegaCdMainCpuBus extends GenesisBus {
     public MegaCdMainCpuBus(MegaCdMemoryContext ctx) {
         cpu = M68K;
         prgRam = ByteBuffer.wrap(ctx.prgRam);
-        sysGateRegs = ByteBuffer.wrap(ctx.getGateSysRegs(cpu));
+        sysGateRegs = ctx.getGateSysRegs(cpu);
         commonGateRegs = ByteBuffer.wrap(ctx.commonGateRegs);
         memCtx = ctx;
-        writeBuffer(sysGateRegs, MCD_RESET.addr, 2, Size.WORD); //DMNA=0, RET=1
-        writeBuffer(sysGateRegs, MCD_MEM_MODE.addr + 1, 1, Size.BYTE); //DMNA=0, RET=1
-        writeBuffer(sysGateRegs, MCD_CDC_REG_DATA.addr, 0xFFFF, Size.WORD);
+        writeBufferRaw(sysGateRegs, MCD_RESET.addr, 2, Size.WORD); //DMNA=0, RET=1
+        writeBufferRaw(sysGateRegs, MCD_MEM_MODE.addr + 1, 1, Size.BYTE); //DMNA=0, RET=1
+        writeBufferRaw(sysGateRegs, MCD_CDC_REG_DATA.addr, 0xFFFF, Size.WORD);
     }
 
     @Override
@@ -137,7 +134,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             if (enableMode1) {
                 if (address >= START_MCD_MAIN_PRG_RAM_MODE1 && address < END_MCD_MAIN_PRG_RAM_MODE1) {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                    writeBuffer(prgRam, addr, data, size);
+                    writeBufferRaw(prgRam, addr, data, size);
                     return;
                 } else if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
                     memCtx.writeWordRam(cpu, address, data, size);
@@ -147,7 +144,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 //TODO test
                 if (address >= START_MCD_MAIN_PRG_RAM && address < END_MCD_MAIN_PRG_RAM) {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                    writeBuffer(prgRam, addr, data, size);
+                    writeBufferRaw(prgRam, addr, data, size);
                     return;
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
                     memCtx.writeWordRam(cpu, address, data, size);
@@ -165,13 +162,14 @@ public class MegaCdMainCpuBus extends GenesisBus {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return 0;
         }
-        ByteBuffer regs = getRegBuffer(regSpec);
+        ByteBuffer regs = memCtx.getRegBuffer(cpu, regSpec);
         int res = readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
         //TODO bios_us.bin RET bit
         //TODO subCpu never returns WRAM to main as subCpu is stuck in CDD
-        if (!enableMode1 && address == 0xA12003 && size == Size.BYTE) {
-            res |= random.nextInt(2);
-        }
+//        if (!enableMode1 && address == 0xA12003 && size == Size.BYTE) {
+//            res |= random.nextInt(2);
+//            logHelper.logWarningOnce(LOG, "Hacking RET bit");
+//        }
         return res;
     }
 
@@ -204,7 +202,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             }
             case MCD_HINT_VECTOR -> {
                 LOG.info("M write MCD_HINT_VECTOR: {} {}", th(data), size);
-                writeBuffer(sysGateRegs, regSpec.addr, data, size);
+                writeBufferRaw(sysGateRegs, regSpec.addr, data, size);
             }
             default -> LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
         }
@@ -212,7 +210,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     private void handleReg0Write(int address, int data, Size size) {
         int curr = readBuffer(sysGateRegs, MCD_RESET.addr, Size.WORD);
-        int res = handleRegWrite(MCD_RESET, address, data, size);
+        int res = memCtx.handleRegWrite(cpu, MCD_RESET, address, data, size);
         int sreset = res & 1;
         int sbusreq = (res >> 1) & 1;
         int subIntReg = (res >> 8) & 1;
@@ -243,15 +241,15 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     private void handleReg2Write(int address, int data, Size size) {
-        int res = handleRegWrite(MCD_MEM_MODE, address, data, size);
+        int res = memCtx.handleRegWrite(cpu, MCD_MEM_MODE, address, data, size);
         if ((res & 0xFF00) != 0) {
-            LOG.warn("M Mem Write protect bits set: {}", th(data));
+            logHelper.logWarningOnce(LOG, "M Mem Write protect bits set: {}", th(data));
         }
         WramSetup ws = memCtx.update(cpu, res);
         if (ws == WramSetup.W_2M_SUB) { //set RET=0
             res = setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 0, 0, Size.BYTE);
+            memCtx.setSharedBit(M68K, MegaCdMemoryContext.SharedBit.RET, 0);
         }
-        logWram(res);
         //bk0,1
         int bval = (res >> 5) & 3;
         if (bval != prgRamBankValue) {
@@ -261,24 +259,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
     }
 
-    private int handleRegWrite(RegSpecMcd regSpec, int address, int data, Size size) {
-        BiConsumer<ByteBuffer, Integer>[] setByteRegHandler = setByteHandlersMain[regSpec.addr];
-        ByteBuffer b = getRegBuffer(regSpec);
-        assert setByteRegHandler != null;
-        switch (size) {
-            case WORD -> {
-                setByteRegHandler[1].accept(b, data); //LSB
-                setByteRegHandler[0].accept(b, data >> 8); //MSB
-            }
-            case BYTE -> setByteRegHandler[address & 1].accept(b, data);
-        }
-        return readBuffer(b, 0, Size.WORD);
-    }
-
     private void handleCommWrite(RegSpecMcd regSpec, int address, int data, Size size) {
         if (address >= START_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_W) { //MAIN COMM
             LOG.info("M Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
-            writeBuffer(commonGateRegs, address & MCD_GATE_REGS_MASK, data, size);
+            writeBufferRaw(commonGateRegs, address & MCD_GATE_REGS_MASK, data, size);
             return;
         }
         if (address >= END_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_R) { //MAIN COMM READ ONLY
@@ -287,33 +271,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
     }
 
-    public void logAccess(RegSpecMcd regSpec, S32xUtil.CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
+    public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
         logHelper.logWarningOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
                 size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
-    }
-
-    private ByteBuffer getRegBuffer(MegaCdDict.RegSpecMcd regSpec) {
-        if (regSpec.addr >= 8) {
-            return commonGateRegs;
-        }
-        return sysGateRegs;
-    }
-
-    private void logWram(int newVal) {
-        int mode = newVal & 4;
-        int dmna = newVal & 2;
-        int ret = newVal & 1;
-        String str = mode == 0 ? "2M" : "1M";
-        //MASTER bios sets it
-//                assert ret == 0; //only SUB able to write to
-        //1M, only dmna = 1 is significant, 0 is set by hw when the request is done
-        if (mode > 0 && dmna > 0) {
-            str += ",SWAP_REQ";
-        }
-        //2M
-        if (mode == 0 && dmna > 0) {
-            str += dmna > 0 ? ",sub(2M WRAM)" : ",main(2M WRAM)";
-        }
-        LOG.info(str);
     }
 }

@@ -17,13 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.system;
+package mcd;
 
+import mcd.bus.MegaCdMainCpuBus;
+import mcd.bus.MegaCdSubCpuBus;
+import mcd.dict.MegaCdMemoryContext;
 import omegadrive.SystemLoader;
 import omegadrive.bus.md.SvpMapper;
-import omegadrive.bus.megacd.MegaCdMainCpuBus;
-import omegadrive.bus.megacd.MegaCdMemoryContext;
-import omegadrive.bus.megacd.MegaCdSubCpuBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
@@ -36,6 +36,9 @@ import omegadrive.joypad.GenesisJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
+import omegadrive.system.BaseSystem;
+import omegadrive.system.Genesis;
+import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -50,8 +53,8 @@ import s32x.util.Md32xRuntimeData;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
-import static s32x.util.S32xUtil.CpuDeviceAccess.Z80;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
 
 /**
  * Megadrive main class

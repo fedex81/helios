@@ -1,7 +1,10 @@
 package omegadrive.bus.megacd;
 
+import mcd.MegaCd;
+import mcd.bus.MegaCdMainCpuBus;
+import mcd.bus.MegaCdSubCpuBus;
+import mcd.dict.MegaCdMemoryContext;
 import omegadrive.cpu.m68k.MC68000Wrapper;
-import omegadrive.system.MegaCd;
 import org.junit.jupiter.api.BeforeEach;
 
 /**
