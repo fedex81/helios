@@ -4,6 +4,8 @@ import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.mapper.MdMapperTest;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.RomHolder;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
@@ -11,18 +13,20 @@ import s32x.StaticBootstrapSupport.NextCycleResettable;
 import s32x.bus.S32xBus;
 import s32x.dict.S32xDict.RegSpecS32x;
 import s32x.event.PollSysEventManager;
-import s32x.util.*;
+import s32x.util.BiosHolder;
 import s32x.util.BiosHolder.BiosData;
+import s32x.util.MarsLauncherHelper;
 import s32x.util.MarsLauncherHelper.Sh2LaunchContext;
-import s32x.util.S32xUtil.CpuDeviceAccess;
+import s32x.util.Md32xRuntimeData;
+import s32x.util.SystemTestUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static s32x.dict.S32xDict.M68K_START_32X_SYSREG;
 import static s32x.dict.S32xDict.RegSpecS32x.*;
 import static s32x.dict.S32xDict.START_32X_SYSREG_CACHE;
-import static s32x.util.S32xUtil.CpuDeviceAccess.*;
 
 /**
  * Federico Berti
@@ -48,11 +52,11 @@ public class MarsRegTestUtil {
 
     public static NextCycleResettable NO_OP = new NextCycleResettable() {
         @Override
-        public void setNextCycle(S32xUtil.CpuDeviceAccess cpu, int value) {
+        public void setNextCycle(BufferUtil.CpuDeviceAccess cpu, int value) {
         }
 
         @Override
-        public void onSysEvent(S32xUtil.CpuDeviceAccess cpu, PollSysEventManager.SysEvent event) {
+        public void onSysEvent(BufferUtil.CpuDeviceAccess cpu, PollSysEventManager.SysEvent event) {
         }
     };
 

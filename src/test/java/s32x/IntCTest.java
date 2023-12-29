@@ -1,5 +1,6 @@
 package s32x;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,17 +10,16 @@ import s32x.sh2.device.IntControl;
 import s32x.sh2.device.IntControl.Sh2Interrupt;
 import s32x.util.MarsLauncherHelper;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static s32x.dict.S32xDict.RegSpecS32x.MD_INT_CTRL;
 import static s32x.dict.S32xDict.RegSpecS32x.SH2_CMD_INT_CLEAR;
 import static s32x.dict.S32xDict.START_32X_SYSREG_CACHE;
 import static s32x.dict.Sh2Dict.RegSpecSh2.INTC_IPRA;
 import static s32x.sh2.device.IntControl.Sh2Interrupt.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.*;
 
 /**
  * Federico Berti
@@ -325,12 +325,12 @@ public class IntCTest {
         Assertions.assertEquals((byte) 0xA0, (byte) res);
     }
 
-    private void setSh2SysReg(S32xUtil.CpuDeviceAccess cpu, int addr, int value, Size size) {
+    private void setSh2SysReg(BufferUtil.CpuDeviceAccess cpu, int addr, int value, Size size) {
         Md32xRuntimeData.setAccessTypeExt(cpu);
         lc.s32XMMREG.write(START_32X_SYSREG_CACHE + addr, value, size);
     }
 
-    private void setSh2SysReg(S32xUtil.CpuDeviceAccess cpu, S32xDict.RegSpecS32x r, int value) {
+    private void setSh2SysReg(BufferUtil.CpuDeviceAccess cpu, S32xDict.RegSpecS32x r, int value) {
         Md32xRuntimeData.setAccessTypeExt(cpu);
         lc.s32XMMREG.write(START_32X_SYSREG_CACHE + r.regSpec.fullAddr, value, r.regSpec.regSize);
     }

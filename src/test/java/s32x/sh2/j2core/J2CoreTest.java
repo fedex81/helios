@@ -1,5 +1,6 @@
 package s32x.sh2.j2core;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
@@ -18,7 +19,6 @@ import s32x.sh2.Sh2Impl;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.sh2.device.Sh2DeviceHelper;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -26,9 +26,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static omegadrive.util.BufferUtil.readBuffer;
+import static omegadrive.util.BufferUtil.writeBufferRaw;
 import static omegadrive.util.Util.th;
-import static s32x.util.S32xUtil.readBuffer;
-import static s32x.util.S32xUtil.writeBufferRaw;
 
 /**
  * Federico Berti
@@ -85,7 +85,7 @@ public class J2CoreTest {
         Sh2Config.reset(config);
         Sh2Bus memory = getMemoryInt(rom);
         sh2 = getSh2Interpreter(memory, sh2Debug);
-        ctx = createContext(S32xUtil.CpuDeviceAccess.MASTER, memory);
+        ctx = createContext(BufferUtil.CpuDeviceAccess.MASTER, memory);
         sh2.reset(ctx);
         System.out.println("Reset, PC: " + ctx.PC + ", SP: " + ctx.registers[15]);
     }
@@ -105,11 +105,11 @@ public class J2CoreTest {
         System.out.println(ctx.toString());
     }
 
-    public static Sh2Context createContext(S32xUtil.CpuDeviceAccess cpu, Sh2Bus memory) {
+    public static Sh2Context createContext(BufferUtil.CpuDeviceAccess cpu, Sh2Bus memory) {
         Sh2Cache cache = Sh2Cache.createCacheInstance(cpu, memory);
         Sh2MMREG sh2MMREG = new Sh2MMREG(cpu, cache);
         S32XMMREG s32XMMREG = new S32XMMREG();
-        Sh2Context context = new Sh2Context(S32xUtil.CpuDeviceAccess.MASTER, sh2Debug);
+        Sh2Context context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, sh2Debug);
         context.devices = Sh2DeviceHelper.createDevices(cpu, memory, new DmaFifo68k(s32XMMREG.regContext), sh2MMREG);
         sh2MMREG.init(context.devices);
         Md32xRuntimeData.newInstance();

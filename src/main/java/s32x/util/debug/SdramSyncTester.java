@@ -1,11 +1,11 @@
 package s32x.util.debug;
 
 import omegadrive.system.SystemProvider;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.dict.S32xDict;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -49,31 +49,31 @@ public class SdramSyncTester {
         this.sdram = sdram;
     }
 
-    public void readSyncCheck(S32xUtil.CpuDeviceAccess cpuAccess, int address, Size size) {
-        if (valToWrite != null && cpuAccess == S32xUtil.CpuDeviceAccess.MASTER) {
+    public void readSyncCheck(BufferUtil.CpuDeviceAccess cpuAccess, int address, Size size) {
+        if (valToWrite != null && cpuAccess == BufferUtil.CpuDeviceAccess.MASTER) {
             LOG.info("Writing after reading: {} {}", th(address), size);
             valToWrite.run();
             valToWrite = null;
         }
         //TODO fix this
         SystemProvider.SystemClock clock = NO_CLOCK; //Genesis.clock;
-        int readType = cpuAccess == S32xUtil.CpuDeviceAccess.MASTER ? MAST_READ : SLAVE_READ;
+        int readType = cpuAccess == BufferUtil.CpuDeviceAccess.MASTER ? MAST_READ : SLAVE_READ;
         sdramAccess[address & S32xDict.SH2_SDRAM_MASK].accessMask |= readType;
         sdramAccess[address & S32xDict.SH2_SDRAM_MASK].cycleAccess[readType] = clock.getCycleCounter();
     }
 
-    public void writeSyncCheck(S32xUtil.CpuDeviceAccess cpuAccess, int address, int val, Size size) {
+    public void writeSyncCheck(BufferUtil.CpuDeviceAccess cpuAccess, int address, int val, Size size) {
         //TODO fix this
         SystemProvider.SystemClock clock = NO_CLOCK; //Genesis.clock;
-        boolean check = cpuAccess == S32xUtil.CpuDeviceAccess.SLAVE &&
+        boolean check = cpuAccess == BufferUtil.CpuDeviceAccess.SLAVE &&
                 (address & S32xDict.SH2_SDRAM_MASK) == 0x4c20 && clock.getCycleCounter() == 111787;
         if (check) {
             final int v = val;
-            valToWrite = () -> S32xUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, v, size);
+            valToWrite = () -> BufferUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, v, size);
         } else {
-            S32xUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, val, size);
+            BufferUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, val, size);
         }
-        int writeType = cpuAccess == S32xUtil.CpuDeviceAccess.MASTER ? MAST_WRITE : SLAVE_WRITE;
+        int writeType = cpuAccess == BufferUtil.CpuDeviceAccess.MASTER ? MAST_WRITE : SLAVE_WRITE;
         sdramAccess[address & S32xDict.SH2_SDRAM_MASK].accessMask |= writeType;
         sdramAccess[address & S32xDict.SH2_SDRAM_MASK].cycleAccess[writeType] = clock.getCycleCounter();
     }

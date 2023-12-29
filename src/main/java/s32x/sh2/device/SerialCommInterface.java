@@ -1,10 +1,10 @@
 package s32x.sh2.device;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 
@@ -20,12 +20,12 @@ import static s32x.dict.Sh2Dict.RegSpecSh2.*;
  * <p>
  * Copyright 2021
  */
-public class SerialCommInterface implements S32xUtil.Sh2Device {
+public class SerialCommInterface implements BufferUtil.Sh2Device {
 
     private static final Logger LOG = LogHelper.getLogger(SerialCommInterface.class.getSimpleName());
 
     static class SciData {
-        public S32xUtil.CpuDeviceAccess sender;
+        public BufferUtil.CpuDeviceAccess sender;
         public int dataInTransit;
         public boolean isDataInTransit;
     }
@@ -40,7 +40,7 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
     private final static boolean verbose = false;
 
     private final ByteBuffer regs;
-    private final S32xUtil.CpuDeviceAccess cpu;
+    private final BufferUtil.CpuDeviceAccess cpu;
     private final IntControl intControl;
 
     private int tdre, rdrf;
@@ -50,7 +50,7 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
 
     public static final SciData sciData = new SciData();
 
-    public SerialCommInterface(S32xUtil.CpuDeviceAccess cpu, IntControl intControl, ByteBuffer regs) {
+    public SerialCommInterface(BufferUtil.CpuDeviceAccess cpu, IntControl intControl, ByteBuffer regs) {
         this.cpu = cpu;
         this.regs = regs;
         this.intControl = intControl;
@@ -115,7 +115,7 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
                 break;
         }
         if (write) {
-            S32xUtil.writeBufferRaw(regs, pos, value, size);
+            BufferUtil.writeBufferRaw(regs, pos, value, size);
         }
     }
 
@@ -126,19 +126,19 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
         int tdreVal = (value & 0x80) > 0 || !txEn ? tdre : 0;
         setTdre(tdreVal);
         if (wasTdre > 0 && (value & 0x80) == 0) {
-            S32xUtil.setBit(regs, SCI_SSR.addr, SCI_SSR_TEND_BIT_POS, 0, Size.BYTE);
+            BufferUtil.setBit(regs, SCI_SSR.addr, SCI_SSR_TEND_BIT_POS, 0, Size.BYTE);
             step(1);
         }
         int rdrfVal = (value & 0x40) == 0 ? 0 : rdrf;
         setRdrf(rdrfVal);
         for (int i = 3; i < 6; i++) {
             if ((value & (1 << i)) == 0) {
-                S32xUtil.setBit(regs, SCI_SSR.addr, i, 0, Size.BYTE);
+                BufferUtil.setBit(regs, SCI_SSR.addr, i, 0, Size.BYTE);
             }
         }
-        S32xUtil.setBit(regs, SCI_SSR.addr, 0, value & 1, Size.BYTE);
+        BufferUtil.setBit(regs, SCI_SSR.addr, 0, value & 1, Size.BYTE);
         if (verbose)
-            LOG.info("{} SSR write: {}, state: {}", cpu, th(value), Util.th(S32xUtil.readBuffer(regs, SCI_SSR.addr, Size.BYTE)));
+            LOG.info("{} SSR write: {}, state: {}", cpu, th(value), Util.th(BufferUtil.readBuffer(regs, SCI_SSR.addr, Size.BYTE)));
     }
 
     @Override
@@ -147,7 +147,7 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
             int data = readBufferByte(regs, SCI_TDR.addr);
             int scr = readBufferByte(regs, SCI_SCR.addr);
             setTdre(1);
-            S32xUtil.setBit(regs, SCI_SSR.addr, SCI_SSR_TEND_BIT_POS, 1, Size.BYTE);
+            BufferUtil.setBit(regs, SCI_SSR.addr, SCI_SSR_TEND_BIT_POS, 1, Size.BYTE);
             sendData(data);
             if ((scr & 0x80) > 0) { //TIE
                 intControl.setOnChipDeviceIntPending(IntControl.Sh2Interrupt.SCIT);
@@ -157,7 +157,7 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
         }
         if (rxEn && sciData.isDataInTransit && sciData.sender != cpu) {
             if (verbose) LOG.info("{} receiving data: {}", cpu, th(sciData.dataInTransit));
-            S32xUtil.writeBufferRaw(regs, SCI_RDR.addr, sciData.dataInTransit, Size.BYTE);
+            BufferUtil.writeBufferRaw(regs, SCI_RDR.addr, sciData.dataInTransit, Size.BYTE);
             setRdrf(1);
             int scr = readBufferByte(regs, SCI_SCR.addr);
             sciData.isDataInTransit = false;
@@ -168,12 +168,12 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
     }
 
     private void setTdre(int value) {
-        S32xUtil.setBit(regs, SCI_SSR.addr, SCI_SSR_TDRE_BIT_POS, value, Size.BYTE);
+        BufferUtil.setBit(regs, SCI_SSR.addr, SCI_SSR_TDRE_BIT_POS, value, Size.BYTE);
         tdre = value;
     }
 
     private void setRdrf(int value) {
-        S32xUtil.setBit(regs, SCI_SSR.addr, SCI_SSR_RDRF_BIT_POS, value, Size.BYTE);
+        BufferUtil.setBit(regs, SCI_SSR.addr, SCI_SSR_RDRF_BIT_POS, value, Size.BYTE);
         rdrf = value;
     }
 
@@ -187,12 +187,12 @@ public class SerialCommInterface implements S32xUtil.Sh2Device {
     @Override
     public void reset() {
         if (verbose) LOG.info("{} SCI reset start", cpu);
-        S32xUtil.writeBufferRaw(regs, SCI_SMR.addr, 0, Size.BYTE);
-        S32xUtil.writeBufferRaw(regs, SCI_BRR.addr, 0xFF, Size.BYTE);
-        S32xUtil.writeBufferRaw(regs, SCI_SCR.addr, 0, Size.BYTE);
-        S32xUtil.writeBufferRaw(regs, SCI_TDR.addr, 0xFF, Size.BYTE);
-        S32xUtil.writeBufferRaw(regs, SCI_SSR.addr, 0x84, Size.BYTE);
-        S32xUtil.writeBufferRaw(regs, SCI_RDR.addr, 0, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, SCI_SMR.addr, 0, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, SCI_BRR.addr, 0xFF, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, SCI_SCR.addr, 0, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, SCI_TDR.addr, 0xFF, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, SCI_SSR.addr, 0x84, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, SCI_RDR.addr, 0, Size.BYTE);
 
         tdre = 1;
         rdrf = 0;

@@ -28,7 +28,7 @@ import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider.VdpBusyState;
 import org.slf4j.Logger;
 
-import static s32x.util.S32xUtil.CpuDeviceAccess;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess;
 
 public interface BusArbiter extends Device, BaseVdpProvider.VdpEventListener {
 

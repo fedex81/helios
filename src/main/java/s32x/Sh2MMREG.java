@@ -2,6 +2,7 @@ package s32x;
 
 import com.google.common.collect.Maps;
 import omegadrive.Device;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -10,7 +11,6 @@ import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.sh2.device.*;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -52,11 +52,11 @@ public class Sh2MMREG implements Device {
     private FreeRunningTimer frt;
     private final Sh2Cache cache;
 
-    private final S32xUtil.CpuDeviceAccess cpu;
+    private final BufferUtil.CpuDeviceAccess cpu;
     private int ticksPerFrame, sh2TicksPerFrame;
     private static final boolean verbose = false;
 
-    public Sh2MMREG(S32xUtil.CpuDeviceAccess cpu, Sh2Cache sh2Cache) {
+    public Sh2MMREG(BufferUtil.CpuDeviceAccess cpu, Sh2Cache sh2Cache) {
         this.cpu = cpu;
         this.cache = sh2Cache;
         this.ctx = new Sh2MMREGContext();
@@ -120,7 +120,7 @@ public class Sh2MMREG implements Device {
                 if (regSpec == RegSpecSh2.NONE_CCR) {
                     value = handleWriteCCR(regSpec, pos, value, size);
                 }
-                S32xUtil.writeBufferRaw(regs, pos, value, size);
+                BufferUtil.writeBufferRaw(regs, pos, value, size);
                 break;
         }
     }
@@ -161,10 +161,10 @@ public class Sh2MMREG implements Device {
                 case FRT -> res = frt.read(regSpec, pos, size);
                 case BSC -> {
                     assert size != Size.BYTE;
-                    res = S32xUtil.readBuffer(regs, pos, size);
+                    res = BufferUtil.readBuffer(regs, pos, size);
                     if (verbose) LOG.info("{} BSC reg {} read: {} {}", cpu, regSpec, th(res), size);
                 }
-                default -> res = S32xUtil.readBuffer(regs, pos, size);
+                default -> res = BufferUtil.readBuffer(regs, pos, size);
             }
         }
         if (verbose) {
@@ -189,7 +189,7 @@ public class Sh2MMREG implements Device {
         if (regSpec == RegSpecSh2.BSC_BCR1) {
             value |= (cpu.ordinal() & 1) << 15;
         }
-        S32xUtil.writeRegBuffer(regSpec, regs, value, size);
+        BufferUtil.writeRegBuffer(regSpec, regs, value, size);
     }
 
     private int handleWriteCCR(RegSpecSh2 r, int pos, int v, Size size) {
@@ -214,7 +214,7 @@ public class Sh2MMREG implements Device {
 
     private void tryWriteBuffer(int reg, int value, Size size) {
         try {
-            S32xUtil.writeBufferRaw(regs, reg & SH2_REG_MASK, value, size);
+            BufferUtil.writeBufferRaw(regs, reg & SH2_REG_MASK, value, size);
         } catch (Exception e) {
             if (verbose) LOG.error("Exception", e);
         }
@@ -251,10 +251,10 @@ public class Sh2MMREG implements Device {
         wdt.reset();
         dmaC.reset();
         intC.reset();
-        S32xUtil.writeBufferRaw(regs, RegSpecSh2.FRT_TIER.addr, 0x1, Size.BYTE);
-        S32xUtil.writeBufferRaw(regs, RegSpecSh2.FRT_TOCR.addr, 0xE0, Size.BYTE);
-        S32xUtil.writeBufferRaw(regs, RegSpecSh2.FRT_OCRAB_H.addr, 0xFF, Size.BYTE);
-        S32xUtil.writeBufferRaw(regs, RegSpecSh2.FRT_OCRAB_L.addr, 0xFF, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, RegSpecSh2.FRT_TIER.addr, 0x1, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, RegSpecSh2.FRT_TOCR.addr, 0xE0, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, RegSpecSh2.FRT_OCRAB_H.addr, 0xFF, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, RegSpecSh2.FRT_OCRAB_L.addr, 0xFF, Size.BYTE);
         handleWriteBSC(RegSpecSh2.BSC_BCR1, BSC_LONG_WRITE_MASK | 0x3f0, Size.LONG);
         handleWriteBSC(RegSpecSh2.BSC_BCR2, BSC_LONG_WRITE_MASK | 0xFC, Size.LONG);
         handleWriteBSC(RegSpecSh2.BSC_WCR, BSC_LONG_WRITE_MASK | 0xAAFF, Size.LONG);

@@ -1,13 +1,13 @@
 package s32x.util;
 
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.Md32x;
 import s32x.sh2.Sh2Helper.Sh2Config;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
-import static s32x.util.S32xUtil.CpuDeviceAccess.cdaValues;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.cdaValues;
 
 /**
  * Federico Berti

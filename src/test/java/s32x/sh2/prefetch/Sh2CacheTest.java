@@ -1,5 +1,6 @@
 package s32x.sh2.prefetch;
 
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,19 +13,18 @@ import s32x.sh2.cache.Sh2Cache;
 import s32x.sh2.cache.Sh2CacheImpl;
 import s32x.sh2.drc.Sh2Block;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Stream;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.SH2_START_SDRAM;
 import static s32x.dict.S32xDict.SH2_START_SDRAM_CACHE;
 import static s32x.sh2.Sh2Disassembler.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
 
 /**
  * Federico Berti

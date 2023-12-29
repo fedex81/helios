@@ -1,12 +1,12 @@
 package s32x.sh2.prefetch;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Instructions;
 import s32x.sh2.cache.Sh2Cache;
-import s32x.util.S32xUtil;
 
 import java.util.StringJoiner;
 
@@ -21,13 +21,13 @@ public interface Sh2Prefetcher {
 
     boolean verbose = false;
 
-    void fetch(Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu);
+    void fetch(Sh2Helper.FetchResult ft, BufferUtil.CpuDeviceAccess cpu);
 
-    int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu);
+    int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, BufferUtil.CpuDeviceAccess cpu);
 
     void invalidateCachePrefetch(Sh2Cache.CacheInvalidateContext ctx);
 
-    default void dataWrite(S32xUtil.CpuDeviceAccess cpu, int addr, int val, Size size) {
+    default void dataWrite(BufferUtil.CpuDeviceAccess cpu, int addr, int val, Size size) {
     }
 
     default void newFrame() {
@@ -54,9 +54,9 @@ public interface Sh2Prefetcher {
     class Stats {
         static String format = "%s pfTot: %d, pfMissPerc: %f, pfDsMissPerc: %f";
         public long pfMiss, pfTotal, pfDsMiss;
-        private final S32xUtil.CpuDeviceAccess cpu;
+        private final BufferUtil.CpuDeviceAccess cpu;
 
-        public Stats(S32xUtil.CpuDeviceAccess cpu) {
+        public Stats(BufferUtil.CpuDeviceAccess cpu) {
             this.cpu = cpu;
         }
 

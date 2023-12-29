@@ -1,17 +1,17 @@
 package s32x;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.S32xUtil;
 
 import java.util.function.Consumer;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static s32x.MarsRegTestUtil.*;
 import static s32x.dict.S32xDict.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.*;
 
 /**
  * Federico Berti
@@ -129,7 +129,7 @@ public class FrameBufferAccessTest {
         testSh2Access();
     }
 
-    private int modifyAddress(S32xUtil.CpuDeviceAccess access, int address, boolean matchNewVal) {
+    private int modifyAddress(BufferUtil.CpuDeviceAccess access, int address, boolean matchNewVal) {
         int res = readBus(lc, access, address, Size.WORD);
         int newVal = res + 1;
         int exp = matchNewVal ? newVal : res;

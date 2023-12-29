@@ -1,5 +1,6 @@
 package s32x.util;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RomHolder;
 import org.slf4j.Logger;
@@ -89,8 +90,8 @@ public class MarsLauncherHelper {
 
     public static Sh2LaunchContext setupRom(S32xBus bus, RomHolder romHolder, BiosHolder biosHolder) {
         Sh2LaunchContext ctx = new Sh2LaunchContext();
-        ctx.masterCtx = new Sh2Context(S32xUtil.CpuDeviceAccess.MASTER, masterDebug);
-        ctx.slaveCtx = new Sh2Context(S32xUtil.CpuDeviceAccess.SLAVE, slaveDebug);
+        ctx.masterCtx = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, masterDebug);
+        ctx.slaveCtx = new Sh2Context(BufferUtil.CpuDeviceAccess.SLAVE, slaveDebug);
         ctx.biosHolder = biosHolder;
         ctx.bus = bus;
         ctx.rom = ByteBuffer.wrap(romHolder.data);
@@ -105,8 +106,8 @@ public class MarsLauncherHelper {
 
         Sh2Bus memory = new Sh2BusImpl(ctx.s32XMMREG, ctx.rom, biosHolder, bus, mDrcCtx, sDrcCtx);
         ctx.memory = Md32x.SH2_DEBUG_DRC ? new Sh2MemoryParallel(memory) : memory;
-        ctx.mDevCtx = Sh2DeviceHelper.createDevices(S32xUtil.CpuDeviceAccess.MASTER, ctx);
-        ctx.sDevCtx = Sh2DeviceHelper.createDevices(S32xUtil.CpuDeviceAccess.SLAVE, ctx);
+        ctx.mDevCtx = Sh2DeviceHelper.createDevices(BufferUtil.CpuDeviceAccess.MASTER, ctx);
+        ctx.sDevCtx = Sh2DeviceHelper.createDevices(BufferUtil.CpuDeviceAccess.SLAVE, ctx);
         ctx.mDevCtx.sci.setOther(ctx.sDevCtx.sci);
         ctx.sh2 = (ctx.masterCtx.debug || ctx.slaveCtx.debug) ?
                 new Sh2Debug(ctx.memory) : new Sh2Impl(ctx.memory);
@@ -134,15 +135,15 @@ public class MarsLauncherHelper {
 
         public void initContext() {
             bus.attachDevice(sh2).attachDevice(s32XMMREG);
-            memory.getSh2MMREGS(S32xUtil.CpuDeviceAccess.MASTER).init(mDevCtx);
-            memory.getSh2MMREGS(S32xUtil.CpuDeviceAccess.SLAVE).init(sDevCtx);
+            memory.getSh2MMREGS(BufferUtil.CpuDeviceAccess.MASTER).init(mDevCtx);
+            memory.getSh2MMREGS(BufferUtil.CpuDeviceAccess.SLAVE).init(sDevCtx);
             s32XMMREG.setInterruptControl(mDevCtx.intC, sDevCtx.intC);
             s32XMMREG.setDmaControl(dmaFifo68k);
             s32XMMREG.setPwm(pwm);
             pwm.setIntControls(mDevCtx.intC, sDevCtx.intC);
             pwm.setDmac(mDevCtx.dmaC, sDevCtx.dmaC);
             dmaFifo68k.setDmac(mDevCtx.dmaC, sDevCtx.dmaC);
-            bus.setBios68k(biosHolder.getBiosData(S32xUtil.CpuDeviceAccess.M68K));
+            bus.setBios68k(biosHolder.getBiosData(BufferUtil.CpuDeviceAccess.M68K));
             bus.setRom(rom);
             bus.masterCtx = masterCtx;
             bus.slaveCtx = slaveCtx;

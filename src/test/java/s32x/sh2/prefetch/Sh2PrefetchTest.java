@@ -1,6 +1,7 @@
 package s32x.sh2.prefetch;
 
 import com.google.common.collect.Range;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,11 +13,12 @@ import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.drc.Sh2Block;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.util.Collection;
 import java.util.Optional;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.*;
 import static s32x.sh2.cache.Sh2Cache.CACHE_BYTES_PER_LINE;
@@ -24,8 +26,6 @@ import static s32x.sh2.cache.Sh2CacheImpl.PARANOID_ON_CACHE_ENABLED_TOGGLE;
 import static s32x.sh2.drc.DrcUtil.getPrefetchBlocksAt;
 import static s32x.sh2.prefetch.Sh2Prefetch.rangeIntersect;
 import static s32x.sh2.prefetch.Sh2PrefetchSimple.prefetchContexts;
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
 
 /**
  * Federico Berti

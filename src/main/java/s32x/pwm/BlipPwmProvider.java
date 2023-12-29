@@ -1,12 +1,8 @@
 package s32x.pwm;
 
 import omegadrive.sound.PwmProvider;
-import omegadrive.util.LogHelper;
-import omegadrive.util.PriorityThreadFactory;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.SoundUtil;
+import omegadrive.util.*;
 import org.slf4j.Logger;
-import s32x.util.S32xUtil;
 import s32x.util.blipbuffer.BlipBufferHelper;
 import s32x.util.blipbuffer.BlipBufferIntf;
 import s32x.util.blipbuffer.StereoBlipBuffer;
@@ -158,7 +154,7 @@ public class BlipPwmProvider implements PwmProvider {
         if (stereoBytes > 0) {
             exec.submit(() -> {
                 SoundUtil.writeBufferInternal(dataLine, context.lineBuffer, 0, stereoBytes);
-                if (S32xUtil.assertionsEnabled) {
+                if (BufferUtil.assertionsEnabled) {
                     if (current != sync.get()) {
                         LOG.info("Pwm audio thread too slow: {} vs {}", current, sync.get());
                     }

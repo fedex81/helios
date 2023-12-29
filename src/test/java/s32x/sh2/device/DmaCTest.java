@@ -1,5 +1,6 @@
 package s32x.sh2.device;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
@@ -11,14 +12,13 @@ import s32x.MarsRegTestUtil;
 import s32x.S32XMMREG;
 import s32x.sh2.device.DmaHelper.DmaChannelSetup;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static s32x.DmaFifo68k.SH2_FIFO_FULL_BIT;
 import static s32x.dict.S32xDict.RegSpecS32x.*;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.*;
 
 /**
  * Federico Berti
@@ -208,7 +208,7 @@ public class DmaCTest {
         } while (!isFifoFull());
     }
 
-    private void dmaStepOne(S32xUtil.CpuDeviceAccess cpu, DmaC dmaC, boolean dreq, int channel) {
+    private void dmaStepOne(BufferUtil.CpuDeviceAccess cpu, DmaC dmaC, boolean dreq, int channel) {
         Md32xRuntimeData.setAccessTypeExt(cpu);
         if (dreq) {
             dmaC.dmaReqTrigger(channel, true);

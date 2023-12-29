@@ -1,6 +1,7 @@
 package s32x.sh2;
 
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.Sh2MMREG;
@@ -13,7 +14,6 @@ import s32x.sh2.drc.Sh2Block;
 import s32x.sh2.drc.Sh2BlockRecompiler;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.util.Arrays;
 
@@ -71,7 +71,7 @@ public class Sh2Impl implements Sh2 {
 
     private boolean acceptInterrupts(final int level) {
         if (level > getIMASK()) {
-            if (S32xUtil.assertionsEnabled) {
+            if (BufferUtil.assertionsEnabled) {
                 Sh2Instructions.Sh2InstructionWrapper instWrapper = Sh2Instructions.instOpcodeMap[ctx.opcode];
                 boolean legal = Arrays.binarySearch(Sh2Instructions.intDisabledOpcodes, instWrapper.inst) < 0;
 //				assert legal : th(inst.pc) + "," + inst.inst;

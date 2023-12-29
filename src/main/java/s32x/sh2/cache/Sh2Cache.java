@@ -1,11 +1,11 @@
 package s32x.sh2.cache;
 
 import omegadrive.Device;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.io.Serial;
 import java.io.Serializable;

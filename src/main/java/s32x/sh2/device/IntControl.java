@@ -1,10 +1,10 @@
 package s32x.sh2.device;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 
@@ -18,7 +18,7 @@ import static s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType.*;
  * Copyright 2021
  * <p>
  */
-public interface IntControl extends S32xUtil.Sh2Device {
+public interface IntControl extends BufferUtil.Sh2Device {
 
     Logger LOG = LogHelper.getLogger(IntControl.class.getSimpleName());
 

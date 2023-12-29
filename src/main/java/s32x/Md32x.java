@@ -7,6 +7,8 @@ import omegadrive.sound.PwmProvider;
 import omegadrive.system.Megadrive;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Sleeper;
 import omegadrive.util.VideoMode;
@@ -24,8 +26,6 @@ import s32x.util.MarsLauncherHelper;
 import s32x.util.MarsLauncherHelper.Sh2LaunchContext;
 import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xMemView;
-import s32x.util.S32xUtil;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 import s32x.vdp.MarsVdp;
 import s32x.vdp.MarsVdp.MarsVdpRenderContext;
 import s32x.vdp.debug.DebugVideoRenderContext;
@@ -33,8 +33,8 @@ import s32x.vdp.debug.DebugVideoRenderContext;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 
 /**
  * Federico Berti
@@ -86,7 +86,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         for (int i = 0; i < sh2CycleTable.length; i++) {
             sh2CycleTable[i] = Math.max(1, (int) Math.round(i * SH2_CYCLE_DIV));
         }
-        S32xUtil.assertPowerOf2Minus1("CYCLE_TABLE_LEN_MASK", CYCLE_TABLE_LEN_MASK);
+        BufferUtil.assertPowerOf2Minus1("CYCLE_TABLE_LEN_MASK", CYCLE_TABLE_LEN_MASK);
     }
 
     public int nextMSh2Cycle = 0, nextSSh2Cycle = 0;

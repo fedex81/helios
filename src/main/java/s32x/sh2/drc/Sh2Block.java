@@ -1,5 +1,6 @@
 package s32x.sh2.drc;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.Sh2MMREG;
@@ -10,7 +11,6 @@ import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.prefetch.Sh2Prefetch;
 import s32x.sh2.prefetch.Sh2Prefetcher;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -31,7 +31,7 @@ public class Sh2Block {
     //needs to be (powerOf2 - 1)
     private static final int OPT_THRESHOLD2 = Integer.parseInt(System.getProperty("helios.32x.sh2.drc.stage2.hits", "31"));
 
-    public static final Sh2Block INVALID_BLOCK = new Sh2Block(-1, S32xUtil.CpuDeviceAccess.MASTER);
+    public static final Sh2Block INVALID_BLOCK = new Sh2Block(-1, BufferUtil.CpuDeviceAccess.MASTER);
     public static final int SH2_DRC_MAX_BLOCK_LEN_BYTES =
             Integer.parseInt(System.getProperty("helios.32x.sh2.drc.maxBlockLen", "32"));
     public static final int MAX_INST_LEN = SH2_DRC_MAX_BLOCK_LEN_BYTES >> 1;
@@ -58,12 +58,12 @@ public class Sh2Block {
     private static final boolean verbose = false;
 
     static {
-        S32xUtil.assertPowerOf2Minus1("OPT_THRESHOLD2", OPT_THRESHOLD2);
+        BufferUtil.assertPowerOf2Minus1("OPT_THRESHOLD2", OPT_THRESHOLD2);
         INVALID_BLOCK.setFlag(VALID_FLAG, false);
         assert POLLER_ACTIVATE_LIMIT >= 3;
     }
 
-    public Sh2Block(int pc, S32xUtil.CpuDeviceAccess cpu) {
+    public Sh2Block(int pc, BufferUtil.CpuDeviceAccess cpu) {
         prefetchPc = pc;
         blockFlags = (cpu.ordinal() | VALID_FLAG);
     }
@@ -174,8 +174,8 @@ public class Sh2Block {
         prefetchPc &= ~1;
     }
 
-    public S32xUtil.CpuDeviceAccess getCpu() {
-        return S32xUtil.CpuDeviceAccess.cdaValues[blockFlags & CPU_FLAG];
+    public BufferUtil.CpuDeviceAccess getCpu() {
+        return BufferUtil.CpuDeviceAccess.cdaValues[blockFlags & CPU_FLAG];
     }
 
     @Override

@@ -1,18 +1,18 @@
 package s32x;
 
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.dict.Sh2Dict;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static s32x.MarsRegTestUtil.createTestInstance;
 import static s32x.dict.Sh2Dict.BSC_LONG_WRITE_MASK;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
 
 /**
  * Federico Berti

@@ -4,10 +4,7 @@ import omegadrive.Device;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.sound.PwmProvider;
-import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
-import omegadrive.util.VideoMode;
+import omegadrive.util.*;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
 import org.slf4j.Logger;
 import s32x.DmaFifo68k;
@@ -18,7 +15,6 @@ import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.util.BiosHolder;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 import s32x.vdp.MarsVdp;
 
 import java.io.Serial;
@@ -219,9 +215,9 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
     }
 
     private void checkBankSetRegister(int address, Size size) {
-        S32xDict.RegSpecS32x r = S32xDict.getRegSpec(S32xUtil.CpuDeviceAccess.M68K, address);
+        S32xDict.RegSpecS32x r = S32xDict.getRegSpec(BufferUtil.CpuDeviceAccess.M68K, address);
         if (r == S32xDict.RegSpecS32x.MD_BANK_SET) {
-            int val = S32xUtil.readWordFromBuffer(s32XMMREG.regContext, r);
+            int val = BufferUtil.readWordFromBuffer(s32XMMREG.regContext, r);
             busContext.bankSetValue = (val & 3);
             bankSetShift = busContext.bankSetValue << 20;
             if (verboseMd) LOG.info("BankSet now: {}", busContext.bankSetValue);
@@ -321,7 +317,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
     }
 
     public void resetSh2() {
-        S32xUtil.CpuDeviceAccess cpu = Md32xRuntimeData.getAccessTypeExt();
+        BufferUtil.CpuDeviceAccess cpu = Md32xRuntimeData.getAccessTypeExt();
         //NOTE this changes the access type
         sh2.reset(masterCtx);
         sh2.reset(slaveCtx);

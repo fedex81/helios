@@ -1,5 +1,6 @@
 package s32x.sh2.device;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -8,7 +9,6 @@ import s32x.dict.S32xDict;
 import s32x.dict.Sh2Dict.RegSpecSh2;
 import s32x.event.PollSysEventManager;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -52,15 +52,15 @@ public class IntControlImpl implements IntControl {
     // V, H, CMD and PWM each possesses exclusive address on the master side and the slave side.
     private final ByteBuffer sh2_int_mask;
     private final ByteBuffer regs;
-    private final S32xUtil.CpuDeviceAccess cpu;
+    private final BufferUtil.CpuDeviceAccess cpu;
 
     private static final boolean legacy = false;
 
-    public static IntControl createInstance(S32xUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
+    public static IntControl createInstance(BufferUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
         return legacy ? new IntControlImplOld(cpu, regs) : new IntControlImpl(cpu, regs);
     }
 
-    public IntControlImpl(S32xUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
+    public IntControlImpl(BufferUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
         sh2_int_mask = ByteBuffer.allocate(2);
         this.regs = regs;
         this.cpu = cpu;
@@ -119,8 +119,8 @@ public class IntControlImpl implements IntControl {
     @Override
     public int read(RegSpecSh2 regSpec, int reg, Size size) {
         if (verbose)
-            LOG.info("{} Read {} value: {} {}", cpu, regSpec.getName(), Util.th(S32xUtil.readBuffer(regs, reg, size)), size);
-        return S32xUtil.readBuffer(regs, reg, size);
+            LOG.info("{} Read {} value: {} {}", cpu, regSpec.getName(), Util.th(BufferUtil.readBuffer(regs, reg, size)), size);
+        return BufferUtil.readBuffer(regs, reg, size);
     }
 
     private InterruptContext getContextFromExternalInterrupt(Sh2Interrupt intp) {
@@ -157,7 +157,7 @@ public class IntControlImpl implements IntControl {
 
     @Override
     public void reloadSh2IntMask() {
-        int newVal = S32xUtil.readBuffer(sh2_int_mask, S32xDict.RegSpecS32x.SH2_INT_MASK.addr, Size.WORD);
+        int newVal = BufferUtil.readBuffer(sh2_int_mask, S32xDict.RegSpecS32x.SH2_INT_MASK.addr, Size.WORD);
         setIntsMasked(newVal & 0xF);
     }
 
@@ -178,7 +178,7 @@ public class IntControlImpl implements IntControl {
     }
 
     public int readSh2IntMaskReg(int pos, Size size) {
-        return S32xUtil.readBuffer(sh2_int_mask, pos, size);
+        return BufferUtil.readBuffer(sh2_int_mask, pos, size);
     }
 
     @Override
@@ -213,7 +213,7 @@ public class IntControlImpl implements IntControl {
     }
     private InterruptContext getCurrentInterrupt() {
         InterruptContext current = LEV_0;
-        if (S32xUtil.assertionsEnabled) {
+        if (BufferUtil.assertionsEnabled) {
             checkMultiInterrupt();
         }
         //order is important, higher first
@@ -286,22 +286,22 @@ public class IntControlImpl implements IntControl {
             case DMA:
                 //byte #3
                 int offset = ctx.source.subType == OnChipSubType.DMA_C0 ? 0 : 1;
-                vn = S32xUtil.readBuffer(regs, INTC_VCRDMA0.addr + (offset << 3), Size.LONG) & 0xFF;
+                vn = BufferUtil.readBuffer(regs, INTC_VCRDMA0.addr + (offset << 3), Size.LONG) & 0xFF;
                 break;
             case WDT:
                 //we only support Watchdog Timer (WDT) Interval Interrupt Vector Number (WITV)
-                vn = S32xUtil.readBuffer(regs, INTC_VCRWDT.addr, Size.BYTE); //byte #0
+                vn = BufferUtil.readBuffer(regs, INTC_VCRWDT.addr, Size.BYTE); //byte #0
                 break;
             case DIV:
-                vn = S32xUtil.readBuffer(regs, INTC_VCRDIV.addr, Size.LONG) & 0x7F; //byte #3
+                vn = BufferUtil.readBuffer(regs, INTC_VCRDIV.addr, Size.LONG) & 0x7F; //byte #3
                 break;
             case SCI:
                 //TODO fix
                 int pos = ctx.source.subType == OnChipSubType.RXI ? INTC_VCRA.addr + 1 : INTC_VCRB.addr;
-                vn = S32xUtil.readBuffer(regs, pos, Size.BYTE);
+                vn = BufferUtil.readBuffer(regs, pos, Size.BYTE);
                 break;
             case FRT:
-                vn = S32xUtil.readBuffer(regs, INTC_VCRD.addr, Size.BYTE) & 0x7F; //byte #0
+                vn = BufferUtil.readBuffer(regs, INTC_VCRD.addr, Size.BYTE) & 0x7F; //byte #0
                 break;
             case NONE:
                 break;
@@ -346,16 +346,16 @@ public class IntControlImpl implements IntControl {
 
     @Override
     public void reset() {
-        S32xUtil.writeRegBuffer(INTC_IPRA, regs, 0, Size.WORD);
-        S32xUtil.writeRegBuffer(INTC_IPRB, regs, 0, Size.WORD);
-        S32xUtil.writeRegBuffer(INTC_VCRA, regs, 0, Size.WORD);
-        S32xUtil.writeRegBuffer(INTC_VCRB, regs, 0, Size.WORD);
-        S32xUtil.writeRegBuffer(INTC_VCRC, regs, 0, Size.WORD);
-        S32xUtil.writeRegBuffer(INTC_VCRD, regs, 0, Size.WORD);
-        S32xUtil.writeRegBuffer(INTC_VCRWDT, regs, 0, Size.WORD);
-        S32xUtil.writeRegBuffer(INTC_VCRDIV, regs, 0, Size.WORD);
-        S32xUtil.writeRegBuffer(INTC_VCRDMA0, regs, 0, Size.WORD);
-        S32xUtil.writeRegBuffer(INTC_VCRDMA1, regs, 0, Size.WORD);
-        S32xUtil.writeRegBuffer(INTC_ICR, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_IPRA, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_IPRB, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_VCRA, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_VCRB, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_VCRC, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_VCRD, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_VCRWDT, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_VCRDIV, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_VCRDMA0, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_VCRDMA1, regs, 0, Size.WORD);
+        BufferUtil.writeRegBuffer(INTC_ICR, regs, 0, Size.WORD);
     }
 }

@@ -1,15 +1,12 @@
-package s32x.util;
+package omegadrive.util;
 
 import com.google.common.math.IntMath;
 import omegadrive.Device;
-import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
-import omegadrive.util.VideoMode;
 import org.slf4j.Logger;
 import s32x.S32XMMREG.RegContext;
 import s32x.dict.S32xDict;
 import s32x.dict.S32xDict.RegSpecS32x;
+import s32x.util.RegSpec;
 import s32x.util.RegSpec.BytePosReg;
 
 import java.nio.ByteBuffer;
@@ -23,9 +20,9 @@ import static s32x.dict.Sh2Dict.RegSpecSh2;
  * <p>
  * Copyright 2021
  */
-public class S32xUtil {
+public class BufferUtil {
 
-    private static final Logger LOG = LogHelper.getLogger(S32xUtil.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(BufferUtil.class.getSimpleName());
 
     public static final int[] EMPTY_INT_ARRAY = {};
 
@@ -188,19 +185,19 @@ public class S32xUtil {
     }
 
     public static boolean setBitRegFromWord(ByteBuffer bb, RegSpecS32x reg, int pos, int value) {
-        return S32xUtil.setBit(bb, reg.addr, pos, value, Size.WORD);
+        return BufferUtil.setBit(bb, reg.addr, pos, value, Size.WORD);
     }
 
     public static void setBitReg(RegContext rc, RegSpecS32x reg, int address, int pos, int value, Size size) {
         address &= reg.getAddrMask();
         if (reg.deviceType == S32xDict.S32xRegType.VDP) {
-            S32xUtil.setBit(rc.vdpRegs, address, pos, value, size);
+            BufferUtil.setBit(rc.vdpRegs, address, pos, value, size);
             return;
         }
         switch (reg.regCpuType) {
-            case REG_BOTH -> S32xUtil.setBit(rc.sysRegsMd, rc.sysRegsSh2, address, pos, value, size);
-            case REG_MD -> S32xUtil.setBit(rc.sysRegsMd, address, pos, value, size);
-            case REG_SH2 -> S32xUtil.setBit(rc.sysRegsSh2, address, pos, value, size);
+            case REG_BOTH -> BufferUtil.setBit(rc.sysRegsMd, rc.sysRegsSh2, address, pos, value, size);
+            case REG_MD -> BufferUtil.setBit(rc.sysRegsMd, address, pos, value, size);
+            case REG_SH2 -> BufferUtil.setBit(rc.sysRegsSh2, address, pos, value, size);
             default ->
                     LOG.error("Unable to setBit: {}, addr: {}, value: {} {}", reg.getName(), th(address), th(value), size);
         }

@@ -52,10 +52,10 @@ import static omegadrive.cart.mapper.md.Ssf2Mapper.BANK_SET_END_ADDRESS;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.joypad.JoypadProvider.JoypadType.BUTTON_3;
 import static omegadrive.system.SystemProvider.SystemEvent.FORCE_PAD_TYPE;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
-import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
-import static s32x.util.S32xUtil.CpuDeviceAccess.Z80;
 
 public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad> implements GenesisBusProvider, RomMapper {
 

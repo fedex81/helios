@@ -10,13 +10,13 @@ import s32x.util.Md32xRuntimeData;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
 import static s32x.dict.S32xDict.RegSpecS32x.MD_DMAC_CTRL;
 import static s32x.dict.S32xDict.RegSpecS32x.MD_FIFO_REG;
 import static s32x.dict.S32xDict.SH2_CACHE_THROUGH_OFFSET;
 import static s32x.dict.S32xDict.SH2_START_SDRAM;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
 
 /**
  * Federico Berti

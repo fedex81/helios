@@ -18,15 +18,15 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
+import static omegadrive.util.BufferUtil.*;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.RegSpecS32x.*;
 import static s32x.pwm.Pwm.PwmChannel.LEFT;
 import static s32x.pwm.Pwm.PwmChannel.RIGHT;
 import static s32x.pwm.Pwm.PwmChannelSetup.OFF;
-import static s32x.util.S32xUtil.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
 
 /**
  * Federico Berti

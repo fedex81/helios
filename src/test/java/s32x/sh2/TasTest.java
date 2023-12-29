@@ -1,10 +1,10 @@
 package s32x.sh2;
 
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import static s32x.dict.S32xDict.SH2_START_SDRAM;
 import static s32x.dict.S32xDict.SH2_START_SDRAM_CACHE;

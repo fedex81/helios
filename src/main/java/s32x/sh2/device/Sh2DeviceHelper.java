@@ -1,10 +1,10 @@
 package s32x.sh2.device;
 
+import omegadrive.util.BufferUtil;
 import s32x.DmaFifo68k;
 import s32x.Sh2MMREG;
 import s32x.bus.Sh2Bus;
 import s32x.util.MarsLauncherHelper.Sh2LaunchContext;
-import s32x.util.S32xUtil;
 
 /**
  * Federico Berti
@@ -16,7 +16,7 @@ public class Sh2DeviceHelper {
     public enum Sh2DeviceType {NONE, UBC, FRT, BSC, DMA, INTC, DIV, SCI, WDT}
 
     public static class Sh2DeviceContext {
-        public S32xUtil.CpuDeviceAccess cpu;
+        public BufferUtil.CpuDeviceAccess cpu;
         public IntControl intC;
         public DmaC dmaC;
         public SerialCommInterface sci;
@@ -26,11 +26,11 @@ public class Sh2DeviceHelper {
         public Sh2MMREG sh2MMREG;
     }
 
-    public static Sh2DeviceContext createDevices(S32xUtil.CpuDeviceAccess cpu, Sh2LaunchContext ctx) {
+    public static Sh2DeviceContext createDevices(BufferUtil.CpuDeviceAccess cpu, Sh2LaunchContext ctx) {
         return createDevices(cpu, ctx.memory, ctx.dmaFifo68k, ctx.memory.getSh2MMREGS(cpu));
     }
 
-    public static Sh2DeviceContext createDevices(S32xUtil.CpuDeviceAccess cpu, Sh2Bus memory,
+    public static Sh2DeviceContext createDevices(BufferUtil.CpuDeviceAccess cpu, Sh2Bus memory,
                                                  DmaFifo68k dmaFifo68k, Sh2MMREG sh2Regs) {
         Sh2DeviceContext ctx = new Sh2DeviceContext();
         ctx.cpu = cpu;

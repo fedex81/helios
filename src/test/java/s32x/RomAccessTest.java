@@ -1,6 +1,8 @@
 package s32x;
 
 import omegadrive.cart.mapper.md.Ssf2Mapper;
+import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,17 +10,15 @@ import org.junit.jupiter.api.Test;
 import s32x.bus.S32xBus;
 import s32x.bus.Sh2Bus;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.S32xUtil;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.util.function.Consumer;
 
 import static omegadrive.bus.model.GenesisBusProvider.SRAM_LOCK;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.th;
 import static s32x.MarsRegTestUtil.readBus;
 import static s32x.MarsRegTestUtil.setRv;
 import static s32x.dict.S32xDict.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.*;
 
 /**
  * Federico Berti
@@ -135,7 +135,7 @@ public class RomAccessTest {
 
     private int readRomToggleRv(CpuDeviceAccess cpu, Sh2Bus sh2Mem, S32xBus mdBus, int addr) {
         int val;
-        if (cpu.regSide == S32xUtil.S32xRegSide.SH2) {
+        if (cpu.regSide == BufferUtil.S32xRegSide.SH2) {
             val = sh2Mem.read(SH2_START_ROM | addr, Size.BYTE) & 0xFF;
         } else {
             val = mdBus.readRom(addr, Size.BYTE) & 0xFF;

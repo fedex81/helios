@@ -1,5 +1,6 @@
 package s32x.util;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -117,7 +118,7 @@ public class RegSpecTest {
         boolean change = r.write(b, r.bufferAddr + bytePos.ordinal(), val, size);
         Assertions.assertEquals(shouldChange, change);
         if (shouldChange) {
-            int res = S32xUtil.readBuffer(b, r.bufferAddr + bytePos.ordinal(), size) & size.getMask();
+            int res = BufferUtil.readBuffer(b, r.bufferAddr + bytePos.ordinal(), size) & size.getMask();
             Assertions.assertEquals(val, res);
         }
     }

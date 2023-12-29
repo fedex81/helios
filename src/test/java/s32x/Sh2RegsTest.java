@@ -1,17 +1,17 @@
 package s32x;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.dict.S32xDict.RegSpecS32x;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.S32xUtil;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static s32x.MarsRegTestUtil.*;
 import static s32x.dict.S32xDict.START_32X_SYSREG_CACHE;
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
 
 /**
  * Federico Berti
@@ -57,12 +57,12 @@ public class Sh2RegsTest {
         }
     }
 
-    private void testByte(S32xUtil.CpuDeviceAccess cpu, RegSpecS32x reg, int k, int val, int bytePos) {
+    private void testByte(BufferUtil.CpuDeviceAccess cpu, RegSpecS32x reg, int k, int val, int bytePos) {
         int andMask = reg.regSpec.writableBitMask;
         int orMask = reg.regSpec.preserveBitMask;
         int ignoreMask = AND_WORD_NO_MASK;
         int regAddr = START_32X_SYSREG_CACHE | reg.addr;
-        S32xUtil.CpuDeviceAccess other = cpu == MASTER ? SLAVE : MASTER;
+        BufferUtil.CpuDeviceAccess other = cpu == MASTER ? SLAVE : MASTER;
         int valByte = (val >> (8 * (1 - bytePos))) & 0xFF;
 
         writeBus(lc, MASTER, regAddr + bytePos, 0, Size.BYTE);
@@ -76,12 +76,12 @@ public class Sh2RegsTest {
         Assertions.assertEquals(exp & ~masterSlaveDiffMask[k], res & ~masterSlaveDiffMask[k]);
     }
 
-    private void testWord(S32xUtil.CpuDeviceAccess cpu, RegSpecS32x reg, int k, int val) {
+    private void testWord(BufferUtil.CpuDeviceAccess cpu, RegSpecS32x reg, int k, int val) {
         int andMask = reg.regSpec.writableBitMask;
         int orMask = reg.regSpec.preserveBitMask;
         int ignoreMask = 0xFFFF;
         int regAddr = START_32X_SYSREG_CACHE | reg.addr;
-        S32xUtil.CpuDeviceAccess other = cpu == MASTER ? SLAVE : MASTER;
+        BufferUtil.CpuDeviceAccess other = cpu == MASTER ? SLAVE : MASTER;
 
         int valOther = readBus(lc, other, regAddr, Size.WORD) & ignoreMask;
 

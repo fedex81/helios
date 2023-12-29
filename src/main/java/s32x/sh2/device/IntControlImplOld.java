@@ -1,5 +1,6 @@
 package s32x.sh2.device;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -9,7 +10,6 @@ import s32x.dict.Sh2Dict.RegSpecSh2;
 import s32x.event.PollSysEventManager;
 import s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceType;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -49,10 +49,10 @@ public class IntControlImplOld implements IntControl {
     private final ByteBuffer sh2_int_mask;
     private final ByteBuffer regs;
     private int interruptLevel;
-    private final S32xUtil.CpuDeviceAccess cpu;
+    private final BufferUtil.CpuDeviceAccess cpu;
     private int additionalIntData = 0;
 
-    public IntControlImplOld(S32xUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
+    public IntControlImplOld(BufferUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
         sh2_int_mask = ByteBuffer.allocate(2);
         this.regs = regs;
         this.cpu = cpu;
@@ -99,8 +99,8 @@ public class IntControlImplOld implements IntControl {
     @Override
     public int read(RegSpecSh2 regSpec, int reg, Size size) {
         if (verbose)
-            LOG.info("{} Read {} value: {} {}", cpu, regSpec.getName(), Util.th(S32xUtil.readBuffer(regs, reg, size)), size);
-        return S32xUtil.readBuffer(regs, reg, size);
+            LOG.info("{} Read {} value: {} {}", cpu, regSpec.getName(), Util.th(BufferUtil.readBuffer(regs, reg, size)), size);
+        return BufferUtil.readBuffer(regs, reg, size);
     }
 
     private void setIntMasked(int ipt, boolean isValid) {
@@ -158,7 +158,7 @@ public class IntControlImplOld implements IntControl {
     }
 
     public int readSh2IntMaskReg(int pos, Size size) {
-        return S32xUtil.readBuffer(sh2_int_mask, pos, size);
+        return BufferUtil.readBuffer(sh2_int_mask, pos, size);
     }
 
     private void setIntPending(int ipt, boolean isPending) {

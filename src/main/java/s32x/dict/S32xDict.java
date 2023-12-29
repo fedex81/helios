@@ -1,22 +1,22 @@
 package s32x.dict;
 
+import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.util.RegSpec;
-import s32x.util.S32xUtil;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 import s32x.vdp.MarsVdp;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.S32xRegCpuType.*;
 import static s32x.dict.S32xDict.S32xRegType.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.*;
 
 /**
  * Federico Berti
@@ -322,7 +322,7 @@ public class S32xDict {
         String type = logCtx.read ? "R" : "W";
         RegSpecS32x regSpec = logCtx.regSpec;
         String s = null;
-        int currentWord = S32xUtil.readBuffer(logCtx.regArea, regSpec.addr, Size.WORD);
+        int currentWord = BufferUtil.readBuffer(logCtx.regArea, regSpec.addr, Size.WORD);
         value = logCtx.read ? currentWord : value;
         switch (regSpec) {
             case VDP_BITMAP_MODE:
@@ -360,7 +360,7 @@ public class S32xDict {
                 if (logCtx.read) {
                     return;
                 }
-                int valueMem = S32xUtil.readBuffer(logCtx.regArea, (address & S32X_REG_MASK) & ~1, Size.LONG);
+                int valueMem = BufferUtil.readBuffer(logCtx.regArea, (address & S32X_REG_MASK) & ~1, Size.LONG);
                 String s2 = decodeComm(valueMem);
                 s = String.format(sformat, logCtx.cpu.toString(), type, regSpec.getName(),
                         s2, value, valueMem, size.name(), evenOdd);

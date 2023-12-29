@@ -1,5 +1,7 @@
 package s32x.bus;
 
+import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -19,17 +21,15 @@ import s32x.sh2.prefetch.Sh2PrefetchSimple;
 import s32x.sh2.prefetch.Sh2Prefetcher;
 import s32x.util.BiosHolder;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 import s32x.util.debug.MemAccessStats;
 import s32x.util.debug.SdramSyncTester;
 
 import java.nio.ByteBuffer;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
 
 public final class Sh2BusImpl implements Sh2Bus {
 
@@ -103,20 +103,20 @@ public final class Sh2BusImpl implements Sh2Bus {
                     res = mdBus.readRom(address & 0xFF_FFFF, size);
                     S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.ROM);
                 } else if (address >= S32xDict.START_32X_SYSREG && address < S32xDict.END_32X_COLPAL) {
-                    if (S32xUtil.ENFORCE_FM_BIT_ON_READS && s32XMMREG.fm == 0 && address >= S32xDict.START_32X_VDPREG) {
+                    if (BufferUtil.ENFORCE_FM_BIT_ON_READS && s32XMMREG.fm == 0 && address >= S32xDict.START_32X_VDPREG) {
                         logWarnIllegalAccess(cpuAccess, "read", "VDP regs", "FM",
                                 s32XMMREG.fm, address, size);
                         return size.getMask();
                     }
                     res = s32XMMREG.read(address, size);
                 } else if (address >= S32xDict.SH2_START_SDRAM && address < S32xDict.SH2_END_SDRAM) {
-                    res = S32xUtil.readBuffer(sdram, address & S32xDict.SH2_SDRAM_MASK, size);
+                    res = BufferUtil.readBuffer(sdram, address & S32xDict.SH2_SDRAM_MASK, size);
                     S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.SDRAM);
                     if (SDRAM_SYNC_TESTER) {
                         sdramSyncTester.readSyncCheck(cpuAccess, address, size);
                     }
                 } else if (address >= S32xDict.START_DRAM && address < S32xDict.END_DRAM_OVER_MIRROR) {
-                    if (S32xUtil.ENFORCE_FM_BIT_ON_READS && s32XMMREG.fm == 0) {
+                    if (BufferUtil.ENFORCE_FM_BIT_ON_READS && s32XMMREG.fm == 0) {
                         logWarnIllegalAccess(cpuAccess, "read", "FB/OVER", "FM",
                                 s32XMMREG.fm, address, size);
                         return size.getMask();
@@ -182,7 +182,7 @@ public final class Sh2BusImpl implements Sh2Bus {
                     if (SDRAM_SYNC_TESTER) {
                         sdramSyncTester.writeSyncCheck(cpuAccess, address, val, size);
                     }
-                    hasMemoryChanged = S32xUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, val, size);
+                    hasMemoryChanged = BufferUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, val, size);
                     S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.SDRAM);
                 } else if (address >= S32xDict.START_32X_SYSREG && address < S32xDict.END_32X_SYSREG) {
                     s32XMMREG.write(address, val, size);

@@ -1,10 +1,10 @@
 package s32x;
 
+import omegadrive.util.BufferUtil;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.device.Sh2DeviceHelper;
 import s32x.sh2.drc.Sh2Block;
 import s32x.sh2.prefetch.Sh2Prefetch;
-import s32x.util.S32xUtil;
 
 /**
  * Federico Berti
@@ -38,9 +38,9 @@ public class AsmExample implements Runnable {
     }
 
     public static void main(String[] args) {
-        Sh2Context sh2Context = new Sh2Context(S32xUtil.CpuDeviceAccess.MASTER);
-        Sh2Block block = new Sh2Block(0, S32xUtil.CpuDeviceAccess.MASTER);
-        Sh2Context context = new Sh2Context(S32xUtil.CpuDeviceAccess.MASTER);
+        Sh2Context sh2Context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER);
+        Sh2Block block = new Sh2Block(0, BufferUtil.CpuDeviceAccess.MASTER);
+        Sh2Context context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER);
         context.devices = new Sh2DeviceHelper.Sh2DeviceContext();
         AsmExample b = new AsmExample(sh2Context.registers, block.prefetchWords, context);
 //        b.run();

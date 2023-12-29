@@ -1,5 +1,6 @@
 package s32x.sh2.j2core;
 
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.*;
@@ -8,7 +9,6 @@ import s32x.sh2.Sh2Disassembler;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.device.IntControl.Sh2Interrupt;
 import s32x.sh2.device.IntControlImpl;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.io.File;
 import java.io.PrintStream;
@@ -18,10 +18,10 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static omegadrive.util.BufferUtil.readBuffer;
+import static omegadrive.util.BufferUtil.writeBufferRaw;
 import static omegadrive.util.Util.th;
 import static s32x.sh2.Sh2.flagIMASK;
-import static s32x.util.S32xUtil.readBuffer;
-import static s32x.util.S32xUtil.writeBufferRaw;
 
 /**
  * Federico Berti

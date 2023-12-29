@@ -1,5 +1,6 @@
 package s32x.sh2.prefetch;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
@@ -13,7 +14,6 @@ import s32x.sh2.Sh2Instructions;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.util.BiosHolder;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -94,7 +94,7 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
         prefetchContexts[1] = new PrefetchContext();
     }
 
-    public void doPrefetch(final PrefetchContext pctx, int pc, S32xUtil.CpuDeviceAccess cpu) {
+    public void doPrefetch(final PrefetchContext pctx, int pc, BufferUtil.CpuDeviceAccess cpu) {
         if (!sh2Config.prefetchEn) return;
         final Sh2Cache sh2Cache = cache[cpu.ordinal()];
         final boolean isCache = (pc >>> PC_CACHE_AREA_SHIFT) == 0;
@@ -169,16 +169,16 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
         pctx.dirty = false;
     }
 
-    public void prefetch(int pc, S32xUtil.CpuDeviceAccess cpu) {
+    public void prefetch(int pc, BufferUtil.CpuDeviceAccess cpu) {
         doPrefetch(prefetchContexts[cpu.ordinal()], pc, cpu);
         assert prefetchContexts[cpu.ordinal()] != null;
     }
 
-    public void fetch(Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    public void fetch(Sh2Helper.FetchResult ft, BufferUtil.CpuDeviceAccess cpu) {
         ft.opcode = fetch(ft.pc, cpu);
     }
 
-    public int fetch(int pc, S32xUtil.CpuDeviceAccess cpu) {
+    public int fetch(int pc, BufferUtil.CpuDeviceAccess cpu) {
         assert cpu == Md32xRuntimeData.getAccessTypeExt();
         if (!sh2Config.prefetchEn) {
             return memory.read(pc, Size.WORD) & 0xFFFF;
@@ -215,7 +215,7 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
     }
 
 
-    public int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    public int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, BufferUtil.CpuDeviceAccess cpu) {
         if (!sh2Config.prefetchEn) {
             assert cpu == Md32xRuntimeData.getAccessTypeExt();
             return memory.read(pc, Size.WORD) & 0xFFFF;
@@ -242,32 +242,32 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
         return res;
     }
 
-    public void dataWrite(S32xUtil.CpuDeviceAccess cpuWrite, int addr, int val, Size size) {
+    public void dataWrite(BufferUtil.CpuDeviceAccess cpuWrite, int addr, int val, Size size) {
         if (!sh2Config.prefetchEn) {
             return;
         }
         boolean isCacheArray = addr >>> S32xDict.SH2_PC_AREA_SHIFT == 0xC0;
         boolean isWriteThrough = addr >>> S32xDict.SH2_PC_AREA_SHIFT == 0x20;
 
-        for (int i = 0; i <= S32xUtil.CpuDeviceAccess.SLAVE.ordinal(); i++) {
+        for (int i = 0; i <= BufferUtil.CpuDeviceAccess.SLAVE.ordinal(); i++) {
             //sh2 cacheArrays are not shared!
             if (isCacheArray && i != cpuWrite.ordinal()) {
                 continue;
             }
-            checkPrefetch(cpuWrite, S32xUtil.CpuDeviceAccess.cdaValues[i], addr, val, size);
+            checkPrefetch(cpuWrite, BufferUtil.CpuDeviceAccess.cdaValues[i], addr, val, size);
             boolean isCacheEnabled = cache[i].getCacheContext().cacheEn > 0;
             if (!isCacheEnabled) {
                 int otherAddr = isWriteThrough ? addr & 0xFFF_FFFF : addr | S32xDict.SH2_CACHE_THROUGH_OFFSET;
-                checkPrefetch(cpuWrite, S32xUtil.CpuDeviceAccess.cdaValues[i], otherAddr, val, size);
+                checkPrefetch(cpuWrite, BufferUtil.CpuDeviceAccess.cdaValues[i], otherAddr, val, size);
             }
         }
     }
 
-    public void invalidateAllPrefetch(S32xUtil.CpuDeviceAccess cpu) {
+    public void invalidateAllPrefetch(BufferUtil.CpuDeviceAccess cpu) {
         prefetchContexts[cpu.ordinal()].dirty = true;
     }
 
-    private void checkPrefetch(S32xUtil.CpuDeviceAccess cpuWrite, S32xUtil.CpuDeviceAccess cpu, int writeAddr, int val, Size size) {
+    private void checkPrefetch(BufferUtil.CpuDeviceAccess cpuWrite, BufferUtil.CpuDeviceAccess cpu, int writeAddr, int val, Size size) {
         final PrefetchContext p = prefetchContexts[cpu.ordinal()];
         int start = p.prefetchPc;
         int end = start + (p.pfMaxIndex << 1);

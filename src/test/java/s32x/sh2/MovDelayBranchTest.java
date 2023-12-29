@@ -1,5 +1,6 @@
 package s32x.sh2;
 
+import omegadrive.util.BufferUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -7,7 +8,6 @@ import s32x.bus.Sh2Bus;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.j2core.J2CoreTest;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 
@@ -31,7 +31,7 @@ public class MovDelayBranchTest {
         Sh2Config.reset(Sh2Config.DEFAULT_CONFIG);
         Sh2Bus memory = J2CoreTest.getMemory(rom);
         sh2 = J2CoreTest.getSh2Interpreter(memory, sh2Debug);
-        ctx = J2CoreTest.createContext(S32xUtil.CpuDeviceAccess.MASTER, memory);
+        ctx = J2CoreTest.createContext(BufferUtil.CpuDeviceAccess.MASTER, memory);
         rom.putInt(0, 0x10); //PC
         rom.putInt(4, 0xF0); //SP
         Md32xRuntimeData.newInstance();

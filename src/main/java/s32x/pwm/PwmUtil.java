@@ -1,10 +1,10 @@
 package s32x.pwm;
 
 import omegadrive.sound.javasound.AbstractSoundManager;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.Fifo;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
-import s32x.util.S32xUtil;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -32,7 +32,7 @@ public class PwmUtil {
         static final double stepFactor = 0.02;
 
         static {
-            S32xUtil.assertPowerOf2Minus1("pwmStepSamples", stepSamples);
+            BufferUtil.assertPowerOf2Minus1("pwmStepSamples", stepSamples);
         }
 
         boolean isWarmup;

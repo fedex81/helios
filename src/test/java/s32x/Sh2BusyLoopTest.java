@@ -1,6 +1,7 @@
 package s32x;
 
 import omegadrive.cpu.CpuFastDebug;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,6 @@ import s32x.sh2.drc.Ow2Sh2Bytecode;
 import s32x.sh2.drc.Sh2Block;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.sh2.prefetch.Sh2Prefetch;
-import s32x.util.S32xUtil;
 
 import java.util.Arrays;
 
@@ -23,7 +23,7 @@ import java.util.Arrays;
  */
 public class Sh2BusyLoopTest {
 
-    private Sh2Context sh2Context = new Sh2Context(S32xUtil.CpuDeviceAccess.MASTER);
+    private Sh2Context sh2Context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER);
 
     private int[] opcodes;
 
@@ -790,7 +790,7 @@ public class Sh2BusyLoopTest {
     }
 
     private Sh2Context clearSh2Context() {
-        sh2Context = new Sh2Context(S32xUtil.CpuDeviceAccess.MASTER);
+        sh2Context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER);
         sh2Context.PC = 0x100;
         return sh2Context;
     }

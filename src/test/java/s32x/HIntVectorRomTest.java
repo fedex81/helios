@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 import s32x.dict.S32xDict;
 import s32x.util.MarsLauncherHelper;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static s32x.MarsRegTestUtil.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
 
 /**
  * Federico Berti

@@ -1,11 +1,11 @@
 package s32x.sh2;
 
 import omegadrive.cpu.CpuFastDebug;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.dict.S32xDict;
 import s32x.sh2.drc.Sh2Block;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.io.Serial;
 import java.io.Serializable;

@@ -1,12 +1,12 @@
 package s32x;
 
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import s32x.event.PollSysEventManager;
 import s32x.sh2.Sh2Helper;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
-import static s32x.util.S32xUtil.CpuDeviceAccess.SLAVE;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 
 /**
  * Federico Berti

@@ -1,12 +1,12 @@
 package s32x.sh2;
 
+import omegadrive.util.BufferUtil;
 import org.junit.jupiter.api.BeforeEach;
 import s32x.S32XMMREG;
 import s32x.bus.S32xBus;
 import s32x.bus.Sh2Bus;
 import s32x.bus.Sh2BusImpl;
 import s32x.util.BiosHolder;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 
@@ -25,7 +25,7 @@ public abstract class Sh2BaseTest {
     public void before() {
         memory = new Sh2BusImpl(new S32XMMREG(), ByteBuffer.allocate(0xFF), BiosHolder.NO_BIOS, new S32xBus());
         sh2 = new Sh2Impl(memory);
-        ctx = new Sh2Context(S32xUtil.CpuDeviceAccess.MASTER);
+        ctx = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER);
         sh2.setCtx(ctx);
     }
 }

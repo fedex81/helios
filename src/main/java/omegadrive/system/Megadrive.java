@@ -48,8 +48,8 @@ import s32x.util.Md32xRuntimeData;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
-import static s32x.util.S32xUtil.CpuDeviceAccess.Z80;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
 
 /**
  * Megadrive main class

@@ -1,5 +1,7 @@
 package s32x.sh2.prefetch;
 
+import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -18,8 +20,6 @@ import s32x.sh2.drc.Sh2Block;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.util.BiosHolder;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -169,7 +169,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         int wordsCount = fillOpcodes(cpu, pc, block);
         assert wordsCount > 0 && wordsCount <= opcodeWords.length;
         block.prefetchLenWords = wordsCount;
-        block.hashCodeWords = S32xUtil.hashCode(opcodeWords, wordsCount);
+        block.hashCodeWords = BufferUtil.hashCode(opcodeWords, wordsCount);
         return block;
     }
 

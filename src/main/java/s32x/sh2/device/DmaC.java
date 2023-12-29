@@ -1,5 +1,6 @@
 package s32x.sh2.device;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
@@ -9,7 +10,6 @@ import s32x.bus.Sh2Bus;
 import s32x.bus.Sh2MemoryParallel;
 import s32x.dict.S32xDict;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 
@@ -27,7 +27,7 @@ import static s32x.sh2.device.IntControl.Sh2Interrupt.DMAC1;
  * <p>
  * 32X Hardware Manual Supplement 1/2,  Chaotix, Primal Rage, and Virtua Racing
  */
-public class DmaC implements S32xUtil.Sh2Device {
+public class DmaC implements BufferUtil.Sh2Device {
 
     private static final Logger LOG = LogHelper.getLogger(DmaC.class.getSimpleName());
 
@@ -39,11 +39,11 @@ public class DmaC implements S32xUtil.Sh2Device {
     private final IntControl intControl;
     private final Sh2Bus memory;
     private final DmaFifo68k dma68k;
-    private final S32xUtil.CpuDeviceAccess cpu;
+    private final BufferUtil.CpuDeviceAccess cpu;
     private final DmaHelper.DmaChannelSetup[] dmaChannelSetup;
     private boolean oneDmaInProgress = false;
 
-    public DmaC(S32xUtil.CpuDeviceAccess cpu, IntControl intControl, Sh2Bus memory, DmaFifo68k dma68k, ByteBuffer regs) {
+    public DmaC(BufferUtil.CpuDeviceAccess cpu, IntControl intControl, Sh2Bus memory, DmaFifo68k dma68k, ByteBuffer regs) {
         this.cpu = cpu;
         this.regs = regs;
         this.memory = memory;
@@ -55,7 +55,7 @@ public class DmaC implements S32xUtil.Sh2Device {
     @Override
     public void write(RegSpecSh2 regSpec, int pos, int value, Size size) {
         if (verbose) LOG.info("{} DMA write {}: {} {}", cpu, regSpec.getName(), th(value), size);
-        S32xUtil.writeBufferRaw(regs, pos, value, size);
+        BufferUtil.writeBufferRaw(regs, pos, value, size);
         switch (cpu.regSide) {
             case SH2 -> {
                 assert pos == regSpec.addr : th(pos) + ", " + th(regSpec.addr);
@@ -67,7 +67,7 @@ public class DmaC implements S32xUtil.Sh2Device {
 
     @Override
     public int read(RegSpecSh2 regSpec, int reg, Size size) {
-        return S32xUtil.readBuffer(regs, reg, size);
+        return BufferUtil.readBuffer(regs, reg, size);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class DmaC implements S32xUtil.Sh2Device {
         }
     }
 
-    private void writeSh2(S32xUtil.CpuDeviceAccess cpu, RegSpecSh2 regSpec, int value, Size size) {
+    private void writeSh2(BufferUtil.CpuDeviceAccess cpu, RegSpecSh2 regSpec, int value, Size size) {
         switch (regSpec) {
             case DMA_CHCR0, DMA_CHCR1 -> {
                 assert size == Size.LONG;
@@ -221,9 +221,9 @@ public class DmaC implements S32xUtil.Sh2Device {
     public void reset() {
         writeBufferForChannel(0, DMA_CHCR0.addr, 0, Size.LONG);
         writeBufferForChannel(1, DMA_CHCR0.addr, 0, Size.LONG);
-        S32xUtil.writeBufferRaw(regs, DMA_DRCR0.addr, 0, Size.BYTE);
-        S32xUtil.writeBufferRaw(regs, DMA_DRCR1.addr, 0, Size.BYTE);
-        S32xUtil.writeBufferRaw(regs, DMA_DMAOR.addr, 0, Size.LONG);
+        BufferUtil.writeBufferRaw(regs, DMA_DRCR0.addr, 0, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, DMA_DRCR1.addr, 0, Size.BYTE);
+        BufferUtil.writeBufferRaw(regs, DMA_DMAOR.addr, 0, Size.LONG);
         oneDmaInProgress = false;
     }
 
@@ -232,11 +232,11 @@ public class DmaC implements S32xUtil.Sh2Device {
     }
 
     private void setDmaChannelBit(int channel, int regChan0, int bitPos, int bitVal, Size size) {
-        S32xUtil.setBit(regs, (regChan0 + (channel << 4)) & Sh2MMREG.SH2_REG_MASK, bitPos, bitVal, size);
+        BufferUtil.setBit(regs, (regChan0 + (channel << 4)) & Sh2MMREG.SH2_REG_MASK, bitPos, bitVal, size);
     }
 
     private int setDmaChannelBitVal(int channel, int regChan0, int bitPos, int bitVal, Size size) {
-        return S32xUtil.setBitVal(regs, (regChan0 + (channel << 4)) & Sh2MMREG.SH2_REG_MASK, bitPos, bitVal, size);
+        return BufferUtil.setBitVal(regs, (regChan0 + (channel << 4)) & Sh2MMREG.SH2_REG_MASK, bitPos, bitVal, size);
     }
 
     private int readVcrDma(int channel) {
@@ -245,10 +245,10 @@ public class DmaC implements S32xUtil.Sh2Device {
 
     //channel1 = +0x10
     private int readBufferForChannel(int channel, int regChan0, Size size) {
-        return S32xUtil.readBuffer(regs, (regChan0 + (channel << 4)) & Sh2MMREG.SH2_REG_MASK, size);
+        return BufferUtil.readBuffer(regs, (regChan0 + (channel << 4)) & Sh2MMREG.SH2_REG_MASK, size);
     }
 
     private void writeBufferForChannel(int channel, int regChan0, int value, Size size) {
-        S32xUtil.writeBufferRaw(regs, (regChan0 + (channel << 4)) & Sh2MMREG.SH2_REG_MASK, value, size);
+        BufferUtil.writeBufferRaw(regs, (regChan0 + (channel << 4)) & Sh2MMREG.SH2_REG_MASK, value, size);
     }
 }

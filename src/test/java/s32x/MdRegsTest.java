@@ -1,5 +1,6 @@
 package s32x;
 
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,14 +8,13 @@ import org.junit.jupiter.api.Test;
 import s32x.dict.S32xDict.RegSpecS32x;
 import s32x.util.MarsLauncherHelper;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
 import static s32x.MarsRegTestUtil.*;
 import static s32x.dict.S32xDict.M68K_START_32X_SYSREG;
 import static s32x.dict.S32xDict.M68K_START_ROM_MIRROR_BANK;
 import static s32x.dict.S32xDict.RegSpecS32x.*;
-import static s32x.util.S32xUtil.CpuDeviceAccess.M68K;
-import static s32x.util.S32xUtil.CpuDeviceAccess.Z80;
 
 /**
  * Federico Berti

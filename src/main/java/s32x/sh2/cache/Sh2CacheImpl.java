@@ -25,6 +25,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 \brief SH2 internal cache operations FIL0016332.PDF section 8
 */
 
+import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -32,8 +34,6 @@ import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
 import s32x.savestate.Gs32xStateHandler;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -257,7 +257,7 @@ public class Sh2CacheImpl implements Sh2Cache {
             LOG.info("{} Cache data array write: {}({}) {}, val: {}", cpu, th(addr),
                     th(address), size, th(val));
         if (address == (addr & DATA_ARRAY_MASK)) {
-            change = S32xUtil.writeBufferRaw(data_array, address, val, size);
+            change = BufferUtil.writeBufferRaw(data_array, address, val, size);
         } else {
             LOG.error("{} Error Cache data array write: {}({}) {}, val: {}", cpu, th(addr),
                     th(address), size, th(val));
@@ -271,16 +271,16 @@ public class Sh2CacheImpl implements Sh2Cache {
         int address = addr & dataArrayMask;
         if (verbose) LOG.info("{} Cache data array read: {}({}) {}, val: {}", cpu, th(addr),
                 th(addr & dataArrayMask), size,
-                Util.th(S32xUtil.readBuffer(data_array, address, size)));
+                Util.th(BufferUtil.readBuffer(data_array, address, size)));
         if (address == (addr & DATA_ARRAY_MASK)) {
-            S32xUtil.readBuffer(data_array, address, size);
+            BufferUtil.readBuffer(data_array, address, size);
         } else {
             LOG.error("{} Error Cache data array read: {}({}) {}, val: {}", cpu, th(addr),
                     th(addr & dataArrayMask), size,
-                    Util.th(S32xUtil.readBuffer(data_array, address, size)));
+                    Util.th(BufferUtil.readBuffer(data_array, address, size)));
             return size.getMask();
         }
-        return S32xUtil.readBuffer(data_array, address, size);
+        return BufferUtil.readBuffer(data_array, address, size);
     }
 
     private void writeAddressArray(int addr, int data) {

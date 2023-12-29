@@ -1,22 +1,22 @@
 package s32x;
 
+import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.dict.S32xDict.RegSpecS32x;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.S32xUtil;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.util.function.Consumer;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static s32x.MarsRegTestUtil.*;
 import static s32x.dict.S32xDict.M68K_START_32X_SYSREG;
 import static s32x.dict.S32xDict.RegSpecS32x.PWM_CTRL;
 import static s32x.dict.S32xDict.RegSpecS32x.PWM_CYCLE;
 import static s32x.dict.S32xDict.START_32X_SYSREG;
-import static s32x.util.S32xUtil.CpuDeviceAccess.*;
 
 /**
  * Federico Berti
@@ -76,7 +76,7 @@ public class PwmRegTest {
         int regBase = ctx.regBase;
         RegSpecS32x[] regSpecs = ctx.regSpecs;
         CpuDeviceAccess cpu = ctx.cpu;
-        boolean isMd = cpu.regSide == S32xUtil.S32xRegSide.MD;
+        boolean isMd = cpu.regSide == BufferUtil.S32xRegSide.MD;
         for (int k = 0; k < regSpecs.length; k++) {
             int ignoreMask = 0xFFFF;
             int regAddr = regBase | regSpecs[k].addr;
@@ -146,7 +146,7 @@ public class PwmRegTest {
         public static PwmRegTestCtx create(CpuDeviceAccess cpu, RegSpecS32x[] regSpecs, int orMask, int andMask,
                                            Consumer<Integer> checker) {
             PwmRegTestCtx c = new PwmRegTestCtx();
-            c.regBase = cpu.regSide == S32xUtil.S32xRegSide.MD ? M68K_START_32X_SYSREG : START_32X_SYSREG;
+            c.regBase = cpu.regSide == BufferUtil.S32xRegSide.MD ? M68K_START_32X_SYSREG : START_32X_SYSREG;
             c.cpu = cpu;
             c.regSpecs = regSpecs;
             c.orMask = orMask;

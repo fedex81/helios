@@ -2,12 +2,12 @@ package s32x.sh2.drc;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+import omegadrive.util.BufferUtil;
 import org.junit.jupiter.api.Assertions;
 import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
-import s32x.util.S32xUtil;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -47,7 +47,7 @@ public class DrcUtil {
         Assertions.assertNotEquals(1_000, cnt);
     }
 
-    private static Table<S32xUtil.CpuDeviceAccess, Integer, Sh2Block> blockTable = HashBasedTable.create();
+    private static Table<BufferUtil.CpuDeviceAccess, Integer, Sh2Block> blockTable = HashBasedTable.create();
 
     public static void triggerDrcBlocks(Sh2 sh2, Sh2Context context, int... blockPcs) {
         Assertions.assertNotEquals(0, blockPcs.length);
@@ -64,7 +64,7 @@ public class DrcUtil {
     }
 
     private static boolean allBlocksDrc(Sh2Context sh2Context, int... blockPcs) {
-        S32xUtil.CpuDeviceAccess cpu = sh2Context.cpuAccess;
+        BufferUtil.CpuDeviceAccess cpu = sh2Context.cpuAccess;
         for (int i = 0; i < blockPcs.length; i++) {
             int blockPc = blockPcs[i];
             if (!blockTable.contains(cpu, blockPc)) {
@@ -81,7 +81,7 @@ public class DrcUtil {
         return !atLeastOneNoDrc;
     }
 
-    public static Collection<Sh2Block> getPrefetchBlocksAt(S32xUtil.CpuDeviceAccess cpu, int address) {
+    public static Collection<Sh2Block> getPrefetchBlocksAt(BufferUtil.CpuDeviceAccess cpu, int address) {
         Set<Sh2Block> l = new HashSet<>();
         if (Sh2Config.get().drcEn) {
             for (int i = address - SH2_DRC_MAX_BLOCK_LEN_BYTES; i <= address; i += 2) {

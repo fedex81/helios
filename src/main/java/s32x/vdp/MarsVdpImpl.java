@@ -1,9 +1,6 @@
 package s32x.vdp;
 
-import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
-import omegadrive.util.VideoMode;
+import omegadrive.util.*;
 import omegadrive.vdp.util.UpdatableViewer;
 import omegadrive.vdp.util.VdpDebugView;
 import org.slf4j.Logger;
@@ -15,7 +12,6 @@ import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.prefetch.Sh2Prefetch;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 import s32x.vdp.debug.MarsVdpDebugView;
 
 import java.io.Serial;
@@ -25,13 +21,13 @@ import java.nio.ShortBuffer;
 import java.util.Arrays;
 import java.util.Optional;
 
+import static omegadrive.util.BufferUtil.writeBufferRaw;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.readBufferByte;
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.DRAM_SIZE;
 import static s32x.dict.S32xDict.RegSpecS32x.FBCR;
 import static s32x.dict.S32xDict.SIZE_32X_COLPAL;
-import static s32x.util.S32xUtil.writeBufferRaw;
 import static s32x.vdp.MarsVdp.VdpPriority.MD;
 import static s32x.vdp.MarsVdp.VdpPriority.S32X;
 
@@ -125,7 +121,7 @@ public class MarsVdpImpl implements MarsVdp {
     @Override
     public void write(int address, int value, Size size) {
         if (address >= S32xDict.START_32X_COLPAL_CACHE && address < S32xDict.END_32X_COLPAL_CACHE) {
-            assert Md32xRuntimeData.getAccessTypeExt() != S32xUtil.CpuDeviceAccess.Z80;
+            assert Md32xRuntimeData.getAccessTypeExt() != BufferUtil.CpuDeviceAccess.Z80;
             switch (size) {
                 case WORD, LONG -> writeBufferRaw(colorPalette, address & S32xDict.S32X_COLPAL_MASK, value, size);
                 default ->
@@ -152,18 +148,18 @@ public class MarsVdpImpl implements MarsVdp {
     public int read(int address, Size size) {
         int res = 0;
         if (address >= S32xDict.START_32X_COLPAL_CACHE && address < S32xDict.END_32X_COLPAL_CACHE) {
-            assert Md32xRuntimeData.getAccessTypeExt() != S32xUtil.CpuDeviceAccess.Z80;
+            assert Md32xRuntimeData.getAccessTypeExt() != BufferUtil.CpuDeviceAccess.Z80;
             if (size == Size.WORD) {
-                res = S32xUtil.readBuffer(colorPalette, address & S32xDict.S32X_COLPAL_MASK, size);
+                res = BufferUtil.readBuffer(colorPalette, address & S32xDict.S32X_COLPAL_MASK, size);
             } else {
                 logWarnOnce(LOG, "{} read, unable to access colorPalette as {}", Md32xRuntimeData.getAccessTypeExt(), size);
             }
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.PALETTE);
         } else if (address >= S32xDict.START_DRAM_CACHE && address < S32xDict.END_DRAM_CACHE) {
-            res = S32xUtil.readBuffer(dramBanks[vdpContext.frameBufferWritable], address & S32xDict.DRAM_MASK, size);
+            res = BufferUtil.readBuffer(dramBanks[vdpContext.frameBufferWritable], address & S32xDict.DRAM_MASK, size);
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.FRAME_BUFFER);
         } else if (address >= S32xDict.START_OVER_IMAGE_CACHE && address < S32xDict.END_OVER_IMAGE_CACHE) {
-            res = S32xUtil.readBuffer(dramBanks[vdpContext.frameBufferWritable], address & S32xDict.DRAM_MASK, size);
+            res = BufferUtil.readBuffer(dramBanks[vdpContext.frameBufferWritable], address & S32xDict.DRAM_MASK, size);
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.FRAME_BUFFER);
         } else {
             LOG.error("{} unhandled read: {} {}", Md32xRuntimeData.getAccessTypeExt(), th(address), size);
@@ -212,9 +208,9 @@ public class MarsVdpImpl implements MarsVdp {
                 value &= 0xFF;
                 //fall-through
             default:
-                int res = S32xUtil.readBufferReg(regContext, regSpec, reg, size);
+                int res = BufferUtil.readBufferReg(regContext, regSpec, reg, size);
                 if (res != value) {
-                    S32xUtil.writeBufferReg(regContext, regSpec, reg, value, size);
+                    BufferUtil.writeBufferReg(regContext, regSpec, reg, value, size);
                     regChanged = true;
                 }
                 break;
@@ -226,7 +222,7 @@ public class MarsVdpImpl implements MarsVdp {
         //NOTE: golf, writes on even byte
         int val = readWordFromBuffer(RegSpecS32x.VDP_BITMAP_MODE);
         int prevPrio = (val >> 7) & 1;
-        S32xUtil.writeBufferReg(regContext, RegSpecS32x.VDP_BITMAP_MODE, reg, value, size);
+        BufferUtil.writeBufferReg(regContext, RegSpecS32x.VDP_BITMAP_MODE, reg, value, size);
         int newVal = readWordFromBuffer(RegSpecS32x.VDP_BITMAP_MODE) & ~(S32xDict.P32XV_PAL | S32xDict.P32XV_240);
         int v240 = ctx.pal == 0 && vdpContext.videoMode.isV30() ? 1 : 0;
         newVal = (newVal & 0xC3) | (ctx.pal * S32xDict.P32XV_PAL) | (v240 * S32xDict.P32XV_240);
@@ -250,7 +246,7 @@ public class MarsVdpImpl implements MarsVdp {
 
     private boolean handleFBCRWrite(int reg, int value, Size size) {
         int val = readWordFromBuffer(FBCR);
-        S32xUtil.writeBufferRaw(regContext.vdpRegs, reg, value, size);
+        BufferUtil.writeBufferRaw(regContext.vdpRegs, reg, value, size);
         //vblank, hblank, pen -> readonly
         int val1 = (val & 0xE000) | (readWordFromBuffer(FBCR) & 3);
         int regVal = 0;
@@ -364,15 +360,15 @@ public class MarsVdpImpl implements MarsVdp {
     }
 
     private void writeBufferWord(RegSpecS32x reg, int value) {
-        S32xUtil.writeBufferReg(regContext, reg, reg.addr, value, Size.WORD);
+        BufferUtil.writeBufferReg(regContext, reg, reg.addr, value, Size.WORD);
     }
 
     private int readWordFromBuffer(RegSpecS32x reg) {
-        return S32xUtil.readWordFromBuffer(regContext, reg);
+        return BufferUtil.readWordFromBuffer(regContext, reg);
     }
 
     private void setBitFromWord(RegSpecS32x reg, int pos, int value) {
-        S32xUtil.setBit(vdpRegs, reg.addr & S32xDict.S32X_VDP_REG_MASK, pos, value, Size.WORD);
+        BufferUtil.setBit(vdpRegs, reg.addr & S32xDict.S32X_VDP_REG_MASK, pos, value, Size.WORD);
     }
 
     private void writeFrameBufferOver(int address, int value, Size size) {
@@ -438,7 +434,7 @@ public class MarsVdpImpl implements MarsVdp {
             final int linePos = lineTableWords[row] + context.screenShift;
             final int fbBasePos = row * w;
             for (int col = 0; col < w; col++) {
-                if (S32xUtil.assertionsEnabled) {
+                if (BufferUtil.assertionsEnabled) {
                     if (fbBasePos + col >= imgData.length) {
                         LOG.warn("row: {}, base: {}, col: {}", row, th(fbBasePos), th(col));
                         continue;
@@ -517,14 +513,14 @@ public class MarsVdpImpl implements MarsVdp {
     private static int[] mdStretchH40 = new int[0];
 
     public static int[] doCompositeRenderingExt(VideoMode mdVideoMode, int[] mdData, MarsVdpRenderContext ctx) {
-        final int[] marsData = Optional.ofNullable(ctx.screen).orElse(S32xUtil.EMPTY_INT_ARRAY);
+        final int[] marsData = Optional.ofNullable(ctx.screen).orElse(BufferUtil.EMPTY_INT_ARRAY);
         int[] out = mdData;
         boolean md_h32 = ctx.vdpContext.videoMode.isH40() && mdVideoMode.isH32();
         if (md_h32) {
             if (mdStretchH40.length != marsData.length) {
                 mdStretchH40 = new int[marsData.length];
             }
-            S32xUtil.vidH32StretchToH40(mdVideoMode, mdData, mdStretchH40);
+            BufferUtil.vidH32StretchToH40(mdVideoMode, mdData, mdStretchH40);
             mdData = mdStretchH40;
         }
         if (mdData.length == marsData.length) {

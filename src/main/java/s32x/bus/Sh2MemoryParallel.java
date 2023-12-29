@@ -1,12 +1,12 @@
 package s32x.bus;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import s32x.Sh2MMREG;
 import s32x.dict.S32xDict;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -80,22 +80,22 @@ public final class Sh2MemoryParallel implements Sh2Bus {
     }
 
     @Override
-    public Sh2MMREG getSh2MMREGS(S32xUtil.CpuDeviceAccess master) {
+    public Sh2MMREG getSh2MMREGS(BufferUtil.CpuDeviceAccess master) {
         return memory.getSh2MMREGS(master);
     }
 
     @Override
-    public void fetch(Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    public void fetch(Sh2Helper.FetchResult ft, BufferUtil.CpuDeviceAccess cpu) {
         memory.fetch(ft, cpu);
     }
 
     @Override
-    public int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, S32xUtil.CpuDeviceAccess cpu) {
+    public int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, BufferUtil.CpuDeviceAccess cpu) {
         return memory.fetchDelaySlot(pc, ft, cpu);
     }
 
     @Override
-    public void dataWrite(S32xUtil.CpuDeviceAccess cpu, int addr, int val, Size size) {
+    public void dataWrite(BufferUtil.CpuDeviceAccess cpu, int addr, int val, Size size) {
         memory.dataWrite(cpu, addr, val, size);
     }
 

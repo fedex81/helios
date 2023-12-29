@@ -1,5 +1,6 @@
 package s32x.sh2.drc;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.Sh2MMREG;
@@ -9,7 +10,6 @@ import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.util.Arrays;
 
@@ -27,7 +27,7 @@ public class Sh2BlockParallel extends Sh2Block {
     private Sh2Context[] cloneCtxs;
     private static final boolean verbose = false;
 
-    public Sh2BlockParallel(int pc, S32xUtil.CpuDeviceAccess cpu) {
+    public Sh2BlockParallel(int pc, BufferUtil.CpuDeviceAccess cpu) {
         super(pc, cpu);
     }
 
@@ -55,7 +55,7 @@ public class Sh2BlockParallel extends Sh2Block {
 
     private void prepareInterpreterParallel() {
         if (cloneCtxs == null) {
-            cloneCtxs = new Sh2Context[]{new Sh2Context(S32xUtil.CpuDeviceAccess.MASTER, false), new Sh2Context(S32xUtil.CpuDeviceAccess.SLAVE, false)};
+            cloneCtxs = new Sh2Context[]{new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, false), new Sh2Context(BufferUtil.CpuDeviceAccess.SLAVE, false)};
         }
         Sh2Context ctx = this.drcContext.sh2Ctx;
         Sh2Context cloneCtx = cloneCtxs[ctx.cpuAccess.ordinal()];

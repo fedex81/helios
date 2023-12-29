@@ -1,6 +1,7 @@
 package s32x.sh2.drc;
 
 import com.google.common.collect.ImmutableMap;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
@@ -12,7 +13,6 @@ import s32x.sh2.Sh2Debug;
 import s32x.sh2.Sh2Disassembler;
 import s32x.sh2.Sh2Helper;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.util.Map;
 import java.util.StringJoiner;
@@ -214,7 +214,7 @@ public class Sh2DrcBlockOptimizer {
     }
 
     public static class PollerCtx {
-        public S32xUtil.CpuDeviceAccess cpu;
+        public BufferUtil.CpuDeviceAccess cpu;
         public int pc;
         public PollSysEventManager.SysEvent event;
         public PollState pollState = PollState.NO_POLL;
@@ -414,7 +414,7 @@ public class Sh2DrcBlockOptimizer {
                 return FRAMEBUFFER;
             case 0:
             case 0x20: {
-                PollType pt = ptMap.get(S32xDict.getRegSpec(S32xUtil.CpuDeviceAccess.MASTER, address).deviceType);
+                PollType pt = ptMap.get(S32xDict.getRegSpec(BufferUtil.CpuDeviceAccess.MASTER, address).deviceType);
 //                assert pt != null : th(address);
                 return pt == null ? NONE : pt;
             }
@@ -426,7 +426,7 @@ public class Sh2DrcBlockOptimizer {
     }
 
     public final static void handlePoll(Sh2Block block) {
-        final S32xUtil.CpuDeviceAccess cpu = block.getCpu();
+        final BufferUtil.CpuDeviceAccess cpu = block.getCpu();
         if (!block.isPollingBlock()) {
             final PollerCtx current = PollSysEventManager.instance.getPoller(cpu);
             assert current != UNKNOWN_POLLER;

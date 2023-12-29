@@ -1,9 +1,10 @@
 package s32x.util;
 
+import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import s32x.util.S32xUtil.CpuDeviceAccess;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -31,7 +32,7 @@ public class BiosHolder {
         }
 
         public int readBuffer(int address, Size size) {
-            return S32xUtil.readBuffer(buffer, address & padMask, size);
+            return BufferUtil.readBuffer(buffer, address & padMask, size);
         }
     }
 

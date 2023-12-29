@@ -1,18 +1,18 @@
 package s32x.sh2.device;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.dict.Sh2Dict;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 
+import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
 import static s32x.sh2.device.IntControl.Sh2Interrupt.FRTO;
 import static s32x.sh2.device.IntControl.Sh2Interrupt.FRTOV;
-import static s32x.util.S32xUtil.*;
 
 /**
  * Federico Berti
@@ -20,7 +20,7 @@ import static s32x.util.S32xUtil.*;
  * Copyright 2022
  * <p>
  **/
-public class FreeRunningTimer implements S32xUtil.Sh2Device {
+public class FreeRunningTimer implements BufferUtil.Sh2Device {
 
     private static final Logger LOG = LogHelper.getLogger(FreeRunningTimer.class.getSimpleName());
 

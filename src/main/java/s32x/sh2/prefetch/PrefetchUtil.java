@@ -1,12 +1,12 @@
 package s32x.sh2.prefetch;
 
 import omegadrive.cpu.CpuFastDebug;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.dict.S32xDict;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.drc.Sh2Block;
-import s32x.util.S32xUtil;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +24,7 @@ public class PrefetchUtil {
 
     private static final Logger LOG = LogHelper.getLogger(PrefetchUtil.class.getSimpleName());
 
-    public static void logPcHits(S32xUtil.CpuDeviceAccess cpu) {
+    public static void logPcHits(BufferUtil.CpuDeviceAccess cpu) {
         Map<CpuFastDebug.PcInfoWrapper, Long> hitMap = new HashMap<>();
         long top10 = 10;
         Sh2Helper.Sh2PcInfoWrapper[][] pcInfoWrapper = Sh2Helper.getPcInfoWrapper();

@@ -1,6 +1,7 @@
 package s32x.sh2.drc;
 
 import com.google.common.collect.Range;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -13,17 +14,16 @@ import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.Sh2MultiTestBase;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.S32xUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
 import static s32x.dict.S32xDict.*;
 import static s32x.sh2.drc.DrcUtil.RUNNING_IN_GITHUB;
 import static s32x.sh2.drc.DrcUtil.triggerDrcBlocks;
 import static s32x.sh2.drc.Sh2Block.INVALID_BLOCK;
-import static s32x.util.S32xUtil.CpuDeviceAccess.MASTER;
 
 /**
  * Federico Berti
@@ -134,7 +134,7 @@ public class Sh2BlockInvalidateTest extends Sh2MultiTestBase {
         Assertions.assertNotEquals(INVALID_BLOCK, w2.block);
     }
 
-    private int readCache(S32xUtil.CpuDeviceAccess cpu, int address, Size size) {
+    private int readCache(BufferUtil.CpuDeviceAccess cpu, int address, Size size) {
         return memory.cache[cpu.ordinal()].readDirect(address, Size.BYTE);
     }
 
