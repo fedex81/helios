@@ -2,11 +2,11 @@ package s32x.dict;
 
 import com.google.common.collect.ImmutableMap;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegSpec;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.Sh2MMREG;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.RegSpec;
 
 import java.util.Map;
 

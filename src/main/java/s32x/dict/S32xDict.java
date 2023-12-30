@@ -3,9 +3,9 @@ package s32x.dict;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegSpec;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
-import s32x.util.RegSpec;
 import s32x.vdp.MarsVdp;
 
 import java.nio.ByteBuffer;

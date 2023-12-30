@@ -1,6 +1,7 @@
 package s32x.util;
 
 import omegadrive.util.BufferUtil;
+import omegadrive.util.RegSpec;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

@@ -2,12 +2,11 @@ package omegadrive.util;
 
 import com.google.common.math.IntMath;
 import omegadrive.Device;
+import omegadrive.util.RegSpec.BytePosReg;
 import org.slf4j.Logger;
 import s32x.S32XMMREG.RegContext;
 import s32x.dict.S32xDict;
 import s32x.dict.S32xDict.RegSpecS32x;
-import s32x.util.RegSpec;
-import s32x.util.RegSpec.BytePosReg;
 
 import java.nio.ByteBuffer;
 

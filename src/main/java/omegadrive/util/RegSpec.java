@@ -1,10 +1,8 @@
-package s32x.util;
-
-import omegadrive.util.Size;
+package omegadrive.util;
 
 import java.nio.ByteBuffer;
 
-import static s32x.util.RegSpec.BytePosReg.BYTE_0;
+import static omegadrive.util.RegSpec.BytePosReg.BYTE_0;
 
 /**
  * Federico Berti
