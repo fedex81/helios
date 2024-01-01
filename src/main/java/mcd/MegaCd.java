@@ -53,8 +53,7 @@ import s32x.util.Md32xRuntimeData;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 
 /**
  * Megadrive main class
@@ -95,8 +94,6 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     protected int nextSub68kCycle = M68K_DIVIDER;
 
-    public static String cpuCode = "M";
-
     //TOOD hack
     public static MegaCdSubCpuBus subCpuBusHack;
 
@@ -121,12 +118,9 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         memory = MemoryProvider.createGenesisInstance();
         bus = createBus();
         vdp = GenesisVdpProvider.createVdp(bus);
-        cpuCode = "M";
-        cpu = MC68000Wrapper.createInstance(bus);
-        cpuCode = "S";
-        subCpu = MC68000Wrapper.createInstance(subCpuBus);
+        cpu = MC68000Wrapper.createInstance(M68K, bus);
+        subCpu = MC68000Wrapper.createInstance(SUB_M68K, subCpuBus);
         subCpuBus.attachDevice(subCpu);
-        cpuCode = "M";
         //TODO check
         ((MC68000Wrapper) subCpu).setStop(true);
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
