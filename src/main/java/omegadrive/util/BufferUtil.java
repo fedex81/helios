@@ -266,14 +266,26 @@ public class BufferUtil {
     public enum S32xRegSide {MD, SH2}
 
     public enum CpuDeviceAccess {
-        MASTER, SLAVE, M68K, Z80;
+        MASTER("M"), SLAVE("S"), M68K("68M"), Z80("Z80"), SUB_M68K("68S");
 
         public final S32xRegSide regSide;
+        public final String cpuShortCode;
 
-        CpuDeviceAccess() {
+        CpuDeviceAccess(String code) {
             this.regSide = this.ordinal() < 2 ? S32xRegSide.SH2 : S32xRegSide.MD;
+            this.cpuShortCode = code;
         }
 
         public static final CpuDeviceAccess[] cdaValues = CpuDeviceAccess.values();
+
+        public static CpuDeviceAccess fromCpuCode(String code) {
+            for (var c : cdaValues) {
+                if (code.equals(c.cpuShortCode)) {
+                    return c;
+                }
+            }
+            LOG.error("Unknown cpu code: {}", code);
+            return null;
+        }
     }
 }

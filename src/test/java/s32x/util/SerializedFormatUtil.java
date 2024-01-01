@@ -1,21 +1,26 @@
 package s32x.util;
 
 import com.google.common.io.Files;
+import omegadrive.Device;
+import omegadrive.savestate.BaseStateHandler;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
+import s32x.MarsRegTestUtil;
+import s32x.StaticBootstrapSupport;
+import s32x.savestate.Gs32xStateHandler;
 import s32x.vdp.MarsVdp;
-import s32x.vdp.composite_render.VdpRenderCompareTest;
 import s32x.vdp.debug.DebugVideoRenderContext;
-import s32x.vdp.mars_render.VdpMarsRenderCompareFileTest;
 
-import java.io.ByteArrayInputStream;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static omegadrive.SystemLoader.SystemType.S32X;
+import static s32x.MarsRegTestUtil.NO_OP;
 
 /**
  * Federico Berti
@@ -26,11 +31,42 @@ public class SerializedFormatUtil {
 
     private static final Logger LOG = LogHelper.getLogger(SerializedFormatUtil.class.getSimpleName());
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 //        VdpRenderCompareTest.getFileProvider(VdpRenderCompareFileTest.baseDataFolder).
 //                forEach(TweakSerializedFormat::convertDvrc);
-        VdpRenderCompareTest.getFileProvider(VdpMarsRenderCompareFileTest.baseDataFolder).
-                forEach(s -> SerializedFormatUtil.convertDmvrc(s, VdpMarsRenderCompareFileTest.baseDataFolder));
+//        VdpRenderCompareTest.getFileProvider(VdpMarsRenderCompareFileTest.baseDataFolder).
+//                forEach(s -> SerializedFormatUtil.convertDmvrc(s, VdpMarsRenderCompareFileTest.baseDataFolder));
+//        S32xSavestateSerializeTest.getFileProvider(S32xSavestateSerializeTest.saveStateFolder).
+//                forEach(SerializedFormatUtil::convertCpuDevice);
+//        load32xSavestateFiles();
+    }
+
+    private static void load32xSavestateFiles() throws IOException {
+        String s = "/home/fede/roms/savestate/s32x/blackth/";
+        Path f = Path.of(s);
+        Set<Path> files = java.nio.file.Files.list(f).
+                filter(p -> p.getFileName().toString().contains(Gs32xStateHandler.fileExtension32x)).collect(Collectors.toSet());
+        files.forEach(SerializedFormatUtil::convertCpuDevice);
+    }
+
+    private static void convertCpuDevice(Path p) {
+        System.out.println(p.toAbsolutePath());
+        MarsLauncherHelper.Sh2LaunchContext lc = MarsRegTestUtil.createTestInstance();
+        StaticBootstrapSupport.instance = NO_OP;
+        Set<Device> deviceSet = lc.bus.getAllDevices(Device.class);
+        Gs32xStateHandler stateHandler = (Gs32xStateHandler) BaseStateHandler.createInstance(
+                S32X, p.toAbsolutePath().toString(), BaseStateHandler.Type.LOAD, deviceSet);
+        stateHandler.setData(FileUtil.readBinaryFile(p, Gs32xStateHandler.fileExtension32x));
+        stateHandler.processState();
+        System.out.println("deserialised ok");
+
+        String fileName = p.getFileName().toString();
+        Path p1 = Path.of(p.getParent().toAbsolutePath().toString(), fileName + ".new");
+        Gs32xStateHandler saveHandler = (Gs32xStateHandler) BaseStateHandler.createInstance(
+                S32X, p1.toAbsolutePath().toString(), BaseStateHandler.Type.SAVE, deviceSet);
+        saveHandler.processState();
+        saveHandler.storeData();
+        System.out.println("saved ok");
     }
 
     private static void convertDmvrc(String s, Path folder) {
@@ -99,6 +135,10 @@ public class SerializedFormatUtil {
         vcNew.screenShift = vc.screenShift;
         vcNew.hBlankOn = vc.hBlankOn;
         return vcNew;
+    }
+
+    public static Serializable deserializeObject(byte[] data) {
+        return deserializeObject(data, 0, data.length);
     }
 
     public static Serializable deserializeObject(byte[] data, int offset, int len) {

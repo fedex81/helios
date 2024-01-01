@@ -121,7 +121,7 @@ public interface Sh2Cache extends Device {
         @Serial
         private static final long serialVersionUID = -5571586968550411713L;
 
-        public CpuDeviceAccess cpu;
+        public transient CpuDeviceAccess cpu;
         public int ccr;
         public int way;
         public int cachePurge;

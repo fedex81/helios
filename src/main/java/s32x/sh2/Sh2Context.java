@@ -1,7 +1,7 @@
 package s32x.sh2;
 
 import omegadrive.Device;
-import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Util;
 import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.Sh2Helper.FetchResult;
@@ -42,7 +42,7 @@ public class Sh2Context implements Device, Serializable {
     public int cycles;
     public int cycles_ran;
 
-    public final BufferUtil.CpuDeviceAccess cpuAccess;
+    public transient CpuDeviceAccess cpuAccess;
     public final String sh2TypeCode;
     public boolean delaySlot;
     public final boolean debug;
@@ -50,11 +50,11 @@ public class Sh2Context implements Device, Serializable {
 
     public transient Sh2DeviceContext devices;
 
-    public Sh2Context(BufferUtil.CpuDeviceAccess cpuAccess) {
+    public Sh2Context(CpuDeviceAccess cpuAccess) {
         this(cpuAccess, false);
     }
 
-    public Sh2Context(BufferUtil.CpuDeviceAccess cpuAccess, boolean debug) {
+    public Sh2Context(CpuDeviceAccess cpuAccess, boolean debug) {
         this.registers = new int[NUM_REG];
         this.cpuAccess = cpuAccess;
         this.sh2TypeCode = cpuAccess.name().substring(0, 1);
@@ -79,7 +79,8 @@ public class Sh2Context implements Device, Serializable {
     }
 
     public void loadContext(Sh2Context ctx) {
-        assert ctx.cpuAccess == cpuAccess;
+        assert ctx.sh2TypeCode.equals(sh2TypeCode);
+        cpuAccess = CpuDeviceAccess.fromCpuCode(sh2TypeCode);
         System.arraycopy(ctx.registers, 0, registers, 0, registers.length);
         PC = ctx.PC;
         opcode = ctx.opcode;
