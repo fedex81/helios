@@ -45,6 +45,8 @@ public class CpuFastDebug {
         public Predicate<Integer> isIgnoreOpcode = i -> true;
         public int debugMode;
 
+        public String cpuCode;
+
         public CpuDebugContext(Map<Integer, Integer> areaMaskMap) {
             pcAreasNumber = 1 + areaMaskMap.keySet().stream().mapToInt(Integer::intValue).max().orElseThrow();
             pcAreasMaskMap = new int[pcAreasNumber];
@@ -129,10 +131,10 @@ public class CpuFastDebug {
     public void printDebugMaybe() {
         switch (debugMode) {
             case STATE:
-                log(debugInfoProvider.getCpuState(""), "");
+                log(debugInfoProvider.getCpuState(ctx.cpuCode), "");
                 break;
             case INST_ONLY:
-                log(debugInfoProvider.getInstructionOnly(), "");
+                log(ctx.cpuCode + " " + debugInfoProvider.getInstructionOnly(), "");
                 break;
             case NEW_INST_ONLY:
                 printNewInstruction();
@@ -178,7 +180,7 @@ public class CpuFastDebug {
     }
 
     private void doPrintInst(String tail) {
-        log(debugInfoProvider.getInstructionOnly(), tail);
+        log(ctx.cpuCode + " " + debugInfoProvider.getInstructionOnly(), tail);
     }
 
     private PcInfoWrapper createPcWrapper(int pcMasked, int area, int opcode) {

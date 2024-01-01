@@ -23,6 +23,7 @@ import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.system.SystemProvider;
+import omegadrive.util.BufferUtil;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
@@ -56,12 +57,12 @@ public class BusArbiterTest {
         Z80Provider z80 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, bus);
 
 
-        cpu = new MC68000Wrapper(bus) {
+        cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, bus) {
             @Override
             public boolean raiseInterrupt(int level) {
                 hCounterRaise = vdp.getHCounter();
                 vCounterRaise = vdp.getVCounter();
-                boolean accept = level > cpu.getM68k().getInterruptLevel();
+                boolean accept = level > getM68k().getInterruptLevel();
                 if (accept) {
                     hCounterIntAccepted = hCounterRaise;
                     vCounterIntAccepted = vCounterRaise;

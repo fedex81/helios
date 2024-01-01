@@ -64,7 +64,7 @@ public class SystemTestUtil {
         GenesisBusProvider busProvider = new GenesisBus();
         GenesisZ80BusProvider z80bus = new GenesisZ80BusProviderImpl();
         GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider, vdpMem);
-        MC68000Wrapper cpu = new MC68000Wrapper(busProvider);
+        MC68000Wrapper cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, busProvider);
         GenesisJoypad joypad = new GenesisJoypad(SystemProvider.NO_CLOCK);
         Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, busProvider);
         FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);

@@ -19,6 +19,7 @@ import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.RegionDetector;
 import omegadrive.vdp.md.GenesisVdp;
 import omegadrive.vdp.md.GenesisVdpMemoryInterface;
@@ -39,7 +40,7 @@ public class SystemTestUtil {
         VdpMemoryInterface vdpMem = GenesisVdpMemoryInterface.createInstance();
         GenesisZ80BusProvider z80bus = new GenesisZ80BusProviderImpl();
         GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider, vdpMem);
-        MC68000Wrapper cpu = new MC68000Wrapper(busProvider);
+        MC68000Wrapper cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, busProvider);
         SystemProvider systemProvider = createTestGenesisProvider(cpuMem1);
         GenesisJoypad joypad = new GenesisJoypad(null);
         Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, busProvider);

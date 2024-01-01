@@ -2,6 +2,7 @@ package omegadrive.cpu.m68k;
 
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
+import omegadrive.util.BufferUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +24,7 @@ public class M68kCpuFastDebugTest {
 
     @Test
     public void testLoopRepetitionDetection() {
-        CpuFastDebug.CpuDebugContext ctx = MC68000WrapperFastDebug.createContext();
+        CpuFastDebug.CpuDebugContext ctx = MC68000WrapperFastDebug.createContext(BufferUtil.CpuDeviceAccess.M68K);
         CpuFastDebug cfd = new CpuFastDebug(null, ctx);
         for (int i = 0; i < test01.length; i++) {
             cfd.isBusyLoop(test01[i], 1);

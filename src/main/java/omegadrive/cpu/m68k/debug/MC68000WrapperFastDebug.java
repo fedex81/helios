@@ -25,6 +25,7 @@ import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.CpuDebugContext;
 import omegadrive.cpu.m68k.MC68000Helper;
 import omegadrive.cpu.m68k.MC68000Wrapper;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
@@ -51,18 +52,19 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
     private static final Map<Integer, Integer> areaMaskMap = ImmutableMap.of(
             0, 0xF_FFFF, 1, 0xF_FFFF, 2, 0xF_FFFF, 3, 0xF_FFFF, 8, 0xF_FFFF, 9, 0xF_FFFF, 0xF, 0xF_FFFF);
 
-    public MC68000WrapperFastDebug(GenesisBusProvider busProvider) {
-        super(busProvider);
-        fastDebug = new CpuFastDebug(this, createContext());
+    public MC68000WrapperFastDebug(CpuDeviceAccess cpu, GenesisBusProvider busProvider) {
+        super(cpu, busProvider);
+        fastDebug = new CpuFastDebug(this, createContext(cpu));
         init();
     }
 
-    public static CpuDebugContext createContext() {
+    public static CpuDebugContext createContext(CpuDeviceAccess cpu) {
         CpuDebugContext ctx = new CpuDebugContext(areaMaskMap);
         ctx.pcAreaShift = 20;
         ctx.isLoopOpcode = isLoopOpcode;
         ctx.isIgnoreOpcode = isIgnoreOpcode;
         ctx.debugMode = debugMode;
+        ctx.cpuCode = cpu.cpuShortCode;
         return ctx;
     }
 
