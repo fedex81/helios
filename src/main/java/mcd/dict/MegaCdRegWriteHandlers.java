@@ -39,6 +39,7 @@ public class MegaCdRegWriteHandlers {
         }
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 0, d); //RET
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 1, d); //DMNA
+        setBitInternal(buff, MCD_MEM_MODE.addr + 1, 2, d); //MODE
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 6, d); //BK0
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 7, d); //BK1
 

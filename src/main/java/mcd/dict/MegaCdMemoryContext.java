@@ -13,6 +13,8 @@ import java.nio.ByteBuffer;
 import java.util.function.BiConsumer;
 
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_COMM0;
+import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
+import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersMain;
 import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersSub;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -57,14 +59,21 @@ public class MegaCdMemoryContext implements Serializable {
 
     public WramSetup wramSetup = WramSetup.W_2M_MAIN;
 
+    public enum WordRamMode {_1M, _2M}
+
     //bit0: mode,
     public enum WramSetup {
-        W_2M_MAIN(M68K),
-        W_2M_SUB(SUB_M68K);
-        public CpuDeviceAccess cpu;
+        W_2M_MAIN(_2M, M68K),
+        W_2M_SUB(_2M, SUB_M68K),
+        W_1M_MAIN(_1M, M68K),
+        W_1M_SUB(_1M, SUB_M68K);
 
-        WramSetup(CpuDeviceAccess c) {
+        public final CpuDeviceAccess cpu;
+        public final WordRamMode mode;
+
+        WramSetup(WordRamMode mode, CpuDeviceAccess c) {
             this.cpu = c;
+            this.mode = mode;
         }
     }
 
@@ -109,8 +118,9 @@ public class MegaCdMemoryContext implements Serializable {
         int mode = reg2 & 4;
         int dmna = reg2 & 2;
         int ret = reg2 & 1;
-        if (mode > 0) {
-            assert false; //TODO
+        if (mode > 0) { //TODO
+            wramSetup = WramSetup.W_1M_SUB;
+            LOG.warn("Setting wordRam to {}", wramSetup);
             return wramSetup;
         }
         if (c == M68K) {

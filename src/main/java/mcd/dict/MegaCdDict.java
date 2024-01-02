@@ -12,8 +12,7 @@ import java.util.Set;
 import static mcd.dict.MegaCdDict.McdRegCpuType.*;
 import static mcd.dict.MegaCdDict.McdRegType.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_RESET;
-import static mcd.dict.MegaCdMemoryContext.MCD_PRG_RAM_SIZE;
-import static mcd.dict.MegaCdMemoryContext.MCD_WORD_RAM_2M_SIZE;
+import static mcd.dict.MegaCdMemoryContext.*;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
@@ -221,6 +220,7 @@ public class MegaCdDict {
 
     public static final int START_MCD_WORD_RAM_MODE1 = 0x600_000;
     public static final int END_MCD_WORD_RAM_MODE1 = START_MCD_WORD_RAM_MODE1 + MCD_WORD_RAM_2M_SIZE;
+    public static final int END_MCD_WORD_RAM_1M_MODE1 = START_MCD_WORD_RAM_MODE1 + MCD_WORD_RAM_1M_SIZE;
 
     public static final int MCD_BOOT_ROM_SIZE = 0x20_000;
     public static final int MCD_BOOT_ROM_MASK = MCD_BOOT_ROM_SIZE - 1;
@@ -249,6 +249,10 @@ public class MegaCdDict {
     public static final int END_MCD_SUB_GA_COMM_R = END_MCD_SUB_GA_COMM_W;
     public static final int SUB_CPU_REGS_MASK = MDC_SUB_GATE_REGS_SIZE - 1;
 
-    public static final int START_MCD_SUB_WORD_RAM = 0x80_000;
-    public static final int END_MCD_SUB_WORD_RAM = START_MCD_SUB_WORD_RAM + MCD_WORD_RAM_2M_SIZE;
+    public static final int START_MCD_SUB_WORD_RAM_2M = 0x80_000;
+    public static final int END_MCD_SUB_WORD_RAM_2M = START_MCD_SUB_WORD_RAM_2M + MCD_WORD_RAM_2M_SIZE;
+
+    public static final int START_MCD_SUB_WORD_RAM_1M = 0xC0_000;
+
+    public static final int END_MCD_SUB_WORD_RAM_1M = START_MCD_SUB_WORD_RAM_1M + MCD_WORD_RAM_1M_SIZE;
 }

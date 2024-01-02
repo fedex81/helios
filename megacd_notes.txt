@@ -21,12 +21,7 @@ cdd
 
 msu-md-sample.bin
 https://github.com/krikzz/msu-md/tree/master/msu-md-sample
-Doesn't use the Main Sega CD bios ROMS as it is mode1, ie. the bootstrap code is in the rom itself
-MAIN writes a program to SUB prg-ram and then resets SUB-CPU.
-MAIN copy to SUB
-(see https://github.com/krikzz/msu-md/blob/master/msu-md-drv/main.s) ??
-SUB starts executing
-(see https://github.com/krikzz/msu-md/blob/master/msu-md-drv/sub_asm.s)
+- MainCpu sets comm flag a1200f, illegal?, then stuck at init driver (note: there is no cd)
 
 Mode1Player.bin
 see /test_roms/roms/megacd/mcd_test/Mode1Example-20120104/mode1/Mode1Player.bin
@@ -37,14 +32,14 @@ https://github.com/jvisser/md-mode1-mcd-asic-test
 MCD Mode 1 Graphics Test.bin
 https://github.com/DevsArchive/sega-cd-asic-demo
 GAME_NAME	EQUS	"MEGA CD MODE 1 DEMO BY DEVON"
+- shows some mangled bitmap
 
 Mode1PCM.bin
 https://github.com/viciious/SegaCDMode1PCM.git
 SubCpu starts from prog0_bios.asm at _start
 _LEVEL2 (MD VINT) is defined at loc $00005F7C, jump table that point to mdInterrupt (0x5f2)
 cddWatchdog overflows -> error triggered?, see checkCddWatchdog
-- mainCpu gets to scd_init_pcm() (main.c), calls wait_do_cmd, writes 'I' (0x49) to a1200e and then it is stuck on
-  wait_cmd_ack (polling a1200f), subCpu is not answering
+gets to the playing screen
 
 TODO compile
 https://github.com/DevsArchive/sega-cd-mode-1-demo

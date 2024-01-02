@@ -2,6 +2,7 @@ package mcd.bus;
 
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
+import mcd.dict.MegaCdMemoryContext.WordRamMode;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.FileUtil;
@@ -104,6 +105,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
         if (enableMCDBus) {
             if (enableMode1) {
                 if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
+                    assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
+                    logHelper.logWarningOnce(LOG, "{} Reading wordRam mode 1m not supported", cpu);
                     return memCtx.readWordRam(cpu, address, size);
                 } else if (address >= START_MCD_MAIN_PRG_RAM_MODE1 && address < END_MCD_MAIN_PRG_RAM_MODE1) {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
@@ -119,6 +122,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 } else if (address >= START_MCD_BOOT_ROM && address < END_MCD_BOOT_ROM) {
                     return readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
+                    assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
+                    logHelper.logWarningOnce(LOG, "{} Reading wordRam mode 1m not supported", cpu);
                     return memCtx.readWordRam(cpu, address, size);
                 }
             }
@@ -139,6 +144,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     writeBufferRaw(prgRam, addr, data, size);
                     return;
                 } else if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
+                    assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
+                    logHelper.logWarningOnce(LOG, "{} Writing wordRam mode 1m not supported", cpu);
                     memCtx.writeWordRam(cpu, address, data, size);
                     return;
                 }
@@ -149,6 +156,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     writeBufferRaw(prgRam, addr, data, size);
                     return;
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
+                    assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
+                    logHelper.logWarningOnce(LOG, "{} Writing wordRam mode 1m not supported", cpu);
                     memCtx.writeWordRam(cpu, address, data, size);
                     return;
                 }
@@ -165,14 +174,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             return 0;
         }
         ByteBuffer regs = memCtx.getRegBuffer(cpu, regSpec);
-        int res = readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
-        //TODO bios_us.bin RET bit
-        //TODO subCpu never returns WRAM to main as subCpu is stuck in CDD
-//        if (!enableMode1 && address == 0xA12003 && size == Size.BYTE) {
-//            res |= random.nextInt(2);
-//            logHelper.logWarningOnce(LOG, "Hacking RET bit");
-//        }
-        return res;
+        return readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
     }
 
     private void handleMegaCdExpWrite(int address, int data, Size size) {

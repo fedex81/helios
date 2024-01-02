@@ -52,7 +52,11 @@ public class MegaCdSubCpuBus extends GenesisBus {
     @Override
     public int read(int address, Size size) {
         address &= MD_PC_MASK;
-        if (address >= START_MCD_SUB_WORD_RAM && address < END_MCD_SUB_WORD_RAM) {
+        if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
+            assert memCtx.wramSetup.mode == WordRamMode._2M;
+            return memCtx.readWordRam(cpu, address, size);
+        } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
+            assert memCtx.wramSetup.mode == WordRamMode._1M;
             return memCtx.readWordRam(cpu, address, size);
         } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
             return readBuffer(subCpuRam, address & MCD_PRG_RAM_MASK, size);
@@ -71,22 +75,23 @@ public class MegaCdSubCpuBus extends GenesisBus {
     @Override
     public void write(int address, int data, Size size) {
         address &= MD_PC_MASK;
-        if (address >= START_MCD_SUB_WORD_RAM && address < END_MCD_SUB_WORD_RAM) {
+        if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
+            assert memCtx.wramSetup.mode == WordRamMode._2M;
             memCtx.writeWordRam(cpu, address, data, size);
-            return;
+        } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
+            assert memCtx.wramSetup.mode == WordRamMode._1M;
+            memCtx.writeWordRam(cpu, address, data, size);
         } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
             writeBufferRaw(subCpuRam, address & MCD_PRG_RAM_MASK, data, size);
-            return;
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address <= END_MCD_SUB_GATE_ARRAY_REGS) {
             handleMegaCdExpWrite(address, data, size);
-            return;
         } else if (address >= 0xFF_0000 && address < START_MCD_SUB_GATE_ARRAY_REGS) {
             logHelper.logWarningOnce(LOG, "PCM source write: {} {}", th(address), size);
-            return;
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
             LOG.error("S Write Reserved: {} {} {}", address, data, size);
+        } else {
+            assert false;
         }
-        assert false;
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
