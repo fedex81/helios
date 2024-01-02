@@ -32,7 +32,7 @@ public class MegaCdDict {
 
     public enum McdRegCpuType {REG_MAIN, REG_SUB, REG_BOTH}
 
-    public enum McdRegType {NONE, SYS, COMM, CD, ASIC}
+    public enum McdRegType {NONE, SYS, COMM, CD, ASIC, PCM}
 
     public static RegSpecMcd[][] mcdRegMapping = new RegSpecMcd[McdRegCpuType.values().length][MDC_SUB_GATE_REGS_MASK];
 
@@ -113,6 +113,26 @@ public class MegaCdDict {
 
         MCD_IMG_TRACE_VECTOR_ADDR(ASIC, 0x66),
         //vector base address(Xstart, Ystart, (Dtita)X, <Del ta), table base address)
+
+        MCD_PCM_ENV(PCM, 0x101),
+
+        MCD_PCM_PAN(PCM, 0x103),
+
+        MCD_PCM_FDL(PCM, 0x105),
+
+        MCD_PCM_FDH(PCM, 0x107),
+
+        MCD_PCM_LSL(PCM, 0x109),
+        MCD_PCM_LSH(PCM, 0x10B),
+
+        MCD_PCM_START(PCM, 0x10D),
+
+        MCD_PCM_CTRL(PCM, 0x10F),
+
+        MCD_PCM_ON_OFF(PCM, 0x111),
+
+        MCD_PCM_RAMPTR(PCM, 0x121),
+
         INVALID(NONE, -1);
 
         public final RegSpec regSpec;
@@ -240,8 +260,11 @@ public class MegaCdDict {
     public static final int START_MCD_SUB_PRG_RAM = 0;
     public static final int END_MCD_SUB_PRG_RAM = START_MCD_SUB_PRG_RAM + MCD_PRG_RAM_SIZE;
 
-    public static final int START_MCD_SUB_GATE_ARRAY_REGS = 0xFF_8000;
-    public static final int END_MCD_SUB_GATE_ARRAY_REGS = 0xFF_81FF;
+    public static final int START_MCD_SUB_PCM_AREA = 0xFF_0000;
+
+    public static final int END_MCD_SUB_PCM_AREA = 0xFF_8000;
+    public static final int START_MCD_SUB_GATE_ARRAY_REGS = END_MCD_SUB_PCM_AREA;
+    public static final int END_MCD_SUB_GATE_ARRAY_REGS = 0xFF_8200;
 
     public static final int START_MCD_SUB_GA_COMM_W = START_MCD_SUB_GATE_ARRAY_REGS + 0x20;
     public static final int END_MCD_SUB_GA_COMM_W = START_MCD_SUB_GA_COMM_W + 0x10;

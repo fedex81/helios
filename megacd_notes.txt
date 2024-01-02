@@ -88,6 +88,7 @@ https://github.com/drojaazu/mmd_loader
 
 PCM
 https://gendev.spritesmind.net/forum/viewtopic.php?t=792
+https://segaxtreme.net/threads/sega-cd-pcm-format.13267/
 
 CDC
 https://gendev.spritesmind.net/forum/viewtopic.php?t=1650

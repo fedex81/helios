@@ -2,6 +2,7 @@ package mcd.bus;
 
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
+import mcd.pcm.McdPcm;
 import omegadrive.bus.md.BusArbiter;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.cpu.m68k.M68kProvider;
@@ -36,11 +37,14 @@ public class MegaCdSubCpuBus extends GenesisBus {
     private MegaCdMemoryContext memCtx;
     private CpuDeviceAccess cpu;
 
+    private McdPcm pcm;
+
     public MegaCdSubCpuBus(MegaCdMemoryContext ctx) {
         cpu = CpuDeviceAccess.SUB_M68K;
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
         sysGateRegs = ctx.getGateSysRegs(cpu);
         commonGateRegs = ByteBuffer.wrap(ctx.commonGateRegs);
+        pcm = new McdPcm();
         memCtx = ctx;
         //NOTE: starts at zero and becomes 1 after ~100ms
         writeBufferRaw(sysGateRegs, MCD_RESET.addr, 1, Size.WORD); //not reset
@@ -62,9 +66,8 @@ public class MegaCdSubCpuBus extends GenesisBus {
             return readBuffer(subCpuRam, address & MCD_PRG_RAM_MASK, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address < END_MCD_SUB_GATE_ARRAY_REGS) {
             return handleMegaCdExpRead(address, size);
-        } else if (address >= 0xFF_0000 && address < START_MCD_SUB_GATE_ARRAY_REGS) {
-            logHelper.logWarningOnce(LOG, "PCM source read: {} {}", th(address), size);
-            return size.getMask();
+        } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
+            return pcm.read(address, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
             LOG.error("S Read Reserved: {} {}", th(address), size);
         }
@@ -85,8 +88,8 @@ public class MegaCdSubCpuBus extends GenesisBus {
             writeBufferRaw(subCpuRam, address & MCD_PRG_RAM_MASK, data, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address <= END_MCD_SUB_GATE_ARRAY_REGS) {
             handleMegaCdExpWrite(address, data, size);
-        } else if (address >= 0xFF_0000 && address < START_MCD_SUB_GATE_ARRAY_REGS) {
-            logHelper.logWarningOnce(LOG, "PCM source write: {} {}", th(address), size);
+        } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
+            pcm.write(address, data, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
             LOG.error("S Write Reserved: {} {} {}", address, data, size);
         } else {
@@ -244,6 +247,11 @@ public class MegaCdSubCpuBus extends GenesisBus {
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
         logHelper.logWarningOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
+                size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
+    }
+
+    public static void logAccessReg(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
+        LogHelper.logWarnOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
                 size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
     }
 }
