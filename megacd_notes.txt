@@ -1,3 +1,4 @@
+MODE 1
 https://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=1018
 https://plutiedev.com/subcpu-in-mode1
 https://bitbucket.org/eke/genesis-plus-gx/issues/29/mega-cd-support
@@ -84,3 +85,32 @@ https://github.com/drojaazu/mmd_loader
      * $640000-$7FFFFF repeatedly mirrors the $600000-$63FFFF area. (7 copies of Word RAM)
      * $A12040-$A120FF repeatedly mirrors the $A12000-$A1203F area. (3 copies of SCD registers)
      */
+
+PCM
+https://gendev.spritesmind.net/forum/viewtopic.php?t=792
+
+CDC
+https://gendev.spritesmind.net/forum/viewtopic.php?t=1650
+
+CD BOOTING
+https://gendev.spritesmind.net/forum/viewtopic.php?t=2996
+
+1M DMNA
+https://gendev.spritesmind.net/forum/viewtopic.php?t=1208
+
+2M WRAM
+https://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=3080
+
+MEMORY MAP MIRRORS
+https://gendev.spritesmind.net/forum/viewtopic.php?t=1276
+
+
+    /*
+	 * Reset the Gate Array - this specific sequence of writes is recognized by
+	 * the gate array as a reset sequence, clearing the entire internal state -
+	 * this is needed for the LaserActive
+	 */
+	write_word(0xA12002, 0xFF00);
+	write_byte(0xA12001, 0x03);
+	write_byte(0xA12001, 0x02);
+	write_byte(0xA12001, 0x00);

@@ -1,10 +1,13 @@
 package omegadrive.bus.megacd;
 
+import mcd.dict.MegaCdMemoryContext;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static mcd.dict.MegaCdDict.START_MCD_SUB_GATE_ARRAY_REGS;
+import static mcd.dict.MegaCdMemoryContext.WramSetup.W_2M_MAIN;
+import static mcd.dict.MegaCdMemoryContext.WramSetup.W_2M_SUB;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
 
 /**
@@ -59,4 +62,49 @@ public class McdWordRamTest extends McdRegTestBase {
         //mainCpu has WRAM
         Assertions.assertEquals(RET_BIT_MASK, reg & 3);
     }
+
+    /**
+     * Writing zero to the wordram control reg (from either side) does not affect 2M wordram assignment.
+     * https://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=3080
+     */
+    @Test
+    public void test2M_WRAM_Switch() {
+        int reg = mainCpuBus.read(MAIN_MEM_MODE_REG + 1, Size.BYTE);
+        int sreg = subCpuBus.read(SUB_MEM_MODE_REG + 1, Size.BYTE);
+        Assertions.assertEquals(reg, sreg);
+        //DMNA=0, RET=1
+        Assertions.assertEquals(RET_BIT_MASK, reg & 3);
+
+        testAssignToMain();
+        testAssignToSub();
+        testAssignToMain();
+        testAssignToMain();
+        testAssignToSub();
+        testAssignToSub();
+    }
+
+    private void testAssignToMain() {
+        MegaCdMemoryContext.WramSetup ws = ctx.wramSetup;
+        //no change
+        mainCpuBus.write(MAIN_MEM_MODE_REG + 1, 0, Size.BYTE);
+        Assertions.assertEquals(ws, ctx.wramSetup);
+        //assign to main
+        subCpuBus.write(SUB_MEM_MODE_REG + 1, RET_BIT_MASK, Size.BYTE);
+        Assertions.assertEquals(W_2M_MAIN, ctx.wramSetup);
+
+        Assertions.assertEquals(RET_BIT_MASK, mainCpuBus.read(MAIN_MEM_MODE_REG + 1, Size.BYTE) & 3);
+    }
+
+    private void testAssignToSub() {
+        //assign to sub
+        mainCpuBus.write(MAIN_MEM_MODE_REG + 1, DMNA_BIT_MASK, Size.BYTE);
+        Assertions.assertEquals(W_2M_SUB, ctx.wramSetup);
+
+        //no change
+        subCpuBus.write(SUB_MEM_MODE_REG + 1, 0, Size.BYTE);
+        Assertions.assertEquals(W_2M_SUB, ctx.wramSetup);
+
+        Assertions.assertEquals(DMNA_BIT_MASK, mainCpuBus.read(MAIN_MEM_MODE_REG + 1, Size.BYTE) & 3);
+    }
+
 }

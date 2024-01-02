@@ -38,13 +38,11 @@ public class MegaCdRegWriteHandlers {
             assert (d & 2) == 0 || ((d & 2) > 0 && (now & 2) > 0); //DMNA write only 0
         }
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 0, d); //RET
-        setBitInternal(buff, MCD_MEM_MODE.addr + 1, 1, d); //DMNA
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 2, d); //MODE
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 6, d); //BK0
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 7, d); //BK1
 
         ctx.setSharedBit(SUB_M68K, RET, d & 1);
-        ctx.setSharedBit(SUB_M68K, DMNA, (d >> 1) & 1);
         ctx.setSharedBit(SUB_M68K, MODE, (d >> 2) & 1);
     };
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg2_S = (ctx, d) -> {
