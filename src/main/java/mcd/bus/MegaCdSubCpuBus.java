@@ -228,8 +228,11 @@ public class MegaCdSubCpuBus extends GenesisBus {
     }
 
     private void m68kInterrupt(int num) {
-        MC68000Wrapper m68k = (MC68000Wrapper) getBusDeviceIfAny(M68kProvider.class).get();
-        m68k.raiseInterrupt(num);
+        getSubCpu().raiseInterrupt(num);
+    }
+
+    public MC68000Wrapper getSubCpu() {
+        return (MC68000Wrapper) getBusDeviceIfAny(M68kProvider.class).get();
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {

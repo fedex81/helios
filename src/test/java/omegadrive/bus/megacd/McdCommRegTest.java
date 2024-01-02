@@ -82,26 +82,26 @@ public class McdCommRegTest extends McdRegTestBase {
             Assertions.assertEquals(sres, res);
             Assertions.assertEquals(0, res);
             //master write
-            int v = Util.random.nextInt(max);
-            mainCpuBus.write(mreg, v, size);
+            int vm = 1 + Util.random.nextInt(max - 1);
+            mainCpuBus.write(mreg, vm, size);
             res = mainCpuBus.read(mreg, size);
             sres = subCpuBus.read(sreg, size);
             if (mreg < END_MCD_MAIN_GA_COMM_W) {
                 Assertions.assertEquals(sres, res);
             } else {
-                Assertions.assertNotEquals(v, res);
-                Assertions.assertNotEquals(v, sres);
+                Assertions.assertNotEquals(vm, res);
+                Assertions.assertNotEquals(vm, sres);
             }
             //slave write
-            v = Util.random.nextInt(max);
-            subCpuBus.write(sreg, v, size);
+            int vs = Math.max(1, vm + 1);
+            subCpuBus.write(sreg, vs, size);
             res = mainCpuBus.read(mreg, size);
             sres = subCpuBus.read(sreg, size);
             if (sreg >= START_MCD_SUB_GA_COMM_W) {
                 Assertions.assertEquals(sres, res);
             } else {
-                Assertions.assertNotEquals(v, res);
-                Assertions.assertNotEquals(v, sres);
+                Assertions.assertNotEquals(vs, res);
+                Assertions.assertNotEquals(vs, sres);
             }
 
         }

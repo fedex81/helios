@@ -1,0 +1,91 @@
+https://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=1018
+https://plutiedev.com/subcpu-in-mode1
+https://bitbucket.org/eke/genesis-plus-gx/issues/29/mega-cd-support
+
+bios_us.bin
+- main calls sub_16D2 (Wait for sub-CPU to set flag 6) and loops,
+then vblank happens -> main does its stuff
+main never leaves the loop (never hits 0x16dc)
+- sub is supposed to set GA_SUBFLAG6 (6) in GA_COMM_SUBFLAGS ($FFFF800F)
+
+- subcpu resets CDD and then waits for peripheral reset to complete (RES0 ff8001)
+then cddWatchdog overflows -> error triggered?, see checkCddWatchdog
+
+0xef4: subCpu copies CommWithCDD to RAM (see cddStatusCache), read long 8038, 804c,...
+cdd
+- read STAL from CDD (status), we should set NO_CD
+-- let's try 0xB see CDD_inf.txt
+- then master decompresses something using nemesis (0xF12) <- load starfield to vram etc
+- sub cpu calls CDBSTAT from the BIOS (see fn writeCddStatus), is it returning NO_DISC?
+
+
+msu-md-sample.bin
+https://github.com/krikzz/msu-md/tree/master/msu-md-sample
+Doesn't use the Main Sega CD bios ROMS as it is mode1, ie. the bootstrap code is in the rom itself
+MAIN writes a program to SUB prg-ram and then resets SUB-CPU.
+MAIN copy to SUB
+(see https://github.com/krikzz/msu-md/blob/master/msu-md-drv/main.s) ??
+SUB starts executing
+(see https://github.com/krikzz/msu-md/blob/master/msu-md-drv/sub_asm.s)
+
+Mode1Player.bin
+see /test_roms/roms/megacd/mcd_test/Mode1Example-20120104/mode1/Mode1Player.bin
+
+md-mode1-mcd-asic-test.bin
+https://github.com/jvisser/md-mode1-mcd-asic-test
+
+MCD Mode 1 Graphics Test.bin
+https://github.com/DevsArchive/sega-cd-asic-demo
+GAME_NAME	EQUS	"MEGA CD MODE 1 DEMO BY DEVON"
+
+Mode1PCM.bin
+https://github.com/viciious/SegaCDMode1PCM.git
+SubCpu starts from prog0_bios.asm at _start
+_LEVEL2 (MD VINT) is defined at loc $00005F7C, jump table that point to mdInterrupt (0x5f2)
+cddWatchdog overflows -> error triggered?, see checkCddWatchdog
+- mainCpu gets to scd_init_pcm() (main.c), calls wait_do_cmd, writes 'I' (0x49) to a1200e and then it is stuck on
+  wait_cmd_ack (polling a1200f), subCpu is not answering
+
+TODO compile
+https://github.com/DevsArchive/sega-cd-mode-1-demo
+dc.b	"SEGA CD ASIC DEM"		; Japanese game name
+
+mcd_verificator
+regression word ram testing,
+0c841489 Federico Berti <fberti146+git@gmail.com> on 18/12/2023 at 13:54
+stops at CDC Init
+
+SUB_M68K reading WRAM but setup is: W_2M_MAIN
+seems harmless, see delay: in sub_bios.s
+
+https://github.com/OrionNavattan/MegaCDErrorHandlerTest
+https://github.com/matteusbeus/ModPlayer
+https://github.com/matteusbeus/RaycastDemo
+https://github.com/TannicArcher/Batman_Returns_SegaCD_Project_Package
+https://github.com/LukeUsher/ProjectCD
+https://github.com/DarkMorford/scd-bios-disassembly
+https://github.com/drojaazu/mmd_loader
+
+--
+/**
+     * Word RAM is, officially, a buffer shared between the two CPUs.
+     * You can execute code from this region, and many games do just that,
+     * but it should never be used for low level code (i.e. the kernel) on either CPU.
+     * Similarly, be careful when running your vertical/horizontal interrupts from
+     * Word RAM and be sure to repoint them to default handlers in the kernel (in Work RAM)
+     * when loading another module. This is because Word RAM is only available to one CPU at a time,
+     * and if an integral piece of code suddenly becomes unavailable due to the buffer ownership
+     * changing, the system will crash.
+     * <p>
+     * Word RAM also has two modes. In one mode, all 2Mbits is "owned" by one of the CPUs
+     * and is inaccessible to the other. One of the main aspects of syncing the Main and Sub CPU
+     * is reconciling ownership of Word RAM in this mode. In the other mode, Word RAM is split
+     * into 1Mbit banks, of which each is owned by one CPU. The ownership can be readily switched,
+     * making this mode useful for streaming data (such as video) which is loaded from disc
+     * via the Sub CPU into one bank while the Main CPU copies the data from the other bank to VRAM,
+     * and then switching banks to continue the process.
+     * <p>
+     * $440000-$5FFFFF repeatedly mirrors the $400000-$43FFFF area. (7 copies of Boot ROM / PRG RAM)
+     * $640000-$7FFFFF repeatedly mirrors the $600000-$63FFFF area. (7 copies of Word RAM)
+     * $A12040-$A120FF repeatedly mirrors the $A12000-$A1203F area. (3 copies of SCD registers)
+     */

@@ -19,9 +19,6 @@
 
 package mcd;
 
-import mcd.bus.MegaCdMainCpuBus;
-import mcd.bus.MegaCdSubCpuBus;
-import mcd.dict.MegaCdMemoryContext;
 import omegadrive.SystemLoader;
 import omegadrive.bus.md.SvpMapper;
 import omegadrive.bus.model.GenesisBusProvider;
@@ -83,9 +80,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     protected M68kProvider cpu;
     protected M68kProvider subCpu;
     protected Md32xRuntimeData rt;
-    protected MegaCdMemoryContext megaCdMemoryContext;
-
-    protected MegaCdSubCpuBus subCpuBus;
+    protected McdDeviceHelper.McdLaunchContext mcdLaunchContext;
     protected UpdatableViewer memView;
     protected double nextVdpCycle = vdpVals[0];
     protected int next68kCycle = M68K_DIVIDER;
@@ -94,15 +89,9 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     protected int nextSub68kCycle = M68K_DIVIDER;
 
-    //TOOD hack
-    public static MegaCdSubCpuBus subCpuBusHack;
-
     protected MegaCd(DisplayWindow emuFrame) {
         super(emuFrame);
         systemType = SystemLoader.SystemType.GENESIS;
-        megaCdMemoryContext = new MegaCdMemoryContext();
-        subCpuBus = new MegaCdSubCpuBus(megaCdMemoryContext);
-        subCpuBusHack = subCpuBus;
     }
 
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
@@ -116,19 +105,17 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         inputProvider = InputProvider.createInstance(joypad);
 
         memory = MemoryProvider.createGenesisInstance();
-        bus = createBus();
+        mcdLaunchContext = McdDeviceHelper.setupDevices();
+        bus = mcdLaunchContext.mainBus;
         vdp = GenesisVdpProvider.createVdp(bus);
         cpu = MC68000Wrapper.createInstance(M68K, bus);
-        subCpu = MC68000Wrapper.createInstance(SUB_M68K, subCpuBus);
-        subCpuBus.attachDevice(subCpu);
-        //TODO check
-        ((MC68000Wrapper) subCpu).setStop(true);
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
         //sound attached later
         sound = SoundProvider.NO_SOUND;
-        vdp.addVdpEventListener(subCpuBus);
+        vdp.addVdpEventListener(mcdLaunchContext.subBus);
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(cpu).attachDevice(z80);
+        subCpu = mcdLaunchContext.subCpu;
         reloadWindowState();
         createAndAddVdpEventListener();
     }
@@ -179,7 +166,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
             boolean canRun = !subCpu.isStopped();
             int cycleDelay = 1;
             if (canRun) {
-                Md32xRuntimeData.setAccessTypeExt(M68K);
+                Md32xRuntimeData.setAccessTypeExt(SUB_M68K);
                 //TODO runs at 15Mhz
                 cycleDelay = subCpu.runInstruction();
                 cycleDelay = cycleDelay + subCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
@@ -216,11 +203,6 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
             nextFMCycle += FM_DIVIDER;
         }
     }
-
-    protected GenesisBusProvider createBus() {
-        return new MegaCdMainCpuBus(megaCdMemoryContext);
-    }
-
     @Override
     protected void updateVideoMode(boolean force) {
         if (force || videoMode != vdp.getVideoMode()) {

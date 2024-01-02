@@ -28,6 +28,8 @@ import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
+import static omegadrive.util.Util.th;
+
 /**
  *
  * NOTES: f-line emulator. Tecmo Cup
@@ -104,7 +106,7 @@ public class MC68000Wrapper implements M68kProvider {
     }
 
     public void setStop(boolean value) {
-//        LOG.debug("M68K stop: {}", value);
+        LOG.info("{} stop: {}", cpu, value);
         this.stop = value;
     }
 
@@ -123,6 +125,7 @@ public class MC68000Wrapper implements M68kProvider {
     @Override
     public void reset() {
         m68k.reset();
+        LOG.info("{} Reset, PC: {}, SP: {}", cpu, th(m68k.getPC()), th(m68k.getSSP()));
     }
 
     //X-men uses it
@@ -130,7 +133,7 @@ public class MC68000Wrapper implements M68kProvider {
     public void softReset() {
         m68k.reset();
         instCycles += 132;
-        stop = false;
+        setStop(false);
     }
 
     @Override
@@ -155,13 +158,13 @@ public class MC68000Wrapper implements M68kProvider {
             @Override
             public void resetExternal() {
                 //m68k asserts ZRES that cause z80, fm to be reset
-                LOG.info("Reset External");
+                LOG.info("{} Reset External", cpu);
                 busProvider.resetFrom68k();
             }
 
             @Override
             public void reset() {
-                LOG.info("Reset");
+                LOG.info("{} Reset", cpu);
                 super.reset();
                 resetExternal();
             }
@@ -169,6 +172,7 @@ public class MC68000Wrapper implements M68kProvider {
             @Override
             public void stop() {
                 setStop(true);
+                LOG.info("{} Stop: true", cpu);
             }
         };
     }

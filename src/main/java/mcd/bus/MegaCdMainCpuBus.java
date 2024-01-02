@@ -1,10 +1,8 @@
 package mcd.bus;
 
-import mcd.MegaCd;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.bus.md.GenesisBus;
-import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
@@ -54,6 +52,9 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private static ByteBuffer bios;
     private LogHelper logHelper = new LogHelper();
     private MegaCdMemoryContext memCtx;
+
+    public MC68000Wrapper subCpu;
+    public MegaCdSubCpuBus subCpuBus;
     private CpuDeviceAccess cpu;
 
     static {
@@ -214,11 +215,11 @@ public class MegaCdMainCpuBus extends GenesisBus {
         int sreset = res & 1;
         int sbusreq = (res >> 1) & 1;
         int subIntReg = (res >> 8) & 1;
+        assert subCpu != null && subCpuBus != null;
 
-        MC68000Wrapper m68k = (MC68000Wrapper) MegaCd.subCpuBusHack.getBusDeviceIfAny(M68kProvider.class).get();
         if (subIntReg > 0) {
             LOG.info("M trigger SubCpu int2 request");
-            m68k.raiseInterrupt(2);
+            subCpu.raiseInterrupt(2);
         }
         if ((address & 1) == 0 && size == Size.BYTE) {
             return;
@@ -229,13 +230,13 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
         if (sreset > 0) {
             if (sbusreq == 0) {
-                m68k.reset();
-                MegaCd.subCpuBusHack.resetDone();
+                subCpu.reset();
+                subCpuBus.resetDone();
                 LOG.info("M SubCpu reset done, now running");
             }
-            m68k.setStop(sbusreq > 0);
+            subCpu.setStop(sbusreq > 0);
         } else { //sreset = 0
-            m68k.setStop(true);
+            subCpu.setStop(true);
             LOG.info("M SubCpu stopped");
         }
     }

@@ -32,8 +32,11 @@ public class MegaCdRegWriteHandlers {
     };
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg2_S = (ctx, d) -> {
-        assert (d & 2) == 0; //DMNA write only 0
         var buff = ctx.getGateSysRegs(SUB_M68K);
+        if (assertionsEnabled) {
+            int now = readBuffer(buff, MCD_MEM_MODE.addr + 1, Size.BYTE);
+            assert (d & 2) == 0 || ((d & 2) > 0 && (now & 2) > 0); //DMNA write only 0
+        }
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 0, d); //RET
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 1, d); //DMNA
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 6, d); //BK0
@@ -64,9 +67,11 @@ public class MegaCdRegWriteHandlers {
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg2_M = (ctx, d) -> {
         var buff = ctx.getGateSysRegs(M68K);
-        int now = readBuffer(buff, MCD_MEM_MODE.addr + 1, Size.BYTE);
-        assert (d & 1) == 0 || ((d & 1) > 0 && (now & 1) > 0); //RET write only 0
-        assert (d & 4) == 0 || ((d & 4) > 0 && (now & 4) > 0); //MODE write only 0
+        if (assertionsEnabled) {
+            int now = readBuffer(buff, MCD_MEM_MODE.addr + 1, Size.BYTE);
+            assert (d & 1) == 0 || ((d & 1) > 0 && (now & 1) > 0); //RET write only 0
+            assert (d & 4) == 0 || ((d & 4) > 0 && (now & 4) > 0); //MODE write only 0
+        }
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 0, d); //RET
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 1, d); //DMNA
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 2, d); //MODE
