@@ -34,6 +34,12 @@ public class McdCommRegTest extends McdRegTestBase {
         int sval = subCpuBus.read(sreg, Size.WORD);
         Assertions.assertEquals(mval, sval);
 
+        Runnable regMatches = () -> {
+            Assertions.assertEquals(mainCpuBus.read(mreg, Size.BYTE), subCpuBus.read(sreg, Size.BYTE));
+            Assertions.assertEquals(mainCpuBus.read(mreg + 1, Size.BYTE), subCpuBus.read(sreg + 1, Size.BYTE));
+            Assertions.assertEquals(mainCpuBus.read(mreg, Size.WORD), subCpuBus.read(sreg, Size.WORD));
+        };
+
         //main can write to MSB only
         Assertions.assertThrowsExactly(AssertionError.class, () -> mainCpuBus.write(mreg, 1, Size.WORD));
         Assertions.assertThrowsExactly(AssertionError.class, () -> mainCpuBus.write(mreg, 2, Size.LONG));
@@ -50,6 +56,8 @@ public class McdCommRegTest extends McdRegTestBase {
         //lsb has not changed
         Assertions.assertEquals(mlsbval, mainCpuBus.read(mreg + 1, Size.BYTE));
         Assertions.assertEquals(slsbval, subCpuBus.read(sreg + 1, Size.BYTE));
+        //reg matches
+        regMatches.run();
 
         //sub can write to LSB only
         Assertions.assertThrowsExactly(AssertionError.class, () -> subCpuBus.write(sreg, 1, Size.WORD));
@@ -65,8 +73,10 @@ public class McdCommRegTest extends McdRegTestBase {
         sval = subCpuBus.read(sreg + 1, Size.BYTE);
         Assertions.assertEquals(mval, sval);
         //msb has not changed
-        Assertions.assertEquals(mlsbval, mainCpuBus.read(mreg, Size.BYTE));
-        Assertions.assertEquals(slsbval, subCpuBus.read(sreg, Size.BYTE));
+        Assertions.assertEquals(mmsbval, mainCpuBus.read(mreg, Size.BYTE));
+        Assertions.assertEquals(smsbval, subCpuBus.read(sreg, Size.BYTE));
+        //reg matches
+        regMatches.run();
     }
 
 

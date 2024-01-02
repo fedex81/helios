@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.function.BiConsumer;
 
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_COMM0;
 import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersMain;
 import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersSub;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -44,7 +45,7 @@ public class MegaCdMemoryContext implements Serializable {
     public static final int MCD_WORD_RAM_2M_MASK = MCD_WORD_RAM_2M_SIZE - 1;
     public static final int MCD_PRG_RAM_MASK = MCD_PRG_RAM_SIZE - 1;
 
-    public static final int NUM_SYS_REG_NON_SHARED = 8;
+    public static final int NUM_SYS_REG_NON_SHARED = MCD_COMM0.addr;
 
     public byte[] prgRam;
     public byte[][] sysGateRegs;

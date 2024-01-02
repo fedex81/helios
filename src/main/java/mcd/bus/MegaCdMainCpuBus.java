@@ -19,6 +19,7 @@ import static mcd.dict.MegaCdMemoryContext.MCD_GATE_REGS_MASK;
 import static mcd.dict.MegaCdMemoryContext.WramSetup;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.th;
 
 /**
@@ -200,6 +201,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 //main can only write to MSB
                 assert size == Size.BYTE && (address & 1) == 0;
                 LOG.info("M write COMM_FLAG: {} {}", th(data), size);
+                writeBufferRaw(sysGateRegs, address & MCD_GATE_REGS_MASK, data, size);
+                writeBufferRaw(memCtx.getRegBuffer(SUB_M68K, regSpec), address & MCD_GATE_REGS_MASK, data, size);
             }
             case MCD_HINT_VECTOR -> {
                 LOG.info("M write MCD_HINT_VECTOR: {} {}", th(data), size);

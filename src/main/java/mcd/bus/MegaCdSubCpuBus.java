@@ -20,6 +20,7 @@ import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.Util.th;
 
 /**
@@ -130,6 +131,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
                 assert size == Size.BYTE && (address & 1) == 1;
                 LOG.info("S write COMM_FLAG: {} {}", th(data), size);
                 writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
+                writeBufferRaw(memCtx.getRegBuffer(M68K, regSpec), address & MCD_GATE_REGS_MASK, data, size);
             }
             case MCD_INT_MASK -> {
                 LOG.info("S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);
