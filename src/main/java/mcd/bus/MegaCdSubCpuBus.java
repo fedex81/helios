@@ -44,13 +44,16 @@ public class MegaCdSubCpuBus extends GenesisBus {
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
         sysGateRegs = ctx.getGateSysRegs(cpu);
         commonGateRegs = ByteBuffer.wrap(ctx.commonGateRegs);
-        pcm = new McdPcm();
         memCtx = ctx;
         //NOTE: starts at zero and becomes 1 after ~100ms
         writeBufferRaw(sysGateRegs, MCD_RESET.addr, 1, Size.WORD); //not reset
         writeBufferRaw(sysGateRegs, MCD_MEM_MODE.addr, 1, Size.WORD);
         writeBufferRaw(commonGateRegs, MCD_CDD_CONTROL.addr, 0x100, Size.WORD);
         attachDevice(BusArbiter.NO_OP);
+    }
+
+    public void setPcm(McdPcm pcm) {
+        this.pcm = pcm;
     }
 
     @Override
@@ -146,8 +149,10 @@ public class MegaCdSubCpuBus extends GenesisBus {
                 writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
             }
             default -> {
-                LOG.error("S write unhandled MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, th(data), size);
+                logHelper.logWarningOnce(LOG,
+                        "S write unhandled MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, th(data), size);
                 writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
+//                assert false;
             }
         }
     }

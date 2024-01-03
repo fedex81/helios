@@ -176,6 +176,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
                 //TODO
             }
             cycleDelay = Math.max(1, cycleDelay);
+            McdDeviceHelper.stepDevices(cycleDelay);
             nextSub68kCycle += M68K_DIVIDER * cycleDelay;
             assert Md32xRuntimeData.resetCpuDelayExt() == 0;
         }

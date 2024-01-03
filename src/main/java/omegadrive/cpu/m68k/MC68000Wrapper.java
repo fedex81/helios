@@ -106,7 +106,9 @@ public class MC68000Wrapper implements M68kProvider {
     }
 
     public void setStop(boolean value) {
-        LOG.info("{} stop: {}", cpu, value);
+        if (stop != value) {
+            LOG.info("{} stop: {}", cpu, value);
+        }
         this.stop = value;
     }
 

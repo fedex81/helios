@@ -131,8 +131,6 @@ public class MegaCdDict {
 
         MCD_PCM_ON_OFF(PCM, 0x111),
 
-        MCD_PCM_RAMPTR(PCM, 0x121),
-
         INVALID(NONE, -1);
 
         public final RegSpec regSpec;
@@ -198,9 +196,8 @@ public class MegaCdDict {
             int idx = cpu == M68K ? REG_MAIN.ordinal() : REG_SUB.ordinal();
             r = mcdRegMapping[idx][address & MDC_SUB_GATE_REGS_MASK];
             if (r == null) {
-                LOG.error("{} unknown register at address: {}", cpu, th(address));
+                LogHelper.logWarnOnce(LOG, "{} unknown register at address: {}", cpu, th(address));
                 r = RegSpecMcd.INVALID;
-                assert false;
             }
         }
         return r;

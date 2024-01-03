@@ -65,8 +65,8 @@ public class MegaCdMemoryContext implements Serializable {
     public enum WramSetup {
         W_2M_MAIN(_2M, M68K),
         W_2M_SUB(_2M, SUB_M68K),
-        W_1M_MAIN(_1M, M68K),
-        W_1M_SUB(_1M, SUB_M68K);
+        W_1M_WR0_MAIN(_1M, M68K),
+        W_1M_WR0_SUB(_1M, SUB_M68K);
 
         public final CpuDeviceAccess cpu;
         public final WordRamMode mode;
@@ -91,7 +91,7 @@ public class MegaCdMemoryContext implements Serializable {
 
     public void writeWordRam(CpuDeviceAccess cpu, int address, int value, Size size) {
         if (cpu == wramSetup.cpu) {
-            writeWordRam(address & MCD_WORD_RAM_2M_MASK >> 17, address, value, size);
+            writeWordRam(getBank(wramSetup, cpu, address), address, value, size);
         } else {
             logWarnOnce(LOG, "{} writing WRAM but setup is: {}", cpu, wramSetup);
         }
@@ -99,11 +99,32 @@ public class MegaCdMemoryContext implements Serializable {
 
     public int readWordRam(CpuDeviceAccess cpu, int address, Size size) {
         if (cpu == wramSetup.cpu) {
-            return readWordRam(address & MCD_WORD_RAM_2M_MASK >> 17, address, size);
+            return readWordRam(getBank(wramSetup, cpu, address), address, size);
         } else {
             logWarnOnce(LOG, "{} reading WRAM but setup is: {}", cpu, wramSetup);
             return size.getMask();
         }
+    }
+
+    //TODO test
+    public static void main(String[] args) {
+        System.out.println(getBank1M(WramSetup.W_1M_WR0_MAIN, M68K));
+        System.out.println(getBank1M(WramSetup.W_1M_WR0_SUB, M68K));
+        System.out.println(getBank1M(WramSetup.W_1M_WR0_MAIN, SUB_M68K));
+        System.out.println(getBank1M(WramSetup.W_1M_WR0_SUB, SUB_M68K));
+    }
+
+    private static int getBank(WramSetup wramSetup, CpuDeviceAccess cpu, int address) {
+        if (wramSetup.mode == _2M) {
+            return address & MCD_WORD_RAM_2M_MASK >> 17;
+        }
+        return getBank1M(wramSetup, cpu);
+    }
+
+    private static int getBank1M(WramSetup wramSetup, CpuDeviceAccess cpu) {
+        int bank = wramSetup == WramSetup.W_1M_WR0_MAIN && cpu == M68K ? 0 : 1;
+        bank = wramSetup == WramSetup.W_1M_WR0_SUB && cpu == SUB_M68K ? 0 : bank;
+        return bank;
     }
 
     private void writeWordRam(int bank, int address, int value, Size size) {
@@ -118,8 +139,12 @@ public class MegaCdMemoryContext implements Serializable {
         int mode = reg2 & 4;
         int dmna = reg2 & 2;
         int ret = reg2 & 1;
-        if (mode > 0) { //TODO
-            wramSetup = WramSetup.W_1M_SUB;
+        if (mode > 0) {
+            if (c == SUB_M68K) {
+                LOG.warn("{} Switch bank requested, ret: {}, current setup {}", c, ret, wramSetup);
+            }
+            //DMNA has no effect, ie. MAIN cannot switch banks directly, it needs to ask SUB to do it
+            wramSetup = ret == 0 ? WramSetup.W_1M_WR0_MAIN : WramSetup.W_1M_WR0_SUB;
             LOG.warn("Setting wordRam to {}", wramSetup);
             return wramSetup;
         }
