@@ -14,6 +14,13 @@ import static s32x.util.blipbuffer.BlipBufferHelper.clampToShort;
 public class BlipBufferHelperTest {
 
     @Test
+    public void testClampToByteNearZero() {
+        Assertions.assertEquals(-1, clampToByte(-1));
+        Assertions.assertEquals(0, clampToByte(0));
+        Assertions.assertEquals(1, clampToByte(1));
+    }
+
+    @Test
     public void testClampToByte() {
         boolean wentPos = false;
         for (int i = Integer.MIN_VALUE; i < Integer.MAX_VALUE; i += 50) {
@@ -28,6 +35,13 @@ public class BlipBufferHelperTest {
             }
 
         }
+    }
+
+    @Test
+    public void testClampToShortNearZero() {
+        Assertions.assertEquals(-1, clampToShort(-1));
+        Assertions.assertEquals(0, clampToShort(0));
+        Assertions.assertEquals(1, clampToShort(1));
     }
 
     @Test

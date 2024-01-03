@@ -135,10 +135,22 @@ public class BlipBufferHelper {
     }
 
     public static int clampToShort(int value) {
-        return (value >> 31) ^ Short.MAX_VALUE;
+        if (value > Short.MAX_VALUE) {
+            return Short.MAX_VALUE;
+        }
+        if (value < Short.MIN_VALUE) {
+            return Short.MIN_VALUE;
+        }
+        return value;
     }
 
     public static int clampToByte(int value) {
-        return (value >> 31) ^ Byte.MAX_VALUE;
+        if (value > Byte.MAX_VALUE) {
+            return Byte.MAX_VALUE;
+        }
+        if (value < Byte.MIN_VALUE) {
+            return Byte.MIN_VALUE;
+        }
+        return value;
     }
 }
