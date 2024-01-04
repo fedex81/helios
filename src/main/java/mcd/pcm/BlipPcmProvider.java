@@ -65,10 +65,10 @@ public class BlipPcmProvider implements McdPcmProvider {
         if (currFreqDelta == freqDelta) {
             return;
         }
-        //TODO HACK
-//        if(currFreqDelta != freqDelta && currFreqDelta > 0){
-//            return;
-//        }
+        if (freqDelta == 0) {
+            ref.get().blipBuffer = null;
+            return;
+        }
         assert freqDelta > 0;
         LOG.info("Using frequencyDelta: {}", freqDelta);
         currFreqDelta = freqDelta;

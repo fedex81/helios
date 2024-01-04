@@ -5,7 +5,6 @@ import mcd.bus.MegaCdSubCpuBus;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.McdPcm;
 import omegadrive.cpu.m68k.MC68000Wrapper;
-import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
@@ -24,18 +23,10 @@ public class McdDeviceHelper {
         assert false;
     }
 
-    static BufferUtil.StepDevice pcmDevice;
-
     public static McdLaunchContext setupDevices() {
         McdLaunchContext ctx = new McdLaunchContext();
         ctx.initContext();
-        assert pcmDevice == null;
-        pcmDevice = ctx.pcm;
         return ctx;
-    }
-
-    public static void stepDevices(int cyles) {
-        pcmDevice.step(cyles);
     }
 
     public static class McdLaunchContext {
@@ -58,6 +49,10 @@ public class McdDeviceHelper {
             mainBus.subCpuBus = subBus;
             //TODO check, on boot the sub bus is set to request (ie. main has it) hence sub cpu cannot run
             subCpu.setStop(true);
+        }
+
+        public void stepDevices(int cyles) {
+            pcm.step(cyles);
         }
 
         public void reset() {

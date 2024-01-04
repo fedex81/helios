@@ -100,7 +100,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 LOG.info("Enabling MegaCD bus mapping");
                 enableMCDBus = true;
             }
-            return handleMegaCdExpRead(address, size);
+            return handleMegaCdExpRead(address, size) & size.getMask();
         }
         int res = size.getMask();
         if (enableMCDBus) {
