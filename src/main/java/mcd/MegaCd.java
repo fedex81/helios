@@ -19,6 +19,7 @@
 
 package mcd;
 
+import mcd.util.McdMemView;
 import omegadrive.SystemLoader;
 import omegadrive.bus.md.SvpMapper;
 import omegadrive.bus.model.GenesisBusProvider;
@@ -42,7 +43,6 @@ import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.util.MemView;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 import s32x.util.Md32xRuntimeData;
@@ -246,7 +246,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     }
 
     protected UpdatableViewer createMemView() {
-        return MemView.createInstance(bus, vdp.getVdpMemory());
+        return McdMemView.createInstance(bus, mcdLaunchContext, vdp.getVdpMemory());
     }
 
     /**

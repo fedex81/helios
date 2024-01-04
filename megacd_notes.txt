@@ -68,6 +68,8 @@ looks like it's writing 0x200 bytes (0.5 Kbyte, see CHBUF_SIZE) chunks to PCM RA
 (at 0x400, 0x1400, 0x2400, 0x3400)
 then writes right channel 0x200 bytes (all 0x80 and 0x1 - silence) , PCM RAM 0 - 0x200
 then PCM RAM 0x200 - 0x400, looks like right channel again
+left channel is not written?
+source 1 doesn't even get copied to PCM_RAM
 
 No more data is written to PCM RAM, there must be a timer triggering?
 

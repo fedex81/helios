@@ -39,6 +39,8 @@ public class McdPcm implements BufferUtil.StepDevice {
 
     public static final int PCM_START_WAVE_DATA_WINDOW = 0x1000;
     public static final int PCM_END_WAVE_DATA_WINDOW = 0x2000;
+
+    public static final int PCM_WAVE_DATA_WINDOW_MASK = PCM_END_WAVE_DATA_WINDOW - PCM_START_WAVE_DATA_WINDOW - 1;
     public static final int PCM_WAVE_DATA_SIZE = 0x10000; //64Kb
     public static final int PCM_ADDRESS_MASK = 0x1FFF;
 
@@ -100,7 +102,7 @@ public class McdPcm implements BufferUtil.StepDevice {
         address &= PCM_ADDRESS_MASK;
         value &= size.getMask();
         if (address >= PCM_START_WAVE_DATA_WINDOW && address < PCM_END_WAVE_DATA_WINDOW) {
-            address = waveBank | ((address & 0xFFF) >> 1);
+            address = waveBank | ((address & PCM_WAVE_DATA_WINDOW_MASK) >> 1);
             LogHelper.logWarnOnce(LOG, "Writing to PCM waveData: {}, {} {}", th(address), th(value), size);
             BufferUtil.writeBufferRaw(waveData, address, value, size);
         } else if (address < PCM_REG_MASK) {
@@ -181,6 +183,10 @@ public class McdPcm implements BufferUtil.StepDevice {
         }
     }
 
+    public ByteBuffer getWaveData() {
+        return waveData;
+    }
+
     private void generateOneSample() {
         ls = 0;
         rs = 0;
@@ -233,17 +239,6 @@ public class McdPcm implements BufferUtil.StepDevice {
 
     public void newFrame() {
         playSupport.newFrame();
-    }
-
-    public static void main(String[] args) {
-        for (int i = Byte.MIN_VALUE; i <= Byte.MAX_VALUE; i++) {
-            System.out.println(Integer.toBinaryString(i & 0xFF)
-                    + "," + (((i & 0x80) > 0) ? "+" : "-") + (i & 0x7F));
-            if ((i & 0x80) > 0) {
-                System.out.println(Integer.toBinaryString(i & 0xFF) + "," + (i & 0x7F));
-            } else {
-                System.out.println(Integer.toBinaryString(i & 0xFF) + "," + -(i));
-            }
-        }
+//        updateFromMemory(0, waveData.capacity());
     }
 }

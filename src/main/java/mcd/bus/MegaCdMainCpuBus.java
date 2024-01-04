@@ -87,9 +87,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
     @Override
     public void init() {
         super.init();
-        //bios_us.bin
-        if ("BR 000006-2.00".equals(cartridgeInfoProvider.getSerial())) {
+        //bios aka bootRom
+        if (cartridgeInfoProvider.getSerial().startsWith("BR ")) {
             enableMode1 = false;
+            LOG.info("Bios detected with serial: {}, disabling mode1 mapper", cartridgeInfoProvider.getSerial());
         }
     }
 
@@ -107,7 +108,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
             if (enableMode1) {
                 if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
                     assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
-                    logHelper.logWarningOnce(LOG, "{} Reading wordRam mode 1m not supported", cpu);
                     res = memCtx.readWordRam(cpu, address, size);
                 } else if (address >= START_MCD_MAIN_PRG_RAM_MODE1 && address < END_MCD_MAIN_PRG_RAM_MODE1) {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
@@ -126,7 +126,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     res = readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
                     assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
-                    logHelper.logWarningOnce(LOG, "{} Reading wordRam mode 1m not supported", cpu);
                     res = memCtx.readWordRam(cpu, address, size);
                 } else {
                     res = super.read(address, size);
