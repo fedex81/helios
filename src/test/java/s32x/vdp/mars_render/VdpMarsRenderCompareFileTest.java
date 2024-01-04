@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import s32x.util.TestRenderUtil;
 import s32x.vdp.MarsVdp;
 import s32x.vdp.MarsVdp.DebugMarsVdpRenderContext;
 import s32x.vdp.MarsVdpImpl;
@@ -43,7 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
-import static s32x.util.TestRenderUtil.*;
+import static omegadrive.util.TestRenderUtil.*;
 
 public class VdpMarsRenderCompareFileTest extends VdpRenderCompareTest {
 
@@ -103,7 +102,7 @@ public class VdpMarsRenderCompareFileTest extends VdpRenderCompareTest {
                 ShortBuffer.wrap(d.frameBuffer1), ShortBuffer.wrap(d.palette));
         vdp.updateVideoMode(vm);
         vdp.draw(vdpContext);
-        Image i = TestRenderUtil.saveRenderToImage(vdp.getMarsVdpRenderContext().screen, vm);
+        Image i = saveRenderToImage(vdp.getMarsVdpRenderContext().screen, vm);
         String fileName = Files.getNameWithoutExtension(datFile.getFileName().toString());
         return convertToBufferedImage(i);
     }

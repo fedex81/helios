@@ -21,6 +21,7 @@ package s32x.vdp.composite_render;
 
 import com.google.common.io.Files;
 import omegadrive.util.FileUtil;
+import omegadrive.util.TestRenderUtil.*;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import org.junit.jupiter.api.Assertions;
@@ -40,8 +41,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
-import static s32x.util.TestRenderUtil.*;
-import static s32x.util.TestRenderUtil.S32xRenderType.*;
+import static omegadrive.util.TestRenderUtil.*;
+
 
 /**
  * Test the creation of a composite image of the MD + S32X screen outputs.
@@ -116,10 +117,10 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
         DebugVideoRenderContext dvrc = (DebugVideoRenderContext) o;
         MarsVdp.MarsVdpRenderContext vrc = DebugVideoRenderContext.toMarsVdpRenderContext(dvrc);
         VideoMode vm = vrc.vdpContext.videoMode;
-        img[MD.ordinal()] = saveRenderToImage(dvrc.mdData, dvrc.mdVideoMode);
-        img[S32X.ordinal()] = saveRenderToImage(dvrc.s32xData, vm);
+        img[S32xRenderType.MD.ordinal()] = saveRenderToImage(dvrc.mdData, dvrc.mdVideoMode);
+        img[S32xRenderType.S32X.ordinal()] = saveRenderToImage(dvrc.s32xData, vm);
         int[] screen = MarsVdpImpl.doCompositeRenderingExt(dvrc.mdVideoMode, dvrc.mdData, vrc);
-        img[FULL.ordinal()] = saveRenderToImage(screen, vm);
+        img[S32xRenderType.FULL.ordinal()] = saveRenderToImage(screen, vm);
         return img;
     }
 }

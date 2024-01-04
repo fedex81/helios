@@ -24,7 +24,6 @@ import omegadrive.util.Util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.slf4j.Logger;
-import s32x.util.TestFileUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,7 +34,9 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import static s32x.util.TestRenderUtil.*;
+import static omegadrive.util.TestFileUtil.decompressAndLoadFromZipFile;
+import static omegadrive.util.TestRenderUtil.*;
+
 
 @Disabled
 public abstract class VdpRenderCompareTest {
@@ -125,7 +126,7 @@ public abstract class VdpRenderCompareTest {
 
     protected boolean testCompareOne(String saveName, BufferedImage actual) {
         Path baselineZipImageFile = Paths.get(compareFolder, saveName + DOT_EXT);
-        Image base = TestFileUtil.decompressAndLoadFromZipFile(baselineZipImageFile, saveName + "." + IMG_EXT, IMG_EXT);
+        Image base = decompressAndLoadFromZipFile(baselineZipImageFile, saveName + "." + IMG_EXT, IMG_EXT);
         Assertions.assertNotNull(base, "File missing: " + baselineZipImageFile.toAbsolutePath());
         BufferedImage baseLine = convertToBufferedImage(base);
         boolean match = compareImage(baseLine, actual);

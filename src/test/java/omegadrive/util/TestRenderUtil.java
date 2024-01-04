@@ -24,6 +24,13 @@ public class TestRenderUtil {
         }
     }
 
+    public enum S32xRenderType {FULL, MD, S32X}
+
+    public static void saveToFile(String folderName, String saveName, S32xRenderType type, String imgExt, Image i) {
+        Path folder = Paths.get(folderName);
+        Path res = TestFileUtil.compressAndSaveToZipFile(saveName + "_" + type.name() + "." + imgExt, folder, i, imgExt);
+        System.out.println("Image saved: " + res.toAbsolutePath());
+    }
 
     public static void saveToFile(String folderName, String saveName, String imgExt, Image i) {
         Path folder = Paths.get(folderName);

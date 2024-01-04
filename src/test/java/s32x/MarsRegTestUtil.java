@@ -8,6 +8,7 @@ import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.RomHolder;
 import omegadrive.util.Size;
+import omegadrive.util.SystemTestUtil;
 import org.junit.jupiter.api.Assertions;
 import s32x.StaticBootstrapSupport.NextCycleResettable;
 import s32x.bus.S32xBus;
@@ -18,7 +19,6 @@ import s32x.util.BiosHolder.BiosData;
 import s32x.util.MarsLauncherHelper;
 import s32x.util.MarsLauncherHelper.Sh2LaunchContext;
 import s32x.util.Md32xRuntimeData;
-import s32x.util.SystemTestUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
