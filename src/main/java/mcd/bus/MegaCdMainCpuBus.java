@@ -102,33 +102,38 @@ public class MegaCdMainCpuBus extends GenesisBus {
             }
             return handleMegaCdExpRead(address, size);
         }
+        int res = size.getMask();
         if (enableMCDBus) {
             if (enableMode1) {
                 if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
                     assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
                     logHelper.logWarningOnce(LOG, "{} Reading wordRam mode 1m not supported", cpu);
-                    return memCtx.readWordRam(cpu, address, size);
+                    res = memCtx.readWordRam(cpu, address, size);
                 } else if (address >= START_MCD_MAIN_PRG_RAM_MODE1 && address < END_MCD_MAIN_PRG_RAM_MODE1) {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                    return readBuffer(prgRam, addr, size);
+                    res = readBuffer(prgRam, addr, size);
                 } else if (address >= START_MCD_BOOT_ROM_MODE1 && address < END_MCD_BOOT_ROM_MODE1) {
-                    return readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
+                    res = readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
+                } else {
+                    res = super.read(address, size);
                 }
             } else {
                 //TODO test
                 if (address >= START_MCD_MAIN_PRG_RAM && address < END_MCD_MAIN_PRG_RAM) {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                    return readBuffer(prgRam, addr, size);
+                    res = readBuffer(prgRam, addr, size);
                 } else if (address >= START_MCD_BOOT_ROM && address < END_MCD_BOOT_ROM) {
-                    return readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
+                    res = readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
                     assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
                     logHelper.logWarningOnce(LOG, "{} Reading wordRam mode 1m not supported", cpu);
-                    return memCtx.readWordRam(cpu, address, size);
+                    res = memCtx.readWordRam(cpu, address, size);
+                } else {
+                    res = super.read(address, size);
                 }
             }
         }
-        return super.read(address, size);
+        return res & size.getMask();
     }
 
     @Override
@@ -145,7 +150,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     return;
                 } else if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
                     assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
-                    logHelper.logWarningOnce(LOG, "{} Writing wordRam mode 1m not supported", cpu);
                     memCtx.writeWordRam(cpu, address, data, size);
                     return;
                 }
@@ -157,7 +161,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     return;
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
                     assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
-                    logHelper.logWarningOnce(LOG, "{} Writing wordRam mode 1m not supported", cpu);
                     memCtx.writeWordRam(cpu, address, data, size);
                     return;
                 }
@@ -174,7 +177,11 @@ public class MegaCdMainCpuBus extends GenesisBus {
             return 0;
         }
         ByteBuffer regs = memCtx.getRegBuffer(cpu, regSpec);
-        return readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
+        int res = readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
+        if (regSpec.deviceType == McdRegType.COMM) {
+            LOG.info("S read {}: {}, {} {}", regSpec, th(address), th(res), size);
+        }
+        return res;
     }
 
     private void handleMegaCdExpWrite(int address, int data, Size size) {

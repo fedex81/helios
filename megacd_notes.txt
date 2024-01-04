@@ -42,6 +42,46 @@ _LEVEL2 (MD VINT) is defined at loc $00005F7C, jump table that point to mdInterr
 cddWatchdog overflows -> error triggered?, see checkCddWatchdog
 gets to the playing screen
 
+stereo_test_u8.wav
+http://www.topherlee.com/software/pcm-tut-wavformat.html
+first 0x2C bytes are header info
+waveData len = 0x0165BC = 91580 bytes
+no loop marker (0xFF)
+sampleRate = 8000hz
+8 bits per sample
+
+file is embedded in ROM at position 0x2710, data starts at 0x2730
+MAIN code at 0x000489a0 is copying from ROM to 0x60_0000 WORD RAM BANK0 (W_1M_WR0_MAIN)
+~ 0x165E bytes
+
+SUB code at 0x6674 copies from 1M WRAM BANK1 (0xC0004) to PRG_RAM ~0x23E3C
+but W_1M_WR0_MAIN so pointless
+
+then SUB switches to W_1M_WR0_SUB
+SUB at 0x6684 copies 0x165e bytes to PRG_RAM 0x3B_BD8
+
+SUB at 0x6818 (pcm_load_stereo_samples_u8) copies to PCM RAM 0xFF_3001
+each sample is transformed using a lookup table (pcm_u8_to_sm_lut), the result is either 0x80 or 0x1 (0x80 -> +0, 1 -> -1)
+this is the right channel
+
+looks like it's writing 0x200 bytes (0.5 Kbyte, see CHBUF_SIZE) chunks to PCM RAM and then set 32 loop markers after them
+(at 0x400, 0x1400, 0x2400, 0x3400)
+then writes right channel 0x200 bytes (all 0x80 and 0x1 - silence) , PCM RAM 0 - 0x200
+then PCM RAM 0x200 - 0x400, looks like right channel again
+
+No more data is written to PCM RAM, there must be a timer triggering?
+
+PCM Chan#0 is on addrCounter = 0x1228D2
+freqDelta= 0x1F7 (repeat sample 4.X times) -> ~8Khz
+0x1228D2 >> 11 = 0x245
+(0x1228D2 + (4*0x1F7)) >> 11 = 0x246
+startAddr: 0
+
+PCM Chan#0 is on addrCounter = 0x528B10
+freqDelta= 0x1F7 (repeat sample 4.X times) -> ~8Khz
+startAddr: 0x800
+gets to 0xA51
+
 TODO compile
 https://github.com/DevsArchive/sega-cd-mode-1-demo
 dc.b	"SEGA CD ASIC DEM"		; Japanese game name

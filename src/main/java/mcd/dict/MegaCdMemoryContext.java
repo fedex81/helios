@@ -90,18 +90,20 @@ public class MegaCdMemoryContext implements Serializable {
     }
 
     public void writeWordRam(CpuDeviceAccess cpu, int address, int value, Size size) {
-        if (cpu == wramSetup.cpu) {
+        if (cpu == wramSetup.cpu || wramSetup.mode == _1M) {
             writeWordRam(getBank(wramSetup, cpu, address), address, value, size);
         } else {
             logWarnOnce(LOG, "{} writing WRAM but setup is: {}", cpu, wramSetup);
+            assert false;
         }
     }
 
     public int readWordRam(CpuDeviceAccess cpu, int address, Size size) {
-        if (cpu == wramSetup.cpu) {
+        if (cpu == wramSetup.cpu || wramSetup.mode == _1M) {
             return readWordRam(getBank(wramSetup, cpu, address), address, size);
         } else {
             logWarnOnce(LOG, "{} reading WRAM but setup is: {}", cpu, wramSetup);
+            assert false;
             return size.getMask();
         }
     }

@@ -59,23 +59,25 @@ public class MegaCdSubCpuBus extends GenesisBus {
     @Override
     public int read(int address, Size size) {
         address &= MD_PC_MASK;
+        int res = size.getMask();
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
             assert memCtx.wramSetup.mode == WordRamMode._2M;
-            return memCtx.readWordRam(cpu, address, size);
+            res = memCtx.readWordRam(cpu, address, size);
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
-            return memCtx.readWordRam(cpu, address, size);
+            res = memCtx.readWordRam(cpu, address, size);
         } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
-            return readBuffer(subCpuRam, address & MCD_PRG_RAM_MASK, size);
+            res = readBuffer(subCpuRam, address & MCD_PRG_RAM_MASK, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address < END_MCD_SUB_GATE_ARRAY_REGS) {
-            return handleMegaCdExpRead(address, size);
+            res = handleMegaCdExpRead(address, size);
         } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
-            return pcm.read(address, size);
+            res = pcm.read(address, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
             LOG.error("S Read Reserved: {} {}", th(address), size);
+        } else {
+            assert false : th(address);
         }
-        assert false : th(address);
-        return size.getMask();
+        return res & size.getMask();
     }
 
     @Override
@@ -113,6 +115,9 @@ public class MegaCdSubCpuBus extends GenesisBus {
                 (regSpec.addr < RegSpecMcd.MCD_CDD_COMM0.addr || regSpec.addr >= MCD_FONT_COLOR.addr));
         if (checkLong) {
             assert size != Size.LONG;
+        }
+        if (regSpec.deviceType == McdRegType.COMM) {
+            LOG.info("S read {}: {}, {} {}", regSpec, th(address), th(res), size);
         }
         return res;
     }
