@@ -90,6 +90,23 @@ public final class StereoBlipBuffer implements BlipBufferIntf {
     static int prevSampleL, prevSampleR;
 
     public int readSamples16bitStereo(byte[] out, int pos, int countMono) {
+        if (postFilterL.length < countMono) {
+            postFilterL = new int[countMono];
+            postFilterR = new int[countMono];
+        }
+        assert pos == 0;
+        int actualMonoLeft = BlipBufferHelper.readSamples16bitMono(left(), postFilterL, pos, countMono);
+        int actualMonoRight = BlipBufferHelper.readSamples16bitMono(right(), postFilterR, pos, countMono);
+        assert actualMonoRight == actualMonoLeft;
+        for (int i = 0; i < countMono; i++) {
+            setSigned16LE((short) (postFilterL[i] << 2), out, pos); //left
+            setSigned16LE((short) (postFilterR[i] << 2), out, pos + 2); //right
+            pos += 4;
+        }
+        return actualMonoLeft;
+    }
+
+    public int readSamples16bitStereoFilter(byte[] out, int pos, int countMono) {
         if (preFilter.length < countMono) {
             preFilter = new int[countMono];
             postFilterL = new int[countMono];

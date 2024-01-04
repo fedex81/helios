@@ -91,7 +91,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     protected MegaCd(DisplayWindow emuFrame) {
         super(emuFrame);
-        systemType = SystemLoader.SystemType.GENESIS;
+        systemType = SystemLoader.SystemType.MEGACD;
     }
 
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
@@ -241,6 +241,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     @Override
     public void newFrame() {
         memView.update();
+        mcdLaunchContext.pcm.newFrame();
         super.newFrame();
     }
 
