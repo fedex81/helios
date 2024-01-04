@@ -230,6 +230,7 @@ public class SystemLoader {
     public enum SystemType {
         NONE(""),
         GENESIS("MD"),
+        MEGACD("MCD"),
         S32X("32X"),
         SG_1000("SG"),
         COLECO("CV"),

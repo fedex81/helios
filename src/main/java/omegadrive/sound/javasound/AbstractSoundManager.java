@@ -21,6 +21,7 @@ package omegadrive.sound.javasound;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
+import omegadrive.sound.PcmProvider;
 import omegadrive.sound.PwmProvider;
 import omegadrive.sound.SoundDevice;
 import omegadrive.sound.SoundDevice.SoundDeviceType;
@@ -57,6 +58,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     protected volatile PsgProvider psg;
     protected volatile FmProvider fm;
     protected volatile PwmProvider pwm;
+    protected volatile PcmProvider pcm;
     protected SoundPersister soundPersister;
     protected int fmSize, psgSize;
 
@@ -83,6 +85,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         psg = (PsgProvider) soundDeviceMap.get(SoundDeviceType.PSG);
         fm = (FmProvider) soundDeviceMap.get(SoundDeviceType.FM);
         pwm = (PwmProvider) soundDeviceMap.get(SoundDeviceType.PWM);
+        pcm = (PcmProvider) soundDeviceMap.get(SoundDeviceType.PCM);
         updateSoundDeviceSetup();
         soundPersister = new FileSoundPersister();
         fmSize = SoundProvider.getFmBufferIntSize(audioFormat);
@@ -98,6 +101,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         soundDeviceSetup |= (fm != FmProvider.NO_SOUND) ? SoundDeviceType.FM.getBit() : 0;
         soundDeviceSetup |= (psg != PsgProvider.NO_SOUND) ? SoundDeviceType.PSG.getBit() : 0;
         soundDeviceSetup |= (pwm != PwmProvider.NO_SOUND) ? SoundDeviceType.PWM.getBit() : 0;
+        soundDeviceSetup |= (pcm != PcmProvider.NO_SOUND) ? SoundDeviceType.PCM.getBit() : 0;
     }
 
     @Override
@@ -118,6 +122,11 @@ public abstract class AbstractSoundManager implements SoundProvider {
     @Override
     public PwmProvider getPwm() {
         return pwm;
+    }
+
+    @Override
+    public PcmProvider getPcm() {
+        return pcm;
     }
 
     @Override
@@ -183,6 +192,13 @@ public abstract class AbstractSoundManager implements SoundProvider {
                 this.pwm = (PwmProvider) (enabled ? soundDeviceMap.get(SoundDeviceType.PWM) : PwmProvider.NO_SOUND);
                 updateSoundDeviceSetup();
                 LOG.info("PWM enabled: {}", enabled);
+            }
+        } else if (pcm == device) {
+            boolean isEnabled = pcm != PcmProvider.NO_SOUND;
+            if (isEnabled != enabled) {
+                this.pcm = (PcmProvider) (enabled ? soundDeviceMap.get(SoundDeviceType.PCM) : PcmProvider.NO_SOUND);
+                updateSoundDeviceSetup();
+                LOG.info("PCM enabled: {}", enabled);
             }
         }
     }

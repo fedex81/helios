@@ -20,6 +20,7 @@ import omegadrive.joypad.GenesisJoypad;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.sound.PcmProvider;
 import omegadrive.sound.PwmProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
@@ -143,6 +144,11 @@ public class SystemTestUtil {
         }
 
         @Override
+        public PcmProvider getPcm() {
+            return null;
+        }
+
+        @Override
         public void close() {
         }
 
@@ -159,6 +165,7 @@ public class SystemTestUtil {
         public void setEnabled(Device device, boolean enabled) {
         }
     }
+
 
     public static JoypadProvider createTestJoypadProvider() {
         return new GenesisJoypad(SystemProvider.NO_CLOCK) {

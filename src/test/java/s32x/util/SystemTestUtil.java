@@ -12,6 +12,7 @@ import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.sound.PcmProvider;
 import omegadrive.sound.PwmProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
@@ -78,6 +79,11 @@ public class SystemTestUtil {
 
         @Override
         public PwmProvider getPwm() {
+            return null;
+        }
+
+        @Override
+        public PcmProvider getPcm() {
             return null;
         }
 

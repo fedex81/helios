@@ -58,6 +58,7 @@ public class Z80CoreWrapper implements Z80Provider {
         switch (systemType) {
             case GENESIS:
             case S32X:
+            case MEGACD:
                 return createGenesisInstanceInternal(busProvider);
             case GG:
             case SMS:

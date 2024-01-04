@@ -10,7 +10,7 @@ import omegadrive.Device;
 public interface SoundDevice extends Device {
 
     enum SoundDeviceType {
-        NONE(0), FM(1), PSG(2), PWM(4);
+        NONE(0), FM(1), PSG(2), PWM(4), PCM(8);
 
         private final int bit;
 

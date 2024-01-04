@@ -3,6 +3,7 @@ package omegadrive.system;
 import omegadrive.Device;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;
+import omegadrive.sound.PcmProvider;
 import omegadrive.sound.PwmProvider;
 import omegadrive.sound.SoundDevice;
 import omegadrive.sound.fm.FmProvider;
@@ -109,6 +110,7 @@ public class SysUtil {
         m.put(PSG, getPsgProvider(systemType, region));
         m.put(FM, getFmProvider(systemType, region));
         m.put(PWM, getPwmProvider(systemType, region));
+        m.put(PCM, getPcmProvider(systemType, region));
         return m;
     }
 
@@ -116,6 +118,12 @@ public class SysUtil {
         return switch (systemType) {
             case S32X -> Pwm.PWM_USE_BLIP ? new BlipPwmProvider(region) : new S32xPwmProvider(region);
             default -> PwmProvider.NO_SOUND;
+        };
+    }
+
+    public static SoundDevice getPcmProvider(SystemType systemType, Region region) {
+        return switch (systemType) {
+            default -> PcmProvider.NO_SOUND;
         };
     }
 
@@ -141,6 +149,7 @@ public class SysUtil {
         switch (systemType) {
             case GENESIS:
             case S32X:
+            case MEGACD:
                 fmProvider = MdFmProvider.createInstance(region, AbstractSoundManager.audioFormat);
                 break;
             case SMS:
