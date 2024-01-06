@@ -5,6 +5,8 @@ import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -15,6 +17,7 @@ import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdMemoryContext.WramSetup.*;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 
 /**
  * Federico Berti
@@ -197,19 +200,115 @@ public class McdWordRamTest extends McdRegTestBase {
         }
     }
 
-    //TODO
+    /**
+     * WORDRAM0         WORDRAM1       WORDRAM_2M
+     * 0: 0000          0:AAAA         0:0000
+     * 2: 1111          2:BBBB         2:AAAA
+     * ...              ...            4:1111
+     * 6:BBBB
+     */
     @Test
     public void testWRAMDataOnSwitch_2M_1M() {
         setWramMain2M();
         assert ctx.wramSetup == W_2M_MAIN;
         int offsetm = MegaCdDict.START_MCD_WORD_RAM_MODE1;
+        int offsets1M = START_MCD_SUB_WORD_RAM_1M;
+        int offsets2M = START_MCD_SUB_WORD_RAM_2M;
+        ByteBuffer[] wram1MCopy = {ByteBuffer.allocate(MCD_WORD_RAM_1M_SIZE), ByteBuffer.allocate(MCD_WORD_RAM_1M_SIZE)};
+
+        Runnable reset = () -> {
+            Arrays.fill(ctx.wordRam01[0], (byte) 0x88);
+            Arrays.fill(ctx.wordRam01[1], (byte) 0x88);
+            Arrays.fill(wram1MCopy[0].array(), (byte) 0x88);
+            Arrays.fill(wram1MCopy[1].array(), (byte) 0x88);
+        };
+
+        reset.run();
+
+        int[] vals0 = {0, 0x1111, 0x2222, 0x3333, 0x4444, 0x5555};
+        int[] vals1 = {0xAAAA, 0xBBBB, 0xCCCC, 0xDDDD, 0xEEEE, 0xFFFF};
+        int[][] vals = {vals0, vals1};
+        int[] cnt = {0, 0};
+
+        //write in 2M mode and then check 1M mode sees the same data correctly interleaved
         for (int i = 0; i < MCD_WORD_RAM_2M_SIZE - 1; i += 2) {
-            mainWriteValAtIdx.accept(offsetm + i, i);
+            int bank = (i & 2) >> 1;
+            int val = vals[bank][cnt[bank]];
+            cnt[bank] = (cnt[bank] + 1) % vals0.length;
+            mainWriteValAtIdx.accept(offsetm + i, val);
+            wram1MCopy[bank].putShort((i >> 1) - bank, (short) val);
         }
         setWram1M_W0Main();
-        for (int i = 0; i < MCD_WORD_RAM_1M_SIZE - 1; i += 2) {
 
-        }
+        Consumer<WramSetup> checkWram1M = (w) -> {
+            int mainWramBank = w == W_1M_WR0_MAIN ? 0 : 1;
+            int subWramBank = w == W_1M_WR0_MAIN ? 1 : 0;
+            for (int i = 0; i < MCD_WORD_RAM_1M_SIZE - 1; i += 2) {
+                //main match wramN
+                int val = mainCpuBus.read(offsetm + i, Size.WORD);
+                int expVal = wram1MCopy[mainWramBank].getShort(i) & 0xFFFF;
+                Assertions.assertEquals(expVal, val);
+
+                //sub match wramM
+                val = subCpuBus.read(offsets1M + i, Size.WORD);
+                expVal = wram1MCopy[subWramBank].getShort(i) & 0xFFFF;
+                Assertions.assertEquals(expVal, val);
+            }
+        };
+
+        checkWram1M.accept(ctx.wramSetup);
+        setWram1M_W0Sub();
+        checkWram1M.accept(ctx.wramSetup);
+
+        //write in 1M mode and then check 2M mode sees the same data correctly interleaved
+        Consumer<WramSetup> set1MVals = w -> {
+            cnt[0] = cnt[1] = 0;
+            reset.run();
+            for (int i = 0; i < MCD_WORD_RAM_1M_SIZE - 1; i += 2) {
+                //main
+                int bank = w == W_1M_WR0_MAIN ? 0 : 1;
+                int val = vals[bank][cnt[bank]];
+                cnt[bank] = (cnt[bank] + 1) % vals0.length;
+                mainWriteValAtIdx.accept(offsetm + i, val);
+                wram1MCopy[bank].putShort(i, (short) val);
+
+                //sub
+                bank = w == W_1M_WR0_MAIN ? 1 : 0;
+                val = vals[bank][cnt[bank]];
+                cnt[bank] = (cnt[bank] + 1) % vals0.length;
+                subWriteValAtIdx.accept(offsets1M + i, val);
+                wram1MCopy[bank].putShort(i, (short) val);
+            }
+        };
+
+        set1MVals.accept(ctx.wramSetup);
+        setWramMain2M();
+
+        //check main can see the correct interleaving
+        Consumer<WramSetup> check2M = w -> {
+            for (int i = 0; i < MCD_WORD_RAM_2M_SIZE - 1; i += 2) {
+                int bank = (i & 2) >> 1;
+                cnt[bank] = (cnt[bank] + 1) % vals0.length;
+                int val = w.cpu == M68K ? mainCpuBus.read(offsetm + i, Size.WORD) :
+                        subCpuBus.read(offsets2M + i, Size.WORD);
+                int expVal = wram1MCopy[bank].getShort((i >> 1) - bank) & 0xFFFF;
+                Assertions.assertEquals(expVal, val);
+            }
+        };
+        check2M.accept(ctx.wramSetup);
+
+        //1M mode again
+        setWram1M_W0Main();
+        set1MVals.accept(ctx.wramSetup);
+        setWramSub2M();
+        check2M.accept(ctx.wramSetup);
+    }
+
+    @Test
+    public void testBitsNoChange() {
+        setWramSub2M_NoChange();
+        setWramMain2M_NoChange();
+        setWramMain2M_NoChange();
     }
 
     private void setWram1M_W0Main() {
@@ -237,6 +336,32 @@ public class McdWordRamTest extends McdRegTestBase {
     }
 
     private void setWramMain2M() {
+        WramSetup ws = ctx.wramSetup;
+        if (ws.mode == _1M) {
+            subSetLsb.accept(subGetLsb.get() & ~4);
+            Assertions.assertEquals(_2M, ctx.wramSetup.mode);
+        }
+        //assign to main
+        subSetLsb.accept(RET_BIT_MASK);
+        Assertions.assertEquals(W_2M_MAIN, ctx.wramSetup);
+
+        Assertions.assertEquals(RET_BIT_MASK, mainGetLsb.get() & 3);
+    }
+
+    private void setWramSub2M() {
+        WramSetup ws = ctx.wramSetup;
+        if (ws.mode == _1M) {
+            subSetLsb.accept(subGetLsb.get() & ~4);
+            Assertions.assertEquals(_2M, ctx.wramSetup.mode);
+        }
+        //assign to sub
+        mainSetLsb.accept(DMNA_BIT_MASK);
+        Assertions.assertEquals(W_2M_SUB, ctx.wramSetup);
+
+        Assertions.assertEquals(DMNA_BIT_MASK, mainGetLsb.get() & 3);
+    }
+
+    private void setWramMain2M_NoChange() {
         assert ctx.wramSetup.mode == _2M;
         WramSetup ws = ctx.wramSetup;
         //no change
@@ -249,7 +374,7 @@ public class McdWordRamTest extends McdRegTestBase {
         Assertions.assertEquals(RET_BIT_MASK, mainGetLsb.get() & 3);
     }
 
-    private void setWramSub2M() {
+    private void setWramSub2M_NoChange() {
         assert ctx.wramSetup.mode == _2M;
         //assign to sub
         mainSetLsb.accept(DMNA_BIT_MASK);

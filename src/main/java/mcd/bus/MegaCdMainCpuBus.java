@@ -175,6 +175,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return 0;
         }
+        checkRegLongAccess(regSpec, size);
         ByteBuffer regs = memCtx.getRegBuffer(cpu, regSpec);
         int res = readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
         if (regSpec.deviceType == McdRegType.COMM) {
@@ -190,6 +191,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
             return;
         }
+        checkRegLongAccess(regSpec, size);
         switch (regSpec.deviceType) {
             case SYS -> handleSysRegWrite(regSpec, address, data, size);
             case COMM -> handleCommWrite(regSpec, address, data, size);

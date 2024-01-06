@@ -11,7 +11,7 @@ import java.util.Set;
 
 import static mcd.dict.MegaCdDict.McdRegCpuType.*;
 import static mcd.dict.MegaCdDict.McdRegType.*;
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_RESET;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_FONT_COLOR;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -35,12 +35,6 @@ public class MegaCdDict {
     public enum McdRegType {NONE, SYS, COMM, CD, ASIC, PCM}
 
     public static RegSpecMcd[][] mcdRegMapping = new RegSpecMcd[McdRegCpuType.values().length][MDC_SUB_GATE_REGS_MASK];
-
-    //
-    //TODO force init
-    static {
-        System.out.println(MCD_RESET);
-    }
 
     public enum RegSpecMcd {
         MCD_RESET(SYS, 0),   //Reset
@@ -201,6 +195,14 @@ public class MegaCdDict {
             }
         }
         return r;
+    }
+
+    public static void checkRegLongAccess(RegSpecMcd regSpec, Size size) {
+        boolean checkLong = regSpec.deviceType != McdRegType.COMM && (regSpec.deviceType == McdRegType.SYS ||
+                (regSpec.addr < RegSpecMcd.MCD_CDD_COMM0.addr || regSpec.addr >= MCD_FONT_COLOR.addr));
+        if (checkLong) {
+            assert size != Size.LONG;
+        }
     }
 
     public static void logZ80Access(CpuDeviceAccess cpu, RegSpecMcd r, int address, Size size, boolean read) {

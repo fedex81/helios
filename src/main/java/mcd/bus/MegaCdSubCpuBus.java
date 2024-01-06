@@ -111,11 +111,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return 0;
         }
-        boolean checkLong = regSpec.deviceType != McdRegType.COMM && (regSpec.deviceType == McdRegType.SYS ||
-                (regSpec.addr < RegSpecMcd.MCD_CDD_COMM0.addr || regSpec.addr >= MCD_FONT_COLOR.addr));
-        if (checkLong) {
-            assert size != Size.LONG;
-        }
+        checkRegLongAccess(regSpec, size);
         if (regSpec.deviceType == McdRegType.COMM) {
             LOG.info("S read {}: {}, {} {}", regSpec, th(address), th(res), size);
         }
@@ -129,6 +125,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return;
         }
+        checkRegLongAccess(regSpec, size);
         switch (regSpec.deviceType) {
             case SYS -> handleSysRegWrite(regSpec, address, data, size);
             case COMM -> handleCommRegWrite(regSpec, address, data, size);
