@@ -87,8 +87,11 @@ public class MegaCdMainCpuBus extends GenesisBus {
     @Override
     public void init() {
         super.init();
+        enableMode1 = true;
+        boolean isBios = cartridgeInfoProvider.getRomName().toLowerCase().contains("bios") &&
+                cartridgeInfoProvider.getSerial().startsWith("BR ");
         //bios aka bootRom
-        if (cartridgeInfoProvider.getSerial().startsWith("BR ")) {
+        if (isBios) {
             enableMode1 = false;
             LOG.info("Bios detected with serial: {}, disabling mode1 mapper", cartridgeInfoProvider.getSerial());
         }
@@ -178,9 +181,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
         checkRegLongAccess(regSpec, size);
         ByteBuffer regs = memCtx.getRegBuffer(cpu, regSpec);
         int res = readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
-        if (regSpec.deviceType == McdRegType.COMM) {
-            LOG.info("S read {}: {}, {} {}", regSpec, th(address), th(res), size);
-        }
         return res;
     }
 

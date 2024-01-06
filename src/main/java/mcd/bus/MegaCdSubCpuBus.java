@@ -112,9 +112,6 @@ public class MegaCdSubCpuBus extends GenesisBus {
             return 0;
         }
         checkRegLongAccess(regSpec, size);
-        if (regSpec.deviceType == McdRegType.COMM) {
-            LOG.info("S read {}: {}, {} {}", regSpec, th(address), th(res), size);
-        }
         return res;
     }
 

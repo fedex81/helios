@@ -21,7 +21,6 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.readBuffer;
 import static omegadrive.util.LogHelper.logWarnOnce;
-import static omegadrive.util.Util.th;
 
 /**
  * Federico Berti
@@ -91,8 +90,6 @@ public class MegaCdMemoryContext implements Serializable {
     }
 
     public void writeWordRam(CpuDeviceAccess cpu, int address, int value, Size size) {
-        //TODO is something doing this? LONG access in 2M
-        assert size == Size.LONG ? wramSetup.mode == _1M : true;
         switch (size) {
             case WORD -> writeWordRamWord(cpu, address, value);
             case LONG -> {
@@ -107,8 +104,6 @@ public class MegaCdMemoryContext implements Serializable {
 
     //TODO test long access
     public int readWordRam(CpuDeviceAccess cpu, int address, Size size) {
-        //TODO is something doing this? LONG access in 2M
-        assert size == Size.LONG ? wramSetup.mode == _1M : true;
         return switch (size) {
             case WORD -> readWordRamWord(cpu, address);
             case LONG -> (readWordRamWord(cpu, address) << 16) | readWordRamWord(cpu, address + 2);
@@ -160,14 +155,10 @@ public class MegaCdMemoryContext implements Serializable {
     }
 
     private static int getAddress(WramSetup wramSetup, int address, int bank) {
-        int a = address;
         if (wramSetup.mode == _2M) {
             address = ((address & MCD_WORD_RAM_2M_MASK) >> 1) - bank;
         } else {
             address = (address & MCD_WORD_RAM_1M_MASK);
-        }
-        if (address == 0) {
-            System.out.println(th(a) + "," + th(address));
         }
         return address;
     }
@@ -176,6 +167,7 @@ public class MegaCdMemoryContext implements Serializable {
         int mode = reg2 & 4;
         int dmna = reg2 & 2;
         int ret = reg2 & 1;
+        WramSetup prev = wramSetup;
         if (mode > 0) {
             if (c == SUB_M68K) {
                 LOG.warn("{} Switch bank requested, ret: {}, current setup {}", c, ret, wramSetup);
@@ -193,6 +185,9 @@ public class MegaCdMemoryContext implements Serializable {
             } else if (c == SUB_M68K) {
                 wramSetup = ret > 0 ? WramSetup.W_2M_MAIN : wramSetup;
             }
+        }
+        if (prev != wramSetup) {
+            LOG.info("{} WRAM setup changed: {} -> {}", c, prev, wramSetup);
         }
         return wramSetup;
     }

@@ -35,7 +35,6 @@ import java.util.function.Predicate;
 
 import static omegadrive.cpu.CpuFastDebug.CpuDebugInfoProvider;
 import static omegadrive.cpu.CpuFastDebug.DebugMode;
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.th;
 
@@ -76,6 +75,10 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         currentPC = m68k.getPC() & MD_PC_MASK; //needs to be set
         opcode = m68k.getPrefetchWord();
         fastDebug.printDebugMaybe();
+        //pc went off a cliff
+        if (currentPC == opcode && opcode == 0) {
+            throw new RuntimeException("oops");
+        }
         hackSubCpu();
         if (!busyLoopDetection) {
             int r = super.runInstruction();
