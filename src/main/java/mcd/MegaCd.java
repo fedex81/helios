@@ -70,10 +70,11 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     private final static Logger LOG = LogHelper.getLogger(Genesis.class.getSimpleName());
 
+    //TODO 68kdebug = false, does not work due to hacks in M68KDebug only
     static {
         System.setProperty("68k.debug", "true");
-        System.setProperty("helios.68k.debug.mode", "2");
-        System.setProperty("z80.debug", "true");
+        System.setProperty("helios.68k.debug.mode", "0");
+        System.setProperty("z80.debug", "false");
     }
 
     protected Z80Provider z80;

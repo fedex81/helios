@@ -12,6 +12,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static mcd.pcm.McdPcm.pcmSampleRateHz;
+import static omegadrive.util.Util.th;
 import static s32x.pwm.PwmUtil.pwmAudioFormat;
 
 /**
@@ -46,9 +48,6 @@ public class BlipPcmProvider implements McdPcmProvider {
     private int prevLSample, prevRSample;
     private final SourceDataLine dataLine;
     private final RegionDetector.Region region;
-    private int currFreqDelta;
-
-    public static BlipPcmProvider pcmProvider;
 
     private final ExecutorService exec =
             Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, "pcm"));
@@ -57,29 +56,13 @@ public class BlipPcmProvider implements McdPcmProvider {
         ref.set(new BlipBufferContext());
         dataLine = SoundUtil.createDataLine(pwmAudioFormat);
         this.region = region;
-        pcmProvider = this;
+        setup();
     }
 
-    @Override
-    public void updateFreqDelta(int freqDelta) {
-        if (currFreqDelta == freqDelta) {
-            return;
-        }
-        if (freqDelta == 0) {
-            ref.get().blipBuffer = null;
-            return;
-        }
-        assert freqDelta > 0;
-        LOG.info("Using frequencyDelta: {}", freqDelta);
-        currFreqDelta = freqDelta;
-        BlipBufferContext context = ref.get();
+    private void setup() {
         BlipBufferIntf blip = new StereoBlipBuffer("pcm");
         blip.setSampleRate((int) pwmAudioFormat.getSampleRate(), BUF_SIZE_MS);
-
-        //PCM clock = 12.5 MHz / 384 = 32552 Hz
-        //SR = (FDH * 256 + FDL) * 12500000 / (384 * 2048)
-        double sampleRate = freqDelta * 12_500_000.0 / (384 * 2048);
-        blip.setClockRate((int) sampleRate);
+        blip.setClockRate((int) pcmSampleRateHz);
         BlipBufferContext bbc = new BlipBufferContext();
         bbc.inputClocksForInterval = (int) (1.0 * blip.clockRate() * region.getFrameIntervalMs() / 1000.0);
         bbc.lineBuffer = new byte[0];
@@ -89,64 +72,33 @@ public class BlipPcmProvider implements McdPcmProvider {
     }
 
 
-    public void playSampleBlip(int lsample, int rsample) {
-        if (lsample != prevLSample || rsample != prevRSample) {
-            try {
-                ref.get().blipBuffer.addDelta((int) deltaTime, lsample - prevLSample, rsample - prevRSample);
-            } catch (Exception e) {
-                return;
+    @Override
+    public void playSample(int lsample, int rsample) {
+        if (BufferUtil.assertionsEnabled) {
+            if (Math.abs(lsample - prevLSample) > Short.MAX_VALUE) {
+                LOG.info("L {} -> {}, absDiff: {}", th(prevLSample), th(lsample), th(Math.abs(lsample - prevLSample)));
             }
-            prevLSample = lsample;
-            prevRSample = rsample;
+            if (Math.abs(rsample - prevRSample) > Short.MAX_VALUE) {
+                LOG.info("R {} -> {}, absDiff: {}", th(prevRSample), th(rsample), th(Math.abs(rsample - prevRSample)));
+            }
         }
+        ref.get().blipBuffer.addDelta((int) deltaTime, lsample - prevLSample, rsample - prevRSample);
+        prevLSample = lsample;
+        prevRSample = rsample;
         deltaTime++;
     }
 
     @Override
-    public void playSample(int lsample, int rsample) {
-        idx++;
-        count++;
-        if (idx >= buffer.length) {
-            play();
-            return;
-        }
-        buffer[idx] = ((lsample + rsample) >> 1) << 4;
-    }
-
-
-    @Override
     public int updateStereo16(int[] buf_lr, int offset, int countMono) {
+        LogHelper.logWarnOnce(LOG, "Ignoring sample requests, using its own dataLine");
         return countMono << 1;
     }
-
 
     private int prevSampleAvail = 0;
     private final AtomicInteger sync = new AtomicInteger();
 
-    int[] buffer = new int[8_000];
-    int idx = 0;
-    int count = 0;
-    byte[] output = new byte[buffer.length << 2];
-
     @Override
     public void newFrame() {
-        play();
-//        LOG.info("Frame samples: {}", count);
-        count = 0;
-    }
-
-    private void play() {
-        int nowIdx = idx;
-        idx = 0;
-        if (nowIdx > 0) {
-            monoStereo16ToByteStereo16Mix(buffer, output, buffer.length);
-            exec.submit(() -> {
-                SoundUtil.writeBufferInternal(dataLine, output, 0, nowIdx << 2);
-            });
-        }
-    }
-
-    public void newFrameBlip() {
         BlipBufferContext context = ref.get();
         BlipBufferIntf blip = context.blipBuffer;
         if (blip == null) {

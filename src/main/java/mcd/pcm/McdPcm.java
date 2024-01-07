@@ -17,7 +17,7 @@ import static omegadrive.util.Util.th;
 
 /**
  * Ricoh RF5C68 (also known as RF5C164 and RF5C105)
- * Inspired by: https://github.com/michelgerritse/TritonCore/blob/master/Devices/Sound/RF5C68.cpp
+ * see Mame, GenPlusGx
  * <p>
  * According to docs:
  * Sample Rate = 19.8 Khz at 7.6Mhz (384 clock divider)
@@ -33,8 +33,12 @@ public class McdPcm implements BufferUtil.StepDevice {
     private static final Logger LOG = LogHelper.getLogger(McdPcm.class.getSimpleName());
 
     public static final int PCM_NUM_CHANNELS = 8;
-    public static final int PCM_REG_MASK = 0x2F;
 
+    public static final int PCM_REG_SIZE = 0x20;
+    public static final int PCM_REG_MASK = PCM_REG_SIZE - 1;
+
+    public static final int PCM_START_RAMPTR_REGS = 0x20;
+    public static final int PCM_END_RAMPTR_REGS = 0x40;
     public static final int PCM_LOOP_MARKER = 0xFF;
 
     public static final int PCM_START_WAVE_DATA_WINDOW = 0x1000;
@@ -42,7 +46,7 @@ public class McdPcm implements BufferUtil.StepDevice {
 
     public static final int PCM_WAVE_DATA_WINDOW_MASK = PCM_END_WAVE_DATA_WINDOW - PCM_START_WAVE_DATA_WINDOW - 1;
     public static final int PCM_WAVE_DATA_SIZE = 0x10000; //64Kb
-    public static final int PCM_ADDRESS_MASK = 0x1FFF;
+    public static final int PCM_ADDRESS_MASK = PCM_WAVE_DATA_SIZE - 1;
 
     //5.11 fixed point number, ie top most 5 bits are the integer part, bottom 11 bits are decimal
     //0000 1000 0000 0000 (2048 base10) -> 1.0
@@ -52,6 +56,14 @@ public class McdPcm implements BufferUtil.StepDevice {
 
     public static final int PCM_WAVE_BANK_SHIFT = 12;
 
+    //TODO this should be using MCD 68K @ 12.5 Mhz
+    //MD M68K 7.67Mhz
+    //pcm sample rate: 32.552 Khz
+    //m68kCyclesPerSample = 235.62
+    private static final double m68kCyclesPerSample = 233.47;
+    private double cycleAccumulator = m68kCyclesPerSample;
+    public static double pcmSampleRateHz = 12_500_000.0 / 384;
+
     private ByteBuffer waveData, pcmRegs;
     private PcmChannelContext[] chan;
 
@@ -59,6 +71,8 @@ public class McdPcm implements BufferUtil.StepDevice {
 
     private int channelBank, waveBank, active, chanControl;
     private int ls, rs;
+
+    int sampleNum = 0;
 
     static class PcmChannelContext {
         public int num, on, env, panl, panr, freqDelta, loopAddr, startAddr;
@@ -69,11 +83,9 @@ public class McdPcm implements BufferUtil.StepDevice {
             factorr = env * panr;
         }
     }
-
-
     public McdPcm() {
         waveData = ByteBuffer.allocate(PCM_WAVE_DATA_SIZE);
-        pcmRegs = ByteBuffer.allocate(0x2F);
+        pcmRegs = ByteBuffer.allocate(PCM_REG_SIZE);
         chan = new PcmChannelContext[PCM_NUM_CHANNELS];
         playSupport = new BlipPcmProvider(RegionDetector.Region.USA);
         for (int i = 0; i < PCM_NUM_CHANNELS; i++) {
@@ -85,15 +97,18 @@ public class McdPcm implements BufferUtil.StepDevice {
     public int read(int address, Size size) {
         assert size == Size.BYTE;
         address &= PCM_ADDRESS_MASK;
-        if (address >= PCM_START_WAVE_DATA_WINDOW && address < PCM_END_WAVE_DATA_WINDOW) {
-            LogHelper.logWarnOnce(LOG, "Reading from PCM wave data");
-            BufferUtil.readBuffer(waveData, address, size);
-            assert false; //TODO anyone doing this??
-        } else if (address < PCM_REG_MASK) {
-            RegSpecMcd regSpec = getPcmReg(address);
-            logAccessReg(regSpec, SUB_M68K, address, 0, size, true);
-            return BufferUtil.readBuffer(pcmRegs, address, Size.BYTE);
+        /**
+         * Channel0 RAMPTR, 16 bit wide
+         * 0x21 -> 0x10 LSB
+         * 0x23 -> 0x11 MSB
+         */
+        if ((address >= PCM_START_RAMPTR_REGS) && (address < PCM_END_RAMPTR_REGS)) {
+            int chanIndex = (address >> 2) & 0x07;
+            //msb right shift by 8, LSB no shi(f)t
+            int msbShift = ((address >> 1) & 1) << 3;
+            return (chan[chanIndex].addrCounter >> (11 + msbShift)) & 0xFF; //MSB or LSB
         }
+        LogHelper.logWarnOnce(LOG, "Unhandled PCM read: {} {}", th(address), size);
         return size.getMask();
     }
 
@@ -101,14 +116,16 @@ public class McdPcm implements BufferUtil.StepDevice {
         assert size == Size.BYTE;
         address &= PCM_ADDRESS_MASK;
         value &= size.getMask();
-        if (address >= PCM_START_WAVE_DATA_WINDOW && address < PCM_END_WAVE_DATA_WINDOW) {
-            address = waveBank | ((address & PCM_WAVE_DATA_WINDOW_MASK) >> 1);
+        if (address >= PCM_START_WAVE_DATA_WINDOW) {
+            address = waveBank | ((address >> 1) & PCM_WAVE_DATA_WINDOW_MASK);
             LogHelper.logWarnOnce(LOG, "Writing to PCM waveData: {}, {} {}", th(address), th(value), size);
             BufferUtil.writeBufferRaw(waveData, address, value, size);
         } else if (address < PCM_REG_MASK) {
             RegSpecMcd regSpec = getPcmReg(address);
             logAccessReg(regSpec, SUB_M68K, address, value, size, false);
             writeReg(regSpec, address, value);
+        } else {
+            LOG.error("Unhandled write: {}, {} {}", th(address), th(value), size);
         }
     }
 
@@ -124,14 +141,8 @@ public class McdPcm implements BufferUtil.StepDevice {
                 channel.panr = value & 0xF;
                 channel.updateChannelFactors();
             }
-            case MCD_PCM_FDL -> {
-                channel.freqDelta = (channel.freqDelta & 0xFF00) | value;
-//                playSupport.updateFreqDelta(channel.freqDelta);
-            }
-            case MCD_PCM_FDH -> {
-                channel.freqDelta = (value << 8) | (channel.freqDelta & 0xFF);
-                playSupport.updateFreqDelta(channel.freqDelta);
-            }
+            case MCD_PCM_FDL -> channel.freqDelta = (channel.freqDelta & 0xFF00) | value;
+            case MCD_PCM_FDH -> channel.freqDelta = (value << 8) | (channel.freqDelta & 0xFF);
             case MCD_PCM_LSL -> channel.loopAddr = (channel.loopAddr & 0xFF00) | value;
             case MCD_PCM_LSH -> channel.loopAddr = (value << 8) | (channel.loopAddr & 0xFF);
             case MCD_PCM_START -> channel.startAddr = value << 8;
@@ -163,14 +174,6 @@ public class McdPcm implements BufferUtil.StepDevice {
         return MegaCdDict.getRegSpec(SUB_M68K, 0x100 + (address & 0xFF));
     }
 
-    //TODO this should be using MCD 68K @ 12.5 Mhz
-    //MD M68K 7.67Mhz
-    //pcm sample rate: 32.552 Khz
-    //m68kCyclesPerSample = 235.62
-
-    private static final double m68kCyclesPerSample = 233.47;
-    private double cycleAccumulator = m68kCyclesPerSample;
-
     @Override
     public void step(int cycles) {
         if (chanControl == 0 && active == 0) {
@@ -187,11 +190,11 @@ public class McdPcm implements BufferUtil.StepDevice {
         return waveData;
     }
 
+
     private void generateOneSample() {
         ls = 0;
         rs = 0;
-        //TODO freqDelta should be the same for each channel??
-//        assert Arrays.stream(chan).filter(c -> c.on > 0).map(c -> c.freqDelta).distinct().count() == 1;
+        sampleNum++;
 
         for (PcmChannelContext channel : chan) {
             if (channel.on > 0) {
@@ -202,7 +205,7 @@ public class McdPcm implements BufferUtil.StepDevice {
                     channel.addrCounter = channel.loopAddr << PCM_FIX_POINT_DECIMAL;
 
                     /* Re-read wave data */
-                    pcm = waveData.get(channel.addrCounter >>> PCM_FIX_POINT_DECIMAL) & 0xFF;
+                    pcm = waveData.get(channel.loopAddr) & 0xFF;
 
                     if (pcm == PCM_LOOP_MARKER) continue; /* Looped to loop stop data, move to next channel */
                 }
@@ -239,6 +242,6 @@ public class McdPcm implements BufferUtil.StepDevice {
 
     public void newFrame() {
         playSupport.newFrame();
-//        updateFromMemory(0, waveData.capacity());
+        sampleNum = 0;
     }
 }
