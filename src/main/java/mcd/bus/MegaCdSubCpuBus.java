@@ -10,8 +10,7 @@ import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
-import omegadrive.vdp.model.BaseVdpProvider;
+import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
@@ -127,6 +126,8 @@ public class MegaCdSubCpuBus extends GenesisBus {
             case SYS -> handleSysRegWrite(regSpec, address, data, size);
             case COMM -> handleCommRegWrite(regSpec, address, data, size);
             case CD -> handleCdRegWrite(regSpec, address, data, size);
+            case ASIC -> handleAsicRegWrite(regSpec, address, data, size);
+            default -> LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
         }
     }
 
@@ -193,6 +194,18 @@ public class MegaCdSubCpuBus extends GenesisBus {
         }
     }
 
+    private void handleAsicRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
+        writeBufferRaw(commonGateRegs, address & SUB_CPU_REGS_MASK, data, size);
+        switch (regSpec) {
+            case MCD_IMG_TRACE_VECTOR_ADDR -> {
+                //starts the ASIC calculation, generates level#1 interrupt when done
+                if (checkInterruptEnabled(1)) {
+                    fireAsicInt = true;
+                }
+            }
+        }
+    }
+
     private void handleCommRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         if (address >= START_MCD_SUB_GA_COMM_W && address < END_MCD_SUB_GA_COMM_W) { //MAIN COMM
             LOG.info("S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
@@ -216,29 +229,50 @@ public class MegaCdSubCpuBus extends GenesisBus {
         LOG.info("S subCpu reset done");
     }
 
-    //TODO this should fire at 75hz
+
     private static boolean fireCddInt = false;
+    private static boolean fireAsicInt = false;
+
+    //75hz at NTSC 60 fps
+    //hBlankOff = 262 ( 225 displayOn, 37 display off)
+    //hblankOff rate: 15_720hz
+    //CDD int should fire every 210 hblankoff (or hblankOn)
+    static final int hblankPerCdd = 210;
+    private int cddCounter = hblankPerCdd;
 
     @Override
-    public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
+    public void onVdpEvent(VdpEvent event, Object value) {
         super.onVdpEvent(event, value);
-        if (event == BaseVdpAdapterEventSupport.VdpEvent.V_BLANK_CHANGE) {
+        if (event == VdpEvent.V_BLANK_CHANGE) {
             boolean val = (boolean) value;
             if (val && checkInterruptEnabled(2)) {
                 LOG.info("S VBlank On, int#2");
                 m68kInterrupt(2);
             }
-            if (!val && fireCddInt) {
-                LOG.info("CDD Int On, int#4");
-                m68kInterrupt(4);
+        } else if (event == VdpEvent.H_BLANK_CHANGE) {
+            boolean val = (boolean) value;
+            if (!val && fireAsicInt) {
+                LOG.info("ASIC Int On, int#1");
+                m68kInterrupt(1);
+                fireAsicInt = false;
+            }
+            if (val && fireCddInt) {
+                if (--cddCounter == 0) {
+                    LOG.info("CDD Int On, int#4");
+                    m68kInterrupt(4);
+                    cddCounter = hblankPerCdd;
+                }
             }
         }
     }
 
-
     private boolean checkInterruptEnabled(int m68kLevel) {
         int reg = Util.readBufferByte(commonGateRegs, 0x33);
-        return (reg & (m68kLevel * m68kLevel)) > 0;
+        return checkInterruptEnabled(reg, m68kLevel);
+    }
+
+    private static boolean checkInterruptEnabled(int reg, int m68kLevel) {
+        return (reg & (1 << (m68kLevel))) > 0;
     }
 
     private void m68kInterrupt(int num) {
