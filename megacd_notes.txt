@@ -30,14 +30,11 @@ see /test_roms/roms/megacd/mcd_test/Mode1Example-20120104/mode1/Mode1Player.bin
 md-mode1-mcd-asic-test.bin
 https://github.com/jvisser/md-mode1-mcd-asic-test
 
-MCD Mode 1 Graphics Test.bin
-https://github.com/DevsArchive/sega-cd-asic-demo
-GAME_NAME	EQUS	"MEGA CD MODE 1 DEMO BY DEVON"
-- shows some mangled bitmap
 
-TODO compile
-https://github.com/DevsArchive/sega-cd-mode-1-demo
-dc.b	"SEGA CD ASIC DEM"		; Japanese game name
+MCD Mode 1 Graphics Test.bin
+NOTE: I don't think the binary matches the source code
+https://github.com/DevsArchive/sega-cd-asic-demo
+
 
 mcd_verificator
 regression word ram testing,
@@ -78,6 +75,12 @@ https://github.com/drojaazu/mmd_loader
      * $640000-$7FFFFF repeatedly mirrors the $600000-$63FFFF area. (7 copies of Word RAM)
      * $A12040-$A120FF repeatedly mirrors the $A12000-$A1203F area. (3 copies of SCD registers)
      */
+
+ASIC
+https://forums.sonicretro.org/index.php?threads/scd-graphics-documentation.40560/
+
+MISC
+https://forums.sonicretro.org/index.php?threads/sega-cd.41344/
 
 PCM
 https://gendev.spritesmind.net/forum/viewtopic.php?t=792

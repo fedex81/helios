@@ -1,5 +1,6 @@
 package mcd.bus;
 
+import mcd.asic.Asic;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.McdPcm;
@@ -38,6 +39,8 @@ public class MegaCdSubCpuBus extends GenesisBus {
 
     private McdPcm pcm;
 
+    private Asic asic;
+
     public MegaCdSubCpuBus(MegaCdMemoryContext ctx) {
         cpu = CpuDeviceAccess.SUB_M68K;
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
@@ -49,6 +52,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
         writeBufferRaw(sysGateRegs, MCD_MEM_MODE.addr, 1, Size.WORD);
         writeBufferRaw(commonGateRegs, MCD_CDD_CONTROL.addr, 0x100, Size.WORD);
         attachDevice(BusArbiter.NO_OP);
+        asic = new Asic(memCtx);
     }
 
     public void setPcm(McdPcm pcm) {
@@ -178,6 +182,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
             setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 1, 0, Size.BYTE);
             memCtx.setSharedBit(cpu, SharedBit.DMNA, 0);
         }
+        asic.setStampPriorityMode((res >> 3) & 3);
     }
 
     private void handleCdRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
@@ -195,9 +200,11 @@ public class MegaCdSubCpuBus extends GenesisBus {
     }
 
     private void handleAsicRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
-        writeBufferRaw(commonGateRegs, address & SUB_CPU_REGS_MASK, data, size);
+        asic.write(regSpec, address, data, size);
         switch (regSpec) {
             case MCD_IMG_TRACE_VECTOR_ADDR -> {
+                //set GRON = 1
+                setBit(commonGateRegs, MCD_IMG_STAMP_SIZE.addr, 15, 1, Size.WORD);
                 //starts the ASIC calculation, generates level#1 interrupt when done
                 if (checkInterruptEnabled(1)) {
                     fireAsicInt = true;
@@ -238,7 +245,10 @@ public class MegaCdSubCpuBus extends GenesisBus {
     //hblankOff rate: 15_720hz
     //CDD int should fire every 210 hblankoff (or hblankOn)
     static final int hblankPerCdd = 210;
+    static final int asicCalcDuration = 50;
     private int cddCounter = hblankPerCdd;
+    private int asicCounter = asicCalcDuration;
+
 
     @Override
     public void onVdpEvent(VdpEvent event, Object value) {
@@ -252,9 +262,14 @@ public class MegaCdSubCpuBus extends GenesisBus {
         } else if (event == VdpEvent.H_BLANK_CHANGE) {
             boolean val = (boolean) value;
             if (!val && fireAsicInt) {
-                LOG.info("ASIC Int On, int#1");
-                m68kInterrupt(1);
-                fireAsicInt = false;
+                if (--asicCounter == 0) {
+                    LOG.info("ASIC Int On, int#1");
+                    m68kInterrupt(1);
+                    asicCounter = asicCalcDuration;
+                    fireAsicInt = false;
+                    //set GRON = 0
+                    setBit(commonGateRegs, MCD_IMG_STAMP_SIZE.addr, 15, 0, Size.WORD);
+                }
             }
             if (val && fireCddInt) {
                 if (--cddCounter == 0) {
