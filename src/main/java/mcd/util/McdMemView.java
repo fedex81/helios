@@ -17,6 +17,7 @@ import java.util.function.BiFunction;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.pcm.McdPcm.PCM_WAVE_DATA_SIZE;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.vdp.util.MemView.MemViewOwner.MCD_SUB_CPU;
 
 /**
@@ -49,21 +50,30 @@ public class McdMemView extends MemView {
             int res = 0;
             if (a >= START_MCD_SUB_WORD_RAM_1M && a < END_MCD_SUB_WORD_RAM_1M) { //bank0
                 res = Util.readDataMask(ctx.memoryContext.wordRam01[0], size, a, MCD_WORD_RAM_1M_MASK);
-            } else if (a >= START_MCD_SUB_WORD_RAM_2M && a < START_MCD_SUB_WORD_RAM_2M + MCD_WORD_RAM_1M_SIZE) {
+            } else if (a >= END_MCD_SUB_WORD_RAM_1M && a < END_MCD_SUB_WORD_RAM_1M + MCD_WORD_RAM_1M_SIZE) { //bank1
                 res = Util.readDataMask(ctx.memoryContext.wordRam01[1], size, a, MCD_WORD_RAM_1M_MASK);
             } else if (a >= START_MCD_SUB_PRG_RAM && a < END_MCD_SUB_PRG_RAM) {
                 res = Util.readDataMask(ctx.memoryContext.prgRam, size, a, MCD_PRG_RAM_SIZE - 1);
             } else if (a >= WAVE_DATA_START && a < WAVE_DATA_END) {
                 res = BufferUtil.readBuffer(ctx.pcm.getWaveData(), a & WAVE_DATA_MASK, size);
+            } else if (a >= START_MCD_SUB_WORD_RAM_2M && a < END_MCD_SUB_WORD_RAM_2M) {
+                int addr = a & ~1;
+                res = ctx.memoryContext.readWordRamBank(getBank(WramSetup.W_2M_SUB, SUB_M68K, addr), addr);
+                if ((a & 1) == 0) {
+                    res >>= 8;
+                }
             }
-            return res;
+            return res & size.getMask();
         };
     }
 
     enum McdMemViewType implements MemViewData {
         MCD_PRG_RAM(MCD_SUB_CPU, START_MCD_SUB_PRG_RAM, END_MCD_SUB_PRG_RAM),
         MCD_WRAM0(MCD_SUB_CPU, START_MCD_SUB_WORD_RAM_1M, END_MCD_SUB_WORD_RAM_1M),
-        MCD_WRAM1(MCD_SUB_CPU, START_MCD_SUB_WORD_RAM_2M, START_MCD_SUB_WORD_RAM_2M + MCD_WORD_RAM_1M_SIZE),
+        //hack
+        MCD_WRAM1(MCD_SUB_CPU, END_MCD_SUB_WORD_RAM_1M, END_MCD_SUB_WORD_RAM_1M + MCD_WORD_RAM_1M_SIZE),
+
+        MCD_WRAM_2M(MCD_SUB_CPU, START_MCD_SUB_WORD_RAM_2M, END_MCD_SUB_WORD_RAM_2M),
         MCD_PCM_WAVE_DATA(MCD_SUB_CPU, WAVE_DATA_START, WAVE_DATA_END),
         ;
 

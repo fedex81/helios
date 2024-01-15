@@ -11,6 +11,8 @@ import omegadrive.util.Size;
 import org.slf4j.Logger;
 
 import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
+import static mcd.util.FixedPointUtil.convert13p3FixedPointUnsigned;
+import static mcd.util.FixedPointUtil.convert5p11FixedPointSigned;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
 import static omegadrive.util.Util.readBufferWord;
@@ -77,6 +79,23 @@ public class Asic {
     private void startRendering() {
         LOG.info("Start rendering, config:\n{}", stampConfig);
         int totalBytes = stampConfig.imgHeightPx * stampConfig.imgWidthPx;
+        //for each line
+        for (int y = 0; y < stampConfig.imgHeightPx; y++) {
+            //trace table 8 bytes per line, fixed point values
+            int xposFP = memoryContext.readWordRam(SUB_M68K, stampConfig.imgTraceTableLocation + y, Size.WORD);
+            int yposFP = memoryContext.readWordRam(SUB_M68K, stampConfig.imgTraceTableLocation + 1, Size.WORD);
+            int xdeltaFP = memoryContext.readWordRam(SUB_M68K, stampConfig.imgTraceTableLocation + 2, Size.WORD);
+            int ydeltaFP = memoryContext.readWordRam(SUB_M68K, stampConfig.imgTraceTableLocation + 3, Size.WORD);
+            double xpos = convert13p3FixedPointUnsigned(xposFP);
+            double ypos = convert13p3FixedPointUnsigned(yposFP);
+            double xdelta = convert5p11FixedPointSigned(xdeltaFP);
+            double ydelta = convert5p11FixedPointSigned(ydeltaFP);
+            for (int x = 0; x < stampConfig.imgWidthPx; x++) {
+                //LOG.info("Line: {}, px: {}", y, x);
+//                    int stampstampConfig.stampStartLocation + (xpos * 1) + ypos;
+            }
+        }
+
         for (int i = 0; i < totalBytes; i++) {
             int val = memoryContext.readWordRam(SUB_M68K, stampConfig.stampStartLocation + i, Size.WORD);
             memoryContext.writeWordRam(SUB_M68K, i + stampConfig.imgDestBufferLocation, val, Size.WORD);

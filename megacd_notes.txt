@@ -78,6 +78,7 @@ https://github.com/drojaazu/mmd_loader
 
 ASIC
 https://forums.sonicretro.org/index.php?threads/scd-graphics-documentation.40560/
+https://gendev.spritesmind.net/forum/viewtopic.php?t=908
 
 MISC
 https://forums.sonicretro.org/index.php?threads/sega-cd.41344/

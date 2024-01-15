@@ -2,6 +2,8 @@ package mcd.asic;
 
 import java.util.StringJoiner;
 
+import static omegadrive.util.Util.th;
+
 /**
  * Federico Berti
  * <p>
@@ -71,10 +73,10 @@ public class AsicModel {
                     .add("stampMapSize=" + stampMapSize)
                     .add("stampRepeat=" + stampRepeat)
                     .add("priorityMode=" + priorityMode)
-                    .add("stampStartLocation=" + stampStartLocation)
+                    .add("stampStartLocation=" + th(stampStartLocation))
                     .add("vCellSize=" + vCellSize)
-                    .add("imgDestBufferLocation=" + imgDestBufferLocation)
-                    .add("imgTraceTableLocation=" + imgTraceTableLocation)
+                    .add("imgDestBufferLocation=" + th(imgDestBufferLocation))
+                    .add("imgTraceTableLocation=" + th(imgTraceTableLocation))
                     .add("hPixelOffset=" + hPixelOffset)
                     .add("vPixelOffset=" + vPixelOffset)
                     .add("imgHeightPx=" + imgHeightPx)
