@@ -15,6 +15,7 @@ import java.util.function.Consumer;
 
 import static omegadrive.bus.model.GenesisBusProvider.SRAM_LOCK;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
+import static omegadrive.util.BufferUtil.assertionsEnabled;
 import static omegadrive.util.Util.th;
 import static s32x.MarsRegTestUtil.readBus;
 import static s32x.MarsRegTestUtil.setRv;
@@ -28,10 +29,11 @@ import static s32x.dict.S32xDict.*;
 public class RomAccessTest {
 
     private MarsLauncherHelper.Sh2LaunchContext lc;
+    private static int ROM_SIZE = 0x3100;
 
     @BeforeEach
     public void before() {
-        byte[] rom = new byte[0x1000];
+        byte[] rom = new byte[ROM_SIZE];
         MarsRegTestUtil.fillAsMdRom(rom, true);
         lc = MarsRegTestUtil.createTestInstance(rom);
         lc.s32XMMREG.aden = 1;
@@ -130,6 +132,49 @@ public class RomAccessTest {
 
         mdBus.write(mdMapperAddress, 1, Size.BYTE);
         checkerBank1.accept(baseAddr);
+    }
+
+
+    @Test
+    public void testRvOn1073Address() {
+        assert assertionsEnabled;
+        int res;
+        int[] addrList = {0x1070, 0x2070, 0x3070};
+        assert addrList[2] + 8 < ROM_SIZE;
+        for (Size size : Size.vals) {
+            for (int addr : addrList) {
+                setRv(lc, 0);
+                res = readBus(lc, M68K, M68K_START_ROM_MIRROR + addr, size);
+                //random values are guaranteed not be 0 or 0xFF
+                Assertions.assertTrue(res != 0 && res != size.getMask(), th(res));
+
+                res = readBus(lc, M68K, M68K_START_ROM_MIRROR_BANK + addr, size);
+                Assertions.assertTrue(res != 0 && res != size.getMask());
+
+                //RV=1, 1070 - 1073 cannot be read correctly, let's assume 0xFF
+                setRv(lc, 1);
+                res = readBus(lc, M68K, addr, size);
+                Assertions.assertTrue(res == size.getMask());
+
+                //106c, 1074 are fine
+                res = readBus(lc, M68K, addr - 4, size);
+                Assertions.assertTrue(res != 0 && res != size.getMask());
+                res = readBus(lc, M68K, addr + 4, size);
+                Assertions.assertTrue(res != 0 && res != size.getMask());
+            }
+        }
+
+        //check 0x70 works ok
+        int addr = 0x70;
+        Size size = Size.WORD;
+        setRv(lc, 0);
+        //hint vector
+        res = readBus(lc, M68K, addr, size);
+        //RV=1, 70 - 73 should be ok
+        setRv(lc, 1);
+        int res2 = readBus(lc, M68K, addr, size);
+        Assertions.assertFalse(res == size.getMask());
+        Assertions.assertEquals(res, res2);
     }
 
 

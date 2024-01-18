@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 
 import static m68k.cpu.Cpu.PC_MASK;
+import static omegadrive.util.BufferUtil.assertionsEnabled;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 
@@ -135,6 +136,9 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
                 logWarnOnce(LOG, "Ignoring read access to ROM when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return size.getMask();
             }
+            if (assertionsEnabled && romReadQuirk(address)) {
+                return size.getMask();
+            }
             res = super.read(address, size);
         }
         if (verboseMd) {
@@ -156,6 +160,15 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
             LOG.info("Read address: {}, size: {}, result: {}", th(address), size, th(res));
         }
         return res;
+    }
+
+    //quirk: https://github.com/viciious/32XDK/wiki/Bugs-and-quirks#about-rom-read-when-rv1
+    private boolean romReadQuirk(int address) {
+        if ((address & 0xFFFF_CFFC) == 0x70 && address > 0x100) {
+            LogHelper.logWarnOnce(LOG, "Unable to read from ROM address: {} when RV=1", th(address));
+            return true;
+        }
+        return false;
     }
 
     private void writeAdapterEnOn(int address, int data, Size size) {
