@@ -201,16 +201,6 @@ public class MegaCdSubCpuBus extends GenesisBus {
 
     private void handleAsicRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         asic.write(regSpec, address, data, size);
-        switch (regSpec) {
-            case MCD_IMG_TRACE_VECTOR_ADDR -> {
-                //set GRON = 1
-                setBit(commonGateRegs, MCD_IMG_STAMP_SIZE.addr, 15, 1, Size.WORD);
-                //starts the ASIC calculation, generates level#1 interrupt when done
-                if (checkInterruptEnabled(1)) {
-                    fireAsicInt = true;
-                }
-            }
-        }
     }
 
     private void handleCommRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
@@ -263,12 +253,12 @@ public class MegaCdSubCpuBus extends GenesisBus {
             boolean val = (boolean) value;
             if (!val && fireAsicInt) {
                 if (--asicCounter == 0) {
-                    LOG.info("ASIC Int On, int#1");
-                    m68kInterrupt(1);
+                    LOG.info("ASIC Int On, int#1, if enabled");
+                    if (checkInterruptEnabled(1)) {
+                        m68kInterrupt(1);
+                    }
+                    asicEvent(commonGateRegs, 0);
                     asicCounter = asicCalcDuration;
-                    fireAsicInt = false;
-                    //set GRON = 0
-                    setBit(commonGateRegs, MCD_IMG_STAMP_SIZE.addr, 15, 0, Size.WORD);
                 }
             }
             if (val && fireCddInt) {
@@ -279,6 +269,11 @@ public class MegaCdSubCpuBus extends GenesisBus {
                 }
             }
         }
+    }
+
+    public static void asicEvent(ByteBuffer commonGateRegs, int event) {
+        fireAsicInt = event == 1; //0 end, 1 start
+        setBit(commonGateRegs, MCD_IMG_STAMP_SIZE.addr, 15, event, Size.WORD);
     }
 
     private boolean checkInterruptEnabled(int m68kLevel) {

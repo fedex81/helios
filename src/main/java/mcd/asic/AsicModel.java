@@ -17,14 +17,27 @@ public class AsicModel {
     }
 
     enum StampSize {
-        _16x16,
-        _32x32;
+        _16x16(16),
+        _32x32(32);
+
+        public final int pixelSize;
+
+        StampSize(int px) {
+            pixelSize = px;
+        }
+
 
         static StampSize[] vals = StampSize.values();
     }
 
     enum StampMapSize {
-        _256x256, _4096x4096;
+        _256x256(256), _4096x4096(4096);
+
+        public final int pixelSize;
+
+        StampMapSize(int px) {
+            pixelSize = px;
+        }
 
         static StampMapSize[] vals = StampMapSize.values();
     }
@@ -48,7 +61,7 @@ public class AsicModel {
         StampRotationDegrees rotation = StampRotationDegrees._0;
     }
 
-    static class TraceTableEnrty {
+    static class TraceTableEntry {
         int startPos, deltax, deltay;
     }
 
@@ -62,7 +75,7 @@ public class AsicModel {
 
         int imgDestBufferLocation = 0, imgTraceTableLocation = 0;
 
-        int hPixelOffset, vPixelOffset;
+        int hPixelOffset, vPixelOffset, imgOffset;
 
         int imgHeightPx, imgWidthPx;
 

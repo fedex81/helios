@@ -29,6 +29,27 @@ see /test_roms/roms/megacd/mcd_test/Mode1Example-20120104/mode1/Mode1Player.bin
 
 md-mode1-mcd-asic-test.bin
 https://github.com/jvisser/md-mode1-mcd-asic-test
+WRAM
+stamps: 0 - 0xA800
+16x16 stamps = 128 bytes = 336 tiles
+first tile 0 - 0x80
+
+StampMapsEnd - StampMaps = 0x20000
+StampMaps: 0xA800
+StampMapsEnd: 0x2A800
+4096 lines 32 bytes each
+
+dma to vdp vram: sourceAddress 60A800
+
+writes word 0001 to 62_0000 -> bank0, address = 1_0000
+writes word 0002 to 62_0002 -> bank1, address = 1_0000
+
+//copies 0x1000 words
+68M 00000324   41f9 00620000           lea      $00620000,a0 [NEW]
+68M 0000032a   43f9 0000c538           lea      $0000c538,a1 [NEW]
+68M 00000330   303c ffff               move.w   #$ffff,d0 [NEW]
+68M 00000334   30d9                    move.w   (a1)+,(a0)+ [NEW]
+68M 00000336   51c8 fffc               dbra     d0,$00000334 [NEW]
 
 
 MCD Mode 1 Graphics Test.bin

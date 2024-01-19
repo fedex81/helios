@@ -160,6 +160,7 @@ public class MegaCdMemoryContext implements Serializable {
         } else {
             address = (address & MCD_WORD_RAM_1M_MASK);
         }
+        assert (address & 1) == 0;
         return address;
     }
 
