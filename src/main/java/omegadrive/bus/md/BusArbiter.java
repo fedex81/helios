@@ -28,6 +28,7 @@ import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider.VdpBusyState;
 import org.slf4j.Logger;
 
+import static omegadrive.bus.md.BusArbiter.isVdpVInt;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess;
 
 public interface BusArbiter extends Device, BaseVdpProvider.VdpEventListener {
@@ -77,6 +78,10 @@ public interface BusArbiter extends Device, BaseVdpProvider.VdpEventListener {
             public void addCyclePenalty(CpuType cpuType, int value) {
             }
         };
+    }
+
+    static boolean isVdpVInt(GenesisVdpProvider vdp) {
+        return vdp.getVip() && vdp.isIe0();
     }
 }
 
@@ -283,10 +288,6 @@ class BusArbiterImpl implements BusArbiter {
         runLater68k = r;
         state68k = CpuState.HALTED;
         if (verbose) logInfo("68k State {} , vdp {}", state68k, vdpBusyState);
-    }
-
-    public static boolean isVdpVInt(GenesisVdpProvider vdp) {
-        return vdp.getVip() && vdp.isIe0();
     }
 
 

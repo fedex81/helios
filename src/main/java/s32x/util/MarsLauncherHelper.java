@@ -134,7 +134,7 @@ public class MarsLauncherHelper {
         public Pwm pwm;
 
         public void initContext() {
-            bus.attachDevice(sh2).attachDevice(s32XMMREG);
+            bus.attachDevices(sh2, s32XMMREG);
             memory.getSh2MMREGS(BufferUtil.CpuDeviceAccess.MASTER).init(mDevCtx);
             memory.getSh2MMREGS(BufferUtil.CpuDeviceAccess.SLAVE).init(sDevCtx);
             s32XMMREG.setInterruptControl(mDevCtx.intC, sDevCtx.intC);

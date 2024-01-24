@@ -23,6 +23,7 @@ import omegadrive.Device;
 import omegadrive.memory.ReadableByteMemory;
 import omegadrive.util.Size;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 
@@ -45,4 +46,8 @@ public interface BaseBusProvider extends Device, ReadableByteMemory {
     <T extends Device> Optional<T> getBusDeviceIfAny(Class<T> clazz);
 
     <T extends Device> Set<T> getAllDevices(Class<T> clazz);
+
+    default void attachDevices(Device... device) {
+        Arrays.stream(device).forEach(this::attachDevice);
+    }
 }

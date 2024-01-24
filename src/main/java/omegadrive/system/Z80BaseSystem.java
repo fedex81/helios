@@ -87,8 +87,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
         inputProvider = InputProvider.createInstance(joypad);
         vdp = new Tms9918aVdp();
         //z80, sound attached later
-        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
-                attachDevice(vdp);
+        bus.attachDevices(this, memory, joypad, vdp);
         reloadWindowState();
         createAndAddVdpEventListener();
     }
@@ -110,7 +109,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     protected void initAfterRomLoad() {
         super.initAfterRomLoad();
         z80 = Z80CoreWrapper.createInstance(systemType, bus);
-        bus.attachDevice(sound).attachDevice(z80);
+        bus.attachDevices(sound, z80);
         resetAfterRomLoad();
     }
 

@@ -70,7 +70,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         inputProvider = InputProvider.createInstance(joypad);
         vdp = new SmsVdp(this);
         //z80, sound attached later
-        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp);
+        bus.attachDevices(this, memory, joypad, vdp);
         reloadWindowState();
         createAndAddVdpEventListener();
     }
@@ -105,7 +105,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     protected void initAfterRomLoad() {
         super.initAfterRomLoad();
         z80 = Z80CoreWrapper.createInstance(systemType, bus);
-        bus.attachDevice(sound).attachDevice(z80);
+        bus.attachDevices(sound, z80);
         vdp.addVdpEventListener(sound);
         resetAfterRomLoad();
     }

@@ -114,8 +114,7 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
         //sound attached later
         sound = SoundProvider.NO_SOUND;
 
-        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
-                attachDevice(cpu).attachDevice(z80);
+        bus.attachDevices(this, memory, joypad, vdp, cpu, z80);
         reloadWindowState();
         createAndAddVdpEventListener();
     }
