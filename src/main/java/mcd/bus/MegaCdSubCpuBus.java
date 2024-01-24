@@ -235,7 +235,8 @@ public class MegaCdSubCpuBus extends GenesisBus {
     //hblankOff rate: 15_720hz
     //CDD int should fire every 210 hblankoff (or hblankOn)
     static final int hblankPerCdd = 210;
-    static final int asicCalcDuration = 50;
+    //md-asic-demo requires > 180
+    static final int asicCalcDuration = 180;
     private int cddCounter = hblankPerCdd;
     private int asicCounter = asicCalcDuration;
 

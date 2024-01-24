@@ -71,7 +71,7 @@ public class Asic {
                 assert stampConfig.imgOffset == 0; //TODO check
                 MegaCdSubCpuBus.asicEvent(memoryContext.commonGateRegsBuf, 1);
                 for (; ; addr += 4) {
-                    startRendering2(addr, stampConfig.imgWidthPx, traceAddr);
+                    startRendering(addr, stampConfig.imgWidthPx, traceAddr);
                     traceAddr += 8;
                     if (--v == 0) {
                         //done + irq
@@ -93,7 +93,7 @@ public class Asic {
         }
     }
 
-    private void startRendering2(int address, int width, int traceAddress) {
+    private void startRendering(int address, int width, int traceAddress) {
         final Function<Integer, Integer> r16 = addr -> memoryContext.readWordRam(SUB_M68K, addr, Size.WORD);
 //        Util.sleep(60_000);
 
@@ -195,8 +195,9 @@ public class Asic {
                 case ILLEGAL -> input;
             };
             writeNibble(address, output);
+//            System.out.println(width + "\t" + th(address) + "\t" + getLowBitNibble(address) + "\t" + th(output));
             if (width == 0xFF) {
-                System.out.println(width + "\t" + address + "\t" + output);
+//                System.out.println(width + "\t" + address + "\t" + output);
             }
             if ((++address & 7) == 0) address += (imageWidth >> 1) - 8;
 
@@ -205,17 +206,7 @@ public class Asic {
         }
     }
 
-    public static void main(String[] args) {
-        res(47, 0x4100, 0x1331, 1); //00
-        res(242, 0x997d, 0x1CCC, 0xC); //01
-        res(238, 0x98FD, 0x5552, 2);  //01
-        res(230, 0x6082, 0x2555, 2);  //10
-        res(243, 0x997f, 0xCCCC, 0xC);
-        res(169, 0x9783, 0xCCCE, 0xE);
-        res(22, 0x6002, 0x4444, 4);
-    }
-
-    private static int getLowBitNibble(int address) {
+    public static int getLowBitNibble(int address) {
         int lowBit = 12 - ((address & 3) << 2);
         if ((address & 1) > 0 && lowBit > 4) {
             lowBit -= 8;
@@ -227,7 +218,7 @@ public class Asic {
         return lowBit;
     }
 
-    private static int readNibble(int address, int wramWord) {
+    public static int readNibble(int address, int wramWord) {
         int lb = getLowBitNibble(address);
         return (wramWord >> lb) & 0xF;
     }
@@ -245,77 +236,4 @@ public class Asic {
         val = (val & mask) | (nibbleValue << nibblePos);
         memoryContext.writeWordRamWord(SUB_M68K, address, val);
     }
-
-    private static void res(int w, int address, int wramWord, int expected) {
-        int output = readNibble(address, wramWord);
-        final int lowBit = 12 - ((address & 3) << 2);
-        System.out.println(w + "," + address + "," + output + "," + lowBit + "," + th(wramWord));
-        if (expected != Integer.MAX_VALUE) {
-            assert expected == output : w;
-        }
-    }
-
-    /**
-     *
-     * auto MCD::GPU::render(uint19 address, uint9 width) -> void {
-     *    uint8 stampShift = 11 + 4 + stamp.tile.size;
-     *    uint8 mapShift   = (4 << stamp.map.size) - stamp.tile.size;
-     *
-     *    uint2 stampMask  = !stamp.tile.size ? 1 : 3;
-     *   uint23 mapMask    = !stamp.map.size ? 0x07ffff : 0x7fffff;
-     *
-     *   uint24 x = mcd.wram[vector.address++] << 8;  //13.3 -> 13.11
-     *   uint24 y = mcd.wram[vector.address++] << 8;  //13.3 -> 13.11
-     *
-     *    int16 xstep = mcd.wram[vector.address++];
-     *    int16 ystep = mcd.wram[vector.address++];
-     *
-     *   while(width--) {
-     *     if(stamp.repeat) {
-     *       x &= mapMask;
-     *       y &= mapMask;
-     *     }
-     *
-     *     uint4 output;
-     *     if(bool outside = (x | y) & ~mapMask; !outside) {
-     *       auto xstamp = x >> stampShift;
-     *       auto ystamp = y >> stampShift << mapShift;
-     *
-     *       auto data  = mcd.wram[stamp.map.address + xstamp + ystamp];
-     *       auto index = uint10(data >>  0);
-     *       auto lroll =  uint1(data >> 13);  //0 = 0 degrees; 1 =  90 degrees
-     *       auto hroll =  uint1(data >> 14);  //0 = 0 degrees; 1 = 180 degrees
-     *       auto hflip =  uint1(data >> 15);
-     *
-     *       if(index) {  //stamp index 0 is not rendered
-     *         auto xpixel = uint6(x >> 11);
-     *         auto ypixel = uint6(y >> 11);
-     *
-     *         if(hflip) { xpixel = ~xpixel; }
-     *         if(hroll) { xpixel = ~xpixel; ypixel = ~ypixel; }
-     *         if(lroll) { auto tpixel = xpixel; xpixel = ~ypixel; ypixel = tpixel; }
-     *
-     *         uint6 pixel = uint3(xpixel) + uint3(ypixel) * 8;
-     *         xpixel = xpixel >> 3 & stampMask;
-     *         ypixel = ypixel >> 3 & stampMask;
-     *         uint4 cell = ypixel + xpixel * (1 + stampMask);
-     *         output = read(index << 8 | cell << 6 | pixel);
-     *       }
-     *     }
-     *
-     *     uint4 input = read(address);
-     *     switch(mcd.io.wramPriority) {
-     *     case 0: output = output; break;
-     *     case 1: output = input ? input : output; break;
-     *     case 2: output = output ? output : input; break;
-     *     case 3: output = input; break;
-     *     }
-     *     write(address, output);
-     *     if(!(++address & 7)) address += (image.vcells + 1 << 6) - 8;
-     *
-     *     x += xstep;
-     *     y += ystep;
-     *   }
-     * }
-     */
 }

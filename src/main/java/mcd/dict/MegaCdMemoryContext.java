@@ -154,7 +154,7 @@ public class MegaCdMemoryContext implements Serializable {
         return wramSetup.cpu == cpu ? 0 : 1;
     }
 
-    private static int getAddress(WramSetup wramSetup, int address, int bank) {
+    public static int getAddress(WramSetup wramSetup, int address, int bank) {
         if (wramSetup.mode == _2M) {
             address = ((address & MCD_WORD_RAM_2M_MASK) >> 1) - bank;
         } else {
