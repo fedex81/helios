@@ -89,28 +89,28 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
     }
 
     private void hackSubCpu() {
-        //SUB: BIOS CDD hack, set NO_DISC(0xB)
-        if (cpu == SUB_M68K && currentPC == 0x1098) {
-            m68k.setDataRegisterLong(0, 0xB);
-            System.out.println("BIOS CDD hack, set NO_DISC(0xB)");
-        }
-        //SUB: fix CDD status bytes BIOS checksum
+//        //SUB: BIOS CDD hack, set NO_DISC(0xB)
+//        if (cpu == SUB_M68K && currentPC == 0x1098) {
+//            m68k.setDataRegisterLong(0, 0xB);
+//            System.out.println("BIOS CDD hack, set NO_DISC(0xB)");
+//        }
+        //SUB: fix CDC status bytes BIOS checksum
         if (cpu == SUB_M68K && currentPC == 0xeac) {
             m68k.setFlags(Cpu.Z_FLAG);
-            System.out.println("Skip BIOS checksum");
+            System.out.println("Skip BIOS CDC checksum");
         }
         //SUB: check something is alive (CDD status related)
         if (cpu == SUB_M68K && currentPC == 0x408) {
             m68k.setDataRegisterLong(0, 0);
         }
-        //SUB: set CDBCHK complete
-        if (cpu == SUB_M68K && currentPC == 0x3cd2) {
-            m68k.clrFlags(Cpu.C_FLAG);
-        }
-        //SUB: set "no disc", it returns "not ready"
-        if (cpu == SUB_M68K && currentPC == 0x3b00) {
-            m68k.setDataRegisterLong(0, 0x10);
-        }
+//        //SUB: set CDBCHK complete
+//        if (cpu == SUB_M68K && currentPC == 0x3cd2) {
+//            m68k.clrFlags(Cpu.C_FLAG);
+//        }
+//        //SUB: set "no disc", it returns "not ready"
+//        if (cpu == SUB_M68K && currentPC == 0x3b00) {
+//            m68k.setDataRegisterLong(0, 0x10);
+//        }
     }
 
     private void checkInterruptLevelChange() {

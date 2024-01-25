@@ -1,11 +1,14 @@
 package mcd.bus;
 
 import mcd.asic.Asic;
+import mcd.cdd.Cdd;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.McdPcm;
+import omegadrive.Device;
 import omegadrive.bus.md.BusArbiter;
 import omegadrive.bus.md.GenesisBus;
+import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
@@ -40,6 +43,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
     private McdPcm pcm;
 
     private Asic asic;
+    private Cdd cdd;
 
     public MegaCdSubCpuBus(MegaCdMemoryContext ctx) {
         cpu = CpuDeviceAccess.SUB_M68K;
@@ -52,11 +56,21 @@ public class MegaCdSubCpuBus extends GenesisBus {
         writeBufferRaw(sysGateRegs, MCD_MEM_MODE.addr, 1, Size.WORD);
         writeBufferRaw(commonGateRegs, MCD_CDD_CONTROL.addr, 0x100, Size.WORD);
         attachDevice(BusArbiter.NO_OP);
-        asic = new Asic(memCtx);
     }
 
-    public void setPcm(McdPcm pcm) {
-        this.pcm = pcm;
+    @Override
+    public GenesisBusProvider attachDevice(Device device) {
+        super.attachDevice(device);
+        if (device instanceof Cdd cdd) {
+            this.cdd = cdd;
+        }
+        if (device instanceof McdPcm pcm) {
+            this.pcm = pcm;
+        }
+        if (device instanceof Asic asic) {
+            this.asic = asic;
+        }
+        return this;
     }
 
     @Override
@@ -187,7 +201,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
 
     private void handleCdRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         LOG.warn("S Write CDD {} : {}, {}, {}", regSpec, th(address), th(data), size);
-        writeBufferRaw(commonGateRegs, address & SUB_CPU_REGS_MASK, data, size);
+        cdd.write(regSpec, address, data, size);
         switch (regSpec) {
             case MCD_CDD_CONTROL -> {
                 int v = readBuffer(commonGateRegs, regSpec.addr, Size.WORD);
@@ -264,8 +278,10 @@ public class MegaCdSubCpuBus extends GenesisBus {
             }
             if (val && fireCddInt) {
                 if (--cddCounter == 0) {
-                    LOG.info("CDD Int On, int#4");
-                    m68kInterrupt(4);
+                    if (cdd.isCommandPending()) {
+                        LOG.info("CDD Int On, int#4");
+                        m68kInterrupt(4);
+                    }
                     cddCounter = hblankPerCdd;
                 }
             }

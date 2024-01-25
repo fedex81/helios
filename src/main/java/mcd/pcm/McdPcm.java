@@ -95,21 +95,43 @@ public class McdPcm implements BufferUtil.StepDevice {
     }
 
     public int read(int address, Size size) {
-        assert size == Size.BYTE;
         address &= PCM_ADDRESS_MASK;
+        if ((address >= PCM_START_RAMPTR_REGS) && (address < PCM_END_RAMPTR_REGS)) {
+            return readRamPointerRegs(address, size);
+        }
+        assert size == Size.BYTE : th(address) + "," + size;
+        LogHelper.logWarnOnce(LOG, "Unhandled PCM read: {} {}", th(address), size);
+        return size.getMask();
+    }
+
+    /**
+     * Channel0 RAMPTR, 16 bit wide
+     * 0x21 -> 0x10 LSB
+     * 0x23 -> 0x11 MSB
+     */
+    private int readRamPointerRegs(int address, Size size) {
+        return switch (size) {
+            case BYTE -> readRamPointerRegsByte(address);
+            case WORD -> readRamPointerRegsWord(address);
+            case LONG -> (readRamPointerRegsWord(address) << 16) | readRamPointerRegsWord(address + 2);
+
+        };
+    }
+
+    private int readRamPointerRegsWord(int address) {
+        int chanIndex = (address >> 2) & 0x07;
+        return (chan[chanIndex].addrCounter >> 11) & 0xFFFF;
+    }
+
+    private int readRamPointerRegsByte(int address) {
         /**
          * Channel0 RAMPTR, 16 bit wide
          * 0x21 -> 0x10 LSB
          * 0x23 -> 0x11 MSB
          */
-        if ((address >= PCM_START_RAMPTR_REGS) && (address < PCM_END_RAMPTR_REGS)) {
-            int chanIndex = (address >> 2) & 0x07;
-            //msb right shift by 8, LSB no shi(f)t
-            int msbShift = ((address >> 1) & 1) << 3;
-            return (chan[chanIndex].addrCounter >> (11 + msbShift)) & 0xFF; //MSB or LSB
-        }
-        LogHelper.logWarnOnce(LOG, "Unhandled PCM read: {} {}", th(address), size);
-        return size.getMask();
+        //msb right shift by 8, LSB no shi(f)t
+        int msbShift = ((address >> 1) & 1) << 3;
+        return (readRamPointerRegsWord(address) >> msbShift) & 0xFF; //MSB or LSB
     }
 
     public void write(int address, int value, Size size) {

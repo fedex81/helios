@@ -7,6 +7,7 @@ import mcd.asic.AsicModel.StampSize;
 import mcd.bus.MegaCdSubCpuBus;
 import mcd.dict.MegaCdDict.RegSpecMcd;
 import mcd.dict.MegaCdMemoryContext;
+import omegadrive.Device;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
@@ -26,7 +27,7 @@ import static omegadrive.util.Util.th;
  * <p>
  * Copyright 2024
  */
-public class Asic {
+public class Asic implements Device {
 
     private static final Logger LOG = LogHelper.getLogger(Asic.class.getSimpleName());
     private StampConfig stampConfig = new StampConfig();

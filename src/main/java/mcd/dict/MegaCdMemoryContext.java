@@ -96,6 +96,11 @@ public class MegaCdMemoryContext implements Serializable {
                 writeWordRamWord(cpu, address, value >> 16);
                 writeWordRamWord(cpu, address + 2, (short) value);
             }
+            case BYTE -> {
+                int bank = getBank(wramSetup, cpu, address);
+                int addr = getAddress(wramSetup, address, bank) | (address & 1);
+                Util.writeData(wordRam01[bank], Size.BYTE, addr, value);
+            }
             default -> {
                 assert false;
             }
@@ -107,9 +112,9 @@ public class MegaCdMemoryContext implements Serializable {
         return switch (size) {
             case WORD -> readWordRamWord(cpu, address);
             case LONG -> (readWordRamWord(cpu, address) << 16) | readWordRamWord(cpu, address + 2);
-            default -> {
-                assert false;
-                yield size.getMask();
+            case BYTE -> {
+                int shift = ~address & 1;
+                yield readWordRamWord(cpu, address) >> (shift << 3);
             }
         };
     }
