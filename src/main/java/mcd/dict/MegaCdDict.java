@@ -32,19 +32,21 @@ public class MegaCdDict {
 
     public enum McdRegCpuType {REG_MAIN, REG_SUB, REG_BOTH}
 
-    public enum McdRegType {NONE, SYS, COMM, CD, ASIC, PCM}
+    public enum McdRegType {NONE, SYS, COMM, CDC, CDD, ASIC, PCM}
 
     public static RegSpecMcd[][] mcdRegMapping = new RegSpecMcd[McdRegCpuType.values().length][MDC_SUB_GATE_REGS_MASK];
 
     public enum RegSpecMcd {
         MCD_RESET(SYS, 0),   //Reset
         MCD_MEM_MODE(SYS, 2), //Memory Mode, write protect
-        MCD_CDC_MODE(CD, 4), //CDC Mode, MAIN read-only
+        MCD_CDC_MODE(CDC, 4), //CDC Mode, MAIN read-only
 
         MCD_HINT_VECTOR(SYS, REG_MAIN, 6), //HINT vector (level 4)
-        MCD_CDC_REG_DATA(SYS, REG_SUB, 6), //CDC Register data
+        MCD_CDC_REG_DATA(CDC, REG_SUB, 6), //CDC Register data
 
-        MCD_CDC_HOST(SYS, 8), //CDC host data
+        MCD_CDC_HOST(CDC, 8), //CDC host data
+
+        MCD_CDC_DMA_ADDRESS(CDC, 0xA), //CDC DMA address
 
         MCD_STOPWATCH(SYS, 0xC), //Stopwatch
 
@@ -71,20 +73,20 @@ public class MegaCdDict {
         MCD_TIMER_INT3(SYS, 0x30), //General Use Timer W/INT3
         MCD_INT_MASK(SYS, 0x32), //Interrupt Mask control
 
-        MCD_CD_FADER(CD, 0x34), //CD Fader
-        MCD_CDD_CONTROL(CD, 0x36), //CDD Control
+        MCD_CD_FADER(CDD, 0x34), //CD Fader
+        MCD_CDD_CONTROL(CDD, 0x36), //CDD Control
 
-        MCD_CDD_COMM0(CD, 0x38), //CDD Comm
-        MCD_CDD_COMM1(CD, 0x3A), //CDD Comm
-        MCD_CDD_COMM2(CD, 0x3C), //CDD Comm
-        MCD_CDD_COMM3(CD, 0x3E), //CDD Comm
+        MCD_CDD_COMM0(CDD, 0x38), //CDD Comm
+        MCD_CDD_COMM1(CDD, 0x3A), //CDD Comm
+        MCD_CDD_COMM2(CDD, 0x3C), //CDD Comm
+        MCD_CDD_COMM3(CDD, 0x3E), //CDD Comm
 
-        MCD_CDD_COMM4(CD, 0x40), //CDD Comm
-        MCD_CDD_COMM5(CD, 0x42), //CDD Comm
-        MCD_CDD_COMM6(CD, 0x44), //CDD Comm
-        MCD_CDD_COMM7(CD, 0x46), //CDD Comm
-        MCD_CDD_COMM8(CD, 0x48), //CDD Comm
-        MCD_CDD_COMM9(CD, 0x4A), //CDD Comm
+        MCD_CDD_COMM4(CDD, 0x40), //CDD Comm
+        MCD_CDD_COMM5(CDD, 0x42), //CDD Comm
+        MCD_CDD_COMM6(CDD, 0x44), //CDD Comm
+        MCD_CDD_COMM7(CDD, 0x46), //CDD Comm
+        MCD_CDD_COMM8(CDD, 0x48), //CDD Comm
+        MCD_CDD_COMM9(CDD, 0x4A), //CDD Comm
 
         MCD_FONT_COLOR(SYS, 0x4C), //Font color
         MCD_FONT_BIT(SYS, 0x4E), //Font bit

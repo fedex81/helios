@@ -143,7 +143,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
         switch (regSpec.deviceType) {
             case SYS -> handleSysRegWrite(regSpec, address, data, size);
             case COMM -> handleCommRegWrite(regSpec, address, data, size);
-            case CD -> handleCdRegWrite(regSpec, address, data, size);
+            case CDD -> handleCddRegWrite(regSpec, address, data, size);
             case ASIC -> handleAsicRegWrite(regSpec, address, data, size);
             default -> LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
         }
@@ -199,7 +199,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
         asic.setStampPriorityMode((res >> 3) & 3);
     }
 
-    private void handleCdRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
+    private void handleCddRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         LOG.warn("S Write CDD {} : {}, {}, {}", regSpec, th(address), th(data), size);
         cdd.write(regSpec, address, data, size);
         switch (regSpec) {

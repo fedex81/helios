@@ -141,7 +141,7 @@ public class McdPcm implements BufferUtil.StepDevice {
         value &= size.getMask();
         if (address >= PCM_START_WAVE_DATA_WINDOW) {
             address = waveBank | ((address >> 1) & PCM_WAVE_DATA_WINDOW_MASK);
-            LogHelper.logWarnOnce(LOG, "Writing to PCM waveData: {}, {} {}", th(address), th(value), size);
+            LogHelper.logWarnOnce(LOG, "Writing to PCM waveData");
             BufferUtil.writeBufferRaw(waveData, address, value, size);
         } else if (address < PCM_REG_MASK) {
             RegSpecMcd regSpec = getPcmReg(address);

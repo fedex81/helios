@@ -11,6 +11,7 @@ import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
 import static omegadrive.util.BufferUtil.readBuffer;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
+import static omegadrive.util.Util.th;
 
 /**
  * Cdd
@@ -162,14 +163,13 @@ class CddImpl implements Cdd {
 
     @Override
     public void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size) {
+        writeBufferRaw(memoryContext.commonGateRegsBuf, address & SUB_CPU_REGS_MASK, value, size);
         switch (regSpec) {
             case MCD_CDD_CONTROL -> {
-                writeBufferRaw(memoryContext.commonGateRegsBuf, address & SUB_CPU_REGS_MASK, value, size);
                 int v = readBuffer(memoryContext.commonGateRegsBuf, regSpec.addr, Size.WORD);
                 cddContext.hostClockEnable = (v & 4);
             }
             case MCD_CDD_COMM5, MCD_CDD_COMM6, MCD_CDD_COMM7, MCD_CDD_COMM8, MCD_CDD_COMM9 -> {
-                writeBufferRaw(memoryContext.commonGateRegsBuf, address & SUB_CPU_REGS_MASK, value, size);
                 switch (size) {
                     case BYTE -> writeCommByte(regSpec, address, value);
                     case WORD -> {
@@ -184,6 +184,8 @@ class CddImpl implements Cdd {
                     }
                 }
             }
+            case MCD_CD_FADER -> LogHelper.logWarnOnce(LOG, "Write {}: {} {}", regSpec, th(value), size);
+            default -> LOG.error("S CDD Write {}: {} {} {}", regSpec, th(address), th(value), size);
         }
     }
 
@@ -280,11 +282,11 @@ class CddImpl implements Cdd {
 
     private void updateStatus(int pos, int val) {
         cddContext.status[pos] = val;
-        writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_CDD_COMM5.addr + pos, val, Size.BYTE);
+        writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_CDD_COMM0.addr + pos, val, Size.BYTE);
     }
 
     private void updateCommand(int pos, int val) {
         cddContext.command[pos] = val;
-        writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_CDD_COMM0.addr + pos, val, Size.BYTE);
+        writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_CDD_COMM5.addr + pos, val, Size.BYTE);
     }
 }

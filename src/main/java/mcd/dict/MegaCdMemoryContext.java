@@ -134,7 +134,6 @@ public class MegaCdMemoryContext implements Serializable {
             return readWordRamBank(getBank(wramSetup, cpu, address), address);
         } else {
             logWarnOnce(LOG, "{} reading WRAM but setup is: {}", cpu, wramSetup);
-            assert false;
             return Size.WORD.getMask();
         }
     }
