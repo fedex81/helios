@@ -119,8 +119,8 @@ public class McdPcm implements BufferUtil.StepDevice {
     }
 
     private int readRamPointerRegsWord(int address) {
-        int chanIndex = (address >> 2) & 0x07;
-        return (chan[chanIndex].addrCounter >> 11) & 0xFFFF;
+        int val = readRamPointerRegsByte(address | 1);
+        return (val << 8) | val;
     }
 
     private int readRamPointerRegsByte(int address) {
@@ -129,9 +129,10 @@ public class McdPcm implements BufferUtil.StepDevice {
          * 0x21 -> 0x10 LSB
          * 0x23 -> 0x11 MSB
          */
+        int chanIndex = (address >> 2) & 0x07;
         //msb right shift by 8, LSB no shi(f)t
         int msbShift = ((address >> 1) & 1) << 3;
-        return (readRamPointerRegsWord(address) >> msbShift) & 0xFF; //MSB or LSB
+        return (chan[chanIndex].addrCounter >> (11 + msbShift)) & 0xFF; //MSB or LSB
     }
 
     public void write(int address, int value, Size size) {

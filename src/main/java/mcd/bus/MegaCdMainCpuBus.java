@@ -7,6 +7,7 @@ import omegadrive.bus.md.GenesisBus;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
@@ -61,16 +62,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     static {
         Path p = Paths.get(biosBasePath, masterBiosName);
-        try {
-            assert p.toFile().exists();
-            byte[] b = FileUtil.readFileSafe(p);
-            assert b.length > 0;
-            bios = ByteBuffer.wrap(b);
-            LOG.info("Loading bios at {}, size: {}", p.toAbsolutePath(), b.length);
-        } catch (Error | Exception e) {
-            LOG.error("Unable to load bios at {}", p.toAbsolutePath());
-            bios = ByteBuffer.allocate(MCD_BOOT_ROM_SIZE);
-        }
+        loadBios(RegionDetector.Region.USA, p);
     }
 
     public MegaCdMainCpuBus(MegaCdMemoryContext ctx) {
@@ -94,6 +86,21 @@ public class MegaCdMainCpuBus extends GenesisBus {
         if (isBios) {
             enableMode1 = false;
             LOG.info("Bios detected with serial: {}, disabling mode1 mapper", cartridgeInfoProvider.getSerial());
+            //TODO doesnt work
+            loadBios(systemProvider.getRegion(), systemProvider.getRomPath());
+        }
+    }
+
+    private static void loadBios(RegionDetector.Region region, Path p) {
+        try {
+            assert p.toFile().exists();
+            byte[] b = FileUtil.readFileSafe(p);
+            assert b.length > 0;
+            bios = ByteBuffer.wrap(b);
+            LOG.info("Loading bios at {}, region: {}, size: {}", p.toAbsolutePath(), region, b.length);
+        } catch (Error | Exception e) {
+            LOG.error("Unable to load bios at {}", p.toAbsolutePath());
+            bios = ByteBuffer.allocate(MCD_BOOT_ROM_SIZE);
         }
     }
 
