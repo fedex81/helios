@@ -1,6 +1,7 @@
 package mcd.bus;
 
 import mcd.asic.Asic;
+import mcd.cdc.Cdc;
 import mcd.cdd.Cdd;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
@@ -44,6 +45,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
 
     private Asic asic;
     private Cdd cdd;
+    private Cdc cdc;
 
     public MegaCdSubCpuBus(MegaCdMemoryContext ctx) {
         cpu = CpuDeviceAccess.SUB_M68K;
@@ -61,6 +63,9 @@ public class MegaCdSubCpuBus extends GenesisBus {
     @Override
     public GenesisBusProvider attachDevice(Device device) {
         super.attachDevice(device);
+        if (device instanceof Cdc cdc) {
+            this.cdc = cdc;
+        }
         if (device instanceof Cdd cdd) {
             this.cdd = cdd;
         }
@@ -128,6 +133,9 @@ public class MegaCdSubCpuBus extends GenesisBus {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return 0;
         }
+        if (regSpec.deviceType == McdRegType.CDC) {
+            res = cdc.read(regSpec, address, size);
+        }
         checkRegLongAccess(regSpec, size);
         return res;
     }
@@ -144,6 +152,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
             case SYS -> handleSysRegWrite(regSpec, address, data, size);
             case COMM -> handleCommRegWrite(regSpec, address, data, size);
             case CDD -> handleCddRegWrite(regSpec, address, data, size);
+            case CDC -> cdc.write(regSpec, address, data, size);
             case ASIC -> handleAsicRegWrite(regSpec, address, data, size);
             default -> LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
         }
@@ -200,7 +209,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
     }
 
     private void handleCddRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
-        LOG.warn("S Write CDD {} : {}, {}, {}", regSpec, th(address), th(data), size);
+        LOG.info("S Write CDD {} : {}, {}, {}", regSpec, th(address), th(data), size);
         cdd.write(regSpec, address, data, size);
         switch (regSpec) {
             case MCD_CDD_CONTROL -> {

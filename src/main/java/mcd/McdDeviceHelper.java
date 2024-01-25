@@ -3,6 +3,7 @@ package mcd;
 import mcd.asic.Asic;
 import mcd.bus.MegaCdMainCpuBus;
 import mcd.bus.MegaCdSubCpuBus;
+import mcd.cdc.Cdc;
 import mcd.cdd.Cdd;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.McdPcm;
@@ -40,6 +41,7 @@ public class McdDeviceHelper {
         public McdPcm pcm;
 
         public Cdd cdd;
+        public Cdc cdc;
 
         public Asic asic;
 
@@ -50,8 +52,9 @@ public class McdDeviceHelper {
             mainBus = new MegaCdMainCpuBus(memoryContext);
             subCpu = MC68000Wrapper.createInstance(SUB_M68K, subBus);
             cdd = Cdd.createInstance(memoryContext);
+            cdc = Cdc.createInstance(memoryContext);
             asic = new Asic(memoryContext);
-            subBus.attachDevice(subCpu).attachDevice(pcm).attachDevice(cdd).attachDevice(asic);
+            subBus.attachDevice(subCpu).attachDevice(pcm).attachDevice(cdd).attachDevice(asic).attachDevice(cdc);
             mainBus.subCpu = subCpu;
             mainBus.subCpuBus = subBus;
             //TODO check, on boot the sub bus is set to request (ie. main has it) hence sub cpu cannot run
@@ -61,6 +64,7 @@ public class McdDeviceHelper {
         public void stepDevices(int cyles) {
             pcm.step(cyles);
             cdd.step(cyles);
+            cdc.step(cyles);
         }
 
         public void reset() {
