@@ -15,7 +15,7 @@ repositories {
 
 dependencies {
     // https://mvnrepository.com/artifact/net.java.jinput/jinput
-    implementation group: 'net.java.jinput', name: 'jinput', version: '2.0.9'
+    implementation group: 'net.java.jinput', name: 'jinput', version: '2.0.10'
     // https://mvnrepository.com/artifact/com.google.guava/guava
     implementation group: 'com.google.guava', name: 'guava', version: '33.0.0-jre'
     implementation group: 'org.jctools', name: 'jctools-core', version: '4.0.2'
