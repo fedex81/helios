@@ -5,10 +5,7 @@ import mcd.dict.MegaCdMemoryContext;
 import mcd.dict.MegaCdMemoryContext.WordRamMode;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.cpu.m68k.MC68000Wrapper;
-import omegadrive.util.FileUtil;
-import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.Size;
+import omegadrive.util.*;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
@@ -123,7 +120,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
                     res = readBuffer(prgRam, addr, size);
                 } else if (address >= START_MCD_BOOT_ROM_MODE1 && address < END_MCD_BOOT_ROM_MODE1) {
-                    res = readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
+                    res = readBiosData(address, size);
                 } else {
                     res = super.read(address, size);
                 }
@@ -133,7 +130,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
                     res = readBuffer(prgRam, addr, size);
                 } else if (address >= START_MCD_BOOT_ROM && address < END_MCD_BOOT_ROM) {
-                    res = readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
+                    res = readBiosData(address, size);
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
                     assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
                     res = memCtx.readWordRam(cpu, address, size);
@@ -176,6 +173,15 @@ public class MegaCdMainCpuBus extends GenesisBus {
             }
         }
         super.write(address, data, size);
+    }
+
+    private int readBiosData(int address, Size size) {
+        address &= MCD_BOOT_ROM_MASK;
+        if (address >= 0x70 && address < 0x74) {
+            assert size == Size.LONG && address == 0x70; //LONG read on 0x72 not supported
+            return Util.readData(memCtx.writeableHint, size, address & 3);
+        }
+        return readBuffer(bios, address, size);
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
@@ -222,8 +228,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 writeBufferRaw(memCtx.getRegBuffer(SUB_M68K, regSpec), address & MCD_GATE_REGS_MASK, data, size);
             }
             case MCD_HINT_VECTOR -> {
+                assert size == Size.WORD;
                 LOG.info("M write MCD_HINT_VECTOR: {} {}", th(data), size);
                 writeBufferRaw(sysGateRegs, regSpec.addr, data, size);
+                Util.writeData(memCtx.writeableHint, size, 2, data);
             }
             default -> LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
         }

@@ -49,10 +49,12 @@ public class MegaCdMemoryContext implements Serializable {
 
     public static final int NUM_SYS_REG_NON_SHARED = MCD_COMM0.addr;
 
-    public byte[] prgRam;
-    public byte[][] sysGateRegs;
-    public byte[] commonGateRegs;
-    public byte[][] wordRam01 = new byte[2][1];
+    public final byte[] prgRam;
+    public final byte[][] sysGateRegs;
+    public final byte[] commonGateRegs;
+    public final byte[][] wordRam01 = new byte[2][1];
+
+    public final byte[] writeableHint = {(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
 
     public transient final ByteBuffer[] sysGateRegsBuf;
     public transient final ByteBuffer commonGateRegsBuf;
