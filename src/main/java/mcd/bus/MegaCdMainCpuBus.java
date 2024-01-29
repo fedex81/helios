@@ -273,17 +273,17 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     private void handleReg2Write(int address, int data, Size size) {
-        int res = memCtx.handleRegWrite(cpu, MCD_MEM_MODE, address, data, size);
-        if ((res & 0xFF00) != 0) {
+        int resWord = memCtx.handleRegWrite(cpu, MCD_MEM_MODE, address, data, size);
+        if ((resWord & 0xFF00) != 0) {
             logHelper.logWarningOnce(LOG, "M Mem Write protect bits set: {}", th(data));
         }
-        WramSetup ws = memCtx.update(cpu, res);
+        WramSetup ws = memCtx.update(cpu, resWord);
         if (ws == WramSetup.W_2M_SUB) { //set RET=0
-            res = setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 0, 0, Size.BYTE);
+            resWord = setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 0, 0, Size.BYTE);
             memCtx.setSharedBit(M68K, MegaCdMemoryContext.SharedBit.RET, 0);
         }
         //bk0,1
-        int bval = (res >> 5) & 3;
+        int bval = (resWord >> 6) & 3;
         if (bval != prgRamBankValue) {
             prgRamBankValue = bval;
             prgRamBankShift = prgRamBankValue << 17;
