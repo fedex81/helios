@@ -302,7 +302,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
         setBit(commonGateRegs, MCD_IMG_STAMP_SIZE.addr, 15, event, Size.WORD);
     }
 
-    private boolean checkInterruptEnabled(int m68kLevel) {
+    public boolean checkInterruptEnabled(int m68kLevel) {
         int reg = Util.readBufferByte(commonGateRegs, 0x33);
         return checkInterruptEnabled(reg, m68kLevel);
     }
