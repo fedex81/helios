@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 
 import static mcd.dict.MegaCdDict.RegSpecMcd;
 import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
-import static omegadrive.util.BufferUtil.readBuffer;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
 import static omegadrive.util.Util.th;
 
@@ -98,9 +98,9 @@ class CdcImpl implements Cdc {
                 controllerWrite(value);
             }
             case MCD_CDC_MODE -> {
-                assert size == Size.BYTE;
+                int resWord = memoryContext.handleRegWrite(SUB_M68K, regSpec, address, value, size);
                 if ((address & 1) == 1) {
-                    cdcContext.address = value & 0xF;
+                    cdcContext.address = resWord & 0xF;
                 } else {
 //                    cdc.transfer.destination = data.bit(8,10);
                 }
@@ -116,7 +116,8 @@ class CdcImpl implements Cdc {
                 return controllerRead();
             }
         }
-        return readBuffer(memoryContext.commonGateRegsBuf, address & SUB_CPU_REGS_MASK, size);
+        assert false;
+        return size.getMask();
     }
 
     private int controllerRead() {

@@ -210,6 +210,7 @@ class CddImpl implements Cdd {
         }
         checksum = ~checksum;
         updateStatus(9, checksum & 0xF);
+        assert readBuffer(memoryContext.commonGateRegsBuf, MCD_CDD_COMM4.addr, Size.WORD) == (checksum & 0xF);
     }
 
     @Override
@@ -258,7 +259,13 @@ class CddImpl implements Cdd {
         CddCommand cddCommand = CddCommand.values()[cddContext.command[0]];
         switch (cddCommand) {
             case Idle -> {
-            } //TODO
+                //fixes Lunar: The Silver Star
+                if (cddContext.io.latency == 0 && cddContext.status[1] == 0xf) {
+                    cddContext.status[1] = 0x2;
+                    cddContext.status[2] = cddContext.io.track / 10;
+                    cddContext.status[3] = cddContext.io.track % 10;
+                }
+            }
             case Stop -> {
                 cddContext.io.status = /*hasFile ? Stop : */ CddStatus.NoDisc;
                 for (int i = 1; i < 9; i++) {

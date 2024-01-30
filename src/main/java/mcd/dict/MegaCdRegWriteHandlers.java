@@ -5,8 +5,7 @@ import omegadrive.util.Size;
 import java.nio.ByteBuffer;
 import java.util.function.BiConsumer;
 
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_MEM_MODE;
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_RESET;
+import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.SharedBit.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
@@ -50,6 +49,20 @@ public class MegaCdRegWriteHandlers {
         var buff = ctx.getGateSysRegs(SUB_M68K);
         writeBufferRaw(buff, MCD_MEM_MODE.addr, d, Size.BYTE); //WP0-7 write protected bits
     };
+
+    private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg4_S = (ctx, d) -> {
+        var buff = ctx.getGateSysRegs(SUB_M68K);
+        writeBufferRaw(buff, MCD_CDC_MODE.addr, d & 7, Size.BYTE); //mcd-verificator
+        ctx.setSharedBit(SUB_M68K, DD0, (d >> DD0.pos) & 1);
+        ctx.setSharedBit(SUB_M68K, DD1, (d >> DD1.pos) & 1);
+        ctx.setSharedBit(SUB_M68K, DD2, (d >> DD2.pos) & 1);
+    };
+
+    private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg4_S = (ctx, d) -> {
+        var buff = ctx.getGateSysRegs(SUB_M68K);
+        writeBufferRaw(buff, MCD_CDC_MODE.addr + 1, d & 0x1f, Size.BYTE); //mcd-verificator
+    };
+
     /**
      * MAIN
      **/
@@ -95,7 +108,6 @@ public class MegaCdRegWriteHandlers {
         setByteHandlersMain[MCD_MEM_MODE.addr] = new BiConsumer[]{setByteMSBReg2_M, setByteLSBReg2_M};
         setByteHandlersSub[MCD_RESET.addr] = new BiConsumer[]{setByteMSBReg0_S, setByteLSBReg0_S};
         setByteHandlersSub[MCD_MEM_MODE.addr] = new BiConsumer[]{setByteMSBReg2_S, setByteLSBReg2_S};
+        setByteHandlersSub[MCD_CDC_MODE.addr] = new BiConsumer[]{setByteMSBReg4_S, setByteLSBReg4_S};
     }
-
-
 }

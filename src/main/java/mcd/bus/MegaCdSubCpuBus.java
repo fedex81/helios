@@ -133,7 +133,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return 0;
         }
-        if (regSpec.deviceType == McdRegType.CDC) {
+        if (regSpec == MCD_CDC_REG_DATA) {
             res = cdc.read(regSpec, address, size);
         }
         checkRegLongAccess(regSpec, size);

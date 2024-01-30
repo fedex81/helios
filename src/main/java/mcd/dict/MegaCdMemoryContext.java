@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.function.BiConsumer;
 
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_COMM0;
+import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersMain;
@@ -204,18 +204,24 @@ public class MegaCdMemoryContext implements Serializable {
         return sysGateRegsBuf[cpu == M68K ? 0 : 1];
     }
 
-    public enum SharedBit {RET, DMNA, MODE}
+    public enum SharedBit {
+        RET(0, MCD_MEM_MODE.addr + 1), DMNA(1, MCD_MEM_MODE.addr + 1),
+        MODE(2, MCD_MEM_MODE.addr + 1), DD0(0, MCD_CDC_MODE.addr), DD1(1, MCD_CDC_MODE.addr), DD2(2, MCD_CDC_MODE.addr);
 
-    public void setSharedBit(CpuDeviceAccess cpu, SharedBit bit, int val) {
-        assert val <= 1;
+        public final int pos, regBytePos;
+
+        private SharedBit(int p, int rbp) {
+            this.pos = p;
+            this.regBytePos = rbp;
+        }
+    }
+
+    public void setSharedBit(CpuDeviceAccess cpu, SharedBit bitDef, int bitVal) {
+        assert bitVal <= 1;
         assert cpu == M68K || cpu == SUB_M68K;
         CpuDeviceAccess other = cpu == M68K ? SUB_M68K : M68K;
         ByteBuffer regs = getGateSysRegs(other);
-        switch (bit) {
-            case MODE -> BufferUtil.setBit(regs, 3, 2, val, Size.BYTE);
-            case DMNA -> BufferUtil.setBit(regs, 3, 1, val, Size.BYTE);
-            case RET -> BufferUtil.setBit(regs, 3, 0, val, Size.BYTE);
-        }
+        BufferUtil.setBit(regs, bitDef.regBytePos, bitDef.pos, bitVal, Size.BYTE);
     }
 
     public ByteBuffer getRegBuffer(CpuDeviceAccess cpu, MegaCdDict.RegSpecMcd regSpec) {
