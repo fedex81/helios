@@ -83,7 +83,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
         address &= MD_PC_MASK;
         int res = size.getMask();
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
-            assert memCtx.wramSetup.mode == WordRamMode._2M;
+//            assert memCtx.wramSetup.mode == WordRamMode._2M; //TODO mcd-verificator
             res = memCtx.readWordRam(cpu, address, size);
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
@@ -106,7 +106,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
     public void write(int address, int data, Size size) {
         address &= MD_PC_MASK;
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
-            assert memCtx.wramSetup.mode == WordRamMode._2M;
+//            assert memCtx.wramSetup.mode == WordRamMode._2M; //TODO mcd-verificator
             memCtx.writeWordRam(cpu, address, data, size);
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
@@ -317,6 +317,12 @@ public class MegaCdSubCpuBus extends GenesisBus {
 
     public MC68000Wrapper getSubCpu() {
         return (MC68000Wrapper) getBusDeviceIfAny(M68kProvider.class).get();
+    }
+
+    @Override
+    public void onNewFrame() {
+        super.onNewFrame();
+        cdc.newFrame();
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {

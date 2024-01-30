@@ -48,7 +48,7 @@ public class MegaCdDict {
 
         MCD_CDC_DMA_ADDRESS(CDC, 0xA), //CDC DMA address
 
-        MCD_STOPWATCH(SYS, 0xC), //Stopwatch
+        MCD_STOPWATCH(CDC, 0xC), //Stopwatch
 
         MCD_COMM_FLAGS(SYS, 0xE), //Communication flags
 

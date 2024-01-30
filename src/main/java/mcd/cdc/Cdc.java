@@ -7,8 +7,13 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
+import java.nio.ByteBuffer;
+
 import static mcd.dict.MegaCdDict.RegSpecMcd;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_STOPWATCH;
 import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
+import static mcd.pcm.McdPcm.m68kCyclesPerSample;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
 import static omegadrive.util.Util.th;
@@ -31,6 +36,8 @@ public interface Cdc extends BufferUtil.StepDevice {
     void clock();
 
     void decode(int sector);
+
+    void newFrame();
 
     class CdcCommand {
         public byte[] fifo = new byte[8];  //COMIN
@@ -91,7 +98,8 @@ class CdcImpl implements Cdc {
 
     @Override
     public void write(RegSpecMcd regSpec, int address, int value, Size size) {
-        writeBufferRaw(memoryContext.commonGateRegsBuf, address & SUB_CPU_REGS_MASK, value, size);
+        ByteBuffer regBuffer = memoryContext.getRegBuffer(SUB_M68K, regSpec);
+        writeBufferRaw(regBuffer, address & SUB_CPU_REGS_MASK, value, size);
         switch (regSpec) {
             case MCD_CDC_REG_DATA -> {
                 assert size == Size.BYTE;
@@ -104,6 +112,11 @@ class CdcImpl implements Cdc {
                 } else {
 //                    cdc.transfer.destination = data.bit(8,10);
                 }
+            }
+            case MCD_STOPWATCH -> {
+                cdcContext.stopwatch = 0;
+                cycleAccumulator = m68kCyclesPerSample;
+                setTimerBuffer();
             }
         }
     }
@@ -177,8 +190,35 @@ class CdcImpl implements Cdc {
         }
     }
 
-    public void step(int cycles) {
+    private static final double limit = m68kCyclesPerSample;
+    private double cycleAccumulator = limit;
 
+    private int ticks, cyclesFrame;
+
+    /**
+     * TODO stopwatch increments every 30.72micros -> 32_552hz
+     */
+    public void step(int cycles) {
+        cycleAccumulator -= cycles;
+        cyclesFrame += cycles;
+        if (cycleAccumulator < 0) {
+            ticks++;
+            cdcContext.stopwatch = (cdcContext.stopwatch + 1) & 0xFFF;
+            setTimerBuffer();
+            cycleAccumulator += limit;
+        }
+    }
+
+    private void setTimerBuffer() {
+        writeBufferRaw(memoryContext.getRegBuffer(SUB_M68K, MCD_STOPWATCH), MCD_STOPWATCH.addr, cdcContext.stopwatch, Size.WORD);
+        writeBufferRaw(memoryContext.getRegBuffer(M68K, MCD_STOPWATCH), MCD_STOPWATCH.addr, cdcContext.stopwatch, Size.WORD);
+    }
+
+    @Override
+    public void newFrame() {
+//        LOG.info("cyclesPerFrame: {}, cyclesHz: {} , ticksPerFrame: {}, ticksHz: {}", cyclesFrame, cyclesFrame*60,
+//                ticks, ticks*60);
+        ticks = cyclesFrame = 0;
     }
 
     @Override

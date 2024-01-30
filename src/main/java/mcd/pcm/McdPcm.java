@@ -60,7 +60,7 @@ public class McdPcm implements BufferUtil.StepDevice {
     //MD M68K 7.67Mhz
     //pcm sample rate: 32.552 Khz
     //m68kCyclesPerSample = 235.62
-    private static final double m68kCyclesPerSample = 233.47;
+    public static final double m68kCyclesPerSample = 233.47;
     private double cycleAccumulator = m68kCyclesPerSample;
     public static double pcmSampleRateHz = 12_500_000.0 / 384;
 
