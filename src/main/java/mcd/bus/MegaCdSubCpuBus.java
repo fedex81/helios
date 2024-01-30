@@ -11,7 +11,6 @@ import omegadrive.bus.md.BusArbiter;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.M68kProvider;
-import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -20,6 +19,7 @@ import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.*;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
@@ -56,8 +56,10 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     private ByteBuffer subCpuRam, sysGateRegs, commonGateRegs;
     private LogHelper logHelper = new LogHelper();
     private MegaCdMemoryContext memCtx;
-    private CpuDeviceAccess cpu;
+    private CpuDeviceAccess cpuType;
 
+    @Deprecated
+    private McdSubInterruptHandler interruptHandler;
     private McdPcm pcm;
 
     private Asic asic;
@@ -68,9 +70,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     private Counter35Khz counter35Khz;
 
     public MegaCdSubCpuBus(MegaCdMemoryContext ctx) {
-        cpu = CpuDeviceAccess.SUB_M68K;
+        cpuType = CpuDeviceAccess.SUB_M68K;
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
-        sysGateRegs = ctx.getGateSysRegs(cpu);
+        sysGateRegs = ctx.getGateSysRegs(cpuType);
         commonGateRegs = ByteBuffer.wrap(ctx.commonGateRegs);
         memCtx = ctx;
         timerContext = new TimerContext();
@@ -85,6 +87,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     @Override
     public GenesisBusProvider attachDevice(Device device) {
         super.attachDevice(device);
+        if (device instanceof McdSubInterruptHandler ih) {
+            this.interruptHandler = ih;
+        }
         if (device instanceof Cdc cdc) {
             this.cdc = cdc;
         }
@@ -97,6 +102,10 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         if (device instanceof Asic asic) {
             this.asic = asic;
         }
+        //TODO fix
+        if (device instanceof M68kProvider m68) {
+            interruptHandler = McdSubInterruptHandler.create(memCtx, m68);
+        }
         return this;
     }
 
@@ -106,10 +115,10 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         int res = size.getMask();
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
 //            assert memCtx.wramSetup.mode == WordRamMode._2M; //TODO mcd-verificator
-            res = memCtx.readWordRam(cpu, address, size);
+            res = memCtx.readWordRam(cpuType, address, size);
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
-            res = memCtx.readWordRam(cpu, address, size);
+            res = memCtx.readWordRam(cpuType, address, size);
         } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
             res = readBuffer(subCpuRam, address & MCD_PRG_RAM_MASK, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address < END_MCD_SUB_GATE_ARRAY_REGS) {
@@ -129,10 +138,10 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         address &= MD_PC_MASK;
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
 //            assert memCtx.wramSetup.mode == WordRamMode._2M; //TODO mcd-verificator
-            memCtx.writeWordRam(cpu, address, data, size);
+            memCtx.writeWordRam(cpuType, address, data, size);
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
-            memCtx.writeWordRam(cpu, address, data, size);
+            memCtx.writeWordRam(cpuType, address, data, size);
         } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
             writeBufferRaw(subCpuRam, address & MCD_PRG_RAM_MASK, data, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address <= END_MCD_SUB_GATE_ARRAY_REGS) {
@@ -147,9 +156,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
-        RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpu, address);
-        logAccess(regSpec, cpu, address, 0, size, true);
-        ByteBuffer regs = memCtx.getRegBuffer(cpu, regSpec);
+        RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
+        logAccess(regSpec, cpuType, address, 0, size, true);
+        ByteBuffer regs = memCtx.getRegBuffer(cpuType, regSpec);
         int res = readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
         if (regSpec == MegaCdDict.RegSpecMcd.INVALID) {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
@@ -163,8 +172,8 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     }
 
     private void handleMegaCdExpWrite(int address, int data, Size size) {
-        MegaCdDict.RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpu, address);
-        MegaCdDict.logAccess(regSpec, cpu, address, data, size, false);
+        MegaCdDict.RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
+        MegaCdDict.logAccess(regSpec, cpuType, address, data, size, false);
         if (regSpec == MegaCdDict.RegSpecMcd.INVALID) {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return;
@@ -182,7 +191,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
 
     private void handleSysRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         assert size != Size.LONG;
-        ByteBuffer regs = memCtx.getRegBuffer(cpu, regSpec);
+        ByteBuffer regs = memCtx.getRegBuffer(cpuType, regSpec);
         switch (regSpec) {
             case MCD_RESET -> handleReg0Write(address, data, size);
             case MCD_MEM_MODE -> handleReg2Write(address, data, size);
@@ -195,7 +204,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             }
             case MCD_INT_MASK -> {
                 LOG.info("S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);
-                writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
+                boolean changed = writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
+                if (changed) {
+                    int reg = Util.readBufferByte(commonGateRegs, MCD_INT_MASK.addr + 1);
+                    McdSubInterruptHandler.printEnabledInterrupts(reg);
+                }
             }
             case MCD_TIMER_INT3 -> {
                 //byte writes to MSB go to LSB
@@ -214,7 +227,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     }
 
     private void handleReg0Write(int address, int data, Size size) {
-        int res = memCtx.handleRegWrite(cpu, MCD_RESET, address, data, size);
+        int res = memCtx.handleRegWrite(cpuType, MCD_RESET, address, data, size);
         int sreset = res & 1;
         if ((address & 1) == 0 && size == Size.BYTE) {
             return;
@@ -228,11 +241,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     }
 
     private void handleReg2Write(int address, int data, Size size) {
-        int res = memCtx.handleRegWrite(cpu, MCD_MEM_MODE, address, data, size);
-        WramSetup ws = memCtx.update(cpu, res);
+        int res = memCtx.handleRegWrite(cpuType, MCD_MEM_MODE, address, data, size);
+        WramSetup ws = memCtx.update(cpuType, res);
         if (ws == WramSetup.W_2M_MAIN) { //set DMNA=0
             setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 1, 0, Size.BYTE);
-            memCtx.setSharedBit(cpu, 0, SharedBit.DMNA);
+            memCtx.setSharedBit(cpuType, 0, SharedBit.DMNA);
         }
         asic.setStampPriorityMode((res >> 3) & 3);
     }
@@ -243,8 +256,8 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         switch (regSpec) {
             case MCD_CDD_CONTROL -> {
                 int v = readBuffer(commonGateRegs, regSpec.addr, Size.WORD);
-                if (((v & 4) > 0) && checkInterruptEnabled(4)) { //HOCK set
-                    m68kInterrupt(4); //trigger CDD interrupt
+                if (((v & 4) > 0) && interruptHandler.checkInterruptEnabled(INT_CDD)) { //HOCK set
+                    interruptHandler.m68kInterrupt(INT_CDD.ordinal()); //trigger CDD interrupt
                     fireCddInt = true;
                 }
             }
@@ -298,18 +311,16 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         super.onVdpEvent(event, value);
         if (event == VdpEvent.V_BLANK_CHANGE) {
             boolean val = (boolean) value;
-            if (val && checkInterruptEnabled(2)) {
+            if (val && interruptHandler.checkInterruptEnabled(INT_LEVEL2)) {
                 LOG.info("S VBlank On, int#2");
-                m68kInterrupt(2);
+                interruptHandler.m68kInterrupt(INT_LEVEL2.ordinal());
             }
         } else if (event == VdpEvent.H_BLANK_CHANGE) {
             boolean val = (boolean) value;
             if (!val && fireAsicInt) {
                 if (--asicCounter == 0) {
                     LOG.info("ASIC Int On, int#1, if enabled");
-                    if (checkInterruptEnabled(1)) {
-                        m68kInterrupt(1);
-                    }
+                    interruptHandler.m68kInterruptWhenNotMasked(INT_ASIC);
                     asicEvent(commonGateRegs, 0);
                     asicCounter = asicCalcDuration;
                 }
@@ -318,7 +329,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
                 if (--cddCounter == 0) {
                     if (cdd.isCommandPending()) {
                         LOG.info("CDD Int On, int#4");
-                        m68kInterrupt(4);
+                        interruptHandler.m68kInterrupt(INT_CDD.ordinal());
                     }
                     cddCounter = hblankPerCdd;
                 }
@@ -326,36 +337,17 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         }
     }
 
-    public static void asicEvent(ByteBuffer commonGateRegs, int event) {
-        fireAsicInt = event == 1; //0 end, 1 start
-        setBit(commonGateRegs, MCD_IMG_STAMP_SIZE.addr, 15, event, Size.WORD);
-    }
-
-    public boolean checkInterruptEnabled(int m68kLevel) {
-        int reg = Util.readBufferByte(commonGateRegs, 0x33);
-        return checkInterruptEnabled(reg, m68kLevel);
-    }
-
-    private static boolean checkInterruptEnabled(int reg, int m68kLevel) {
-        return (reg & (1 << (m68kLevel))) > 0;
-    }
-
-    private void m68kInterrupt(int num) {
-        getSubCpu().raiseInterrupt(num);
-    }
-
     private void timerStep() {
         if (timerContext.rate > 0 && --timerContext.counter == 0) {
             timerContext.counter = timerContext.rate;
-            if (checkInterruptEnabled(3)) {
-                m68kInterrupt(3);
+            if (getInterruptHandler().m68kInterruptWhenNotMasked(INT_TIMER)) {
                 LOG.info("Timer Int On, int#3");
             }
         }
     }
 
-    public MC68000Wrapper getSubCpu() {
-        return (MC68000Wrapper) getBusDeviceIfAny(M68kProvider.class).get();
+    public McdSubInterruptHandler getInterruptHandler() {
+        return interruptHandler;
     }
 
     @Override
@@ -375,6 +367,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     public void onNewFrame() {
         super.onNewFrame();
         counter35Khz.cyclesFrame = counter35Khz.ticks = 0;
+    }
+
+    public static void asicEvent(ByteBuffer commonGateRegs, int event) {
+        fireAsicInt = event == 1; //0 end, 1 start
+        setBit(commonGateRegs, MCD_IMG_STAMP_SIZE.addr, 15, event, Size.WORD);
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {

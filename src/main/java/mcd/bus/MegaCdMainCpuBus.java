@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.MCD_GATE_REGS_MASK;
@@ -246,11 +247,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
         assert subCpu != null && subCpuBus != null;
 
         if (subIntReg > 0) {
-            boolean doIt = subCpuBus.checkInterruptEnabled(2);
+            boolean doIt = subCpuBus.getInterruptHandler().m68kInterruptWhenNotMasked(INT_LEVEL2);
             LOG.info("M trigger SubCpu int2 request, masked : {}", !doIt);
-            if (doIt) {
-                subCpu.raiseInterrupt(2);
-            }
         }
         if ((address & 1) == 0 && size == Size.BYTE) {
             return;
