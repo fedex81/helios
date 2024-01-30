@@ -41,8 +41,7 @@ public class MegaCdRegWriteHandlers {
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 6, d); //BK0
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 7, d); //BK1
 
-        ctx.setSharedBit(SUB_M68K, RET, d & 1);
-        ctx.setSharedBit(SUB_M68K, MODE, (d >> 2) & 1);
+        ctx.setSharedBits(SUB_M68K, d, RET, MODE);
     };
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg2_S = (ctx, d) -> {
         assert d == 0; //Write protected bits only write 0
@@ -53,9 +52,7 @@ public class MegaCdRegWriteHandlers {
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg4_S = (ctx, d) -> {
         var buff = ctx.getGateSysRegs(SUB_M68K);
         writeBufferRaw(buff, MCD_CDC_MODE.addr, d & 7, Size.BYTE); //mcd-verificator
-        ctx.setSharedBit(SUB_M68K, DD0, (d >> DD0.pos) & 1);
-        ctx.setSharedBit(SUB_M68K, DD1, (d >> DD1.pos) & 1);
-        ctx.setSharedBit(SUB_M68K, DD2, (d >> DD2.pos) & 1);
+        ctx.setSharedBits(SUB_M68K, d, DD0, DD1, DD2);
     };
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg4_S = (ctx, d) -> {
@@ -89,9 +86,7 @@ public class MegaCdRegWriteHandlers {
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 2, d); //MODE
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 6, d); //BK0
         setBitInternal(buff, MCD_MEM_MODE.addr + 1, 7, d); //BK1
-        ctx.setSharedBit(M68K, RET, d & 1);
-        ctx.setSharedBit(M68K, DMNA, (d >> 1) & 1);
-        ctx.setSharedBit(M68K, MODE, (d >> 2) & 1);
+        ctx.setSharedBits(M68K, d, RET, DMNA, MODE);
     };
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg2_M = (ctx, d) -> {
         writeBufferRaw(ctx.getGateSysRegs(M68K), MCD_MEM_MODE.addr, d, Size.BYTE); //WP0-7 write protected bits

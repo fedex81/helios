@@ -203,7 +203,7 @@ public class MegaCdSubCpuBus extends GenesisBus {
         WramSetup ws = memCtx.update(cpu, res);
         if (ws == WramSetup.W_2M_MAIN) { //set DMNA=0
             setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 1, 0, Size.BYTE);
-            memCtx.setSharedBit(cpu, SharedBit.DMNA, 0);
+            memCtx.setSharedBit(cpu, 0, SharedBit.DMNA);
         }
         asic.setStampPriorityMode((res >> 3) & 3);
     }

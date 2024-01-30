@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.function.BiConsumer;
 
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
@@ -210,18 +211,24 @@ public class MegaCdMemoryContext implements Serializable {
 
         public final int pos, regBytePos;
 
-        private SharedBit(int p, int rbp) {
+        SharedBit(int p, int rbp) {
             this.pos = p;
             this.regBytePos = rbp;
         }
     }
 
-    public void setSharedBit(CpuDeviceAccess cpu, SharedBit bitDef, int bitVal) {
-        assert bitVal <= 1;
+    public void setSharedBits(CpuDeviceAccess cpu, int byteVal, SharedBit... bitDef) {
+        Arrays.stream(bitDef).forEach(bd -> setSharedBit(cpu, byteVal, bd));
+    }
+
+    /**
+     * Given the byte value, only set the bit at bitPos as defined in SharedBit
+     */
+    public void setSharedBit(CpuDeviceAccess cpu, int byteVal, SharedBit bitDef) {
         assert cpu == M68K || cpu == SUB_M68K;
         CpuDeviceAccess other = cpu == M68K ? SUB_M68K : M68K;
         ByteBuffer regs = getGateSysRegs(other);
-        BufferUtil.setBit(regs, bitDef.regBytePos, bitDef.pos, bitVal, Size.BYTE);
+        BufferUtil.setBit(regs, bitDef.regBytePos, bitDef.pos, (byteVal >> bitDef.pos) & 1, Size.BYTE);
     }
 
     public ByteBuffer getRegBuffer(CpuDeviceAccess cpu, MegaCdDict.RegSpecMcd regSpec) {

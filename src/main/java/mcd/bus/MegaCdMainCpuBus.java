@@ -280,7 +280,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         WramSetup ws = memCtx.update(cpu, resWord);
         if (ws == WramSetup.W_2M_SUB) { //set RET=0
             resWord = setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 0, 0, Size.BYTE);
-            memCtx.setSharedBit(M68K, MegaCdMemoryContext.SharedBit.RET, 0);
+            memCtx.setSharedBit(M68K, 0, MegaCdMemoryContext.SharedBit.RET);
         }
         //bk0,1
         int bval = (resWord >> 6) & 3;
