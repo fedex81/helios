@@ -62,9 +62,7 @@ public class McdDeviceHelper {
         }
 
         public void stepDevices(int cyles) {
-            pcm.step(cyles);
-            cdd.step(cyles);
-            cdc.step(cyles);
+            subBus.step(cyles);
         }
 
         public void reset() {

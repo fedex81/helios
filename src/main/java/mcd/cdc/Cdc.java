@@ -12,7 +12,6 @@ import java.nio.ByteBuffer;
 import static mcd.dict.MegaCdDict.RegSpecMcd;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_STOPWATCH;
 import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
-import static mcd.pcm.McdPcm.m68kCyclesPerSample;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
@@ -36,8 +35,6 @@ public interface Cdc extends BufferUtil.StepDevice {
     void clock();
 
     void decode(int sector);
-
-    void newFrame();
 
     class CdcCommand {
         public byte[] fifo = new byte[8];  //COMIN
@@ -115,7 +112,6 @@ class CdcImpl implements Cdc {
             }
             case MCD_STOPWATCH -> {
                 cdcContext.stopwatch = 0;
-                cycleAccumulator = m68kCyclesPerSample;
                 setTimerBuffer();
             }
         }
@@ -190,35 +186,19 @@ class CdcImpl implements Cdc {
         }
     }
 
-    private static final double limit = m68kCyclesPerSample;
-    private double cycleAccumulator = limit;
-
-    private int ticks, cyclesFrame;
 
     /**
      * TODO stopwatch increments every 30.72micros -> 32_552hz
+     * this needs to be called at ~ 35.55 Khz
      */
     public void step(int cycles) {
-        cycleAccumulator -= cycles;
-        cyclesFrame += cycles;
-        if (cycleAccumulator < 0) {
-            ticks++;
-            cdcContext.stopwatch = (cdcContext.stopwatch + 1) & 0xFFF;
-            setTimerBuffer();
-            cycleAccumulator += limit;
-        }
+        cdcContext.stopwatch = (cdcContext.stopwatch + 1) & 0xFFF;
+        setTimerBuffer();
     }
 
     private void setTimerBuffer() {
         writeBufferRaw(memoryContext.getRegBuffer(SUB_M68K, MCD_STOPWATCH), MCD_STOPWATCH.addr, cdcContext.stopwatch, Size.WORD);
         writeBufferRaw(memoryContext.getRegBuffer(M68K, MCD_STOPWATCH), MCD_STOPWATCH.addr, cdcContext.stopwatch, Size.WORD);
-    }
-
-    @Override
-    public void newFrame() {
-//        LOG.info("cyclesPerFrame: {}, cyclesHz: {} , ticksPerFrame: {}, ticksHz: {}", cyclesFrame, cyclesFrame*60,
-//                ticks, ticks*60);
-        ticks = cyclesFrame = 0;
     }
 
     @Override

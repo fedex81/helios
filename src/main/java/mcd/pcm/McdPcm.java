@@ -56,13 +56,7 @@ public class McdPcm implements BufferUtil.StepDevice {
 
     public static final int PCM_WAVE_BANK_SHIFT = 12;
 
-    //TODO this should be using MCD 68K @ 12.5 Mhz
-    //MD M68K 7.67Mhz
-    //pcm sample rate: 32.552 Khz
-    //m68kCyclesPerSample = 235.62
-    public static final double m68kCyclesPerSample = 233.47;
-    private double cycleAccumulator = m68kCyclesPerSample;
-    public static double pcmSampleRateHz = 12_500_000.0 / 384;
+    public static final double pcmSampleRateHz = 12_500_000.0 / 384;
 
     private ByteBuffer waveData, pcmRegs;
     private PcmChannelContext[] chan;
@@ -202,11 +196,7 @@ public class McdPcm implements BufferUtil.StepDevice {
         if (chanControl == 0 && active == 0) {
             return;
         }
-        cycleAccumulator -= cycles;
-        if (cycleAccumulator < 0) {
-            generateOneSample();
-            cycleAccumulator += m68kCyclesPerSample;
-        }
+        generateOneSample();
     }
 
     public ByteBuffer getWaveData() {

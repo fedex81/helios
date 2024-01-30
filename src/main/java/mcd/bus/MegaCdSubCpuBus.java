@@ -33,9 +33,27 @@ import static omegadrive.util.Util.th;
  * <p>
  * Copyright 2023
  */
-public class MegaCdSubCpuBus extends GenesisBus {
+public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
 
     private static final Logger LOG = LogHelper.getLogger(MegaCdSubCpuBus.class.getSimpleName());
+
+    private class TimerContext {
+        public int counter, rate;
+    }
+
+    //TODO this should be using MCD 68K @ 12.5 Mhz
+    //MD M68K 7.67Mhz
+    //pcm sample rate: 32.552 Khz
+    //m68kCyclesPerSample = 235.62
+    private class Counter35Khz {
+        public static final double limit = 233.47;
+        ;
+        public double cycleAccumulator = limit;
+
+        //debug
+        private int ticks, cyclesFrame;
+    }
+
     private ByteBuffer subCpuRam, sysGateRegs, commonGateRegs;
     private LogHelper logHelper = new LogHelper();
     private MegaCdMemoryContext memCtx;
@@ -47,12 +65,17 @@ public class MegaCdSubCpuBus extends GenesisBus {
     private Cdd cdd;
     private Cdc cdc;
 
+    private TimerContext timerContext;
+    private Counter35Khz counter35Khz;
+
     public MegaCdSubCpuBus(MegaCdMemoryContext ctx) {
         cpu = CpuDeviceAccess.SUB_M68K;
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
         sysGateRegs = ctx.getGateSysRegs(cpu);
         commonGateRegs = ByteBuffer.wrap(ctx.commonGateRegs);
         memCtx = ctx;
+        timerContext = new TimerContext();
+        counter35Khz = new Counter35Khz();
         //NOTE: starts at zero and becomes 1 after ~100ms
         writeBufferRaw(sysGateRegs, MCD_RESET.addr, 1, Size.WORD); //not reset
         writeBufferRaw(sysGateRegs, MCD_MEM_MODE.addr, 1, Size.WORD);
@@ -174,6 +197,10 @@ public class MegaCdSubCpuBus extends GenesisBus {
             case MCD_INT_MASK -> {
                 LOG.info("S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);
                 writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
+            }
+            case MCD_TIMER_INT3 -> {
+                assert size == Size.BYTE ? (address & 1) == 1 : true;
+                timerContext.rate = data & 0xFF;
             }
             default -> {
                 logHelper.logWarningOnce(LOG,
@@ -320,9 +347,21 @@ public class MegaCdSubCpuBus extends GenesisBus {
     }
 
     @Override
+    public void step(int cycles) {
+        counter35Khz.cycleAccumulator -= cycles;
+        counter35Khz.cyclesFrame += cycles;
+        if (counter35Khz.cycleAccumulator < 0) {
+            counter35Khz.ticks++;
+            pcm.step(0);
+            cdc.step(0);
+            cdd.step(0);
+            counter35Khz.cycleAccumulator += Counter35Khz.limit;
+        }
+    }
+
     public void onNewFrame() {
         super.onNewFrame();
-        cdc.newFrame();
+        counter35Khz.cyclesFrame = counter35Khz.ticks = 0;
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
