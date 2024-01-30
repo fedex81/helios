@@ -46,10 +46,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     //pcm sample rate: 32.552 Khz
     //m68kCyclesPerSample = 235.62
     private class Counter35Khz {
-        public static final double limit = 233.47;
-        ;
+        //mcd_verificator requires such precise value
+        public static final double limit = 233.47 * 1.003;
         public double cycleAccumulator = limit;
-
         //debug
         private int ticks, cyclesFrame;
     }
@@ -199,8 +198,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
                 writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
             }
             case MCD_TIMER_INT3 -> {
-                assert size == Size.BYTE ? (address & 1) == 1 : true;
+                //byte writes to MSB go to LSB
+                int addr = size == Size.BYTE ? (address & MCD_GATE_REGS_MASK) | 1 : address & MCD_GATE_REGS_MASK;
                 timerContext.rate = data & 0xFF;
+                timerContext.counter = timerContext.rate;
+                writeBufferRaw(regs, addr, data, size);
             }
             default -> {
                 logHelper.logWarningOnce(LOG,
@@ -342,6 +344,16 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         getSubCpu().raiseInterrupt(num);
     }
 
+    private void timerStep() {
+        if (timerContext.rate > 0 && --timerContext.counter == 0) {
+            timerContext.counter = timerContext.rate;
+            if (checkInterruptEnabled(3)) {
+                m68kInterrupt(3);
+                LOG.info("Timer Int On, int#3");
+            }
+        }
+    }
+
     public MC68000Wrapper getSubCpu() {
         return (MC68000Wrapper) getBusDeviceIfAny(M68kProvider.class).get();
     }
@@ -355,6 +367,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             pcm.step(0);
             cdc.step(0);
             cdd.step(0);
+            timerStep();
             counter35Khz.cycleAccumulator += Counter35Khz.limit;
         }
     }
