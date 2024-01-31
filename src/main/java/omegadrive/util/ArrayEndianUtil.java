@@ -94,7 +94,7 @@ public class ArrayEndianUtil {
 
     // addr 0 -> [8bit][8bit] <- addr 1
     public static int setByteInWordBE(int word, int byteVal, int bytePos) {
-        final int shift = ((bytePos + 1) & 1 << 3);
-        return (word & ~(0xFF << shift)) | (byteVal << shift);
+        final int shift = (((bytePos + 1) & 1) << 3);
+        return (word & ~(0xFF << shift)) | ((byteVal & 0xFF) << shift);
     }
 }

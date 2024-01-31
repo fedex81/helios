@@ -125,7 +125,7 @@ public class I2cEeprom implements EepromBase {
             System.out.println("W," + th(address & 0xFF) + "," + size.name().charAt(0) + "," + th(data));
         assert size != Size.LONG;
         if (size == Size.BYTE) {
-            ctx.writeLatch = setByteInWordBE(ctx.writeLatch, data & 0xFF, address & 1);
+            ctx.writeLatch = setByteInWordBE(ctx.writeLatch, data, address & 1);
             data = ctx.writeLatch;
         }
         writeWordEeprom(data);
