@@ -10,8 +10,11 @@ import org.slf4j.Logger;
 import java.nio.ByteBuffer;
 
 import static mcd.dict.MegaCdDict.RegSpecMcd;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_STOPWATCH;
 import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
+import static omegadrive.util.ArrayEndianUtil.getByteInWordBE;
+import static omegadrive.util.ArrayEndianUtil.setByteInWordBE;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
@@ -30,6 +33,12 @@ import static omegadrive.util.Util.th;
  * Copyright 2024
  */
 public interface Cdc extends BufferUtil.StepDevice {
+
+    Logger LOG = LogHelper.getLogger(Cdc.class.getSimpleName());
+
+    //some Cdc models have 16, others 32; mcd_verificator expects 32
+    int NUM_CDC_REG = 32;
+    int NUM_CDC_REG_MASK = 31;
 
     void poll();
 
@@ -87,7 +96,7 @@ public interface Cdc extends BufferUtil.StepDevice {
         }
 
         default void stop() {
-            throw new RuntimeException();
+            LogHelper.logWarnOnce(LOG, "Not supported, CDC transfer stop");
         }
     }
 
@@ -227,17 +236,15 @@ class CdcImpl implements Cdc {
         writeBufferRaw(regBuffer, address & SUB_CPU_REGS_MASK, value, size);
         switch (regSpec) {
             case MCD_CDC_REG_DATA -> {
-                assert size == Size.BYTE;
+                //word writes MSB is ignored??
                 controllerWrite((byte) value);
             }
             case MCD_CDC_MODE -> {
                 int resWord = memoryContext.handleRegWrite(SUB_M68K, regSpec, address, value, size);
-                if ((address & 1) == 1) {
-                    cdcContext.address = resWord & 0xF;
-                } else {
-                    LOG.warn("CDC transfer write: {}", th(value));
-//                    assert false;
-                    cdcContext.transfer.destination = 0;//data.bit(8,10);
+                cdcContext.address = resWord & NUM_CDC_REG_MASK;
+                cdcContext.transfer.destination = (resWord >> 7) & 3;
+                if (cdcContext.transfer.destination > 1) {
+                    LOG.warn("Unsupported cdc transfer destination: {}", cdcContext.transfer.destination);
                 }
             }
             case MCD_CDC_DMA_ADDRESS -> LOG.error("Write {} not supported: {} {}", regSpec, th(value), size);
@@ -252,7 +259,7 @@ class CdcImpl implements Cdc {
     public int read(RegSpecMcd regSpec, int address, Size size) {
         switch (regSpec) {
             case MCD_CDC_REG_DATA -> {
-                assert size == Size.BYTE;
+                //word reads only populate LSB??
                 return controllerRead();
             }
         }
@@ -278,13 +285,19 @@ class CdcImpl implements Cdc {
                 }
             }
             break;
+            //DBCL: data byte counter low
+            case 0x2:
+                data = getByteInWordBE(cdcContext.transfer.length, 1);
+                break;
+            //DBCH: data byte counter high
+            case 0x3:
+                data = getByteInWordBE(cdcContext.transfer.length, 0);
+                break;
             default:
                 LOG.error("CDC READ unknown address: {}", th(cdcContext.address));
         }
         //COMIN reads do not increment the address; STAT3 reads wrap the address to 0x0
-        if (cdcContext.address > 0) {
-            cdcContext.address = (cdcContext.address + 1) & 0xF;
-        }
+        increaseCdcAddress();
 //        logCd("CDC R: " + th(cdcContext.address) + "," + th(data));
         return data;
     }
@@ -319,6 +332,14 @@ class CdcImpl implements Cdc {
                 if (cdcContext.transfer.enable == 0) cdcContext.transfer.stop();
             }
             break;
+            //DBCL: data byte counter low
+            case 0x2:
+                cdcContext.transfer.length = setByteInWordBE(cdcContext.transfer.length, data, 1);
+                break;
+            //DBCH: data byte counter high
+            case 0x3:
+                cdcContext.transfer.length = setByteInWordBE(cdcContext.transfer.length, data & 0xF, 0);
+                break;
             //WAL: write address low
             case 0x8: {
                 int t = cdcContext.transfer.target;
@@ -363,8 +384,13 @@ class CdcImpl implements Cdc {
                 LOG.error("CDC WRITE unknown address: {}, data {}", th(cdcContext.address), th(data));
         }
         //SBOUT writes do not increment the address; RESET reads wrap the address to 0x0
+        increaseCdcAddress();
+    }
+
+    private void increaseCdcAddress() {
         if (cdcContext.address > 0) {
-            cdcContext.address = (cdcContext.address + 1) & 0xF;
+            cdcContext.address = (cdcContext.address + 1) & NUM_CDC_REG_MASK;
+            setCdcAddress();
         }
     }
 
@@ -376,6 +402,10 @@ class CdcImpl implements Cdc {
     public void step(int cycles) {
         cdcContext.stopwatch = (cdcContext.stopwatch + 1) & 0xFFF;
         setTimerBuffer();
+    }
+
+    private void setCdcAddress() {
+        writeBufferRaw(memoryContext.getRegBuffer(SUB_M68K, MCD_CDC_MODE), MCD_CDC_MODE.addr + 1, cdcContext.address, Size.BYTE);
     }
 
     private void setTimerBuffer() {

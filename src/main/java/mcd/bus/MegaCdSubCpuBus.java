@@ -309,17 +309,13 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     @Override
     public void onVdpEvent(VdpEvent event, Object value) {
         super.onVdpEvent(event, value);
-        if (event == VdpEvent.V_BLANK_CHANGE) {
-            boolean val = (boolean) value;
-            if (val && interruptHandler.checkInterruptEnabled(INT_LEVEL2)) {
-                LOG.info("S VBlank On, int#2");
-                interruptHandler.m68kInterrupt(INT_LEVEL2.ordinal());
-            }
+        //vBlankOn fire LEV2
+        if (event == VdpEvent.V_BLANK_CHANGE && (boolean) value) {
+            interruptHandler.m68kInterruptWhenNotMasked(INT_LEVEL2);
         } else if (event == VdpEvent.H_BLANK_CHANGE) {
             boolean val = (boolean) value;
             if (!val && fireAsicInt) {
                 if (--asicCounter == 0) {
-                    LOG.info("ASIC Int On, int#1, if enabled");
                     interruptHandler.m68kInterruptWhenNotMasked(INT_ASIC);
                     asicEvent(commonGateRegs, 0);
                     asicCounter = asicCalcDuration;
@@ -327,9 +323,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             }
             if (val && fireCddInt) {
                 if (--cddCounter == 0) {
-                    if (cdd.isCommandPending()) {
-                        LOG.info("CDD Int On, int#4");
-                        interruptHandler.m68kInterrupt(INT_CDD.ordinal());
+                    //TODO mcd-verificator doesn't like the pending check -> ignorePending = true;
+                    //TODO bios needs it -> ignorePending = false;
+                    boolean ignorePending = false;
+                    if (ignorePending || cdd.isCommandPending()) {
+                        interruptHandler.m68kInterruptWhenNotMasked(INT_CDD);
                     }
                     cddCounter = hblankPerCdd;
                 }
