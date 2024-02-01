@@ -1,9 +1,6 @@
 package mcd.asic;
 
-import mcd.asic.AsicModel.StampConfig;
-import mcd.asic.AsicModel.StampMapSize;
-import mcd.asic.AsicModel.StampPriorityMode;
-import mcd.asic.AsicModel.StampSize;
+import mcd.asic.AsicModel.*;
 import mcd.bus.McdSubInterruptHandler;
 import mcd.dict.MegaCdDict.RegSpecMcd;
 import mcd.dict.MegaCdMemoryContext;
@@ -38,8 +35,8 @@ public class Asic implements Device {
     private MegaCdMemoryContext memoryContext;
     private McdSubInterruptHandler interruptHandler;
 
-    //0 end, 1 start
-    public enum AsicEvent {AS_STOP, AS_START}
+    private AsicEvent asicEvent = AsicEvent.AS_STOP;
+
 
     public Asic(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih) {
         this.memoryContext = memoryContext;
@@ -216,7 +213,11 @@ public class Asic implements Device {
     }
 
     public void asicEvent(AsicEvent event) {
+        if (event == asicEvent) {
+            return;
+        }
         setBit(memoryContext.commonGateRegsBuf, MCD_IMG_STAMP_SIZE.addr, 15, event.ordinal(), Size.WORD);
+        asicEvent = event;
         if (event == AsicEvent.AS_STOP) {
             interruptHandler.m68kInterruptWhenNotMasked(INT_ASIC);
         }

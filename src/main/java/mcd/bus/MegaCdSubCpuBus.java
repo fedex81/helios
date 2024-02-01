@@ -1,6 +1,7 @@
 package mcd.bus;
 
 import mcd.asic.Asic;
+import mcd.asic.AsicModel.AsicEvent;
 import mcd.cdc.Cdc;
 import mcd.cdd.Cdd;
 import mcd.dict.MegaCdDict;
@@ -272,8 +273,6 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         LOG.info("S subCpu reset done");
     }
 
-    private static boolean fireAsicInt = false;
-
     //75hz at NTSC 60 fps
     //hBlankOff = 262 ( 225 displayOn, 37 display off)
     //hblankOff rate: 15_720hz
@@ -292,10 +291,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             interruptHandler.m68kInterruptWhenNotMasked(INT_LEVEL2);
         } else if (event == VdpEvent.H_BLANK_CHANGE) {
             boolean val = (boolean) value;
-            if (!val && fireAsicInt) {
+            if (!val) {
                 if (--asicCounter == 0) {
-                    asic.asicEvent(Asic.AsicEvent.AS_STOP);
-                    fireAsicInt = false;
+                    asic.asicEvent(AsicEvent.AS_STOP);
                     asicCounter = asicCalcDuration;
                 }
             }

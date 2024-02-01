@@ -10,6 +10,10 @@ import static omegadrive.util.Util.th;
  * Copyright 2024
  */
 public class AsicModel {
+
+    //0 end, 1 start
+    public enum AsicEvent {AS_STOP, AS_START}
+
     enum StampRepeat {
         BLANK, REPEAT_MAP;
 

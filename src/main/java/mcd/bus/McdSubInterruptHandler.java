@@ -14,6 +14,7 @@ import org.slf4j.Logger;
  * <p>
  * TODO interrupt priority, more than one at the same time
  * TODO what happens to masked interrupts?
+ * TODO Looks like ASIC interrupts should be held pending and trigger when the mask allows it
  */
 public interface McdSubInterruptHandler extends Device {
 
@@ -52,6 +53,7 @@ public interface McdSubInterruptHandler extends Device {
             m68kInterrupt(m68kLevel);
             return true;
         }
+        LogHelper.logWarnOnce(LOG, "TODO should store the interrupt: {}", m68kLevel);
         return false;
     }
 
