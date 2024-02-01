@@ -10,7 +10,6 @@ import omegadrive.Device;
 import omegadrive.bus.md.BusArbiter;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -19,7 +18,8 @@ import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 
-import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.*;
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_TIMER;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
@@ -48,7 +48,10 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     private class Counter35Khz {
         //mcd_verificator requires such precise value
         public static final double limit = 233.47 * 1.003;
+
+        public static final int limit75hz = 434;
         public double cycleAccumulator = limit;
+        public int cycleAcc75 = limit75hz;
         //debug
         private int ticks, cyclesFrame;
     }
@@ -101,10 +104,6 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         }
         if (device instanceof Asic asic) {
             this.asic = asic;
-        }
-        //TODO fix
-        if (device instanceof M68kProvider m68) {
-            interruptHandler = McdSubInterruptHandler.create(memCtx, m68);
         }
         return this;
     }
@@ -182,9 +181,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         switch (regSpec.deviceType) {
             case SYS -> handleSysRegWrite(regSpec, address, data, size);
             case COMM -> handleCommRegWrite(regSpec, address, data, size);
-            case CDD -> handleCddRegWrite(regSpec, address, data, size);
+            case CDD -> cdd.write(regSpec, address, data, size);
             case CDC -> cdc.write(regSpec, address, data, size);
-            case ASIC -> handleAsicRegWrite(regSpec, address, data, size);
+            case ASIC -> asic.write(regSpec, address, data, size);
             default -> LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
         }
     }
@@ -250,24 +249,6 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         asic.setStampPriorityMode((res >> 3) & 3);
     }
 
-    private void handleCddRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
-        LOG.info("S Write CDD {} : {}, {}, {}", regSpec, th(address), th(data), size);
-        cdd.write(regSpec, address, data, size);
-        switch (regSpec) {
-            case MCD_CDD_CONTROL -> {
-                int v = readBuffer(commonGateRegs, regSpec.addr, Size.WORD);
-                if (((v & 4) > 0) && interruptHandler.checkInterruptEnabled(INT_CDD)) { //HOCK set
-                    interruptHandler.m68kInterrupt(INT_CDD.ordinal()); //trigger CDD interrupt
-                    fireCddInt = true;
-                }
-            }
-        }
-    }
-
-    private void handleAsicRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
-        asic.write(regSpec, address, data, size);
-    }
-
     private void handleCommRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         if (address >= START_MCD_SUB_GA_COMM_W && address < END_MCD_SUB_GA_COMM_W) { //MAIN COMM
             LOG.info("S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
@@ -291,18 +272,15 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         LOG.info("S subCpu reset done");
     }
 
-
-    private static boolean fireCddInt = false;
     private static boolean fireAsicInt = false;
 
     //75hz at NTSC 60 fps
     //hBlankOff = 262 ( 225 displayOn, 37 display off)
     //hblankOff rate: 15_720hz
     //CDD int should fire every 210 hblankoff (or hblankOn)
-    static final int hblankPerCdd = 210;
+
     //md-asic-demo requires > 180
     static final int asicCalcDuration = 180;
-    private int cddCounter = hblankPerCdd;
     private int asicCounter = asicCalcDuration;
 
 
@@ -316,20 +294,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             boolean val = (boolean) value;
             if (!val && fireAsicInt) {
                 if (--asicCounter == 0) {
-                    interruptHandler.m68kInterruptWhenNotMasked(INT_ASIC);
-                    asicEvent(commonGateRegs, 0);
+                    asic.asicEvent(Asic.AsicEvent.AS_STOP);
+                    fireAsicInt = false;
                     asicCounter = asicCalcDuration;
-                }
-            }
-            if (val && fireCddInt) {
-                if (--cddCounter == 0) {
-                    //TODO mcd-verificator doesn't like the pending check -> ignorePending = true;
-                    //TODO bios needs it -> ignorePending = false;
-                    boolean ignorePending = false;
-                    if (ignorePending || cdd.isCommandPending()) {
-                        interruptHandler.m68kInterruptWhenNotMasked(INT_CDD);
-                    }
-                    cddCounter = hblankPerCdd;
                 }
             }
         }
@@ -338,9 +305,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     private void timerStep() {
         if (timerContext.rate > 0 && --timerContext.counter == 0) {
             timerContext.counter = timerContext.rate;
-            if (getInterruptHandler().m68kInterruptWhenNotMasked(INT_TIMER)) {
-                LOG.info("Timer Int On, int#3");
-            }
+            interruptHandler.m68kInterruptWhenNotMasked(INT_TIMER);
         }
     }
 
@@ -348,28 +313,41 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         return interruptHandler;
     }
 
+
+    private long cnt35khz, cnt75hz, frames;
+
     @Override
     public void step(int cycles) {
         counter35Khz.cycleAccumulator -= cycles;
         counter35Khz.cyclesFrame += cycles;
         if (counter35Khz.cycleAccumulator < 0) {
+            cnt35khz++;
+            counter35Khz.cycleAcc75--;
             counter35Khz.ticks++;
             pcm.step(0);
             cdc.step(0);
-            cdd.step(0);
             timerStep();
             counter35Khz.cycleAccumulator += Counter35Khz.limit;
+            if (counter35Khz.cycleAcc75 < 0) { //75hz
+                cdd.step(0);
+                cnt75hz++;
+                counter35Khz.cycleAcc75 += Counter35Khz.limit75hz;
+            }
         }
     }
 
     public void onNewFrame() {
         super.onNewFrame();
         counter35Khz.cyclesFrame = counter35Khz.ticks = 0;
-    }
-
-    public static void asicEvent(ByteBuffer commonGateRegs, int event) {
-        fireAsicInt = event == 1; //0 end, 1 start
-        setBit(commonGateRegs, MCD_IMG_STAMP_SIZE.addr, 15, event, Size.WORD);
+        frames++;
+        if ((frames + 1) % 100 == 0) {
+            double r1 = cnt75hz / (frames / 60.0);
+            double r2 = cnt35khz / (frames / 60.0);
+            boolean rangeOk = Math.abs(75 - r1) < 0.5 && Math.abs(32550 - r2) < 500.0;
+            if (!rangeOk) {
+                LOG.warn("SubCpu timing off!!!, 35Khz: {}, 75hz:{}", r1, r2);
+            }
+        }
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {

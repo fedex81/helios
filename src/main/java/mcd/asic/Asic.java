@@ -4,7 +4,7 @@ import mcd.asic.AsicModel.StampConfig;
 import mcd.asic.AsicModel.StampMapSize;
 import mcd.asic.AsicModel.StampPriorityMode;
 import mcd.asic.AsicModel.StampSize;
-import mcd.bus.MegaCdSubCpuBus;
+import mcd.bus.McdSubInterruptHandler;
 import mcd.dict.MegaCdDict.RegSpecMcd;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.Device;
@@ -16,8 +16,11 @@ import java.util.function.Function;
 
 import static mcd.asic.AsicModel.StampRepeat.REPEAT_MAP;
 import static mcd.asic.AsicModel.StampRepeat.vals;
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_IMG_STAMP_SIZE;
 import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
+import static omegadrive.util.BufferUtil.setBit;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
@@ -33,9 +36,14 @@ public class Asic implements Device {
     private StampConfig stampConfig = new StampConfig();
 
     private MegaCdMemoryContext memoryContext;
+    private McdSubInterruptHandler interruptHandler;
 
-    public Asic(MegaCdMemoryContext memoryContext) {
+    //0 end, 1 start
+    public enum AsicEvent {AS_STOP, AS_START}
+
+    public Asic(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih) {
         this.memoryContext = memoryContext;
+        this.interruptHandler = ih;
     }
 
     public void write(RegSpecMcd regSpec, int address, int value, Size size) {
@@ -70,7 +78,7 @@ public class Asic implements Device {
                 // image.address = (image.base << 1) + image.offset;
                 int addr = (stampConfig.imgDestBufferLocation << 2) + stampConfig.imgOffset;
                 assert stampConfig.imgOffset == 0; //TODO check
-                MegaCdSubCpuBus.asicEvent(memoryContext.commonGateRegsBuf, 1);
+                asicEvent(AsicEvent.AS_START);
                 for (; ; addr += 4) {
                     startRendering(addr, stampConfig.imgWidthPx, traceAddr);
                     traceAddr += 8;
@@ -204,6 +212,13 @@ public class Asic implements Device {
 
             x += xstep;
             y += ystep;
+        }
+    }
+
+    public void asicEvent(AsicEvent event) {
+        setBit(memoryContext.commonGateRegsBuf, MCD_IMG_STAMP_SIZE.addr, 15, event.ordinal(), Size.WORD);
+        if (event == AsicEvent.AS_STOP) {
+            interruptHandler.m68kInterruptWhenNotMasked(INT_ASIC);
         }
     }
 

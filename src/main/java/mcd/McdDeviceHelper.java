@@ -1,6 +1,7 @@
 package mcd;
 
 import mcd.asic.Asic;
+import mcd.bus.McdSubInterruptHandler;
 import mcd.bus.MegaCdMainCpuBus;
 import mcd.bus.MegaCdSubCpuBus;
 import mcd.cdc.Cdc;
@@ -37,6 +38,7 @@ public class McdDeviceHelper {
         public MegaCdSubCpuBus subBus;
         public MegaCdMainCpuBus mainBus;
         public MegaCdMemoryContext memoryContext;
+        public McdSubInterruptHandler interruptHandler;
 
         public McdPcm pcm;
 
@@ -51,10 +53,12 @@ public class McdDeviceHelper {
             subBus = new MegaCdSubCpuBus(memoryContext);
             mainBus = new MegaCdMainCpuBus(memoryContext);
             subCpu = MC68000Wrapper.createInstance(SUB_M68K, subBus);
-            cdd = Cdd.createInstance(memoryContext);
+            interruptHandler = McdSubInterruptHandler.create(memoryContext, subCpu);
+            cdd = Cdd.createInstance(memoryContext, interruptHandler);
             cdc = Cdc.createInstance(memoryContext);
-            asic = new Asic(memoryContext);
-            subBus.attachDevice(subCpu).attachDevice(pcm).attachDevice(cdd).attachDevice(asic).attachDevice(cdc);
+            asic = new Asic(memoryContext, interruptHandler);
+            subBus.attachDevice(subCpu).attachDevice(pcm).attachDevice(cdd).attachDevice(asic).
+                    attachDevice(cdc).attachDevice(interruptHandler);
             mainBus.subCpu = subCpu;
             mainBus.subCpuBus = subBus;
             //TODO check, on boot the sub bus is set to request (ie. main has it) hence sub cpu cannot run

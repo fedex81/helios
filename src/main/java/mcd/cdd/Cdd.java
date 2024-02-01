@@ -1,5 +1,6 @@
 package mcd.cdd;
 
+import mcd.bus.McdSubInterruptHandler;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.util.BufferUtil;
@@ -7,10 +8,12 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
 import static omegadrive.util.BufferUtil.readBuffer;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
+import static omegadrive.util.Util.readData;
 import static omegadrive.util.Util.th;
 
 /**
@@ -144,8 +147,8 @@ public interface Cdd extends BufferUtil.StepDevice {
         }
     }
 
-    static Cdd createInstance(MegaCdMemoryContext memoryContext) {
-        return new CddImpl(memoryContext);
+    static Cdd createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih) {
+        return new CddImpl(memoryContext, ih);
     }
 }
 
@@ -156,9 +159,11 @@ class CddImpl implements Cdd {
     public final CddContext cddContext = CddContext.create(CddIo.create());
 
     private final MegaCdMemoryContext memoryContext;
+    private final McdSubInterruptHandler interruptHandler;
 
-    public CddImpl(MegaCdMemoryContext mc) {
+    public CddImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih) {
         memoryContext = mc;
+        interruptHandler = ih;
     }
 
     @Override
@@ -167,7 +172,12 @@ class CddImpl implements Cdd {
         switch (regSpec) {
             case MCD_CDD_CONTROL -> {
                 int v = readBuffer(memoryContext.commonGateRegsBuf, regSpec.addr, Size.WORD);
+                //TODO this should be only when HOCK 0->1 but bios requires it
+                if ((v & 4) > 0) { //HOCK set
+                    interruptHandler.m68kInterruptWhenNotMasked(INT_CDD);
+                }
                 cddContext.hostClockEnable = (v & 4);
+                assert (v & 0xFEFB) == 0 : th(v); //DRS,DTS, invalid bits are 0
             }
             case MCD_CDD_COMM5, MCD_CDD_COMM6, MCD_CDD_COMM7, MCD_CDD_COMM8, MCD_CDD_COMM9 -> {
                 switch (size) {
@@ -228,16 +238,20 @@ class CddImpl implements Cdd {
         return cddContext;
     }
 
+    /**
+     * this should be called at 75hz
+     */
     public void step(int cycles) {
-        assert (readBuffer(memoryContext.commonGateRegsBuf, MCD_CDD_CONTROL.addr, Size.WORD) & 3) == 0;
-        //from 0xff8036
         if (cddContext.hostClockEnable == 0) {
             return;
         }
-        if (cddContext.statusPending > 0) {
-            cddContext.statusPending = 0;
-            //do irq
+        boolean ignorePending = false;
+        //TODO mcd-verificator doesn't like the pending check, stuck on CDD INIT -> ignorePending = true;
+        //TODO bios needs it-> ignorePending = false;
+        if (ignorePending || cddContext.statusPending > 0) {
+            interruptHandler.m68kInterruptWhenNotMasked(INT_CDD);
         }
+        cddContext.statusPending = 0;
 
         switch (cddContext.io.status) {
             case NoDisc -> {
