@@ -197,12 +197,12 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             case MCD_COMM_FLAGS -> {
                 //sub can only write to LSB
                 assert size == Size.BYTE && (address & 1) == 1;
-                LOG.info("S write COMM_FLAG: {} {}", th(data), size);
+                LogHelper.logInfo(LOG, "S write COMM_FLAG: {} {}", th(data), size);
                 writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
                 writeBufferRaw(memCtx.getRegBuffer(M68K, regSpec), address & MCD_GATE_REGS_MASK, data, size);
             }
             case MCD_INT_MASK -> {
-                LOG.info("S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);
+                LogHelper.logInfo(LOG, "S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);
                 boolean changed = writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
                 if (changed) {
                     int reg = Util.readBufferByte(commonGateRegs, MCD_INT_MASK.addr + 1);
@@ -251,7 +251,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
 
     private void handleCommRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         if (address >= START_MCD_SUB_GA_COMM_W && address < END_MCD_SUB_GA_COMM_W) { //MAIN COMM
-            LOG.info("S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
+            LogHelper.logInfo(LOG, "S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
             writeBufferRaw(commonGateRegs, address & SUB_CPU_REGS_MASK, data, size);
             return;
         }
@@ -343,7 +343,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         if ((frames + 1) % 100 == 0) {
             double r1 = cnt75hz / (frames / 60.0);
             double r2 = cnt35khz / (frames / 60.0);
-            boolean rangeOk = Math.abs(75 - r1) < 0.5 && Math.abs(32550 - r2) < 500.0;
+            boolean rangeOk = Math.abs(75 - r1) < 0.75 && Math.abs(32550 - r2) < 500.0;
             if (!rangeOk) {
                 LOG.warn("SubCpu timing off!!!, 35Khz: {}, 75hz:{}", r1, r2);
             }

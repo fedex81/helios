@@ -195,7 +195,7 @@ public class MegaCdMemoryContext implements Serializable {
             }
         }
         if (prev != wramSetup) {
-            LOG.info("{} WRAM setup changed: {} -> {}", c, prev, wramSetup);
+            LogHelper.logInfo(LOG, "{} WRAM setup changed: {} -> {}", c, prev, wramSetup);
         }
         return wramSetup;
     }

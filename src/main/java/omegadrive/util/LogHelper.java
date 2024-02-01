@@ -14,6 +14,8 @@ import java.util.Set;
  */
 public class LogHelper {
 
+    private static final boolean doLog = false;
+
     private Set<String> msgCache = new HashSet<>();
 
     private RepeaterDetector rd = new RepeaterDetector();
@@ -32,17 +34,23 @@ public class LogHelper {
         return MessageFormatter.arrayFormat(s, o).getMessage();
     }
 
+    public static void logInfo(Logger log, String str, Object... o) {
+        if (doLog) {
+            log.info(formatMessage(str, o));
+        }
+    }
+
     public static void logWarnOnce(Logger log, String str, Object... o) {
         String msg = formatMessage(str, o);
         if (msgCacheShared.add(msg)) {
-            log.warn(msg + " (ONCE)");
+            logWarn(log, msg + " (ONCE)");
         }
     }
 
     public void logWarningOnce(Logger log, String str, Object... o) {
         String msg = formatMessage(str, o);
         if (msgCache.add(msg)) {
-            log.warn(msg + " (ONCE)");
+            logWarn(log, msg + " (ONCE)");
         } else {
             checkRepeat(log, msg);
         }
@@ -52,11 +60,17 @@ public class LogHelper {
         if (rd.msg.equals(msg)) {
             boolean logRepeat = rd.hit();
             if (logRepeat) {
-                log.warn(msg + " - RP: " + rd.cnt);
+                logWarn(log, msg + " - RP: " + rd.cnt);
             }
         } else {
             rd.reset();
             rd.msg = msg;
+        }
+    }
+
+    private static void logWarn(Logger log, String msg) {
+        if (doLog) {
+            log.warn(msg);
         }
     }
 

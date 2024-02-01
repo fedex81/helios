@@ -35,7 +35,7 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     public static final boolean verbose = false;
-    public static final boolean lessVerbose = true || verbose;
+    public static final boolean lessVerbose = false || verbose;
     public static final boolean printToSysOut = false;
     private final static Logger LOG = LogHelper.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
 

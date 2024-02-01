@@ -97,11 +97,12 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         //SUB: fix CDC status bytes BIOS checksum
         if (cpu == SUB_M68K && currentPC == 0xeac) {
             m68k.setFlags(Cpu.Z_FLAG);
-            System.out.println("Skip BIOS CDC checksum");
+            LogHelper.logWarnOnce(LOG, "Skip BIOS CDC checksum");
         }
         //SUB: check something is alive (CDD status related)
         if (cpu == SUB_M68K && currentPC == 0x408) {
             m68k.setDataRegisterLong(0, 0);
+            LogHelper.logWarnOnce(LOG, "CDD status hack");
         }
 //        //SUB: set CDBCHK complete
 //        if (cpu == SUB_M68K && currentPC == 0x3cd2) {

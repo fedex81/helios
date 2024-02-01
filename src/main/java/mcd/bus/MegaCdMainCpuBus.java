@@ -224,7 +224,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             case MCD_COMM_FLAGS -> {
                 //main can only write to MSB
                 assert size == Size.BYTE && (address & 1) == 0;
-                LOG.info("M write COMM_FLAG: {} {}", th(data), size);
+                LogHelper.logInfo(LOG, "M write COMM_FLAG: {} {}", th(data), size);
                 writeBufferRaw(sysGateRegs, address & MCD_GATE_REGS_MASK, data, size);
                 writeBufferRaw(memCtx.getRegBuffer(SUB_M68K, regSpec), address & MCD_GATE_REGS_MASK, data, size);
             }
@@ -248,7 +248,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
         if (subIntReg > 0) {
             boolean doIt = subCpuBus.getInterruptHandler().m68kInterruptWhenNotMasked(INT_LEVEL2);
-            LOG.info("M trigger SubCpu int2 request, masked : {}", !doIt);
+            LogHelper.logInfo(LOG, "M trigger SubCpu int2 request, masked : {}", !doIt);
         }
         if ((address & 1) == 0 && size == Size.BYTE) {
             return;
@@ -291,7 +291,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     private void handleCommWrite(RegSpecMcd regSpec, int address, int data, Size size) {
         if (address >= START_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_W) { //MAIN COMM
-            LOG.info("M Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
+            LogHelper.logInfo(LOG, "M Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
             writeBufferRaw(commonGateRegs, address & MCD_GATE_REGS_MASK, data, size);
             return;
         }

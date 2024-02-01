@@ -27,6 +27,8 @@ public class MegaCdDict {
 
     private static final Logger LOG = LogHelper.getLogger(MegaCdDict.class.getSimpleName());
 
+    private static final boolean verbose = false;
+
     public static final int MDC_SUB_GATE_REGS_SIZE = 0x200;
     public static final int MDC_SUB_GATE_REGS_MASK = MDC_SUB_GATE_REGS_SIZE - 1;
 
@@ -179,8 +181,10 @@ public class MegaCdDict {
     }
 
     public static void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
-        LOG.info("{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
-                size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
+        if (verbose) {
+            LOG.info("{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
+                    size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
+        }
     }
 
     public static Set<Integer> z80RegAccess = new HashSet<>();

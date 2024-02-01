@@ -92,7 +92,7 @@ public interface McdSubInterruptHandler extends Device {
         public void m68kInterrupt(int num) {
             subCpu.raiseInterrupt(num);
             if (LOG_INTERRUPT_TRIGGER) {
-                LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
+                LogHelper.logInfo(LOG, "SubCpu interrupt trigger: {} ({})", intVals[num], num);
             }
         }
     }
