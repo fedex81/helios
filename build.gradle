@@ -32,7 +32,7 @@ dependencies {
 
     implementation 'org.tinylog:tinylog-api:2.7.0'
     implementation 'org.tinylog:tinylog-impl:2.6.2'
-    implementation 'org.tinylog:slf4j-tinylog:2.6.2'
+    implementation 'org.tinylog:slf4j-tinylog:2.7.0'
 
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
