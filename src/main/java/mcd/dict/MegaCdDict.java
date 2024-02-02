@@ -275,7 +275,6 @@ public class MegaCdDict {
     public static final int END_MCD_SUB_GA_COMM_W = START_MCD_SUB_GA_COMM_W + 0x10;
     public static final int START_MCD_SUB_GA_COMM_R = START_MCD_SUB_GATE_ARRAY_REGS + 0x10;
     public static final int END_MCD_SUB_GA_COMM_R = END_MCD_SUB_GA_COMM_W;
-    public static final int SUB_CPU_REGS_MASK = MDC_SUB_GATE_REGS_SIZE - 1;
 
     public static final int START_MCD_SUB_WORD_RAM_2M = 0x80_000;
     public static final int END_MCD_SUB_WORD_RAM_2M = START_MCD_SUB_WORD_RAM_2M + MCD_WORD_RAM_2M_SIZE;

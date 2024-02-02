@@ -14,8 +14,8 @@ import java.util.function.Function;
 import static mcd.asic.AsicModel.StampRepeat.REPEAT_MAP;
 import static mcd.asic.AsicModel.StampRepeat.vals;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
+import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_IMG_STAMP_SIZE;
-import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.setBit;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
@@ -44,7 +44,7 @@ public class Asic implements Device {
     }
 
     public void write(RegSpecMcd regSpec, int address, int value, Size size) {
-        writeBufferRaw(memoryContext.commonGateRegsBuf, address & SUB_CPU_REGS_MASK, value, size);
+        writeBufferRaw(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, value, size);
         if (regSpec != RegSpecMcd.MCD_IMG_STAMP_SIZE) {
             assert size == Size.WORD;
         }

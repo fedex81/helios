@@ -69,9 +69,15 @@ public class MegaCdRegWriteHandlers {
         setBitInternal(buff, MCD_RESET.addr + 1, 1, d); //SBRQ
     };
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg0_M = (ctx, d) -> {
-        assert (d & 128) == 0; //IEN2 write only 0
         var buff = ctx.getGateSysRegs(M68K);
+        if (assertionsEnabled) {
+            int now = readBuffer(buff, MCD_RESET.addr, Size.BYTE);
+            assert (d & 0x80) == 0x80 ? (now & 0x80) == 0x80 : true; //IEN2 write only 0
+        }
         setBitInternal(buff, MCD_RESET.addr, 0, d); //IFL2
+        //Note, according to hw manual, sync IEN2 for sub
+        int byteVal = setBitVal(ctx.commonGateRegsBuf, MCD_INT_MASK.addr + 1, 2, (d >> 7) & 1, Size.BYTE);
+        assert ((d >> 7) & 1) == ((byteVal >> 2) & 1);
     };
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg2_M = (ctx, d) -> {

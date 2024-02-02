@@ -5,8 +5,13 @@ import omegadrive.Device;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
+
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_INT_MASK;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_RESET;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 
 /**
  * Federico Berti
@@ -105,10 +110,14 @@ public interface McdSubInterruptHandler extends Device {
             pendingMask &= ~(1 << sint.ordinal());
             pendingMask |= pending;
             pendingInterrupts[sint.ordinal()] = pending > 0;
+            //TODO check this
+            if (sint == SubCpuInterrupt.INT_LEVEL2) {
+                BufferUtil.setBit(context.getGateSysRegs(M68K), MCD_RESET.addr, 0, ~val & 1, Size.BYTE);
+            }
         }
 
         private int getRegMask() {
-            return Util.readBufferByte(context.commonGateRegsBuf, 0x33);
+            return Util.readBufferByte(context.commonGateRegsBuf, MCD_INT_MASK.addr + 1);
         }
 
         private boolean m68kInterrupt(int num) {
@@ -116,8 +125,7 @@ public interface McdSubInterruptHandler extends Device {
             boolean raised = subCpu.raiseInterrupt(num);
             if (LOG_INTERRUPT_TRIGGER && raised) {
 //                LogHelper.logInfo(LOG, "SubCpu interrupt trigger: {} ({})", intVals[num], num);
-                if (num != 2)
-                    LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
+                LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
             }
             //if the cpu is masking it, interrupt lost
             return true;

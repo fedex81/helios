@@ -11,8 +11,8 @@ import org.slf4j.Logger;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
 import static mcd.cdd.Cdd.CddStatus.NoDisc;
 import static mcd.cdd.Cdd.CddStatus.Stopped;
+import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
-import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
 import static omegadrive.util.BufferUtil.readBuffer;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
 import static omegadrive.util.Util.th;
@@ -166,12 +166,12 @@ class CddImpl implements Cdd {
 
     @Override
     public void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size) {
-        writeBufferRaw(memoryContext.commonGateRegsBuf, address & SUB_CPU_REGS_MASK, value, size);
+        writeBufferRaw(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, value, size);
         switch (regSpec) {
             case MCD_CDD_CONTROL -> {
                 int v = readBuffer(memoryContext.commonGateRegsBuf, regSpec.addr, Size.WORD);
                 //TODO this should be only when HOCK 0->1 but bios requires it
-                if ((v & 4) > 0) { //HOCK set
+                if ((true || cddContext.hostClockEnable == 0) && (v & 4) > 0) { //HOCK set
                     interruptHandler.raiseInterrupt(INT_CDD);
                 }
                 cddContext.hostClockEnable = (v & 4);
@@ -198,7 +198,7 @@ class CddImpl implements Cdd {
     }
 
     private void writeCommByte(MegaCdDict.RegSpecMcd regSpec, int addr, int value) {
-        int index = (addr & SUB_CPU_REGS_MASK) - MCD_CDD_COMM5.addr;
+        int index = (addr & MDC_SUB_GATE_REGS_MASK) - MCD_CDD_COMM5.addr;
         updateCommand(index, value & 0xF);
         switch (regSpec) {
             case MCD_CDD_COMM9 -> {
