@@ -15,7 +15,6 @@ import java.nio.file.Paths;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
-import static mcd.dict.MegaCdMemoryContext.MCD_GATE_REGS_MASK;
 import static mcd.dict.MegaCdMemoryContext.WramSetup;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -31,6 +30,9 @@ import static omegadrive.util.Util.th;
 public class MegaCdMainCpuBus extends GenesisBus {
 
     private static final Logger LOG = LogHelper.getLogger(MegaCdMainCpuBus.class.getSimpleName());
+
+    public static final int MCD_GATE_REGS_SIZE = 0x40;
+    public static final int MCD_GATE_REGS_MASK = MCD_GATE_REGS_SIZE - 1;
 
     /**
      * 3 states
@@ -186,6 +188,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
+        assert (address & 0xFF) < MCD_GATE_REGS_SIZE;
         RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpu, address);
         logAccess(regSpec, cpu, address, 0, size, true);
         if (regSpec == RegSpecMcd.INVALID) {
@@ -199,6 +202,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     private void handleMegaCdExpWrite(int address, int data, Size size) {
+        assert (address & 0xFF) < MCD_GATE_REGS_SIZE;
         RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpu, address);
         MegaCdDict.logAccess(regSpec, cpu, address, data, size, false);
         if (regSpec == RegSpecMcd.INVALID) {

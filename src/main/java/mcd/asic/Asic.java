@@ -214,6 +214,7 @@ public class Asic implements Device {
 
     public void asicEvent(AsicEvent event) {
         if (event == asicEvent) {
+            assert (readBufferWord(memoryContext.commonGateRegsBuf, MCD_IMG_STAMP_SIZE.addr) >>> 15) == event.ordinal();
             return;
         }
         setBit(memoryContext.commonGateRegsBuf, MCD_IMG_STAMP_SIZE.addr, 15, event.ordinal(), Size.WORD);

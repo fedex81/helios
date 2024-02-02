@@ -159,13 +159,16 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
         logAccess(regSpec, cpuType, address, 0, size, true);
         ByteBuffer regs = memCtx.getRegBuffer(cpuType, regSpec);
-        int res = readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
+        int res = readBuffer(regs, address & MDC_SUB_GATE_REGS_MASK, size);
         if (regSpec == MegaCdDict.RegSpecMcd.INVALID) {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return 0;
         }
         if (regSpec == MCD_CDC_REG_DATA) {
             res = cdc.read(regSpec, address, size);
+        }
+        if (regSpec.deviceType == McdRegType.CDD || regSpec.deviceType == McdRegType.CDC) {
+//            forceLog(regSpec, cpuType, address, res, size, true);
         }
         checkRegLongAccess(regSpec, size);
         return res;
@@ -178,7 +181,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return;
         }
+        if (regSpec.deviceType == McdRegType.CDD || regSpec.deviceType == McdRegType.CDC) {
+//            forceLog(regSpec, cpuType, address, data, size, false);
+        }
         checkRegLongAccess(regSpec, size);
+        address &= MDC_SUB_GATE_REGS_MASK;
         switch (regSpec.deviceType) {
             case SYS -> handleSysRegWrite(regSpec, address, data, size);
             case COMM -> handleCommRegWrite(regSpec, address, data, size);
@@ -187,6 +194,13 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             case ASIC -> asic.write(regSpec, address, data, size);
             default -> LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
         }
+    }
+
+    private static void forceLog(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
+        LogHelper.doLog = true;
+        LOG.info("{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
+                size, regSpec.getName(), th(address), ": " + th(value));
+        LogHelper.doLog = false;
     }
 
     private void handleSysRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
@@ -199,12 +213,12 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
                 //sub can only write to LSB
                 assert size == Size.BYTE && (address & 1) == 1;
                 LogHelper.logInfo(LOG, "S write COMM_FLAG: {} {}", th(data), size);
-                writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
-                writeBufferRaw(memCtx.getRegBuffer(M68K, regSpec), address & MCD_GATE_REGS_MASK, data, size);
+                writeBufferRaw(regs, address, data, size);
+                writeBufferRaw(memCtx.getRegBuffer(M68K, regSpec), address, data, size);
             }
             case MCD_INT_MASK -> {
                 LogHelper.logInfo(LOG, "S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);
-                boolean changed = writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
+                boolean changed = writeBufferRaw(regs, address, data, size);
                 if (changed) {
                     int reg = Util.readBufferByte(commonGateRegs, MCD_INT_MASK.addr + 1);
                     McdSubInterruptHandler.printEnabledInterrupts(reg);
@@ -212,7 +226,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             }
             case MCD_TIMER_INT3 -> {
                 //byte writes to MSB go to LSB
-                int addr = size == Size.BYTE ? (address & MCD_GATE_REGS_MASK) | 1 : address & MCD_GATE_REGS_MASK;
+                int addr = size == Size.BYTE ? address | 1 : address;
                 timerContext.rate = data & 0xFF;
                 timerContext.counter = timerContext.rate;
                 writeBufferRaw(regs, addr, data, size);
@@ -220,7 +234,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             default -> {
                 logHelper.logWarningOnce(LOG,
                         "S write unhandled MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, th(data), size);
-                writeBufferRaw(regs, address & MCD_GATE_REGS_MASK, data, size);
+                writeBufferRaw(regs, address, data, size);
 //                assert false;
             }
         }
@@ -252,7 +266,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
 
     private void handleCommRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         if (address >= START_MCD_SUB_GA_COMM_W && address < END_MCD_SUB_GA_COMM_W) { //MAIN COMM
-            LogHelper.logInfo(LOG, "S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
+            logHelper.logWarningOnce(LOG, "S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
             writeBufferRaw(commonGateRegs, address & SUB_CPU_REGS_MASK, data, size);
             return;
         }

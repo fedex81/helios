@@ -14,7 +14,7 @@ import java.util.Set;
  */
 public class LogHelper {
 
-    private static final boolean doLog = false;
+    public static boolean doLog = true;
 
     private Set<String> msgCache = new HashSet<>();
 

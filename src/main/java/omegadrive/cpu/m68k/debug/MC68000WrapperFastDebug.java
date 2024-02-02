@@ -79,7 +79,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         if (currentPC == opcode && opcode == 0) {
             throw new RuntimeException("oops");
         }
-        hackSubCpu();
+//        hackSubCpu();
         if (!busyLoopDetection) {
             int r = super.runInstruction();
 //            checkInterruptLevelChange();

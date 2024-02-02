@@ -19,6 +19,7 @@
 
 package mcd;
 
+import mcd.bus.McdSubInterruptHandler;
 import mcd.util.McdMemView;
 import omegadrive.SystemLoader;
 import omegadrive.bus.md.SvpMapper;
@@ -70,10 +71,9 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     private final static Logger LOG = LogHelper.getLogger(Genesis.class.getSimpleName());
 
-    //TODO 68kdebug = false, does not work due to hacks in M68KDebug only
     static {
-        System.setProperty("68k.debug", "true");
-        System.setProperty("helios.68k.debug.mode", "2");
+        System.setProperty("68k.debug", "false");
+        System.setProperty("helios.68k.debug.mode", "0");
         System.setProperty("z80.debug", "false");
     }
 

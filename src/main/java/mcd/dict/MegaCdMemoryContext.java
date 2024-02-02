@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 
+import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_SIZE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
@@ -39,11 +40,6 @@ public class MegaCdMemoryContext implements Serializable {
     public static final int MCD_WORD_RAM_2M_SIZE = 0x40_000;
     public static final int MCD_WORD_RAM_1M_SIZE = MCD_WORD_RAM_2M_SIZE >> 1;
     public static final int MCD_PRG_RAM_SIZE = 0x80_000;
-    public static final int MCD_GATE_REGS_SIZE = 0x40;
-
-    public static final int MDC_SUB_GATE_REGS_SIZE = 0x200;
-
-    public static final int MCD_GATE_REGS_MASK = MCD_GATE_REGS_SIZE - 1;
     public static final int MCD_WORD_RAM_1M_MASK = MCD_WORD_RAM_1M_SIZE - 1;
     public static final int MCD_WORD_RAM_2M_MASK = MCD_WORD_RAM_2M_SIZE - 1;
     public static final int MCD_PRG_RAM_MASK = MCD_PRG_RAM_SIZE - 1;

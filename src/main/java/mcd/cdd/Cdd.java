@@ -9,6 +9,8 @@ import omegadrive.util.Size;
 import org.slf4j.Logger;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
+import static mcd.cdd.Cdd.CddStatus.NoDisc;
+import static mcd.cdd.Cdd.CddStatus.Stopped;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
 import static omegadrive.util.BufferUtil.readBuffer;
@@ -77,11 +79,6 @@ public interface Cdd extends BufferUtil.StepDevice {
 
     void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size);
 
-
-    CddContext getCddContext();
-
-    boolean isCommandPending();
-
     default void advance() {
         throw new RuntimeException("not implemented");
     }
@@ -128,7 +125,7 @@ public interface Cdd extends BufferUtil.StepDevice {
 
         static CddIo create() {
             CddIo c = new CddIo();
-            c.status = CddStatus.NoDisc;
+            c.status = NoDisc;
             return c;
         }
     }
@@ -163,6 +160,8 @@ class CddImpl implements Cdd {
     public CddImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih) {
         memoryContext = mc;
         interruptHandler = ih;
+        updateStatus(0, Stopped.ordinal());
+        checksum();
     }
 
     @Override
@@ -232,11 +231,6 @@ class CddImpl implements Cdd {
         return (checksum & 0xF) == cddContext.command[9];
     }
 
-    @Override
-    public CddContext getCddContext() {
-        return cddContext;
-    }
-
     /**
      * this should be called at 75hz
      */
@@ -244,10 +238,7 @@ class CddImpl implements Cdd {
         if (cddContext.hostClockEnable == 0) {
             return;
         }
-        boolean ignorePending = false;
-        //TODO mcd-verificator doesn't like the pending check, stuck on CDD INIT -> ignorePending = true;
-        //TODO bios needs it-> ignorePending = false;
-        if (ignorePending || cddContext.statusPending > 0) {
+        if (cddContext.statusPending > 0) {
             interruptHandler.raiseInterrupt(INT_CDD);
         }
         cddContext.statusPending = 0;
@@ -262,6 +253,7 @@ class CddImpl implements Cdd {
 
     @Override
     public void process() {
+        LOG.info("CDD {}: {}", cddContext.command[0], cddContext.command[3]);
         if (!valid()) {
             //unverified
             LOG.error("CDD checksum error");
@@ -274,13 +266,13 @@ class CddImpl implements Cdd {
             case Idle -> {
                 //fixes Lunar: The Silver Star
                 if (cddContext.io.latency == 0 && cddContext.status[1] == 0xf) {
-                    cddContext.status[1] = 0x2;
-                    cddContext.status[2] = cddContext.io.track / 10;
-                    cddContext.status[3] = cddContext.io.track % 10;
+                    updateStatus(1, 0x2);
+                    updateStatus(2, cddContext.io.track / 10);
+                    updateStatus(3, cddContext.io.track % 10);
                 }
             }
             case Stop -> {
-                cddContext.io.status = /*hasFile ? Stop : */ CddStatus.NoDisc;
+                cddContext.io.status = /*hasFile ? Stop : */ NoDisc;
                 for (int i = 1; i < 9; i++) {
                     updateStatus(i, 0);
                 }
@@ -294,10 +286,6 @@ class CddImpl implements Cdd {
         updateStatus(0, cddContext.io.status.ordinal());
         checksum();
         cddContext.statusPending = 1;
-    }
-
-    public boolean isCommandPending() {
-        return cddContext.statusPending > 0;
     }
 
     private void updateStatus(int pos, int val) {
