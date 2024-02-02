@@ -288,7 +288,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         super.onVdpEvent(event, value);
         //vBlankOn fire LEV2
         if (event == VdpEvent.V_BLANK_CHANGE && (boolean) value) {
-            interruptHandler.m68kInterruptWhenNotMasked(INT_LEVEL2);
+            interruptHandler.raiseInterrupt(INT_LEVEL2);
         } else if (event == VdpEvent.H_BLANK_CHANGE) {
             boolean val = (boolean) value;
             if (!val) {
@@ -303,7 +303,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     private void timerStep() {
         if (timerContext.rate > 0 && --timerContext.counter == 0) {
             timerContext.counter = timerContext.rate;
-            interruptHandler.m68kInterruptWhenNotMasked(INT_TIMER);
+            interruptHandler.raiseInterrupt(INT_TIMER);
         }
     }
 

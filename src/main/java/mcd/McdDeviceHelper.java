@@ -55,7 +55,7 @@ public class McdDeviceHelper {
             subCpu = MC68000Wrapper.createInstance(SUB_M68K, subBus);
             interruptHandler = McdSubInterruptHandler.create(memoryContext, subCpu);
             cdd = Cdd.createInstance(memoryContext, interruptHandler);
-            cdc = Cdc.createInstance(memoryContext);
+            cdc = Cdc.createInstance(memoryContext, interruptHandler);
             asic = new Asic(memoryContext, interruptHandler);
             subBus.attachDevice(subCpu).attachDevice(pcm).attachDevice(cdd).attachDevice(asic).
                     attachDevice(cdc).attachDevice(interruptHandler);

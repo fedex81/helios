@@ -247,8 +247,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
         assert subCpu != null && subCpuBus != null;
 
         if (subIntReg > 0) {
-            boolean doIt = subCpuBus.getInterruptHandler().m68kInterruptWhenNotMasked(INT_LEVEL2);
-            LogHelper.logInfo(LOG, "M trigger SubCpu int2 request, masked : {}", !doIt);
+            subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
+            LogHelper.logInfo(LOG, "M SubCpu int2 request");
         }
         if ((address & 1) == 0 && size == Size.BYTE) {
             return;

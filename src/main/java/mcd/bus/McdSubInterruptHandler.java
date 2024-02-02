@@ -3,6 +3,7 @@ package mcd.bus;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.Device;
 import omegadrive.cpu.m68k.M68kProvider;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
@@ -12,9 +13,6 @@ import org.slf4j.Logger;
  * <p>
  * Copyright 2024
  * <p>
- * TODO interrupt priority, more than one at the same time
- * TODO what happens to masked interrupts?
- * TODO Looks like ASIC interrupts should be held pending and trigger when the mask allows it
  */
 public interface McdSubInterruptHandler extends Device {
 
@@ -33,29 +31,11 @@ public interface McdSubInterruptHandler extends Device {
 
     SubCpuInterrupt[] intVals = SubCpuInterrupt.values();
 
-    void m68kInterrupt(int num);
+    void handleInterrupts();
 
-    boolean checkInterruptEnabled(int m68kLevel);
+    void raiseInterrupt(SubCpuInterrupt intp);
 
-    default boolean checkInterruptEnabled(SubCpuInterrupt intp) {
-        return checkInterruptEnabled(intp.ordinal());
-    }
-
-    default boolean m68kInterruptWhenNotMasked(SubCpuInterrupt intp) {
-        return m68kInterruptWhenNotMasked(intp.ordinal());
-    }
-
-    /**
-     * @return true - non masked, false - masked
-     */
-    default boolean m68kInterruptWhenNotMasked(int m68kLevel) {
-        if (checkInterruptEnabled(m68kLevel)) {
-            m68kInterrupt(m68kLevel);
-            return true;
-        }
-        LogHelper.logWarnOnce(LOG, "TODO should store the interrupt: {}", m68kLevel);
-        return false;
-    }
+    void lowerInterrupt(SubCpuInterrupt intp);
 
     static McdSubInterruptHandler create(MegaCdMemoryContext context, M68kProvider c) {
         return new McdSubInterruptHandlerImpl(context, c);
@@ -79,23 +59,68 @@ public interface McdSubInterruptHandler extends Device {
         private M68kProvider subCpu;
         private MegaCdMemoryContext context;
 
+        private boolean[] pendingInterrupts = new boolean[intVals.length];
+
+        private int pendingMask = 0;
+
         private McdSubInterruptHandlerImpl(MegaCdMemoryContext c1, M68kProvider c) {
             this.subCpu = c;
             this.context = c1;
         }
 
         @Override
-        public boolean checkInterruptEnabled(int m68kLevel) {
-            int reg = Util.readBufferByte(context.commonGateRegsBuf, 0x33);
-            return McdSubInterruptHandler.checkInterruptEnabled(reg, m68kLevel);
+        public void raiseInterrupt(SubCpuInterrupt sint) {
+            setPending(sint, 1);
         }
 
         @Override
-        public void m68kInterrupt(int num) {
-            subCpu.raiseInterrupt(num);
-            if (LOG_INTERRUPT_TRIGGER) {
-                LogHelper.logInfo(LOG, "SubCpu interrupt trigger: {} ({})", intVals[num], num);
+        public void lowerInterrupt(SubCpuInterrupt intp) {
+            setPending(intp, 0);
+        }
+
+        @Override
+        public void handleInterrupts() {
+            if (pendingMask == 0) {
+                return;
             }
+            for (int i = 1; i < pendingInterrupts.length; i++) {
+                if (pendingInterrupts[i]) {
+                    if (m68kInterrupt(i)) {
+                        setPending(intVals[i], 0);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void setPending(SubCpuInterrupt sint, int val) {
+            assert (val & 1) == val;
+            int pending = (val << sint.ordinal()) & getRegMask();
+            if (BufferUtil.assertionsEnabled) {
+                boolean en = checkInterruptEnabled(getRegMask(), sint.ordinal());
+                int pn = en ? (val << sint.ordinal()) : 0;
+                assert pn == pending;
+            }
+            //clear bit, then set it
+            pendingMask &= ~(1 << sint.ordinal());
+            pendingMask |= pending;
+            pendingInterrupts[sint.ordinal()] = pending > 0;
+        }
+
+        private int getRegMask() {
+            return Util.readBufferByte(context.commonGateRegsBuf, 0x33);
+        }
+
+        private boolean m68kInterrupt(int num) {
+            assert num > 0;
+            boolean raised = subCpu.raiseInterrupt(num);
+            if (LOG_INTERRUPT_TRIGGER && raised) {
+//                LogHelper.logInfo(LOG, "SubCpu interrupt trigger: {} ({})", intVals[num], num);
+                if (num != 2)
+                    LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
+            }
+            //if the cpu is masking it, interrupt lost
+            return true;
         }
     }
 }

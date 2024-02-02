@@ -1,6 +1,7 @@
 package mcd.cdc;
 
 
+import mcd.bus.McdSubInterruptHandler;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDC;
 import static mcd.dict.MegaCdDict.RegSpecMcd;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_STOPWATCH;
@@ -212,8 +214,8 @@ public interface Cdc extends BufferUtil.StepDevice {
 
     int read(RegSpecMcd regSpec, int address, Size size);
 
-    static Cdc createInstance(MegaCdMemoryContext memoryContext) {
-        return new CdcImpl(memoryContext);
+    static Cdc createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler interruptHandler) {
+        return new CdcImpl(memoryContext, interruptHandler);
     }
 
 }
@@ -223,10 +225,12 @@ class CdcImpl implements Cdc {
     private final static Logger LOG = LogHelper.getLogger(CdcImpl.class.getSimpleName());
 
     private final MegaCdMemoryContext memoryContext;
+    private final McdSubInterruptHandler interruptHandler;
     private final CdcContext cdcContext;
 
-    public CdcImpl(MegaCdMemoryContext mc) {
+    public CdcImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih) {
         memoryContext = mc;
+        interruptHandler = ih;
         cdcContext = new CdcContext();
     }
 
@@ -421,9 +425,9 @@ class CdcImpl implements Cdc {
         pending |= irq.transfer.enable & irq.transfer.pending;
         pending |= irq.command.enable & irq.command.pending;
         if (pending > 0) {
-            irq.raise();
+            interruptHandler.raiseInterrupt(INT_CDC);
         } else {
-            irq.lower();
+            interruptHandler.lowerInterrupt(INT_CDC);
         }
     }
 

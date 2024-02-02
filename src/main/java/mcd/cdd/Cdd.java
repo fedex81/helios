@@ -13,7 +13,6 @@ import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdDict.SUB_CPU_REGS_MASK;
 import static omegadrive.util.BufferUtil.readBuffer;
 import static omegadrive.util.BufferUtil.writeBufferRaw;
-import static omegadrive.util.Util.readData;
 import static omegadrive.util.Util.th;
 
 /**
@@ -174,7 +173,7 @@ class CddImpl implements Cdd {
                 int v = readBuffer(memoryContext.commonGateRegsBuf, regSpec.addr, Size.WORD);
                 //TODO this should be only when HOCK 0->1 but bios requires it
                 if ((v & 4) > 0) { //HOCK set
-                    interruptHandler.m68kInterruptWhenNotMasked(INT_CDD);
+                    interruptHandler.raiseInterrupt(INT_CDD);
                 }
                 cddContext.hostClockEnable = (v & 4);
                 assert (v & 0xFEFB) == 0 : th(v); //DRS,DTS, invalid bits are 0
@@ -249,7 +248,7 @@ class CddImpl implements Cdd {
         //TODO mcd-verificator doesn't like the pending check, stuck on CDD INIT -> ignorePending = true;
         //TODO bios needs it-> ignorePending = false;
         if (ignorePending || cddContext.statusPending > 0) {
-            interruptHandler.m68kInterruptWhenNotMasked(INT_CDD);
+            interruptHandler.raiseInterrupt(INT_CDD);
         }
         cddContext.statusPending = 0;
 

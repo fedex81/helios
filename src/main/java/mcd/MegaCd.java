@@ -80,6 +80,8 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     protected Z80Provider z80;
     protected M68kProvider cpu;
     protected M68kProvider subCpu;
+
+    protected McdSubInterruptHandler interruptHandler;
     protected Md32xRuntimeData rt;
     protected McdDeviceHelper.McdLaunchContext mcdLaunchContext;
     protected UpdatableViewer memView;
@@ -117,6 +119,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
                 attachDevice(cpu).attachDevice(z80);
         subCpu = mcdLaunchContext.subCpu;
+        interruptHandler = mcdLaunchContext.interruptHandler;
         reloadWindowState();
         createAndAddVdpEventListener();
     }
@@ -173,9 +176,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
                 cycleDelay = cycleDelay + subCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
             }
             //interrupts are processed after the current instruction
-            if (bus.is68kRunning()) {
-                //TODO
-            }
+            interruptHandler.handleInterrupts();
             cycleDelay = Math.max(1, cycleDelay);
             mcdLaunchContext.stepDevices(cycleDelay);
             nextSub68kCycle += M68K_DIVIDER * cycleDelay;

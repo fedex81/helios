@@ -219,7 +219,7 @@ public class Asic implements Device {
         setBit(memoryContext.commonGateRegsBuf, MCD_IMG_STAMP_SIZE.addr, 15, event.ordinal(), Size.WORD);
         asicEvent = event;
         if (event == AsicEvent.AS_STOP) {
-            interruptHandler.m68kInterruptWhenNotMasked(INT_ASIC);
+            interruptHandler.raiseInterrupt(INT_ASIC);
         }
     }
 
