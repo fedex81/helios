@@ -77,7 +77,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         cpuType = CpuDeviceAccess.SUB_M68K;
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
         sysGateRegs = ctx.getGateSysRegs(cpuType);
-        commonGateRegs = ByteBuffer.wrap(ctx.commonGateRegs);
+        commonGateRegs = ctx.commonGateRegsBuf;
         memCtx = ctx;
         timerContext = new TimerContext();
         counter35Khz = new Counter35Khz();

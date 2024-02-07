@@ -37,8 +37,6 @@ public class MegaCdMemoryContext implements Serializable {
     private static final long serialVersionUID = 9209612516906245680L;
 
     private static final Logger LOG = LogHelper.getLogger(MegaCdMemoryContext.class.getSimpleName());
-
-    public static final MegaCdMemoryContext NO_CONTEXT = new MegaCdMemoryContext();
     public static final int MCD_WORD_RAM_2M_SIZE = 0x40_000;
     public static final int MCD_WORD_RAM_1M_SIZE = MCD_WORD_RAM_2M_SIZE >> 1;
     public static final int MCD_PRG_RAM_SIZE = 0x80_000;

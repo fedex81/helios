@@ -77,8 +77,9 @@ public class MegaCdRegWriteHandlers {
         }
         setBitInternal(buff, MCD_RESET.addr, 0, d); //IFL2
         //Note, according to hw manual, sync IEN2 for sub
-        int byteVal = setBitVal(ctx.commonGateRegsBuf, MCD_INT_MASK.addr + 1, 2, (d >> 7) & 1, Size.BYTE);
-        assert ((d >> 7) & 1) == ((byteVal >> 2) & 1);
+        //mcd-verificator contradicts this
+//        int byteVal = setBitVal(ctx.commonGateRegsBuf, MCD_INT_MASK.addr + 1, 2, (d >> 7) & 1, Size.BYTE);
+//        assert ((d >> 7) & 1) == ((byteVal >> 2) & 1);
     };
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg2_M = (ctx, d) -> {
