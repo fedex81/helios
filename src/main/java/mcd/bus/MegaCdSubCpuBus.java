@@ -303,7 +303,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         super.onVdpEvent(event, value);
         //vBlankOn fire LEV2
         if (event == VdpEvent.V_BLANK_CHANGE && (boolean) value) {
-            interruptHandler.raiseInterrupt(INT_LEVEL2);
+            int ifl2 = readBuffer(memCtx.getGateSysRegs(M68K), MCD_RESET.addr, Size.BYTE) & 1;
+            //TODO bios requires ignoring ifl2, mcd-verificator test requires the opposite
+            if (true || ifl2 > 0) {
+                interruptHandler.raiseInterrupt(INT_LEVEL2);
+            }
         } else if (event == VdpEvent.H_BLANK_CHANGE) {
             boolean val = (boolean) value;
             if (!val) {
