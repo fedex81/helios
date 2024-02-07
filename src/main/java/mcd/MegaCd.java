@@ -70,8 +70,10 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     protected final static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
     protected final static int FM_DIVIDER = 42 / MCLK_DIVIDER;
 
-    //2*MAIN_68K_CLOCK / 12.5 Mhz
-    protected final static double MCD_68K_RATIO = (2.0 * GEN_NTSC_MCLOCK_MHZ / 7.0) / 12_500_000;
+    public final static double MCD_SUB_68K_CLOCK_MHZ = 12_500_000;
+
+    //mcd-verificator is very sensitive
+    public final static double MCD_68K_RATIO = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_NTSC_MCLOCK_MHZ / 7.0)) * 0.99;
 
     private final static Logger LOG = LogHelper.getLogger(Genesis.class.getSimpleName());
 
@@ -94,7 +96,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     protected int nextZ80Cycle = Z80_DIVIDER;
     protected int nextFMCycle = FM_DIVIDER;
 
-    protected int nextSub68kCycle = M68K_DIVIDER;
+    protected double nextSub68kCycle = M68K_DIVIDER;
 
     protected MegaCd(DisplayWindow emuFrame) {
         super(emuFrame);
@@ -169,21 +171,23 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         }
     }
 
+    double subCnt = 0;
+
     protected void runSub68k() {
         while (nextSub68kCycle <= cycleCounter) {
             boolean canRun = !subCpu.isStopped();
-            int cycleDelay = 1;
+            int cycleDelayCpu = 1;
             if (canRun) {
                 Md32xRuntimeData.setAccessTypeExt(SUB_M68K);
-                cycleDelay = subCpu.runInstruction();
-                cycleDelay += subCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
+                cycleDelayCpu = subCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
             }
             //interrupts are processed after the current instruction
             interruptHandler.handleInterrupts();
-            cycleDelay = Math.max(1, cycleDelay);
-            mcdLaunchContext.stepDevices(cycleDelay);
-            cycleDelay *= MCD_68K_RATIO;
-            nextSub68kCycle += M68K_DIVIDER * cycleDelay;
+            cycleDelayCpu = Math.max(1, cycleDelayCpu);
+            subCnt += cycleDelayCpu;
+            mcdLaunchContext.stepDevices(cycleDelayCpu);
+            //convert cycles at 7.67 to cycle @ 12.5 Mhz
+            nextSub68kCycle += M68K_DIVIDER * MCD_68K_RATIO * cycleDelayCpu;
             assert Md32xRuntimeData.resetCpuDelayExt() == 0;
         }
     }
@@ -263,6 +267,13 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         assert nextZ80Cycle >= counter && next68kCycle >= counter &&
                 nextSub68kCycle >= counter &&
                 nextVdpCycle + 1 >= counter;
+        if ((getFrameCounter() + 1) % 60 == 0) {
+            boolean rangeOk = Math.abs(MCD_SUB_68K_CLOCK_MHZ - subCnt) < 250_000; //250Khz slack
+            if (!rangeOk) {
+                LOG.info("SubCpu timing off!!!, 68K clock: {}", subCnt);
+            }
+            subCnt = 0;
+        }
         nextZ80Cycle = Math.max(1, nextZ80Cycle - counter);
         next68kCycle = Math.max(1, next68kCycle - counter);
         nextSub68kCycle = Math.max(1, nextSub68kCycle - counter);

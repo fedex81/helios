@@ -218,8 +218,7 @@ class CdcImpl implements Cdc {
 
 
     /**
-     * TODO stopwatch increments every 30.72micros -> 32_552hz
-     * this needs to be called at ~ 35.55 Khz
+     * this needs to be called at ~ 32.55 Khz
      */
     public void step(int cycles) {
         cdcContext.stopwatch = (cdcContext.stopwatch + 1) & 0xFFF;

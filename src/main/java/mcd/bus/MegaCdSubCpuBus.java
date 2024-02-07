@@ -24,6 +24,7 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_TIMER;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
+import static mcd.pcm.McdPcm.MCD_PCM_DIVIDER;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -42,19 +43,16 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         public int counter, rate;
     }
 
-    //TODO this should be using MCD 68K @ 12.5 Mhz
-    //MD M68K 7.67Mhz
-    //pcm sample rate: 32.552 Khz
-    //m68kCyclesPerSample = 235.62
-    private class Counter35Khz {
-        //mcd_verificator requires such precise value
-        public static final double limit = 233.47 * 1.003;
+    //32552/434 = 75 Hz
+    public static final int PCM_CLOCK_DIVIDER_TO_75HZ = 434;
 
-        public static final int limit75hz = 434;
-        public double cycleAccumulator = limit;
-        public int cycleAcc75 = limit75hz;
+    private class Counter32p5Khz {
+        //mcd_verificator requires such precise value
+        public static final int limit = MCD_PCM_DIVIDER;
+        public int cycleAccumulator = limit;
+        public int cycleAcc75 = PCM_CLOCK_DIVIDER_TO_75HZ;
         //debug
-        private int ticks, cyclesFrame;
+        private int ticks32p5, ticks75, frames;
     }
 
     private ByteBuffer subCpuRam, sysGateRegs, commonGateRegs;
@@ -71,7 +69,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     private Cdc cdc;
 
     private TimerContext timerContext;
-    private Counter35Khz counter35Khz;
+    private Counter32p5Khz counter32p5Khz;
 
     public MegaCdSubCpuBus(MegaCdMemoryContext ctx) {
         cpuType = CpuDeviceAccess.SUB_M68K;
@@ -80,7 +78,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         commonGateRegs = ctx.commonGateRegsBuf;
         memCtx = ctx;
         timerContext = new TimerContext();
-        counter35Khz = new Counter35Khz();
+        counter32p5Khz = new Counter32p5Khz();
         //NOTE: starts at zero and becomes 1 after ~100ms
         writeBufferRaw(sysGateRegs, MCD_RESET.addr, 1, Size.WORD); //not reset
         writeBufferRaw(sysGateRegs, MCD_MEM_MODE.addr, 1, Size.WORD);
@@ -128,7 +126,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
             LOG.error("S Read Reserved: {} {}", th(address), size);
         } else {
-            assert false : th(address);
+            LogHelper.logWarnOnce(LOG, "S Unexpected read access: {} {}", th(address), size);
         }
         return res & size.getMask();
     }
@@ -151,7 +149,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
             LOG.error("S Write Reserved: {} {} {}", address, data, size);
         } else {
-            assert false;
+            LogHelper.logWarnOnce(LOG, "S Unexpected write access: {} {}", th(address), size);
         }
     }
 
@@ -329,40 +327,34 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         return interruptHandler;
     }
 
-
-    private long cnt35khz, cnt75hz, frames;
-
     @Override
-    public void step(int cycles) {
-        counter35Khz.cycleAccumulator -= cycles;
-        counter35Khz.cyclesFrame += cycles;
-        if (counter35Khz.cycleAccumulator < 0) {
-            cnt35khz++;
-            counter35Khz.cycleAcc75--;
-            counter35Khz.ticks++;
+    public void step(int cpuCycles) {
+        counter32p5Khz.cycleAccumulator -= cpuCycles;
+        if (counter32p5Khz.cycleAccumulator <= 0) {
+            counter32p5Khz.cycleAcc75--;
+            counter32p5Khz.ticks32p5++;
             pcm.step(0);
             cdc.step(0);
             timerStep();
-            counter35Khz.cycleAccumulator += Counter35Khz.limit;
-            if (counter35Khz.cycleAcc75 < 0) { //75hz
+            counter32p5Khz.cycleAccumulator += Counter32p5Khz.limit;
+            if (counter32p5Khz.cycleAcc75 <= 0) { //75hz
                 cdd.step(0);
-                cnt75hz++;
-                counter35Khz.cycleAcc75 += Counter35Khz.limit75hz;
+                counter32p5Khz.ticks75++;
+                counter32p5Khz.cycleAcc75 += PCM_CLOCK_DIVIDER_TO_75HZ;
             }
         }
     }
 
     public void onNewFrame() {
         super.onNewFrame();
-        counter35Khz.cyclesFrame = counter35Khz.ticks = 0;
-        frames++;
-        if ((frames + 1) % 100 == 0) {
-            double r1 = cnt75hz / (frames / 60.0);
-            double r2 = cnt35khz / (frames / 60.0);
-            boolean rangeOk = Math.abs(75 - r1) < 0.75 && Math.abs(32550 - r2) < 500.0;
+        counter32p5Khz.frames++;
+        if ((counter32p5Khz.frames + 1) % 60 == 0) {
+            boolean rangeOk = Math.abs(75 - counter32p5Khz.ticks75) < 2 &&
+                    Math.abs(McdPcm.PCM_SAMPLE_RATE_HZ - counter32p5Khz.ticks32p5) < 500.0;
             if (!rangeOk) {
-                LOG.warn("SubCpu timing off!!!, 35Khz: {}, 75hz:{}", r1, r2);
+                LOG.warn("SubCpu timing off!!!, 32.5Khz: {}, 75hz:{}", counter32p5Khz.ticks32p5, counter32p5Khz.ticks75);
             }
+            counter32p5Khz.ticks32p5 = counter32p5Khz.ticks75 = 0;
         }
     }
 

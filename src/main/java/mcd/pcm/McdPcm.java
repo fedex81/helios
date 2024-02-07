@@ -11,6 +11,7 @@ import s32x.util.blipbuffer.BlipBufferHelper;
 
 import java.nio.ByteBuffer;
 
+import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
 import static mcd.bus.MegaCdSubCpuBus.logAccessReg;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.th;
@@ -56,7 +57,11 @@ public class McdPcm implements BufferUtil.StepDevice {
 
     public static final int PCM_WAVE_BANK_SHIFT = 12;
 
-    public static final double pcmSampleRateHz = 12_500_000.0 / 384;
+
+    public static final int MCD_PCM_DIVIDER = 384;
+    public static final double pcmSampleRateHz = MCD_SUB_68K_CLOCK_MHZ / MCD_PCM_DIVIDER;
+
+    public static final int PCM_SAMPLE_RATE_HZ = (int) pcmSampleRateHz;
 
     private ByteBuffer waveData, pcmRegs;
     private PcmChannelContext[] chan;
