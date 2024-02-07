@@ -52,6 +52,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
+import static omegadrive.util.Util.GEN_NTSC_MCLOCK_MHZ;
 
 /**
  * Megadrive main class
@@ -68,6 +69,9 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     public final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
     protected final static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
     protected final static int FM_DIVIDER = 42 / MCLK_DIVIDER;
+
+    //2*MAIN_68K_CLOCK / 12.5 Mhz
+    protected final static double MCD_68K_RATIO = (2.0 * GEN_NTSC_MCLOCK_MHZ / 7.0) / 12_500_000;
 
     private final static Logger LOG = LogHelper.getLogger(Genesis.class.getSimpleName());
 
@@ -171,14 +175,14 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
             int cycleDelay = 1;
             if (canRun) {
                 Md32xRuntimeData.setAccessTypeExt(SUB_M68K);
-                //TODO runs at 15Mhz
                 cycleDelay = subCpu.runInstruction();
-                cycleDelay = cycleDelay + subCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
+                cycleDelay += subCpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
             }
             //interrupts are processed after the current instruction
             interruptHandler.handleInterrupts();
             cycleDelay = Math.max(1, cycleDelay);
             mcdLaunchContext.stepDevices(cycleDelay);
+            cycleDelay *= MCD_68K_RATIO;
             nextSub68kCycle += M68K_DIVIDER * cycleDelay;
             assert Md32xRuntimeData.resetCpuDelayExt() == 0;
         }
@@ -218,7 +222,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     }
 
     private double getMicrosPerTick() {
-        double mclkhz = videoMode.isPal() ? Util.GEN_PAL_MCLOCK_MHZ : Util.GEN_NTSC_MCLOCK_MHZ;
+        double mclkhz = videoMode.isPal() ? Util.GEN_PAL_MCLOCK_MHZ : GEN_NTSC_MCLOCK_MHZ;
         return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
     }
 
