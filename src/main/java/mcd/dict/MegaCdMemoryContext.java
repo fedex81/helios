@@ -23,6 +23,8 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.readBuffer;
 import static omegadrive.util.LogHelper.logWarnOnce;
+import static omegadrive.util.Util.th;
+import static omegadrive.util.Util.writeData;
 
 /**
  * Federico Berti
@@ -46,6 +48,10 @@ public class MegaCdMemoryContext implements Serializable {
 
     public static final int NUM_SYS_REG_NON_SHARED = MCD_COMM0.addr;
 
+    public static final int MCD_PRAM_WRITE_PROTECT_AREA_END = 0x1FE00;
+    public static final int MCD_PRAM_WRITE_PROTECT_BLOCK_SIZE = 0x200;
+    public static final int MCD_PRAM_WRITE_PROTECT_BLOCK_MASK = MCD_PRAM_WRITE_PROTECT_BLOCK_SIZE - 1;
+
     public final byte[] prgRam;
     public final byte[][] sysGateRegs;
     public final byte[] commonGateRegs;
@@ -55,6 +61,8 @@ public class MegaCdMemoryContext implements Serializable {
 
     public transient final ByteBuffer[] sysGateRegsBuf;
     public transient final ByteBuffer commonGateRegsBuf;
+
+    public int writeProtectRam = 0;
 
     public WramSetup wramSetup = WramSetup.W_2M_MAIN;
 
@@ -193,7 +201,24 @@ public class MegaCdMemoryContext implements Serializable {
         if (prev != wramSetup) {
             LogHelper.logInfo(LOG, "{} WRAM setup changed: {} -> {}", c, prev, wramSetup);
         }
+        int wpVal = (reg2 >> 8) & 0xFF;
+        if (wpVal != writeProtectRam) {
+            LOG.info("M PROG-RAM Write protection: {} -> {}", th(writeProtectRam), th(wpVal));
+            writeProtectRam = wpVal;
+        }
         return wramSetup;
+    }
+
+    public void writeProgRam(int address, int val, Size size) {
+        if (address < MCD_PRAM_WRITE_PROTECT_AREA_END) {
+            if (((address >> 8) & MCD_PRAM_WRITE_PROTECT_BLOCK_MASK) >= (writeProtectRam << 1)) {
+                writeData(prgRam, size, address, val);
+            } else {
+                LogHelper.logWarnOnce(LOG, "Ignoring PRG-RAM write: {} {}, wp {}", th(address), size, th(writeProtectRam));
+            }
+            return;
+        }
+        writeData(prgRam, size, address, val);
     }
 
     public ByteBuffer getGateSysRegs(CpuDeviceAccess cpu) {

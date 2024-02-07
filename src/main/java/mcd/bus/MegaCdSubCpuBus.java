@@ -143,7 +143,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
             memCtx.writeWordRam(cpuType, address, data, size);
         } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
-            writeBufferRaw(subCpuRam, address & MCD_PRG_RAM_MASK, data, size);
+            memCtx.writeProgRam(address & MCD_PRG_RAM_MASK, data, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address <= END_MCD_SUB_GATE_ARRAY_REGS) {
             handleMegaCdExpWrite(address, data, size);
         } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
@@ -256,13 +256,13 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     }
 
     private void handleReg2Write(int address, int data, Size size) {
-        int res = memCtx.handleRegWrite(cpuType, MCD_MEM_MODE, address, data, size);
-        WramSetup ws = memCtx.update(cpuType, res);
+        int resWord = memCtx.handleRegWrite(cpuType, MCD_MEM_MODE, address, data, size);
+        WramSetup ws = memCtx.update(cpuType, resWord);
         if (ws == WramSetup.W_2M_MAIN) { //set DMNA=0
             setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 1, 0, Size.BYTE);
             memCtx.setSharedBit(cpuType, 0, SharedBit.DMNA);
         }
-        asic.setStampPriorityMode((res >> 3) & 3);
+        asic.setStampPriorityMode((resWord >> 3) & 3);
     }
 
     private void handleCommRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {

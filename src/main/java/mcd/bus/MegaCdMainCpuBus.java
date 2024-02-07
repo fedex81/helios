@@ -276,9 +276,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     private void handleReg2Write(int address, int data, Size size) {
         int resWord = memCtx.handleRegWrite(cpu, MCD_MEM_MODE, address, data, size);
-        if ((resWord & 0xFF00) != 0) {
-            logHelper.logWarningOnce(LOG, "M Mem Write protect bits set: {}", th(data));
-        }
         WramSetup ws = memCtx.update(cpu, resWord);
         if (ws == WramSetup.W_2M_SUB) { //set RET=0
             resWord = setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 0, 0, Size.BYTE);
