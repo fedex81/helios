@@ -86,7 +86,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
         if (isBios) {
             enableMode1 = false;
             LOG.info("Bios detected with serial: {}, disabling mode1 mapper", cartridgeInfoProvider.getSerial());
-            //TODO doesnt work
             loadBios(systemProvider.getRegion(), systemProvider.getRomPath());
         }
     }
@@ -94,7 +93,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private static void loadBios(RegionDetector.Region region, Path p) {
         try {
             assert p.toFile().exists();
-            byte[] b = FileUtil.readFileSafe(p);
+            byte[] b = FileUtil.readBinaryFile(p, ".bin", ".md");
             assert b.length > 0;
             bios = ByteBuffer.wrap(b);
             LOG.info("Loading bios at {}, region: {}, size: {}", p.toAbsolutePath(), region, b.length);
