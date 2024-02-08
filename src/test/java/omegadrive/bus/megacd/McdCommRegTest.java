@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 import static mcd.bus.MegaCdMainCpuBus.MEGA_CD_EXP_START;
 import static mcd.dict.MegaCdDict.*;
@@ -40,11 +41,6 @@ public class McdCommRegTest extends McdRegTestBase {
             Assertions.assertEquals(mainCpuBus.read(mreg, Size.WORD), subCpuBus.read(sreg, Size.WORD));
         };
 
-        //main can write to MSB only
-        Assertions.assertThrowsExactly(AssertionError.class, () -> mainCpuBus.write(mreg, 1, Size.WORD));
-        Assertions.assertThrowsExactly(AssertionError.class, () -> mainCpuBus.write(mreg, 2, Size.LONG));
-        Assertions.assertThrowsExactly(AssertionError.class, () -> mainCpuBus.write(mreg + 1, 3, Size.BYTE));
-
         int val = random.nextInt(0x100);
         int mlsbval = mainCpuBus.read(mreg + 1, Size.BYTE);
         int slsbval = subCpuBus.read(sreg + 1, Size.BYTE);
@@ -59,11 +55,6 @@ public class McdCommRegTest extends McdRegTestBase {
         //reg matches
         regMatches.run();
 
-        //sub can write to LSB only
-        Assertions.assertThrowsExactly(AssertionError.class, () -> subCpuBus.write(sreg, 1, Size.WORD));
-        Assertions.assertThrowsExactly(AssertionError.class, () -> subCpuBus.write(sreg, 2, Size.LONG));
-        Assertions.assertThrowsExactly(AssertionError.class, () -> subCpuBus.write(sreg, 3, Size.BYTE));
-
         val = random.nextInt(0x100);
         int mmsbval = mainCpuBus.read(mreg, Size.BYTE);
         int smsbval = subCpuBus.read(sreg, Size.BYTE);
@@ -77,6 +68,48 @@ public class McdCommRegTest extends McdRegTestBase {
         Assertions.assertEquals(smsbval, subCpuBus.read(sreg, Size.BYTE));
         //reg matches
         regMatches.run();
+    }
+
+    @Test
+    public void testCommFlags2() {
+        int mreg = MEGA_CD_EXP_START + 0xE;
+        int sreg = START_MCD_SUB_GATE_ARRAY_REGS + 0xE;
+        int mval = mainCpuBus.read(mreg, Size.WORD);
+        int sval = subCpuBus.read(sreg, Size.WORD);
+        Assertions.assertEquals(mval, sval);
+        Assertions.assertEquals(0, sval);
+
+        Runnable regMatches = () -> {
+            Assertions.assertEquals(mainCpuBus.read(mreg, Size.BYTE), subCpuBus.read(sreg, Size.BYTE));
+            Assertions.assertEquals(mainCpuBus.read(mreg + 1, Size.BYTE), subCpuBus.read(sreg + 1, Size.BYTE));
+            Assertions.assertEquals(mainCpuBus.read(mreg, Size.WORD), subCpuBus.read(sreg, Size.WORD));
+        };
+
+        Consumer<Integer> checkWordValue = val -> {
+            int mmsbval = mainCpuBus.read(mreg, Size.WORD);
+            int smsbval = subCpuBus.read(sreg, Size.WORD);
+            Assertions.assertEquals(val, mmsbval);
+            Assertions.assertEquals(val, smsbval);
+            regMatches.run();
+        };
+
+        mainCpuBus.write(mreg, 0xAABB, Size.WORD);
+        checkWordValue.accept(0xBB00);
+
+        subCpuBus.write(sreg, 0xCCDD, Size.WORD);
+        checkWordValue.accept(0xBBDD);
+
+        mainCpuBus.write(mreg + 1, 0xEE, Size.BYTE);
+        checkWordValue.accept(0xEEDD);
+
+        mainCpuBus.write(mreg, 0xBB, Size.BYTE);
+        checkWordValue.accept(0xBBDD);
+
+        subCpuBus.write(sreg, 0xFF, Size.BYTE);
+        checkWordValue.accept(0xBBFF);
+
+        subCpuBus.write(sreg + 1, 0xAA, Size.BYTE);
+        checkWordValue.accept(0xBBAA);
     }
 
 

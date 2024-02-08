@@ -123,6 +123,8 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             res = handleMegaCdExpRead(address, size);
         } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
             res = pcm.read(address, size);
+        } else if (address >= START_MCD_SUB_BRAM_AREA && address < END_MCD_SUB_BRAM_AREA) {
+            res = readBuffer(memCtx.backupRam, address & MCD_SUB_BRAM_MASK, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
             LOG.error("S Read Reserved: {} {}", th(address), size);
         } else {
@@ -146,6 +148,8 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             handleMegaCdExpWrite(address, data, size);
         } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
             pcm.write(address, data, size);
+        } else if (address >= START_MCD_SUB_BRAM_AREA && address < END_MCD_SUB_BRAM_AREA) {
+            writeBufferRaw(memCtx.backupRam, address & MCD_SUB_BRAM_MASK, data, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
             LOG.error("S Write Reserved: {} {} {}", address, data, size);
         } else {
@@ -207,11 +211,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             case MCD_RESET -> handleReg0Write(address, data, size);
             case MCD_MEM_MODE -> handleReg2Write(address, data, size);
             case MCD_COMM_FLAGS -> {
-                //sub can only write to LSB
-                assert size == Size.BYTE && (address & 1) == 1;
+                //sub can only write to LSB (odd byte), WORD write becomes a BYTE write
+                address |= 1;
                 LogHelper.logInfo(LOG, "S write COMM_FLAG: {} {}", th(data), size);
-                writeBufferRaw(regs, address, data, size);
-                writeBufferRaw(memCtx.getRegBuffer(M68K, regSpec), address, data, size);
+                writeBufferRaw(regs, address, data, Size.BYTE);
+                writeBufferRaw(memCtx.getRegBuffer(M68K, regSpec), address, data, Size.BYTE);
             }
             case MCD_INT_MASK -> {
                 LogHelper.logInfo(LOG, "S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);

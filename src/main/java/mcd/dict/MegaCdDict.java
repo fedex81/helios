@@ -265,6 +265,13 @@ public class MegaCdDict {
     public static final int START_MCD_SUB_PRG_RAM = 0;
     public static final int END_MCD_SUB_PRG_RAM = START_MCD_SUB_PRG_RAM + MCD_PRG_RAM_SIZE;
 
+    public static final int MCD_SUB_BRAM_SIZE = 0x4000;
+
+    public static final int MCD_SUB_BRAM_MASK = MCD_SUB_BRAM_SIZE - 1;
+    public static final int START_MCD_SUB_BRAM_AREA = 0xFE_0000;
+
+    //bram size is 0x4000 but is mirrored within a 0x10_000 area
+    public static final int END_MCD_SUB_BRAM_AREA = 0xFF_0000;
     public static final int START_MCD_SUB_PCM_AREA = 0xFF_0000;
 
     public static final int END_MCD_SUB_PCM_AREA = 0xFF_8000;

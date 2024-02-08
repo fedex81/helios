@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 
+import static mcd.dict.MegaCdDict.MCD_SUB_BRAM_SIZE;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_SIZE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
@@ -50,15 +51,14 @@ public class MegaCdMemoryContext implements Serializable {
     public static final int MCD_PRAM_WRITE_PROTECT_BLOCK_SIZE = 0x200;
     public static final int MCD_PRAM_WRITE_PROTECT_BLOCK_MASK = MCD_PRAM_WRITE_PROTECT_BLOCK_SIZE - 1;
 
-    public final byte[] prgRam;
+    public final byte[] prgRam, commonGateRegs, backupRamArr;
     public final byte[][] sysGateRegs;
-    public final byte[] commonGateRegs;
     public final byte[][] wordRam01 = new byte[2][1];
 
     public final byte[] writeableHint = {(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
 
     public transient final ByteBuffer[] sysGateRegsBuf;
-    public transient final ByteBuffer commonGateRegsBuf;
+    public transient final ByteBuffer commonGateRegsBuf, backupRam;
 
     public int writeProtectRam = 0;
 
@@ -88,7 +88,9 @@ public class MegaCdMemoryContext implements Serializable {
         wordRam01[1] = new byte[MCD_WORD_RAM_1M_SIZE];
         sysGateRegs = new byte[2][NUM_SYS_REG_NON_SHARED];
         commonGateRegs = new byte[MDC_SUB_GATE_REGS_SIZE];
+        backupRamArr = new byte[MCD_SUB_BRAM_SIZE];
         commonGateRegsBuf = ByteBuffer.wrap(commonGateRegs);
+        backupRam = ByteBuffer.wrap(backupRamArr);
         sysGateRegsBuf = new ByteBuffer[2];
         sysGateRegsBuf[0] = ByteBuffer.wrap(sysGateRegs[0]);
         sysGateRegsBuf[1] = ByteBuffer.wrap(sysGateRegs[1]);

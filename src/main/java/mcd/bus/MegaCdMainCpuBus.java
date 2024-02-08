@@ -226,11 +226,11 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 assert false : regSpec;
             } //not writable
             case MCD_COMM_FLAGS -> {
-                //main can only write to MSB
-                assert size == Size.BYTE && (address & 1) == 0;
+                //main can only write to MSB (even byte), WORD write becomes a BYTE write
+                address &= ~1;
                 LogHelper.logInfo(LOG, "M write COMM_FLAG: {} {}", th(data), size);
-                writeBufferRaw(sysGateRegs, address & MCD_GATE_REGS_MASK, data, size);
-                writeBufferRaw(memCtx.getRegBuffer(SUB_M68K, regSpec), address & MCD_GATE_REGS_MASK, data, size);
+                writeBufferRaw(sysGateRegs, address & MCD_GATE_REGS_MASK, data, Size.BYTE);
+                writeBufferRaw(memCtx.getRegBuffer(SUB_M68K, regSpec), address & MCD_GATE_REGS_MASK, data, Size.BYTE);
             }
             case MCD_HINT_VECTOR -> {
                 assert size == Size.WORD;
