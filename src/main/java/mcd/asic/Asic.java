@@ -15,6 +15,7 @@ import static mcd.asic.AsicModel.StampRepeat.REPEAT_MAP;
 import static mcd.asic.AsicModel.StampRepeat.vals;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_IMG_OFFSET;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_IMG_STAMP_SIZE;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.setBit;
@@ -45,8 +46,8 @@ public class Asic implements Device {
 
     public void write(RegSpecMcd regSpec, int address, int value, Size size) {
         writeBufferRaw(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, value, size);
-        if (regSpec != RegSpecMcd.MCD_IMG_STAMP_SIZE) {
-            assert size == Size.WORD;
+        if (regSpec != RegSpecMcd.MCD_IMG_STAMP_SIZE && regSpec != MCD_IMG_OFFSET) {
+            assert size == Size.WORD : regSpec + "," + size;
         }
         switch (regSpec) {
             case MCD_IMG_STAMP_SIZE -> {
@@ -62,6 +63,7 @@ public class Asic implements Device {
             case MCD_IMG_VCELL -> stampConfig.vCellSize = (value & 0x1F) + 1;
             case MCD_IMG_START_ADDR -> stampConfig.imgDestBufferLocation = value;
             case MCD_IMG_OFFSET -> {
+                assert size == Size.BYTE ? (address & 1) == 1 : true;
                 stampConfig.hPixelOffset = value & 7;
                 stampConfig.vPixelOffset = (value >> 3) & 7;
                 stampConfig.imgOffset = value & 0x3F;

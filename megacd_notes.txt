@@ -22,7 +22,7 @@ cdd
 
 msu-md-sample.bin
 https://github.com/krikzz/msu-md/tree/master/msu-md-sample
-- MainCpu sets comm flag a1200f, illegal?, then stuck at init driver (note: there is no cd)
+- gets to CDD readtoc command, unsupported
 
 Mode1Player.bin
 see /test_roms/roms/megacd/mcd_test/Mode1Example-20120104/mode1/Mode1Player.bin

@@ -5,13 +5,10 @@ import omegadrive.Device;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_INT_MASK;
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_RESET;
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 
 /**
  * Federico Berti
@@ -110,10 +107,10 @@ public interface McdSubInterruptHandler extends Device {
             pendingMask &= ~(1 << sint.ordinal());
             pendingMask |= pending;
             pendingInterrupts[sint.ordinal()] = pending > 0;
-            //TODO check this
-            if (sint == SubCpuInterrupt.INT_LEVEL2) {
-                BufferUtil.setBit(context.getGateSysRegs(M68K), MCD_RESET.addr, 0, ~val & 1, Size.BYTE);
-            }
+            //TODO check this, breaks bios_us
+//            if (sint == SubCpuInterrupt.INT_LEVEL2) {
+//                BufferUtil.setBit(context.getGateSysRegs(M68K), MCD_RESET.addr, 0, ~val & 1, Size.BYTE);
+//            }
         }
 
         private int getRegMask() {

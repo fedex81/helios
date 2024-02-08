@@ -277,7 +277,11 @@ class CddImpl implements Cdd {
                     updateStatus(i, 0);
                 }
             }
-            default -> LOG.error("Cdd command: {}", cddCommand);
+            default -> {
+                LOG.error("Unsupported Cdd command: {}({}), parameter: {}", cddCommand, cddCommand.ordinal(),
+                        cddContext.command[3]);
+                assert false;
+            }
         }
         processDone();
     }

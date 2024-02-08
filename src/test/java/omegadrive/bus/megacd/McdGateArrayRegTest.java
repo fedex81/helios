@@ -185,8 +185,9 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         mreg = mainCpuBus.read(mainAddr, Size.WORD);
         subCpuBus.write(subAddr, val, Size.WORD);
         int mreg2 = mainCpuBus.read(mainAddr, Size.WORD);
+        //CDC data read, should return 0xFF
         sreg = subCpuBus.read(subAddr, Size.WORD);
-        Assertions.assertEquals(val, sreg & 0xFFFF);
+        Assertions.assertEquals(0xFF, sreg & 0xFF);
         Assertions.assertEquals(mreg, mreg2);
     }
 }
