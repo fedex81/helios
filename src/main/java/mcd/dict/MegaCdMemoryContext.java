@@ -106,7 +106,7 @@ public class MegaCdMemoryContext implements Serializable {
             case BYTE -> {
                 int bank = getBank(wramSetup, cpu, address);
                 int addr = getAddress(wramSetup, address, bank) | (address & 1);
-                Util.writeData(wordRam01[bank], Size.BYTE, addr, value);
+                Util.writeData(wordRam01[bank], addr, value, Size.BYTE);
             }
             default -> {
                 assert false;
@@ -146,11 +146,11 @@ public class MegaCdMemoryContext implements Serializable {
     }
 
     private void writeWordRamBank(int bank, int address, int value) {
-        Util.writeData(wordRam01[bank], Size.WORD, getAddress(wramSetup, address, bank), value);
+        Util.writeData(wordRam01[bank], getAddress(wramSetup, address, bank), value, Size.WORD);
     }
 
     public int readWordRamBank(int bank, int address) {
-        return Util.readData(wordRam01[bank], Size.WORD, getAddress(wramSetup, address, bank));
+        return Util.readData(wordRam01[bank], getAddress(wramSetup, address, bank), Size.WORD);
     }
 
     public static int getBank(WramSetup wramSetup, CpuDeviceAccess cpu, int address) {
@@ -212,13 +212,13 @@ public class MegaCdMemoryContext implements Serializable {
     public void writeProgRam(int address, int val, Size size) {
         if (address < MCD_PRAM_WRITE_PROTECT_AREA_END) {
             if (((address >> 8) & MCD_PRAM_WRITE_PROTECT_BLOCK_MASK) >= (writeProtectRam << 1)) {
-                writeData(prgRam, size, address, val);
+                writeData(prgRam, address, val, size);
             } else {
                 LogHelper.logWarnOnce(LOG, "Ignoring PRG-RAM write: {} {}, wp {}", th(address), size, th(writeProtectRam));
             }
             return;
         }
-        writeData(prgRam, size, address, val);
+        writeData(prgRam, address, val, size);
     }
 
     public ByteBuffer getGateSysRegs(CpuDeviceAccess cpu) {

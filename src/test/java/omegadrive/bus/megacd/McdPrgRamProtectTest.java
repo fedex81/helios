@@ -26,10 +26,10 @@ public class McdPrgRamProtectTest extends McdRegTestBase {
 
             int wp_size = 0;
             for (int u = 0; u < 0x80000; u += 256) {
-                int val = (readData(ctx.prgRam, Size.BYTE, u) ^ 0xFF) & 0xFF;
+                int val = (readData(ctx.prgRam, u, Size.BYTE) ^ 0xFF) & 0xFF;
                 ctx.writeProgRam(u, val, Size.BYTE);
 
-                int val2 = readData(ctx.prgRam, Size.BYTE, u) & 0xFF;
+                int val2 = readData(ctx.prgRam, u, Size.BYTE) & 0xFF;
                 if (val2 != val) {
                     wp_size = u + 256;
                 }

@@ -182,7 +182,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         address &= MCD_BOOT_ROM_MASK;
         if (address >= 0x70 && address < 0x74) {
             assert size == Size.LONG && address == 0x70; //LONG read on 0x72 not supported
-            return Util.readData(memCtx.writeableHint, size, address & 3);
+            return Util.readData(memCtx.writeableHint, address & 3, size);
         }
         return readBuffer(bios, address, size);
     }
@@ -235,7 +235,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 assert size == Size.WORD;
                 LOG.info("M write MCD_HINT_VECTOR: {} {}", th(data), size);
                 writeBufferRaw(sysGateRegs, regSpec.addr, data, size);
-                Util.writeData(memCtx.writeableHint, size, 2, data);
+                Util.writeData(memCtx.writeableHint, 2, data, size);
             }
             default -> LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
         }

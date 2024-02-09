@@ -49,11 +49,11 @@ public class McdMemView extends MemView {
         return (a, size) -> {
             int res = 0;
             if (a >= START_MCD_SUB_WORD_RAM_1M && a < END_MCD_SUB_WORD_RAM_1M) { //bank0
-                res = Util.readDataMask(ctx.memoryContext.wordRam01[0], size, a, MCD_WORD_RAM_1M_MASK);
+                res = Util.readDataMask(ctx.memoryContext.wordRam01[0], a, MCD_WORD_RAM_1M_MASK, size);
             } else if (a >= END_MCD_SUB_WORD_RAM_1M && a < END_MCD_SUB_WORD_RAM_1M + MCD_WORD_RAM_1M_SIZE) { //bank1
-                res = Util.readDataMask(ctx.memoryContext.wordRam01[1], size, a, MCD_WORD_RAM_1M_MASK);
+                res = Util.readDataMask(ctx.memoryContext.wordRam01[1], a, MCD_WORD_RAM_1M_MASK, size);
             } else if (a >= START_MCD_SUB_PRG_RAM && a < END_MCD_SUB_PRG_RAM) {
-                res = Util.readDataMask(ctx.memoryContext.prgRam, size, a, MCD_PRG_RAM_SIZE - 1);
+                res = Util.readDataMask(ctx.memoryContext.prgRam, a, MCD_PRG_RAM_SIZE - 1, size);
             } else if (a >= WAVE_DATA_START && a < WAVE_DATA_END) {
                 res = BufferUtil.readBuffer(ctx.pcm.getWaveData(), a & WAVE_DATA_MASK, size);
             } else if (a >= START_MCD_SUB_WORD_RAM_2M && a < END_MCD_SUB_WORD_RAM_2M) {
