@@ -96,13 +96,13 @@ public class S32xSavestateSerializeTest {
     //TODO fix
     private void ignoreKnownIssues(Gs32xStateHandler stateHandler, Gs32xStateHandler saveHandler) {
         //ignore m68k ssp, usp
-        Util.writeData(stateHandler.getData(), Size.LONG, M68K_SSP_OFFSET, 0);
-        Util.writeData(saveHandler.getData(), Size.LONG, M68K_SSP_OFFSET, 0);
-        Util.writeData(stateHandler.getData(), Size.LONG, M68K_USP_OFFSET, 0);
-        Util.writeData(saveHandler.getData(), Size.LONG, M68K_USP_OFFSET, 0);
+        Util.writeData(stateHandler.getData(), M68K_SSP_OFFSET, 0, Size.LONG);
+        Util.writeData(saveHandler.getData(), M68K_SSP_OFFSET, 0, Size.LONG);
+        Util.writeData(stateHandler.getData(), M68K_USP_OFFSET, 0, Size.LONG);
+        Util.writeData(saveHandler.getData(), M68K_USP_OFFSET, 0, Size.LONG);
 
         //FM regs
-        Util.writeData(stateHandler.getData(), Size.LONG, 0x20C, 0);
-        Util.writeData(saveHandler.getData(), Size.LONG, 0x20C, 0);
+        Util.writeData(stateHandler.getData(), 0x20C, 0, Size.LONG);
+        Util.writeData(saveHandler.getData(), 0x20C, 0, Size.LONG);
     }
 }

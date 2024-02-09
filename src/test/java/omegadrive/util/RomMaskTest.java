@@ -68,23 +68,23 @@ public class RomMaskTest {
             boolean isPadded = size > romSize;
 //            System.out.println(th(entry.getKey()) + "," + th(entry.getValue()) + "," + th(size) + "," + isPadded);
 
-            int b1 = (int) Util.readDataMask(rom, Size.BYTE, size - 1, mask);
+            int b1 = (int) Util.readDataMask(rom, size - 1, mask, Size.BYTE);
             Assert.assertEquals(isPadded ? padVal : romVal, b1);
-            int b2 = (int) Util.readDataMask(rom, Size.BYTE, size, mask); //this maps to address 0
+            int b2 = (int) Util.readDataMask(rom, size, mask, Size.BYTE); //this maps to address 0
             Assert.assertEquals(romVal, b2);
             //NOTE not supported as only homebrews do this
 //            int w1 = (int) Util.readDataMask(rom, Size.WORD, size - 1, mask);
 //            Assert.assertEquals(isPadded ? 0xFF22 : 0x2222, w1);
-            int w2 = (int) Util.readDataMask(rom, Size.WORD, size, mask);
+            int w2 = (int) Util.readDataMask(rom, size, mask, Size.WORD);
             Assert.assertEquals(0x2222, w2);
-            int ln = (int) Util.readDataMask(rom, Size.LONG, size, mask);
+            int ln = (int) Util.readDataMask(rom, size, mask, Size.LONG);
             Assert.assertEquals(0x22222222, ln);
             if (size - romSize <= 4) { //TODO corner case
                 continue;
             }
-            int w3 = (int) Util.readDataMask(rom, Size.WORD, size - 2, mask);
+            int w3 = (int) Util.readDataMask(rom, size - 2, mask, Size.WORD);
             Assert.assertEquals(isPadded ? 0xFFFF : 0x2222, w3 & 0xFFFF);
-            int l0 = (int) Util.readDataMask(rom, Size.LONG, size - 4, mask);
+            int l0 = (int) Util.readDataMask(rom, size - 4, mask, Size.LONG);
             Assert.assertEquals(isPadded ? 0xFFFFFFFF : 0x22222222, l0);
             //NOTE not supported as only homebrews do this
 //            int l1 = (int) Util.readDataMask(rom, Size.LONG, size - 3, mask);

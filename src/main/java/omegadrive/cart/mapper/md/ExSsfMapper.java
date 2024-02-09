@@ -52,7 +52,7 @@ public class ExSsfMapper extends Ssf2Mapper {
 
             int addressI = ((banks[0] << BANK_SHIFT) | (address & BANK_MASK));
             if (verbose) LOG.info("Bank read: {} {} -> {}", th(addressI), size, th(address));
-            return Util.readDataMask(memory.getRomData(), size, addressI, memory.getRomMask());
+            return Util.readDataMask(memory.getRomData(), addressI, memory.getRomMask(), size);
         }
         return baseMapper.readData(address, size);
     }

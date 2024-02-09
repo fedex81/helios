@@ -199,9 +199,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         address &= MD_PC_MASK;
         int data;
         if (address < ROM_END_ADDRESS) {  //ROM
-            data = Util.readDataMask(rom, size, address, romMask);
+            data = Util.readDataMask(rom, address, romMask, size);
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            data = Util.readDataMask(ram, size, address, M68K_RAM_MASK);
+            data = Util.readDataMask(ram, address, M68K_RAM_MASK, size);
         } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
             data = reservedRead(address, size);
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
@@ -229,7 +229,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         address &= MD_PC_MASK;
         data &= size.getMask();
         if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            Util.writeDataMask(ram, size, address, data, M68K_RAM_MASK);
+            Util.writeDataMask(ram, address, data, M68K_RAM_MASK, size);
         } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
             z80MemoryWrite(address, size, data);
         } else if (address >= IO_ADDRESS_SPACE_START && address <= IO_ADDRESS_SPACE_END) {    //	IO addressing space
@@ -276,7 +276,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return size.getMax();
         } else {
             //reads rom at 0x40_0000 MegaCD mirror
-            return Util.readDataMask(rom, size, address, DEFAULT_ROM_END_ADDRESS);
+            return Util.readDataMask(rom, address, DEFAULT_ROM_END_ADDRESS, size);
         }
     }
 
@@ -545,7 +545,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
                 break;
             default:
                 if (address >= 0xE && address < 0x20) {
-                    data = Util.readData(serialPortData, size, address - 0xE);
+                    data = Util.readData(serialPortData, address - 0xE, size);
                     LOG.info("Reading serial control: {} {}, data: {}", th(address), size, th(data));
                 } else {
                     LOG.error("Unexpected ioRead: {}", th(addressL));
@@ -601,7 +601,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             default:
                 if (address >= 0xE && address < 0x20) {
                     logWarnOnce(LOG, "Write serial control: {}", th(addressL));
-                    Util.writeData(serialPortData, size, address - 0xE, data);
+                    Util.writeData(serialPortData, address - 0xE, data, size);
                 } else { //Reserved
                     LOG.error("Unexpected ioWrite {}, data {}", th(addressL), th(data));
                 }

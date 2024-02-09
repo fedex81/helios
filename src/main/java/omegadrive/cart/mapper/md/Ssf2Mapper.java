@@ -92,7 +92,7 @@ public abstract class Ssf2Mapper implements RomMapper, RomMapper.StateAwareMappe
             //bankSelector = address >> BANK_SHIFT;
             address = (banks[address >> BANK_SHIFT] << BANK_SHIFT) | (address & BANK_MASK);
             if (verbose) LOG.info("Bank read: {} -> {} {}", th(addressL), th(address), size);
-            return Util.readDataMask(memory.getRomData(), size, address, memory.getRomMask());
+            return Util.readDataMask(memory.getRomData(), address, memory.getRomMask(), size);
         }
         return baseMapper.readData(addressL, size);
     }

@@ -46,10 +46,10 @@ public class UtilTest {
 
     @Test
     public void testReadNegative() {
-        long res = Util.readDataMask(input, Size.WORD, 0, MASK);
+        long res = Util.readDataMask(input, 0, MASK, Size.WORD);
         Assert.assertEquals(0x8081, res);
 
-        res = Util.readDataMask(input, Size.LONG, 0, MASK);
+        res = Util.readDataMask(input, 0, MASK, Size.LONG);
         Assert.assertEquals(0x80818283, res);
     }
 
@@ -59,7 +59,7 @@ public class UtilTest {
         int mask = input.length - 1;
         long expect = 0x7e7f8081;
         try {
-            long res = Util.readDataMask(input, Size.LONG, address, mask);
+            long res = Util.readDataMask(input, address, mask, Size.LONG);
             Assert.fail();
         } catch (Exception e) {
         } //expected
@@ -79,7 +79,7 @@ public class UtilTest {
         int address = 0xFEFFFE;
         int value = 0x6e6f7071;
         try {
-            Util.writeDataMask(input, Size.LONG, address, value, MASK);
+            Util.writeDataMask(input, address, value, MASK, Size.LONG);
             Assert.fail();
         } catch (Exception e) {
         } //expected

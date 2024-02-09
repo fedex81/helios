@@ -112,7 +112,7 @@ public class MdT5740Mapper extends BackupMemoryMapper implements RomMapper, RomM
                 int res;
                 if (m_rdcnt < 3) {
                     m_rdcnt++;
-                    res = Util.readData(prot_15e6, size, offset - 0x0015e6);
+                    res = Util.readData(prot_15e6, offset - 0x0015e6, size);
                 } else {
                     res = baseMapper.readData(offset, size);
                 }

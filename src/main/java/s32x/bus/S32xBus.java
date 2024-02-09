@@ -52,7 +52,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
     public S32xBus() {
         busContext = new S32xBusContext();
         bankSetShift = busContext.bankSetValue << 20;
-        Util.writeData(busContext.writeableHint, Size.LONG, 0, -1);
+        Util.writeData(busContext.writeableHint, 0, -1, Size.LONG);
         Gs32xStateHandler.addDevice(this);
     }
 
@@ -203,7 +203,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
         } else if (address >= S32xDict.M68K_START_HINT_VECTOR_WRITEABLE && address < S32xDict.M68K_END_HINT_VECTOR_WRITEABLE) {
             if (verboseMd) LOG.info("HINT vector write, address: {}, data: {}, size: {}", th(address),
                     th(data), size);
-            Util.writeData(busContext.writeableHint, size, address & 3, data);
+            Util.writeData(busContext.writeableHint, address & 3, data, size);
         } else {
             if (address < S32xDict.M68K_END_VECTOR_ROM) {
                 logWarnOnce(LOG, "Ignoring write access to vector rom, RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
@@ -270,9 +270,9 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
     }
 
     private int readHIntVector(int address, Size size) {
-        int res = Util.readData(busContext.writeableHint, Size.LONG, 0);
+        int res = Util.readData(busContext.writeableHint, 0, Size.LONG);
         if (res != -1) {
-            res = Util.readData(busContext.writeableHint, size, address & 3);
+            res = Util.readData(busContext.writeableHint, address & 3, size);
             if (verboseMd) LOG.info("HINT vector read, rv {}, address: {}, {} {}", DmaFifo68k.rv,
                     th(address), th(res), size);
         } else {

@@ -462,10 +462,10 @@ public class Sh2CacheImpl implements Sh2Cache {
     }
 
     private void setCachedData(final byte[] data, int addr, int val, Size size) {
-        Util.writeDataMask(data, size, addr, val, CACHE_BYTES_PER_LINE_MASK);
+        Util.writeDataMask(data, addr, val, CACHE_BYTES_PER_LINE_MASK, size);
     }
 
     private static int getCachedData(final byte[] data, int addr, Size size) {
-        return Util.readDataMask(data, size, addr, CACHE_BYTES_PER_LINE_MASK);
+        return Util.readDataMask(data, addr, CACHE_BYTES_PER_LINE_MASK, size);
     }
 }

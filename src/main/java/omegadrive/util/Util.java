@@ -217,11 +217,11 @@ public class Util {
         return b.getInt(pos);
     }
 
-    public static int readDataMask(byte[] src, Size size, int address, final int mask) {
-        return readData(src, size, address & mask);
+    public static int readDataMask(byte[] src, int address, final int mask, Size size) {
+        return readData(src, address & mask, size);
     }
 
-    public static int readData(byte[] src, Size size, int address) {
+    public static int readData(byte[] src, int address, Size size) {
         return switch (size) {
             case WORD -> ((src[address] & 0xFF) << 8) | (src[address + 1] & 0xFF);
             case LONG -> ((src[address] & 0xFF) << 24) | (src[address + 1] & 0xFF) << 16 |
@@ -230,7 +230,7 @@ public class Util {
         };
     }
 
-    public static void writeData(byte[] dest, Size size, int address, int data) {
+    public static void writeData(byte[] dest, int address, int data, Size size) {
         switch (size) {
             case WORD -> SHORT_BYTEARR_HANDLE.set(dest, address, (short) data);
             case LONG -> INT_BYTEARR_HANDLE.set(dest, address, data);
@@ -238,8 +238,8 @@ public class Util {
         }
     }
 
-    public static void writeDataMask(byte[] dest, Size size, int address, int data, final int mask) {
-        writeData(dest, size, address & mask, data);
+    public static void writeDataMask(byte[] dest, int address, int data, final int mask, Size size) {
+        writeData(dest, address & mask, data, size);
     }
 
     @Deprecated
@@ -250,7 +250,7 @@ public class Util {
         int size = memoryProvider.getRomSize();
         final int mask = memoryProvider.getRomMask();
         for (; i < size - 1; i += 2) {
-            int val = Util.readDataMask(memoryProvider.getRomData(), Size.WORD, i, mask);
+            int val = Util.readDataMask(memoryProvider.getRomData(), i, mask, Size.WORD);
             res = (res + val) & 0xFFFF;
         }
         //read final byte ??

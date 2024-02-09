@@ -301,7 +301,7 @@ public class MemView implements Device, UpdatableViewer {
         final int start = current.getStart();
         for (int i = 0; i < len; i += 2) {
             int w = readerMap.get(SH2_WORD).apply(current, start + i).intValue();
-            Util.writeData(data, Size.WORD, i, w);
+            Util.writeData(data, i, w, Size.WORD);
         }
     }
 

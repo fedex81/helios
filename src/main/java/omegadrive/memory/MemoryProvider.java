@@ -80,7 +80,7 @@ public class MemoryProvider implements IMemoryProvider {
 
     @Override
     public int readRomByte(int address) {
-        return Util.readDataMask(romHolder.data, Size.BYTE, address, romHolder.romMask);
+        return Util.readDataMask(romHolder.data, address, romHolder.romMask, Size.BYTE);
     }
 
     @Override
@@ -108,8 +108,8 @@ public class MemoryProvider implements IMemoryProvider {
 
     @Override
     public void setChecksumRomValue(long value) {
-        Util.writeDataMask(romHolder.data, Size.BYTE, CHECKSUM_START_ADDRESS, (byte) ((value >> 8) & 0xFF), romHolder.romMask);
-        Util.writeDataMask(romHolder.data, Size.BYTE, CHECKSUM_START_ADDRESS + 1, (byte) (value & 0xFF), romHolder.romMask);
+        Util.writeDataMask(romHolder.data, CHECKSUM_START_ADDRESS, (byte) ((value >> 8) & 0xFF), romHolder.romMask, Size.BYTE);
+        Util.writeDataMask(romHolder.data, CHECKSUM_START_ADDRESS + 1, (byte) (value & 0xFF), romHolder.romMask, Size.BYTE);
     }
 
     @Override
