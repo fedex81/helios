@@ -19,6 +19,7 @@ import static mcd.dict.MegaCdMemoryContext.WramSetup;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
+import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
 
 /**
@@ -196,8 +197,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
         checkRegLongAccess(regSpec, size);
         ByteBuffer regs = memCtx.getRegBuffer(cpu, regSpec);
-        int res = readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
-        return res;
+        return readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
     }
 
     private void handleMegaCdExpWrite(int address, int data, Size size) {
@@ -242,7 +242,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     private void handleReg0Write(int address, int data, Size size) {
-        int curr = readBuffer(sysGateRegs, MCD_RESET.addr, Size.WORD);
+        int curr = readBufferWord(sysGateRegs, MCD_RESET.addr);
         int res = memCtx.handleRegWrite(cpu, MCD_RESET, address, data, size);
         int sreset = res & 1;
         int sbusreq = (res >> 1) & 1;

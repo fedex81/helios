@@ -28,6 +28,7 @@ import static mcd.pcm.McdPcm.MCD_PCM_DIVIDER;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.Util.getBitFromWord;
 import static omegadrive.util.Util.th;
 
 /**
@@ -234,12 +235,38 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
                 timerContext.counter = timerContext.rate;
                 writeBufferRaw(regs, addr, data, size);
             }
+            case MCD_FONT_COLOR -> { //4c
+                //byte access always goes to the odd byte
+                address = size == Size.BYTE ? address | 1 : address;
+                writeBufferRaw(regs, address, data & 0xFF, size);
+                recalcFontData(regs);
+            }
+            case MCD_FONT_BIT -> { //4e
+                writeBufferRaw(regs, address, data, size);
+                recalcFontData(regs);
+            }
             default -> {
                 logHelper.logWarningOnce(LOG,
                         "S write unhandled MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, th(data), size);
                 writeBufferRaw(regs, address, data, size);
 //                assert false;
             }
+        }
+    }
+
+    private void recalcFontData(ByteBuffer regs) {
+        int colorVal = readBuffer(regs, MCD_FONT_COLOR.addr, Size.WORD);
+        short fontData = (short) readBuffer(regs, MCD_FONT_BIT.addr, Size.WORD);
+        int background = colorVal & 0xF;
+        int foreground = (colorVal >> 4) & 0xF;
+        int limit = 8; //4 regs, 2 bytes wide
+        for (int i = 0; i < limit; i += 2) {
+            int offset = 12 - (i << 1);
+            int n1 = getBitFromWord(fontData, offset | 0) > 0 ? foreground : background;
+            int n2 = getBitFromWord(fontData, offset | 1) > 0 ? foreground : background;
+            int n3 = getBitFromWord(fontData, offset | 2) > 0 ? foreground : background;
+            int n4 = getBitFromWord(fontData, offset | 3) > 0 ? foreground : background;
+            writeBufferRaw(regs, MCD_FONT_DATA0.addr + i, (n4 << 12) | (n3 << 8) | (n2 << 4) | n1, Size.WORD);
         }
     }
 

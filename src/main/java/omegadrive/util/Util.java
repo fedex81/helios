@@ -384,6 +384,12 @@ public class Util {
     }
 
     public static int getBitFromByte(byte b, int bitPos) {
+        assert bitPos >= 0 && bitPos < 8;
+        return (b >> bitPos) & 1;
+    }
+
+    public static int getBitFromWord(short b, int bitPos) {
+        assert bitPos >= 0 && bitPos < 16;
         return (b >> bitPos) & 1;
     }
 }

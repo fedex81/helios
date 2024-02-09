@@ -121,10 +121,6 @@ public class BufferUtil {
             case WORD -> readBufferWord(b, pos);
             case LONG -> readBufferLong(b, pos);
             case BYTE -> readBufferByte(b, pos);
-            default -> {
-                LOG.error("Unexpected size: {}", size);
-                yield size.getMask();
-            }
         };
     }
 
