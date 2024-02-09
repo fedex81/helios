@@ -57,8 +57,7 @@ public class McdDeviceHelper {
             cdd = Cdd.createInstance(memoryContext, interruptHandler);
             cdc = Cdc.createInstance(memoryContext, interruptHandler);
             asic = new Asic(memoryContext, interruptHandler);
-            subBus.attachDevice(subCpu).attachDevice(pcm).attachDevice(cdd).attachDevice(asic).
-                    attachDevice(cdc).attachDevice(interruptHandler);
+            subBus.attachDevices(subCpu, pcm, cdd, asic, cdc, interruptHandler);
             mainBus.subCpu = subCpu;
             mainBus.subCpuBus = subBus;
             //TODO check, on boot the sub bus is set to request (ie. main has it) hence sub cpu cannot run

@@ -122,8 +122,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         //sound attached later
         sound = SoundProvider.NO_SOUND;
         vdp.addVdpEventListener(mcdLaunchContext.subBus);
-        bus.attachDevice(this).attachDevice(memory).attachDevice(joypad).attachDevice(vdp).
-                attachDevice(cpu).attachDevice(z80);
+        bus.attachDevices(this, memory, joypad, vdp, cpu, z80);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
         reloadWindowState();

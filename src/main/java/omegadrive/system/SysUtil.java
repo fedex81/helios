@@ -56,11 +56,13 @@ public class SysUtil {
     public static final String[] nesBinaryTypes = {".nes"};
     public static final String[] gbBinaryTypes = {".gb"};
     public static final String[] s32xBinaryTypes = {".32x", ".bin", ".md"};
+
+    public static final String[] mcdBinaryTypes = {".cue", ".bin"};
     public static final String[] compressedBinaryTypes = {".gz", ".zip"};
 
     public static final String[] binaryTypes = Stream.of(
             mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes, nesBinaryTypes,
-            gbBinaryTypes, s32xBinaryTypes,
+            gbBinaryTypes, s32xBinaryTypes, mcdBinaryTypes,
             compressedBinaryTypes
     ).flatMap(Stream::of).distinct().toArray(String[]::new);
 
@@ -73,6 +75,7 @@ public class SysUtil {
         SystemProvider systemProvider = null;
         boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean is32x = Arrays.stream(s32xBinaryTypes).anyMatch(lowerCaseName::endsWith);
+        boolean isMcd = Arrays.stream(mcdBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
@@ -81,8 +84,7 @@ public class SysUtil {
         boolean isNes = Arrays.stream(nesBinaryTypes).anyMatch(lowerCaseName::endsWith);
         boolean isGb = Arrays.stream(gbBinaryTypes).anyMatch(lowerCaseName::endsWith);
         if (isGen) {
-            //TODO fix
-            systemProvider = MegaCd.createNewInstance(display);
+            systemProvider = Megadrive.createNewInstance(display);
         } else if (isSg) {
             systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, display);
         } else if (isCv) {
@@ -99,6 +101,8 @@ public class SysUtil {
             systemProvider = Gb.createNewInstance(SystemType.GB, display);
         } else if (is32x) {
             systemProvider = Md32x.createNewInstance32x(display, debugPerf);
+        } else if (isMcd) {
+            systemProvider = MegaCd.createNewInstance(display);
         }
         if (systemProvider == null) {
             LOG.error("Unable to find a system to load: {}", file.toAbsolutePath());
