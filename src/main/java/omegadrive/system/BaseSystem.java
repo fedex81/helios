@@ -31,6 +31,7 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
+import omegadrive.system.SysUtil.RomSpec;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
@@ -110,8 +111,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         return Region.JAPAN;
     }
 
-    protected final Region getRegionInternal(String regionOvr) {
-        Region romRegion = getRomRegion();
+    public static Region getRegionInternal(String regionOvr, Region romRegion) {
         Region ovrRegion = RegionDetector.getRegion(regionOvr);
         if (ovrRegion != null && ovrRegion != romRegion) {
             LOG.info("Setting region override from: {} to {}", romRegion, ovrRegion);
@@ -129,7 +129,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         LOG.info("Event: {}, with parameter: {}", event, parameter);
         switch (event) {
             case NEW_ROM:
-                handleNewRom((Path) parameter);
+                handleNewRom((RomSpec) parameter);
                 break;
             case CLOSE_ROM:
                 handleCloseRom();
@@ -187,10 +187,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         emuFrame.reloadControllers(inputProvider.getAvailableControllers());
     }
 
-    public void handleNewRom(Path file) {
+    public void handleNewRom(RomSpec romSpec) {
         init();
-        Runnable runnable = new RomRunnable(file);
-        PrefStore.addRecentFile(file.toAbsolutePath().toString());
+        Runnable runnable = new RomRunnable(romSpec);
+        PrefStore.addRecentFile(romSpec.toString());
         runningRomFuture = executorService.submit(runnable, null);
     }
 
@@ -348,24 +348,25 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     final Consumer<String> statsConsumer = st -> stats = Optional.of(st);
 
     class RomRunnable implements Runnable {
-        private final Path file;
+        private final RomSpec romSpec;
         private static final String threadNamePrefix = "cycle-";
 
-        public RomRunnable(Path file) {
-            this.file = file;
+        public RomRunnable(RomSpec romSpec) {
+            this.romSpec = romSpec;
         }
 
         @Override
         public void run() {
             try {
-                byte[] data = FileUtil.readBinaryFile(file, getSystemType());
+                assert romSpec.systemType != SystemType.NONE ? romSpec.systemType == getSystemType() : true;
+                byte[] data = FileUtil.readBinaryFile(romSpec.file, getSystemType());
                 if (data.length == 0) {
-                    LOG.error("Unable to open/access file: {}", file.toAbsolutePath());
+                    LOG.error("Unable to open/access file: {}", romSpec);
                     return;
                 }
                 memory.setRomData(data);
-                romContext = createRomContext(file);
-                String romName = FileUtil.getFileName(file);
+                romContext = createRomContext(romSpec);
+                String romName = FileUtil.getFileName(romSpec.file);
                 emuFrame.setTitle(romName);
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
@@ -383,9 +384,9 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         }
     }
 
-    protected RomContext createRomContext(Path rom) {
+    protected RomContext createRomContext(RomSpec rom) {
         RomContext rc = new RomContext();
-        rc.romPath = rom;
+        rc.romSpec = rom;
         rc.region = getRomRegion();
         return rc;
     }
@@ -414,7 +415,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     @Override
     public void reset() {
         handleCloseRom();
-        handleNewRom(romContext.romPath);
+        handleNewRom(romContext.romSpec);
     }
 
     protected void resetAfterRomLoad() {

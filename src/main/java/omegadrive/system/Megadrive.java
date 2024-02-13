@@ -31,6 +31,7 @@ import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.GenesisJoypad;
+import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
@@ -45,7 +46,6 @@ import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 import s32x.util.Md32xRuntimeData;
 
-import java.nio.file.Path;
 import java.util.Optional;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -208,15 +208,19 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
     }
 
     @Override
-    protected RomContext createRomContext(Path rom) {
+    protected RomContext createRomContext(SysUtil.RomSpec rom) {
+        return createRomContext(rom, memory, emuFrame.getRegionOverride());
+    }
+
+    public static RomContext createRomContext(SysUtil.RomSpec rom, IMemoryProvider memory, String regionOverride) {
         RomContext rc = new RomContext();
-        rc.romPath = rom;
-        MdCartInfoProvider mcip = MdCartInfoProvider.createInstance(memory, rc.romPath);
+        rc.romSpec = rom;
+        MdCartInfoProvider mcip = MdCartInfoProvider.createInstance(memory, rc.romSpec.file);
         rc.cartridgeInfoProvider = mcip;
-        String regionOverride = Optional.ofNullable(mcip.getEntry().forceRegion).
-                orElse(emuFrame.getRegionOverride());
-        romContext = rc;
-        rc.region = getRegionInternal(regionOverride);
+        String regionOvr = Optional.ofNullable(mcip.getEntry().forceRegion).
+                orElse(regionOverride);
+        RegionDetector.Region romRegion = RegionDetector.detectRegion((MdCartInfoProvider) rc.cartridgeInfoProvider);
+        rc.region = getRegionInternal(regionOvr, romRegion);
         return rc;
     }
 

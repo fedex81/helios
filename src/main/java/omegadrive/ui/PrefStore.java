@@ -19,12 +19,15 @@
 
 package omegadrive.ui;
 
+import omegadrive.SystemLoader;
+import omegadrive.system.SysUtil;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.file.Path;
 import java.util.*;
 
 public class PrefStore {
@@ -78,6 +81,24 @@ public class PrefStore {
         List<String> l = new ArrayList<>(map.values());
         Collections.reverse(l);
         return l;
+    }
+
+    public static SysUtil.RomSpec getRomSpecFromRecentItem(String text) {
+        int idx = text.indexOf(',');
+        int tknLimit = idx > 0 ? 2 : 0;
+        String[] tkn = text.split(",", tknLimit);
+        SystemLoader.SystemType st;
+        String file;
+        try {
+            //"<systemType>,<filePath>", ie: "MD,<filePath>"
+            st = SystemLoader.SystemType.valueOf(tkn[0]);
+            file = tkn[1];
+        } catch (Exception e) {
+            //"<filePath>"
+            st = SystemLoader.SystemType.NONE;
+            file = tkn[0];
+        }
+        return SysUtil.RomSpec.of(Path.of(file), st);
     }
 
     public static int getSwingUiThemeIndex() {

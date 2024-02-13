@@ -1,5 +1,7 @@
 package omegadrive.system;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import mcd.MegaCd;
 import omegadrive.Device;
 import omegadrive.SystemLoader.SystemType;
@@ -27,10 +29,11 @@ import s32x.pwm.BlipPwmProvider;
 import s32x.pwm.Pwm;
 import s32x.pwm.S32xPwmProvider;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Stream;
 
+import static omegadrive.SystemLoader.SystemType.*;
 import static omegadrive.SystemLoader.handleCompressedFiles;
 import static omegadrive.sound.SoundDevice.SoundDeviceType.*;
 import static omegadrive.sound.SoundProvider.SAMPLE_RATE_HZ;
@@ -47,66 +50,101 @@ public class SysUtil {
 
     public static final String SMD_INTERLEAVED_EXT = ".smd";
 
-    public static final String[] mdBinaryTypes = {".md", ".bin", SMD_INTERLEAVED_EXT};
-    public static final String[] sgBinaryTypes = {".sg", ".sc"};
-    public static final String[] cvBinaryTypes = {".col"};
-    public static final String[] msxBinaryTypes = {".rom"};
-    public static final String[] smsBinaryTypes = {".sms"};
-    public static final String[] ggBinaryTypes = {".gg"};
-    public static final String[] nesBinaryTypes = {".nes"};
-    public static final String[] gbBinaryTypes = {".gb"};
-    public static final String[] s32xBinaryTypes = {".32x", ".bin", ".md"};
-
-    public static final String[] mcdBinaryTypes = {".cue", ".bin"};
+    public static final Map<SystemType, String[]> sysFileExtensionsMap = ImmutableMap.of(
+            GENESIS, new String[]{".md", ".bin", SMD_INTERLEAVED_EXT},
+            S32X, new String[]{".32x", ".bin", ".md"},
+            MEGACD, new String[]{".cue", ".bin"},
+            SG_1000, new String[]{".sg", ".sc"},
+            COLECO, new String[]{".col"},
+            MSX, new String[]{".rom"},
+            SMS, new String[]{".sms"},
+            GG, new String[]{".gg"},
+            NES, new String[]{".nes"},
+            GB, new String[]{".gb"}
+    );
     public static final String[] compressedBinaryTypes = {".gz", ".zip"};
 
-    public static final String[] binaryTypes = Stream.of(
-            mdBinaryTypes, sgBinaryTypes, cvBinaryTypes, msxBinaryTypes, smsBinaryTypes, ggBinaryTypes, nesBinaryTypes,
-            gbBinaryTypes, s32xBinaryTypes, mcdBinaryTypes,
-            compressedBinaryTypes
-    ).flatMap(Stream::of).distinct().toArray(String[]::new);
+    public static final Set<String> binaryTypesSet;
+    public static final String[] binaryTypes;
 
-    public static SystemProvider createSystemProvider(Path file, DisplayWindow display, boolean debugPerf) {
-        String lowerCaseName = handleCompressedFiles(file, file.toString().toLowerCase());
+    static {
+        ImmutableSet.Builder<String> b = ImmutableSet.builder();
+        sysFileExtensionsMap.values().stream().flatMap(v -> Arrays.stream(v)).forEach(b::add);
+        Arrays.stream(compressedBinaryTypes).forEach(b::add);
+        binaryTypesSet = b.build();
+        binaryTypes = binaryTypesSet.toArray(String[]::new);
+    }
+
+    public static class RomSpec {
+
+        public static final RomSpec NO_ROM = RomSpec.of(new File("./NO_FILE"));
+
+        public Path file;
+        public SystemType systemType;
+
+        public static RomSpec of(Path path) {
+            return of(path, SystemType.NONE);
+        }
+
+        public static RomSpec of(String filePath) {
+            return of(Path.of(filePath), SystemType.NONE);
+        }
+
+        public static RomSpec of(File file) {
+            return of(Path.of(file.getAbsolutePath()), SystemType.NONE);
+        }
+
+        public static RomSpec of(File file, SystemType systemType) {
+            return of(Path.of(file.getAbsolutePath()), systemType);
+        }
+
+        public static RomSpec of(Path file, SystemType systemType) {
+            RomSpec r = new RomSpec();
+            r.systemType = systemType;
+            r.file = file;
+            return r;
+        }
+
+        @Override
+        public String toString() {
+            return systemType + "," + file.toAbsolutePath();
+        }
+    }
+
+    public static SystemProvider createSystemProvider(RomSpec romSpec, DisplayWindow display) {
+        String lowerCaseName = handleCompressedFiles(romSpec.file, romSpec.file.toString().toLowerCase());
+
         if (lowerCaseName == null) {
-            LOG.error("Unable to load file: {}", file != null ? file.toAbsolutePath() : "null");
+            LOG.error("Unable to load file: {}", romSpec);
             return null;
         }
-        SystemProvider systemProvider = null;
-        boolean isGen = Arrays.stream(mdBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean is32x = Arrays.stream(s32xBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isMcd = Arrays.stream(mcdBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isSg = Arrays.stream(sgBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isCv = Arrays.stream(cvBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isMsx = Arrays.stream(msxBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isSms = Arrays.stream(smsBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isGg = Arrays.stream(ggBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isNes = Arrays.stream(nesBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        boolean isGb = Arrays.stream(gbBinaryTypes).anyMatch(lowerCaseName::endsWith);
-        if (isGen) {
-            systemProvider = Megadrive.createNewInstance(display);
-        } else if (isSg) {
-            systemProvider = Z80BaseSystem.createNewInstance(SystemType.SG_1000, display);
-        } else if (isCv) {
-            systemProvider = Z80BaseSystem.createNewInstance(SystemType.COLECO, display);
-        } else if (isMsx) {
-            systemProvider = Z80BaseSystem.createNewInstance(SystemType.MSX, display);
-        } else if (isSms) {
-            systemProvider = Sms.createNewInstance(SystemType.SMS, display);
-        } else if (isGg) {
-            systemProvider = Sms.createNewInstance(SystemType.GG, display);
-        } else if (isNes) {
-            systemProvider = Nes.createNewInstance(SystemType.NES, display);
-        } else if (isGb) {
-            systemProvider = Gb.createNewInstance(SystemType.GB, display);
-        } else if (is32x) {
-            systemProvider = Md32x.createNewInstance32x(display, debugPerf);
-        } else if (isMcd) {
-            systemProvider = MegaCd.createNewInstance(display);
+        SystemType type = romSpec.systemType;
+
+        if (type == SystemType.NONE) {
+            for (var entry : sysFileExtensionsMap.entrySet()) {
+                boolean isMatch = Arrays.stream(entry.getValue()).anyMatch(lowerCaseName::endsWith);
+                if (isMatch) {
+                    type = entry.getKey();
+                    break;
+                }
+            }
         }
-        if (systemProvider == null) {
-            LOG.error("Unable to find a system to load: {}", file.toAbsolutePath());
-        }
+        SystemProvider systemProvider = switch (type) {
+            case GENESIS -> Megadrive.createNewInstance(display);
+            case MEGACD -> MegaCd.createNewInstance(display);
+            case S32X -> Md32x.createNewInstance32x(display);
+            case SG_1000 -> Z80BaseSystem.createNewInstance(SG_1000, display);
+            case COLECO -> Z80BaseSystem.createNewInstance(COLECO, display);
+            case MSX -> Z80BaseSystem.createNewInstance(MSX, display);
+            case SMS -> Sms.createNewInstance(SMS, display);
+            case GG -> Sms.createNewInstance(GG, display);
+            case NES -> Nes.createNewInstance(NES, display);
+            case GB -> Gb.createNewInstance(GB, display);
+            case NONE -> {
+                LOG.error("Unable to find a system to load: {}", romSpec);
+                yield null;
+            }
+        };
         return systemProvider;
     }
 

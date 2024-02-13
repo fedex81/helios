@@ -5,6 +5,7 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.joypad.JoypadProvider.JoypadButton;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -81,7 +82,7 @@ public class VdpFifoTesting {
         Path file = Paths.get(resFolder.toAbsolutePath().toString(), fileName);
         Assert.assertNotNull(file);
         SystemLoader systemLoader = SystemLoader.getInstance();
-        SystemProvider system = systemLoader.handleNewRomFile(file);
+        SystemProvider system = systemLoader.handleNewRomFile(SysUtil.RomSpec.of(file));
         waitUntilRunning(system);
         JoypadProvider joypadProvider = getProvider(system, "joypad");
         IMemoryProvider memoryProvider = getProvider(system, "memory");

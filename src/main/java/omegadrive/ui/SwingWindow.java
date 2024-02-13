@@ -21,13 +21,16 @@ package omegadrive.ui;
 
 import com.google.common.base.Strings;
 import omegadrive.SystemLoader;
+import omegadrive.SystemLoader.SystemType;
 import omegadrive.input.InputProvider;
 import omegadrive.input.InputProvider.PlayerNumber;
 import omegadrive.joypad.JoypadProvider.JoypadType;
+import omegadrive.system.SysUtil.RomSpec;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.flatlaf.FlatLafHelper;
+import omegadrive.ui.util.UiFileFilters;
+import omegadrive.ui.util.UiFileFilters.FileResourceType;
 import omegadrive.util.*;
-import omegadrive.util.FileUtil.FileResourceType;
 import org.slf4j.Logger;
 
 import javax.swing.*;
@@ -55,7 +58,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static omegadrive.system.SystemProvider.SystemEvent.*;
-import static omegadrive.util.FileUtil.FileResourceType.SAVE_STATE_RES;
+import static omegadrive.ui.PrefStore.getRomSpecFromRecentItem;
+import static omegadrive.ui.util.UiFileFilters.FileResourceType.SAVE_STATE_RES;
 import static omegadrive.util.FileUtil.QUICK_SAVE_PATH;
 import static omegadrive.util.ScreenSizeHelper.*;
 
@@ -323,7 +327,7 @@ public class SwingWindow implements DisplayWindow {
         recentFilesItems = new JMenuItem[PrefStore.recentFileTotal];
         IntStream.range(0, recentFilesItems.length).forEach(i -> {
             recentFilesItems[i] = new JMenuItem();
-            addKeyAction(recentFilesItems[i], NONE, e -> handleNewRom(recentFilesItems[i].getToolTipText()));
+            addKeyAction(recentFilesItems[i], NONE, e -> handleNewRomFromRecent(recentFilesItems[i].getToolTipText()));
             recentFilesMenu.add(recentFilesItems[i]);
         });
         reloadRecentFiles();
@@ -488,27 +492,34 @@ public class SwingWindow implements DisplayWindow {
         };
     }
 
-    private Optional<File> loadFileDialog(Component parent, FileResourceType type) {
+    private Optional<RomSpec> loadFileDialog(Component parent, FileResourceType type) {
         return fileDialog(parent, type, true);
     }
 
-    private Optional<File> fileDialog(Component parent, FileResourceType type, boolean load) {
+    private Optional<RomSpec> fileDialog(Component parent, FileResourceType type, boolean load) {
         int dialogType = load ? JFileChooser.OPEN_DIALOG : JFileChooser.SAVE_DIALOG;
-        FileFilter filter = type == FileResourceType.SAVE_STATE_RES ? FileUtil.SAVE_STATE_FILTER : FileUtil.ROM_FILTER;
-        String lastFileStr = type == FileResourceType.SAVE_STATE_RES ? PrefStore.lastSaveFile : PrefStore.lastRomFile;
+        boolean isSaveState = type == SAVE_STATE_RES;
+        String lastFileStr = isSaveState ? PrefStore.lastSaveFile : PrefStore.lastRomFile;
         File lastFile = new File(lastFileStr);
-        Optional<File> res = Optional.empty();
         JFileChooser fileChooser = new JFileChooser(lastFile);
-        fileChooser.setFileFilter(filter);
         fileChooser.setDialogType(dialogType);
+        FileFilter[] filters = UiFileFilters.getFilterSet(type).toArray(FileFilter[]::new);
+        Arrays.stream(filters).forEach(fileChooser::addChoosableFileFilter);
+        fileChooser.setFileFilter(filters[0]);
         if (lastFile.isFile()) {
             fileChooser.setSelectedFile(lastFile);
         }
         int result = fileChooser.showDialog(parent, null);
+
+        SystemType systemType = SystemType.NONE;
+        Optional<File> res = Optional.empty();
         if (result == JFileChooser.APPROVE_OPTION) {
             res = Optional.ofNullable(fileChooser.getSelectedFile());
+            systemType = UiFileFilters.getSystemTypeFromFilterDesc(type,
+                    fileChooser.getFileFilter().getDescription(), mainEmu.getSystemType());
         }
-        return res;
+        final SystemType st = systemType;
+        return res.map(f -> RomSpec.of(f, st));
     }
 
     @Override
@@ -517,12 +528,12 @@ public class SwingWindow implements DisplayWindow {
         showInfoCount = SHOW_INFO_FRAMES_DELAY;
     }
 
-    private Optional<File> loadRomDialog(Component parent) {
+    private Optional<RomSpec> loadRomDialog(Component parent) {
         return loadFileDialog(parent, FileResourceType.ROM);
     }
 
     private Optional<File> loadStateFileDialog(Component parent) {
-        return loadFileDialog(parent, FileResourceType.SAVE_STATE_RES);
+        return loadFileDialog(parent, SAVE_STATE_RES).map(r -> r.file.toFile());
     }
 
     private void handleLoadState() {
@@ -550,27 +561,27 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private void handleSaveState() {
-        Optional<File> optFile = fileDialog(jFrame, SAVE_STATE_RES, false);
+        Optional<File> optFile = fileDialog(jFrame, SAVE_STATE_RES, false).map(r -> r.file.toFile());
         optFile.ifPresent(file -> handleSystemEvent(SAVE_STATE, file.toPath(), file.getName()));
     }
 
     private void handleNewRom() {
         handleSystemEvent(CLOSE_ROM, null, null);
-        Optional<File> optFile = loadRomDialog(jFrame);
+        Optional<RomSpec> optFile = loadRomDialog(jFrame);
         if (optFile.isPresent()) {
-            Path file = optFile.get().toPath();
-            SystemLoader.getInstance().handleNewRomFile(file);
+            RomSpec romSpec = optFile.get();
+            SystemLoader.getInstance().handleNewRomFile(romSpec);
             reloadRecentFiles();
-            showInfo(NEW_ROM + ": " + file.getFileName());
-            PrefStore.lastRomFile = file.toAbsolutePath().toString();
+            showInfo(NEW_ROM + ": " + romSpec);
+            PrefStore.lastRomFile = romSpec.toString();
         }
     }
 
-    private void handleNewRom(String path) {
-        Path p = Paths.get(path);
-        showInfo(NEW_ROM + ": " + p.getFileName());
-        SystemLoader.getInstance().handleNewRomFile(p);
-        PrefStore.lastRomFile = p.toAbsolutePath().toString();
+    private void handleNewRomFromRecent(String path) {
+        RomSpec romSpec = getRomSpecFromRecentItem(path);
+        showInfo(NEW_ROM + ": " + romSpec);
+        SystemLoader.getInstance().handleNewRomFile(romSpec);
+        PrefStore.lastRomFile = romSpec.toString();
     }
 
     private void addDndListener(Component component) {
@@ -591,11 +602,11 @@ public class SwingWindow implements DisplayWindow {
                         return;
                     }
                     Path path = file.toPath();
-                    if (FileUtil.ROM_FILTER.accept(file)) {
-                        SystemLoader.getInstance().handleNewRomFile(path);
+                    if (UiFileFilters.ROM_FILTER.accept(file)) {
+                        SystemLoader.getInstance().handleNewRomFile(RomSpec.of(path));
                         reloadRecentFiles();
                         showInfo(NEW_ROM + ": " + path.getFileName());
-                    } else if (FileUtil.SAVE_STATE_FILTER.accept(file)) {
+                    } else if (UiFileFilters.SAVE_STATE_FILTER.accept(file)) {
                         handleSystemEvent(LOAD_STATE, path, path.getFileName().toString());
                     }
                 } catch (Exception ex) {
@@ -613,8 +624,8 @@ public class SwingWindow implements DisplayWindow {
         Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);
         Optional.ofNullable(mainEmu).ifPresent(sp -> {
             setTitle("");
-            boolean en = mainEmu.getSystemType() == SystemLoader.SystemType.GENESIS ||
-                    mainEmu.getSystemType() == SystemLoader.SystemType.S32X;
+            boolean en = mainEmu.getSystemType() == SystemType.GENESIS ||
+                    mainEmu.getSystemType() == SystemType.S32X;
             joypadTypeMenu.setEnabled(en);
             mainEmu.handleSystemEvent(SOUND_ENABLED, soundEnItem.getState());
         });

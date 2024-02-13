@@ -5,6 +5,7 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.sound.PwmProvider;
 import omegadrive.system.Megadrive;
+import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.BufferUtil;
@@ -30,7 +31,6 @@ import s32x.vdp.MarsVdp;
 import s32x.vdp.MarsVdp.MarsVdpRenderContext;
 import s32x.vdp.debug.DebugVideoRenderContext;
 
-import java.nio.file.Path;
 import java.util.Optional;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
@@ -118,8 +118,8 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         sound.setEnabled(sound.getPwm(), !Pwm.PWM_USE_BLIP);
     }
 
-    public static SystemProvider createNewInstance32x(DisplayWindow emuFrame, boolean debugPerf) {
-        return debugPerf ? null : new Md32x(emuFrame);
+    public static SystemProvider createNewInstance32x(DisplayWindow emuFrame) {
+        return new Md32x(emuFrame);
     }
 
     @Override
@@ -244,8 +244,8 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     }
 
     @Override
-    public void handleNewRom(Path file) {
-        super.handleNewRom(file);
+    public void handleNewRom(SysUtil.RomSpec romSpec) {
+        super.handleNewRom(romSpec);
         StaticBootstrapSupport.initStatic(this);
     }
 

@@ -35,9 +35,7 @@ import omegadrive.joypad.GenesisJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
-import omegadrive.system.BaseSystem;
-import omegadrive.system.Genesis;
-import omegadrive.system.SystemProvider;
+import omegadrive.system.*;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -47,9 +45,6 @@ import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 import s32x.util.Md32xRuntimeData;
-
-import java.nio.file.Path;
-import java.util.Optional;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.GEN_NTSC_MCLOCK_MHZ;
@@ -235,16 +230,9 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     }
 
     @Override
-    protected RomContext createRomContext(Path rom) {
-        RomContext rc = new RomContext();
-        rc.romPath = rom;
-        MdCartInfoProvider mcip = MdCartInfoProvider.createInstance(memory, rc.romPath);
-        rc.cartridgeInfoProvider = mcip;
-        String regionOverride = Optional.ofNullable(mcip.getEntry().forceRegion).
-                orElse(emuFrame.getRegionOverride());
-        romContext = rc;
-        rc.region = getRegionInternal(regionOverride);
-        return rc;
+    protected RomContext createRomContext(SysUtil.RomSpec rom) {
+        romContext = Megadrive.createRomContext(rom, memory, emuFrame.getRegionOverride());
+        return romContext;
     }
 
     @Override

@@ -136,9 +136,10 @@ public class S32xAutomatedGameTester {
         SystemLoader systemLoader = SystemLoader.getInstance();
         SystemProvider system;
         for (Path rom : testRoms) {
+            SysUtil.RomSpec romSpec = SysUtil.RomSpec.of(rom);
             String name = FileUtil.getFileName(rom);
             System.out.println(count++ + ": " + name);
-            system = systemLoader.handleNewRomFile(rom);
+            system = systemLoader.handleNewRomFile(romSpec);
             if (system == null) {
                 System.out.print(" - SKIP");
                 continue;

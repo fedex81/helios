@@ -21,6 +21,7 @@ package omegadrive;
 
 import omegadrive.input.KeyboardInputHelper;
 import omegadrive.system.SysUtil;
+import omegadrive.system.SysUtil.RomSpec;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
@@ -34,7 +35,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.FileReader;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipEntry;
@@ -53,7 +53,7 @@ public class SystemLoader {
 
     private static final String PROPERTIES_FILENAME = "./helios.properties";
 
-    public static boolean debugPerf, showFps, headless, smdFileAsInterleaved, testMode;
+    public static boolean showFps, headless, smdFileAsInterleaved, testMode;
     public static String biosFolder = "./res/bios";
     public static String biosNameMsx1 = "cbios_main_msx1.rom";
     public static String biosNameColeco = "bios_coleco.col";
@@ -68,7 +68,6 @@ public class SystemLoader {
         }
         System.getProperties().list(System.out);
         System.out.println("-- done listing properties --");
-        debugPerf = Boolean.parseBoolean(java.lang.System.getProperty("helios.debug", "false"));
         showFps = Boolean.parseBoolean(java.lang.System.getProperty("helios.fps", "false"));
         headless = Boolean.parseBoolean(java.lang.System.getProperty("helios.headless", "false"));
         biosFolder = String.valueOf(java.lang.System.getProperty("bios.folder", biosFolder));
@@ -96,7 +95,8 @@ public class SystemLoader {
             Util.sleep(250);
             String filePath = args[0];
             LOG.info("Launching file at: {}", filePath);
-            INSTANCE.handleNewRomFile(Paths.get(filePath));
+            RomSpec romSpec = RomSpec.of(filePath);
+            INSTANCE.handleNewRomFile(romSpec);
             Util.sleep(1_000); //give the game thread a chance
         }
         if (headless) {
@@ -147,8 +147,8 @@ public class SystemLoader {
         SystemLoader.headless = headless;
     }
 
-    public SystemProvider handleNewRomFile(Path file) {
-        systemProvider = createSystemProvider(file, debugPerf);
+    public SystemProvider handleNewRomFile(RomSpec file) {
+        systemProvider = createSystemProvider(file);
         if (systemProvider != null) {
             emuFrame.reloadSystem(systemProvider);
             systemProvider.handleSystemEvent(NEW_ROM, file);
@@ -156,7 +156,7 @@ public class SystemLoader {
         return systemProvider;
     }
 
-    SystemProvider getSystemAdapter(){
+    SystemProvider getSystemAdapter() {
         return new SystemProvider() {
 
             @Override
@@ -164,7 +164,7 @@ public class SystemLoader {
                 LOG.info("Event: {}, with parameter: {}", event, parameter);
                 switch (event) {
                     case NEW_ROM:
-                        handleNewRomFile((Path) parameter);
+                        handleNewRomFile((RomSpec) parameter);
                         break;
                     case CLOSE_ROM:
                         break;
@@ -197,11 +197,6 @@ public class SystemLoader {
             }
         };
     }
-
-    public SystemProvider createSystemProvider(Path file) {
-        return createSystemProvider(file, false);
-    }
-
     public static String handleCompressedFiles(Path file, String lowerCaseName) {
         if (ZipUtil.isZipArchiveByteStream(file)) {
             Optional<? extends ZipEntry> optEntry = ZipUtil.getSupportedZipEntryIfAny(file);
@@ -218,8 +213,8 @@ public class SystemLoader {
         return lowerCaseName;
     }
 
-    public SystemProvider createSystemProvider(Path file, boolean debugPerf) {
-        systemProvider = SysUtil.createSystemProvider(file, emuFrame, debugPerf);
+    public SystemProvider createSystemProvider(RomSpec file) {
+        systemProvider = SysUtil.createSystemProvider(file, emuFrame);
         return systemProvider;
     }
 

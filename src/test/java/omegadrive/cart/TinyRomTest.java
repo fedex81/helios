@@ -22,6 +22,7 @@ package omegadrive.cart;
 import omegadrive.SystemLoader;
 import omegadrive.input.InputProvider;
 import omegadrive.sound.SoundProvider;
+import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -56,7 +57,7 @@ public class TinyRomTest {
 
     protected static SystemProvider createTestProvider() {
         InputProvider.bootstrap();
-        return SystemLoader.getInstance().handleNewRomFile(testFilePath);
+        return SystemLoader.getInstance().handleNewRomFile(SysUtil.RomSpec.of(testFilePath));
     }
 
     /**

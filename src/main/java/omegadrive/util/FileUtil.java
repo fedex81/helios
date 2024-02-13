@@ -24,14 +24,12 @@ import omegadrive.system.SysUtil;
 import org.slf4j.Logger;
 
 import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.*;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +38,7 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
 import static omegadrive.SystemLoader.smdFileAsInterleaved;
+import static omegadrive.ui.util.UiFileFilters.ROM_FILTER;
 
 public class FileUtil {
 
@@ -57,26 +56,6 @@ public class FileUtil {
 
     public static final int SMD_HEADER_SIZE = 512;
     public static final int SMD_CHUNK_SIZE = 16384;
-
-    public static final String[] extBinaryTypesList = Arrays.stream(SysUtil.binaryTypes).
-            map(s -> s.replace(".", "")).toArray(String[]::new);
-    public static final FileFilter ROM_FILTER = new FileNameExtensionFilter(
-            Arrays.toString(extBinaryTypesList) + " files", extBinaryTypesList);
-
-    public enum FileResourceType {ROM, SAVE_STATE_RES}
-
-    public static final FileFilter SAVE_STATE_FILTER = new FileFilter() {
-        @Override
-        public String getDescription() {
-            return "state files";
-        }
-
-        @Override
-        public boolean accept(File f) {
-            String name = f.getName().toLowerCase();
-            return f.isDirectory() || name.contains(".gs") || name.contains(".s0") || name.contains(".n0");
-        }
-    };
 
     public static void writeFileSafe(Path file, byte[] data) {
         //calling thread could be interrupted while writing -> bad

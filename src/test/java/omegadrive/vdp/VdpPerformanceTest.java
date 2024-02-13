@@ -22,6 +22,7 @@ package omegadrive.vdp;
 import omegadrive.SystemLoader;
 import omegadrive.cpu.m68k.MC68000Helper;
 import omegadrive.input.InputProvider;
+import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -60,7 +61,7 @@ public class VdpPerformanceTest {
 
     protected static SystemProvider createTestProvider() {
         InputProvider.bootstrap();
-        return SystemLoader.getInstance().handleNewRomFile(testFilePath);
+        return SystemLoader.getInstance().handleNewRomFile(SysUtil.RomSpec.of(testFilePath));
     }
 
     private static void printFramePerf(long sampleCnt, long nowNs, long lastNs, long startNs, int frameCount) {

@@ -19,12 +19,23 @@
 
 package omegadrive.ui;
 
+import omegadrive.SystemLoader.SystemType;
+import omegadrive.system.SysUtil.RomSpec;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+
+import static omegadrive.SystemLoader.SystemType.NONE;
+import static omegadrive.SystemLoader.SystemType.S32X;
 
 public class PrefStoreTest {
 
@@ -80,4 +91,47 @@ public class PrefStoreTest {
         Assert.assertEquals(exp, toOrderedString());
     }
 
+    @Test
+    public void testItemName() {
+        Function<SystemType, RomSpec> toRomSpec =
+                v -> RomSpec.of(Paths.get("file" + v.hashCode()), v);
+        Arrays.stream(SystemType.values()).forEach(v -> {
+            if (v != NONE) {
+                addSet(toRomSpec.apply(v).toString());
+            }
+        });
+        PrefStore.getRecentFilesList().forEach(str -> {
+            RomSpec r = PrefStore.getRomSpecFromRecentItem(str);
+            Assertions.assertNotEquals(NONE, r.systemType);
+        });
+
+        PrefStore.initPrefs();
+        String[] names = {"file1", ",file2", "oops,file3"};
+        Arrays.stream(names).forEach(PrefStoreTest::addSet);
+        List<String> l = PrefStore.getRecentFilesList();
+        for (int i = 0; i < names.length; i++) {
+            String v = l.get(i);
+            RomSpec romSpec = PrefStore.getRomSpecFromRecentItem(v);
+            Assertions.assertEquals(NONE, romSpec.systemType);
+        }
+    }
+
+    @Test
+    public void testItemNameParse() {
+        PrefStore.initPrefs();
+        String path = "Darxide (Europe) (En,Fr,De,Es).32x.zip";
+        Path p = Paths.get(path);
+        List<SystemType> typ = List.of(NONE, S32X);
+        String[] names = new String[]{typ.get(0).name() + "," + path, typ.get(1).name() + "," + path};
+        Arrays.stream(names).forEach(PrefStoreTest::addSet);
+        List<String> l = PrefStore.getRecentFilesList();
+        List<SystemType> expTyp = new ArrayList<>(typ);
+        Collections.reverse(expTyp);
+        for (int i = 0; i < names.length; i++) {
+            String v = l.get(i);
+            RomSpec romSpec = PrefStore.getRomSpecFromRecentItem(v);
+            Assertions.assertEquals(expTyp.get(i), romSpec.systemType);
+            Assertions.assertEquals(p, romSpec.file);
+        }
+    }
 }

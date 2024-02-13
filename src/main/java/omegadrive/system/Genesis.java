@@ -45,9 +45,6 @@ import omegadrive.vdp.util.MemView;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 
-import java.nio.file.Path;
-import java.util.Optional;
-
 /**
  * Megadrive main class
  *
@@ -218,16 +215,8 @@ public class Genesis extends BaseSystem<GenesisBusProvider> {
     }
 
     @Override
-    protected RomContext createRomContext(Path rom) {
-        RomContext rc = new RomContext();
-        rc.romPath = rom;
-        MdCartInfoProvider mcip = MdCartInfoProvider.createInstance(memory, rc.romPath);
-        rc.cartridgeInfoProvider = mcip;
-        String regionOverride = Optional.ofNullable(mcip.getEntry().forceRegion).
-                orElse(emuFrame.getRegionOverride());
-        romContext = rc;
-        rc.region = getRegionInternal(regionOverride);
-        return rc;
+    protected RomContext createRomContext(SysUtil.RomSpec rom) {
+        return Megadrive.createRomContext(rom, memory, emuFrame.getRegionOverride());
     }
 
     @Override

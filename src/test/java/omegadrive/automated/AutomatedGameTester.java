@@ -35,6 +35,7 @@ import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static omegadrive.SystemLoader.SystemType.*;
 import static omegadrive.system.SysUtil.*;
 import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_ROM;
 
@@ -58,23 +59,23 @@ public class AutomatedGameTester {
             , "blacklist.txt"));
 
     public static Predicate<Path> testGenRomsPredicate = p ->
-            Arrays.stream(mdBinaryTypes).anyMatch(p.toString()::endsWith) ||
+            Arrays.stream(sysFileExtensionsMap.get(GENESIS)).anyMatch(p.toString()::endsWith) ||
                     Arrays.stream(compressedBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testSgRomsPredicate = p ->
-            Arrays.stream(sgBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(sysFileExtensionsMap.get(SG_1000)).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testColecoRomsPredicate = p ->
-            Arrays.stream(cvBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(sysFileExtensionsMap.get(COLECO)).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testMsxRomsPredicate = p ->
-            Arrays.stream(msxBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(sysFileExtensionsMap.get(MSX)).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testSmsRomsPredicate = p ->
-            Arrays.stream(smsBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(sysFileExtensionsMap.get(SMS)).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testGgRomsPredicate = p ->
-            Arrays.stream(ggBinaryTypes).anyMatch(p.toString()::endsWith);
+            Arrays.stream(sysFileExtensionsMap.get(GG)).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testAllRomsPredicate = p ->
             Arrays.stream(binaryTypes).anyMatch(p.toString()::endsWith);
@@ -184,9 +185,10 @@ public class AutomatedGameTester {
         SystemLoader systemLoader = SystemLoader.getInstance();
         SystemProvider system;
         for (Path rom : testRoms) {
+            RomSpec romSpec = RomSpec.of(rom);
             String name = rom.getFileName().toString();
             System.out.println(count++ + ": " + name);
-            system = systemLoader.handleNewRomFile(rom);
+            system = systemLoader.handleNewRomFile(romSpec);
             if (system == null) {
                 System.out.print(" - SKIP");
                 continue;

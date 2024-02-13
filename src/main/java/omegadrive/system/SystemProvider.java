@@ -23,6 +23,7 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.system.SysUtil.RomSpec;
 import omegadrive.util.RegionDetector;
 
 import java.nio.file.Path;
@@ -31,24 +32,27 @@ import java.util.StringJoiner;
 public interface SystemProvider extends Device {
 
     class RomContext {
-        public RegionDetector.Region region;
-        public Path romPath;
-        public CartridgeInfoProvider cartridgeInfoProvider;
 
         public static final RomContext NO_ROM;
 
         static {
             NO_ROM = new RomContext();
             NO_ROM.region = RegionDetector.Region.USA;
-            NO_ROM.romPath = Path.of("NO_PATH");
+            NO_ROM.romSpec = RomSpec.of(Path.of("NO_PATH"));
             NO_ROM.cartridgeInfoProvider = new MdCartInfoProvider();
         }
+
+        public RegionDetector.Region region;
+
+        public RomSpec romSpec = RomSpec.NO_ROM;
+        public CartridgeInfoProvider cartridgeInfoProvider;
+
 
         @Override
         public String toString() {
             return new StringJoiner(", ", RomContext.class.getSimpleName() + "[", "]")
                     .add("region=" + region)
-                    .add("romPath=" + romPath)
+                    .add("romSpec=" + romSpec)
                     .add("\ncartridgeInfoProvider=" + cartridgeInfoProvider)
                     .toString();
         }
@@ -75,7 +79,7 @@ public interface SystemProvider extends Device {
     }
 
     default Path getRomPath() {
-        return getRomContext().romPath;
+        return getRomContext().romSpec.file;
     }
 
     enum SystemEvent {
