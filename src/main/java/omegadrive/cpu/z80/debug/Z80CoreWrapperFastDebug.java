@@ -77,6 +77,12 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
         return Z80Helper.dumpInfo(z80Disasm, memIoOps, pc);
     }
 
+    //TODO ignores opcode
+    @Override
+    public String getInstructionOnly(int pc, int opcode) {
+        return Z80Helper.dumpInfo(z80Disasm, memIoOps, pc);
+    }
+
     @Override
     public String getCpuState(String head) {
         return head + getInstructionOnly() + "\n" + Z80Helper.toString(z80Core.getZ80State());

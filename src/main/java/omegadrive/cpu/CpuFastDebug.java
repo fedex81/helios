@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -24,6 +25,8 @@ public class CpuFastDebug {
     private static final boolean logToSysOut = Boolean.parseBoolean(System.getProperty("helios.logToSysOut", "true"));
 
     public interface CpuDebugInfoProvider {
+
+        String getInstructionOnly(int pc, int opcode);
         String getInstructionOnly(int pc);
 
         String getCpuState(String head);
@@ -33,7 +36,7 @@ public class CpuFastDebug {
         int getOpcode();
 
         default String getInstructionOnly() {
-            return getInstructionOnly(getPc());
+            return getInstructionOnly(getPc(), getOpcode());
         }
     }
 
@@ -101,6 +104,8 @@ public class CpuFastDebug {
     public DebugMode debugMode = DebugMode.NONE;
     private final CpuDebugInfoProvider debugInfoProvider;
     private int delay;
+
+    private final String logHead;
     private final static boolean VERBOSE = false;
     public static final int CK_DELAY_ON_LOOP = 50;
 
@@ -108,6 +113,7 @@ public class CpuFastDebug {
         this.debugInfoProvider = debugInfoProvider;
         this.ctx = ctx;
         this.pcInfoWrapper = createWrapper(ctx);
+        logHead = Optional.ofNullable(ctx.cpuCode).orElse("");
         init();
     }
 
@@ -134,7 +140,7 @@ public class CpuFastDebug {
                 log(debugInfoProvider.getCpuState(ctx.cpuCode), "");
                 break;
             case INST_ONLY:
-                log(ctx.cpuCode + " " + debugInfoProvider.getInstructionOnly(), "");
+                doPrintInst("", debugInfoProvider.getInstructionOnly());
                 break;
             case NEW_INST_ONLY:
                 printNewInstruction();
@@ -145,7 +151,7 @@ public class CpuFastDebug {
     }
 
     /**
-     * TODO 68k
+     * TODO 68k,z80
      * 00ff1928   13fc 0009 00a13005      move.b   #$0009,$00a13005 [NEW]
      * vs
      * 00ff1928   13fc 0001 00a13005      move.b   #$0001,$00a13005 [NEW]
@@ -161,26 +167,23 @@ public class CpuFastDebug {
         final int opcode = debugInfoProvider.getOpcode();
 
         PcInfoWrapper piw = pcInfoWrapper[area][pcMasked];
-        if (piw != NOT_VISITED && piw.opcode != opcode) {
-            piw.opcode = opcode;
-            piw.str = debugInfoProvider.getInstructionOnly();
-            doPrintInst(" [NEW-R]");
-        } else if (piw == NOT_VISITED) {
+        if (piw == NOT_VISITED) {
+            String instOnly = debugInfoProvider.getInstructionOnly(pc, opcode);
             pcInfoWrapper[area][pcMasked] = createPcWrapper(pcMasked, area, opcode);
-            pcInfoWrapper[area][pcMasked].str = debugInfoProvider.getInstructionOnly();
-            doPrintInst(" [NEW]");
-        } else {
-            String str = debugInfoProvider.getInstructionOnly();
-            if (!piw.str.equals(str)) {
-                piw.opcode = opcode;
-                piw.str = str;
-                doPrintInst(" [NEW-R]");
-            }
+            pcInfoWrapper[area][pcMasked].str = instOnly;
+            doPrintInst(" [NEW]", instOnly);
+            return;
+        }
+        boolean isReplaced = piw != NOT_VISITED && piw.opcode != opcode;
+        if (isReplaced) {
+            piw.opcode = opcode;
+            piw.str = debugInfoProvider.getInstructionOnly(pc, opcode);
+            doPrintInst(" [NEW-R]", piw.str);
         }
     }
 
-    private void doPrintInst(String tail) {
-        log(ctx.cpuCode + " " + debugInfoProvider.getInstructionOnly(), tail);
+    private void doPrintInst(String tail, String instOnly) {
+        log(logHead + " " + instOnly, tail);
     }
 
     private PcInfoWrapper createPcWrapper(int pcMasked, int area, int opcode) {

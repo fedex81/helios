@@ -20,7 +20,6 @@
 package omegadrive.cpu.m68k.debug;
 
 import com.google.common.collect.ImmutableMap;
-import m68k.cpu.Cpu;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.CpuDebugContext;
@@ -35,7 +34,6 @@ import java.util.function.Predicate;
 
 import static omegadrive.cpu.CpuFastDebug.CpuDebugInfoProvider;
 import static omegadrive.cpu.CpuFastDebug.DebugMode;
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.th;
 
 public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugInfoProvider {
@@ -79,39 +77,12 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         if (currentPC == opcode && opcode == 0) {
             throw new RuntimeException("oops");
         }
-//        hackSubCpu();
         if (!busyLoopDetection) {
             int r = super.runInstruction();
 //            checkInterruptLevelChange();
             return r;
         }
         return fastDebug.isBusyLoop(currentPC, opcode) + super.runInstruction();
-    }
-
-    private void hackSubCpu() {
-//        //SUB: BIOS CDD hack, set NO_DISC(0xB)
-//        if (cpu == SUB_M68K && currentPC == 0x1098) {
-//            m68k.setDataRegisterLong(0, 0xB);
-//            System.out.println("BIOS CDD hack, set NO_DISC(0xB)");
-//        }
-        //SUB: fix CDC status bytes BIOS checksum
-        if (cpu == SUB_M68K && currentPC == 0xeac) {
-            m68k.setFlags(Cpu.Z_FLAG);
-            LogHelper.logWarnOnce(LOG, "Skip BIOS CDC checksum");
-        }
-        //SUB: check something is alive (CDD status related)
-        if (cpu == SUB_M68K && currentPC == 0x408) {
-            m68k.setDataRegisterLong(0, 0);
-            LogHelper.logWarnOnce(LOG, "CDD status hack");
-        }
-//        //SUB: set CDBCHK complete
-//        if (cpu == SUB_M68K && currentPC == 0x3cd2) {
-//            m68k.clrFlags(Cpu.C_FLAG);
-//        }
-//        //SUB: set "no disc", it returns "not ready"
-//        if (cpu == SUB_M68K && currentPC == 0x3b00) {
-//            m68k.setDataRegisterLong(0, 0x10);
-//        }
     }
 
     private void checkInterruptLevelChange() {
@@ -135,6 +106,16 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
     @Override
     public int getOpcode() {
         return opcode;
+    }
+
+    @Override
+    public String getInstructionOnly(int pc, int opcode) {
+        try {
+            return MC68000Helper.dumpOp(m68k, pc, opcode);
+        } catch (Exception e) {
+            LOG.warn("Unable to dump the instruction at PC: {}", th(pc & MD_PC_MASK), e);
+        }
+        return "????";
     }
 
     @Override

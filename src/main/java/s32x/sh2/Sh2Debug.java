@@ -8,6 +8,7 @@ import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
 import s32x.dict.S32xDict;
+import s32x.util.Md32xRuntimeData;
 
 import java.util.Map;
 import java.util.function.Predicate;
@@ -126,7 +127,7 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
     public final void printDebugMaybe(int opcode) {
         ctx.opcode = opcode;
         final int n = ctx.cpuAccess.ordinal();
-        fastDebug[n].isBusyLoop(ctx.PC & 0x0FFF_FFFF, ctx.opcode);
+//        fastDebug[n].isBusyLoop(ctx.PC & 0x0FFF_FFFF, ctx.opcode);
         fastDebug[n].printDebugMaybe();
         if ((ctx.PC & 1) > 0) {
             LOG.error("Odd PC: {}", th(ctx.PC));
@@ -143,13 +144,20 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
     }
 
     @Override
-    public String getInstructionOnly(int pc) {
-        return Sh2Helper.getInstString(ctx.sh2TypeCode, pc, memory.read16(pc));
+    public String getInstructionOnly(int pc, int opcode) {
+        return Sh2Helper.getInstString(ctx.sh2TypeCode, pc, opcode);
     }
 
+    /**
+     * Slow, use with care
+     */
     @Override
-    public String getInstructionOnly() {
-        return Sh2Helper.getInstString(ctx);
+    public String getInstructionOnly(int pc) {
+        assert pc != ctx.PC;
+        int delay = Md32xRuntimeData.getCpuDelayExt();
+        String res = Sh2Helper.getInstString(ctx.sh2TypeCode, pc, memory.read16(pc));
+        Md32xRuntimeData.resetCpuDelayExt(delay);
+        return res;
     }
 
     @Override
