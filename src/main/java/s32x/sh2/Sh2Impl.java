@@ -71,20 +71,25 @@ public class Sh2Impl implements Sh2 {
 
     private boolean acceptInterrupts(final int level) {
         if (level > getIMASK()) {
-            if (BufferUtil.assertionsEnabled) {
-                Sh2Instructions.Sh2InstructionWrapper instWrapper = Sh2Instructions.instOpcodeMap[ctx.opcode];
-                boolean legal = Arrays.binarySearch(Sh2Instructions.intDisabledOpcodes, instWrapper.inst) < 0;
-//				assert legal : th(inst.pc) + "," + inst.inst;
-                if (!legal) {
-                    LOG.warn("{}, {}", th(ctx.PC), instWrapper.inst);
-                    return false;
-                }
+            if (BufferUtil.assertionsEnabled && !sh2Config.prefetchEn) {
+                //this should only be checked when prefetch is off, as prefetch aligns the interrupt
+                //to the end of a block
+                checkInterruptDisabledOpcode();
             }
             processInterrupt(ctx, level);
             ctx.devices.intC.clearCurrentInterrupt();
             return true;
         }
         return false;
+    }
+
+    private void checkInterruptDisabledOpcode() {
+        Sh2Instructions.Sh2InstructionWrapper instWrapper = Sh2Instructions.instOpcodeMap[ctx.opcode];
+        boolean legal = Arrays.binarySearch(Sh2Instructions.intDisabledOpcodes, instWrapper.inst) < 0;
+//				assert legal : th(inst.pc) + "," + inst.inst;
+        if (!legal) {
+            LogHelper.logWarnOnce(LOG, "{}, {}", th(ctx.PC), instWrapper.inst);
+        }
     }
 
     private void processInterrupt(final Sh2Context ctx, final int level) {
