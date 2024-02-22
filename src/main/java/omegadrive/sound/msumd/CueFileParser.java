@@ -55,6 +55,17 @@ public class CueFileParser {
         return (toBCD(m) << 16) | (toBCD(s) << 8) | toBCD(f);
     }
 
+    public static void toMSF(int sector, int[] result) {
+        int f = sector % 75;
+        sector /= 75;
+        int s = sector % 60;
+        sector /= 60;
+        int m = sector;
+        result[0] = toBCD(f);
+        result[1] = toBCD(s);
+        result[2] = toBCD(m);
+    }
+
     public static int toBCD(int x) {
         return (x % 10) + ((x / 10) << 4);
     }
