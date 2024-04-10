@@ -127,13 +127,12 @@ public class MC68000Wrapper implements M68kProvider {
     @Override
     public void reset() {
         m68k.reset();
-        LOG.info("{} Reset, PC: {}, SP: {}", cpu, th(m68k.getPC()), th(m68k.getSSP()));
     }
 
     //X-men uses it
     @Override
     public void softReset() {
-        m68k.reset();
+        reset();
         instCycles += 132;
         setStop(false);
     }
@@ -166,9 +165,9 @@ public class MC68000Wrapper implements M68kProvider {
 
             @Override
             public void reset() {
-                LOG.info("{} Reset", cpu);
                 super.reset();
                 resetExternal();
+                LOG.info("{} Reset, PC: {}, SP: {}", cpu, th(m68k.getPC()), th(m68k.getSSP()));
             }
 
             @Override
