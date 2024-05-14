@@ -387,7 +387,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     protected RomContext createRomContext(RomSpec rom) {
         RomContext rc = new RomContext();
         rc.romSpec = rom;
-        rc.region = getRomRegion();
+        rc.region = getRegionInternal(emuFrame.getRegionOverride(), getRomRegion());
         return rc;
     }
 

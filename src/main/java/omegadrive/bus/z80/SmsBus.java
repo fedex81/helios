@@ -288,6 +288,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
             if (bEn && !HW_ENABLE_BIOS) {
                 LOG.warn("HW_ENABLE_BIOS is {}, unable to set biosEn: {}", HW_ENABLE_BIOS, bEn);
             }
+            port3E = value;
         }
     }
 
