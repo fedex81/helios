@@ -20,7 +20,9 @@
 package omegadrive.cart;
 
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.memory.MemoryProvider;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
@@ -33,7 +35,7 @@ public class CartridgeInfoProvider {
 
     public static final boolean AUTOFIX_CHECKSUM = false;
 
-    protected IMemoryProvider memoryProvider;
+    protected IMemoryProvider memoryProvider = MemoryProvider.NO_MEMORY;
     private long checksum;
     private long computedChecksum;
     private String sha1;
@@ -51,6 +53,10 @@ public class CartridgeInfoProvider {
 
     public String getRomName() {
         return romName;
+    }
+
+    public String getRegion() {
+        return RegionDetector.Region.USA.name();
     }
 
     public String getSha1() {

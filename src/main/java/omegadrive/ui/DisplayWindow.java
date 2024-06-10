@@ -44,7 +44,7 @@ public interface DisplayWindow {
         }
 
         @Override
-        public void setTitle(String rom) {
+        public void setRomData(SystemProvider.RomContext rom) {
 
         }
 
@@ -79,7 +79,7 @@ public interface DisplayWindow {
         }
     };
 
-    void setTitle(String rom);
+    void setRomData(SystemProvider.RomContext rom);
 
     void init();
 

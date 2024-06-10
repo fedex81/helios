@@ -28,6 +28,7 @@ import omegadrive.joypad.JoypadProvider.JoypadType;
 import omegadrive.system.SysUtil.RomSpec;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.flatlaf.FlatLafHelper;
+import omegadrive.ui.util.CountryFlagsLoader;
 import omegadrive.ui.util.UiFileFilters;
 import omegadrive.ui.util.UiFileFilters.FileResourceType;
 import omegadrive.util.*;
@@ -57,6 +58,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static omegadrive.system.SystemProvider.RomContext;
+import static omegadrive.system.SystemProvider.SystemEvent;
 import static omegadrive.system.SystemProvider.SystemEvent.*;
 import static omegadrive.ui.PrefStore.getRomSpecFromRecentItem;
 import static omegadrive.ui.util.UiFileFilters.FileResourceType.SAVE_STATE_RES;
@@ -84,6 +87,7 @@ public class SwingWindow implements DisplayWindow {
 
     private final JLabel screenLabel = new JLabel();
     private final JLabel perfLabel = new JLabel("");
+    private final JLabel regionLabel = new JLabel("");
 
     private JFrame jFrame;
     private SystemProvider mainEmu;
@@ -97,12 +101,14 @@ public class SwingWindow implements DisplayWindow {
     private List<AbstractButton> screenItems;
     private int screenChangedCheckCounter = screenChangedCheckFrequency;
     private Dimension nativeScreenSize = DEFAULT_BASE_SCREEN_SIZE;
-    private final Map<SystemProvider.SystemEvent, AbstractAction> actionMap = new HashMap<>();
+    private final Map<SystemEvent, AbstractAction> actionMap = new HashMap<>();
 
     private int showInfoCount = SHOW_INFO_FRAMES_DELAY;
     private Optional<String> actionInfo = Optional.empty();
     private MouseCursorHandler cursorHandler;
     private AWTEventListener awtEventListener;
+
+    private RomContext romContext = RomContext.NO_ROM;
     private final ExecutorService executorService;
 
     public SwingWindow(SystemProvider mainEmu) {
@@ -115,12 +121,22 @@ public class SwingWindow implements DisplayWindow {
                 null;
     }
 
-    public void setTitle(String title) {
-        jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() + " " + VERSION + " - " + title);
+    @Override
+    public void setRomData(RomContext rom) {
+        this.romContext = rom;
+        if (romContext == RomContext.NO_ROM) {
+            return;
+        }
+        jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() + " " + VERSION + " - " +
+                FileUtil.getFileName(romContext.romSpec.file));
+        Icon icon = CountryFlagsLoader.getRegionIcon(romContext.region);
+        regionLabel.setIcon(icon);
+        regionLabel.setText(icon == null ? romContext.region.name() : "");
+        regionLabel.setToolTipText(romContext.region.name());
         reloadRecentFiles();
     }
 
-    private void addKeyAction(AbstractButton component, SystemProvider.SystemEvent event, ActionListener l) {
+    private void addKeyAction(AbstractButton component, SystemEvent event, ActionListener l) {
         AbstractAction action = toAbstractAction(component.getText(), l);
         if (event != NONE) {
             action.putValue(Action.ACCELERATOR_KEY, KeyBindingsHandler.getInstance().getKeyStrokeForEvent(event));
@@ -191,6 +207,8 @@ public class SwingWindow implements DisplayWindow {
             screenLabel.invalidate();
             screenLabel.repaint();
             perfLabel.setText("");
+            regionLabel.setIcon(null);
+            regionLabel.setText("");
             jFrame.setTitle(FRAME_TITLE_HEAD);
             cursorHandler.reset();
             LOG.info("Blanking screen");
@@ -319,6 +337,8 @@ public class SwingWindow implements DisplayWindow {
         bar.add(helpMenu);
         bar.add(Box.createHorizontalGlue());
         bar.add(perfLabel);
+        bar.add(Box.createHorizontalGlue());
+        bar.add(regionLabel);
 
         JMenuItem loadRomItem = new JMenuItem("Load ROM");
         addKeyAction(loadRomItem, NEW_ROM, e -> handleNewRom());
@@ -364,6 +384,9 @@ public class SwingWindow implements DisplayWindow {
         addAction(keyBindingsItem, e -> showHelpMessage(keyBindingsItem.getText(),
                 KeyBindingsHandler.toConfigString()));
 
+        JMenuItem romInfoItem = new JMenuItem("Rom Info");
+        addAction(romInfoItem, e -> showHelpMessage(romInfoItem.getText(), romContext.toString()));
+
         JMenuItem readmeItem = new JMenuItem("Readme");
         addAction(readmeItem, e -> showHelpMessage(readmeItem.getText(),
                 FileUtil.readFileContentAsString("README.md")));
@@ -386,6 +409,7 @@ public class SwingWindow implements DisplayWindow {
         menu.add(exitItem);
         helpMenu.add(aboutItem);
         helpMenu.add(keyBindingsItem);
+        helpMenu.add(romInfoItem);
         helpMenu.add(readmeItem);
         helpMenu.add(creditsItem);
         helpMenu.add(historyItem);
@@ -555,7 +579,7 @@ public class SwingWindow implements DisplayWindow {
         handleSystemEvent(QUICK_SAVE, p, p.getFileName().toString());
     }
 
-    private void handleSystemEvent(SystemProvider.SystemEvent event, Object par, String msg) {
+    private void handleSystemEvent(SystemEvent event, Object par, String msg) {
         mainEmu.handleSystemEvent(event, par);
         showInfo(event + (Strings.isNullOrEmpty(msg) ? "" : ": " + msg));
     }
@@ -623,7 +647,7 @@ public class SwingWindow implements DisplayWindow {
 
         Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);
         Optional.ofNullable(mainEmu).ifPresent(sp -> {
-            setTitle("");
+            setRomData(RomContext.NO_ROM);
             boolean en = mainEmu.getSystemType() == SystemType.GENESIS ||
                     mainEmu.getSystemType() == SystemType.S32X;
             joypadTypeMenu.setEnabled(en);
@@ -664,7 +688,7 @@ public class SwingWindow implements DisplayWindow {
 
     private void handleUiEvent(KeyEvent ke) {
         KeyStroke keyStroke = KeyStroke.getKeyStrokeForEvent(ke);
-        SystemProvider.SystemEvent event = KeyBindingsHandler.getInstance().getSystemEventIfAny(keyStroke);
+        SystemEvent event = KeyBindingsHandler.getInstance().getSystemEventIfAny(keyStroke);
         if (event != null && event != NONE) {
             //if the menuBar is visible it will handle the event, otherwise we need to perform the action here
             boolean menuVisible = jFrame.getJMenuBar().isVisible();

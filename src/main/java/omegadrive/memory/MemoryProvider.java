@@ -34,7 +34,7 @@ public class MemoryProvider implements IMemoryProvider {
 
     private final static Logger LOG = LogHelper.getLogger(MemoryProvider.class.getSimpleName());
 
-    public static final MemoryProvider NO_MEMORY = new MemoryProvider();
+    public static final IMemoryProvider NO_MEMORY = createInstance(RomHolder.EMPTY_ROM, 0);
 
     public static final int M68K_RAM_SIZE = 0x10000;
     public static final int SG1K_Z80_RAM_SIZE = 0x400;

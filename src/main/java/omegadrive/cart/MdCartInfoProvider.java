@@ -266,6 +266,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         return entry;
     }
 
+    @Override
     public String getRegion() {
         return region;
     }

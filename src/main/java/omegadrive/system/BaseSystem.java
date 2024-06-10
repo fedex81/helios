@@ -372,7 +372,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
                 memory.setRomData(data);
                 romContext = createRomContext(romSpec);
                 String romName = FileUtil.getFileName(romSpec.file);
-                emuFrame.setTitle(romName);
+                emuFrame.setRomData(romContext);
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
                 LOG.info("Running rom: {},\n{}", romName, romContext);
