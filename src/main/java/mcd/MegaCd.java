@@ -34,7 +34,6 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.sound.SoundProvider;
 import omegadrive.system.*;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
@@ -104,6 +103,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     @Override
     public void init() {
+        super.init();
         stateHandler = BaseStateHandler.EMPTY_STATE;
         joypad = GenesisJoypad.create(this);
         inputProvider = InputProvider.createInstance(joypad);
@@ -114,10 +114,8 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         vdp = GenesisVdpProvider.createVdp(bus);
         cpu = MC68000Wrapper.createInstance(M68K, bus);
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
-        //sound attached later
-        sound = SoundProvider.NO_SOUND;
         vdp.addVdpEventListener(mcdLaunchContext.subBus);
-        bus.attachDevices(this, memory, joypad, vdp, cpu, z80);
+        bus.attachDevices(this, memory, joypad, vdp, cpu, z80, sound);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
         reloadWindowState();

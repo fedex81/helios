@@ -50,7 +50,7 @@ import org.slf4j.Logger;
  *
  * @author Federico Berti
  *
- * TODO this is used by MD only, should be removed, perf vs Megadrive?
+ * @Deprecated unused, to be removed
  */
 @Deprecated
 public class Genesis extends BaseSystem<GenesisBusProvider> {

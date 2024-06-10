@@ -49,8 +49,7 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
 
     boolean JAL_SOUND_MGR = Boolean.parseBoolean(System.getProperty("helios.jal.sound.mgr", "false"));
 
-    int[] EMPTY_FM = new int[0];
-    byte[] EMPTY_PSG = new byte[0];
+    void init(RegionDetector.Region region);
 
     PsgProvider getPsg();
 
@@ -95,6 +94,10 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
         @Override
         public PcmProvider getPcm() {
             return PcmProvider.NO_SOUND;
+        }
+
+        @Override
+        public void init(RegionDetector.Region region) {
         }
 
         @Override

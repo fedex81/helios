@@ -151,6 +151,10 @@ public class SystemTestUtil {
     public static class SoundProviderAdapter implements SoundProvider {
 
         @Override
+        public void init(RegionDetector.Region region) {
+        }
+
+        @Override
         public PsgProvider getPsg() {
             return null;
         }

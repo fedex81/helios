@@ -22,7 +22,6 @@ package omegadrive.sound;
 import omegadrive.SystemLoader;
 import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 
 import java.io.File;
@@ -39,7 +38,7 @@ public class DACTest {
     private static Path fileFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources", "dac");
 
-    static SoundProvider sp = AbstractSoundManager.createSoundProvider(SystemLoader.SystemType.GENESIS, RegionDetector.Region.EUROPE);
+    static SoundProvider sp = AbstractSoundManager.createSoundProvider(SystemLoader.SystemType.GENESIS);
 
     public static void main(String[] args) throws IOException {
         System.out.println(new File(".").getAbsolutePath());

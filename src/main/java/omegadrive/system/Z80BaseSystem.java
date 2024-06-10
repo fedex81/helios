@@ -59,6 +59,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     @Override
     public void init() {
+        super.init();
         switch (systemType){
             case SG_1000:
                 joypad = new TwoButtonsJoypad();
@@ -86,8 +87,8 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
         stateHandler = BaseStateHandler.EMPTY_STATE;
         inputProvider = InputProvider.createInstance(joypad);
         vdp = new Tms9918aVdp();
-        //z80, sound attached later
-        bus.attachDevices(this, memory, joypad, vdp);
+        z80 = Z80CoreWrapper.createInstance(systemType, bus);
+        bus.attachDevices(this, memory, joypad, vdp, z80, sound);
         reloadWindowState();
         createAndAddVdpEventListener();
     }
@@ -108,8 +109,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     @Override
     protected void initAfterRomLoad() {
         super.initAfterRomLoad();
-        z80 = Z80CoreWrapper.createInstance(systemType, bus);
-        bus.attachDevices(sound, z80);
         resetAfterRomLoad();
     }
 

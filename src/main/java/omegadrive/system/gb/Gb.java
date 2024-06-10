@@ -52,6 +52,7 @@ public class Gb extends BaseSystem<BaseBusProvider> {
 
     @Override
     public void init() {
+        super.init();
         bus = SysUtil.NO_OP_BUS;
         vdp = SysUtil.NO_OP_VDP_PROVIDER;
         memory = MemoryProvider.NO_MEMORY;

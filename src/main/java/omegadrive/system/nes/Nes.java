@@ -71,6 +71,7 @@ public class Nes extends BaseSystem<BaseBusProvider> {
 
     @Override
     public void init() {
+        super.init();
         stateHandler = BaseStateHandler.EMPTY_STATE;
         bus = SysUtil.NO_OP_BUS;
         vdp = SysUtil.NO_OP_VDP_PROVIDER;

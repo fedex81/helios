@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractSoundManager implements SoundProvider {
     private static final Logger LOG = LogHelper.getLogger(AbstractSoundManager.class.getSimpleName());
@@ -67,19 +68,20 @@ public abstract class AbstractSoundManager implements SoundProvider {
     private SystemLoader.SystemType type;
     protected RegionDetector.Region region;
     protected volatile int soundDeviceSetup = SoundDeviceType.NONE.getBit();
+    protected AtomicBoolean initedOnce = new AtomicBoolean(false);
 
-    public static SoundProvider createSoundProvider(SystemLoader.SystemType systemType, RegionDetector.Region region) {
+    public static SoundProvider createSoundProvider(SystemLoader.SystemType systemType) {
         if (!ENABLE_SOUND) {
             LOG.warn("Sound disabled");
             return NO_SOUND;
         }
         AbstractSoundManager jsm = JAL_SOUND_MGR ? new JalSoundManager() : new JavaSoundManager();
         jsm.type = systemType;
-        jsm.init(region);
         return jsm;
     }
 
-    protected void init(RegionDetector.Region region) {
+    @Override
+    public void init(RegionDetector.Region region) {
         this.region = region;
         soundDeviceMap = SysUtil.getSoundDevices(type, region);
         psg = (PsgProvider) soundDeviceMap.get(SoundDeviceType.PSG);
@@ -90,10 +92,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         soundPersister = new FileSoundPersister();
         fmSize = SoundProvider.getFmBufferIntSize(audioFormat);
         psgSize = SoundProvider.getPsgBufferByteSize(audioFormat);
-        executorService = Executors.newSingleThreadExecutor
-                (new PriorityThreadFactory(Thread.MAX_PRIORITY, AbstractSoundManager.class.getSimpleName()));
         init();
-        LOG.info("Output audioFormat: {}, bufferSize: {}", audioFormat, fmSize);
     }
 
     protected void updateSoundDeviceSetup() {
@@ -106,7 +105,13 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     @Override
     public void init() {
+        assert initedOnce.compareAndSet(false, true);
+        assert dataLine == null && executorService == null;
+
         dataLine = SoundUtil.createDataLine(audioFormat);
+        executorService = Executors.newSingleThreadExecutor
+                (new PriorityThreadFactory(Thread.MAX_PRIORITY, AbstractSoundManager.class.getSimpleName()));
+        LOG.info("Output audioFormat: {}, bufferSize: {}, region: {}", audioFormat, fmSize, region);
     }
 
     @Override

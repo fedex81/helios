@@ -34,7 +34,6 @@ import omegadrive.joypad.GenesisJoypad;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.sound.SoundProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -102,6 +101,7 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
 
     @Override
     public void init() {
+        super.init();
         stateHandler = BaseStateHandler.EMPTY_STATE;
         joypad = GenesisJoypad.create(this);
         inputProvider = InputProvider.createInstance(joypad);
@@ -111,10 +111,8 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
         vdp = GenesisVdpProvider.createVdp(bus);
         cpu = MC68000Wrapper.createInstance(bus);
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
-        //sound attached later
-        sound = SoundProvider.NO_SOUND;
-
-        bus.attachDevices(this, memory, joypad, vdp, cpu, z80);
+        vdp.addVdpEventListener(sound);
+        bus.attachDevices(this, memory, joypad, vdp, cpu, z80, sound);
         reloadWindowState();
         createAndAddVdpEventListener();
     }
@@ -254,8 +252,6 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
     @Override
     protected void initAfterRomLoad() {
         super.initAfterRomLoad();
-        bus.attachDevice(sound);
-        vdp.addVdpEventListener(sound);
         SvpMapper.ssp16 = Ssp16.NO_SVP;
         resetAfterRomLoad();
         memView.reset();

@@ -99,8 +99,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
     protected abstract void loop();
 
+    @Override
+    public void init() {
+        sound = AbstractSoundManager.createSoundProvider(systemType);
+    }
+
     protected void initAfterRomLoad() {
-        sound = AbstractSoundManager.createSoundProvider(systemType, romContext.region);
+        sound.init(romContext.region);
     }
 
     protected abstract void resetCycleCounters(int counter);
