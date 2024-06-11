@@ -117,7 +117,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         if (cartridgeInfoProvider.isSsfMapper()) {
             checkExSsfMapper();
         }
-        msuMdHandler = MsuMdHandlerImpl.createInstance(systemProvider.getRomPath());
+        msuMdHandler = MsuMdHandlerImpl.createInstance(systemProvider.getSystemType(), systemProvider.getRomPath());
         //some homebrews use a flat ROM mapper, in theory up to Z80_ADDRESS_SPACE_START
         if (!cartridgeInfoProvider.isSsfMapper() && ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
             LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);

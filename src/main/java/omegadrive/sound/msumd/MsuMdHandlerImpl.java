@@ -1,6 +1,7 @@
 package omegadrive.sound.msumd;
 
 import com.google.common.io.Files;
+import omegadrive.SystemLoader;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.SoundUtil;
@@ -110,8 +111,12 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         LOG.info("Enabling MSU-MD handling, using cue sheet: {}", cueSheet.getFile().toAbsolutePath());
     }
 
-    public static MsuMdHandler createInstance(Path romPath) {
+    public static MsuMdHandler createInstance(SystemLoader.SystemType systemType, Path romPath) {
         if (romPath == null) {
+            return NO_OP_HANDLER;
+        }
+        if (systemType == SystemLoader.SystemType.MEGACD) {
+            LOG.info("Disabling MSU-MD handling, {} detected.", systemType);
             return NO_OP_HANDLER;
         }
         CueSheet cueSheet = MsuMdHandlerImpl.initCueSheet(romPath);

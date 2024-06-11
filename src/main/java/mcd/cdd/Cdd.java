@@ -6,10 +6,10 @@ import mcd.cdd.CdModel.TrackDataType;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.sound.msumd.CueFileParser;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import org.digitalmediaserver.cuelib.Position;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -89,6 +89,7 @@ public interface Cdd extends BufferUtil.StepDevice {
         NotReady,  //not ready to comply with the current command
     }
 
+    void tryInsert(SystemProvider.RomContext romContext);
     void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size);
 
     default void advance() {
@@ -171,7 +172,6 @@ class CddImpl implements Cdd {
     private final MegaCdMemoryContext memoryContext;
     private final McdSubInterruptHandler interruptHandler;
 
-    static final Path p = Path.of("./test_roms", "sonic_cd.cue");
     private ExtendedCueSheet extCueSheet;
     private boolean hasFile;
 
@@ -181,10 +181,14 @@ class CddImpl implements Cdd {
         interruptHandler = ih;
 
         checksum();
-        tryInsert();
     }
 
-    private void tryInsert() {
+    @Override
+    public void tryInsert(SystemProvider.RomContext romContext) {
+        tryInsert(romContext.romSpec.file);
+    }
+
+    private void tryInsert(Path p) {
         extCueSheet = new ExtendedCueSheet(p);
         hasFile = extCueSheet.cueSheet != null;
         if (!hasFile) {
@@ -193,8 +197,9 @@ class CddImpl implements Cdd {
         }
 
         cddContext.io.status = ReadingTOC;
-        cddContext.io.sector = 0; //TODO session.leadIn.lba;
+        cddContext.io.sector = 150; //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
         cddContext.io.track = cddContext.io.sample = cddContext.io.tocRead = 0;
+        LOG.info("Using disc: {}", extCueSheet);
     }
 
     @Override
@@ -329,6 +334,9 @@ class CddImpl implements Cdd {
                 }
             }
             case Request -> handleRequestCommand();
+            case SeekPause ->
+                    LOG.error("Unsupported Cdd command: {}({}), parameter: {}", cddCommand, cddCommand.ordinal(),
+                            cddContext.command[3]);
             default -> {
                 LOG.error("Unsupported Cdd command: {}({}), parameter: {}", cddCommand, cddCommand.ordinal(),
                         cddContext.command[3]);
@@ -340,6 +348,10 @@ class CddImpl implements Cdd {
 
     private final int[] msfRes = new int[3];
 
+    //"sonic_cd_audio.cue"
+    //14471856 (bin1) + 19618032 (bin2) = 34089888 bytes
+    //34089888/2352 = 14494 sectors
+    // + 2 seconds (150 sectors, for lead-in) = 14496 sectors
     private void handleRequestCommand() {
         CddRequest request = CddRequest.values()[cddContext.command[3]];
         boolean isAudio = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track).trackDataType == TrackDataType.AUDIO;
@@ -367,8 +379,7 @@ class CddImpl implements Cdd {
 //                if(session.inLeadOut(io.sector)) { status[2] = 0xa; status[3] = 0xa; }
             }
             case DiscCompletionTime -> {
-                assert false;
-                int lba = 0;
+                int lba = extCueSheet.sectorEnd;
                 CueFileParser.toMSF(lba, msfRes);
                 int minute = msfRes[2], second = msfRes[1], frame = msfRes[0];
                 updateStatuses(cddContext.command[3], minute / 10, minute % 10,
@@ -384,16 +395,8 @@ class CddImpl implements Cdd {
                 if (cddContext.command[4] > 9 || cddContext.command[5] > 9) break;
                 int track = cddContext.command[4] * 10 + cddContext.command[5];
                 ExtendedTrackData extTrackData = ExtendedCueSheet.getExtTrack(extCueSheet, track);
-                int minute, second, frame;
-
-                //TODO
-                Position indexPos = extTrackData.trackData.getLastIndex().getPosition();
-                minute = indexPos.getMinutes();
-                second = indexPos.getSeconds();
-                frame = indexPos.getFrames();
-
-                int val = extTrackData.absoluteSectorStart;
-
+                CueFileParser.toMSF(extTrackData.absoluteSectorStart, msfRes);
+                int minute = msfRes[2], second = msfRes[1], frame = msfRes[0];
                 //                status[6].bit(3) = session.tracks[track].isData();
                 int status6 = frame / 10;
                 status6 &= ~(1 << 3);

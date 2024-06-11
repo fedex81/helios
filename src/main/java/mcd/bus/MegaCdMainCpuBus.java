@@ -83,11 +83,16 @@ public class MegaCdMainCpuBus extends GenesisBus {
         enableMode1 = true;
         boolean isBios = cartridgeInfoProvider.getRomName().toLowerCase().contains("bios") &&
                 cartridgeInfoProvider.getSerial().startsWith("BR ");
+        boolean isCue = cartridgeInfoProvider.getRomName().toLowerCase().endsWith(".cue");
         //bios aka bootRom
         if (isBios) {
             enableMode1 = false;
             LOG.info("Bios detected with serial: {}, disabling mode1 mapper", cartridgeInfoProvider.getSerial());
             loadBios(systemProvider.getRegion(), systemProvider.getRomPath());
+        }
+        if (isCue) {
+            enableMode1 = false;
+            LOG.info("CUE file detected, disabling mode1 mapper");
         }
     }
 

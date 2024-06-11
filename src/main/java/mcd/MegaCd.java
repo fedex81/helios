@@ -34,7 +34,10 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.system.*;
+import omegadrive.system.BaseSystem;
+import omegadrive.system.Megadrive;
+import omegadrive.system.SysUtil;
+import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -55,6 +58,8 @@ import static omegadrive.util.Util.GEN_NTSC_MCLOCK_MHZ;
  */
 public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
+    private final static Logger LOG = LogHelper.getLogger(MegaCd.class.getSimpleName());
+
     public final static boolean verbose = false;
     //the emulation runs at MCLOCK_MHZ/MCLK_DIVIDER
     public final static int MCLK_DIVIDER = 7;
@@ -69,7 +74,6 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     //mcd-verificator is very sensitive
     public final static double MCD_68K_RATIO = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_NTSC_MCLOCK_MHZ / 7.0)) * 0.99;
 
-    private final static Logger LOG = LogHelper.getLogger(Genesis.class.getSimpleName());
 
     static {
         System.setProperty("68k.debug", "false");
@@ -273,6 +277,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         vdp.addVdpEventListener(sound);
         SvpMapper.ssp16 = Ssp16.NO_SVP;
         resetAfterRomLoad();
+        mcdLaunchContext.cdd.tryInsert(romContext);
         memView = createMemView();
     }
 
