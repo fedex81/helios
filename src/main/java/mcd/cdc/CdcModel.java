@@ -171,13 +171,4 @@ public interface CdcModel {
             control = new CdcControl();
         }
     }
-
-    enum CdcAddress {
-        COMIN_SBOUT, IFCTRL, DBCL, DBCH,
-        NONE4, NONE5, NONE6, NONE7,
-        WAL, WAH, PTL, PTH,
-        NONE12, NONE13, NONE14, RESET
-    }
-
-    CdcAddress[] cdcAddrVals = CdcAddress.values();
 }

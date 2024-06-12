@@ -190,6 +190,11 @@ public class ExtendedCueSheet implements Closeable {
         return td;
     }
 
+    public static boolean isAudioTrack(ExtendedCueSheet extCueSheet, int number) {
+        CdModel.ExtendedTrackData td = extCueSheet.extTracks.get(number - 1);
+        return td.trackDataType == TrackDataType.AUDIO;
+    }
+
     @Override
     public String toString() {
         String s = "\n\t" + extTracks.stream().map(Objects::toString).collect(Collectors.joining("\n\t")) + "\n";

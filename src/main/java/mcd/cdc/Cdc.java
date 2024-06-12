@@ -11,9 +11,7 @@ import org.slf4j.Logger;
 import java.nio.ByteBuffer;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDC;
-import static mcd.cdc.CdcModel.CdcAddress.RESET;
 import static mcd.cdc.CdcModel.NUM_CDC_REG_MASK;
-import static mcd.cdc.CdcModel.cdcAddrVals;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
@@ -44,10 +42,11 @@ public interface Cdc extends BufferUtil.StepDevice {
 
     int read(RegSpecMcd regSpec, int address, Size size);
 
+    void decode(int sector);
+
     static Cdc createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler interruptHandler) {
         return new CdcImpl(memoryContext, interruptHandler);
     }
-
 }
 
 class CdcImpl implements Cdc {
@@ -103,14 +102,13 @@ class CdcImpl implements Cdc {
 
     private int controllerRead() {
         int data = 0;
-        if (cdcContext.address > RESET.ordinal()) {
+        if (cdcContext.address > 0xF) { //RESET
             increaseCdcAddress();
             return data;
         }
-        CdcModel.CdcAddress cdcAddress = cdcAddrVals[cdcContext.address];
-        switch (cdcAddress) {
+        switch (cdcContext.address) {
             //COMIN: command input
-            case COMIN_SBOUT: {
+            case 0: {
                 CdcModel.CdcCommand command = cdcContext.command;
                 if (command.empty > 0) {
                     data = 0xff;
@@ -125,15 +123,17 @@ class CdcImpl implements Cdc {
             }
             break;
             //DBCL: data byte counter low
-            case DBCL:
+            case 2:
                 data = getByteInWordBE(cdcContext.transfer.length, 1);
                 break;
             //DBCH: data byte counter high
-            case DBCH:
+            case 3:
                 data = getByteInWordBE(cdcContext.transfer.length, 0);
                 break;
-            default:
-                LOG.error("CDC READ unknown address: {} {}", cdcAddress, th(cdcContext.address));
+            default: {
+                LOG.error("CDC READ unknown address: {}", th(cdcContext.address));
+                assert false;
+            }
         }
         //COMIN reads do not increment the address; STAT3 reads wrap the address to 0x0
         increaseCdcAddress();
@@ -143,14 +143,13 @@ class CdcImpl implements Cdc {
 
     private void controllerWrite(byte data) {
 //        logCd("CDC W: " + th(cdcContext.address) + "," + th(data));
-        if (cdcContext.address > RESET.ordinal()) {
+        if (cdcContext.address > 0xF) { //RESET
             increaseCdcAddress();
             return;
         }
-        CdcModel.CdcAddress cdcAddress = cdcAddrVals[cdcContext.address];
-        switch (cdcAddress) {
+        switch (cdcContext.address) {
             //SBOUT: status byte output
-            case COMIN_SBOUT -> {
+            case 0 -> {
                 CdcModel.CdcStatus status = cdcContext.status;
                 if (status.wait > 0/*&& transfer.busy*/) break;
                 if (status.read == status.write && status.empty == 0) status.read++;  //unverified: discard oldest byte?
@@ -159,7 +158,7 @@ class CdcImpl implements Cdc {
                 status.active = 1;
                 status.busy = 1;
             }
-            case IFCTRL -> {
+            case 1 -> { //IFCTRL
                 cdcContext.status.enable = getBitFromByte(data, 0);
                 cdcContext.transfer.enable = getBitFromByte(data, 1);
                 cdcContext.status.wait = getInvertedBitFromByte(data, 2);
@@ -175,25 +174,40 @@ class CdcImpl implements Cdc {
             }
 
             //DBCL: data byte counter low
-            case DBCL -> cdcContext.transfer.length = setByteInWordBE(cdcContext.transfer.length, data, 1);
+            case 2 -> cdcContext.transfer.length = setByteInWordBE(cdcContext.transfer.length, data, 1);
 
             //DBCH: data byte counter high
-            case DBCH -> cdcContext.transfer.length = setByteInWordBE(cdcContext.transfer.length, data & 0xF, 0);
+            //TODO this should only overwrite bits 8-11
+            case 3 -> cdcContext.transfer.length = setByteInWordBE(cdcContext.transfer.length, data & 0xF, 0);
+
+            //DACL: data address counter low
+            case 4 -> cdcContext.transfer.source = setByteInWordBE(cdcContext.transfer.source, data, 1);
+
+            //DACH: data address counter high
+            case 5 -> cdcContext.transfer.source = setByteInWordBE(cdcContext.transfer.source, data, 0);
+
+            //DTRG: data trigger
+            case 6 -> cdcContext.transfer.start();
+
+            case 7 -> {
+                cdcContext.irq.transfer.pending = 0;
+                poll();
+            }
 
             //WAL: write address low
-            case WAL -> cdcContext.transfer.target = setByteInWordBE(cdcContext.transfer.target, data, 1);
+            case 8 -> cdcContext.transfer.target = setByteInWordBE(cdcContext.transfer.target, data, 1);
 
             //WAH: write address high
-            case WAH -> cdcContext.transfer.target = setByteInWordBE(cdcContext.transfer.target, data, 0);
+            case 9 -> cdcContext.transfer.target = setByteInWordBE(cdcContext.transfer.target, data, 0);
 
             //PTL: block pointer low
-            case PTL -> cdcContext.transfer.pointer = setByteInWordBE(cdcContext.transfer.pointer, data, 1);
+            case 0xC -> cdcContext.transfer.pointer = setByteInWordBE(cdcContext.transfer.pointer, data, 1);
 
             //PTH: block pointer high
-            case PTH -> cdcContext.transfer.pointer = setByteInWordBE(cdcContext.transfer.pointer, data, 0);
+            case 0xD -> cdcContext.transfer.pointer = setByteInWordBE(cdcContext.transfer.pointer, data, 0);
 
             //RESET: software reset
-            case RESET -> {
+            case 0xF -> {
                 cdcContext.status.reset();
                 cdcContext.transfer.reset();
                 cdcContext.irq.reset();
@@ -202,8 +216,10 @@ class CdcImpl implements Cdc {
                 //TODO header, subheader
                 poll();
             }
-            default ->
-                    LOG.error("CDC WRITE unknown address: {} {}, data {}", cdcAddress, th(cdcContext.address), th(data));
+            default -> {
+                LOG.error("CDC WRITE unknown address: {}, data {}", th(cdcContext.address), th(data));
+                assert false;
+            }
         }
         //SBOUT writes do not increment the address; RESET reads wrap the address to 0x0
         increaseCdcAddress();
@@ -247,8 +263,10 @@ class CdcImpl implements Cdc {
         }
     }
 
-    private void decode(int sector) {
+    @Override
+    public void decode(int sector) {
         assert cdcContext.decoder.enable == 0;
+        throw new RuntimeException("Not implemented!");
     }
 
     public static int getInvertedBitFromByte(byte b, int bitPos) {

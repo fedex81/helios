@@ -1,8 +1,8 @@
 package mcd.cdd;
 
 import mcd.bus.McdSubInterruptHandler;
+import mcd.cdc.Cdc;
 import mcd.cdd.CdModel.ExtendedTrackData;
-import mcd.cdd.CdModel.TrackDataType;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.sound.msumd.CueFileParser;
@@ -101,7 +101,15 @@ public interface Cdd extends BufferUtil.StepDevice {
     }
 
     default double position(int sector) {
-        throw new RuntimeException("not implemented");
+        //convert sector# to normalized sector position on the CD-ROM surface for seek latency calculation
+
+        double sectors = 7500.0 + 330000.0 + 6750.0;
+        double radius = 0.058 - 0.024;
+        double innerRadius = 0.024 * 0.024;  //in mm
+        double outerRadius = 0.058 * 0.058;  //in mm
+
+        sector += 150; //session.leadIn.lba;  //convert to natural //TODO check
+        return Math.sqrt(sector / sectors * (outerRadius - innerRadius) + innerRadius) / radius;
     }
 
     default void process() {
@@ -158,8 +166,8 @@ public interface Cdd extends BufferUtil.StepDevice {
 
     CddStatus[] statusVals = CddStatus.values();
 
-    static Cdd createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih) {
-        return new CddImpl(memoryContext, ih);
+    static Cdd createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih, Cdc cdc) {
+        return new CddImpl(memoryContext, ih, cdc);
     }
 }
 
@@ -171,14 +179,16 @@ class CddImpl implements Cdd {
 
     private final MegaCdMemoryContext memoryContext;
     private final McdSubInterruptHandler interruptHandler;
+    private final Cdc cdc;
 
     private ExtendedCueSheet extCueSheet;
     private boolean hasFile;
 
 
-    public CddImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih) {
+    public CddImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih, Cdc c) {
         memoryContext = mc;
         interruptHandler = ih;
+        cdc = c;
 
         checksum();
     }
@@ -231,7 +241,10 @@ class CddImpl implements Cdd {
                 }
             }
             case MCD_CD_FADER -> LogHelper.logWarnOnce(LOG, "Write {}: {} {}", regSpec, th(value), size);
-            default -> LOG.error("S CDD Write {}: {} {} {}", regSpec, th(address), th(value), size);
+            default -> {
+                LOG.error("S CDD Write {}: {} {} {}", regSpec, th(address), th(value), size);
+                assert false;
+            }
         }
     }
 
@@ -294,11 +307,29 @@ class CddImpl implements Cdd {
             case ReadingTOC -> {
                 cddContext.io.sector++;
 //                if(!session.inLeadIn(io.sector)) { //TODO
-                if (true) {
+                if (cddContext.io.sector > 150) {
                     cddContext.io.status = Paused;
-                    cddContext.io.track = 1; //TODO
+                    int trackNow = inTrack(cddContext.io.sector);
+                    if (trackNow > 0) {
+                        cddContext.io.track = trackNow;
+                    }
                     cddContext.io.tocRead = 1;
                 }
+            }
+            case Seeking -> {
+                if (cddContext.io.latency > 0 && --cddContext.io.latency > 0) break;
+                cddContext.io.status = statusVals[cddContext.io.seeking];
+                int trackNow = inTrack(cddContext.io.sector);
+                if (trackNow > 0) {
+                    cddContext.io.track = trackNow;
+                }
+            }
+            case Playing -> {
+                assert false; //TODO untested
+//                readSubcode();
+                if (ExtendedCueSheet.isAudioTrack(extCueSheet, cddContext.io.track)) break;
+                cdc.decode(cddContext.io.sector);
+                advance();
             }
             default -> {
                 LOG.error("CDD status: {}", cddContext.io.status);
@@ -334,9 +365,21 @@ class CddImpl implements Cdd {
                 }
             }
             case Request -> handleRequestCommand();
-            case SeekPause ->
-                    LOG.error("Unsupported Cdd command: {}({}), parameter: {}", cddCommand, cddCommand.ordinal(),
-                            cddContext.command[3]);
+            case SeekPause -> {
+                int minute = cddContext.command[2] * 10 + cddContext.command[3];
+                int second = cddContext.command[4] * 10 + cddContext.command[5];
+                int frame = cddContext.command[6] * 10 + cddContext.command[7];
+                int lba = minute * 60 * 75 + second * 75 + frame - 3;
+
+//                cddCounter    = 0; //TODO
+                cddContext.io.status = CddStatus.Seeking;
+                cddContext.io.seeking = CddStatus.Paused.ordinal();
+                cddContext.io.latency = (int) (11 + 112.5 * Math.abs(position(cddContext.io.sector) - position(lba)));
+                cddContext.io.sector = lba;
+                cddContext.io.sample = 0;
+
+                updateStatuses(0xf, 0, 0, 0, 0, 0, 0, 0);
+            }
             default -> {
                 LOG.error("Unsupported Cdd command: {}({}), parameter: {}", cddCommand, cddCommand.ordinal(),
                         cddContext.command[3]);
@@ -354,7 +397,7 @@ class CddImpl implements Cdd {
     // + 2 seconds (150 sectors, for lead-in) = 14496 sectors
     private void handleRequestCommand() {
         CddRequest request = CddRequest.values()[cddContext.command[3]];
-        boolean isAudio = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track).trackDataType == TrackDataType.AUDIO;
+        boolean isAudio = ExtendedCueSheet.isAudioTrack(extCueSheet, cddContext.io.track);
         switch (request) {
             case AbsoluteTime -> {
                 CueFileParser.toMSF(cddContext.io.sector, msfRes);
@@ -364,7 +407,8 @@ class CddImpl implements Cdd {
                         second / 10, second % 10, frame / 10, frame % 10, status8);
             }
             case RelativeTime -> {
-                int relSector = cddContext.io.sector - ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track).absoluteSectorStart;
+                int relSector = cddContext.io.sector -
+                        ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track).absoluteSectorStart;
                 assert relSector > 0; //TODO can be < 0?
                 CueFileParser.toMSF(relSector, msfRes);
                 int minute = msfRes[2], second = msfRes[1], frame = msfRes[0];
@@ -416,6 +460,15 @@ class CddImpl implements Cdd {
         updateStatus(0, cddContext.io.status.ordinal());
         checksum();
         cddContext.statusPending = 1;
+    }
+
+    private int inTrack(int lba) {
+        for (CdModel.ExtendedTrackData ext : extCueSheet.extTracks) {
+            if (lba >= ext.absoluteSectorStart && lba <= ext.absoluteSectorEnd) {
+                return ext.trackData.getNumber();
+            }
+        }
+        return 0;
     }
 
     /**
