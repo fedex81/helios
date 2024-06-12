@@ -12,7 +12,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static mcd.pcm.McdPcm.pcmSampleRateHz;
 import static omegadrive.util.Util.th;
 import static s32x.pwm.PwmUtil.pwmAudioFormat;
 
@@ -49,20 +48,23 @@ public class BlipPcmProvider implements McdPcmProvider {
     private final SourceDataLine dataLine;
     private final RegionDetector.Region region;
 
-    private final ExecutorService exec =
-            Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, "pcm"));
+    private final double clockRate;
+    private final ExecutorService exec;
 
-    public BlipPcmProvider(RegionDetector.Region region) {
+    public BlipPcmProvider(RegionDetector.Region region, double clockRate) {
         ref.set(new BlipBufferContext());
         dataLine = SoundUtil.createDataLine(pwmAudioFormat);
         this.region = region;
+        this.clockRate = clockRate;
+        exec = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY,
+                "pcm_" + (int) clockRate));
         setup();
     }
 
     private void setup() {
-        BlipBufferIntf blip = new StereoBlipBuffer("pcm");
+        BlipBufferIntf blip = new StereoBlipBuffer("pcm_" + (int) clockRate);
         blip.setSampleRate((int) pwmAudioFormat.getSampleRate(), BUF_SIZE_MS);
-        blip.setClockRate((int) pcmSampleRateHz);
+        blip.setClockRate((int) clockRate);
         BlipBufferContext bbc = new BlipBufferContext();
         bbc.inputClocksForInterval = (int) (1.0 * blip.clockRate() * region.getFrameIntervalMs() / 1000.0);
         bbc.lineBuffer = new byte[0];
@@ -129,13 +131,6 @@ public class BlipPcmProvider implements McdPcmProvider {
         prevSampleAvail = availMonoSamples;
     }
 
-    public static void monoStereo16ToByteStereo16Mix(int[] input, byte[] output, int inputLen) {
-        for (int i = 0, k = 0; i < inputLen; i += 1, k += 4) {
-            output[k + 2] = output[k] = (byte) (input[i] & 0xFF); //lsb
-            output[k + 3] = output[k + 1] = (byte) ((input[i] >> 8) & 0xFF); //msb
-        }
-    }
-
     private void logInfo(BlipBufferContext ctx) {
         int outSamplesPerInterval = (int) (pwmAudioFormat.getSampleRate() * BUF_SIZE_MS / 1000.0);
         int inSamplesPerInterval = (int) (ctx.blipBuffer.clockRate() * BUF_SIZE_MS / 1000.0);
@@ -147,5 +142,6 @@ public class BlipPcmProvider implements McdPcmProvider {
     @Override
     public void reset() {
         SoundUtil.close(dataLine);
+        exec.shutdown();
     }
 }

@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 
+import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_TIMER;
 import static mcd.dict.MegaCdDict.*;
@@ -358,6 +359,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         return interruptHandler;
     }
 
+    public static final double counterCddaLimit = MCD_SUB_68K_CLOCK_MHZ / 44100.0;
+    private double counterCddaAcc = counterCddaLimit;
+
     @Override
     public void step(int cpuCycles) {
         counter32p5Khz.cycleAccumulator -= cpuCycles;
@@ -373,6 +377,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
                 counter32p5Khz.ticks75++;
                 counter32p5Khz.cycleAcc75 += PCM_CLOCK_DIVIDER_TO_75HZ;
             }
+        }
+        counterCddaAcc -= cpuCycles;
+        if (counterCddaAcc <= 0) {
+            counterCddaAcc += counterCddaLimit;
+            cdd.stepCdda();
         }
     }
 
@@ -397,5 +406,10 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     public static void logAccessReg(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
         LogHelper.logWarnOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
                 size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
+    }
+
+    public static void logAccessReg(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, Size size, boolean read) {
+        LogHelper.logWarnOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
+                size, regSpec.getName(), th(address));
     }
 }

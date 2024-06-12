@@ -104,10 +104,6 @@ public class McdWordRamTest extends McdRegTestBase {
         Assertions.assertEquals(RET_BIT_MASK, reg & 3);
     }
 
-    /**
-     * Writing zero to the wordram control reg (from either side) does not affect 2M wordram assignment.
-     * https://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=3080
-     */
     @Test
     public void test2M_WRAM_Switch() {
         assert ctx.wramSetup.mode == _2M;
@@ -313,6 +309,10 @@ public class McdWordRamTest extends McdRegTestBase {
         check2M.accept(ctx.wramSetup);
     }
 
+    /**
+     * Writing zero to the wordram control reg (from either side) does not affect 2M wordram assignment.
+     * https://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=3080
+     */
     @Test
     public void testBitsNoChange() {
         setWramSub2M_NoChange();
@@ -384,6 +384,12 @@ public class McdWordRamTest extends McdRegTestBase {
         Assertions.assertEquals(DMNA_BIT_MASK, mainGetLsb.get() & 3);
     }
 
+    /**
+     * Case 1 - assign 2M wordram to MAIN:
+     * MAIN $a12003 := 0x00
+     * SUB $ff8003 := 0x01
+     * assert: MAIN $a12003 == 0x01
+     */
     private void setWramMain2M_NoChange() {
         assert ctx.wramSetup.mode == _2M;
         WramSetup ws = ctx.wramSetup;
@@ -397,6 +403,12 @@ public class McdWordRamTest extends McdRegTestBase {
         Assertions.assertEquals(RET_BIT_MASK, mainGetLsb.get() & 3);
     }
 
+    /**
+     * Case 2 - assign 2M wordram to SUB:
+     * MAIN $a12003 := 0x02
+     * SUB $ff8003 := 0x00
+     * assert: MAIN $a12003 == 0x02
+     */
     private void setWramSub2M_NoChange() {
         assert ctx.wramSetup.mode == _2M;
         //assign to sub

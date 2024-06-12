@@ -206,6 +206,11 @@ class CdcImpl implements Cdc {
             //PTH: block pointer high
             case 0xD -> cdcContext.transfer.pointer = setByteInWordBE(cdcContext.transfer.pointer, data, 0);
 
+            //CTRL0: control 0
+            case 0xA -> LOG.error("CDC WRITE unsupported CTRL0: {}, data {}", th(cdcContext.address), th(data));
+            //CTRL1: control 1
+            case 0xb -> LOG.error("CDC WRITE unsupported CTRL1: {}, data {}", th(cdcContext.address), th(data));
+
             //RESET: software reset
             case 0xF -> {
                 cdcContext.status.reset();

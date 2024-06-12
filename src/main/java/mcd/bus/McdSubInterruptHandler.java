@@ -122,7 +122,7 @@ public interface McdSubInterruptHandler extends Device {
             boolean raised = subCpu.raiseInterrupt(num);
             if (LOG_INTERRUPT_TRIGGER && raised) {
 //                LogHelper.logInfo(LOG, "SubCpu interrupt trigger: {} ({})", intVals[num], num);
-                LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
+//                LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
             }
             //if the cpu is masking it, interrupt lost
             return true;

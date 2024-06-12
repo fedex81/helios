@@ -171,7 +171,6 @@ public class MegaCdMemoryContext implements Serializable {
         } else {
             address = (address & MCD_WORD_RAM_1M_MASK);
         }
-        assert (address & 1) == 0;
         return address;
     }
 
@@ -182,11 +181,11 @@ public class MegaCdMemoryContext implements Serializable {
         WramSetup prev = wramSetup;
         if (mode > 0) {
             if (c == SUB_M68K) {
-                LOG.warn("{} Switch bank requested, ret: {}, current setup {}", c, ret, wramSetup);
+                LogHelper.logWarnOnce(LOG, "{} Switch bank requested, ret: {}, current setup {}", c, ret, wramSetup);
             }
             //DMNA has no effect, ie. MAIN cannot switch banks directly, it needs to ask SUB to do it
             wramSetup = ret == 0 ? WramSetup.W_1M_WR0_MAIN : WramSetup.W_1M_WR0_SUB;
-            LOG.warn("Setting wordRam to {}", wramSetup);
+            LogHelper.logWarnOnce(LOG, "Setting wordRam to {}", wramSetup);
             return wramSetup;
         } else if (mode == 0) {
             if (wramSetup.mode == _1M) {

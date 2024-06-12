@@ -86,7 +86,7 @@ public class McdPcm implements BufferUtil.StepDevice {
         waveData = ByteBuffer.allocate(PCM_WAVE_DATA_SIZE);
         pcmRegs = ByteBuffer.allocate(PCM_REG_SIZE);
         chan = new PcmChannelContext[PCM_NUM_CHANNELS];
-        playSupport = new BlipPcmProvider(RegionDetector.Region.USA);
+        playSupport = new BlipPcmProvider(RegionDetector.Region.USA, pcmSampleRateHz); //TODO region
         for (int i = 0; i < PCM_NUM_CHANNELS; i++) {
             chan[i] = new PcmChannelContext();
             chan[i].num = i;
@@ -144,7 +144,7 @@ public class McdPcm implements BufferUtil.StepDevice {
             BufferUtil.writeBufferRaw(waveData, address, value, size);
         } else if (address < PCM_REG_MASK) {
             RegSpecMcd regSpec = getPcmReg(address);
-            logAccessReg(regSpec, SUB_M68K, address, value, size, false);
+            logAccessReg(regSpec, SUB_M68K, address, size, false);
             writeReg(regSpec, address, value);
         } else {
             LOG.error("Unhandled write: {}, {} {}", th(address), th(value), size);
@@ -261,5 +261,10 @@ public class McdPcm implements BufferUtil.StepDevice {
     public void newFrame() {
         playSupport.newFrame();
         sampleNum = 0;
+    }
+
+    @Override
+    public void reset() {
+        playSupport.reset();
     }
 }

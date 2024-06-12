@@ -1,6 +1,7 @@
 package mcd.cdd;
 
 import com.google.common.base.MoreObjects;
+import mcd.cdd.CdModel.ExtendedTrackData;
 import mcd.cdd.CdModel.RomFileType;
 import mcd.cdd.CdModel.TrackDataType;
 import omegadrive.sound.msumd.CueFileParser;
@@ -17,6 +18,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static mcd.cdd.CdModel.ExtendedTrackData.NO_TRACK;
 
 /**
  * Federico Berti
@@ -42,7 +45,7 @@ public class ExtendedCueSheet implements Closeable {
     public RomFileType romFileType = RomFileType.UNKNOWN;
 
     private Optional<Path> isoPath = Optional.empty();
-    public final List<CdModel.ExtendedTrackData> extTracks = new ArrayList<>();
+    public final List<ExtendedTrackData> extTracks = new ArrayList<>();
     public int numTracks, sectorEnd;
     protected final Map<String, RandomAccessFile> fileCache = new HashMap<>();
     private static RandomAccessFile NO_BIN_FILE;
@@ -104,14 +107,14 @@ public class ExtendedCueSheet implements Closeable {
     private void parseTrack(ExtendedCueSheet extCueSheet, int trackNumber, Path cuePath) {
         TrackData trackData = getTrack(extCueSheet.cueSheet, trackNumber);
         RandomAccessFile raf = getDataFile(extCueSheet, trackData.getParent().getFile(), cuePath);
-        CdModel.ExtendedTrackData extTrackData = new CdModel.ExtendedTrackData(trackData, raf);
+        ExtendedTrackData extTrackData = new ExtendedTrackData(trackData, raf);
         extTrackData.trackDataType = TrackDataType.parse(trackData.getDataType());
         try {
             /* read Sega CD image header + security code */
             byte[] sec = new byte[0x200];
             raf.read(sec, 0, sec.length);
 
-            List<CdModel.ExtendedTrackData> extTracks = extCueSheet.extTracks;
+            List<ExtendedTrackData> extTracks = extCueSheet.extTracks;
             int sectorStart = 0;
             if (!extTracks.isEmpty()) {
                 sectorStart = extTracks.get(extTracks.size() - 1).absoluteSectorEnd;
@@ -183,16 +186,19 @@ public class ExtendedCueSheet implements Closeable {
         return td;
     }
 
-    public static CdModel.ExtendedTrackData getExtTrack(ExtendedCueSheet extCueSheet, int number) {
+    public static ExtendedTrackData getExtTrack(ExtendedCueSheet extCueSheet, int number) {
         assert number > 0;
-        CdModel.ExtendedTrackData td = extCueSheet.extTracks.get(number - 1);
-        assert td.trackData.getNumber() == number;
+        int zeroBased = number - 1;
+        ExtendedTrackData td = NO_TRACK;
+        if (zeroBased < extCueSheet.extTracks.size()) {
+            td = extCueSheet.extTracks.get(zeroBased);
+            assert td.trackData.getNumber() == number;
+        }
         return td;
     }
 
     public static boolean isAudioTrack(ExtendedCueSheet extCueSheet, int number) {
-        CdModel.ExtendedTrackData td = extCueSheet.extTracks.get(number - 1);
-        return td.trackDataType == TrackDataType.AUDIO;
+        return getExtTrack(extCueSheet, number).trackDataType == TrackDataType.AUDIO;
     }
 
     @Override
@@ -220,7 +226,7 @@ public class ExtendedCueSheet implements Closeable {
 
     @Override
     public void close() throws IOException {
-        extTracks.forEach(CdModel.ExtendedTrackData::closeQuietly);
+        extTracks.forEach(ExtendedTrackData::closeQuietly);
         assert fileCache.values().stream().noneMatch(r -> r.getChannel().isOpen());
     }
 }

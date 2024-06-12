@@ -32,6 +32,10 @@ public class CueFileParser {
     public static final int MAX_TRACKS = 100; //0-99
     static final int SECTOR_SIZE_BYTES = 2352;
 
+    public static class MsfHolder {
+        public int minute, second, frame;
+    }
+
     public static CueSheet parse(Path cueFilePath) {
         CueSheet cueSheet = null;
         try {
@@ -46,7 +50,7 @@ public class CueFileParser {
         return (m * 60 + s) * 75 + f - 150;
     }
 
-    public static int toMSF(int sector) {
+    public static int toMSF_BCD(int sector) {
         int f = sector % 75;
         sector /= 75;
         int s = sector % 60;
@@ -55,15 +59,12 @@ public class CueFileParser {
         return (toBCD(m) << 16) | (toBCD(s) << 8) | toBCD(f);
     }
 
-    public static void toMSF(int sector, int[] result) {
-        int f = sector % 75;
+    public static void toMSF(int sector, MsfHolder h) {
+        h.frame = sector % 75;
         sector /= 75;
-        int s = sector % 60;
+        h.second = sector % 60;
         sector /= 60;
-        int m = sector;
-        result[0] = toBCD(f);
-        result[1] = toBCD(s);
-        result[2] = toBCD(m);
+        h.minute = sector;
     }
 
     public static int toBCD(int x) {

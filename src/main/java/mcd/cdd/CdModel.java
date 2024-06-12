@@ -90,6 +90,8 @@ public class CdModel {
     }
 
     static class ExtendedTrackData implements Closeable {
+
+        public static final ExtendedTrackData NO_TRACK = new ExtendedTrackData(null, null);
         public final TrackData trackData;
         public final RandomAccessFile file;
         public TrackDataType trackDataType;

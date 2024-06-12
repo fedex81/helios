@@ -241,6 +241,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     public void newFrame() {
         memView.update();
         mcdLaunchContext.pcm.newFrame();
+        mcdLaunchContext.cdd.newFrame();
         super.newFrame();
     }
 
@@ -289,6 +290,13 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         cpu.reset();
         subCpu.reset();
         z80.reset(); //TODO confirm this is needed
+    }
+
+    @Override
+    protected void handleCloseRom() {
+        super.handleCloseRom();
+        mcdLaunchContext.cdd.reset();
+        mcdLaunchContext.pcm.reset();
     }
 
     @Override
