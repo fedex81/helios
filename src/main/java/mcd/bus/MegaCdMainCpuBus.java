@@ -3,14 +3,15 @@ package mcd.bus;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.dict.MegaCdMemoryContext.WordRamMode;
+import mcd.util.McdBiosHolder;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.cpu.m68k.MC68000Wrapper;
-import omegadrive.util.*;
+import omegadrive.util.LogHelper;
+import omegadrive.util.Size;
+import omegadrive.util.Util;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.*;
@@ -50,21 +51,15 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     private boolean enableMCDBus = true, enableMode1 = true;
 
-    static String biosBasePath = "res/bios/mcd";
-
-    static String masterBiosName = "bios_us.bin";
     private static ByteBuffer bios;
     private LogHelper logHelper = new LogHelper();
     private MegaCdMemoryContext memCtx;
 
+    private McdBiosHolder biosHolder;
+
     public MC68000Wrapper subCpu;
     public MegaCdSubCpuBus subCpuBus;
     private CpuDeviceAccess cpu;
-
-    static {
-        Path p = Paths.get(biosBasePath, masterBiosName);
-        loadBios(RegionDetector.Region.USA, p);
-    }
 
     public MegaCdMainCpuBus(MegaCdMemoryContext ctx) {
         cpu = M68K;
@@ -75,6 +70,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         writeBufferRaw(sysGateRegs, MCD_RESET.addr, 2, Size.WORD); //DMNA=0, RET=1
         writeBufferRaw(sysGateRegs, MCD_MEM_MODE.addr + 1, 1, Size.BYTE); //DMNA=0, RET=1
         writeBufferRaw(sysGateRegs, MCD_CDC_REG_DATA.addr, 0xFFFF, Size.WORD);
+        biosHolder = McdBiosHolder.getInstance();
     }
 
     @Override
@@ -88,24 +84,13 @@ public class MegaCdMainCpuBus extends GenesisBus {
         if (isBios) {
             enableMode1 = false;
             LOG.info("Bios detected with serial: {}, disabling mode1 mapper", cartridgeInfoProvider.getSerial());
-            loadBios(systemProvider.getRegion(), systemProvider.getRomPath());
+            //NOTE: load bios as a file, use it as the current bios, disregarding the default bios
+            bios = McdBiosHolder.loadBios(systemProvider.getRegion(), systemProvider.getRomPath());
         }
         if (isCue) {
             enableMode1 = false;
+            bios = biosHolder.getBiosBuffer(systemProvider.getRegion());
             LOG.info("CUE file detected, disabling mode1 mapper");
-        }
-    }
-
-    private static void loadBios(RegionDetector.Region region, Path p) {
-        try {
-            assert p.toFile().exists();
-            byte[] b = FileUtil.readBinaryFile(p, ".bin", ".md");
-            assert b.length > 0;
-            bios = ByteBuffer.wrap(b);
-            LOG.info("Loading bios at {}, region: {}, size: {}", p.toAbsolutePath(), region, b.length);
-        } catch (Error | Exception e) {
-            LOG.error("Unable to load bios at {}", p.toAbsolutePath());
-            bios = ByteBuffer.allocate(MCD_BOOT_ROM_SIZE);
         }
     }
 

@@ -1,5 +1,6 @@
 package s32x.util;
 
+import com.google.common.base.MoreObjects;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.FileUtil;
@@ -29,6 +30,14 @@ public class BiosHolder {
             rawSize = b.length;
             padMask = Util.getRomMask(rawSize);
             buffer = ByteBuffer.wrap(b);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("rawSize", rawSize)
+                    .add("padMask", padMask)
+                    .toString();
         }
 
         public int readBuffer(int address, Size size) {
