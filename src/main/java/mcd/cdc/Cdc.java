@@ -3,6 +3,7 @@ package mcd.cdc;
 
 import mcd.bus.McdSubInterruptHandler;
 import mcd.dict.MegaCdMemoryContext;
+import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -12,6 +13,7 @@ import java.nio.ByteBuffer;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDC;
 import static mcd.cdc.CdcModel.NUM_CDC_REG_MASK;
+import static mcd.cdd.CdModel.SECTOR_2352;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
@@ -56,6 +58,8 @@ class CdcImpl implements Cdc {
     private final MegaCdMemoryContext memoryContext;
     private final McdSubInterruptHandler interruptHandler;
     private final CdcModel.CdcContext cdcContext;
+
+    private final CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();
 
     public CdcImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih) {
         memoryContext = mc;
@@ -270,8 +274,30 @@ class CdcImpl implements Cdc {
 
     @Override
     public void decode(int sector) {
-        assert cdcContext.decoder.enable == 0;
-        throw new RuntimeException("Not implemented!");
+        boolean hasFile = true;
+        if (cdcContext.decoder.enable == 0 || !hasFile) {
+            return;
+        }
+        CueFileParser.toMSF(sector, msfHolder);
+        cdcContext.decoder.valid = 1;
+        cdcContext.irq.pending = 1;
+        poll();
+
+        if (cdcContext.control.writeRequest > 0) {
+            cdcContext.transfer.pointer += SECTOR_2352; //TODO data track always 2352 bytes?
+            cdcContext.transfer.target += SECTOR_2352;
+
+            //the sync header is written at the tail instead of head.
+            /*
+             *     mcd.fd->seek((abs(mcd.cdd.session.leadIn.lba) + sector) * 2448); //should be 2352?
+             *     for(u32 index = 0; index <   12; index += 2) {
+             *       ram[n13(transfer.pointer + index + 2340 >> 1)] = mcd.fd->readm(2);
+             *     }
+             *     for(u32 index = 0; index < 2340; index += 2) {
+             *       ram[n13(transfer.pointer + index +    0 >> 1)] = mcd.fd->readm(2);
+             *     }
+             */
+        }
     }
 
     public static int getInvertedBitFromByte(byte b, int bitPos) {

@@ -32,7 +32,7 @@ public class BlipPcmProvider implements McdPcmProvider {
     static class BlipBufferContext {
         BlipBufferIntf blipBuffer;
         byte[] lineBuffer;
-        int inputClocksForInterval;
+        AtomicInteger inputClocksForInterval = new AtomicInteger();
 
         @Override
         public String toString() {
@@ -46,30 +46,32 @@ public class BlipPcmProvider implements McdPcmProvider {
 
     private int prevLSample, prevRSample;
     private final SourceDataLine dataLine;
-    private final RegionDetector.Region region;
+    private RegionDetector.Region region;
 
     private final double clockRate;
     private final ExecutorService exec;
 
-    public BlipPcmProvider(RegionDetector.Region region, double clockRate) {
+    private final String instanceId;
+
+    public BlipPcmProvider(String name, RegionDetector.Region region, double clockRate) {
         ref.set(new BlipBufferContext());
         dataLine = SoundUtil.createDataLine(pwmAudioFormat);
         this.region = region;
         this.clockRate = clockRate;
-        exec = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY,
-                "pcm_" + (int) clockRate));
+        this.instanceId = name + "_" + (int) clockRate;
+        exec = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, instanceId));
         setup();
     }
 
     private void setup() {
-        BlipBufferIntf blip = new StereoBlipBuffer("pcm_" + (int) clockRate);
+        BlipBufferIntf blip = new StereoBlipBuffer(instanceId);
         blip.setSampleRate((int) pwmAudioFormat.getSampleRate(), BUF_SIZE_MS);
         blip.setClockRate((int) clockRate);
         BlipBufferContext bbc = new BlipBufferContext();
-        bbc.inputClocksForInterval = (int) (1.0 * blip.clockRate() * region.getFrameIntervalMs() / 1000.0);
         bbc.lineBuffer = new byte[0];
         bbc.blipBuffer = blip;
         ref.set(bbc);
+        updateRegion(region);
         logInfo(bbc);
     }
 
@@ -78,10 +80,10 @@ public class BlipPcmProvider implements McdPcmProvider {
     public void playSample(int lsample, int rsample) {
         if (BufferUtil.assertionsEnabled) {
             if (Math.abs(lsample - prevLSample) > Short.MAX_VALUE) {
-                LOG.info("L {} -> {}, absDiff: {}", th(prevLSample), th(lsample), th(Math.abs(lsample - prevLSample)));
+                LOG.info("{} L {} -> {}, absDiff: {}", instanceId, th(prevLSample), th(lsample), th(Math.abs(lsample - prevLSample)));
             }
             if (Math.abs(rsample - prevRSample) > Short.MAX_VALUE) {
-                LOG.info("R {} -> {}, absDiff: {}", th(prevRSample), th(rsample), th(Math.abs(rsample - prevRSample)));
+                LOG.info("{} R {} -> {}, absDiff: {}", instanceId, th(prevRSample), th(rsample), th(Math.abs(rsample - prevRSample)));
             }
         }
         ref.get().blipBuffer.addDelta((int) deltaTime, lsample - prevLSample, rsample - prevRSample);
@@ -92,7 +94,7 @@ public class BlipPcmProvider implements McdPcmProvider {
 
     @Override
     public int updateStereo16(int[] buf_lr, int offset, int countMono) {
-        LogHelper.logWarnOnce(LOG, "Ignoring sample requests, using its own dataLine");
+        LogHelper.logWarnOnce(LOG, "{} Ignoring sample requests, using its own dataLine", instanceId);
         return countMono << 1;
     }
 
@@ -106,14 +108,15 @@ public class BlipPcmProvider implements McdPcmProvider {
         if (blip == null) {
             return;
         }
-        blip.endFrame(context.inputClocksForInterval);
+        assert context.inputClocksForInterval.get() > 0;
+        blip.endFrame(context.inputClocksForInterval.get());
         deltaTime = 0;
         int availMonoSamples = blip.samplesAvail();
         if (availMonoSamples + 5 < prevSampleAvail) {
-            LOG.info("Audio underrun : {} -> {} samples", prevSampleAvail, availMonoSamples);
+            LOG.info("{} Audio underrun : {} -> {} samples", instanceId, prevSampleAvail, availMonoSamples);
         }
         if (context.lineBuffer.length < availMonoSamples << 2) {
-            LOG.info("Audio buffer size: {} -> {} bytes", context.lineBuffer.length, availMonoSamples << 2);
+            LOG.info("{} Audio buffer size: {} -> {} bytes", instanceId, context.lineBuffer.length, availMonoSamples << 2);
             context.lineBuffer = new byte[availMonoSamples << 2];
         }
         final long current = sync.incrementAndGet();
@@ -123,7 +126,7 @@ public class BlipPcmProvider implements McdPcmProvider {
                 SoundUtil.writeBufferInternal(dataLine, context.lineBuffer, 0, stereoBytes);
                 if (BufferUtil.assertionsEnabled) {
                     if (current != sync.get()) {
-                        LOG.info("Pcm audio thread too slow: {} vs {}", current, sync.get());
+                        LOG.info("{} Blip audio thread too slow: {} vs {}", instanceId, current, sync.get());
                     }
                 }
             });
@@ -131,11 +134,18 @@ public class BlipPcmProvider implements McdPcmProvider {
         prevSampleAvail = availMonoSamples;
     }
 
+    @Override
+    public void updateRegion(RegionDetector.Region region) {
+        this.region = region;
+        BlipBufferContext ctx = ref.get();
+        ctx.inputClocksForInterval.set((int) (1.0 * ctx.blipBuffer.clockRate() * region.getFrameIntervalMs() / 1000.0));
+    }
+
     private void logInfo(BlipBufferContext ctx) {
         int outSamplesPerInterval = (int) (pwmAudioFormat.getSampleRate() * BUF_SIZE_MS / 1000.0);
         int inSamplesPerInterval = (int) (ctx.blipBuffer.clockRate() * BUF_SIZE_MS / 1000.0);
-        LOG.info("{}\nOutput sampleRate: {}, Input sampleRate: {}, outputBufLenMs: {}, outputBufLenSamples: {}" +
-                        ", inputBufLenSamples: {}", ctx, pwmAudioFormat.getSampleRate(), ctx.blipBuffer.clockRate(), BUF_SIZE_MS,
+        LOG.info("{}: {}\nOutput sampleRate: {}, Input sampleRate: {}, outputBufLenMs: {}, outputBufLenSamples: {}" +
+                        ", inputBufLenSamples: {}", instanceId, ctx, pwmAudioFormat.getSampleRate(), ctx.blipBuffer.clockRate(), BUF_SIZE_MS,
                 outSamplesPerInterval, inSamplesPerInterval);
     }
 

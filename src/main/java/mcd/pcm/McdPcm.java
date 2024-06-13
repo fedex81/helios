@@ -2,10 +2,7 @@ package mcd.pcm;
 
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdDict.RegSpecMcd;
-import omegadrive.util.BufferUtil;
-import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.Size;
+import omegadrive.util.*;
 import org.slf4j.Logger;
 import s32x.util.blipbuffer.BlipBufferHelper;
 
@@ -86,7 +83,7 @@ public class McdPcm implements BufferUtil.StepDevice {
         waveData = ByteBuffer.allocate(PCM_WAVE_DATA_SIZE);
         pcmRegs = ByteBuffer.allocate(PCM_REG_SIZE);
         chan = new PcmChannelContext[PCM_NUM_CHANNELS];
-        playSupport = new BlipPcmProvider(RegionDetector.Region.USA, pcmSampleRateHz); //TODO region
+        playSupport = new BlipPcmProvider("PCM", RegionDetector.Region.USA, pcmSampleRateHz);
         for (int i = 0; i < PCM_NUM_CHANNELS; i++) {
             chan[i] = new PcmChannelContext();
             chan[i].num = i;
@@ -256,6 +253,10 @@ public class McdPcm implements BufferUtil.StepDevice {
         }
         /* 16-bit DAC output (interleaved) */
         playSupport.playSample(ls, rs);
+    }
+
+    public void updateVideoMode(VideoMode videoMode) {
+        playSupport.updateRegion(videoMode.getRegion());
     }
 
     public void newFrame() {

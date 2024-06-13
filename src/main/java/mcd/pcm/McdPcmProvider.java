@@ -1,6 +1,7 @@
 package mcd.pcm;
 
 import omegadrive.sound.SoundDevice;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 
 /**
@@ -15,6 +16,8 @@ public interface McdPcmProvider extends SoundDevice {
 
     void playSample(int left, int right);
 
+    void updateRegion(RegionDetector.Region region);
+
     default SoundDeviceType getType() {
         return SoundDeviceType.PCM;
     }
@@ -25,6 +28,10 @@ public interface McdPcmProvider extends SoundDevice {
     McdPcmProvider NO_SOUND = new McdPcmProvider() {
         @Override
         public void playSample(int left, int right) {
+        }
+
+        @Override
+        public void updateRegion(RegionDetector.Region region) {
         }
 
         @Override

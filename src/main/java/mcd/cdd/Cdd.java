@@ -9,10 +9,7 @@ import mcd.pcm.BlipPcmProvider;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.sound.msumd.CueFileParser.MsfHolder;
 import omegadrive.system.SystemProvider;
-import omegadrive.util.BufferUtil;
-import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.Size;
+import omegadrive.util.*;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -20,7 +17,6 @@ import java.io.RandomAccessFile;
 import java.nio.file.Path;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
-import static mcd.cdd.CdModel.TrackDataType.AUDIO;
 import static mcd.cdd.Cdd.CddCommand.Request;
 import static mcd.cdd.Cdd.CddCommand.SeekPause;
 import static mcd.cdd.Cdd.CddStatus.*;
@@ -109,6 +105,8 @@ public interface Cdd extends BufferUtil.StepDevice {
     void stepCdda();
 
 
+    void updateVideoMode(VideoMode videoMode);
+
     void newFrame();
 
     default void process() {
@@ -190,7 +188,7 @@ class CddImpl implements Cdd {
         memoryContext = mc;
         interruptHandler = ih;
         cdc = c;
-        playSupport = new BlipPcmProvider(RegionDetector.Region.USA, 44100); //TODO region
+        playSupport = new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100);
         checksum();
     }
 
@@ -203,11 +201,11 @@ class CddImpl implements Cdd {
         extCueSheet = new ExtendedCueSheet(p);
         hasFile = extCueSheet.cueSheet != null;
         if (!hasFile) {
-            cddContext.io.status = NoDisc;
+            setIoStatus(NoDisc);
             return;
         }
 
-        cddContext.io.status = ReadingTOC;
+        setIoStatus(ReadingTOC);
         cddContext.io.sector = 150; //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
         cddContext.io.track = cddContext.io.sample = cddContext.io.tocRead = 0;
         LOG.info("Using disc: {}", extCueSheet);
@@ -297,43 +295,33 @@ class CddImpl implements Cdd {
         cddContext.statusPending = 0;
 
         switch (cddContext.io.status) {
-            case NoDisc, Paused -> {
+            case NoDisc, Paused, LeadOut -> {
                 //do nothing
             }
             case Stopped -> {
-                if (!hasFile) cddContext.io.status = NoDisc;
-                else if (cddContext.io.tocRead == 0) cddContext.io.status = ReadingTOC;
+                if (!hasFile) setIoStatus(NoDisc);
+                else if (cddContext.io.tocRead == 0) setIoStatus(ReadingTOC);
                 cddContext.io.sector = cddContext.io.sample = cddContext.io.track = 0;
             }
             case ReadingTOC -> {
                 cddContext.io.sector++;
 //                if(!session.inLeadIn(io.sector)) { //TODO
                 if (cddContext.io.sector > 150) {
-                    cddContext.io.status = Paused;
-                    int trackNow = inTrack(cddContext.io.sector);
-                    if (trackNow > 0) {
-                        cddContext.io.track = trackNow;
-                    }
+                    setIoStatus(Paused);
+                    updateTrackIfLegal();
                     cddContext.io.tocRead = 1;
                 }
             }
             case Seeking -> {
                 if (cddContext.io.latency > 0 && --cddContext.io.latency > 0) break;
-                cddContext.io.status = statusVals[cddContext.io.seeking];
-                int trackNow = inTrack(cddContext.io.sector);
-                if (trackNow > 0) {
-                    cddContext.io.track = trackNow;
-                }
+                setIoStatus(statusVals[cddContext.io.seeking]);
+                updateTrackIfLegal();
             }
             case Playing -> {
 //                readSubcode();
                 if (ExtendedCueSheet.isAudioTrack(extCueSheet, cddContext.io.track)) break;
                 cdc.decode(cddContext.io.sector);
                 advance();
-            }
-            case LeadOut -> {
-                //do nothing
-                System.out.println(cddContext.io.status);
             }
             default -> {
                 LOG.error("CDD status: {}", cddContext.io.status);
@@ -349,19 +337,20 @@ class CddImpl implements Cdd {
         if (cddContext.io.status == Playing) {
             if (ExtendedCueSheet.isAudioTrack(extCueSheet, cddContext.io.track)) {
                 ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
+                //CDDA: 2352 audio data (+ 96 subcode, not dumped)
+                int sectorSize = etd.trackDataType.size.s_size;
+                int trackRelSector = cddContext.io.sector - etd.absoluteSectorStart;
+                assert trackRelSector >= 0;
                 try {
-                    //CDDA: 2352 audio data (+ 96 subcode, not dumped)
-                    int trackRelSector = cddContext.io.sector - etd.absoluteSectorStart;
-                    assert trackRelSector >= 0;
-                    etd.file.seek((AUDIO.size.s_size * trackRelSector) + cddContext.io.sample);
+                    etd.file.seek((sectorSize * trackRelSector) + cddContext.io.sample);
                     left = readShortLE(etd.file);
                     right = readShortLE(etd.file);
                     cddContext.io.sample += 4;
-                    if (cddContext.io.sample >= AUDIO.size.s_size) {
+                    if (cddContext.io.sample >= sectorSize) {
                         advance();
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOG.error("Unable to seek to sector: {}", cddContext.io.sector, e);
                 }
             }
         }
@@ -375,13 +364,13 @@ class CddImpl implements Cdd {
     private void advance() {
         int track = inTrack(cddContext.io.sector + 1);
         if (track > 0) {
-            cddContext.io.track = track;
+            setTrack(track);
             cddContext.io.sector++;
             cddContext.io.sample = 0;
             return;
         }
-        cddContext.io.status = LeadOut;
-        cddContext.io.track = 0xAA;
+        setIoStatus(LeadOut);
+        setTrack(0xAA);
     }
 
     @Override
@@ -392,7 +381,7 @@ class CddImpl implements Cdd {
         if (!valid()) {
             //unverified
             LOG.error("CDD checksum error");
-            cddContext.io.status = CddStatus.ChecksumError;
+            setIoStatus(CddStatus.ChecksumError);
             processDone();
             return;
         }
@@ -406,7 +395,7 @@ class CddImpl implements Cdd {
                 }
             }
             case Stop -> {
-                cddContext.io.status = hasFile ? Stopped : NoDisc;
+                setIoStatus(hasFile ? Stopped : NoDisc);
                 for (int i = 1; i < 9; i++) {
                     updateStatus(i, 0);
                 }
@@ -419,7 +408,7 @@ class CddImpl implements Cdd {
                 int lba = minute * 60 * 75 + second * 75 + frame - 3;
 
 //                cddCounter    = 0; //TODO
-                cddContext.io.status = CddStatus.Seeking;
+                setIoStatus(CddStatus.Seeking);
                 cddContext.io.seeking = cddCommand == SeekPause ? CddStatus.Paused.ordinal() : Playing.ordinal();
                 cddContext.io.latency = (int) (11 + 112.5 * Math.abs(position(cddContext.io.sector) - position(lba)));
                 cddContext.io.sector = lba;
@@ -507,6 +496,27 @@ class CddImpl implements Cdd {
         return 0;
     }
 
+    private void updateTrackIfLegal() {
+        int trackNow = inTrack(cddContext.io.sector);
+        if (trackNow > 0) {
+            setTrack(trackNow);
+        }
+    }
+
+    private void setTrack(int track) {
+        if (track != cddContext.io.track) {
+            LOG.info("Track changed: {} -> {}", cddContext.io.track, track);
+            cddContext.io.track = track;
+        }
+    }
+
+    private void setIoStatus(CddStatus status) {
+        if (status != cddContext.io.status) {
+            LOG.info("Status changed: {} -> {}", cddContext.io.status, status);
+            cddContext.io.status = status;
+        }
+    }
+
     /**
      * status 1..8, status0 is ignored
      */
@@ -540,6 +550,11 @@ class CddImpl implements Cdd {
     private void updateCommand(int pos, int val) {
         cddContext.command[pos] = val;
         writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_CDD_COMM5.addr + pos, val, Size.BYTE);
+    }
+
+    @Override
+    public void updateVideoMode(VideoMode videoMode) {
+        playSupport.updateRegion(videoMode.getRegion());
     }
 
     @Override

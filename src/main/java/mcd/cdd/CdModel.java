@@ -30,7 +30,7 @@ public class CdModel {
 
     enum TrackMode {MODE1, MODE2}
 
-    enum SectorSize {
+    public enum SectorSize {
         S_2048(2048), S_2352(2352);
 
         public final int s_size;
@@ -39,6 +39,8 @@ public class CdModel {
             this.s_size = s;
         }
     }
+
+    public static final int SECTOR_2352 = S_2352.s_size;
 
     /**
      * AUDIO	    Audio/Music (2352 — 588 samples)

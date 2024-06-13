@@ -223,6 +223,8 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
             sound.getFm().setMicrosPerTick(microsPerTick);
             targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
             mcd68kRatio = videoMode.isPal() ? MCD_68K_RATIO_PAL : MCD_68K_RATIO_NTSC;
+            mcdLaunchContext.pcm.updateVideoMode(videoMode);
+            mcdLaunchContext.cdd.updateVideoMode(videoMode);
             LOG.info("Video mode changed: {}, mcd68kRatio: {}, microsPerTick: {}", videoMode, mcd68kRatio, microsPerTick);
         }
     }
