@@ -50,6 +50,7 @@ import s32x.util.Md32xRuntimeData;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.GEN_NTSC_MCLOCK_MHZ;
+import static omegadrive.util.Util.GEN_PAL_MCLOCK_MHZ;
 
 /**
  * Megadrive main class
@@ -71,8 +72,12 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     public final static double MCD_SUB_68K_CLOCK_MHZ = 12_500_000;
 
-    //mcd-verificator is very sensitive
-    public final static double MCD_68K_RATIO = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_NTSC_MCLOCK_MHZ / 7.0)) * 0.99;
+    //mcd-verificator(NTSC) is very sensitive
+    public final static double MCD_68K_RATIO_NTSC = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_NTSC_MCLOCK_MHZ / 7.0)) * 0.99;
+    //TODO pal timings are off
+    public final static double MCD_68K_RATIO_PAL = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_PAL_MCLOCK_MHZ / 7.0)) * 0.99;
+
+    private double mcd68kRatio;
 
 
     static {
@@ -183,7 +188,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
             subCnt += cycleDelayCpu;
             mcdLaunchContext.stepDevices(cycleDelayCpu);
             //convert cycles at 7.67 to cycle @ 12.5 Mhz
-            nextSub68kCycle += M68K_DIVIDER * MCD_68K_RATIO * cycleDelayCpu;
+            nextSub68kCycle += M68K_DIVIDER * mcd68kRatio * cycleDelayCpu;
             assert Md32xRuntimeData.resetCpuDelayExt() == 0;
         }
     }
@@ -217,12 +222,13 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
             double microsPerTick = getMicrosPerTick();
             sound.getFm().setMicrosPerTick(microsPerTick);
             targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
-            LOG.info("Video mode changed: {}, microsPerTick: {}", videoMode, microsPerTick);
+            mcd68kRatio = videoMode.isPal() ? MCD_68K_RATIO_PAL : MCD_68K_RATIO_NTSC;
+            LOG.info("Video mode changed: {}, mcd68kRatio: {}, microsPerTick: {}", videoMode, mcd68kRatio, microsPerTick);
         }
     }
 
     private double getMicrosPerTick() {
-        double mclkhz = videoMode.isPal() ? Util.GEN_PAL_MCLOCK_MHZ : GEN_NTSC_MCLOCK_MHZ;
+        double mclkhz = videoMode.isPal() ? GEN_PAL_MCLOCK_MHZ : GEN_NTSC_MCLOCK_MHZ;
         return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
     }
 
@@ -260,7 +266,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         if ((getFrameCounter() + 1) % 60 == 0) {
             boolean rangeOk = Math.abs(MCD_SUB_68K_CLOCK_MHZ - subCnt) < 250_000; //250Khz slack
             if (!rangeOk) {
-                LOG.info("SubCpu timing off!!!, 68K clock: {}", subCnt);
+                logTimingWarn(LOG, "SubCpu timing off!!!, 68K clock: {}, mode: {}", videoMode);
             }
             subCnt = 0;
         }
@@ -278,7 +284,9 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         vdp.addVdpEventListener(sound);
         SvpMapper.ssp16 = Ssp16.NO_SVP;
         resetAfterRomLoad();
-        mcdLaunchContext.cdd.tryInsert(romContext);
+        if (!mcdLaunchContext.mainBus.isEnableMode1()) {
+            mcdLaunchContext.cdd.tryInsert(romContext);
+        }
         memView = createMemView();
     }
 
@@ -305,5 +313,14 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
             cpu.softReset();
         }
         super.handleSoftReset();
+    }
+
+    private void logTimingWarn(Logger log, String str, Object... pars) {
+        if (videoMode.isPal()) {
+            //known issue, warn once
+            LogHelper.logWarnOnce(log, str, pars);
+        } else {
+            log.info(str, pars);
+        }
     }
 }

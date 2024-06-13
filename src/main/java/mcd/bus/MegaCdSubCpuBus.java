@@ -392,7 +392,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             boolean rangeOk = Math.abs(75 - counter32p5Khz.ticks75) < 2 &&
                     Math.abs(McdPcm.PCM_SAMPLE_RATE_HZ - counter32p5Khz.ticks32p5) < 500.0;
             if (!rangeOk) {
-                LOG.warn("SubCpu timing off!!!, 32.5Khz: {}, 75hz:{}", counter32p5Khz.ticks32p5, counter32p5Khz.ticks75);
+                String str = "SubCpu timing off!!!, 32.5Khz: {}, 75hz:{}";
+                //known issue for PAL, warn once
+                LogHelper.logWarnOnce(LOG, str, counter32p5Khz.ticks32p5, counter32p5Khz.ticks75);
             }
             counter32p5Khz.ticks32p5 = counter32p5Khz.ticks75 = 0;
         }

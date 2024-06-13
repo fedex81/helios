@@ -130,8 +130,9 @@ public class MegaCdMemoryContext implements Serializable {
         if (cpu == wramSetup.cpu || wramSetup.mode == _1M) {
             writeWordRamBank(getBank(wramSetup, cpu, address), address, value);
         } else {
+            //BIOS JP when playing CDDA
             logWarnOnce(LOG, "{} writing WRAM but setup is: {}", cpu, wramSetup);
-            assert false;
+//            assert false;
         }
     }
 

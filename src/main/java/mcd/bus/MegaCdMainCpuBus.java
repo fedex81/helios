@@ -86,12 +86,14 @@ public class MegaCdMainCpuBus extends GenesisBus {
             LOG.info("Bios detected with serial: {}, disabling mode1 mapper", cartridgeInfoProvider.getSerial());
             //NOTE: load bios as a file, use it as the current bios, disregarding the default bios
             bios = McdBiosHolder.loadBios(systemProvider.getRegion(), systemProvider.getRomPath());
+            return;
         }
         if (isCue) {
             enableMode1 = false;
-            bios = biosHolder.getBiosBuffer(systemProvider.getRegion());
             LOG.info("CUE file detected, disabling mode1 mapper");
         }
+        //mode1 and cue
+        bios = biosHolder.getBiosBuffer(systemProvider.getRegion());
     }
 
     @Override
@@ -289,6 +291,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
             LOG.error("M illegal write read-only MEGA_CD_COMM reg: {}", th(address));
             return;
         }
+    }
+
+    public boolean isEnableMode1() {
+        return enableMode1;
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {

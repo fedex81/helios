@@ -187,10 +187,9 @@ public class ExtendedCueSheet implements Closeable {
     }
 
     public static ExtendedTrackData getExtTrack(ExtendedCueSheet extCueSheet, int number) {
-        assert number > 0;
         int zeroBased = number - 1;
         ExtendedTrackData td = NO_TRACK;
-        if (zeroBased < extCueSheet.extTracks.size()) {
+        if (zeroBased >= 0 && zeroBased < extCueSheet.extTracks.size()) {
             td = extCueSheet.extTracks.get(zeroBased);
             assert td.trackData.getNumber() == number;
         }
