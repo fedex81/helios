@@ -26,14 +26,28 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.text.NumberFormat;
 
 public class CueFileParser {
     private static final Logger LOG = LogHelper.getLogger(CueFileParser.class.getSimpleName());
     public static final int MAX_TRACKS = 100; //0-99
     static final int SECTOR_SIZE_BYTES = 2352;
 
+    static final NumberFormat msfFormat;
+
+    static {
+        msfFormat = NumberFormat.getInstance();
+        msfFormat.setMinimumIntegerDigits(2);
+        msfFormat.setMaximumFractionDigits(0);
+    }
+
     public static class MsfHolder {
         public int minute, second, frame;
+
+        @Override
+        public String toString() {
+            return msfFormat.format(minute) + ":" + msfFormat.format(second) + ":" + msfFormat.format(frame);
+        }
     }
 
     public static CueSheet parse(Path cueFilePath) {
@@ -47,7 +61,7 @@ public class CueFileParser {
     }
 
     public static int toSector(int m, int s, int f) {
-        return (m * 60 + s) * 75 + f - 150;
+        return (m * 60 + s) * 75 + f;
     }
 
     public static int toMSF_BCD(int sector) {

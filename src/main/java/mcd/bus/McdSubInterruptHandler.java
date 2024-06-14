@@ -20,7 +20,7 @@ public interface McdSubInterruptHandler extends Device {
 
     Logger LOG = LogHelper.getLogger(McdSubInterruptHandler.class.getSimpleName());
 
-    boolean LOG_INTERRUPT_TRIGGER = true;
+    boolean LOG_INTERRUPT_TRIGGER = false;
 
     /**
      * INT_ASIC = LEVEL 1
@@ -121,8 +121,7 @@ public interface McdSubInterruptHandler extends Device {
             assert num > 0;
             boolean raised = subCpu.raiseInterrupt(num);
             if (LOG_INTERRUPT_TRIGGER && raised) {
-//                LogHelper.logInfo(LOG, "SubCpu interrupt trigger: {} ({})", intVals[num], num);
-//                LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
+                LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
             }
             //if the cpu is masking it, interrupt lost
             return true;

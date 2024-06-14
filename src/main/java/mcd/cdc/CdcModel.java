@@ -14,7 +14,7 @@ public interface CdcModel {
 
     //some Cdc models have 16, others 32; mcd_verificator expects 32
     int NUM_CDC_REG = 32;
-    int NUM_CDC_REG_MASK = 31;
+    int NUM_CDC_REG_MASK = NUM_CDC_REG - 1;
 
     int NUM_CDC_MCD_REG = 16;
     int NUM_CDC_MCD_REG_MASK = NUM_CDC_MCD_REG - 1;
@@ -54,25 +54,15 @@ public interface CdcModel {
 
     //cdc-transfer.cpp
     interface CdcTransferAction {
-        default void dma() {
-            throw new RuntimeException();
-        }
+        void start();
 
-        default int read() {
-            throw new RuntimeException();
-        } //n16
+        void stop();
 
-        default void start() {
-            throw new RuntimeException();
-        }
+        void dma();
 
-        default void complete() {
-            throw new RuntimeException();
-        }
+        int read(); //n16
 
-        default void stop() {
-            LogHelper.logWarnOnce(LOG, "Not supported, CDC transfer stop");
-        }
+        void complete();
     }
 
     class CdcTransfer implements CdcTransferAction {
@@ -91,10 +81,41 @@ public interface CdcModel {
         int ready;      //DSR, n1
         int completed;  //EDT, n1
 
+        final CdcTransferAction delegate;
+
+        public CdcTransfer(CdcTransferAction action) {
+            this.delegate = action;
+        }
+
+        @Override
+        public void stop() {
+            delegate.stop();
+        }
+
+        @Override
+        public void start() {
+            delegate.start();
+        }
+
+        @Override
+        public void dma() {
+            delegate.dma();
+        }
+
+        @Override
+        public void complete() {
+            delegate.complete();
+        }
+
+        @Override
+        public int read() {
+            return delegate.read();
+        }
+
         public void reset() {
             enable = active = busy = 0;
             wait = 1;
-//            stop(); //TODO
+            stop();
         }
     }
 
@@ -117,6 +138,17 @@ public interface CdcModel {
         void reset() {
             decoder.pending = transfer.pending = command.pending = 0;
             decoder.enable = transfer.enable = command.enable = 0;
+        }
+    }
+
+    class CdcHeader {
+        int minute; //n8
+        int second;//n8
+        int frame; //n8
+        int mode;//n8
+
+        public void reset() {
+            minute = second = frame = mode = 0;
         }
     }
 
@@ -160,15 +192,28 @@ public interface CdcModel {
         public CdcTransfer transfer;
         public CdcIrq irq;
         public CdcControl control;
+        public CdcHeader header;
 
 
-        public CdcContext() {
+        public CdcContext(CdcTransferAction cdcTransferAction) {
             status = new CdcStatus();
             command = new CdcCommand();
             decoder = new CdcDecoder();
-            transfer = new CdcTransfer();
+            transfer = new CdcTransfer(cdcTransferAction);
             irq = new CdcIrq();
             control = new CdcControl();
+            header = new CdcHeader();
         }
     }
+
+    enum CdcAddressRead {
+        COMIN, IFSTAT, DBCL, DBCH, HEAD0, HEAD1, HEAD2, HEAD3, PTL, PTH, WAL, WAH, STAT0, STAT1, STAT2, STAT3;
+    }
+
+    enum CdcAddressWrite {
+        SBOUT, IFCTRL, DBCL, DBCH, DACL, DACH, DTRG, DTACK, WAL, WAH, CTRL0, CTRL1, PTL, PTH, CTRL2, RESET;
+    }
+
+    CdcAddressRead[] cdcAddrReadVals = CdcAddressRead.values();
+    CdcAddressWrite[] cdcAddrWriteVals = CdcAddressWrite.values();
 }

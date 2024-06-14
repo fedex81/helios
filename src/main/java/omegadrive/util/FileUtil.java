@@ -242,4 +242,12 @@ public class FileUtil {
         }
         return n;
     }
+
+    public static int readShortLE(RandomAccessFile file) throws IOException {
+        return (short) ((file.read() << 0) + (file.read() << 8));
+    }
+
+    public static int readShortBE(RandomAccessFile file) throws IOException {
+        return (short) ((file.read() << 8) + (file.read()));
+    }
 }

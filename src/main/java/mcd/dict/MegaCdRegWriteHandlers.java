@@ -52,13 +52,15 @@ public class MegaCdRegWriteHandlers {
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg4_S = (ctx, d) -> {
         var buff = ctx.getGateSysRegs(SUB_M68K);
+        //DSR, EDT can only be set to 0
         writeBufferRaw(buff, MCD_CDC_MODE.addr, d & 7, Size.BYTE); //mcd-verificator
-        ctx.setSharedBits(SUB_M68K, d, DD0, DD1, DD2);
+        ctx.setSharedBits(SUB_M68K, d & 7, DD0, DD1, DD2, DSR, EDT);
     };
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg4_S = (ctx, d) -> {
         var buff = ctx.getGateSysRegs(SUB_M68K);
         writeBufferRaw(buff, MCD_CDC_MODE.addr + 1, d & 0x1f, Size.BYTE); //mcd-verificator
+        writeBufferRaw(ctx.getGateSysRegs(M68K), MCD_CDC_MODE.addr + 1, 0, Size.BYTE);
     };
 
     /**

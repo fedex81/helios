@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static mcd.cdd.CdBiosHelper.logCdPcInfo;
 import static omegadrive.cpu.CpuFastDebug.CpuDebugInfoProvider;
 import static omegadrive.cpu.CpuFastDebug.DebugMode;
 import static omegadrive.util.Util.th;
@@ -78,6 +79,9 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
             throw new RuntimeException("oops");
         }
         if (!busyLoopDetection) {
+            if (cpu == CpuDeviceAccess.SUB_M68K) {
+                logCdPcInfo(currentPC, m68k.getDataRegisterByte(0));
+            }
             int r = super.runInstruction();
 //            checkInterruptLevelChange();
             return r;

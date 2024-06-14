@@ -162,19 +162,20 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     private int handleMegaCdExpRead(int address, Size size) {
         RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
         logAccess(regSpec, cpuType, address, 0, size, true);
-        ByteBuffer regs = memCtx.getRegBuffer(cpuType, regSpec);
-        int res = readBuffer(regs, address & MDC_SUB_GATE_REGS_MASK, size);
         if (regSpec == MegaCdDict.RegSpecMcd.INVALID) {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return 0;
         }
-        if (regSpec == MCD_CDC_REG_DATA) {
-            res = cdc.read(regSpec, address, size);
-        }
-        if (regSpec.deviceType == McdRegType.CDD || regSpec.deviceType == McdRegType.CDC) {
-//            forceLog(regSpec, cpuType, address, res, size, true);
-        }
+        int res = switch (regSpec.deviceType) {
+            case CDD -> cdd.read(regSpec, address, size);
+            case CDC -> cdc.read(regSpec, address, size);
+            default -> readBuffer(memCtx.getRegBuffer(cpuType, regSpec),
+                    address & MDC_SUB_GATE_REGS_MASK, size);
+        };
         checkRegLongAccess(regSpec, size);
+        if (regSpec == MCD_COMM_FLAGS) {
+//            LogHelper.logInfo(LOG, "S read COMM_FLAG {}: {} {}", th(address), th(res), size);
+        }
         return res;
     }
 
@@ -215,7 +216,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             case MCD_COMM_FLAGS -> {
                 //sub can only write to LSB (odd byte), WORD write becomes a BYTE write
                 address |= 1;
-                LogHelper.logInfo(LOG, "S write COMM_FLAG: {} {}", th(data), size);
+                LogHelper.logInfo(LOG, "S write COMM_FLAG {}: {} {}", th(address), th(data), size);
                 writeBufferRaw(regs, address, data, Size.BYTE);
                 writeBufferRaw(memCtx.getRegBuffer(M68K, regSpec), address, data, Size.BYTE);
             }
@@ -297,7 +298,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
 
     private void handleCommRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         if (address >= START_MCD_SUB_GA_COMM_W && address < END_MCD_SUB_GA_COMM_W) { //MAIN COMM
-            logHelper.logWarningOnce(LOG, "S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
+            LogHelper.logInfo(LOG, "S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
             writeBufferRaw(commonGateRegs, address & MDC_SUB_GATE_REGS_MASK, data, size);
             return;
         }
@@ -360,7 +361,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     }
 
     public static final double counterCddaLimit = MCD_SUB_68K_CLOCK_MHZ / 44100.0;
+    public static final double counterCdcDmaLimit = 6;
     private double counterCddaAcc = counterCddaLimit;
+    private double counterCdcDma = counterCdcDmaLimit;
 
     @Override
     public void step(int cpuCycles) {
@@ -382,6 +385,12 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         if (counterCddaAcc <= 0) {
             counterCddaAcc += counterCddaLimit;
             cdd.stepCdda();
+        }
+
+        counterCdcDma -= cpuCycles;
+        if (counterCdcDma <= 0) {
+            counterCdcDma += counterCdcDmaLimit;
+            cdc.getContext().transfer.dma();
         }
     }
 

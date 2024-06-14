@@ -8,13 +8,11 @@ import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.BlipPcmProvider;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.sound.msumd.CueFileParser.MsfHolder;
-import omegadrive.system.SystemProvider;
 import omegadrive.util.*;
 import org.slf4j.Logger;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
 import static mcd.cdd.Cdd.CddCommand.Request;
@@ -22,8 +20,7 @@ import static mcd.cdd.Cdd.CddCommand.SeekPause;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
-import static omegadrive.util.BufferUtil.readBuffer;
-import static omegadrive.util.BufferUtil.writeBufferRaw;
+import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.th;
 
 /**
@@ -86,8 +83,10 @@ public interface Cdd extends BufferUtil.StepDevice {
         NotReady,  //not ready to comply with the current command
     }
 
-    void tryInsert(SystemProvider.RomContext romContext);
+    void tryInsert(Path cueSheet);
     void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size);
+
+    int read(MegaCdDict.RegSpecMcd regSpec, int address, Size size);
 
     default double position(int sector) {
         //convert sector# to normalized sector position on the CD-ROM surface for seek latency calculation
@@ -181,7 +180,7 @@ class CddImpl implements Cdd {
     private ExtendedCueSheet extCueSheet;
 
     private final MsfHolder msfHolder = new MsfHolder();
-    private boolean hasFile;
+    private boolean hasMedia;
 
 
     public CddImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih, Cdc c) {
@@ -193,36 +192,38 @@ class CddImpl implements Cdd {
     }
 
     @Override
-    public void tryInsert(SystemProvider.RomContext romContext) {
-        tryInsert(romContext.romSpec.file);
-    }
-
-    private void tryInsert(Path p) {
-        extCueSheet = new ExtendedCueSheet(p);
-        hasFile = extCueSheet.cueSheet != null;
-        if (!hasFile) {
+    public void tryInsert(Path cueSheet) {
+        extCueSheet = new ExtendedCueSheet(cueSheet);
+        hasMedia = extCueSheet.cueSheet != null;
+        if (!hasMedia) {
             setIoStatus(NoDisc);
             return;
         }
 
         setIoStatus(ReadingTOC);
-        cddContext.io.sector = 150; //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
+        setSector(0); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
         cddContext.io.track = cddContext.io.sample = cddContext.io.tocRead = 0;
+        cdc.setMedia(extCueSheet);
         LOG.info("Using disc: {}", extCueSheet);
     }
 
     @Override
     public void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size) {
-        writeBufferRaw(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, value, size);
+        LOG.info("CDD,regW,{},{},{},{}", th(address), th(value), size, regSpec);
         switch (regSpec) {
             case MCD_CDD_CONTROL -> {
-                int v = readBuffer(memoryContext.commonGateRegsBuf, regSpec.addr, Size.WORD);
+                //TODO check word writes, even byte writes
+                assert (value & 3) == 0; //DRS and DTS can only be set to 0
+                value &= 7;
+                assert memoryContext.getRegBuffer(CpuDeviceAccess.SUB_M68K, regSpec) == memoryContext.commonGateRegsBuf;
+                writeBufferRaw(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, value, size);
                 //TODO this should be only when HOCK 0->1 but bios requires it
-                if ((true || cddContext.hostClockEnable == 0) && (v & 4) > 0) { //HOCK set
+                if ((true || cddContext.hostClockEnable == 0) && (value & 4) > 0) { //HOCK set
+//                if ((cddContext.hostClockEnable == 0) && (value & 4) > 0) { //HOCK set
                     interruptHandler.raiseInterrupt(INT_CDD);
                 }
-                cddContext.hostClockEnable = (v & 4);
-                assert (v & 0xFEFB) == 0 : th(v); //DRS,DTS, invalid bits are 0
+                cddContext.hostClockEnable = (value & 4);
+                assert (value & 0xFEFB) == 0 : th(value); //DRS,DTS, invalid bits are 0
             }
             case MCD_CDD_COMM5, MCD_CDD_COMM6, MCD_CDD_COMM7, MCD_CDD_COMM8, MCD_CDD_COMM9 -> {
                 switch (size) {
@@ -239,13 +240,25 @@ class CddImpl implements Cdd {
                     }
                 }
             }
-            case MCD_CD_FADER -> LogHelper.logWarnOnce(LOG, "Write {}: {} {}", regSpec, th(value), size);
+            case MCD_CD_FADER -> {
+                assert size == Size.WORD; //ignore write
+                //bit15 should be 0 when reading, end of fade data transfer
+            }
             default -> {
                 LOG.error("S CDD Write {}: {} {} {}", regSpec, th(address), th(value), size);
                 assert false;
             }
         }
     }
+
+    @Override
+    public int read(MegaCdDict.RegSpecMcd regSpec, int address, Size size) {
+        assert memoryContext.getRegBuffer(CpuDeviceAccess.SUB_M68K, regSpec) == memoryContext.commonGateRegsBuf;
+        int res = readBuffer(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, size);
+        LOG.info("CDD,regR,{},{},{},{}", th(address), th(res), size, regSpec);
+        return res;
+    }
+
 
     private void writeCommByte(MegaCdDict.RegSpecMcd regSpec, int addr, int value) {
         int index = (addr & MDC_SUB_GATE_REGS_MASK) - MCD_CDD_COMM5.addr;
@@ -282,6 +295,16 @@ class CddImpl implements Cdd {
         return (checksum & 0xF) == cddContext.command[9];
     }
 
+    //TODO mcd-ver requires 10, bios seems to like 0
+    static int limit = 10;
+
+    static {
+        if (limit > 0) {
+            LOG.error("XXXX mcd-ver interruptDelay mode!!!");
+        }
+    }
+    AtomicInteger interruptDelay = new AtomicInteger(limit);
+
     /**
      * this should be called at 75hz
      */
@@ -290,26 +313,32 @@ class CddImpl implements Cdd {
             return;
         }
         if (cddContext.statusPending > 0) {
-            interruptHandler.raiseInterrupt(INT_CDD);
+            if (interruptDelay.decrementAndGet() <= 0) {
+                interruptHandler.raiseInterrupt(INT_CDD);
+                cddContext.statusPending = 0;
+                interruptDelay.set(limit);
+            }
         }
-        cddContext.statusPending = 0;
-
         switch (cddContext.io.status) {
             case NoDisc, Paused, LeadOut -> {
                 //do nothing
             }
             case Stopped -> {
-                if (!hasFile) setIoStatus(NoDisc);
+                if (!hasMedia) setIoStatus(NoDisc);
                 else if (cddContext.io.tocRead == 0) setIoStatus(ReadingTOC);
-                cddContext.io.sector = cddContext.io.sample = cddContext.io.track = 0;
+                cddContext.io.sample = cddContext.io.track = 0;
+                setSector(0);
             }
             case ReadingTOC -> {
-                cddContext.io.sector++;
+                setSector(cddContext.io.sector + 1);
 //                if(!session.inLeadIn(io.sector)) { //TODO
                 if (cddContext.io.sector > 150) {
                     setIoStatus(Paused);
                     updateTrackIfLegal();
                     cddContext.io.tocRead = 1;
+                    //TODO hack, mcd-ver is waiting for an interrupt CDD4
+                    cddContext.statusPending = 1;
+                    //TODO hack
                 }
             }
             case Seeking -> {
@@ -343,8 +372,8 @@ class CddImpl implements Cdd {
                 assert trackRelSector >= 0;
                 try {
                     etd.file.seek((sectorSize * trackRelSector) + cddContext.io.sample);
-                    left = readShortLE(etd.file);
-                    right = readShortLE(etd.file);
+                    left = FileUtil.readShortLE(etd.file);
+                    right = FileUtil.readShortLE(etd.file);
                     cddContext.io.sample += 4;
                     if (cddContext.io.sample >= sectorSize) {
                         advance();
@@ -357,15 +386,11 @@ class CddImpl implements Cdd {
         playSupport.playSample(left, right);
     }
 
-    private int readShortLE(RandomAccessFile file) throws IOException {
-        return (short) ((file.read() << 0) + (file.read() << 8));
-    }
-
     private void advance() {
         int track = inTrack(cddContext.io.sector + 1);
         if (track > 0) {
             setTrack(track);
-            cddContext.io.sector++;
+            setSector(cddContext.io.sector + 1);
             cddContext.io.sample = 0;
             return;
         }
@@ -376,8 +401,8 @@ class CddImpl implements Cdd {
     @Override
     public void process() {
         CddCommand cddCommand = CddCommand.values()[cddContext.command[0]];
-//        LOG.info("CDD {}: {}", cddCommand, cddCommand == Request ?
-//                CddRequest.values()[cddContext.command[3]]: cddContext.command[3]);
+        LOG.info("CDD {}({}): {}({})", cddCommand, cddCommand.ordinal(), cddCommand == Request ?
+                CddRequest.values()[cddContext.command[3]] : cddContext.command[3], cddContext.command[3]);
         if (!valid()) {
             //unverified
             LOG.error("CDD checksum error");
@@ -395,7 +420,7 @@ class CddImpl implements Cdd {
                 }
             }
             case Stop -> {
-                setIoStatus(hasFile ? Stopped : NoDisc);
+                setIoStatus(hasMedia ? Stopped : NoDisc);
                 for (int i = 1; i < 9; i++) {
                     updateStatus(i, 0);
                 }
@@ -411,11 +436,15 @@ class CddImpl implements Cdd {
                 setIoStatus(CddStatus.Seeking);
                 cddContext.io.seeking = cddCommand == SeekPause ? CddStatus.Paused.ordinal() : Playing.ordinal();
                 cddContext.io.latency = (int) (11 + 112.5 * Math.abs(position(cddContext.io.sector) - position(lba)));
-                cddContext.io.sector = lba;
+                setSector(lba);
                 cddContext.io.sample = 0;
 
                 updateStatuses(0xf, 0, 0, 0, 0, 0, 0, 0);
+                CueFileParser.toMSF(lba, msfHolder);
+                LOG.info(cddCommand + " to sector: {}({})", msfHolder, th(lba));
             }
+            case Play -> setIoStatus(Playing);
+            case Pause -> setIoStatus(Paused);
             default -> {
                 LOG.error("Unsupported Cdd command: {}({}), parameter: {}", cddCommand, cddCommand.ordinal(),
                         cddContext.command[3]);
@@ -507,6 +536,10 @@ class CddImpl implements Cdd {
         if (track != cddContext.io.track) {
             LOG.info("Track changed: {} -> {}", cddContext.io.track, track);
             cddContext.io.track = track;
+            //set D/M bit: 0 = MUSIC, 1 = DATA
+            int val = ExtendedCueSheet.isAudioTrack(extCueSheet, track) ? 0 : 1;
+            assert memoryContext.getRegBuffer(CpuDeviceAccess.SUB_M68K, MCD_CDD_CONTROL) == memoryContext.commonGateRegsBuf;
+            setBit(memoryContext.commonGateRegsBuf, MCD_CDD_CONTROL.addr, 8, val, Size.WORD);
         }
     }
 
@@ -514,6 +547,13 @@ class CddImpl implements Cdd {
         if (status != cddContext.io.status) {
             LOG.info("Status changed: {} -> {}", cddContext.io.status, status);
             cddContext.io.status = status;
+        }
+    }
+
+    private void setSector(int s) {
+        if (s != cddContext.io.sector) {
+            LOG.info("Sector changed: {} -> {}", cddContext.io.sector, s);
+            cddContext.io.sector = s;
         }
     }
 

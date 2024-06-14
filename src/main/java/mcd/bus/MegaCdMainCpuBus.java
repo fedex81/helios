@@ -80,6 +80,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         boolean isBios = cartridgeInfoProvider.getRomName().toLowerCase().contains("bios") &&
                 cartridgeInfoProvider.getSerial().startsWith("BR ");
         boolean isCue = cartridgeInfoProvider.getRomName().toLowerCase().endsWith(".cue");
+        boolean isIso = cartridgeInfoProvider.getRomName().toLowerCase().endsWith(".iso");
         //bios aka bootRom
         if (isBios) {
             enableMode1 = false;
@@ -88,7 +89,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             bios = McdBiosHolder.loadBios(systemProvider.getRegion(), systemProvider.getRomPath());
             return;
         }
-        if (isCue) {
+        if (isCue || isIso) {
             enableMode1 = false;
             LOG.info("CUE file detected, disabling mode1 mapper");
         }
@@ -188,8 +189,16 @@ public class MegaCdMainCpuBus extends GenesisBus {
             return 0;
         }
         checkRegLongAccess(regSpec, size);
-        ByteBuffer regs = memCtx.getRegBuffer(cpu, regSpec);
-        return readBuffer(regs, address & MCD_GATE_REGS_MASK, size);
+        int res = readBuffer(memCtx.getRegBuffer(cpu, regSpec), address & MCD_GATE_REGS_MASK, size);
+        if (regSpec == MCD_COMM_FLAGS) {
+//            LogHelper.logInfo(LOG, "M read COMM_FLAG {}: {} {}", th(address), th(res), size);
+        }
+        //TODO hack
+        if (regSpec == MCD_CDC_HOST) {
+            int addr = END_MCD_SUB_PCM_AREA + regSpec.addr + (address & 1);
+            res = subCpuBus.read(addr, size);
+        }
+        return res;
     }
 
     private void handleMegaCdExpWrite(int address, int data, Size size) {
@@ -219,7 +228,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             case MCD_COMM_FLAGS -> {
                 //main can only write to MSB (even byte), WORD write becomes a BYTE write
                 address &= ~1;
-                LogHelper.logInfo(LOG, "M write COMM_FLAG: {} {}", th(data), size);
+                LogHelper.logInfo(LOG, "M write COMM_FLAG {}: {} {}", th(address), th(data), size);
                 writeBufferRaw(sysGateRegs, address & MCD_GATE_REGS_MASK, data, Size.BYTE);
                 writeBufferRaw(memCtx.getRegBuffer(SUB_M68K, regSpec), address & MCD_GATE_REGS_MASK, data, Size.BYTE);
             }
@@ -248,7 +257,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         if ((address & 1) == 0 && size == Size.BYTE) {
             return;
         }
-        LOG.info("M SubCpu reset: {}, busReq: {}", (sreset == 0 ? "Reset" : "Run"), (sbusreq == 0 ? "Cancel" : "Request"));
+        LogHelper.logInfo(LOG, "M SubCpu reset: {}, busReq: {}", (sreset == 0 ? "Reset" : "Run"), (sbusreq == 0 ? "Cancel" : "Request"));
         if ((curr & 3) == (res & 3)) {
             return;
         }

@@ -228,7 +228,10 @@ public class MegaCdMemoryContext implements Serializable {
 
     public enum SharedBit {
         RET(0, MCD_MEM_MODE.addr + 1), DMNA(1, MCD_MEM_MODE.addr + 1),
-        MODE(2, MCD_MEM_MODE.addr + 1), DD0(0, MCD_CDC_MODE.addr), DD1(1, MCD_CDC_MODE.addr), DD2(2, MCD_CDC_MODE.addr);
+        MODE(2, MCD_MEM_MODE.addr + 1),
+        DD0(0, MCD_CDC_MODE.addr), DD1(1, MCD_CDC_MODE.addr), DD2(2, MCD_CDC_MODE.addr),
+        EDT(7, MCD_CDC_MODE.addr), DSR(6, MCD_CDC_MODE.addr);
+
 
         public final int pos, regBytePos;
 
