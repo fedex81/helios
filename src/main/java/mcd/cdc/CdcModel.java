@@ -65,7 +65,7 @@ public interface CdcModel {
         void complete();
     }
 
-    class CdcTransfer implements CdcTransferAction {
+    class CdcTransfer {
         int destination; //n3
         int address; //n19
 
@@ -81,41 +81,11 @@ public interface CdcModel {
         int ready;      //DSR, n1
         int completed;  //EDT, n1
 
-        final CdcTransferAction delegate;
-
-        public CdcTransfer(CdcTransferAction action) {
-            this.delegate = action;
-        }
-
-        @Override
-        public void stop() {
-            delegate.stop();
-        }
-
-        @Override
-        public void start() {
-            delegate.start();
-        }
-
-        @Override
-        public void dma() {
-            delegate.dma();
-        }
-
-        @Override
-        public void complete() {
-            delegate.complete();
-        }
-
-        @Override
-        public int read() {
-            return delegate.read();
-        }
 
         public void reset() {
             enable = active = busy = 0;
             wait = 1;
-            stop();
+//            stop(); //TODO transferHelper.stop
         }
     }
 
@@ -195,11 +165,11 @@ public interface CdcModel {
         public CdcHeader header;
 
 
-        public CdcContext(CdcTransferAction cdcTransferAction) {
+        public CdcContext() {
             status = new CdcStatus();
             command = new CdcCommand();
             decoder = new CdcDecoder();
-            transfer = new CdcTransfer(cdcTransferAction);
+            transfer = new CdcTransfer();
             irq = new CdcIrq();
             control = new CdcControl();
             header = new CdcHeader();

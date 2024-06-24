@@ -70,6 +70,9 @@ public class McdPcm implements BufferUtil.StepDevice {
 
     int sampleNum = 0;
 
+    //TODO
+    public static McdPcm pcm;
+
     static class PcmChannelContext {
         public int num, on, env, panl, panr, freqDelta, loopAddr, startAddr;
         public int addrCounter, factorl, factorr;
@@ -88,6 +91,7 @@ public class McdPcm implements BufferUtil.StepDevice {
             chan[i] = new PcmChannelContext();
             chan[i].num = i;
         }
+        pcm = this;
     }
 
     public int read(int address, Size size) {

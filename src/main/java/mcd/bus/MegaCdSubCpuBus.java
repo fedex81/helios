@@ -388,9 +388,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         }
 
         counterCdcDma -= cpuCycles;
-        if (counterCdcDma <= 0) {
+        while (counterCdcDma <= 0) {
             counterCdcDma += counterCdcDmaLimit;
-            cdc.getContext().transfer.dma();
+            cdc.dma();
         }
     }
 

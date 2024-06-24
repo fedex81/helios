@@ -5,7 +5,6 @@ import mcd.bus.McdSubInterruptHandler;
 import mcd.cdd.CdModel;
 import mcd.cdd.ExtendedCueSheet;
 import mcd.dict.MegaCdMemoryContext;
-import mcd.dict.MegaCdMemoryContext.WordRamMode;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
@@ -20,7 +19,8 @@ import java.util.Arrays;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDC;
 import static mcd.cdc.CdcModel.*;
 import static mcd.cdd.CdModel.SECTOR_2352;
-import static mcd.dict.MegaCdDict.*;
+import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
+import static mcd.dict.MegaCdDict.RegSpecMcd;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_STOPWATCH;
 import static omegadrive.util.ArrayEndianUtil.getByteInWordBE;
@@ -53,14 +53,20 @@ public interface Cdc extends BufferUtil.StepDevice {
     void setMedia(ExtendedCueSheet extCueSheet);
     void decode(int sector);
 
+    void poll();
+
+    void dma();
+
     CdcModel.CdcContext getContext();
+
+    void recalcRegValue(RegSpecMcd regSpec);
 
     static Cdc createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler interruptHandler) {
         return new CdcImpl(memoryContext, interruptHandler);
     }
 }
 
-class CdcImpl implements Cdc, CdcModel.CdcTransferAction {
+class CdcImpl implements Cdc {
 
     private final static Logger LOG = LogHelper.getLogger(CdcImpl.class.getSimpleName());
 
@@ -75,15 +81,17 @@ class CdcImpl implements Cdc, CdcModel.CdcTransferAction {
     private ByteBuffer ram;
 
     private CdcModel.CdcTransfer transfer;
+    private CdcTransferHelper transferHelper;
 
     private boolean hasMedia;
 
     public CdcImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih) {
         memoryContext = mc;
         interruptHandler = ih;
-        cdcContext = new CdcModel.CdcContext(this);
+        cdcContext = new CdcModel.CdcContext();
         transfer = cdcContext.transfer;
         ram = ByteBuffer.allocate(0x4000); //16 Kbytes
+        transferHelper = new CdcTransferHelper(this, memoryContext, ram);
     }
 
     @Override
@@ -147,7 +155,7 @@ class CdcImpl implements Cdc, CdcModel.CdcTransferAction {
             }
             case MCD_CDC_HOST -> {
                 assert size == Size.WORD; //bios_us word
-                yield transfer.read();
+                yield transferHelper.read();
             }
             case MCD_CDC_DMA_ADDRESS -> {
                 assert false;
@@ -318,7 +326,7 @@ class CdcImpl implements Cdc, CdcModel.CdcTransferAction {
                 poll();
 
                 //abort data transfer if data output is disabled
-                if (transfer.enable == 0) transfer.stop();
+                if (transfer.enable == 0) transferHelper.stop();
             }
 
             //DBCL: data byte counter low
@@ -335,7 +343,7 @@ class CdcImpl implements Cdc, CdcModel.CdcTransferAction {
             case DACH -> transfer.source = setByteInWordBE(transfer.source, data, 0);
 
             //DTRG: data trigger
-            case DTRG -> transfer.start();
+            case DTRG -> transferHelper.start();
 
             case DTACK -> {
                 cdcContext.irq.transfer.pending = 0;
@@ -431,7 +439,8 @@ class CdcImpl implements Cdc, CdcModel.CdcTransferAction {
         writeBufferRaw(memoryContext.getRegBuffer(M68K, MCD_STOPWATCH), MCD_STOPWATCH.addr, cdcContext.stopwatch, Size.WORD);
     }
 
-    private void poll() {
+    @Override
+    public void poll() {
         CdcModel.CdcIrq irq = cdcContext.irq;
         int pending = 0;
         pending |= irq.decoder.enable & irq.decoder.pending;
@@ -512,92 +521,25 @@ class CdcImpl implements Cdc, CdcModel.CdcTransferAction {
         ok &= Arrays.equals(expSync, syncHeader);
         if (!ok) {
             System.out.println("here");
+            assert false;
         }
         return ok;
     }
 
     @Override
-    public void start() {
-        LOG.info("Transfer start");
-        CdcModel.CdcTransfer t = transfer;
-        if (t.enable == 0) return;
-        t.active = 1;
-        t.busy = 1;
-        t.ready = (t.destination == 2 || t.destination == 3) ? 1 : 0;
-        t.completed = 0;
-        cdcContext.irq.transfer.pending = 0;
-        updateCdcMode4();
-        poll();
+    public CdcModel.CdcContext getContext() {
+        return cdcContext;
     }
 
     @Override
-    public void stop() {
-        LOG.info("Transfer stop");
-        transfer.active = 0;
-        transfer.busy = 0;
-        transfer.ready = 0;
+    public void recalcRegValue(RegSpecMcd regSpec) {
+        assert regSpec == MCD_CDC_MODE;
         updateCdcMode4();
-    }
-
-    @Override
-    public int read() {
-        LOG.info("Transfer read");
-        CdcModel.CdcTransfer t = transfer;
-        if (t.ready == 0) return 0xFFFF;
-        int data = ram.getShort(t.source);
-        LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
-        t.source = (t.source + 2) & 0x3FFF;
-        t.length -= 2;
-        if (t.length <= 0) {
-            t.length = 0;
-            complete();
-        }
-        return data;
     }
 
     @Override
     public void dma() {
-        CdcModel.CdcTransfer t = transfer;
-        if (t.active == 0) {
-            return;
-        }
-        if (t.destination != 4 && t.destination != 5 && t.destination != 7) return;
-        updateCdcMode4();
-        int data = ram.getShort(t.source);
-        switch (t.destination) {
-            case 7 -> { //WRAM
-                int baseAddr = memoryContext.wramSetup.mode == WordRamMode._1M
-                        ? START_MCD_SUB_WORD_RAM_1M : START_MCD_SUB_WORD_RAM_2M;
-                memoryContext.writeWordRamWord(SUB_M68K, baseAddr | t.address, data);
-                LOG.info("CDC,DMA_WRAM,wram[{}]={}", th(baseAddr | t.address), th(data));
-            }
-            default -> {
-                LOG.info("TODO CDC DMA mode: {}", t.destination);
-                assert false;
-            }
-        }
-        t.source = (t.source + 2) & 0x3FFF;
-        t.address += 2;
-        t.length -= 2;
-        if (t.length <= 0) {
-            t.length = 0;
-            complete();
-        }
-    }
-    @Override
-    public void complete() {
-        LOG.info("Transfer complete");
-        CdcModel.CdcTransfer t = transfer;
-        t.active = t.busy = t.ready = 0;
-        t.completed = 1;
-        cdcContext.irq.transfer.pending = 1;
-        updateCdcMode4();
-        poll();
-    }
-
-    @Override
-    public CdcModel.CdcContext getContext() {
-        return cdcContext;
+        transferHelper.dma();
     }
 
     public static int getInvertedBitFromByte(byte b, int bitPos) {
