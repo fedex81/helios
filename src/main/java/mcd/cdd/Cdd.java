@@ -96,7 +96,7 @@ public interface Cdd extends BufferUtil.StepDevice {
         double innerRadius = 0.024 * 0.024;  //in mm
         double outerRadius = 0.058 * 0.058;  //in mm
 
-        sector += 150; //session.leadIn.lba;  //convert to natural //TODO check
+        sector += 7500; //session.leadIn.lba;  //convert to natural
         return Math.sqrt(sector / sectors * (outerRadius - innerRadius) + innerRadius) / radius;
     }
 
@@ -218,8 +218,8 @@ class CddImpl implements Cdd {
                 assert memoryContext.getRegBuffer(CpuDeviceAccess.SUB_M68K, regSpec) == memoryContext.commonGateRegsBuf;
                 writeBufferRaw(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, value, size);
                 //TODO this should be only when HOCK 0->1 but bios requires it
-                if ((true || cddContext.hostClockEnable == 0) && (value & 4) > 0) { //HOCK set
-//                if ((cddContext.hostClockEnable == 0) && (value & 4) > 0) { //HOCK set
+//                if ((true || cddContext.hostClockEnable == 0) && (value & 4) > 0) { //HOCK set
+                if ((cddContext.hostClockEnable == 0) && (value & 4) > 0) { //HOCK set
                     interruptHandler.raiseInterrupt(INT_CDD);
                 }
                 cddContext.hostClockEnable = (value & 4);
@@ -295,8 +295,8 @@ class CddImpl implements Cdd {
         return (checksum & 0xF) == cddContext.command[9];
     }
 
-    //TODO mcd-ver requires 10, bios seems to like 0
-    static int limit = 10;
+    //TODO remove, mcd-ver used to require 10, bios seems to like 0
+    static int limit = 0;
 
     static {
         if (limit > 0) {
@@ -312,13 +312,14 @@ class CddImpl implements Cdd {
         if (cddContext.hostClockEnable == 0) {
             return;
         }
-        if (cddContext.statusPending > 0) {
+//        if (cddContext.statusPending > 0) { //TODO why is ares doing this??
             if (interruptDelay.decrementAndGet() <= 0) {
                 interruptHandler.raiseInterrupt(INT_CDD);
                 cddContext.statusPending = 0;
                 interruptDelay.set(limit);
+                cdc.step75hz();
             }
-        }
+//        }
         switch (cddContext.io.status) {
             case NoDisc, Paused, LeadOut -> {
                 //do nothing
@@ -336,9 +337,6 @@ class CddImpl implements Cdd {
                     setIoStatus(Paused);
                     updateTrackIfLegal();
                     cddContext.io.tocRead = 1;
-                    //TODO hack, mcd-ver is waiting for an interrupt CDD4
-                    cddContext.statusPending = 1;
-                    //TODO hack
                 }
             }
             case Seeking -> {

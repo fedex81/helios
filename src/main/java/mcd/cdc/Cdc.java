@@ -57,6 +57,8 @@ public interface Cdc extends BufferUtil.StepDevice {
 
     void dma();
 
+    void step75hz();
+
     CdcModel.CdcContext getContext();
 
     void recalcRegValue(RegSpecMcd regSpec);
@@ -184,7 +186,7 @@ class CdcImpl implements Cdc {
         int data = 0;
         if (cdcContext.address > CdcAddressRead.STAT3.ordinal()) {
             increaseCdcAddress();
-            return data;
+            return 0xFF;
         }
         CdcAddressRead addressRead = cdcAddrReadVals[cdcContext.address];
         switch (addressRead) {
@@ -371,6 +373,7 @@ class CdcImpl implements Cdc {
                 cdcContext.control.head = getBitFromByte(data, 0);
                 cdcContext.control.form = getBitFromByte(data, 2);
                 cdcContext.control.mode = getBitFromByte(data, 3);
+                cdcContext.control.syncInterrupt = getBitFromByte(data, 7);
 
                 cdcContext.decoder.mode = cdcContext.control.mode;
                 cdcContext.decoder.form = cdcContext.control.form & cdcContext.control.autoCorrection;
@@ -466,8 +469,9 @@ class CdcImpl implements Cdc {
         cdcContext.header.mode = 1;
 
         cdcContext.decoder.valid = 1;
-        cdcContext.irq.decoder.pending = 1;
-        poll();
+        //NOTE see cdc.step75hz
+//        cdcContext.irq.decoder.pending = 1;
+//        poll();
 
         if (cdcContext.control.writeRequest > 0) {
             transfer.pointer = (transfer.pointer + SECTOR_2352) & 0x3FFF;
@@ -519,10 +523,6 @@ class CdcImpl implements Cdc {
         boolean ok = header[0] == holder.minute && header[1] == holder.second
                 && header[2] == holder.frame && header[3] == 1; //MODE1
         ok &= Arrays.equals(expSync, syncHeader);
-        if (!ok) {
-            System.out.println("here");
-            assert false;
-        }
         return ok;
     }
 
@@ -540,6 +540,14 @@ class CdcImpl implements Cdc {
     @Override
     public void dma() {
         transferHelper.dma();
+    }
+
+    @Override
+    public void step75hz() {
+        if ((cdcContext.irq.decoder.enable & cdcContext.decoder.enable & cdcContext.control.syncInterrupt) > 0) {
+            cdcContext.irq.decoder.pending = 1;
+            poll();
+        }
     }
 
     public static int getInvertedBitFromByte(byte b, int bitPos) {
