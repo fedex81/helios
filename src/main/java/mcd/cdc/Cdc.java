@@ -119,6 +119,7 @@ class CdcImpl implements Cdc {
                 value <<= 3;
                 //[0-15] maps to [3-18]
                 writeBufferRaw(regBuffer, address & MDC_SUB_GATE_REGS_MASK, value, size);
+                transfer.address = value;
             }
             case MCD_CDC_HOST -> {
                 LOG.error("CDC write {} not supported: {} {}", regSpec, th(value), size);

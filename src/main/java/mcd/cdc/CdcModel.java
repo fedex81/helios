@@ -91,7 +91,7 @@ public interface CdcModel {
 
     class McdIrq {
         public int enable;     //n1
-        public int pending;     //n1 DECI
+        public int pending;     //n1 DECI decoder, DTEI transfer
     }
 
     class CdcIrq extends McdIrq {

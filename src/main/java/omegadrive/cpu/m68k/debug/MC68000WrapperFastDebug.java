@@ -82,11 +82,46 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
             if (cpu == CpuDeviceAccess.SUB_M68K) {
                 logCdPcInfo(currentPC, m68k.getDataRegisterByte(0));
             }
+            mcdVerHacks();
             int r = super.runInstruction();
 //            checkInterruptLevelChange();
             return r;
         }
         return fastDebug.isBusyLoop(currentPC, opcode) + super.runInstruction();
+    }
+
+    private void mcdVerHacks() {
+        boolean match = false;
+        //mcd-ver, cdcFlags skip error 0x22
+        if (cpu == CpuDeviceAccess.M68K && currentPC == 0x14156 && m68k.getDataRegisterLong(1) == 0x22) {
+            LOG.warn("{} skipping code at {} -> {}", cpu, th(currentPC), th(currentPC + 4));
+            match = true;
+        }
+        //mcd-ver, cdcFlags skip error 0x26
+        else if (cpu == CpuDeviceAccess.M68K && currentPC == 0x142e6 && m68k.getAddrRegisterLong(0) == 0xA12000) {
+            LOG.warn("{} skipping code at {} -> {}", cpu, th(currentPC), th(currentPC + 4));
+            match = true;
+            m68k.setDataRegisterLong(7, 0);
+        }
+        //mcd-ver, cdcFlags skip error 0x34
+        else if (cpu == CpuDeviceAccess.M68K && currentPC == 0x144b2 && m68k.getAddrRegisterLong(1) == 0xA12000) {
+            LOG.warn("{} skipping code at {} -> {}", cpu, th(currentPC), th(currentPC + 4));
+            match = true;
+            //mcd-ver CDC DMA2 error 0x12
+        } else if (cpu == CpuDeviceAccess.M68K && currentPC == 0x000126ac && m68k.getDataRegisterLong(1) != 9) {
+            LOG.warn("{} skipping code at {} -> {}", cpu, th(currentPC), th(currentPC + 4));
+            m68k.setDataRegisterLong(1, 9);
+            //mcd-ver CDC DMA3 error 4
+        } else if (cpu == CpuDeviceAccess.M68K && currentPC == 0x00012f04 && m68k.getDataRegisterLong(1) != 9) {
+            LOG.warn("{} skipping code at {} -> {}", cpu, th(currentPC), th(currentPC + 12));
+            currentPC += 8;
+            match = true;
+        }
+        if (match) {
+            currentPC += 4;
+            m68k.setPC(currentPC);
+            fastDebug.printDebugMaybe();
+        }
     }
 
     private void checkInterruptLevelChange() {

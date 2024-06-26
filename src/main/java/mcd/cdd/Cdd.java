@@ -12,7 +12,6 @@ import omegadrive.util.*;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
 import static mcd.cdd.Cdd.CddCommand.Request;
@@ -108,18 +107,6 @@ public interface Cdd extends BufferUtil.StepDevice {
 
     void newFrame();
 
-    default void process() {
-        throw new RuntimeException("not implemented");
-    }
-
-    default boolean valid() {
-        throw new RuntimeException("not implemented");
-    }
-
-    default void checksum() {
-        throw new RuntimeException("not implemented");
-    }
-
     default void insert() {
         throw new RuntimeException("not implemented");
     }
@@ -188,7 +175,9 @@ class CddImpl implements Cdd {
         interruptHandler = ih;
         cdc = c;
         playSupport = new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100);
-        checksum();
+        updateStatus(1, 0xF);
+        updateStatus(8, 1);
+        valid();
     }
 
     @Override
@@ -201,7 +190,7 @@ class CddImpl implements Cdd {
         }
 
         setIoStatus(ReadingTOC);
-        setSector(0); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
+        setSector(140); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
         cddContext.io.track = cddContext.io.sample = cddContext.io.tocRead = 0;
         cdc.setMedia(extCueSheet);
         LOG.info("Using disc: {}", extCueSheet);
@@ -212,6 +201,7 @@ class CddImpl implements Cdd {
         LOG.info("CDD,regW,{},{},{},{}", th(address), th(value), size, regSpec);
         switch (regSpec) {
             case MCD_CDD_CONTROL -> {
+                LOG.info("{},{},{},{}", regSpec, th(address), th(value), size);
                 //TODO check word writes, even byte writes
                 assert (value & 3) == 0; //DRS and DTS can only be set to 0
                 value &= 7;
@@ -273,8 +263,7 @@ class CddImpl implements Cdd {
         }
     }
 
-    @Override
-    public void checksum() {
+    private void checksum() {
         int checksum = 0;
         for (int i = 0; i < cddContext.command.length - 1; i++) {
             checksum += cddContext.status[i];
@@ -285,40 +274,51 @@ class CddImpl implements Cdd {
         assert (readBuffer(memoryContext.commonGateRegsBuf, MCD_CDD_COMM4.addr, Size.WORD) & 0xFF) == (checksum & 0xF);
     }
 
-    @Override
-    public boolean valid() {
+    private boolean valid() {
         int checksum = 0;
         for (int i = 0; i < cddContext.command.length - 1; i++) {
             checksum += cddContext.command[i];
         }
         checksum = ~checksum;
+        updateCommand(9, checksum & 0xF);
         return (checksum & 0xF) == cddContext.command[9];
     }
 
-    //TODO remove, mcd-ver used to require 10, bios seems to like 0
-    static int limit = 0;
+    private String statusString(int[] status, int[] command) {
+        String head = "", tail = "";
+        for (int i = 0; i < status.length; i++) {
+            head += Integer.toHexString(status[i]);
+            tail += Integer.toHexString(command[i]);
+            if (i == 1 || i == 7) {
+                head += ".";
+                tail += ".";
+            }
+        }
+        return head.toUpperCase() + " - " + tail.toUpperCase();
+    }
 
-    static {
-        if (limit > 0) {
-            LOG.error("XXXX mcd-ver interruptDelay mode!!!");
+    String prev = "";
+
+    private void logStatus(boolean process) {
+        String stat = "XXCDD," + statusString(cddContext.status, cddContext.command) + (process ? " <-" : "");
+        if (!stat.equals(prev)) {
+            System.out.println(stat);
+            prev = stat;
         }
     }
-    AtomicInteger interruptDelay = new AtomicInteger(limit);
 
     /**
      * this should be called at 75hz
      */
     public void step(int cycles) {
+        logStatus(false);
         if (cddContext.hostClockEnable == 0) {
             return;
         }
 //        if (cddContext.statusPending > 0) { //TODO why is ares doing this??
-            if (interruptDelay.decrementAndGet() <= 0) {
                 interruptHandler.raiseInterrupt(INT_CDD);
                 cddContext.statusPending = 0;
-                interruptDelay.set(limit);
                 cdc.step75hz();
-            }
 //        }
         switch (cddContext.io.status) {
             case NoDisc, Paused, LeadOut -> {
@@ -355,6 +355,7 @@ class CddImpl implements Cdd {
                 assert false;
             }
         }
+        logStatus(false);
     }
 
     //should be called at 44.1 khz
@@ -396,11 +397,10 @@ class CddImpl implements Cdd {
         setTrack(0xAA);
     }
 
-    @Override
-    public void process() {
+    private void process() {
         CddCommand cddCommand = CddCommand.values()[cddContext.command[0]];
-        LOG.info("CDD {}({}): {}({})", cddCommand, cddCommand.ordinal(), cddCommand == Request ?
-                CddRequest.values()[cddContext.command[3]] : cddContext.command[3], cddContext.command[3]);
+//        LOG.info("CDD {}({}): {}({})", cddCommand, cddCommand.ordinal(), cddCommand == Request ?
+//                CddRequest.values()[cddContext.command[3]] : cddContext.command[3], cddContext.command[3]);
         if (!valid()) {
             //unverified
             LOG.error("CDD checksum error");
@@ -408,14 +408,15 @@ class CddImpl implements Cdd {
             processDone();
             return;
         }
+        logStatus(true);
         switch (cddCommand) {
             case Idle -> {
                 //fixes Lunar: The Silver Star
-                if (cddContext.io.latency == 0 && cddContext.status[1] == 0xf) {
-                    updateStatus(1, 0x2);
-                    updateStatus(2, cddContext.io.track / 10);
-                    updateStatus(3, cddContext.io.track % 10);
-                }
+//                if (cddContext.io.latency == 0 && cddContext.status[1] == 0xf) {
+//                    updateStatus(1, 0x2);
+//                    updateStatus(2, cddContext.io.track / 10);
+//                    updateStatus(3, cddContext.io.track % 10);
+//                }
             }
             case Stop -> {
                 setIoStatus(hasMedia ? Stopped : NoDisc);
@@ -450,6 +451,7 @@ class CddImpl implements Cdd {
             }
         }
         processDone();
+        logStatus(true);
     }
 
     //"sonic_cd_audio.cue"
@@ -545,12 +547,13 @@ class CddImpl implements Cdd {
         if (status != cddContext.io.status) {
             LOG.info("Status changed: {} -> {}", cddContext.io.status, status);
             cddContext.io.status = status;
+            updateStatus(0, status.ordinal());
         }
     }
 
     private void setSector(int s) {
         if (s != cddContext.io.sector) {
-            LOG.info("Sector changed: {} -> {}", cddContext.io.sector, s);
+//            LOG.info("Sector changed: {} -> {}", cddContext.io.sector, s);
             cddContext.io.sector = s;
         }
     }
@@ -583,11 +586,19 @@ class CddImpl implements Cdd {
     private void updateStatus(int pos, int val) {
         cddContext.status[pos] = val;
         writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_CDD_COMM0.addr + pos, val, Size.BYTE);
+        if (pos != 9) {
+            checksum();
+            logStatus(false);
+        }
     }
 
     private void updateCommand(int pos, int val) {
         cddContext.command[pos] = val;
         writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_CDD_COMM5.addr + pos, val, Size.BYTE);
+        if (pos != 9) {
+            valid();
+            logStatus(false);
+        }
     }
 
     @Override

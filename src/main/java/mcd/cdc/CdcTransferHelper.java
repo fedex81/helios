@@ -50,10 +50,6 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
         cdc.getContext().irq.transfer.pending = 0;
         cdc.recalcRegValue(MCD_CDC_MODE);
         cdc.poll();
-        if (t.length == 127) {
-            System.out.println("here");
-            hack++;
-        }
     }
 
     @Override
@@ -67,21 +63,18 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     @Override
     public int read() {
-        LOG.info("Transfer read");
+//        LOG.info("Transfer read");
         if (t.ready == 0) return 0xFFFF;
         int data = ram.getShort(t.source);
-        LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
+//        LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
         t.source = (t.source + 2) & 0x3FFF;
         t.length -= 2;
         if (t.length <= 0) {
             t.length = 0;
             complete();
-            hack = hack == 4 ? hack + 1 : hack;
         }
         return data;
     }
-
-    public static int hack = 0;
 
     @Override
     public void dma() {
@@ -101,16 +94,14 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
                 memoryContext.writeProgRam(t.address, data, Size.WORD);
                 //mcd.write(1, 1, 0x000000 | (n19) address & ~1, data);
             }
-//            case 4:  //PCM (0x1000 - 0x1fff = PCM RAM active 4KB bank)
-//                mcd.pcm.write(0x1000 | n12(address >> 1) | 1, data.byte(1));
-//                mcd.pcm.write(0x1000 | n12(address >> 1) | 0, data.byte(0));
-//                address += 2;  //PCM DMA requires two 8-bit writes per transfer
-//                break;
             case 4 -> {
+                assert t.length > 0;
                 //PCM DMA requires two 8-bit writes per transfer
-                McdPcm.pcm.write(PCM_START_WAVE_DATA_WINDOW | t.address, data >> 8, Size.BYTE);
-                McdPcm.pcm.write(PCM_START_WAVE_DATA_WINDOW | t.address + 1, data & 0xFF, Size.BYTE);
-                t.address += 2;
+                writePcm(t.address, data >> 8);
+
+                if (t.length - 1 >= 0) {
+                    writePcm(t.address + 1, data & 0xFF);
+                }
             }
             default -> {
                 LOG.info("TODO CDC DMA mode: {}", t.destination);
@@ -125,6 +116,12 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
             complete();
         }
         cdc.recalcRegValue(MCD_CDC_MODE);
+    }
+
+    private void writePcm(int address, int data) {
+        McdPcm.pcm.write((PCM_START_WAVE_DATA_WINDOW + address) << 1, data, Size.BYTE);
+        LOG.info("CDC,DMA_PCM,pcm_ram[{}]={},srcAddrWord={},len={}",
+                th((PCM_START_WAVE_DATA_WINDOW + address) << 1), th(data & 0xFF), th(t.source), th(t.length));
     }
 
     @Override
