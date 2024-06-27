@@ -49,7 +49,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private ByteBuffer prgRam, sysGateRegs, commonGateRegs;
     private int prgRamBankValue = 0, prgRamBankShift = 0;
 
-    private boolean enableMCDBus = true, enableMode1 = true;
+    private boolean enableMCDBus = true, enableMode1 = true, isBios;
 
     private static ByteBuffer bios;
     private LogHelper logHelper = new LogHelper();
@@ -77,8 +77,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     public void init() {
         super.init();
         enableMode1 = true;
-        boolean isBios = cartridgeInfoProvider.getRomName().toLowerCase().contains("bios") &&
-                cartridgeInfoProvider.getSerial().startsWith("BR ");
+        isBios = cartridgeInfoProvider.getSerial().startsWith("BR ");
         boolean isCue = cartridgeInfoProvider.getRomName().toLowerCase().endsWith(".cue");
         boolean isIso = cartridgeInfoProvider.getRomName().toLowerCase().endsWith(".iso");
         //bios aka bootRom
@@ -304,6 +303,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     public boolean isEnableMode1() {
         return enableMode1;
+    }
+
+    public boolean isBios() {
+        return isBios;
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {

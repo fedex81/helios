@@ -48,6 +48,8 @@ import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 import s32x.util.Md32xRuntimeData;
 
+import java.nio.file.Path;
+
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.GEN_NTSC_MCLOCK_MHZ;
 import static omegadrive.util.Util.GEN_PAL_MCLOCK_MHZ;
@@ -286,10 +288,31 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         vdp.addVdpEventListener(sound);
         SvpMapper.ssp16 = Ssp16.NO_SVP;
         resetAfterRomLoad();
-        if (!mcdLaunchContext.mainBus.isEnableMode1()) {
-            mcdLaunchContext.cdd.tryInsert(romContext);
-        }
+        megaCdDiscInsert();
         memView = createMemView();
+    }
+
+    //fudge it
+    private void megaCdDiscInsert() {
+        boolean segaMode1 = mcdLaunchContext.mainBus.isEnableMode1();
+        boolean bios = mcdLaunchContext.mainBus.isBios();
+        boolean tryInsertAsDisc = !segaMode1 && !bios;
+        boolean biosNoDisc = true;
+        boolean biosCdAudio = false;
+        if (bios) {
+            LOG.info("Bios mode, noDisc: {}, cdAudio: {}", biosNoDisc, biosCdAudio);
+        }
+        if (tryInsertAsDisc) {
+            mcdLaunchContext.cdd.tryInsert(romContext.romSpec.file);
+        } else if (segaMode1 && (!bios || biosCdAudio)) {
+            //insert an audio CD, for testing mode1 CD Player
+//            Path p = Path.of("./test_roms/SonicCD", "SonicCD_AudioOnly.cue");
+            //test mcd-ver
+            Path p = Path.of("./test_roms/SonicCD", "SonicCD.cue");
+            if (p.toFile().exists()) {
+                mcdLaunchContext.cdd.tryInsert(p);
+            }
+        }
     }
 
     @Override
