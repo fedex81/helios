@@ -173,6 +173,7 @@ class CdcImpl implements Cdc {
                 yield size.getMask();
             }
         };
+        LOG.info("CDC,regR,{},{},{},{}", th(address), res, size, regSpec);
         return res;
     }
 

@@ -26,10 +26,13 @@ public class BiosHolder {
         public ByteBuffer buffer;
         public int rawSize, padMask;
 
+        public final String sha1sum;
+
         public BiosData(byte[] b) {
             rawSize = b.length;
             padMask = Util.getRomMask(rawSize);
             buffer = ByteBuffer.wrap(b);
+            sha1sum = Util.computeSha1Sum(b);
         }
 
         @Override
@@ -37,6 +40,7 @@ public class BiosHolder {
             return MoreObjects.toStringHelper(this)
                     .add("rawSize", rawSize)
                     .add("padMask", padMask)
+                    .add("sha1", sha1sum)
                     .toString();
         }
 

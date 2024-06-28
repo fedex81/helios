@@ -1,3 +1,19 @@
+CDC-INIT mcd-verificator
+it needs a media inserted
+
+CDROM Mode1 sector
+http://www.dandans.com/onlinehelp/glossary/audio-cd-track-details.htm
+2352 bytes
+12 sync
+4 header, sector MSF(3) + MODE(1) = 1
+2048 data
+288 error stuff (4 EDC + 8 unused + 276 ECC)
+
+-prog0_bios.asm, CDC sector read
+; Read Mode 1 frame
+@loc_191E:
+
+
 MODE 1
 https://gendev.spritesmind.net/forum/viewtopic.php?f=5&t=1018
 https://plutiedev.com/subcpu-in-mode1

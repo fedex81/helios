@@ -175,6 +175,7 @@ class CddImpl implements Cdd {
         interruptHandler = ih;
         cdc = c;
         playSupport = new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100);
+        setIoStatus(NoDisc);
         updateStatus(1, 0xF);
         updateStatus(8, 1);
         valid();
@@ -207,8 +208,6 @@ class CddImpl implements Cdd {
                 value &= 7;
                 assert memoryContext.getRegBuffer(CpuDeviceAccess.SUB_M68K, regSpec) == memoryContext.commonGateRegsBuf;
                 writeBufferRaw(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, value, size);
-                //TODO this should be only when HOCK 0->1 but bios requires it
-//                if ((true || cddContext.hostClockEnable == 0) && (value & 4) > 0) { //HOCK set
                 if ((cddContext.hostClockEnable == 0) && (value & 4) > 0) { //HOCK set
                     interruptHandler.raiseInterrupt(INT_CDD);
                 }
@@ -399,8 +398,8 @@ class CddImpl implements Cdd {
 
     private void process() {
         CddCommand cddCommand = CddCommand.values()[cddContext.command[0]];
-//        LOG.info("CDD {}({}): {}({})", cddCommand, cddCommand.ordinal(), cddCommand == Request ?
-//                CddRequest.values()[cddContext.command[3]] : cddContext.command[3], cddContext.command[3]);
+        LOG.info("CDD {}({}): {}({})", cddCommand, cddCommand.ordinal(), cddCommand == Request ?
+                CddRequest.values()[cddContext.command[3]] : cddContext.command[3], cddContext.command[3]);
         if (!valid()) {
             //unverified
             LOG.error("CDD checksum error");

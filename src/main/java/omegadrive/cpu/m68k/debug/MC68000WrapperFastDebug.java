@@ -83,6 +83,12 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
                 logCdPcInfo(currentPC, m68k.getDataRegisterByte(0));
             }
             mcdVerHacks();
+            //us bios, shows planet
+//            if(cpu == CpuDeviceAccess.M68K && currentPC == 0x1f32){
+//                currentPC += 2;
+//                m68k.setPC(currentPC);
+//                fastDebug.printDebugMaybe();
+//            }
             int r = super.runInstruction();
 //            checkInterruptLevelChange();
             return r;

@@ -246,7 +246,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         int res = memCtx.handleRegWrite(cpu, MCD_RESET, address, data, size);
         int sreset = res & 1;
         int sbusreq = (res >> 1) & 1;
-        int subIntReg = (res >> 8) & 1;
+        int subIntReg = (res >> 8) & 1; //IFL2
         assert subCpu != null && subCpuBus != null;
 
         if (subIntReg > 0) {

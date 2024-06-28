@@ -83,7 +83,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
 
     static {
-        System.setProperty("68k.debug", "false");
+        System.setProperty("68k.debug", "true");
         System.setProperty("helios.68k.debug.mode", "0");
         System.setProperty("z80.debug", "false");
     }
@@ -297,14 +297,14 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         boolean segaMode1 = mcdLaunchContext.mainBus.isEnableMode1();
         boolean bios = mcdLaunchContext.mainBus.isBios();
         boolean tryInsertAsDisc = !segaMode1 && !bios;
-        boolean biosNoDisc = true;
-        boolean biosCdAudio = false;
+        boolean biosNoDisc = false;
+        boolean biosCdAudio = true;
         if (bios) {
             LOG.info("Bios mode, noDisc: {}, cdAudio: {}", biosNoDisc, biosCdAudio);
         }
         if (tryInsertAsDisc) {
             mcdLaunchContext.cdd.tryInsert(romContext.romSpec.file);
-        } else if (segaMode1 && (!bios || biosCdAudio)) {
+        } else if (segaMode1 || (!bios || biosCdAudio)) {
             //insert an audio CD, for testing mode1 CD Player
 //            Path p = Path.of("./test_roms/SonicCD", "SonicCD_AudioOnly.cue");
             //test mcd-ver

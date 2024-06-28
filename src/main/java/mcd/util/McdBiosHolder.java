@@ -82,7 +82,9 @@ public class McdBiosHolder {
     }
 
     public ByteBuffer getBiosBuffer(Region region) {
-        return biosData.get(region).buffer;
+        BiosHolder.BiosData bd = biosData.get(region);
+        LOG.info("{} using bios: {}", region, bd);
+        return bd.buffer;
     }
 
     public byte[] getBios(Region region) {

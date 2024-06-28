@@ -3,7 +3,6 @@ package mcd.bus;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.Device;
 import omegadrive.cpu.m68k.M68kProvider;
-import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
@@ -20,7 +19,7 @@ public interface McdSubInterruptHandler extends Device {
 
     Logger LOG = LogHelper.getLogger(McdSubInterruptHandler.class.getSimpleName());
 
-    boolean LOG_INTERRUPT_TRIGGER = false;
+    boolean LOG_INTERRUPT_TRIGGER = true;
 
     /**
      * INT_ASIC = LEVEL 1
@@ -87,8 +86,13 @@ public interface McdSubInterruptHandler extends Device {
             }
             for (int i = 1; i < pendingInterrupts.length; i++) {
                 if (pendingInterrupts[i]) {
-                    if (m68kInterrupt(i)) {
+                    boolean canRaise = ((1 << i) & getRegMask()) > 0;
+                    if (canRaise && m68kInterrupt(i)) {
                         setPending(intVals[i], 0);
+                        //TODO check if necessary
+//                        if (intVals[i] == SubCpuInterrupt.INT_LEVEL2) {
+//                            BufferUtil.setBit(context.getGateSysRegs(M68K), MCD_RESET.addr, 0, 0, Size.BYTE);
+//                        }
                         break;
                     }
                 }
@@ -97,20 +101,11 @@ public interface McdSubInterruptHandler extends Device {
 
         private void setPending(SubCpuInterrupt sint, int val) {
             assert (val & 1) == val;
-            int pending = (val << sint.ordinal()) & getRegMask();
-            if (BufferUtil.assertionsEnabled) {
-                boolean en = checkInterruptEnabled(getRegMask(), sint.ordinal());
-                int pn = en ? (val << sint.ordinal()) : 0;
-                assert pn == pending;
-            }
+            int pending = (val << sint.ordinal());
             //clear bit, then set it
             pendingMask &= ~(1 << sint.ordinal());
             pendingMask |= pending;
             pendingInterrupts[sint.ordinal()] = pending > 0;
-            //TODO check this, breaks bios_us
-//            if (sint == SubCpuInterrupt.INT_LEVEL2) {
-//                BufferUtil.setBit(context.getGateSysRegs(M68K), MCD_RESET.addr, 0, ~val & 1, Size.BYTE);
-//            }
         }
 
         private int getRegMask() {
