@@ -60,6 +60,7 @@ public interface Cdd extends BufferUtil.StepDevice {
         Request,  //change report type
         SeekPlay,  //read ROM data
         SeekPause,  //seek to a specified location
+        None_5,
         Pause,  //pause the drive
         Play,  //start playing from the current location
         Forward,  //forward skip and playback
@@ -175,9 +176,9 @@ class CddImpl implements Cdd {
         interruptHandler = ih;
         cdc = c;
         playSupport = new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100);
-        setIoStatus(NoDisc);
-        updateStatus(1, 0xF);
-        updateStatus(8, 1);
+        setIoStatus(Stopped);
+//        updateStatus(1, 0xF);
+//        updateStatus(8, 1);
         valid();
     }
 
@@ -190,7 +191,7 @@ class CddImpl implements Cdd {
             return;
         }
 
-        setIoStatus(ReadingTOC);
+//        setIoStatus(ReadingTOC);
         setSector(140); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
         cddContext.io.track = cddContext.io.sample = cddContext.io.tocRead = 0;
         cdc.setMedia(extCueSheet);
@@ -199,7 +200,7 @@ class CddImpl implements Cdd {
 
     @Override
     public void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size) {
-        LOG.info("CDD,regW,{},{},{},{}", th(address), th(value), size, regSpec);
+//        LOG.info("CDD,regW,{},{},{},{}", th(address), th(value), size, regSpec);
         switch (regSpec) {
             case MCD_CDD_CONTROL -> {
                 LOG.info("{},{},{},{}", regSpec, th(address), th(value), size);
@@ -244,7 +245,11 @@ class CddImpl implements Cdd {
     public int read(MegaCdDict.RegSpecMcd regSpec, int address, Size size) {
         assert memoryContext.getRegBuffer(CpuDeviceAccess.SUB_M68K, regSpec) == memoryContext.commonGateRegsBuf;
         int res = readBuffer(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, size);
-        LOG.info("CDD,regR,{},{},{},{}", th(address), th(res), size, regSpec);
+        if (regSpec == MCD_CDD_CONTROL) {
+            ;
+            LOG.info("CDD,regR,{},{},{},{}", th(address), th(res), size, regSpec);
+        }
+//        LOG.info("CDD,regR,{},{},{},{}", th(address), th(res), size, regSpec);
         return res;
     }
 
@@ -386,6 +391,9 @@ class CddImpl implements Cdd {
 
     private void advance() {
         int track = inTrack(cddContext.io.sector + 1);
+        //TODO clear DRS
+        setBit(memoryContext.getRegBuffer(CpuDeviceAccess.SUB_M68K, MCD_CDD_CONTROL),
+                MCD_CDD_CONTROL.addr + 1, 1, 0, Size.BYTE);
         if (track > 0) {
             setTrack(track);
             setSector(cddContext.io.sector + 1);
@@ -398,8 +406,8 @@ class CddImpl implements Cdd {
 
     private void process() {
         CddCommand cddCommand = CddCommand.values()[cddContext.command[0]];
-        LOG.info("CDD {}({}): {}({})", cddCommand, cddCommand.ordinal(), cddCommand == Request ?
-                CddRequest.values()[cddContext.command[3]] : cddContext.command[3], cddContext.command[3]);
+//        LOG.info("CDD {}({}): {}({})", cddCommand, cddCommand.ordinal(), cddCommand == Request ?
+//                CddRequest.values()[cddContext.command[3]] : cddContext.command[3], cddContext.command[3]);
         if (!valid()) {
             //unverified
             LOG.error("CDD checksum error");
@@ -510,7 +518,6 @@ class CddImpl implements Cdd {
     }
 
     private void processDone() {
-        updateStatus(0, cddContext.io.status.ordinal());
         checksum();
         cddContext.statusPending = 1;
     }
