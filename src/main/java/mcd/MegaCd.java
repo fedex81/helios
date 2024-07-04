@@ -244,6 +244,12 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     @Override
     protected RomContext createRomContext(SysUtil.RomSpec rom) {
         romContext = Megadrive.createRomContext(rom, memory, emuFrame.getRegionOverride());
+        //TODO code above is parsing the cue to get the region, randomly ends up as Japan
+        //TODO use USA instead
+        if (rom.file.toString().endsWith(".cue") && romContext.region == RegionDetector.Region.JAPAN) {
+            romContext.region = getRegionInternal(emuFrame.getRegionOverride(), RegionDetector.Region.USA);
+            LOG.warn("Forcing cue file region to {}", romContext.region);
+        }
         return romContext;
     }
 

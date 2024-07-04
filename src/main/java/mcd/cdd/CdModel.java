@@ -24,11 +24,11 @@ public class CdModel {
 
     private final static Logger LOG = LogHelper.getLogger(CdModel.class.getSimpleName());
 
-    enum RomFileType {UNKNOWN, BIN_CUE, ISO}
+    public enum RomFileType {UNKNOWN, BIN_CUE, ISO}
 
-    enum TrackContent {T_AUDIO, T_DATA}
+    public enum TrackContent {T_AUDIO, T_DATA}
 
-    enum TrackMode {MODE1, MODE2}
+    public enum TrackMode {MODE1, MODE2}
 
     public enum SectorSize {
         S_2048(2048), S_2352(2352);
@@ -56,7 +56,7 @@ public class CdModel {
      * <p>
      * https://www.gnu.org/software/ccd2cue/manual/html_node/MODE-_0028Compact-Disc-fields_0029.html
      */
-    enum TrackDataType {
+    public enum TrackDataType {
         MODE1_2352(MODE1, S_2352, T_DATA),
         AUDIO(MODE1, S_2352, T_AUDIO);
 
@@ -97,7 +97,7 @@ public class CdModel {
         public final TrackData trackData;
         public final RandomAccessFile file;
         public TrackDataType trackDataType;
-        public int absoluteSectorStart, absoluteSectorEnd, lenBytes, lenSector;
+        public int absoluteSectorStart, absoluteSectorEnd, lenBytes, trackLenSectors;
 
         public ExtendedTrackData(TrackData trackData, RandomAccessFile file) {
             this.trackData = trackData;
@@ -112,7 +112,7 @@ public class CdModel {
                     .add("trackDataType", trackDataType)
                     .add("absoluteSectorStart", absoluteSectorStart)
                     .add("absoluteSectorEnd", absoluteSectorEnd)
-                    .add("lenSector", lenSector)
+                    .add("lenSector", trackLenSectors)
                     .add("lenBytes", lenBytes)
                     .toString();
         }

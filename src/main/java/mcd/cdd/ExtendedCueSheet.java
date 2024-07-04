@@ -123,7 +123,7 @@ public class ExtendedCueSheet implements Closeable {
             extTrackData.lenBytes = (int) raf.length();
             extTrackData.absoluteSectorStart = sectorStart;
             extTrackData.absoluteSectorEnd = sectorStart + (extTrackData.lenBytes / sectorSize.s_size);
-            extTrackData.lenSector = extTrackData.absoluteSectorEnd - extTrackData.absoluteSectorStart;
+            extTrackData.trackLenSectors = extTrackData.absoluteSectorEnd - extTrackData.absoluteSectorStart;
             extCueSheet.sectorEnd = extTrackData.absoluteSectorEnd;
             //NOTE projectcd.iso fails this one
             if (romFileType != RomFileType.ISO) {
@@ -187,6 +187,7 @@ public class ExtendedCueSheet implements Closeable {
     }
 
     public static ExtendedTrackData getExtTrack(ExtendedCueSheet extCueSheet, int number) {
+        assert number > 0;
         int zeroBased = number - 1;
         ExtendedTrackData td = NO_TRACK;
         if (zeroBased >= 0 && zeroBased < extCueSheet.extTracks.size()) {
@@ -197,6 +198,7 @@ public class ExtendedCueSheet implements Closeable {
     }
 
     public static boolean isAudioTrack(ExtendedCueSheet extCueSheet, int number) {
+        assert number > 0;
         return getExtTrack(extCueSheet, number).trackDataType == TrackDataType.AUDIO;
     }
 

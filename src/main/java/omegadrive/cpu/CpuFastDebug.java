@@ -112,7 +112,7 @@ public class CpuFastDebug {
     public CpuFastDebug(CpuDebugInfoProvider debugInfoProvider, CpuDebugContext ctx) {
         this.debugInfoProvider = debugInfoProvider;
         this.ctx = ctx;
-        this.pcInfoWrapper = createWrapper(ctx);
+        this.pcInfoWrapper = new PcInfoWrapper[ctx.pcAreasNumber][0];
         logHead = Optional.ofNullable(ctx.cpuCode).orElse("");
         init();
     }
@@ -120,10 +120,11 @@ public class CpuFastDebug {
     public void init() {
         assert ctx.debugMode < debugModeVals.length : ctx.debugMode;
         debugMode = debugModeVals[ctx.debugMode];
+        resetWrapper();
     }
 
-    public static PcInfoWrapper[][] createWrapper(CpuDebugContext ctx) {
-        PcInfoWrapper[][] pcInfoWrapper = new PcInfoWrapper[ctx.pcAreasNumber][0];
+    public void resetWrapper() {
+        LOG.warn("Resetting known and visited PCs!!");
         for (int i = 0; i < ctx.pcAreasMaskMap.length; i++) {
             int pcAreaSize = ctx.pcAreasMaskMap[i] + 1;
             if (pcAreaSize > 1) {
@@ -131,7 +132,6 @@ public class CpuFastDebug {
                 Arrays.fill(pcInfoWrapper[i], NOT_VISITED);
             }
         }
-        return pcInfoWrapper;
     }
 
     public void printDebugMaybe() {

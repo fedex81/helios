@@ -80,15 +80,10 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         }
         if (!busyLoopDetection) {
             if (cpu == CpuDeviceAccess.SUB_M68K) {
-                logCdPcInfo(currentPC, m68k.getDataRegisterByte(0));
+                logCdPcInfo(currentPC, m68k);
+                biosUs_Errors();
             }
             mcdVerHacks();
-            //us bios, shows planet
-//            if(cpu == CpuDeviceAccess.M68K && currentPC == 0x1f32){
-//                currentPC += 2;
-//                m68k.setPC(currentPC);
-//                fastDebug.printDebugMaybe();
-//            }
             int r = super.runInstruction();
 //            checkInterruptLevelChange();
             return r;
@@ -96,37 +91,67 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         return fastDebug.isBusyLoop(currentPC, opcode) + super.runInstruction();
     }
 
+    private void biosUs_Errors() {
+        if (cpu == CpuDeviceAccess.M68K) {
+            return;
+        }
+        if (currentPC == 0xf20 || currentPC == 0xf32) {
+            LOG.warn("BIOS US error: {}, PC:{}", "Abort CDD transfers", th(currentPC));
+//            assert false;
+        } else if (opcode == 0x44C1) { //move #1, ccr
+            LOG.warn("BIOS US error: {}, PC:{}", "setErrorFlag(macro)", th(currentPC));
+//            assert false;
+        }
+//        if(currentPC == 0xcac){ //getTocForTrack
+//            System.out.println("here");
+//            fastDebug.resetWrapper();
+//        }
+        //us bios, shows planet
+//            if(cpu == CpuDeviceAccess.M68K && currentPC == 0x1f32){
+//                currentPC += 2;
+//                m68k.setPC(currentPC);
+//                fastDebug.printDebugMaybe();
+//            }
+    }
+
     private void mcdVerHacks() {
         boolean match = false;
+        boolean sentinel = false;
         //mcd-ver, cdcFlags skip error 0x22
         if (cpu == CpuDeviceAccess.M68K && currentPC == 0x14156 && m68k.getDataRegisterLong(1) == 0x22) {
             LOG.warn("{} skipping code at {} -> {}", cpu, th(currentPC), th(currentPC + 4));
             match = true;
+            assert sentinel;
         }
         //mcd-ver, cdcFlags skip error 0x26
         else if (cpu == CpuDeviceAccess.M68K && currentPC == 0x142e6 && m68k.getAddrRegisterLong(0) == 0xA12000) {
             LOG.warn("{} skipping code at {} -> {}", cpu, th(currentPC), th(currentPC + 4));
             match = true;
             m68k.setDataRegisterLong(7, 0);
+            assert sentinel;
         }
         //mcd-ver, cdcFlags skip error 0x34
         else if (cpu == CpuDeviceAccess.M68K && currentPC == 0x144b2 && m68k.getAddrRegisterLong(1) == 0xA12000) {
             LOG.warn("{} skipping code at {} -> {}", cpu, th(currentPC), th(currentPC + 4));
             match = true;
+            assert sentinel;
             //mcd-ver CDC DMA2 error 0x12
         } else if (cpu == CpuDeviceAccess.M68K && currentPC == 0x000126ac && m68k.getDataRegisterLong(1) != 9) {
             LOG.warn("{} skipping code at {} -> {}", cpu, th(currentPC), th(currentPC + 4));
             m68k.setDataRegisterLong(1, 9);
+            assert sentinel;
             //mcd-ver CDC DMA3 error 4
         } else if (cpu == CpuDeviceAccess.M68K && currentPC == 0x00012f04 && m68k.getDataRegisterLong(1) != 9) {
             LOG.warn("{} skipping code at {} -> {}", cpu, th(currentPC), th(currentPC + 12));
             currentPC += 8;
             match = true;
+            assert sentinel;
         }
         if (match) {
             currentPC += 4;
             m68k.setPC(currentPC);
             fastDebug.printDebugMaybe();
+            assert sentinel;
         }
     }
 

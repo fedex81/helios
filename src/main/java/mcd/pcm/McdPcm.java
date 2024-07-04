@@ -192,7 +192,7 @@ public class McdPcm implements BufferUtil.StepDevice {
                     int wb = waveBank;
                     waveBank = (value & 0xf) << PCM_WAVE_BANK_SHIFT;
                     if (wb != waveBank) {
-                        LOG.info("PCM bank: {}", th(waveBank));
+//                        LOG.info("PCM bank: {}", th(waveBank));
                     }
                 }
             }

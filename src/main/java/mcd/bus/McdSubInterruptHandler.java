@@ -84,9 +84,10 @@ public interface McdSubInterruptHandler extends Device {
             if (pendingMask == 0) {
                 return;
             }
+            final int mask = getRegMask();
             for (int i = 1; i < pendingInterrupts.length; i++) {
                 if (pendingInterrupts[i]) {
-                    boolean canRaise = ((1 << i) & getRegMask()) > 0;
+                    boolean canRaise = ((1 << i) & mask) > 0;
                     if (canRaise && m68kInterrupt(i)) {
                         setPending(intVals[i], 0);
                         //TODO check if necessary

@@ -64,6 +64,10 @@ public class CueFileParser {
         return (m * 60 + s) * 75 + f;
     }
 
+    public static int toSector(int mH, int mL, int sH, int sL, int fH, int fL) {
+        return toSector(mH * 10 + mL, sH * 10 + sL, fH * 10 + fL);
+    }
+
     public static int toMSF_BCD(int sector) {
         int f = sector % 75;
         sector /= 75;

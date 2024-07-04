@@ -78,17 +78,17 @@ public class MegaCdDict {
         MCD_CD_FADER(CDD, 0x34), //CD Fader
         MCD_CDD_CONTROL(CDD, 0x36), //CDD Control
 
-        MCD_CDD_COMM0(CDD, 0x38), //CDD Comm
-        MCD_CDD_COMM1(CDD, 0x3A), //CDD Comm
-        MCD_CDD_COMM2(CDD, 0x3C), //CDD Comm
-        MCD_CDD_COMM3(CDD, 0x3E), //CDD Comm
+        MCD_CDD_COMM0(CDD, 0x38), //CDD Comm, status[0],[1]
+        MCD_CDD_COMM1(CDD, 0x3A), //CDD Comm, status[2],[3]
+        MCD_CDD_COMM2(CDD, 0x3C), //CDD Comm, status[4],[5]
+        MCD_CDD_COMM3(CDD, 0x3E), //CDD Comm, status[6],[7]
 
-        MCD_CDD_COMM4(CDD, 0x40), //CDD Comm
-        MCD_CDD_COMM5(CDD, 0x42), //CDD Comm
-        MCD_CDD_COMM6(CDD, 0x44), //CDD Comm
-        MCD_CDD_COMM7(CDD, 0x46), //CDD Comm
-        MCD_CDD_COMM8(CDD, 0x48), //CDD Comm
-        MCD_CDD_COMM9(CDD, 0x4A), //CDD Comm
+        MCD_CDD_COMM4(CDD, 0x40), //CDD Comm, status[8],[9] //9 is checksum
+        MCD_CDD_COMM5(CDD, 0x42), //CDD Comm, command[0],[1]
+        MCD_CDD_COMM6(CDD, 0x44), //CDD Comm, command[2],[3]
+        MCD_CDD_COMM7(CDD, 0x46), //CDD Comm, command[4],[5]
+        MCD_CDD_COMM8(CDD, 0x48), //CDD Comm, command[6],[7]
+        MCD_CDD_COMM9(CDD, 0x4A), //CDD Comm, command[8],[9] //9 is checksum
 
         MCD_FONT_COLOR(SYS, 0x4C), //Font color
         MCD_FONT_BIT(SYS, 0x4E), //Font bit

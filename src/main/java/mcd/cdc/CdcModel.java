@@ -28,12 +28,12 @@ public interface CdcModel {
 
     class CdcStatus {
         public byte[] fifo = new byte[8];    //SBOUT
-        int read, write; //n3
-        int empty = 1; //n1
-        int enable;     //SOUTEN, n1
-        int active;     //STEN, n1
-        int busy;       //STBSY, n1
-        int wait;       //STWAI, n1
+        public int read, write; //n3
+        public int empty = 1; //n1
+        public int enable;     //SOUTEN, n1
+        public int active;     //STEN, n1
+        public int busy;       //STBSY, n1
+        public int wait;       //STWAI, n1
 
         public void reset() {
             active = busy = enable = 0;
@@ -42,10 +42,10 @@ public interface CdcModel {
     }
 
     class CdcDecoder {
-        int enable;  //DECEN, n1
-        int mode;    //MODE, n1
-        int form;    //FORM, n1
-        int valid;   //!VALST, n1
+        public int enable;  //DECEN, n1
+        public int mode;    //MODE, n1
+        public int form;    //FORM, n1
+        public int valid;   //!VALST, n1
 
         public void reset() {
             enable = form = mode = 0;
@@ -66,20 +66,20 @@ public interface CdcModel {
     }
 
     class CdcTransfer {
-        int destination; //n3
-        int address; //n19
+        public int destination; //n3
+        public int address; //n19
 
-        int source; //n16
-        int target; //n16
-        int pointer; //n16
-        int length; //n12
+        public int source; //n16
+        public int target; //n16
+        public int pointer; //n16
+        public int length; //n12
 
-        int enable;     //DOUTEN, n1
-        int active;     //DTEN, n1
-        int busy;       //DTBSY, n1
-        int wait;       //DTWAI, n1
-        int ready;      //DSR, n1
-        int completed;  //EDT, n1
+        public int enable;     //DOUTEN, n1
+        public int active;     //DTEN, n1
+        public int busy;       //DTBSY, n1
+        public int wait;       //DTWAI, n1
+        public int ready;      //DSR, n1
+        public int completed;  //EDT, n1
 
 
         public void reset() {
@@ -105,17 +105,17 @@ public interface CdcModel {
             command = new McdIrq();
         }
 
-        void reset() {
+        public void reset() {
             decoder.pending = transfer.pending = command.pending = 0;
             decoder.enable = transfer.enable = command.enable = 0;
         }
     }
 
     class CdcHeader {
-        int minute; //n8
-        int second;//n8
-        int frame; //n8
-        int mode;//n8
+        public int minute; //n8
+        public int second;//n8
+        public int frame; //n8
+        public int mode;//n8
 
         public void reset() {
             minute = second = frame = mode = 0;
@@ -124,25 +124,25 @@ public interface CdcModel {
 
     class CdcControl {
         //all n1
-        int head;               //SHDREN: 0 = read header, 1 = read subheader
-        int mode;               //MODE
-        int form;               //FORM
-        int commandBreak;       //CMDBK
-        int modeByteCheck;      //MBCKRQ
-        int erasureRequest;     //ERAMRQ
-        int writeRequest;       //WRRQ
-        int pCodeCorrection;    //PRQ
-        int qCodeCorrection;    //QRQ
-        int autoCorrection;     //AUTOQ
-        int errorCorrection;    //E01RQ
-        int edcCorrection;      //EDCRQ
-        int correctionWrite;    //COWREN
-        int descramble;         //DSCREN
-        int syncDetection;      //SYDEN
-        int syncInterrupt;      //SYIEN
-        int erasureCorrection;  //ERAMSL
-        int statusTrigger;      //STENTRG
-        int statusControl;      //STENCTL
+        public int head;               //SHDREN: 0 = read header, 1 = read subheader
+        public int mode;               //MODE
+        public int form;               //FORM
+        public int commandBreak;       //CMDBK
+        public int modeByteCheck;      //MBCKRQ
+        public int erasureRequest;     //ERAMRQ
+        public int writeRequest;       //WRRQ
+        public int pCodeCorrection;    //PRQ
+        public int qCodeCorrection;    //QRQ
+        public int autoCorrection;     //AUTOQ
+        public int errorCorrection;    //E01RQ
+        public int edcCorrection;      //EDCRQ
+        public int correctionWrite;    //COWREN
+        public int descramble;         //DSCREN
+        public int syncDetection;      //SYDEN
+        public int syncInterrupt;      //SYIEN
+        public int erasureCorrection;  //ERAMSL
+        public int statusTrigger;      //STENTRG
+        public int statusControl;      //STENCTL
 
         public void reset() {
             commandBreak = 1;

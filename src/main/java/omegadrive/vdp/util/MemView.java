@@ -269,21 +269,28 @@ public class MemView implements Device, UpdatableViewer {
     }
 
     private static final int BYTES_PER_LINE = 0x10;
-
     private void updateFromMemory(int start, int end) {
+        fillFormattedString(sb, data, start, end);
+        textArea.setText(sb.toString());
+        sb.setLength(0);
+        qLen.decrementAndGet();
+    }
+
+    public static void fillFormattedString(StringBuilder sb, byte[] data, int start, int end) {
         try {
             HexFormat hf = HexFormat.of().withSuffix(" ");
             sb.append(String.format("%4x", 0)).append(": ");
-            for (int i = 0; i < end - start; i += BYTES_PER_LINE) {
-                hf.formatHex(sb, data, i, i + BYTES_PER_LINE).append("  ");
-                for (int j = i; j < i + BYTES_PER_LINE; j++) {
+            int len = end - start;
+            for (int i = start; i < end; i += BYTES_PER_LINE) {
+                int slen = Math.min(len, i + BYTES_PER_LINE);
+                hf.formatHex(sb, data, i, i + slen).append("  ");
+                for (int j = i; j < i + slen; j++) {
                     sb.append(toAsciiChar(data[j])).append(" ");
                 }
-                sb.append("\n").append(String.format("%4x", i + BYTES_PER_LINE)).append(": ");
+                if (i + BYTES_PER_LINE < len) {
+                    sb.append("\n").append(String.format("%4x", i + BYTES_PER_LINE)).append(": ");
+                }
             }
-            textArea.setText(sb.toString());
-            sb.setLength(0);
-            qLen.decrementAndGet();
         } catch (Exception e) {
             LOG.error("Error", e);
             e.printStackTrace();
