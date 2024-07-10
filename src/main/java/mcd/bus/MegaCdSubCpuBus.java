@@ -22,10 +22,13 @@ import java.nio.ByteBuffer;
 import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_TIMER;
+import static mcd.dict.MegaCdDict.BitRegDef.IEN2;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.pcm.McdPcm.MCD_PCM_DIVIDER;
+import static mcd.util.McdRegBitUtil.setBitDefInternal;
+import static mcd.util.McdRegBitUtil.setSharedBit;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -226,8 +229,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
                 if (changed) {
                     int reg = Util.readBufferByte(commonGateRegs, MCD_INT_MASK.addr + 1);
                     McdSubInterruptHandler.printEnabledInterrupts(reg);
-                    //Note, according to hw manual
-                    setBit(memCtx.getGateSysRegs(M68K), MCD_RESET.addr, 7, (reg >> 2) & 1, Size.BYTE);
+                    //Note, according to hw manual, mcd-ver
+                    //IEN2 shift from bit#2 to bit#7
+                    setBitDefInternal(memCtx, M68K, IEN2, IEN2.getBitMask() * ((reg >> 2) & 1));
                 }
             }
             case MCD_TIMER_INT3 -> {
@@ -291,7 +295,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         WramSetup ws = memCtx.update(cpuType, resWord);
         if (ws == WramSetup.W_2M_MAIN) { //set DMNA=0
             setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 1, 0, Size.BYTE);
-            memCtx.setSharedBit(cpuType, 0, SharedBit.DMNA);
+            setSharedBit(memCtx, cpuType, 0, SharedBitDef.DMNA);
         }
         asic.setStampPriorityMode((resWord >> 3) & 3);
     }

@@ -2,6 +2,7 @@ package omegadrive.bus.megacd;
 
 import mcd.McdDeviceHelper;
 import mcd.dict.MegaCdDict;
+import mcd.dict.MegaCdDict.SharedBitDef;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
@@ -79,7 +80,7 @@ public class McdWordRam2Test extends McdRegTestBase {
         int mainMemModeAddr = GenesisBusProvider.MEGA_CD_EXP_START +
                 MegaCdDict.RegSpecMcd.MCD_MEM_MODE.addr + 1;
         int val = mainCpuBus.read(mainMemModeAddr, Size.BYTE);
-        int newVal = val & ~(1 << SharedBit.DMNA.pos); //reset DMNA from MAIN
+        int newVal = val & ~(1 << SharedBitDef.DMNA.getBitPos()); //reset DMNA from MAIN
         mainCpuBus.write(mainMemModeAddr, newVal, Size.BYTE);
         int val2 = mainCpuBus.read(mainMemModeAddr, Size.BYTE);
         Assertions.assertEquals(val, val2);

@@ -17,6 +17,7 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.WramSetup;
+import static mcd.util.McdRegBitUtil.setSharedBit;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
@@ -278,8 +279,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
         int resWord = memCtx.handleRegWrite(cpu, MCD_MEM_MODE, address, data, size);
         WramSetup ws = memCtx.update(cpu, resWord);
         if (ws == WramSetup.W_2M_SUB) { //set RET=0
-            resWord = setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 0, 0, Size.BYTE);
-            memCtx.setSharedBit(M68K, 0, MegaCdMemoryContext.SharedBit.RET);
+            setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 0, 0, Size.BYTE);
+            setSharedBit(memCtx, M68K, 0, SharedBitDef.RET);
         }
         //bk0,1
         int bval = (resWord >> 6) & 3;

@@ -2,11 +2,12 @@ package mcd.dict;
 
 import omegadrive.util.Size;
 
-import java.nio.ByteBuffer;
 import java.util.function.BiConsumer;
 
+import static mcd.dict.MegaCdDict.BitRegDef.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
-import static mcd.dict.MegaCdMemoryContext.SharedBit.*;
+import static mcd.dict.MegaCdDict.SharedBitDef.*;
+import static mcd.util.McdRegBitUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.*;
@@ -20,28 +21,30 @@ public class MegaCdRegWriteHandlers {
      * SUB
      **/
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg0_S = (ctx, d) -> {
-        var buff = ctx.getGateSysRegs(SUB_M68K);
         assert d < 2; //Version bits only write 0
-        setBitInternal(buff, MCD_RESET.addr + 1, 0, d); //RES0
+        setBitDefInternal(ctx, SUB_M68K, RES0, d);
     };
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg0_S = (ctx, d) -> {
-        var buff = ctx.getGateSysRegs(SUB_M68K);
-        setBitInternal(buff, MCD_RESET.addr, 0, d); //LEDR
-        setBitInternal(buff, MCD_RESET.addr, 1, d); //LEDG
+        setBitDefInternal(ctx, SUB_M68K, LEDR, d);
+        setBitDefInternal(ctx, SUB_M68K, LEDG, d);
     };
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg2_S = (ctx, d) -> {
         var buff = ctx.getGateSysRegs(SUB_M68K);
+        int now = readBuffer(buff, MCD_MEM_MODE.addr + 1, Size.BYTE);
+        int ret = now & RET.getBitMask();
+        int mode = now & MODE.getBitMask();
+        int dmna = now & DMNA.getBitMask();
         if (assertionsEnabled) {
-            int now = readBuffer(buff, MCD_MEM_MODE.addr + 1, Size.BYTE);
-            assert (d & 2) == 0 || ((d & 2) > 0 && (now & 2) > 0); //DMNA write only 0
+            assert (d & DMNA.getBitMask()) == 0 || ((d & DMNA.getBitMask()) > 0 && dmna > 0); //DMNA write only 0
         }
-        setBitInternal(buff, MCD_MEM_MODE.addr + 1, 0, d); //RET
-        setBitInternal(buff, MCD_MEM_MODE.addr + 1, 2, d); //MODE
-        setBitInternal(buff, MCD_MEM_MODE.addr + 1, 6, d); //BK0
-        setBitInternal(buff, MCD_MEM_MODE.addr + 1, 7, d); //BK1
 
-        ctx.setSharedBits(SUB_M68K, d, RET, MODE);
+        if (mode == 0 && ret == 1 && dmna == 0) {
+            d |= RET.getBitMask();
+        } else {
+            setSharedBitInternal(ctx, SUB_M68K, RET, d);
+        }
+        setSharedBitInternal(ctx, SUB_M68K, MODE, d);
     };
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg2_S = (ctx, d) -> {
 //        assert d == 0; //Write protected bits only write 0, mcd-verificator contradicts this
@@ -54,7 +57,7 @@ public class MegaCdRegWriteHandlers {
         var buff = ctx.getGateSysRegs(SUB_M68K);
         //DSR, EDT can only be set to 0
         writeBufferRaw(buff, MCD_CDC_MODE.addr, d & 7, Size.BYTE); //mcd-verificator
-        ctx.setSharedBits(SUB_M68K, d & 7, DD0, DD1, DD2, DSR, EDT);
+        setSharedBits(ctx, SUB_M68K, d & 7, DD0, DD1, DD2, DSR, EDT);
     };
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg4_S = (ctx, d) -> {
@@ -67,54 +70,42 @@ public class MegaCdRegWriteHandlers {
      * MAIN
      **/
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg0_M = (ctx, d) -> {
-        var buff = ctx.getGateSysRegs(M68K);
-        setBitInternal(buff, MCD_RESET.addr + 1, 0, d); //SRES
-        setBitInternal(buff, MCD_RESET.addr + 1, 1, d); //SBRQ
+        setBitDefInternal(ctx, M68K, SRES, d);
+        setBitDefInternal(ctx, M68K, SBRQ, d);
     };
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg0_M = (ctx, d) -> {
         var buff = ctx.getGateSysRegs(M68K);
         if (assertionsEnabled) {
             int now = readBuffer(buff, MCD_RESET.addr, Size.BYTE);
-            assert (d & 0x80) == 0x80 ? (now & 0x80) == 0x80 : true; //IEN2 write only 0
+            assert (d & IEN2.getBitMask()) > 0 ? (now & IEN2.getBitMask()) > 0 : true; //IEN2 write only 0
         }
         //mcd-ver main sets IFL2 to 0
-        setBitInternal(buff, MCD_RESET.addr, 0, d & 1); //IFL2
+        setBitDefInternal(ctx, M68K, IFL2, d);
     };
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteLSBReg2_M = (ctx, d) -> {
         var buff = ctx.getGateSysRegs(M68K);
         int now = readBuffer(buff, MCD_MEM_MODE.addr + 1, Size.BYTE);
-        int ret = now & RET.bitMask;
-        int mode = now & MODE.bitMask;
-        int dmna = now & DMNA.bitMask;
+        int ret = now & RET.getBitMask();
+        int mode = now & MODE.getBitMask();
+        int dmna = now & DMNA.getBitMask();
         if (assertionsEnabled) {
-            assert (d & RET.bitMask) == 0 || ((d & RET.bitMask) > 0 && ret > 0); //RET write only 0
-            assert (d & MODE.bitMask) == 0 || ((d & MODE.bitMask) > 0 && mode > 0); //MODE write only 0
+            assert (d & RET.getBitMask()) == 0 || ((d & RET.getBitMask()) > 0 && ret > 0); //RET write only 0
+            assert (d & MODE.getBitMask()) == 0 || ((d & MODE.getBitMask()) > 0 && mode > 0); //MODE write only 0
         }
-        setBitInternal(buff, RET, d);
         //2M_SUB, RET == 0, DMNA > 0 -> main cannot modify DMNA, SUB needs to release WRAM first
         if (mode != 0 || ret != 0 || dmna <= 0) {
-            setBitInternal(buff, DMNA, d);
+            setSharedBitInternal(ctx, M68K, DMNA, d);
         }
-        setBitInternal(buff, MODE, d); //MODE
-        setBitInternal(buff, MCD_MEM_MODE.addr + 1, 6, d); //BK0
-        setBitInternal(buff, MCD_MEM_MODE.addr + 1, 7, d); //BK1
-        ctx.setSharedBits(M68K, d, RET, DMNA, MODE);
+        setSharedBitInternal(ctx, M68K, RET, d);
+        setSharedBitInternal(ctx, M68K, MODE, d);
+        setBitDefInternal(ctx, M68K, BK0, d);
+        setBitDefInternal(ctx, M68K, BK1, d);
     };
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg2_M = (ctx, d) -> {
         writeBufferRaw(ctx.getGateSysRegs(M68K), MCD_MEM_MODE.addr, d, Size.BYTE); //WP0-7 write protected bits
         writeBufferRaw(ctx.getGateSysRegs(SUB_M68K), MCD_MEM_MODE.addr, d, Size.BYTE); //sub too
     };
-
-    private static void setBitInternal(ByteBuffer buff, MegaCdMemoryContext.SharedBit bitDef, int data) {
-        setBitInternal(buff, bitDef.regBytePos, bitDef.pos, data);
-    }
-
-    private static void setBitInternal(ByteBuffer buff, int regAddr, int bitPos, int data) {
-        assert bitPos < 8;
-        setBitVal(buff, regAddr, bitPos, (data >> bitPos) & 1, Size.BYTE);
-    }
-
 
     static {
         setByteHandlersMain[MCD_RESET.addr] = new BiConsumer[]{setByteMSBReg0_M, setByteLSBReg0_M};

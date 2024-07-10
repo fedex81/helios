@@ -1,7 +1,6 @@
 package mcd.dict;
 
 import mcd.cdd.CdBiosHelper;
-import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -11,13 +10,12 @@ import org.slf4j.Logger;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.function.BiConsumer;
 
 import static mcd.dict.MegaCdDict.MCD_SUB_BRAM_SIZE;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_SIZE;
-import static mcd.dict.MegaCdDict.RegSpecMcd.*;
-import static mcd.dict.MegaCdMemoryContext.SharedBit.*;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_COMM0;
+import static mcd.dict.MegaCdDict.SharedBitDef.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersMain;
@@ -178,9 +176,9 @@ public class MegaCdMemoryContext implements Serializable {
     }
 
     public WramSetup update(CpuDeviceAccess c, int reg2) {
-        int mode = reg2 & MODE.bitMask;
-        int dmna = reg2 & DMNA.bitMask;
-        int ret = reg2 & RET.bitMask;
+        int mode = reg2 & MODE.getBitMask();
+        int dmna = reg2 & DMNA.getBitMask();
+        int ret = reg2 & RET.getBitMask();
         WramSetup prev = wramSetup;
         if (mode > 0) {
             if (c == SUB_M68K) {
@@ -227,36 +225,6 @@ public class MegaCdMemoryContext implements Serializable {
     public ByteBuffer getGateSysRegs(CpuDeviceAccess cpu) {
         assert cpu == M68K || cpu == SUB_M68K;
         return sysGateRegsBuf[cpu == M68K ? 0 : 1];
-    }
-
-    public enum SharedBit {
-        RET(0, MCD_MEM_MODE.addr + 1), DMNA(1, MCD_MEM_MODE.addr + 1),
-        MODE(2, MCD_MEM_MODE.addr + 1),
-        DD0(0, MCD_CDC_MODE.addr), DD1(1, MCD_CDC_MODE.addr), DD2(2, MCD_CDC_MODE.addr),
-        EDT(7, MCD_CDC_MODE.addr), DSR(6, MCD_CDC_MODE.addr);
-
-
-        public final int pos, regBytePos, bitMask;
-
-        SharedBit(int p, int rbp) {
-            this.pos = p;
-            this.regBytePos = rbp;
-            this.bitMask = 1 << pos;
-        }
-    }
-
-    public void setSharedBits(CpuDeviceAccess cpu, int byteVal, SharedBit... bitDef) {
-        Arrays.stream(bitDef).forEach(bd -> setSharedBit(cpu, byteVal, bd));
-    }
-
-    /**
-     * Given the byte value, only set the bit at bitPos as defined in SharedBit
-     */
-    public void setSharedBit(CpuDeviceAccess cpu, int byteVal, SharedBit bitDef) {
-        assert cpu == M68K || cpu == SUB_M68K;
-        CpuDeviceAccess other = cpu == M68K ? SUB_M68K : M68K;
-        ByteBuffer regs = getGateSysRegs(other);
-        BufferUtil.setBit(regs, bitDef.regBytePos, bitDef.pos, (byteVal >> bitDef.pos) & 1, Size.BYTE);
     }
 
     public ByteBuffer getRegBuffer(CpuDeviceAccess cpu, MegaCdDict.RegSpecMcd regSpec) {

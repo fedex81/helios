@@ -11,11 +11,10 @@ import java.util.Set;
 
 import static mcd.dict.MegaCdDict.McdRegCpuType.*;
 import static mcd.dict.MegaCdDict.McdRegType.*;
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_FONT_COLOR;
+import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.th;
 
 /**
@@ -172,6 +171,93 @@ public class MegaCdDict {
 
         public String getName() {
             return regSpec.name;
+        }
+    }
+
+    public interface BitRegisterDef {
+        int getBitPos();
+
+        int getRegBytePos();
+
+        int getBitMask();
+
+        default CpuDeviceAccess getCpu() {
+            return null;
+        }
+    }
+
+    public enum SharedBitDef implements BitRegisterDef {
+        RET(0, MCD_MEM_MODE.addr + 1), DMNA(1, MCD_MEM_MODE.addr + 1),
+        MODE(2, MCD_MEM_MODE.addr + 1),
+        DD0(0, MCD_CDC_MODE.addr), DD1(1, MCD_CDC_MODE.addr), DD2(2, MCD_CDC_MODE.addr),
+        EDT(7, MCD_CDC_MODE.addr), DSR(6, MCD_CDC_MODE.addr);
+
+
+        private final int pos, regBytePos, bitMask;
+
+        SharedBitDef(int p, int rbp) {
+            this.pos = p;
+            this.regBytePos = rbp;
+            this.bitMask = 1 << pos;
+        }
+
+        @Override
+        public int getBitPos() {
+            return pos;
+        }
+
+        @Override
+        public int getRegBytePos() {
+            return regBytePos;
+        }
+
+        @Override
+        public int getBitMask() {
+            return bitMask;
+        }
+    }
+
+    public enum BitRegDef implements BitRegisterDef {
+
+        RES0(SUB_M68K, 0, MCD_RESET.addr + 1),
+        LEDR(SUB_M68K, 0, MCD_RESET.addr),
+        LEDG(SUB_M68K, 1, MCD_RESET.addr),
+
+        IFL2(M68K, 0, MCD_RESET.addr),
+        IEN2(M68K, 7, MCD_RESET.addr),
+        SRES(M68K, 0, MCD_RESET.addr + 1),
+        SBRQ(M68K, 1, MCD_RESET.addr + 1),
+        BK0(M68K, 6, MCD_MEM_MODE.addr + 1),
+        BK1(M68K, 7, MCD_MEM_MODE.addr + 1);
+
+        private final int pos, regBytePos, bitMask;
+        public final CpuDeviceAccess cpu;
+
+        BitRegDef(CpuDeviceAccess cpu, int p, int rbp) {
+            this.pos = p;
+            this.regBytePos = rbp;
+            this.bitMask = 1 << pos;
+            this.cpu = cpu;
+        }
+
+        @Override
+        public int getBitPos() {
+            return pos;
+        }
+
+        @Override
+        public int getRegBytePos() {
+            return regBytePos;
+        }
+
+        @Override
+        public int getBitMask() {
+            return bitMask;
+        }
+
+        @Override
+        public CpuDeviceAccess getCpu() {
+            return cpu;
         }
     }
 
