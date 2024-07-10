@@ -38,6 +38,8 @@ public interface McdSubInterruptHandler extends Device {
 
     void lowerInterrupt(SubCpuInterrupt intp);
 
+    void setIFL2(boolean val);
+
     static McdSubInterruptHandler create(MegaCdMemoryContext context, M68kProvider c) {
         return new McdSubInterruptHandlerImpl(context, c);
     }
@@ -62,6 +64,8 @@ public interface McdSubInterruptHandler extends Device {
 
         private boolean[] pendingInterrupts = new boolean[intVals.length];
 
+        private boolean ifl2 = false;
+
         private int pendingMask = 0;
 
         private McdSubInterruptHandlerImpl(MegaCdMemoryContext c1, M68kProvider c) {
@@ -80,6 +84,11 @@ public interface McdSubInterruptHandler extends Device {
         }
 
         @Override
+        public void setIFL2(boolean val) {
+            ifl2 = val;
+        }
+
+        @Override
         public void handleInterrupts() {
             if (pendingMask == 0) {
                 return;
@@ -88,6 +97,8 @@ public interface McdSubInterruptHandler extends Device {
             for (int i = 1; i < pendingInterrupts.length; i++) {
                 if (pendingInterrupts[i]) {
                     boolean canRaise = ((1 << i) & mask) > 0;
+                    //mcd-ver: if ifl2==0 INT#2 is not triggering
+                    canRaise &= (i == 2 && !ifl2) ? false : true;
                     if (canRaise && m68kInterrupt(i)) {
                         setPending(intVals[i], 0);
                         //TODO check if necessary

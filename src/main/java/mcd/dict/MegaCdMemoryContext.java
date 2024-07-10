@@ -17,6 +17,7 @@ import java.util.function.BiConsumer;
 import static mcd.dict.MegaCdDict.MCD_SUB_BRAM_SIZE;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_SIZE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
+import static mcd.dict.MegaCdMemoryContext.SharedBit.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersMain;
@@ -177,9 +178,9 @@ public class MegaCdMemoryContext implements Serializable {
     }
 
     public WramSetup update(CpuDeviceAccess c, int reg2) {
-        int mode = reg2 & 4;
-        int dmna = reg2 & 2;
-        int ret = reg2 & 1;
+        int mode = reg2 & MODE.bitMask;
+        int dmna = reg2 & DMNA.bitMask;
+        int ret = reg2 & RET.bitMask;
         WramSetup prev = wramSetup;
         if (mode > 0) {
             if (c == SUB_M68K) {
@@ -235,11 +236,12 @@ public class MegaCdMemoryContext implements Serializable {
         EDT(7, MCD_CDC_MODE.addr), DSR(6, MCD_CDC_MODE.addr);
 
 
-        public final int pos, regBytePos;
+        public final int pos, regBytePos, bitMask;
 
         SharedBit(int p, int rbp) {
             this.pos = p;
             this.regBytePos = rbp;
+            this.bitMask = 1 << pos;
         }
     }
 

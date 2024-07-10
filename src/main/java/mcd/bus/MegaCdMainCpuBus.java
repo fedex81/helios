@@ -249,6 +249,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         int subIntReg = (res >> 8) & 1; //IFL2
         assert subCpu != null && subCpuBus != null;
 
+        subCpuBus.getInterruptHandler().setIFL2(subIntReg > 0);
         if (subIntReg > 0) {
             LogHelper.logInfo(LOG, "M SubCpu int2 request");
             subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);

@@ -1,6 +1,6 @@
 package omegadrive.bus.megacd;
 
-import mcd.McdDeviceHelper;
+import mcd.McdDeviceHelper.McdLaunchContext;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.bus.model.BaseBusProvider;
@@ -46,8 +46,9 @@ public class McdWordRamTest extends McdRegTestBase {
 
     static Function<BaseBusProvider, Integer> subGetLsbFn = bus -> bus.read(SUB_MEM_MODE_REG + 1, Size.BYTE);
 
+    static BiConsumer<BaseBusProvider, Integer> mainSetLsbFn = (bus, val) -> bus.write(MAIN_MEM_MODE_REG + 1, val, Size.BYTE);
     static Function<BaseBusProvider, Integer> mainGetLsbFn = bus -> bus.read(MAIN_MEM_MODE_REG + 1, Size.BYTE);
-    Consumer<Integer> mainSetLsb = val -> mainCpuBus.write(MAIN_MEM_MODE_REG + 1, val, Size.BYTE);
+    Consumer<Integer> mainSetLsb = val -> mainSetLsbFn.accept(mainCpuBus, val);
     Consumer<Integer> subSetLsb = val -> subSetLsbFn.accept(subCpuBus, val);
     Supplier<Integer> mainGetLsb = () -> mainGetLsbFn.apply(lc.mainBus);
     Supplier<Integer> subGetLsb = () -> subGetLsbFn.apply(lc.subBus);
@@ -345,19 +346,10 @@ public class McdWordRamTest extends McdRegTestBase {
     }
 
     private void setWramMain2M() {
-        WramSetup ws = ctx.wramSetup;
-        if (ws.mode == _1M) {
-            subSetLsb.accept(subGetLsb.get() & ~4);
-            Assertions.assertEquals(_2M, ctx.wramSetup.mode);
-        }
-        //assign to main
-        subSetLsb.accept(RET_BIT_MASK);
-        Assertions.assertEquals(W_2M_MAIN, ctx.wramSetup);
-
-        Assertions.assertEquals(RET_BIT_MASK, mainGetLsb.get() & 3);
+        setWramMain2M(lc);
     }
 
-    public static void setWramMain2M(McdDeviceHelper.McdLaunchContext lc) {
+    public static void setWramMain2M(McdLaunchContext lc) {
         MegaCdMemoryContext ctx = lc.memoryContext;
         WramSetup ws = ctx.wramSetup;
         if (ws.mode == _1M) {
@@ -371,17 +363,22 @@ public class McdWordRamTest extends McdRegTestBase {
         Assertions.assertEquals(RET_BIT_MASK, mainGetLsbFn.apply(lc.mainBus) & 3);
     }
 
-    private void setWramSub2M() {
+    public static void setWramSub2M(McdLaunchContext lc) {
+        MegaCdMemoryContext ctx = lc.memoryContext;
         WramSetup ws = ctx.wramSetup;
         if (ws.mode == _1M) {
-            subSetLsb.accept(subGetLsb.get() & ~4);
+            subSetLsbFn.accept(lc.subBus, subGetLsbFn.apply(lc.subBus) & ~4);
             Assertions.assertEquals(_2M, ctx.wramSetup.mode);
         }
         //assign to sub
-        mainSetLsb.accept(DMNA_BIT_MASK);
+        mainSetLsbFn.accept(lc.mainBus, DMNA_BIT_MASK);
         Assertions.assertEquals(W_2M_SUB, ctx.wramSetup);
 
-        Assertions.assertEquals(DMNA_BIT_MASK, mainGetLsb.get() & 3);
+        Assertions.assertEquals(DMNA_BIT_MASK, mainGetLsbFn.apply(lc.mainBus) & 3);
+    }
+
+    private void setWramSub2M() {
+        setWramSub2M(lc);
     }
 
     /**
