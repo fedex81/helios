@@ -117,8 +117,18 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         address &= MD_PC_MASK;
         int res = size.getMask();
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
-//            assert memCtx.wramSetup.mode == WordRamMode._2M; //TODO mcd-verificator
-            res = memCtx.readWordRam(cpuType, address, size);
+            if (memCtx.wramSetup.mode == WordRamMode._2M) {
+                res = memCtx.readWordRam(cpuType, address, size);
+            } else { //TODO mcd-verificator, better fix
+                res = switch (size) {
+                    case BYTE -> readByteStriped(address);
+                    case WORD -> (readByteStriped(address) << 8) | readByteStriped(address + 1);
+                    case LONG -> {
+                        assert false;
+                        yield size.getMask();
+                    }
+                };
+            }
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
             res = memCtx.readWordRam(cpuType, address, size);
@@ -142,8 +152,17 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     public void write(int address, int data, Size size) {
         address &= MD_PC_MASK;
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
-//            assert memCtx.wramSetup.mode == WordRamMode._2M; //TODO mcd-verificator
-            memCtx.writeWordRam(cpuType, address, data, size);
+            if (memCtx.wramSetup.mode == WordRamMode._2M) {
+                memCtx.writeWordRam(cpuType, address, data, size);
+            } else { //TODO mcd-verificator, better fix
+                switch (size) {
+                    case BYTE -> writeByteStriped(address, data);
+                    case WORD -> {
+                        writeByteStriped(address, data >> 8);
+                        writeByteStriped(address + 1, data);
+                    }
+                }
+            }
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
             memCtx.writeWordRam(cpuType, address, data, size);
@@ -160,6 +179,25 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         } else {
             LogHelper.logWarnOnce(LOG, "S Unexpected write access: {} {}", th(address), size);
         }
+    }
+
+    private int readByteStriped(int address) {
+        byte[] wramBank = memCtx.wordRam01[memCtx.wramSetup.cpu == cpuType ? 0 : 1];
+        int addr = (address & MCD_WORD_RAM_1M_MASK) >> 1;
+        int shift = ((address + 1) & 1) << 2;
+        return (wramBank[addr] >> shift) & 0xF;
+    }
+
+    private void writeByteStriped(int address, int data) {
+        byte[] wramBank = memCtx.wordRam01[memCtx.wramSetup.cpu == cpuType ? 0 : 1];
+        int addr = (address & MCD_WORD_RAM_1M_MASK) >> 1;
+        int val = wramBank[addr];
+        if ((address & 1) == 0) {
+            val = (val & 0xF) | (data & 0xF) << 4;
+        } else {
+            val = (val & 0xF0) | (data & 0xF);
+        }
+        wramBank[addr] = (byte) val;
     }
 
     private int handleMegaCdExpRead(int address, Size size) {

@@ -53,7 +53,7 @@ public class SysUtil {
     public static final Map<SystemType, String[]> sysFileExtensionsMap = ImmutableMap.of(
             GENESIS, new String[]{".md", ".bin", SMD_INTERLEAVED_EXT},
             S32X, new String[]{".32x", ".bin", ".md"},
-            MEGACD, new String[]{".cue", ".bin"},
+            MEGACD, new String[]{".cue", ".bin", ".iso"},
             SG_1000, new String[]{".sg", ".sc"},
             COLECO, new String[]{".col"},
             MSX, new String[]{".rom"},

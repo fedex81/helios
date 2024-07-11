@@ -1,15 +1,14 @@
-package omegadrive.bus.megacd;
+package mcd;
 
-import mcd.McdDeviceHelper;
 import mcd.dict.MegaCdDict;
-import mcd.dict.MegaCdDict.SharedBitDef;
+import mcd.dict.MegaCdDict.*;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static mcd.dict.MegaCdDict.START_MCD_WORD_RAM_MODE1;
+import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdMemoryContext.WramSetup.W_2M_MAIN;
@@ -57,22 +56,6 @@ public class McdWordRam2Test extends McdRegTestBase {
     }
 
     //main can't take back access to wram until sub not release it
-
-    /**
-     * //main can't take back access to wram until sub not release it
-     * mcdWR8(0x8000, 0);
-     * val = ga->MEMMOD;
-     * ga->MEMMOD &= ~GA_MEMMOD_DMNA; //Main resets DMNA
-     * gVsync();
-     * if (val != ga->MEMMOD)return 0x04; //<- here
-     * mcdWR8(0x8000, 1);
-     * if (mcdRD8(0x8000) != 1)return 0x05;
-     * ga->MEMMOD |= GA_MEMMOD_DMNA;
-     * gVsync();
-     * if (val != ga->MEMMOD)return 0x06;
-     * mcdWR8(0x8000, 2);
-     * if (mcdRD8(0x8000) != 2)return 0x07;
-     */
     @Test
     public void testSwitch01() {
         assert ctx.wramSetup.mode == _2M;
@@ -80,9 +63,64 @@ public class McdWordRam2Test extends McdRegTestBase {
         int mainMemModeAddr = GenesisBusProvider.MEGA_CD_EXP_START +
                 MegaCdDict.RegSpecMcd.MCD_MEM_MODE.addr + 1;
         int val = mainCpuBus.read(mainMemModeAddr, Size.BYTE);
-        int newVal = val & ~(1 << SharedBitDef.DMNA.getBitPos()); //reset DMNA from MAIN
+        //reset DMNA from MAIN, ignored
+        int newVal = val & ~(SharedBitDef.DMNA.getBitMask());
         mainCpuBus.write(mainMemModeAddr, newVal, Size.BYTE);
         int val2 = mainCpuBus.read(mainMemModeAddr, Size.BYTE);
         Assertions.assertEquals(val, val2);
+    }
+
+    @Test
+    public void testWramSubReads() {
+        assert ctx.wramSetup.mode == _2M;
+        McdWordRamTest.setWramMain2M(lc);
+        mainCpuBus.write(START_MCD_WORD_RAM, 0x1234, Size.WORD);
+        mainCpuBus.write(START_MCD_WORD_RAM + 2, 0xABCD, Size.WORD);
+
+        //WR0        WR1                2M
+        //1234       ABCD               1234
+        //0000       0000               ABCD
+        //                              0000
+        //                              0000
+
+        McdWordRamTest.setWram1M_W0Main(lc);
+
+        //main reads the start of WR0 -> 1234
+        int res = mainCpuBus.read(START_MCD_WORD_RAM, Size.WORD);
+        Assertions.assertEquals(0x1234, res);
+
+        //sub reads the start of WR1 -> ABCD
+        res = subCpuBus.read(START_MCD_SUB_WORD_RAM_1M, Size.WORD);
+        Assertions.assertEquals(0xABCD, res);
+
+        //sub reads the start of 2M window -> 0x0A0B
+        res = subCpuBus.read(START_MCD_SUB_WORD_RAM_2M, Size.WORD);
+        Assertions.assertEquals(0x0A0B, res);
+
+        //sub reads the start+2 of 2M window -> 0x0C0D
+        res = subCpuBus.read(START_MCD_SUB_WORD_RAM_2M + 2, Size.WORD);
+        Assertions.assertEquals(0x0C0D, res);
+
+        for (int i = 0; i < 4; i++) {
+            subCpuBus.write(START_MCD_SUB_WORD_RAM_2M + i, 0xF0 + i, Size.BYTE);
+        }
+
+        for (int i = 0; i < 4; i++) {
+            res = subCpuBus.read(START_MCD_SUB_WORD_RAM_2M + i, Size.BYTE);
+            Assertions.assertEquals(i, res);
+        }
+
+        res = subCpuBus.read(START_MCD_SUB_WORD_RAM_1M, Size.WORD);
+        Assertions.assertEquals(0x0123, res);
+
+        for (int i = 0; i < 256; i++) {
+            subCpuBus.write(START_MCD_SUB_WORD_RAM_2M + i * 2 + 0, 0xF0 + (i >> 4), Size.BYTE);
+            subCpuBus.write(START_MCD_SUB_WORD_RAM_2M + i * 2 + 1, 0xF0 + i, Size.BYTE);
+        }
+
+        for (int i = 0; i < 256; i++) {
+            res = subCpuBus.read(START_MCD_SUB_WORD_RAM_1M + i, Size.BYTE);
+            Assertions.assertEquals(i, res);
+        }
     }
 }

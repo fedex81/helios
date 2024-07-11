@@ -1,4 +1,4 @@
-package omegadrive.bus.megacd;
+package mcd;
 
 import mcd.dict.MegaCdDict;
 import omegadrive.bus.model.GenesisBusProvider;

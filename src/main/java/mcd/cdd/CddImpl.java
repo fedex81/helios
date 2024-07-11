@@ -46,7 +46,7 @@ class CddImpl implements Cdd {
         interruptHandler = ih;
         cdc = c;
         playSupport = new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100);
-        setIoStatus(Stopped);
+        setIoStatus(NoDisc);
         checksum();
     }
 
@@ -124,7 +124,9 @@ class CddImpl implements Cdd {
             case MCD_CDD_COMM9 -> {
                 //Transmission Command 9
                 if ((addr & 1) == 1) { //unconfirmed
+                    logStatus(true);
                     cdd_process();
+                    logStatus(true);
                 }
             }
         }
@@ -167,9 +169,9 @@ class CddImpl implements Cdd {
     String prev = "";
 
     private void logStatus(boolean process) {
-        String stat = "XXCDD," + statusString(cddContext.statusRegs, cddContext.commandRegs) + (process ? " <-" : "");
+        String stat = "CDD," + statusString(cddContext.statusRegs, cddContext.commandRegs);
         if (!stat.equals(prev)) {
-            if (verbose) System.out.println(stat);
+            if (verbose) System.out.println(stat + (process ? " <-" : ""));
             prev = stat;
         }
     }
@@ -218,6 +220,7 @@ class CddImpl implements Cdd {
 
                 /* decode CD-ROM track sector */
                 cdc.cdc_decoder_update(cddContext.io.sector);
+                setSector(cddContext.io.sector + 1);
             } else {
                 /* check against audio track start index */
                 if (cddContext.io.sector >= etd.absoluteSectorStart) {
@@ -227,9 +230,9 @@ class CddImpl implements Cdd {
 
                 /* audio blocks are still sent to CDC as well as CD DAC/Fader */
                 cdc.cdc_decoder_update(cddContext.io.sector);
+                //stepCdda increases the sector
 //                cdc_decoder_update(0); //TODO check
             }
-            setSector(cddContext.io.sector + 1);
         } else if (cddContext.io.status == Scanning) {
             assert false;
         }
@@ -266,7 +269,7 @@ class CddImpl implements Cdd {
                     /* otherwise, check if RS2-RS8 need to be updated */
                     else if (cddContext.statusRegs[1] == 0x00) {
                         /* current absolute time */
-                        int lba = cddContext.io.sector + 150;
+                        int lba = hasMedia ? cddContext.io.sector + 150 : 0;
                         CueFileParser.toMSF(lba, msfHolder);
                         updateStatusesMsf(cddContext.statusRegs[1], (isAudio ? 0 : 1) << 2, msfHolder);
                     } else if (cddContext.statusRegs[1] == 0x01) {
@@ -548,7 +551,7 @@ class CddImpl implements Cdd {
             }
             /* Total length (MM:SS:FF) */
             case DiscCompletionTime -> {
-                int lba = extCueSheet.sectorEnd + 150;
+                int lba = hasMedia ? extCueSheet.sectorEnd + 150 : 0;
                 CueFileParser.toMSF(lba, msfHolder);
                 updateStatus(0, cddContext.io.status.ordinal());
                 updateStatusesMsf(request.ordinal(), 0, msfHolder);
@@ -556,7 +559,7 @@ class CddImpl implements Cdd {
             /* First & Last Track Numbers */
             case DiscTracks -> {
                 int firstTrack = 1;
-                int lastTrack = extCueSheet.numTracks;
+                int lastTrack = hasMedia ? extCueSheet.numTracks : 0;
                 updateStatus(0, cddContext.io.status.ordinal());
                 /* Drive Version (?) in RS6-RS7 */
                 int rs6 = 0, rs7 = 0;
@@ -646,14 +649,6 @@ class CddImpl implements Cdd {
         assert lba < 0;
         return 1;
     }
-
-    private void updateTrackIfLegal() {
-        int trackNow = inTrack(cddContext.io.sector);
-        if (trackNow > 0) {
-            setTrack(trackNow);
-        }
-    }
-
     private void setTrack(int track) {
         assert track > 0;
         if (track != cddContext.io.track) {

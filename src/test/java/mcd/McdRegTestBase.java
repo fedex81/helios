@@ -1,6 +1,5 @@
-package omegadrive.bus.megacd;
+package mcd;
 
-import mcd.McdDeviceHelper;
 import mcd.bus.MegaCdMainCpuBus;
 import mcd.bus.MegaCdSubCpuBus;
 import mcd.dict.MegaCdDict.RegSpecMcd;

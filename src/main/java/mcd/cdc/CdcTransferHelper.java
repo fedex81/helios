@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 
+import static mcd.cdc.CdcImpl.verbose;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.START_MCD_SUB_WORD_RAM_1M;
 import static mcd.dict.MegaCdDict.START_MCD_SUB_WORD_RAM_2M;
@@ -41,7 +42,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     @Override
     public void start() {
-        LOG.info("Transfer start");
+        if (verbose) LOG.info("Transfer start");
         CdcModel.CdcTransfer t = cdc.getContext().transfer;
         if (t.enable == 0) return;
         t.active = 1;
@@ -59,7 +60,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     @Override
     public void stop() {
-        LOG.info("Transfer stop");
+        if (verbose) LOG.info("Transfer stop");
         t.active = 0;
         t.busy = 0;
         t.ready = 0;
@@ -69,9 +70,10 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
     @Override
     public int read() {
 //        LOG.info("Transfer read");
+        //TODO bios has subCpu reading but t.ready goes to 0 and stays there
         if (t.ready == 0) return 0xFFFF;
         int data = ram.getShort(t.source);
-//        LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
+        if (verbose) LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
         t.source = (t.source + 2) & 0x3FFF;
         t.length -= 2;
         if (t.length <= 0) {
@@ -93,7 +95,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
                 int baseAddr = memoryContext.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M
                         ? START_MCD_SUB_WORD_RAM_1M : START_MCD_SUB_WORD_RAM_2M;
                 memoryContext.writeWordRamWord(SUB_M68K, baseAddr | t.address, data);
-                LOG.info("CDC,DMA_WRAM,wram[{}]={}", th(baseAddr | t.address), th(data));
+                if (verbose) LOG.info("CDC,DMA_WRAM,wram[{}]={}", th(baseAddr | t.address), th(data));
             }
             case 5 -> {  //PRG-RAM
                 memoryContext.writeProgRam(t.address, data, Size.WORD);
@@ -109,7 +111,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
                 }
             }
             default -> {
-                LOG.info("TODO CDC DMA mode: {}", t.destination);
+                LOG.warn("TODO CDC DMA mode: {}", t.destination);
                 assert false;
             }
         }
@@ -125,13 +127,13 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     private void writePcm(int address, int data) {
         McdPcm.pcm.write((PCM_START_WAVE_DATA_WINDOW + address) << 1, data, Size.BYTE);
-        LOG.info("CDC,DMA_PCM,pcm_ram[{}]={},srcAddrWord={},len={}",
+        if (verbose) LOG.info("CDC,DMA_PCM,pcm_ram[{}]={},srcAddrWord={},len={}",
                 th((PCM_START_WAVE_DATA_WINDOW + address) << 1), th(data & 0xFF), th(t.source), th(t.length));
     }
 
     @Override
     public void complete() {
-        LOG.info("Transfer complete");
+        if (verbose) LOG.info("Transfer complete");
         t.active = t.busy = t.ready = 0;
         t.completed = 1;
         cdc.getContext().irq.transfer.pending = 1;

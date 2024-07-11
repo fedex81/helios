@@ -1,4 +1,4 @@
-package omegadrive.bus.megacd;
+package mcd;
 
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;

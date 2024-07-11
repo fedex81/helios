@@ -1,4 +1,4 @@
-package omegadrive.bus.megacd;
+package mcd;
 
 import mcd.McdDeviceHelper.McdLaunchContext;
 import mcd.dict.MegaCdDict;
@@ -321,16 +321,21 @@ public class McdWordRamTest extends McdRegTestBase {
         setWramMain2M_NoChange();
     }
 
-    private void setWram1M_W0Main() {
+    public static void setWram1M_W0Main(McdLaunchContext lc) {
+        MegaCdMemoryContext ctx = lc.memoryContext;
         if (ctx.wramSetup.mode == _2M) {
             //SUB sets 1M
-            subSetLsb.accept(subGetLsb.get() | 4);
+            subSetLsbFn.accept(lc.subBus, subGetLsbFn.apply(lc.subBus) | 4);
             Assertions.assertEquals(_1M, ctx.wramSetup.mode);
         }
         if (ctx.wramSetup == W_1M_WR0_SUB) {
-            subSetLsb.accept(subGetLsb.get() & ~1);
+            subSetLsbFn.accept(lc.subBus, subGetLsbFn.apply(lc.subBus) & ~1);
         }
         Assertions.assertEquals(W_1M_WR0_MAIN, ctx.wramSetup);
+    }
+
+    private void setWram1M_W0Main() {
+        setWram1M_W0Main(lc);
     }
 
     private void setWram1M_W0Sub() {

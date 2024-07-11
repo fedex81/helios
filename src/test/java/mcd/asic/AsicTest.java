@@ -1,8 +1,8 @@
 package mcd.asic;
 
+import mcd.McdRegTestBase;
+import mcd.McdWordRamTest;
 import mcd.dict.MegaCdMemoryContext;
-import omegadrive.bus.megacd.McdRegTestBase;
-import omegadrive.bus.megacd.McdWordRamTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

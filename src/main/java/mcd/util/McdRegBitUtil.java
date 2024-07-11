@@ -11,6 +11,7 @@ import java.util.Arrays;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
+import static omegadrive.util.Util.getBitFromByte;
 
 /**
  * Federico Berti
@@ -48,5 +49,9 @@ public class McdRegBitUtil {
         assert !(def instanceof SharedBitDef);
         assert def.getCpu() == cpu;
         setBitInternal(ctx.getGateSysRegs(cpu), def.getRegBytePos(), def.getBitPos(), data);
+    }
+
+    public static int getInvertedBitFromByte(byte b, int bitPos) {
+        return ~getBitFromByte(b, bitPos) & 1;
     }
 }

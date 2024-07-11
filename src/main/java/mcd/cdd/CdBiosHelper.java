@@ -26,12 +26,15 @@ public class CdBiosHelper {
     public static final String BURAM = "_BURAM";
 
     public static final String NO_ENTRY_POINT = "NONE";
+    public static final String NO_FUNCTION = "ERROR";
     private static final Map<String, Integer> cdBiosEntryPointMap = new HashMap<>();
     private static final Map<Integer, String> invCdBiosEntryPointMap;
     private static final Table<Integer, Integer, String> cdFunTable = HashBasedTable.create();
     private static final Table<String, Integer, Integer> memRegionTable = HashBasedTable.create();
     private static final Map<Integer, CdMemRegion> memRegionMap = new HashMap<>();
     private static final int LOW_ENTRY, HIGH_ENTRY;
+
+    public static final boolean enabled;
 
     static class CdMemRegion {
         public String name;
@@ -243,10 +246,11 @@ public class CdBiosHelper {
         invCdBuramFunMap.entrySet().stream().forEach(e -> cdFunTable.put(cdBiosEntryPointMap.get(BURAM), e.getKey(), e.getValue()));
         HIGH_ENTRY = invCdBiosEntryPointMap.keySet().stream().max(Integer::compareTo).orElseThrow();
         LOW_ENTRY = invCdBiosEntryPointMap.keySet().stream().min(Integer::compareTo).orElseThrow();
+        enabled = Boolean.valueOf(System.getProperty("68k.debug", "false"));
     }
 
     public static String getFunctionName(int pc, int code) {
-        return cdFunTable.row(pc).getOrDefault(code, "ERROR");
+        return cdFunTable.row(pc).getOrDefault(code, NO_FUNCTION);
     }
 
     public static String getCdBiosEntryPointIfAny(int pc) {
@@ -260,7 +264,8 @@ public class CdBiosHelper {
                 LOG.warn("calling sub_bios entry point {}({})", res, th(pc));
                 Map<Integer, String> rowFunc = cdFunTable.row(pc);
                 if (rowFunc != null && !rowFunc.isEmpty()) {
-                    String fname = CdBiosHelper.getFunctionName(pc, cpu.getDataRegisterLong(0));
+                    String fname = CdBiosHelper.getFunctionName(pc, cpu.getDataRegisterByte(0));
+                    assert !NO_FUNCTION.equals(fname);
                     handleCdBiosCalls(fname, cpu);
                     LOG.warn("calling fn {} #{}({})", res, fname, th(pc));
                 }
@@ -290,6 +295,9 @@ public class CdBiosHelper {
     }
 
     public static void checkMemRegion(byte[] data, int address) {
+        if (!enabled) {
+            return;
+        }
         CdMemRegion r = memRegionMap.get(address);
         if (r != null) {
             printMemRegion(data, r);
@@ -302,7 +310,9 @@ public class CdBiosHelper {
     private static void printMemRegion(byte[] data, CdMemRegion r) {
         MemView.fillFormattedString(sb, data, r.startInclusive, r.endInclusive);
         int hc = sb.toString().hashCode();
-        if (lastCdbStatHash[r.startInclusive] != hc) {
+        //print first write or when changed
+        boolean print = lastCdbStatHash[r.startInclusive] == 0 || lastCdbStatHash[r.startInclusive] != hc;
+        if (print) {
             LOG.info("{} update\n{}", r, sb);
             lastCdbStatHash[r.startInclusive] = hc;
         }

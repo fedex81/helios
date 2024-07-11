@@ -97,11 +97,15 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         }
         if (currentPC == 0xf20 || currentPC == 0xf32) {
             LOG.warn("BIOS US error: {}, PC:{}", "Abort CDD transfers", th(currentPC));
-//            assert false;
+            assert false;
         } else if (opcode == 0x44C1) { //move #1, ccr
             LOG.warn("BIOS US error: {}, PC:{}", "setErrorFlag(macro)", th(currentPC));
-//            assert false;
+            assert false;
         }
+//        else if (currentPC == 0xebe && prevPc != 0xf4c) {
+//            LOG.warn("BIOS US error: {}, PC:{}", "cddCommand checksum error", th(currentPC));
+//            assert false;
+//        }
 //        if(currentPC == 0xcac){ //getTocForTrack
 //            System.out.println("here");
 //            fastDebug.resetWrapper();

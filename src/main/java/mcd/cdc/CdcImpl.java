@@ -22,6 +22,7 @@ import static mcd.cdd.CdModel.SectorSize.S_2048;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_STOPWATCH;
+import static mcd.util.McdRegBitUtil.getInvertedBitFromByte;
 import static omegadrive.util.ArrayEndianUtil.getByteInWordBE;
 import static omegadrive.util.ArrayEndianUtil.setByteInWordBE;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -40,7 +41,7 @@ public class CdcImpl implements Cdc {
 
     private final static Logger LOG = LogHelper.getLogger(CdcImpl.class.getSimpleName());
 
-    private final boolean verbose = true;
+    protected static final boolean verbose = true;
     private final MegaCdMemoryContext memoryContext;
     private final McdSubInterruptHandler interruptHandler;
     private final CdcContext cdcContext;
@@ -422,9 +423,6 @@ public class CdcImpl implements Cdc {
 
     @Override
     public void cdc_decoder_update(int sector) {
-        if (sector < 0) {
-            return;
-        }
         /* data decoding enabled ? */
         if (cdcContext.decoder.enable > 0) {
             /* update HEADx registers with current block header */
@@ -484,6 +482,9 @@ public class CdcImpl implements Cdc {
                 ram.put((byte) cdcContext.header.frame);
                 ram.put((byte) cdcContext.header.mode);
                 offset += 4;
+                if (sector < 0) {
+                    return;
+                }
 
                 /* check decoded block mode */
                 if (cdcContext.header.mode == 0x01) {
@@ -616,13 +617,6 @@ public class CdcImpl implements Cdc {
 
     @Override
     public void step75hz() {
-        if ((cdcContext.irq.decoder.enable & cdcContext.decoder.enable & cdcContext.control.syncInterrupt) > 0) {
-            cdcContext.irq.decoder.pending = 1;
-            poll();
-        }
-    }
-
-    public static int getInvertedBitFromByte(byte b, int bitPos) {
-        return ~getBitFromByte(b, bitPos) & 1;
+        assert false;
     }
 }
