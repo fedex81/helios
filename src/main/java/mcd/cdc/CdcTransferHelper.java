@@ -69,16 +69,34 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     @Override
     public int read() {
-//        LOG.info("Transfer read");
-        //TODO bios has subCpu reading but t.ready goes to 0 and stays there
-        if (t.ready == 0) return 0xFFFF;
-        int data = ram.getShort(t.source);
-        if (verbose) LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
-        t.source = (t.source + 2) & 0x3FFF;
-        t.length -= 2;
-        if (t.length <= 0) {
-            t.length = 0;
-            complete();
+        int data;
+        switch (t.destination) {
+            case 2, 3 -> {
+                data = ram.getShort(t.source);
+                if (verbose) LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
+                t.source = (t.source + 2) & 0x3FFF;
+                t.length -= 2;
+                t.ready = 1;
+                cdc.recalcRegValue(MCD_CDC_MODE);
+                if (t.length <= 0) {
+                    t.length = 0;
+                    t.active = t.busy = t.ready = 0;
+                    t.completed = 1;
+                    cdc.recalcRegValue(MCD_CDC_MODE);
+//                    complete();
+                }
+            }
+            default -> { //TODO check
+                if (t.ready == 0) return 0xFFFF;
+                data = ram.getShort(t.source);
+                if (verbose) LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
+                t.source = (t.source + 2) & 0x3FFF;
+                t.length -= 2;
+                if (t.length <= 0) {
+                    t.length = 0;
+                    complete();
+                }
+            }
         }
         return data;
     }

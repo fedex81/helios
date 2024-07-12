@@ -278,7 +278,7 @@ public class CdBiosHelper {
             int memAddr = cpu.getAddrRegisterLong(0);
             int firstSector = cpu.readMemoryLong(memAddr);
             int length = cpu.readMemoryLong(memAddr + 4);
-            LogHelper.logWarnOnceForce(LOG, "CDBIOS {}, firstSector {}, length {}", fname, firstSector, length);
+            LOG.warn("CDBIOS {}, firstSector {}, length {}", fname, firstSector, length);
         }
     }
 

@@ -49,6 +49,7 @@ public class CdcImpl implements Cdc {
     private final CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();
 
     private CdModel.ExtendedTrackData track01;
+    private ExtendedCueSheet cueSheet;
 
     private ByteBuffer ram;
 
@@ -143,13 +144,14 @@ public class CdcImpl implements Cdc {
                 yield size.getMask();
             }
         };
-        if (verbose) LOG.info("CDC,regR,{},{},{},{}", th(address), res, size, regSpec);
+        if (verbose) LOG.info("CDC,regR,{},{},{},{}", th(address), th(res), size, regSpec);
         return res;
     }
 
     @Override
     public void setMedia(ExtendedCueSheet extCueSheet) {
-        track01 = extCueSheet.extTracks.get(0);
+        cueSheet = extCueSheet;
+        track01 = cueSheet.extTracks.get(0);
         hasMedia = true;
         assert track01 != null && track01 != CdModel.ExtendedTrackData.NO_TRACK;
     }
@@ -493,6 +495,7 @@ public class CdcImpl implements Cdc {
                     cdd_read_data(sector, offset, track01);
                     offset += track01.trackDataType.size.s_size;
                 } else {
+                    assert false;
 //                    /* check if CD-ROM Mode 2 decoding is enabled */
 //                    if (cdc.ctrl[1] & BIT_MODRQ)
                     if (cdcContext.control.mode > 0) {
@@ -544,10 +547,12 @@ public class CdcImpl implements Cdc {
     private void cdd_read_data(int sector, int offset, CdModel.ExtendedTrackData track) {
         /* only allow reading (first) CD-ROM track sectors */
         if (track.trackDataType != CdModel.TrackDataType.AUDIO && sector >= 0) {
-            if (track.trackDataType.size == S_2048) {
+            if (cueSheet.romFileType == CdModel.RomFileType.ISO) {
+                assert track.trackDataType == CdModel.TrackDataType.MODE1_2048;
                 /* read Mode 1 user data (2048 bytes) */
                 doFileRead(track01.file, sector * S_2048.s_size, S_2048.s_size, offset);
-            } else {
+            } else if (cueSheet.romFileType == CdModel.RomFileType.BIN_CUE) { //TODO
+                assert false;
                 /* skip block sync pattern (12 bytes) + block header (4 bytes) then read Mode 1 user data (2048 bytes) */
 //                    cdStreamSeek(cdd.toc.tracks[0].fd, (cdd.lba * 2352) + 12 + 4, SEEK_SET);
 //                    cdStreamRead(dst, 2048, 1, cdd.toc.tracks[0].fd);

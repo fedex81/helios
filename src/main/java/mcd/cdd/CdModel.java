@@ -10,6 +10,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import static mcd.cdd.CdModel.SectorSize.S_2048;
 import static mcd.cdd.CdModel.SectorSize.S_2352;
 import static mcd.cdd.CdModel.TrackContent.T_AUDIO;
 import static mcd.cdd.CdModel.TrackContent.T_DATA;
@@ -58,6 +59,7 @@ public class CdModel {
      */
     public enum TrackDataType {
         MODE1_2352(MODE1, S_2352, T_DATA),
+        MODE1_2048(MODE1, S_2048, T_DATA), //ISO
         AUDIO(MODE1, S_2352, T_AUDIO);
 
         public final TrackMode mode;
@@ -74,6 +76,8 @@ public class CdModel {
             String s = spec.toUpperCase();
             if (s.contains(MODE1.name()) && s.contains(S_2352.s_size + "")) {
                 return MODE1_2352;
+            } else if (s.contains(MODE1.name()) && s.contains(S_2048.s_size + "")) {
+                return MODE1_2048;
             } else if (s.equals(AUDIO.name())) {
                 return AUDIO;
             }

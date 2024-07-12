@@ -72,7 +72,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
     @Override
     public int runInstruction() {
         currentPC = m68k.getPC() & MD_PC_MASK; //needs to be set
-        opcode = m68k.getPrefetchWord();
+        opcode = m68k.readMemoryWord(currentPC);
         fastDebug.printDebugMaybe();
         //pc went off a cliff
         if (currentPC == opcode && opcode == 0) {
@@ -98,8 +98,8 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         if (currentPC == 0xf20 || currentPC == 0xf32) {
             LOG.warn("BIOS US error: {}, PC:{}", "Abort CDD transfers", th(currentPC));
             assert false;
-        } else if (opcode == 0x44C1) { //move #1, ccr
-            LOG.warn("BIOS US error: {}, PC:{}", "setErrorFlag(macro)", th(currentPC));
+        } else if (currentPC == 0x197a) {
+            LOG.warn("BIOS US error: {}, PC:{}", "_cdctrn timeout", th(currentPC));
             assert false;
         }
 //        else if (currentPC == 0xebe && prevPc != 0xf4c) {
