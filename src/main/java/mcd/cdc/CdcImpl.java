@@ -2,10 +2,12 @@ package mcd.cdc;
 
 import mcd.bus.McdSubInterruptHandler;
 import mcd.cdd.CdModel;
+import mcd.cdd.CdModel.ExtendedTrackData;
 import mcd.cdd.ExtendedCueSheet;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.sound.msumd.CueFileParser;
+import omegadrive.sound.msumd.CueFileParser.MsfHolder;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -19,10 +21,12 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDC;
 import static mcd.cdc.CdcModel.*;
 import static mcd.cdd.CdModel.SECTOR_2352;
 import static mcd.cdd.CdModel.SectorSize.S_2048;
+import static mcd.cdd.CdModel.SectorSize.S_2352;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_STOPWATCH;
 import static mcd.util.McdRegBitUtil.getInvertedBitFromByte;
+import static omegadrive.sound.msumd.CueFileParser.toBcdByte;
 import static omegadrive.util.ArrayEndianUtil.getByteInWordBE;
 import static omegadrive.util.ArrayEndianUtil.setByteInWordBE;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -46,9 +50,9 @@ public class CdcImpl implements Cdc {
     private final McdSubInterruptHandler interruptHandler;
     private final CdcContext cdcContext;
 
-    private final CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();
+    private final MsfHolder msfHolder = new MsfHolder();
 
-    private CdModel.ExtendedTrackData track01;
+    private ExtendedTrackData track01;
     private ExtendedCueSheet cueSheet;
 
     private ByteBuffer ram;
@@ -153,7 +157,7 @@ public class CdcImpl implements Cdc {
         cueSheet = extCueSheet;
         track01 = cueSheet.extTracks.get(0);
         hasMedia = true;
-        assert track01 != null && track01 != CdModel.ExtendedTrackData.NO_TRACK;
+        assert track01 != null && track01 != ExtendedTrackData.NO_TRACK;
     }
 
     private int controllerRead() {
@@ -430,9 +434,9 @@ public class CdcImpl implements Cdc {
             /* update HEADx registers with current block header */
             CueFileParser.toMSF(sector + 150, msfHolder);
             //bcd format
-            cdcContext.header.minute = ((msfHolder.minute / 10) << 4) | (msfHolder.minute % 10);
-            cdcContext.header.second = ((msfHolder.second / 10) << 4) | (msfHolder.second % 10);
-            cdcContext.header.frame = ((msfHolder.frame / 10) << 4) | (msfHolder.frame % 10);
+            cdcContext.header.minute = toBcdByte.apply(msfHolder.minute);
+            cdcContext.header.second = toBcdByte.apply(msfHolder.second);
+            cdcContext.header.frame = toBcdByte.apply(msfHolder.frame);
             //cdd.toc.tracks[cdd.index].type;
             /**
              * #define TYPE_AUDIO 0x00
@@ -442,7 +446,6 @@ public class CdcImpl implements Cdc {
             cdcContext.header.mode = track01.trackDataType == CdModel.TrackDataType.AUDIO ? 0 : 1;
             /* set !VALST */
             cdcContext.decoder.valid = 1;
-//            cdc.stat[3] = 0x00;
 
             /* pending decoder interrupt */
             cdcContext.irq.decoder.pending = 1;
@@ -463,14 +466,11 @@ public class CdcImpl implements Cdc {
             }
 
             /* buffer RAM write enabled ? */
-//            if (cdc.ctrl[0] & BIT_WRRQ)
             if (cdcContext.control.writeRequest > 0) {
                 int offset;
                 /* increment block pointer  */
-//                cdc.pt.w += 2352;
                 transfer.pointer = (transfer.pointer + SECTOR_2352);
                 /* increment write address */
-//                cdc.wa.w += 2352;
                 transfer.target = (transfer.target + SECTOR_2352);
 
                 /* CDC buffer address */
@@ -478,7 +478,6 @@ public class CdcImpl implements Cdc {
                 ram.position(offset);
 
                 /* write current block header to RAM buffer (4 bytes) */
-//                *(uint32 *)(cdc.ram + offset) = header;
                 ram.put((byte) cdcContext.header.minute);
                 ram.put((byte) cdcContext.header.second);
                 ram.put((byte) cdcContext.header.frame);
@@ -493,49 +492,8 @@ public class CdcImpl implements Cdc {
                     assert track01.trackDataType != CdModel.TrackDataType.AUDIO;
                     /* write Mode 1 user data to RAM buffer (2048 bytes) */
                     cdd_read_data(sector, offset, track01);
-                    offset += track01.trackDataType.size.s_size;
                 } else {
-                    assert false;
-//                    /* check if CD-ROM Mode 2 decoding is enabled */
-//                    if (cdc.ctrl[1] & BIT_MODRQ)
-                    if (cdcContext.control.mode > 0) {
-                        assert track01.trackDataType == CdModel.TrackDataType.AUDIO;
-                        //Mode2, CD_AUDIO
-                        cdd_read_data(sector, offset, track01);
-                        offset += 2328;
-                    } else {
-                        assert false : "MODE 2";
-                    }
-//                    {
-//                        /* update HEADx registers with current block sub-header & write Mode 2 user data to RAM buffer (max 2328 bytes) */
-//                        cdd_read_data(cdc.ram + offset + 8, cdc.head[1]);
-//
-//                        /* write current block sub-header to RAM buffer (4 bytes x 2) */
-//          *(uint32 *)(cdc.ram + offset) = *(uint32 *)(cdc.head[1]);
-//          *(uint32 *)(cdc.ram + offset + 4) = *(uint32 *)(cdc.head[1]);
-//                        offset += 2336;
-//                    }
-//                    else
-//                    {
-//                        /* update HEADx registers with current block sub-header & write Mode 2 user data to RAM buffer (max 2328 bytes) */
-//                        /* NB: when Mode 2 decoding is disabled, sub-header is apparently not written to RAM buffer (required by Wonder Library) */
-//                        cdd_read_data(cdc.ram + offset, cdc.head[1]);
-//                        offset += 2328;
-//                    }
-//
-//                    /* set STAT2 register FORM bit according to sub-header FORM bit when CTRL0 register AUTORQ bit is set */
-//                    if (cdc.ctrl[0] & BIT_AUTORQ)
-//                    {
-//                        cdc.stat[2] = (cdc.ctrl[1] & BIT_MODRQ) | ((cdc.head[1][2] & 0x20) >> 3);
-//                    }
-                }
-
-                /* take care of buffer overrun */
-                if (offset > 0x4000) {
-                    /* data should be written at the start of buffer */
-//                    memcpy(cdc.ram, cdc.ram + 0x4000, offset - 0x4000);
-//                    assert false;
-                    LOG.error("buffer overrun : {}", th(offset));
+                    assert false : "MODE 2";
                 }
             }
         }
@@ -544,20 +502,22 @@ public class CdcImpl implements Cdc {
     /**
      * Only reads DATA tracks
      */
-    private void cdd_read_data(int sector, int offset, CdModel.ExtendedTrackData track) {
+    private void cdd_read_data(int sector, int offset, ExtendedTrackData track) {
         /* only allow reading (first) CD-ROM track sectors */
         if (track.trackDataType != CdModel.TrackDataType.AUDIO && sector >= 0) {
             if (cueSheet.romFileType == CdModel.RomFileType.ISO) {
                 assert track.trackDataType == CdModel.TrackDataType.MODE1_2048;
                 /* read Mode 1 user data (2048 bytes) */
-                doFileRead(track01.file, sector * S_2048.s_size, S_2048.s_size, offset);
+                int seekPos = sector * S_2048.s_size;
+                doFileRead(track.file, seekPos, S_2048.s_size, offset);
             } else if (cueSheet.romFileType == CdModel.RomFileType.BIN_CUE) { //TODO
-                assert false;
                 /* skip block sync pattern (12 bytes) + block header (4 bytes) then read Mode 1 user data (2048 bytes) */
+                assert track.trackDataType.size == S_2352;
+                int seekPos = (sector * track.trackDataType.size.s_size) + 12 + 4;
+                checkMode1Data(track, msfHolder, seekPos);
+                doFileRead(track.file, seekPos, S_2048.s_size, offset);
 //                    cdStreamSeek(cdd.toc.tracks[0].fd, (cdd.lba * 2352) + 12 + 4, SEEK_SET);
 //                    cdStreamRead(dst, 2048, 1, cdd.toc.tracks[0].fd);
-                assert track.trackDataType.size.s_size == SECTOR_2352;
-                doFileRead(track01.file, sector * SECTOR_2352 + 12 + 4, S_2048.s_size, offset);
             }
             LOG.info("Decoding data track sector: {}", sector);
         }
@@ -570,7 +530,7 @@ public class CdcImpl implements Cdc {
             if (ramOffset + readChunkSize >= RAM_SIZE) {
                 System.out.println("here");
             }
-            LOG.info(ramOffset + "," + readChunkSize + "," + RAM_SIZE);
+            if (verbose) LOG.info(th(ramOffset) + "," + th(seekPos) + "," + readChunkSize);
             int len = Math.min(RAM_SIZE - ramOffset, readChunkSize);
             int readN = file.read(ram.array(), ramOffset, len);
             assert readN == len;
@@ -589,18 +549,24 @@ public class CdcImpl implements Cdc {
     static final byte[] expSync = {0, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
             (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, 0};
 
-    private boolean checkMode1(CueFileParser.MsfHolder holder, int syncPos, int headerPos) {
-        int[] header = new int[4];
+    private boolean checkMode1Data(ExtendedTrackData track, MsfHolder holder, int dataSeekPos) {
+        byte[] header = new byte[4];
         byte[] syncHeader = new byte[12];
-        for (int i = 0; i < header.length; i++) {
-            header[i] = ram.get((headerPos + i) & 0x3FFF);
+        boolean ok = false;
+        try {
+            track.file.seek(dataSeekPos - 16);
+            int readN = track.file.read(syncHeader, 0, syncHeader.length);
+            assert readN == syncHeader.length;
+            readN = track.file.read(header, 0, header.length);
+            assert readN == header.length;
+            ok = header[0] == holder.minute && header[1] == holder.second
+                    && header[2] == holder.frame && header[3] == 1; //MODE1
+            ok &= Arrays.equals(expSync, syncHeader);
+        } catch (Exception e) {
+            LOG.error("decode error: {}", e.getMessage());
+            e.printStackTrace();
+            assert false;
         }
-        for (int i = 0; i < syncHeader.length; i++) {
-            syncHeader[i] = ram.get((syncPos + i) & 0x3FFF);
-        }
-        boolean ok = header[0] == holder.minute && header[1] == holder.second
-                && header[2] == holder.frame && header[3] == 1; //MODE1
-        ok &= Arrays.equals(expSync, syncHeader);
         return ok;
     }
 

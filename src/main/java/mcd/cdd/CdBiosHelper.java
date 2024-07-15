@@ -203,6 +203,9 @@ public class CdBiosHelper {
         addToMemRegion("cdcStatus", 0x5a38, 2);
         addToMemRegion("cdcFrameHeader", 0x5a3a, 4);
         addToMemRegion("cdcStat0", 0x5a40, 1);
+        addToMemRegion("cdcStat1", 0x5a41, 1);
+        addToMemRegion("cdcStat2", 0x5a42, 1);
+        addToMemRegion("cdcStat3", 0x5a43, 1);
         addToMemRegion("cdcRingBuffer", 0x5a44, 60); //??
 
         addToMemRegion("cdbStat", 0x5a80, 4);
@@ -239,6 +242,8 @@ public class CdBiosHelper {
         addToMemRegion("frameCheckValue", 0x5b52, 1);
 
         addToMemRegion("vBlankFlag", 0x5ea4, 1);
+
+        addToMemRegion("discType", 0x833C + 0x42, 1);
 
         invCdBiosEntryPointMap = ImmutableBiMap.copyOf(cdBiosEntryPointMap).inverse();
         invCdBiosFunMap.entrySet().stream().forEach(e -> cdFunTable.put(cdBiosEntryPointMap.get(CDBIOS), e.getKey(), e.getValue()));
@@ -304,7 +309,7 @@ public class CdBiosHelper {
         }
     }
 
-    private static int[] lastCdbStatHash = new int[0x6000];
+    private static int[] lastCdbStatHash = new int[0xA000];
     private static final StringBuilder sb = new StringBuilder();
 
     private static void printMemRegion(byte[] data, CdMemRegion r) {

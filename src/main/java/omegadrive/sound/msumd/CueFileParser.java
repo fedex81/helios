@@ -27,11 +27,17 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.text.NumberFormat;
+import java.util.function.Function;
 
 public class CueFileParser {
     private static final Logger LOG = LogHelper.getLogger(CueFileParser.class.getSimpleName());
     public static final int MAX_TRACKS = 100; //0-99
     static final int SECTOR_SIZE_BYTES = 2352;
+
+    public static final Function<Integer, Integer> toBcdByte = n -> {
+        assert n >= 0 && n < 80;
+        return (((n / 10) << 4) | (n % 10));
+    };
 
     static final NumberFormat msfFormat;
 
@@ -67,16 +73,6 @@ public class CueFileParser {
     public static int toSector(int mH, int mL, int sH, int sL, int fH, int fL) {
         return toSector(mH * 10 + mL, sH * 10 + sL, fH * 10 + fL);
     }
-
-    public static int toMSF_BCD(int sector) {
-        int f = sector % 75;
-        sector /= 75;
-        int s = sector % 60;
-        sector /= 60;
-        int m = sector;
-        return (toBCD(m) << 16) | (toBCD(s) << 8) | toBCD(f);
-    }
-
     public static void toMSF(int sector, MsfHolder h) {
         h.frame = sector % 75;
         sector /= 75;
@@ -84,9 +80,4 @@ public class CueFileParser {
         sector /= 60;
         h.minute = sector;
     }
-
-    public static int toBCD(int x) {
-        return (x % 10) + ((x / 10) << 4);
-    }
-
 }

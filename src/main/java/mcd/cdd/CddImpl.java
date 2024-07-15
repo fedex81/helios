@@ -60,7 +60,7 @@ class CddImpl implements Cdd {
         }
 
         setIoStatus(ReadingTOC);
-        setSector(150); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
+        setSector(-150); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
         cddContext.io.track = cddContext.io.sample = cddContext.io.tocRead = 0;
         cdc.setMedia(extCueSheet);
         LOG.info("Using disc: {}", extCueSheet);
@@ -210,14 +210,6 @@ class CddImpl implements Cdd {
             boolean isDataTrack = etd.trackDataType != CdModel.TrackDataType.AUDIO;
             if (isDataTrack) {
                 /* CD-ROM sector header */
-                int[] header = new int[4];
-                int msf = cddContext.io.sector + 150;
-                CueFileParser.toMSF(msf, msfHolder);
-                header[0] = msfHolder.minute;
-                header[1] = msfHolder.second;
-                header[2] = msfHolder.frame;
-                header[3] = CddControl_DM_bit.DATA_1.ordinal();
-
                 /* decode CD-ROM track sector */
                 cdc.cdc_decoder_update(cddContext.io.sector);
                 setSector(cddContext.io.sector + 1);
@@ -229,11 +221,19 @@ class CddImpl implements Cdd {
                 }
 
                 /* audio blocks are still sent to CDC as well as CD DAC/Fader */
-                cdc.cdc_decoder_update(cddContext.io.sector);
+                cdc.cdc_decoder_update(0);
                 //stepCdda increases the sector
-//                cdc_decoder_update(0); //TODO check
             }
-        } else if (cddContext.io.status == Scanning) {
+        } else {
+            /* CDC decoder is still running while disc is not being read (fixes MCD-verificator CDC Flags Test #30) */
+            cdc.cdc_decoder_update(0);
+        }
+        int nt = inTrack(cddContext.io.sector);
+        if (cddContext.io.sector >= 0 && nt != cddContext.io.track) {
+            assert false;
+        }
+
+        if (cddContext.io.status == Scanning) {
             assert false;
         }
     }
@@ -335,6 +335,9 @@ class CddImpl implements Cdd {
 
                 /* get track index */
                 index = inTrack(cddContext.io.sector);
+                if (index == 0) { //sector < 0, use track 1
+                    index = 1;
+                }
                 CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, index);
                 /* audio track ? */
                 if (ExtendedCueSheet.isAudioTrack(extCueSheet, index)) {
@@ -395,6 +398,9 @@ class CddImpl implements Cdd {
 
                 /* get current track index */
                 index = inTrack(cddContext.io.sector);
+                if (index == 0) { //sector < 0, use track 1
+                    index = 1;
+                }
                 CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, index);
 
                 /* audio track ? */
@@ -585,6 +591,7 @@ class CddImpl implements Cdd {
                 updateStatus(0, cddContext.io.status.ordinal());
                 /* no error */
                 updateStatuses(request.ordinal(), 0, 0, 0, 0, 0, 0, 0);
+                assert false;
             }
             default -> {
                 assert false;
@@ -647,17 +654,16 @@ class CddImpl implements Cdd {
             }
         }
         assert lba < 0;
-        return 1;
+        return 0;
     }
     private void setTrack(int track) {
         assert track > 0;
         if (track != cddContext.io.track) {
             if (verbose) LOG.info("Track changed: {} -> {}", cddContext.io.track, track);
             cddContext.io.track = track;
-            //set D/M bit: 0 = MUSIC, 1 = DATA
-            int val = ExtendedCueSheet.isAudioTrack(extCueSheet, track) ? 0 : 1;
-            assert memoryContext.getRegBuffer(CpuDeviceAccess.SUB_M68K, MCD_CDD_CONTROL) == memoryContext.commonGateRegsBuf;
-            setBit(memoryContext.commonGateRegsBuf, MCD_CDD_CONTROL.addr, 8, val, Size.WORD);
+            CddControl_DM_bit bit = ExtendedCueSheet.isAudioTrack(extCueSheet, track) ?
+                    CddControl_DM_bit.MUSIC_0 : CddControl_DM_bit.DATA_1;
+            setDataOrMusicBit(bit);
         }
     }
 

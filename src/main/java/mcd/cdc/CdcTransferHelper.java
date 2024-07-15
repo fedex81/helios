@@ -13,7 +13,6 @@ import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.START_MCD_SUB_WORD_RAM_1M;
 import static mcd.dict.MegaCdDict.START_MCD_SUB_WORD_RAM_2M;
 import static mcd.pcm.McdPcm.PCM_START_WAVE_DATA_WINDOW;
-import static omegadrive.util.ArrayEndianUtil.setByteInWordBE;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.th;
 
@@ -52,8 +51,6 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
         t.completed = 0;
         CdcModel.CdcContext ctx = cdc.getContext();
         ctx.irq.transfer.pending = 0;
-        /* clear DBCH bits 4-7 */
-        ctx.transfer.length = setByteInWordBE(ctx.transfer.length, 0, 0);
         cdc.recalcRegValue(MCD_CDC_MODE);
 //        cdc.poll(); //TODO gengx not using it
     }
@@ -80,10 +77,8 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
                 cdc.recalcRegValue(MCD_CDC_MODE);
                 if (t.length <= 0) {
                     t.length = 0;
-                    t.active = t.busy = t.ready = 0;
-                    t.completed = 1;
-                    cdc.recalcRegValue(MCD_CDC_MODE);
-//                    complete();
+                    assert t.completed == 0;
+                    complete();
                 }
             }
             default -> { //TODO check
