@@ -181,7 +181,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private int readBiosData(int address, Size size) {
         address &= MCD_BOOT_ROM_MASK;
         if (address >= 0x70 && address < 0x74) {
-            assert size == Size.LONG && address == 0x70; //LONG read on 0x72 not supported
+            assert size == Size.LONG ? address == 0x70 : true; //LONG read on 0x72 not supported
             return Util.readData(memCtx.writeableHint, address & 3, size);
         }
         return readBuffer(bios, address, size);
