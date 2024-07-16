@@ -55,6 +55,7 @@ public class MegaCdMemoryContext implements Serializable {
     public final byte[][] sysGateRegs;
     public final byte[][] wordRam01 = new byte[2][1];
 
+    public final static int WRITABLE_HINT_UNUSED = 0xFFFF_FFFF;
     public final byte[] writeableHint = {(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
 
     public transient final ByteBuffer[] sysGateRegsBuf;

@@ -16,6 +16,7 @@ import java.nio.ByteBuffer;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
+import static mcd.dict.MegaCdMemoryContext.WRITABLE_HINT_UNUSED;
 import static mcd.dict.MegaCdMemoryContext.WramSetup;
 import static mcd.util.McdRegBitUtil.setSharedBit;
 import static omegadrive.util.BufferUtil.*;
@@ -106,12 +107,20 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
         int res = size.getMask();
         if (enableMCDBus) {
+            if (address >= 0x70 && address <= 0x74) {
+                assert size == Size.LONG ? address == 0x70 : true; //LONG read on 0x72 not supported
+                int wh = Util.readData(memCtx.writeableHint, 0, Size.LONG);
+                //only used if it has been set, 240p suite bios crc check
+                if (wh != WRITABLE_HINT_UNUSED) {
+                    return Util.readData(memCtx.writeableHint, address & 3, size);
+                }
+            }
             if (!enableMode1) {
                 if (address >= START_MCD_MAIN_PRG_RAM && address < END_MCD_MAIN_PRG_RAM) {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
                     res = readBuffer(prgRam, addr, size);
                 } else if (address >= START_MCD_BOOT_ROM && address < END_MCD_BOOT_ROM) {
-                    res = readBiosData(address, size);
+                    res = readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
                     assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
                     res = memCtx.readWordRam(cpu, address, size);
@@ -126,7 +135,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
                     res = readBuffer(prgRam, addr, size);
                 } else if (address >= START_MCD_BOOT_ROM_MODE1 && address < END_MCD_BOOT_ROM_MODE1) {
-                    res = readBiosData(address, size);
+                    res = readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
                     assert false; //TODO remove??
 //                    assert memCtx.wramSetup.mode == WordRamMode._2M;
@@ -174,15 +183,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
             }
         }
         super.write(address, data, size);
-    }
-
-    private int readBiosData(int address, Size size) {
-        address &= MCD_BOOT_ROM_MASK;
-        if (address >= 0x70 && address < 0x74) {
-            assert size == Size.LONG ? address == 0x70 : true; //LONG read on 0x72 not supported
-            return Util.readData(memCtx.writeableHint, address & 3, size);
-        }
-        return readBuffer(bios, address, size);
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
