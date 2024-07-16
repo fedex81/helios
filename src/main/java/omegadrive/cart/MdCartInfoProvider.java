@@ -23,6 +23,7 @@ import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.mapper.md.MdMapperType;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.system.SysUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -30,11 +31,10 @@ import org.slf4j.Logger;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.HexFormat;
-import java.util.Optional;
 
 import static omegadrive.cart.MdCartInfoProvider.MdRomHeaderField.*;
+import static omegadrive.system.SystemProvider.RomContext;
 import static omegadrive.util.Util.th;
 
 public class MdCartInfoProvider extends CartridgeInfoProvider {
@@ -169,8 +169,8 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     @Override
     protected void init() {
-        this.initMemoryLayout(memoryProvider);
         super.init();
+        initMemoryLayout(memoryProvider);
         entry = MdLoader.getEntry(serial);
     }
 
@@ -190,10 +190,10 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         return sb.append(headerInfo).toString();
     }
 
-    public static MdCartInfoProvider createInstance(IMemoryProvider memoryProvider, Path rom) {
+    public static MdCartInfoProvider createMdInstance(IMemoryProvider memoryProvider, RomContext rom) {
         MdCartInfoProvider provider = new MdCartInfoProvider();
         provider.memoryProvider = memoryProvider;
-        provider.romName = Optional.ofNullable(rom).map(p -> p.getFileName().toString()).orElse("norom.bin");
+        provider.romContext = rom;
         provider.init();
         return provider;
     }
@@ -211,8 +211,11 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     }
 
     private void initMemoryLayout(IMemoryProvider memoryProvider) {
-        detectHeaderMetadata();
-        romSize = memoryProvider.getRomData().length;
+        byte[] header = memoryProvider.getRomData();
+        if (romContext.romFileType == SysUtil.RomFileType.BIN_CUE) {
+            header = romContext.sheet.getRomHeader();
+        }
+        detectHeaderMetadata(header);
         detectSram();
     }
 
@@ -242,23 +245,27 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         }
     }
 
-    private void detectHeaderMetadata() {
-        byte[] rom = memoryProvider.getRomData();
+    /**
+     * @param romHeader initial 0x200 bytes
+     */
+    private void detectHeaderMetadata(byte[] romHeader) {
+        romSize = memoryProvider.getRomData().length;
         int send = SERIAL_NUMBER.startOffset + SERIAL_NUMBER.len;
-        if (rom.length < send) {
+        if (romHeader.length < send) {
             return;
         }
+        assert romHeader.length >= 0x200;
         StringBuilder sb = new StringBuilder("\nRom header:\n");
         for (MdRomHeaderField f : rhf) {
-            sb.append(f.getStringView(rom)).append("\n");
+            sb.append(f.getStringView(romHeader)).append("\n");
         }
         headerInfo = sb.toString();
-        systemType = SYSTEM_TYPE.getValue(rom).trim();
-        region = REGION_SUPPORT.getValue(rom);
+        systemType = SYSTEM_TYPE.getValue(romHeader).trim();
+        region = REGION_SUPPORT.getValue(romHeader);
         forceMapper = MdMapperType.getMdMapperType(systemType);
-        serial = SERIAL_NUMBER.getValue(rom);
-        if (rom.length > SVP_SV_TOKEN_ADDRESS + 1) {
-            isSvp = SVP_SV_TOKEN.equals(new String(rom, SVP_SV_TOKEN_ADDRESS, 2).trim());
+        serial = SERIAL_NUMBER.getValue(romHeader);
+        if (romHeader.length > SVP_SV_TOKEN_ADDRESS + 1) {
+            isSvp = SVP_SV_TOKEN.equals(new String(romHeader, SVP_SV_TOKEN_ADDRESS, 2).trim());
         }
     }
 

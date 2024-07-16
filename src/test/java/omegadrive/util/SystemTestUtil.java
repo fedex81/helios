@@ -28,6 +28,7 @@ import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.Z80BaseSystem;
 import omegadrive.ui.DisplayWindow;
@@ -198,8 +199,8 @@ public class SystemTestUtil {
             private RomContext romContext;
 
             {
-                romContext = new RomContext();
-                romContext.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, null);
+                romContext = new RomContext(SysUtil.RomSpec.NO_ROM);
+                romContext.cartridgeInfoProvider = MdCartInfoProvider.createMdInstance(memoryProvider, RomContext.NO_ROM);
             }
 
             @Override

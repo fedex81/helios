@@ -12,8 +12,6 @@ import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.*;
 import org.slf4j.Logger;
 
-import java.nio.file.Path;
-
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
 import static mcd.cdd.Cdd.CddCommand.Request;
 import static mcd.cdd.Cdd.CddCommand.SeekPause;
@@ -51,8 +49,9 @@ class CddImpl implements Cdd {
     }
 
     @Override
-    public void tryInsert(Path cueSheet) {
-        extCueSheet = new ExtendedCueSheet(cueSheet);
+    public void tryInsert(ExtendedCueSheet cueSheet) {
+        cueSheet.assertReady();
+        extCueSheet = cueSheet;
         hasMedia = extCueSheet.cueSheet != null;
         if (!hasMedia) {
             setIoStatus(NoDisc);
@@ -265,6 +264,18 @@ class CddImpl implements Cdd {
         }
         setIoStatus(LeadOut);
         setTrack(0xAA);
+    }
+
+    public static double position(int sector) {
+        //convert sector# to normalized sector position on the CD-ROM surface for seek latency calculation
+
+        double sectors = 7500.0 + 330000.0 + 6750.0;
+        double radius = 0.058 - 0.024;
+        double innerRadius = 0.024 * 0.024;  //in mm
+        double outerRadius = 0.058 * 0.058;  //in mm
+
+        sector += 7500; //session.leadIn.lba;  //convert to natural
+        return Math.sqrt(sector / sectors * (outerRadius - innerRadius) + innerRadius) / radius;
     }
 
     private void process() {

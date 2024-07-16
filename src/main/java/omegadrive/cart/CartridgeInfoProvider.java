@@ -21,6 +21,8 @@ package omegadrive.cart;
 
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
+import omegadrive.system.SysUtil;
+import omegadrive.system.SystemProvider.RomContext;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -36,6 +38,8 @@ public class CartridgeInfoProvider {
     public static final boolean AUTOFIX_CHECKSUM = false;
 
     protected IMemoryProvider memoryProvider = MemoryProvider.NO_MEMORY;
+
+    protected RomContext romContext = RomContext.NO_ROM;
     private long checksum;
     private long computedChecksum;
     private String sha1;
@@ -46,13 +50,17 @@ public class CartridgeInfoProvider {
     public static CartridgeInfoProvider createInstance(IMemoryProvider memoryProvider, Path rom) {
         CartridgeInfoProvider provider = new CartridgeInfoProvider();
         provider.memoryProvider = memoryProvider;
-        provider.romName = Optional.ofNullable(rom).map(p -> p.getFileName().toString()).orElse("norom.bin");
+        provider.romContext = new RomContext(SysUtil.RomSpec.of(rom));
         provider.init();
         return provider;
     }
 
     public String getRomName() {
         return romName;
+    }
+
+    public RomContext getRomContext() {
+        return romContext;
     }
 
     public String getRegion() {
@@ -76,6 +84,7 @@ public class CartridgeInfoProvider {
     }
 
     protected void init() {
+        romName = Optional.ofNullable(romContext.romSpec.file).map(p -> p.getFileName().toString()).orElse("norom.bin");
         this.initChecksum();
     }
 

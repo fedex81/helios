@@ -19,6 +19,7 @@
 
 package omegadrive.system;
 
+import mcd.cdd.ExtendedCueSheet;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.cart.CartridgeInfoProvider;
@@ -28,6 +29,8 @@ import omegadrive.util.RegionDetector;
 
 import java.nio.file.Path;
 import java.util.StringJoiner;
+
+import static omegadrive.system.SysUtil.RomFileType;
 
 public interface SystemProvider extends Device {
 
@@ -46,7 +49,24 @@ public interface SystemProvider extends Device {
 
         public RomSpec romSpec = RomSpec.NO_ROM;
         public CartridgeInfoProvider cartridgeInfoProvider;
+        public RomFileType romFileType = RomFileType.UNKNOWN;
 
+        public ExtendedCueSheet sheet;
+
+        private RomContext() {
+        }
+
+        public RomContext(RomSpec r) {
+            romSpec = r;
+            romFileType = r.file.toString().endsWith(".cue") ? RomFileType.BIN_CUE : romFileType;
+            romFileType = r.file.toString().endsWith(".iso") ? RomFileType.ISO : romFileType;
+            if (romFileType == RomFileType.UNKNOWN) {
+                romFileType = RomFileType.CART_ROM;
+            }
+            if (romFileType.isDiscImage()) {
+                sheet = new ExtendedCueSheet(r.file, romFileType);
+            }
+        }
 
         @Override
         public String toString() {

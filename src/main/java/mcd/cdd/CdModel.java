@@ -25,8 +25,6 @@ public class CdModel {
 
     private final static Logger LOG = LogHelper.getLogger(CdModel.class.getSimpleName());
 
-    public enum RomFileType {UNKNOWN, BIN_CUE, ISO}
-
     public enum TrackContent {T_AUDIO, T_DATA}
 
     public enum TrackMode {MODE1, MODE2}

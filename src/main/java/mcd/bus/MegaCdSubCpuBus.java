@@ -210,6 +210,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         int res = switch (regSpec.deviceType) {
             case CDD -> cdd.read(regSpec, address, size);
             case CDC -> cdc.read(regSpec, address, size);
+            case ASIC -> asic.read(regSpec, address, size);
             default -> readBuffer(memCtx.getRegBuffer(cpuType, regSpec),
                     address & MDC_SUB_GATE_REGS_MASK, size);
         };

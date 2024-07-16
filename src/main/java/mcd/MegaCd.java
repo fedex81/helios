@@ -20,6 +20,7 @@
 package mcd;
 
 import mcd.bus.McdSubInterruptHandler;
+import mcd.cdd.ExtendedCueSheet;
 import mcd.util.McdMemView;
 import omegadrive.SystemLoader;
 import omegadrive.bus.md.SvpMapper;
@@ -244,12 +245,6 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     @Override
     protected RomContext createRomContext(SysUtil.RomSpec rom) {
         romContext = Megadrive.createRomContext(rom, memory, emuFrame.getRegionOverride());
-        //TODO code above is parsing the cue to get the region, randomly ends up as Japan
-        //TODO use USA instead
-        if (rom.file.toString().endsWith(".cue") && romContext.region == RegionDetector.Region.JAPAN) {
-            romContext.region = getRegionInternal(emuFrame.getRegionOverride(), RegionDetector.Region.USA);
-            LOG.warn("Forcing cue file region to {}", romContext.region);
-        }
         return romContext;
     }
 
@@ -302,21 +297,22 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     private void megaCdDiscInsert() {
         boolean segaMode1 = mcdLaunchContext.mainBus.isEnableMode1();
         boolean bios = mcdLaunchContext.mainBus.isBios();
-        boolean tryInsertAsDisc = !segaMode1 && !bios;
+        boolean tryInsertAsDisc = !segaMode1 && !bios && romContext.romFileType.isDiscImage();
         boolean biosNoDisc = false;
         boolean biosCdAudio = true;
         if (bios) {
             LOG.info("Bios mode, noDisc: {}, cdAudio: {}", biosNoDisc, biosCdAudio);
         }
         if (tryInsertAsDisc) {
-            mcdLaunchContext.cdd.tryInsert(romContext.romSpec.file);
+            mcdLaunchContext.cdd.tryInsert(romContext.sheet);
         } else if (segaMode1 || (!bios || biosCdAudio)) {
             //insert an audio CD, for testing mode1 CD Player
-//            Path p = Path.of("./test_roms/SonicCD", "SonicCD_AudioOnly.cue");
+            Path p = Path.of("./test_roms/SonicCD", "SonicCD_AudioOnly.cue");
             //test mcd-ver
-            Path p = Path.of("./test_roms/SonicCD", "SonicCD.cue");
+//            Path p = Path.of("./test_roms/SonicCD", "SonicCD.cue");
             if (p.toFile().exists()) {
-                mcdLaunchContext.cdd.tryInsert(p);
+                ExtendedCueSheet cueSheet = new ExtendedCueSheet(p, SysUtil.RomFileType.BIN_CUE);
+                mcdLaunchContext.cdd.tryInsert(cueSheet);
             }
         }
     }

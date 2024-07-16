@@ -52,6 +52,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
         CdcModel.CdcContext ctx = cdc.getContext();
         ctx.irq.transfer.pending = 0;
         cdc.recalcRegValue(MCD_CDC_MODE);
+        t.source &= 0x3fff;
 //        cdc.poll(); //TODO gengx not using it
     }
 

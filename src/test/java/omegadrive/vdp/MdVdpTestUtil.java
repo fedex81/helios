@@ -24,6 +24,7 @@ import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.system.BaseSystem;
+import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
@@ -286,8 +287,8 @@ public class MdVdpTestUtil {
             private RomContext romContext;
 
             {
-                romContext = new RomContext();
-                romContext.cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider, null);
+                romContext = new RomContext(SysUtil.RomSpec.NO_ROM);
+                romContext.cartridgeInfoProvider = MdCartInfoProvider.createMdInstance(memoryProvider, RomContext.NO_ROM);
             }
 
             @Override

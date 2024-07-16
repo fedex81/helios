@@ -8,6 +8,7 @@ import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.sound.msumd.CueFileParser.MsfHolder;
+import omegadrive.system.SysUtil.RomFileType;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -505,12 +506,12 @@ public class CdcImpl implements Cdc {
     private void cdd_read_data(int sector, int offset, ExtendedTrackData track) {
         /* only allow reading (first) CD-ROM track sectors */
         if (track.trackDataType != CdModel.TrackDataType.AUDIO && sector >= 0) {
-            if (cueSheet.romFileType == CdModel.RomFileType.ISO) {
+            if (cueSheet.romFileType == RomFileType.ISO) {
                 assert track.trackDataType == CdModel.TrackDataType.MODE1_2048;
                 /* read Mode 1 user data (2048 bytes) */
                 int seekPos = sector * S_2048.s_size;
                 doFileRead(track.file, seekPos, S_2048.s_size, offset);
-            } else if (cueSheet.romFileType == CdModel.RomFileType.BIN_CUE) { //TODO
+            } else if (cueSheet.romFileType == RomFileType.BIN_CUE) {
                 /* skip block sync pattern (12 bytes) + block header (4 bytes) then read Mode 1 user data (2048 bytes) */
                 assert track.trackDataType.size == S_2352;
                 int seekPos = (sector * track.trackDataType.size.s_size) + 12 + 4;

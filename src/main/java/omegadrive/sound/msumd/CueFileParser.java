@@ -24,8 +24,11 @@ import org.digitalmediaserver.cuelib.CueSheet;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.text.NumberFormat;
 import java.util.function.Function;
 
@@ -59,9 +62,19 @@ public class CueFileParser {
     public static CueSheet parse(Path cueFilePath) {
         CueSheet cueSheet = null;
         try {
-            cueSheet = CueParser.parse(cueFilePath.toFile(), Charset.defaultCharset());
+            cueSheet = parse(Files.newInputStream(cueFilePath, StandardOpenOption.READ));
         } catch (IOException e) {
-            LOG.warn("Unable to open BIN/CUE file {}: {}", cueFilePath, e.getMessage());
+            LOG.warn("Unable to open BIN/CUE file: {}, {}", cueFilePath, e.getMessage());
+        }
+        return cueSheet;
+    }
+
+    public static CueSheet parse(InputStream is) {
+        CueSheet cueSheet = null;
+        try {
+            cueSheet = CueParser.parse(is, Charset.defaultCharset());
+        } catch (IOException e) {
+            LOG.warn("Unable to open BIN/CUE stream: {}", e.getMessage());
         }
         return cueSheet;
     }

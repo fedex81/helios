@@ -12,8 +12,6 @@ import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.*;
 import org.slf4j.Logger;
 
-import java.nio.file.Path;
-
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
@@ -54,8 +52,8 @@ class CddImplGpgxOld implements Cdd {
     }
 
     @Override
-    public void tryInsert(Path cueSheet) {
-        extCueSheet = new ExtendedCueSheet(cueSheet);
+    public void tryInsert(ExtendedCueSheet cueSheet) {
+        extCueSheet = cueSheet;
         hasMedia = extCueSheet.cueSheet != null;
         if (!hasMedia) {
             setIoStatus(NoDisc);

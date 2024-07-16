@@ -18,8 +18,7 @@ import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_IMG_OFFSET;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_IMG_STAMP_SIZE;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
-import static omegadrive.util.BufferUtil.setBit;
-import static omegadrive.util.BufferUtil.writeBufferRaw;
+import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
 
@@ -42,6 +41,10 @@ public class Asic implements Device {
     public Asic(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih) {
         this.memoryContext = memoryContext;
         this.interruptHandler = ih;
+    }
+
+    public int read(RegSpecMcd regSpec, int address, Size size) {
+        return readBuffer(memoryContext.getRegBuffer(SUB_M68K, regSpec), address & MDC_SUB_GATE_REGS_MASK, size);
     }
 
     public void write(RegSpecMcd regSpec, int address, int value, Size size) {

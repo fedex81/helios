@@ -2,21 +2,19 @@ package mcd.cdd;
 
 import com.google.common.base.MoreObjects;
 import mcd.cdd.CdModel.ExtendedTrackData;
-import mcd.cdd.CdModel.RomFileType;
 import mcd.cdd.CdModel.TrackDataType;
 import omegadrive.sound.msumd.CueFileParser;
+import omegadrive.system.SysUtil.RomFileType;
 import omegadrive.util.LogHelper;
 import org.digitalmediaserver.cuelib.CueSheet;
 import org.digitalmediaserver.cuelib.TrackData;
 import org.slf4j.Logger;
 
-import java.io.Closeable;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static mcd.cdd.CdModel.ExtendedTrackData.NO_TRACK;
@@ -34,17 +32,23 @@ public class ExtendedCueSheet implements Closeable {
     private final static byte ff = (byte) 0xff;
     private final static byte[] CD_SYNC_BYTES = {0x00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 0x00};
 
-    private static final boolean CUE_TEST_MODE = true;
+    //TODO remove at some point
+    private static final boolean CUE_TEST_MODE = false;
     private static final Path NO_BIN_FILE_PATH = Paths.get(".", "test.bin");
-    private static final Path TEMPLATE_ISO_CUE_PATH = Paths.get(".", "template_iso.cue");
     //placeholder name
     private static final String TEMPLATE_ISO_NAME_PH = "<iso_here>";
+
+    private static final String TEMPLATE_CUE_FOR_ISO =
+            "REM CD_ROM, 1 DATA TRACK MAPS TO ISO\n" +
+                    "FILE \"<iso_here>\" BINARY\n" +
+                    "  TRACK 01 MODE1/2048\n" +
+                    "    INDEX 01 00:00:00";
     public final CueSheet cueSheet;
     public final Path cuePath;
 
     public RomFileType romFileType = RomFileType.UNKNOWN;
 
-    private Optional<Path> isoPath = Optional.empty();
+    private Optional<Path> isoPathCue = Optional.empty();
     public final List<ExtendedTrackData> extTracks = new ArrayList<>();
     public int numTracks, sectorEnd;
     protected final Map<String, RandomAccessFile> fileCache = new HashMap<>();
@@ -56,14 +60,19 @@ public class ExtendedCueSheet implements Closeable {
         }
     }
 
-    public ExtendedCueSheet(Path path) {
+    public ExtendedCueSheet(Path discImage, RomFileType rft) {
+        assert rft.isDiscImage();
+        this.romFileType = rft;
+        Path path = discImage;
         Path cp = path;
-        if (path.getFileName().toString().endsWith(".iso")) {
-            cp = path.resolveSibling(TEMPLATE_ISO_CUE_PATH);
-            isoPath = Optional.of(path);
+        if (rft == RomFileType.ISO) {
+            AtomicReference<Path> ref = new AtomicReference<>();
+            cueSheet = parseCueForIso(discImage, ref);
+            cuePath = ref.get();
+        } else {
+            cueSheet = CueFileParser.parse(cp);
+            cuePath = cp;
         }
-        cuePath = cp;
-        cueSheet = CueFileParser.parse(cuePath);
         parseCueSheet();
         assertReady();
         if (romFileType == null || romFileType == RomFileType.UNKNOWN) {
@@ -71,34 +80,57 @@ public class ExtendedCueSheet implements Closeable {
         }
     }
 
+    private CueSheet parseCueForIso(Path path, AtomicReference<Path> ref) {
+        CueSheet cs = null;
+        //first check if we have a matching *.cue file
+        Path mcp = Paths.get(path.toAbsolutePath().toString().replace(".iso", ".cue"));
+        Path cp = path.resolveSibling(mcp);
+        if (cp.toFile().exists()) {
+            isoPathCue = Optional.of(cp);
+            cs = CueFileParser.parse(isoPathCue.get());
+            ref.set(isoPathCue.get());
+            LOG.info("ISO file detected, using the following CUE file: {}", cp.toAbsolutePath());
+        } else {
+            //otherwise generate a cue file for the iso
+            String fakeCue = TEMPLATE_CUE_FOR_ISO.replace(TEMPLATE_ISO_NAME_PH, path.getFileName().toString());
+            ByteArrayInputStream bais = new ByteArrayInputStream(fakeCue.getBytes());
+            cs = CueFileParser.parse(bais);
+            ref.set(path);
+            LOG.info("ISO file detected, generating a synthetic CUE file: \n{}", fakeCue);
+        }
+        assert cs != null;
+        return cs;
+    }
     private void parseCueSheet() {
         ExtendedCueSheet extCueSheet = this;
         assert extCueSheet.fileCache.isEmpty();
         List<TrackData> tracks = extCueSheet.cueSheet.getAllTrackData();
         assert !tracks.isEmpty();
         extCueSheet.numTracks = tracks.size();
-        parseTrack01Header(tracks.get(0));
+        checkTrack01Header(tracks.get(0));
         for (TrackData track : tracks) {
             parseTrack(extCueSheet, track.getNumber(), cuePath);
         }
     }
 
-    private void parseTrack01Header(TrackData track01) {
+    private void checkTrack01Header(TrackData track01) {
         try {
             byte[] header = new byte[16];
             RandomAccessFile raf = getDataFile(this, track01.getParent().getFile(), cuePath);
             TrackDataType trackDataType = TrackDataType.parse(track01.getDataType());
             raf.read(header, 0, header.length);
+            RomFileType detected = RomFileType.UNKNOWN;
             if (Arrays.equals(SCD_SYS_BYTES, 0, SCD_SYS_BYTES.length, header, 0, SCD_SYS_BYTES.length)) {
                 System.out.println("valid Sega CD image");
-                romFileType = RomFileType.ISO;
+                detected = RomFileType.ISO;
             } else if (Arrays.equals(CD_SYNC_BYTES, 0, CD_SYNC_BYTES.length, header, 0, CD_SYNC_BYTES.length)) {
                 System.out.println("CD-ROM synchro pattern");
-                romFileType = RomFileType.BIN_CUE;
+                detected = RomFileType.BIN_CUE;
             } else if (trackDataType == TrackDataType.AUDIO) {
                 System.out.println("CD-AUDIO");
-                romFileType = RomFileType.BIN_CUE;
+                detected = RomFileType.BIN_CUE;
             }
+            assert detected == romFileType;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -156,11 +188,6 @@ public class ExtendedCueSheet implements Closeable {
     private static RandomAccessFile getDataFile(ExtendedCueSheet extCueSheet, String trackFileName, Path cuePath) {
         Path fp = cuePath.resolveSibling(trackFileName);
         String key = fp.getFileName().toString();
-        if (TEMPLATE_ISO_NAME_PH.equals(key)) {
-            assert extCueSheet.isoPath.isPresent();
-            fp = extCueSheet.isoPath.orElse(fp);
-            key = fp.getFileName().toString();
-        }
         return getDataFile(extCueSheet, key, fp, cuePath);
     }
 
@@ -202,6 +229,20 @@ public class ExtendedCueSheet implements Closeable {
         return getExtTrack(extCueSheet, number).trackDataType == TrackDataType.AUDIO;
     }
 
+    public byte[] getRomHeader() {
+        assert romFileType == RomFileType.BIN_CUE;
+        byte[] dest = new byte[0x200];
+        try {
+            RandomAccessFile raf = extTracks.get(0).file;
+            //skip sync pattern(12) + header(4)
+            raf.seek(16);
+            raf.read(dest);
+        } catch (Exception e) {
+            LOG.error("Unable to parse MD header", e);
+        }
+        return dest;
+    }
+
     @Override
     public String toString() {
         String s = "\n\t" + extTracks.stream().map(Objects::toString).collect(Collectors.joining("\n\t")) + "\n";
@@ -209,7 +250,7 @@ public class ExtendedCueSheet implements Closeable {
                 .add("romFileType", romFileType)
                 .add("cueSheet", cueSheet)
                 .add("cuePath", cuePath)
-                .add("isoPath", isoPath)
+                .add("isoPath", isoPathCue)
                 .add("extTracks", s)
                 .add("numTracks", numTracks)
                 .add("sectorEnd", sectorEnd)

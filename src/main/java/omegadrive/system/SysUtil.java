@@ -75,6 +75,14 @@ public class SysUtil {
         binaryTypes = binaryTypesSet.toArray(String[]::new);
     }
 
+    public enum RomFileType {
+        UNKNOWN, BIN_CUE, ISO, CART_ROM;
+
+        public boolean isDiscImage() {
+            return this == BIN_CUE || this == ISO;
+        }
+    }
+
     public static class RomSpec {
 
         public static final RomSpec NO_ROM = RomSpec.of(new File("./NO_FILE"));
@@ -130,7 +138,8 @@ public class SysUtil {
             }
         }
         SystemProvider systemProvider = switch (type) {
-            case GENESIS -> Megadrive.createNewInstance(display);
+            //TODO hack
+            case GENESIS -> MegaCd.createNewInstance(display);
             case MEGACD -> MegaCd.createNewInstance(display);
             case S32X -> Md32x.createNewInstance32x(display);
             case SG_1000 -> Z80BaseSystem.createNewInstance(SG_1000, display);

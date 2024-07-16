@@ -8,8 +8,6 @@ import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
 
-import java.nio.file.Path;
-
 import static mcd.cdd.Cdd.CddStatus.NoDisc;
 
 /**
@@ -75,22 +73,10 @@ public interface Cdd extends BufferUtil.StepDevice {
 
     enum CddControl_DM_bit {MUSIC_0, DATA_1}
 
-    void tryInsert(Path cueSheet);
+    void tryInsert(ExtendedCueSheet cueSheet);
     void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size);
 
     int read(MegaCdDict.RegSpecMcd regSpec, int address, Size size);
-
-    default double position(int sector) {
-        //convert sector# to normalized sector position on the CD-ROM surface for seek latency calculation
-
-        double sectors = 7500.0 + 330000.0 + 6750.0;
-        double radius = 0.058 - 0.024;
-        double innerRadius = 0.024 * 0.024;  //in mm
-        double outerRadius = 0.058 * 0.058;  //in mm
-
-        sector += 7500; //session.leadIn.lba;  //convert to natural
-        return Math.sqrt(sector / sectors * (outerRadius - innerRadius) + innerRadius) / radius;
-    }
 
     //should be called at 44.1 khz
     void stepCdda();

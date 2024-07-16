@@ -211,9 +211,8 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
     }
 
     public static RomContext createRomContext(SysUtil.RomSpec rom, IMemoryProvider memory, String regionOverride) {
-        RomContext rc = new RomContext();
-        rc.romSpec = rom;
-        MdCartInfoProvider mcip = MdCartInfoProvider.createInstance(memory, rc.romSpec.file);
+        RomContext rc = new RomContext(rom);
+        MdCartInfoProvider mcip = MdCartInfoProvider.createMdInstance(memory, rc);
         rc.cartridgeInfoProvider = mcip;
         String regionOvr = Optional.ofNullable(mcip.getEntry().forceRegion).
                 orElse(regionOverride);
