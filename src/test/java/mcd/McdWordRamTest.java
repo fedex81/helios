@@ -155,7 +155,7 @@ public class McdWordRamTest extends McdRegTestBase {
     public void testWRAMDataOnSwitch_2M() {
         setWramMain2M();
         assert ctx.wramSetup == W_2M_MAIN;
-        int offsetm = MegaCdDict.START_MCD_WORD_RAM_MODE1;
+        int offsetm = MegaCdDict.START_MCD_WORD_RAM;
         int offsets = START_MCD_SUB_WORD_RAM_2M;
         for (int i = 0; i < MCD_WORD_RAM_2M_SIZE - 1; i += 2) {
             mainWriteValAtIdx.accept(offsetm + i, i);
@@ -177,7 +177,7 @@ public class McdWordRamTest extends McdRegTestBase {
     @Test
     public void testWRAMDataOnSwitch_1M() {
         setWram1M_W0Main();
-        int offsetm = MegaCdDict.START_MCD_WORD_RAM_MODE1;
+        int offsetm = MegaCdDict.START_MCD_WORD_RAM;
         int offsets = START_MCD_SUB_WORD_RAM_1M;
 
         for (int i = 0; i < MCD_WORD_RAM_1M_SIZE - 1; i += 2) {
@@ -217,7 +217,7 @@ public class McdWordRamTest extends McdRegTestBase {
     public void testWRAMDataOnSwitch_2M_1M() {
         setWramMain2M();
         assert ctx.wramSetup == W_2M_MAIN;
-        int offsetm = MegaCdDict.START_MCD_WORD_RAM_MODE1;
+        int offsetm = MegaCdDict.START_MCD_WORD_RAM;
         int offsets1M = START_MCD_SUB_WORD_RAM_1M;
         int offsets2M = START_MCD_SUB_WORD_RAM_2M;
         ByteBuffer[] wram1MCopy = {ByteBuffer.allocate(MCD_WORD_RAM_1M_SIZE), ByteBuffer.allocate(MCD_WORD_RAM_1M_SIZE)};
@@ -334,20 +334,25 @@ public class McdWordRamTest extends McdRegTestBase {
         Assertions.assertEquals(W_1M_WR0_MAIN, ctx.wramSetup);
     }
 
+    public static void setWram1M_W0Sub(McdLaunchContext lc) {
+        MegaCdMemoryContext ctx = lc.memoryContext;
+        if (ctx.wramSetup.mode == _2M) {
+            //SUB sets 1M
+            subSetLsbFn.accept(lc.subBus, subGetLsbFn.apply(lc.subBus) | 4);
+            Assertions.assertEquals(_1M, ctx.wramSetup.mode);
+        }
+        if (ctx.wramSetup == W_1M_WR0_MAIN) {
+            subSetLsbFn.accept(lc.subBus, subGetLsbFn.apply(lc.subBus) | 1);
+        }
+        Assertions.assertEquals(W_1M_WR0_SUB, ctx.wramSetup);
+    }
+
     private void setWram1M_W0Main() {
         setWram1M_W0Main(lc);
     }
 
     private void setWram1M_W0Sub() {
-        if (ctx.wramSetup.mode == _2M) {
-            //SUB sets 1M
-            subSetLsb.accept(subGetLsb.get() | 4);
-            Assertions.assertEquals(_1M, ctx.wramSetup.mode);
-        }
-        if (ctx.wramSetup == W_1M_WR0_MAIN) {
-            subSetLsb.accept(subGetLsb.get() | 1);
-        }
-        Assertions.assertEquals(W_1M_WR0_SUB, ctx.wramSetup);
+        setWram1M_W0Sub(lc);
     }
 
     private void setWramMain2M() {

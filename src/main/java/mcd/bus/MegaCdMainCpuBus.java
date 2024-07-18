@@ -19,6 +19,7 @@ import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.WRITABLE_HINT_UNUSED;
 import static mcd.dict.MegaCdMemoryContext.WramSetup;
 import static mcd.util.McdRegBitUtil.setSharedBit;
+import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
@@ -51,7 +52,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private ByteBuffer prgRam, sysGateRegs, commonGateRegs;
     private int prgRamBankValue = 0, prgRamBankShift = 0;
 
-    private boolean enableMCDBus = true, enableMode1 = true, isBios;
+    private boolean enableMCDBus = true, enableMode1 = false, isBios;
 
     private static ByteBuffer bios;
     private LogHelper logHelper = new LogHelper();
@@ -98,6 +99,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     @Override
     public int read(int address, Size size) {
+        address &= MD_PC_MASK;
         if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
             if (!enableMCDBus) {
                 LOG.info("Enabling MegaCD bus mapping");
@@ -137,8 +139,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 } else if (address >= START_MCD_BOOT_ROM_MODE1 && address < END_MCD_BOOT_ROM_MODE1) {
                     res = readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
-                    assert false; //TODO remove??
-//                    assert memCtx.wramSetup.mode == WordRamMode._2M;
                     res = memCtx.readWordRam(cpu, address, size);
                 } else {
                     res = super.read(address, size);
@@ -150,6 +150,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     @Override
     public void write(int address, int data, Size size) {
+        address &= MD_PC_MASK;
         if (enableMCDBus) {
             if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
                 handleMegaCdExpWrite(address, data, size);
@@ -175,8 +176,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     memCtx.writeWordRam(cpu, address, data, size);
                     return;
                 } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
-                    assert false; //TODO remove??
-                    assert memCtx.wramSetup.mode == WordRamMode._2M;
+                    assert memCtx.wramSetup.mode == WordRamMode._1M && memCtx.wramSetup.cpu == M68K ?
+                            address < END_MCD_WORD_RAM_1M_BANK0 : true;
+                    assert memCtx.wramSetup.mode == WordRamMode._1M && memCtx.wramSetup.cpu != M68K ?
+                            address >= END_MCD_WORD_RAM_1M_BANK0 : true;
                     memCtx.writeWordRam(cpu, address, data, size);
                     return;
                 }

@@ -1,5 +1,6 @@
 package mcd.cdd;
 
+import com.google.common.base.MoreObjects;
 import mcd.bus.McdSubInterruptHandler;
 import mcd.cdc.Cdc;
 import mcd.dict.MegaCdDict;
@@ -7,6 +8,8 @@ import mcd.dict.MegaCdMemoryContext;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
+
+import java.util.Arrays;
 
 import static mcd.cdd.Cdd.CddStatus.NoDisc;
 
@@ -99,11 +102,24 @@ public interface Cdd extends BufferUtil.StepDevice {
             c.status = NoDisc;
             return c;
         }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("status", status)
+                    .add("seeking", seeking)
+                    .add("latency", latency)
+                    .add("sector", sector)
+                    .add("sample", sample)
+                    .add("track", track)
+                    .add("tocRead", tocRead)
+                    .toString();
+        }
     }
 
     class CddContext {
         public CddIo io;
-        public int hostClockEnable, statusPending;
+        public int hostClockEnable;
         public int[] statusRegs = new int[10];
         public int[] commandRegs = new int[10];
 
@@ -111,6 +127,16 @@ public interface Cdd extends BufferUtil.StepDevice {
             CddContext c = new CddContext();
             c.io = cddIo;
             return c;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("io", io)
+                    .add("hostClockEnable_HOCK", hostClockEnable)
+                    .add("statusRegs", Arrays.toString(statusRegs))
+                    .add("commandRegs", Arrays.toString(commandRegs))
+                    .toString();
         }
     }
 

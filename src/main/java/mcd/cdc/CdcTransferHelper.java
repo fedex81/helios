@@ -41,7 +41,6 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     @Override
     public void start() {
-        if (verbose) LOG.info("Transfer start");
         CdcModel.CdcTransfer t = cdc.getContext().transfer;
         if (t.enable == 0) return;
         t.active = 1;
@@ -53,12 +52,15 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
         ctx.irq.transfer.pending = 0;
         cdc.recalcRegValue(MCD_CDC_MODE);
         t.source &= 0x3fff;
+        LOG.info("CdcTransfer start, dest: {}, cdcRam: {}, len: {}\n{}", t.destination, th(t.source), t.length, cdc.getContext());
 //        cdc.poll(); //TODO gengx not using it
     }
 
     @Override
     public void stop() {
-        if (verbose) LOG.info("Transfer stop");
+        if (t.active > 0) {
+            LOG.info("CdcTransfer stop, dest: {}, cdcRam: {}, len: {}\n{}", t.destination, th(t.source), t.length, cdc.getContext());
+        }
         t.active = 0;
         t.busy = 0;
         t.ready = 0;
@@ -74,7 +76,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
                 if (verbose) LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
                 t.source = (t.source + 2) & 0x3FFF;
                 t.length -= 2;
-                t.ready = 1;
+//                t.ready = 1; //TODO check
                 cdc.recalcRegValue(MCD_CDC_MODE);
                 if (t.length <= 0) {
                     t.length = 0;
@@ -147,11 +149,11 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     @Override
     public void complete() {
-        if (verbose) LOG.info("Transfer complete");
         t.active = t.busy = t.ready = 0;
         t.completed = 1;
         cdc.getContext().irq.transfer.pending = 1;
         cdc.recalcRegValue(MCD_CDC_MODE);
         cdc.poll();
+        LOG.info("CdcTransfer complete, dest: {}, cdcRam: {}, len: {}\n{}", t.destination, th(t.source), t.length, cdc.getContext());
     }
 }

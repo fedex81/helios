@@ -46,7 +46,7 @@ public class CdcImpl implements Cdc {
 
     private final static Logger LOG = LogHelper.getLogger(CdcImpl.class.getSimpleName());
 
-    protected static final boolean verbose = true;
+    protected static final boolean verbose = false;
     private final MegaCdMemoryContext memoryContext;
     private final McdSubInterruptHandler interruptHandler;
     private final CdcContext cdcContext;
@@ -183,8 +183,8 @@ public class CdcImpl implements Cdc {
                         ((~c.transfer.busy & 1) << 3) |
                         (1 << 4) |
                         ((~c.irq.decoder.pending & 1) << 5) |
-                        ((~c.irq.transfer.pending & 1) << 6) |
-                        ((~c.irq.command.pending & 1) << 7);
+                        ((~c.irq.transfer.pending & 1) << 6);
+//                       | ((~c.irq.command.pending & 1) << 7); //unused
             }
             //DBCL: data byte counter low
             case DBCL -> data = getByteInWordBE(transfer.length, 1);
@@ -289,7 +289,7 @@ public class CdcImpl implements Cdc {
                 cdcContext.control.commandBreak = getInvertedBitFromByte(data, 4);
                 cdcContext.irq.decoder.enable = getBitFromByte(data, 5);
                 cdcContext.irq.transfer.enable = getBitFromByte(data, 6);
-                cdcContext.irq.command.enable = getBitFromByte(data, 7);
+//                cdcContext.irq.command.enable = getBitFromByte(data, 7); //unused
                 poll();
 
                 //abort data transfer if data output is disabled
@@ -415,7 +415,7 @@ public class CdcImpl implements Cdc {
         int pending = 0;
         pending |= irq.decoder.enable & irq.decoder.pending;
         pending |= irq.transfer.enable & irq.transfer.pending;
-        pending |= irq.command.enable & irq.command.pending;
+//        pending |= irq.command.enable & irq.command.pending; //unused
         if (pending > 0) {
             interruptHandler.raiseInterrupt(INT_CDC);
         } else {
@@ -494,7 +494,8 @@ public class CdcImpl implements Cdc {
                     /* write Mode 1 user data to RAM buffer (2048 bytes) */
                     cdd_read_data(sector, offset, track01);
                 } else {
-                    assert false : "MODE 2";
+                    assert track01.trackDataType == CdModel.TrackDataType.AUDIO;
+                    //NOTE cdda play
                 }
             }
         }
@@ -506,6 +507,8 @@ public class CdcImpl implements Cdc {
     private void cdd_read_data(int sector, int offset, ExtendedTrackData track) {
         /* only allow reading (first) CD-ROM track sectors */
         if (track.trackDataType != CdModel.TrackDataType.AUDIO && sector >= 0) {
+            //header(4)
+            LOG.info("Decoding data track sector: {}, cdcRamOffset: {}", sector, th(offset - 4));
             if (cueSheet.romFileType == RomFileType.ISO) {
                 assert track.trackDataType == CdModel.TrackDataType.MODE1_2048;
                 /* read Mode 1 user data (2048 bytes) */
@@ -520,7 +523,6 @@ public class CdcImpl implements Cdc {
 //                    cdStreamSeek(cdd.toc.tracks[0].fd, (cdd.lba * 2352) + 12 + 4, SEEK_SET);
 //                    cdStreamRead(dst, 2048, 1, cdd.toc.tracks[0].fd);
             }
-            LOG.info("Decoding data track sector: {}", sector);
         }
     }
 
@@ -528,9 +530,6 @@ public class CdcImpl implements Cdc {
         assert ramOffset < RAM_SIZE;
         try {
             file.seek(seekPos);
-            if (ramOffset + readChunkSize >= RAM_SIZE) {
-                System.out.println("here");
-            }
             if (verbose) LOG.info(th(ramOffset) + "," + th(seekPos) + "," + readChunkSize);
             int len = Math.min(RAM_SIZE - ramOffset, readChunkSize);
             int readN = file.read(ram.array(), ramOffset, len);

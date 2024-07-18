@@ -120,11 +120,12 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             if (memCtx.wramSetup.mode == WordRamMode._2M) {
                 res = memCtx.readWordRam(cpuType, address, size);
             } else { //TODO mcd-verificator, better fix
+                assert false;
                 res = switch (size) {
                     case BYTE -> readByteStriped(address);
                     case WORD -> (readByteStriped(address) << 8) | readByteStriped(address + 1);
+                    //batman returns (E), using clr.l
                     case LONG -> {
-                        assert false;
                         yield size.getMask();
                     }
                 };
@@ -155,6 +156,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             if (memCtx.wramSetup.mode == WordRamMode._2M) {
                 memCtx.writeWordRam(cpuType, address, data, size);
             } else { //TODO mcd-verificator, better fix
+                assert false;
                 switch (size) {
                     case BYTE -> writeByteStriped(address, data);
                     case WORD -> {

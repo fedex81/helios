@@ -115,15 +115,13 @@ public class MegaCdMemoryContext implements Serializable {
         }
     }
 
-    //TODO test long access
     public int readWordRam(CpuDeviceAccess cpu, int address, Size size) {
         return switch (size) {
             case WORD -> readWordRamWord(cpu, address);
             case LONG -> (readWordRamWord(cpu, address) << 16) | readWordRamWord(cpu, address + 2);
-            case BYTE -> {
-                int shift = ~address & 1;
-                yield readWordRamWord(cpu, address) >> (shift << 3);
-            }
+            case BYTE ->
+                //int shift = (~address & 1) << 3;
+                    readWordRamWord(cpu, address & ~1) >> ((~address & 1) << 3);
         };
     }
 

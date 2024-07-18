@@ -1,5 +1,6 @@
 package mcd.cdc;
 
+import com.google.common.base.MoreObjects;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
@@ -39,6 +40,16 @@ public interface CdcModel {
             active = busy = enable = 0;
             wait = 1;
         }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("enable_SOUTEN", enable)
+                    .add("active_STEN", active)
+                    .add("busy_STBSY", busy)
+                    .add("wait_STWAI", wait)
+                    .toString();
+        }
     }
 
     class CdcDecoder {
@@ -49,6 +60,16 @@ public interface CdcModel {
 
         public void reset() {
             enable = form = mode = 0;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("enable_DECEN", enable)
+                    .add("mode", mode)
+                    .add("form", form)
+                    .add("valid_!VALST", valid)
+                    .toString();
         }
     }
 
@@ -85,29 +106,63 @@ public interface CdcModel {
         public void reset() {
             enable = active = busy = 0;
             wait = 1;
+            LOG.error("TODO transferHelper.stop");
 //            stop(); //TODO transferHelper.stop
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("destination", destination)
+                    .add("address", address)
+                    .add("source", source)
+                    .add("target", target)
+                    .add("pointer", pointer)
+                    .add("length", length)
+                    .add("enable_DOUTEN", enable)
+                    .add("active_DTEN", active)
+                    .add("busy_DTBSY", busy)
+                    .add("wait_DTWAI", wait)
+                    .add("ready_DSR", ready)
+                    .add("completed_EDT", completed)
+                    .toString();
         }
     }
 
     class McdIrq {
         public int enable;     //n1
         public int pending;     //n1 DECI decoder, DTEI transfer
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("enable", enable)
+                    .add("pending", pending)
+                    .toString();
+        }
     }
 
     class CdcIrq extends McdIrq {
         public McdIrq decoder;   //DECEIN + DECI
         public McdIrq transfer;  //DTEIEN + DTEI
-        public McdIrq command;   //CMDIEN + CMDI
+//        public McdIrq command;   //CMDIEN + CMDI, unused
 
         public CdcIrq() {
             decoder = new McdIrq();
             transfer = new McdIrq();
-            command = new McdIrq();
         }
 
         public void reset() {
-            decoder.pending = transfer.pending = command.pending = 0;
-            decoder.enable = transfer.enable = command.enable = 0;
+            decoder.pending = transfer.pending = 0;
+            decoder.enable = transfer.enable = 0;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("decoder_DECEIN+DECI", decoder)
+                    .add("transfer_DTEIEN+DTEI", transfer)
+                    .toString();
         }
     }
 
@@ -119,6 +174,16 @@ public interface CdcModel {
 
         public void reset() {
             minute = second = frame = mode = 0;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("minute", minute)
+                    .add("second", second)
+                    .add("frame", frame)
+                    .add("mode", mode)
+                    .toString();
         }
     }
 
@@ -151,13 +216,22 @@ public interface CdcModel {
             head = modeByteCheck = form = mode = correctionWrite = descramble = syncDetection = syncInterrupt = 0;
             statusTrigger = statusControl = erasureCorrection = 0;
         }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("head_SHDREN", head)
+                    .add("mode", mode)
+                    .add("form", form)
+                    .add("writeRequest_WRRQ", writeRequest)
+                    .toString();
+        }
     }
 
     class CdcContext {
         public int address, stopwatch;
         public byte[] ram;
         public CdcStatus status;
-        public CdcCommand command;
         public CdcDecoder decoder;
         public CdcTransfer transfer;
         public CdcIrq irq;
@@ -167,12 +241,22 @@ public interface CdcModel {
 
         public CdcContext() {
             status = new CdcStatus();
-            command = new CdcCommand();
             decoder = new CdcDecoder();
             transfer = new CdcTransfer();
             irq = new CdcIrq();
             control = new CdcControl();
             header = new CdcHeader();
+        }
+
+        @Override
+        public String toString() {
+            return status + "\n" +
+                    transfer + "\n" +
+                    decoder + "\n" +
+                    irq + "\n" +
+                    control + "\n" +
+                    header;
+
         }
     }
 

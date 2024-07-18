@@ -130,7 +130,7 @@ public class ExtendedCueSheet implements Closeable {
                 System.out.println("CD-AUDIO");
                 detected = RomFileType.BIN_CUE;
             }
-            assert detected == romFileType;
+            assert detected == romFileType : detected + " vs " + romFileType;
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -8,6 +8,7 @@ import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Size;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 import static mcd.dict.MegaCdDict.START_MCD_SUB_GATE_ARRAY_REGS;
@@ -30,12 +31,13 @@ public class McdRegTestBase {
     MC68000Wrapper subCpu;
 
     @BeforeEach
-    public void setup() {
+    public void setupBase() {
         lc = McdDeviceHelper.setupDevices();
         ctx = lc.memoryContext;
         mainCpuBus = lc.mainBus;
         subCpuBus = lc.subBus;
         subCpu = lc.subCpu;
+        Assertions.assertEquals(false, mainCpuBus.isEnableMode1(), "MCD boot mode should not be Mode1");
     }
 
 

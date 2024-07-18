@@ -27,9 +27,8 @@ public class McdGateArrayRegTest extends McdRegTestBase {
     public static final int SUB_RESET_REG = START_MCD_SUB_GATE_ARRAY_REGS;
 
     @BeforeEach
-    @Override
     public void setup() {
-        super.setup();
+        super.setupBase();
         //ignore interrupts
         subCpu.getM68k().setSR(0x2700);
     }
