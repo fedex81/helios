@@ -45,8 +45,9 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
         if (t.enable == 0) return;
         t.active = 1;
         t.busy = 1;
+        assert t.destination.isValid() : t.destination;
         //DSR is set when destination is mainCpuRead or subCpuRead
-        t.ready = (t.destination == 2 || t.destination == 3) ? 1 : 0;
+        t.ready = (t.destination.isDma()) ? 0 : 1;
         t.completed = 0;
         CdcModel.CdcContext ctx = cdc.getContext();
         ctx.irq.transfer.pending = 0;
@@ -69,13 +70,9 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     @Override
     public int read() {
-        if (t.destination != 2 && t.destination != 3) {
+        if (t.destination.isDma()) {
             if (t.ready == 0) return 0xFFFF;
         }
-        return readInternal();
-    }
-
-    private int readInternal() {
         int data = ram.getShort(t.source);
         if (verbose) LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
         t.source = (t.source + 2) & 0x3FFF;
@@ -93,23 +90,23 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     @Override
     public void dma() {
-        if (t.active == 0) {
+        if (t.active == 0 || !t.destination.isDma()) {
             return;
         }
-        if (t.destination != 4 && t.destination != 5 && t.destination != 7) return;
+        assert t.destination.isValid();
         int data = ram.getShort(t.source);
         switch (t.destination) {
-            case 7 -> { //WRAM
+            case DMA_SUB_WRAM_7 -> { //WRAM
                 int baseAddr = memoryContext.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M
                         ? START_MCD_SUB_WORD_RAM_1M : START_MCD_SUB_WORD_RAM_2M;
                 memoryContext.writeWordRamWord(SUB_M68K, baseAddr | t.address, data);
                 if (verbose) LOG.info("CDC,DMA_WRAM,wram[{}]={}", th(baseAddr | t.address), th(data));
             }
-            case 5 -> {  //PRG-RAM
+            case DMA_PROGRAM_5 -> {  //PRG-RAM
                 memoryContext.writeProgRam(t.address, data, Size.WORD);
                 //mcd.write(1, 1, 0x000000 | (n19) address & ~1, data);
             }
-            case 4 -> {
+            case DMA_PCM_4 -> {
                 assert t.length > 0;
                 //PCM DMA requires two 8-bit writes per transfer
                 writePcm(t.address, data >> 8);

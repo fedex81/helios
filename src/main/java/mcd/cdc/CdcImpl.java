@@ -86,7 +86,7 @@ public class CdcImpl implements Cdc {
             case MCD_CDC_MODE -> {
                 int resWord = memoryContext.handleRegWrite(SUB_M68K, regSpec, address, value, size);
                 cdcContext.address = resWord & NUM_CDC_REG_MASK;
-                transfer.destination = (resWord >> 8) & 7;
+                transfer.destination = CdcTransferDestination.vals[(resWord >> 8) & 7];
                 transfer.completed = (resWord >> 15) & 1;
                 transfer.ready = (resWord >> 14) & 1;
             }
@@ -121,7 +121,7 @@ public class CdcImpl implements Cdc {
                 int res2 = readBuffer(memoryContext.getRegBuffer(BufferUtil.CpuDeviceAccess.SUB_M68K, regSpec),
                         address & MDC_SUB_GATE_REGS_MASK, size);
                 //according to mcd-ver, reading DSR,EDT resets them to 0 (only for DMA transfers?)
-                if (transfer.destination != 2 && transfer.destination != 3) {
+                if (transfer.destination.isDma()) {
                     transfer.completed = 0;
                     transfer.ready = 0;
                     updateCdcMode4();
@@ -396,7 +396,7 @@ public class CdcImpl implements Cdc {
     }
 
     private void updateCdcMode4() {
-        int val = cdcContext.address | (transfer.destination << 8) |
+        int val = cdcContext.address | (transfer.destination.ordinal() << 8) |
                 (transfer.ready << 14) | (transfer.completed << 15);
         //TODO improve, cannot use the regWriteHandlers as bus writes cannot modify EDT,DSR
         writeBufferRaw(memoryContext.getRegBuffer(SUB_M68K, MCD_CDC_MODE),

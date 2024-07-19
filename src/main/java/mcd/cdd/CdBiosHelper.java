@@ -263,6 +263,9 @@ public class CdBiosHelper {
     }
 
     public static void logCdPcInfo(int pc, MC68000 cpu) {
+        if (!enabled) {
+            return;
+        }
         if (pc >= LOW_ENTRY && pc <= HIGH_ENTRY) {
             String res = CdBiosHelper.getCdBiosEntryPointIfAny(pc);
             if (res != CdBiosHelper.NO_ENTRY_POINT) {

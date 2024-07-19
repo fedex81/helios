@@ -86,8 +86,29 @@ public interface CdcModel {
         void complete();
     }
 
+    enum CdcTransferDestination {
+        NONE_0, NONE_1, MAIN_READ_2, SUB_READ_3, DMA_PCM_4, DMA_PROGRAM_5, NONE_6, DMA_SUB_WRAM_7;
+
+        public static CdcTransferDestination[] vals = CdcTransferDestination.values();
+        private boolean dmaDestination;
+        private boolean valid;
+
+        CdcTransferDestination() {
+            dmaDestination = name().startsWith("DMA");
+            valid = !name().startsWith("NONE");
+        }
+
+        public boolean isDma() {
+            return dmaDestination;
+        }
+
+        public boolean isValid() {
+            return valid;
+        }
+    }
+
     class CdcTransfer {
-        public int destination; //n3
+        public CdcTransferDestination destination; //n3
         public int address; //n19
 
         public int source; //n16
