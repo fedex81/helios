@@ -69,32 +69,24 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     @Override
     public int read() {
-        int data;
-        switch (t.destination) {
-            case 2, 3 -> {
-                data = ram.getShort(t.source);
-                if (verbose) LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
-                t.source = (t.source + 2) & 0x3FFF;
-                t.length -= 2;
-//                t.ready = 1; //TODO check
-                cdc.recalcRegValue(MCD_CDC_MODE);
-                if (t.length <= 0) {
-                    t.length = 0;
-                    assert t.completed == 0;
-                    complete();
-                }
-            }
-            default -> { //TODO check
-                if (t.ready == 0) return 0xFFFF;
-                data = ram.getShort(t.source);
-                if (verbose) LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
-                t.source = (t.source + 2) & 0x3FFF;
-                t.length -= 2;
-                if (t.length <= 0) {
-                    t.length = 0;
-                    complete();
-                }
-            }
+        if (t.destination != 2 && t.destination != 3) {
+            if (t.ready == 0) return 0xFFFF;
+        }
+        return readInternal();
+    }
+
+    private int readInternal() {
+        int data = ram.getShort(t.source);
+        if (verbose) LOG.info("CDC,RAM_R,ram[{}]={}", th(t.source), th(data));
+        t.source = (t.source + 2) & 0x3FFF;
+        t.length -= 2;
+        if (t.length <= 0) {
+            t.length = 0;
+            complete();
+        } else if (t.length <= 2) {
+            assert t.ready == 1;
+            t.completed = 1;
+            cdc.recalcRegValue(MCD_CDC_MODE);
         }
         return data;
     }

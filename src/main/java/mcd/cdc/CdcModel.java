@@ -106,8 +106,6 @@ public interface CdcModel {
         public void reset() {
             enable = active = busy = 0;
             wait = 1;
-            LOG.error("TODO transferHelper.stop");
-//            stop(); //TODO transferHelper.stop
         }
 
         @Override

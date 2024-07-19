@@ -120,10 +120,12 @@ public class CdcImpl implements Cdc {
             case MCD_CDC_MODE -> {
                 int res2 = readBuffer(memoryContext.getRegBuffer(BufferUtil.CpuDeviceAccess.SUB_M68K, regSpec),
                         address & MDC_SUB_GATE_REGS_MASK, size);
-                //according to mcd-ver, reading DSR,EDT resets them to 0
-                transfer.completed = 0;
-                transfer.ready = 0;
-                updateCdcMode4();
+                //according to mcd-ver, reading DSR,EDT resets them to 0 (only for DMA transfers?)
+                if (transfer.destination != 2 && transfer.destination != 3) {
+                    transfer.completed = 0;
+                    transfer.ready = 0;
+                    updateCdcMode4();
+                }
                 yield res2;
             }
             case MCD_CDC_REG_DATA -> {
@@ -359,6 +361,7 @@ public class CdcImpl implements Cdc {
                 CdcContext c = cdcContext;
                 c.status.reset();
                 c.transfer.reset();
+                transferHelper.stop();
                 c.irq.reset();
                 c.control.reset();
                 c.decoder.reset();
