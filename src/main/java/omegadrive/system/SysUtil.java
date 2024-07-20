@@ -138,8 +138,7 @@ public class SysUtil {
             }
         }
         SystemProvider systemProvider = switch (type) {
-            //TODO hack
-            case GENESIS -> MegaCd.createNewInstance(display);
+            case GENESIS -> Megadrive.createNewInstance(display);
             case MEGACD -> MegaCd.createNewInstance(display);
             case S32X -> Md32x.createNewInstance32x(display);
             case SG_1000 -> Z80BaseSystem.createNewInstance(SG_1000, display);

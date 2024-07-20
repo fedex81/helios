@@ -1,3 +1,12 @@
+#24.0720
+helios: fix setByteInWordBE
+helios: show rom info dialog, show region flag
+helios: fix clamp method (!)
+sms: fix port 3E bug, fix region override
+32x: quirk on rom read 0x1070 when RV=1
+32x: implement soft reset
+mcd: started work on it, not ready yet
+
 ## 23.1207
 32x: improve handling of multiple interrupts
 32x: add FRT support, disabled by default

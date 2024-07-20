@@ -76,7 +76,7 @@ task copyRes {
             include "res/**"
         }
         into "$buildDir/packageDir"
-        exclude "**/*.col", "**/site/**", "**/misc/**"
+        exclude "**/*.col", "**/bios.sms", "**/site/**", "**/misc/**", "**/sms/**", "**/mcd/**"
     }
     copy {
         from {
