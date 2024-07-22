@@ -45,6 +45,8 @@ public class MegaCdRegWriteHandlers {
             setSharedBitInternal(ctx, SUB_M68K, RET, d);
         }
         setSharedBitInternal(ctx, SUB_M68K, MODE, d);
+        setBitDefInternal(ctx, SUB_M68K, PM0, d);
+        setBitDefInternal(ctx, SUB_M68K, PM1, d);
     };
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg2_S = (ctx, d) -> {
 //        assert d == 0; //Write protected bits only write 0, mcd-verificator contradicts this

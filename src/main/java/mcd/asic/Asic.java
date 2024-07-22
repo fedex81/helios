@@ -104,6 +104,10 @@ public class Asic implements Device {
         }
     }
 
+    public StampPriorityMode getStampPriorityMode() {
+        return stampConfig.priorityMode;
+    }
+
     private void startRendering(int address, int width, int traceAddress) {
         final Function<Integer, Integer> r16 = addr -> memoryContext.readWordRam(SUB_M68K, addr, Size.WORD);
 //        Util.sleep(60_000);

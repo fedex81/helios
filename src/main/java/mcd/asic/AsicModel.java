@@ -46,7 +46,7 @@ public class AsicModel {
         static StampMapSize[] vals = StampMapSize.values();
     }
 
-    enum StampPriorityMode {
+    public enum StampPriorityMode {
         PM_OFF, UNDERWRITE, OVERWRITE, ILLEGAL;
         static StampPriorityMode[] vals = StampPriorityMode.values();
     }

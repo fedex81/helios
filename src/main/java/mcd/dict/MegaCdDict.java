@@ -222,6 +222,8 @@ public class MegaCdDict {
         RES0(SUB_M68K, 0, MCD_RESET.addr + 1),
         LEDR(SUB_M68K, 0, MCD_RESET.addr),
         LEDG(SUB_M68K, 1, MCD_RESET.addr),
+        PM0(SUB_M68K, 3, MCD_MEM_MODE.addr + 1),
+        PM1(SUB_M68K, 4, MCD_MEM_MODE.addr + 1),
 
         IFL2(M68K, 0, MCD_RESET.addr),
         IEN2(M68K, 7, MCD_RESET.addr),

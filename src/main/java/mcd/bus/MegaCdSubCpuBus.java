@@ -11,6 +11,7 @@ import omegadrive.Device;
 import omegadrive.bus.md.BusArbiter;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.util.ArrayEndianUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
@@ -119,16 +120,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
             if (memCtx.wramSetup.mode == WordRamMode._2M) {
                 res = memCtx.readWordRam(cpuType, address, size);
-            } else { //TODO mcd-verificator, better fix
-                assert false;
-                res = switch (size) {
-                    case BYTE -> readByteStriped(address);
-                    case WORD -> (readByteStriped(address) << 8) | readByteStriped(address + 1);
-                    //batman returns (E), using clr.l
-                    case LONG -> {
-                        yield size.getMask();
-                    }
-                };
+            } else {
+                //dot mapped window
+                res = readDotMapped(address, size);
             }
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
@@ -155,15 +149,9 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
             if (memCtx.wramSetup.mode == WordRamMode._2M) {
                 memCtx.writeWordRam(cpuType, address, data, size);
-            } else { //TODO mcd-verificator, better fix
-                assert false;
-                switch (size) {
-                    case BYTE -> writeByteStriped(address, data);
-                    case WORD -> {
-                        writeByteStriped(address, data >> 8);
-                        writeByteStriped(address + 1, data);
-                    }
-                }
+            } else {
+                //dot mapped window
+                writeDotMapped(address, data, size);
             }
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
@@ -183,23 +171,56 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         }
     }
 
-    private int readByteStriped(int address) {
+    private int readDotMapped(int address, Size size) {
+        return switch (size) {
+            case BYTE -> readDotMappedByte(address);
+            case WORD -> (readDotMappedByte(address) << 8) | readDotMappedByte(address + 1);
+            //batman returns (E), using clr.l
+            case LONG -> (readDotMappedByte(address) << 24) | (readDotMappedByte(address + 1) << 16) |
+                    (readDotMappedByte(address + 2) << 8) | (readDotMappedByte(address + 3) << 0);
+        };
+    }
+
+    private void writeDotMapped(int address, int data, Size size) {
+        switch (size) {
+            case BYTE -> writeDotMappedByte(address, data);
+            case WORD -> {
+                writeDotMappedByte(address, data >> 8);
+                writeDotMappedByte(address + 1, data);
+            }
+            case LONG -> {
+                writeDotMappedByte(address, data >> 24);
+                writeDotMappedByte(address + 1, data >> 16);
+                writeDotMappedByte(address + 2, data >> 8);
+                writeDotMappedByte(address + 3, data >> 0);
+            }
+        }
+    }
+
+    private int readDotMappedByte(int address) {
         byte[] wramBank = memCtx.wordRam01[memCtx.wramSetup.cpu == cpuType ? 0 : 1];
         int addr = (address & MCD_WORD_RAM_1M_MASK) >> 1;
-        int shift = ((address + 1) & 1) << 2;
+        int shift = (~address & 1) << 2;
         return (wramBank[addr] >> shift) & 0xF;
     }
 
-    private void writeByteStriped(int address, int data) {
+    private void writeDotMappedByte(int address, int data) {
         byte[] wramBank = memCtx.wordRam01[memCtx.wramSetup.cpu == cpuType ? 0 : 1];
         int addr = (address & MCD_WORD_RAM_1M_MASK) >> 1;
-        int val = wramBank[addr];
-        if ((address & 1) == 0) {
-            val = (val & 0xF) | (data & 0xF) << 4;
-        } else {
-            val = (val & 0xF0) | (data & 0xF);
+        boolean doWrite = switch (asic.getStampPriorityMode()) {
+            case PM_OFF -> true;
+            //if current nibble == 0, write
+            case UNDERWRITE -> ArrayEndianUtil.getNibbleInByteBE(wramBank[addr], address & 1) == 0;
+            //if data > 0, overwrite the existing value
+            case OVERWRITE -> ArrayEndianUtil.getNibbleInByteBE(data, address & 1) > 0;
+            default -> {
+                assert false;
+                yield false;
+            }
+        };
+        if (doWrite) {
+            wramBank[addr] = (byte) ArrayEndianUtil.setNibbleInByteBE(wramBank[addr], data, address & 1);
         }
-        wramBank[addr] = (byte) val;
     }
 
     private int handleMegaCdExpRead(int address, Size size) {

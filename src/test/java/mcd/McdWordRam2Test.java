@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static mcd.McdWordRamTest.SUB_MEM_MODE_REG;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
@@ -170,8 +171,10 @@ public class McdWordRam2Test extends McdRegTestBase {
     }
 
     @Test
-    public void testWramSubReads() {
+    public void testWramDotMappedSubReads() {
         assert ctx.wramSetup.mode == _2M;
+        //priority mode off = 0, PM0 = PM1 = 0
+        assert (subCpuBus.read(SUB_MEM_MODE_REG + 1, Size.BYTE) & 0x18) == 0;
         McdWordRamTest.setWramMain2M(lc);
         mainCpuBus.write(START_MCD_WORD_RAM, 0x1234, Size.WORD);
         mainCpuBus.write(START_MCD_WORD_RAM + 2, 0xABCD, Size.WORD);

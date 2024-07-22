@@ -89,12 +89,24 @@ public class ArrayEndianUtil {
 
     // addr 0 -> [8bit][8bit] <- addr 1
     public static int getByteInWordBE(int word, int bytePos) {
-        return (word >> (((bytePos + 1) & 1) << 3)) & 0xFF;
+        return (word >> ((~bytePos & 1) << 3)) & 0xFF;
     }
 
     // addr 0 -> [8bit][8bit] <- addr 1
     public static int setByteInWordBE(int word, int byteVal, int bytePos) {
-        final int shift = (((bytePos + 1) & 1) << 3);
+        final int shift = (~bytePos & 1) << 3;
         return (word & ~(0xFF << shift)) | ((byteVal & 0xFF) << shift);
+    }
+
+    // addr 0 -> [8bit], nibble 0 -> [4bit][4bit] <- nibble 1
+    public static int setNibbleInByteBE(int byteVal, int nibbleVal, int nibblePos) {
+        assert nibblePos < 2 && byteVal == (byte) byteVal;
+        final int shift = (~nibblePos & 1) << 2;
+        return (byteVal & ~(0xF << shift)) | ((nibbleVal & 0xF) << shift);
+    }
+
+    // addr 0 -> [8bit], nibble 0 -> [4bit][4bit] <- nibble 1
+    public static int getNibbleInByteBE(int byteVal, int nibblePos) {
+        return (byteVal >> ((~nibblePos & 1) << 2)) & 0xF;
     }
 }
