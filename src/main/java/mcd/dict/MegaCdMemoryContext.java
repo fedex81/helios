@@ -1,6 +1,7 @@
 package mcd.dict;
 
 import mcd.cdd.CdBiosHelper;
+import mcd.util.BuramHelper;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -92,6 +93,7 @@ public class MegaCdMemoryContext implements Serializable {
         backupRamArr = new byte[MCD_SUB_BRAM_SIZE];
         commonGateRegsBuf = ByteBuffer.wrap(commonGateRegs);
         backupRam = ByteBuffer.wrap(backupRamArr);
+        BuramHelper.check_format_bram(backupRam);
         sysGateRegsBuf = new ByteBuffer[2];
         sysGateRegsBuf[0] = ByteBuffer.wrap(sysGateRegs[0]);
         sysGateRegsBuf[1] = ByteBuffer.wrap(sysGateRegs[1]);

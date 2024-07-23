@@ -28,6 +28,8 @@ import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.pcm.McdPcm.MCD_PCM_DIVIDER;
+import static mcd.util.BuramHelper.readBackupRam;
+import static mcd.util.BuramHelper.writeBackupRam;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
 import static mcd.util.McdRegBitUtil.setSharedBit;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
@@ -134,7 +136,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
             res = pcm.read(address, size);
         } else if (address >= START_MCD_SUB_BRAM_AREA && address < END_MCD_SUB_BRAM_AREA) {
-            res = readBuffer(memCtx.backupRam, address & MCD_SUB_BRAM_MASK, size);
+            res = readBackupRam(memCtx.backupRam, address, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
             LOG.error("S Read Reserved: {} {}", th(address), size);
         } else {
@@ -163,7 +165,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
             pcm.write(address, data, size);
         } else if (address >= START_MCD_SUB_BRAM_AREA && address < END_MCD_SUB_BRAM_AREA) {
-            writeBufferRaw(memCtx.backupRam, address & MCD_SUB_BRAM_MASK, data, size);
+            writeBackupRam(memCtx.backupRam, address, data, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
             LOG.error("S Write Reserved: {} {} {}", address, data, size);
         } else {

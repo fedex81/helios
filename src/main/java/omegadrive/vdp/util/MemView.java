@@ -282,7 +282,7 @@ public class MemView implements Device, UpdatableViewer {
             sb.append(String.format("%4x", 0)).append(": ");
             int len = end - start;
             for (int i = start; i < end; i += BYTES_PER_LINE) {
-                int slen = Math.min(len, i + BYTES_PER_LINE);
+                int slen = Math.min(len, BYTES_PER_LINE);
                 hf.formatHex(sb, data, i, i + slen).append("  ");
                 for (int j = i; j < i + slen; j++) {
                     sb.append(toAsciiChar(data[j])).append(" ");
