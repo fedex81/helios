@@ -1,5 +1,9 @@
 package mcd.asic;
 
+import mcd.dict.MegaCdDict;
+import omegadrive.util.BufferUtil;
+import omegadrive.util.Size;
+
 import java.util.StringJoiner;
 
 import static omegadrive.util.Util.th;
@@ -10,6 +14,16 @@ import static omegadrive.util.Util.th;
  * Copyright 2024
  */
 public class AsicModel {
+
+    public interface AsicOp extends BufferUtil.StepDevice {
+        void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size);
+
+        int read(MegaCdDict.RegSpecMcd regSpec, int address, Size size);
+
+        StampPriorityMode getStampPriorityMode();
+
+        void setStampPriorityMode(int value);
+    }
 
     //0 end, 1 start
     public enum AsicEvent {AS_STOP, AS_START}

@@ -1,6 +1,7 @@
 package mcd;
 
 import mcd.asic.Asic;
+import mcd.asic.AsicModel;
 import mcd.bus.McdSubInterruptHandler;
 import mcd.bus.MegaCdMainCpuBus;
 import mcd.bus.MegaCdSubCpuBus;
@@ -45,7 +46,7 @@ public class McdDeviceHelper {
         public Cdd cdd;
         public Cdc cdc;
 
-        public Asic asic;
+        public AsicModel.AsicOp asic;
 
         public void initContext() {
             memoryContext = new MegaCdMemoryContext();

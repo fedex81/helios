@@ -2,34 +2,33 @@ package mcd.asic;
 
 import mcd.asic.AsicModel.*;
 import mcd.bus.McdSubInterruptHandler;
-import mcd.dict.MegaCdDict.RegSpecMcd;
 import mcd.dict.MegaCdMemoryContext;
-import omegadrive.Device;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
-import java.util.function.Function;
-
 import static mcd.asic.AsicModel.StampRepeat.REPEAT_MAP;
 import static mcd.asic.AsicModel.StampRepeat.vals;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
-import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_IMG_OFFSET;
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_IMG_STAMP_SIZE;
+import static mcd.dict.MegaCdDict.*;
+import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
 
 /**
+ *
+ *
  * Federico Berti
  * <p>
  * Copyright 2024
  */
-public class Asic implements Device {
+public class Asic implements AsicOp {
 
     private static final Logger LOG = LogHelper.getLogger(Asic.class.getSimpleName());
+
+    private final boolean verbose = false;
     private StampConfig stampConfig = new StampConfig();
 
     private MegaCdMemoryContext memoryContext;
@@ -37,19 +36,20 @@ public class Asic implements Device {
 
     private AsicEvent asicEvent = AsicEvent.AS_STOP;
 
-
     public Asic(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih) {
         this.memoryContext = memoryContext;
         this.interruptHandler = ih;
     }
 
+    @Override
     public int read(RegSpecMcd regSpec, int address, Size size) {
         return readBuffer(memoryContext.getRegBuffer(SUB_M68K, regSpec), address & MDC_SUB_GATE_REGS_MASK, size);
     }
 
+    @Override
     public void write(RegSpecMcd regSpec, int address, int value, Size size) {
         writeBufferRaw(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, value, size);
-        if (regSpec != RegSpecMcd.MCD_IMG_STAMP_SIZE && regSpec != MCD_IMG_OFFSET) {
+        if (regSpec != MCD_IMG_STAMP_SIZE && regSpec != MCD_IMG_OFFSET) {
             assert size == Size.WORD : regSpec + "," + size;
         }
         switch (regSpec) {
@@ -75,192 +75,274 @@ public class Asic implements Device {
             case MCD_IMG_VDOT -> stampConfig.imgHeightPx = value & 0xFF;
             case MCD_IMG_TRACE_VECTOR_ADDR -> {
                 stampConfig.imgTraceTableLocation = (value & ~1) << 2;
-                int v = stampConfig.imgHeightPx;
-                int traceAddr = stampConfig.imgTraceTableLocation;
-                // image.address = (image.base << 1) + image.offset;
-                int addr = (stampConfig.imgDestBufferLocation << 2) + stampConfig.imgOffset;
-                assert stampConfig.imgOffset == 0; //TODO check
+                cd_graphics_dst_y = stampConfig.vPixelOffset;
                 asicEvent(AsicEvent.AS_START);
-                for (; ; addr += 4) {
-                    startRendering(addr, stampConfig.imgWidthPx, traceAddr);
-                    traceAddr += 8;
-                    if (--v == 0) {
-                        //done + irq
-                        break;
-                    }
-                }
+                gfxCycleCost();
             }
-            default -> LOG.error("Unhandled: {}, {} {}", regSpec, th(value), size);
+            default -> {
+                LOG.error("Unhandled: {}, {} {}", regSpec, th(value), size);
+                assert false;
+            }
         }
     }
 
-    //from MCD_MEM_MODE
+
+    @Override    //from MCD_MEM_MODE
     public void setStampPriorityMode(int value) {
         StampPriorityMode spm = StampPriorityMode.vals[value & 3];
         assert spm != StampPriorityMode.ILLEGAL;
         if (spm != stampConfig.priorityMode) {
-            LOG.info("StampPriorityMode: {} -> {}", stampConfig.priorityMode, spm);
+            if (verbose) LOG.info("StampPriorityMode: {} -> {}", stampConfig.priorityMode, spm);
             stampConfig.priorityMode = spm;
         }
     }
 
+    @Override
     public StampPriorityMode getStampPriorityMode() {
         return stampConfig.priorityMode;
     }
 
-    private void startRendering(int address, int width, int traceAddress) {
-        final Function<Integer, Integer> r16 = addr -> memoryContext.readWordRam(SUB_M68K, addr, Size.WORD);
-//        Util.sleep(60_000);
+    int cd_graphics_x, cd_graphics_dst_x, cd_graphics_y, cd_graphics_dst_y, cd_graphics_dx, cd_graphics_dy;
+    int[] cd_graphics_pixels = new int[4];
+    int cycles;
 
-        int stampMapAddr = stampConfig.stampStartLocation << 1;
-        if (stampConfig.stampMapSize.ordinal() == 0 && stampConfig.stampSize.ordinal() == 0)
-            stampMapAddr &= 0x1ff00;  // A9-A17
-        if (stampConfig.stampMapSize.ordinal() == 0 && stampConfig.stampSize.ordinal() == 1)
-            stampMapAddr &= 0x1ffc0;  // A5-A17
-        if (stampConfig.stampMapSize.ordinal() == 1 && stampConfig.stampSize.ordinal() == 0)
-            stampMapAddr &= 0x10000;  //    A17
-        if (stampConfig.stampMapSize.ordinal() == 1 && stampConfig.stampSize.ordinal() == 1)
-            stampMapAddr &= 0x1c000;  //A15-A17
-
-        int stampShift = 4;
-        int mapShift = 4 << stampConfig.stampMapSize.ordinal();
-        int indexMask = 0x7FF; //n11
-        int pixelOffsetMask = 0xf;
-
-        if (stampConfig.stampSize == StampSize._32x32) {
-            stampShift++;
-            mapShift--;
-            indexMask &= ~3;
-            pixelOffsetMask |= 0x10;
-        }
-
-        int imageWidth = stampConfig.vCellSize << 6; //n19
-        int mapMask = stampConfig.stampMapSize == StampMapSize._256x256 ? 0x07ffff : 0x7fffff;
-
-        //13.3 -> 13.11
-        int x = r16.apply(traceAddress) << 8;
-        int y = r16.apply(traceAddress + 2) << 8;
-
-        //5.11
-        int xstep = r16.apply(traceAddress + 4);
-        int ystep = r16.apply(traceAddress + 6);
-
-//        System.out.println(traceAddress + "\t" + x);
-//        System.out.println((traceAddress+2) + "\t" + y);
-//        System.out.println((traceAddress+4) + "\t" + xstep);
-//        System.out.println((traceAddress+6) + "\t" + ystep);
-
-//        sleep(1);
-        int output = 0; //uint4
-        while (width-- > 0) {
-            if (stampConfig.stampRepeat == REPEAT_MAP) {
-                x &= mapMask;
-                y &= mapMask;
+    private void doRenderLines(int num) {
+        int target = Math.max(0, stampConfig.imgHeightPx - num);
+        int line = stampConfig.imgHeightPx;
+        do {
+            doRenderingSlot();
+            if (line != stampConfig.imgHeightPx) {
+//                LOG.info("Line: {}", stampConfig.imgHeightPx);
             }
-            //            if(bool outside = (x | y) & ~mapMask; !outside) { ??
-            boolean outside = ((x | y) & ~mapMask) > 0;
-            if (!outside) {
-                int xtrunc = x >>> 11;
-                int ytrunc = y >>> 11;
-                int xstamp = xtrunc >>> stampShift;
-                int ystamp = ytrunc >>> stampShift;
+        } while (target != stampConfig.imgHeightPx);
+    }
 
-                int val = (stampMapAddr + xstamp + (ystamp << mapShift)) << 1;
-                int mapEntry = r16.apply(val);
-//            System.out.println(width + "\t" + val + "\t" + mapEntry);
-                int index = mapEntry & indexMask;
-                int lroll = (mapEntry >> 13) & 1;  //0 = 0 degrees; 1 =  90 degrees
-                int hroll = (mapEntry >> 14) & 1;  //0 = 0 degrees; 1 = 180 degrees
-                int hflip = (mapEntry >> 15) & 1;
+    private boolean doFetch = true;
 
-                assert index >= 0;
-                //stamp index 0 is not rendered
-                if (index > 0) {
-                    if (hflip > 0) {
-                        xtrunc = ~xtrunc;
-                    }
-                    if (hroll > 0) {
-                        xtrunc = ~xtrunc;
-                        ytrunc = ~ytrunc;
-                    }
-                    if (lroll > 0) {
-                        int temp = xtrunc;
-                        xtrunc = ~ytrunc;
-                        ytrunc = temp;
-                    }
+    /**
+     * Actual impl lifted from Blastem
+     */
+    private void doRenderingSlot() {
+        cycles = 0;
+        int hLimit = stampConfig.imgWidthPx + stampConfig.hPixelOffset;
+        for (int i = 0; i < 4; i++) {
+            if (doFetch) {
+                int tvb = (readBuffer(memoryContext.commonGateRegsBuf, MCD_IMG_TRACE_VECTOR_ADDR.addr, Size.WORD) & Size.WORD.getMask()) << 2;
+                //FETCH X
+                cd_graphics_x = memoryContext.readWordRam(SUB_M68K, tvb, Size.WORD) << 8;
+                cycles += 4 * 3;
+                cd_graphics_dst_x = stampConfig.hPixelOffset;
 
-                    int xpixel = xtrunc & pixelOffsetMask; //n5
-                    int ypixel = ytrunc & pixelOffsetMask; //n5
-                    //A stamp ID is calculated by taking a stamp's location
-                    //relative to the start of Word RAM and dividing it by 0x80
-                    int outIdx = (index << 8) | ((xpixel & ~7) << stampShift) | (ypixel << 3) | (xpixel & 7);
-                    outIdx >>= 1;
-                    output = readNibble(outIdx, r16.apply(outIdx));
-//                    System.out.println(width + "\t" + outIdx + "\t" + output);
+                //FETCH Y
+                cd_graphics_y = memoryContext.readWordRam(SUB_M68K, tvb + 2, Size.WORD) << 8;
+                cycles += 4 * 2;
+
+                //FETCH DX
+                cd_graphics_dx = memoryContext.readWordRam(SUB_M68K, tvb + 4, Size.WORD);
+                if ((cd_graphics_dx & 0x8000) > 0) {
+                    cd_graphics_dx |= 0xFFFF_0000;
                 }
-            }
-            //TODO check this, only PM_OFF works?
-            int input = readNibble(address, r16.apply(address)); //n4
-//            System.out.println(width + "\t" + address + "\t" + input);
-            assert stampConfig.priorityMode == StampPriorityMode.PM_OFF;
-            output = switch (stampConfig.priorityMode) {
-                case PM_OFF -> output;
-                case UNDERWRITE -> input > 0 ? input : output;
-                case OVERWRITE -> output > 0 ? output : input;
-                case ILLEGAL -> input;
-            };
-            writeNibble(address, output);
-//            System.out.println(width + "\t" + th(address) + "\t" + getLowBitNibble(address) + "\t" + th(output));
-            if (width == 0xFF) {
-//                System.out.println(width + "\t" + address + "\t" + output);
-            }
-            if ((++address & 7) == 0) address += (imageWidth >> 1) - 8;
+                cycles += 4 * 2;
 
-            x += xstep;
-            y += ystep;
+                //FETCH DY
+                cd_graphics_dy = memoryContext.readWordRam(SUB_M68K, tvb + 6, Size.WORD);
+                if ((cd_graphics_dy & 0x8000) > 0) {
+                    cd_graphics_dy |= 0xFFFF_0000;
+                }
+                cycles += 4 * 2;
+            }
+
+            //PIXEL_I
+            cd_graphics_pixels[i] = get_src_pixel();
+            if ((cd_graphics_dst_x & 3) == 3 - i || cd_graphics_dst_x + i + 1 == hLimit) {
+                drawPixel();
+                break;
+            }
+            cycles += 4 * 2;
         }
     }
 
-    public void asicEvent(AsicEvent event) {
+    private void drawPixel() {
+        int to_draw = 4 - (cd_graphics_dst_x & 3);
+        int x_end = stampConfig.imgWidthPx + stampConfig.hPixelOffset;
+        if (cd_graphics_dst_x + to_draw > x_end) {
+            to_draw = stampConfig.imgWidthPx + stampConfig.hPixelOffset - cd_graphics_dst_x;
+        }
+        for (int i = 0; i < to_draw; i++) {
+            int dst_address = stampConfig.imgDestBufferLocation << 1;
+            dst_address += cd_graphics_dst_y << 1;
+            dst_address += (cd_graphics_dst_x >> 2) & 1;
+            dst_address += ((cd_graphics_dst_x >>> 3) * (stampConfig.vCellSize)) << 4;
+            int pixel_shift = 12 - 4 * (cd_graphics_dst_x & 3);
+            int pixel = cd_graphics_pixels[i] << pixel_shift;
+            int src_mask_check = 0xf << pixel_shift;
+            int src_mask_keep = ~src_mask_check;
+            pixel &= src_mask_check;
+            int wramVal = memoryContext.readWordRam(SUB_M68K, dst_address << 1, Size.WORD);
+            wramVal = switch (stampConfig.priorityMode) {
+                case PM_OFF -> (wramVal & src_mask_keep) | pixel;
+                case UNDERWRITE -> {
+                    if (pixel > 0 && (wramVal & src_mask_check) == 0) {
+                        wramVal = (wramVal & src_mask_keep) | pixel;
+                    }
+                    yield wramVal;
+                }
+                case OVERWRITE -> {
+                    if (pixel > 0) {
+                        wramVal = (wramVal & src_mask_keep) | pixel;
+                    }
+                    yield wramVal;
+                }
+                case ILLEGAL -> {
+                    assert false;
+                    yield wramVal;
+                }
+            };
+            memoryContext.writeWordRam(SUB_M68K, dst_address << 1, wramVal, Size.WORD);
+            cd_graphics_dst_x++;
+        }
+        doFetch = false;
+        if (cd_graphics_dst_x == x_end) {
+            cd_graphics_dst_y++;
+            stampConfig.imgHeightPx--;
+            writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_IMG_VDOT.addr, stampConfig.imgHeightPx, Size.WORD);
+            int tvb = readBuffer(memoryContext.commonGateRegsBuf, MCD_IMG_TRACE_VECTOR_ADDR.addr, Size.WORD);
+            writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_IMG_TRACE_VECTOR_ADDR.addr, tvb + 2, Size.WORD);
+            doFetch = true;
+            if (stampConfig.imgHeightPx == 0) {
+                asicEvent(AsicEvent.AS_STOP);
+//                    printWram(memoryContext);
+            }
+        }
+    }
+
+    public static void printWram(MegaCdMemoryContext mc) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = START_MCD_SUB_WORD_RAM_2M; i < END_MCD_SUB_WORD_RAM_2M; i += 2) {
+            sb.append((mc.readWordRam(SUB_M68K, i, Size.WORD) & 0xFFFF) + ",");
+            if (((i + 2) >> 1) % 16 == 0) {
+                sb.append("\n");
+            }
+        }
+        System.out.println(sb);
+    }
+
+    private int get_src_pixel() {
+        int x = cd_graphics_x >>> 11;
+        int y = cd_graphics_y >>> 11;
+        cd_graphics_x += cd_graphics_dx;
+        cd_graphics_x &= 0xFF_FFFF;
+        cd_graphics_y += cd_graphics_dy;
+        cd_graphics_y &= 0xFF_FFFF;
+        int stamp_shift, pixel_mask, stamp_num_mask;
+        if (stampConfig.stampSize == StampSize._32x32) {
+            stamp_shift = 5;
+            pixel_mask = 0x1f;
+            stamp_num_mask = 0x7fc;
+        } else {
+            stamp_shift = 4;
+            pixel_mask = 0xf;
+            stamp_num_mask = 0x7ff;
+        }
+        int stamp_x = x >>> stamp_shift; //uint16_t
+        int stamp_y = y >>> stamp_shift; //uint16_t
+        int max, base_mask;   //uint16_t
+        int row_shift; //uint32_t
+        if (stampConfig.stampMapSize == StampMapSize._4096x4096) {
+            max = 4096 >> stamp_shift;
+            base_mask = 0xE000 << ((5 - stamp_shift) << 1);
+            //128 stamps in 32x32 mode, 256 stamps in 16x16 mode
+            row_shift = 12 - stamp_shift;
+        } else {
+            max = 256 >> stamp_shift;
+            base_mask = 0xFFE0 << ((5 - stamp_shift) << 1);
+            //8 stamps in 32x32 mode, 16 stamps in 16x16 mode
+            row_shift = 8 - stamp_shift;
+        }
+        if (stamp_x >= max || stamp_y >= max) {
+            if (stampConfig.stampRepeat == REPEAT_MAP) {
+                stamp_x &= max - 1;
+                stamp_y &= max - 1;
+            } else {
+                return 0;
+            }
+        }
+        int address = (stampConfig.stampStartLocation & base_mask) << 1;
+        address += (stamp_y << row_shift) + stamp_x;
+        int stamp_def = memoryContext.readWordRam(SUB_M68K, address << 1, Size.WORD);
+        int stamp_num = stamp_def & stamp_num_mask;
+        if (stamp_num == 0) {
+            //manual says stamp 0 can't be used, I assume that means it's treated as transparent
+            return 0;
+        }
+        int pixel_x = x & pixel_mask;
+        int pixel_y = y & pixel_mask;
+        if ((stamp_def & 0x8000) > 0) { //HFLIP
+            pixel_x = pixel_mask - pixel_x;
+        }
+        int tmp;
+        switch ((stamp_def >> 13) & 3) {
+            case 1 -> {
+                tmp = pixel_y;
+                pixel_y = pixel_x;
+                pixel_x = pixel_mask - tmp;
+            }
+            case 2 -> {
+                pixel_y = pixel_mask - pixel_y;
+                pixel_x = pixel_mask - pixel_x;
+            }
+            case 3 -> {
+                tmp = pixel_y;
+                pixel_y = pixel_mask - pixel_x;
+                pixel_x = tmp;
+            }
+        }
+        int cell_x = pixel_x >> 3;
+        assert cell_x >= 0;
+        int pixel_address = stamp_num << 6;
+        pixel_address += (pixel_y << 1) + (cell_x << (stamp_shift + 1)) + ((pixel_x >> 2) & 1);
+        int word = memoryContext.readWordRam(SUB_M68K, pixel_address << 1, Size.WORD);
+        return switch (pixel_x & 3) {
+            case 1 -> (word >> 8) & 0xF;
+            case 2 -> (word >> 4) & 0xF;
+            case 3 -> word & 0xF;
+            default -> (word >> 12) & 0xF; //case 0
+        };
+    }
+
+    int cycleCost;
+
+    public int gfxCycleCost() {
+        // vsize * (13 + 2 * hoffset + 9 * (hdots + hoffset - 1))
+        //with an additional 13? cycle setup cost per line
+        cycleCost = 4 * stampConfig.imgHeightPx *
+                (13 + 2 * stampConfig.hPixelOffset + 9 * (stampConfig.imgWidthPx + stampConfig.hPixelOffset - 1));
+//        System.out.println(cycleCost);
+        return cycleCost;
+    }
+
+    private void asicEvent(AsicEvent event) {
         if (event == asicEvent) {
             assert (readBufferWord(memoryContext.commonGateRegsBuf, MCD_IMG_STAMP_SIZE.addr) >>> 15) == event.ordinal();
             return;
         }
         setBit(memoryContext.commonGateRegsBuf, MCD_IMG_STAMP_SIZE.addr, 15, event.ordinal(), Size.WORD);
-        asicEvent = event;
-        if (event == AsicEvent.AS_STOP) {
+        if (asicEvent != event && event == AsicEvent.AS_STOP) {
             interruptHandler.raiseInterrupt(INT_ASIC);
         }
+        asicEvent = event;
     }
 
-    public static int getLowBitNibble(int address) {
-        int lowBit = 12 - ((address & 3) << 2);
-        if ((address & 1) > 0 && lowBit > 4) {
-            lowBit -= 8;
-        } else if ((address & 1) > 0) {
-        } else {
-            lowBit = (address & 2) > 0 ? lowBit + 8 : lowBit;
+    //called at 32.5Khz, 0.0307 ms
+    //12_500_000/32.5Khz = 384
+    //max 32_500 lines/s, 521 lines/frame
+    @Override
+    public void step(int cycles) {
+        if (asicEvent != AsicEvent.AS_START || stampConfig.imgHeightPx == 0) {
+            return;
         }
-        assert lowBit >= 0 && lowBit <= 12;
-        return lowBit;
-    }
-
-    public static int readNibble(int address, int wramWord) {
-        int lb = getLowBitNibble(address);
-        return (wramWord >> lb) & 0xF;
-    }
-
-    private void writeNibble(int address, int nibbleValue) {
-        final int nibblePos = getLowBitNibble(address);
-        int val = memoryContext.readWordRamWord(SUB_M68K, address);
-        int mask = switch (nibblePos) {
-            case 0 -> 0xFFF0;
-            case 4 -> 0xFF0F;
-            case 8 -> 0xF0FF;
-            case 12 -> 0x0FFF;
-            default -> 0;
-        };
-        val = (val & mask) | (nibbleValue << nibblePos);
-        memoryContext.writeWordRamWord(SUB_M68K, address, val);
+//        printWram(memoryContext);
+        //bios_EU likes 75
+        doRenderLines(75);
     }
 }

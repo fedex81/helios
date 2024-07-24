@@ -1,7 +1,6 @@
 package mcd.bus;
 
-import mcd.asic.Asic;
-import mcd.asic.AsicModel.AsicEvent;
+import mcd.asic.AsicModel;
 import mcd.cdc.Cdc;
 import mcd.cdd.Cdd;
 import mcd.dict.MegaCdDict;
@@ -72,7 +71,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     private McdSubInterruptHandler interruptHandler;
     private McdPcm pcm;
 
-    private Asic asic;
+    private AsicModel.AsicOp asic;
     private Cdd cdd;
     private Cdc cdc;
 
@@ -109,7 +108,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         if (device instanceof McdPcm pcm) {
             this.pcm = pcm;
         }
-        if (device instanceof Asic asic) {
+        if (device instanceof AsicModel.AsicOp asic) {
             this.asic = asic;
         }
         return this;
@@ -406,14 +405,6 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             if (ifl2 > 0) {
                 interruptHandler.raiseInterrupt(INT_LEVEL2);
             }
-        } else if (event == VdpEvent.H_BLANK_CHANGE) {
-            boolean val = (boolean) value;
-            if (!val) {
-                if (--asicCounter == 0) {
-                    asic.asicEvent(AsicEvent.AS_STOP);
-                    asicCounter = asicCalcDuration;
-                }
-            }
         }
     }
 
@@ -442,6 +433,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             pcm.step(0);
             cdc.step(0);
             timerStep();
+            asic.step(0);
             counter32p5Khz.cycleAccumulator += Counter32p5Khz.limit;
             if (counter32p5Khz.cycleAcc75 <= 0) { //75hz
                 cdd.step(0);
