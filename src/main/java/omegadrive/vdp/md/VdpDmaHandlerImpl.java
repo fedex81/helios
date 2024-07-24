@@ -19,6 +19,7 @@
 
 package omegadrive.vdp.md;
 
+import omegadrive.SystemLoader;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -70,13 +71,35 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         if (dmaMode != null) {
             vdpProvider.setDmaFlag(1);
             printLessVerboseInfo(dmaMode == DmaMode.VRAM_FILL ? "SETUP" : "START");
-            /* Transfer from SVP ROM/RAM ($000000-$3fffff)*/
-            if (busProvider.isSvp() && (vdpProvider.getRegisterData(23) & 0x60) == 0) {
-                decreaseDmaLength();
-                increaseDestAddress();
-            }
+            handleDmaFastMemory();
         }
         return dmaMode;
+    }
+
+    private void handleDmaFastMemory() {
+        int dmaSrcHigh = vdpProvider.getRegisterData(DMA_SOURCE_HIGH);
+        /* Transfer from SVP ROM/RAM ($000000-$3fffff)*/
+        boolean svpDma = busProvider.isSvp() && (dmaSrcHigh & 0x60) == 0;
+        /* Transfer from MEGACD
+                    WRAM_1M($600_000-$63f_fff)
+                    WRAM_2M($200_000-$23f_fff)
+                    PRGRAM ($020_000-$03f_fff)
+        */
+        boolean isMegaCd = (busProvider.getSystem().getSystemType() == SystemLoader.SystemType.MEGACD);
+        //TODO mode1
+        boolean megaCdDma = isMegaCd && (
+                ((dmaSrcHigh & 0xF0) == 0x30) || //wram_1M
+                        ((dmaSrcHigh & 0xF0) == 0x10)    //wram_2M
+        );
+        if (isMegaCd) {
+            if ((dmaSrcHigh & 0xFF) == 2 || (dmaSrcHigh & 0xFF) == 3) {
+                assert false; //TODO prgRam
+            }
+        }
+        if (megaCdDma || svpDma) {
+            decreaseDmaLength();
+            increaseDestAddress();
+        }
     }
 
     //https://gendev.spritesmind.net/forum/viewtopic.php?t=2663
