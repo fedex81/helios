@@ -1,5 +1,6 @@
 package s32x.sh2.device;
 
+import omegadrive.SystemLoader;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +27,7 @@ public class SciTest {
         lc = MarsRegTestUtil.createTestInstance();
         lc.s32XMMREG.aden = 1;
         Md32xRuntimeData.releaseInstance();
-        Md32xRuntimeData.newInstance();
+        Md32xRuntimeData.newInstance(SystemLoader.SystemType.S32X);
         msci = lc.masterCtx.devices.sci;
         ssci = lc.slaveCtx.devices.sci;
     }

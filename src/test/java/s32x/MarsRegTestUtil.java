@@ -1,5 +1,6 @@
 package s32x;
 
+import omegadrive.SystemLoader;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.mapper.MdMapperTest;
 import omegadrive.memory.IMemoryProvider;
@@ -83,7 +84,7 @@ public class MarsRegTestUtil {
      */
     public static Sh2LaunchContext createTestInstance(byte[] irom) {
         Md32xRuntimeData.releaseInstance();
-        Md32xRuntimeData.newInstance();
+        Md32xRuntimeData.newInstance(SystemLoader.SystemType.S32X);
         RomHolder romHolder = new RomHolder(irom);
         Sh2LaunchContext lc = MarsLauncherHelper.setupRom(new S32xBus(), romHolder, createTestBiosHolder());
         IMemoryProvider mp = MemoryProvider.createGenesisInstance();

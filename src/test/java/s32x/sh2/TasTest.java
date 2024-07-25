@@ -1,5 +1,6 @@
 package s32x.sh2;
 
+import omegadrive.SystemLoader;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +25,7 @@ public class TasTest extends Sh2BaseTest {
     @BeforeEach
     public void before() {
         super.before();
-        Md32xRuntimeData.newInstance();
+        Md32xRuntimeData.newInstance(SystemLoader.SystemType.S32X);
         Md32xRuntimeData.setAccessTypeExt(CpuDeviceAccess.MASTER);
     }
 

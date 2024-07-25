@@ -261,7 +261,7 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
         Md32xRuntimeData.releaseInstance();
-        rt = Md32xRuntimeData.newInstance();
+        rt = Md32xRuntimeData.newInstance(systemType);
         cpu.reset();
         z80.reset(); //TODO confirm this is needed
     }

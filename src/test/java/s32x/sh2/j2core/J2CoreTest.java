@@ -1,5 +1,6 @@
 package s32x.sh2.j2core;
 
+import omegadrive.SystemLoader;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Size;
@@ -112,7 +113,7 @@ public class J2CoreTest {
         Sh2Context context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, sh2Debug);
         context.devices = Sh2DeviceHelper.createDevices(cpu, memory, new DmaFifo68k(s32XMMREG.regContext), sh2MMREG);
         sh2MMREG.init(context.devices);
-        Md32xRuntimeData.newInstance();
+        Md32xRuntimeData.newInstance(SystemLoader.SystemType.S32X);
         return context;
     }
 

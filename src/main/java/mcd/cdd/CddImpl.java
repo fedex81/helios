@@ -18,6 +18,8 @@ import static omegadrive.util.Util.th;
 
 /***
  * CddImpl
+ *
+ * TODO check mute bit from blastem
  */
 class CddImpl implements Cdd {
 
@@ -44,6 +46,7 @@ class CddImpl implements Cdd {
         interruptHandler = ih;
         cdc = c;
         playSupport = new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100);
+        setDataOrMusicBit(CddControl_DM_bit.DATA_1);
         setIoStatus(NoDisc);
         checksum();
     }
@@ -229,7 +232,8 @@ class CddImpl implements Cdd {
         }
         int nt = inTrack(cddContext.io.sector);
         if (cddContext.io.sector >= 0 && nt != cddContext.io.track) {
-            assert false;
+            LOG.error("Track changed: {}->{}, sector: {}", cddContext.io.track, nt, cddContext.io.sector);
+            setTrack(nt);
         }
 
         if (cddContext.io.status == Scanning) {

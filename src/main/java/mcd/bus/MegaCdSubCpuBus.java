@@ -10,6 +10,7 @@ import omegadrive.Device;
 import omegadrive.bus.md.BusArbiter;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.ArrayEndianUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -75,6 +76,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     private Cdd cdd;
     private Cdc cdc;
 
+    private MC68000Wrapper subCpu;
     private TimerContext timerContext;
     private Counter32p5Khz counter32p5Khz;
 
@@ -110,6 +112,10 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         }
         if (device instanceof AsicModel.AsicOp asic) {
             this.asic = asic;
+        }
+        if (device instanceof MC68000Wrapper c) {
+            assert subCpu == null;
+            this.subCpu = c;
         }
         return this;
     }
@@ -281,6 +287,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             case MCD_MEM_MODE -> handleReg2Write(address, data, size);
             case MCD_COMM_FLAGS -> {
                 //sub can only write to LSB (odd byte), WORD write becomes a BYTE write
+                assert size == Size.BYTE ? (address & 1) == 1 : true;
                 address |= 1;
                 LogHelper.logInfo(LOG, "S write COMM_FLAG {}: {} {}", th(address), th(data), size);
                 writeBufferRaw(regs, address, data, Size.BYTE);
@@ -381,20 +388,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     }
 
     public void resetDone() {
-        int regVal = readBuffer(sysGateRegs, 0, Size.WORD) | 1;
-        writeBufferRaw(sysGateRegs, 0, regVal, Size.WORD);
+        //TODO when RES0 goes to 1, does SRES (main side) follow??
+        setBit(sysGateRegs, MCD_RESET.addr + 1, 0, 1, Size.BYTE);
+        setBit(memCtx.getRegBuffer(M68K, MCD_RESET), MCD_RESET.addr + 1, 0, 1, Size.BYTE);
         LOG.info("S subCpu reset done");
     }
-
-    //75hz at NTSC 60 fps
-    //hBlankOff = 262 ( 225 displayOn, 37 display off)
-    //hblankOff rate: 15_720hz
-    //CDD int should fire every 210 hblankoff (or hblankOn)
-
-    //md-asic-demo requires > 180
-    static final int asicCalcDuration = 180;
-    private int asicCounter = asicCalcDuration;
-
 
     @Override
     public void onVdpEvent(VdpEvent event, Object value) {

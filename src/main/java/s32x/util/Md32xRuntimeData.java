@@ -1,5 +1,6 @@
 package s32x.util;
 
+import omegadrive.SystemLoader.SystemType;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
@@ -23,17 +24,24 @@ public class Md32xRuntimeData {
     private final int[] cpuDelay = new int[cdaValues.length];
     private final boolean ignoreDelays;
 
+    private final SystemType type;
+
     private static Md32xRuntimeData rt;
 
-    private Md32xRuntimeData() {
-        ignoreDelays = Sh2Config.get().ignoreDelays;
+    private Md32xRuntimeData(SystemType type) {
+        this.type = type;
+        boolean id = false;
+        if (type == SystemType.S32X) {
+            id = Sh2Config.get().ignoreDelays;
+        }
+        ignoreDelays = id;
     }
 
-    public static Md32xRuntimeData newInstance() {
+    public static Md32xRuntimeData newInstance(SystemType type) {
         if (rt != null) {
             LOG.error("Previous instance has not been released! {}", rt);
         }
-        Md32xRuntimeData mrt = new Md32xRuntimeData();
+        Md32xRuntimeData mrt = new Md32xRuntimeData(type);
         rt = mrt;
         return mrt;
     }

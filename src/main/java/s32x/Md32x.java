@@ -102,7 +102,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 
     @Override
     protected void initAfterRomLoad() {
-        rt = Md32xRuntimeData.newInstance();
+        rt = Md32xRuntimeData.newInstance(systemType);
         launchCtx = MarsLauncherHelper.setupRom((S32xBus) bus, memory.getRomHolder());
         masterCtx = launchCtx.masterCtx;
         slaveCtx = launchCtx.slaveCtx;

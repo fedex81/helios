@@ -92,10 +92,9 @@ public class CdcImpl implements Cdc {
             }
             case MCD_CDC_DMA_ADDRESS -> {
                 assert size == Size.WORD;
-                value <<= 3;
-                //[0-15] maps to [3-18]
                 writeBufferRaw(regBuffer, address & MDC_SUB_GATE_REGS_MASK, value, size);
-                transfer.address = value;
+                //[0-15] maps to [3-18]
+                transfer.address = value << 3;
             }
             case MCD_CDC_HOST -> {
                 LOG.error("CDC write {} not supported: {} {}", regSpec, th(value), size);
@@ -139,8 +138,8 @@ public class CdcImpl implements Cdc {
                 yield transferHelper.read();
             }
             case MCD_CDC_DMA_ADDRESS -> {
-                assert false;
-                yield transfer.address >> 3; // map [3,18] to [0-15]
+//                assert false : "TODO check this";
+                yield transfer.address >>> 3; // map [3,18] to [0-15], flux
             }
             case MCD_STOPWATCH -> {
                 assert false;

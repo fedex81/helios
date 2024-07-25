@@ -79,6 +79,7 @@ public class MegaCdRegWriteHandlers {
         var buff = ctx.getGateSysRegs(M68K);
         if (assertionsEnabled) {
             int now = readBuffer(buff, MCD_RESET.addr, Size.BYTE);
+            //Flux sets IEN2 = 1
             assert (d & IEN2.getBitMask()) > 0 ? (now & IEN2.getBitMask()) > 0 : true; //IEN2 write only 0
         }
         //mcd-ver main sets IFL2 to 0
@@ -93,6 +94,7 @@ public class MegaCdRegWriteHandlers {
         int dmna = now & DMNA.getBitMask();
         if (assertionsEnabled) {
             assert (d & RET.getBitMask()) == 0 || ((d & RET.getBitMask()) > 0 && ret > 0); //RET write only 0
+            //star wars_E_Demo sets mode = 1
             assert (d & MODE.getBitMask()) == 0 || ((d & MODE.getBitMask()) > 0 && mode > 0); //MODE write only 0
         }
         //2M_SUB, RET == 0, DMNA > 0 -> main cannot modify DMNA, SUB needs to release WRAM first

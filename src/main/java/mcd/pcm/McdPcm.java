@@ -133,6 +133,10 @@ public class McdPcm implements BufferUtil.StepDevice {
         address &= PCM_ADDRESS_MASK;
         if ((address >= PCM_START_RAMPTR_REGS) && (address < PCM_END_RAMPTR_REGS)) {
             return readRamPointerRegs(address, size);
+        } else if (address < PCM_REG_MASK) {
+            RegSpecMcd regSpec = getPcmReg(address);
+            logAccessReg(regSpec, SUB_M68K, address, size, true);
+            return BufferUtil.readBuffer(pcmRegs, address, size);
         }
         assert size == Size.BYTE : th(address) + "," + size;
         if (address >= PCM_START_WAVE_DATA_WINDOW) {
@@ -144,12 +148,14 @@ public class McdPcm implements BufferUtil.StepDevice {
             return res;
         }
         LogHelper.logWarnOnce(LOG, "Unhandled PCM read: {} {}", th(address), size);
-        assert false;
         return size.getMask();
     }
 
     public void write(int address, int value, Size size) {
-        assert size == Size.BYTE;
+        assert size != Size.LONG;
+        if (size == Size.WORD) {
+            address |= 1;
+        }
         address &= PCM_ADDRESS_MASK;
         value &= size.getMask();
         if (address >= PCM_START_WAVE_DATA_WINDOW) {
@@ -164,6 +170,7 @@ public class McdPcm implements BufferUtil.StepDevice {
             writeReg(regSpec, address, value);
         } else {
             LOG.error("Unhandled write: {}, {} {}", th(address), th(value), size);
+            assert false;
         }
     }
 
