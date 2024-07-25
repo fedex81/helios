@@ -2,7 +2,6 @@ package mcd.bus;
 
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
-import mcd.dict.MegaCdMemoryContext.WordRamMode;
 import mcd.util.McdBiosHolder;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.cpu.m68k.MC68000Wrapper;
@@ -64,6 +63,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
     public MegaCdSubCpuBus subCpuBus;
     private CpuDeviceAccess cpu;
 
+    private int maskMode1;
+
     public MegaCdMainCpuBus(MegaCdMemoryContext ctx) {
         cpu = M68K;
         prgRam = ByteBuffer.wrap(ctx.prgRam);
@@ -74,6 +75,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         writeBufferRaw(sysGateRegs, MCD_MEM_MODE.addr + 1, 1, Size.BYTE); //DMNA=0, RET=1
         writeBufferRaw(sysGateRegs, MCD_CDC_REG_DATA.addr, 0xFFFF, Size.WORD);
         biosHolder = McdBiosHolder.getInstance();
+        maskMode1 = !enableMode1 ? MCD_MAIN_MODE1_MASK : 0;
     }
 
     @Override
@@ -95,6 +97,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
         //mode1 and cue
         bios = biosHolder.getBiosBuffer(systemProvider.getRegion());
+        maskMode1 = !enableMode1 ? MCD_MAIN_MODE1_MASK : 0;
     }
 
     @Override
@@ -109,40 +112,19 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
         int res = size.getMask();
         if (enableMCDBus) {
-            if (address >= 0x70 && address <= 0x74) {
-                assert size == Size.LONG ? address == 0x70 : true; //LONG read on 0x72 not supported
-                int wh = Util.readData(memCtx.writeableHint, 0, Size.LONG);
-                //only used if it has been set, 240p suite bios crc check
-                if (wh != WRITABLE_HINT_UNUSED) {
-                    return Util.readData(memCtx.writeableHint, address & 3, size);
-                }
+            int addr = address | maskMode1;
+            if (addr >= M68K_START_HINT_VECTOR_WRITEABLE_M1 && addr < M68K_END_HINT_VECTOR_WRITEABLE_M1) {
+                return readHintVector(addr, size);
             }
-            if (!enableMode1) {
-                if (address >= START_MCD_MAIN_PRG_RAM && address < END_MCD_MAIN_PRG_RAM) {
-                    int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                    res = readBuffer(prgRam, addr, size);
-                } else if (address >= START_MCD_BOOT_ROM && address < END_MCD_BOOT_ROM) {
-                    res = readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
-                } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
-                    assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
-                    res = memCtx.readWordRam(cpu, address, size);
-                } else {
-                    res = super.read(address, size);
-                }
+            if (addr >= START_MCD_WORD_RAM_MODE1 && addr < END_MCD_WORD_RAM_MODE1) {
+                res = memCtx.readWordRam(cpu, addr, size);
+            } else if (addr >= START_MCD_MAIN_PRG_RAM_MODE1 && addr < END_MCD_MAIN_PRG_RAM_MODE1) {
+                addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
+                res = readBuffer(prgRam, addr, size);
+            } else if (addr >= START_MCD_BOOT_ROM_MODE1 && addr < END_MCD_BOOT_ROM_MODE1) {
+                res = readBuffer(bios, addr & MCD_BOOT_ROM_MASK, size);
             } else {
-                if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
-                    assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
-                    res = memCtx.readWordRam(cpu, address, size);
-                } else if (address >= START_MCD_MAIN_PRG_RAM_MODE1 && address < END_MCD_MAIN_PRG_RAM_MODE1) {
-                    int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                    res = readBuffer(prgRam, addr, size);
-                } else if (address >= START_MCD_BOOT_ROM_MODE1 && address < END_MCD_BOOT_ROM_MODE1) {
-                    res = readBuffer(bios, address & MCD_BOOT_ROM_MASK, size);
-                } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
-                    res = memCtx.readWordRam(cpu, address, size);
-                } else {
-                    res = super.read(address, size);
-                }
+                res = super.read(address, size);
             }
         }
         return res & size.getMask();
@@ -156,36 +138,28 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 handleMegaCdExpWrite(address, data, size);
                 return;
             }
-            if (!enableMode1) {
-                if (address >= START_MCD_MAIN_PRG_RAM && address < END_MCD_MAIN_PRG_RAM) {
-                    int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                    writeBufferRaw(prgRam, addr, data, size);
-                    return;
-                } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
-                    assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
-                    memCtx.writeWordRam(cpu, address, data, size);
-                    return;
-                }
-            } else {
-                if (address >= START_MCD_MAIN_PRG_RAM_MODE1 && address < END_MCD_MAIN_PRG_RAM_MODE1) {
-                    int addr = prgRamBankShift | (address & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                    writeBufferRaw(prgRam, addr, data, size);
-                    return;
-                } else if (address >= START_MCD_WORD_RAM_MODE1 && address < END_MCD_WORD_RAM_MODE1) {
-                    assert memCtx.wramSetup.mode == WordRamMode._1M ? address < END_MCD_WORD_RAM_1M_MODE1 : true;
-                    memCtx.writeWordRam(cpu, address, data, size);
-                    return;
-                } else if (address >= START_MCD_WORD_RAM && address < END_MCD_WORD_RAM) {
-                    assert memCtx.wramSetup.mode == WordRamMode._1M && memCtx.wramSetup.cpu == M68K ?
-                            address < END_MCD_WORD_RAM_1M_BANK0 : true;
-                    assert memCtx.wramSetup.mode == WordRamMode._1M && memCtx.wramSetup.cpu != M68K ?
-                            address >= END_MCD_WORD_RAM_1M_BANK0 : true;
-                    memCtx.writeWordRam(cpu, address, data, size);
-                    return;
-                }
+            int addr = address | maskMode1;
+            if (addr >= START_MCD_MAIN_PRG_RAM_MODE1 && addr < END_MCD_MAIN_PRG_RAM_MODE1) {
+                addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
+                writeBufferRaw(prgRam, addr, data, size);
+                return;
+            } else if (addr >= START_MCD_WORD_RAM_MODE1 && addr < END_MCD_WORD_RAM_MODE1) {
+                memCtx.writeWordRam(cpu, addr, data, size);
+                return;
             }
         }
         super.write(address, data, size);
+    }
+
+    private int readHintVector(int addr, Size size) {
+        //LONG read on 0x72 not supported
+        assert size == Size.LONG ? addr == M68K_START_HINT_VECTOR_WRITEABLE_M1 : true;
+        int res = Util.readData(memCtx.writeableHint, 0, Size.LONG);
+        //only used if it has been set, 240p suite bios crc check
+        if (res != WRITABLE_HINT_UNUSED) {
+            res = Util.readData(memCtx.writeableHint, addr & 3, size);
+        }
+        return res;
     }
 
     private int handleMegaCdExpRead(int address, Size size) {

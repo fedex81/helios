@@ -319,6 +319,15 @@ public class MegaCdDict {
         return s1;
     }
 
+
+    public static final int MCD_MAIN_MODE1_MASK = 0x400_000;
+
+    public static final int M68K_START_HINT_VECTOR_WRITEABLE = 0x70;
+    public static final int M68K_END_HINT_VECTOR_WRITEABLE = 0x74;
+
+    public static final int M68K_START_HINT_VECTOR_WRITEABLE_M1 = M68K_START_HINT_VECTOR_WRITEABLE | MCD_MAIN_MODE1_MASK;
+    public static final int M68K_END_HINT_VECTOR_WRITEABLE_M1 = M68K_END_HINT_VECTOR_WRITEABLE | MCD_MAIN_MODE1_MASK;
+
     public static final int MCD_MAIN_PRG_RAM_WINDOW_SIZE = 0x20_000;
     public static final int MCD_MAIN_PRG_RAM_WINDOW_MASK = MCD_MAIN_PRG_RAM_WINDOW_SIZE - 1;
     public static final int START_MCD_MAIN_PRG_RAM = 0x20_000;

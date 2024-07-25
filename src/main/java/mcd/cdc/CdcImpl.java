@@ -56,10 +56,10 @@ public class CdcImpl implements Cdc {
     private ExtendedTrackData track01;
     private ExtendedCueSheet cueSheet;
 
-    private ByteBuffer ram;
+    private final ByteBuffer ram;
 
-    private CdcTransfer transfer;
-    private CdcTransferHelper transferHelper;
+    private final CdcTransfer transfer;
+    private final CdcTransferHelper transferHelper;
 
     private boolean hasMedia;
 
