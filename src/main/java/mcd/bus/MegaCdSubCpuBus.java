@@ -452,6 +452,8 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         }
     }
 
+    int subCpuResetFrameCount = 0;
+
     public void onNewFrame() {
         super.onNewFrame();
         counter32p5Khz.frames++;
@@ -465,6 +467,24 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             }
             counter32p5Khz.ticks32p5 = counter32p5Khz.ticks75 = 0;
         }
+        if (subCpuResetFrameCount > 0) {
+            if (--subCpuResetFrameCount == 0) {
+                releaseSubCpuReset();
+            }
+        }
+        if (MegaCdMainCpuBus.subCpuReset && subCpuResetFrameCount == 0) {
+            subCpuResetFrameCount = 6; //~100ms
+        }
+    }
+
+    private void releaseSubCpuReset() {
+        MegaCdMainCpuBus.subCpuReset = false;
+        subCpu.reset();
+        resetDone();
+        //get SBRQ from main
+        int bval = readBuffer(memCtx.getGateSysRegs(M68K), MCD_RESET.addr + 1, Size.BYTE);
+        int sbusreq = (bval >> 1) & 1;
+        subCpu.setStop(sbusreq > 0);
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {

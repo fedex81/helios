@@ -225,6 +225,8 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
     }
 
+    public static boolean subCpuReset = false;
+
     private void handleReg0Write(int address, int data, Size size) {
         int curr = readBufferWord(sysGateRegs, MCD_RESET.addr);
         int res = memCtx.handleRegWrite(cpu, MCD_RESET, address, data, size);
@@ -247,11 +249,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
         }
         if (sreset > 0) {
             if (sbusreq == 0) {
-                subCpu.reset();
-                subCpuBus.resetDone();
-                LOG.info("M SubCpu reset done, now running");
+                subCpuReset = true;
+            } else {
+                subCpu.setStop(sbusreq > 0);
             }
-            subCpu.setStop(sbusreq > 0);
         } else { //sreset = 0
             subCpu.setStop(true);
             LOG.info("M SubCpu stopped");
