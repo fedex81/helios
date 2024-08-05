@@ -295,6 +295,11 @@ public class McdPcm implements BufferUtil.StepDevice {
     }
 
     @Override
+    public void close() {
+        playSupport.close();
+    }
+
+    @Override
     public void reset() {
         playSupport.reset();
     }

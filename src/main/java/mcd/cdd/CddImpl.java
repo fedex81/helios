@@ -735,6 +735,11 @@ class CddImpl implements Cdd {
     }
 
     @Override
+    public void close() {
+        playSupport.close();
+    }
+
+    @Override
     public void reset() {
         playSupport.reset();
     }

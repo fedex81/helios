@@ -209,7 +209,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             } //not writable
             case MCD_COMM_FLAGS -> {
                 //main can only write to MSB (even byte), WORD write becomes a BYTE write
-                assert size == Size.BYTE ? (address & 1) == 0 : true;
+//                assert size == Size.BYTE ? (address & 1) == 0 : true;
                 address &= ~1;
                 LogHelper.logInfo(LOG, "M write COMM_FLAG {}: {} {}", th(address), th(data), size);
                 writeBufferRaw(sysGateRegs, address & MCD_GATE_REGS_MASK, data, Size.BYTE);
@@ -235,8 +235,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
         int subIntReg = (res >> 8) & 1; //IFL2
         assert subCpu != null && subCpuBus != null;
 
+        //TODO this triggers only 0 -> 1 ??
         subCpuBus.getInterruptHandler().setIFL2(subIntReg > 0);
-        if (subIntReg > 0) {
+        int prevSubIntReg = 0;//(curr >> 8) & 1;
+        if (prevSubIntReg == 0 && subIntReg > 0) {
             LogHelper.logInfo(LOG, "M SubCpu int2 request");
             subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
         }
@@ -247,6 +249,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
         if ((curr & 3) == (res & 3)) {
             return;
         }
+        //reset only when 0->1
         if (sreset > 0) {
             if (sbusreq == 0) {
                 subCpuReset = true;

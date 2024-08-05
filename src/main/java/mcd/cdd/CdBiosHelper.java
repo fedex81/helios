@@ -3,7 +3,7 @@ package mcd.cdd;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Table;
-import m68k.cpu.MC68000;
+import m68k.cpu.Cpu;
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.util.MemView;
 import org.slf4j.Logger;
@@ -262,7 +262,7 @@ public class CdBiosHelper {
         return invCdBiosEntryPointMap.getOrDefault(pc, NO_ENTRY_POINT);
     }
 
-    public static void logCdPcInfo(int pc, MC68000 cpu) {
+    public static void logCdPcInfo(int pc, Cpu cpu) {
         if (!enabled) {
             return;
         }
@@ -281,7 +281,7 @@ public class CdBiosHelper {
         }
     }
 
-    private static void handleCdBiosCalls(String fname, MC68000 cpu) {
+    private static void handleCdBiosCalls(String fname, Cpu cpu) {
         if ("ROMREADN".equalsIgnoreCase(fname)) {
             int memAddr = cpu.getAddrRegisterLong(0);
             int firstSector = cpu.readMemoryLong(memAddr);

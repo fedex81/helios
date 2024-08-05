@@ -1,5 +1,6 @@
 package mcd.dict;
 
+import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegSpec;
@@ -31,7 +32,22 @@ public class MegaCdDict {
     public static final int MDC_SUB_GATE_REGS_SIZE = 0x200;
     public static final int MDC_SUB_GATE_REGS_MASK = MDC_SUB_GATE_REGS_SIZE - 1;
 
-    public enum McdRegCpuType {REG_MAIN, REG_SUB, REG_BOTH}
+    public enum McdRegCpuType {
+        REG_MAIN(M68K), REG_SUB(SUB_M68K), REG_BOTH(M68K, SUB_M68K);
+
+        //2 -> Main only
+        //4 -> sub only
+        //6 -> both
+        public final int bitSet;
+
+        McdRegCpuType(CpuDeviceAccess... cpus) {
+            int bs = 0;
+            for (var cpu : cpus) {
+                bs |= cpu.ordinal();
+            }
+            bitSet = bs;
+        }
+    }
 
     public enum McdRegType {NONE, SYS, COMM, CDC, CDD, ASIC, PCM}
 
@@ -317,6 +333,26 @@ public class MegaCdDict {
                     (char) ((valueMem & 0x000000FF) >> 0) + "'";
         }
         return s1;
+    }
+
+    public static void writeCommonRegWord(MegaCdMemoryContext mc, CpuDeviceAccess cpu, RegSpecMcd reg, int value) {
+        assert reg.deviceType != SYS;
+        assert reg.addr > NUM_SYS_REG_NON_SHARED;
+        writeReg(mc, cpu, reg, reg.addr, value, Size.WORD);
+    }
+
+    public static void writeSysRegWord(MegaCdMemoryContext mc, CpuDeviceAccess cpu, RegSpecMcd reg, int value) {
+        assert reg.addr < NUM_SYS_REG_NON_SHARED;
+        writeReg(mc, cpu, reg, reg.addr, value, Size.WORD);
+    }
+
+    public static void writeReg(MegaCdMemoryContext mc, CpuDeviceAccess cpu, RegSpecMcd reg, int value, Size size) {
+        writeReg(mc, cpu, reg, reg.addr, value, size);
+    }
+
+    public static void writeReg(MegaCdMemoryContext mc, CpuDeviceAccess cpu, RegSpecMcd reg, int addr, int value, Size size) {
+        assert (reg.regCpuType.bitSet & cpu.ordinal()) > 0;
+        BufferUtil.writeBufferRaw(mc.getRegBuffer(cpu, reg), addr, value, size);
     }
 
 

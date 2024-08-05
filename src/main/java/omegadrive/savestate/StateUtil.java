@@ -225,7 +225,7 @@ public class StateUtil {
     public static String getStateFileName(String fileName, String... exts) {
         String fileNameEx = fileName;
         Path p = Paths.get(fileName);
-        if (ZipUtil.isGZipByteStream(p) || ZipUtil.isZipArchiveByteStream(p)) {
+        if (ZipUtil.isCompressedByteStream(p)) {
             Optional<? extends ZipEntry> opt = ZipUtil.getSupportedZipEntryIfAny(p, exts);
             if (opt.isPresent()) {
                 fileNameEx = opt.get().getName();

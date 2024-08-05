@@ -150,8 +150,13 @@ public class BlipPcmProvider implements McdPcmProvider {
     }
 
     @Override
-    public void reset() {
+    public void close() {
         SoundUtil.close(dataLine);
         exec.shutdown();
+    }
+
+    @Override
+    public void reset() {
+        LOG.warn("TODO reset");
     }
 }

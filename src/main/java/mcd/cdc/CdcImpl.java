@@ -510,7 +510,7 @@ public class CdcImpl implements Cdc {
         /* only allow reading (first) CD-ROM track sectors */
         if (track.trackDataType != CdModel.TrackDataType.AUDIO && sector >= 0) {
             //header(4)
-            LOG.info("Decoding data track sector: {}, cdcRamOffset: {}", sector, th(offset - 4));
+            if (verbose) LOG.info("Decoding data track sector: {}, cdcRamOffset: {}", sector, th(offset - 4));
             if (cueSheet.romFileType == RomFileType.ISO) {
                 assert track.trackDataType == CdModel.TrackDataType.MODE1_2048;
                 /* read Mode 1 user data (2048 bytes) */

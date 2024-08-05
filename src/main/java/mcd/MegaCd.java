@@ -43,6 +43,7 @@ import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
+import omegadrive.util.ZipUtil;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.util.UpdatableViewer;
@@ -245,6 +246,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     @Override
     protected RomContext createRomContext(SysUtil.RomSpec rom) {
         romContext = Megadrive.createRomContext(rom, memory, emuFrame.getRegionOverride());
+        assert !ZipUtil.isCompressedByteStream(rom.file);
         return romContext;
     }
 
@@ -330,8 +332,8 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     @Override
     protected void handleCloseRom() {
         super.handleCloseRom();
-        mcdLaunchContext.cdd.reset();
-        mcdLaunchContext.pcm.reset();
+        mcdLaunchContext.cdd.close();
+        mcdLaunchContext.pcm.close();
     }
 
     @Override

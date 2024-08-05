@@ -42,6 +42,10 @@ public class ZipUtil {
         return isGZipFile.test(path.getFileName().toString().toLowerCase());
     }
 
+    public static boolean isCompressedByteStream(Path path) {
+        return isZipArchiveByteStream(path) || isGZipByteStream(path);
+    }
+
     public static Optional<? extends ZipEntry> getSupportedZipEntryIfAny(Path zipFilePath, String... ext) {
         String[] extArray = ext == null || ext.length == 0 ? SysUtil.binaryTypes : ext;
         Optional<? extends ZipEntry> entry = Optional.empty();

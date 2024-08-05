@@ -50,9 +50,8 @@ public class MegaCdRegWriteHandlers {
     };
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg2_S = (ctx, d) -> {
 //        assert d == 0; //Write protected bits only write 0, mcd-verificator contradicts this
-        var buff = ctx.getGateSysRegs(SUB_M68K);
-        writeBufferRaw(buff, MCD_MEM_MODE.addr, d, Size.BYTE); //WP0-7 write protected bits
-        writeBufferRaw(ctx.getGateSysRegs(M68K), MCD_MEM_MODE.addr, d, Size.BYTE); //main
+        MegaCdDict.writeReg(ctx, SUB_M68K, MCD_MEM_MODE, MCD_MEM_MODE.addr, d, Size.BYTE); //WP0-7 write protected bits
+        MegaCdDict.writeReg(ctx, M68K, MCD_MEM_MODE, MCD_MEM_MODE.addr, d, Size.BYTE); //main
     };
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg4_S = (ctx, d) -> {

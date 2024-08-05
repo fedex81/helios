@@ -31,6 +31,11 @@ public interface Device {
         //DO NOTHING
     }
 
+    default void close() {
+        //DO NOTHING
+    }
+
+
     default void saveContext(ByteBuffer buffer) {
         //DO NOTHING
     }

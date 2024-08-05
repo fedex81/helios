@@ -53,14 +53,16 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
         ctx.irq.transfer.pending = 0;
         cdc.recalcRegValue(MCD_CDC_MODE);
         t.source &= 0x3fff;
-        LOG.info("CdcTransfer start, dest: {}, cdcRam: {}, len: {}\n{}", t.destination, th(t.source), t.length, cdc.getContext());
+        if (verbose)
+            LOG.info("CdcTransfer start, dest: {}, cdcRam: {}, len: {}\n{}", t.destination, th(t.source), t.length, cdc.getContext());
 //        cdc.poll(); //TODO gengx not using it
     }
 
     @Override
     public void stop() {
         if (t.active > 0) {
-            LOG.info("CdcTransfer stop, dest: {}, cdcRam: {}, len: {}\n{}", t.destination, th(t.source), t.length, cdc.getContext());
+            if (verbose)
+                LOG.info("CdcTransfer stop, dest: {}, cdcRam: {}, len: {}\n{}", t.destination, th(t.source), t.length, cdc.getContext());
         }
         t.active = 0;
         t.busy = 0;
@@ -143,6 +145,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
         cdc.getContext().irq.transfer.pending = 1;
         cdc.recalcRegValue(MCD_CDC_MODE);
         cdc.poll();
-        LOG.info("CdcTransfer complete, dest: {}, cdcRam: {}, len: {}\n{}", t.destination, th(t.source), t.length, cdc.getContext());
+        if (verbose)
+            LOG.info("CdcTransfer complete, dest: {}, cdcRam: {}, len: {}\n{}", t.destination, th(t.source), t.length, cdc.getContext());
     }
 }

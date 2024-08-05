@@ -7,6 +7,8 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
+import java.util.Arrays;
+
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_INT_MASK;
 
 /**
@@ -19,7 +21,7 @@ public interface McdSubInterruptHandler extends Device {
 
     Logger LOG = LogHelper.getLogger(McdSubInterruptHandler.class.getSimpleName());
 
-    boolean LOG_INTERRUPT_TRIGGER = true;
+    boolean verbose = false;
 
     /**
      * INT_ASIC = LEVEL 1
@@ -49,6 +51,9 @@ public interface McdSubInterruptHandler extends Device {
     }
 
     static void printEnabledInterrupts(int reg33) {
+        if (!verbose) {
+            return;
+        }
         StringBuilder sb = new StringBuilder("SubCpu interrupts non-masked: ");
         for (var i : intVals) {
             if (McdSubInterruptHandler.checkInterruptEnabled(reg33, i.ordinal())) {
@@ -127,11 +132,17 @@ public interface McdSubInterruptHandler extends Device {
         private boolean m68kInterrupt(int num) {
             assert num > 0;
             boolean raised = subCpu.raiseInterrupt(num);
-            if (LOG_INTERRUPT_TRIGGER && raised) {
+            if (verbose && raised) {
                 LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
             }
             //if the cpu is masking it, interrupt lost
             return true;
+        }
+
+        @Override
+        public void reset() {
+            pendingMask = 0;
+            Arrays.fill(pendingInterrupts, false);
         }
     }
 }
