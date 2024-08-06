@@ -267,16 +267,15 @@ public class MegaCdMainCpuBus extends GenesisBus {
         if ((curr & 3) == (res & 3)) {
             return;
         }
-        //reset only when 0->1
-        if (sreset > 0) {
-            if (sbusreq == 0) {
-                subCpuReset = true;
-            } else {
-                subCpu.setStop(sbusreq > 0);
-            }
-        } else { //sreset = 0
-            subCpu.setStop(true);
-            LOG.info("M SubCpu stopped");
+        boolean stopped = sreset == 0 || sbusreq > 0;
+        boolean triggerReset = ((curr & 1) == 0) && sreset > 0;
+        if (triggerReset) {
+            subCpu.reset();
+        }
+        boolean prevStop = subCpu.isStopped();
+        subCpu.setStop(stopped);
+        if (prevStop != stopped) {
+            LOG.info("M SubCpu stopped: {}", stopped);
         }
     }
 
