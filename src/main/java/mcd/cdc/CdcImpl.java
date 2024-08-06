@@ -23,7 +23,7 @@ import static mcd.cdc.CdcModel.*;
 import static mcd.cdd.CdModel.SECTOR_2352;
 import static mcd.cdd.CdModel.SectorSize.S_2048;
 import static mcd.cdd.CdModel.SectorSize.S_2352;
-import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
+import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_STOPWATCH;
 import static mcd.util.McdRegBitUtil.getInvertedBitFromByte;
@@ -79,7 +79,7 @@ public class CdcImpl implements Cdc {
         switch (regSpec) {
             case MCD_CDC_REG_DATA -> {
                 //mcd-ver writes WORD
-                writeBufferRaw(regBuffer, address & MDC_SUB_GATE_REGS_MASK, value, size);
+                writeReg(memoryContext, SUB_M68K, regSpec, address & MDC_SUB_GATE_REGS_MASK, value, size);
                 //word writes MSB is ignored??
                 controllerWrite((byte) value);
             }
@@ -92,7 +92,7 @@ public class CdcImpl implements Cdc {
             }
             case MCD_CDC_DMA_ADDRESS -> {
                 assert size == Size.WORD;
-                writeBufferRaw(regBuffer, address & MDC_SUB_GATE_REGS_MASK, value, size);
+                writeReg(memoryContext, SUB_M68K, regSpec, address & MDC_SUB_GATE_REGS_MASK, value, size);
                 //[0-15] maps to [3-18]
                 transfer.address = value << 3;
             }
@@ -407,8 +407,8 @@ public class CdcImpl implements Cdc {
     }
 
     private void setTimerBuffer() {
-        writeBufferRaw(memoryContext.getRegBuffer(SUB_M68K, MCD_STOPWATCH), MCD_STOPWATCH.addr, cdcContext.stopwatch, Size.WORD);
-        writeBufferRaw(memoryContext.getRegBuffer(M68K, MCD_STOPWATCH), MCD_STOPWATCH.addr, cdcContext.stopwatch, Size.WORD);
+        writeSysRegWord(memoryContext, SUB_M68K, MCD_STOPWATCH, cdcContext.stopwatch);
+        writeSysRegWord(memoryContext, M68K, MCD_STOPWATCH, cdcContext.stopwatch);
     }
 
     @Override

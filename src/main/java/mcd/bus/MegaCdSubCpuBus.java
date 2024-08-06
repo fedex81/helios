@@ -19,11 +19,13 @@ import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_TIMER;
 import static mcd.dict.MegaCdDict.BitRegDef.IEN2;
+import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
@@ -89,9 +91,10 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         timerContext = new TimerContext();
         counter32p5Khz = new Counter32p5Khz();
         //NOTE: starts at zero and becomes 1 after ~100ms
-        writeBufferRaw(sysGateRegs, MCD_RESET.addr, 1, Size.WORD); //not reset
-        writeBufferRaw(sysGateRegs, MCD_MEM_MODE.addr, 1, Size.WORD);
-        writeBufferRaw(commonGateRegs, MCD_CDD_CONTROL.addr, 0x100, Size.WORD);
+
+        writeSysRegWord(memCtx, cpuType, MCD_RESET, 1); //not reset
+        writeSysRegWord(memCtx, cpuType, MCD_MEM_MODE, 1);
+        writeCommonRegWord(memCtx, cpuType, MCD_CDD_CONTROL, 0x100);
         attachDevice(BusArbiter.NO_OP);
     }
 
@@ -287,11 +290,11 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             case MCD_MEM_MODE -> handleReg2Write(address, data, size);
             case MCD_COMM_FLAGS -> {
                 //sub can only write to LSB (odd byte), WORD write becomes a BYTE write
-                assert size == Size.BYTE ? (address & 1) == 1 : true;
+//                assert size == Size.BYTE ? (address & 1) == 1 : true;
                 address |= 1;
                 LogHelper.logInfo(LOG, "S write COMM_FLAG {}: {} {}", th(address), th(data), size);
-                writeBufferRaw(regs, address, data, Size.BYTE);
-                writeBufferRaw(memCtx.getRegBuffer(M68K, regSpec), address, data, Size.BYTE);
+                writeReg(memCtx, cpuType, regSpec, address, data, Size.BYTE);
+                writeReg(memCtx, M68K, regSpec, address, data, Size.BYTE);
             }
             case MCD_INT_MASK -> {
                 LogHelper.logInfo(LOG, "S Write Interrupt mask control: {}, {}, {}", th(address), th(data), size);
@@ -314,22 +317,22 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
                 int addr = size == Size.BYTE ? address | 1 : address;
                 timerContext.rate = data & 0xFF;
                 timerContext.counter = timerContext.rate;
-                writeBufferRaw(regs, addr, data, size);
+                writeReg(memCtx, cpuType, regSpec, addr, data, size);
             }
             case MCD_FONT_COLOR -> { //4c
                 //byte access always goes to the odd byte
                 address = size == Size.BYTE ? address | 1 : address;
-                writeBufferRaw(regs, address, data & 0xFF, size);
+                writeReg(memCtx, cpuType, regSpec, address, data & 0xFF, size);
                 recalcFontData(regs);
             }
             case MCD_FONT_BIT -> { //4e
-                writeBufferRaw(regs, address, data, size);
+                writeReg(memCtx, cpuType, regSpec, address, data, size);
                 recalcFontData(regs);
             }
             default -> {
                 logHelper.logWarningOnce(LOG,
                         "S write unhandled MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, th(data), size);
-                writeBufferRaw(regs, address, data, size);
+                writeReg(memCtx, cpuType, regSpec, address, data, size);
 //                assert false;
             }
         }
@@ -362,6 +365,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             //TODO reset CD drive, part of cddinit, does it take 100ms??
             LOG.info("S subCpu peripheral reset started");
             setBit(sysGateRegs, MCD_RESET.addr + 1, 0, 1, Size.BYTE);//cd drive done resetting
+            softReset();
         }
     }
 
@@ -378,7 +382,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     private void handleCommRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         if (address >= START_MCD_SUB_GA_COMM_W && address < END_MCD_SUB_GA_COMM_W) { //MAIN COMM
             LogHelper.logInfo(LOG, "S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
-            writeBufferRaw(commonGateRegs, address & MDC_SUB_GATE_REGS_MASK, data, size);
+            writeReg(memCtx, cpuType, regSpec, address & MDC_SUB_GATE_REGS_MASK, data, size);
             return;
         }
         if (address >= START_MCD_SUB_GA_COMM_R && address < START_MCD_SUB_GA_COMM_W) { //SUB COMM READ ONLY
@@ -404,10 +408,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         super.onVdpEvent(event, value);
         //vBlankOn fire LEV2
         if (event == VdpEvent.V_BLANK_CHANGE && (boolean) value) {
-            int ifl2 = readBuffer(memCtx.getGateSysRegs(M68K), MCD_RESET.addr, Size.BYTE) & 1;
-            if (ifl2 > 0) {
-                interruptHandler.raiseInterrupt(INT_LEVEL2);
-            }
+            interruptHandler.raiseInterrupt(INT_LEVEL2);
         }
     }
 
@@ -490,6 +491,32 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         int bval = readBuffer(memCtx.getGateSysRegs(M68K), MCD_RESET.addr + 1, Size.BYTE);
         int sbusreq = (bval >> 1) & 1;
         subCpu.setStop(sbusreq > 0);
+    }
+
+    public void softReset() {
+        /* RESET register always return 1 */
+        writeReg(memCtx, cpuType, MCD_RESET, MCD_RESET.addr + 1, 1, Size.BYTE);
+        writeSysRegWord(memCtx, cpuType, MCD_CDC_MODE, 0);
+        writeSysRegWord(memCtx, cpuType, MCD_STOPWATCH, 0);
+        //reset all sub regs
+        Arrays.fill(commonGateRegs.array(), MCD_TIMER_INT3.addr, commonGateRegs.capacity(), (byte) 0);
+        /* SUB-CPU side default values */
+        writeSysRegWord(memCtx, cpuType, MCD_CDC_HOST, 0xffff);
+        writeSysRegWord(memCtx, cpuType, MCD_CDC_DMA_ADDRESS, 0xffff);
+
+        writeCommonRegWord(memCtx, cpuType, MCD_CDD_CONTROL, 0x100);
+        writeCommonRegWord(memCtx, cpuType, MCD_CDD_COMM4, 0x000f); //LSB status checksum
+        writeCommonRegWord(memCtx, cpuType, MCD_CDD_COMM5, 0xffff);
+        writeCommonRegWord(memCtx, cpuType, MCD_CDD_COMM6, 0xffff);
+        writeCommonRegWord(memCtx, cpuType, MCD_CDD_COMM7, 0xffff);
+        writeCommonRegWord(memCtx, cpuType, MCD_CDD_COMM8, 0xffff);
+        writeCommonRegWord(memCtx, cpuType, MCD_CDD_COMM9, 0xffff);//LSB command checksum
+
+        interruptHandler.reset();
+        cdd.reset();
+        cdc.reset();
+        asic.reset();
+        pcm.reset();
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {

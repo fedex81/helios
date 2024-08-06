@@ -26,6 +26,8 @@ public class McdGateArrayRegTest extends McdRegTestBase {
     public static final int MAIN_RESET_REG = MEGA_CD_EXP_START;
     public static final int SUB_RESET_REG = START_MCD_SUB_GATE_ARRAY_REGS;
 
+    public static final int SUB_INT_MASK_ODD = START_MCD_SUB_GATE_ARRAY_REGS | MCD_INT_MASK.addr + 1;
+
     @BeforeEach
     public void setup() {
         super.setupBase();
@@ -221,18 +223,17 @@ public class McdGateArrayRegTest extends McdRegTestBase {
     //TODO fix
 //    @Test
     public void testResetReg_IFL2() {
-        int resetReg = MEGA_CD_EXP_START | MCD_RESET.addr;
         //bset     #$0,$00a12000
-        int val = mainCpuBus.read(resetReg, Size.BYTE);
-        mainCpuBus.write(resetReg, val | 1, Size.BYTE);
+        int val = mainCpuBus.read(MAIN_RESET_REG, Size.BYTE);
+        mainCpuBus.write(MAIN_RESET_REG, val | 1, Size.BYTE);
         int startCnt = 1_000;
         int cnt = startCnt;
         boolean trigger = false;
         McdSubInterruptHandler interruptHandler = subCpuBus.getInterruptHandler();
-        subCpuBus.write(START_MCD_SUB_GATE_ARRAY_REGS | MCD_INT_MASK.addr + 1, 0xFF, Size.BYTE);
+        subCpuBus.write(SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
         do {
             //btst     #$0,$00a12000
-            val = mainCpuBus.read(resetReg, Size.BYTE);
+            val = mainCpuBus.read(MAIN_RESET_REG, Size.BYTE);
             if (!trigger && cnt < startCnt >> 1) {
                 interruptHandler.raiseInterrupt(McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2);
                 interruptHandler.handleInterrupts();
@@ -248,16 +249,14 @@ public class McdGateArrayRegTest extends McdRegTestBase {
      */
     @Test
     public void testResetReg_IEN2_disable() {
-        int resetReg = MEGA_CD_EXP_START | MCD_RESET.addr;
-        McdSubInterruptHandler interruptHandler = subCpuBus.getInterruptHandler();
         //enable IEN2
-        subCpuBus.write(START_MCD_SUB_GATE_ARRAY_REGS | MCD_INT_MASK.addr + 1, 0xFF, Size.BYTE);
+        subCpuBus.write(SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
         //set IFL2
-        int val = mainCpuBus.read(resetReg, Size.BYTE);
-        mainCpuBus.write(resetReg, val | 1, Size.BYTE);
+        int val = mainCpuBus.read(MAIN_RESET_REG, Size.BYTE);
+        mainCpuBus.write(MAIN_RESET_REG, val | 1, Size.BYTE);
         //disable IEN2
-        subCpuBus.write(START_MCD_SUB_GATE_ARRAY_REGS | MCD_INT_MASK.addr + 1, 0, Size.BYTE);
-        val = mainCpuBus.read(resetReg, Size.BYTE);
+        subCpuBus.write(SUB_INT_MASK_ODD, 0, Size.BYTE);
+        val = mainCpuBus.read(MAIN_RESET_REG, Size.BYTE);
         //IFL2 goes to 0
         Assertions.assertEquals(0, val & 1);
     }
