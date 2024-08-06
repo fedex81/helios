@@ -1,5 +1,6 @@
 package mcd;
 
+import mcd.bus.McdSubInterruptHandler;
 import mcd.dict.MegaCdDict;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
@@ -210,6 +211,55 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         mainCpuBus.write(commFlags, 0, Size.LONG);
         res = mainCpuBus.read(commFlags, Size.LONG);
         Assertions.assertEquals(0, res);
+    }
+
+    /**
+     * 68M 00ff066e   08f9 0008 00a12000      bset     #$0,$00a12000 [NEW]
+     * 68M 00ff0676   0839 0008 00a12000      btst     #$0,$00a12000 [NEW]
+     * 68M 00ff067e   6600 fff6               bne.w    $00ff0676 [NEW]
+     */
+    //TODO fix
+//    @Test
+    public void testResetReg_IFL2() {
+        int resetReg = MEGA_CD_EXP_START | MCD_RESET.addr;
+        //bset     #$0,$00a12000
+        int val = mainCpuBus.read(resetReg, Size.BYTE);
+        mainCpuBus.write(resetReg, val | 1, Size.BYTE);
+        int startCnt = 1_000;
+        int cnt = startCnt;
+        boolean trigger = false;
+        McdSubInterruptHandler interruptHandler = subCpuBus.getInterruptHandler();
+        subCpuBus.write(START_MCD_SUB_GATE_ARRAY_REGS | MCD_INT_MASK.addr + 1, 0xFF, Size.BYTE);
+        do {
+            //btst     #$0,$00a12000
+            val = mainCpuBus.read(resetReg, Size.BYTE);
+            if (!trigger && cnt < startCnt >> 1) {
+                interruptHandler.raiseInterrupt(McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2);
+                interruptHandler.handleInterrupts();
+                trigger = true;
+            }
+            cnt--;
+        } while (cnt > 0 && (val & 1) > 0);
+        Assertions.assertNotEquals(0, cnt);
+    }
+
+    /**
+     * Arslan Senki - The Heroic Legend of Arslan (hangs at copyright screen)
+     */
+    @Test
+    public void testResetReg_IEN2_disable() {
+        int resetReg = MEGA_CD_EXP_START | MCD_RESET.addr;
+        McdSubInterruptHandler interruptHandler = subCpuBus.getInterruptHandler();
+        //enable IEN2
+        subCpuBus.write(START_MCD_SUB_GATE_ARRAY_REGS | MCD_INT_MASK.addr + 1, 0xFF, Size.BYTE);
+        //set IFL2
+        int val = mainCpuBus.read(resetReg, Size.BYTE);
+        mainCpuBus.write(resetReg, val | 1, Size.BYTE);
+        //disable IEN2
+        subCpuBus.write(START_MCD_SUB_GATE_ARRAY_REGS | MCD_INT_MASK.addr + 1, 0, Size.BYTE);
+        val = mainCpuBus.read(resetReg, Size.BYTE);
+        //IFL2 goes to 0
+        Assertions.assertEquals(0, val & 1);
     }
 
 }

@@ -9,7 +9,10 @@ import org.slf4j.Logger;
 
 import java.util.Arrays;
 
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_INT_MASK;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_RESET;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 
 /**
  * Federico Berti
@@ -40,8 +43,6 @@ public interface McdSubInterruptHandler extends Device {
 
     void lowerInterrupt(SubCpuInterrupt intp);
 
-    void setIFL2(boolean val);
-
     static McdSubInterruptHandler create(MegaCdMemoryContext context, M68kProvider c) {
         return new McdSubInterruptHandlerImpl(context, c);
     }
@@ -69,13 +70,11 @@ public interface McdSubInterruptHandler extends Device {
 
         private boolean[] pendingInterrupts = new boolean[intVals.length];
 
-        private boolean ifl2 = false;
-
         private int pendingMask = 0;
 
-        private McdSubInterruptHandlerImpl(MegaCdMemoryContext c1, M68kProvider c) {
-            this.subCpu = c;
-            this.context = c1;
+        private McdSubInterruptHandlerImpl(MegaCdMemoryContext c, M68kProvider subCpu) {
+            this.subCpu = subCpu;
+            this.context = c;
         }
 
         @Override
@@ -88,9 +87,8 @@ public interface McdSubInterruptHandler extends Device {
             setPending(intp, 0);
         }
 
-        @Override
-        public void setIFL2(boolean val) {
-            ifl2 = val;
+        private int getIFL2() {
+            return Util.readBufferByte(context.getGateSysRegs(M68K), MCD_RESET.addr) & 1;
         }
 
         @Override
@@ -99,17 +97,14 @@ public interface McdSubInterruptHandler extends Device {
                 return;
             }
             final int mask = getRegMask();
+            final int ifl2 = getIFL2();
             for (int i = 1; i < pendingInterrupts.length; i++) {
                 if (pendingInterrupts[i]) {
                     boolean canRaise = ((1 << i) & mask) > 0;
                     //mcd-ver: if ifl2==0 INT#2 is not triggering
-                    canRaise &= (i == 2 && !ifl2) ? false : true;
+                    canRaise &= (i == INT_LEVEL2.ordinal() && ifl2 == 0) ? false : true;
                     if (canRaise && m68kInterrupt(i)) {
                         setPending(intVals[i], 0);
-                        //TODO check if necessary
-//                        if (intVals[i] == SubCpuInterrupt.INT_LEVEL2) {
-//                            BufferUtil.setBit(context.getGateSysRegs(M68K), MCD_RESET.addr, 0, 0, Size.BYTE);
-//                        }
                         break;
                     }
                 }

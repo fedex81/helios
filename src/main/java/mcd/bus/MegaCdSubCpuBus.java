@@ -301,7 +301,12 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
                     McdSubInterruptHandler.printEnabledInterrupts(reg);
                     //Note, according to hw manual, mcd-ver
                     //IEN2 shift from bit#2 to bit#7
-                    setBitDefInternal(memCtx, M68K, IEN2, IEN2.getBitMask() * ((reg >> 2) & 1));
+                    int val = IEN2.getBitMask() * ((reg >> 2) & 1);
+                    setBitDefInternal(memCtx, M68K, IEN2, val);
+                    //disable IEN2 -> resets IFL2
+                    if (val == 0) {
+                        setBitDefInternal(memCtx, M68K, IFL2, 0);
+                    }
                 }
             }
             case MCD_TIMER_INT3 -> {
