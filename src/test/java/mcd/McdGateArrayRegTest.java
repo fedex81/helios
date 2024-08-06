@@ -9,8 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_HINT_VECTOR;
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_RESET;
+import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdDict.START_MCD_SUB_GATE_ARRAY_REGS;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -193,4 +192,24 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         Assertions.assertEquals(0xFF, sreg & 0xFF);
         Assertions.assertEquals(mreg, mreg2);
     }
+
+    /**
+     * clr.l    $00a1200e
+     * read long and then write long 0
+     */
+    @Test
+    public void testClearReg_0xE() {
+        int commFlags = MEGA_CD_EXP_START | MCD_COMM_FLAGS.addr;
+        int comm0 = MEGA_CD_EXP_START | MCD_COMM0.addr;
+        //0xA1200F is not writable by MAIN
+        mainCpuBus.write(commFlags, 0xAABB, Size.WORD);
+        mainCpuBus.write(comm0, 0xCCDD, Size.WORD);
+
+        int res = mainCpuBus.read(commFlags, Size.LONG);
+        Assertions.assertEquals(0xBB00_CCDD, res);
+        mainCpuBus.write(commFlags, 0, Size.LONG);
+        res = mainCpuBus.read(commFlags, Size.LONG);
+        Assertions.assertEquals(0, res);
+    }
+
 }

@@ -163,7 +163,16 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
+        return switch (size) {
+            case WORD, BYTE -> handleMegaCdExpReadInternal(address, size);
+            case LONG -> ((handleMegaCdExpReadInternal(address, Size.WORD) & 0xFFFF) << 16) |
+                    (handleMegaCdExpReadInternal(address + 2, Size.WORD) & 0xFFFF);
+        };
+    }
+
+    private int handleMegaCdExpReadInternal(int address, Size size) {
         assert (address & 0xFF) < MCD_GATE_REGS_SIZE;
+        assert size != Size.LONG;
         RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpu, address);
         logAccess(regSpec, cpu, address, 0, size, true);
         if (regSpec == RegSpecMcd.INVALID) {
@@ -191,7 +200,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
             return;
         }
-        checkRegLongAccess(regSpec, size);
+//        checkRegLongAccess(regSpec, size);
         switch (regSpec.deviceType) {
             case SYS -> handleSysRegWrite(regSpec, address, data, size);
             case COMM -> handleCommWrite(regSpec, address, data, size);
@@ -200,6 +209,16 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     private void handleSysRegWrite(RegSpecMcd regSpec, int address, int data, Size size) {
+        switch (size) {
+            case WORD, BYTE -> handleSysRegWriteInternal(regSpec, address, data, size);
+            case LONG -> {
+                handleMegaCdExpWrite(address, data >> 16, Size.WORD);
+                handleMegaCdExpWrite(address + 2, data, Size.WORD);
+            }
+        }
+    }
+
+    private void handleSysRegWriteInternal(RegSpecMcd regSpec, int address, int data, Size size) {
         assert size != Size.LONG;
         switch (regSpec) {
             case MCD_RESET -> handleReg0Write(address, data, size);
