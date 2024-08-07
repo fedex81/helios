@@ -234,6 +234,14 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
+        return switch (size) {
+            case WORD, BYTE -> handleMegaCdExpReadInternal(address, size);
+            case LONG -> ((handleMegaCdExpReadInternal(address, Size.WORD) & 0xFFFF) << 16) |
+                    (handleMegaCdExpReadInternal(address + 2, Size.WORD) & 0xFFFF);
+        };
+    }
+
+    private int handleMegaCdExpReadInternal(int address, Size size) {
         RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
         logAccess(regSpec, cpuType, address, 0, size, true);
         if (regSpec == MegaCdDict.RegSpecMcd.INVALID) {
@@ -255,6 +263,16 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     }
 
     private void handleMegaCdExpWrite(int address, int data, Size size) {
+        switch (size) {
+            case WORD, BYTE -> handleMegaCdExpWriteInternal(address, data, size);
+            case LONG -> {
+                handleMegaCdExpWrite(address, data >> 16, Size.WORD);
+                handleMegaCdExpWrite(address + 2, data, Size.WORD);
+            }
+        }
+    }
+
+    private void handleMegaCdExpWriteInternal(int address, int data, Size size) {
         MegaCdDict.RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
         MegaCdDict.logAccess(regSpec, cpuType, address, data, size, false);
         if (regSpec == MegaCdDict.RegSpecMcd.INVALID) {

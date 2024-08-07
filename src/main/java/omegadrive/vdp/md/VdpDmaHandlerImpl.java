@@ -77,6 +77,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     private void handleDmaFastMemory() {
+        if (dmaMode != DmaMode.MEM_TO_VRAM) {
+            return;
+        }
         int dmaSrcHigh = vdpProvider.getRegisterData(DMA_SOURCE_HIGH);
         /* Transfer from SVP ROM/RAM ($000000-$3fffff)*/
         boolean svpDma = busProvider.isSvp() && (dmaSrcHigh & 0x60) == 0;
@@ -170,7 +173,8 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     private void printInfoLess(String head, int srcAddress, Integer data) {
         String str = getDmaStateString(head, srcAddress, data);
-        LOG.info(str);
+        LogHelper.logWarnOnceForce(LOG, str);
+//        LOG.info(str);
         if (printToSysOut) {
             System.out.println(str);
         }
