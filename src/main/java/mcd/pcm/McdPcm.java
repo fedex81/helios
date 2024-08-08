@@ -154,7 +154,7 @@ public class McdPcm implements BufferUtil.StepDevice {
     public void write(int address, int value, Size size) {
         assert size != Size.LONG;
         if (size == Size.WORD) {
-            address |= 1;
+            address |= 1; //write LSB only to odd byte
         }
         address &= PCM_ADDRESS_MASK;
         value &= size.getMask();
@@ -163,18 +163,18 @@ public class McdPcm implements BufferUtil.StepDevice {
             assert address >= 0x2000 && address < 0x4000 : th(address);
             address = waveBank | ((address & PCM_WAVE_DATA_WINDOW_MASK_EXT) >> 1);
 //            LOG.info("PCM W {}(ext {}) val: {} {}", th(address),th(ta), th(value), size);
-            BufferUtil.writeBufferRaw(waveData, address, value, size);
+            BufferUtil.writeBufferRaw(waveData, address, value, Size.BYTE);
         } else if (address < PCM_REG_MASK) {
             RegSpecMcd regSpec = getPcmReg(address);
             logAccessReg(regSpec, SUB_M68K, address, size, false);
-            writeReg(regSpec, address, value);
+            writeRegByte(regSpec, address, value);
         } else {
             LOG.error("Unhandled write: {}, {} {}", th(address), th(value), size);
             assert false;
         }
     }
 
-    private void writeReg(RegSpecMcd regSpec, int address, int value) {
+    private void writeRegByte(RegSpecMcd regSpec, int address, int value) {
         PcmChannelContext channel = chan[channelBank];
         switch (regSpec) {
             case MCD_PCM_ENV -> {

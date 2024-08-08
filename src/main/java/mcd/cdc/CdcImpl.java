@@ -558,7 +558,12 @@ public class CdcImpl implements Cdc {
         try {
             track.file.seek(dataSeekPos - 16);
             int readN = track.file.read(syncHeader, 0, syncHeader.length);
-            assert readN == syncHeader.length;
+            try {
+                assert readN == syncHeader.length : track + ",seekPos:" + th(dataSeekPos); //SurgicalStrike_E
+            } catch (Error e) {
+                //try-catch for debugging
+                e.printStackTrace();
+            }
             readN = track.file.read(header, 0, header.length);
             assert readN == header.length;
             ok = header[0] == holder.minute && header[1] == holder.second
