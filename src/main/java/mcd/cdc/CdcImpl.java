@@ -141,10 +141,7 @@ public class CdcImpl implements Cdc {
 //                assert false : "TODO check this";
                 yield transfer.address >>> 3; // map [3,18] to [0-15], flux
             }
-            case MCD_STOPWATCH -> {
-                assert false;
-                yield cdcContext.stopwatch;
-            }
+            case MCD_STOPWATCH -> cdcContext.stopwatch;
             default -> {
                 assert false;
                 yield size.getMask();
