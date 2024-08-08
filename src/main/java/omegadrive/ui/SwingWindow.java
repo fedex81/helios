@@ -427,9 +427,7 @@ public class SwingWindow implements DisplayWindow {
         jFrame.add(screenLabel, -1);
 
         jFrame.pack();
-        SwingScreenSupport.centerWindow(jFrame);
-
-        jFrame.setVisible(true);
+        SwingScreenSupport.showOnCurrentScreen(jFrame);
         showDebugInfo(SystemLoader.showFps);
     }
 
@@ -510,7 +508,7 @@ public class SwingWindow implements DisplayWindow {
             jFrame.setPreferredSize(isFullScreen ? fullScreenSize : nativeScreenSize);
             jFrame.getJMenuBar().setVisible(!isFullScreen);
             jFrame.pack();
-            SwingScreenSupport.centerWindow(jFrame);
+            SwingScreenSupport.showOnCurrentScreen(jFrame);
             LOG.info("Emulation Viewport size: {}", outputScreenSize);
             LOG.info("Application size: {}", jFrame.getSize());
         };

@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  */
 public class SwingScreenSupport {
 
-    public static final int DEFAULT_SCREEN = 1;
+    public static final int DEFAULT_SCREEN = Integer.valueOf(System.getProperty("helios.ui.default.screen", "1"));
 
     private static final Logger LOG = LogHelper.getLogger(SwingScreenSupport.class.getSimpleName());
 
@@ -59,14 +59,8 @@ public class SwingScreenSupport {
         return currentScreen;
     }
 
-    //get the center location and then reset it
-    public static void centerWindow(Window w) {
-        //get the center location and then reset it
-        GraphicsDevice gd = getGraphicsDevice();
-        w.setLocationRelativeTo(null);
-        Point centerPoint = w.getLocation();
-        w.setLocation(gd.getDefaultConfiguration().getBounds().x + centerPoint.x,
-                gd.getDefaultConfiguration().getBounds().y + centerPoint.y);
+    public static void showOnCurrentScreen(JFrame frame) {
+        showOnScreen(currentScreen, frame);
     }
 
     public static void showOnScreen(int screen, JFrame frame) {
