@@ -37,8 +37,8 @@ import static mcd.util.McdRegBitUtil.setSharedBit;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
-import static omegadrive.util.Util.getBitFromWord;
-import static omegadrive.util.Util.th;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
+import static omegadrive.util.Util.*;
 
 /**
  * Federico Berti
@@ -506,9 +506,13 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         subCpu.reset();
         resetDone();
         //get SBRQ from main
-        int bval = readBuffer(memCtx.getGateSysRegs(M68K), MCD_RESET.addr + 1, Size.BYTE);
+        int bval = readBufferByte(memCtx.getGateSysRegs(M68K), MCD_RESET.addr + 1);
         int sbusreq = (bval >> 1) & 1;
         subCpu.setStop(sbusreq > 0);
+    }
+
+    public int getLedState() {
+        return readBufferByte(memCtx.getGateSysRegs(SUB_M68K), MCD_RESET.addr) & 3;
     }
 
     public void softReset() {

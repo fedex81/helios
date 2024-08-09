@@ -28,7 +28,7 @@ import omegadrive.joypad.JoypadProvider.JoypadType;
 import omegadrive.system.SysUtil.RomSpec;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.flatlaf.FlatLafHelper;
-import omegadrive.ui.util.CountryFlagsLoader;
+import omegadrive.ui.util.IconsLoader;
 import omegadrive.ui.util.UiFileFilters;
 import omegadrive.ui.util.UiFileFilters.FileResourceType;
 import omegadrive.util.*;
@@ -88,6 +88,7 @@ public class SwingWindow implements DisplayWindow {
     private final JLabel screenLabel = new JLabel();
     private final JLabel perfLabel = new JLabel("");
     private final JLabel regionLabel = new JLabel("");
+    private final JLabel megaCdLedLabel = new JLabel("");
 
     private JFrame jFrame;
     private SystemProvider mainEmu;
@@ -129,11 +130,14 @@ public class SwingWindow implements DisplayWindow {
         }
         jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() + " " + VERSION + " - " +
                 FileUtil.getFileName(romContext.romSpec.file));
-        Icon icon = CountryFlagsLoader.getRegionIcon(romContext.region);
+        Icon icon = IconsLoader.getRegionIcon(romContext.region);
         regionLabel.setIcon(icon);
         regionLabel.setText(icon == null ? romContext.region.name() : "");
         regionLabel.setToolTipText(romContext.region.name());
         reloadRecentFiles();
+        if (mainEmu.getSystemType() == SystemType.MEGACD) {
+            megaCdLedLabel.setIcon(IconsLoader.getLedIcon(0));
+        }
     }
 
     private void addKeyAction(AbstractButton component, SystemEvent event, ActionListener l) {
@@ -209,6 +213,7 @@ public class SwingWindow implements DisplayWindow {
             perfLabel.setText("");
             regionLabel.setIcon(null);
             regionLabel.setText("");
+            megaCdLedLabel.setIcon(null);
             jFrame.setTitle(FRAME_TITLE_HEAD);
             cursorHandler.reset();
             LOG.info("Blanking screen");
@@ -231,18 +236,23 @@ public class SwingWindow implements DisplayWindow {
 
     private Future<?> previousFrame = CompletableFuture.completedFuture(null);
 
+    private DisplayContext dcCopy = new DisplayContext();
+
     //NOTE: this will copy the input array
     @Override
-    public void renderScreenLinear(int[] data, Optional<String> label, VideoMode videoMode) {
-        if (data.length != pixelsSrc.length) {
-            pixelsSrc = data.clone();
+    public void renderScreenLinear(DisplayContext dc) {
+        if (dc.data.length != pixelsSrc.length) {
+            pixelsSrc = dc.data.clone();
         }
-        System.arraycopy(data, 0, pixelsSrc, 0, data.length);
+        System.arraycopy(dc.data, 0, pixelsSrc, 0, dc.data.length);
         if (UI_SCALE_ON_THREAD) {
             assert checkSlowDown();
-            previousFrame = executorService.submit(() -> renderScreenLinearInternal(pixelsSrc, label, videoMode));
+            dcCopy.megaCdLedState = dc.megaCdLedState;
+            dcCopy.label = dc.label;
+            dcCopy.videoMode = dc.videoMode;
+            previousFrame = executorService.submit(() -> renderScreenLinearInternal(pixelsSrc, dcCopy));
         } else {
-            renderScreenLinearInternal(pixelsSrc, label, videoMode);
+            renderScreenLinearInternal(pixelsSrc, dc);
         }
     }
 
@@ -338,6 +348,7 @@ public class SwingWindow implements DisplayWindow {
         bar.add(Box.createHorizontalGlue());
         bar.add(perfLabel);
         bar.add(Box.createHorizontalGlue());
+        bar.add(megaCdLedLabel);
         bar.add(regionLabel);
 
         JMenuItem loadRomItem = new JMenuItem("Load ROM");
@@ -431,10 +442,11 @@ public class SwingWindow implements DisplayWindow {
         showDebugInfo(SystemLoader.showFps);
     }
 
-    private void renderScreenLinearInternal(int[] data, Optional<String> label, VideoMode videoMode) {
-        resizeScreen(videoMode);
+    private void renderScreenLinearInternal(int[] data, DisplayContext dc) {
+        resizeScreen(dc.videoMode);
         RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
-        label.ifPresent(this::showLabel);
+        dc.label.ifPresent(this::showLabel);
+        dc.megaCdLedState.ifPresent(v -> megaCdLedLabel.setIcon(IconsLoader.getLedIcon(v)));
         screenLabel.repaint();
         detectUserScreenChange();
         cursorHandler.newFrame();

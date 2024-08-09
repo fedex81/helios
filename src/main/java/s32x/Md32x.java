@@ -12,7 +12,6 @@ import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Sleeper;
-import omegadrive.util.VideoMode;
 import omegadrive.vdp.md.GenesisVdp;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
@@ -174,17 +173,19 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     }
 
     @Override
-    protected void doRendering(VideoMode mdVideoMode, int[] data, Optional<String> stats) {
+    protected void doRendering(int[] data) {
         MarsVdpRenderContext ctx = marsVdp.getMarsVdpRenderContext();
         boolean dumpComposite = false, dumpMars = false;
         if (dumpComposite) {
-            DebugVideoRenderContext.dumpCompositeData(ctx, data, mdVideoMode);
+            DebugVideoRenderContext.dumpCompositeData(ctx, data, displayContext.videoMode);
         }
         if (dumpMars) {
             marsVdp.dumpMarsData();
         }
-        int[] fg = marsVdp.doCompositeRendering(mdVideoMode, data, ctx);
-        super.doRendering(ctx.vdpContext.videoMode, fg, stats);
+        int[] fg = marsVdp.doCompositeRendering(displayContext.videoMode, data, ctx);
+        //Use 32x videoMode, can be different from MD videoMode
+        displayContext.videoMode = ctx.vdpContext.videoMode;
+        super.doRendering(fg);
     }
 
     @Override

@@ -51,6 +51,7 @@ import org.slf4j.Logger;
 import s32x.util.Md32xRuntimeData;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.GEN_NTSC_MCLOCK_MHZ;
@@ -221,20 +222,20 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     }
     @Override
     protected void updateVideoMode(boolean force) {
-        if (force || videoMode != vdp.getVideoMode()) {
-            videoMode = vdp.getVideoMode();
+        if (force || displayContext.videoMode != vdp.getVideoMode()) {
+            displayContext.videoMode = vdp.getVideoMode();
             double microsPerTick = getMicrosPerTick();
             sound.getFm().setMicrosPerTick(microsPerTick);
             targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
-            mcd68kRatio = videoMode.isPal() ? MCD_68K_RATIO_PAL : MCD_68K_RATIO_NTSC;
-            mcdLaunchContext.pcm.updateVideoMode(videoMode);
-            mcdLaunchContext.cdd.updateVideoMode(videoMode);
-            LOG.info("Video mode changed: {}, mcd68kRatio: {}, microsPerTick: {}", videoMode, mcd68kRatio, microsPerTick);
+            mcd68kRatio = displayContext.videoMode.isPal() ? MCD_68K_RATIO_PAL : MCD_68K_RATIO_NTSC;
+            mcdLaunchContext.pcm.updateVideoMode(displayContext.videoMode);
+            mcdLaunchContext.cdd.updateVideoMode(displayContext.videoMode);
+            LOG.info("Video mode changed: {}, mcd68kRatio: {}, microsPerTick: {}", displayContext.videoMode, mcd68kRatio, microsPerTick);
         }
     }
 
     private double getMicrosPerTick() {
-        double mclkhz = videoMode.isPal() ? GEN_PAL_MCLOCK_MHZ : GEN_NTSC_MCLOCK_MHZ;
+        double mclkhz = displayContext.videoMode.isPal() ? GEN_PAL_MCLOCK_MHZ : GEN_NTSC_MCLOCK_MHZ;
         return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
     }
 
@@ -255,6 +256,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         memView.update();
         mcdLaunchContext.pcm.newFrame();
         mcdLaunchContext.cdd.newFrame();
+        displayContext.megaCdLedState = Optional.of(mcdLaunchContext.subBus.getLedState());
         super.newFrame();
     }
 
@@ -273,7 +275,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         if ((getFrameCounter() + 1) % 60 == 0) {
             boolean rangeOk = Math.abs(MCD_SUB_68K_CLOCK_MHZ - subCnt) < 250_000; //250Khz slack
             if (!rangeOk) {
-                logTimingWarn(LOG, "SubCpu timing off!!!, 68K clock: {}, mode: {}", videoMode);
+                logTimingWarn(LOG, "SubCpu timing off!!!, 68K clock: {}, mode: {}", subCnt, displayContext.videoMode);
             }
             subCnt = 0;
         }
@@ -345,7 +347,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     }
 
     private void logTimingWarn(Logger log, String str, Object... pars) {
-        if (videoMode.isPal()) {
+        if (displayContext.videoMode.isPal()) {
             //known issue, warn once
             LogHelper.logWarnOnce(log, str, pars);
         } else {

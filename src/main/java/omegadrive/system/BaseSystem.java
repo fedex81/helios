@@ -70,6 +70,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     protected Future<Void> runningRomFuture;
     protected DisplayWindow emuFrame;
 
+    protected DisplayWindow.DisplayContext displayContext;
+
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     protected volatile boolean saveStateFlag = false;
@@ -89,7 +91,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     protected long elapsedWaitNs, frameProcessingDelayNs;
     protected long targetNs, startNs = 0;
     private long driftNs = 0;
-    private Optional<String> stats = Optional.empty();
 
     private final CyclicBarrier pauseBarrier = new CyclicBarrier(2);
 
@@ -102,6 +103,9 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     @Override
     public void init() {
         sound = AbstractSoundManager.createSoundProvider(systemType);
+        displayContext = new DisplayWindow.DisplayContext();
+        displayContext.megaCdLedState = Optional.empty();
+        displayContext.videoMode = VideoMode.PAL_H40_V30;
     }
 
     protected void initAfterRomLoad() {
@@ -265,12 +269,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         }
     }
 
-    protected Optional<String> getStats(long nowNs, long prevStartNs) {
+    protected void getStats(long nowNs, long prevStartNs) {
         if (!SystemLoader.showFps) {
-            return Optional.empty();
+            return;
         }
         telemetry.newFrame(nowNs - prevStartNs, driftNs).ifPresent(statsConsumer);
-        return stats;
     }
 
     protected long syncCycle(long startCycle) {
@@ -336,7 +339,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         elapsedWaitNs = syncCycle(startNs) - startWaitNs;
         startNs = System.nanoTime();
         updateVideoMode(false);
-        doRendering(videoMode, vdp.getScreenDataLinear(), getStats(startNs, prevStartNs));
+        getStats(startNs, prevStartNs);
+        doRendering(vdp.getScreenDataLinear());
         frameProcessingDelayNs = startNs - startWaitNs - elapsedWaitNs;
         handleVdpDumpScreenData();
         processSaveState();
@@ -350,7 +354,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 //        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
     }
 
-    final Consumer<String> statsConsumer = st -> stats = Optional.of(st);
+    final Consumer<String> statsConsumer = st -> displayContext.label = Optional.of(st);
 
     class RomRunnable implements Runnable {
         private final RomSpec romSpec;
@@ -402,8 +406,9 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         }
     }
 
-    protected void doRendering(VideoMode videoMode, int[] data, Optional<String> label) {
-        emuFrame.renderScreenLinear(data, label, videoMode);
+    protected void doRendering(int[] data) {
+        displayContext.data = data;
+        emuFrame.renderScreenLinear(displayContext);
     }
 
     private void handlePause() {

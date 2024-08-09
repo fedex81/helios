@@ -83,7 +83,7 @@ public class Nes extends BaseSystem<BaseBusProvider> {
     @Override
     protected void loop() {
         targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
-        videoMode = vdp.getVideoMode();
+        displayContext.videoMode = vdp.getVideoMode();
         gui = NesHelper.createNes(getRomPath(), this, (AudioOutInterface) sound.getFm());
         vdp = gui.getVdpProvider();
         gui.run(); //blocking
@@ -108,6 +108,6 @@ public class Nes extends BaseSystem<BaseBusProvider> {
 
     @Override
     protected void updateVideoMode(boolean force) {
-        videoMode = vdp.getVideoMode();
+        displayContext.videoMode = vdp.getVideoMode();
     }
 }

@@ -116,7 +116,7 @@ public class Gb extends BaseSystem<BaseBusProvider> {
 
     @Override
     protected void updateVideoMode(boolean force) {
-        videoMode = vdp.getVideoMode();
+        displayContext.videoMode = vdp.getVideoMode();
     }
 
     @Override

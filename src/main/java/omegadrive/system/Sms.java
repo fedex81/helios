@@ -100,7 +100,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
 
     @Override
     protected void updateVideoMode(boolean force) {
-        videoMode = vdp.getVideoMode();
+        displayContext.videoMode = vdp.getVideoMode();
     }
 
     @Override

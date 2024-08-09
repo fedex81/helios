@@ -37,6 +37,14 @@ public interface DisplayWindow {
     int SHOW_INFO_FRAMES_DELAY = 120; //~2sec
 
 
+    class DisplayContext {
+        public int[] data;
+        public VideoMode videoMode;
+        public Optional<String> label;
+        public Optional<Integer> megaCdLedState;
+    }
+
+
     DisplayWindow HEADLESS_INSTANCE = new DisplayWindow() {
         @Override
         public void addKeyListener(KeyListener keyAdapter) {
@@ -54,7 +62,7 @@ public interface DisplayWindow {
         }
 
         @Override
-        public void renderScreenLinear(int[] data, Optional<String> label, VideoMode videoMode) {
+        public void renderScreenLinear(DisplayContext displayContext) {
 
         }
 
@@ -83,7 +91,7 @@ public interface DisplayWindow {
 
     void init();
 
-    void renderScreenLinear(int[] data, Optional<String> label, VideoMode videoMode);
+    void renderScreenLinear(DisplayContext displayContext);
 
     void resetScreen();
 

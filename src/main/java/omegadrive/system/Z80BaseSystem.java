@@ -125,9 +125,9 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     @Override
     protected void updateVideoMode(boolean force) {
         VideoMode vm = vdp.getVideoMode();
-        if (force || videoMode != vm) {
+        if (force || displayContext.videoMode != vm) {
             LOG.info("Video mode changed: {}", vm);
-            videoMode = vm;
+            displayContext.videoMode = vm;
         }
     }
 

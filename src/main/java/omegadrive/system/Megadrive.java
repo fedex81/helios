@@ -186,17 +186,17 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
 
     @Override
     protected void updateVideoMode(boolean force) {
-        if (force || videoMode != vdp.getVideoMode()) {
-            videoMode = vdp.getVideoMode();
+        if (force || displayContext.videoMode != vdp.getVideoMode()) {
+            displayContext.videoMode = vdp.getVideoMode();
             double microsPerTick = getMicrosPerTick();
             sound.getFm().setMicrosPerTick(microsPerTick);
             targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
-            LOG.info("Video mode changed: {}, microsPerTick: {}", videoMode, microsPerTick);
+            LOG.info("Video mode changed: {}, microsPerTick: {}", displayContext.videoMode, microsPerTick);
         }
     }
 
     private double getMicrosPerTick() {
-        double mclkhz = videoMode.isPal() ? Util.GEN_PAL_MCLOCK_MHZ : Util.GEN_NTSC_MCLOCK_MHZ;
+        double mclkhz = displayContext.videoMode.isPal() ? Util.GEN_PAL_MCLOCK_MHZ : Util.GEN_NTSC_MCLOCK_MHZ;
         return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
     }
 
