@@ -10,7 +10,10 @@ import org.digitalmediaserver.cuelib.CueSheet;
 import org.digitalmediaserver.cuelib.TrackData;
 import org.slf4j.Logger;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -28,13 +31,6 @@ public class ExtendedCueSheet implements Closeable {
 
     private final static Logger LOG = LogHelper.getLogger(ExtendedCueSheet.class.getSimpleName());
 
-    private final static byte[] SCD_SYS_BYTES = "SEGADISCSYSTEM".getBytes();
-    private final static byte ff = (byte) 0xff;
-    private final static byte[] CD_SYNC_BYTES = {0x00, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, 0x00};
-
-    //TODO remove at some point
-    private static final boolean CUE_TEST_MODE = false;
-    private static final Path NO_BIN_FILE_PATH = Paths.get(".", "test.bin");
     //placeholder name
     private static final String TEMPLATE_ISO_NAME_PH = "<iso_here>";
 
@@ -52,13 +48,6 @@ public class ExtendedCueSheet implements Closeable {
     public final List<ExtendedTrackData> extTracks = new ArrayList<>();
     public int numTracks, sectorEnd;
     protected final Map<String, RandomAccessFile> fileCache = new HashMap<>();
-    private static RandomAccessFile NO_BIN_FILE;
-
-    static {
-        if (CUE_TEST_MODE) {
-            LOG.warn("Cue test mode: {}", CUE_TEST_MODE);
-        }
-    }
 
     public ExtendedCueSheet(Path discImage, RomFileType rft) {
         assert rft.isDiscImage();
@@ -107,32 +96,8 @@ public class ExtendedCueSheet implements Closeable {
         List<TrackData> tracks = extCueSheet.cueSheet.getAllTrackData();
         assert !tracks.isEmpty();
         extCueSheet.numTracks = tracks.size();
-        checkTrack01Header(tracks.get(0));
         for (TrackData track : tracks) {
             parseTrack(extCueSheet, track.getNumber(), cuePath);
-        }
-    }
-
-    private void checkTrack01Header(TrackData track01) {
-        try {
-            byte[] header = new byte[16];
-            RandomAccessFile raf = getDataFile(this, track01.getParent().getFile(), cuePath);
-            TrackDataType trackDataType = TrackDataType.parse(track01.getDataType());
-            raf.read(header, 0, header.length);
-            RomFileType detected = RomFileType.UNKNOWN;
-            if (Arrays.equals(SCD_SYS_BYTES, 0, SCD_SYS_BYTES.length, header, 0, SCD_SYS_BYTES.length)) {
-                System.out.println("valid Sega CD image");
-                detected = RomFileType.ISO;
-            } else if (Arrays.equals(CD_SYNC_BYTES, 0, CD_SYNC_BYTES.length, header, 0, CD_SYNC_BYTES.length)) {
-                System.out.println("CD-ROM synchro pattern");
-                detected = RomFileType.BIN_CUE;
-            } else if (trackDataType == TrackDataType.AUDIO) {
-                System.out.println("CD-AUDIO");
-                detected = RomFileType.BIN_CUE;
-            }
-            assert detected == romFileType : detected + " vs " + romFileType;
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -171,15 +136,12 @@ public class ExtendedCueSheet implements Closeable {
     }
 
     private static RandomAccessFile getDataFile(ExtendedCueSheet extCueSheet, String key, Path file, Path cuePath) {
+        //TODO close RandomAccessFile
         if (!extCueSheet.fileCache.containsKey(key)) {
             try {
                 extCueSheet.fileCache.put(key, new RandomAccessFile(file.toFile(), "r"));
             } catch (Exception e) {
-                if (CUE_TEST_MODE) {
-                    handleTestCueMode(extCueSheet, cuePath, key);
-                } else {
-                    e.printStackTrace();
-                }
+                e.printStackTrace();
             }
         }
         return extCueSheet.fileCache.get(key);
@@ -189,21 +151,6 @@ public class ExtendedCueSheet implements Closeable {
         Path fp = cuePath.resolveSibling(trackFileName);
         String key = fp.getFileName().toString();
         return getDataFile(extCueSheet, key, fp, cuePath);
-    }
-
-    private static void handleTestCueMode(ExtendedCueSheet extCueSheet, Path cuePath, String key) {
-        try {
-            if (NO_BIN_FILE == null) {
-                Path p = cuePath.resolveSibling(NO_BIN_FILE_PATH);
-                NO_BIN_FILE = new RandomAccessFile(p.toFile(), "r");
-                LOG.warn("Missing bin file: {}, using instead: {}, cue_test_mode: {}", key, p.toAbsolutePath(), CUE_TEST_MODE);
-            }
-            extCueSheet.fileCache.put(key, NO_BIN_FILE);
-            extCueSheet.romFileType = RomFileType.BIN_CUE;
-        } catch (FileNotFoundException ex) {
-            LOG.error("Missing bin file: {}", key);
-            throw new RuntimeException(ex);
-        }
     }
 
     private static TrackData getTrack(CueSheet cueSheet, int number) {

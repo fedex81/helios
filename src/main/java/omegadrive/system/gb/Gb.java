@@ -15,7 +15,6 @@ import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.BaseVdpAdapter;
@@ -77,7 +76,7 @@ public class Gb extends BaseSystem<BaseBusProvider> {
 
     private Emulator createEmulator(String[] args) {
         try {
-            HeliosDisplay display = new HeliosDisplay(this, emuFrame);
+            HeliosDisplay display = new HeliosDisplay(this, this.display);
             emulator = new Emulator(args, display, (SoundOutput) sound.getFm(), controller);
             vdp = BaseVdpAdapter.getVdpProviderWrapper(VideoMode.NTSCJ_H20_V18, display);
         } catch (Exception e) {
@@ -117,10 +116,5 @@ public class Gb extends BaseSystem<BaseBusProvider> {
     @Override
     protected void updateVideoMode(boolean force) {
         displayContext.videoMode = vdp.getVideoMode();
-    }
-
-    @Override
-    protected RegionDetector.Region getRomRegion() {
-        return RegionDetector.Region.USA;
     }
 }

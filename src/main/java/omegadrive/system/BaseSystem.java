@@ -24,6 +24,7 @@ import omegadrive.SystemLoader;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.UserConfigHolder;
 import omegadrive.bus.model.BaseBusProvider;
+import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInput;
 import omegadrive.joypad.JoypadProvider;
@@ -36,7 +37,6 @@ import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.util.*;
-import omegadrive.util.RegionDetector.Region;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEventListener;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
@@ -64,11 +64,9 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     protected InputProvider inputProvider;
     protected BUS bus;
     protected SystemType systemType;
-
-    protected VideoMode videoMode = VideoMode.PAL_H40_V30;
     protected RomContext romContext = NO_ROM;
     protected Future<Void> runningRomFuture;
-    protected DisplayWindow emuFrame;
+    protected DisplayWindow display;
 
     protected DisplayWindow.DisplayContext displayContext;
 
@@ -116,21 +114,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
     protected abstract void updateVideoMode(boolean force);
 
-    protected Region getRomRegion() {
-        return Region.JAPAN;
-    }
-
-    public static Region getRegionInternal(String regionOvr, Region romRegion) {
-        Region ovrRegion = RegionDetector.getRegion(regionOvr);
-        if (ovrRegion != null && ovrRegion != romRegion) {
-            LOG.info("Setting region override from: {} to {}", romRegion, ovrRegion);
-            romRegion = ovrRegion;
-        }
-        return romRegion;
-    }
-
     protected BaseSystem(DisplayWindow emuFrame) {
-        this.emuFrame = emuFrame;
+        this.display = emuFrame;
     }
 
     @Override
@@ -152,7 +137,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
                 handleSaveState((Path) parameter);
                 break;
             case TOGGLE_FULL_SCREEN:
-                emuFrame.setFullScreen((Boolean) parameter);
+                display.setFullScreen((Boolean) parameter);
                 break;
             case TOGGLE_PAUSE:
                 handlePause();
@@ -192,8 +177,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     }
 
     protected void reloadWindowState() {
-        emuFrame.addKeyListener(KeyboardInput.createKeyAdapter(systemType, joypad));
-        emuFrame.reloadControllers(inputProvider.getAvailableControllers());
+        display.addKeyListener(KeyboardInput.createKeyAdapter(systemType, joypad));
+        display.reloadControllers(inputProvider.getAvailableControllers());
     }
 
     public void handleNewRom(RomSpec romSpec) {
@@ -206,7 +191,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     private void handleCloseApp() {
         try {
             handleCloseRom();
-            emuFrame.close();
+            display.close();
             sound.close();
             Util.executorService.shutdown();
             Util.executorService.awaitTermination(1, TimeUnit.SECONDS);
@@ -309,12 +294,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
                 Util.sleep(100);
             }
             LOG.info("Rom thread cancel");
-            emuFrame.resetScreen();
+            display.resetScreen();
             sound.reset();
             bus.closeRom();
             telemetry.reset();
             Optional.ofNullable(vdp).ifPresent(Device::reset);
             cycleCounter = 1;
+            romContext = NO_ROM;
         }
     }
 
@@ -374,9 +360,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
                     return;
                 }
                 memory.setRomData(data);
+                assert romContext == NO_ROM;
                 romContext = createRomContext(romSpec);
                 String romName = FileUtil.getFileName(romSpec.file);
-                emuFrame.setRomData(romContext);
+                display.setRomData(romContext);
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
                 LOG.info("Running rom: {},\n{}", romName, romContext);
@@ -395,7 +382,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
     protected RomContext createRomContext(RomSpec rom) {
         RomContext rc = new RomContext(rom);
-        rc.region = getRegionInternal(emuFrame.getRegionOverride(), getRomRegion());
+        rc.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memory, rom.file);
+        rc.region = RegionDetector.selectRegion(display, rc.cartridgeInfoProvider);
         return rc;
     }
 
@@ -408,7 +396,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
     protected void doRendering(int[] data) {
         displayContext.data = data;
-        emuFrame.renderScreenLinear(displayContext);
+        display.renderScreenLinear(displayContext);
     }
 
     private void handlePause() {

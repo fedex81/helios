@@ -23,7 +23,7 @@ import mcd.cdd.ExtendedCueSheet;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.cart.CartridgeInfoProvider;
-import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.memory.MemoryProvider;
 import omegadrive.system.SysUtil.RomSpec;
 import omegadrive.util.RegionDetector;
 
@@ -42,7 +42,7 @@ public interface SystemProvider extends Device {
             NO_ROM = new RomContext();
             NO_ROM.region = RegionDetector.Region.USA;
             NO_ROM.romSpec = RomSpec.of(Path.of("NO_PATH"));
-            NO_ROM.cartridgeInfoProvider = new MdCartInfoProvider();
+            NO_ROM.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(MemoryProvider.NO_MEMORY, NO_ROM.romSpec.file);
         }
 
         public RegionDetector.Region region;

@@ -20,6 +20,7 @@
 package mcd;
 
 import mcd.bus.McdSubInterruptHandler;
+import mcd.cart.MegaCdCartInfoProvider;
 import mcd.cdd.ExtendedCueSheet;
 import mcd.util.McdMemView;
 import omegadrive.SystemLoader;
@@ -36,7 +37,6 @@ import omegadrive.joypad.GenesisJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.system.BaseSystem;
-import omegadrive.system.Megadrive;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
@@ -240,15 +240,13 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     }
 
     @Override
-    protected RegionDetector.Region getRomRegion() {
-        return RegionDetector.detectRegion((MdCartInfoProvider) romContext.cartridgeInfoProvider);
-    }
-
-    @Override
     protected RomContext createRomContext(SysUtil.RomSpec rom) {
-        romContext = Megadrive.createRomContext(rom, memory, emuFrame.getRegionOverride());
         assert !ZipUtil.isCompressedByteStream(rom.file);
-        return romContext;
+        RomContext rc = new RomContext(rom);
+        MdCartInfoProvider mcip = MegaCdCartInfoProvider.createMcdInstance(memory, rc);
+        rc.cartridgeInfoProvider = mcip;
+        rc.region = RegionDetector.selectRegion(display, mcip);
+        return rc;
     }
 
     @Override

@@ -46,7 +46,7 @@ public class MdRomHeaderTest {
                 CartridgeInfoProvider cartridgeInfoProvider = MdCartInfoProvider.createInstance(memoryProvider,
                         rom);
                 System.out.println(cartridgeInfoProvider);
-                System.out.println(RegionDetector.detectRegion((MdCartInfoProvider) cartridgeInfoProvider));
+                System.out.println(RegionDetector.detectHeaderRegion((MdCartInfoProvider) cartridgeInfoProvider));
             } catch (Exception e) {
                 System.err.println("Exception: " + rom.getFileName());
                 e.printStackTrace();

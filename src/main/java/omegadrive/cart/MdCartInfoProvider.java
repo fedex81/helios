@@ -23,6 +23,7 @@ import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.mapper.md.MdMapperType;
 import omegadrive.memory.IMemoryProvider;
+import omegadrive.memory.MemoryProvider;
 import omegadrive.system.SysUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -190,12 +191,17 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         return sb.append(headerInfo).toString();
     }
 
+    public static final MdCartInfoProvider NO_PROVIDER = new MdCartInfoProvider(MemoryProvider.NO_MEMORY, RomContext.NO_ROM);
+
     public static MdCartInfoProvider createMdInstance(IMemoryProvider memoryProvider, RomContext rom) {
-        MdCartInfoProvider provider = new MdCartInfoProvider();
-        provider.memoryProvider = memoryProvider;
-        provider.romContext = rom;
-        provider.init();
-        return provider;
+        MdCartInfoProvider m = new MdCartInfoProvider(memoryProvider, rom);
+        m.init();
+        return m;
+    }
+
+    protected MdCartInfoProvider(IMemoryProvider memoryProvider, RomContext rom) {
+        this.memoryProvider = memoryProvider;
+        this.romContext = rom;
     }
 
     public boolean isSramUsedWithBrokenHeader(long address) {

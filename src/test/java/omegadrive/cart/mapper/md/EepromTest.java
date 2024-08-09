@@ -1,6 +1,5 @@
 package omegadrive.cart.mapper.md;
 
-import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.mapper.RomMapper;
@@ -9,6 +8,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static omegadrive.cart.MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS;
+import static omegadrive.cart.MdCartInfoProvider.NO_PROVIDER;
 import static omegadrive.cart.loader.MdRomDbModel.NO_ENTRY;
 
 
@@ -33,8 +33,7 @@ public class EepromTest {
     private void setup() {
         MdRomDbModel.RomDbEntry romDbEntry = MdLoader.getEntry(nflQc32x_serial);
         Assertions.assertNotEquals(NO_ENTRY, romDbEntry);
-        MdCartInfoProvider provider = new MdCartInfoProvider();
-        mapper = MdBackupMemoryMapper.createInstance(rom, provider, RomMapper.SramMode.READ_WRITE, romDbEntry);
+        mapper = MdBackupMemoryMapper.createInstance(rom, NO_PROVIDER, RomMapper.SramMode.READ_WRITE, romDbEntry);
     }
 
     /**

@@ -20,7 +20,10 @@
 package omegadrive.util;
 
 import com.google.common.base.Strings;
+import mcd.cart.MegaCdCartInfoProvider;
+import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.ui.DisplayWindow;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -34,7 +37,7 @@ public class RegionDetector {
     public final static int PAL_FPS = 50;
     public final static int NTSC_FPS = 60;
 
-    public static Region detectRegion(MdCartInfoProvider cartInfoProvider, boolean verbose) {
+    public static Region detectHeaderRegion(MdCartInfoProvider cartInfoProvider, boolean verbose) {
         String s = cartInfoProvider.getRegion();
         s = Strings.padEnd(s, 3, ' ');
         assert s.length() == 3;
@@ -58,8 +61,53 @@ public class RegionDetector {
         return res;
     }
 
-    public static Region detectRegion(MdCartInfoProvider cartInfo) {
-        return detectRegion(cartInfo, false);
+    public static Region detectHeaderRegion(MdCartInfoProvider cartInfo) {
+        return detectHeaderRegion(cartInfo, false);
+    }
+
+    public static Region selectRegion(DisplayWindow w, CartridgeInfoProvider cip) {
+        assert cip != MdCartInfoProvider.NO_PROVIDER;
+        Region regionFileName = getRegionFileName(cip.getRomName());
+        Region regionOvrUi = RegionDetector.getRegion(w.getRegionOverride());
+        Region regionOvrConfig = null;
+        Region securityCodeRegion = null;
+        Region romHeaderRegion = RegionDetector.getRegion(cip.getRegion());
+        if (cip instanceof MdCartInfoProvider mcip) {
+            regionOvrConfig = RegionDetector.getRegion(Optional.ofNullable((mcip).getEntry().forceRegion).
+                    orElse(null));
+            romHeaderRegion = detectHeaderRegion(mcip, false);
+        }
+        if (cip instanceof MegaCdCartInfoProvider mcdip) {
+            securityCodeRegion = mcdip.securityCodeRegion;
+        }
+        if (regionOvrUi != null && regionOvrUi != romHeaderRegion) {
+            LOG.info("Setting region override from UI: {} to {}", romHeaderRegion, regionOvrUi);
+            return regionOvrUi;
+        }
+        if (regionOvrConfig != null && regionOvrConfig != romHeaderRegion) {
+            LOG.info("Setting region override from Config: {} to {}", romHeaderRegion, regionOvrConfig);
+            return regionOvrConfig;
+        }
+        if (securityCodeRegion != null && securityCodeRegion != romHeaderRegion) {
+            LOG.info("Setting region from securityCode: {} to {}", romHeaderRegion, securityCodeRegion);
+            return securityCodeRegion;
+        }
+        if (regionFileName != null && regionFileName != romHeaderRegion) {
+            LOG.info("Setting region from fileName: {} to {}", romHeaderRegion, regionFileName);
+            return regionFileName;
+        }
+        LOG.info("Region: {}", romHeaderRegion);
+        return romHeaderRegion;
+    }
+
+    public static Region getRegionFileName(String fileName) {
+        boolean eu = fileName.toUpperCase().contains("(EUROPE)");
+        boolean us = fileName.toUpperCase().contains("(US)");
+        boolean jp = fileName.toUpperCase().contains("(JAPAN)");
+        Region r = eu ? Region.EUROPE : null;
+        r = jp ? Region.JAPAN : r;
+        r = us ? Region.USA : r;
+        return r;
     }
 
     /**
