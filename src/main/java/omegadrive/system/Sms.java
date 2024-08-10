@@ -34,6 +34,8 @@ import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
 import org.slf4j.Logger;
 
+import static omegadrive.util.RegionDetector.Region.USA;
+
 public class Sms extends BaseSystem<Z80BusProvider> {
 
     public static final boolean ENABLE_FM = Boolean.parseBoolean(System.getProperty("sms.enable.fm", "false"));
@@ -89,11 +91,16 @@ public class Sms extends BaseSystem<Z80BusProvider> {
 
     @Override
     protected void loop() {
-        targetNs = (long) (romContext.region.getFrameIntervalMs() * Util.MILLI_IN_NS);
+        //gameGear always 60fps
+        double frameMs = systemType == SystemLoader.SystemType.GG ?
+                USA.getFrameIntervalMs() : romContext.region.getFrameIntervalMs();
+        targetNs = (long) (frameMs * Util.MILLI_IN_NS);
         do {
             runZ80(cycleCounter);
             runVdp(cycleCounter);
-            runFM(cycleCounter);
+            if (ENABLE_FM) {
+                runFM(cycleCounter);
+            }
             cycleCounter++;
         } while (!runningRomFuture.isDone());
     }
