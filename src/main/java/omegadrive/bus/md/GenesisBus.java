@@ -31,7 +31,6 @@ import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.md.ExSsfMapper;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
-import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.joypad.GenesisJoypad;
 import omegadrive.joypad.JoypadProvider;
 import omegadrive.sound.fm.FmProvider;
@@ -152,7 +151,6 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     public GenesisBusProvider attachDevice(Device device) {
         if (device instanceof BusArbiter) {
             this.busArbiter = (BusArbiter) device;
-            getBusDeviceIfAny(Z80Provider.class).ifPresent(zp -> zp.getZ80BusProvider().attachDevice(device));
         }
         super.attachDevice(device);
         return this;

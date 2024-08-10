@@ -136,6 +136,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
     private FmProvider getFm() {
         if (fmProvider == null) {
             fmProvider = mainBusProvider.getFm();
+            assert busArbiter != BusArbiter.NO_OP;
         }
         return fmProvider;
     }

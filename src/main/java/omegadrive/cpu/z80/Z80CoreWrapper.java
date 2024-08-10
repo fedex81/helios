@@ -19,7 +19,7 @@
 
 package omegadrive.cpu.z80;
 
-import omegadrive.SystemLoader;
+import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.bus.model.GenesisZ80BusProvider;
 import omegadrive.cpu.z80.debug.Z80CoreWrapperFastDebug;
@@ -54,22 +54,29 @@ public class Z80CoreWrapper implements Z80Provider {
     protected int instCyclesPenalty = 0;
     protected int memPtrInitVal;
 
-    public static Z80CoreWrapper createInstance(SystemLoader.SystemType systemType, BaseBusProvider busProvider) {
+    public static Z80CoreWrapper createInstance(SystemType systemType, BaseBusProvider busProvider) {
+        Z80CoreWrapper w = null;
         switch (systemType) {
             case GENESIS:
             case S32X:
             case MEGACD:
-                return createGenesisInstanceInternal(busProvider);
+                w = createGenesisInstanceInternal(busProvider);
+                break;
             case GG:
             case SMS:
             case COLECO:
             case SG_1000:
             case MSX:
-                return createInstanceInternal(busProvider);
+                w = createInstanceInternal(busProvider);
+                break;
             default:
                 LOG.error("Unexpected system: {}", systemType);
         }
-        return null;
+        //sms: ace of Aces, needs SP != 0xFFFF, 0xDFF0 is commonly used
+        if (systemType == SystemType.SMS) {
+            w.z80Core.setRegSP(0xDFF0);
+        }
+        return w;
     }
 
     protected Z80CoreWrapper() {
@@ -81,7 +88,8 @@ public class Z80CoreWrapper implements Z80Provider {
         if (z80State != null) {
             z80Core.setZ80State(z80State);
         }
-        z80Core.setRegSP(memIoOps.getPcUpperLimit()); //md: fixes Z80 WAV Player v0.1
+        //md: fixes Z80 WAV Player v0.1
+        z80Core.setRegSP(memIoOps.getPcUpperLimit());
         memPtrInitVal = memIoOps.getPcUpperLimit();
         return this;
     }

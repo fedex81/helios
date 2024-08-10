@@ -50,6 +50,8 @@ public interface BusArbiter extends Device, BaseVdpProvider.VdpEventListener {
         b.vdp = vdp;
         b.m68k = m68k;
         b.z80 = z80;
+        assert z80.getZ80BusProvider() != null;
+        z80.getZ80BusProvider().attachDevice(b);
         vdp.addVdpEventListener(b);
         return b;
     }
