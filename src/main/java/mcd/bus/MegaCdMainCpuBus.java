@@ -116,11 +116,16 @@ public class MegaCdMainCpuBus extends GenesisBus {
             if (addr >= M68K_START_HINT_VECTOR_WRITEABLE_M1 && addr < M68K_END_HINT_VECTOR_WRITEABLE_M1) {
                 return readHintVector(addr, size);
             }
-            if (addr >= START_MCD_WORD_RAM_MODE1 && addr < END_MCD_WORD_RAM_MODE1) {
+            if (addr >= START_MCD_WORD_RAM_MODE1 && addr < END_MCD_WORD_RAM_1M_BANK0_MODE1) {
+//                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M;
                 res = memCtx.readWordRam(cpu, addr, size);
             } else if (addr >= START_MCD_MAIN_PRG_RAM_MODE1 && addr < END_MCD_MAIN_PRG_RAM_MODE1) {
                 addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
                 res = readBuffer(prgRam, addr, size);
+            } else if (addr >= START_MCD_WORD_RAM_1M_BANK1_MODE1 && addr < END_MCD_WORD_RAM_MODE1) {
+                //TODO cell image
+                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._2M;
+                res = memCtx.readWordRam(cpu, addr, size);
             } else if (addr >= START_MCD_BOOT_ROM_MODE1 && addr < END_MCD_BOOT_ROM_MODE1) {
                 res = readBuffer(bios, addr & MCD_BOOT_ROM_MASK, size);
             } else {
@@ -144,7 +149,17 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
                 writeBufferRaw(prgRam, addr, data, size);
                 return;
-            } else if (addr >= START_MCD_WORD_RAM_MODE1 && addr < END_MCD_WORD_RAM_MODE1) {
+                /* WRAM-1M :
+                    Word-RAM 0/1 assigned to MAIN-CPU
+                    VRAM cell image mapped at $220_000-$23F_FFF
+                */
+            } else if (addr >= START_MCD_WORD_RAM_MODE1 && addr < END_MCD_WORD_RAM_1M_BANK0_MODE1) {
+//                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M;
+                memCtx.writeWordRam(cpu, addr, data, size);
+                return;
+            } else if (addr >= START_MCD_WORD_RAM_1M_BANK1_MODE1 && addr < END_MCD_WORD_RAM_MODE1) {
+                //TODO cell image
+                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._2M;
                 memCtx.writeWordRam(cpu, addr, data, size);
                 return;
             }

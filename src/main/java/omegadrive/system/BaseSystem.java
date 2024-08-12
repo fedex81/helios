@@ -300,7 +300,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
             telemetry.reset();
             Optional.ofNullable(vdp).ifPresent(Device::reset);
             cycleCounter = 1;
-            romContext = NO_ROM;
         }
     }
 
@@ -347,6 +346,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         private static final String threadNamePrefix = "cycle-";
 
         public RomRunnable(RomSpec romSpec) {
+            assert romSpec != RomSpec.NO_ROM;
             this.romSpec = romSpec;
         }
 
@@ -360,7 +360,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
                     return;
                 }
                 memory.setRomData(data);
-                assert romContext == NO_ROM;
                 romContext = createRomContext(romSpec);
                 String romName = FileUtil.getFileName(romSpec.file);
                 display.setRomData(romContext);

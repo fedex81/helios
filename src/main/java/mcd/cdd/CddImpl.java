@@ -5,6 +5,7 @@ import mcd.cdc.Cdc;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.BlipPcmProvider;
+import mcd.pcm.McdPcmProvider;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.*;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
+import static omegadrive.sound.SoundProvider.ENABLE_SOUND;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.th;
 
@@ -34,7 +36,7 @@ class CddImpl implements Cdd {
     private final MegaCdMemoryContext memoryContext;
     private final McdSubInterruptHandler interruptHandler;
     private final Cdc cdc;
-    private final BlipPcmProvider playSupport;
+    private final McdPcmProvider playSupport;
     private ExtendedCueSheet extCueSheet;
 
     private final CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();
@@ -45,7 +47,8 @@ class CddImpl implements Cdd {
         memoryContext = mc;
         interruptHandler = ih;
         cdc = c;
-        playSupport = new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100);
+        playSupport = ENABLE_SOUND ?
+                new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100) : BlipPcmProvider.NO_SOUND;
         setDataOrMusicBit(CddControl_DM_bit.DATA_1);
         setIoStatus(NoDisc);
         checksum();

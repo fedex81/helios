@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 
 import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
 import static mcd.bus.MegaCdSubCpuBus.logAccessReg;
+import static omegadrive.sound.SoundProvider.ENABLE_SOUND;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.th;
 
@@ -89,7 +90,7 @@ public class McdPcm implements BufferUtil.StepDevice {
         waveData = ByteBuffer.allocate(PCM_WAVE_DATA_SIZE);
         pcmRegs = ByteBuffer.allocate(PCM_REG_SIZE);
         chan = new PcmChannelContext[PCM_NUM_CHANNELS];
-        playSupport = new BlipPcmProvider("PCM", RegionDetector.Region.USA, pcmSampleRateHz);
+        playSupport = ENABLE_SOUND ? new BlipPcmProvider("PCM", RegionDetector.Region.USA, pcmSampleRateHz) : McdPcmProvider.NO_SOUND;
         for (int i = 0; i < PCM_NUM_CHANNELS; i++) {
             chan[i] = new PcmChannelContext();
             chan[i].num = i;
