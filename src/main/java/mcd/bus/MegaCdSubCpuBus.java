@@ -125,6 +125,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
 
     @Override
     public int read(int address, Size size) {
+        assert assertCheckBusOp68k(address, size);
         address &= MD_PC_MASK;
         int res = size.getMask();
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
@@ -155,6 +156,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
 
     @Override
     public void write(int address, int data, Size size) {
+        assert assertCheckBusOp68k(address, size);
         address &= MD_PC_MASK;
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
             if (memCtx.wramSetup.mode == WordRamMode._2M) {

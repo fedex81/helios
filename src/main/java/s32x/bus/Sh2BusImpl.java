@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static omegadrive.util.LogHelper.logWarnOnce;
+import static omegadrive.util.Util.assertCheckBusOp;
 import static omegadrive.util.Util.th;
 
 public final class Sh2BusImpl implements Sh2Bus {
@@ -83,8 +84,7 @@ public final class Sh2BusImpl implements Sh2Bus {
     @Override
     public int read(int address, Size size) {
         CpuDeviceAccess cpuAccess = Md32xRuntimeData.getAccessTypeExt();
-        assert (size == Size.LONG ? (address & 3) == 0 : true) : (th(address) + "," + size);
-        assert (size == Size.WORD ? (address & 1) == 0 : true) : (th(address) + "," + size);
+        assert assertCheckBusOp(address, size);
         int res = 0;
         if (SH2_MEM_ACCESS_STATS) {
             memAccessStats.addMemHit(true, address, size);
@@ -152,9 +152,8 @@ public final class Sh2BusImpl implements Sh2Bus {
     @Override
     public void write(int address, int val, Size size) {
         CpuDeviceAccess cpuAccess = Md32xRuntimeData.getAccessTypeExt();
+        assert assertCheckBusOp(address, size);
         val &= size.getMask();
-        assert size == Size.LONG ? (address & 3) == 0 : true : th(address) + "," + size;
-        assert size == Size.WORD ? (address & 1) == 0 : true : th(address) + "," + size;
         if (SH2_MEM_ACCESS_STATS) {
             memAccessStats.addMemHit(false, address, size);
         }

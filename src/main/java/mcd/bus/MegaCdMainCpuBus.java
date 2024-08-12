@@ -22,8 +22,7 @@ import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
-import static omegadrive.util.Util.readBufferWord;
-import static omegadrive.util.Util.th;
+import static omegadrive.util.Util.*;
 
 /**
  * Federico Berti
@@ -102,6 +101,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     @Override
     public int read(int address, Size size) {
+        assert assertCheckBusOp68k(address, size);
         address &= MD_PC_MASK;
         if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
             if (!enableMCDBus) {
@@ -132,6 +132,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     @Override
     public void write(int address, int data, Size size) {
+        assert assertCheckBusOp68k(address, size);
         address &= MD_PC_MASK;
         if (enableMCDBus) {
             if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
