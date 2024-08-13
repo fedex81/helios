@@ -10,8 +10,9 @@ import org.slf4j.Logger;
 import java.util.Arrays;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
+import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_INT_MASK;
-import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_RESET;
+import static mcd.util.McdRegBitUtil.setBitDefInternal;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 
 /**
@@ -87,17 +88,13 @@ public interface McdSubInterruptHandler extends Device {
             setPending(intp, 0);
         }
 
-        private int getIFL2() {
-            return Util.readBufferByte(context.getGateSysRegs(M68K), MCD_RESET.addr) & 1;
-        }
-
         @Override
         public void handleInterrupts() {
             if (pendingMask == 0) {
                 return;
             }
             final int mask = getRegMask();
-            final int ifl2 = getIFL2();
+            final int ifl2 = MegaCdMainCpuBus.ifl2Trigger;
             for (int i = 1; i < pendingInterrupts.length; i++) {
                 if (pendingInterrupts[i]) {
                     boolean canRaise = ((1 << i) & mask) > 0;
@@ -105,6 +102,9 @@ public interface McdSubInterruptHandler extends Device {
                     canRaise &= (i == INT_LEVEL2.ordinal() && ifl2 == 0) ? false : true;
                     if (canRaise && m68kInterrupt(i)) {
                         setPending(intVals[i], 0);
+                        if (intVals[i] == INT_LEVEL2) {
+                            setBitDefInternal(context, M68K, IFL2, 0);
+                        }
                         break;
                     }
                 }

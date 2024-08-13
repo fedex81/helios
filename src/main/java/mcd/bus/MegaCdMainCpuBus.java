@@ -124,7 +124,9 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 res = readBuffer(prgRam, addr, size);
             } else if (addr >= START_MCD_WORD_RAM_1M_BANK1_MODE1 && addr < END_MCD_WORD_RAM_MODE1) {
                 //TODO cell image
-                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._2M;
+                if (memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
+                    LogHelper.logWarnOnceForce(LOG, "Cell image read: {}", memCtx.wramSetup);
+                }
                 res = memCtx.readWordRam(cpu, addr, size);
             } else if (addr >= START_MCD_BOOT_ROM_MODE1 && addr < END_MCD_BOOT_ROM_MODE1) {
                 res = readBuffer(bios, addr & MCD_BOOT_ROM_MASK, size);
@@ -159,7 +161,9 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 return;
             } else if (addr >= START_MCD_WORD_RAM_1M_BANK1_MODE1 && addr < END_MCD_WORD_RAM_MODE1) {
                 //TODO cell image
-                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._2M;
+                if (memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
+                    LogHelper.logWarnOnceForce(LOG, "Cell image write: {}", memCtx.wramSetup);
+                }
                 memCtx.writeWordRam(cpu, addr, data, size);
                 return;
             }
@@ -262,20 +266,18 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     public static boolean subCpuReset = false;
 
+    //detects 0->1, 1->0 transitions only when written to
+    public static int ifl2Trigger = 0;
+
     private void handleReg0Write(int address, int data, Size size) {
         int curr = readBufferWord(sysGateRegs, MCD_RESET.addr);
         int res = memCtx.handleRegWrite(cpu, MCD_RESET, address, data, size);
+
         int sreset = res & 1;
         int sbusreq = (res >> 1) & 1;
-        int subIntReg = (res >> 8) & 1; //IFL2
         assert subCpu != null && subCpuBus != null;
+        handleIfl2(curr, res, address, size);
 
-        //TODO this triggers only 0 -> 1 ??
-        int prevSubIntReg = 0;//(curr >> 8) & 1;
-        if (prevSubIntReg == 0 && subIntReg > 0) {
-            LogHelper.logInfo(LOG, "M SubCpu int2 request");
-            subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
-        }
         if ((address & 1) == 0 && size == Size.BYTE) {
             return;
         }
@@ -292,6 +294,23 @@ public class MegaCdMainCpuBus extends GenesisBus {
         subCpu.setStop(stopped);
         if (prevStop != stopped) {
             LOG.info("M SubCpu stopped: {}", stopped);
+        }
+    }
+
+    private void handleIfl2(int prev, int res, int address, Size size) {
+        if ((address & 1) == 1 && size == Size.BYTE) {
+            return;
+        }
+        int subIntReg = (res >> 8) & 1; //IFL2
+        if (subIntReg > 0) {
+            if (((prev >> 8) & 1) == 0) {
+                ifl2Trigger = 1;
+                LogHelper.logInfo(LOG, "M SubCpu int2 request");
+                subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
+            }
+        } else if (subIntReg == 0) {
+            //explicit set ifl2 to 0
+            ifl2Trigger = 0;
         }
     }
 
