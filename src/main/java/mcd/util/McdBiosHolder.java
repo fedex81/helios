@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 import java.util.EnumMap;
 import java.util.Map;
 
-import static mcd.dict.MegaCdDict.MCD_BOOT_ROM_SIZE;
+import static mcd.dict.MegaCdDict.MCD_BOOT_ROM_WINDOW_SIZE;
 import static omegadrive.SystemLoader.biosFolder;
 import static omegadrive.util.RegionDetector.Region;
 
@@ -102,7 +102,7 @@ public class McdBiosHolder {
             LOG.info("Loading bios at {}, region: {}, size: {}", p.toAbsolutePath(), region, b.length);
         } catch (Error | Exception e) {
             LOG.error("Unable to load bios at {}", p.toAbsolutePath());
-            bios = ByteBuffer.allocate(MCD_BOOT_ROM_SIZE);
+            bios = ByteBuffer.allocate(MCD_BOOT_ROM_WINDOW_SIZE);
         }
         return bios;
     }

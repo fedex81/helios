@@ -155,7 +155,7 @@ public class McdWordRamTest extends McdRegTestBase {
     public void testWRAMDataOnSwitch_2M() {
         setWramMain2M();
         assert ctx.wramSetup == W_2M_MAIN;
-        int offsetm = MegaCdDict.START_MCD_WORD_RAM;
+        int offsetm = MegaCdDict.START_MCD_MAIN_WORD_RAM;
         int offsets = START_MCD_SUB_WORD_RAM_2M;
         for (int i = 0; i < MCD_WORD_RAM_2M_SIZE - 1; i += 2) {
             mainWriteValAtIdx.accept(offsetm + i, i);
@@ -177,7 +177,7 @@ public class McdWordRamTest extends McdRegTestBase {
     @Test
     public void testWRAMDataOnSwitch_1M() {
         setWram1M_W0Main();
-        int offsetm = MegaCdDict.START_MCD_WORD_RAM;
+        int offsetm = MegaCdDict.START_MCD_MAIN_WORD_RAM;
         int offsets = START_MCD_SUB_WORD_RAM_1M;
 
         for (int i = 0; i < MCD_WORD_RAM_1M_SIZE - 1; i += 2) {
@@ -217,7 +217,7 @@ public class McdWordRamTest extends McdRegTestBase {
     public void testWRAMDataOnSwitch_2M_1M() {
         setWramMain2M();
         assert ctx.wramSetup == W_2M_MAIN;
-        int offsetm = MegaCdDict.START_MCD_WORD_RAM;
+        int offsetm = MegaCdDict.START_MCD_MAIN_WORD_RAM;
         int offsets1M = START_MCD_SUB_WORD_RAM_1M;
         int offsets2M = START_MCD_SUB_WORD_RAM_2M;
         ByteBuffer[] wram1MCopy = {ByteBuffer.allocate(MCD_WORD_RAM_1M_SIZE), ByteBuffer.allocate(MCD_WORD_RAM_1M_SIZE)};

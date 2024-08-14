@@ -374,27 +374,23 @@ public class MegaCdDict {
     public static final int END_MCD_MAIN_PRG_RAM_MODE1 = START_MCD_MAIN_PRG_RAM_MODE1 +
             MCD_MAIN_PRG_RAM_WINDOW_SIZE;
 
-    public static final int START_MCD_WORD_RAM = 0x200_000;
-    public static final int END_MCD_WORD_RAM = START_MCD_WORD_RAM + MCD_WORD_RAM_2M_SIZE;
+    public static final int END_MCD_MAIN_PRG_RAM_MIRROR_MODE1 = 0x600_000;
 
-    public static final int END_MCD_WORD_RAM_1M_BANK0 = START_MCD_WORD_RAM + MCD_WORD_RAM_1M_SIZE;
+    public static final int START_MCD_MAIN_WORD_RAM = 0x200_000;
 
-    public static final int START_MCD_WORD_RAM_1M_BANK1 = END_MCD_WORD_RAM_1M_BANK0;
+    public static final int END_MCD_MAIN_WORD_RAM_MIRROR = 0x400_000;
 
-    public static final int START_MCD_WORD_RAM_MODE1 = 0x600_000;
-    public static final int END_MCD_WORD_RAM_MODE1 = START_MCD_WORD_RAM_MODE1 + MCD_WORD_RAM_2M_SIZE;
-    public static final int END_MCD_WORD_RAM_1M_MODE1 = START_MCD_WORD_RAM_MODE1 + MCD_WORD_RAM_1M_SIZE;
-
-    public static final int END_MCD_WORD_RAM_1M_BANK0_MODE1 = START_MCD_WORD_RAM_MODE1 + MCD_WORD_RAM_1M_SIZE;
-
-    public static final int START_MCD_WORD_RAM_1M_BANK1_MODE1 = END_MCD_WORD_RAM_1M_BANK0_MODE1;
-
-    public static final int MCD_BOOT_ROM_SIZE = 0x20_000;
-    public static final int MCD_BOOT_ROM_MASK = MCD_BOOT_ROM_SIZE - 1;
+    //0x400_000 | 0x200_000
+    public static final int START_MCD_MAIN_WORD_RAM_MODE1 = START_MCD_MAIN_WORD_RAM | MCD_MAIN_MODE1_MASK;
+    public static final int END_MCD_MAIN_WORD_RAM_MIRROR_MODE1 = 0x800_000;
+    public static final int MCD_BOOT_ROM_WINDOW_SIZE = 0x20_000;
+    public static final int MCD_BOOT_ROM_MASK = MCD_BOOT_ROM_WINDOW_SIZE - 1;
     public static final int START_MCD_BOOT_ROM = 0;
-    public static final int END_MCD_BOOT_ROM = MCD_BOOT_ROM_SIZE;
+
+    public static final int MCD_BOOT_ROM_PRGRAM_WINDOW_MASK = 0x40_000 - 1;
+    public static final int END_MCD_BOOT_ROM = MCD_BOOT_ROM_WINDOW_SIZE;
     public static final int START_MCD_BOOT_ROM_MODE1 = START_MCD_BOOT_ROM + 0x400_000;
-    public static final int END_MCD_BOOT_ROM_MODE1 = START_MCD_BOOT_ROM_MODE1 + MCD_BOOT_ROM_SIZE;
+    public static final int END_MCD_BOOT_ROM_MIRROR_MODE1 = 0x600_000;
 
     public static final int START_MCD_MAIN_GA_COMM_R = MEGA_CD_EXP_START + 0x10;
     public static final int END_MCD_MAIN_GA_COMM_R = START_MCD_MAIN_GA_COMM_R + 0x20;

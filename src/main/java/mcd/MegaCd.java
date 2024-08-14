@@ -241,8 +241,8 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     @Override
     protected RomContext createRomContext(SysUtil.RomSpec rom) {
-        assert !ZipUtil.isCompressedByteStream(rom.file);
         RomContext rc = new RomContext(rom);
+        assert rc.romFileType.isDiscImage() ? !ZipUtil.isCompressedByteStream(rom.file) : true;
         MdCartInfoProvider mcip = MegaCdCartInfoProvider.createMcdInstance(memory, rc);
         rc.cartridgeInfoProvider = mcip;
         rc.region = RegionDetector.selectRegion(display, mcip);

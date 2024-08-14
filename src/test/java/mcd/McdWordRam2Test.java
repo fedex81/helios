@@ -40,7 +40,7 @@ public class McdWordRam2Test extends McdRegTestBase {
 
     @Test
     public void testBank2MWord() {
-        int start = START_MCD_WORD_RAM_MODE1;
+        int start = START_MCD_MAIN_WORD_RAM_MODE1;
         int[] addr = {
                 start, start + 2, start + MCD_WORD_RAM_1M_SIZE,
                 start + MCD_WORD_RAM_1M_SIZE + 2,
@@ -73,7 +73,7 @@ public class McdWordRam2Test extends McdRegTestBase {
         GenesisBus bus = cpu == M68K ? mainCpuBus : subCpuBus;
         int baseAddr = START_MCD_SUB_WORD_RAM_1M;
         if (cpu == M68K) {
-            baseAddr = bank == 0 ? START_MCD_WORD_RAM : START_MCD_WORD_RAM + MCD_WORD_RAM_1M_SIZE;
+            baseAddr = bank == 0 ? START_MCD_MAIN_WORD_RAM : START_MCD_MAIN_WORD_RAM + MCD_WORD_RAM_1M_SIZE;
         }
         for (int i = 0; i < s.length(); i += size.getByteSize()) {
             int val = switch (size) {
@@ -92,7 +92,7 @@ public class McdWordRam2Test extends McdRegTestBase {
         GenesisBus bus = cpu == M68K ? mainCpuBus : subCpuBus;
         int baseAddr = START_MCD_SUB_WORD_RAM_1M;
         if (cpu == M68K) {
-            baseAddr = bank == 0 ? START_MCD_WORD_RAM : START_MCD_WORD_RAM + MCD_WORD_RAM_1M_SIZE;
+            baseAddr = bank == 0 ? START_MCD_MAIN_WORD_RAM : START_MCD_MAIN_WORD_RAM + MCD_WORD_RAM_1M_SIZE;
         }
         String res = "";
         for (int i = 0; i < len; i += size.getByteSize()) {
@@ -176,8 +176,8 @@ public class McdWordRam2Test extends McdRegTestBase {
         //priority mode off = 0, PM0 = PM1 = 0
         assert (subCpuBus.read(SUB_MEM_MODE_REG + 1, Size.BYTE) & 0x18) == 0;
         McdWordRamTest.setWramMain2M(lc);
-        mainCpuBus.write(START_MCD_WORD_RAM, 0x1234, Size.WORD);
-        mainCpuBus.write(START_MCD_WORD_RAM + 2, 0xABCD, Size.WORD);
+        mainCpuBus.write(START_MCD_MAIN_WORD_RAM, 0x1234, Size.WORD);
+        mainCpuBus.write(START_MCD_MAIN_WORD_RAM + 2, 0xABCD, Size.WORD);
 
         //WR0        WR1                2M
         //1234       ABCD               1234
@@ -188,7 +188,7 @@ public class McdWordRam2Test extends McdRegTestBase {
         McdWordRamTest.setWram1M_W0Main(lc);
 
         //main reads the start of WR0 -> 1234
-        int res = mainCpuBus.read(START_MCD_WORD_RAM, Size.WORD);
+        int res = mainCpuBus.read(START_MCD_MAIN_WORD_RAM, Size.WORD);
         Assertions.assertEquals(0x1234, res);
 
         //sub reads the start of WR1 -> ABCD

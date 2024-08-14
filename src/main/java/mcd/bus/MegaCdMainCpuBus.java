@@ -15,8 +15,7 @@ import java.nio.ByteBuffer;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
-import static mcd.dict.MegaCdMemoryContext.WRITABLE_HINT_UNUSED;
-import static mcd.dict.MegaCdMemoryContext.WramSetup;
+import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.util.McdRegBitUtil.setSharedBit;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
@@ -52,7 +51,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     private boolean enableMCDBus = true, enableMode1 = false, isBios;
 
-    private static ByteBuffer bios;
+    public ByteBuffer bios;
     private LogHelper logHelper = new LogHelper();
     private MegaCdMemoryContext memCtx;
 
@@ -108,7 +107,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 LOG.info("Enabling MegaCD bus mapping");
                 enableMCDBus = true;
             }
-            return handleMegaCdExpRead(address, size) & size.getMask();
+            return handleMegaCdExpRead(address & MCD_GATE_REGS_MASK, size) & size.getMask();
         }
         int res = size.getMask();
         if (enableMCDBus) {
@@ -116,20 +115,26 @@ public class MegaCdMainCpuBus extends GenesisBus {
             if (addr >= M68K_START_HINT_VECTOR_WRITEABLE_M1 && addr < M68K_END_HINT_VECTOR_WRITEABLE_M1) {
                 return readHintVector(addr, size);
             }
-            if (addr >= START_MCD_WORD_RAM_MODE1 && addr < END_MCD_WORD_RAM_1M_BANK0_MODE1) {
+            if (addr >= START_MCD_MAIN_WORD_RAM_MODE1 && addr < END_MCD_MAIN_WORD_RAM_MIRROR_MODE1) {
+                addr &= MCD_WORD_RAM_2M_MASK;
+                if (addr < MCD_WORD_RAM_1M_SIZE) {
 //                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M;
-                res = memCtx.readWordRam(cpu, addr, size);
-            } else if (addr >= START_MCD_MAIN_PRG_RAM_MODE1 && addr < END_MCD_MAIN_PRG_RAM_MODE1) {
-                addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                res = readBuffer(prgRam, addr, size);
-            } else if (addr >= START_MCD_WORD_RAM_1M_BANK1_MODE1 && addr < END_MCD_WORD_RAM_MODE1) {
-                //TODO cell image
-                if (memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
-                    LogHelper.logWarnOnceForce(LOG, "Cell image read: {}", memCtx.wramSetup);
+                    res = memCtx.readWordRam(cpu, addr, size);
+                } else {
+                    //TODO cell image
+                    if (memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
+                        LogHelper.logWarnOnceForce(LOG, "Cell image read: {}", memCtx.wramSetup);
+                    }
+                    res = memCtx.readWordRam(cpu, addr, size);
                 }
-                res = memCtx.readWordRam(cpu, addr, size);
-            } else if (addr >= START_MCD_BOOT_ROM_MODE1 && addr < END_MCD_BOOT_ROM_MODE1) {
-                res = readBuffer(bios, addr & MCD_BOOT_ROM_MASK, size);
+            } else if (addr >= START_MCD_BOOT_ROM_MODE1 && addr < END_MCD_BOOT_ROM_MIRROR_MODE1) {
+                addr &= MCD_BOOT_ROM_PRGRAM_WINDOW_MASK;
+                if (addr >= MCD_BOOT_ROM_WINDOW_SIZE) {
+                    addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
+                    res = readBuffer(prgRam, addr, size);
+                } else {
+                    res = readBuffer(bios, addr & MCD_BOOT_ROM_MASK, size);
+                }
             } else {
                 res = super.read(address, size);
             }
@@ -143,29 +148,37 @@ public class MegaCdMainCpuBus extends GenesisBus {
         address &= MD_PC_MASK;
         if (enableMCDBus) {
             if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
-                handleMegaCdExpWrite(address, data, size);
+                handleMegaCdExpWrite(address & MCD_GATE_REGS_MASK, data, size);
                 return;
             }
             int addr = address | maskMode1;
-            if (addr >= START_MCD_MAIN_PRG_RAM_MODE1 && addr < END_MCD_MAIN_PRG_RAM_MODE1) {
-                addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                writeBufferRaw(prgRam, addr, data, size);
+            if (addr >= START_MCD_MAIN_PRG_RAM_MODE1 && addr < END_MCD_BOOT_ROM_MIRROR_MODE1) {
+                addr &= MCD_BOOT_ROM_PRGRAM_WINDOW_MASK;
+                if (addr >= MCD_BOOT_ROM_WINDOW_SIZE) {
+                    addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
+                    writeBufferRaw(prgRam, addr, data, size);
+                } else {
+                    LOG.error("Writing to boot rom: {}({})", th(addr), th(address));
+                }
                 return;
+            } else if (addr >= START_MCD_MAIN_WORD_RAM_MODE1 && addr < END_MCD_MAIN_WORD_RAM_MIRROR_MODE1) {
                 /* WRAM-1M :
                     Word-RAM 0/1 assigned to MAIN-CPU
                     VRAM cell image mapped at $220_000-$23F_FFF
                 */
-            } else if (addr >= START_MCD_WORD_RAM_MODE1 && addr < END_MCD_WORD_RAM_1M_BANK0_MODE1) {
+                addr &= MCD_WORD_RAM_2M_MASK;
+                if (addr < MCD_WORD_RAM_1M_SIZE) {
 //                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M;
-                memCtx.writeWordRam(cpu, addr, data, size);
-                return;
-            } else if (addr >= START_MCD_WORD_RAM_1M_BANK1_MODE1 && addr < END_MCD_WORD_RAM_MODE1) {
-                //TODO cell image
-                if (memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
-                    LogHelper.logWarnOnceForce(LOG, "Cell image write: {}", memCtx.wramSetup);
+                    memCtx.writeWordRam(cpu, addr, data, size);
+                    return;
+                } else {
+                    //TODO cell image
+                    if (memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
+                        LogHelper.logWarnOnceForce(LOG, "Cell image write: {}", memCtx.wramSetup);
+                    }
+                    memCtx.writeWordRam(cpu, addr, data, size);
+                    return;
                 }
-                memCtx.writeWordRam(cpu, addr, data, size);
-                return;
             }
         }
         super.write(address, data, size);
@@ -331,12 +344,12 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     private void handleCommWrite(RegSpecMcd regSpec, int address, int data, Size size) {
-        if (address >= START_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_W) { //MAIN COMM
+        if (address >= MCD_COMM0.addr && address < MCD_COMM8.addr) { //MAIN COMM
             LogHelper.logInfo(LOG, "M Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
             writeBufferRaw(commonGateRegs, address & MCD_GATE_REGS_MASK, data, size);
             return;
         }
-        if (address >= END_MCD_MAIN_GA_COMM_W && address < END_MCD_MAIN_GA_COMM_R) { //MAIN COMM READ ONLY
+        if (address >= MCD_COMM8.addr && address < MCD_TIMER_INT3.addr) { //MAIN COMM READ ONLY
             LOG.error("M illegal write read-only MEGA_CD_COMM reg: {}", th(address));
             return;
         }

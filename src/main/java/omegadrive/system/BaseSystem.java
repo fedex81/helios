@@ -293,7 +293,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
             while (isRomRunning()) {
                 Util.sleep(100);
             }
-            LOG.info("Rom thread cancel");
+            LOG.info("Rom thread cancel: {}", romContext.romSpec);
             display.resetScreen();
             sound.reset();
             bus.closeRom();
