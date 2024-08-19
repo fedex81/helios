@@ -147,7 +147,7 @@ public class MegaCdMemoryContext implements Serializable {
         }
     }
 
-    private void writeWordRamBank(int bank, int address, int value) {
+    public void writeWordRamBank(int bank, int address, int value) {
         Util.writeData(wordRam01[bank], getAddress(wramSetup, address, bank), value, Size.WORD);
     }
 

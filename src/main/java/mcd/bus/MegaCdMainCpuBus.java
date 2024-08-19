@@ -17,6 +17,7 @@ import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.util.McdRegBitUtil.setSharedBit;
+import static mcd.util.McdWramCell.linearCellMap;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -117,14 +118,14 @@ public class MegaCdMainCpuBus extends GenesisBus {
             }
             if (addr >= START_MCD_MAIN_WORD_RAM_MODE1 && addr < END_MCD_MAIN_WORD_RAM_MIRROR_MODE1) {
                 addr &= MCD_WORD_RAM_2M_MASK;
-                if (addr < MCD_WORD_RAM_1M_SIZE) {
-//                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M;
-                    res = memCtx.readWordRam(cpu, addr, size);
+                if (addr >= MCD_WORD_RAM_1M_SIZE && memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
+                    LogHelper.logWarnOnceForce(LOG, "Cell image read: {}", memCtx.wramSetup);
+                    assert memCtx.wramSetup.mode == WordRamMode._1M;
+                    assert size == Size.WORD;
+                    int assignedBank = memCtx.wramSetup.cpu == M68K ? 0 : 1;
+                    int otherBank = ~assignedBank & 1;
+                    res = memCtx.readWordRamBank(otherBank, address);
                 } else {
-                    //TODO cell image
-                    if (memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
-                        LogHelper.logWarnOnceForce(LOG, "Cell image read: {}", memCtx.wramSetup);
-                    }
                     res = memCtx.readWordRam(cpu, addr, size);
                 }
             } else if (addr >= START_MCD_BOOT_ROM_MODE1 && addr < END_MCD_BOOT_ROM_MIRROR_MODE1) {
@@ -170,18 +171,26 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 if (addr < MCD_WORD_RAM_1M_SIZE) {
 //                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M;
                     memCtx.writeWordRam(cpu, addr, data, size);
-                    return;
-                } else {
-                    //TODO cell image
                     if (memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
                         LogHelper.logWarnOnceForce(LOG, "Cell image write: {}", memCtx.wramSetup);
+                        assert size == Size.WORD;
+                        writeCell(addr, data);
                     }
+                    return;
+                } else {
                     memCtx.writeWordRam(cpu, addr, data, size);
                     return;
                 }
             }
         }
         super.write(address, data, size);
+    }
+
+    private void writeCell(int a, int value) {
+        assert memCtx.wramSetup.mode == WordRamMode._1M;
+        int assignedBank = memCtx.wramSetup.cpu == M68K ? 0 : 1;
+        int otherBank = ~assignedBank & 1;
+        memCtx.writeWordRamBank(otherBank, linearCellMap[a & MCD_WORD_RAM_1M_MASK], value);
     }
 
     private int readHintVector(int addr, Size size) {
