@@ -1,6 +1,5 @@
 package mcd;
 
-import m68k.cpu.CpuException;
 import mcd.bus.McdSubInterruptHandler;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
@@ -84,23 +83,12 @@ public class McdResetTest extends McdRegTestBase {
         //ifl2 is still 0 but interrupts keep getting triggered
         subCpu.getM68k().setSR(0x2000);
         interruptHandler.raiseInterrupt(McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2);
-        try {
-            interruptHandler.handleInterrupts();
-            Assertions.fail();
-        } catch (CpuException e) {
-            //expected
-            //m68k.cpu.CpuException: Interrupt vector not set for uninitialised
-            //interrupt vector while trapping uninitialised vector 26
-        }
+        McdInterruptTest.assertOneInterruptTrigger(interruptHandler);
 
         //ifl2 is now set to 0 externally, interrupts are not triggered
         mainCpuBus.write(MAIN_RESET_REG, 0, Size.BYTE);
         interruptHandler.raiseInterrupt(McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2);
-        try {
-            interruptHandler.handleInterrupts();
-        } catch (CpuException e) {
-            Assertions.fail();
-        }
+        McdInterruptTest.assertNoInterruptTrigger(interruptHandler);
     }
 
     private void testBusReqInternal(int mreg, boolean[] exp) {
