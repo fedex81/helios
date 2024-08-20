@@ -181,7 +181,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     protected void runSub68k() {
         while (nextSub68kCycle <= cycleCounter) {
-            boolean canRun = !subCpu.isStopped();
+            boolean canRun = !subCpu.isStopped();// && !MC68000Wrapper.subCpuBusHalt;
             int cycleDelayCpu = 1;
             if (canRun) {
                 Md32xRuntimeData.setAccessTypeExt(SUB_M68K);

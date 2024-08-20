@@ -88,12 +88,8 @@ public class McdWordRam2Test extends McdRegTestBase {
 
     private String read1mString(CpuDeviceAccess cpu, int len, Size size) {
         assert lc.memoryContext.wramSetup.mode == _1M;
-        int bank = getBank1M(lc.memoryContext.wramSetup, cpu);
         GenesisBus bus = cpu == M68K ? mainCpuBus : subCpuBus;
-        int baseAddr = START_MCD_SUB_WORD_RAM_1M;
-        if (cpu == M68K) {
-            baseAddr = bank == 0 ? START_MCD_MAIN_WORD_RAM : START_MCD_MAIN_WORD_RAM + MCD_WORD_RAM_1M_SIZE;
-        }
+        int baseAddr = cpu == M68K ? START_MCD_MAIN_WORD_RAM : START_MCD_SUB_WORD_RAM_1M;
         String res = "";
         for (int i = 0; i < len; i += size.getByteSize()) {
             int val = bus.read(baseAddr + i, size);

@@ -18,6 +18,7 @@
 package omegadrive.bus.md;
 
 import omegadrive.SystemLoader;
+import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
@@ -49,13 +50,15 @@ public class BusArbiterTest {
     int vCounterIntAccepted = -1;
     private MC68000Wrapper cpu;
 
+    private BaseBusProvider z80bus;
+
     @Before
     public void setup() {
         SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
         bus = new GenesisBus();
         vdp = GenesisVdpProvider.createVdp(bus);
         Z80Provider z80 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, bus);
-
+        z80bus = z80.getZ80BusProvider();
 
         cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, bus) {
             @Override
@@ -79,6 +82,9 @@ public class BusArbiterTest {
 
     private void setupZ80() {
         Z80Provider z80 = new Z80CoreWrapper() {
+            {
+                this.z80BusProvider = z80bus;
+            }
             @Override
             public boolean interrupt(boolean value) {
                 hCounterRaise = vdp.getHCounter();
@@ -87,7 +93,6 @@ public class BusArbiterTest {
             }
         };
         busArbiter = BusArbiter.createInstance(vdp, cpu, z80);
-
         bus.attachDevice(busArbiter);
     }
 

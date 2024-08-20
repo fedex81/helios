@@ -19,6 +19,7 @@
 
 package omegadrive.bus.model;
 
+import com.google.common.base.MoreObjects;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
@@ -71,10 +72,19 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     Logger LOG = LogHelper.getLogger(GenesisBusProvider.class.getSimpleName());
 
-    abstract class VdpRunnable implements Runnable {
-        public int vdpAddress;
-        public int vpdData;
-        public Size vdpSize;
+    abstract class BusWriteRunnable implements Runnable {
+        public int address;
+        public int data;
+        public Size size;
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("address", address)
+                    .add("data", data)
+                    .add("size", size)
+                    .toString();
+        }
     }
 
     void handleVdpInterrupts68k();

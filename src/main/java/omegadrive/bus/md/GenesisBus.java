@@ -74,11 +74,11 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     protected MsuMdHandler msuMdHandler = MsuMdHandler.NO_OP_HANDLER;
     private BusArbiter busArbiter = BusArbiter.NO_OP;
 
-    final GenesisBus.VdpRunnable vdpRunnable = new GenesisBus.VdpRunnable() {
+    final BusWriteRunnable vdpRunnable = new BusWriteRunnable() {
         @Override
         public void run() {
 //            LOG.info("{}, {} {}", th(vdpAddress), vpdData, vdpSize);
-            write(vdpAddress, vpdData, vdpSize);
+            write(address, data, size);
         }
     };
 
@@ -814,9 +814,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private boolean checkVdpBusy(int address, Size size, int data) {
         if (busArbiter.getVdpBusyState() == VdpBusyState.FIFO_FULL ||
                 busArbiter.getVdpBusyState() == VdpBusyState.MEM_TO_VRAM) {
-            vdpRunnable.vdpAddress = address;
-            vdpRunnable.vdpSize = size;
-            vdpRunnable.vpdData = data;
+            vdpRunnable.address = address;
+            vdpRunnable.size = size;
+            vdpRunnable.data = data;
             busArbiter.runLater68k(vdpRunnable);
             return true;
         }

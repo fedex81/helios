@@ -50,6 +50,8 @@ public class MC68000Wrapper implements M68kProvider {
     protected int currentPC;
     protected int instCycles = 0;
 
+    public static boolean subCpuBusHalt = false;
+
     public MC68000Wrapper(CpuDeviceAccess cpu, GenesisBusProvider busProvider) {
         this.cpu = cpu;
         this.m68k = createCpu();
