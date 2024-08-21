@@ -9,8 +9,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static mcd.McdWordRamTest.SUB_MEM_MODE_REG;
+import static mcd.McdWordRamTest.*;
 import static mcd.dict.MegaCdDict.*;
+import static mcd.dict.MegaCdDict.SharedBitDef.MODE;
+import static mcd.dict.MegaCdDict.SharedBitDef.RET;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
@@ -220,5 +222,162 @@ public class McdWordRam2Test extends McdRegTestBase {
             res = subCpuBus.read(START_MCD_SUB_WORD_RAM_1M + i, Size.BYTE);
             Assertions.assertEquals(i, res);
         }
+    }
+
+    //ROTD sets DMNA=1 in 1M and expects SUB to have WordRAM after the switch to 2M.
+    @Test
+    public void testRiseOfTheDragon() {
+        McdWordRamTest.setWram1M_W0Main(lc);
+        int v = mainGetLsbFn.apply(mainCpuBus);
+        //1M Mode, main sets DMNA
+        mainSetLsbFn.accept(mainCpuBus, v | DMNA_BIT_MASK);
+        //switch to 2M
+        subSetLsbFn.accept(lc.subBus, subGetLsbFn.apply(lc.subBus) & ~4);
+        Assertions.assertEquals(_2M, ctx.wramSetup.mode);
+        Assertions.assertEquals(SUB_M68K, ctx.wramSetup.cpu);
+    }
+
+    //UP sets bank in 1M (so, RET=1) and expects MAIN to have WordRAM after the switch to 2M.
+    @Test
+    public void testUltraverse() {
+        McdWordRamTest.setWram1M_W0Main(lc);
+        McdWordRamTest.setWram1M_W0Sub(lc); //RET = 1
+        //switch to 2M
+        subSetLsbFn.accept(lc.subBus, subGetLsbFn.apply(lc.subBus) & ~4);
+        Assertions.assertEquals(_2M, ctx.wramSetup.mode);
+        Assertions.assertEquals(M68K, ctx.wramSetup.cpu);
+    }
+
+    /**
+     * [ff8003]=00 (switch to 2M)
+     * [ff8003]=01 (give WordRAM to MAIN)
+     * [ff8003]=04 (switch to 1M, set bank=0)
+     * <p>
+     * versus
+     * <p>
+     * [ff8003]=00 (switch to 2M)
+     * [ff8003]=05 (switch to 1M, set bank=1)
+     * <p>
+     * As you'd expect, the 1M WordRAM banks are assigned differently, based on last write to bit 0.
+     * However, [ff8003]=05 has the unexpected result of setting RET=1 despite the mode bit.
+     * In switching back to 2M (say, by setting [ff8003]=00), WordRAM will have already been
+     * assigned to MAIN, and the register value will reflect this: [ff8003]==01.
+     */
+    @Test
+    public void testSequence1() {
+        /**
+         *  [ff8003]=00 (switch to 2M)
+         *  [ff8003]=01 (give WordRAM to MAIN)
+         *  [ff8003]=04 (switch to 1M, set bank=0)
+         */
+        McdWordRamTest.setWram1M_W0Main(lc);
+        //switch to 2M
+        subSetLsbFn.accept(lc.subBus, 0);
+        Assertions.assertEquals(_2M, ctx.wramSetup.mode);
+
+        //give WordRAM to MAIN
+        subSetLsbFn.accept(lc.subBus, RET_BIT_MASK);
+        Assertions.assertEquals(W_2M_MAIN, ctx.wramSetup);
+
+        //switch to 1M
+        subSetLsbFn.accept(lc.subBus, MODE.getBitMask());
+        Assertions.assertEquals(W_1M_WR0_SUB, ctx.wramSetup);
+
+        //switch to 2M
+        subSetLsbFn.accept(lc.subBus, 0);
+        Assertions.assertEquals(W_2M_SUB, ctx.wramSetup);
+
+        /**
+         * [ff8003]=00 (switch to 2M)
+         * [ff8003]=05 (switch to 1M, set bank=1)
+         */
+        McdWordRamTest.setWram1M_W0Main(lc);
+        //switch to 2M
+        subSetLsbFn.accept(lc.subBus, 0);
+        Assertions.assertEquals(_2M, ctx.wramSetup.mode);
+
+        //switch to 1M, bank=1
+        subSetLsbFn.accept(lc.subBus, MODE.getBitMask() | RET.getBitMask());
+        Assertions.assertEquals(W_1M_WR0_SUB, ctx.wramSetup);
+
+        //switch to 2M
+        subSetLsbFn.accept(lc.subBus, 0);
+        Assertions.assertEquals(W_2M_MAIN, ctx.wramSetup);
+        Assertions.assertEquals(1, subGetLsbFn.apply(lc.subBus));
+    }
+
+    /**
+     * RET bit does not matter, it can not be written by main-CPU so it keeps its previous value but yes,
+     * in 1M mode (but not in 2M mode), writing 1 to bit 0 has no effect on the read value and writing 0
+     * set DMNA bit value to 1.
+     * Writing 1 to DMNA bit in 1M mode although have some side-effect when switching back to 2M mode,
+     * as mentioned earlier and as explained by TascoDlx above.
+     */
+
+    /**
+     * The DMNA bit must be set to 0 (not 1) to request word-ram bank switching
+     * (it is read as 1 after that, until the switch has been performed by sub-cpu).
+     * I actually found this to be correctly explained in only one
+     * place of the available documentation (main-cpu section of "rex sabio" hardware manual),
+     * in other places it is either wrong ("writing 1 to dmna bit") or imprecise ("on read, dmna bit is set to 1"),
+     * which probably did not help during manuals translation.
+     */
+    @Test
+    public void test1M_MainSwitch() {
+        McdWordRamTest.setWram1M_W0Main(lc);
+
+        //switch bank, set DMNA=0, main = bank1
+        mainSetLsbFn.accept(lc.mainBus, mainGetLsbFn.apply(lc.mainBus) & ~1);
+        Assertions.assertEquals(W_1M_WR0_SUB, ctx.wramSetup);
+        //DMNA then goes to 1, (TODO->) and then 0
+        Assertions.assertEquals(DMNA_BIT_MASK, mainGetLsbFn.apply(lc.mainBus) & DMNA_BIT_MASK);
+    }
+
+    @Test
+    public void test2M_SubRetBit() {
+        McdWordRamTest.setWramSub2M(lc);
+        //set RET=1, WRAM goes to MAIN
+        subSetLsbFn.accept(lc.subBus, subGetLsbFn.apply(lc.subBus) | RET.getBitMask());
+        Assertions.assertEquals(W_2M_MAIN, ctx.wramSetup);
+        //RET=1 means switch done
+        Assertions.assertEquals(RET.getBitMask(), subGetLsbFn.apply(lc.subBus) & RET.getBitMask());
+    }
+
+    /**
+     * //W_1M_WR0_MAIN then MODE = 1 -> remain 1M, swap request to SUB
+     * //MODE=1,
+     * //MAIN set DMNA=0 swap request
+     * //RET goes to 1, DMNA gets set to 1 as well
+     * 68M 00ff0498   13fc 0004 00a12003      move.b   #$0004,$00a12003 [NEW]
+     * 68M 00ff04a0   0839 0001 00a12003      btst     #$1,$00a12003 [NEW]
+     * 68M 00ff04a8   67ee                    beq.s    $00ff0498 [NEW]
+     */
+    @Test
+    public void test1M_terminator() {
+        McdWordRamTest.setWram1M_W0Main(lc);
+        //switch bank, set DMNA=0, main = bank1
+        mainSetLsbFn.accept(lc.mainBus, MODE.getBitMask());
+        Assertions.assertEquals(W_1M_WR0_SUB, ctx.wramSetup);
+        Assertions.assertEquals(7, mainGetLsbFn.apply(lc.mainBus));
+    }
+
+
+    /**
+     * Battlecorps E demo, BC racers E Demo
+     * 68S 00025af0   0879 0000 00ff8003      bchg     #$0,$00ff8003 [NEW]
+     * 68S 00025af8   0839 0001 00ff8003      btst     #$1,$00ff8003 [NEW]
+     * 68S 00025b00   66f6                    bne.s    $00025af8 [NEW]
+     */
+    @Test
+    public void test1M_bcracers() {
+        McdWordRamTest.setWram1M_W0Main(lc);
+        //switch bank, set DMNA=0, main = bank1
+        int val = subGetLsbFn.apply(lc.subBus);
+        int retFlip = ~val & 1;
+        val &= ~1; //unset RET
+        val |= retFlip;
+        subSetLsbFn.accept(lc.subBus, val);
+        Assertions.assertEquals(W_1M_WR0_SUB, ctx.wramSetup);
+        Assertions.assertEquals(5, mainGetLsbFn.apply(lc.mainBus));
     }
 }

@@ -2,6 +2,7 @@ package mcd.dict;
 
 import mcd.cdd.CdBiosHelper;
 import mcd.util.BuramHelper;
+import mcd.util.McdRegBitUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -184,10 +185,30 @@ public class MegaCdMemoryContext implements Serializable {
         if (mode > 0) {
             if (c == SUB_M68K) {
                 LogHelper.logWarnOnce(LOG, "{} Switch bank requested, ret: {}, current setup {}", c, ret, wramSetup);
+                wramSetup = ret == 0 ? WramSetup.W_1M_WR0_MAIN : WramSetup.W_1M_WR0_SUB;
+                if (ret > 0) {
+                    dmna = 0;
+                }
+                McdRegBitUtil.setSharedBit(this, M68K, dmna << 1, DMNA);
+                McdRegBitUtil.setSharedBit(this, SUB_M68K, dmna << 1, DMNA);
+                LogHelper.logWarnOnce(LOG, "Setting wordRam to {}", wramSetup);
             }
-            //DMNA has no effect, ie. MAIN cannot switch banks directly, it needs to ask SUB to do it
-            wramSetup = ret == 0 ? WramSetup.W_1M_WR0_MAIN : WramSetup.W_1M_WR0_SUB;
-            LogHelper.logWarnOnce(LOG, "Setting wordRam to {}", wramSetup);
+            if (c == M68K) {
+                boolean swapRequest = dmna == 0;
+                if (swapRequest) {
+                    ret = ~ret & 1;
+                    if (ret > 0) {
+                        dmna = ret;
+                    }
+                    McdRegBitUtil.setSharedBit(this, M68K, dmna << 1, DMNA);
+                    McdRegBitUtil.setSharedBit(this, SUB_M68K, dmna << 1, DMNA);
+                    McdRegBitUtil.setSharedBit(this, M68K, ret, RET);
+                    McdRegBitUtil.setSharedBit(this, SUB_M68K, ret, RET);
+                    //DMNA has no effect, ie. MAIN cannot switch banks directly, it needs to ask SUB to do it
+                    wramSetup = ret == 0 ? WramSetup.W_1M_WR0_MAIN : WramSetup.W_1M_WR0_SUB;
+                    LogHelper.logWarnOnce(LOG, "Setting wordRam to {}", wramSetup);
+                }
+            }
             return wramSetup;
         } else if (mode == 0) {
             if (wramSetup.mode == _1M) {
