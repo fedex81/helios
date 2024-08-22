@@ -78,9 +78,8 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     public final static double MCD_SUB_68K_CLOCK_MHZ = 12_500_000;
 
     //mcd-verificator(NTSC) is very sensitive
-    public final static double MCD_68K_RATIO_NTSC = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_NTSC_MCLOCK_MHZ / 7.0)) * 0.99;
-    //TODO pal timings are off
-    public final static double MCD_68K_RATIO_PAL = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_PAL_MCLOCK_MHZ / 7.0)) * 0.99;
+    public final static double MCD_68K_RATIO_NTSC = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_NTSC_MCLOCK_MHZ / 7.0));
+    public final static double MCD_68K_RATIO_PAL = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_PAL_MCLOCK_MHZ / 7.0));
 
     private double mcd68kRatio;
 
@@ -130,6 +129,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
         vdp.addVdpEventListener(mcdLaunchContext.subBus);
         bus.attachDevices(this, memory, joypad, vdp, cpu, z80, sound);
+        mcdLaunchContext.subBus.attachDevice(this);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
         reloadWindowState();
@@ -190,9 +190,9 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
             //interrupts are processed after the current instruction
             interruptHandler.handleInterrupts();
             cycleDelayCpu = Math.max(1, cycleDelayCpu);
-            subCnt += cycleDelayCpu;
+            subCnt += cycleDelayCpu; //cycles @ 12.5 Mhz
             mcdLaunchContext.stepDevices(cycleDelayCpu);
-            //convert cycles at 7.67 to cycle @ 12.5 Mhz
+            //convert cycles @ 12.5 Mhz to cycles @ 7.67 Mhz
             nextSub68kCycle += M68K_DIVIDER * mcd68kRatio * cycleDelayCpu;
             assert Md32xRuntimeData.resetCpuDelayExt() == 0;
         }
@@ -270,13 +270,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         assert nextZ80Cycle >= counter && next68kCycle >= counter &&
                 nextSub68kCycle >= counter &&
                 nextVdpCycle + 1 >= counter;
-        if ((getFrameCounter() + 1) % 60 == 0) {
-            boolean rangeOk = Math.abs(MCD_SUB_68K_CLOCK_MHZ - subCnt) < 250_000; //250Khz slack
-            if (!rangeOk) {
-                logTimingWarn(LOG, "SubCpu timing off!!!, 68K clock: {}, mode: {}", subCnt, displayContext.videoMode);
-            }
-            subCnt = 0;
-        }
+        logSlowFrames();
         nextZ80Cycle = Math.max(1, nextZ80Cycle - counter);
         next68kCycle = Math.max(1, next68kCycle - counter);
         nextSub68kCycle = Math.max(1, nextSub68kCycle - counter);
@@ -344,12 +338,14 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         super.handleSoftReset();
     }
 
-    private void logTimingWarn(Logger log, String str, Object... pars) {
-        if (displayContext.videoMode.isPal()) {
-            //known issue, warn once
-            LogHelper.logWarnOnce(log, str, pars);
-        } else {
-            log.info(str, pars);
+    private void logSlowFrames() {
+        long fc = getFrameCounter();
+        if ((fc + 1) % romContext.region.getFps() == 0) {
+            boolean rangeOk = Math.abs(MCD_SUB_68K_CLOCK_MHZ - subCnt) < 100_000; //100Khz slack
+            if (fc > 100 && !rangeOk) {
+                LOG.warn("Frame#{} SubCpu timing off!!!, 68K clock: {}, mode: {}", fc, subCnt, displayContext.videoMode);
+            }
+            subCnt = 0;
         }
     }
 }

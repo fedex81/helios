@@ -519,17 +519,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
 
     public void onNewFrame() {
         super.onNewFrame();
-        counter32p5Khz.frames++;
-        if ((counter32p5Khz.frames + 1) % 60 == 0) {
-            boolean rangeOk = Math.abs(75 - counter32p5Khz.ticks75) < 2 &&
-                    Math.abs(McdPcm.PCM_SAMPLE_RATE_HZ - counter32p5Khz.ticks32p5) < 500.0;
-            if (!rangeOk) {
-                String str = "SubCpu timing off!!!, 32.5Khz: {}, 75hz:{}";
-                //known issue for PAL, warn once
-                LogHelper.logWarnOnce(LOG, str, counter32p5Khz.ticks32p5, counter32p5Khz.ticks75);
-            }
-            counter32p5Khz.ticks32p5 = counter32p5Khz.ticks75 = 0;
-        }
+        logSlowFrames();
         if (subCpuResetFrameCount > 0) {
             if (--subCpuResetFrameCount == 0) {
                 releaseSubCpuReset();
@@ -578,6 +568,20 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         cdc.reset();
         asic.reset();
         pcm.reset();
+    }
+
+    private void logSlowFrames() {
+        counter32p5Khz.frames++;
+        if ((counter32p5Khz.frames + 1) % getSystem().getRegion().getFps() == 0) {
+            //[74-76] hz, (32.200 - 32.800) khz, TODO PAL is at 32.750khz
+            boolean rangeOk = Math.abs(75 - counter32p5Khz.ticks75) < 2 &&
+                    Math.abs(McdPcm.PCM_SAMPLE_RATE_HZ - counter32p5Khz.ticks32p5) < 300.0;
+            if (counter32p5Khz.frames > 100 && !rangeOk) {
+                String str = "SubCpu timing off!!!, 32.5Khz: {}, 75hz:{}";
+                LOG.warn(str, counter32p5Khz.ticks32p5, counter32p5Khz.ticks75);
+            }
+            counter32p5Khz.ticks32p5 = counter32p5Khz.ticks75 = 0;
+        }
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
