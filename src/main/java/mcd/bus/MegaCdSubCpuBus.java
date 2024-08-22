@@ -140,7 +140,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
             res = memCtx.readWordRam(cpuType, address, size);
         } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
-            res = readBuffer(subCpuRam, address & MCD_PRG_RAM_MASK, size);
+            res = readPrgRam(address, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address < END_MCD_SUB_GATE_ARRAY_REGS) {
             res = handleMegaCdExpRead(address, size);
         } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
@@ -202,6 +202,16 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         } else {
             LogHelper.logWarnOnce(LOG, "S Unexpected write access: {} {}", th(address), size);
         }
+    }
+
+    private int readPrgRam(int address, Size size) {
+        return switch (size) {
+            case BYTE, WORD -> readBuffer(subCpuRam, address & MCD_PRG_RAM_MASK, size);
+            case LONG -> {
+                int res = readBuffer(subCpuRam, address & MCD_PRG_RAM_MASK, Size.WORD) & 0xFFFF;
+                yield (res << 16) | (readBuffer(subCpuRam, (address + 2) & MCD_PRG_RAM_MASK, Size.WORD) & 0xFFFF);
+            }
+        };
     }
 
     private int readDotMapped(int address, Size size) {
