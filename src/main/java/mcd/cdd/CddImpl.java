@@ -65,7 +65,7 @@ class CddImpl implements Cdd {
         }
 
         setIoStatus(ReadingTOC);
-        setSector(-150); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
+        setSector(-1); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
         cddContext.io.track = cddContext.io.sample = cddContext.io.tocRead = 0;
         cdc.setMedia(extCueSheet);
         LOG.info("Using disc: {}", extCueSheet);
@@ -181,19 +181,27 @@ class CddImpl implements Cdd {
         }
     }
 
+    @Override
+    public void logStatus() {
+        logStatus(false);
+    }
+
 
     /**
      * this should be called at 75hz
      */
     public void step(int cycles) {
         logStatus(false);
-        if (cddContext.hostClockEnable == 0) {
+        if (!hasMedia || cddContext.hostClockEnable == 0) {
             return;
         }
         interruptHandler.raiseInterrupt(INT_CDD);
         /* drive latency */
         if (cddContext.io.latency > 0) {
             cddContext.io.latency--;
+            if (cddContext.io.latency == 0) {
+                updateStatus(0, cddContext.io.status.ordinal());
+            }
             return;
         }
 
@@ -246,7 +254,7 @@ class CddImpl implements Cdd {
 
     void cdd_process() {
         /* Process CDD command */
-        CddCommand cddCommand = CddCommand.values()[cddContext.commandRegs[0]];
+        CddCommand cddCommand = Cdd.commandVals[cddContext.commandRegs[0]];
         if (verbose) LOG.info("CDD {}({})", cddCommand, cddCommand.ordinal());
         final boolean isAudio = cddContext.io.track > 0 ?
                 ExtendedCueSheet.isAudioTrack(extCueSheet, cddContext.io.track) : false;
@@ -281,7 +289,7 @@ class CddImpl implements Cdd {
                     } else if (cddContext.statusRegs[1] == 0x01) {
                         CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                         /* current track relative time */
-                        int lba = Math.abs(cddContext.io.sector - etd.absoluteSectorStart);
+                        int lba = cddContext.io.sector - etd.absoluteSectorStart;
                         CueFileParser.toMSF(lba, msfHolder);
                         updateStatusesMsf(cddContext.statusRegs[1], (isAudio ? 0 : 1) << 2, msfHolder);
                     } else if (cddContext.statusRegs[1] == 0x02) {
@@ -389,14 +397,19 @@ class CddImpl implements Cdd {
                 int lba = CueFileParser.toSector(cddContext.commandRegs[2], cddContext.commandRegs[3],
                         cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6], cddContext.commandRegs[7]) - 150;
 
+                /* CD drive latency */
+                if (cddContext.io.latency == 0) {
+                    cddContext.io.latency = 1 + 10 * CD_LATENCY;
+                }
+
                 /* CD drive seek time  */
                 /* We are using similar linear model as above, although still not exactly accurate, */
                 /* it works fine for Switch/Panic! intro (Switch needs at least 30 interrupts while */
                 /* seeking from 00:05:63 to 24:03:19, Panic! when seeking from 00:05:60 to 24:06:07) */
                 if (lba > cddContext.io.sector) {
-                    cddContext.io.latency = ((lba - cddContext.io.sector) * 120 * CD_LATENCY) / 270000;
+                    cddContext.io.latency += ((lba - cddContext.io.sector) * 120 * CD_LATENCY) / 270000;
                 } else {
-                    cddContext.io.latency = ((cddContext.io.sector - lba) * 120 * CD_LATENCY) / 270000;
+                    cddContext.io.latency += ((cddContext.io.sector - lba) * 120 * CD_LATENCY) / 270000;
                 }
 
                 /* update current LBA */
@@ -528,7 +541,7 @@ class CddImpl implements Cdd {
     private void handleRequestCommand(boolean isAudio) {
         /* Infos automatically retrieved by CDD processor from Q-Channel */
         /* commands 0x00-0x02 (current block) and 0x03-0x05 (Lead-In) */
-        CddRequest request = CddRequest.values()[cddContext.commandRegs[3]];
+        CddRequest request = Cdd.requestVals[cddContext.commandRegs[3]];
         String extraInfo = "";
         switch (request) {
             /* Current Absolute Time (MM:SS:FF) */
@@ -544,8 +557,8 @@ class CddImpl implements Cdd {
             case RelativeTime -> {
                 CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                 /* current track relative time */
-                int lba = Math.abs(cddContext.io.sector - etd.absoluteSectorStart);
-                CueFileParser.toMSF(lba, msfHolder);
+                int lba = cddContext.io.sector - etd.absoluteSectorStart;
+                CueFileParser.toMSF(lba + 150, msfHolder);
                 /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
                 int rs8 = (isAudio ? 0 : 1) << 2;
                 updateStatus(0, cddContext.io.status.ordinal());
@@ -554,12 +567,14 @@ class CddImpl implements Cdd {
             /* Current Track Number */
             case TrackInformation -> {
                 /* Disk Control Code (?) in RS6 */
-                int rs6 = 0;
+//                int rs6 = 0;
                 //rs2-rs3
                 int rs2 = cddContext.io.track <= extCueSheet.numTracks ? cddContext.io.track / 10 : 0xA;
                 int rs3 = cddContext.io.track <= extCueSheet.numTracks ? cddContext.io.track % 10 : 0xA;
+                //rs4-rs7 (start/index lba??)
+                int rs5 = 1, rs6 = 5, rs7 = 0;
                 updateStatus(0, cddContext.io.status.ordinal());
-                updateStatuses(request.ordinal(), rs2, rs3, 0, 0, rs6, 0, 0);
+                updateStatuses(request.ordinal(), rs2, rs3, 0, rs5, rs6, rs7, 0);
             }
             /* Total length (MM:SS:FF) */
             case DiscCompletionTime -> {
@@ -570,7 +585,7 @@ class CddImpl implements Cdd {
             }
             /* First & Last Track Numbers */
             case DiscTracks -> {
-                int firstTrack = 1;
+                int firstTrack = hasMedia ? 1 : 0;
                 int lastTrack = hasMedia ? extCueSheet.numTracks : 0;
                 updateStatus(0, cddContext.io.status.ordinal());
                 /* Drive Version (?) in RS6-RS7 */
@@ -725,6 +740,11 @@ class CddImpl implements Cdd {
         cddContext.commandRegs[pos] = val;
         writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_CDD_COMM5.addr + pos, val, Size.BYTE);
         logStatus(false);
+    }
+
+    @Override
+    public CddContext getCddContext() {
+        return cddContext;
     }
 
     @Override

@@ -120,7 +120,6 @@ public class MegaCdMainCpuBus extends GenesisBus {
                 addr &= MCD_WORD_RAM_2M_MASK;
                 if (addr >= MCD_WORD_RAM_1M_SIZE && memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
                     LogHelper.logWarnOnceForce(LOG, "Cell image read: {}", memCtx.wramSetup);
-                    assert memCtx.wramSetup.mode == WordRamMode._1M;
                     assert size == Size.WORD;
                     int assignedBank = memCtx.wramSetup.cpu == M68K ? 0 : 1;
                     int otherBank = ~assignedBank & 1;

@@ -136,6 +136,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
                 logWarnOnce(LOG, "Ignoring read access to ROM when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return size.getMask();
             }
+            //NOTE: only works when assertions are enabled
             if (assertionsEnabled && romReadQuirk(address)) {
                 return size.getMask();
             }

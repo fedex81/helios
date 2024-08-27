@@ -90,7 +90,7 @@ public class Asic implements AsicOp {
     @Override    //from MCD_MEM_MODE
     public void setStampPriorityMode(int value) {
         StampPriorityMode spm = StampPriorityMode.vals[value & 3];
-        assert spm != StampPriorityMode.ILLEGAL;
+        assert spm != StampPriorityMode.ILLEGAL; //Ecco does this
         if (spm != stampConfig.priorityMode) {
             if (verbose) LOG.info("StampPriorityMode: {} -> {}", stampConfig.priorityMode, spm);
             stampConfig.priorityMode = spm;

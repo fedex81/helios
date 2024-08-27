@@ -32,9 +32,9 @@ public class ExtendedCueSheet implements Closeable {
     private final static Logger LOG = LogHelper.getLogger(ExtendedCueSheet.class.getSimpleName());
 
     //placeholder name
-    private static final String TEMPLATE_ISO_NAME_PH = "<iso_here>";
+    public static final String TEMPLATE_ISO_NAME_PH = "<iso_here>";
 
-    private static final String TEMPLATE_CUE_FOR_ISO =
+    public static final String TEMPLATE_CUE_FOR_ISO =
             "REM CD_ROM, 1 DATA TRACK MAPS TO ISO\n" +
                     "FILE \"<iso_here>\" BINARY\n" +
                     "  TRACK 01 MODE1/2048\n" +

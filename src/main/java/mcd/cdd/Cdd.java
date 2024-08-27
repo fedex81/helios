@@ -26,6 +26,9 @@ import static mcd.cdd.Cdd.CddStatus.NoDisc;
  */
 public interface Cdd extends BufferUtil.StepDevice {
 
+    //status, command registers
+    int CDD_REG_NUM = 10;
+
     enum CddStatus {
         Stopped,  //0, motor disabled
         Playing,  //1, data or audio playback in progress
@@ -85,9 +88,13 @@ public interface Cdd extends BufferUtil.StepDevice {
     void stepCdda();
 
 
+    CddContext getCddContext();
+
     void updateVideoMode(VideoMode videoMode);
 
     void newFrame();
+
+    void logStatus();
 
     //status after seeking (Playing or Paused)
     //sector = current frame#
@@ -120,8 +127,8 @@ public interface Cdd extends BufferUtil.StepDevice {
     class CddContext {
         public CddIo io;
         public int hostClockEnable;
-        public int[] statusRegs = new int[10];
-        public int[] commandRegs = new int[10];
+        public int[] statusRegs = new int[CDD_REG_NUM];
+        public int[] commandRegs = new int[CDD_REG_NUM];
 
         public static CddContext create(CddIo cddIo) {
             CddContext c = new CddContext();
@@ -141,6 +148,9 @@ public interface Cdd extends BufferUtil.StepDevice {
     }
 
     CddStatus[] statusVals = CddStatus.values();
+    CddCommand[] commandVals = CddCommand.values();
+    CddRequest[] requestVals = CddRequest.values();
+
 
     static Cdd createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih, Cdc cdc) {
         return new CddImpl(memoryContext, ih, cdc);
