@@ -14,6 +14,7 @@ import s32x.util.Md32xRuntimeData;
 
 import java.util.function.BiFunction;
 
+import static mcd.bus.McdWordRamHelper.getBank;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.pcm.McdPcm.PCM_WAVE_DATA_SIZE;
@@ -58,7 +59,7 @@ public class McdMemView extends MemView {
                 res = BufferUtil.readBuffer(ctx.pcm.getWaveData(), a & WAVE_DATA_MASK, size);
             } else if (a >= START_MCD_SUB_WORD_RAM_2M && a < END_MCD_SUB_WORD_RAM_2M) {
                 int addr = a & ~1;
-                res = ctx.memoryContext.readWordRamBank(getBank(WramSetup.W_2M_SUB, SUB_M68K, addr), addr);
+                res = ctx.memoryContext.wramHelper.readWordRamBank(getBank(WramSetup.W_2M_SUB, SUB_M68K, addr), addr);
                 if ((a & 1) == 0) {
                     res >>= 8;
                 }

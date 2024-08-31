@@ -16,8 +16,8 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
+import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.util.McdRegBitUtil.setSharedBit;
-import static mcd.util.McdWramCell.linearCellMap;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -101,7 +101,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     @Override
     public int read(int address, Size size) {
-        assert assertCheckBusOp68k(address, size);
+        assert assertCheckBusOp(address, size);
         address &= MD_PC_MASK;
         if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
             if (!enableMCDBus) {
@@ -118,14 +118,10 @@ public class MegaCdMainCpuBus extends GenesisBus {
             }
             if (addr >= START_MCD_MAIN_WORD_RAM_MODE1 && addr < END_MCD_MAIN_WORD_RAM_MIRROR_MODE1) {
                 addr &= MCD_WORD_RAM_2M_MASK;
-                if (addr >= MCD_WORD_RAM_1M_SIZE && memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
-                    LogHelper.logWarnOnceForce(LOG, "Cell image read: {}", memCtx.wramSetup);
-                    assert size == Size.WORD;
-                    int assignedBank = memCtx.wramSetup.cpu == M68K ? 0 : 1;
-                    int otherBank = ~assignedBank & 1;
-                    res = memCtx.readWordRamBank(otherBank, address);
+                if (memCtx.wramSetup.mode == _1M && addr >= MCD_WORD_RAM_1M_SIZE) {
+                    res = memCtx.wramHelper.readCellMapped(address, size);
                 } else {
-                    res = memCtx.readWordRam(cpu, addr, size);
+                    res = memCtx.wramHelper.readWordRam(cpu, addr, size);
                 }
             } else if (addr >= START_MCD_BOOT_ROM_MODE1 && addr < END_MCD_BOOT_ROM_MIRROR_MODE1) {
                 addr &= MCD_BOOT_ROM_PRGRAM_WINDOW_MASK;
@@ -144,7 +140,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     @Override
     public void write(int address, int data, Size size) {
-        assert assertCheckBusOp68k(address, size);
+        assert assertCheckBusOp(address, size);
         address &= MD_PC_MASK;
         if (enableMCDBus) {
             if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
@@ -167,37 +163,17 @@ public class MegaCdMainCpuBus extends GenesisBus {
                     VRAM cell image mapped at $220_000-$23F_FFF
                 */
                 addr &= MCD_WORD_RAM_2M_MASK;
+                memCtx.wramHelper.writeWordRam(cpu, addr, data, size);
                 if (addr < MCD_WORD_RAM_1M_SIZE) {
-//                assert memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M;
-                    memCtx.writeWordRam(cpu, addr, data, size);
-                    if (memCtx.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M) {
-                        if (size != Size.WORD) {
-                            LogHelper.logWarnOnceForce(LOG, "TODO check, WramCell {} write: {} {}", size, th(addr), th(data));
-                        }
-                        switch (size) {
-                            case BYTE, WORD -> writeCell(addr, data);
-                            case LONG -> {
-                                writeCell(addr, data >> 16);
-                                writeCell(addr + 2, data);
-                            }
-                        }
+                    //TODO breaks corpse killer
+                    if (memCtx.wramSetup.mode == _1M) {
+                        memCtx.wramHelper.writeCellMapped(addr, data, size);
                     }
-                    return;
-                } else {
-                    memCtx.writeWordRam(cpu, addr, data, size);
-                    return;
                 }
+                return;
             }
         }
         super.write(address, data, size);
-    }
-
-    private void writeCell(int a, int value) {
-        LogHelper.logWarnOnceForce(LOG, "Cell image write: {}", memCtx.wramSetup);
-        assert memCtx.wramSetup.mode == WordRamMode._1M;
-        int assignedBank = memCtx.wramSetup.cpu == M68K ? 0 : 1;
-        int otherBank = ~assignedBank & 1;
-        memCtx.writeWordRamBank(otherBank, linearCellMap[a & MCD_WORD_RAM_1M_MASK], value);
     }
 
     private int readHintVector(int addr, Size size) {
@@ -351,7 +327,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     private void handleReg2Write(int address, int data, Size size) {
         int resWord = memCtx.handleRegWrite(cpu, MCD_MEM_MODE, address, data, size);
         WramSetup prev = memCtx.wramSetup;
-        WramSetup ws = memCtx.update(cpu, resWord);
+        WramSetup ws = memCtx.wramHelper.update(cpu, resWord);
         if (ws == WramSetup.W_2M_SUB) { //set RET=0
             setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 0, 0, Size.BYTE);
             setSharedBit(memCtx, M68K, 0, SharedBitDef.RET);

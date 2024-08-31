@@ -101,7 +101,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
             case DMA_SUB_WRAM_7 -> { //WRAM
                 int baseAddr = memoryContext.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M
                         ? START_MCD_SUB_WORD_RAM_1M : START_MCD_SUB_WORD_RAM_2M;
-                memoryContext.writeWordRamWord(SUB_M68K, baseAddr | t.address, data);
+                memoryContext.wramHelper.writeWordRamWord(SUB_M68K, baseAddr | t.address, data);
                 if (verbose) LOG.info("CDC,DMA_WRAM,wram[{}]={}", th(baseAddr | t.address), th(data));
             }
             case DMA_PROGRAM_5 -> {  //PRG-RAM

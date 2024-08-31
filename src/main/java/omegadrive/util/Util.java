@@ -395,15 +395,9 @@ public class Util {
         return (b >> bitPos) & 1;
     }
 
-    public static boolean assertCheckBusOp68k(int address, Size size) {
+    public static boolean assertCheckBusOp(int address, Size size) {
         //68k LONG access, gets converted to 2 WORD accesses
         assert (size != Size.BYTE ? (address & 1) == 0 : true) : (th(address) + "," + size);
-        return true;
-    }
-
-    public static boolean assertCheckBusOp(int address, Size size) {
-        assert (size == Size.LONG ? (address & 3) == 0 : true) : (th(address) + "," + size);
-        assert (size == Size.WORD ? (address & 1) == 0 : true) : (th(address) + "," + size);
         return true;
     }
 }

@@ -1,12 +1,11 @@
 package mcd.dict;
 
+import mcd.bus.McdWordRamHelper;
 import mcd.cdd.CdBiosHelper;
 import mcd.util.BuramHelper;
-import mcd.util.McdRegBitUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import omegadrive.util.Util;
 import org.slf4j.Logger;
 
 import java.io.Serial;
@@ -17,7 +16,6 @@ import java.util.function.BiConsumer;
 import static mcd.dict.MegaCdDict.MCD_SUB_BRAM_SIZE;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_SIZE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_COMM0;
-import static mcd.dict.MegaCdDict.SharedBitDef.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersMain;
@@ -25,7 +23,6 @@ import static mcd.dict.MegaCdRegWriteHandlers.setByteHandlersSub;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.readBuffer;
-import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 import static omegadrive.util.Util.writeData;
 
@@ -57,6 +54,7 @@ public class MegaCdMemoryContext implements Serializable {
     public final byte[][] sysGateRegs;
     public final byte[][] wordRam01 = new byte[2][1];
 
+    public final McdWordRamHelper wramHelper;
     public final static int WRITABLE_HINT_UNUSED = 0xFFFF_FFFF;
     public final byte[] writeableHint = {(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
 
@@ -98,137 +96,7 @@ public class MegaCdMemoryContext implements Serializable {
         sysGateRegsBuf = new ByteBuffer[2];
         sysGateRegsBuf[0] = ByteBuffer.wrap(sysGateRegs[0]);
         sysGateRegsBuf[1] = ByteBuffer.wrap(sysGateRegs[1]);
-    }
-
-    public void writeWordRam(CpuDeviceAccess cpu, int address, int value, Size size) {
-        switch (size) {
-            case WORD -> writeWordRamWord(cpu, address, value);
-            case LONG -> {
-                writeWordRamWord(cpu, address, value >> 16);
-                writeWordRamWord(cpu, address + 2, (short) value);
-            }
-            case BYTE -> {
-                int bank = getBank(wramSetup, cpu, address);
-                int addr = getAddress(wramSetup, address, bank) | (address & 1);
-                Util.writeData(wordRam01[bank], addr, value, Size.BYTE);
-            }
-            default -> {
-                assert false;
-            }
-        }
-    }
-
-    public int readWordRam(CpuDeviceAccess cpu, int address, Size size) {
-        return switch (size) {
-            case WORD -> readWordRamWord(cpu, address);
-            case LONG -> (readWordRamWord(cpu, address) << 16) | readWordRamWord(cpu, address + 2);
-            case BYTE ->
-                //int shift = (~address & 1) << 3;
-                    readWordRamWord(cpu, address & ~1) >> ((~address & 1) << 3);
-        };
-    }
-
-    public void writeWordRamWord(CpuDeviceAccess cpu, int address, int value) {
-        if (cpu == wramSetup.cpu || wramSetup.mode == _1M) {
-            writeWordRamBank(getBank(wramSetup, cpu, address), address, value);
-        } else {
-            //BIOS JP when playing CDDA
-            logWarnOnce(LOG, "{} writing WRAM but setup is: {}", cpu, wramSetup);
-//            assert false;
-        }
-    }
-
-
-    public int readWordRamWord(CpuDeviceAccess cpu, int address) {
-        if (cpu == wramSetup.cpu || wramSetup.mode == _1M) {
-            return readWordRamBank(getBank(wramSetup, cpu, address), address);
-        } else {
-            logWarnOnce(LOG, "{} reading WRAM but setup is: {}", cpu, wramSetup);
-            return Size.WORD.getMask();
-        }
-    }
-
-    public void writeWordRamBank(int bank, int address, int value) {
-        Util.writeData(wordRam01[bank], getAddress(wramSetup, address, bank), value, Size.WORD);
-    }
-
-    public int readWordRamBank(int bank, int address) {
-        return Util.readData(wordRam01[bank], getAddress(wramSetup, address, bank), Size.WORD);
-    }
-
-    public static int getBank(WramSetup wramSetup, CpuDeviceAccess cpu, int address) {
-        if (wramSetup.mode == _2M) {
-            return ((address & MCD_WORD_RAM_2M_MASK) & 2) >> 1;
-        }
-        return getBank1M(wramSetup, cpu);
-    }
-
-    public static int getBank1M(WramSetup wramSetup, CpuDeviceAccess cpu) {
-        assert wramSetup.mode == _1M;
-        return wramSetup.cpu == cpu ? 0 : 1;
-    }
-
-    public static int getAddress(WramSetup wramSetup, int address, int bank) {
-        if (wramSetup.mode == _2M) {
-            address = ((address & MCD_WORD_RAM_2M_MASK) >> 1) - bank;
-        } else {
-            address = (address & MCD_WORD_RAM_1M_MASK);
-        }
-        return address;
-    }
-
-    public WramSetup update(CpuDeviceAccess c, int reg2) {
-        int mode = reg2 & MODE.getBitMask();
-        int dmna = reg2 & DMNA.getBitMask();
-        int ret = reg2 & RET.getBitMask();
-        WramSetup prev = wramSetup;
-        if (mode > 0) {
-            if (c == SUB_M68K) {
-                LogHelper.logWarnOnce(LOG, "{} Switch bank requested, ret: {}, current setup {}", c, ret, wramSetup);
-                wramSetup = ret == 0 ? WramSetup.W_1M_WR0_MAIN : WramSetup.W_1M_WR0_SUB;
-                if (ret > 0) {
-                    dmna = 0;
-                }
-                McdRegBitUtil.setSharedBit(this, M68K, dmna << 1, DMNA);
-                McdRegBitUtil.setSharedBit(this, SUB_M68K, dmna << 1, DMNA);
-                LogHelper.logWarnOnce(LOG, "Setting wordRam to {}", wramSetup);
-            }
-            if (c == M68K) {
-                boolean swapRequest = dmna == 0;
-                if (swapRequest) {
-                    ret = ~ret & 1;
-                    if (ret > 0) {
-                        dmna = ret;
-                    }
-                    McdRegBitUtil.setSharedBit(this, M68K, dmna << 1, DMNA);
-                    McdRegBitUtil.setSharedBit(this, SUB_M68K, dmna << 1, DMNA);
-                    McdRegBitUtil.setSharedBit(this, M68K, ret, RET);
-                    McdRegBitUtil.setSharedBit(this, SUB_M68K, ret, RET);
-                    //DMNA has no effect, ie. MAIN cannot switch banks directly, it needs to ask SUB to do it
-                    wramSetup = ret == 0 ? WramSetup.W_1M_WR0_MAIN : WramSetup.W_1M_WR0_SUB;
-                    LogHelper.logWarnOnce(LOG, "Setting wordRam to {}", wramSetup);
-                }
-            }
-            return wramSetup;
-        } else if (mode == 0) {
-            if (wramSetup.mode == _1M) {
-                wramSetup = WramSetup.W_2M_MAIN;
-            }
-            if (c == M68K) {
-                wramSetup = dmna > 0 ? WramSetup.W_2M_SUB : wramSetup;
-            } else if (c == SUB_M68K) {
-                wramSetup = ret > 0 ? WramSetup.W_2M_MAIN : wramSetup;
-            }
-        }
-        if (prev != wramSetup) {
-            LogHelper.logInfo(LOG, "{} WRAM setup changed: {} -> {}", c, prev, wramSetup);
-        }
-        int wpVal = (reg2 >> 8) & 0xFF;
-        if (wpVal != writeProtectRam) {
-            LOG.info("M PROG-RAM Write protection: {} -> {}", th(writeProtectRam), th(wpVal));
-            writeProtectRam = wpVal;
-        }
-        return wramSetup;
+        wramHelper = new McdWordRamHelper(this, wordRam01);
     }
 
     public void writeProgRam(int address, int val, Size size) {

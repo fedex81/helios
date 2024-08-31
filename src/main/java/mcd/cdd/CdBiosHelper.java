@@ -30,7 +30,6 @@ public class CdBiosHelper {
     private static final Map<String, Integer> cdBiosEntryPointMap = new HashMap<>();
     private static final Map<Integer, String> invCdBiosEntryPointMap;
     private static final Table<Integer, Integer, String> cdFunTable = HashBasedTable.create();
-    private static final Table<String, Integer, Integer> memRegionTable = HashBasedTable.create();
     private static final Map<Integer, CdMemRegion> memRegionMap = new HashMap<>();
     private static final int LOW_ENTRY, HIGH_ENTRY;
 
@@ -251,7 +250,7 @@ public class CdBiosHelper {
         invCdBuramFunMap.entrySet().stream().forEach(e -> cdFunTable.put(cdBiosEntryPointMap.get(BURAM), e.getKey(), e.getValue()));
         HIGH_ENTRY = invCdBiosEntryPointMap.keySet().stream().max(Integer::compareTo).orElseThrow();
         LOW_ENTRY = invCdBiosEntryPointMap.keySet().stream().min(Integer::compareTo).orElseThrow();
-        enabled = Boolean.valueOf(System.getProperty("68k.debug", "false"));
+        enabled = Boolean.valueOf(System.getProperty("68k.debug", "false")) && false;
     }
 
     public static String getFunctionName(int pc, int code) {

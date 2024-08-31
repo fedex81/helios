@@ -68,7 +68,7 @@ public class AsicTest extends McdRegTestBase {
         List<Integer> il = toListOf16bitWords(path);
         for (int i = START_MCD_SUB_WORD_RAM_2M; i < END_MCD_SUB_WORD_RAM_2M; i += 2) {
             int index = (i - START_MCD_SUB_WORD_RAM_2M) >> 1;
-            lc.memoryContext.writeWordRam(SUB_M68K, i, il.get(index), Size.WORD);
+            lc.memoryContext.wramHelper.writeWordRam(SUB_M68K, i, il.get(index), Size.WORD);
         }
         //        printWram(lc.memoryContext);
     }
@@ -78,7 +78,7 @@ public class AsicTest extends McdRegTestBase {
         for (int i = START_MCD_SUB_WORD_RAM_2M; i < END_MCD_SUB_WORD_RAM_2M; i += 2) {
             int index = (i - START_MCD_SUB_WORD_RAM_2M) >> 1;
             int actual = il.get(index);
-            int exp = lc.memoryContext.readWordRam(SUB_M68K, i, Size.WORD);
+            int exp = lc.memoryContext.wramHelper.readWordRam(SUB_M68K, i, Size.WORD);
             Assertions.assertEquals(exp, actual);
         }
         //        printWram(lc.memoryContext);
@@ -92,7 +92,7 @@ public class AsicTest extends McdRegTestBase {
     public static void printWram(MegaCdMemoryContext mc) {
         StringBuilder sb = new StringBuilder();
         for (int i = START_MCD_SUB_WORD_RAM_2M; i < END_MCD_SUB_WORD_RAM_2M; i += 2) {
-            sb.append((mc.readWordRam(SUB_M68K, i, Size.WORD) & 0xFFFF) + ",");
+            sb.append((mc.wramHelper.readWordRam(SUB_M68K, i, Size.WORD) & 0xFFFF) + ",");
             if (((i + 2) >> 1) % 16 == 0) {
                 sb.append("\n");
             }

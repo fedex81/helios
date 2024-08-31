@@ -23,7 +23,7 @@ public class McdPrgRamTest extends McdRegTestBase {
         int wp;
         for (int i = 0; i < 9; i++) {
             wp = (1 << i) - 1;
-            ctx.update(M68K, wp << 8);
+            ctx.wramHelper.update(M68K, wp << 8);
 
             int wp_size = 0;
             for (int u = 0; u < 0x80000; u += 256) {

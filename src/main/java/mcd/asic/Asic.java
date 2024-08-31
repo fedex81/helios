@@ -129,23 +129,23 @@ public class Asic implements AsicOp {
             if (doFetch) {
                 int tvb = (readBuffer(memoryContext.commonGateRegsBuf, MCD_IMG_TRACE_VECTOR_ADDR.addr, Size.WORD) & Size.WORD.getMask()) << 2;
                 //FETCH X
-                cd_graphics_x = memoryContext.readWordRam(SUB_M68K, tvb, Size.WORD) << 8;
+                cd_graphics_x = memoryContext.wramHelper.readWordRam(SUB_M68K, tvb, Size.WORD) << 8;
                 cycles += 4 * 3;
                 cd_graphics_dst_x = stampConfig.hPixelOffset;
 
                 //FETCH Y
-                cd_graphics_y = memoryContext.readWordRam(SUB_M68K, tvb + 2, Size.WORD) << 8;
+                cd_graphics_y = memoryContext.wramHelper.readWordRam(SUB_M68K, tvb + 2, Size.WORD) << 8;
                 cycles += 4 * 2;
 
                 //FETCH DX
-                cd_graphics_dx = memoryContext.readWordRam(SUB_M68K, tvb + 4, Size.WORD);
+                cd_graphics_dx = memoryContext.wramHelper.readWordRam(SUB_M68K, tvb + 4, Size.WORD);
                 if ((cd_graphics_dx & 0x8000) > 0) {
                     cd_graphics_dx |= 0xFFFF_0000;
                 }
                 cycles += 4 * 2;
 
                 //FETCH DY
-                cd_graphics_dy = memoryContext.readWordRam(SUB_M68K, tvb + 6, Size.WORD);
+                cd_graphics_dy = memoryContext.wramHelper.readWordRam(SUB_M68K, tvb + 6, Size.WORD);
                 if ((cd_graphics_dy & 0x8000) > 0) {
                     cd_graphics_dy |= 0xFFFF_0000;
                 }
@@ -178,7 +178,7 @@ public class Asic implements AsicOp {
             int src_mask_check = 0xf << pixel_shift;
             int src_mask_keep = ~src_mask_check;
             pixel &= src_mask_check;
-            int wramVal = memoryContext.readWordRam(SUB_M68K, dst_address << 1, Size.WORD);
+            int wramVal = memoryContext.wramHelper.readWordRam(SUB_M68K, dst_address << 1, Size.WORD);
             wramVal = switch (stampConfig.priorityMode) {
                 case PM_OFF -> (wramVal & src_mask_keep) | pixel;
                 case UNDERWRITE -> {
@@ -198,7 +198,7 @@ public class Asic implements AsicOp {
                     yield wramVal;
                 }
             };
-            memoryContext.writeWordRam(SUB_M68K, dst_address << 1, wramVal, Size.WORD);
+            memoryContext.wramHelper.writeWordRam(SUB_M68K, dst_address << 1, wramVal, Size.WORD);
             cd_graphics_dst_x++;
         }
         doFetch = false;
@@ -219,7 +219,7 @@ public class Asic implements AsicOp {
     public static void printWram(MegaCdMemoryContext mc) {
         StringBuilder sb = new StringBuilder();
         for (int i = START_MCD_SUB_WORD_RAM_2M; i < END_MCD_SUB_WORD_RAM_2M; i += 2) {
-            sb.append((mc.readWordRam(SUB_M68K, i, Size.WORD) & 0xFFFF) + ",");
+            sb.append((mc.wramHelper.readWordRam(SUB_M68K, i, Size.WORD) & 0xFFFF) + ",");
             if (((i + 2) >> 1) % 16 == 0) {
                 sb.append("\n");
             }
@@ -269,7 +269,7 @@ public class Asic implements AsicOp {
         }
         int address = (stampConfig.stampStartLocation & base_mask) << 1;
         address += (stamp_y << row_shift) + stamp_x;
-        int stamp_def = memoryContext.readWordRam(SUB_M68K, address << 1, Size.WORD);
+        int stamp_def = memoryContext.wramHelper.readWordRam(SUB_M68K, address << 1, Size.WORD);
         int stamp_num = stamp_def & stamp_num_mask;
         if (stamp_num == 0) {
             //manual says stamp 0 can't be used, I assume that means it's treated as transparent
@@ -301,7 +301,7 @@ public class Asic implements AsicOp {
         assert cell_x >= 0;
         int pixel_address = stamp_num << 6;
         pixel_address += (pixel_y << 1) + (cell_x << (stamp_shift + 1)) + ((pixel_x >> 2) & 1);
-        int word = memoryContext.readWordRam(SUB_M68K, pixel_address << 1, Size.WORD);
+        int word = memoryContext.wramHelper.readWordRam(SUB_M68K, pixel_address << 1, Size.WORD);
         return switch (pixel_x & 3) {
             case 1 -> (word >> 8) & 0xF;
             case 2 -> (word >> 4) & 0xF;

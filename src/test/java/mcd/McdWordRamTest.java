@@ -39,10 +39,6 @@ public class McdWordRamTest extends McdRegTestBase {
     public static final int RET_BIT_POS = 0;
     public static final int RET_BIT_MASK = 1 << RET_BIT_POS;
 
-    Consumer<Integer> mainThrows = val ->
-            Assertions.assertThrowsExactly(AssertionError.class,
-                    () -> mainCpuBus.write(MAIN_MEM_MODE_REG + 1, val, Size.BYTE));
-
     static BiConsumer<BaseBusProvider, Integer> subSetLsbFn = (bus, val) -> bus.write(SUB_MEM_MODE_REG + 1, val, Size.BYTE);
 
     static Function<BaseBusProvider, Integer> subGetLsbFn = bus -> bus.read(SUB_MEM_MODE_REG + 1, Size.BYTE);
