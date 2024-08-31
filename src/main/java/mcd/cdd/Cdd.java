@@ -29,6 +29,10 @@ public interface Cdd extends BufferUtil.StepDevice {
     //status, command registers
     int CDD_REG_NUM = 10;
 
+    int PREGAP_LEN_LBA = 150;
+
+    int LBA_READAHEAD_LEN = 3;
+
     enum CddStatus {
         Stopped,  //0, motor disabled
         Playing,  //1, data or audio playback in progress
@@ -66,15 +70,15 @@ public interface Cdd extends BufferUtil.StepDevice {
     }
 
     enum CddRequest {
-        AbsoluteTime,
-        RelativeTime,
-        TrackInformation,
-        DiscCompletionTime,
-        DiscTracks,  //start/end track numbers
-        TrackStartTime,  //start time of specific track
-        ErrorInformation,
-        SubcodeError,
-        NotReady,  //not ready to comply with the current command
+        AbsoluteTime, //0
+        RelativeTime, //1
+        TrackInformation, //2
+        DiscCompletionTime, //3
+        DiscTracks,  //4 start/end track numbers
+        TrackStartTime,  //5 start time of specific track
+        ErrorInformation, //6
+        SubcodeError, //7
+        NotReady,  //8 not ready to comply with the current command
     }
 
     enum CddControl_DM_bit {MUSIC_0, DATA_1}
@@ -154,5 +158,13 @@ public interface Cdd extends BufferUtil.StepDevice {
 
     static Cdd createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih, Cdc cdc) {
         return new CddImpl(memoryContext, ih, cdc);
+    }
+
+    static int getCddChecksum(int[] vals) {
+        int checksum = 0;
+        for (int i = 0; i < vals.length - 1; i++) {
+            checksum += vals[i];
+        }
+        return ~checksum & 0xF;
     }
 }
