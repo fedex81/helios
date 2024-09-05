@@ -29,6 +29,8 @@ public interface Cdd extends BufferUtil.StepDevice {
     //status, command registers
     int CDD_REG_NUM = 10;
 
+    int CDD_CHECKSUM_BYTE = 9;
+
     int PREGAP_LEN_LBA = 150;
 
     int LBA_READAHEAD_LEN = 3;

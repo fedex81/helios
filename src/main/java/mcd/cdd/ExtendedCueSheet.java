@@ -127,7 +127,7 @@ public class ExtendedCueSheet implements Closeable {
                 //divides with no remainder
                 assert sectorSize.s_size * (extTrackData.lenBytes / sectorSize.s_size) == extTrackData.lenBytes;
                 /* DATA track length should be at least 2s (BIOS requirement) */
-                assert sectorSize.s_size >= 150;
+                assert sectorSize.s_size >= Cdd.PREGAP_LEN_LBA;
             }
             extTracks.add(extTrackData);
         } catch (Exception e) {

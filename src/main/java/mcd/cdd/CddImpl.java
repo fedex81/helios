@@ -27,7 +27,8 @@ class CddImpl implements Cdd {
 
     private final static Logger LOG = LogHelper.getLogger(CddImpl.class.getSimpleName());
 
-    private final boolean verbose = true;
+    private final boolean verbose = false;
+    private final boolean verboseReg = false;
 
     private static final int CD_LATENCY = 1;
 
@@ -51,7 +52,8 @@ class CddImpl implements Cdd {
                 new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100) : BlipPcmProvider.NO_SOUND;
         setDataOrMusicBit(CddControl_DM_bit.DATA_1);
         setIoStatus(NoDisc);
-        checksum();
+        statusChecksum();
+        commandChecksum();
     }
 
     @Override
@@ -73,7 +75,7 @@ class CddImpl implements Cdd {
 
     @Override
     public void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size) {
-        if (verbose) LOG.info("CDD,regW,{},{},{},{}", th(address), th(value), size, regSpec);
+        if (verboseReg) LOG.info("CDD,regW,{},{},{},{}", th(address), th(value), size, regSpec);
         switch (regSpec) {
             case MCD_CDD_CONTROL -> {
                 //TODO check word writes, even byte writes
@@ -117,7 +119,7 @@ class CddImpl implements Cdd {
     public int read(MegaCdDict.RegSpecMcd regSpec, int address, Size size) {
         assert memoryContext.getRegBuffer(CpuDeviceAccess.SUB_M68K, regSpec) == memoryContext.commonGateRegsBuf;
         int res = readBuffer(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, size);
-        if (verbose) LOG.info("CDD,regR,{},{},{},{}", th(address), th(res), size, regSpec);
+        if (verboseReg) LOG.info("CDD,regR,{},{},{},{}", th(address), th(res), size, regSpec);
         return res;
     }
 
@@ -137,25 +139,14 @@ class CddImpl implements Cdd {
         }
     }
 
-    private void checksum() {
-        int checksum = 0;
-        for (int i = 0; i < cddContext.commandRegs.length - 1; i++) {
-            checksum += cddContext.statusRegs[i];
-        }
-        checksum = ~checksum;
-        updateStatus(9, checksum & 0xF);
-        //TODO check 0x40,it can be 1 -> 0x103 != 0x3
-        assert (readBuffer(memoryContext.commonGateRegsBuf, MCD_CDD_COMM4.addr, Size.WORD) & 0xFF) == (checksum & 0xF);
+    private void statusChecksum() {
+        updateStatus(CDD_CHECKSUM_BYTE, Cdd.getCddChecksum(cddContext.statusRegs));
     }
 
-    private boolean valid() {
-        int checksum = 0;
-        for (int i = 0; i < cddContext.commandRegs.length - 1; i++) {
-            checksum += cddContext.commandRegs[i];
-        }
-        checksum = ~checksum;
-        updateCommand(9, checksum & 0xF);
-        return (checksum & 0xF) == cddContext.commandRegs[9];
+    private boolean commandChecksum() {
+        int checksum = Cdd.getCddChecksum(cddContext.commandRegs);
+        updateCommand(CDD_CHECKSUM_BYTE, checksum);
+        return checksum == cddContext.commandRegs[CDD_CHECKSUM_BYTE];
     }
 
     private String statusString(int[] status, int[] command) {
@@ -174,8 +165,12 @@ class CddImpl implements Cdd {
     String prev = "";
 
     private void logStatus(boolean process) {
-        String stat = "CDD," + statusString(cddContext.statusRegs, cddContext.commandRegs);
-        if (!stat.equals(prev)) {
+        logStatus(process, false);
+    }
+
+    private void logStatus(boolean process, boolean force) {
+        String stat = "_CDD," + statusString(cddContext.statusRegs, cddContext.commandRegs);
+        if (force || !stat.equals(prev)) {
             if (verbose) System.out.println(stat + (process ? " <-" : ""));
             prev = stat;
         }
@@ -191,7 +186,7 @@ class CddImpl implements Cdd {
      * this should be called at 75hz
      */
     public void step(int cycles) {
-        logStatus(false);
+        logStatus(false, true);
         if (!hasMedia || cddContext.hostClockEnable == 0) {
             return;
         }
@@ -210,6 +205,7 @@ class CddImpl implements Cdd {
             /* end of disc detection */
             if (cddContext.io.sector >= extCueSheet.sectorEnd) { //cdd.toc.last){
                 setIoStatus(LeadOut);
+                LOG.warn("LeadOut");
                 return;
             }
 
@@ -275,7 +271,7 @@ class CddImpl implements Cdd {
                     if (cddContext.statusRegs[1] == 0xF) {
                         /* seeking has ended so we return valid track infos,
                         e.g current absolute time by default (fixes Lunar - The Silver Star) */
-                        int lba = cddContext.io.sector + 150;
+                        int lba = cddContext.io.sector + PREGAP_LEN_LBA;
                         CueFileParser.toMSF(lba, msfHolder);
                         /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
                         updateStatusesMsf(0, (isAudio ? 0 : 1) << 2, msfHolder);
@@ -283,13 +279,13 @@ class CddImpl implements Cdd {
                     /* otherwise, check if RS2-RS8 need to be updated */
                     else if (cddContext.statusRegs[1] == 0x00) {
                         /* current absolute time */
-                        int lba = hasMedia ? cddContext.io.sector + 150 : 0;
+                        int lba = hasMedia ? cddContext.io.sector + PREGAP_LEN_LBA : 0;
                         CueFileParser.toMSF(lba, msfHolder);
                         updateStatusesMsf(cddContext.statusRegs[1], (isAudio ? 0 : 1) << 2, msfHolder);
                     } else if (cddContext.statusRegs[1] == 0x01) {
                         CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                         /* current track relative time */
-                        int lba = cddContext.io.sector - etd.absoluteSectorStart;
+                        int lba = cddContext.io.sector - etd.absoluteSectorStart + PREGAP_LEN_LBA;
                         CueFileParser.toMSF(lba, msfHolder);
                         updateStatusesMsf(cddContext.statusRegs[1], (isAudio ? 0 : 1) << 2, msfHolder);
                     } else if (cddContext.statusRegs[1] == 0x02) {
@@ -319,10 +315,12 @@ class CddImpl implements Cdd {
 
                 /* new LBA position */
                 int lba = CueFileParser.toSector(cddContext.commandRegs[2], cddContext.commandRegs[3],
-                        cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6], cddContext.commandRegs[7]) - 150;
+                        cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6],
+                        cddContext.commandRegs[7]) - PREGAP_LEN_LBA;
 //                    ((scd.regs[0x44>>1].byte.h * 10 + scd.regs[0x44>>1].byte.l) * 60 +
 //                    (scd.regs[0x46>>1].byte.h * 10 + scd.regs[0x46>>1].byte.l)) * 75 +
 //                    (scd.regs[0x48>>1].byte.h * 10 + scd.regs[0x48>>1].byte.l) - 150;
+                lba -= LBA_READAHEAD_LEN;
 
                 /* CD drive latency */
                 if (cddContext.io.latency == 0) {
@@ -343,6 +341,9 @@ class CddImpl implements Cdd {
                 } else {
                     cddContext.io.latency += (((cddContext.io.sector - lba) * 120 * CD_LATENCY) / 270000);
                 }
+
+                int minLatency = 1 + 10 * CD_LATENCY;
+                cddContext.io.latency = Math.max(cddContext.io.latency, minLatency);
 
                 /* update current LBA */
                 setSector(lba);
@@ -395,7 +396,9 @@ class CddImpl implements Cdd {
 
                 /* new LBA position */
                 int lba = CueFileParser.toSector(cddContext.commandRegs[2], cddContext.commandRegs[3],
-                        cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6], cddContext.commandRegs[7]) - 150;
+                        cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6],
+                        cddContext.commandRegs[7]) - PREGAP_LEN_LBA;
+                lba -= LBA_READAHEAD_LEN;
 
                 /* CD drive latency */
                 if (cddContext.io.latency == 0) {
@@ -411,6 +414,8 @@ class CddImpl implements Cdd {
                 } else {
                     cddContext.io.latency += ((cddContext.io.sector - lba) * 120 * CD_LATENCY) / 270000;
                 }
+                int minLatency = 1 + 10 * CD_LATENCY;
+                cddContext.io.latency = Math.max(cddContext.io.latency, minLatency);
 
                 /* update current LBA */
                 setSector(lba);
@@ -535,7 +540,9 @@ class CddImpl implements Cdd {
                 assert false;
             }
         }
-        checksum();
+        //TODO does this happen?
+        clearCommandRegs();
+        statusChecksum();
     }
 
     private void handleRequestCommand(boolean isAudio) {
@@ -546,7 +553,7 @@ class CddImpl implements Cdd {
         switch (request) {
             /* Current Absolute Time (MM:SS:FF) */
             case AbsoluteTime -> {
-                int lba = cddContext.io.sector + 150;
+                int lba = cddContext.io.sector + PREGAP_LEN_LBA;
                 CueFileParser.toMSF(lba, msfHolder);
                 /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
                 int rs8 = (isAudio ? 0 : 1) << 2;
@@ -557,8 +564,8 @@ class CddImpl implements Cdd {
             case RelativeTime -> {
                 CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                 /* current track relative time */
-                int lba = cddContext.io.sector - etd.absoluteSectorStart;
-                CueFileParser.toMSF(lba + 150, msfHolder);
+                int lba = Math.abs(cddContext.io.sector - etd.absoluteSectorStart);
+                CueFileParser.toMSF(lba, msfHolder);
                 /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
                 int rs8 = (isAudio ? 0 : 1) << 2;
                 updateStatus(0, cddContext.io.status.ordinal());
@@ -572,13 +579,13 @@ class CddImpl implements Cdd {
                 int rs2 = cddContext.io.track <= extCueSheet.numTracks ? cddContext.io.track / 10 : 0xA;
                 int rs3 = cddContext.io.track <= extCueSheet.numTracks ? cddContext.io.track % 10 : 0xA;
                 //rs4-rs7 (start/index lba??)
-                int rs5 = 1, rs6 = 5, rs7 = 0;
+                int rs5 = 0, rs6 = 0, rs7 = 0;
                 updateStatus(0, cddContext.io.status.ordinal());
                 updateStatuses(request.ordinal(), rs2, rs3, 0, rs5, rs6, rs7, 0);
             }
             /* Total length (MM:SS:FF) */
             case DiscCompletionTime -> {
-                int lba = hasMedia ? extCueSheet.sectorEnd + 150 : 0;
+                int lba = hasMedia ? extCueSheet.sectorEnd + PREGAP_LEN_LBA : 0;
                 CueFileParser.toMSF(lba, msfHolder);
                 updateStatus(0, cddContext.io.status.ordinal());
                 updateStatusesMsf(request.ordinal(), 0, msfHolder);
@@ -600,7 +607,7 @@ class CddImpl implements Cdd {
                 int track = cddContext.commandRegs[4] * 10 + cddContext.commandRegs[5];
                 extraInfo += "Track: 0x" + th(track);
                 CdModel.ExtendedTrackData extTrackData = ExtendedCueSheet.getExtTrack(extCueSheet, track);
-                CueFileParser.toMSF(extTrackData.absoluteSectorStart + 150, msfHolder);
+                CueFileParser.toMSF(extTrackData.absoluteSectorStart + PREGAP_LEN_LBA, msfHolder);
                 /* RS6 bit 3 is set for CD-ROM track, Track Number (low digit) */
                 int status6 = ((isAudio ? 0 : 1) << 3) | (msfHolder.frame / 10);
                 updateStatus(0, cddContext.io.status.ordinal());
@@ -707,7 +714,7 @@ class CddImpl implements Cdd {
      */
     private void updateStatuses(int... vals) {
         assert vals.length == 8;
-        for (int i = 1; i < 9; i++) {
+        for (int i = 1; i < CDD_CHECKSUM_BYTE; i++) {
             updateStatus(i, vals[i - 1]);
         }
     }
@@ -730,16 +737,23 @@ class CddImpl implements Cdd {
     private void updateStatus(int pos, int val) {
         cddContext.statusRegs[pos] = val;
         writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_CDD_COMM0.addr + pos, val, Size.BYTE);
-        if (pos != 9) {
-            checksum();
-            logStatus(false);
+        if (pos != CDD_CHECKSUM_BYTE) {
+            statusChecksum();
+//            logStatus(false);
         }
     }
 
     private void updateCommand(int pos, int val) {
         cddContext.commandRegs[pos] = val;
         writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_CDD_COMM5.addr + pos, val, Size.BYTE);
-        logStatus(false);
+//        logStatus(false);
+    }
+
+    private void clearCommandRegs() {
+        for (int i = 0; i < 8; i++) {
+            updateCommand(i, 0);
+        }
+        commandChecksum();
     }
 
     @Override
