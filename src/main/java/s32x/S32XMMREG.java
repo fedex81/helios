@@ -231,6 +231,8 @@ public class S32XMMREG implements Device {
         if (regChanged) {
             //comm regs are shared
             BufferUtil.writeBuffers(sysRegsMd, sysRegsSh2, reg, value, size);
+            //Brutal: force successive COMM writes to happen at least 12 cycles apart
+            Md32xRuntimeData.addCpuDelayExt(12);
         }
         return regChanged;
     }

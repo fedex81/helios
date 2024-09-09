@@ -61,7 +61,6 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     //NOTE vr helios.32x.sh2.cycles = 32
     //TODO chaotix,break with poll1, see startPollingMaybe
     //TODO fifa, poll0 or cycles 12 poll1
-    //TODO brutal, cycles=12
     static {
         boolean prefEn = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.prefetch", "true"));
         boolean drcEn = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.drc", "true"));
@@ -270,14 +269,13 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
                 Md32xRuntimeData.resetCpuDelayExt(MASTER, 0);
                 Md32xRuntimeData.resetCpuDelayExt(SLAVE, 0);
             }
-            default -> { //stop polling
-                final Sh2DrcBlockOptimizer.PollerCtx pc = PollSysEventManager.instance.getPoller(cpu);
-                stopPolling(cpu, event, pc);
-            }
+            //stop polling
+            default -> stopPolling(cpu, event);
         }
     }
 
-    private void stopPolling(CpuDeviceAccess cpu, PollSysEventManager.SysEvent event, Sh2DrcBlockOptimizer.PollerCtx pctx) {
+    private void stopPolling(CpuDeviceAccess cpu, PollSysEventManager.SysEvent event) {
+        final Sh2DrcBlockOptimizer.PollerCtx pctx = PollSysEventManager.instance.getPoller(cpu);
 //        assert event == SysEventManager.SysEvent.INT ? pc.isPollingBusyLoop() : true;
         boolean stopOk = event == pctx.event || event == PollSysEventManager.SysEvent.INT;
         if (stopOk) {
