@@ -64,9 +64,14 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
     @Override
     protected void init() {
         super.init();
-        CdModel.ExtendedTrackData t1 = romContext.sheet.extTracks.get(0);
-        checkTrack01Header(t1);
-        securityCodeRegion = verifySecurityCodeRegion(t1);
+        detectedRomFileType = romContext.romFileType;
+        securityCodeRegion = romContext.region;
+        //NOTE flux
+        if (romContext.romFileType.isDiscImage()) {
+            CdModel.ExtendedTrackData t1 = romContext.sheet.extTracks.get(0);
+            checkTrack01Header(t1);
+            securityCodeRegion = verifySecurityCodeRegion(t1);
+        }
     }
 
     private void checkTrack01Header(CdModel.ExtendedTrackData track01) {

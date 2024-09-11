@@ -84,7 +84,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     protected int cycleCounter = 1;
 
     //frame pacing stuff
-    protected final Telemetry telemetry = Telemetry.getInstance();
+    protected Telemetry telemetry;
     public static final boolean fullThrottle;
     protected long elapsedWaitNs, frameProcessingDelayNs;
     protected long targetNs, startNs = 0;
@@ -104,6 +104,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         displayContext = new DisplayWindow.DisplayContext();
         displayContext.megaCdLedState = Optional.empty();
         displayContext.videoMode = VideoMode.PAL_H40_V30;
+        telemetry = Telemetry.resetClock(this);
     }
 
     protected void initAfterRomLoad() {

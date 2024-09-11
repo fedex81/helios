@@ -3,6 +3,7 @@ package omegadrive.system.perf;
 import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
 import omegadrive.sound.fm.AudioRateControl;
+import omegadrive.system.SystemProvider.SystemClock;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
@@ -46,11 +47,13 @@ public class Telemetry {
             (now, prev) -> (now.nanoTime - prev.nanoTime) / (double) Util.MILLI_IN_NS + "," +
                     Instant.ofEpochMilli(now.instantNow);
 
-    private static final Telemetry telemetry = new Telemetry();
+    private static Telemetry telemetry = new Telemetry();
     private static final NumberFormat fpsFormatter = new DecimalFormat("#0.00");
     private static final int STATS_EVERY_FRAMES = 50;
     private static final Timing NO_TIMING = new Timing();
     private Path telemetryFile;
+
+    private SystemClock systemClock;
     private long frameCounter = 0;
     private final Table<String, Long, Double> data = TreeBasedTable.create();
     private final Map<Long, Timing> frameTimeStamp = new HashMap<>();
@@ -59,7 +62,13 @@ public class Telemetry {
         Timing t = new Timing();
         t.instantNow = Instant.now().toEpochMilli();
         t.nanoTime = System.nanoTime();
-        frameTimeStamp.put(frameCounter, t);
+        frameTimeStamp.put(systemClock.getFrameCounter(), t);
+    }
+
+    public static Telemetry resetClock(SystemClock clock) {
+        telemetry = new Telemetry();
+        telemetry.systemClock = clock;
+        return telemetry;
     }
 
     public static Telemetry getInstance() {
@@ -161,5 +170,9 @@ public class Telemetry {
 
     public long getFrameCounter() {
         return frameCounter;
+    }
+
+    public int getCycleCounter() {
+        return systemClock.getCycleCounter();
     }
 }
