@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import s32x.Sh2MMREG;
 import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
+import s32x.sh2.Sh2Debug;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.prefetch.Sh2Prefetch;
@@ -73,6 +74,9 @@ public class Sh2Block {
         assert (blockFlags & VALID_FLAG) > 0;
         if (stage2Drc != null) {
             stage2Drc.run();
+            if (drcContext.sh2Ctx.debug) {
+                Sh2Debug.drcDebug(getCpu(), prefetchPc);
+            }
             return;
         }
         runInterpreter(sh2, sm, drcContext.sh2Ctx);

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.DebugMode;
 import omegadrive.cpu.CpuFastDebug.PcInfoWrapper;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
@@ -111,6 +112,23 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
         fastDebug[0].debugMode = DebugMode.NEW_INST_ONLY;
         fastDebug[1].debugMode = DebugMode.NEW_INST_ONLY;
         piw = fastDebug[0].pcInfoWrapper;
+    }
+
+    static String[] latestBlock = {"", ""};
+    static int[] count = {0, 0};
+
+    public static void drcDebug(CpuDeviceAccess cpu, int prefetchPc) {
+        String s = " " + cpu.cpuShortCode + " DRC block " + th(prefetchPc);
+        if (!latestBlock[cpu.ordinal()].equalsIgnoreCase(s)) {
+            latestBlock[cpu.ordinal()] = s;
+            count[cpu.ordinal()] = 0;
+            System.out.println(s);
+        } else {
+            if ((++count[cpu.ordinal()] & 0xFFFF) == 0) {
+                System.out.println(s + " [" + count[cpu.ordinal()] + "]");
+            }
+            assert count[cpu.ordinal()] >= 0;
+        }
     }
 
 //    @Override

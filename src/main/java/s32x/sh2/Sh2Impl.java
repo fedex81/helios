@@ -4,7 +4,6 @@ package s32x.sh2;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
-import s32x.Sh2MMREG;
 import s32x.bus.Sh2Bus;
 import s32x.dict.S32xDict;
 import s32x.event.PollSysEventManager;
@@ -118,7 +117,6 @@ public class Sh2Impl implements Sh2 {
      */
     public void run(final Sh2Context ctx) {
         this.ctx = ctx;
-        final Sh2MMREG sh2MMREG = ctx.devices.sh2MMREG;
         final IntControl intControl = ctx.devices.intC;
         final PollSysEventManager instance = PollSysEventManager.instance;
         for (; ctx.cycles >= 0; ) {
@@ -159,6 +157,7 @@ public class Sh2Impl implements Sh2 {
 
     private void runBlock(final Sh2Helper.FetchResult fr) {
         final Sh2Block block = fr.block;
+        assert block.isValid();
         block.runBlock(this, ctx.devices.sh2MMREG);
         //looping on the same block
         if (ctx.PC == block.prefetchPc) {
