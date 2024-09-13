@@ -133,9 +133,10 @@ public class Sh2CacheImpl implements Sh2Cache {
             }
             case CACHE_DATA_ARRAY:
                 return readDataArray(addr, size);
-            case CACHE_PURGE:
-                //fifa
+            case CACHE_PURGE: //associative purge
+                //fifa32x expects a read to purge the cache
                 if (verbose) LOG.warn("{} CACHE_PURGE read: {}, {}", cpu, th(addr), size);
+                purgeCache(addr);
                 break;
             case CACHE_ADDRESS_ARRAY:
 //                assert size == Size.LONG; //TODO pwm sound demo != LONG
@@ -162,23 +163,8 @@ public class Sh2CacheImpl implements Sh2Cache {
                 change = writeCache(addr, val, size);
             }
             case CACHE_DATA_ARRAY -> change = writeDataArray(addr, val, size);
-            case CACHE_PURGE ->//associative purge
-            {
-                final int tagaddr = (addr & TAG_MASK);
-                final int entry = (addr & ENTRY_MASK) >> ENTRY_SHIFT;
-                //can purge more than one line
-                for (int i = 0; i < CACHE_WAYS; i++) {
-                    if (ca.way[i][entry].tag == tagaddr) {
-                        assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && i > 1);
-                        //only v bit is changed, the rest of the data remains
-                        ca.way[i][entry].v = 0;
-                        Md32xRuntimeData.addCpuDelayExt(CACHE_PURGE_DELAY);
-                        invalidatePrefetcher(ca.way[i][entry], entry, addr & CACHE_PURGE_MASK);
-                    }
-                }
-                if (verbose) LOG.info("{} Cache purge: {}", cpu, th(addr));
-                assert addr < 0x4800_0000;
-            }
+            //associative purge
+            case CACHE_PURGE -> purgeCache(addr);
             case CACHE_ADDRESS_ARRAY -> {
                 if (verbose) LOG.info("{} CACHE_ADDRESS_ARRAY write: {}, {} {}", cpu, th(addr), th(val), size);
                 //doomRes 1.4, vf
@@ -298,6 +284,24 @@ public class Sh2CacheImpl implements Sh2Cache {
         final int tagaddr = ca.way[cacheRegCtx.way][entry].tag;
         return (tagaddr & 0x7ffff << 10) | (ca.lru[entry] << 4) | cacheRegCtx.cacheEn;
     }
+
+    private void purgeCache(int addr) {
+        final int tagaddr = (addr & TAG_MASK);
+        final int entry = (addr & ENTRY_MASK) >> ENTRY_SHIFT;
+        //can purge more than one line
+        for (int i = 0; i < CACHE_WAYS; i++) {
+            if (ca.way[i][entry].tag == tagaddr) {
+                assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && i > 1);
+                //only v bit is changed, the rest of the data remains
+                ca.way[i][entry].v = 0;
+                Md32xRuntimeData.addCpuDelayExt(CACHE_PURGE_DELAY);
+                invalidatePrefetcher(ca.way[i][entry], entry, addr & CACHE_PURGE_MASK);
+            }
+        }
+        if (verbose) LOG.info("{} Cache purge: {}", cpu, th(addr));
+        assert addr < 0x4800_0000;
+    }
+
 
 
     @Override
