@@ -1,12 +1,13 @@
 package s32x.sh2;
 
 import omegadrive.SystemLoader;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.BufferUtil;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import s32x.util.Md32xRuntimeData;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -40,8 +41,8 @@ public class MovPreDecTest extends Sh2BaseTest {
     @BeforeEach
     public void before() {
         super.before();
-        Md32xRuntimeData.newInstance(SystemLoader.SystemType.S32X);
-        Md32xRuntimeData.setAccessTypeExt(BufferUtil.CpuDeviceAccess.MASTER);
+        MdRuntimeData.newInstance(SystemLoader.SystemType.S32X, SystemProvider.NO_CLOCK);
+        MdRuntimeData.setAccessTypeExt(BufferUtil.CpuDeviceAccess.MASTER);
     }
 
     @Test

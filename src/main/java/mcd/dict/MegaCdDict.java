@@ -350,9 +350,9 @@ public class MegaCdDict {
         writeReg(mc, cpu, reg, reg.addr, value, size);
     }
 
-    public static void writeReg(MegaCdMemoryContext mc, CpuDeviceAccess cpu, RegSpecMcd reg, int addr, int value, Size size) {
+    public static boolean writeReg(MegaCdMemoryContext mc, CpuDeviceAccess cpu, RegSpecMcd reg, int addr, int value, Size size) {
         assert (reg.regCpuType.bitSet & cpu.ordinal()) > 0;
-        BufferUtil.writeBufferRaw(mc.getRegBuffer(cpu, reg), addr, value, size);
+        return BufferUtil.writeBufferRaw(mc.getRegBuffer(cpu, reg), addr, value, size);
     }
 
 

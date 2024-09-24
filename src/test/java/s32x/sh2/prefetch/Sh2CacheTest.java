@@ -1,6 +1,7 @@
 package s32x.sh2.prefetch;
 
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,7 +13,6 @@ import s32x.sh2.Sh2MultiTestBase;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.sh2.cache.Sh2CacheImpl;
 import s32x.sh2.drc.Sh2Block;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -70,7 +70,7 @@ public class Sh2CacheTest extends Sh2MultiTestBase {
     }
 
     protected void testCacheOffInternal() {
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         initRam(0x100);
         int noCacheAddr = SH2_START_SDRAM | 0x8;
         int cacheAddr = SH2_START_SDRAM_CACHE | 0x8;
@@ -98,7 +98,7 @@ public class Sh2CacheTest extends Sh2MultiTestBase {
     }
 
     protected void testCacheOnInternal() {
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         initRam(0x100);
         int noCacheAddr = SH2_START_SDRAM | 0x8;
         int cacheAddr = SH2_START_SDRAM_CACHE | 0x8;
@@ -181,7 +181,7 @@ public class Sh2CacheTest extends Sh2MultiTestBase {
         checkCacheContents(MASTER, Optional.empty(), noCacheAddr[0], Size.WORD);
         checkCacheContents(SLAVE, Optional.empty(), noCacheAddr[0], Size.WORD);
 
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
 
         //fetch triggers a cache refill on cacheAddr
         doCacheFetch(MASTER, cacheAddr[0]);
@@ -228,7 +228,7 @@ public class Sh2CacheTest extends Sh2MultiTestBase {
     }
 
     private void testCacheDataArray(boolean cacheOn, boolean twoWayCache) {
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         initRam(0x100);
         int val = cacheOn ? 1 : 0;
         val |= (twoWayCache ? 1 : 0) << 3;
@@ -256,7 +256,7 @@ public class Sh2CacheTest extends Sh2MultiTestBase {
     }
 
     private void testCacheWriteNoHitInternal(Size size) {
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         initRam(0x100);
         int noCacheAddr = SH2_START_SDRAM | 0x8;
         int cacheAddr = SH2_START_SDRAM_CACHE | 0x8;
@@ -306,7 +306,7 @@ public class Sh2CacheTest extends Sh2MultiTestBase {
     }
 
     private void checkVal(CpuDeviceAccess cpu, int addr, int expVal, Size size) {
-        Md32xRuntimeData.setAccessTypeExt(cpu);
+        MdRuntimeData.setAccessTypeExt(cpu);
         int val = memory.read(addr, size);
         Assertions.assertEquals(expVal, val, cpu + "," + th(addr));
     }

@@ -1,13 +1,13 @@
 package s32x;
 
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.dict.S32xDict.RegSpecS32x;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.Md32xRuntimeData;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
@@ -126,7 +126,7 @@ public class MdRegsTest {
 
     private void testZ80RegsInternal(RegSpecS32x[] regSpecs) {
         setAdenMdSide(true);
-        Md32xRuntimeData.setAccessTypeExt(Z80);
+        MdRuntimeData.setAccessTypeExt(Z80);
 
         for (RegSpecS32x regSpec : regSpecs) {
             int byte0Addr = M68K_START_32X_SYSREG | regSpec.addr;

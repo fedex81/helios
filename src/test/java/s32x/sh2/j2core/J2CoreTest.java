@@ -1,8 +1,10 @@
 package s32x.sh2.j2core;
 
 import omegadrive.SystemLoader;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.FileUtil;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,7 +21,6 @@ import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.Sh2Impl;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.sh2.device.Sh2DeviceHelper;
-import s32x.util.Md32xRuntimeData;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -113,7 +114,7 @@ public class J2CoreTest {
         Sh2Context context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, sh2Debug);
         context.devices = Sh2DeviceHelper.createDevices(cpu, memory, new DmaFifo68k(s32XMMREG.regContext), sh2MMREG);
         sh2MMREG.init(context.devices);
-        Md32xRuntimeData.newInstance(SystemLoader.SystemType.S32X);
+        MdRuntimeData.newInstance(SystemLoader.SystemType.S32X, SystemProvider.NO_CLOCK);
         return context;
     }
 

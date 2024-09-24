@@ -1,10 +1,7 @@
 package s32x.bus;
 
-import omegadrive.util.BufferUtil;
+import omegadrive.util.*;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
-import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
 import org.slf4j.Logger;
 import s32x.DmaFifo68k;
 import s32x.S32XMMREG;
@@ -20,7 +17,6 @@ import s32x.sh2.prefetch.Sh2Prefetch;
 import s32x.sh2.prefetch.Sh2PrefetchSimple;
 import s32x.sh2.prefetch.Sh2Prefetcher;
 import s32x.util.BiosHolder;
-import s32x.util.Md32xRuntimeData;
 import s32x.util.debug.MemAccessStats;
 import s32x.util.debug.SdramSyncTester;
 
@@ -83,7 +79,7 @@ public final class Sh2BusImpl implements Sh2Bus {
 
     @Override
     public int read(int address, Size size) {
-        CpuDeviceAccess cpuAccess = Md32xRuntimeData.getAccessTypeExt();
+        CpuDeviceAccess cpuAccess = MdRuntimeData.getAccessTypeExt();
         assert assertCheckBusOp(address, size);
         int res = 0;
         if (SH2_MEM_ACCESS_STATS) {
@@ -151,7 +147,7 @@ public final class Sh2BusImpl implements Sh2Bus {
 
     @Override
     public void write(int address, int val, Size size) {
-        CpuDeviceAccess cpuAccess = Md32xRuntimeData.getAccessTypeExt();
+        CpuDeviceAccess cpuAccess = MdRuntimeData.getAccessTypeExt();
         assert assertCheckBusOp(address, size);
         val &= size.getMask();
         if (SH2_MEM_ACCESS_STATS) {

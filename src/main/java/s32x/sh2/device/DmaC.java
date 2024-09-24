@@ -2,6 +2,7 @@ package s32x.sh2.device;
 
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.DmaFifo68k;
@@ -9,7 +10,6 @@ import s32x.Sh2MMREG;
 import s32x.bus.Sh2Bus;
 import s32x.bus.Sh2MemoryParallel;
 import s32x.dict.S32xDict;
-import s32x.util.Md32xRuntimeData;
 
 import java.nio.ByteBuffer;
 
@@ -140,7 +140,7 @@ public class DmaC implements BufferUtil.Sh2Device {
         if (enable) {
             checkDmaStart(d);
             if (d.dmaInProgress) {
-                Md32xRuntimeData.setAccessTypeExt(cpu);
+                MdRuntimeData.setAccessTypeExt(cpu);
                 dmaOneStep(d);
                 d.dreqLevel = false;
                 d.dmaInProgress = false;
@@ -164,7 +164,7 @@ public class DmaC implements BufferUtil.Sh2Device {
         int srcAddress = readBufferForChannel(c.channel, DMA_SAR0.addr, Size.LONG);
         int destAddress = readBufferForChannel(c.channel, DMA_DAR0.addr, Size.LONG);
         int steps = c.transfersPerStep;
-        assert cpu == Md32xRuntimeData.getAccessTypeExt();
+        assert cpu == MdRuntimeData.getAccessTypeExt();
 //        assert (destAddress >> Sh2Prefetch.PC_CACHE_AREA_SHIFT) != 0 : th(srcAddress) +"," + th(destAddress);
 //        assert (srcAddress >> Sh2Prefetch.PC_CACHE_AREA_SHIFT) != 0 : th(srcAddress) +"," + th(destAddress);
         destAddress |= S32xDict.SH2_CACHE_THROUGH_OFFSET;

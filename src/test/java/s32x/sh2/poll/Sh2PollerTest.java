@@ -2,6 +2,7 @@ package s32x.sh2.poll;
 
 import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.*;
 import s32x.event.PollSysEventManager;
@@ -11,7 +12,6 @@ import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer.PollType;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.Md32xRuntimeData;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -57,7 +57,7 @@ public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
         lastCpuEvent = null;
         lastEvent = null;
         lc.sh2.reset(lc.masterCtx);
-        Md32xRuntimeData.setAccessTypeExt(CpuDeviceAccess.MASTER);
+        MdRuntimeData.setAccessTypeExt(CpuDeviceAccess.MASTER);
         PollSysEventManager.instance.reset();
         PollSysEventManager.instance.addSysEventListener(CpuDeviceAccess.MASTER, "Sh2PollerTest", this);
         Sh2Helper.clear();

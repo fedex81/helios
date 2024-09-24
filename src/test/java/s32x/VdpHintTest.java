@@ -1,6 +1,7 @@
 package s32x;
 
 import omegadrive.util.BufferUtil;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.VdpCounterMode;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.device.IntControl.Sh2Interrupt;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.Md32xRuntimeData;
 
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.RegSpecS32x.SH2_HCOUNT_REG;
@@ -34,7 +34,7 @@ public class VdpHintTest {
         lc = MarsRegTestUtil.createTestInstance();
         s32XMMREG = lc.s32XMMREG;
         masterIntControl = lc.mDevCtx.intC;
-        Md32xRuntimeData.setAccessTypeExt(BufferUtil.CpuDeviceAccess.MASTER);
+        MdRuntimeData.setAccessTypeExt(BufferUtil.CpuDeviceAccess.MASTER);
     }
 
     //hcount = 0, hen = 0

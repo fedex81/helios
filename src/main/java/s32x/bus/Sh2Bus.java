@@ -3,13 +3,13 @@ package s32x.bus;
 import omegadrive.Device;
 import omegadrive.memory.ReadableByteMemory;
 import omegadrive.util.BufferUtil;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import s32x.Sh2MMREG;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.cache.Sh2Cache.CacheInvalidateContext;
 import s32x.sh2.prefetch.Sh2Prefetcher;
 import s32x.util.BiosHolder;
-import s32x.util.Md32xRuntimeData;
 
 import java.nio.ByteBuffer;
 
@@ -73,9 +73,9 @@ public interface Sh2Bus extends Sh2Prefetcher, ReadableByteMemory, Device {
     }
 
     default int readMemoryUncachedNoDelay(int address, Size size) {
-        int delay = Md32xRuntimeData.getCpuDelayExt();
+        int delay = MdRuntimeData.getCpuDelayExt();
         int res = read(address | CACHE_THROUGH, size);
-        Md32xRuntimeData.resetCpuDelayExt(delay);
+        MdRuntimeData.resetCpuDelayExt(delay);
         return res;
     }
 

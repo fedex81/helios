@@ -2,6 +2,7 @@ package s32x.sh2.drc;
 
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
 import s32x.Sh2MMREG;
 import s32x.sh2.Sh2;
@@ -11,7 +12,6 @@ import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.prefetch.Sh2Prefetch;
 import s32x.sh2.prefetch.Sh2Prefetcher;
-import s32x.util.Md32xRuntimeData;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -94,7 +94,7 @@ public class Sh2Block {
             }
             curr = curr.next;
         } while (true);
-        cyclesConsumed = (startCycle - ctx.cycles) + Md32xRuntimeData.getCpuDelayExt();
+        cyclesConsumed = (startCycle - ctx.cycles) + MdRuntimeData.getCpuDelayExt();
         curr = prev;
     }
 

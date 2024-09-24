@@ -11,6 +11,7 @@ import omegadrive.ui.DisplayWindow;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Sleeper;
 import omegadrive.vdp.md.GenesisVdp;
 import omegadrive.vdp.util.UpdatableViewer;
@@ -24,7 +25,6 @@ import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.util.MarsLauncherHelper;
 import s32x.util.MarsLauncherHelper.Sh2LaunchContext;
-import s32x.util.Md32xRuntimeData;
 import s32x.util.S32xMemView;
 import s32x.vdp.MarsVdp;
 import s32x.vdp.MarsVdp.MarsVdpRenderContext;
@@ -99,7 +99,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 
     @Override
     protected void initAfterRomLoad() {
-        rt = Md32xRuntimeData.newInstance(systemType);
+        rt = MdRuntimeData.newInstance(systemType, this);
         launchCtx = MarsLauncherHelper.setupRom((S32xBus) bus, memory.getRomHolder());
         masterCtx = launchCtx.masterCtx;
         slaveCtx = launchCtx.slaveCtx;
@@ -143,7 +143,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
             rt.setAccessType(MASTER);
             sh2.run(masterCtx);
             assert (masterCtx.cycles_ran & CYCLE_TABLE_LEN_MASK) == masterCtx.cycles_ran : masterCtx.cycles_ran;
-            assert Md32xRuntimeData.resetCpuDelayExt() == 0;
+            assert MdRuntimeData.resetCpuDelayExt() == 0;
             nextMSh2Cycle += sh2CycleTable[masterCtx.cycles_ran];
         }
         if (nextSSh2Cycle == cycleCounter) {
@@ -151,18 +151,18 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
             rt.setAccessType(SLAVE);
             sh2.run(slaveCtx);
             assert (slaveCtx.cycles_ran & CYCLE_TABLE_LEN_MASK) == slaveCtx.cycles_ran : slaveCtx.cycles_ran;
-            assert Md32xRuntimeData.resetCpuDelayExt() == 0;
+            assert MdRuntimeData.resetCpuDelayExt() == 0;
             nextSSh2Cycle += sh2CycleTable[slaveCtx.cycles_ran];
         }
     }
 
     private void runDevices() {
-        assert Md32xRuntimeData.getCpuDelayExt() == 0;
+        assert MdRuntimeData.getCpuDelayExt() == 0;
         //NOTE if Pwm triggers dreq, the cpuDelay should be assigned to the DMA engine, not to the CPU itself
         launchCtx.pwm.step(SH2_CYCLE_RATIO);
         launchCtx.mDevCtx.sh2MMREG.deviceStepSh2Rate(SH2_CYCLE_RATIO);
         launchCtx.sDevCtx.sh2MMREG.deviceStepSh2Rate(SH2_CYCLE_RATIO);
-        assert Md32xRuntimeData.getCpuDelayExt() == 0;
+        assert MdRuntimeData.getCpuDelayExt() == 0;
     }
 
     @Override
@@ -255,7 +255,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
                 final Sh2DrcBlockOptimizer.PollerCtx pc = PollSysEventManager.instance.getPoller(cpu);
                 assert pc.isPollingActive() : event + "," + pc;
                 setNextCycle(cpu, SH2_SLEEP_VALUE);
-                Md32xRuntimeData.resetCpuDelayExt(cpu, 0);
+                MdRuntimeData.resetCpuDelayExt(cpu, 0);
                 if (verbose) LOG.info("{} {} {}: {}", cpu, event, cycleCounter, pc);
             }
             case SH2_RESET_ON -> {
@@ -265,8 +265,8 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
             case SH2_RESET_OFF -> {
                 setNextCycle(MASTER, cycleCounter + 1);
                 setNextCycle(SLAVE, cycleCounter + 2);
-                Md32xRuntimeData.resetCpuDelayExt(MASTER, 0);
-                Md32xRuntimeData.resetCpuDelayExt(SLAVE, 0);
+                MdRuntimeData.resetCpuDelayExt(MASTER, 0);
+                MdRuntimeData.resetCpuDelayExt(SLAVE, 0);
             }
             //stop polling
             default -> stopPolling(cpu, event);
@@ -304,7 +304,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
             sh2.reset(masterCtx);
             sh2.reset(slaveCtx);
             launchCtx.reset();
-            Md32xRuntimeData.resetAllCpuDelayExt();
+            MdRuntimeData.resetAllCpuDelayExt();
             StaticBootstrapSupport.initStatic(this);
         }
         super.handleSoftReset();

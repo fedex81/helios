@@ -186,7 +186,7 @@ public class CdBiosHelper {
         addToMemRegion("cddLastTrack", 0x5851, 1);
         addToMemRegion("cddVersion", 0x5852, 2);
         addToMemRegion("cddLeadOutTime", 0x5854, 4);
-        addToMemRegion("cddTocTable", 0x5858, 20); //?
+        addToMemRegion("cddTocTable", 0x5858, 80); //?
 
         addToMemRegion("cddTocCache", 0x59E8, 4);
         addToMemRegion("cddAbsFrameTime", 0x59EC, 4);

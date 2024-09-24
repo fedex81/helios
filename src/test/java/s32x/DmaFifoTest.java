@@ -1,11 +1,11 @@
 package s32x;
 
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.sh2.device.DmaC;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -121,12 +121,12 @@ public class DmaFifoTest {
     }
 
     private void dmaStep(DmaC dmac) {
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         dmac.step(1);
     }
 
     private void toggle68kFifo(boolean enable) {
-        Md32xRuntimeData.setAccessTypeExt(M68K);
+        MdRuntimeData.setAccessTypeExt(M68K);
         s32XMMREG.write(DMA_CONTROL_OFFSET, enable ? 4 : 0, Size.WORD); // 68S <- 1
     }
 
@@ -140,24 +140,24 @@ public class DmaFifoTest {
     }
 
     private void m68kWriteToFifo(int data) {
-        Md32xRuntimeData.setAccessTypeExt(M68K);
+        MdRuntimeData.setAccessTypeExt(M68K);
         s32XMMREG.write(FIFO_OFFSET, data, Size.WORD);
     }
 
     private boolean isDmaDoneM68k() {
-        Md32xRuntimeData.setAccessTypeExt(M68K);
+        MdRuntimeData.setAccessTypeExt(M68K);
         int val = s32XMMREG.read(DMA_CONTROL_OFFSET, Size.WORD);
         return (val >> DmaFifo68k.M68K_68S_BIT_POS & 1) == 0;
     }
 
     private boolean isFifoFull() {
-        Md32xRuntimeData.setAccessTypeExt(M68K);
+        MdRuntimeData.setAccessTypeExt(M68K);
         int val = s32XMMREG.read(DMA_CONTROL_OFFSET, Size.WORD);
         return (val >> DmaFifo68k.M68K_FIFO_FULL_BIT & 1) > 0;
     }
 
     private boolean isFifoEmpty() {
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         int val = s32XMMREG.read(DMA_CONTROL_OFFSET, Size.WORD);
         return (val >> DmaFifo68k.SH2_FIFO_EMPTY_BIT & 1) > 0;
     }

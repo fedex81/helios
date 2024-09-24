@@ -1,7 +1,7 @@
 package s32x.dict;
 
 import omegadrive.util.BufferUtil;
-import s32x.util.Md32xRuntimeData;
+import omegadrive.util.MdRuntimeData;
 
 /**
  * Federico Berti
@@ -71,10 +71,10 @@ public class S32xMemAccessDelay {
     }
 
     public static void addReadCpuDelay(int deviceType) {
-        Md32xRuntimeData.addCpuDelayExt(readDelays, deviceType);
+        MdRuntimeData.addCpuDelayExt(readDelays, deviceType);
     }
 
     public static void addWriteCpuDelay(int deviceType) {
-        Md32xRuntimeData.addCpuDelayExt(writeDelays, deviceType);
+        MdRuntimeData.addCpuDelayExt(writeDelays, deviceType);
     }
 }

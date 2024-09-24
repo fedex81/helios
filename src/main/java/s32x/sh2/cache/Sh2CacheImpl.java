@@ -25,15 +25,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 \brief SH2 internal cache operations FIL0016332.PDF section 8
 */
 
-import omegadrive.util.BufferUtil;
+import omegadrive.util.*;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
-import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
 import s32x.savestate.Gs32xStateHandler;
-import s32x.util.Md32xRuntimeData;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -109,7 +105,7 @@ public class Sh2CacheImpl implements Sh2Cache {
                         }
                     }
                 }
-                assert cpu == Md32xRuntimeData.getAccessTypeExt();
+                assert cpu == MdRuntimeData.getAccessTypeExt();
                 return memory.readMemoryUncachedNoDelay(addr, size);
             case CACHE_DATA_ARRAY:
                 return readDataArray(addr, size);
@@ -126,7 +122,7 @@ public class Sh2CacheImpl implements Sh2Cache {
         switch (addr & AREA_MASK) {
             case CACHE_USE: {
                 if (ca.enable == 0) {
-                    assert cpu == Md32xRuntimeData.getAccessTypeExt();
+                    assert cpu == MdRuntimeData.getAccessTypeExt();
                     return readMemoryUncached(memory, addr, size);
                 }
                 return readCache(addr, size);
@@ -294,7 +290,7 @@ public class Sh2CacheImpl implements Sh2Cache {
                 assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && i > 1);
                 //only v bit is changed, the rest of the data remains
                 ca.way[i][entry].v = 0;
-                Md32xRuntimeData.addCpuDelayExt(CACHE_PURGE_DELAY);
+                MdRuntimeData.addCpuDelayExt(CACHE_PURGE_DELAY);
                 invalidatePrefetcher(ca.way[i][entry], entry, addr & CACHE_PURGE_MASK);
             }
         }
@@ -402,8 +398,8 @@ public class Sh2CacheImpl implements Sh2Cache {
     }
 
     private void refillCache(byte[] data, int addr) {
-        Md32xRuntimeData.addCpuDelayExt(4);
-        assert cpu == Md32xRuntimeData.getAccessTypeExt();
+        MdRuntimeData.addCpuDelayExt(4);
+        assert cpu == MdRuntimeData.getAccessTypeExt();
         for (int i = 0; i < CACHE_BYTES_PER_LINE; i += 4) {
             int val = memory.readMemoryUncachedNoDelay((addr & 0xFFFFFFF0) + i, Size.LONG);
             setCachedData(data, i & LINE_MASK, val, Size.LONG);

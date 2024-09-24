@@ -1,13 +1,14 @@
 package s32x.sh2.device;
 
 import omegadrive.SystemLoader;
+import omegadrive.system.SystemProvider;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.MarsRegTestUtil;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.Md32xRuntimeData;
 
 import static omegadrive.util.Util.th;
 import static s32x.dict.Sh2Dict.RegSpecSh2.*;
@@ -26,8 +27,8 @@ public class SciTest {
     public void before() {
         lc = MarsRegTestUtil.createTestInstance();
         lc.s32XMMREG.aden = 1;
-        Md32xRuntimeData.releaseInstance();
-        Md32xRuntimeData.newInstance(SystemLoader.SystemType.S32X);
+        MdRuntimeData.releaseInstance();
+        MdRuntimeData.newInstance(SystemLoader.SystemType.S32X, SystemProvider.NO_CLOCK);
         msci = lc.masterCtx.devices.sci;
         ssci = lc.slaveCtx.devices.sci;
     }

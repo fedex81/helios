@@ -2,15 +2,11 @@ package s32x;
 
 import com.google.common.collect.Maps;
 import omegadrive.Device;
-import omegadrive.util.BufferUtil;
-import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
+import omegadrive.util.*;
 import org.slf4j.Logger;
 import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.sh2.device.*;
-import s32x.util.Md32xRuntimeData;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -264,13 +260,13 @@ public class Sh2MMREG implements Device {
     //23 Mhz
     public void deviceStepSh2Rate(int cycles) {
         assert cycles == 3;
-        Md32xRuntimeData.setAccessTypeExt(cpu);
+        MdRuntimeData.setAccessTypeExt(cpu);
         wdt.step(cycles);
         if (SH2_ENABLE_FRT) {
             frt.step(cycles);
         }
         dmaC.step(cycles);
-        Md32xRuntimeData.resetCpuDelayExt(cpu, 0);
+        MdRuntimeData.resetCpuDelayExt(cpu, 0);
         if (verbose) sh2TicksPerFrame += cycles;
     }
 }

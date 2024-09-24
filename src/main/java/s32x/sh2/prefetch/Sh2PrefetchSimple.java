@@ -2,6 +2,7 @@ package s32x.sh2.prefetch;
 
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
@@ -13,7 +14,6 @@ import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.Sh2Instructions;
 import s32x.sh2.cache.Sh2Cache;
 import s32x.util.BiosHolder;
-import s32x.util.Md32xRuntimeData;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -179,7 +179,7 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
     }
 
     public int fetch(int pc, BufferUtil.CpuDeviceAccess cpu) {
-        assert cpu == Md32xRuntimeData.getAccessTypeExt();
+        assert cpu == MdRuntimeData.getAccessTypeExt();
         if (!sh2Config.prefetchEn) {
             return memory.read(pc, Size.WORD) & 0xFFFF;
         }
@@ -217,7 +217,7 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
 
     public int fetchDelaySlot(int pc, Sh2Helper.FetchResult ft, BufferUtil.CpuDeviceAccess cpu) {
         if (!sh2Config.prefetchEn) {
-            assert cpu == Md32xRuntimeData.getAccessTypeExt();
+            assert cpu == MdRuntimeData.getAccessTypeExt();
             return memory.read(pc, Size.WORD) & 0xFFFF;
         }
         final PrefetchContext pctx = prefetchContexts[cpu.ordinal()];

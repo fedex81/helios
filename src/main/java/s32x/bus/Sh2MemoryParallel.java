@@ -1,12 +1,12 @@
 package s32x.bus;
 
 import omegadrive.util.BufferUtil;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import s32x.Sh2MMREG;
 import s32x.dict.S32xDict;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.cache.Sh2Cache;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,10 +65,10 @@ public final class Sh2MemoryParallel implements Sh2Bus {
         }
         if (!replayMode) {
             RwCtx entry = addEntry(address, 0, size, true);
-            int delay = Md32xRuntimeData.getCpuDelayExt();
+            int delay = MdRuntimeData.getCpuDelayExt();
             int res = memory.read(address, size);
             entry.value = res;
-            entry.cpuDelay = Md32xRuntimeData.getCpuDelayExt() - delay;
+            entry.cpuDelay = MdRuntimeData.getCpuDelayExt() - delay;
             return res;
         }
         return checkEntry(address, 0, size, true).value;
@@ -120,13 +120,13 @@ public final class Sh2MemoryParallel implements Sh2Bus {
         }
         if (!replayMode) {
             RwCtx entry = addEntry(address, val, size, false);
-            int delay = Md32xRuntimeData.getCpuDelayExt();
+            int delay = MdRuntimeData.getCpuDelayExt();
             memory.write(address, val, size);
-            entry.cpuDelay = Md32xRuntimeData.getCpuDelayExt() - delay;
+            entry.cpuDelay = MdRuntimeData.getCpuDelayExt() - delay;
             return;
         }
         RwCtx entry = checkEntry(address, val, size, false);
-        Md32xRuntimeData.addCpuDelayExt(entry.cpuDelay);
+        MdRuntimeData.addCpuDelayExt(entry.cpuDelay);
     }
 
     private RwCtx checkEntry(int address, int val, Size size, boolean read) {

@@ -14,7 +14,6 @@ import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.util.BiosHolder;
-import s32x.util.Md32xRuntimeData;
 import s32x.vdp.MarsVdp;
 
 import java.io.Serial;
@@ -331,13 +330,13 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
     }
 
     public void resetSh2() {
-        BufferUtil.CpuDeviceAccess cpu = Md32xRuntimeData.getAccessTypeExt();
+        BufferUtil.CpuDeviceAccess cpu = MdRuntimeData.getAccessTypeExt();
         //NOTE this changes the access type
         sh2.reset(masterCtx);
         sh2.reset(slaveCtx);
         masterCtx.devices.sh2MMREG.reset();
         slaveCtx.devices.sh2MMREG.reset();
         s32XMMREG.fm = 0;
-        Md32xRuntimeData.setAccessTypeExt(cpu);
+        MdRuntimeData.setAccessTypeExt(cpu);
     }
 }

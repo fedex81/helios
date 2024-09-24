@@ -1,9 +1,9 @@
 package s32x.util.debug;
 
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,7 +37,7 @@ public class RegAccessLogger {
         if (regSpec.startsWith("FRT_") || regSpec.startsWith("FBCR")) {
             return;
         }
-        String s = Md32xRuntimeData.getAccessTypeExt() + "," + (read ? "R," : "W,") + regSpec + "," + th(address) + "," + size;
+        String s = MdRuntimeData.getAccessTypeExt() + "," + (read ? "R," : "W,") + regSpec + "," + th(address) + "," + size;
         Integer v = log.get(s);
         if (v == null || v != val) {
             LOG.info("{},{}", s, th(val));

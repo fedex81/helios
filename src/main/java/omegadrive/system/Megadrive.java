@@ -35,6 +35,7 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -42,7 +43,6 @@ import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.util.MemView;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
-import s32x.util.Md32xRuntimeData;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
@@ -81,7 +81,7 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
     protected M68kProvider cpu;
     protected Ssp16 ssp16 = Ssp16.NO_SVP;
     protected UpdatableViewer memView = UpdatableViewer.NO_OP_VIEWER;
-    protected Md32xRuntimeData rt;
+    protected MdRuntimeData rt;
     protected boolean hasSvp = ssp16 != Ssp16.NO_SVP;
     protected double nextVdpCycle = vdpVals[0];
     protected int next68kCycle = M68K_DIVIDER;
@@ -142,8 +142,8 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
             boolean canRun = !cpu.isStopped() && isRunning;
             int cycleDelay = 1;
             if (canRun) {
-                Md32xRuntimeData.setAccessTypeExt(M68K);
-                cycleDelay = cpu.runInstruction() + Md32xRuntimeData.resetCpuDelayExt();
+                MdRuntimeData.setAccessTypeExt(M68K);
+                cycleDelay = cpu.runInstruction() + MdRuntimeData.resetCpuDelayExt();
             }
             //interrupts are processed after the current instruction
             if (isRunning) {
@@ -151,7 +151,7 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
             }
             cycleDelay = Math.max(1, cycleDelay);
             next68kCycle += M68K_DIVIDER * cycleDelay;
-            assert Md32xRuntimeData.resetCpuDelayExt() == 0;
+            assert MdRuntimeData.resetCpuDelayExt() == 0;
         }
     }
 
@@ -160,14 +160,14 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
             int cycleDelay = 0;
             boolean running = bus.isZ80Running();
             if (running) {
-                Md32xRuntimeData.setAccessTypeExt(Z80);
+                MdRuntimeData.setAccessTypeExt(Z80);
                 cycleDelay = z80.executeInstruction();
                 bus.handleVdpInterruptsZ80();
-                cycleDelay += Md32xRuntimeData.resetCpuDelayExt();
+                cycleDelay += MdRuntimeData.resetCpuDelayExt();
             }
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
-            assert Md32xRuntimeData.resetCpuDelayExt() == 0;
+            assert MdRuntimeData.resetCpuDelayExt() == 0;
         }
     }
 
@@ -245,8 +245,8 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
     @Override
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
-        Md32xRuntimeData.releaseInstance();
-        rt = Md32xRuntimeData.newInstance(systemType);
+        MdRuntimeData.releaseInstance();
+        rt = MdRuntimeData.newInstance(systemType, this);
         cpu.reset();
         z80.reset(); //TODO confirm this is needed
     }

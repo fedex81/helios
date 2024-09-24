@@ -2,6 +2,7 @@ package s32x.sh2.device;
 
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +12,6 @@ import s32x.DmaFifo68k;
 import s32x.MarsRegTestUtil;
 import s32x.S32XMMREG;
 import s32x.sh2.device.DmaHelper.DmaChannelSetup;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -187,7 +187,7 @@ public class DmaCTest {
         setupDmaAndStartChannel(c, masterDmac, dmaLen, sar, dar, true);
         c.chcr_dmaEn = c.dmaor_dme = true;
         c.chcr_tranEndOk = false;
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         int len = Integer.MAX_VALUE;
         do {
             dmaStepOne(MASTER, masterDmac, true, channel);
@@ -209,7 +209,7 @@ public class DmaCTest {
     }
 
     private void dmaStepOne(BufferUtil.CpuDeviceAccess cpu, DmaC dmaC, boolean dreq, int channel) {
-        Md32xRuntimeData.setAccessTypeExt(cpu);
+        MdRuntimeData.setAccessTypeExt(cpu);
         if (dreq) {
             dmaC.dmaReqTrigger(channel, true);
         }

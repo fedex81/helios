@@ -2,6 +2,7 @@ package s32x.sh2.drc;
 
 import com.google.common.collect.Range;
 import omegadrive.util.BufferUtil;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -13,7 +14,6 @@ import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.Sh2MultiTestBase;
-import s32x.util.Md32xRuntimeData;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -91,7 +91,7 @@ public class Sh2BlockInvalidateTest extends Sh2MultiTestBase {
         masterCtx.registers[2] = expectedRamByte;
         setTrace(t1Start & 0xFFFF, trace1, masterCtx);
         setTrace(t2Start & 0xFFFF, trace2, masterCtx);
-        Md32xRuntimeData.resetCpuDelayExt();
+        MdRuntimeData.resetCpuDelayExt();
 
         masterCtx.cycles = 1;
         triggerDrcBlocks(sh2, masterCtx, t1Start, t2Start);
@@ -172,7 +172,7 @@ public class Sh2BlockInvalidateTest extends Sh2MultiTestBase {
                                 ",blockRange: " + br + ",writeRange: " + writeRange +
                                 ",invalidate: " + !blockStillValid + ",block: " + preBlock);
 
-                    Md32xRuntimeData.setAccessTypeExt(MASTER);
+                    MdRuntimeData.setAccessTypeExt(MASTER);
                     memory.write(writeAddr, (0xFF << 16) | 0xFF, size);
 
                     //previous block becomes invalid

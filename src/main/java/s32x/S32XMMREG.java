@@ -10,7 +10,6 @@ import s32x.pwm.Pwm;
 import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.prefetch.Sh2Prefetch;
-import s32x.util.Md32xRuntimeData;
 import s32x.vdp.MarsVdp;
 import s32x.vdp.MarsVdp.MarsVdpContext;
 import s32x.vdp.MarsVdpImpl;
@@ -133,7 +132,7 @@ public class S32XMMREG implements Device {
     }
 
     private int handleRegRead(int address, Size size) {
-        CpuDeviceAccess cpu = Md32xRuntimeData.getAccessTypeExt();
+        CpuDeviceAccess cpu = MdRuntimeData.getAccessTypeExt();
         RegSpecS32x regSpec = S32xDict.getRegSpec(cpu, address);
         if (regSpec == INVALID) {
             LOG.error("{} unable to handle read, addr: {} {}", cpu, th(address), size);
@@ -165,7 +164,7 @@ public class S32XMMREG implements Device {
 
     private boolean handleRegWrite(int address, int value, Size size) {
         final int reg = address & S32xDict.S32X_MMREG_MASK;
-        final CpuDeviceAccess cpu = Md32xRuntimeData.getAccessTypeExt();
+        final CpuDeviceAccess cpu = MdRuntimeData.getAccessTypeExt();
         final RegSpecS32x regSpec = S32xDict.getRegSpec(cpu, address);
         //RegAccessLogger.regAccess(regSpec.toString(), reg, value, size, false);
         boolean regChanged = false;
@@ -232,7 +231,7 @@ public class S32XMMREG implements Device {
             //comm regs are shared
             BufferUtil.writeBuffers(sysRegsMd, sysRegsSh2, reg, value, size);
             //Brutal: force successive COMM writes to happen at least 12 cycles apart
-            Md32xRuntimeData.addCpuDelayExt(12);
+            MdRuntimeData.addCpuDelayExt(12);
         }
         return regChanged;
     }
@@ -240,7 +239,7 @@ public class S32XMMREG implements Device {
     private void doLog(CpuDeviceAccess cpu, RegSpecS32x regSpec, int address, int value, Size size, boolean read) {
         boolean isSys = address < S32xDict.END_32X_SYSREG_CACHE;
         ByteBuffer regArea = isSys ? (cpu == M68K ? sysRegsMd : sysRegsSh2) : regContext.vdpRegs;
-        logCtx.cpu = Md32xRuntimeData.getAccessTypeExt();
+        logCtx.cpu = MdRuntimeData.getAccessTypeExt();
         logCtx.regSpec = regSpec;
         logCtx.regArea = regArea;
         logCtx.read = read;
@@ -322,7 +321,7 @@ public class S32XMMREG implements Device {
     //Note: disabling ADEN not allowed, once it is set
     private int handleAden(int newVal) {
         if (aden > 0 && (newVal & MD_ADEN_BIT) == 0) {
-            LOG.warn("{} Disabling ADEN not allowed", Md32xRuntimeData.getAccessTypeExt());
+            LOG.warn("{} Disabling ADEN not allowed", MdRuntimeData.getAccessTypeExt());
             setBitRegFromWord(sysRegsMd, MD_ADAPTER_CTRL, MD_ADEN_BIT_POS, 1);
             newVal |= MD_ADEN_BIT;
         }
@@ -333,14 +332,14 @@ public class S32XMMREG implements Device {
     private void handleReset(int val, int newVal) {
         //reset cancel
         if ((val & S32xDict.P32XS_nRES) == 0 && (newVal & S32xDict.P32XS_nRES) > 0) {
-            LOG.info("{} unset reset Sh2s (nRes = 0)", Md32xRuntimeData.getAccessTypeExt());
+            LOG.info("{} unset reset Sh2s (nRes = 0)", MdRuntimeData.getAccessTypeExt());
             PollSysEventManager.instance.fireSysEvent(MASTER, SH2_RESET_OFF);
 //            S32xUtil.setBitRegFromWord(sysRegsMd, MD_ADAPTER_CTRL, P32XS_REN_POS, 1); //set REN to true
 //            bus.resetSh2(); //TODO check
         }
         //reset
         if ((val & S32xDict.P32XS_nRES) > 0 && (newVal & S32xDict.P32XS_nRES) == 0) {
-            LOG.info("{} set reset SH2s (nRes = 1)", Md32xRuntimeData.getAccessTypeExt());
+            LOG.info("{} set reset SH2s (nRes = 1)", MdRuntimeData.getAccessTypeExt());
             PollSysEventManager.instance.fireSysEvent(MASTER, SH2_RESET_ON);
 //            S32xUtil.setBitRegFromWord(sysRegsMd, MD_ADAPTER_CTRL, P32XS_REN_POS, 0); //set REN to false during reset
         }
@@ -356,7 +355,7 @@ public class S32XMMREG implements Device {
         int nhen = (newVal >> S32xDict.INTMASK_HEN_BIT_POS) & 1;
         if (nhen != ctx.hen) {
             ctx.hen = nhen;
-            if (verbose) LOG.info("{} HEN: {}", Md32xRuntimeData.getAccessTypeExt(), ctx.hen);
+            if (verbose) LOG.info("{} HEN: {}", MdRuntimeData.getAccessTypeExt(), ctx.hen);
         }
         BufferUtil.setBit(interruptControls[0].getSh2_int_mask_regs(),
                 interruptControls[1].getSh2_int_mask_regs(), 1, S32xDict.INTMASK_HEN_BIT_POS, ctx.hen, Size.BYTE);
@@ -397,7 +396,7 @@ public class S32XMMREG implements Device {
         BufferUtil.setBit(interruptControls[0].getSh2_int_mask_regs(),
                 interruptControls[1].getSh2_int_mask_regs(), 0, 7, fm, Size.BYTE);
         BufferUtil.setBit(sysRegsMd, MD_ADAPTER_CTRL.addr, 7, fm, Size.BYTE);
-        if (verbose) LOG.info("{} FM: {}", Md32xRuntimeData.getAccessTypeExt(), fm);
+        if (verbose) LOG.info("{} FM: {}", MdRuntimeData.getAccessTypeExt(), fm);
     }
 
     public void setDmaControl(DmaFifo68k dmaFifoControl) {

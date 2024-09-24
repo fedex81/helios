@@ -7,11 +7,12 @@ import mcd.dict.MegaCdMemoryContext;
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import s32x.util.Md32xRuntimeData;
 
 import static mcd.dict.MegaCdDict.START_MCD_SUB_GATE_ARRAY_REGS;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
@@ -34,7 +35,7 @@ public class McdRegTestBase {
 
     @BeforeEach
     public void setupBase() {
-        Md32xRuntimeData.newInstance(SystemLoader.SystemType.MEGACD);
+        MdRuntimeData.newInstance(SystemLoader.SystemType.MEGACD, SystemProvider.NO_CLOCK);
         lc = McdDeviceHelper.setupDevices();
         ctx = lc.memoryContext;
         mainCpuBus = lc.mainBus;

@@ -5,12 +5,12 @@ import mcd.McdDeviceHelper.McdLaunchContext;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.memory.ReadableByteMemory;
 import omegadrive.util.BufferUtil;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.util.MemView;
 import omegadrive.vdp.util.UpdatableViewer;
 import omegadrive.vdp.util.VdpDebugView;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.function.BiFunction;
 
@@ -106,7 +106,7 @@ public class McdMemView extends MemView {
 
     @Override
     protected void doMemoryRead(MemViewData current, int len, BiFunction<MemViewData, Integer, Integer> readerFn) {
-        int v = Md32xRuntimeData.getCpuDelayExt();
+        int v = MdRuntimeData.getCpuDelayExt();
 //        if (current == S32X_PALETTE) {
 //            doMemoryRead_WordBE(current, len);
 //        } else {

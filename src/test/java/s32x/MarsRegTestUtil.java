@@ -5,11 +5,9 @@ import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.mapper.MdMapperTest;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
-import omegadrive.util.BufferUtil;
+import omegadrive.system.SystemProvider;
+import omegadrive.util.*;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
-import omegadrive.util.RomHolder;
-import omegadrive.util.Size;
-import omegadrive.util.SystemTestUtil;
 import org.junit.jupiter.api.Assertions;
 import s32x.StaticBootstrapSupport.NextCycleResettable;
 import s32x.bus.S32xBus;
@@ -19,7 +17,6 @@ import s32x.util.BiosHolder;
 import s32x.util.BiosHolder.BiosData;
 import s32x.util.MarsLauncherHelper;
 import s32x.util.MarsLauncherHelper.Sh2LaunchContext;
-import s32x.util.Md32xRuntimeData;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
@@ -83,8 +80,8 @@ public class MarsRegTestUtil {
      * NOTE: any array modification after this point, will be ignored by the emulated system
      */
     public static Sh2LaunchContext createTestInstance(byte[] irom) {
-        Md32xRuntimeData.releaseInstance();
-        Md32xRuntimeData.newInstance(SystemLoader.SystemType.S32X);
+        MdRuntimeData.releaseInstance();
+        MdRuntimeData.newInstance(SystemLoader.SystemType.S32X, SystemProvider.NO_CLOCK);
         RomHolder romHolder = new RomHolder(irom);
         Sh2LaunchContext lc = MarsLauncherHelper.setupRom(new S32xBus(), romHolder, createTestBiosHolder());
         IMemoryProvider mp = MemoryProvider.createGenesisInstance();
@@ -106,7 +103,7 @@ public class MarsRegTestUtil {
     }
 
     public static int readBus(Sh2LaunchContext lc, CpuDeviceAccess cpu, int reg, Size size) {
-        Md32xRuntimeData.setAccessTypeExt(cpu);
+        MdRuntimeData.setAccessTypeExt(cpu);
         if (cpu == M68K || cpu == Z80) {
             return (int) lc.bus.read(reg, size);
         } else {
@@ -115,7 +112,7 @@ public class MarsRegTestUtil {
     }
 
     public static void writeBus(Sh2LaunchContext lc, CpuDeviceAccess cpu, int reg, int data, Size size) {
-        Md32xRuntimeData.setAccessTypeExt(cpu);
+        MdRuntimeData.setAccessTypeExt(cpu);
         if (cpu == M68K || cpu == Z80) {
             lc.bus.write(reg, data, size);
         } else {

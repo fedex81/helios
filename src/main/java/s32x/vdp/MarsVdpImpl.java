@@ -11,7 +11,6 @@ import s32x.dict.S32xMemAccessDelay;
 import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.prefetch.Sh2Prefetch;
-import s32x.util.Md32xRuntimeData;
 import s32x.vdp.debug.MarsVdpDebugView;
 
 import java.io.Serial;
@@ -121,11 +120,11 @@ public class MarsVdpImpl implements MarsVdp {
     @Override
     public void write(int address, int value, Size size) {
         if (address >= S32xDict.START_32X_COLPAL_CACHE && address < S32xDict.END_32X_COLPAL_CACHE) {
-            assert Md32xRuntimeData.getAccessTypeExt() != BufferUtil.CpuDeviceAccess.Z80;
+            assert MdRuntimeData.getAccessTypeExt() != BufferUtil.CpuDeviceAccess.Z80;
             switch (size) {
                 case WORD, LONG -> writeBufferRaw(colorPalette, address & S32xDict.S32X_COLPAL_MASK, value, size);
                 default ->
-                        LOG.error("{} write, unable to access colorPalette as {}", Md32xRuntimeData.getAccessTypeExt(), size);
+                        LOG.error("{} write, unable to access colorPalette as {}", MdRuntimeData.getAccessTypeExt(), size);
             }
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.PALETTE);
         } else if (address >= S32xDict.START_DRAM_CACHE && address < S32xDict.END_DRAM_CACHE) {
@@ -139,7 +138,7 @@ public class MarsVdpImpl implements MarsVdp {
             writeFrameBufferOver(address, value, size);
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.FRAME_BUFFER);
         } else {
-            LOG.error("{} unhandled write at {}, val: {} {}", Md32xRuntimeData.getAccessTypeExt(), th(address),
+            LOG.error("{} unhandled write at {}, val: {} {}", MdRuntimeData.getAccessTypeExt(), th(address),
                     th(value), size);
         }
     }
@@ -148,11 +147,11 @@ public class MarsVdpImpl implements MarsVdp {
     public int read(int address, Size size) {
         int res = 0;
         if (address >= S32xDict.START_32X_COLPAL_CACHE && address < S32xDict.END_32X_COLPAL_CACHE) {
-            assert Md32xRuntimeData.getAccessTypeExt() != BufferUtil.CpuDeviceAccess.Z80;
+            assert MdRuntimeData.getAccessTypeExt() != BufferUtil.CpuDeviceAccess.Z80;
             if (size == Size.WORD) {
                 res = BufferUtil.readBuffer(colorPalette, address & S32xDict.S32X_COLPAL_MASK, size);
             } else {
-                logWarnOnce(LOG, "{} read, unable to access colorPalette as {}", Md32xRuntimeData.getAccessTypeExt(), size);
+                logWarnOnce(LOG, "{} read, unable to access colorPalette as {}", MdRuntimeData.getAccessTypeExt(), size);
             }
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.PALETTE);
         } else if (address >= S32xDict.START_DRAM_CACHE && address < S32xDict.END_DRAM_CACHE) {
@@ -162,7 +161,7 @@ public class MarsVdpImpl implements MarsVdp {
             res = BufferUtil.readBuffer(dramBanks[vdpContext.frameBufferWritable], address & S32xDict.DRAM_MASK, size);
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.FRAME_BUFFER);
         } else {
-            LOG.error("{} unhandled read: {} {}", Md32xRuntimeData.getAccessTypeExt(), th(address), size);
+            LOG.error("{} unhandled read: {} {}", MdRuntimeData.getAccessTypeExt(), th(address), size);
         }
         return res;
     }

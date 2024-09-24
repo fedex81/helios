@@ -1,6 +1,7 @@
 package s32x;
 
 import omegadrive.util.BufferUtil;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,7 +10,6 @@ import s32x.dict.S32xDict;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.device.IntControl.Sh2Interrupt;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -326,22 +326,22 @@ public class IntCTest {
     }
 
     private void setSh2SysReg(BufferUtil.CpuDeviceAccess cpu, int addr, int value, Size size) {
-        Md32xRuntimeData.setAccessTypeExt(cpu);
+        MdRuntimeData.setAccessTypeExt(cpu);
         lc.s32XMMREG.write(START_32X_SYSREG_CACHE + addr, value, size);
     }
 
     private void setSh2SysReg(BufferUtil.CpuDeviceAccess cpu, S32xDict.RegSpecS32x r, int value) {
-        Md32xRuntimeData.setAccessTypeExt(cpu);
+        MdRuntimeData.setAccessTypeExt(cpu);
         lc.s32XMMREG.write(START_32X_SYSREG_CACHE + r.regSpec.fullAddr, value, r.regSpec.regSize);
     }
 
     private void setM68kSysReg(S32xDict.RegSpecS32x r, int value) {
-        Md32xRuntimeData.setAccessTypeExt(M68K);
+        MdRuntimeData.setAccessTypeExt(M68K);
         lc.bus.write(BASE_M68K_SYS_REG + r.regSpec.fullAddr, value, r.regSpec.regSize);
     }
 
     private void checkM68kSysReg(S32xDict.RegSpecS32x r, int expected) {
-        Md32xRuntimeData.setAccessTypeExt(M68K);
+        MdRuntimeData.setAccessTypeExt(M68K);
         int res = (int) lc.bus.read(BASE_M68K_SYS_REG + r.regSpec.fullAddr, r.regSpec.regSize);
         Assertions.assertEquals(expected, res, r.getName());
     }

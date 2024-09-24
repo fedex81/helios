@@ -3,6 +3,7 @@ package s32x.sh2;
 
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
 import s32x.dict.S32xDict;
@@ -12,7 +13,6 @@ import s32x.sh2.device.IntControl;
 import s32x.sh2.drc.Sh2Block;
 import s32x.sh2.drc.Sh2BlockRecompiler;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.Arrays;
 
@@ -93,7 +93,7 @@ public class Sh2Impl implements Sh2 {
 
     private void processInterrupt(final Sh2Context ctx, final int level) {
 //		System.out.println(ctx.cpuAccess + " Interrupt processed: " + level);
-        assert Md32xRuntimeData.getAccessTypeExt() == ctx.cpuAccess;
+        assert MdRuntimeData.getAccessTypeExt() == ctx.cpuAccess;
         push(ctx.SR);
         push(ctx.PC); //stores the next inst to be executed
         //SR 7-4
@@ -122,7 +122,7 @@ public class Sh2Impl implements Sh2 {
         for (; ctx.cycles >= 0; ) {
             decode();
             boolean res = acceptInterrupts(intControl.getInterruptLevel());
-            ctx.cycles -= Md32xRuntimeData.resetCpuDelayExt(); //TODO check perf
+            ctx.cycles -= MdRuntimeData.resetCpuDelayExt(); //TODO check perf
             if (res || instance.getPoller(ctx.cpuAccess).isPollingActive()) {
                 break;
             }
@@ -217,7 +217,7 @@ public class Sh2Impl implements Sh2 {
     }
 
     public void reset(Sh2Context ctx) {
-        Md32xRuntimeData.setAccessTypeExt(ctx.cpuAccess);
+        MdRuntimeData.setAccessTypeExt(ctx.cpuAccess);
         ctx.VBR = 0;
         ctx.PC = memory.read32(0);
         ctx.SR = flagIMASK;

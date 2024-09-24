@@ -1,10 +1,7 @@
 package s32x.sh2.prefetch;
 
-import omegadrive.util.BufferUtil;
+import omegadrive.util.*;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
-import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
 import org.objectweb.asm.commons.LocalVariablesSorter;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
@@ -19,7 +16,6 @@ import s32x.sh2.cache.Sh2Cache;
 import s32x.sh2.drc.Sh2Block;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 import s32x.util.BiosHolder;
-import s32x.util.Md32xRuntimeData;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -450,7 +446,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         if (verbose) {
             String s = LogHelper.formatMessage(
                     "{} write at addr: {} val: {}, {} invalidate block with start: {} blockLen: {}",
-                    Md32xRuntimeData.getAccessTypeExt(), th(addr), th(val),
+                    MdRuntimeData.getAccessTypeExt(), th(addr), th(val),
                     pcInfoWrapper.block.drcContext.cpu, Util.th(pcInfoWrapper.block.prefetchPc),
                     pcInfoWrapper.block.prefetchLenWords);
             LOG.info(s);

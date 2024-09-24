@@ -2,6 +2,7 @@ package s32x.sh2.prefetch;
 
 import com.google.common.collect.Range;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +13,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.drc.Sh2Block;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -114,25 +114,25 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
 
     protected void testRamCacheOffWriteInternal() {
         resetMemory();
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         memory.write16(cacheAddrDef, CLRMAC);
 
         checkAllFetches(noCacheAddrDef, CLRMAC);
         checkAllFetches(cacheAddrDef, CLRMAC);
 
-        Md32xRuntimeData.setAccessTypeExt(SLAVE);
+        MdRuntimeData.setAccessTypeExt(SLAVE);
         memory.write16(cacheAddrDef, NOP);
 
         checkAllFetches(noCacheAddrDef, NOP);
         checkAllFetches(cacheAddrDef, NOP);
 
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         memory.write16(noCacheAddrDef, CLRMAC);
 
         checkAllFetches(noCacheAddrDef, CLRMAC);
         checkAllFetches(cacheAddrDef, CLRMAC);
 
-        Md32xRuntimeData.setAccessTypeExt(SLAVE);
+        MdRuntimeData.setAccessTypeExt(SLAVE);
         memory.write16(noCacheAddrDef, NOP);
 
         checkAllFetches(noCacheAddrDef, NOP);
@@ -143,7 +143,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         resetMemory();
         enableCache(MASTER, true);
 
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         memory.write16(cacheAddrDef, CLRMAC);
 
         //cache is write-through
@@ -162,7 +162,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         enableCache(MASTER, true);
         enableCache(SLAVE, true);
 
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         memory.write16(cacheAddrDef, CLRMAC);
 
         checkAllFetches(noCacheAddrDef, CLRMAC);
@@ -171,7 +171,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         checkFetch(SLAVE, cacheAddrDef, CLRMAC);
 
         //writes to MASTER cache and SDRAM, SLAVE cache is not touched
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         memory.write16(cacheAddrDef, NOP);
 
         checkAllFetches(noCacheAddrDef, NOP);
@@ -180,7 +180,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         checkFetch(SLAVE, cacheAddrDef, CLRMAC);
 
         //update SLAVE cache
-        Md32xRuntimeData.setAccessTypeExt(SLAVE);
+        MdRuntimeData.setAccessTypeExt(SLAVE);
         memory.write16(cacheAddrDef, NOP);
 
         //cache hit
@@ -191,7 +191,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         resetMemory();
         enableCache(MASTER, true);
 
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         memory.write16(cacheAddrDef, CLRMAC);
 
         //cache is write-through
@@ -201,7 +201,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         //disable cache, cache is not cleared
         enableCache(MASTER, false);
 
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         memory.write16(cacheAddrDef, NOP);
 
         checkFetch(MASTER, noCacheAddrDef, NOP);
@@ -245,7 +245,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         checkCacheContents(MASTER, Optional.of(NOP), noCacheAddrDef, Size.WORD);
 
         //long write within the prefetch window
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         memory.write32(cacheAddrDef - 2, (CLRMAC << 16) | SETT);
 
         checkFetch(MASTER, cacheAddrDef - 2, CLRMAC);
@@ -271,7 +271,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         int pstart = l.stream().findFirst().get().start;
         Assertions.assertTrue(pstart > 0);
 
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         memory.write32(cacheAddr2 - 2, (CLRMAC << 16) | SETT);
 
         checkFetch(MASTER, cacheAddrDef - 2, CLRMAC);
@@ -288,7 +288,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         checkCacheContents(MASTER, Optional.empty(), noCacheAddrDef, Size.WORD);
         checkCacheContents(SLAVE, Optional.empty(), noCacheAddrDef, Size.WORD);
 
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         //M not in cache
         memory.write16(cacheAddrDef, CLRMAC);
         checkCacheContents(MASTER, Optional.empty(), noCacheAddrDef, Size.WORD);
@@ -297,7 +297,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         //M add to cache
         memory.read(cacheAddrDef, Size.WORD);
 
-        Md32xRuntimeData.setAccessTypeExt(SLAVE);
+        MdRuntimeData.setAccessTypeExt(SLAVE);
         //S not in cache
         memory.write16(noCacheAddrDef, SETT);
         checkCacheContents(MASTER, Optional.of(CLRMAC), noCacheAddrDef, Size.WORD);
@@ -316,7 +316,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         checkCacheContents(MASTER, Optional.of(CLRMAC), noCacheAddrDef, Size.WORD);
         checkCacheContents(SLAVE, Optional.empty(), noCacheAddrDef, Size.WORD);
 
-        Md32xRuntimeData.setAccessTypeExt(SLAVE);
+        MdRuntimeData.setAccessTypeExt(SLAVE);
         memory.write16(noCacheAddrDef, NOP);
 
         //MASTER hit, SLAVE miss reload NOP
@@ -337,9 +337,9 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         checkCacheContents(MASTER, Optional.of(NOP), noCacheAddrDef, Size.WORD);
 
         //both caches out of sync
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
         memory.write16(noCacheAddrDef, CLRMAC);
-        Md32xRuntimeData.setAccessTypeExt(SLAVE);
+        MdRuntimeData.setAccessTypeExt(SLAVE);
         memory.write16(noCacheAddrDef, SETT);
 
         //MASTER hit, SLAVE hit
@@ -375,7 +375,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         checkCacheContents(MASTER, Optional.empty(), noCacheAddr, Size.WORD);
         checkCacheContents(SLAVE, Optional.empty(), noCacheAddr, Size.WORD);
 
-        Md32xRuntimeData.setAccessTypeExt(MASTER);
+        MdRuntimeData.setAccessTypeExt(MASTER);
 
         int prefetchEndAddress = cacheAddr + CACHE_BYTES_PER_LINE + 6;
         memory.write16(prefetchEndAddress, JMP_0);
@@ -428,14 +428,14 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
 
     private void checkMemoryNoCache(CpuDeviceAccess cpu, int addr, int val) {
         assert addr >> Sh2Prefetch.PC_CACHE_AREA_SHIFT == 2;
-        Md32xRuntimeData.setAccessTypeExt(cpu);
+        MdRuntimeData.setAccessTypeExt(cpu);
         int res = memory.read16(addr);
         Assertions.assertEquals(val, res, cpu + "," + th(addr));
     }
 
     //NOTE: this can trigger a cache fill
     private void checkFetch(CpuDeviceAccess cpu, int addr, int val) {
-        Md32xRuntimeData.setAccessTypeExt(cpu);
+        MdRuntimeData.setAccessTypeExt(cpu);
         Sh2Helper.FetchResult ft = doCacheFetch(cpu, addr);
         int opcode = ft.opcode;
         Assertions.assertEquals(val, opcode, cpu + "," + th(addr) + ",\n" + ft.block

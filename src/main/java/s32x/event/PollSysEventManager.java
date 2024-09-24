@@ -3,10 +3,10 @@ package s32x.event;
 import omegadrive.Device;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer.PollerCtx;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -111,7 +111,7 @@ public interface PollSysEventManager extends Device {
         if (event == SysEvent.INT) {
             return true;
         }
-        assert Md32xRuntimeData.getCpuDelayExt(cpu) == 0;
+        assert MdRuntimeData.getCpuDelayExt(cpu) == 0;
         int value = readPollValue(pctx);
         if (value == pctx.pollValue) {
             System.out.println("?? Poll stop but value unchanged: " + th(pctx.pollValue) + "," + th(value));

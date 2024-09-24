@@ -3,6 +3,7 @@ package s32x.sh2.drc;
 import com.google.common.collect.ImmutableMap;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
@@ -12,7 +13,6 @@ import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Debug;
 import s32x.sh2.Sh2Disassembler;
 import s32x.sh2.Sh2Helper;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.Map;
 import java.util.StringJoiner;
@@ -419,7 +419,7 @@ public class Sh2DrcBlockOptimizer {
                 return pt == null ? NONE : pt;
             }
             default:
-                LOG.error("{} Unexpected {} access type for polling: {}", Md32xRuntimeData.getAccessTypeExt(), NONE
+                LOG.error("{} Unexpected {} access type for polling: {}", MdRuntimeData.getAccessTypeExt(), NONE
                         , th(address));
                 return NONE;
         }

@@ -2,6 +2,7 @@ package s32x.sh2.drc;
 
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
 import s32x.Sh2MMREG;
 import s32x.bus.Sh2MemoryParallel;
@@ -9,7 +10,6 @@ import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.Arrays;
 
@@ -77,7 +77,7 @@ public class Sh2BlockParallel extends Sh2Block {
     }
 
     private void runInterpreterParallel(Sh2 sh2, Sh2MMREG sm) {
-        int delay = Md32xRuntimeData.getCpuDelayExt();
+        int delay = MdRuntimeData.getCpuDelayExt();
         Sh2MemoryParallel sp = ((Sh2MemoryParallel) drcContext.memory);
         sp.setReplayMode(true);
         Sh2Context ctx = this.drcContext.sh2Ctx;
@@ -104,6 +104,6 @@ public class Sh2BlockParallel extends Sh2Block {
         sp.setReplayMode(false);
         sp.clear();
         sp.setActive(false);
-        Md32xRuntimeData.resetCpuDelayExt(delay);
+        MdRuntimeData.resetCpuDelayExt(delay);
     }
 }

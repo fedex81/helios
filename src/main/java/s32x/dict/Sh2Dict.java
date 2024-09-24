@@ -2,11 +2,11 @@ package s32x.dict;
 
 import com.google.common.collect.ImmutableMap;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.RegSpec;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.Sh2MMREG;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.Map;
 
@@ -164,13 +164,13 @@ public class Sh2Dict {
 
     public static boolean checkName(int reg) {
         if (sh2RegMapping[reg & Sh2MMREG.SH2_REG_MASK] == null) {
-            LOG.warn("{} SH2 mmreg unknown reg: {}", Md32xRuntimeData.getAccessTypeExt(), th(reg));
+            LOG.warn("{} SH2 mmreg unknown reg: {}", MdRuntimeData.getAccessTypeExt(), th(reg));
         }
         return true;
     }
 
     public static void logAccess(String type, int reg, int value, Size size) {
-        String s = Md32xRuntimeData.getAccessTypeExt() + " SH2 reg " + type + " " +
+        String s = MdRuntimeData.getAccessTypeExt() + " SH2 reg " + type + " " +
                 size + ", (" + sh2RegMapping[reg & Sh2MMREG.SH2_REG_MASK] + ") " + th(reg) + ": " + th(value);
         LOG.info(s);
     }

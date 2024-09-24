@@ -3,6 +3,7 @@ package s32x.util;
 import com.google.common.collect.ObjectArrays;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.memory.ReadableByteMemory;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.util.MemView;
 import omegadrive.vdp.util.UpdatableViewer;
@@ -70,12 +71,12 @@ public class S32xMemView extends MemView {
 
     @Override
     protected void doMemoryRead(MemViewData current, int len, BiFunction<MemViewData, Integer, Integer> readerFn) {
-        int v = Md32xRuntimeData.getCpuDelayExt();
+        int v = MdRuntimeData.getCpuDelayExt();
         if (current == S32X_PALETTE) {
             doMemoryRead_WordBE(current, len);
         } else {
             super.doMemoryRead(current, len, readerFn);
         }
-        Md32xRuntimeData.resetCpuDelayExt(v);
+        MdRuntimeData.resetCpuDelayExt(v);
     }
 }

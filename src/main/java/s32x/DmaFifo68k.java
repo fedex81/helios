@@ -8,7 +8,6 @@ import s32x.S32XMMREG.RegContext;
 import s32x.dict.S32xDict.RegSpecS32x;
 import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.device.DmaC;
-import s32x.util.Md32xRuntimeData;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -82,7 +81,7 @@ public class DmaFifo68k implements Device {
                 handleDreqCtlWriteMd(address, value, size);
                 break;
             case MD_FIFO_REG:
-                assert Md32xRuntimeData.getAccessTypeExt() != CpuDeviceAccess.Z80;
+                assert MdRuntimeData.getAccessTypeExt() != CpuDeviceAccess.Z80;
                 handleFifoRegWriteMd(value, size);
                 BufferUtil.writeBufferRaw(sysRegsMd, address, value, size);
                 break;
@@ -93,7 +92,7 @@ public class DmaFifo68k implements Device {
             case MD_DREQ_DEST_ADDR_L:
             case MD_DREQ_SRC_ADDR_H:
             case MD_DREQ_SRC_ADDR_L:
-                assert Md32xRuntimeData.getAccessTypeExt() != CpuDeviceAccess.Z80;
+                assert MdRuntimeData.getAccessTypeExt() != CpuDeviceAccess.Z80;
                 //NOTE after burner 68k byte writes: (MD_DREQ_DEST_ADDR_H +1) 0xd,2,BYTE
                 BufferUtil.writeBufferRaw(sysRegsMd, address, value, size);
                 BufferUtil.writeBufferRaw(sysRegsSh2, address, value, size);
@@ -117,9 +116,9 @@ public class DmaFifo68k implements Device {
             //NOTE bit 1 is called DMA, only relevant when using SEGA CD (see picodrive)
 //            assert (res & 2) == 0;
             if (verbose)
-                LOG.info("{} write DREQ_CTL, dmaOn: {} , RV: {}", Md32xRuntimeData.getAccessTypeExt(), ctx.m68S, rv);
+                LOG.info("{} write DREQ_CTL, dmaOn: {} , RV: {}", MdRuntimeData.getAccessTypeExt(), ctx.m68S, rv);
             if (wasDmaOn && !ctx.m68S) {
-                LOG.info("{} Setting 68S = 0, stops DMA while running", Md32xRuntimeData.getAccessTypeExt());
+                LOG.info("{} Setting 68S = 0, stops DMA while running", MdRuntimeData.getAccessTypeExt());
                 dmaEnd();
             }
             updateFifoState();

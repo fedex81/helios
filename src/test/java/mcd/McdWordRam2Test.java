@@ -4,11 +4,11 @@ import mcd.dict.MegaCdDict;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import s32x.util.Md32xRuntimeData;
 
 import static mcd.McdWordRamTest.*;
 import static mcd.bus.McdWordRamHelper.getBank;
@@ -197,7 +197,7 @@ public class McdWordRam2Test extends McdRegTestBase {
         Assertions.assertEquals(0xABCD, res);
 
         //sub reads the start of 2M window -> 0x0A0B
-        Md32xRuntimeData.setAccessTypeExt(SUB_M68K);
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
         res = subCpuBus.read(START_MCD_SUB_WORD_RAM_2M, Size.WORD);
         Assertions.assertEquals(0x0A0B, res);
 

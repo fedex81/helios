@@ -3,13 +3,9 @@ package mcd.bus;
 import mcd.asic.AsicModel.StampPriorityMode;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.util.McdRegBitUtil;
-import omegadrive.util.ArrayEndianUtil;
+import omegadrive.util.*;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
-import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
-import omegadrive.util.Util;
 import org.slf4j.Logger;
-import s32x.util.Md32xRuntimeData;
 
 import static mcd.dict.MegaCdDict.SharedBitDef.*;
 import static mcd.dict.MegaCdMemoryContext.MCD_WORD_RAM_1M_MASK;
@@ -186,7 +182,7 @@ public class McdWordRamHelper {
 
     public int readCellMapped(int address, Size size) {
         assert size == Size.WORD;
-        assert Md32xRuntimeData.getAccessTypeExt() == M68K;
+        assert MdRuntimeData.getAccessTypeExt() == M68K;
         LogHelper.logWarnOnceForce(LOG, "Cell image read: {}", memoryContext.wramSetup);
         assert size == Size.WORD;
         int assignedBank = memoryContext.wramSetup.cpu == M68K ? 0 : 1;
@@ -229,7 +225,7 @@ public class McdWordRamHelper {
     }
 
     private int readDotMappedByte(int address) {
-        assert Md32xRuntimeData.getAccessTypeExt() == SUB_M68K;
+        assert MdRuntimeData.getAccessTypeExt() == SUB_M68K;
         byte[] wramBank = wordRam01[memoryContext.wramSetup.cpu == SUB_M68K ? 0 : 1];
         int addr = (address & MCD_WORD_RAM_1M_MASK) >> 1;
         int shift = (~address & 1) << 2;

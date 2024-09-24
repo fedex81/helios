@@ -1,8 +1,8 @@
-package s32x.util;
+package omegadrive.util;
 
 import omegadrive.SystemLoader.SystemType;
+import omegadrive.system.SystemProvider.SystemClock;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
-import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import s32x.Md32x;
 import s32x.sh2.Sh2Helper.Sh2Config;
@@ -15,7 +15,7 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.cdaValues;
  * <p>
  * Copyright 2022
  */
-public class Md32xRuntimeData {
+public class MdRuntimeData {
 
     private static final Logger LOG = LogHelper.getLogger(Md32x.class.getSimpleName());
 
@@ -26,10 +26,12 @@ public class Md32xRuntimeData {
 
     private final SystemType type;
 
-    private static Md32xRuntimeData rt;
+    private final SystemClock clock;
+    private static MdRuntimeData rt;
 
-    private Md32xRuntimeData(SystemType type) {
+    private MdRuntimeData(SystemType type, SystemClock clock) {
         this.type = type;
+        this.clock = clock;
         boolean id = false;
         if (type == SystemType.S32X) {
             id = Sh2Config.get().ignoreDelays;
@@ -37,17 +39,17 @@ public class Md32xRuntimeData {
         ignoreDelays = id;
     }
 
-    public static Md32xRuntimeData newInstance(SystemType type) {
+    public static MdRuntimeData newInstance(SystemType type, SystemClock clock) {
         if (rt != null) {
             LOG.error("Previous instance has not been released! {}", rt);
         }
-        Md32xRuntimeData mrt = new Md32xRuntimeData(type);
+        MdRuntimeData mrt = new MdRuntimeData(type, clock);
         rt = mrt;
         return mrt;
     }
 
-    public static Md32xRuntimeData releaseInstance() {
-        Md32xRuntimeData m = rt;
+    public static MdRuntimeData releaseInstance() {
+        MdRuntimeData m = rt;
         rt = null;
         return m;
     }
@@ -118,5 +120,9 @@ public class Md32xRuntimeData {
 
     public static CpuDeviceAccess getAccessTypeExt() {
         return rt.accessType;
+    }
+
+    public static SystemClock getSystemClockExt() {
+        return rt.clock;
     }
 }

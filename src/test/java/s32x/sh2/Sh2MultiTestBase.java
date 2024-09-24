@@ -1,6 +1,8 @@
 package s32x.sh2;
 
 import omegadrive.SystemLoader;
+import omegadrive.system.SystemProvider;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Util;
 import org.junit.jupiter.api.BeforeEach;
 import s32x.MarsRegTestUtil;
@@ -8,7 +10,6 @@ import s32x.bus.Sh2BusImpl;
 import s32x.sh2.Sh2Helper.Sh2Config;
 import s32x.sh2.prefetch.Sh2CacheTest;
 import s32x.util.MarsLauncherHelper;
-import s32x.util.Md32xRuntimeData;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -56,8 +57,8 @@ public class Sh2MultiTestBase {
         rom = lc.memory.getMemoryDataCtx().rom;
         lc.s32XMMREG.aden = 1;
         memory = (Sh2BusImpl) lc.memory;
-        Md32xRuntimeData.releaseInstance();
-        Md32xRuntimeData.newInstance(SystemLoader.SystemType.S32X);
+        MdRuntimeData.releaseInstance();
+        MdRuntimeData.newInstance(SystemLoader.SystemType.S32X, SystemProvider.NO_CLOCK);
         masterCtx = lc.masterCtx;
         sh2 = lc.sh2;
         resetMemory();

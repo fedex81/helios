@@ -6,10 +6,10 @@ import omegadrive.cpu.CpuFastDebug.DebugMode;
 import omegadrive.cpu.CpuFastDebug.PcInfoWrapper;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
 import s32x.dict.S32xDict;
-import s32x.util.Md32xRuntimeData;
 
 import java.util.Map;
 import java.util.function.Predicate;
@@ -172,9 +172,9 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
     @Override
     public String getInstructionOnly(int pc) {
         assert pc != ctx.PC;
-        int delay = Md32xRuntimeData.getCpuDelayExt();
+        int delay = MdRuntimeData.getCpuDelayExt();
         String res = Sh2Helper.getInstString(ctx.sh2TypeCode, pc, memory.read16(pc));
-        Md32xRuntimeData.resetCpuDelayExt(delay);
+        MdRuntimeData.resetCpuDelayExt(delay);
         return res;
     }
 
