@@ -566,7 +566,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private void ioWrite(int address, Size size, int data) {
         switch (size) {
             case BYTE:
-                assert (address & 1) == 1;
+                if ((address & 1) == 0) { //Turrican (USA, Europe) (Unl)
+                    LogHelper.logWarnOnce(LOG, "Ignore byte-wide writes on even addr: {} {}", th(address), size);
+                    return;
+                }
             case WORD:
                 ioWriteInternal(address, data, size);
                 break;
