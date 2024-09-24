@@ -149,7 +149,13 @@ public class S32XMMREG implements Device {
                 res = dmaFifoControl.read(regSpec, cpu, address & S32xDict.S32X_REG_MASK, size);
             }
             case PWM -> res = pwm.read(cpu, regSpec, address & S32xDict.S32X_MMREG_MASK, size);
-            case COMM -> res = BufferUtil.readBufferReg(regContext, regSpec, address, size);
+            case COMM -> {
+                res = BufferUtil.readBufferReg(regContext, regSpec, address, size);
+                //fifa32x hack
+//                if (cpu == MASTER && regSpec == COMM6) {
+//                    MdRuntimeData.addCpuDelayExt(32);
+//                }
+            }
             default -> {
                 assert (regSpec.addr >= MD_DREQ_SRC_ADDR_H.addr ? cpu != Z80 : true) : regSpec;
                 res = BufferUtil.readBufferReg(regContext, regSpec, address, size);
