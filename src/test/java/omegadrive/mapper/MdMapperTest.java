@@ -9,7 +9,6 @@ import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
 import org.junit.Assert;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -54,7 +53,6 @@ public class MdMapperTest {
 
     @Test
     public void testNoMapperSram() {
-        Assume.assumeTrue(false); //TODO fails locally
         Assume.assumeFalse(RUNNING_IN_GITHUB);
         prepareRomData(0x10_0000, "SEGA GENESIS"); //8 Mbit
         prepareSramHeader();
@@ -62,9 +60,7 @@ public class MdMapperTest {
     }
 
     //see VR 32x japan
-//    @Test
-    @Ignore
-    //TODO fix
+    @Test
     public void testMapper() {
         Assume.assumeFalse(RUNNING_IN_GITHUB);
         prepareRomData(0x50_0000, "SEGA GENESIS"); //40 Mbit
@@ -119,7 +115,6 @@ public class MdMapperTest {
     @Test
     //NOTE: fails in github actions
     public void testNoMapperSramDodgy() {
-        Assume.assumeTrue(false); //TODO fails locally
         Assume.assumeFalse(RUNNING_IN_GITHUB);
         prepareRomData(0x20_0000, "SEGA GENESIS"); //16 Mbit
         testSramInternal();
@@ -145,9 +140,7 @@ public class MdMapperTest {
     /**
      * Astebros demo, switches on sram but in read-only mode, it then expects to be able to write to it.
      */
-//    @Test
-    @Ignore
-    //TODO fix
+    @Test
     public void testSramReadOnlyFlag() {
         prepareRomData(0x50_0000, "SEGA GENESIS"); //40 Mbit
         GenesisBusProvider bus = loadRomData();
@@ -180,7 +173,7 @@ public class MdMapperTest {
         //unmapped read
         testBusRead(bus, address, 0xFFFF_FFFF);
         testBusRead(bus, address1, val1);
-        testBusRead(bus, address2, 0); //sram contains 0xFFs
+        testBusRead(bus, address2, 0xFFFF_FFFF); //sram contains 0xFFs
 
         //test write
         int val2 = 0x22_44_66_88;

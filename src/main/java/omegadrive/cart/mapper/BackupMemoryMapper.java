@@ -35,6 +35,8 @@ public abstract class BackupMemoryMapper {
 
     private final static Logger LOG = LogHelper.getLogger(BackupMemoryMapper.class.getSimpleName());
 
+    public static final byte DEFAULT_SRAM_BYTE = (byte) 0xFF;
+
     protected final String defaultSramFolder;
 
     protected final String sramFolder;
@@ -91,7 +93,7 @@ public abstract class BackupMemoryMapper {
         LOG.info("Creating backup memory file: {}", backupFile);
         sram = new byte[sramSize];
         //see GenTechBulletins, StarTrek echoes fails when reading sram with all 0s
-        Arrays.fill(sram, (byte) 0xFF);
+        Arrays.fill(sram, DEFAULT_SRAM_BYTE);
         FileUtil.writeFileSafe(backupFile, sram);
         return sram.length;
     }

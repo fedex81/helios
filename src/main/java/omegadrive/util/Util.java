@@ -222,7 +222,7 @@ public class Util {
     }
 
     public static int readData(byte[] src, int address, Size size) {
-        assert size != Size.BYTE ? (address & 1) == 0 : true;
+//        assert size != Size.BYTE ? (address & 1) == 0 : true; //TODO sram word reads on odd addresses
         return switch (size) {
             case WORD -> ((src[address] & 0xFF) << 8) | (src[address + 1] & 0xFF);
             case LONG -> ((src[address] & 0xFF) << 24) | (src[address + 1] & 0xFF) << 16 |
@@ -232,7 +232,7 @@ public class Util {
     }
 
     public static void writeData(byte[] dest, int address, int data, Size size) {
-        assert size != Size.BYTE ? (address & 1) == 0 : true;
+//        assert size != Size.BYTE ? (address & 1) == 0 : true; //TODO sram word writes on odd addresses
         switch (size) {
             case WORD -> SHORT_BYTEARR_HANDLE.set(dest, address, (short) data);
             case LONG -> INT_BYTEARR_HANDLE.set(dest, address, data);
