@@ -15,7 +15,7 @@ jobs:
         java-version: 1.17
     - name: Build with Gradle
       run: ./gradlew packageDistribution
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: helios-SNAPSHOT-${{ github.sha }}-${{ github.run_number }}
         path: build/dist
