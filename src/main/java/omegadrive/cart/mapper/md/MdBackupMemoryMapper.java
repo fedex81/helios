@@ -111,6 +111,9 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
 //            assert size == Size.BYTE : size; //TODO MdMapperTest writes word/long, check sw doing that
             int res = Util.readDataMask(sram, address, sramMask, size);
             if (verbose) LOG.info("SRAM read at: {} {}, result: {} ", address & 0xFFFF, size, res);
+            if (size != Size.BYTE && (address & 1) == 1) {
+                LOG.error("sram read: {} {}, val: {}", th(address), size, th(res));
+            }
             return res;
         }
         return baseMapper.readData(address, size);
@@ -127,6 +130,9 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
             if (verbose) LOG.info("SRAM write at: {} {}, data: {} ", address, size, data);
 //            assert size == Size.BYTE : size; //TODO MdMapperTest writes word/long, check sw doing that
             Util.writeDataMask(sram, address, data, sramMask, size);
+            if (size != Size.BYTE && (address & 1) == 1) {
+                LOG.error("sram write: {} {}, val: {}", th(address), size, th(data));
+            }
         }
     }
 

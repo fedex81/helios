@@ -318,7 +318,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             return msuMdHandler.handleMsuMdRead(address, size);
         } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {
             //NOTE genTest does: cmpi.l #'MARS',$A130EC  ;32X
-            timeLineControlRead(address, size);
+            return timeLineControlRead(address, size);
         } else if (address >= TMSS_AREA1_START && address <= TMSS_AREA1_END) {
             LOG.warn("TMSS read enable cart");
         } else if (address >= TMSS_AREA2_START && address <= TMSS_AREA2_END) {
@@ -346,7 +346,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
         } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
             z80ResetControlWrite(data, size);
         } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {
-            assert address <= BANK_SET_END_ADDRESS ? size == Size.BYTE : true;
+            assert size != Size.LONG;
             timeLineControlWrite(address, data, size);
         } else if (address >= TMSS_AREA1_START && address <= TMSS_AREA1_END) {
             // used to lock/unlock the VDP by writing either "SEGA" to unlock it or anything else to lock it.
@@ -393,6 +393,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
      * * <p>
      */
     private void timeLineControlWrite(int addressL, int data, Size size) {
+        if (size == Size.WORD) {
+            LogHelper.logWarnOnce(LOG, "timeLineControlWrite should be byte-wide {} {}", th(addressL), size);
+            addressL |= 1;
+        }
         if (addressL >= Ssf2Mapper.BANK_SET_START_ADDRESS && addressL <= BANK_SET_END_ADDRESS) {
             LOG.info("Mapper bank set, address: {} , data: {}", th(addressL),
                     th(data));
@@ -549,9 +553,9 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             default:
                 if (address >= 0xE && address < 0x20) {
                     data = Util.readData(serialPortData, address - 0xE, size);
-                    LOG.info("Reading serial control: {} {}, data: {}", th(address), size, th(data));
+                    LogHelper.logWarnOnce(LOG, "Reading serial control: {} {}, data: {}", th(address), size, th(data));
                 } else {
-                    LOG.error("Unexpected ioRead: {}", th(addressL));
+                    LogHelper.logWarnOnce(LOG, "Unexpected ioRead: {}", th(addressL));
                 }
                 break;
         }
@@ -718,8 +722,8 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private int vdpReadInternal(int addressL, Size size) {
         boolean valid = (addressL & VDP_VALID_ADDRESS_MASK) == VDP_ADDRESS_SPACE_START;
         if (!valid) {
-            LOG.error("Illegal VDP read, address {}, size {}", th(addressL), size);
-            return 0xFF;
+            LogHelper.logWarnOnce(LOG, "Illegal VDP read at {} {}", th(addressL), size);
+            return size.getMask();
         }
         int address = addressL & 0x1F; //low 5 bits
         if (address <= 0x07) {

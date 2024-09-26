@@ -163,7 +163,7 @@ public class CpuFastDebug {
 
         final int area = pc >>> ctx.pcAreaShift;
         final int mask = ctx.pcAreasMaskMap[area];
-        assert mask > 0;
+        assert mask > 0 : th(pc);
         final int pcMasked = pc & mask;
         final int opcode = debugInfoProvider.getOpcode();
 

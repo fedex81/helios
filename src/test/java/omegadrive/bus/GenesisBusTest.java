@@ -25,6 +25,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
+import static omegadrive.bus.model.GenesisBusProvider.SRAM_LOCK;
+
 /**
  * GenesisBusTest
  *
@@ -85,6 +87,19 @@ public class GenesisBusTest {
         testIoReadInternal(ctrlPort, 0xCCDDAAFF, Size.WORD);
     }
 
+    /**
+     * Sega Sound Tool (USA) (v2.2) (Program).md
+     * <p>
+     * 68M 00000d06   33fc 0001 00a130f0      move.w   #$0001,$00a130f0
+     */
+    @Test
+    public void timeLineControlWrite_WORD() {
+        int val = 1;
+        bus.write(SRAM_LOCK - 1, val, Size.WORD);
+        int res = bus.read(SRAM_LOCK, Size.BYTE);
+        Assertions.assertEquals(val, res);
+    }
+
     private void testIoReadInternal(int ctrlPort, int val, Size size) {
         int res, expWord, expByte = val & 0xFF;
         bus.write(ctrlPort, val, size);
@@ -94,4 +109,6 @@ public class GenesisBusTest {
         expWord = expByte | ((expByte << 8) & 0xFF00);
         Assertions.assertEquals(expWord, res);
     }
+
+
 }

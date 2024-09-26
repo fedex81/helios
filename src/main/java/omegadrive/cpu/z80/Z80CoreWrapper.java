@@ -33,6 +33,8 @@ import z80core.Z80State;
 
 import java.nio.ByteBuffer;
 
+import static omegadrive.util.Util.th;
+
 public class Z80CoreWrapper implements Z80Provider {
 
     public final static boolean STOP_ON_EXCEPTION;
@@ -144,6 +146,7 @@ public class Z80CoreWrapper implements Z80Provider {
         z80Core.setIFF1(false);
         z80Core.setIFF2(false);
         z80Core.setIM(Z80.IntMode.IM0);
+        LOG.info("Z80 Reset, PC: {}", th(z80Core.getRegPC()));
     }
 
     //If the Z80 has interrupts disabled when the frame interrupt is supposed
