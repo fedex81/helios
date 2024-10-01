@@ -168,11 +168,13 @@ public class McdWordRamHelper {
 
     public void writeCellMapped(int addr, int data, Size size) {
         assert memoryContext.wramSetup.mode == _1M;
-        if (size != Size.WORD) {
-            LogHelper.logWarnOnceForce(LOG, "TODO check, WramCell {} write: {} {}", size, th(addr), th(data));
-        }
         switch (size) {
-            case BYTE, WORD -> writeCell(addr, data);
+            case BYTE -> {
+                int val = readCellMapped(addr, Size.WORD);
+                ArrayEndianUtil.setByteInWordBE(val, data, addr & 1);
+                writeCell(addr & ~1, val);
+            }
+            case WORD -> writeCell(addr, data);
             case LONG -> {
                 writeCell(addr, data >> 16);
                 writeCell(addr + 2, data);
@@ -181,13 +183,15 @@ public class McdWordRamHelper {
     }
 
     public int readCellMapped(int address, Size size) {
-        assert size == Size.WORD;
+        assert size != Size.LONG;
         assert MdRuntimeData.getAccessTypeExt() == M68K;
-        LogHelper.logWarnOnceForce(LOG, "Cell image read: {}", memoryContext.wramSetup);
-        assert size == Size.WORD;
         int assignedBank = memoryContext.wramSetup.cpu == M68K ? 0 : 1;
         int otherBank = ~assignedBank & 1;
-        return readWordRamBank(otherBank, address);
+        int word = readWordRamBank(otherBank, address & ~1);
+        if (size == Size.BYTE) {
+            return (address & 1) == 0 ? word >> 8 : word;
+        }
+        return word;
     }
 
     public int readDotMapped(int address, Size size) {
@@ -217,8 +221,6 @@ public class McdWordRamHelper {
     }
 
     private void writeCell(int a, int value) {
-        LogHelper.logWarnOnceForce(LOG, "Cell image write: {}", memoryContext.wramSetup);
-        assert memoryContext.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M;
         int assignedBank = memoryContext.wramSetup.cpu == M68K ? 0 : 1;
         int otherBank = ~assignedBank & 1;
         writeWordRamBank(otherBank, linearCellMap[a & MCD_WORD_RAM_1M_MASK], value);
