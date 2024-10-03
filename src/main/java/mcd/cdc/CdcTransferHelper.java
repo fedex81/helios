@@ -12,7 +12,6 @@ import static mcd.cdc.CdcImpl.verbose;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.START_MCD_SUB_WORD_RAM_1M;
 import static mcd.dict.MegaCdDict.START_MCD_SUB_WORD_RAM_2M;
-import static mcd.pcm.McdPcm.PCM_START_WAVE_DATA_WINDOW;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.th;
 
@@ -25,6 +24,9 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
 
     private final static Logger LOG = LogHelper.getLogger(CdcTransferHelper.class.getSimpleName());
 
+    //$FF800A CDC DMA ADDRESS register
+    //PCM address: 10 valid bits (0x3FF), reg value is then << 3 => mask = (0x400 << 3) - 1 = 0x1FFF
+    public static final int PCM_ADDRESS_MASK = 0x1FFF;
     private Cdc cdc;
     private CdcModel.CdcTransfer t;
     private MegaCdMemoryContext memoryContext;
@@ -110,11 +112,18 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
             }
             case DMA_PCM_4 -> {
                 assert t.length > 0;
-                //PCM DMA requires two 8-bit writes per transfer
-                writePcm(t.address, data >> 8);
+                //TODO hack testDma2 error 0x12
+//                if(t.length == 8 && t.address == 8){
+//                    t.length++;
+//                }
+                //TODO hack testDma2 error 0x12
 
+                //PCM DMA requires two 8-bit writes per transfer
+                //address gets halved by the PCM chip, hence the double increment
+                writePcm(t.address, data >> 8);
                 if (t.length - 1 >= 0) {
-                    writePcm(t.address + 1, data & 0xFF);
+                    writePcm(t.address + 2, data & 0xFF);
+                    t.address += 2;
                 }
             }
             default -> {
@@ -132,10 +141,12 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
         cdc.recalcRegValue(MCD_CDC_MODE);
     }
 
+    //Brutal, intro
     private void writePcm(int address, int data) {
-        McdPcm.pcm.write((PCM_START_WAVE_DATA_WINDOW + address) << 1, data, Size.BYTE);
+        address &= PCM_ADDRESS_MASK;
         if (verbose) LOG.info("CDC,DMA_PCM,pcm_ram[{}]={},srcAddrWord={},len={}",
-                th((PCM_START_WAVE_DATA_WINDOW + address) << 1), th(data & 0xFF), th(t.source), th(t.length));
+                th(address & PCM_ADDRESS_MASK), th(data & 0xFF), th(t.source), th(t.length));
+        McdPcm.pcm.pcmDataWrite(address & PCM_ADDRESS_MASK, data, Size.BYTE);
     }
 
     @Override

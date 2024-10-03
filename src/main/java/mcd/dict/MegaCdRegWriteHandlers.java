@@ -65,8 +65,8 @@ public class MegaCdRegWriteHandlers {
 
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg4_S = (ctx, d) -> {
         var buff = ctx.getGateSysRegs(SUB_M68K);
-        //DSR, EDT can only be set to 0
-        writeBufferRaw(buff, MCD_CDC_MODE.addr, d & 7, Size.BYTE); //mcd-verificator
+        //mcd-ver: DSR, EDT can only be set to 0 by SUB
+        writeBufferRaw(buff, MCD_CDC_MODE.addr, d & 7, Size.BYTE);
         setSharedBits(ctx, SUB_M68K, d & 7, DD0, DD1, DD2, DSR, EDT);
     };
 

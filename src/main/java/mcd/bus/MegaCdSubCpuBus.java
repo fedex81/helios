@@ -192,7 +192,8 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
             memCtx.writeProgRam(address & MCD_PRG_RAM_MASK, data, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address <= END_MCD_SUB_GATE_ARRAY_REGS) {
             handleMegaCdExpWrite(address, data, size);
-        } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
+        } else if (address >= START_MCD_SUB_PCM_AREA && address < END_MCD_SUB_PCM_AREA) {
+            assert address < 0xFF_4000;
             pcm.write(address, data, size);
         } else if (address >= START_MCD_SUB_BRAM_AREA && address < END_MCD_SUB_BRAM_AREA) {
             writeBackupRam(memCtx.backupRam, address, data, size);

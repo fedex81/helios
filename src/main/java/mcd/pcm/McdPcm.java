@@ -160,11 +160,9 @@ public class McdPcm implements BufferUtil.StepDevice {
         address &= PCM_ADDRESS_MASK;
         value &= size.getMask();
         if (address >= PCM_START_WAVE_DATA_WINDOW) {
-            //NOTE, this only support writing to [0x2000-0x4000] which in turns maps to [0-0x1000] | waveBank
+            //NOTE, this only support writing to [0x2000-0x4000) which in turns maps to [0-0x1000) | waveBank
             assert address >= 0x2000 && address < 0x4000 : th(address);
-            address = waveBank | ((address & PCM_WAVE_DATA_WINDOW_MASK_EXT) >> 1);
-//            LOG.info("PCM W {}(ext {}) val: {} {}", th(address),th(ta), th(value), size);
-            BufferUtil.writeBufferRaw(waveData, address, value, Size.BYTE);
+            pcmDataWrite(address, value, size);
         } else if (address < PCM_REG_MASK) {
             RegSpecMcd regSpec = getPcmReg(address);
             logAccessReg(regSpec, SUB_M68K, address, size, false);
@@ -173,6 +171,12 @@ public class McdPcm implements BufferUtil.StepDevice {
             LOG.error("Unhandled write: {}, {} {}", th(address), th(value), size);
             assert false;
         }
+    }
+
+    public void pcmDataWrite(int address, int value, Size size) {
+        address = waveBank | ((address & PCM_WAVE_DATA_WINDOW_MASK_EXT) >> 1);
+//        LOG.info("PCM W {}(ext {}) val: {} {}", th(address),th(ta), th(value & size.getMask()), size);
+        BufferUtil.writeBufferRaw(waveData, address, value, Size.BYTE);
     }
 
     private void writeRegByte(RegSpecMcd regSpec, int address, int value) {
