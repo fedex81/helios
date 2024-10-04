@@ -181,6 +181,8 @@ class CddImpl implements Cdd {
         logStatus(false);
     }
 
+    private boolean once = false;
+    private int prevStatus1 = 0;
 
     /**
      * this should be called at 75hz
@@ -191,12 +193,37 @@ class CddImpl implements Cdd {
             return;
         }
         interruptHandler.raiseInterrupt(INT_CDD);
+        if (verbose) LOG.info("CDD interrupt");
         /* drive latency */
         if (cddContext.io.latency > 0) {
+            /**
+             * TODO
+             * One little detail that's worth mentioning, is that seeking has two consequences for CDD status.
+             * The first is that it's not consistently happening every 1/75th of a second anymore.
+             * The other is that periodically the drive seems to lose sync and the CDD gives a not-ready status.
+             * This not-ready status is actually important because the BIOS is a buggy piece of crap and
+             * only updates it's knowledge of the current track number after receiving such a status even though
+             * it's periodically getting track number updates from the CDD.
+             */
             cddContext.io.latency--;
-            if (cddContext.io.latency == 0) {
-                updateStatus(0, cddContext.io.status.ordinal());
+            if (!once && cddContext.statusRegs[0] != CddRequest.NotReady.ordinal()) {
+                prevStatus1 = cddContext.statusRegs[1];
+                updateStatus(1, CddRequest.NotReady.ordinal());
+                once = true;
             }
+            if (cddContext.io.latency == 0) {
+                updateStatus(0, cddContext.io.status.ordinal()); //for seek_pause and seek_play
+                updateStatus(1, prevStatus1);
+                once = false;
+                //TODO needed??
+                if (cddContext.io.status == Paused) {
+                    cdc.cdc_decoder_update(cddContext.io.sector, cddContext.io.track, cddContext.io.status);
+                }
+            }
+            return;
+        }
+
+        if (cddContext.io.status == ReadingTOC) {
             return;
         }
 
@@ -220,7 +247,7 @@ class CddImpl implements Cdd {
             if (isDataTrack) {
                 /* CD-ROM sector header */
                 /* decode CD-ROM track sector */
-                cdc.cdc_decoder_update(cddContext.io.sector);
+                cdc.cdc_decoder_update(cddContext.io.sector, cddContext.io.track, cddContext.io.status);
                 setSector(cddContext.io.sector + 1);
             } else {
                 /* check against audio track start index */
@@ -230,16 +257,16 @@ class CddImpl implements Cdd {
                 }
 
                 /* audio blocks are still sent to CDC as well as CD DAC/Fader */
-                cdc.cdc_decoder_update(0);
+                cdc.cdc_decoder_update(cddContext.io.sector, cddContext.io.track, cddContext.io.status);
                 //stepCdda increases the sector
             }
         } else {
             /* CDC decoder is still running while disc is not being read (fixes MCD-verificator CDC Flags Test #30) */
-            cdc.cdc_decoder_update(0);
+            cdc.cdc_decoder_update(cddContext.io.sector, cddContext.io.track, cddContext.io.status);
         }
         int nt = inTrack(cddContext.io.sector);
         if (cddContext.io.sector >= 0 && nt != cddContext.io.track) {
-            LOG.error("Track changed: {}->{}, sector: {}", cddContext.io.track, nt, cddContext.io.sector);
+            LOG.warn("Track changed: {}->{}, EOD track sector: {}", cddContext.io.track, nt, cddContext.io.sector);
             setTrack(nt);
         }
 
@@ -251,9 +278,9 @@ class CddImpl implements Cdd {
     void cdd_process() {
         /* Process CDD command */
         CddCommand cddCommand = Cdd.commandVals[cddContext.commandRegs[0]];
-        if (verbose) LOG.info("CDD {}({})", cddCommand, cddCommand.ordinal());
         final boolean isAudio = cddContext.io.track > 0 ?
                 ExtendedCueSheet.isAudioTrack(extCueSheet, cddContext.io.track) : false;
+        String extraInfo = "";
         switch (cddCommand) {
             /* Get Drive Status */
             case DriveStatus -> {
@@ -274,20 +301,21 @@ class CddImpl implements Cdd {
                         int lba = cddContext.io.sector + PREGAP_LEN_LBA;
                         CueFileParser.toMSF(lba, msfHolder);
                         /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
-                        updateStatusesMsf(0, (isAudio ? 0 : 1) << 2, msfHolder);
+                        updateStatusesMsf(0, getFlags(isAudio), msfHolder);
                     }
                     /* otherwise, check if RS2-RS8 need to be updated */
                     else if (cddContext.statusRegs[1] == 0x00) {
                         /* current absolute time */
                         int lba = hasMedia ? cddContext.io.sector + PREGAP_LEN_LBA : 0;
                         CueFileParser.toMSF(lba, msfHolder);
-                        updateStatusesMsf(cddContext.statusRegs[1], (isAudio ? 0 : 1) << 2, msfHolder);
+                        updateStatusesMsf(cddContext.statusRegs[1], getFlags(isAudio), msfHolder);
                     } else if (cddContext.statusRegs[1] == 0x01) {
                         CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                         /* current track relative time */
                         int lba = cddContext.io.sector - etd.absoluteSectorStart + PREGAP_LEN_LBA;
                         CueFileParser.toMSF(lba, msfHolder);
-                        updateStatusesMsf(cddContext.statusRegs[1], (isAudio ? 0 : 1) << 2, msfHolder);
+                        updateStatusesMsf(cddContext.statusRegs[1], getFlags(isAudio), msfHolder);
+
                     } else if (cddContext.statusRegs[1] == 0x02) {
                         /* current track number */
 //                        scd.regs[0x3a>>1].w = (cdd.index < cdd.toc.last) ? lut_BCD_16[cdd.index + 1] : 0x0A0A;
@@ -317,10 +345,9 @@ class CddImpl implements Cdd {
                 int lba = CueFileParser.toSector(cddContext.commandRegs[2], cddContext.commandRegs[3],
                         cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6],
                         cddContext.commandRegs[7]) - PREGAP_LEN_LBA;
-//                    ((scd.regs[0x44>>1].byte.h * 10 + scd.regs[0x44>>1].byte.l) * 60 +
-//                    (scd.regs[0x46>>1].byte.h * 10 + scd.regs[0x46>>1].byte.l)) * 75 +
-//                    (scd.regs[0x48>>1].byte.h * 10 + scd.regs[0x48>>1].byte.l) - 150;
                 lba -= LBA_READAHEAD_LEN;
+                CueFileParser.toMSF((lba + LBA_READAHEAD_LEN + PREGAP_LEN_LBA), msfHolder);
+                extraInfo += "lba " + (lba + LBA_READAHEAD_LEN + PREGAP_LEN_LBA) + ", msf " + msfHolder;
 
                 /* CD drive latency */
                 if (cddContext.io.latency == 0) {
@@ -398,8 +425,8 @@ class CddImpl implements Cdd {
                 int lba = CueFileParser.toSector(cddContext.commandRegs[2], cddContext.commandRegs[3],
                         cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6],
                         cddContext.commandRegs[7]) - PREGAP_LEN_LBA;
-                lba -= LBA_READAHEAD_LEN;
-
+                CueFileParser.toMSF((lba + PREGAP_LEN_LBA), msfHolder);
+                extraInfo += "lba " + (lba + PREGAP_LEN_LBA) + ", msf " + msfHolder;
                 /* CD drive latency */
                 if (cddContext.io.latency == 0) {
                     cddContext.io.latency = 1 + 10 * CD_LATENCY;
@@ -540,8 +567,9 @@ class CddImpl implements Cdd {
                 assert false;
             }
         }
+        if (verbose) LOG.info("CDD process, {}({}) {}", cddCommand, cddCommand.ordinal(), extraInfo);
         //TODO does this happen?
-        clearCommandRegs();
+//      clearCommandRegs();
         statusChecksum();
     }
 
@@ -554,62 +582,74 @@ class CddImpl implements Cdd {
             /* Current Absolute Time (MM:SS:FF) */
             case AbsoluteTime -> {
                 int lba = cddContext.io.sector + PREGAP_LEN_LBA;
+                if (cddContext.io.track == LEADINNUM) {
+                    updateStatus(1, CddRequest.NotReady.ordinal());
+                    break;
+                }
                 CueFileParser.toMSF(lba, msfHolder);
-                /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
-                int rs8 = (isAudio ? 0 : 1) << 2;
                 updateStatus(0, cddContext.io.status.ordinal());
-                updateStatusesMsf(request.ordinal(), rs8, msfHolder);
+                updateStatusesMsf(request.ordinal(), getFlags(isAudio), msfHolder);
             }
             /* Current Track Relative Time (MM:SS:FF) */
             case RelativeTime -> {
+                if (cddContext.io.track == LEADINNUM) {
+                    updateStatus(1, CddRequest.NotReady.ordinal());
+                    break;
+                }
                 CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                 /* current track relative time */
-                int lba = Math.abs(cddContext.io.sector - etd.absoluteSectorStart);
+                int lba = PREGAP_LEN_LBA + cddContext.io.sector - etd.absoluteSectorStart;
+//                        Math.abs(cddContext.io.sector - etd.absoluteSectorStart) + PREGAP_LEN_LBA;
                 CueFileParser.toMSF(lba, msfHolder);
-                /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
-                int rs8 = (isAudio ? 0 : 1) << 2;
                 updateStatus(0, cddContext.io.status.ordinal());
-                updateStatusesMsf(request.ordinal(), rs8, msfHolder);
+                updateStatusesMsf(request.ordinal(), getFlags(isAudio), msfHolder);
             }
             /* Current Track Number */
             case TrackInformation -> {
+                if (cddContext.io.track == LEADINNUM) {
+                    updateStatus(1, CddRequest.NotReady.ordinal());
+                    break;
+                }
                 /* Disk Control Code (?) in RS6 */
-//                int rs6 = 0;
+                int rs6 = 0; //TODO
                 //rs2-rs3
-                int rs2 = cddContext.io.track <= extCueSheet.numTracks ? cddContext.io.track / 10 : 0xA;
-                int rs3 = cddContext.io.track <= extCueSheet.numTracks ? cddContext.io.track % 10 : 0xA;
-                //rs4-rs7 (start/index lba??)
-                int rs5 = 0, rs6 = 0, rs7 = 0;
+                int tno = cddContext.io.track <= extCueSheet.numTracks ? cddContext.io.track : LEADOUTNUM;
+                int rs2 = tno / 10;
+                int rs3 = tno % 10;
                 updateStatus(0, cddContext.io.status.ordinal());
-                updateStatuses(request.ordinal(), rs2, rs3, 0, rs5, rs6, rs7, 0);
+                updateStatuses(request.ordinal(), rs2, rs3, 0, 0, rs6, 0, getFlags(isAudio));
             }
-            /* Total length (MM:SS:FF) */
+            /* Total length (MM:SS:FF), TOCO */
             case DiscCompletionTime -> {
                 int lba = hasMedia ? extCueSheet.sectorEnd + PREGAP_LEN_LBA : 0;
                 CueFileParser.toMSF(lba, msfHolder);
                 updateStatus(0, cddContext.io.status.ordinal());
-                updateStatusesMsf(request.ordinal(), 0, msfHolder);
+                updateStatusesMsf(request.ordinal(), getFlags(isAudio), msfHolder);
             }
-            /* First & Last Track Numbers */
+            /* First & Last Track Numbers, TOCT */
             case DiscTracks -> {
                 int firstTrack = hasMedia ? 1 : 0;
                 int lastTrack = hasMedia ? extCueSheet.numTracks : 0;
                 updateStatus(0, cddContext.io.status.ordinal());
                 /* Drive Version (?) in RS6-RS7 */
                 int rs6 = 0, rs7 = 0;
-                /* Lead-In flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
-                int rs8 = 0;
                 updateStatuses(request.ordinal(), firstTrack / 10, firstTrack % 10,
-                        lastTrack / 10, lastTrack % 10, rs6, rs7, rs8);
+                        lastTrack / 10, lastTrack % 10, rs6, rs7, getFlags(isAudio));
             }
-            /* Track Start Time (MM:SS:FF) */
+            /* Track Start Time (MM:SS:FF), TOCN */
             case TrackStartTime -> {
                 int track = cddContext.commandRegs[4] * 10 + cddContext.commandRegs[5];
                 extraInfo += "Track: 0x" + th(track);
                 CdModel.ExtendedTrackData extTrackData = ExtendedCueSheet.getExtTrack(extCueSheet, track);
+                if (extTrackData == CdModel.ExtendedTrackData.NO_TRACK) {
+                    updateStatus(1, CddRequest.NotReady.ordinal());
+                    updateStatus(8, getFlags(isAudio));
+                    break;
+                }
+                extraInfo += "Track: 0x" + th(track);
                 CueFileParser.toMSF(extTrackData.absoluteSectorStart + PREGAP_LEN_LBA, msfHolder);
                 /* RS6 bit 3 is set for CD-ROM track, Track Number (low digit) */
-                int status6 = ((isAudio ? 0 : 1) << 3) | (msfHolder.frame / 10);
+                int status6 = (isAudio ? 0 : 0x8) | (msfHolder.frame / 10);
                 updateStatus(0, cddContext.io.status.ordinal());
                 updateStatuses(request.ordinal(), msfHolder.minute / 10, msfHolder.minute % 10,
                         msfHolder.second / 10, msfHolder.second % 10, status6, msfHolder.frame % 10, track % 10);
@@ -626,6 +666,19 @@ class CddImpl implements Cdd {
             }
         }
         if (verbose) LOG.info("CDD Request {}({}): {}", request, request.ordinal(), extraInfo);
+    }
+
+    private int getFlags(boolean isAudio) {
+        int rs8 = isAudio ? FLAGS_AUDIO : FLAGS_DATA;
+        //leadout shows the absolute time as well
+        //TODO mute is linked to D/M bit
+        if (cddContext.io.status != Playing) {
+            rs8 |= FLAGS_iEMPHASIS | FLAGS_aMUTE;
+        } else {
+            rs8 |= FLAGS_iEMPHASIS + FLAGS_iMUTE;
+            //TODO audio with emphasis ??
+        }
+        return rs8;
     }
 
     //should be called at 44.1 khz
@@ -667,7 +720,7 @@ class CddImpl implements Cdd {
             return;
         }
         setIoStatus(LeadOut);
-        setTrack(0xAA);
+        setTrack(LEADOUTNUM);
     }
 
     //reg36 MSB
@@ -677,7 +730,7 @@ class CddImpl implements Cdd {
 
     private int inTrack(int lba) {
         for (CdModel.ExtendedTrackData ext : extCueSheet.extTracks) {
-            if (lba >= ext.absoluteSectorStart && lba <= ext.absoluteSectorEnd) {
+            if (lba >= ext.absoluteSectorStart && lba < ext.absoluteSectorEnd) {
                 return ext.trackData.getNumber();
             }
         }
@@ -704,7 +757,10 @@ class CddImpl implements Cdd {
 
     private void setSector(int s) {
         if (s != cddContext.io.sector) {
-            if (verbose) LOG.info("Sector changed: {} -> {}", cddContext.io.sector, s);
+            if (verbose) {
+                CueFileParser.toMSF(s + PREGAP_LEN_LBA, msfHolder);
+                LOG.info("Sector changed: {} -> {}({}), msf: {}", cddContext.io.sector, s, s + PREGAP_LEN_LBA, msfHolder);
+            }
             cddContext.io.sector = s;
         }
     }

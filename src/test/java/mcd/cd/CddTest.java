@@ -18,7 +18,6 @@ import static mcd.cd.CddTestHelper.*;
 import static mcd.cdd.Cdd.CddCommand.SeekPause;
 import static mcd.cdd.Cdd.CddCommand.SeekPlay;
 import static mcd.cdd.Cdd.LBA_READAHEAD_LEN;
-import static mcd.cdd.Cdd.PREGAP_LEN_LBA;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 
 /**
@@ -47,7 +46,7 @@ public class CddTest extends McdRegTestBase {
         insertDiscEnableHock(lc, extendedCueSheet);
         cddRequest(lc, CddRequest.DiscCompletionTime);
         lc.cdd.step(1);
-        Assertions.assertEquals("93.000248.05", getStatusString());
+        Assertions.assertEquals("93.000248.50", getStatusString());
     }
 
     @Test
@@ -70,7 +69,7 @@ public class CddTest extends McdRegTestBase {
         testSeekInternal(SeekPause, CddStatus.Paused, 145);
         clearCmdReg(lc);
         cddRequest(lc, CddRequest.RelativeTime);
-        Assertions.assertEquals("41.000008.4e", getStatusString());
+        Assertions.assertEquals("41.000167.57", getStatusString());
     }
 
     /**
@@ -101,15 +100,17 @@ public class CddTest extends McdRegTestBase {
      */
     @Test
     public void testRelativeTime2() {
-        int[] expStat = {4, -1, 0, 0, 0, 0, 0, -1, 4, -1};
+        int[] expStat = {4, -1, 0, 0, 0, 0, 0, -1, 5, -1};
         for (int i = 135; i < 156; i++) {
+            System.out.println(i);
+            System.out.println(getStatusString());
             testSeekInternal(SeekPause, CddStatus.Paused, i);
             clearCmdReg(lc);
             cddRequest(lc, CddRequest.RelativeTime);
             expStat[1] = CddRequest.RelativeTime.ordinal();
             //when seeking the actual lba is decreased by 3
             //150-(i-3) frames away from the actual track start (2s of pregap)
-            int relativeLba = Math.abs(PREGAP_LEN_LBA - (i - 3));
+            int relativeLba = (i - 3);
             String exp = setMsfGetTestString(relativeLba, expStat);
             Assertions.assertEquals(exp, getStatusString());
 
@@ -126,7 +127,7 @@ public class CddTest extends McdRegTestBase {
         testSeekInternal(SeekPause, CddStatus.Paused, 145);
         clearCmdReg(lc);
         cddRequest(lc, CddRequest.AbsoluteTime);
-        Assertions.assertEquals("40.000167.49", getStatusString());
+        Assertions.assertEquals("40.000167.58", getStatusString());
     }
 
     @Test
@@ -134,7 +135,7 @@ public class CddTest extends McdRegTestBase {
         testSeekInternal(SeekPause, CddStatus.Paused, 145);
         clearCmdReg(lc);
         cddRequest(lc, CddRequest.TrackInformation);
-        Assertions.assertEquals("42.010000.08", getStatusString());
+        Assertions.assertEquals("42.010000.53", getStatusString());
     }
 
     @Test
@@ -150,7 +151,6 @@ public class CddTest extends McdRegTestBase {
     private void testSeekInternal(CddCommand command, CddStatus expected, int lba) {
         insertDiscEnableHock(lc, extendedCueSheet);
         cddRequest(lc, command, lba);
-        setCommandChecksum(lc);
         waitCddStatus(lc, expected);
     }
 

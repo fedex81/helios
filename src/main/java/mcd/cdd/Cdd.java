@@ -26,6 +26,10 @@ import static mcd.cdd.Cdd.CddStatus.NoDisc;
  */
 public interface Cdd extends BufferUtil.StepDevice {
 
+    //track numbers for leadin and leadout
+    int LEADINNUM = 0;
+    int LEADOUTNUM = 0xAA;
+
     //status, command registers
     int CDD_REG_NUM = 10;
 
@@ -79,9 +83,19 @@ public interface Cdd extends BufferUtil.StepDevice {
         DiscTracks,  //4 start/end track numbers
         TrackStartTime,  //5 start time of specific track
         ErrorInformation, //6
-        SubcodeError, //7
-        NotReady,  //8 not ready to comply with the current command
+        NONE_7, NONE_8, NONE_9, NONE_A, NONE_B, NONE_C, NONE_D,
+        SubcodeError, //0xE
+        NotReady,  //0xF not ready to comply with the current command
     }
+
+    //request Flags field definitions
+
+    int FLAGS_DATA = 4;
+    int FLAGS_AUDIO = 0;
+    int FLAGS_aEMPHASIS = 2;
+    int FLAGS_iEMPHASIS = 0;
+    int FLAGS_aMUTE = 1;
+    int FLAGS_iMUTE = 0;
 
     enum CddControl_DM_bit {MUSIC_0, DATA_1}
 

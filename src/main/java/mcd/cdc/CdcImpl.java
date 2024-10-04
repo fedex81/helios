@@ -3,6 +3,7 @@ package mcd.cdc;
 import mcd.bus.McdSubInterruptHandler;
 import mcd.cdd.CdModel;
 import mcd.cdd.CdModel.ExtendedTrackData;
+import mcd.cdd.Cdd;
 import mcd.cdd.ExtendedCueSheet;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
@@ -23,6 +24,7 @@ import static mcd.cdc.CdcModel.*;
 import static mcd.cdd.CdModel.SECTOR_2352;
 import static mcd.cdd.CdModel.SectorSize.S_2048;
 import static mcd.cdd.CdModel.SectorSize.S_2352;
+import static mcd.cdd.Cdd.CddStatus.Playing;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_STOPWATCH;
@@ -416,6 +418,7 @@ public class CdcImpl implements Cdc {
         pending |= irq.transfer.enable & irq.transfer.pending;
 //        pending |= irq.command.enable & irq.command.pending; //unused
         if (pending > 0) {
+            if (verbose) LOG.info("CDC interrupt");
             interruptHandler.raiseInterrupt(INT_CDC);
         } else {
             interruptHandler.lowerInterrupt(INT_CDC);
@@ -428,11 +431,11 @@ public class CdcImpl implements Cdc {
     }
 
     @Override
-    public void cdc_decoder_update(int sector) {
+    public void cdc_decoder_update(int sector, int track, Cdd.CddStatus cddStatus) {
         /* data decoding enabled ? */
         if (cdcContext.decoder.enable > 0) {
             /* update HEADx registers with current block header */
-            CueFileParser.toMSF(sector + 150, msfHolder);
+            CueFileParser.toMSF(sector + Cdd.PREGAP_LEN_LBA, msfHolder);
             //bcd format
             cdcContext.header.minute = toBcdByte.apply(msfHolder.minute);
             cdcContext.header.second = toBcdByte.apply(msfHolder.second);
@@ -443,7 +446,8 @@ public class CdcImpl implements Cdc {
              * #define TYPE_MODE1 0x01
              * #define TYPE_MODE2 0x02
              */
-            cdcContext.header.mode = track01.trackDataType == CdModel.TrackDataType.AUDIO ? 0 : 1;
+            ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(cueSheet, track);
+            cdcContext.header.mode = etd.trackDataType == CdModel.TrackDataType.AUDIO ? 0 : 1;
             /* set !VALST */
             cdcContext.decoder.valid = 1;
 
@@ -452,7 +456,7 @@ public class CdcImpl implements Cdc {
 //            cdc.ifstat &= ~BIT_DECI;
 
             /* decoder interrupt enabled ? */
-            if (cdcContext.irq.decoder.enable > 0) {
+            if (cddStatus == Playing && cdcContext.irq.decoder.enable > 0) {
                 poll();
                 /* pending level 5 interrupt */
 //                scd.pending |= (1 << 5);
@@ -489,11 +493,11 @@ public class CdcImpl implements Cdc {
 
                 /* check decoded block mode */
                 if (cdcContext.header.mode == 0x01) {
-                    assert track01.trackDataType != CdModel.TrackDataType.AUDIO;
+                    assert etd.trackDataType != CdModel.TrackDataType.AUDIO;
                     /* write Mode 1 user data to RAM buffer (2048 bytes) */
                     cdd_read_data(sector, offset, track01);
                 } else {
-                    assert track01.trackDataType == CdModel.TrackDataType.AUDIO;
+                    assert etd.trackDataType == CdModel.TrackDataType.AUDIO;
                     //NOTE cdda play
                 }
             }
@@ -517,7 +521,7 @@ public class CdcImpl implements Cdc {
                 /* skip block sync pattern (12 bytes) + block header (4 bytes) then read Mode 1 user data (2048 bytes) */
                 assert track.trackDataType.size == S_2352;
                 int seekPos = (sector * track.trackDataType.size.s_size) + 12 + 4;
-                checkMode1Data(track, msfHolder, seekPos);
+                assert checkMode1Data(track, msfHolder, seekPos);
                 doFileRead(track.file, seekPos, S_2048.s_size, offset);
 //                    cdStreamSeek(cdd.toc.tracks[0].fd, (cdd.lba * 2352) + 12 + 4, SEEK_SET);
 //                    cdStreamRead(dst, 2048, 1, cdd.toc.tracks[0].fd);
@@ -563,8 +567,13 @@ public class CdcImpl implements Cdc {
             }
             readN = track.file.read(header, 0, header.length);
             assert readN == header.length;
-            ok = header[0] == holder.minute && header[1] == holder.second
-                    && header[2] == holder.frame && header[3] == 1; //MODE1
+            ok = Integer.parseInt("" + holder.minute, 16) == header[0] &&
+                    Integer.parseInt("" + holder.second, 16) == header[1] &&
+                    Integer.parseInt("" + holder.frame, 16) == header[2];
+            ok &= header[0] == cdcContext.header.minute &&
+                    header[1] == cdcContext.header.second &&
+                    header[2] == cdcContext.header.frame;
+            ok &= header[3] == cdcContext.header.mode; //MODE1
             ok &= Arrays.equals(expSync, syncHeader);
         } catch (Exception e) {
             LOG.error("decode error: {}", e.getMessage());

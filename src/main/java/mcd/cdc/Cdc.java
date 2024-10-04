@@ -2,6 +2,7 @@ package mcd.cdc;
 
 
 import mcd.bus.McdSubInterruptHandler;
+import mcd.cdd.Cdd.CddStatus;
 import mcd.cdd.ExtendedCueSheet;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.util.BufferUtil;
@@ -40,7 +41,7 @@ public interface Cdc extends BufferUtil.StepDevice {
 
     void step75hz();
 
-    default void cdc_decoder_update(int sector) {
+    default void cdc_decoder_update(int sector, int track, CddStatus status) {
         assert false;
     }
 

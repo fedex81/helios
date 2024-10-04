@@ -57,8 +57,8 @@ public class CddLogDecoder {
                 continue;
             }
             String[] tkn = line.split(" -");
-            int[] status = parseStatCom(tkn[0].trim());
-            int[] command = parseStatCom(tkn[1].trim());
+            int[] status = parseStatCom(tkn[0].trim().toUpperCase());
+            int[] command = parseStatCom(tkn[1].trim().toUpperCase());
             boolean sendCommand = line.contains("<-");
             StringBuilder sb = new StringBuilder("\n" + cnt + ": " + line + "\n");
             sb.append("Status: " + Cdd.statusVals[status[0]]);
@@ -147,7 +147,7 @@ public class CddLogDecoder {
     private static int fromAsciiChar(char val) {
         int r = val >= 48 && val < 58 ? val - 48 : -1;
         r = r == -1 && val >= 65 && val < 71 ? val - 65 + 10 : r;
-        assert r != -1;
+        assert r != -1 : "" + val;
         return r;
     }
 
