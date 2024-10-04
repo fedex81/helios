@@ -153,8 +153,13 @@ public class MegaCdMainCpuBus extends GenesisBus {
             if (addr >= START_MCD_MAIN_PRG_RAM_MODE1 && addr < END_MCD_BOOT_ROM_MIRROR_MODE1) {
                 addr &= MCD_BOOT_ROM_PRGRAM_WINDOW_MASK;
                 if (addr >= MCD_BOOT_ROM_WINDOW_SIZE) {
-                    addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
-                    writeBufferRaw(prgRam, addr, data, size);
+                    if (subCpu.isStopped()) {
+                        addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
+                        writeBufferRaw(prgRam, addr, data, size);
+                    } else {
+                        LogHelper.logWarnOnce(LOG, "Ignoring {} writing to PRG_RAM when SUB is running",
+                                MdRuntimeData.getAccessTypeExt());
+                    }
                 } else {
                     LOG.error("Writing to boot rom: {}({})", th(addr), th(address));
                 }
