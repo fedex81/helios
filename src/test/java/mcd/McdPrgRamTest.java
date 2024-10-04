@@ -1,11 +1,12 @@
 package mcd;
 
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static mcd.dict.MegaCdDict.END_MCD_SUB_PRG_RAM;
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static mcd.dict.MegaCdDict.*;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.readData;
 
 /**
@@ -42,9 +43,59 @@ public class McdPrgRamTest extends McdRegTestBase {
     //BcRacers E does this
     @Test
     public void testPrgRamLongRead() {
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
         subCpuBus.write(END_MCD_SUB_PRG_RAM - 2, 0x1122, Size.WORD);
         subCpuBus.write(0, 0x3344, Size.WORD);
         int res = subCpuBus.read(END_MCD_SUB_PRG_RAM - 2, Size.LONG);
         Assertions.assertEquals(0x11223344, res);
+    }
+
+    int mainResetReg = McdGateArrayRegTest.MAIN_RESET_REG;
+
+
+    //Dungeon Explorer US
+    @Test
+    public void testPrgRamZ80Access() {
+        MdRuntimeData.setAccessTypeExt(M68K);
+        //SUB stopped
+        int r0 = mainCpuBus.read(mainResetReg, Size.WORD) & ~3;
+        mainCpuBus.write(mainResetReg, r0, Size.WORD);
+        lc.subCpu.setStop(true);
+
+        testPrgRamZ80AccessInternal(true);
+
+        //SUB running
+        MdRuntimeData.setAccessTypeExt(M68K);
+        r0 = mainCpuBus.read(mainResetReg, Size.WORD) & ~3;
+        mainCpuBus.write(mainResetReg, r0 | 1, Size.WORD);
+        lc.subCpu.setStop(false);
+        testPrgRamZ80AccessInternal(false);
+    }
+
+    void testPrgRamZ80AccessInternal(boolean subStopped) {
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
+        int val = 0x1122;
+        int res = subCpuBus.read(START_MCD_MAIN_PRG_RAM, Size.WORD);
+        Assertions.assertNotEquals(val, res);
+
+        subCpuBus.write(START_MCD_SUB_PRG_RAM, val, Size.WORD);
+        res = subCpuBus.read(START_MCD_SUB_PRG_RAM, Size.WORD);
+        Assertions.assertEquals(val, res);
+
+        //SUB running MAIN,Z80 should not be able to access PRG-RAM
+        int expVal = subStopped ? ~(val + 2) : val;
+        MdRuntimeData.setAccessTypeExt(M68K);
+        mainCpuBus.write(START_MCD_MAIN_PRG_RAM, ~(val + 2), Size.WORD);
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
+        res = subCpuBus.read(START_MCD_SUB_PRG_RAM, Size.WORD);
+        Assertions.assertEquals((short) expVal, (short) res);
+
+        MdRuntimeData.setAccessTypeExt(Z80);
+        expVal = subStopped ? ~(val + 1) : val;
+        MdRuntimeData.setAccessTypeExt(M68K);
+        mainCpuBus.write(START_MCD_MAIN_PRG_RAM, ~(val + 1), Size.WORD);
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
+        res = subCpuBus.read(START_MCD_SUB_PRG_RAM, Size.WORD);
+        Assertions.assertEquals((short) expVal, (short) res);
     }
 }

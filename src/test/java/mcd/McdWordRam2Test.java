@@ -80,6 +80,7 @@ public class McdWordRam2Test extends McdRegTestBase {
         if (cpu == M68K) {
             baseAddr = bank == 0 ? START_MCD_MAIN_WORD_RAM : START_MCD_MAIN_WORD_RAM + MCD_WORD_RAM_1M_SIZE;
         }
+        MdRuntimeData.setAccessTypeExt(cpu);
         for (int i = 0; i < s.length(); i += size.getByteSize()) {
             int val = switch (size) {
                 case BYTE -> s.charAt(i);
@@ -96,6 +97,7 @@ public class McdWordRam2Test extends McdRegTestBase {
         GenesisBus bus = cpu == M68K ? mainCpuBus : subCpuBus;
         int baseAddr = cpu == M68K ? START_MCD_MAIN_WORD_RAM : START_MCD_SUB_WORD_RAM_1M;
         String res = "";
+        MdRuntimeData.setAccessTypeExt(cpu);
         for (int i = 0; i < len; i += size.getByteSize()) {
             int val = bus.read(baseAddr + i, size);
             res += switch (size) {
@@ -175,6 +177,7 @@ public class McdWordRam2Test extends McdRegTestBase {
     public void testWramDotMappedSubReads() {
         assert ctx.wramSetup.mode == _2M;
         //priority mode off = 0, PM0 = PM1 = 0
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
         assert (subCpuBus.read(SUB_MEM_MODE_REG + 1, Size.BYTE) & 0x18) == 0;
         McdWordRamTest.setWramMain2M(lc);
         mainCpuBus.write(START_MCD_MAIN_WORD_RAM, 0x1234, Size.WORD);
@@ -189,15 +192,16 @@ public class McdWordRam2Test extends McdRegTestBase {
         McdWordRamTest.setWram1M_W0Main(lc);
 
         //main reads the start of WR0 -> 1234
+        MdRuntimeData.setAccessTypeExt(M68K);
         int res = mainCpuBus.read(START_MCD_MAIN_WORD_RAM, Size.WORD);
         Assertions.assertEquals(0x1234, res);
 
         //sub reads the start of WR1 -> ABCD
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
         res = subCpuBus.read(START_MCD_SUB_WORD_RAM_1M, Size.WORD);
         Assertions.assertEquals(0xABCD, res);
 
         //sub reads the start of 2M window -> 0x0A0B
-        MdRuntimeData.setAccessTypeExt(SUB_M68K);
         res = subCpuBus.read(START_MCD_SUB_WORD_RAM_2M, Size.WORD);
         Assertions.assertEquals(0x0A0B, res);
 
@@ -230,8 +234,7 @@ public class McdWordRam2Test extends McdRegTestBase {
 
     //ROTD sets DMNA=1 in 1M and expects SUB to have WordRAM after the switch to 2M.
     //TODO fix
-//    @Test
-    @Ignore
+    @Test
     public void testRiseOfTheDragon() {
         McdWordRamTest.setWram1M_W0Main(lc);
         int v = mainGetLsbFn.apply(mainCpuBus);

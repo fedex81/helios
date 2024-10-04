@@ -39,7 +39,9 @@ import omegadrive.sound.msumd.MsuMdHandlerImpl;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.SystemProvider.RomContext;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -77,8 +79,10 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     final BusWriteRunnable vdpRunnable = new BusWriteRunnable() {
         @Override
         public void run() {
+            CpuDeviceAccess prev = MdRuntimeData.setAccessTypeExt(cpu);
 //            LOG.info("{}, {} {}", th(vdpAddress), vpdData, vdpSize);
             write(address, data, size);
+            MdRuntimeData.setAccessTypeExt(prev);
         }
     };
 
@@ -821,6 +825,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     private boolean checkVdpBusy(int address, Size size, int data) {
         if (busArbiter.getVdpBusyState() == VdpBusyState.FIFO_FULL ||
                 busArbiter.getVdpBusyState() == VdpBusyState.MEM_TO_VRAM) {
+            vdpRunnable.cpu = MdRuntimeData.getAccessTypeExt();
             vdpRunnable.address = address;
             vdpRunnable.size = size;
             vdpRunnable.data = data;

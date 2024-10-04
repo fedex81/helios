@@ -6,6 +6,7 @@ import mcd.util.McdBiosHolder;
 import omegadrive.bus.md.GenesisBus;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
@@ -20,8 +21,7 @@ import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.util.McdRegBitUtil.setSharedBit;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.*;
 
 /**
@@ -102,6 +102,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
     @Override
     public int read(int address, Size size) {
         assert assertCheckBusOp(address, size);
+        assert MdRuntimeData.getAccessTypeExt() == M68K || MdRuntimeData.getAccessTypeExt() == Z80;
         address &= MD_PC_MASK;
         if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
             if (!enableMCDBus) {
@@ -140,6 +141,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
 
     @Override
     public void write(int address, int data, Size size) {
+        assert MdRuntimeData.getAccessTypeExt() == M68K || MdRuntimeData.getAccessTypeExt() == Z80;
         assert assertCheckBusOp(address, size);
         address &= MD_PC_MASK;
         if (enableMCDBus) {

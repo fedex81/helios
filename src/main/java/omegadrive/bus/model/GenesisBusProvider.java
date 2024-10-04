@@ -23,6 +23,7 @@ import com.google.common.base.MoreObjects;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -73,6 +74,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
     Logger LOG = LogHelper.getLogger(GenesisBusProvider.class.getSimpleName());
 
     abstract class BusWriteRunnable implements Runnable {
+        public CpuDeviceAccess cpu;
         public int address;
         public int data;
         public Size size;

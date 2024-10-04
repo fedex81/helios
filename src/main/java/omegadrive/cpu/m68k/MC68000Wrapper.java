@@ -26,6 +26,7 @@ import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
 
 import static omegadrive.util.Util.th;
@@ -128,7 +129,9 @@ public class MC68000Wrapper implements M68kProvider {
 
     @Override
     public void reset() {
+        CpuDeviceAccess prev = MdRuntimeData.setAccessTypeExt(cpu);
         m68k.reset();
+        MdRuntimeData.setAccessTypeExt(prev);
     }
 
     //X-men uses it

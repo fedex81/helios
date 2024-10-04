@@ -4,8 +4,8 @@ import mcd.McdDeviceHelper.McdLaunchContext;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.bus.model.BaseBusProvider;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +23,7 @@ import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdMemoryContext.WramSetup.*;
 import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 
 /**
  * Federico Berti
@@ -39,12 +40,24 @@ public class McdWordRamTest extends McdRegTestBase {
     public static final int RET_BIT_POS = 0;
     public static final int RET_BIT_MASK = 1 << RET_BIT_POS;
 
-    static BiConsumer<BaseBusProvider, Integer> subSetLsbFn = (bus, val) -> bus.write(SUB_MEM_MODE_REG + 1, val, Size.BYTE);
+    static BiConsumer<BaseBusProvider, Integer> subSetLsbFn = (bus, val) -> {
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
+        bus.write(SUB_MEM_MODE_REG + 1, val, Size.BYTE);
+    };
 
-    static Function<BaseBusProvider, Integer> subGetLsbFn = bus -> bus.read(SUB_MEM_MODE_REG + 1, Size.BYTE);
+    static Function<BaseBusProvider, Integer> subGetLsbFn = bus -> {
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
+        return bus.read(SUB_MEM_MODE_REG + 1, Size.BYTE);
+    };
 
-    static BiConsumer<BaseBusProvider, Integer> mainSetLsbFn = (bus, val) -> bus.write(MAIN_MEM_MODE_REG + 1, val, Size.BYTE);
-    static Function<BaseBusProvider, Integer> mainGetLsbFn = bus -> bus.read(MAIN_MEM_MODE_REG + 1, Size.BYTE);
+    static BiConsumer<BaseBusProvider, Integer> mainSetLsbFn = (bus, val) -> {
+        MdRuntimeData.setAccessTypeExt(M68K);
+        bus.write(MAIN_MEM_MODE_REG + 1, val, Size.BYTE);
+    };
+    static Function<BaseBusProvider, Integer> mainGetLsbFn = bus -> {
+        MdRuntimeData.setAccessTypeExt(M68K);
+        return bus.read(MAIN_MEM_MODE_REG + 1, Size.BYTE);
+    };
     Consumer<Integer> mainSetLsb = val -> mainSetLsbFn.accept(mainCpuBus, val);
     Consumer<Integer> subSetLsb = val -> subSetLsbFn.accept(subCpuBus, val);
     Supplier<Integer> mainGetLsb = () -> mainGetLsbFn.apply(lc.mainBus);
@@ -52,12 +65,14 @@ public class McdWordRamTest extends McdRegTestBase {
 
     //only for RAM writes, do not use for regs
     BiConsumer<Integer, Integer> mainWriteValAtIdx = (idx, val) -> {
+        MdRuntimeData.setAccessTypeExt(M68K);
         mainCpuBus.write(idx, val, Size.WORD);
         Assertions.assertEquals(val & 0xFFFF, mainCpuBus.read(idx, Size.WORD));
     };
 
     //only for RAM writes, do not use for regs
     BiConsumer<Integer, Integer> subWriteValAtIdx = (idx, val) -> {
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
         subCpuBus.write(idx, val, Size.WORD);
         Assertions.assertEquals(val & 0xFFFF, subCpuBus.read(idx, Size.WORD));
     };
@@ -159,6 +174,7 @@ public class McdWordRamTest extends McdRegTestBase {
             mainWriteValAtIdx.accept(offsetm + i, i);
         }
         setWramSub2M();
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
         for (int i = 0; i < MCD_WORD_RAM_2M_SIZE - 1; i += 2) {
             //sub can read what main wrote
             Assertions.assertEquals(i & 0xFFFF, subCpuBus.read(offsets + i, Size.WORD));
@@ -167,6 +183,7 @@ public class McdWordRamTest extends McdRegTestBase {
         }
         setWramMain2M();
         //main read
+        MdRuntimeData.setAccessTypeExt(M68K);
         for (int i = 0; i < MCD_WORD_RAM_2M_SIZE - 1; i += 2) {
             Assertions.assertEquals((i + 1) & 0xFFFF, mainCpuBus.read(offsetm + i, Size.WORD));
         }
@@ -176,8 +193,7 @@ public class McdWordRamTest extends McdRegTestBase {
      * TODO it is not this simple anymore
      * TODO how this fits with the MAIN CELL rendering??
      */
-    @Ignore
-//    @Test
+    @Test
     public void testWRAMDataOnSwitch_1M() {
         setWram1M_W0Main();
         int offsetm = MegaCdDict.START_MCD_MAIN_WORD_RAM;
@@ -192,8 +208,10 @@ public class McdWordRamTest extends McdRegTestBase {
         setWram1M_W0Sub();
         for (int i = 0; i < MCD_WORD_RAM_1M_SIZE - 1; i += 2) {
             //main can read what sub wrote
+            MdRuntimeData.setAccessTypeExt(M68K);
             Assertions.assertEquals((i + 1) & 0xFFFF, mainCpuBus.read(offsetm + i, Size.WORD));
             //sub can read what main wrote
+            MdRuntimeData.setAccessTypeExt(SUB_M68K);
             Assertions.assertEquals(i & 0xFFFF, subCpuBus.read(offsets + i, Size.WORD));
             //main writes to bank1
             mainWriteValAtIdx.accept(offsetm + i, (i + 2) & 0xFFFF);
@@ -203,8 +221,10 @@ public class McdWordRamTest extends McdRegTestBase {
         setWram1M_W0Main();
         for (int i = 0; i < MCD_WORD_RAM_1M_SIZE - 1; i += 2) {
             //main can read what sub wrote, bank0
+            MdRuntimeData.setAccessTypeExt(M68K);
             Assertions.assertEquals((i + 3) & 0xFFFF, mainCpuBus.read(offsetm + i, Size.WORD));
             //sub can read what main wrote, bank1
+            MdRuntimeData.setAccessTypeExt(SUB_M68K);
             Assertions.assertEquals((i + 2) & 0xFFFF, subCpuBus.read(offsets + i, Size.WORD));
         }
     }
@@ -222,8 +242,8 @@ public class McdWordRamTest extends McdRegTestBase {
      * ...              ...            4:1111
      * 6:BBBB
      */
-    @Ignore
-//    @Test
+
+    @Test
     public void testWRAMDataOnSwitch_2M_1M() {
         setWramMain2M();
         assert ctx.wramSetup == W_2M_MAIN;
@@ -261,11 +281,13 @@ public class McdWordRamTest extends McdRegTestBase {
             int subWramBank = w == W_1M_WR0_MAIN ? 1 : 0;
             for (int i = 0; i < MCD_WORD_RAM_1M_SIZE - 1; i += 2) {
                 //main match wramN
+                MdRuntimeData.setAccessTypeExt(M68K);
                 int val = mainCpuBus.read(offsetm + i, Size.WORD);
                 int expVal = wram1MCopy[mainWramBank].getShort(i) & 0xFFFF;
                 Assertions.assertEquals(expVal, val);
 
                 //sub match wramM
+                MdRuntimeData.setAccessTypeExt(SUB_M68K);
                 val = subCpuBus.read(offsets1M + i, Size.WORD);
                 expVal = wram1MCopy[subWramBank].getShort(i) & 0xFFFF;
                 Assertions.assertEquals(expVal, val);
@@ -305,6 +327,7 @@ public class McdWordRamTest extends McdRegTestBase {
             for (int i = 0; i < MCD_WORD_RAM_2M_SIZE - 1; i += 2) {
                 int bank = (i & 2) >> 1;
                 cnt[bank] = (cnt[bank] + 1) % vals0.length;
+                MdRuntimeData.setAccessTypeExt(w.cpu);
                 int val = w.cpu == M68K ? mainCpuBus.read(offsetm + i, Size.WORD) :
                         subCpuBus.read(offsets2M + i, Size.WORD);
                 int expVal = wram1MCopy[bank].getShort((i >> 1) - bank) & 0xFFFF;

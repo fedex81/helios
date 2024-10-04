@@ -21,7 +21,9 @@ package omegadrive.vdp.md;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -29,6 +31,7 @@ import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.slf4j.Logger;
 
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.Util.th;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
@@ -206,6 +209,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     public boolean doDmaSlot(VideoMode videoMode) {
+        //TODO handle "DMA" delay
+        int delay = MdRuntimeData.getCpuDelayExt(M68K);
+        CpuDeviceAccess prev = MdRuntimeData.setAccessTypeExt(M68K);
         boolean done = true;
         switch (dmaMode) {
             case VRAM_FILL:
@@ -229,6 +235,8 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             dmaMode = null; //Bug Hunt
             dmaFillReady = false;
         }
+        MdRuntimeData.resetCpuDelayExt(M68K, delay);
+        MdRuntimeData.setAccessTypeExt(prev);
         return done;
     }
 

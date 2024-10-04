@@ -84,9 +84,11 @@ public class MdRuntimeData {
         rt.addCpuDelay(delays[rt.accType][deviceType]);
     }
 
-    public static void setAccessTypeExt(CpuDeviceAccess accessType) {
+    public static CpuDeviceAccess setAccessTypeExt(CpuDeviceAccess accessType) {
+        CpuDeviceAccess prev = rt.accessType;
         rt.accessType = accessType;
         rt.accType = accessType.ordinal();
+        return prev;
     }
 
     public static int resetCpuDelayExt(int value) {

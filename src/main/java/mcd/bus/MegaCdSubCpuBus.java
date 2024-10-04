@@ -12,6 +12,7 @@ import omegadrive.bus.md.GenesisBus;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent;
@@ -125,6 +126,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
 
     @Override
     public int read(int address, Size size) {
+        assert MdRuntimeData.getAccessTypeExt() == SUB_M68K;
         assert assertCheckBusOp(address, size);
         address &= MD_PC_MASK;
         int res = size.getMask();
@@ -166,6 +168,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
 
     @Override
     public void write(int address, int data, Size size) {
+        assert MdRuntimeData.getAccessTypeExt() == SUB_M68K;
         assert assertCheckBusOp(address, size);
         address &= MD_PC_MASK;
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
