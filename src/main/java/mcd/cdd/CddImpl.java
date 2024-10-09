@@ -10,7 +10,10 @@ import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.*;
 import org.slf4j.Logger;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
+import static mcd.cdd.Cdd.CddRequest.NotReady;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
@@ -27,7 +30,7 @@ class CddImpl implements Cdd {
 
     private final static Logger LOG = LogHelper.getLogger(CddImpl.class.getSimpleName());
 
-    private final boolean verbose = false;
+    private final boolean verbose = true;
     private final boolean verboseReg = false;
 
     private static final int CD_LATENCY = 1;
@@ -192,8 +195,13 @@ class CddImpl implements Cdd {
         if (!hasMedia || cddContext.hostClockEnable == 0) {
             return;
         }
-        interruptHandler.raiseInterrupt(INT_CDD);
+//        if(processReceived.get()){
+//            processReceived.set(false);
+//            interruptHandler.raiseInterrupt(INT_CDD);
+//        }
+
         if (verbose) LOG.info("CDD interrupt");
+        interruptHandler.raiseInterrupt(INT_CDD);
         /* drive latency */
         if (cddContext.io.latency > 0) {
             /**
@@ -206,9 +214,9 @@ class CddImpl implements Cdd {
              * it's periodically getting track number updates from the CDD.
              */
             cddContext.io.latency--;
-            if (!once && cddContext.statusRegs[0] != CddRequest.NotReady.ordinal()) {
+            if (!once && cddContext.statusRegs[0] != NotReady.ordinal()) {
                 prevStatus1 = cddContext.statusRegs[1];
-                updateStatus(1, CddRequest.NotReady.ordinal());
+                updateStatus(1, NotReady.ordinal());
                 once = true;
             }
             if (cddContext.io.latency == 0) {
@@ -571,7 +579,10 @@ class CddImpl implements Cdd {
         //TODO does this happen?
 //      clearCommandRegs();
         statusChecksum();
+        processReceived.set(true);
     }
+
+    AtomicBoolean processReceived = new AtomicBoolean();
 
     private void handleRequestCommand(boolean isAudio) {
         /* Infos automatically retrieved by CDD processor from Q-Channel */

@@ -26,7 +26,7 @@ public interface McdSubInterruptHandler extends Device {
 
     Logger LOG = LogHelper.getLogger(McdSubInterruptHandler.class.getSimpleName());
 
-    boolean verbose = false;
+    boolean verbose = true;
 
     /**
      * INT_ASIC = LEVEL 1
@@ -97,6 +97,7 @@ public interface McdSubInterruptHandler extends Device {
             final int mask = getRegMask();
             final int ifl2 = MegaCdMainCpuBus.ifl2Trigger;
             for (int i = 1; i < pendingInterrupts.length; i++) {
+//            for (int i = pendingInterrupts.length - 1; i > 0; i--) {
                 if (pendingInterrupts[i]) {
                     boolean canRaise = ((1 << i) & mask) > 0;
                     //mcd-ver: if ifl2==0 INT#2 is not triggering
@@ -135,7 +136,7 @@ public interface McdSubInterruptHandler extends Device {
                 LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
             }
             //if the cpu is masking it, interrupt lost
-            return true;
+            return raised;
         }
 
         @Override
