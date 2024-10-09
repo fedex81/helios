@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
-import static mcd.cdd.Cdd.CddRequest.NotReady;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
@@ -214,19 +213,21 @@ class CddImpl implements Cdd {
              * it's periodically getting track number updates from the CDD.
              */
             cddContext.io.latency--;
-            if (!once && cddContext.statusRegs[0] != NotReady.ordinal()) {
-                prevStatus1 = cddContext.statusRegs[1];
-                updateStatus(1, NotReady.ordinal());
-                once = true;
-            }
+            //TODO not needed?
+//            if (!once && cddContext.statusRegs[0] != NotReady.ordinal()) {
+//                prevStatus1 = cddContext.statusRegs[1];
+//                updateStatus(1, NotReady.ordinal());
+//                once = true;
+//            }
             if (cddContext.io.latency == 0) {
-                updateStatus(0, cddContext.io.status.ordinal()); //for seek_pause and seek_play
-                updateStatus(1, prevStatus1);
+                //TODO not needed?
+//                updateStatus(0, cddContext.io.status.ordinal()); //for seek_pause and seek_play
+//                updateStatus(1, prevStatus1);
                 once = false;
-                //TODO needed??
-                if (cddContext.io.status == Paused) {
-                    cdc.cdc_decoder_update(cddContext.io.sector, cddContext.io.track, cddContext.io.status);
-                }
+                //TODO not needed?
+//                if (cddContext.io.status == Paused) {
+//                    cdc.cdc_decoder_update(cddContext.io.sector, cddContext.io.track, cddContext.io.status);
+//                }
             }
             return;
         }
@@ -288,7 +289,7 @@ class CddImpl implements Cdd {
         CddCommand cddCommand = Cdd.commandVals[cddContext.commandRegs[0]];
         final boolean isAudio = cddContext.io.track > 0 ?
                 ExtendedCueSheet.isAudioTrack(extCueSheet, cddContext.io.track) : false;
-        String extraInfo = "";
+        StringBuilder extraInfo = new StringBuilder();
         switch (cddCommand) {
             /* Get Drive Status */
             case DriveStatus -> {
@@ -343,7 +344,7 @@ class CddImpl implements Cdd {
                 updateStatuses(0, 0, 0, 0, 0, 0, 0, 0);
             }
             /* Report TOC infos */
-            case Request -> handleRequestCommand(isAudio);
+            case Request -> handleRequestCommand(isAudio, extraInfo);
             /* Play */
             case SeekPlay -> {
                 /* reset track index */
@@ -355,7 +356,7 @@ class CddImpl implements Cdd {
                         cddContext.commandRegs[7]) - PREGAP_LEN_LBA;
                 lba -= LBA_READAHEAD_LEN;
                 CueFileParser.toMSF((lba + LBA_READAHEAD_LEN + PREGAP_LEN_LBA), msfHolder);
-                extraInfo += "lba " + (lba + LBA_READAHEAD_LEN + PREGAP_LEN_LBA) + ", msf " + msfHolder;
+                extraInfo.append("lba " + (lba + LBA_READAHEAD_LEN + PREGAP_LEN_LBA) + ", msf " + msfHolder);
 
                 /* CD drive latency */
                 if (cddContext.io.latency == 0) {
@@ -434,7 +435,7 @@ class CddImpl implements Cdd {
                         cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6],
                         cddContext.commandRegs[7]) - PREGAP_LEN_LBA;
                 CueFileParser.toMSF((lba + PREGAP_LEN_LBA), msfHolder);
-                extraInfo += "lba " + (lba + PREGAP_LEN_LBA) + ", msf " + msfHolder;
+                extraInfo.append("lba " + (lba + PREGAP_LEN_LBA) + ", msf " + msfHolder);
                 /* CD drive latency */
                 if (cddContext.io.latency == 0) {
                     cddContext.io.latency = 1 + 10 * CD_LATENCY;
@@ -575,7 +576,7 @@ class CddImpl implements Cdd {
                 assert false;
             }
         }
-        if (verbose) LOG.info("CDD process, {}({}) {}", cddCommand, cddCommand.ordinal(), extraInfo);
+        if (verbose) LOG.info("CDD cmd, {}({}) {}", cddCommand, cddCommand.ordinal(), extraInfo);
         //TODO does this happen?
 //      clearCommandRegs();
         statusChecksum();
@@ -584,11 +585,11 @@ class CddImpl implements Cdd {
 
     AtomicBoolean processReceived = new AtomicBoolean();
 
-    private void handleRequestCommand(boolean isAudio) {
+    private void handleRequestCommand(boolean isAudio, StringBuilder extraInfo) {
         /* Infos automatically retrieved by CDD processor from Q-Channel */
         /* commands 0x00-0x02 (current block) and 0x03-0x05 (Lead-In) */
         CddRequest request = Cdd.requestVals[cddContext.commandRegs[3]];
-        String extraInfo = "";
+        extraInfo.append(" " + request + "(" + request.ordinal() + ") ");
         switch (request) {
             /* Current Absolute Time (MM:SS:FF) */
             case AbsoluteTime -> {
@@ -650,14 +651,13 @@ class CddImpl implements Cdd {
             /* Track Start Time (MM:SS:FF), TOCN */
             case TrackStartTime -> {
                 int track = cddContext.commandRegs[4] * 10 + cddContext.commandRegs[5];
-                extraInfo += "Track: 0x" + th(track);
+                extraInfo.append("\n\tTrack: 0x" + th(track));
                 CdModel.ExtendedTrackData extTrackData = ExtendedCueSheet.getExtTrack(extCueSheet, track);
                 if (extTrackData == CdModel.ExtendedTrackData.NO_TRACK) {
                     updateStatus(1, CddRequest.NotReady.ordinal());
                     updateStatus(8, getFlags(isAudio));
                     break;
                 }
-                extraInfo += "Track: 0x" + th(track);
                 CueFileParser.toMSF(extTrackData.absoluteSectorStart + PREGAP_LEN_LBA, msfHolder);
                 /* RS6 bit 3 is set for CD-ROM track, Track Number (low digit) */
                 int status6 = (isAudio ? 0 : 0x8) | (msfHolder.frame / 10);
@@ -676,13 +676,12 @@ class CddImpl implements Cdd {
                 assert false;
             }
         }
-        if (verbose) LOG.info("CDD Request {}({}): {}", request, request.ordinal(), extraInfo);
     }
 
     private int getFlags(boolean isAudio) {
         int rs8 = isAudio ? FLAGS_AUDIO : FLAGS_DATA;
         //leadout shows the absolute time as well
-        //TODO mute is linked to D/M bit
+        //TODO mute is linked to D/M bit ??
         if (cddContext.io.status != Playing) {
             rs8 |= FLAGS_iEMPHASIS | FLAGS_aMUTE;
         } else {

@@ -409,8 +409,8 @@ public class CdBiosHelper {
         var map = cpu == M68K ? mainMemRegionMap : subMemRegionMap;
         CdMemRegion r = map.get(address);
         if (r != null) {
-            printMemRegion(cpu, data, r);
-//            if("biosStatus".equals(r.name)){
+            boolean change = printMemRegion(cpu, data, r);
+//            if("biosStatus".equals(r.name) && change){
 //                System.out.println("here");
 //            }
         }
@@ -422,18 +422,19 @@ public class CdBiosHelper {
     private static final int[][] memAreaHash = new int[2][MAX_AREA_SIZE];
     private static final StringBuilder sb = new StringBuilder();
 
-    private static void printMemRegion(CpuDeviceAccess cpu, byte[] data, CdMemRegion r) {
+    private static boolean printMemRegion(CpuDeviceAccess cpu, byte[] data, CdMemRegion r) {
         int startIncl = r.startInclusive & MAX_AREA_MASK;
         int endIncl = r.endInclusive & MAX_AREA_MASK;
         MemView.fillFormattedString(sb, data, startIncl, endIncl);
         int hc = sb.toString().hashCode();
         int[] areaHash = memAreaHash[cpu == M68K ? 0 : 1];
         //print first write or when changed
-        boolean print = areaHash[startIncl] == 0 || areaHash[startIncl] != hc;
-        if (print) {
+        boolean hasChanged = areaHash[startIncl] == 0 || areaHash[startIncl] != hc;
+        if (hasChanged) {
             LOG.info("{} {} update\n{}", cpu, r, sb);
             areaHash[startIncl] = hc;
         }
         sb.setLength(0);
+        return hasChanged;
     }
 }

@@ -279,7 +279,7 @@ public class MemView implements Device, UpdatableViewer {
     public static void fillFormattedString(StringBuilder sb, byte[] data, int start, int end) {
         try {
             HexFormat hf = HexFormat.of().withSuffix(" ");
-            sb.append(String.format("%4x", 0)).append(": ");
+            sb.append(String.format("%8x", start)).append(": ");
             int len = end - start;
             for (int i = start; i < end; i += BYTES_PER_LINE) {
                 int slen = Math.min(len, BYTES_PER_LINE);
@@ -287,8 +287,8 @@ public class MemView implements Device, UpdatableViewer {
                 for (int j = i; j < i + slen; j++) {
                     sb.append(toAsciiChar(data[j])).append(" ");
                 }
-                if (i + BYTES_PER_LINE < len) {
-                    sb.append("\n").append(String.format("%4x", i + BYTES_PER_LINE)).append(": ");
+                if ((i - start) + BYTES_PER_LINE < len) {
+                    sb.append("\n").append(String.format("%8x", i + BYTES_PER_LINE)).append(": ");
                 }
             }
         } catch (Exception e) {
