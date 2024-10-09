@@ -103,7 +103,7 @@ public class MegaCdMemoryContext implements Serializable {
         if (address < MCD_PRAM_WRITE_PROTECT_AREA_END) {
             if (((address >> 8) & MCD_PRAM_WRITE_PROTECT_BLOCK_MASK) >= (writeProtectRam << 1)) {
                 writeData(prgRam, address, val, size);
-                CdBiosHelper.checkMemRegion(prgRam, address);
+                CdBiosHelper.checkSubMemRegion(prgRam, address);
             } else {
                 LogHelper.logWarnOnce(LOG, "Ignoring PRG-RAM write: {} {}, wp {}", th(address), size, th(writeProtectRam));
             }

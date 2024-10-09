@@ -1,5 +1,6 @@
 package mcd.bus;
 
+import mcd.cdd.CdBiosHelper;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.util.McdBiosHolder;
@@ -181,6 +182,7 @@ public class MegaCdMainCpuBus extends GenesisBus {
             }
         }
         super.write(address, data, size);
+        CdBiosHelper.checkMainMemRegion(ram, address);
     }
 
     private int readHintVector(int addr, Size size) {
