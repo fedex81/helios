@@ -376,10 +376,10 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         WramSetup prev = memCtx.wramSetup;
         WramSetup ws = memCtx.wramHelper.update(cpuType, resWord);
         handleWramSetupChange(prev, ws);
-        if (ws.mode == WordRamMode._2M) { //set DMNA=0 for 2M_MAIN, DMNA = 1 for 2M_SUB
-            //TODO verify DMNA = 1 for 2M_SUB
-            int val = ws.cpu == M68K ? 0 : 1;
-            setSharedBitBothCpu(memCtx, SharedBitDef.DMNA, val);
+        //TODO set DMNA = 1 for 2M_SUB breaks us_bios 1.00, write test
+        //set DMNA=0 for 2M_MAIN
+        if (ws == WramSetup.W_2M_MAIN) {
+            setSharedBitBothCpu(memCtx, SharedBitDef.DMNA, 0);
         }
         asic.setStampPriorityMode((resWord >> 3) & 3);
     }

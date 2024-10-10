@@ -81,7 +81,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
 
     static {
-        System.setProperty("68k.debug", "true");
+        System.setProperty("68k.debug", "false");
         System.setProperty("helios.68k.debug.mode", "0");
         System.setProperty("z80.debug", "false");
     }
@@ -179,8 +179,8 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
         while (nextSub68kCycle <= cycleCounter) {
             boolean canRun = !subCpu.isStopped();// && !MC68000Wrapper.subCpuBusHalt;
             int cycleDelayCpu = 1;
+            MdRuntimeData.setAccessTypeExt(SUB_M68K);
             if (canRun) {
-                MdRuntimeData.setAccessTypeExt(SUB_M68K);
                 cycleDelayCpu = subCpu.runInstruction() + MdRuntimeData.resetCpuDelayExt();
             }
             //interrupts are processed after the current instruction
