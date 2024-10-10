@@ -19,7 +19,7 @@ import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
-import static mcd.util.McdRegBitUtil.setSharedBit;
+import static mcd.util.McdRegBitUtil.setSharedBitBothCpu;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
@@ -334,13 +334,19 @@ public class MegaCdMainCpuBus extends GenesisBus {
     }
 
     private void handleReg2Write(int address, int data, Size size) {
+//        int before = readBuffer(memCtx.getRegBuffer(cpu, MCD_MEM_MODE), MCD_MEM_MODE.addr, Size.WORD);
         int resWord = memCtx.handleRegWrite(cpu, MCD_MEM_MODE, address, data, size);
         WramSetup prev = memCtx.wramSetup;
         WramSetup ws = memCtx.wramHelper.update(cpu, resWord);
-        if (ws == WramSetup.W_2M_SUB) { //set RET=0
-            setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 0, 0, Size.BYTE);
-            setSharedBit(memCtx, M68K, 0, SharedBitDef.RET);
+
+        if (ws.mode == WordRamMode._2M) { //set RET=0 for sub, RET=1 for main
+            int val = ws.cpu == M68K ? 1 : 0;
+            setSharedBitBothCpu(memCtx, SharedBitDef.RET, val);
         }
+//        int after2 = readBuffer(memCtx.getRegBuffer(cpu, MCD_MEM_MODE), MCD_MEM_MODE.addr, Size.WORD);
+//        LOG.info("{} write: {} {} {}, regBefore: {}, regAfter: {}, " +
+//                "wramBefore: {}, wramAfter: {}, regAfter2: {}",
+//                MCD_MEM_MODE, th(address), th(data), size, th(before), th(resWord), prev, ws, th(after2));
         subCpuBus.handleWramSetupChange(prev, ws);
         //bk0,1
         int bval = (resWord >> 6) & 3;

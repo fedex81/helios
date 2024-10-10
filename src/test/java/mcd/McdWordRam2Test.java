@@ -390,4 +390,43 @@ public class McdWordRam2Test extends McdRegTestBase {
         Assertions.assertEquals(W_1M_WR0_SUB, ctx.wramSetup);
         Assertions.assertEquals(5, mainGetLsbFn.apply(lc.mainBus));
     }
+
+    /**
+     * //ok
+     * MCD_MEM_MODE write: 3 0 BYTE, regBefore: 1, regAfter: 0, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: 1
+     * MCD_MEM_MODE write: 3 40 BYTE, regBefore: 1, regAfter: 40, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: 41
+     * MCD_MEM_MODE write: 3 80 BYTE, regBefore: 41, regAfter: 80, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: 81
+     * MCD_MEM_MODE write: 3 c0 BYTE, regBefore: 81, regAfter: c0, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: c1
+     * MCD_MEM_MODE write: 2 ff00 WORD, regBefore: c1, regAfter: ffffff00, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: ff01
+     * MCD_MEM_MODE write: 2 0 BYTE, regBefore: ffffff01, regAfter: 1, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: 1
+     * MCD_MEM_MODE write: 2 2a BYTE, regBefore: 1, regAfter: 2a01, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: 2a01
+     * <p>
+     * //ko
+     * MCD_MEM_MODE write: 3 0 BYTE, regBefore: 1, regAfter: 0, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: 0
+     * MCD_MEM_MODE write: 3 40 BYTE, regBefore: 0, regAfter: 40, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: 40
+     * MCD_MEM_MODE write: 3 80 BYTE, regBefore: 40, regAfter: 80, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: 80
+     * MCD_MEM_MODE write: 3 c0 BYTE, regBefore: 80, regAfter: c0, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: c0
+     * MCD_MEM_MODE write: 2 ff00 WORD, regBefore: c0, regAfter: ff00, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: ff00
+     * MCD_MEM_MODE write: 2 ff00 WORD, regBefore: fff00, regAfter: ff00, wramBefore: W_2M_MAIN, wramAfter: W_2M_MAIN, regAfter2: ff00
+     * //[...] forever
+     * <p>
+     * <p>
+     * 68M 00000646   33fc ff00 00a12002      move.w   #$ff00,$00a12002
+     * [...]
+     * 68M 00000692   0c79 ff01 00a12002      cmpi.w   #$ff01,$00a12002
+     * 68M 0000069a   668e                    bne.s    $0000062a
+     */
+    @Test
+    public void test2M_wonderMidi() {
+        //default
+        Assertions.assertEquals(1, mainGetLsbFn.apply(lc.mainBus));
+        mainSetLsbFn.accept(lc.mainBus, 0);
+        mainSetLsbFn.accept(lc.mainBus, 0x40);
+        mainSetLsbFn.accept(lc.mainBus, 0x80);
+        mainSetLsbFn.accept(lc.mainBus, 0xC0);
+        MdRuntimeData.setAccessTypeExt(M68K);
+        lc.mainBus.write(MAIN_MEM_MODE_REG, 0xFF00, Size.WORD);
+        //RET goes to 1
+        Assertions.assertEquals(1, mainGetLsbFn.apply(lc.mainBus));
+    }
 }

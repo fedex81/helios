@@ -34,7 +34,7 @@ import static mcd.pcm.McdPcm.MCD_PCM_DIVIDER;
 import static mcd.util.BuramHelper.readBackupRam;
 import static mcd.util.BuramHelper.writeBackupRam;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
-import static mcd.util.McdRegBitUtil.setSharedBit;
+import static mcd.util.McdRegBitUtil.setSharedBitBothCpu;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
@@ -376,9 +376,10 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
         WramSetup prev = memCtx.wramSetup;
         WramSetup ws = memCtx.wramHelper.update(cpuType, resWord);
         handleWramSetupChange(prev, ws);
-        if (ws == WramSetup.W_2M_MAIN) { //set DMNA=0
-            setBitVal(sysGateRegs, MCD_MEM_MODE.addr + 1, 1, 0, Size.BYTE);
-            setSharedBit(memCtx, cpuType, 0, SharedBitDef.DMNA);
+        if (ws.mode == WordRamMode._2M) { //set DMNA=0 for 2M_MAIN, DMNA = 1 for 2M_SUB
+            //TODO verify DMNA = 1 for 2M_SUB
+            int val = ws.cpu == M68K ? 0 : 1;
+            setSharedBitBothCpu(memCtx, SharedBitDef.DMNA, val);
         }
         asic.setStampPriorityMode((resWord >> 3) & 3);
     }

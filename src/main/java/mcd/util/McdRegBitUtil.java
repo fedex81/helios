@@ -20,18 +20,23 @@ import static omegadrive.util.Util.getBitFromByte;
  */
 public class McdRegBitUtil {
 
-    public static void setSharedBits(MegaCdMemoryContext ctx, CpuDeviceAccess cpu, int byteVal, SharedBitDef... bitDef) {
-        Arrays.stream(bitDef).forEach(bd -> setSharedBit(ctx, cpu, byteVal, bd));
+    public static void setSharedBitsOtherCpu(MegaCdMemoryContext ctx, CpuDeviceAccess cpu, int byteVal, SharedBitDef... bitDef) {
+        Arrays.stream(bitDef).forEach(bd -> setSharedBitOtherCpu(ctx, cpu, byteVal, bd));
     }
 
     /**
      * Given the byte value, only set the bit at bitPos as defined in SharedBit
      */
-    public static void setSharedBit(MegaCdMemoryContext ctx, CpuDeviceAccess cpu, int byteVal, SharedBitDef bitDef) {
+    public static void setSharedBitOtherCpu(MegaCdMemoryContext ctx, CpuDeviceAccess cpu, int byteVal, SharedBitDef bitDef) {
         assert cpu == M68K || cpu == SUB_M68K;
         CpuDeviceAccess other = cpu == M68K ? SUB_M68K : M68K;
         ByteBuffer regs = ctx.getGateSysRegs(other);
         setBit(regs, bitDef.getRegBytePos(), bitDef.getBitPos(), (byteVal >> bitDef.getBitPos()) & 1, Size.BYTE);
+    }
+
+    public static void setSharedBitBothCpu(MegaCdMemoryContext ctx, SharedBitDef bitDef, int byteVal) {
+        setBitInternal(ctx.getGateSysRegs(M68K), bitDef.getRegBytePos(), bitDef.getBitPos(), byteVal);
+        setBitInternal(ctx.getGateSysRegs(SUB_M68K), bitDef.getRegBytePos(), bitDef.getBitPos(), byteVal);
     }
 
     public static void setBitInternal(ByteBuffer buff, int regAddr, int bitPos, int data) {
@@ -41,7 +46,7 @@ public class McdRegBitUtil {
 
     public static void setSharedBitInternal(MegaCdMemoryContext ctx, CpuDeviceAccess cpu, SharedBitDef bitDef, int data) {
         setBitInternal(ctx.getGateSysRegs(cpu), bitDef.getRegBytePos(), bitDef.getBitPos(), data);
-        setSharedBit(ctx, cpu, data, bitDef);
+        setSharedBitOtherCpu(ctx, cpu, data, bitDef);
     }
 
     public static void setBitDefInternal(MegaCdMemoryContext ctx, CpuDeviceAccess cpu,

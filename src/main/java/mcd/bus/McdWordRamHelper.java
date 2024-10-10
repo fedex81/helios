@@ -123,8 +123,7 @@ public class McdWordRamHelper {
                 if (ret > 0) {
                     dmna = 0;
                 }
-                McdRegBitUtil.setSharedBit(memoryContext, M68K, dmna << 1, DMNA);
-                McdRegBitUtil.setSharedBit(memoryContext, SUB_M68K, dmna << 1, DMNA);
+                McdRegBitUtil.setSharedBitBothCpu(memoryContext, DMNA, dmna << 1);
                 LogHelper.logWarnOnce(LOG, "Setting wordRam to {}", memoryContext.wramSetup);
             }
             if (c == M68K) {
@@ -134,10 +133,8 @@ public class McdWordRamHelper {
                     if (ret > 0) {
                         dmna = ret;
                     }
-                    McdRegBitUtil.setSharedBit(memoryContext, M68K, dmna << 1, DMNA);
-                    McdRegBitUtil.setSharedBit(memoryContext, SUB_M68K, dmna << 1, DMNA);
-                    McdRegBitUtil.setSharedBit(memoryContext, M68K, ret, RET);
-                    McdRegBitUtil.setSharedBit(memoryContext, SUB_M68K, ret, RET);
+                    McdRegBitUtil.setSharedBitBothCpu(memoryContext, DMNA, dmna << 1);
+                    McdRegBitUtil.setSharedBitBothCpu(memoryContext, RET, ret);
                     //DMNA has no effect, ie. MAIN cannot switch banks directly, it needs to ask SUB to do it
                     memoryContext.wramSetup = ret == 0 ? MegaCdMemoryContext.WramSetup.W_1M_WR0_MAIN : MegaCdMemoryContext.WramSetup.W_1M_WR0_SUB;
                     LogHelper.logWarnOnce(LOG, "Setting wordRam to {}", memoryContext.wramSetup);
