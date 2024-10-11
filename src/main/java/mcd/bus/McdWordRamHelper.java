@@ -180,13 +180,16 @@ public class McdWordRamHelper {
     }
 
     public int readCellMapped(int address, Size size) {
-        assert size != Size.LONG;
         assert MdRuntimeData.getAccessTypeExt() == M68K;
         int assignedBank = memoryContext.wramSetup.cpu == M68K ? 0 : 1;
         int otherBank = ~assignedBank & 1;
         int word = readWordRamBank(otherBank, address & ~1);
         if (size == Size.BYTE) {
+            LogHelper.logWarnOnceForce(LOG, "readCellMapped BYTE");
             return (address & 1) == 0 ? word >> 8 : word;
+        } else if (size == Size.LONG) { //TODO check, Dune
+            word = (word << 16) | readCellMapped(address + 2, Size.WORD);
+            LogHelper.logWarnOnceForce(LOG, "readCellMapped LONG");
         }
         return word;
     }
