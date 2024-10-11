@@ -32,7 +32,8 @@ import org.slf4j.Logger;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HexFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static omegadrive.cart.MdCartInfoProvider.MdRomHeaderField.*;
 import static omegadrive.system.SystemProvider.RomContext;
@@ -48,6 +49,64 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         } catch (Exception e) {
             System.out.println("Charset SHIFT-JIS not supported");
             SHIFT_JIS = null;
+        }
+    }
+
+    public enum DeviceSupportField {
+        J("3-button controller"),
+        _6("6", "6-button controller"),
+        _0("0", "Master System controller"),
+        A("Analog joystick"),
+        _4("4", "Multitap"),
+
+        G("Lightgun"),
+
+        L("Activator"),
+
+        M("Mouse"),
+
+        B("Trackball"),
+
+        T("Tablet"),
+
+        V("Paddle"),
+
+        K("Keyboard or keypad"),
+
+        R("RS-232"),
+
+        P("Printer"),
+
+        C("CD-ROM (Sega CD)"),
+
+        F("Floppy drive"),
+
+        D("Download?");
+
+        public final String code;
+        public final String explain;
+
+        DeviceSupportField(String name) {
+            this.code = name();
+            this.explain = name;
+        }
+
+        DeviceSupportField(String code, String name) {
+            this.code = code;
+            this.explain = name;
+        }
+
+        public static Optional<DeviceSupportField> getDeviceMappingIfAny(String s) {
+            Optional<DeviceSupportField> dsf = Optional.empty();
+            try {
+                dsf = Optional.of(DeviceSupportField.valueOf(s));
+            } catch (Exception e) {
+                try {
+                    dsf = Optional.of(DeviceSupportField.valueOf("_" + s));
+                } catch (Exception e1) {
+                }
+            }
+            return dsf;
         }
     }
 
@@ -68,7 +127,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         REGION_SUPPORT(0x1F0, 3),
         RESERVED2(0x1F3, 13);
 
-        static HexFormat hf = HexFormat.of().withSuffix(" ");
+        static final HexFormat hf = HexFormat.of().withSuffix(" ");
 
         public final int startOffset;
         public final int len;
@@ -115,7 +174,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         private static String extraMemStr(byte[] data) {
             int skipRaOffset = 2;
             String s = new String(data, EXTRA_MEMORY.startOffset, skipRaOffset) + " ";
-            if (s.trim().length() == 0) {
+            if (s.trim().isEmpty()) {
                 skipRaOffset = 0;
             }
             s += hf.formatHex(data, EXTRA_MEMORY.startOffset + skipRaOffset,
@@ -143,6 +202,8 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     private boolean sramEnabled;
     private int romSize;
     private String systemType, region = "";
+
+    private Set<DeviceSupportField> deviceSupport = Collections.emptySet();
 
     private String headerInfo = "";
     private MdMapperType forceMapper = null;
@@ -263,7 +324,15 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         assert romHeader.length >= 0x200;
         StringBuilder sb = new StringBuilder("\nRom header:\n");
         for (MdRomHeaderField f : rhf) {
-            sb.append(f.getStringView(romHeader)).append("\n");
+            String sv = f.getStringView(romHeader);
+            if (f == DEVICE_SUPPORT) {
+                processDeviceSupport(romHeader);
+                if (!deviceSupport.isEmpty()) {
+                    sv += "\n\t" + Arrays.toString(deviceSupport.stream().map(df -> df.explain).
+                            collect(Collectors.toList()).toArray());
+                }
+            }
+            sb.append(sv).append("\n");
         }
         headerInfo = sb.toString();
         systemType = SYSTEM_TYPE.getValue(romHeader).trim();
@@ -273,6 +342,18 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         if (romHeader.length > SVP_SV_TOKEN_ADDRESS + 1) {
             isSvp = SVP_SV_TOKEN.equals(new String(romHeader, SVP_SV_TOKEN_ADDRESS, 2).trim());
         }
+    }
+
+    private void processDeviceSupport(byte[] romHeader) {
+        String str = DEVICE_SUPPORT.getValue(romHeader).trim();
+        Set<DeviceSupportField> set = new LinkedHashSet<>();
+        for (int i = 0; i < str.length(); i++) {
+            String s = "" + str.charAt(i);
+            if (!s.trim().isEmpty()) {
+                DeviceSupportField.getDeviceMappingIfAny(s).ifPresent(set::add);
+            }
+        }
+        deviceSupport = Collections.unmodifiableSet(set);
     }
 
     public MdRomDbModel.RomDbEntry getEntry() {
@@ -290,6 +371,10 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
 
     public boolean isSvp() {
         return isSvp;
+    }
+
+    public Set<DeviceSupportField> getDeviceSupport() {
+        return deviceSupport;
     }
 
     public boolean adjustSramLimits(long address) {
