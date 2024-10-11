@@ -4,6 +4,7 @@ import mcd.dict.MegaCdMemoryContext;
 import omegadrive.Device;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector.Region;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
@@ -27,6 +28,9 @@ public interface McdSubInterruptHandler extends Device {
     Logger LOG = LogHelper.getLogger(McdSubInterruptHandler.class.getSimpleName());
 
     boolean verbose = false;
+
+    @Deprecated
+    void setRegion(Region region);
 
     /**
      * INT_ASIC = LEVEL 1
@@ -74,6 +78,8 @@ public interface McdSubInterruptHandler extends Device {
 
         private int pendingMask = 0;
 
+        private Region region = Region.USA;
+
         private McdSubInterruptHandlerImpl(MegaCdMemoryContext c, M68kProvider subCpu) {
             this.subCpu = subCpu;
             this.context = c;
@@ -87,6 +93,14 @@ public interface McdSubInterruptHandler extends Device {
         @Override
         public void lowerInterrupt(SubCpuInterrupt intp) {
             setPending(intp, 0);
+        }
+
+        @Override
+        public void setRegion(Region region) {
+            if (this.region != region) {
+                LOG.info("Interrupt hack for region: {}", region);
+                this.region = region;
+            }
         }
 
         @Override
@@ -135,8 +149,13 @@ public interface McdSubInterruptHandler extends Device {
             if (verbose && raised) {
                 LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
             }
+            //TODO HACK
             //if the cpu is masking it, interrupt lost
-            return raised;
+            //OK -> EU-bios 1.00 (f891e0ea651e2232af0c5c4cb46a0cae2ee8f356)
+            //OK -> US-bios 1.00 (c5c24e6439a148b7f4c7ea269d09b7a23fe25075)
+            //OK -> JP-bios 1.00H (aka 100s) (230ebfc49dc9e15422089474bcc9fa040f2c57eb)
+            //for JP press start and then select CD-ROM
+            return region == Region.EUROPE ? true : raised;
         }
 
         @Override

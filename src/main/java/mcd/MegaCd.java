@@ -79,7 +79,10 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
 
     private double mcd68kRatio;
 
-
+    //OK -> EU-bios 1.00 (f891e0ea651e2232af0c5c4cb46a0cae2ee8f356)
+    //OK -> US-bios 1.00 (c5c24e6439a148b7f4c7ea269d09b7a23fe25075)
+    //OK -> JP-bios 1.00H (aka 100s) (230ebfc49dc9e15422089474bcc9fa040f2c57eb)
+    //for JP press start and then select CD-ROM
     static {
         System.setProperty("68k.debug", "false");
         System.setProperty("helios.68k.debug.mode", "0");
@@ -227,6 +230,7 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
             mcdLaunchContext.pcm.updateVideoMode(displayContext.videoMode);
             mcdLaunchContext.cdd.updateVideoMode(displayContext.videoMode);
             LOG.info("Video mode changed: {}, mcd68kRatio: {}, microsPerTick: {}", displayContext.videoMode, mcd68kRatio, microsPerTick);
+            mcdLaunchContext.interruptHandler.setRegion(displayContext.videoMode.getRegion());
         }
     }
 
