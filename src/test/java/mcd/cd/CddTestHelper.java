@@ -74,16 +74,16 @@ public class CddTestHelper {
 
 
     public static void waitCddStatus(McdLaunchContext lc, Cdd.CddStatus status) {
-        Cdd.CddStatus now = null;
         int cnt = 0;
+        Cdd.CddStatus lastStatus = null;
         do {
             lc.cdd.step(1);
             int res = readBuffer(lc.memoryContext.commonGateRegsBuf, (MCD_CDD_COMM0.addr) & MDC_SUB_GATE_REGS_MASK,
                     Size.BYTE);
-            now = Cdd.statusVals[res];
+            lastStatus = Cdd.statusVals[res];
             cnt++;
-        } while (now != status && cnt < cddWaitLimit);
-        Assertions.assertTrue(cnt < cddWaitLimit);
+        } while (lastStatus != status && cnt < cddWaitLimit);
+        Assertions.assertTrue(cnt < cddWaitLimit, "act: " + lastStatus + " vs exp: " + status);
     }
 
     public static String setMsfGetTestString(int lba, int[] input) {

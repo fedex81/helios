@@ -51,7 +51,7 @@ public class CdBiosHelper {
     }
 
     static {
-        enabled = Boolean.valueOf(System.getProperty("68k.debug", "false"));
+        enabled = false && Boolean.valueOf(System.getProperty("68k.debug", "false"));
         Map<String, Integer> cdBiosFunMap = new HashMap<>();
         Map<String, Integer> cdBootFunMap = new HashMap<>();
         Map<String, Integer> cdBuramFunMap = new HashMap<>();

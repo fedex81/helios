@@ -29,7 +29,7 @@ class CddImpl implements Cdd {
 
     private final static Logger LOG = LogHelper.getLogger(CddImpl.class.getSimpleName());
 
-    private final boolean verbose = true;
+    private final boolean verbose = false;
     private final boolean verboseReg = false;
 
     private static final int CD_LATENCY = 1;
@@ -220,8 +220,8 @@ class CddImpl implements Cdd {
 //                once = true;
 //            }
             if (cddContext.io.latency == 0) {
+                updateStatus(0, cddContext.io.status.ordinal()); //for seek_pause and seek_play
                 //TODO not needed?
-//                updateStatus(0, cddContext.io.status.ordinal()); //for seek_pause and seek_play
 //                updateStatus(1, prevStatus1);
                 once = false;
                 //TODO not needed?
@@ -314,11 +314,13 @@ class CddImpl implements Cdd {
                     }
                     /* otherwise, check if RS2-RS8 need to be updated */
                     else if (cddContext.statusRegs[1] == 0x00) {
+                        //TODO is this used??
                         /* current absolute time */
                         int lba = hasMedia ? cddContext.io.sector + PREGAP_LEN_LBA : 0;
                         CueFileParser.toMSF(lba, msfHolder);
                         updateStatusesMsf(cddContext.statusRegs[1], getFlags(isAudio), msfHolder);
                     } else if (cddContext.statusRegs[1] == 0x01) {
+                        //TODO is this used??
                         CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                         /* current track relative time */
                         int lba = cddContext.io.sector - etd.absoluteSectorStart + PREGAP_LEN_LBA;
@@ -434,8 +436,9 @@ class CddImpl implements Cdd {
                 int lba = CueFileParser.toSector(cddContext.commandRegs[2], cddContext.commandRegs[3],
                         cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6],
                         cddContext.commandRegs[7]) - PREGAP_LEN_LBA;
-                CueFileParser.toMSF((lba + PREGAP_LEN_LBA), msfHolder);
-                extraInfo.append("lba " + (lba + PREGAP_LEN_LBA) + ", msf " + msfHolder);
+                lba -= LBA_READAHEAD_LEN;
+                CueFileParser.toMSF((lba + PREGAP_LEN_LBA + LBA_READAHEAD_LEN), msfHolder);
+                extraInfo.append("lba " + (lba + PREGAP_LEN_LBA + LBA_READAHEAD_LEN) + ", msf " + msfHolder);
                 /* CD drive latency */
                 if (cddContext.io.latency == 0) {
                     cddContext.io.latency = 1 + 10 * CD_LATENCY;
@@ -610,8 +613,7 @@ class CddImpl implements Cdd {
                 }
                 CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                 /* current track relative time */
-                int lba = PREGAP_LEN_LBA + cddContext.io.sector - etd.absoluteSectorStart;
-//                        Math.abs(cddContext.io.sector - etd.absoluteSectorStart) + PREGAP_LEN_LBA;
+                int lba = Math.max(0, cddContext.io.sector - etd.absoluteSectorStart);
                 CueFileParser.toMSF(lba, msfHolder);
                 updateStatus(0, cddContext.io.status.ordinal());
                 updateStatusesMsf(request.ordinal(), getFlags(isAudio), msfHolder);
@@ -744,6 +746,7 @@ class CddImpl implements Cdd {
                 return ext.trackData.getNumber();
             }
         }
+        //TODO slodemo.iso breaks
         assert lba < 0;
         return 0;
     }

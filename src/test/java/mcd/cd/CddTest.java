@@ -18,6 +18,7 @@ import static mcd.cd.CddTestHelper.*;
 import static mcd.cdd.Cdd.CddCommand.SeekPause;
 import static mcd.cdd.Cdd.CddCommand.SeekPlay;
 import static mcd.cdd.Cdd.LBA_READAHEAD_LEN;
+import static mcd.cdd.Cdd.PREGAP_LEN_LBA;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 
 /**
@@ -69,7 +70,7 @@ public class CddTest extends McdRegTestBase {
         testSeekInternal(SeekPause, CddStatus.Paused, 145);
         clearCmdReg(lc);
         cddRequest(lc, CddRequest.RelativeTime);
-        Assertions.assertEquals("41.000167.57", getStatusString());
+        Assertions.assertEquals("41.000000.55", getStatusString());
     }
 
     /**
@@ -110,7 +111,7 @@ public class CddTest extends McdRegTestBase {
             expStat[1] = CddRequest.RelativeTime.ordinal();
             //when seeking the actual lba is decreased by 3
             //150-(i-3) frames away from the actual track start (2s of pregap)
-            int relativeLba = (i - 3);
+            int relativeLba = Math.max(0, (i - 3) - PREGAP_LEN_LBA);
             String exp = setMsfGetTestString(relativeLba, expStat);
             Assertions.assertEquals(exp, getStatusString());
 

@@ -26,7 +26,7 @@ public interface McdSubInterruptHandler extends Device {
 
     Logger LOG = LogHelper.getLogger(McdSubInterruptHandler.class.getSimpleName());
 
-    boolean verbose = true;
+    boolean verbose = false;
 
     /**
      * INT_ASIC = LEVEL 1
