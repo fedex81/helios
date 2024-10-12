@@ -51,7 +51,7 @@ public class SysUtil {
     public static final String SMD_INTERLEAVED_EXT = ".smd";
 
     public static final Map<SystemType, String[]> sysFileExtensionsMap = ImmutableMap.of(
-            GENESIS, new String[]{".md", ".bin", SMD_INTERLEAVED_EXT},
+            MD, new String[]{".md", ".bin", SMD_INTERLEAVED_EXT},
             S32X, new String[]{".32x", ".bin", ".md"},
             MEGACD, new String[]{".cue", ".bin", ".iso"},
             SG_1000, new String[]{".sg", ".sc"},
@@ -138,7 +138,8 @@ public class SysUtil {
             }
         }
         SystemProvider systemProvider = switch (type) {
-            case GENESIS -> Megadrive.createNewInstance(display);
+//            case GENESIS -> Megadrive.createNewInstance(display);
+            case MD -> MegaCd2.createNewInstance(display);
             case MEGACD -> MegaCd2.createNewInstance(display);
             case S32X -> Md32x.createNewInstance32x(display);
             case SG_1000 -> Z80BaseSystem.createNewInstance(SG_1000, display);
@@ -199,7 +200,7 @@ public class SysUtil {
     public static SoundDevice getFmProvider(SystemType systemType, Region region) {
         SoundDevice fmProvider = FmProvider.NO_SOUND;
         switch (systemType) {
-            case GENESIS:
+            case MD:
             case S32X:
             case MEGACD:
                 fmProvider = MdFmProvider.createInstance(region, AbstractSoundManager.audioFormat);

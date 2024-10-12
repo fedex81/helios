@@ -19,7 +19,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static omegadrive.SystemLoader.SystemType.GENESIS;
+import static omegadrive.SystemLoader.SystemType.MD;
 
 /**
  * Ym2612NukeSerializeTest
@@ -44,7 +44,7 @@ public class SavestateSerializeTest {
     public void testSerialFormatUnchangedNuke() {
         Path p = Paths.get(fileFolder, nukeSavestateName);
         GstStateHandler stateHandler = (GstStateHandler) BaseStateHandler.createInstance(
-                GENESIS, p.toAbsolutePath().toString(), BaseStateHandler.Type.LOAD, Collections.emptySet());
+                MD, p.toAbsolutePath().toString(), BaseStateHandler.Type.LOAD, Collections.emptySet());
         Ym2612Nuke nuke = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
         int hashCode = nuke.getState().hashCode();
         stateHandler.loadFmState(nuke);
@@ -64,7 +64,7 @@ public class SavestateSerializeTest {
     public void testSerialFormatUnchangedSvp() {
         Path p = Paths.get(fileFolder, svpSavestateName);
         GshStateHandler stateHandler = (GshStateHandler) BaseStateHandler.createInstance(
-                GENESIS, p.toAbsolutePath().toString(), BaseStateHandler.Type.LOAD, Collections.emptySet());
+                MD, p.toAbsolutePath().toString(), BaseStateHandler.Type.LOAD, Collections.emptySet());
         SvpMapper svpMapper = SvpMapper.createInstance(RomMapper.NO_OP_MAPPER, NO_MEMORY);
         Ssp16 ssp16 = SvpMapper.ssp16;
         int hc1 = Arrays.hashCode(ssp16.getSvpContext().iram_rom) + Arrays.hashCode(ssp16.getSvpContext().dram);

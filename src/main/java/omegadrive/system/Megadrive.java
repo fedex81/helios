@@ -89,7 +89,7 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
 
     protected Megadrive(DisplayWindow emuFrame) {
         super(emuFrame);
-        systemType = SystemLoader.SystemType.GENESIS;
+        systemType = SystemLoader.SystemType.MD;
     }
 
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {

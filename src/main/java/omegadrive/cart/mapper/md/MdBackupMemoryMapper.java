@@ -55,7 +55,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     private EepromBase eeprom = EepromBase.NO_OP;
 
     private MdBackupMemoryMapper(String romName, int size) {
-        super(SystemLoader.SystemType.GENESIS, fileType, romName, size);
+        super(SystemLoader.SystemType.MD, fileType, romName, size);
     }
 
     public static RomMapper createInstance(RomMapper baseMapper, MdCartInfoProvider cart, RomDbEntry entry) {

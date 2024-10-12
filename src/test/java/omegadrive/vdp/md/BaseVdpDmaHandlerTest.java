@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import static omegadrive.SystemLoader.SystemType.GENESIS;
+import static omegadrive.SystemLoader.SystemType.MD;
 import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
 
@@ -53,7 +53,7 @@ public class BaseVdpDmaHandlerTest {
         vdpProvider = opt.get();
         memoryInterface = vdpProvider.getVdpMemory();
         MdVdpTestUtil.vdpMode5(vdpProvider);
-        MdRuntimeData.newInstance(GENESIS, NO_CLOCK);
+        MdRuntimeData.newInstance(MD, NO_CLOCK);
     }
 
     protected void testDMAFillInternal(int dmaFillLong, int increment,

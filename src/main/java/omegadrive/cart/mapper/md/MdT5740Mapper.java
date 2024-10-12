@@ -64,7 +64,7 @@ public class MdT5740Mapper extends BackupMemoryMapper implements RomMapper, RomM
     }
 
     private MdT5740Mapper(String romName, RomMapper baseMapper) {
-        super(SystemLoader.SystemType.GENESIS, fileType, romName, SpiEeprom.SIZE_BYTES);
+        super(SystemLoader.SystemType.MD, fileType, romName, SpiEeprom.SIZE_BYTES);
         m_bank = new byte[3];
         this.baseMapper = baseMapper;
         LOG.info("MdT5740Mapper created, using folder: {}", sramFolder);

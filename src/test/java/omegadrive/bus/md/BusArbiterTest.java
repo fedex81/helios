@@ -57,7 +57,7 @@ public class BusArbiterTest {
         SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
         bus = new GenesisBus();
         vdp = GenesisVdpProvider.createVdp(bus);
-        Z80Provider z80 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, bus);
+        Z80Provider z80 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.MD, bus);
         z80bus = z80.getZ80BusProvider();
 
         cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, bus) {

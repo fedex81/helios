@@ -59,7 +59,7 @@ public class AutomatedGameTester {
             , "blacklist.txt"));
 
     public static Predicate<Path> testGenRomsPredicate = p ->
-            Arrays.stream(sysFileExtensionsMap.get(GENESIS)).anyMatch(p.toString()::endsWith) ||
+            Arrays.stream(sysFileExtensionsMap.get(MD)).anyMatch(p.toString()::endsWith) ||
                     Arrays.stream(compressedBinaryTypes).anyMatch(p.toString()::endsWith);
 
     private static Predicate<Path> testSgRomsPredicate = p ->

@@ -72,7 +72,7 @@ public class SystemTestUtil {
         GenesisVdpProvider vdpProvider1 = GenesisVdp.createInstance(busProvider, vdpMem);
         MC68000Wrapper cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, busProvider);
         GenesisJoypad joypad = new GenesisJoypad(SystemProvider.NO_CLOCK);
-        Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, busProvider);
+        Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.MD, busProvider);
         FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
         SoundProvider sp1 = getSoundProvider(fm1);
         z80bus.attachDevice(BusArbiter.NO_OP).attachDevice(busProvider);
@@ -101,7 +101,7 @@ public class SystemTestUtil {
         MC68000Wrapper cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, busProvider);
         SystemProvider systemProvider = createTestGenesisProvider(cpuMem1);
         GenesisJoypad joypad = new GenesisJoypad(null);
-        Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.GENESIS, busProvider);
+        Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.MD, busProvider);
         FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
         SoundProvider sp1 = getSoundProvider(fm1);
 
@@ -236,7 +236,7 @@ public class SystemTestUtil {
 
             @Override
             public SystemLoader.SystemType getSystemType() {
-                return SystemLoader.SystemType.GENESIS;
+                return SystemLoader.SystemType.MD;
             }
 
             @Override

@@ -67,7 +67,7 @@ public interface BaseStateHandler {
                                            Type type, Set<Device> devices) {
         BaseStateHandler h = BaseStateHandler.EMPTY_STATE;
         switch (systemType) {
-            case GENESIS:
+            case MD:
                 h = GshStateHandler.createInstance(fileName, type, devices);
                 break;
             case S32X:

@@ -38,7 +38,7 @@ public class DACTest {
     private static Path fileFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources", "dac");
 
-    static SoundProvider sp = AbstractSoundManager.createSoundProvider(SystemLoader.SystemType.GENESIS);
+    static SoundProvider sp = AbstractSoundManager.createSoundProvider(SystemLoader.SystemType.MD);
 
     public static void main(String[] args) throws IOException {
         System.out.println(new File(".").getAbsolutePath());

@@ -308,7 +308,7 @@ public class MdVdpTestUtil {
 
             @Override
             public SystemLoader.SystemType getSystemType() {
-                return SystemLoader.SystemType.GENESIS;
+                return SystemLoader.SystemType.MD;
             }
 
         };

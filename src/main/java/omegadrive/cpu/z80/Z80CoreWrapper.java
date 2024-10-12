@@ -59,7 +59,7 @@ public class Z80CoreWrapper implements Z80Provider {
     public static Z80CoreWrapper createInstance(SystemType systemType, BaseBusProvider busProvider) {
         Z80CoreWrapper w = null;
         switch (systemType) {
-            case GENESIS:
+            case MD:
             case S32X:
             case MEGACD:
                 w = createGenesisInstanceInternal(busProvider);

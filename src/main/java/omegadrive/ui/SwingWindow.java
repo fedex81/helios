@@ -658,7 +658,7 @@ public class SwingWindow implements DisplayWindow {
         Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);
         Optional.ofNullable(mainEmu).ifPresent(sp -> {
             setRomData(RomContext.NO_ROM);
-            boolean en = mainEmu.getSystemType() == SystemType.GENESIS ||
+            boolean en = mainEmu.getSystemType() == SystemType.MD ||
                     mainEmu.getSystemType() == SystemType.S32X;
             joypadTypeMenu.setEnabled(en);
             mainEmu.handleSystemEvent(SOUND_ENABLED, soundEnItem.getState());

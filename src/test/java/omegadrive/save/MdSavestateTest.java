@@ -47,7 +47,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static omegadrive.SystemLoader.SystemType.GENESIS;
+import static omegadrive.SystemLoader.SystemType.MD;
 
 public class MdSavestateTest extends BaseSavestateTest {
 
@@ -63,7 +63,7 @@ public class MdSavestateTest extends BaseSavestateTest {
     public static GenesisBusProvider loadSaveState(Path saveFile) {
         GenesisBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
         BaseStateHandler loadHandler = BaseStateHandler.createInstance(
-                GENESIS, saveFile.toAbsolutePath().toString(), Type.LOAD, busProvider.getAllDevices(Device.class));
+                MD, saveFile.toAbsolutePath().toString(), Type.LOAD, busProvider.getAllDevices(Device.class));
         loadHandler.processState();
         return busProvider;
     }
@@ -131,7 +131,7 @@ public class MdSavestateTest extends BaseSavestateTest {
         GenesisBusProvider busProvider1 = SystemTestUtil.setupNewMdSystem();
 
         BaseStateHandler loadHandler = BaseStateHandler.createInstance(
-                GENESIS, filePath, Type.LOAD, busProvider1.getAllDevices(Device.class));
+                MD, filePath, Type.LOAD, busProvider1.getAllDevices(Device.class));
         byte[] data = loadHandler.getData();
 
         loadHandler.processState();
@@ -139,12 +139,12 @@ public class MdSavestateTest extends BaseSavestateTest {
         String name = loadHandler.getFileName() + "_TEST_" + System.currentTimeMillis() + ".gs0";
 
         BaseStateHandler saveHandler = BaseStateHandler.createInstance(
-                GENESIS, name, Type.SAVE, busProvider1.getAllDevices(Device.class));
+                MD, name, Type.SAVE, busProvider1.getAllDevices(Device.class));
 
         GenesisBusProvider busProvider2 = SystemTestUtil.setupNewMdSystem();
 
         BaseStateHandler loadHandler1 = BaseStateHandler.createInstance(
-                GENESIS, filePath, Type.LOAD, busProvider2.getAllDevices(Device.class));
+                MD, filePath, Type.LOAD, busProvider2.getAllDevices(Device.class));
         byte[] savedData = loadHandler1.getData();
         loadHandler1.processState();
 
