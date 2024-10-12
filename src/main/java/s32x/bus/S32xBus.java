@@ -1,8 +1,8 @@
 package s32x.bus;
 
 import omegadrive.Device;
-import omegadrive.bus.md.GenesisBus;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.md.MdBus;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.sound.PwmProvider;
 import omegadrive.util.*;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
@@ -30,7 +30,7 @@ import static omegadrive.util.Util.th;
  * <p>
  * Copyright 2021
  */
-public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
+public class S32xBus extends MdBus implements Sh2Bus.MdRomAccess {
 
     private static final Logger LOG = LogHelper.getLogger(S32xBus.class.getSimpleName());
     static final boolean verboseMd = false;
@@ -56,7 +56,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
     }
 
     @Override
-    public GenesisBusProvider attachDevice(Device device) {
+    public MdBusProvider attachDevice(Device device) {
         if (device instanceof Sh2) {
             sh2 = (Sh2) device;
         } else if (device instanceof S32XMMREG) {
@@ -131,7 +131,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
             assert address == S32xDict.M68K_START_MARS_ID;
             res = 0x4d415253; //'MARS'
         } else {
-            if (!DmaFifo68k.rv && address <= GenesisBus.DEFAULT_ROM_END_ADDRESS) {
+            if (!DmaFifo68k.rv && address <= MdBus.DEFAULT_ROM_END_ADDRESS) {
                 logWarnOnce(LOG, "Ignoring read access to ROM when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return size.getMask();
             }
@@ -209,7 +209,7 @@ public class S32xBus extends GenesisBus implements Sh2Bus.MdRomAccess {
                 logWarnOnce(LOG, "Ignoring write access to vector rom, RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return;
             }
-            if (!DmaFifo68k.rv && address <= GenesisBus.DEFAULT_ROM_END_ADDRESS) {
+            if (!DmaFifo68k.rv && address <= MdBus.DEFAULT_ROM_END_ADDRESS) {
                 LOG.warn("Ignoring write access to ROM when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return;
             }

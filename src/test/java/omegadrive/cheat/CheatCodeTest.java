@@ -17,7 +17,7 @@
 
 package omegadrive.cheat;
 
-import omegadrive.cart.cheat.BasicGenesisRawCode;
+import omegadrive.cart.cheat.BasicMdRawCode;
 import omegadrive.cart.cheat.CheatCodeHelper;
 import omegadrive.cart.cheat.GameGenieHelper;
 import org.junit.Assert;
@@ -46,7 +46,7 @@ public class CheatCodeTest {
 
     public static void main(String[] args) {
 //        AB1A-CAGJ + AB1T-CAHE
-        BasicGenesisRawCode code = GameGenieHelper.decode("AB1T-CAHE");
+        BasicMdRawCode code = GameGenieHelper.decode("AB1T-CAHE");
         System.out.println(code.toString());
     }
 
@@ -70,7 +70,7 @@ public class CheatCodeTest {
             System.out.println(file.toString());
             try {
                 List<String> lines = Files.readAllLines(file);
-                Set<BasicGenesisRawCode> set =
+                Set<BasicMdRawCode> set =
                         lines.stream().map(CheatCodeHelper::parseCheatCode).collect(Collectors.toSet());
             } catch (Exception e) {
                 System.err.println("Unable to load: " + file.toString());

@@ -1,5 +1,5 @@
 /*
- * GenesisJoypad
+ * MdJoypad
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 13/10/19 17:32
  *
@@ -38,17 +38,17 @@ import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
 import static omegadrive.util.Util.th;
 
 /**
- * GenesisJoypad
+ * MdJoypad
  *
  * @author Federico Berti
  * <p>
  * Most of the code adapted from GenesisPlusGx joypad.c
  * <p>
- * see GenesisJoypadTest
+ * see MdJoypadTest
  */
-public class GenesisJoypad extends BasePadAdapter {
+public class MdJoypad extends BasePadAdapter {
 
-    private static final Logger LOG = LogHelper.getLogger(GenesisJoypad.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MdJoypad.class.getSimpleName());
 
     private static final int M68K_CYCLES_PAD_RESET = 12000; //~1.6ms @ 7.5mhz
 
@@ -117,11 +117,11 @@ public class GenesisJoypad extends BasePadAdapter {
 
     private final SystemProvider.SystemClock clock;
 
-    public static GenesisJoypad create(SystemProvider.SystemClock clock) {
-        return new GenesisJoypad(clock);
+    public static MdJoypad create(SystemProvider.SystemClock clock) {
+        return new MdJoypad(clock);
     }
 
-    public GenesisJoypad(SystemProvider.SystemClock clock) {
+    public MdJoypad(SystemProvider.SystemClock clock) {
         this.clock = clock;
         p1Type = JoypadType.BUTTON_6;
         p2Type = JoypadType.BUTTON_6;

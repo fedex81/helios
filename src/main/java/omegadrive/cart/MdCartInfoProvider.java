@@ -1,5 +1,5 @@
 /*
- * GenesisCartInfoProvider
+ * MdCartInfoProvider
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 17/05/19 13:33
  *

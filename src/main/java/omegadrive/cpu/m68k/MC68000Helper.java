@@ -40,18 +40,18 @@ public class MC68000Helper {
     private final static Logger LOG = LogHelper.getLogger(MC68000Helper.class.getSimpleName());
 
     public static final boolean STOP_ON_EXCEPTION;
-    public static final boolean GENESIS_TAS_BROKEN;
+    public static final boolean MD_TAS_BROKEN;
     public static final boolean M68K_DEBUG;
     public final static int OVERCLOCK_FACTOR;
 
     static {
         STOP_ON_EXCEPTION =
                 Boolean.parseBoolean(System.getProperty("68k.stop.on.exception", "true"));
-        GENESIS_TAS_BROKEN = Boolean.parseBoolean(System.getProperty("68k.broken.tas", "true"));
+        MD_TAS_BROKEN = Boolean.parseBoolean(System.getProperty("68k.broken.tas", "true"));
         M68K_DEBUG = Boolean.parseBoolean(System.getProperty("68k.debug", "false"));
         OVERCLOCK_FACTOR = Integer.parseInt(System.getProperty("68k.overclock.factor", "0"));
-        if (GENESIS_TAS_BROKEN != TAS.EMULATE_BROKEN_TAS) {
-            LOG.info("Overriding 68k TAS broken setting: {}", GENESIS_TAS_BROKEN);
+        if (MD_TAS_BROKEN != TAS.EMULATE_BROKEN_TAS) {
+            LOG.info("Overriding 68k TAS broken setting: {}", MD_TAS_BROKEN);
         }
         if (M68K_DEBUG) {
             LOG.info("68k debug mode: true");

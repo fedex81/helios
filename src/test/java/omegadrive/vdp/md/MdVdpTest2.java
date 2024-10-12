@@ -1,5 +1,5 @@
 /*
- * GenesisVdpTest2
+ * MdVdpTest2
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 17/10/19 14:04
  *
@@ -19,14 +19,14 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.VdpDmaHandlerTest;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,25 +36,25 @@ import org.slf4j.Logger;
 import java.util.Optional;
 
 import static omegadrive.SystemLoader.SystemType.MD;
-import static omegadrive.bus.model.GenesisBusProvider.VDP_ADDRESS_SPACE_START;
+import static omegadrive.bus.model.MdBusProvider.VDP_ADDRESS_SPACE_START;
 import static omegadrive.system.SystemProvider.NO_CLOCK;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.*;
-import static omegadrive.vdp.model.GenesisVdpProvider.VramMode.*;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.*;
+import static omegadrive.vdp.model.MdVdpProvider.VramMode.*;
 
-public class GenesisVdpTest2 {
+public class MdVdpTest2 {
 
     private static final Logger LOG = LogHelper.getLogger(VdpDmaHandlerTest.class.getSimpleName());
 
-    GenesisVdpProvider vdpProvider;
+    MdVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
-    GenesisBusProvider busProvider;
+    MdBusProvider busProvider;
 
     static final int VDP_CONTROL_PORT = VDP_ADDRESS_SPACE_START + 4;
 
     @Before
     public void setup() {
         busProvider = SystemTestUtil.setupNewMdSystem();
-        Optional<GenesisVdpProvider> opt = busProvider.getBusDeviceIfAny(GenesisVdpProvider.class);
+        Optional<MdVdpProvider> opt = busProvider.getBusDeviceIfAny(MdVdpProvider.class);
         Assert.assertTrue(opt.isPresent());
         vdpProvider = opt.get();
         memoryInterface = vdpProvider.getVdpMemory();
@@ -100,13 +100,13 @@ public class GenesisVdpTest2 {
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
         //autoInc has not been changed
-        Assert.assertEquals(dmaAutoInc, vdpProvider.getRegisterData(GenesisVdpProvider.VdpRegisterName.AUTO_INCREMENT));
+        Assert.assertEquals(dmaAutoInc, vdpProvider.getRegisterData(MdVdpProvider.VdpRegisterName.AUTO_INCREMENT));
 
         MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
         Assert.assertTrue(busProvider.is68kRunning());
 
         //autoInc has now been changed
-        Assert.assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(GenesisVdpProvider.VdpRegisterName.AUTO_INCREMENT));
+        Assert.assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(MdVdpProvider.VdpRegisterName.AUTO_INCREMENT));
     }
 
     @Test
@@ -129,7 +129,7 @@ public class GenesisVdpTest2 {
 
         vdpProvider.writeControlPort(0x8f02); //set autoInc = 2, addressRegister -> 0xF02, codeReg = 2 (invalid)
         //codeReg should now be 2
-        int res = vdpProvider.readVdpPortWord(GenesisVdpProvider.VdpPortType.DATA);
+        int res = vdpProvider.readVdpPortWord(MdVdpProvider.VdpPortType.DATA);
         Assert.assertEquals(0, res); //invalid read returns 0
     }
 
@@ -220,7 +220,7 @@ public class GenesisVdpTest2 {
         vdpProvider.writeControlPort(firstWord);
         vdpProvider.writeControlPort(secondWord);
 
-        GenesisVdpProvider.VramMode vramMode = vdpProvider.getVramMode();
-        Assert.assertEquals(GenesisVdpProvider.VramMode.getVramMode(expected), vramMode);
+        MdVdpProvider.VramMode vramMode = vdpProvider.getVramMode();
+        Assert.assertEquals(MdVdpProvider.VramMode.getVramMode(expected), vramMode);
     }
 }

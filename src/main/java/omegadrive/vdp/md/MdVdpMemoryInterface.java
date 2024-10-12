@@ -1,5 +1,5 @@
 /*
- * GenesisVdpMemoryInterface
+ * MdVdpMemoryInterface
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 17/10/19 11:37
  *
@@ -21,7 +21,7 @@ package omegadrive.vdp.md;
 
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.slf4j.Logger;
 
@@ -31,12 +31,12 @@ import java.util.stream.IntStream;
 
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
-import static omegadrive.vdp.model.GenesisVdpProvider.*;
+import static omegadrive.vdp.model.MdVdpProvider.*;
 
-public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
+public class MdVdpMemoryInterface implements VdpMemoryInterface {
 
     public final static boolean verbose = false;
-    private final static Logger LOG = LogHelper.getLogger(GenesisVdpMemoryInterface.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(MdVdpMemoryInterface.class.getSimpleName());
     private static final int EVEN_VALUE_MASK = ~1;
 
     private ByteBuffer vram;
@@ -48,12 +48,12 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     private final VdpColorMapper colorMapper;
 
-    protected GenesisVdpMemoryInterface() {
+    protected MdVdpMemoryInterface() {
         colorMapper = VdpColorMapper.getInstance();
     }
 
-    public static GenesisVdpMemoryInterface createInstance() {
-        GenesisVdpMemoryInterface i = new GenesisVdpMemoryInterface();
+    public static MdVdpMemoryInterface createInstance() {
+        MdVdpMemoryInterface i = new MdVdpMemoryInterface();
         i.init();
         return i;
     }
@@ -87,7 +87,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     }
 
     @Override
-    public int readVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int address) {
+    public int readVideoRamWord(MdVdpProvider.VdpRamType vramType, int address) {
         switch (vramType) {
             case VRAM:
                 return readVramWord(address);
@@ -102,7 +102,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
     }
 
     @Override
-    public void writeVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int data, int address) {
+    public void writeVideoRamWord(MdVdpProvider.VdpRamType vramType, int data, int address) {
         byte data1 = (byte) (data >> 8);
         byte data2 = (byte) data;
         //ignore A0
@@ -186,7 +186,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 //    when it passes 7Fh. Writes to the addresses beyond 50h are ignored.
     protected void writeVsramByte(int address, byte data) {
         address &= 0x7F;
-        if (address < GenesisVdpProvider.VDP_VSRAM_SIZE) {
+        if (address < MdVdpProvider.VDP_VSRAM_SIZE) {
             vsram.put(address, data);
         } else {
             //Arrow Flash
@@ -206,7 +206,7 @@ public class GenesisVdpMemoryInterface implements VdpMemoryInterface {
 
     protected byte readVsramByte(int address) {
         address &= 0x7F;
-        if (address >= GenesisVdpProvider.VDP_VSRAM_SIZE) {
+        if (address >= MdVdpProvider.VDP_VSRAM_SIZE) {
             address = 0;
         }
         return vsram.get(address);

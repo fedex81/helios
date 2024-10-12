@@ -22,8 +22,8 @@ package omegadrive.vdp.model;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static omegadrive.vdp.model.GenesisVdpProvider.H32_SLOTS;
-import static omegadrive.vdp.model.GenesisVdpProvider.H40_SLOTS;
+import static omegadrive.vdp.model.MdVdpProvider.H32_SLOTS;
+import static omegadrive.vdp.model.MdVdpProvider.H40_SLOTS;
 
 public enum VdpSlotType {
     NONE,

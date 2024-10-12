@@ -1,5 +1,5 @@
 /*
- * GenesisBackupMemoryMapper
+ * MdBackupMemoryMapper
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 21/10/19 13:51
  *

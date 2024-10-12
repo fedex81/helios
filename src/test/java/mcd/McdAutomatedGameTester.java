@@ -147,7 +147,6 @@ public class McdAutomatedGameTester {
                 System.out.print(" - SKIP");
                 continue;
             }
-//            genesisProvider.setFullScreen(true);
             Util.sleep(BOOT_DELAY_MS);
             boolean tooManyErrors = false;
             int totalDelay = BOOT_DELAY_MS;

@@ -1,7 +1,7 @@
 package omegadrive.cpu.z80;
 
-import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.bus.model.GenesisZ80BusProvider;
+import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
@@ -20,14 +20,14 @@ import static omegadrive.util.Util.th;
  */
 public class Z80BusTest {
 
-    GenesisZ80BusProvider z80bus;
-    GenesisBusProvider mainBus;
+    MdZ80BusProvider z80bus;
+    MdBusProvider mainBus;
     IMemoryProvider memoryProvider;
 
     @Before
     public void setup() {
         mainBus = SystemTestUtil.setupNewMdSystem();
-        Optional<GenesisZ80BusProvider> optBus = mainBus.getBusDeviceIfAny(GenesisZ80BusProvider.class);
+        Optional<MdZ80BusProvider> optBus = mainBus.getBusDeviceIfAny(MdZ80BusProvider.class);
         Assert.assertTrue(optBus.isPresent());
         z80bus = optBus.get();
         Optional<IMemoryProvider> opt = mainBus.getBusDeviceIfAny(IMemoryProvider.class);
@@ -39,10 +39,10 @@ public class Z80BusTest {
     @Test
     public void testZ80Write68kRam() {
         z80bus.setRomBank68kSerial(0xE0_0000);
-        for (int i = GenesisZ80BusProvider.START_68K_BANK; i <= GenesisZ80BusProvider.END_68K_BANK; i++) {
+        for (int i = MdZ80BusProvider.START_68K_BANK; i <= MdZ80BusProvider.END_68K_BANK; i++) {
             z80bus.write(i, i & 0xFF, Size.BYTE);
         }
-        for (int i = 0; i <= GenesisZ80BusProvider.M68K_BANK_MASK; i++) {
+        for (int i = 0; i <= MdZ80BusProvider.M68K_BANK_MASK; i++) {
             int val = memoryProvider.readRamByte(i);
             Assert.assertEquals(th(i), i & 0xFF, val & 0xFF);
         }
@@ -55,7 +55,7 @@ public class Z80BusTest {
     @Test
     public void testZ80Read68kRam() {
         z80bus.setRomBank68kSerial(0xE0_0000);
-        for (int i = GenesisZ80BusProvider.START_68K_BANK; i < GenesisZ80BusProvider.END_68K_BANK; i++) {
+        for (int i = MdZ80BusProvider.START_68K_BANK; i < MdZ80BusProvider.END_68K_BANK; i++) {
             int val = (int) z80bus.read(i, Size.BYTE);
             Assert.assertEquals(0xff, val);
         }
@@ -65,7 +65,7 @@ public class Z80BusTest {
 
         //still unable to read
         z80bus.setRomBank68kSerial(0xE0_0000);
-        for (int i = GenesisZ80BusProvider.START_68K_BANK; i < GenesisZ80BusProvider.END_68K_BANK; i++) {
+        for (int i = MdZ80BusProvider.START_68K_BANK; i < MdZ80BusProvider.END_68K_BANK; i++) {
             int val = (int) z80bus.read(i, Size.BYTE);
             Assert.assertEquals(0xff, val);
         }

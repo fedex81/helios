@@ -23,13 +23,13 @@ import org.junit.Test;
 import java.util.stream.IntStream;
 
 /**
- * GenesisMemoryProviderTest
+ * MdMemoryProviderTest
  *
  * @author Federico Berti
  */
-public class GenesisMemoryProviderTest {
+public class MdMemoryProviderTest {
 
-    IMemoryProvider provider = MemoryProvider.createGenesisInstance();
+    IMemoryProvider provider = MemoryProvider.createMdInstance();
 
     @Test
     public void testRomWrapping01() {

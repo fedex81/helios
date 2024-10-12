@@ -138,7 +138,7 @@ public class SysUtil {
             }
         }
         SystemProvider systemProvider = switch (type) {
-//            case GENESIS -> Megadrive.createNewInstance(display);
+//            case MD -> Megadrive.createNewInstance(display);
             case MD -> MegaCd2.createNewInstance(display);
             case MEGACD -> MegaCd2.createNewInstance(display);
             case S32X -> Md32x.createNewInstance32x(display);

@@ -1,5 +1,5 @@
 /*
- * GenesisZ80BusProvider
+ * MdZ80BusProvider
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 18/06/19 13:56
  *
@@ -19,16 +19,16 @@
 
 package omegadrive.bus.model;
 
-import omegadrive.bus.md.GenesisZ80BusProviderImpl;
+import omegadrive.bus.md.MdZ80BusProviderImpl;
 import omegadrive.cpu.z80.Z80Memory;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
-public interface GenesisZ80BusProvider extends BaseBusProvider {
+public interface MdZ80BusProvider extends BaseBusProvider {
 
-    Logger LOG = LogHelper.getLogger(GenesisZ80BusProvider.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(MdZ80BusProvider.class.getSimpleName());
 
     int END_RAM = 0x3FFF;
     int START_YM2612 = 0x4000;
@@ -54,10 +54,10 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
     int Z80_RAM_MEMORY_SIZE = 0x2000;
 
 
-    static GenesisZ80BusProvider createInstance(BaseBusProvider genesisBusProvider) {
+    static MdZ80BusProvider createInstance(BaseBusProvider busProvider) {
         IMemoryRam ram = new Z80Memory(Z80_RAM_MEMORY_SIZE);
-        GenesisZ80BusProvider b = new GenesisZ80BusProviderImpl();
-        b.attachDevices(genesisBusProvider, ram);
+        MdZ80BusProvider b = new MdZ80BusProviderImpl();
+        b.attachDevices(busProvider, ram);
         return b;
     }
 
@@ -80,7 +80,7 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
     }
 
     static int getRomBank68kSerial(Z80Provider z80) {
-        if (z80.getZ80BusProvider() instanceof GenesisZ80BusProvider g) {
+        if (z80.getZ80BusProvider() instanceof MdZ80BusProvider g) {
             return g.getRomBank68kSerial();
         }
         return -1;
@@ -88,7 +88,7 @@ public interface GenesisZ80BusProvider extends BaseBusProvider {
 
     static void setRomBank68kSerial(Z80Provider z80, int romBank68kSerial) {
         BaseBusProvider bus = z80.getZ80BusProvider();
-        if (bus instanceof GenesisZ80BusProvider genBus) {
+        if (bus instanceof MdZ80BusProvider genBus) {
             genBus.setRomBank68kSerial(romBank68kSerial);
         }
     }

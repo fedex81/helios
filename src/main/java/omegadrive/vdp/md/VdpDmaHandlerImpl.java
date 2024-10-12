@@ -20,21 +20,21 @@
 package omegadrive.vdp.md;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpDmaHandler;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.slf4j.Logger;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.Util.th;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.VRAM;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
 
 public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
@@ -43,9 +43,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     public static final boolean printToSysOut = false;
     private final static Logger LOG = LogHelper.getLogger(VdpDmaHandlerImpl.class.getSimpleName());
 
-    protected GenesisVdpProvider vdpProvider;
+    protected MdVdpProvider vdpProvider;
     protected VdpMemoryInterface memoryInterface;
-    protected GenesisBusProvider busProvider;
+    protected MdBusProvider busProvider;
 
     private int dmaFillData;
     private DmaMode dmaMode = null;
@@ -54,8 +54,8 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     //TODO this should be in the VDP
     private final VdpFifo.VdpFifoEntry pendingReadEntry = new VdpFifo.VdpFifoEntry();
 
-    public static VdpDmaHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
-                                               GenesisBusProvider busProvider) {
+    public static VdpDmaHandler createInstance(MdVdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
+                                               MdBusProvider busProvider) {
         VdpDmaHandlerImpl d = new VdpDmaHandlerImpl();
         d.vdpProvider = vdpProvider;
         d.busProvider = busProvider;
@@ -63,7 +63,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         return d;
     }
 
-    public DmaMode setupDma(GenesisVdpProvider.VramMode vramMode, int data, boolean m1) {
+    public DmaMode setupDma(MdVdpProvider.VramMode vramMode, int data, boolean m1) {
         if (!m1) {
             if (verbose) LOG.warn("Attempting DMA but m1 not set: {}, data: {}", dmaMode, data);
             return null;
@@ -265,7 +265,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         if (pendingReadEntry.vdpRamMode == null) {
             int sourceAddress = getSourceAddress() ^ 1;
             int data = memoryInterface.readVideoRamByte(VRAM, sourceAddress);
-            pendingReadEntry.vdpRamMode = GenesisVdpProvider.VramMode.vramWrite;
+            pendingReadEntry.vdpRamMode = MdVdpProvider.VramMode.vramWrite;
             pendingReadEntry.data = data;
             printInfo("IN PROGRESS - READ");
         } else {
@@ -280,7 +280,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     //it will act like you set it to $10000.
     private int decreaseDmaLength() {
         int dmaLen = getDmaLength();
-        dmaLen = (dmaLen - 1) & (GenesisVdpProvider.VDP_VRAM_SIZE - 1);
+        dmaLen = (dmaLen - 1) & (MdVdpProvider.VDP_VRAM_SIZE - 1);
         vdpProvider.updateRegisterData(DMA_LENGTH_LOW, dmaLen & 0xFF);
         vdpProvider.updateRegisterData(DMA_LENGTH_HIGH, dmaLen >> 8);
         return dmaLen;
@@ -317,7 +317,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         postDmaRegisters();
     }
 
-    private DmaMode getDmaMode(int reg17, GenesisVdpProvider.VramMode vramMode) {
+    private DmaMode getDmaMode(int reg17, MdVdpProvider.VramMode vramMode) {
         int dmaBits = reg17 >> 6;
         DmaMode mode = null;
         switch (dmaBits) {
@@ -327,7 +327,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                 mode = DmaMode.VRAM_COPY;
                 break;
             case 2:
-                if (vramMode == GenesisVdpProvider.VramMode.vramWrite) {
+                if (vramMode == MdVdpProvider.VramMode.vramWrite) {
                     mode = DmaMode.VRAM_FILL;
                 }
                 break;

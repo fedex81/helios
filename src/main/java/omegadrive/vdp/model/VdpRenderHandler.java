@@ -25,8 +25,8 @@ import omegadrive.vdp.model.VdpMisc.RenderType;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static omegadrive.vdp.model.GenesisVdpProvider.*;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
+import static omegadrive.vdp.model.MdVdpProvider.*;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
 
 public interface VdpRenderHandler {
 
@@ -97,12 +97,12 @@ public interface VdpRenderHandler {
         return isH40 ? H40 : H32;
     }
 
-    static int getHScrollDataLocation(GenesisVdpProvider vdp) {
+    static int getHScrollDataLocation(MdVdpProvider vdp) {
         //	bit 6 = mode 128k
         return (vdp.getRegisterData(HORIZONTAL_SCROLL_DATA_LOC) & 0x3F) << HOR_SCROLL_SHIFT;
     }
 
-    static int getWindowPlaneNameTableLocation(GenesisVdpProvider vdp, boolean isH40) {
+    static int getWindowPlaneNameTableLocation(MdVdpProvider vdp, boolean isH40) {
         int reg3 = vdp.getRegisterData(WINDOW_NAMETABLE);
         //	WD11 is ignored if the display resolution is 320px wide (H40),
         // which limits the Window nametable address to multiples of $1000.
@@ -122,15 +122,15 @@ public interface VdpRenderHandler {
 // it would be divided by $2000, which results in $07, the proper value for this register.
 //	SB16 is only valid if 128 KB mode is enabled, and allows for rebasing the
 // Plane B nametable to the second 64 KB of VRAM.
-    static int getPlaneBNameTableLocation(GenesisVdpProvider vdpProvider) {
+    static int getPlaneBNameTableLocation(MdVdpProvider vdpProvider) {
         return (vdpProvider.getRegisterData(PLANE_B_NAMETABLE) & 0x7) << PLANE_B_SHIFT;
     }
 
-    static int getPlaneANameTableLocation(GenesisVdpProvider vdpProvider) {
+    static int getPlaneANameTableLocation(MdVdpProvider vdpProvider) {
         return (vdpProvider.getRegisterData(PLANE_A_NAMETABLE) & 0x38) << PLANE_A_SHIFT;
     }
 
-    static int getSpriteTableLocation(GenesisVdpProvider vdp, boolean isH40) {
+    static int getSpriteTableLocation(MdVdpProvider vdp, boolean isH40) {
         //	AT16 is only valid if 128 KB mode is enabled,
         // and allows for rebasing the Sprite Attribute Table to the second 64 KB of VRAM.
         // AT0: Ignored in 320 pixel wide mode, limiting the address to a multiple of $400.

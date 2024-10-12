@@ -22,8 +22,8 @@ package omegadrive.savestate;
 import com.google.common.collect.ImmutableSet;
 import m68k.cpu.MC68000;
 import omegadrive.Device;
-import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.bus.model.GenesisZ80BusProvider;
+import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
@@ -33,7 +33,7 @@ import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.slf4j.Logger;
 import z80core.Z80;
@@ -47,7 +47,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import static omegadrive.savestate.StateUtil.*;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.VRAM;
 
 public class GstStateHandler implements BaseStateHandler {
 
@@ -74,7 +74,7 @@ public class GstStateHandler implements BaseStateHandler {
     protected static final String extension = ".gs";
 
     private static final Set<Class<? extends Device>> deviceClassSet = ImmutableSet.of(Z80Provider.class,
-            GenesisVdpProvider.class, IMemoryProvider.class, GenesisBusProvider.class, SoundProvider.class, MC68000Wrapper.class);
+            MdVdpProvider.class, IMemoryProvider.class, MdBusProvider.class, SoundProvider.class, MC68000Wrapper.class);
 
     protected ByteBuffer buffer;
     protected int version;
@@ -110,7 +110,7 @@ public class GstStateHandler implements BaseStateHandler {
     @Override
     public void processState() {
 //        Level prev = LogManager.getRootLogger().getLevel();
-        GenesisBusProvider bus = StateUtil.getInstanceOrThrow(deviceList, GenesisBusProvider.class);
+        MdBusProvider bus = StateUtil.getInstanceOrThrow(deviceList, MdBusProvider.class);
         BaseVdpProvider vdp = StateUtil.getInstanceOrThrow(deviceList, BaseVdpProvider.class);
         Z80Provider z80 = StateUtil.getInstanceOrThrow(deviceList, Z80Provider.class);
         IMemoryProvider mem = StateUtil.getInstanceOrThrow(deviceList, IMemoryProvider.class);
@@ -158,33 +158,33 @@ public class GstStateHandler implements BaseStateHandler {
     }
 
     protected void loadVdpState(BaseVdpProvider vdp) {
-        IntStream.range(0, GenesisVdpProvider.VDP_REGISTERS_SIZE).forEach(
+        IntStream.range(0, MdVdpProvider.VDP_REGISTERS_SIZE).forEach(
                 i -> vdp.updateRegisterData(i, buffer.get(i + VDP_REG_OFFSET) & 0xFF));
         loadVdpMemory(vdp.getVdpMemory());
         vdp.reload();
     }
 
     protected void loadVdpMemory(VdpMemoryInterface vmi) {
-        for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i += 2) {
+        for (int i = 0; i < MdVdpProvider.VDP_VRAM_SIZE; i += 2) {
             vmi.writeVideoRamByte(VRAM, i, buffer.get(i + VRAM_DATA_OFFSET));
             vmi.writeVideoRamByte(VRAM, i + 1, buffer.get(i + VRAM_DATA_OFFSET + 1));
         }
         //cram is swapped
         byte[] cram = vmi.getCram().array();
-        for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
+        for (int i = 0; i < MdVdpProvider.VDP_CRAM_SIZE; i += 2) {
             cram[i] = buffer.get(i + CRAM_DATA_OFFSET + 1);
             cram[i + 1] = buffer.get(i + CRAM_DATA_OFFSET);
         }
         byte[] vsram = vmi.getVsram().array();
-        for (int i = 0; i < GenesisVdpProvider.VDP_VSRAM_SIZE; i += 2) {
+        for (int i = 0; i < MdVdpProvider.VDP_VSRAM_SIZE; i += 2) {
             vsram[i] = buffer.get(i + VSRAM_DATA_OFFSET);
             vsram[i + 1] = buffer.get(i + VSRAM_DATA_OFFSET + 1);
         }
     }
 
-    protected void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
+    protected void loadZ80(Z80Provider z80, MdBusProvider bus) {
         int z80BankInt = getInt4Fn.apply(buffer, 0x43C);
-        GenesisZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
+        MdZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
 
         bus.setZ80BusRequested((buffer.get(0x439) & 0xFF) > 0);
         bus.setZ80ResetState(false);
@@ -197,7 +197,7 @@ public class GstStateHandler implements BaseStateHandler {
             z80.reset();
         }
 
-        IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
+        IntStream.range(0, MdZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> z80.writeMemory(i, buffer.get(i + Z80_RAM_DATA_OFFSET) & 0xFF));
 
         Z80State z80State = loadZ80StateGst(buffer);
@@ -244,33 +244,33 @@ public class GstStateHandler implements BaseStateHandler {
     protected void saveVdp(BaseVdpProvider vdp) {
         VdpMemoryInterface vdpMemoryInterface = vdp.getVdpMemory();
         byte[] vram = vdpMemoryInterface.getVram().array();
-        for (int i = 0; i < GenesisVdpProvider.VDP_VRAM_SIZE; i += 2) {
+        for (int i = 0; i < MdVdpProvider.VDP_VRAM_SIZE; i += 2) {
             buffer.put(i + VRAM_DATA_OFFSET, vram[i]);
             buffer.put(i + VRAM_DATA_OFFSET + 1, vram[i + 1]);
         }
         byte[] cram = vdpMemoryInterface.getCram().array();
         //cram is swapped
-        for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
+        for (int i = 0; i < MdVdpProvider.VDP_CRAM_SIZE; i += 2) {
             buffer.put(i + CRAM_DATA_OFFSET + 1, cram[i]);
             buffer.put(i + CRAM_DATA_OFFSET, cram[i + 1]);
 
         }
 
         byte[] vsram = vdpMemoryInterface.getVsram().array();
-        for (int i = 0; i < GenesisVdpProvider.VDP_VSRAM_SIZE; i += 2) {
+        for (int i = 0; i < MdVdpProvider.VDP_VSRAM_SIZE; i += 2) {
             buffer.put(i + VSRAM_DATA_OFFSET, vsram[i]);
             buffer.put(i + VSRAM_DATA_OFFSET + 1, vsram[i + 1]);
         }
         IntStream.range(0, 24).forEach(i -> buffer.put(i + VDP_REG_OFFSET, (byte) vdp.getRegisterData(i)));
     }
 
-    protected void saveZ80(Z80Provider z80, GenesisBusProvider bus) {
-        IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
+    protected void saveZ80(Z80Provider z80, MdBusProvider bus) {
+        IntStream.range(0, MdZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> buffer.put(Z80_RAM_DATA_OFFSET + i, (byte) z80.readMemory(i)));
         buffer.put(0x438, (byte) (bus.isZ80ResetState() ? 1 : 0));
         buffer.put(0x439, (byte) (bus.isZ80BusRequested() ? 1 : 0));
 
-        int romBankSerial = GenesisZ80BusProvider.getRomBank68kSerial(z80);
+        int romBankSerial = MdZ80BusProvider.getRomBank68kSerial(z80);
         if (romBankSerial >= 0) {
             setInt4LEFn(buffer, 0x43C, romBankSerial);
         }

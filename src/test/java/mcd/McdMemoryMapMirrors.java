@@ -11,7 +11,7 @@ import java.util.Arrays;
 import static mcd.dict.MegaCdDict.MCD_MAIN_PRG_RAM_WINDOW_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_COMM0;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_COMM3;
-import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
+import static omegadrive.bus.model.MdBusProvider.MEGA_CD_EXP_START;
 
 /**
  * Federico Berti

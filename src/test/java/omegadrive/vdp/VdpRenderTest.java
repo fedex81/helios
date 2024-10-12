@@ -19,7 +19,7 @@
 
 package omegadrive.vdp;
 
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.save.MdSavestateTest;
 import omegadrive.system.Megadrive;
@@ -27,7 +27,7 @@ import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.TestRenderUtil;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import org.junit.Before;
 import org.junit.Ignore;
 
@@ -48,7 +48,7 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
         System.setProperty("helios.headless", "true");
     }
 
-    protected GenesisVdpProvider vdpProvider;
+    protected MdVdpProvider vdpProvider;
 
     private static SystemProvider createTestProvider() {
         InputProvider.bootstrap();
@@ -56,15 +56,15 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
     }
 
     protected Image testSavestateViewerSingle(Path saveFile) {
-        GenesisVdpProvider vdpProvider = prepareVdp(saveFile);
+        MdVdpProvider vdpProvider = prepareVdp(saveFile);
         MdVdpTestUtil.runToStartFrame(vdpProvider);
         return TestRenderUtil.saveRenderToImage(screenData, vdpProvider.getVideoMode());
     }
 
-    protected GenesisVdpProvider prepareVdp(Path saveFile) {
-        SystemProvider genesisProvider = createTestProvider();
-        GenesisBusProvider busProvider = MdSavestateTest.loadSaveState(saveFile);
-        busProvider.attachDevice(genesisProvider).attachDevice(createTestJoypadProvider());
+    protected MdVdpProvider prepareVdp(Path saveFile) {
+        SystemProvider MdProvider = createTestProvider();
+        MdBusProvider busProvider = MdSavestateTest.loadSaveState(saveFile);
+        busProvider.attachDevice(MdProvider).attachDevice(createTestJoypadProvider());
         busProvider.init();
         vdpProvider = busProvider.getVdp();
         vdpProvider.addVdpEventListener(this);

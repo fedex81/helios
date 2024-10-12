@@ -20,7 +20,7 @@
 package omegadrive.cpu.m68k.debug;
 
 import com.google.common.collect.ImmutableMap;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.CpuDebugContext;
 import omegadrive.cpu.m68k.MC68000Helper;
@@ -55,7 +55,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
     private static final Map<Integer, Integer> areaMaskMap = ImmutableMap.of(
             0, 0xF_FFFF, 1, 0xF_FFFF, 2, 0xF_FFFF, 3, 0xF_FFFF, 8, 0xF_FFFF, 9, 0xF_FFFF, 0xF, 0xF_FFFF);
 
-    public MC68000WrapperFastDebug(CpuDeviceAccess cpu, GenesisBusProvider busProvider) {
+    public MC68000WrapperFastDebug(CpuDeviceAccess cpu, MdBusProvider busProvider) {
         super(cpu, busProvider);
         fastDebug = new CpuFastDebug(this, createContext(cpu));
         init();

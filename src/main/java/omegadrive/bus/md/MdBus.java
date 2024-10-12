@@ -1,5 +1,5 @@
 /*
- * GenesisBus
+ * MdBus
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 21/10/19 13:52
  *
@@ -22,7 +22,7 @@ package omegadrive.bus.md;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.bus.model.SvpBus;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.loader.MdRomDbModel;
@@ -31,8 +31,8 @@ import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.md.ExSsfMapper;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
 import omegadrive.cart.mapper.md.Ssf2Mapper;
-import omegadrive.joypad.GenesisJoypad;
 import omegadrive.joypad.JoypadProvider;
+import omegadrive.joypad.MdJoypad;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.msumd.MsuMdHandler;
 import omegadrive.sound.msumd.MsuMdHandlerImpl;
@@ -44,9 +44,9 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider.VdpBusyState;
-import omegadrive.vdp.model.GenesisVdpProvider.VdpPortType;
+import omegadrive.vdp.model.MdVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider.VdpBusyState;
+import omegadrive.vdp.model.MdVdpProvider.VdpPortType;
 import org.slf4j.Logger;
 
 import java.util.Objects;
@@ -61,10 +61,10 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 
-public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad> implements GenesisBusProvider, RomMapper {
+public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements MdBusProvider, RomMapper {
 
 
-    private static final Logger LOG = LogHelper.getLogger(GenesisBus.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MdBus.class.getSimpleName());
 
     public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
@@ -102,7 +102,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     //NOTE only a stub for serial ports, not supported
     private byte[] serialPortData = new byte[20];
 
-    public GenesisBus() {
+    public MdBus() {
         this.mapper = this;
         this.enableTmss = Boolean.parseBoolean(System.getProperty("md.enable.tmss", "false"));
     }
@@ -152,7 +152,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     @Override
-    public GenesisBusProvider attachDevice(Device device) {
+    public MdBusProvider attachDevice(Device device) {
         if (device instanceof BusArbiter) {
             this.busArbiter = (BusArbiter) device;
         }
@@ -640,7 +640,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             LOG.warn("68k read access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
             return 0; //TODO this should return z80 open bus (ie. prefetch?)
         }
-        int addressZ = (address & GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK);
+        int addressZ = (address & MdBusProvider.M68K_TO_Z80_MEMORY_MASK);
         if (size == Size.BYTE) {
             return z80Provider.readMemory(addressZ);
         } else if (size == Size.WORD) {
@@ -660,7 +660,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
             logWarnOnce(LOG, "68k write access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
             return;
         }
-        address &= GenesisBusProvider.M68K_TO_Z80_MEMORY_MASK;
+        address &= MdBusProvider.M68K_TO_Z80_MEMORY_MASK;
         if (size == Size.BYTE) {
             z80Provider.writeMemory(address, dataL);
         } else if (size == Size.WORD) {
@@ -888,7 +888,7 @@ public class GenesisBus extends DeviceAwareBus<GenesisVdpProvider, GenesisJoypad
     }
 
     @Override
-    public GenesisVdpProvider getVdp() {
+    public MdVdpProvider getVdp() {
         return vdpProvider;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Genesis
+ * MegaCd
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 26/10/19 15:29
  *
@@ -25,7 +25,7 @@ import mcd.cdd.ExtendedCueSheet;
 import mcd.util.McdMemView;
 import omegadrive.SystemLoader;
 import omegadrive.bus.md.SvpMapper;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.ssp16.Ssp16;
@@ -99,7 +99,7 @@ public class MegaCd2 extends Megadrive {
     }
 
     @Override
-    protected GenesisBusProvider createBus() {
+    protected MdBusProvider createBus() {
         assert mcdLaunchContext.mainBus != null;
         bus = mcdLaunchContext.mainBus;
         return bus;

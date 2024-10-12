@@ -19,7 +19,7 @@ package omegadrive.vdp;
 
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.md.BaseVdpDmaHandlerTest;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import org.junit.Test;
 import org.slf4j.Logger;
 
@@ -140,7 +140,7 @@ public class VdpDmaHandlerTest extends BaseVdpDmaHandlerTest {
     @Test
     public void testDMA_Fill_Len_0() {
         int dmaFillCommand = 0x4000_0080; //DMA fill entire VRAM
-        int[] expected = new int[GenesisVdpProvider.VDP_VRAM_SIZE];
+        int[] expected = new int[MdVdpProvider.VDP_VRAM_SIZE];
         Arrays.fill(expected, 1);
         testDMAFillInternal2(dmaFillCommand, 0, 1, 0x100, expected);
 

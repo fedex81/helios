@@ -1,5 +1,5 @@
 /*
- * Genesis
+ * Megadrive
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 26/10/19 15:29
  *
@@ -20,9 +20,9 @@
 package omegadrive.system;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.md.GenesisBus;
+import omegadrive.bus.md.MdBus;
 import omegadrive.bus.md.SvpMapper;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
@@ -30,7 +30,7 @@ import omegadrive.cpu.ssp16.Ssp16;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.input.InputProvider;
-import omegadrive.joypad.GenesisJoypad;
+import omegadrive.joypad.MdJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.ui.DisplayWindow;
@@ -39,7 +39,7 @@ import omegadrive.util.MdRuntimeData;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.util.MemView;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
@@ -54,7 +54,7 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
  *
  * TODO this is used by 32x as a base class, unify with the other variants
  */
-public class Megadrive extends BaseSystem<GenesisBusProvider> {
+public class Megadrive extends BaseSystem<MdBusProvider> {
 
     public final static boolean verbose = false;
     //the emulation runs at MCLOCK_MHZ/MCLK_DIVIDER
@@ -100,12 +100,12 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
     public void init() {
         super.init();
         stateHandler = BaseStateHandler.EMPTY_STATE;
-        joypad = GenesisJoypad.create(this);
+        joypad = MdJoypad.create(this);
         inputProvider = InputProvider.createInstance(joypad);
 
-        memory = MemoryProvider.createGenesisInstance();
+        memory = MemoryProvider.createMdInstance();
         bus = createBus();
-        vdp = GenesisVdpProvider.createVdp(bus);
+        vdp = MdVdpProvider.createVdp(bus);
         cpu = MC68000Wrapper.createInstance(bus);
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
         vdp.addVdpEventListener(sound);
@@ -177,8 +177,8 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
         }
     }
 
-    protected GenesisBusProvider createBus() {
-        return new GenesisBus();
+    protected MdBusProvider createBus() {
+        return new MdBus();
     }
 
     @Override

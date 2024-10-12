@@ -1,5 +1,5 @@
 /*
- * GenesisJoypad
+ * MdJoypadTest
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 13/10/19 17:32
  *
@@ -35,7 +35,7 @@ import static omegadrive.util.Util.th;
  * wwf raw 32x, GreatestHeavyweights, Sf2, sgdk joytest,
  * Decap Attack, Asterix
  */
-public class GenesisJoypadTest {
+public class MdJoypadTest {
 
     private SystemProvider.SystemClock clock;
     private int cycleCounter = 0;
@@ -100,7 +100,7 @@ public class GenesisJoypadTest {
 
     private void testSimpleSequenceInternal(JoypadType type, int[] sequence) {
         System.out.println(type);
-        GenesisJoypad j = createBoth(type, clock);
+        MdJoypad j = createBoth(type, clock);
         Assert.assertEquals(0, j.ctx1.control);
 
         int thControl = 0x40;
@@ -141,7 +141,7 @@ public class GenesisJoypadTest {
     }
 
     private void testInitAndResetInternal(JoypadType type) {
-        GenesisJoypad j = createBoth(type);
+        MdJoypad j = createBoth(type);
 
         Assert.assertEquals(0, j.ctx1.control);
         Assert.assertEquals(0, j.ctx2.control);
@@ -155,7 +155,7 @@ public class GenesisJoypadTest {
     }
 
     private void testNewFrameInternal(JoypadType type) {
-        GenesisJoypad j = createBoth(type);
+        MdJoypad j = createBoth(type);
         j.newFrame();
         //transition 0->1
         j.writeControlRegister1(0x40);
@@ -170,7 +170,7 @@ public class GenesisJoypadTest {
 
     //Samurai Spirit, Power Instinct
     private void testInitDataPortValueInternal(JoypadType type) {
-        GenesisJoypad j = createBoth(type);
+        MdJoypad j = createBoth(type);
 
         Assertions.assertEquals(0x40, j.ctx1.data);
         Assertions.assertEquals(0x40, j.ctx2.data);
@@ -185,7 +185,7 @@ public class GenesisJoypadTest {
     }
 
     private void testDisabledInternal(JoypadType type) {
-        GenesisJoypad j = createBoth(type);
+        MdJoypad j = createBoth(type);
         j.writeControlRegister1(0x40);
         j.writeControlRegister2(0x40);
         j.writeDataRegister1(0x40);
@@ -229,9 +229,9 @@ public class GenesisJoypadTest {
      * 008817d2   6000 fffffffe               bra.w    $008817d2 [NEW]
      */
     private void testWwfRaw32xInternal(JoypadType type) {
-        GenesisJoypad.WWF32X_HACK = true;
+        MdJoypad.WWF32X_HACK = true;
         int r2;
-        GenesisJoypad j = createBoth(type);
+        MdJoypad j = createBoth(type);
         j.writeControlRegister2(0x39);
         System.out.println("ctrl:   " + Integer.toBinaryString(0x39));
         j.writeDataRegister2(0);
@@ -254,7 +254,7 @@ public class GenesisJoypadTest {
         Assertions.assertTrue((r2 & 0x30) == 0);
         // bits 1100_0000 are input bits and they are not being driven, assumes pulled-up
         Assertions.assertEquals(0xC0, r2 & 0xC0);
-        GenesisJoypad.WWF32X_HACK = false;
+        MdJoypad.WWF32X_HACK = false;
     }
 
     /**
@@ -268,7 +268,7 @@ public class GenesisJoypadTest {
      * readDataReg: data 33, MdPadContext{control=40, data=40, readStep=0, player=1}
      */
     private void testGreatestHeavyweightsInternal(JoypadType type, int[] expect) {
-        GenesisJoypad j = createBoth(type, clock);
+        MdJoypad j = createBoth(type, clock);
 
         j.newFrame();
         j.writeControlRegister1(0x40);
@@ -354,7 +354,7 @@ public class GenesisJoypadTest {
     }
 
     private void testDecapAttackInternal(JoypadType type) {
-        GenesisJoypad j = createBoth(type);
+        MdJoypad j = createBoth(type);
         Assert.assertEquals(0, j.ctx1.control);
         j.writeControlRegister1(0x40);
 
@@ -384,16 +384,16 @@ public class GenesisJoypadTest {
         j.writeDataRegister1(0x40);
     }
 
-    private static GenesisJoypad createBoth(JoypadType type) {
+    private static MdJoypad createBoth(JoypadType type) {
         return create(type, type, NO_CLOCK);
     }
 
-    private static GenesisJoypad createBoth(JoypadType type, SystemProvider.SystemClock clock) {
+    private static MdJoypad createBoth(JoypadType type, SystemProvider.SystemClock clock) {
         return create(type, type, clock);
     }
 
-    private static GenesisJoypad create(JoypadType p1Type, JoypadType p2Type, SystemProvider.SystemClock clock) {
-        GenesisJoypad j = new GenesisJoypad(clock);
+    private static MdJoypad create(JoypadType p1Type, JoypadType p2Type, SystemProvider.SystemClock clock) {
+        MdJoypad j = new MdJoypad(clock);
         j.setPadSetupChange(InputProvider.PlayerNumber.P1, p1Type.name());
         j.setPadSetupChange(InputProvider.PlayerNumber.P2, p2Type.name());
         j.init();

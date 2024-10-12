@@ -39,13 +39,13 @@ import java.util.function.BiConsumer;
 
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.vdp.model.BaseVdpProvider.VdpEventListener;
-import static omegadrive.vdp.model.GenesisVdpProvider.MAX_SPRITES_PER_LINE_H40;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
+import static omegadrive.vdp.model.MdVdpProvider.MAX_SPRITES_PER_LINE_H40;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
 
 public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener {
 
     private final static Logger LOG = LogHelper.getLogger(VdpRenderHandlerImpl.class.getSimpleName());
-    private final GenesisVdpProvider vdpProvider;
+    private final MdVdpProvider vdpProvider;
     private final VdpMemoryInterface memoryInterface;
     private final VdpScrollHandler scrollHandler;
     private final VdpRenderDump renderDump;
@@ -86,7 +86,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
     private final PixelData[] linePixelData = new PixelData[COLS];
     private int odd;
 
-    public static VdpRenderHandler createInstance(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
+    public static VdpRenderHandler createInstance(MdVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         return new VdpRenderHandlerImpl(vdpProvider, memoryInterface);
     }
 
@@ -118,7 +118,7 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
         }
     }
 
-    public VdpRenderHandlerImpl(GenesisVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
+    public VdpRenderHandlerImpl(MdVdpProvider vdpProvider, VdpMemoryInterface memoryInterface) {
         this.vdpProvider = vdpProvider;
         this.memoryInterface = memoryInterface;
         this.colorMapper = VdpColorMapper.getInstance();

@@ -24,8 +24,8 @@ import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider.VdpBusyState;
+import omegadrive.vdp.model.MdVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider.VdpBusyState;
 import org.slf4j.Logger;
 
 import static omegadrive.bus.md.BusArbiter.isVdpVInt;
@@ -45,7 +45,7 @@ public interface BusArbiter extends Device, BaseVdpProvider.VdpEventListener {
 
     enum InterruptEvent {Z80_INT_ON, Z80_INT_OFF}
 
-    static BusArbiter createInstance(GenesisVdpProvider vdp, M68kProvider m68k, Z80Provider z80) {
+    static BusArbiter createInstance(MdVdpProvider vdp, M68kProvider m68k, Z80Provider z80) {
         BusArbiterImpl b = new BusArbiterImpl();
         b.vdp = vdp;
         b.m68k = m68k;
@@ -82,7 +82,7 @@ public interface BusArbiter extends Device, BaseVdpProvider.VdpEventListener {
         };
     }
 
-    static boolean isVdpVInt(GenesisVdpProvider vdp) {
+    static boolean isVdpVInt(MdVdpProvider vdp) {
         return vdp.getVip() && vdp.isIe0();
     }
 }
@@ -99,7 +99,7 @@ class BusArbiterImpl implements BusArbiter {
     private IntState z80Int = IntState.NONE;
     private InterruptEvent z80IntLineVdp = InterruptEvent.Z80_INT_OFF;
 
-    protected GenesisVdpProvider vdp;
+    protected MdVdpProvider vdp;
     protected M68kProvider m68k;
     protected Z80Provider z80;
 

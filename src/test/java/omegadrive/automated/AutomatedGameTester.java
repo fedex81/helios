@@ -101,7 +101,6 @@ public class AutomatedGameTester {
         System.out.println("Blacklist entries: " + blackList.size());
 //        new AutomatedGameTester().testAll(false);
 //        new AutomatedGameTester().testList();
-//        new AutomatedGameTester().bootRomsGenesis(true);
 //        new AutomatedGameTester().bootRomsSg1000(true);
 //        new AutomatedGameTester().bootRomsColeco(true);
 //        new AutomatedGameTester().bootRomsMsx(true);
@@ -135,7 +134,7 @@ public class AutomatedGameTester {
         filterAndBootRoms(testColecoRomsPredicate, shuffle);
     }
 
-    private void bootRomsGenesis(boolean shuffle) throws IOException {
+    private void bootRomsMd(boolean shuffle) throws IOException {
         filterAndBootRoms(testVerifiedRomsPredicate, shuffle);
     }
 
@@ -193,7 +192,6 @@ public class AutomatedGameTester {
                 System.out.print(" - SKIP");
                 continue;
             }
-//            genesisProvider.setFullScreen(true);
             Util.sleep(BOOT_DELAY_MS);
             boolean tooManyErrors = false;
             int totalDelay = BOOT_DELAY_MS;

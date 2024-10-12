@@ -19,7 +19,7 @@
 
 package omegadrive.cart.cheat;
 
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
@@ -33,18 +33,18 @@ public class CheatCodeHelper {
     /**
      * Pattern for recognizing Genesis Raw Codes.
      */
-    public static final Pattern GENESIS_RAW_PATTERN = Pattern.compile("^([A-Fa-f0-9]{1,6}):([A-Fa-f0-9]{1,4})$");
+    public static final Pattern MD_RAW_PATTERN = Pattern.compile("^([A-Fa-f0-9]{1,6}):([A-Fa-f0-9]{1,4})$");
 
-    public static BasicGenesisRawCode parseCheatCode(String str) {
-        BasicGenesisRawCode result = BasicGenesisRawCode.INVALID_CODE;
+    public static BasicMdRawCode parseCheatCode(String str) {
+        BasicMdRawCode result = BasicMdRawCode.INVALID_CODE;
         if (GameGenieHelper.isValidGGLine(str) && GameGenieHelper.isValidCode(str.substring(0, 9))) {
             result = GameGenieHelper.decode(str.substring(0, 9));
         } else if (isValidRawCode(str)) {
-            Matcher m = GENESIS_RAW_PATTERN.matcher(str.substring(0, 10));
+            Matcher m = MD_RAW_PATTERN.matcher(str.substring(0, 10));
             if (m.matches()) {
                 int address = Integer.parseInt(m.group(1), 16);
                 int value = Integer.parseInt(m.group(2), 16);
-                result = new BasicGenesisRawCode(address, value);
+                result = new BasicMdRawCode(address, value);
             } else {
                 LOG.error("Invalid cheat code: {}", str);
             }
@@ -56,16 +56,16 @@ public class CheatCodeHelper {
 
     private static boolean isValidRawCode(String str) {
         if (str.contains(":") && str.length() >= 11) {
-            return GENESIS_RAW_PATTERN.matcher(str.substring(0, 10)).matches();
+            return MD_RAW_PATTERN.matcher(str.substring(0, 10)).matches();
         }
         return false;
     }
 
-    public static boolean isRamPatch(BasicGenesisRawCode code) {
-        return code.getAddress() >= GenesisBusProvider.ADDRESS_RAM_MAP_START && code.getAddress() <= GenesisBusProvider.ADDRESS_UPPER_LIMIT;
+    public static boolean isRamPatch(BasicMdRawCode code) {
+        return code.getAddress() >= MdBusProvider.ADDRESS_RAM_MAP_START && code.getAddress() <= MdBusProvider.ADDRESS_UPPER_LIMIT;
     }
 
-    public static boolean isRomPatch(BasicGenesisRawCode code) {
+    public static boolean isRomPatch(BasicMdRawCode code) {
         return !isRamPatch(code);
     }
 }

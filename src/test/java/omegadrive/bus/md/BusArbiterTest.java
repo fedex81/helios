@@ -19,14 +19,14 @@ package omegadrive.bus.md;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.BaseBusProvider;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.BufferUtil;
 import omegadrive.vdp.MdVdpTestUtil;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,8 +38,8 @@ import static omegadrive.util.SystemTestUtil.createTestJoypadProvider;
 public class BusArbiterTest {
 
     private boolean verbose = false;
-    private GenesisVdpProvider vdp;
-    private GenesisBusProvider bus;
+    private MdVdpProvider vdp;
+    private MdBusProvider bus;
     private BusArbiter busArbiter;
     int hCounterIntAccepted = -1;
 
@@ -54,9 +54,9 @@ public class BusArbiterTest {
 
     @Before
     public void setup() {
-        SystemProvider emu = MdVdpTestUtil.createTestGenesisProvider();
-        bus = new GenesisBus();
-        vdp = GenesisVdpProvider.createVdp(bus);
+        SystemProvider emu = MdVdpTestUtil.createTestMdProvider();
+        bus = new MdBus();
+        vdp = MdVdpProvider.createVdp(bus);
         Z80Provider z80 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.MD, bus);
         z80bus = z80.getZ80BusProvider();
 

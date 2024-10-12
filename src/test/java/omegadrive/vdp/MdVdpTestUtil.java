@@ -28,12 +28,12 @@ import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.md.GenesisVdp;
+import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.md.VdpFifo;
 import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.InterlaceMode;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 
 import java.lang.reflect.Field;
@@ -44,8 +44,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static omegadrive.util.Util.th;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpPortType.CONTROL;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
+import static omegadrive.vdp.model.MdVdpProvider.VdpPortType.CONTROL;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
 
 public class MdVdpTestUtil {
 
@@ -69,7 +69,7 @@ public class MdVdpTestUtil {
     }
 
 
-    public static int runToStartNextLine(GenesisVdpProvider vdp) {
+    public static int runToStartNextLine(MdVdpProvider vdp) {
         boolean isStart;
         int cnt = 0;
         do {
@@ -81,7 +81,7 @@ public class MdVdpTestUtil {
     }
 
     //NOTE: overwrites m3 (counter latch) to off
-    public static void runToStartFrame(GenesisVdpProvider vdp) {
+    public static void runToStartFrame(MdVdpProvider vdp) {
         do {
             vdp.runSlot();
         } while (!isVBlank(vdp));
@@ -97,7 +97,7 @@ public class MdVdpTestUtil {
         runToCounter(vdp, 0, 0);
     }
 
-    public static void runToCounter(GenesisVdpProvider vdp, int hCounter, int vCounter) {
+    public static void runToCounter(MdVdpProvider vdp, int hCounter, int vCounter) {
         boolean isStart;
         do {
             vdp.runSlot();
@@ -107,18 +107,18 @@ public class MdVdpTestUtil {
         vdp.setHip(false);
     }
 
-    public static void runVdpSlot(GenesisVdpProvider vdp) {
+    public static void runVdpSlot(MdVdpProvider vdp) {
         vdp.runSlot();
     }
 
-    public static void runVdpUntilFifoEmpty(GenesisVdpProvider vdp) {
+    public static void runVdpUntilFifoEmpty(MdVdpProvider vdp) {
         VdpFifo fifo = vdp.getFifo();
         while (!fifo.isEmpty()) {
             vdp.runSlot();
         }
     }
 
-    public static int runVdpUntilDmaDone(GenesisVdpProvider vdp) {
+    public static int runVdpUntilDmaDone(MdVdpProvider vdp) {
         int slots = 0;
         boolean dmaDone;
         do {
@@ -129,7 +129,7 @@ public class MdVdpTestUtil {
         return slots;
     }
 
-    public static void runVdpUntilVBlank(GenesisVdpProvider vdp) {
+    public static void runVdpUntilVBlank(MdVdpProvider vdp) {
         //if we already are in vblank, run until vblank is over
         do {
             vdp.runSlot();
@@ -139,51 +139,51 @@ public class MdVdpTestUtil {
         } while (!isVBlank(vdp));
     }
 
-    public static boolean isVBlank(GenesisVdpProvider vdp) {
+    public static boolean isVBlank(MdVdpProvider vdp) {
         return (vdp.readVdpPortWord(CONTROL) & 0x8) == 8;
     }
 
-    public static boolean isHBlank(GenesisVdpProvider vdp) {
+    public static boolean isHBlank(MdVdpProvider vdp) {
         return (vdp.readVdpPortWord(CONTROL) & 0x4) == 4;
     }
 
-    public static void setH32(GenesisVdpProvider vdp) {
+    public static void setH32(MdVdpProvider vdp) {
         //        Set Video mode: PAL_H32_V28
         int val = vdp.getRegisterData(MODE_4);
         vdp.writeControlPort(CTRL_PORT_MODE_4 | (val & 0x7E));
         vdp.resetVideoMode(true);
     }
 
-    public static void setH40(GenesisVdpProvider vdp) {
+    public static void setH40(MdVdpProvider vdp) {
         //        Set Video mode: PAL_H40_V28
         int val = vdp.getRegisterData(MODE_4);
         vdp.writeControlPort(CTRL_PORT_MODE_4 | (val | 0x81));
         vdp.resetVideoMode(true);
     }
 
-    public static void vdpMode5(GenesisVdpProvider vdp) {
+    public static void vdpMode5(MdVdpProvider vdp) {
         int val = vdp.getRegisterData(MODE_2) | toMaskFn.apply(MODE_5_BIT_POS);
         vdp.writeControlPort(CTRL_PORT_MODE_2 | val);
     }
 
-    public static void vdpDisplayEnable(GenesisVdpProvider vdp, boolean en) {
+    public static void vdpDisplayEnable(MdVdpProvider vdp, boolean en) {
         int val = vdp.getRegisterData(MODE_2) & toResetMaskFn.apply(DISP_EN_BIT_POS);
         int den = en ? toMaskFn.apply(DISP_EN_BIT_POS) : 0;
         vdp.writeControlPort(CTRL_PORT_MODE_2 | (val | den));
     }
 
-    public static void vdpDisplayEnableAndMode5(GenesisVdpProvider vdp) {
+    public static void vdpDisplayEnableAndMode5(MdVdpProvider vdp) {
         vdpDisplayEnable(vdp, true);
         vdpMode5(vdp);
     }
 
-    public static void vdpEnableDma(GenesisVdpProvider vdp, boolean en) {
+    public static void vdpEnableDma(MdVdpProvider vdp, boolean en) {
         int val = vdp.getRegisterData(MODE_2) & toResetMaskFn.apply(DMA_EN_BIT_POS);
         int den = en ? toMaskFn.apply(DMA_EN_BIT_POS) : 0;
         vdp.writeControlPort(CTRL_PORT_MODE_2 | (val | den));
     }
 
-    public static String printVdpMemory(VdpMemoryInterface memoryInterface, GenesisVdpProvider.VdpRamType type, int from, int to) {
+    public static String printVdpMemory(VdpMemoryInterface memoryInterface, MdVdpProvider.VdpRamType type, int from, int to) {
         Function<Integer, Integer> getByteFn = addr -> {
             int word = memoryInterface.readVideoRamWord(type, addr);
             return addr % 2 == 0 ? word >> 8 : word & 0xFF;
@@ -216,11 +216,11 @@ public class MdVdpTestUtil {
         vdp.updateRegisterData(0, 0);
     }
 
-    public static GenesisVdp getVdpProvider(SystemProvider systemProvider) throws Exception {
+    public static MdVdp getVdpProvider(SystemProvider systemProvider) throws Exception {
         BaseSystem system = (BaseSystem) systemProvider;
         Field f = BaseSystem.class.getDeclaredField("vdp");
         f.setAccessible(true);
-        return (GenesisVdp) f.get(system);
+        return (MdVdp) f.get(system);
     }
 
     private void dumpTiles() {
@@ -277,11 +277,11 @@ public class MdVdpTestUtil {
         return vdp;
     }
 
-    public static SystemProvider createTestGenesisProvider() {
-        return createTestGenesisProvider(MemoryProvider.createGenesisInstance());
+    public static SystemProvider createTestMdProvider() {
+        return createTestMdProvider(MemoryProvider.createMdInstance());
     }
 
-    public static SystemProvider createTestGenesisProvider(IMemoryProvider memoryProvider) {
+    public static SystemProvider createTestMdProvider(IMemoryProvider memoryProvider) {
         return new SystemProvider() {
 
             private RomContext romContext;
@@ -315,7 +315,7 @@ public class MdVdpTestUtil {
     }
 
 
-    public static class VdpAdaptor implements GenesisVdpProvider {
+    public static class VdpAdaptor implements MdVdpProvider {
 
         @Override
         public void writeVdpPortWord(VdpPortType type, int data) {

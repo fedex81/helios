@@ -1,20 +1,20 @@
 package omegadrive.vdp.md;
 
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 
 /**
- * TestGenesisVdpMemoryInterface
+ * TestMdVdpMemoryInterface
  * <p>
  * Federico Berti
  * <p>
  * Copyright 2020
  */
-public class TestGenesisVdpMemoryInterface extends GenesisVdpMemoryInterface {
+public class TestMdVdpMemoryInterface extends MdVdpMemoryInterface {
     int vramWrites, vramReads;
     int cramReads, cramWrites;
     int vsramReads, vsramWrites;
 
-    public TestGenesisVdpMemoryInterface() {
+    public TestMdVdpMemoryInterface() {
         super();
         init();
     }
@@ -38,7 +38,7 @@ public class TestGenesisVdpMemoryInterface extends GenesisVdpMemoryInterface {
     }
 
     @Override
-    public void writeVideoRamByte(GenesisVdpProvider.VdpRamType vramType, int address, byte data) {
+    public void writeVideoRamByte(MdVdpProvider.VdpRamType vramType, int address, byte data) {
         super.writeVideoRamByte(vramType, address, data);
     }
 
@@ -60,7 +60,7 @@ public class TestGenesisVdpMemoryInterface extends GenesisVdpMemoryInterface {
         vsramWrites++;
     }
 
-    public int getMemoryReads(GenesisVdpProvider.VdpRamType ramType) {
+    public int getMemoryReads(MdVdpProvider.VdpRamType ramType) {
         switch (ramType) {
             case VRAM:
                 return vramReads;
@@ -72,7 +72,7 @@ public class TestGenesisVdpMemoryInterface extends GenesisVdpMemoryInterface {
         return -1;
     }
 
-    public int getMemoryWrites(GenesisVdpProvider.VdpRamType ramType) {
+    public int getMemoryWrites(MdVdpProvider.VdpRamType ramType) {
         switch (ramType) {
             case VRAM:
                 return vramWrites;

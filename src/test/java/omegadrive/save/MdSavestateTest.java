@@ -21,8 +21,8 @@ package omegadrive.save;
 
 import m68k.cpu.MC68000;
 import omegadrive.Device;
-import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.bus.model.GenesisZ80BusProvider;
+import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
@@ -33,7 +33,7 @@ import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.SystemTestUtil;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.junit.Assert;
 import org.junit.Test;
@@ -60,8 +60,8 @@ public class MdSavestateTest extends BaseSavestateTest {
         return files;
     }
 
-    public static GenesisBusProvider loadSaveState(Path saveFile) {
-        GenesisBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
+    public static MdBusProvider loadSaveState(Path saveFile) {
+        MdBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
         BaseStateHandler loadHandler = BaseStateHandler.createInstance(
                 MD, saveFile.toAbsolutePath().toString(), Type.LOAD, busProvider.getAllDevices(Device.class));
         loadHandler.processState();
@@ -81,16 +81,16 @@ public class MdSavestateTest extends BaseSavestateTest {
         }
     }
 
-    private void compareZ80(Z80Provider z80p1, Z80Provider z80p2, GenesisBusProvider bus1, GenesisBusProvider bus2) {
+    private void compareZ80(Z80Provider z80p1, Z80Provider z80p2, MdBusProvider bus1, MdBusProvider bus2) {
         compareZ80(z80p1, z80p2);
 
-        IntStream.range(0, GenesisZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
+        IntStream.range(0, MdZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> Assert.assertEquals("Z80Ram:" + i, z80p1.readMemory(i), z80p2.readMemory(i))
         );
         Assert.assertEquals("z80Reset", bus1.isZ80ResetState(), bus2.isZ80ResetState());
         Assert.assertEquals("z80BusReq", bus1.isZ80BusRequested(), bus2.isZ80BusRequested());
-        Assert.assertEquals("z80Banking", GenesisZ80BusProvider.getRomBank68kSerial(z80p1),
-                GenesisZ80BusProvider.getRomBank68kSerial(z80p2));
+        Assert.assertEquals("z80Banking", MdZ80BusProvider.getRomBank68kSerial(z80p1),
+                MdZ80BusProvider.getRomBank68kSerial(z80p2));
     }
 
     private void compare68k(MC68000Wrapper cpu1w, MC68000Wrapper cpu2w, IMemoryProvider mem1, IMemoryProvider mem2) {
@@ -111,24 +111,24 @@ public class MdSavestateTest extends BaseSavestateTest {
 
     }
 
-    private void compareVdp(GenesisVdpProvider vdp1, GenesisVdpProvider vdp2) {
+    private void compareVdp(MdVdpProvider vdp1, MdVdpProvider vdp2) {
         IntStream.range(0, 24).forEach(i ->
                 Assert.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
 
         VdpMemoryInterface vm1 = vdp1.getVdpMemory();
         VdpMemoryInterface vm2 = vdp2.getVdpMemory();
-        IntStream.range(0, GenesisVdpProvider.VDP_VRAM_SIZE).forEach(i ->
+        IntStream.range(0, MdVdpProvider.VDP_VRAM_SIZE).forEach(i ->
                 Assert.assertEquals("Vram" + i, vm1.getVram().get(i), vm2.getVram().get(i)));
-        IntStream.range(0, GenesisVdpProvider.VDP_VSRAM_SIZE).forEach(i ->
+        IntStream.range(0, MdVdpProvider.VDP_VSRAM_SIZE).forEach(i ->
                 Assert.assertEquals("Vsram" + i, vm1.getVsram().get(i), vm2.getVsram().get(i)));
-        IntStream.range(0, GenesisVdpProvider.VDP_CRAM_SIZE).forEach(i ->
+        IntStream.range(0, MdVdpProvider.VDP_CRAM_SIZE).forEach(i ->
                 Assert.assertEquals("Cram" + i, vm1.getCram().get(i), vm2.getCram().get(i)));
     }
 
     @Override
     protected void testLoadSaveInternal(Path saveFile) {
         String filePath = saveFile.toAbsolutePath().toString();
-        GenesisBusProvider busProvider1 = SystemTestUtil.setupNewMdSystem();
+        MdBusProvider busProvider1 = SystemTestUtil.setupNewMdSystem();
 
         BaseStateHandler loadHandler = BaseStateHandler.createInstance(
                 MD, filePath, Type.LOAD, busProvider1.getAllDevices(Device.class));
@@ -141,7 +141,7 @@ public class MdSavestateTest extends BaseSavestateTest {
         BaseStateHandler saveHandler = BaseStateHandler.createInstance(
                 MD, name, Type.SAVE, busProvider1.getAllDevices(Device.class));
 
-        GenesisBusProvider busProvider2 = SystemTestUtil.setupNewMdSystem();
+        MdBusProvider busProvider2 = SystemTestUtil.setupNewMdSystem();
 
         BaseStateHandler loadHandler1 = BaseStateHandler.createInstance(
                 MD, filePath, Type.LOAD, busProvider2.getAllDevices(Device.class));
@@ -153,8 +153,8 @@ public class MdSavestateTest extends BaseSavestateTest {
         Assert.assertArrayEquals("Data mismatch", data, savedData);
     }
 
-    private void compareDevices(GenesisBusProvider b1, GenesisBusProvider b2) {
-        compareVdp(getDevice(b1, GenesisVdpProvider.class), getDevice(b2, GenesisVdpProvider.class));
+    private void compareDevices(MdBusProvider b1, MdBusProvider b2) {
+        compareVdp(getDevice(b1, MdVdpProvider.class), getDevice(b2, MdVdpProvider.class));
         compare68k(getDevice(b1, MC68000Wrapper.class), getDevice(b2, MC68000Wrapper.class),
                 getDevice(b1, IMemoryProvider.class), getDevice(b2, IMemoryProvider.class));
         compareZ80(getDevice(b1, Z80Provider.class), getDevice(b2, Z80Provider.class), b1, b2);

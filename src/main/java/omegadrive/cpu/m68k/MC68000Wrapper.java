@@ -22,7 +22,7 @@ package omegadrive.cpu.m68k;
 import m68k.cpu.MC68000;
 import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
@@ -45,7 +45,7 @@ public class MC68000Wrapper implements M68kProvider {
 
     protected final MC68000 m68k;
     protected final AddressSpace addressSpace;
-    protected final GenesisBusProvider busProvider;
+    protected final MdBusProvider busProvider;
     protected final CpuDeviceAccess cpu;
     private boolean stop;
     protected int currentPC;
@@ -53,20 +53,20 @@ public class MC68000Wrapper implements M68kProvider {
 
     public static boolean subCpuBusHalt = false;
 
-    public MC68000Wrapper(CpuDeviceAccess cpu, GenesisBusProvider busProvider) {
+    public MC68000Wrapper(CpuDeviceAccess cpu, MdBusProvider busProvider) {
         this.cpu = cpu;
         this.m68k = createCpu();
         this.busProvider = busProvider;
         this.addressSpace = createAddressSpace();
         m68k.setAddressSpace(addressSpace);
-        TAS.EMULATE_BROKEN_TAS = MC68000Helper.GENESIS_TAS_BROKEN;
+        TAS.EMULATE_BROKEN_TAS = MC68000Helper.MD_TAS_BROKEN;
     }
 
-    public static MC68000Wrapper createInstance(GenesisBusProvider busProvider) {
+    public static MC68000Wrapper createInstance(MdBusProvider busProvider) {
         return createInstance(CpuDeviceAccess.M68K, busProvider);
     }
 
-    public static MC68000Wrapper createInstance(CpuDeviceAccess cpu, GenesisBusProvider busProvider) {
+    public static MC68000Wrapper createInstance(CpuDeviceAccess cpu, MdBusProvider busProvider) {
         return MC68000Helper.M68K_DEBUG ? new MC68000WrapperFastDebug(cpu, busProvider) : new MC68000Wrapper(cpu, busProvider);
     }
 

@@ -1,5 +1,5 @@
 /*
- * GenesisVdpTest2
+ * MdVdpTest2
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 17/10/19 14:04
  *
@@ -19,14 +19,14 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.system.Megadrive;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.VdpDmaHandlerTest;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,18 +35,18 @@ import org.slf4j.Logger;
 
 import java.util.Optional;
 
-public class GenesisVdpSpeedTest {
+public class MdVdpSpeedTest {
 
     private static final Logger LOG = LogHelper.getLogger(VdpDmaHandlerTest.class.getSimpleName());
 
-    GenesisVdpProvider vdpProvider;
+    MdVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
-    GenesisBusProvider busProvider;
+    MdBusProvider busProvider;
 
     @Before
     public void setup() {
         busProvider = SystemTestUtil.setupNewMdSystem();
-        Optional<GenesisVdpProvider> opt = busProvider.getBusDeviceIfAny(GenesisVdpProvider.class);
+        Optional<MdVdpProvider> opt = busProvider.getBusDeviceIfAny(MdVdpProvider.class);
         Assert.assertTrue(opt.isPresent());
         vdpProvider = opt.get();
         memoryInterface = (VdpMemoryInterface) vdpProvider.getVdpMemory();

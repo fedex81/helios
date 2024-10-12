@@ -2,7 +2,7 @@ package s32x;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.sound.PwmProvider;
 import omegadrive.system.Megadrive;
 import omegadrive.system.SysUtil;
@@ -13,7 +13,7 @@ import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Sleeper;
-import omegadrive.vdp.md.GenesisVdp;
+import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 import s32x.bus.S32xBus;
@@ -107,7 +107,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         marsVdp = launchCtx.marsVdp;
         //aden 0 -> cycle = 0 = not running
         nextSSh2Cycle = nextMSh2Cycle = launchCtx.s32XMMREG.aden & 1;
-        marsVdp.updateDebugView(((GenesisVdp) vdp).getDebugViewer());
+        marsVdp.updateDebugView(((MdVdp) vdp).getDebugViewer());
         super.initAfterRomLoad(); //needs to be last
         //TODO super inits the soundProvider
         launchCtx.pwm.setPwmProvider(ENABLE_PWM ? sound.getPwm() : PwmProvider.NO_SOUND);
@@ -166,7 +166,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     }
 
     @Override
-    protected GenesisBusProvider createBus() {
+    protected MdBusProvider createBus() {
         return new S32xBus();
     }
 

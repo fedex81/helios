@@ -22,7 +22,7 @@ package omegadrive.savestate;
 import com.google.common.primitives.Bytes;
 import omegadrive.Device;
 import omegadrive.bus.md.SvpMapper;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.cpu.ssp16.Ssp16;
 import omegadrive.cpu.ssp16.Ssp16Types;
 import omegadrive.cpu.z80.Z80Provider;
@@ -132,13 +132,13 @@ public class GshStateHandler extends GstStateHandler {
     }
 
     @Override
-    public void saveZ80(Z80Provider z80, GenesisBusProvider bus) {
+    public void saveZ80(Z80Provider z80, MdBusProvider bus) {
         super.saveZ80(z80, bus);
         saveMapper(bus);
         saveSvp(SvpMapper.ssp16);
     }
 
-    private void saveMapper(GenesisBusProvider bus) {
+    private void saveMapper(MdBusProvider bus) {
         int[] data = bus.getMapperData();
         for (int i = 0; i < data.length; i++) {
             buffer.put(SSF2_MAPPER_REG_OFFSET + i, (byte) data[i]);
@@ -146,14 +146,14 @@ public class GshStateHandler extends GstStateHandler {
     }
 
     @Override
-    public void loadZ80(Z80Provider z80, GenesisBusProvider bus) {
+    public void loadZ80(Z80Provider z80, MdBusProvider bus) {
         super.loadZ80(z80, bus);
         loadMapper(bus);
         loadSvpState(SvpMapper.ssp16);
     }
 
-    private void loadMapper(GenesisBusProvider bus) {
-        int[] data = new int[GenesisBusProvider.NUM_MAPPER_BANKS];
+    private void loadMapper(MdBusProvider bus) {
+        int[] data = new int[MdBusProvider.NUM_MAPPER_BANKS];
         for (int i = 0; i < data.length; i++) {
             data[i] = buffer.get(SSF2_MAPPER_REG_OFFSET + i) & 0xFF;
         }

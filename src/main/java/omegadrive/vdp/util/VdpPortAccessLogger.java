@@ -1,7 +1,7 @@
 package omegadrive.vdp.util;
 
 import omegadrive.vdp.md.VdpInterruptHandler;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ public class VdpPortAccessLogger {
         this.writes = new ArrayList<>();
     }
 
-    public void logVdpWrite(GenesisVdpProvider.VdpPortType type, int value) {
+    public void logVdpWrite(MdVdpProvider.VdpPortType type, int value) {
         VdpWriteContext v = new VdpWriteContext();
         v.hcInternal = handler.gethCounterInternal();
         v.hcExternal = handler.getHCounterExternal();
@@ -52,7 +52,7 @@ public class VdpPortAccessLogger {
         public int hcExternal;
         public int vcExternal;
         public int value;
-        public GenesisVdpProvider.VdpPortType portType;
+        public MdVdpProvider.VdpPortType portType;
 
         public static VdpWriteContext parseShortString(String s) {
             String[] tk = s.split(",");
@@ -61,7 +61,7 @@ public class VdpPortAccessLogger {
             v.vcExternal = Integer.parseInt(tk[1]);
             v.hcInternal = Integer.parseInt(tk[2]);
             v.vcInternal = Integer.parseInt(tk[3]);
-            v.portType = GenesisVdpProvider.VdpPortType.valueOf(tk[4]);
+            v.portType = MdVdpProvider.VdpPortType.valueOf(tk[4]);
             v.value = Integer.parseInt(tk[5]);
             return v;
         }

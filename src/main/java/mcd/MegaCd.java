@@ -1,5 +1,5 @@
 /*
- * Genesis
+ * MegaCd
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 26/10/19 15:29
  *
@@ -25,7 +25,7 @@ import mcd.cdd.ExtendedCueSheet;
 import mcd.util.McdMemView;
 import omegadrive.SystemLoader;
 import omegadrive.bus.md.SvpMapper;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
@@ -33,7 +33,7 @@ import omegadrive.cpu.ssp16.Ssp16;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.input.InputProvider;
-import omegadrive.joypad.GenesisJoypad;
+import omegadrive.joypad.MdJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.system.BaseSystem;
@@ -42,7 +42,7 @@ import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.*;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 
@@ -54,12 +54,12 @@ import static omegadrive.util.Util.GEN_NTSC_MCLOCK_MHZ;
 import static omegadrive.util.Util.GEN_PAL_MCLOCK_MHZ;
 
 /**
- * Megadrive main class
+ * MegaCd main class
  *
  * @author Federico Berti
  */
 @Deprecated
-public class MegaCd extends BaseSystem<GenesisBusProvider> {
+public class MegaCd extends BaseSystem<MdBusProvider> {
 
     private final static Logger LOG = LogHelper.getLogger(MegaCd.class.getSimpleName());
 
@@ -120,13 +120,13 @@ public class MegaCd extends BaseSystem<GenesisBusProvider> {
     public void init() {
         super.init();
         stateHandler = BaseStateHandler.EMPTY_STATE;
-        joypad = GenesisJoypad.create(this);
+        joypad = MdJoypad.create(this);
         inputProvider = InputProvider.createInstance(joypad);
 
-        memory = MemoryProvider.createGenesisInstance();
+        memory = MemoryProvider.createMdInstance();
         mcdLaunchContext = McdDeviceHelper.setupDevices();
         bus = mcdLaunchContext.mainBus;
-        vdp = GenesisVdpProvider.createVdp(bus);
+        vdp = MdVdpProvider.createVdp(bus);
         cpu = MC68000Wrapper.createInstance(M68K, bus);
         z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
         vdp.addVdpEventListener(mcdLaunchContext.subBus);

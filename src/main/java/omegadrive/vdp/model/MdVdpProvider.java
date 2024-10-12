@@ -1,5 +1,5 @@
 /*
- * GenesisVdpProvider
+ * MdVdpProvider
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 28/05/19 17:15
  *
@@ -19,15 +19,15 @@
 
 package omegadrive.vdp.model;
 
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.util.LogHelper;
-import omegadrive.vdp.md.GenesisVdp;
+import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.md.VdpFifo;
 import org.slf4j.Logger;
 
-public interface GenesisVdpProvider extends BaseVdpProvider {
+public interface MdVdpProvider extends BaseVdpProvider {
 
-    Logger LOG = LogHelper.getLogger(GenesisVdpProvider.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(MdVdpProvider.class.getSimpleName());
 
     int MAX_SPRITES_PER_FRAME_H40 = 80;
     int MAX_SPRITES_PER_FRAME_H32 = 64;
@@ -163,8 +163,8 @@ public interface GenesisVdpProvider extends BaseVdpProvider {
     }
 
 
-    static GenesisVdpProvider createVdp(GenesisBusProvider bus) {
-        return GenesisVdp.createInstance(bus);
+    static MdVdpProvider createVdp(MdBusProvider bus) {
+        return MdVdp.createInstance(bus);
     }
 
     //write a word

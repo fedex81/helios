@@ -1,5 +1,5 @@
 /*
- * GenesisVdp
+ * MdVdp
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 25/10/19 14:10
  *
@@ -20,7 +20,7 @@
 package omegadrive.vdp.md;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
@@ -41,9 +41,9 @@ import static omegadrive.util.Util.bitSetTest;
 import static omegadrive.util.Util.th;
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_FIELD_CHANGE;
 import static omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent.INTERLACE_MODE_CHANGE;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.CRAM;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.getRegisterName;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.CRAM;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.VRAM;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.getRegisterName;
 
 /**
  * Initially Based on genefusto GenVdp
@@ -53,11 +53,11 @@ import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.getRegiste
  *
  * @author Federico Berti
  */
-public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSupport.VdpEventListener {
+public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEventListener {
 
     public final static boolean verbose = false;
     public final static boolean regVerbose = false;
-    private final static Logger LOG = LogHelper.getLogger(GenesisVdp.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(MdVdp.class.getSimpleName());
 
     //TODO true breaks a good number of VdpFifoTests
     private static final boolean ENABLE_READ_AHEAD = Boolean.parseBoolean(System.getProperty("vdp.enable.read.ahead", "false"));
@@ -138,7 +138,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     int satStart;
     int fifoEmpty = 1, fifoFull = 0;
 
-    private GenesisBusProvider bus;
+    private MdBusProvider bus;
     protected VdpInterruptHandler interruptHandler;
     private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
@@ -150,9 +150,9 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     private UpdatableViewer debugViewer;
     private VdpPortAccessLogger vdpPortAccessLogger;
 
-    public static GenesisVdp createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface,
-                                            VdpDmaHandler dmaHandler, RegionDetector.Region region) {
-        GenesisVdp v = new GenesisVdp();
+    public static MdVdp createInstance(MdBusProvider bus, VdpMemoryInterface memoryInterface,
+                                       VdpDmaHandler dmaHandler, RegionDetector.Region region) {
+        MdVdp v = new MdVdp();
         v.bus = bus;
         v.memoryInterface = memoryInterface;
         v.dmaHandler = dmaHandler;
@@ -161,8 +161,8 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         return v;
     }
 
-    public static GenesisVdp createInstance(GenesisBusProvider bus, VdpMemoryInterface memoryInterface) {
-        GenesisVdp v = new GenesisVdp();
+    public static MdVdp createInstance(MdBusProvider bus, VdpMemoryInterface memoryInterface) {
+        MdVdp v = new MdVdp();
         v.bus = bus;
         v.memoryInterface = memoryInterface;
         v.dmaHandler = VdpDmaHandlerImpl.createInstance(v, v.memoryInterface, bus);
@@ -171,11 +171,11 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
         return v;
     }
 
-    public static GenesisVdp createInstance(GenesisBusProvider bus) {
-        return createInstance(bus, GenesisVdpMemoryInterface.createInstance());
+    public static MdVdp createInstance(MdBusProvider bus) {
+        return createInstance(bus, MdVdpMemoryInterface.createInstance());
     }
 
-    private GenesisVdp() {
+    private MdVdp() {
     }
 
     @Override
@@ -207,7 +207,7 @@ public class GenesisVdp implements GenesisVdpProvider, BaseVdpAdapterEventSuppor
     }
 
     private void reloadRegisters() {
-        IntStream.range(0, GenesisVdpProvider.VDP_REGISTERS_SIZE).forEach(i -> updateVariables(i, registers[i]));
+        IntStream.range(0, MdVdpProvider.VDP_REGISTERS_SIZE).forEach(i -> updateVariables(i, registers[i]));
     }
 
     private int lastControl = -1;

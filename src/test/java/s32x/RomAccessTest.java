@@ -14,7 +14,7 @@ import s32x.util.MarsLauncherHelper;
 
 import java.util.function.Consumer;
 
-import static omegadrive.bus.model.GenesisBusProvider.SRAM_LOCK;
+import static omegadrive.bus.model.MdBusProvider.SRAM_LOCK;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.BufferUtil.assertionsEnabled;
 import static omegadrive.util.Util.th;

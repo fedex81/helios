@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 import static mcd.dict.MegaCdDict.START_MCD_SUB_GATE_ARRAY_REGS;
-import static omegadrive.bus.model.GenesisBusProvider.MEGA_CD_EXP_START;
+import static omegadrive.bus.model.MdBusProvider.MEGA_CD_EXP_START;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 

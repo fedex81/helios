@@ -20,7 +20,7 @@
 package omegadrive.cpu.z80;
 
 import omegadrive.bus.model.BaseBusProvider;
-import omegadrive.bus.model.GenesisZ80BusProvider;
+import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.util.Size;
 import z80core.IMemIoOps;
@@ -37,21 +37,21 @@ public class Z80MemIoOps implements IMemIoOps {
     private int pcUpperLimit = 0xFFFF;
     public int lastFetch;
 
-    public static Z80MemIoOps createGenesisInstance(BaseBusProvider z80BusProvider) {
-        return createGenesisInstanceInternal(new Z80MemIoOps(), z80BusProvider);
+    public static Z80MemIoOps createMdInstance(BaseBusProvider z80BusProvider) {
+        return createMdInstanceInternal(new Z80MemIoOps(), z80BusProvider);
     }
 
-    public static Z80MemIoOps createDebugGenesisInstance(BaseBusProvider z80BusProvider, StringBuilder sb, int logAddressAccess) {
-        return createGenesisInstanceInternal(createDbgMemIoOps(sb, logAddressAccess), z80BusProvider);
+    public static Z80MemIoOps createDebugMdInstance(BaseBusProvider z80BusProvider, StringBuilder sb, int logAddressAccess) {
+        return createMdInstanceInternal(createDbgMemIoOps(sb, logAddressAccess), z80BusProvider);
     }
 
-    private static Z80MemIoOps createGenesisInstanceInternal(Z80MemIoOps m, BaseBusProvider z80BusProvider) {
+    private static Z80MemIoOps createMdInstanceInternal(Z80MemIoOps m, BaseBusProvider z80BusProvider) {
         m.z80BusProvider = z80BusProvider;
         IMemoryRam mem = z80BusProvider.getBusDeviceIfAny(IMemoryRam.class).
                 orElseThrow(() -> new RuntimeException("Invalid setup"));
         m.ram = mem.getRamData();
         m.ramSizeMask = m.ram.length - 1;
-        m.pcUpperLimit = GenesisZ80BusProvider.END_RAM;
+        m.pcUpperLimit = MdZ80BusProvider.END_RAM;
         return m;
     }
 

@@ -1,7 +1,7 @@
 package s32x.util;
 
 import com.google.common.collect.ObjectArrays;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.memory.ReadableByteMemory;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.vdp.model.VdpMemoryInterface;
@@ -26,12 +26,12 @@ public class S32xMemView extends MemView {
     public static final MemViewData[] s32xMemViewData =
             ObjectArrays.concat(mdMemViewData, S32xMemViewType.values(), MemViewData.class);
 
-    public static UpdatableViewer createInstance(GenesisBusProvider m, ReadableByteMemory s32x,
+    public static UpdatableViewer createInstance(MdBusProvider m, ReadableByteMemory s32x,
                                                  VdpMemoryInterface vdpMem) {
         return VdpDebugView.DEBUG_VIEWER_ENABLED ? new S32xMemView(m, s32x, vdpMem) : NO_MEMVIEW;
     }
 
-    protected S32xMemView(GenesisBusProvider m, ReadableByteMemory s32x, VdpMemoryInterface vdpMem) {
+    protected S32xMemView(MdBusProvider m, ReadableByteMemory s32x, VdpMemoryInterface vdpMem) {
         super(s32xMemViewData, m, s32x, vdpMem);
     }
 

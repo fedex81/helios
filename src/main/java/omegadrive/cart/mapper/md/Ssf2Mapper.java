@@ -19,7 +19,7 @@
 
 package omegadrive.cart.mapper.md;
 
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.LogHelper;
@@ -87,7 +87,7 @@ public abstract class Ssf2Mapper implements RomMapper, RomMapper.StateAwareMappe
 
     @Override
     public int readData(int addressL, Size size) {
-        if (addressL >= BANKABLE_START_ADDRESS && addressL <= GenesisBusProvider.DEFAULT_ROM_END_ADDRESS) {
+        if (addressL >= BANKABLE_START_ADDRESS && addressL <= MdBusProvider.DEFAULT_ROM_END_ADDRESS) {
             int address = (addressL & MD_PC_MASK);
             //bankSelector = address >> BANK_SHIFT;
             address = (banks[address >> BANK_SHIFT] << BANK_SHIFT) | (address & BANK_MASK);

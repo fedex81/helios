@@ -25,7 +25,7 @@ import omegadrive.util.FileUtil;
 import omegadrive.util.TestRenderUtil;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
@@ -119,7 +119,7 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
         } while (fieldCompleted != 1);
     }
 
-    private void writeVdpData(GenesisVdpProvider vdp, Path datFile) {
+    private void writeVdpData(MdVdpProvider vdp, Path datFile) {
         List<VdpWriteContext> list = getDatFileContents(datFile);
         System.out.println("Replaying vdpPort writes: " + list.size());
         for (VdpWriteContext v : list) {

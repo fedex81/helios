@@ -20,7 +20,7 @@
 package omegadrive.vdp.md;
 
 import omegadrive.util.Fifo;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 
 import java.util.stream.IntStream;
 
@@ -29,8 +29,8 @@ public class VdpFifo extends Fifo.FixedSizeFifo<VdpFifo.VdpFifoEntry> {
     public static final int VDP_FIFO_SIZE = 4;
 
     public static class VdpFifoEntry {
-        public GenesisVdpProvider.VdpPortType portType;
-        public GenesisVdpProvider.VramMode vdpRamMode;
+        public MdVdpProvider.VdpPortType portType;
+        public MdVdpProvider.VramMode vdpRamMode;
         public int addressRegister;
         public int data;
         public boolean firstByteWritten;
@@ -53,7 +53,7 @@ public class VdpFifo extends Fifo.FixedSizeFifo<VdpFifo.VdpFifoEntry> {
         IntStream.range(0, VDP_FIFO_SIZE).forEach(i -> fifo[i] = new VdpFifoEntry());
     }
 
-    public void push(GenesisVdpProvider.VramMode vdpRamMode, int addressReg, int data) {
+    public void push(MdVdpProvider.VramMode vdpRamMode, int addressReg, int data) {
         if (isFull()) {
             LOG.info("FIFO full");
             return;

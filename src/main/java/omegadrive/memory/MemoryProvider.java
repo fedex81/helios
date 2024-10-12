@@ -50,7 +50,7 @@ public class MemoryProvider implements IMemoryProvider {
     private MemoryProvider() {
     }
 
-    public static IMemoryProvider createGenesisInstance() {
+    public static IMemoryProvider createMdInstance() {
         return createInstance(RomHolder.EMPTY_ROM, M68K_RAM_SIZE);
     }
 

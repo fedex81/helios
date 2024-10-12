@@ -21,7 +21,7 @@ package omegadrive.cpu.z80;
 
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;
-import omegadrive.bus.model.GenesisZ80BusProvider;
+import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.cpu.z80.debug.Z80CoreWrapperFastDebug;
 import omegadrive.savestate.StateUtil;
 import omegadrive.util.LogHelper;
@@ -62,7 +62,7 @@ public class Z80CoreWrapper implements Z80Provider {
             case MD:
             case S32X:
             case MEGACD:
-                w = createGenesisInstanceInternal(busProvider);
+                w = createMdInstanceInternal(busProvider);
                 break;
             case GG:
             case SMS:
@@ -103,10 +103,10 @@ public class Z80CoreWrapper implements Z80Provider {
         return w.setupInternal(null);
     }
 
-    private static Z80CoreWrapper createGenesisInstanceInternal(BaseBusProvider busProvider) {
+    private static Z80CoreWrapper createMdInstanceInternal(BaseBusProvider busProvider) {
         Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperFastDebug() : new Z80CoreWrapper();
-        w.z80BusProvider = GenesisZ80BusProvider.createInstance(busProvider);
-        w.memIoOps = Z80MemIoOps.createGenesisInstance(w.z80BusProvider);
+        w.z80BusProvider = MdZ80BusProvider.createInstance(busProvider);
+        w.memIoOps = Z80MemIoOps.createMdInstance(w.z80BusProvider);
         return w.setupInternal(null);
     }
 

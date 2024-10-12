@@ -31,7 +31,7 @@ public class GameGenieHelper {
     /**
      * Game Genie alphabet for Genesis codes.
      */
-    public static final char[] GENESIS_ALPHABET = {
+    public static final char[] MD_ALPHABET = {
             'A', 'B', 'C', 'D', 'E',
             'F', 'G', 'H', 'J', 'K',
             'L', 'M', 'N', 'P', 'R',
@@ -41,11 +41,11 @@ public class GameGenieHelper {
             '8', '9'
     };
 
-    public static final Pattern GENESIS_GG_PATTERN = Pattern.compile("^([A-Za-z0-9]{1,4})-([A-Za-z0-9]{1,4})$");
+    public static final Pattern MD_GG_PATTERN = Pattern.compile("^([A-Za-z0-9]{1,4})-([A-Za-z0-9]{1,4})$");
 
     public static boolean isValidGGLine(String line) {
         if (line.contains("-") && line.length() >= 9) {
-            return GENESIS_GG_PATTERN.matcher(line.substring(0, 9)).matches();
+            return MD_GG_PATTERN.matcher(line.substring(0, 9)).matches();
         }
         return false;
     }
@@ -73,7 +73,7 @@ public class GameGenieHelper {
         code = code.substring(0, 4) + code.substring(5);
         --length;
 
-        char[] alphabet = GENESIS_ALPHABET;
+        char[] alphabet = MD_ALPHABET;
 
         for (int i = 0; i < length; i++) {
             boolean found = false;
@@ -99,7 +99,7 @@ public class GameGenieHelper {
      * @param ggcode The Genesis GameGenieCode to decode.
      * @return The Genesis code in "raw" format.
      */
-    public static BasicGenesisRawCode decode(String ggcode) {
+    public static BasicMdRawCode decode(String ggcode) {
         int length = ggcode.length();
 
         if (length != 9) {
@@ -149,10 +149,10 @@ public class GameGenieHelper {
         address <<= 8;
         address |= temp;
 
-        return new BasicGenesisRawCode(address, value);
+        return new BasicMdRawCode(address, value);
     }
 
-    public static String encode(BasicGenesisRawCode code) {
+    public static String encode(BasicMdRawCode code) {
         int temp;
         long genie;
         int value = code.getValue();
@@ -207,7 +207,7 @@ public class GameGenieHelper {
         genie |= temp;
 
         StringBuilder ggcode = new StringBuilder();
-        char[] alphabet = GENESIS_ALPHABET;
+        char[] alphabet = MD_ALPHABET;
 
         for (int i = 0; i < 8; i++) {
             if (i == 4) {
@@ -229,7 +229,7 @@ public class GameGenieHelper {
     private static int toHex(char letter) throws IllegalArgumentException {
         letter = Character.toUpperCase(letter);
 
-        char[] alphabet = GENESIS_ALPHABET;
+        char[] alphabet = MD_ALPHABET;
 
         for (int i = 0; i < alphabet.length; i++) {
             if (alphabet[i] == letter) {

@@ -29,13 +29,13 @@ public interface VdpMemoryInterface {
 
     Logger LOG = LogHelper.getLogger(VdpMemoryInterface.class.getSimpleName());
 
-    void writeVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int data, int address);
+    void writeVideoRamWord(MdVdpProvider.VdpRamType vramType, int data, int address);
 
-    void writeVideoRamByte(GenesisVdpProvider.VdpRamType vramType, int address, byte data);
+    void writeVideoRamByte(MdVdpProvider.VdpRamType vramType, int address, byte data);
 
-    byte readVideoRamByte(GenesisVdpProvider.VdpRamType vramType, int address);
+    byte readVideoRamByte(MdVdpProvider.VdpRamType vramType, int address);
 
-    int readVideoRamWord(GenesisVdpProvider.VdpRamType vramType, int address);
+    int readVideoRamWord(MdVdpProvider.VdpRamType vramType, int address);
 
     int[] getJavaColorPalette();
 
@@ -57,7 +57,7 @@ public interface VdpMemoryInterface {
         //DO NOTHING
     }
 
-    default void writeVideoRamWord(GenesisVdpProvider.VramMode mode, int data, int address) {
+    default void writeVideoRamWord(MdVdpProvider.VramMode mode, int data, int address) {
         if (mode == null) {
             LOG.warn("writeDataPort when vramMode is not set, address {} , size {}", address, Size.WORD);
             return;
@@ -65,7 +65,7 @@ public interface VdpMemoryInterface {
         writeVideoRamWord(mode.getRamType(), data, address);
     }
 
-    default int readVideoRamWord(GenesisVdpProvider.VramMode mode, int address) {
+    default int readVideoRamWord(MdVdpProvider.VramMode mode, int address) {
         if (mode == null) {
             LOG.warn("readDataPort when vramMode is not set, address {} , size {}", address, Size.WORD);
             return 0;

@@ -2,7 +2,7 @@ package omegadrive.vdp.util;
 
 import omegadrive.util.LogHelper;
 import omegadrive.util.PriorityThreadFactory;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpRenderHandler;
 import org.slf4j.Logger;
@@ -45,14 +45,14 @@ public class VdpDebugView implements UpdatableViewer {
 
     private boolean s32xMode = false;
 
-    private VdpDebugView(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
+    private VdpDebugView(MdVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.cramViewer = CramViewer.createInstance(memoryInterface);
         this.planeViewer = PlaneViewer.createInstance(vdp, memoryInterface, renderHandler);
         this.tileViewer = TileViewer.createInstance(vdp, memoryInterface, renderHandler);
         init();
     }
 
-    public static UpdatableViewer createInstance(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
+    public static UpdatableViewer createInstance(MdVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         return DEBUG_VIEWER_ENABLED ? new VdpDebugView(vdp, memoryInterface, renderHandler) : UpdatableViewer.NO_OP_VIEWER;
     }
 

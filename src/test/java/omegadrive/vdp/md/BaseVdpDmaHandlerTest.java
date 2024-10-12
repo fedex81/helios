@@ -17,12 +17,12 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.MdVdpTestUtil;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,20 +35,20 @@ import java.util.stream.IntStream;
 
 import static omegadrive.SystemLoader.SystemType.MD;
 import static omegadrive.system.SystemProvider.NO_CLOCK;
-import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.VRAM;
 
 @Ignore
 public class BaseVdpDmaHandlerTest {
 
     private static final Logger LOG = LogHelper.getLogger(BaseVdpDmaHandlerTest.class.getSimpleName());
 
-    GenesisVdpProvider vdpProvider;
+    MdVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
 
     @Before
     public void setup() {
-        GenesisBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
-        Optional<GenesisVdpProvider> opt = busProvider.getBusDeviceIfAny(GenesisVdpProvider.class);
+        MdBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
+        Optional<MdVdpProvider> opt = busProvider.getBusDeviceIfAny(MdVdpProvider.class);
         Assert.assertTrue(opt.isPresent());
         vdpProvider = opt.get();
         memoryInterface = vdpProvider.getVdpMemory();

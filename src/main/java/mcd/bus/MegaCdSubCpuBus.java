@@ -8,8 +8,8 @@ import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.McdPcm;
 import omegadrive.Device;
 import omegadrive.bus.md.BusArbiter;
-import omegadrive.bus.md.GenesisBus;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.md.MdBus;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
@@ -46,7 +46,7 @@ import static omegadrive.util.Util.*;
  * <p>
  * Copyright 2023
  */
-public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
+public class MegaCdSubCpuBus extends MdBus implements StepDevice {
 
     private static final Logger LOG = LogHelper.getLogger(MegaCdSubCpuBus.class.getSimpleName());
 
@@ -100,7 +100,7 @@ public class MegaCdSubCpuBus extends GenesisBus implements StepDevice {
     }
 
     @Override
-    public GenesisBusProvider attachDevice(Device device) {
+    public MdBusProvider attachDevice(Device device) {
         super.attachDevice(device);
         if (device instanceof McdSubInterruptHandler ih) {
             this.interruptHandler = ih;

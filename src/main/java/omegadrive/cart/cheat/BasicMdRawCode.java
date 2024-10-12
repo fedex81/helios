@@ -1,5 +1,5 @@
 /*
- * BasicGenesisRawCode
+ * BasicMdRawCode
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 07/04/19 16:01
  *
@@ -21,9 +21,9 @@ package omegadrive.cart.cheat;
 
 import static omegadrive.util.Util.th;
 
-public class BasicGenesisRawCode {
+public class BasicMdRawCode {
 
-    public static final BasicGenesisRawCode INVALID_CODE = new BasicGenesisRawCode(-1, -1);
+    public static final BasicMdRawCode INVALID_CODE = new BasicMdRawCode(-1, -1);
 
     private int address;
     private int value;
@@ -34,7 +34,7 @@ public class BasicGenesisRawCode {
      * @param address This code's address.
      * @param value   This code's value.
      */
-    public BasicGenesisRawCode(int address, int value) {
+    public BasicMdRawCode(int address, int value) {
         this.setAddress(address);
         this.setValue(value);
     }
@@ -93,7 +93,7 @@ public class BasicGenesisRawCode {
      * @return A String representation.
      */
     public String toString() {
-        return "GenesisRawCode[" + this.toHexString(this.value, 4) +
+        return "BasicMdRawCode[" + this.toHexString(this.value, 4) +
                 ":" + this.toHexString(this.address, 6) + "]";
     }
 }

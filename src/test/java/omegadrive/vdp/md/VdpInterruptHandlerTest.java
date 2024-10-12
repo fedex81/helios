@@ -23,7 +23,7 @@ import omegadrive.util.VideoMode;
 import omegadrive.vdp.BaseVdpInterruptHandlerTest;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -109,7 +109,7 @@ public class VdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
         VdpInterruptHandler h = VdpInterruptHandler.createMdInstance(vdp);
         MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
 
-        int totalCount = GenesisVdpProvider.NTSC_SCANLINES * 10 + 5;
+        int totalCount = MdVdpProvider.NTSC_SCANLINES * 10 + 5;
         prepareVdp(vdp, h, VideoMode.NTSCU_H40_V28);
         do {
             h.increaseHCounter();
@@ -130,7 +130,7 @@ public class VdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
         BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
         VdpInterruptHandler h = VdpInterruptHandler.createMdInstance(vdp);
 
-        int totalCount = GenesisVdpProvider.NTSC_SCANLINES * 10 + 5;
+        int totalCount = MdVdpProvider.NTSC_SCANLINES * 10 + 5;
         prepareVdp(vdp, h, VideoMode.NTSCU_H40_V30);
         boolean atLeastOneVInt = false;
         Assert.assertFalse(h.isvBlankSet());

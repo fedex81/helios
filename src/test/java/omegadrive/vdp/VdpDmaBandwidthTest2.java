@@ -20,7 +20,7 @@
 package omegadrive.vdp;
 
 import omegadrive.util.LogHelper;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -33,74 +33,74 @@ public class VdpDmaBandwidthTest2 extends BaseVdpDmaBandwidthTest {
     @Test
     public void test68kVramDmaPerLineBlankingH32() {
         MdVdpTestUtil.setH32(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.VRAM, true, true);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.VRAM, true, true);
     }
 
     @Test
     public void test68kVramDmaPerLineActiveScreenH32() {
         MdVdpTestUtil.setH32(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.VRAM, true, false);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.VRAM, true, false);
     }
 
     @Ignore("TODO fix")
     @Test
     public void test68kVramDmaPerLineBlankingH40() {
         MdVdpTestUtil.setH40(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.VRAM, false, true);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.VRAM, false, true);
     }
 
     @Test
     public void test68kVramDmaPerLineActiveScreenH40() {
         MdVdpTestUtil.setH40(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.VRAM, false, false);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.VRAM, false, false);
     }
 
     @Test
     public void test68kCramDmaPerLineBlankingH32() {
         MdVdpTestUtil.setH32(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.CRAM, true, true);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.CRAM, true, true);
     }
 
     @Test
     public void test68kCramDmaPerLineActiveScreenH32() {
         MdVdpTestUtil.setH32(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.CRAM, true, false);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.CRAM, true, false);
     }
 
     @Test
     public void test68kCramDmaPerLineBlankingH40() {
         MdVdpTestUtil.setH40(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.CRAM, false, true);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.CRAM, false, true);
     }
 
     @Test
     public void test68kCramDmaPerLineActiveScreenH40() {
         MdVdpTestUtil.setH40(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.CRAM, false, false);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.CRAM, false, false);
     }
 
     @Test
     public void test68kVsramDmaPerLineBlankingH32() {
         MdVdpTestUtil.setH32(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.VSRAM, true, true);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.VSRAM, true, true);
     }
 
     @Test
     public void test68kVsramDmaPerLineActiveScreenH32() {
         MdVdpTestUtil.setH32(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.VSRAM, true, false);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.VSRAM, true, false);
     }
 
     @Test
     public void test68kVsramDmaPerLineBlankingH40() {
         MdVdpTestUtil.setH40(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.VSRAM, false, true);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.VSRAM, false, true);
     }
 
     @Test
     public void test68kVsramDmaPerLineActiveScreenH40() {
         MdVdpTestUtil.setH40(vdpProvider);
-        test68kDmaPerLine(GenesisVdpProvider.VdpRamType.VSRAM, false, false);
+        test68kDmaPerLine(MdVdpProvider.VdpRamType.VSRAM, false, false);
     }
 
 }

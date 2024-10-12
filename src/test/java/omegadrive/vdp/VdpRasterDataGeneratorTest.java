@@ -22,7 +22,7 @@ package omegadrive.vdp;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
-import omegadrive.vdp.md.GenesisVdp;
+import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.util.VdpPortAccessLogger;
 import org.junit.Assert;
@@ -50,7 +50,7 @@ public class VdpRasterDataGeneratorTest extends VdpPerformanceTest {
     }
 
     private SystemProvider system;
-    private GenesisVdp vdp;
+    private MdVdp vdp;
     private VdpPortAccessLogger logger;
 
     @BeforeClass

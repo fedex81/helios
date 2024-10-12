@@ -17,7 +17,7 @@
 
 package omegadrive.bus;
 
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
 import org.junit.Assert;
@@ -25,16 +25,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
-import static omegadrive.bus.model.GenesisBusProvider.SRAM_LOCK;
+import static omegadrive.bus.model.MdBusProvider.SRAM_LOCK;
 
 /**
- * GenesisBusTest
+ * MdBusTest
  *
  * @author Federico Berti
  */
-public class GenesisBusTest {
+public class MdBusTest {
 
-    private GenesisBusProvider bus;
+    private MdBusProvider bus;
 
     @Before
     public void init() {
@@ -49,13 +49,13 @@ public class GenesisBusTest {
         int value = 1;
         bus.setZ80ResetState(false);
         bus.write(0xA11100, value, Size.BYTE); //busReq
-        bus.write(GenesisBusProvider.Z80_ADDRESS_SPACE_START, value, Size.BYTE);
-        long res = bus.read(GenesisBusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
+        bus.write(MdBusProvider.Z80_ADDRESS_SPACE_START, value, Size.BYTE);
+        long res = bus.read(MdBusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
         Assert.assertEquals(value, res);
 
         value = 2;
         bus.write(0xA08000, value, Size.BYTE);
-        res = bus.read(GenesisBusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
+        res = bus.read(MdBusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
         Assert.assertEquals(value, res);
 
         value = 3;

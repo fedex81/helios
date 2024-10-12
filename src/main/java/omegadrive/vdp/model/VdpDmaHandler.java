@@ -29,7 +29,7 @@ public interface VdpDmaHandler {
 
     DmaMode getDmaMode();
 
-    DmaMode setupDma(GenesisVdpProvider.VramMode vramMode, int data, boolean m1);
+    DmaMode setupDma(MdVdpProvider.VramMode vramMode, int data, boolean m1);
 
     boolean doDmaSlot(VideoMode videoMode);
 

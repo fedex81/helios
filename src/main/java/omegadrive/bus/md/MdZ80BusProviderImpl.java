@@ -1,5 +1,5 @@
 /*
- * GenesisZ80BusProviderImpl
+ * MdZ80BusProviderImpl
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 11/10/19 11:06
  *
@@ -22,8 +22,8 @@ package omegadrive.bus.md;
 import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.model.BaseBusProvider;
-import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.bus.model.GenesisZ80BusProvider;
+import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.LogHelper;
@@ -33,8 +33,8 @@ import org.slf4j.Logger;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 
-public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements GenesisZ80BusProvider {
-    private static final Logger LOG = LogHelper.getLogger(GenesisZ80BusProviderImpl.class.getSimpleName());
+public class MdZ80BusProviderImpl extends DeviceAwareBus implements MdZ80BusProvider {
+    private static final Logger LOG = LogHelper.getLogger(MdZ80BusProviderImpl.class.getSimpleName());
 
     private final static boolean verbose = false;
 
@@ -44,7 +44,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
     //    bit 15 and ending with bit 23.
     private int romBank68kSerial;
 
-    private GenesisBusProvider mainBusProvider;
+    private MdBusProvider mainBusProvider;
     private BusArbiter busArbiter;
     private FmProvider fmProvider;
     private byte[] ram;
@@ -53,8 +53,8 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
 
     @Override
     public BaseBusProvider attachDevice(Device device) {
-        if (device instanceof GenesisBusProvider) {
-            this.mainBusProvider = (GenesisBusProvider) device;
+        if (device instanceof MdBusProvider) {
+            this.mainBusProvider = (MdBusProvider) device;
             this.mainBusProvider.getBusDeviceIfAny(BusArbiter.class).ifPresent(this::attachDevice);
         }
         if (device instanceof IMemoryRam z80Memory) {
@@ -91,7 +91,7 @@ public class GenesisZ80BusProviderImpl extends DeviceAwareBus implements Genesis
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
             int addressB = romBank68kSerial | (address & M68K_BANK_MASK);
-            if (addressB >= GenesisBusProvider.ADDRESS_RAM_MAP_START && addressB < GenesisBusProvider.ADDRESS_UPPER_LIMIT) {
+            if (addressB >= MdBusProvider.ADDRESS_RAM_MAP_START && addressB < MdBusProvider.ADDRESS_UPPER_LIMIT) {
                 LOG.warn("Z80 reading from 68k RAM");
             } else {
                 data = mainBusProvider.read(addressB, Size.BYTE);

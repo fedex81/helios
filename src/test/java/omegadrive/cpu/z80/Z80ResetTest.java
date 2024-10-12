@@ -1,7 +1,7 @@
 package omegadrive.cpu.z80;
 
-import omegadrive.bus.model.GenesisBusProvider;
-import omegadrive.bus.model.GenesisZ80BusProvider;
+import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
 import org.junit.Assert;
@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Assertions;
 
 import java.util.Optional;
 
-import static omegadrive.bus.model.GenesisBusProvider.Z80_BUS_REQ_CONTROL_START;
-import static omegadrive.bus.model.GenesisBusProvider.Z80_RESET_CONTROL_START;
+import static omegadrive.bus.model.MdBusProvider.Z80_BUS_REQ_CONTROL_START;
+import static omegadrive.bus.model.MdBusProvider.Z80_RESET_CONTROL_START;
 
 /**
  * Federico Berti
@@ -21,8 +21,8 @@ import static omegadrive.bus.model.GenesisBusProvider.Z80_RESET_CONTROL_START;
  */
 public class Z80ResetTest {
 
-    GenesisZ80BusProvider z80bus;
-    GenesisBusProvider mainBus;
+    MdZ80BusProvider z80bus;
+    MdBusProvider mainBus;
     Z80Provider z80;
 
     static final int RESET_ON = 0, BUSREQ_OFF = 0, RESET_OFF = 1, BUSREQ_ON = 1;
@@ -30,7 +30,7 @@ public class Z80ResetTest {
     @Before
     public void setup() {
         mainBus = SystemTestUtil.setupNewMdSystem();
-        Optional<GenesisZ80BusProvider> optBus = mainBus.getBusDeviceIfAny(GenesisZ80BusProvider.class);
+        Optional<MdZ80BusProvider> optBus = mainBus.getBusDeviceIfAny(MdZ80BusProvider.class);
         Assert.assertTrue(optBus.isPresent());
         z80bus = optBus.get();
         Optional<Z80Provider> opt = mainBus.getBusDeviceIfAny(Z80Provider.class);

@@ -5,7 +5,7 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.VdpRenderDump;
 import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpMisc.RenderType;
 import omegadrive.vdp.model.VdpRenderHandler;
@@ -35,7 +35,7 @@ public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventLis
     private static final Dimension layerDim = new Dimension(320, 256);
 
     private final VdpRenderHandler renderHandler;
-    private static final int CRAM_MASK = GenesisVdpProvider.VDP_CRAM_SIZE - 1;
+    private static final int CRAM_MASK = MdVdpProvider.VDP_CRAM_SIZE - 1;
     private JPanel panel;
     private final JPanel[] panelList = new JPanel[RenderType.values().length];
     private final BufferedImage[] imageList = new BufferedImage[RenderType.values().length];
@@ -50,7 +50,7 @@ public class PlaneViewer implements UpdatableViewer, BaseVdpProvider.VdpEventLis
         initPanel();
     }
 
-    public static PlaneViewer createInstance(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
+    public static PlaneViewer createInstance(MdVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         PlaneViewer p = new PlaneViewer(memoryInterface, renderHandler);
         vdp.addVdpEventListener(p);
         return p;

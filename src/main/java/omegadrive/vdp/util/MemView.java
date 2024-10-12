@@ -2,7 +2,7 @@ package omegadrive.vdp.util;
 
 import com.google.common.base.Ascii;
 import omegadrive.Device;
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.ReadableByteMemory;
 import omegadrive.util.FileUtil;
@@ -24,10 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
-import static omegadrive.bus.model.GenesisBusProvider.ADDRESS_UPPER_LIMIT;
-import static omegadrive.bus.model.GenesisBusProvider.M68K_RAM_MASK;
-import static omegadrive.bus.model.GenesisZ80BusProvider.END_RAM;
-import static omegadrive.vdp.model.GenesisVdpProvider.*;
+import static omegadrive.bus.model.MdBusProvider.ADDRESS_UPPER_LIMIT;
+import static omegadrive.bus.model.MdBusProvider.M68K_RAM_MASK;
+import static omegadrive.bus.model.MdZ80BusProvider.END_RAM;
+import static omegadrive.vdp.model.MdVdpProvider.*;
 import static omegadrive.vdp.util.MemView.MemViewOwner.*;
 
 /**
@@ -145,11 +145,11 @@ public class MemView implements Device, UpdatableViewer {
         }
     }
 
-    public static UpdatableViewer createInstance(GenesisBusProvider m, VdpMemoryInterface vdpMem) {
+    public static UpdatableViewer createInstance(MdBusProvider m, VdpMemoryInterface vdpMem) {
         return createInstance(mdMemViewData, m, null, vdpMem);
     }
 
-    public static UpdatableViewer createInstance(MemViewData[] memViewData, GenesisBusProvider m,
+    public static UpdatableViewer createInstance(MemViewData[] memViewData, MdBusProvider m,
                                                  ReadableByteMemory s32x, VdpMemoryInterface vdpMem) {
         return VdpDebugView.DEBUG_VIEWER_ENABLED ? new MemView(memViewData, m, s32x, vdpMem) : NO_MEMVIEW;
     }
@@ -159,7 +159,7 @@ public class MemView implements Device, UpdatableViewer {
     }
 
 
-    protected MemView(MemViewData[] memViewData, GenesisBusProvider m, ReadableByteMemory bus, VdpMemoryInterface vdpMem) {
+    protected MemView(MemViewData[] memViewData, MdBusProvider m, ReadableByteMemory bus, VdpMemoryInterface vdpMem) {
         this.memViewData = memViewData;
         if (!VdpDebugView.DEBUG_VIEWER_ENABLED || m == null) {
             readerMap = Collections.emptyMap();

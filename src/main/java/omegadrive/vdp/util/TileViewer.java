@@ -2,8 +2,8 @@ package omegadrive.vdp.util;
 
 import omegadrive.util.ImageUtil;
 import omegadrive.vdp.md.VdpRenderHandlerImpl;
-import omegadrive.vdp.model.GenesisVdpProvider;
 import omegadrive.vdp.model.InterlaceMode;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpRenderHandler;
 
@@ -31,13 +31,13 @@ public class TileViewer implements UpdatableViewer {
     private static final int PANEL_WIDTH = PLANE_IMG_WIDTH;
 
     private final VdpMemoryInterface memoryInterface;
-    private final GenesisVdpProvider vdp;
+    private final MdVdpProvider vdp;
     private int[] javaPalette;
     private JPanel panel;
     private BufferedImage imageA, imageB, imageS, imageW;
     private int[] pixelsA, pixelsB, pixelsS, pixelsW;
 
-    private TileViewer(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
+    private TileViewer(MdVdpProvider vdp, VdpMemoryInterface memoryInterface, VdpRenderHandler renderHandler) {
         this.vdp = vdp;
         VdpRenderHandlerImpl renderHandler1 = (VdpRenderHandlerImpl) renderHandler;
         this.memoryInterface = memoryInterface;
@@ -46,7 +46,7 @@ public class TileViewer implements UpdatableViewer {
         initPanel();
     }
 
-    public static TileViewer createInstance(GenesisVdpProvider vdp, VdpMemoryInterface memoryInterface,
+    public static TileViewer createInstance(MdVdpProvider vdp, VdpMemoryInterface memoryInterface,
                                             VdpRenderHandler renderHandler) {
         return new TileViewer(vdp, memoryInterface, renderHandler);
     }
@@ -113,8 +113,8 @@ public class TileViewer implements UpdatableViewer {
 
     @Override
     public void update() {
-        int hCellSize = VdpRenderHandler.getHorizontalPlaneSize(vdp.getRegisterData(GenesisVdpProvider.VdpRegisterName.PLANE_SIZE));
-        int vCellSize = VdpRenderHandler.getVerticalPlaneSize(vdp.getRegisterData(GenesisVdpProvider.VdpRegisterName.PLANE_SIZE));
+        int hCellSize = VdpRenderHandler.getHorizontalPlaneSize(vdp.getRegisterData(MdVdpProvider.VdpRegisterName.PLANE_SIZE));
+        int vCellSize = VdpRenderHandler.getVerticalPlaneSize(vdp.getRegisterData(MdVdpProvider.VdpRegisterName.PLANE_SIZE));
         int planeSize = hCellSize * vCellSize;
         boolean isH40 = vdp.getVideoMode().isH40();
         int wPlaneSize = (isH40 ? 40 : 32) * 32;
@@ -126,11 +126,11 @@ public class TileViewer implements UpdatableViewer {
 
         //planeSize -> each cell 16 bit
         int planeADataEnd = getClosestUpperLimit(planeALoc, planeALoc + (planeSize << 1),
-                new int[]{planeALoc + (planeSize << 1), planeBLoc, satLoc, planeWLoc, GenesisVdpProvider.VDP_VRAM_SIZE - 1});
+                new int[]{planeALoc + (planeSize << 1), planeBLoc, satLoc, planeWLoc, MdVdpProvider.VDP_VRAM_SIZE - 1});
         int planeBDataEnd = getClosestUpperLimit(planeBLoc, planeBLoc + (planeSize << 1),
-                new int[]{planeBLoc + (planeSize << 1), planeALoc, satLoc, planeWLoc, GenesisVdpProvider.VDP_VRAM_SIZE - 1});
+                new int[]{planeBLoc + (planeSize << 1), planeALoc, satLoc, planeWLoc, MdVdpProvider.VDP_VRAM_SIZE - 1});
         int planeWDataEnd = getClosestUpperLimit(planeBLoc, planeWLoc + (wPlaneSize << 1),
-                new int[]{planeWLoc + (wPlaneSize << 1), planeALoc, satLoc, planeBLoc, GenesisVdpProvider.VDP_VRAM_SIZE - 1});
+                new int[]{planeWLoc + (wPlaneSize << 1), planeALoc, satLoc, planeBLoc, MdVdpProvider.VDP_VRAM_SIZE - 1});
 
         showPlaneTiles(pixelsA, planeALoc, planeADataEnd);
         showPlaneTiles(pixelsB, planeBLoc, planeBDataEnd);

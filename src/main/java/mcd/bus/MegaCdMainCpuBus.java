@@ -4,7 +4,7 @@ import mcd.cdd.CdBiosHelper;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.util.McdBiosHolder;
-import omegadrive.bus.md.GenesisBus;
+import omegadrive.bus.md.MdBus;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
@@ -31,7 +31,7 @@ import static omegadrive.util.Util.*;
  * Copyright 2023
  * <p>
  */
-public class MegaCdMainCpuBus extends GenesisBus {
+public class MegaCdMainCpuBus extends MdBus {
 
     private static final Logger LOG = LogHelper.getLogger(MegaCdMainCpuBus.class.getSimpleName());
 

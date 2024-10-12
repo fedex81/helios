@@ -1,5 +1,5 @@
 /*
- * GenesisMapper
+ * RomMapper
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 07/04/19 16:01
  *

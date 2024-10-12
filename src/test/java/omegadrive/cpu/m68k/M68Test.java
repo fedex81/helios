@@ -1,6 +1,6 @@
 package omegadrive.cpu.m68k;
 
-import omegadrive.bus.model.GenesisBusProvider;
+import omegadrive.bus.model.MdBusProvider;
 import omegadrive.util.SystemTestUtil;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,7 +21,7 @@ public class M68Test {
 
     @Before
     public void setup() {
-        GenesisBusProvider bus = SystemTestUtil.setupNewMdSystem();
+        MdBusProvider bus = SystemTestUtil.setupNewMdSystem();
         Optional<M68kProvider> optM = bus.getBusDeviceIfAny(M68kProvider.class);
         Assert.assertTrue(optM.isPresent());
         provider = optM.get();

@@ -1,5 +1,5 @@
 /*
- * GenesisBusProvider
+ * MdBusProvider
  * Copyright (c) 2018-2019 Federico Berti
  * Last modified: 17/10/19 11:16
  *
@@ -26,12 +26,12 @@ import omegadrive.system.SystemProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import org.slf4j.Logger;
 
 import static omegadrive.memory.MemoryProvider.M68K_RAM_SIZE;
 
-public interface GenesisBusProvider extends BaseBusProvider {
+public interface MdBusProvider extends BaseBusProvider {
 
     int[] EMPTY = new int[0];
     //http://gendev.spritesmind.net/forum/viewtopic.php?f=25&t=1283
@@ -71,7 +71,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     int NUM_MAPPER_BANKS = 8;
 
-    Logger LOG = LogHelper.getLogger(GenesisBusProvider.class.getSimpleName());
+    Logger LOG = LogHelper.getLogger(MdBusProvider.class.getSimpleName());
 
     abstract class BusWriteRunnable implements Runnable {
         public CpuDeviceAccess cpu;
@@ -104,7 +104,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     boolean is68kRunning();
 
-    void setVdpBusyState(GenesisVdpProvider.VdpBusyState state);
+    void setVdpBusyState(MdVdpProvider.VdpBusyState state);
 
     boolean isZ80Running();
 
@@ -122,7 +122,7 @@ public interface GenesisBusProvider extends BaseBusProvider {
 
     SystemProvider getSystem();
 
-    GenesisVdpProvider getVdp();
+    MdVdpProvider getVdp();
 
     default int[] getMapperData() {
         return EMPTY;

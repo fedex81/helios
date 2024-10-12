@@ -21,7 +21,7 @@ package omegadrive.vdp.util;
 
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.md.VdpColorMapper;
-import omegadrive.vdp.model.GenesisVdpProvider;
+import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.slf4j.Logger;
 
@@ -34,7 +34,7 @@ public class CramViewer implements UpdatableViewer {
 
     private static final Logger LOG = LogHelper.getLogger(CramViewer.class.getSimpleName());
 
-    private static final int CRAM_ENTRIES = GenesisVdpProvider.VDP_CRAM_SIZE / 2;
+    private static final int CRAM_ENTRIES = MdVdpProvider.VDP_CRAM_SIZE / 2;
     private static final int LABEL_HEIGHT = 100;
     private static final int LABEL_WIDTH = 10;
     private static final int FRAME_HEIGHT = LABEL_HEIGHT + 50;
@@ -73,7 +73,7 @@ public class CramViewer implements UpdatableViewer {
             }
             int k = 0;
             int rowCnt = 0;
-            for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
+            for (int i = 0; i < MdVdpProvider.VDP_CRAM_SIZE; i += 2) {
                 if (k % labelPerLine == 0) {
                     JLabel label = new JLabel(th(rowCnt * labelPerLine));
                     label.setHorizontalAlignment(SwingConstants.CENTER);
@@ -103,8 +103,8 @@ public class CramViewer implements UpdatableViewer {
     public void update() {
         SwingUtilities.invokeLater(() -> {
             int k = 0;
-            for (int i = 0; i < GenesisVdpProvider.VDP_CRAM_SIZE; i += 2) {
-                int cramColor = vdpMemoryInterface.readVideoRamWord(GenesisVdpProvider.VdpRamType.CRAM, i);
+            for (int i = 0; i < MdVdpProvider.VDP_CRAM_SIZE; i += 2) {
+                int cramColor = vdpMemoryInterface.readVideoRamWord(MdVdpProvider.VdpRamType.CRAM, i);
                 int rgb = colorMapper.getColor(cramColor);
                 Color c = new Color(rgb);
                 JPanel label = panelList[k];
