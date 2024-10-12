@@ -289,6 +289,9 @@ public class Util {
         return new String(data);
     }
 
+    public static String th(short pos) {
+        return Integer.toHexString(((int) pos) & 0xFFFF);
+    }
     public static String th(int pos) {
         return Integer.toHexString(pos);
     }

@@ -44,7 +44,7 @@ public class BlipPcmProvider implements McdPcmProvider {
 
     private double deltaTime;
 
-    private int prevLSample, prevRSample;
+    private short prevLSample, prevRSample;
     private final SourceDataLine dataLine;
     private RegionDetector.Region region;
 
@@ -79,16 +79,16 @@ public class BlipPcmProvider implements McdPcmProvider {
     @Override
     public void playSample(int lsample, int rsample) {
         if (BufferUtil.assertionsEnabled) {
-            if (Math.abs(lsample - prevLSample) > Short.MAX_VALUE) {
-                LOG.info("{} L {} -> {}, absDiff: {}", instanceId, th(prevLSample), th(lsample), th(Math.abs(lsample - prevLSample)));
+            if (Math.abs(lsample - prevLSample) > 0xD000) {
+                LOG.info("{} L {} -> {}, absDiff: {}", instanceId, th(prevLSample), th((short) lsample), th(Math.abs(lsample - prevLSample)));
             }
-            if (Math.abs(rsample - prevRSample) > Short.MAX_VALUE) {
-                LOG.info("{} R {} -> {}, absDiff: {}", instanceId, th(prevRSample), th(rsample), th(Math.abs(rsample - prevRSample)));
+            if (Math.abs(rsample - prevRSample) > 0xD000) {
+                LOG.info("{} R {} -> {}, absDiff: {}", instanceId, th(prevRSample), th((short) rsample), th(Math.abs(rsample - prevRSample)));
             }
         }
         ref.get().blipBuffer.addDelta((int) deltaTime, lsample - prevLSample, rsample - prevRSample);
-        prevLSample = lsample;
-        prevRSample = rsample;
+        prevLSample = (short) lsample;
+        prevRSample = (short) rsample;
         deltaTime++;
     }
 

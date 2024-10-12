@@ -2,7 +2,7 @@ package omegadrive.system;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import mcd.MegaCd;
+import mcd.MegaCd2;
 import omegadrive.Device;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;
@@ -139,7 +139,7 @@ public class SysUtil {
         }
         SystemProvider systemProvider = switch (type) {
             case GENESIS -> Megadrive.createNewInstance(display);
-            case MEGACD -> MegaCd.createNewInstance(display);
+            case MEGACD -> MegaCd2.createNewInstance(display);
             case S32X -> Md32x.createNewInstance32x(display);
             case SG_1000 -> Z80BaseSystem.createNewInstance(SG_1000, display);
             case COLECO -> Z80BaseSystem.createNewInstance(COLECO, display);

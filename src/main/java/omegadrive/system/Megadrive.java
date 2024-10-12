@@ -192,7 +192,7 @@ public class Megadrive extends BaseSystem<GenesisBusProvider> {
         }
     }
 
-    private double getMicrosPerTick() {
+    protected double getMicrosPerTick() {
         double mclkhz = displayContext.videoMode.isPal() ? Util.GEN_PAL_MCLOCK_MHZ : Util.GEN_NTSC_MCLOCK_MHZ;
         return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
     }

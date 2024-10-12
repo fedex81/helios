@@ -8,7 +8,7 @@ import s32x.util.blipbuffer.BlipBufferHelper;
 
 import java.nio.ByteBuffer;
 
-import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
+import static mcd.MegaCd2.MCD_SUB_68K_CLOCK_MHZ;
 import static mcd.bus.MegaCdSubCpuBus.logAccessReg;
 import static omegadrive.sound.SoundProvider.ENABLE_SOUND;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
