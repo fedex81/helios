@@ -21,6 +21,7 @@ package omegadrive.vdp.md;
 
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.MdVdpTestUtil;
@@ -34,7 +35,9 @@ import org.slf4j.Logger;
 
 import java.util.Optional;
 
+import static omegadrive.SystemLoader.SystemType.GENESIS;
 import static omegadrive.bus.model.GenesisBusProvider.VDP_ADDRESS_SPACE_START;
+import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.*;
 import static omegadrive.vdp.model.GenesisVdpProvider.VramMode.*;
 
@@ -54,7 +57,8 @@ public class GenesisVdpTest2 {
         Optional<GenesisVdpProvider> opt = busProvider.getBusDeviceIfAny(GenesisVdpProvider.class);
         Assert.assertTrue(opt.isPresent());
         vdpProvider = opt.get();
-        memoryInterface = (VdpMemoryInterface) vdpProvider.getVdpMemory();
+        memoryInterface = vdpProvider.getVdpMemory();
+        MdRuntimeData.newInstance(GENESIS, NO_CLOCK);
     }
 
 

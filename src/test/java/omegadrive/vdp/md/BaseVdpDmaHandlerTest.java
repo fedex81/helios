@@ -19,6 +19,7 @@ package omegadrive.vdp.md;
 
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -32,6 +33,8 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+import static omegadrive.SystemLoader.SystemType.GENESIS;
+import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRamType.VRAM;
 
 @Ignore
@@ -48,8 +51,9 @@ public class BaseVdpDmaHandlerTest {
         Optional<GenesisVdpProvider> opt = busProvider.getBusDeviceIfAny(GenesisVdpProvider.class);
         Assert.assertTrue(opt.isPresent());
         vdpProvider = opt.get();
-        memoryInterface = (VdpMemoryInterface) vdpProvider.getVdpMemory();
+        memoryInterface = vdpProvider.getVdpMemory();
         MdVdpTestUtil.vdpMode5(vdpProvider);
+        MdRuntimeData.newInstance(GENESIS, NO_CLOCK);
     }
 
     protected void testDMAFillInternal(int dmaFillLong, int increment,

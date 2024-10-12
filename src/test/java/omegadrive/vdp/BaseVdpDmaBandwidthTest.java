@@ -22,6 +22,7 @@ package omegadrive.vdp;
 import omegadrive.bus.model.GenesisBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.md.TestGenesisVdpMemoryInterface;
 import omegadrive.vdp.model.GenesisVdpProvider;
@@ -34,6 +35,8 @@ import org.slf4j.Logger;
 import java.util.Arrays;
 import java.util.Optional;
 
+import static omegadrive.SystemLoader.SystemType.GENESIS;
+import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.vdp.model.GenesisVdpProvider.VdpRegisterName.*;
 
 /**
@@ -79,6 +82,7 @@ public class BaseVdpDmaBandwidthTest {
         vdpProvider = opt.get();
         memoryProvider = optMem.get();
         MdVdpTestUtil.vdpMode5(vdpProvider);
+        MdRuntimeData.newInstance(GENESIS, NO_CLOCK);
     }
 
     private void setup68kRam() {
