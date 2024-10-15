@@ -607,7 +607,7 @@ public class SwingWindow implements DisplayWindow {
             SystemLoader.getInstance().handleNewRomFile(romSpec);
             reloadRecentFiles();
             showInfo(NEW_ROM + ": " + romSpec);
-            PrefStore.lastRomFile = romSpec.toString();
+            PrefStore.lastRomFile = romSpec.file.toString();
         }
     }
 

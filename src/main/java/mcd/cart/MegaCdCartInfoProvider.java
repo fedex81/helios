@@ -131,4 +131,10 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
         }
         return null;
     }
+
+    @Override
+    protected void initChecksum() {
+        //NOTE: this would take a while for big ISOs
+        LOG.info("Skipping checksum for MCD");
+    }
 }

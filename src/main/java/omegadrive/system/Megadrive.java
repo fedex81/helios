@@ -141,8 +141,8 @@ public class Megadrive extends BaseSystem<MdBusProvider> {
             boolean isRunning = bus.is68kRunning();
             boolean canRun = !cpu.isStopped() && isRunning;
             int cycleDelay = 1;
+            MdRuntimeData.setAccessTypeExt(M68K);
             if (canRun) {
-                MdRuntimeData.setAccessTypeExt(M68K);
                 cycleDelay = cpu.runInstruction() + MdRuntimeData.resetCpuDelayExt();
             }
             //interrupts are processed after the current instruction

@@ -88,7 +88,7 @@ public class CartridgeInfoProvider {
         this.initChecksum();
     }
 
-    private void initChecksum() {
+    protected void initChecksum() {
         this.checksum = memoryProvider.readRomByte(getChecksumStartAddress());
         this.computedChecksum = Util.computeChecksum(memoryProvider);
         this.sha1 = Util.computeSha1Sum(memoryProvider);

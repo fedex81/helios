@@ -20,22 +20,26 @@
 package mcd;
 
 import omegadrive.SystemLoader;
+import omegadrive.joypad.MdJoypad;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileUtil;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static omegadrive.input.InputProvider.PlayerNumber.P1;
+import static omegadrive.joypad.JoypadProvider.JoypadAction.PRESSED;
+import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
+import static omegadrive.joypad.JoypadProvider.JoypadButton.A;
+import static omegadrive.joypad.JoypadProvider.JoypadButton.S;
 import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_ROM;
 
 public class McdAutomatedGameTester {
@@ -139,6 +143,8 @@ public class McdAutomatedGameTester {
         SystemLoader systemLoader = SystemLoader.getInstance();
         SystemProvider system;
         for (Path rom : testRoms) {
+            jbBtnPressDone = false;
+            bootTimeMs = System.currentTimeMillis();
             SysUtil.RomSpec romSpec = SysUtil.RomSpec.of(rom);
             String name = FileUtil.getFileName(rom);
             System.out.println(count++ + ": " + name);
@@ -157,6 +163,8 @@ public class McdAutomatedGameTester {
                     logFileLen = logFileLength(logFile);
                     Util.sleep(LOG_CHECK_DELAY_MS);
                     totalDelay += LOG_CHECK_DELAY_MS;
+                    //JP bios need START and then BTN_A press
+                    jbBiosButtonPresses(system);
                 } while (totalDelay < MAX_RUNTIME_MS && !tooManyErrors);
                 system.handleSystemEvent(CLOSE_ROM, null);
             }
@@ -169,6 +177,29 @@ public class McdAutomatedGameTester {
                 break;
             }
         }
+    }
+
+    private boolean jbBtnPressDone = false;
+    private long bootTimeMs = 0;
+
+    private void jbBiosButtonPresses(SystemProvider system) {
+        if (jbBtnPressDone || system.getRegion() != RegionDetector.Region.JAPAN) {
+            jbBtnPressDone = true;
+            return;
+        }
+        if (System.currentTimeMillis() - bootTimeMs < 5000) {
+            return;
+        }
+        Util.sleep(BOOT_DELAY_MS << 1);
+        Optional<MdJoypad> optPad = ((MegaCd2) system).mcdLaunchContext.mainBus.getBusDeviceIfAny(MdJoypad.class);
+        MdJoypad joypad = optPad.get();
+        joypad.setButtonAction(P1, S, PRESSED);
+        Util.sleep(BOOT_DELAY_MS << 1);
+        joypad.setButtonAction(P1, S, RELEASED);
+        joypad.setButtonAction(P1, A, PRESSED);
+        Util.sleep(BOOT_DELAY_MS);
+        joypad.setButtonAction(P1, A, RELEASED);
+        jbBtnPressDone = true;
     }
 
     private void fileTooBig(File logFile) {

@@ -139,9 +139,10 @@ public class SoundUtil {
         return line;
     }
 
+    //NOTE: doesn't work in linux, check if it does something in Windows
     private static void lowerLatencyHack(SourceDataLine line) {
         String sname = line.getClass().getSuperclass().getCanonicalName();
-        if ("com.sun.media.sound.DirectAudioDevice.DirectDL".equalsIgnoreCase(sname)) {
+        if (Sleeper.isWindows() && "com.sun.media.sound.DirectAudioDevice.DirectDL".equalsIgnoreCase(sname)) {
             try {
                 Field f = line.getClass().getSuperclass().getDeclaredField("waitTime");
                 f.setAccessible(true);
