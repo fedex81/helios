@@ -5,6 +5,8 @@ group 'com.fbdev.helios'
 version dateString + '-SNAPSHOT'
 def jarNameHead = rootProject.name + "-" + version
 
+String packageDir = getLayout().getBuildDirectory().dir("packageDir").get()
+
 assert JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) : "Java 17 or newer is required"
 
 apply plugin: 'java'
@@ -50,7 +52,7 @@ def static getDate() {
 }
 
 //create a single Jar with all dependencies
-task fatJar(type: Jar) {
+tasks.register('fatJar', Jar) {
     manifest {
         attributes 'Implementation-Title': 'Helios',
                 'Implementation-Version': archiveVersion,
@@ -61,7 +63,7 @@ task fatJar(type: Jar) {
     from {
         ["CREDITS.md", "README.md", "HISTORY.md", "LICENSE.md", "helios.properties"]
     }
-    from("bios"){
+    from("bios") {
         include "*.rom"
     }
     with jar
@@ -70,12 +72,12 @@ task fatJar(type: Jar) {
     }
 }
 
-task copyRes {
+tasks.register('copyRes') {
     copy {
-        from (".") {
+        from(".") {
             include "res/**"
         }
-        into "$buildDir/packageDir"
+        into packageDir
         exclude "**/*.col", "**/bios.sms", "**/site/**", "**/misc/**", "**/sms/**", "**/mcd/**"
     }
     copy {
@@ -83,17 +85,17 @@ task copyRes {
             ["CREDITS.md", "README.md", "HISTORY.md",
              "LICENSE.md", "helios.properties", "key.config.1p"]
         }
-        into "$buildDir/packageDir"
+        into packageDir
     }
     copy {
-        from (".") {
+        from(".") {
             include "lib/**"
         }
-        into "$buildDir/packageDir"
+        into packageDir
     }
     copy {
         from configurations.runtimeClasspath
-        into "$buildDir/packageDir/lib"
+        into packageDir + "/lib"
     }
 }
 
@@ -105,14 +107,14 @@ jar {
                    'Class-Path': configurations.compileClasspath.collect { "lib/" + it.getName() }.join(' ')
     }
     getArchiveBaseName().set(rootProject.name)
-    destinationDirectory = file("$buildDir/packageDir")
+    destinationDirectory = file(packageDir)
     doLast {
         println("Creating jar: " + getArchiveFileName().getOrNull() +
                 " in folder: " + getDestinationDirectory().getOrNull())
     }
 }
 
-task jarWithSources(type: org.gradle.jvm.tasks.Jar) {
+tasks.register('jarWithSources', org.gradle.jvm.tasks.Jar) {
     from sourceSets.main.allSource
     manifest {
         attributes 'Implementation-Title': 'Helios',
@@ -121,7 +123,7 @@ task jarWithSources(type: org.gradle.jvm.tasks.Jar) {
                 'Class-Path': configurations.compileClasspath.collect { "lib/" + it.getName() }.join(' ')
     }
     getArchiveFileName().set(rootProject.name + "-binsrc-${project.version}.jar")
-    destinationDirectory = file("$buildDir/packageDir")
+    destinationDirectory = file(packageDir)
     with jar
     doLast {
         println("Creating jar with sources: " + getArchiveFileName().getOrNull() +
@@ -129,19 +131,20 @@ task jarWithSources(type: org.gradle.jvm.tasks.Jar) {
     }
 }
 
-task packageDistribution(type: Zip) {
+tasks.register('packageDistribution', Zip) {
     dependsOn "test", "jar", "copyRes", "writeToFile"
     archiveFileName = jarNameHead + ".zip"
-    destinationDirectory = file("$buildDir/dist")
+    destinationDirectory = file(getLayout().getBuildDirectory().dir("dist"))
 
-    from "$buildDir/packageDir"
+    from packageDir
     doLast {
         println("Creating package: " + getArchiveFileName().getOrNull() +
                 ", folder: " + getDestinationDirectory().getOrNull())
+        println("" + getDestinationDirectory().getOrNull() + "/" + getArchiveFileName().getOrNull())
     }
 }
 
-task writeToFile {
+tasks.register('writeToFile') {
     String jarName = jarNameHead + ".jar"
     List<String> javaAdvOpts =
             ["-XX:AutoBoxCacheMax=65536", "-XX:-DontCompileHugeMethods", "-XX:+AlwaysCompileLoopMethods"]
@@ -158,13 +161,14 @@ task writeToFile {
     sampleWin.addAll(1, winOpts)
     sampleWin.add("\"%1\"" + "\n")
     // create the folders if it does not exist.(otherwise it will throw exception)
-    File extraFolder = new File( "${buildDir}/packageDir")
-    if( !extraFolder.exists() ) {
+    File extraFolder = new File(packageDir)
+    if (!extraFolder.exists()) {
         extraFolder.mkdirs()
     }
     // create the file and write text to it.
-    new File("${buildDir}/packageDir/launcher.sh").text = sampleUx.join (" ")
-    new File("${buildDir}/packageDir/launcher.bat").text = sampleWin.join (" ")
+    Directory dir = getLayout().getBuildDirectory().dir("packageDir").get()
+    dir.file("launcher.sh").getAsFile().text = sampleUx.join(" ")
+    dir.file("launcher.bat").getAsFile().text = sampleWin.join(" ")
 }
 
 test {
