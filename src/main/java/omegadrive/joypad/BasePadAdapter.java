@@ -70,6 +70,8 @@ public abstract class BasePadAdapter implements JoypadProvider {
     public void setButtonAction(PlayerNumber number, JoypadButton button, JoypadAction action) {
         if (getMap(number).containsKey(button)) {
             getMap(number).replace(button, action);
+        } else {
+            LOG.warn("Ignored mapping {}, {} {}", number, button, action);
         }
     }
 

@@ -77,6 +77,15 @@ public class KeyboardInput extends KeyAdapter {
                 KeyboardInputHelper.keyboardInverseBindings.column(kc).entrySet().stream().findFirst();
         if (e.getModifiers() == 0 && optEntry.isPresent()) {
             joypad.setButtonAction(optEntry.get().getKey(), optEntry.get().getValue(), action, e);
+        } else if (optEntry.isPresent()) {
+            //avoid key getting stuck:
+            //press a key, then press SHIFT and release the key while holding SHIFT, then release the key
+            //TODO emu should check every frame for pressed keys
+            if (!pressed) {
+                joypad.setButtonAction(optEntry.get().getKey(), optEntry.get().getValue(), action, e);
+            }
+        } else {
+            LOG.debug("Ignored event: {}, pressed: {}", e, pressed);
         }
     }
 }
