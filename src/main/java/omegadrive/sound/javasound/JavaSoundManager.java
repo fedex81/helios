@@ -56,7 +56,7 @@ public class JavaSoundManager extends AbstractSoundManager {
         psg_buf_bytes = new byte[psgSize];
         fmSizeMono = (int) Math.round(fmSize / 2d);
         telemetry = Telemetry.getInstance();
-        executorService.submit(getRunnable());
+//        executorService.submit(getRunnable());
     }
 
     private int playOnceStereo(int fmBufferLenMono) {

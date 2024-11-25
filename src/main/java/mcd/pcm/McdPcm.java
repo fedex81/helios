@@ -4,6 +4,7 @@ import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdDict.RegSpecMcd;
 import omegadrive.util.*;
 import org.slf4j.Logger;
+import s32x.pwm.PwmUtil;
 import s32x.util.blipbuffer.BlipBufferHelper;
 
 import java.nio.ByteBuffer;
@@ -90,7 +91,7 @@ public class McdPcm implements BufferUtil.StepDevice {
         waveData = ByteBuffer.allocate(PCM_WAVE_DATA_SIZE);
         pcmRegs = ByteBuffer.allocate(PCM_REG_SIZE);
         chan = new PcmChannelContext[PCM_NUM_CHANNELS];
-        playSupport = ENABLE_SOUND ? new BlipPcmProvider("PCM", RegionDetector.Region.USA, pcmSampleRateHz) : McdPcmProvider.NO_SOUND;
+        playSupport = ENABLE_SOUND ? new BlipSoundProvider("PCM", RegionDetector.Region.USA, PwmUtil.pwmAudioFormat, pcmSampleRateHz) : McdPcmProvider.NO_SOUND;
         for (int i = 0; i < PCM_NUM_CHANNELS; i++) {
             chan[i] = new PcmChannelContext();
             chan[i].num = i;

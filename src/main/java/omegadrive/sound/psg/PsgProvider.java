@@ -21,7 +21,7 @@ package omegadrive.sound.psg;
 
 import omegadrive.sound.SoundDevice;
 import omegadrive.sound.psg.msx.Ay38910Psg;
-import omegadrive.sound.psg.white.SN76489Psg;
+import omegadrive.sound.psg.white.BlipSN76489Psg;
 import omegadrive.util.RegionDetector;
 
 import static omegadrive.sound.SoundProvider.LOG;
@@ -31,8 +31,8 @@ public interface PsgProvider extends SoundDevice {
 
     static PsgProvider createSnInstance(RegionDetector.Region region, int sampleRate) {
         int clockHz = (int) getPsgSoundClock(region);
-        LOG.info("PSG instance, clockHz: {}, sampleRate: {}", clockHz, sampleRate);
-        return SN76489Psg.createInstance(clockHz, sampleRate);
+        LOG.info("PSG instance, region: {}, clockHz: {}, sampleRate: {}", region, clockHz, sampleRate);
+        return BlipSN76489Psg.createInstance(region, sampleRate);
     }
 
     static PsgProvider createAyInstance(RegionDetector.Region region, int sampleRate) {
@@ -68,4 +68,13 @@ public interface PsgProvider extends SoundDevice {
         public void updateMono8(byte[] output, int offset, int end) {
         }
     };
+
+    default void onNewFrame() {
+    }
+
+    default void tick() {
+    }
+
+    default void updateRate(RegionDetector.Region region, int clockRate) {
+    }
 }

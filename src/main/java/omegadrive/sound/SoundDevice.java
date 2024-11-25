@@ -25,6 +25,12 @@ public interface SoundDevice extends Device {
 
     SoundDevice NO_SOUND = () -> SoundDeviceType.NONE;
 
+    class SampleBufferContext {
+        public byte[] lineBuffer;
+        //16 bit stereo @ 44100 hz = 44100*4 bytes
+        public int stereoBytesLen;
+    }
+
     /**
      * Typical FM output
      */
@@ -39,9 +45,9 @@ public interface SoundDevice extends Device {
         throw new RuntimeException("Not implemented");
     }
 
-    default void updateMono8(byte[] output) {
-        updateMono8(output, 0, output.length);
-    }
-
     SoundDeviceType getType();
+
+    default SampleBufferContext getFrameData() {
+        return null;
+    }
 }

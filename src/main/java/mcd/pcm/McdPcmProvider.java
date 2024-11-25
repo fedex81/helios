@@ -16,7 +16,12 @@ public interface McdPcmProvider extends SoundDevice {
 
     void playSample(int left, int right);
 
-    void updateRegion(RegionDetector.Region region);
+    default void updateRegion(RegionDetector.Region region) {
+        throw new RuntimeException("illegal");
+    }
+
+    default void updateRegion(RegionDetector.Region region, int clockRate) {
+    }
 
     default SoundDeviceType getType() {
         return SoundDeviceType.PCM;

@@ -4,11 +4,13 @@ import mcd.bus.McdSubInterruptHandler;
 import mcd.cdc.Cdc;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
-import mcd.pcm.BlipPcmProvider;
+import mcd.pcm.BlipSoundProvider;
 import mcd.pcm.McdPcmProvider;
+import omegadrive.sound.SoundProvider;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.*;
 import org.slf4j.Logger;
+import s32x.pwm.PwmUtil;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -51,7 +53,7 @@ class CddImpl implements Cdd {
         interruptHandler = ih;
         cdc = c;
         playSupport = ENABLE_SOUND ?
-                new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100) : BlipPcmProvider.NO_SOUND;
+                new BlipSoundProvider("CDDA", RegionDetector.Region.USA, PwmUtil.pwmAudioFormat, SoundProvider.SAMPLE_RATE_HZ) : BlipSoundProvider.NO_SOUND;
         setDataOrMusicBit(CddControl_DM_bit.DATA_1);
         setIoStatus(NoDisc);
         statusChecksum();

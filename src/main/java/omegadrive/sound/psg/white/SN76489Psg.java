@@ -24,10 +24,10 @@ import omegadrive.sound.psg.PsgProvider;
 
 public class SN76489Psg implements PsgProvider {
 
-    private SN76489 psg;
+    protected SN76489 psg;
 
     public static SN76489Psg createInstance(int clockSpeed, int sampleRate) {
-        SN76489Psg s = new SN76489Psg();
+        SN76489Psg s = new BlipSN76489Psg();
         s.psg = new SN76489();
         s.psg.init(clockSpeed, sampleRate);
         return s;

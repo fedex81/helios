@@ -1,10 +1,15 @@
 package mcd.pcm;
 
-import omegadrive.util.*;
+import omegadrive.util.BufferUtil;
+import omegadrive.util.LogHelper;
+import omegadrive.util.PriorityThreadFactory;
+import omegadrive.util.RegionDetector.Region;
+import omegadrive.util.SoundUtil;
 import org.slf4j.Logger;
 import s32x.util.blipbuffer.BlipBufferIntf;
 import s32x.util.blipbuffer.StereoBlipBuffer;
 
+import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
 import java.util.StringJoiner;
 import java.util.concurrent.ExecutorService;
@@ -13,7 +18,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static omegadrive.util.Util.th;
-import static s32x.pwm.PwmUtil.pwmAudioFormat;
 
 /**
  * Federico Berti
@@ -21,17 +25,16 @@ import static s32x.pwm.PwmUtil.pwmAudioFormat;
  * Copyright 2022
  * <p>
  */
-public class BlipPcmProvider implements McdPcmProvider {
+public class BlipSoundProvider implements McdPcmProvider {
 
-    private static final Logger LOG = LogHelper.getLogger(BlipPcmProvider.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(BlipSoundProvider.class.getSimpleName());
 
     private static final int BUF_SIZE_MS = 50;
 
     private final AtomicReference<BlipBufferContext> ref = new AtomicReference<>();
 
-    static class BlipBufferContext {
+    static class BlipBufferContext extends SampleBufferContext {
         BlipBufferIntf blipBuffer;
-        byte[] lineBuffer;
         AtomicInteger inputClocksForInterval = new AtomicInteger();
 
         @Override
@@ -46,32 +49,34 @@ public class BlipPcmProvider implements McdPcmProvider {
 
     private short prevLSample, prevRSample;
     private final SourceDataLine dataLine;
-    private RegionDetector.Region region;
+    private Region region;
 
     private final double clockRate;
+    private final AudioFormat audioFormat;
     private final ExecutorService exec;
 
     private final String instanceId;
 
-    public BlipPcmProvider(String name, RegionDetector.Region region, double clockRate) {
+    public BlipSoundProvider(String name, Region region, AudioFormat af, double clockRate) {
         ref.set(new BlipBufferContext());
-        dataLine = SoundUtil.createDataLine(pwmAudioFormat);
+        dataLine = SoundUtil.createDataLine(af);
         this.region = region;
         this.clockRate = clockRate;
-        this.instanceId = name + "_" + (int) clockRate;
+        this.instanceId = name + "_" + (int) af.getSampleRate();
+        this.audioFormat = af;
         exec = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, instanceId));
         setup();
     }
 
     private void setup() {
         BlipBufferIntf blip = new StereoBlipBuffer(instanceId);
-        blip.setSampleRate((int) pwmAudioFormat.getSampleRate(), BUF_SIZE_MS);
+        blip.setSampleRate((int) audioFormat.getSampleRate(), BUF_SIZE_MS);
         blip.setClockRate((int) clockRate);
         BlipBufferContext bbc = new BlipBufferContext();
         bbc.lineBuffer = new byte[0];
         bbc.blipBuffer = blip;
         ref.set(bbc);
-        updateRegion(region);
+        updateRegion(region, (int) clockRate);
         logInfo(bbc);
     }
 
@@ -120,32 +125,40 @@ public class BlipPcmProvider implements McdPcmProvider {
             context.lineBuffer = new byte[availMonoSamples << 2];
         }
         final long current = sync.incrementAndGet();
-        int stereoBytes = blip.readSamples16bitStereo(context.lineBuffer, 0, availMonoSamples) << 2;
-        if (stereoBytes > 0) {
-            exec.submit(() -> {
-                SoundUtil.writeBufferInternal(dataLine, context.lineBuffer, 0, stereoBytes);
-                if (BufferUtil.assertionsEnabled) {
-                    if (current != sync.get()) {
-                        LOG.info("{} Blip audio thread too slow: {} vs {}", instanceId, current, sync.get());
-                    }
-                }
-            });
+        context.stereoBytesLen = blip.readSamples16bitStereo(context.lineBuffer, 0, availMonoSamples) << 2;
+        if (context.stereoBytesLen > 0) {
+//            exec.submit(() -> {
+//                SoundUtil.writeBufferInternal(dataLine, context.lineBuffer, 0, stereoBytes);
+//                if (BufferUtil.assertionsEnabled) {
+//                    if (current != sync.get()) {
+//                        LOG.info("{} Blip audio thread too slow: {} vs {}", instanceId, current, sync.get());
+//                    }
+//                }
+//            });
         }
         prevSampleAvail = availMonoSamples;
     }
 
+    public SampleBufferContext getDataBuffer() {
+        return ref.get();
+    }
+
     @Override
-    public void updateRegion(RegionDetector.Region region) {
-        this.region = region;
+    public void updateRegion(Region region, int clockRate) {
         BlipBufferContext ctx = ref.get();
-        ctx.inputClocksForInterval.set((int) (1.0 * ctx.blipBuffer.clockRate() * region.getFrameIntervalMs() / 1000.0));
+        if (region != this.region || ctx.blipBuffer.clockRate() != clockRate) {
+            this.region = region;
+            ctx.blipBuffer.setClockRate(clockRate);
+            ctx.inputClocksForInterval.set((int) (1.0 * ctx.blipBuffer.clockRate() * region.getFrameIntervalMs() / 1000.0));
+            LOG.info("{} updating region: {} and ticksPerFrame: {}", instanceId, region, ctx.inputClocksForInterval);
+        }
     }
 
     private void logInfo(BlipBufferContext ctx) {
-        int outSamplesPerInterval = (int) (pwmAudioFormat.getSampleRate() * BUF_SIZE_MS / 1000.0);
+        int outSamplesPerInterval = (int) (audioFormat.getSampleRate() * BUF_SIZE_MS / 1000.0);
         int inSamplesPerInterval = (int) (ctx.blipBuffer.clockRate() * BUF_SIZE_MS / 1000.0);
         LOG.info("{}: {}\nOutput sampleRate: {}, Input sampleRate: {}, outputBufLenMs: {}, outputBufLenSamples: {}" +
-                        ", inputBufLenSamples: {}", instanceId, ctx, pwmAudioFormat.getSampleRate(), ctx.blipBuffer.clockRate(), BUF_SIZE_MS,
+                        ", inputBufLenSamples: {}", instanceId, ctx, audioFormat.getSampleRate(), ctx.blipBuffer.clockRate(), BUF_SIZE_MS,
                 outSamplesPerInterval, inSamplesPerInterval);
     }
 
