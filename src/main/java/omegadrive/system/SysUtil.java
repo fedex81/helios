@@ -11,7 +11,7 @@ import omegadrive.sound.PwmProvider;
 import omegadrive.sound.SoundDevice;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.MdFmProvider;
-import omegadrive.sound.fm.ym2413.Ym2413Provider;
+import omegadrive.sound.fm.ym2413.BlipYm2413Provider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.gb.Gb;
@@ -207,7 +207,7 @@ public class SysUtil {
                 break;
             case SMS:
                 if (Sms.ENABLE_FM) {
-                    fmProvider = Ym2413Provider.createInstance(AbstractSoundManager.audioFormat);
+                    fmProvider = BlipYm2413Provider.createInstance(AbstractSoundManager.audioFormat);
                 }
                 break;
             case NES:

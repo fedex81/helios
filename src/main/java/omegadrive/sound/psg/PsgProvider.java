@@ -20,25 +20,31 @@
 package omegadrive.sound.psg;
 
 import omegadrive.sound.SoundDevice;
-import omegadrive.sound.psg.msx.Ay38910Psg;
+import omegadrive.sound.psg.msx.BlipAy38910Psg;
 import omegadrive.sound.psg.white.BlipSN76489Psg;
 import omegadrive.util.RegionDetector;
 
-import static omegadrive.sound.SoundProvider.LOG;
-import static omegadrive.sound.SoundProvider.getPsgSoundClock;
-
 public interface PsgProvider extends SoundDevice {
 
+
+    interface PsgDevice {
+        void update(byte[] buffer, int offset, int samplesToGenerate);
+
+        void init(int clockSpeed, int sampleRate);
+
+        void write(int value);
+
+        void reset();
+    }
+
     static PsgProvider createSnInstance(RegionDetector.Region region, int sampleRate) {
-        int clockHz = (int) getPsgSoundClock(region);
-        LOG.info("PSG instance, region: {}, clockHz: {}, sampleRate: {}", region, clockHz, sampleRate);
         return BlipSN76489Psg.createInstance(region, sampleRate);
     }
 
     static PsgProvider createAyInstance(RegionDetector.Region region, int sampleRate) {
-        int clockHz = (int) getPsgSoundClock(region);
-        LOG.info("PSG instance, clockHz: {}, sampleRate: {}", clockHz, sampleRate);
-        return Ay38910Psg.createInstance(sampleRate);
+//        int clockHz = (int) getPsgSoundClock(region);
+//        LOG.info("PSG instance, clockHz: {}, sampleRate: {}", clockHz, sampleRate);
+        return BlipAy38910Psg.createInstance(region, sampleRate);
     }
 
     //SN style PSG

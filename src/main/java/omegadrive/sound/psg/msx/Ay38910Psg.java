@@ -22,6 +22,7 @@ package omegadrive.sound.psg.msx;
 
 import omegadrive.sound.psg.PsgProvider;
 
+@Deprecated
 public class Ay38910Psg implements PsgProvider {
 
     private Ay38910 psg;

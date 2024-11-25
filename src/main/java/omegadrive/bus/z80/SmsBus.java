@@ -350,6 +350,9 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
         return res;
     }
 
+    //https://www.smspower.org/Development/AudioControlPort
+    //https://www.smspower.org/forums/17760-FMPSGMixTestingTheAudioControlPort
+    //test rom: ACPTest2.sms
     private void handleAudioControl(int value) {
         audioControl = value;
         boolean psgDisable = (value & 3) == 1 || (value & 3) == 2;

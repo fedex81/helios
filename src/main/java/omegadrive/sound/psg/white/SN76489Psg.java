@@ -22,12 +22,13 @@ package omegadrive.sound.psg.white;
 
 import omegadrive.sound.psg.PsgProvider;
 
+@Deprecated
 public class SN76489Psg implements PsgProvider {
 
     protected SN76489 psg;
 
     public static SN76489Psg createInstance(int clockSpeed, int sampleRate) {
-        SN76489Psg s = new BlipSN76489Psg();
+        SN76489Psg s = new SN76489Psg();
         s.psg = new SN76489();
         s.psg.init(clockSpeed, sampleRate);
         return s;

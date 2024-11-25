@@ -49,18 +49,64 @@ public class JavaSoundManager2 extends AbstractSoundManager {
     @Override
     public void onNewFrame() {
         doStats();
+        psg.onNewFrame();
         fm.onNewFrame();
-        SampleBufferContext psgContext = psg.getFrameData();
-        playSound(psgContext);
+        int len = mixAudioProviders();
+        playSound(len);
+    }
+
+    //FM,PWM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
+    protected int mixAudioProviders() {
+        if (!soundEnabled) {
+            return 0;
+        }
+        int len = 0;
+        switch (soundDeviceSetup) {
+            case 1: //fm only
+                System.arraycopy(fm.getFrameData().lineBuffer, 0, mix_buf_bytes16Stereo, 0, fm.getFrameData().stereoBytesLen);
+                len = fm.getFrameData().stereoBytesLen;
+                break;
+            case 2: //psg only
+                System.arraycopy(psg.getFrameData().lineBuffer, 0, mix_buf_bytes16Stereo, 0, psg.getFrameData().stereoBytesLen);
+                len = psg.getFrameData().stereoBytesLen;
+                break;
+            case 3: //fm + psg
+                SoundUtil.mixTwoSources(psg.getFrameData().lineBuffer, fm.getFrameData().lineBuffer, mix_buf_bytes16Stereo,
+                        psg.getFrameData().stereoBytesLen, fm.getFrameData().stereoBytesLen);
+                //TODO ugly hack
+                len = Math.min(psg.getFrameData().stereoBytesLen, fm.getFrameData().stereoBytesLen);
+                break;
+            case 6: //pwm + psg
+//                SoundUtil.intStereo14ToByteStereo16Mix(pwm_buf_ints, mix_buf_bytes16Stereo, psg_buf_bytes, inputLen);
+                throw new RuntimeException("" + soundDeviceSetup);
+//                break;
+            case 7: //fm + psg + pwm
+//                SoundUtil.intStereo14ToByteStereo16PwmMix(mix_buf_bytes16Stereo, fm_buf_ints, pwm_buf_ints, psg_buf_bytes, inputLen);
+//                break;
+                throw new RuntimeException("" + soundDeviceSetup);
+            case 11: //fm + psg + pcm
+//                SoundUtil.intStereo14ToByteStereo16PwmMix(mix_buf_bytes16Stereo, fm_buf_ints, pcm_buf_ints, psg_buf_bytes, inputLen);
+//                break;
+                throw new RuntimeException("" + soundDeviceSetup);
+            default:
+                LOG.error("Unable to mix the sound setup: {}", soundDeviceSetup);
+                break;
+        }
+        return len;
     }
 
     private void playSound(SampleBufferContext context) {
         if (context.stereoBytesLen > 0) {
             System.arraycopy(context.lineBuffer, 0, mix_buf_bytes16Stereo, 0, context.stereoBytesLen);
-            final int len = context.stereoBytesLen;
+            playSound(context.stereoBytesLen);
+        }
+    }
+
+    private void playSound(int inputLen) {
+        if (inputLen > 0) {
             final long current = sync.incrementAndGet();
             executorService.submit(() -> {
-                SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, 0, len);
+                SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, 0, inputLen);
                 if (BufferUtil.assertionsEnabled) {
                     if (current != sync.get()) {
                         LOG.info("{} Audio thread too slow: {} vs {}", current, sync.get());
@@ -71,6 +117,8 @@ public class JavaSoundManager2 extends AbstractSoundManager {
             LOG.warn("Empty sound buffer!!");
         }
     }
+
+
 
     private void doStats() {
         if (Telemetry.enable) {

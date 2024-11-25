@@ -60,15 +60,16 @@ public class BlipSoundProvider implements McdPcmProvider {
     public BlipSoundProvider(String name, Region region, AudioFormat af, double clockRate) {
         ref.set(new BlipBufferContext());
         dataLine = SoundUtil.createDataLine(af);
-        this.region = region;
+        this.region = null;
         this.clockRate = clockRate;
         this.instanceId = name + "_" + (int) af.getSampleRate();
         this.audioFormat = af;
         exec = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, instanceId));
-        setup();
+        setup(region);
+        assert this.region == region;
     }
 
-    private void setup() {
+    private void setup(Region region) {
         BlipBufferIntf blip = new StereoBlipBuffer(instanceId);
         blip.setSampleRate((int) audioFormat.getSampleRate(), BUF_SIZE_MS);
         blip.setClockRate((int) clockRate);

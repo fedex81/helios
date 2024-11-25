@@ -154,6 +154,26 @@ public class SoundUtil {
         }
     }
 
+    public static void mixTwoSources(byte[] input1, byte[] input2, byte[] output, int inputLen1, int inputLen2) {
+        if (inputLen1 == 0) {
+            System.arraycopy(input2, 0, output, 0, inputLen2);
+        } else if (inputLen2 == 0) {
+            System.arraycopy(input1, 0, output, 0, inputLen1);
+        } else {
+            if (inputLen1 != inputLen2) {
+                LOG.error("oops, " + inputLen1 + "," + inputLen2);
+            }
+            //TODO ugly hack
+            int len = Math.min(inputLen1, inputLen2);
+            for (int i = 0; i < len; i += 4) {
+                output[i] = (byte) ((input1[i] + input2[i]) >> 1);
+                output[i + 1] = (byte) ((input1[i + 1] + input2[i + 1]) >> 1);
+                output[i + 2] = (byte) ((input1[i + 2] + input2[i + 2]) >> 1);
+                output[i + 3] = (byte) ((input1[i + 3] + input2[i + 3]) >> 1);
+            }
+        }
+    }
+
     public static void intStereo16ToByteStereo16Mix(int[] input, byte[] output, int inputLen) {
         for (int i = 0, k = 0; i < inputLen; i += 2, k += 4) {
             output[k] = (byte) (input[i] & 0xFF); //left lsb
@@ -222,8 +242,8 @@ public class SoundUtil {
         }
     }
 
-    public static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output) {
-        for (int j = 0, i = 0; j < psgMono8.length; j++, i += 4) {
+    public static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output, int inputLen) {
+        for (int j = 0, i = 0; j < inputLen; j++, i += 4) {
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
             int psg16 = psgMono8[j] << 7;
             output[i] = (byte) (psg16 & 0xFF); //lsb
@@ -231,6 +251,11 @@ public class SoundUtil {
             output[i + 2] = output[i];
             output[i + 3] = output[i + 1];
         }
+    }
+
+    @Deprecated
+    public static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output) {
+        byteMono8ToByteStereo16Mix(psgMono8, output, psgMono8.length);
     }
 
     public static void close(DataLine line) {

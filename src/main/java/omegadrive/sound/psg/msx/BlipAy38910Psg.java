@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package omegadrive.sound.psg.white;
+package omegadrive.sound.psg.msx;
 
 
 import mcd.pcm.BlipSoundProvider;
@@ -27,28 +27,46 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 
-import static omegadrive.sound.SoundProvider.getPsgSoundClock;
+public class BlipAy38910Psg implements PsgProvider {
 
-public class BlipSN76489Psg implements PsgProvider {
-
+    private final static Logger LOG = LogHelper.getLogger(BlipAy38910Psg.class.getSimpleName());
     private static int DEFAULT_CLOCK_RATE = AbstractSoundManager.SAMPLE_RATE_HZ;
     private BlipSoundProvider blipProvider;
-    protected SN76489 psg;
+    protected Ay38910 psg;
+    private long tickCnt = 0;
 
-    public static BlipSN76489Psg createInstance(RegionDetector.Region region, int outputSampleRate) {
-        BlipSN76489Psg s = new BlipSN76489Psg();
-        s.psg = new SN76489();
-        s.psg.init((int) getPsgSoundClock(region), outputSampleRate);
-        s.blipProvider = new BlipSoundProvider("psg_sn", RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
+    public static BlipAy38910Psg createInstance(RegionDetector.Region region, int outputSampleRate) {
+        BlipAy38910Psg s = new BlipAy38910Psg();
+        s.psg = new Ay38910(outputSampleRate);
+        s.blipProvider = new BlipSoundProvider("psg_ay", RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
                 DEFAULT_CLOCK_RATE);
-        LOG.info("PSG instance, region: {}, clockHz: {}, sampleRate: {}", region, (int) getPsgSoundClock(region), outputSampleRate);
+        LOG.info("PSG instance, region: {}, sampleRate: {}", region, outputSampleRate);
         return s;
     }
 
     @Override
     public void write(int data) {
-        psg.write(data);
+        throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void write(int register, int data) {
+        psg.out(register, data);
+    }
+
+    @Override
+    public int read(int register) {
+        return psg.in(register);
+    }
+
+    @Override
+    public void updateMono8(byte[] output, int offset, int end) {
+//        for (int i = offset; i < end; i++) {
+//            output[i] = (byte) psg.getSoundSigned();
+//        }
+        LogHelper.logWarnOnceForce(LOG, "Invalid method call: updateMono8");
+    }
+
 
     @Override
     public void updateRate(RegionDetector.Region region, int clockRate) {
@@ -56,20 +74,10 @@ public class BlipSN76489Psg implements PsgProvider {
     }
 
     @Override
-    public void updateMono8(byte[] output, int offset, int end) {
-        LogHelper.logWarnOnceForce(LOG, "Invalid method call: updateMono8");
-    }
-
-    long tickCnt = 0;
-    final byte[] output = new byte[1];
-
-    private final static Logger LOG = LogHelper.getLogger(BlipSN76489Psg.class.getSimpleName());
-
-    @Override
     public void tick() {
         tickCnt++;
-        psg.update(output, 0, 1);
-        blipProvider.playSample(output[0] << 8, output[0] << 8);
+        byte val = (byte) psg.getSoundSigned();
+        blipProvider.playSample(val << 8, val << 8);
     }
 
     @Override
