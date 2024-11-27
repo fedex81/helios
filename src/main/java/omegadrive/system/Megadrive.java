@@ -174,6 +174,9 @@ public class Megadrive extends BaseSystem<MdBusProvider> {
     protected final void runFM() {
         if ((cycleCounter & 1) == 0 && (cycleCounter % FM_DIVIDER) == 0) { //perf, avoid some divs
             bus.getFm().tick();
+            if (cycleCounter % 29 == 0) {
+                bus.getPsg().tick();
+            }
         }
     }
 
@@ -210,6 +213,7 @@ public class Megadrive extends BaseSystem<MdBusProvider> {
     public void newFrame() {
         checkSvp();
         memView.update();
+        sound.onNewFrame();
         super.newFrame();
     }
 

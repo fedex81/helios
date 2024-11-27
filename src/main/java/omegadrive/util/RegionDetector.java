@@ -171,6 +171,10 @@ public class RegionDetector {
         public int getVersionCode() {
             return versionCode;
         }
+
+        public boolean isPal() {
+            return this == EUROPE;
+        }
     }
 
     public static Region getRegion(String regionName) {

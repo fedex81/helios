@@ -102,14 +102,22 @@ public class JavaSoundManager2 extends AbstractSoundManager {
         }
     }
 
+    private long lastFrame = -1;
+
     private void playSound(int inputLen) {
+        long frame = Telemetry.getInstance().getFrameCounter();
+        if (frame == lastFrame) {
+            LogHelper.logWarnOnce(LOG, "Duplicate playSound call!!");
+            return;
+        }
+        lastFrame = frame;
         if (inputLen > 0) {
             final long current = sync.incrementAndGet();
             executorService.submit(() -> {
                 SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, 0, inputLen);
                 if (BufferUtil.assertionsEnabled) {
                     if (current != sync.get()) {
-                        LOG.info("{} Audio thread too slow: {} vs {}", current, sync.get());
+                        LOG.info("Audio thread too slow: {} vs {}", current, sync.get());
                     }
                 }
             });

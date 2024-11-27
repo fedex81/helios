@@ -19,10 +19,11 @@
 
 package omegadrive.sound.fm.ym2612.nukeykt;
 
+import omegadrive.sound.BlipSoundProvider;
 import omegadrive.sound.fm.MdFmProvider;
-import omegadrive.sound.fm.VariableSampleRateSource;
 import omegadrive.sound.fm.ym2612.Ym2612RegSupport;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector.Region;
 import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
@@ -37,56 +38,69 @@ import java.util.Arrays;
  * NTSC:
  * FM CLOCK = MCLOCK/7 = 7670453
  * NUKE_CLOCK = FM_CLOCK/6 = 1278409
- * CHIP_OUTPUT_RATE = NUKE_CLOCK/24 = 53267
+ * CHIP_OUTPUT_RATE = NUKE_CLOCK/24 = 53267 (52781 Hz (PAL))
  * <p>
  */
-@Deprecated
-public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider {
+public class BlipYm2612Nuke implements MdFmProvider {
 
-    private static final Logger LOG = LogHelper.getLogger(Ym2612Nuke.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(BlipYm2612Nuke.class.getSimpleName());
 
     private final static int AUDIO_SCALE_BITS = 3;
+
+    private static final int NTSC_BLIP_INPUT_RATE_HZ = 53400;
+    private static final int PAL_BLIP_INPUT_RATE_HZ = 53100;
 
     private final IYm3438 ym3438;
     private IYm3438.IYm3438_Type chip;
     private Ym3438Context state;
     private final Ym2612RegSupport regSupport;
 
+    /**
+     * Audio sync mode: 0=perfect sync (slow), 2=less than perfect sync (faster)
+     * values greater than 2 are generally not worth it.
+     */
     private final static int syncAudioMode =
             Integer.parseInt(System.getProperty("helios.md.fm.sync.mode", "2"));
     private final static int syncAudioCycles = Math.max(1, 24 * syncAudioMode);
+
+    private BlipSoundProvider blipProvider;
     private int syncAudioCnt = 0;
     private int prevL, prevR;
+    protected double microsPerInputSample;
 
-    private double cycleAccum = 0;
+    private long tickCnt = 0;
 
-    public Ym2612Nuke(AudioFormat audioFormat, double sourceSampleRate) {
-        this(new IYm3438.IYm3438_Type(), audioFormat, sourceSampleRate);
+    public BlipYm2612Nuke(AudioFormat audioFormat, Region region, double sourceSampleRate) {
+        this(new IYm3438.IYm3438_Type(), region, audioFormat, sourceSampleRate);
     }
 
-    // sourceSampleRate ~= 7.6 mhz
-    private Ym2612Nuke(IYm3438.IYm3438_Type chip, AudioFormat audioFormat, double sourceSampleRate) {
-        super(sourceSampleRate / 6, audioFormat, "fmNuke", AUDIO_SCALE_BITS);
+    private BlipYm2612Nuke(IYm3438.IYm3438_Type chip, Region region, AudioFormat audioFormat, double sourceSampleRate) {
         this.ym3438 = new Ym3438();
         this.chip = chip;
         this.ym3438.OPN2_SetChipType(IYm3438.ym3438_mode_readmode);
         this.state = new Ym3438Context();
         state.chip = chip;
         this.regSupport = new Ym2612RegSupport();
+        this.microsPerInputSample = (1_000_000.0 / (sourceSampleRate / 6));
+        blipProvider = new BlipSoundProvider("nuke2612", region, audioFormat,
+                region.isPal() ? PAL_BLIP_INPUT_RATE_HZ : NTSC_BLIP_INPUT_RATE_HZ);
     }
 
     @Override
     public void setMicrosPerTick(double microsPerTick) {
-        setMicrosPerInputSample(microsPerTick);
+        microsPerInputSample = microsPerTick;
     }
 
     @Override
     public void reset() {
-        super.reset();
         ym3438.OPN2_Reset(chip);
         state.reset();
-        cycleAccum = 0;
         syncAudioCnt = prevL = prevR = 0;
+    }
+
+    @Override
+    public int updateStereo16(int[] buf_lr, int offset, int count) {
+        return 0;
     }
 
     @Override
@@ -101,20 +115,12 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
         regSupport.write(addr, data);
     }
 
-    private void addSample() {
-        if (cycleAccum > fmCalcsPerMicros) {
-            super.addStereoSample(prevL, prevR);
-            cycleAccum -= fmCalcsPerMicros;
-        }
-    }
-
     @Override
     public int read() {
         spin();
         return ym3438.OPN2_Read(chip, 0x4000);
     }
 
-    //Output frequency: 53.267 kHz (NTSC), 52.781 kHz (PAL)
     @Override
     public void tick() {
         if (++syncAudioCnt == syncAudioCycles) {
@@ -124,14 +130,11 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
 
     private void spin() {
         for (int i = 0; i < syncAudioCnt; i++) {
-            cycleAccum += microsPerInputSample;
             spinOnce();
-            addSample();
         }
         syncAudioCnt = 0;
     }
 
-    @Override
     protected void spinOnce() {
         ym3438.OPN2_Clock(chip, state.ym3438_accm[state.ym3438_cycles]);
         state.ym3438_cycles = (state.ym3438_cycles + 1) % 24;
@@ -144,6 +147,8 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
                 sampleR += state.ym3438_accm[j][1];
             }
             filterAndSet(sampleL, sampleR);
+            blipProvider.playSample(prevL << AUDIO_SCALE_BITS, prevR << AUDIO_SCALE_BITS);
+            tickCnt++;
         }
     }
 
@@ -156,6 +161,23 @@ public class Ym2612Nuke extends VariableSampleRateSource implements MdFmProvider
         state.ym3438_diffLR_sampleL = (((sampleL - sampleR) & 0xFFFF) << 16) | (sampleL & 0xFFFF);
         prevL = sampleL;
         prevR = sampleR;
+    }
+
+    @Override
+    public SampleBufferContext getFrameData() {
+        onNewFrame();
+        return blipProvider.getDataBuffer();
+    }
+
+    @Override
+    public void onNewFrame() {
+        if (tickCnt > 0) { //TODO fix
+            blipProvider.newFrame();
+            System.out.println(tickCnt);
+            tickCnt = 0;
+        } else {
+            LogHelper.logWarnOnceForce(LOG, "newFrame called with tickCnt: {}", tickCnt);
+        }
     }
 
     public void setState(Ym3438Context state) {

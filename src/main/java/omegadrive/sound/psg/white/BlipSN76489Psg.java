@@ -20,7 +20,7 @@
 package omegadrive.sound.psg.white;
 
 
-import mcd.pcm.BlipSoundProvider;
+import omegadrive.sound.BlipSoundProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.LogHelper;

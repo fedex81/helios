@@ -4,7 +4,7 @@ import mcd.bus.McdSubInterruptHandler;
 import mcd.cdc.Cdc;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
-import mcd.pcm.BlipSoundProvider;
+import mcd.pcm.BlipSoundProviderDataLine;
 import mcd.pcm.McdPcmProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.msumd.CueFileParser;
@@ -53,7 +53,7 @@ class CddImpl implements Cdd {
         interruptHandler = ih;
         cdc = c;
         playSupport = ENABLE_SOUND ?
-                new BlipSoundProvider("CDDA", RegionDetector.Region.USA, PwmUtil.pwmAudioFormat, SoundProvider.SAMPLE_RATE_HZ) : BlipSoundProvider.NO_SOUND;
+                new BlipSoundProviderDataLine("CDDA", RegionDetector.Region.USA, PwmUtil.pwmAudioFormat, SoundProvider.SAMPLE_RATE_HZ) : BlipSoundProviderDataLine.NO_SOUND;
         setDataOrMusicBit(CddControl_DM_bit.DATA_1);
         setIoStatus(NoDisc);
         statusChecksum();
