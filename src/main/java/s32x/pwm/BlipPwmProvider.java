@@ -124,12 +124,6 @@ public class BlipPwmProvider implements PwmProvider {
         return scaled;
     }
 
-    @Override
-    public int updateStereo16(int[] buf_lr, int offset, int countMono) {
-        return countMono << 1;
-    }
-
-
     private int prevSampleAvail = 0;
     private final AtomicInteger sync = new AtomicInteger();
 

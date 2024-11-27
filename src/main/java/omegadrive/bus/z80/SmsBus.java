@@ -39,8 +39,8 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.ADDR_LATCH_REG;
-import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.DATA_REG;
+import static omegadrive.sound.fm.ym2413.BlipYm2413Provider.FmReg.ADDR_LATCH_REG;
+import static omegadrive.sound.fm.ym2413.BlipYm2413Provider.FmReg.DATA_REG;
 import static omegadrive.util.ArrayEndianUtil.toUnsignedIntArray;
 import static omegadrive.util.ArrayEndianUtil.unsignedToByteArray;
 import static omegadrive.util.Util.th;

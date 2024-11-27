@@ -20,26 +20,26 @@
 package omegadrive.sound.psg.msx;
 
 
-import omegadrive.sound.BlipSoundProvider;
+import omegadrive.sound.BlipBaseSound;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 
-public class BlipAy38910Psg implements PsgProvider {
+public class BlipAy38910Psg extends BlipBaseSound.BlipBaseSoundImpl implements PsgProvider {
 
     private final static Logger LOG = LogHelper.getLogger(BlipAy38910Psg.class.getSimpleName());
     private static int DEFAULT_CLOCK_RATE = AbstractSoundManager.SAMPLE_RATE_HZ;
-    private BlipSoundProvider blipProvider;
     protected Ay38910 psg;
-    private long tickCnt = 0;
+
+    protected BlipAy38910Psg(String name, RegionDetector.Region region, int blipClockRate) {
+        super(name, region, blipClockRate, Channel.MONO, AbstractSoundManager.audioFormat);
+    }
 
     public static BlipAy38910Psg createInstance(RegionDetector.Region region, int outputSampleRate) {
-        BlipAy38910Psg s = new BlipAy38910Psg();
+        BlipAy38910Psg s = new BlipAy38910Psg("psg_ay", region, DEFAULT_CLOCK_RATE);
         s.psg = new Ay38910(outputSampleRate);
-        s.blipProvider = new BlipSoundProvider("psg_ay", RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
-                DEFAULT_CLOCK_RATE);
         LOG.info("PSG instance, region: {}, sampleRate: {}", region, outputSampleRate);
         return s;
     }
@@ -59,42 +59,13 @@ public class BlipAy38910Psg implements PsgProvider {
         return psg.in(register);
     }
 
-    @Override
-    public void updateMono8(byte[] output, int offset, int end) {
-//        for (int i = offset; i < end; i++) {
-//            output[i] = (byte) psg.getSoundSigned();
-//        }
-        LogHelper.logWarnOnceForce(LOG, "Invalid method call: updateMono8");
-    }
-
-
-    @Override
-    public void updateRate(RegionDetector.Region region, int clockRate) {
-        blipProvider.updateRegion(region, clockRate);
+    public int getSample16bit(boolean left) {
+        return (byte) psg.getSoundSigned() << 8;
     }
 
     @Override
-    public void tick() {
-        tickCnt++;
-        byte val = (byte) psg.getSoundSigned();
-        blipProvider.playSample(val << 8, val << 8);
-    }
-
-    @Override
-    public SampleBufferContext getFrameData() {
-        onNewFrame();
-        return blipProvider.getDataBuffer();
-    }
-
-    @Override
-    public void onNewFrame() {
-        if (tickCnt > 0) { //TODO fix
-            blipProvider.newFrame();
-//            System.out.println(tickCnt);
-            tickCnt = 0;
-        } else {
-            LogHelper.logWarnOnceForce(LOG, "newFrame called with tickCnt: {}", tickCnt);
-        }
+    public SoundDeviceType getType() {
+        return SoundDeviceType.PSG;
     }
 
     @Override

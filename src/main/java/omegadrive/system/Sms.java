@@ -56,8 +56,8 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     protected static final int VDP_DIVIDER = 2;  //10.738635 Mhz
     protected static final int Z80_DIVIDER = 3; //3.579545 Mhz
     protected static final int FM_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
-    protected static final int PAL_PSG_SAMPLES_PER_FRAME = 991 * 50;
-    protected static final int NTSC_PSG_SAMPLES_PER_FRAME = 49780;
+    protected static final int PAL_PSG_SAMPLES_PER_FRAME = 49550; //991*50
+    protected static final int NTSC_PSG_SAMPLES_PER_FRAME = 49780; //829.6*60
 
     protected Z80Provider z80;
     int nextZ80Cycle = Z80_DIVIDER;

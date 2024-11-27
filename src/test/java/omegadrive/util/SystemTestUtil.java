@@ -73,7 +73,7 @@ public class SystemTestUtil {
         MC68000Wrapper cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, busProvider);
         MdJoypad joypad = new MdJoypad(SystemProvider.NO_CLOCK);
         Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.MD, busProvider);
-        FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
+        FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, RegionDetector.Region.USA);
         SoundProvider sp1 = getSoundProvider(fm1);
         z80bus.attachDevice(BusArbiter.NO_OP).attachDevice(busProvider);
         busProvider.attachDevice(vdpProvider1).attachDevice(cpu).attachDevice(joypad).attachDevice(z80bus).
@@ -102,7 +102,7 @@ public class SystemTestUtil {
         SystemProvider systemProvider = createTestMdProvider(cpuMem1);
         MdJoypad joypad = new MdJoypad(null);
         Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.MD, busProvider);
-        FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
+        FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, RegionDetector.Region.USA);
         SoundProvider sp1 = getSoundProvider(fm1);
 
         z80bus.attachDevice(BusArbiter.NO_OP).attachDevice(busProvider);

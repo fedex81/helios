@@ -191,7 +191,7 @@ public class SysUtil {
                 //no PSG, external audio set as FM
                 break;
             default:
-                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
+                psgProvider = PsgProvider.createSnInstance(region, AbstractSoundManager.audioFormat);
                 break;
         }
         return psgProvider;

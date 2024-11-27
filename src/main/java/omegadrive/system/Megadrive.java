@@ -46,6 +46,7 @@ import org.slf4j.Logger;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
+import static omegadrive.util.RegionDetector.Region.EUROPE;
 
 /**
  * Megadrive main class
@@ -64,9 +65,13 @@ public class Megadrive extends BaseSystem<MdBusProvider> {
     public final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
     protected final static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
     protected final static int FM_DIVIDER = 42 / MCLK_DIVIDER;
+    protected final static int PSG_DIVIDER = FM_DIVIDER * 29;
     protected static final int SVP_CYCLES = 100;
     protected static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
     static final int SVP_CYCLES_MASK = SVP_CYCLES - 1;
+
+    protected static final int PAL_PSG_SAMPLES_PER_FRAME = 49550; //991*50
+    protected static final int NTSC_PSG_SAMPLES_PER_FRAME = 44100; //735*60
 
     private final static Logger LOG = LogHelper.getLogger(Megadrive.class.getSimpleName());
 
@@ -174,7 +179,7 @@ public class Megadrive extends BaseSystem<MdBusProvider> {
     protected final void runFM() {
         if ((cycleCounter & 1) == 0 && (cycleCounter % FM_DIVIDER) == 0) { //perf, avoid some divs
             bus.getFm().tick();
-            if (cycleCounter % 29 == 0) {
+            if (cycleCounter % PSG_DIVIDER == 0) {
                 bus.getPsg().tick();
             }
         }
@@ -191,8 +196,14 @@ public class Megadrive extends BaseSystem<MdBusProvider> {
             double microsPerTick = getMicrosPerTick();
             sound.getFm().setMicrosPerTick(microsPerTick);
             targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
+            updatePsgRate(displayContext.videoMode.getRegion());
             LOG.info("Video mode changed: {}, microsPerTick: {}", displayContext.videoMode, microsPerTick);
+
         }
+    }
+
+    private void updatePsgRate(RegionDetector.Region region) {
+        sound.getPsg().updateRate(region, region == EUROPE ? PAL_PSG_SAMPLES_PER_FRAME : NTSC_PSG_SAMPLES_PER_FRAME);
     }
 
     protected double getMicrosPerTick() {

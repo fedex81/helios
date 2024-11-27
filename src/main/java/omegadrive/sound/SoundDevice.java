@@ -34,6 +34,7 @@ public interface SoundDevice extends Device {
     /**
      * Typical FM output
      */
+    @Deprecated
     default int updateStereo16(int[] buf_lr, int offset, int count) {
         throw new RuntimeException("Not implemented");
     }
@@ -41,6 +42,7 @@ public interface SoundDevice extends Device {
     /**
      * Typical PSG output
      */
+    @Deprecated
     default void updateMono8(byte[] output, int offset, int end) {
         throw new RuntimeException("Not implemented");
     }

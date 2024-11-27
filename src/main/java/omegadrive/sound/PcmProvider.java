@@ -26,11 +26,6 @@ public interface PcmProvider extends SoundDevice {
         @Override
         public void updateFreqDelta(int freqDelta) {
         }
-
-        @Override
-        public int updateStereo16(int[] buf_lr, int offset, int count) {
-            return 0;
-        }
     };
 }
 

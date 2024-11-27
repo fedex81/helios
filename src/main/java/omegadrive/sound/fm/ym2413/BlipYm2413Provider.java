@@ -20,16 +20,15 @@
 package omegadrive.sound.fm.ym2413;
 
 
-import omegadrive.sound.BlipSoundProvider;
+import omegadrive.sound.BlipBaseSound;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 
-public class BlipYm2413Provider implements FmProvider {
+public class BlipYm2413Provider extends BlipBaseSound.BlipBaseSoundImpl implements FmProvider {
 
     private static final Logger LOG = LogHelper.getLogger(BlipYm2413Provider.class.getSimpleName());
 
@@ -38,26 +37,17 @@ public class BlipYm2413Provider implements FmProvider {
     private static final int CLOCK_HZ = 3579545;
     final double ratio;
     double rateAccum;
-
-    private BlipSoundProvider blipProvider;
     private OPLL opll;
     private int sample;
 
-    private String name;
-
-    long tickCnt = 0;
-
     protected BlipYm2413Provider(AudioFormat audioFormat) {
-        name = "fm2413";
+        super("fm2413", RegionDetector.Region.JAPAN, (int) FM_RATE, Channel.MONO, audioFormat);
         ratio = FM_RATE / audioFormat.getSampleRate();
-
     }
 
     public static FmProvider createInstance(AudioFormat audioFormat) {
         BlipYm2413Provider p = new BlipYm2413Provider(audioFormat);
         p.init();
-        p.blipProvider = new BlipSoundProvider(p.name, RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
-                FM_RATE);
         return p;
     }
 
@@ -81,11 +71,6 @@ public class BlipYm2413Provider implements FmProvider {
             tickCnt++;
             rateAccum -= 1;
         }
-    }
-
-    @Override
-    public int updateStereo16(int[] buf_lr, int offset, int count) {
-        throw new RuntimeException("Illegal method call: updateStereo16");
     }
 
     @Override
@@ -116,20 +101,8 @@ public class BlipYm2413Provider implements FmProvider {
     }
 
     @Override
-    public SampleBufferContext getFrameData() {
-        onNewFrame();
-        return blipProvider.getDataBuffer();
-    }
-
-    @Override
-    public void onNewFrame() {
-        if (tickCnt > 0) { //TODO fix
-            blipProvider.newFrame();
-//            System.out.println(tickCnt);
-            tickCnt = 0;
-        } else {
-            LogHelper.logWarnOnceForce(LOG, "newFrame called with tickCnt: {}", tickCnt);
-        }
+    public int getSample16bit(boolean left) {
+        throw new IllegalArgumentException("not supported");
     }
 
     public enum FmReg {ADDR_LATCH_REG, DATA_REG}

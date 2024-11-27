@@ -19,14 +19,10 @@
 
 package omegadrive.sound.fm;
 
-import omegadrive.sound.fm.ym2612.nukeykt.BlipYm2612Nuke;
-import omegadrive.sound.javasound.AbstractSoundManager;
+import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.util.RegionDetector;
 
 import javax.sound.sampled.AudioFormat;
-
-import static omegadrive.sound.SoundProvider.LOG;
-import static omegadrive.sound.SoundProvider.getFmSoundClock;
 
 public interface MdFmProvider extends FmProvider {
 
@@ -36,9 +32,7 @@ public interface MdFmProvider extends FmProvider {
     int FM_DATA_PORT1 = 3;
 
     static MdFmProvider createInstance(RegionDetector.Region region, AudioFormat audioFormat) {
-        double clock = getFmSoundClock(region);
-        MdFmProvider fmProvider = new BlipYm2612Nuke(AbstractSoundManager.audioFormat, region, clock);
-        LOG.info("FM instance, clock: {}, sampleRate: {}", clock, audioFormat.getSampleRate());
+        MdFmProvider fmProvider = new Ym2612Nuke(audioFormat, region);
         return fmProvider;
     }
 }

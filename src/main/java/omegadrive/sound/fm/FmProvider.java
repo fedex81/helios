@@ -24,11 +24,6 @@ import omegadrive.vdp.model.BaseVdpProvider;
 
 public interface FmProvider extends SoundDevice, BaseVdpProvider.VdpEventListener {
 
-    /**
-     * @return stereo samples effectively added to the buffer
-     */
-    int updateStereo16(int[] buf_lr, int offset, int count);
-
     int readRegister(int type, int regNumber);
 
     void tick();
@@ -72,11 +67,6 @@ public interface FmProvider extends SoundDevice, BaseVdpProvider.VdpEventListene
 
         @Override
         public int readRegister(int type, int regNumber) {
-            return 0;
-        }
-
-        @Override
-        public int updateStereo16(int[] buf_lr, int offset, int end) {
             return 0;
         }
 

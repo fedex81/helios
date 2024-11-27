@@ -90,14 +90,7 @@ public class BlipSoundProvider implements McdPcmProvider {
         deltaTime++;
     }
 
-    @Override
-    public int updateStereo16(int[] buf_lr, int offset, int countMono) {
-        LogHelper.logWarnOnce(LOG, "{} Ignoring sample requests, using its own dataLine", instanceId);
-        return countMono << 1;
-    }
-
     private int prevSampleAvail = 0;
-    private final AtomicInteger sync = new AtomicInteger();
 
     @Override
     public void newFrame() {

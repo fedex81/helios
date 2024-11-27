@@ -38,10 +38,5 @@ public interface McdPcmProvider extends SoundDevice {
         @Override
         public void updateRegion(RegionDetector.Region region) {
         }
-
-        @Override
-        public int updateStereo16(int[] buf_lr, int offset, int count) {
-            return 0;
-        }
     };
 }

@@ -31,10 +31,5 @@ public interface PwmProvider extends SoundDevice {
         @Override
         public void playSample(int left, int right) {
         }
-
-        @Override
-        public int updateStereo16(int[] buf_lr, int offset, int count) {
-            return 0;
-        }
     };
 }

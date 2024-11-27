@@ -11,6 +11,7 @@ import omegadrive.savestate.GshStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
+import omegadrive.util.RegionDetector;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -45,7 +46,7 @@ public class SavestateSerializeTest {
         Path p = Paths.get(fileFolder, nukeSavestateName);
         GstStateHandler stateHandler = (GstStateHandler) BaseStateHandler.createInstance(
                 MD, p.toAbsolutePath().toString(), BaseStateHandler.Type.LOAD, Collections.emptySet());
-        Ym2612Nuke nuke = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
+        Ym2612Nuke nuke = new Ym2612Nuke(AbstractSoundManager.audioFormat, RegionDetector.Region.USA);
         int hashCode = nuke.getState().hashCode();
         stateHandler.loadFmState(nuke);
         Ym2612Nuke.Ym3438Context context = nuke.getState();
