@@ -30,7 +30,6 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
 import org.slf4j.Logger;
@@ -99,7 +98,8 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         double frameMs = systemType == SystemLoader.SystemType.GG ?
                 USA.getFrameIntervalMs() : romContext.region.getFrameIntervalMs();
         targetNs = (long) (frameMs * Util.MILLI_IN_NS);
-        updatePsgRate(romContext.region);
+        updateSoundRates(romContext.region, 1.0,
+                romContext.region == EUROPE ? PAL_PSG_SAMPLES_PER_FRAME : NTSC_PSG_SAMPLES_PER_FRAME);
         do {
             runZ80(cycleCounter);
             runVdp(cycleCounter);
@@ -108,15 +108,11 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         } while (!runningRomFuture.isDone());
     }
 
-    private void updatePsgRate(RegionDetector.Region region) {
-        sound.getPsg().updateRate(region, region == EUROPE ? PAL_PSG_SAMPLES_PER_FRAME : NTSC_PSG_SAMPLES_PER_FRAME);
-    }
-
-
     @Override
     protected void updateVideoMode(boolean force) {
         displayContext.videoMode = vdp.getVideoMode();
-        updatePsgRate(romContext.region);
+        updateSoundRates(romContext.region, 1.0,
+                romContext.region == EUROPE ? PAL_PSG_SAMPLES_PER_FRAME : NTSC_PSG_SAMPLES_PER_FRAME);
     }
 
     @Override

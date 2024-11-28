@@ -1,6 +1,6 @@
 package s32x.util.blipbuffer;
 
-import static s32x.pwm.PwmUtil.setSigned16LE;
+import static omegadrive.util.SoundUtil.setSigned16LE;
 
 /**
  * Federico Berti

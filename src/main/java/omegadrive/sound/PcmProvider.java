@@ -1,5 +1,7 @@
 package omegadrive.sound;
 
+import omegadrive.util.RegionDetector;
+
 /**
  * Federico Berti
  * <p>
@@ -7,24 +9,28 @@ package omegadrive.sound;
  */
 public interface PcmProvider extends SoundDevice {
 
-    void updateFreqDelta(int freqDelta);
-
     void playSample(int left, int right);
 
     default SoundDeviceType getType() {
         return SoundDeviceType.PCM;
     }
 
-    default void newFrame() {
-    }
-
     PcmProvider NO_SOUND = new PcmProvider() {
         @Override
-        public void playSample(int left, int right) {
+        public void tick() {
         }
 
         @Override
-        public void updateFreqDelta(int freqDelta) {
+        public SampleBufferContext getFrameData() {
+            return null;
+        }
+
+        @Override
+        public void updateRate(RegionDetector.Region region, int clockRate) {
+        }
+
+        @Override
+        public void playSample(int left, int right) {
         }
     };
 }

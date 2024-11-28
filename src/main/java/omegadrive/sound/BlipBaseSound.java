@@ -31,12 +31,6 @@ public interface BlipBaseSound extends SoundDevice {
 
     enum Channel {NONE, MONO, STEREO}
 
-    void updateRate(Region region, int clockRate);
-
-    void tick();
-
-    void onNewFrame();
-
     int getSample16bit(boolean left);
 
     abstract class BlipBaseSoundImpl implements BlipBaseSound {
@@ -58,7 +52,7 @@ public interface BlipBaseSound extends SoundDevice {
 
         @Override
         public void updateRate(Region region, int clockRate) {
-            blipProvider.updateRegion(region, clockRate);
+            blipProvider.updateRate(region, clockRate);
         }
 
         @Override
@@ -89,14 +83,13 @@ public interface BlipBaseSound extends SoundDevice {
             return blipProvider.getDataBuffer();
         }
 
+        //NOTE: this can be called multiple times per frame
         @Override
         public void onNewFrame() {
-            if (tickCnt > 0) { //TODO fix
-                blipProvider.newFrame();
+            if (tickCnt > 0) {
+                blipProvider.onNewFrame();
 //                LOG.info("{} ticksPerFrame: {}", name, tickCnt);
                 tickCnt = 0;
-            } else {
-                LogHelper.logWarnOnceForce(LOG, "newFrame called with tickCnt: {}", tickCnt);
             }
         }
     }

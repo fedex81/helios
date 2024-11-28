@@ -2,7 +2,7 @@ package s32x.util.blipbuffer;
 
 import s32x.pwm.PwmUtil;
 
-import static s32x.pwm.PwmUtil.setSigned16LE;
+import static omegadrive.util.SoundUtil.setSigned16LE;
 
 /**
  * StereoBuffer

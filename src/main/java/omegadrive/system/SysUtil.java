@@ -2,7 +2,7 @@ package omegadrive.system;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import mcd.MegaCd2;
+import mcd.MegaCd;
 import omegadrive.Device;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;
@@ -14,6 +14,8 @@ import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.fm.ym2413.BlipYm2413Provider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.sound.psg.msx.BlipAy38910Psg;
+import omegadrive.sound.psg.white.BlipSN76489Psg;
 import omegadrive.system.gb.Gb;
 import omegadrive.system.gb.GbSoundWrapper;
 import omegadrive.system.nes.Nes;
@@ -34,7 +36,6 @@ import java.util.*;
 import static omegadrive.SystemLoader.SystemType.*;
 import static omegadrive.SystemLoader.handleCompressedFiles;
 import static omegadrive.sound.SoundDevice.SoundDeviceType.*;
-import static omegadrive.sound.SoundProvider.SAMPLE_RATE_HZ;
 import static omegadrive.util.RegionDetector.Region;
 
 /**
@@ -162,6 +163,7 @@ public class SysUtil {
         m.put(FM, getFmProvider(systemType, region));
         m.put(PWM, getPwmProvider(systemType, region));
         m.put(PCM, getPcmProvider(systemType, region));
+        m.put(CDDA, PcmProvider.NO_SOUND);
         return m;
     }
 
@@ -182,14 +184,14 @@ public class SysUtil {
         SoundDevice psgProvider = PsgProvider.NO_SOUND;
         switch (systemType) {
             case MSX:
-                psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
+                psgProvider = BlipAy38910Psg.createInstance(region, (int) AbstractSoundManager.audioFormat.getSampleRate());
                 break;
             case NES:
             case GB:
                 //no PSG, external audio set as FM
                 break;
             default:
-                psgProvider = PsgProvider.createSnInstance(region, AbstractSoundManager.audioFormat);
+                psgProvider = BlipSN76489Psg.createInstance(region, AbstractSoundManager.audioFormat);
                 break;
         }
         return psgProvider;

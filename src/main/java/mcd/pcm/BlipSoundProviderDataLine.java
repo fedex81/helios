@@ -32,12 +32,12 @@ public class BlipSoundProviderDataLine extends BlipSoundProvider.BlipSoundProvid
         dataLine = SoundUtil.createDataLine(audioFormat);
         this.instanceId = name + "_" + (int) clockRate;
         exec = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, instanceId));
-        super.updateRegion(region, (int) clockRate);
+        super.updateRate(region, (int) clockRate);
     }
 
     @Override
-    public void newFrame() {
-        super.newFrame();
+    public void onNewFrame() {
+        super.onNewFrame();
         SampleBufferContext ctx = getDataBuffer();
         if (ctx.stereoBytesLen > 0) {
             final long current = sync.incrementAndGet();

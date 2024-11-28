@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static mcd.MegaCd2.MCD_SUB_68K_CLOCK_MHZ;
+import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_TIMER;
 import static mcd.dict.MegaCdDict.BitRegDef.IEN2;

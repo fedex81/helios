@@ -4,13 +4,12 @@ import mcd.bus.McdSubInterruptHandler;
 import mcd.cdc.Cdc;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
-import mcd.pcm.BlipSoundProviderDataLine;
 import omegadrive.sound.BlipSoundProvider;
 import omegadrive.sound.SoundProvider;
+import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.*;
 import org.slf4j.Logger;
-import s32x.pwm.PwmUtil;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -26,7 +25,7 @@ import static omegadrive.util.Util.th;
  *
  * TODO check mute bit from blastem
  */
-class CddImpl implements Cdd {
+public class CddImpl implements Cdd {
 
     private final static Logger LOG = LogHelper.getLogger(CddImpl.class.getSimpleName());
 
@@ -46,17 +45,22 @@ class CddImpl implements Cdd {
     private final CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();
     private boolean hasMedia;
 
+    @Deprecated
+    public static BlipSoundProvider bsp;
+
 
     public CddImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih, Cdc c) {
         memoryContext = mc;
         interruptHandler = ih;
         cdc = c;
         playSupport =
-                new BlipSoundProviderDataLine("CDDA", RegionDetector.Region.USA, PwmUtil.pwmAudioFormat, SoundProvider.SAMPLE_RATE_HZ);
+                new BlipSoundProvider.BlipSoundProviderImpl("CDDA", RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
+                        SoundProvider.SAMPLE_RATE_HZ);
         setDataOrMusicBit(CddControl_DM_bit.DATA_1);
         setIoStatus(NoDisc);
         statusChecksum();
         commandChecksum();
+        bsp = playSupport;
     }
 
     @Override
@@ -837,8 +841,9 @@ class CddImpl implements Cdd {
     }
 
     @Override
+    @Deprecated
     public void newFrame() {
-        playSupport.newFrame();
+        playSupport.onNewFrame();
     }
 
     @Override

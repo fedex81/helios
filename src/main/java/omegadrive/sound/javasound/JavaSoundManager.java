@@ -20,6 +20,7 @@
 package omegadrive.sound.javasound;
 
 import omegadrive.sound.SoundDevice;
+import omegadrive.sound.SoundProvider;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
@@ -30,10 +31,17 @@ import org.slf4j.Logger;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static omegadrive.util.SoundUtil.getStereoSamplesBufferSize;
+
 public class JavaSoundManager extends AbstractSoundManager {
 
     private static final Logger LOG = LogHelper.getLogger(JavaSoundManager.class.getSimpleName());
     private byte[] mix_buf_bytes16Stereo;
+
+    /**
+     * by default we hold 50ms
+     */
+    private final static int MIX_BUF_SIZE = getStereoSamplesBufferSize(audioFormat);
     private final AtomicInteger sync = new AtomicInteger();
 
     //stats
@@ -43,8 +51,10 @@ public class JavaSoundManager extends AbstractSoundManager {
     @Override
     public void init(RegionDetector.Region region) {
         super.init(region);
-        mix_buf_bytes16Stereo = new byte[fmSize << 1];
+        mix_buf_bytes16Stereo = new byte[MIX_BUF_SIZE];
         telemetry = Telemetry.getInstance();
+        LOG.info("Output audioFormat: {}, bufferMs: {}, bufferSize: {}, region: {}", audioFormat,
+                SoundProvider.AUDIO_BUFFER_LEN_MS, MIX_BUF_SIZE, region);
     }
 
     @Override
@@ -52,7 +62,9 @@ public class JavaSoundManager extends AbstractSoundManager {
         doStats();
         psg.onNewFrame();
         fm.onNewFrame();
-        pwm.newFrame();
+        pwm.onNewFrame();
+        pcm.onNewFrame();
+        cdda.onNewFrame();
         int len = mixAudioProviders();
         playSound(len);
     }
@@ -76,6 +88,8 @@ public class JavaSoundManager extends AbstractSoundManager {
             case 7 -> mix(psg, fm, pwm);
             //fm + psg + pcm
             case 11 -> mix(psg, fm, pcm);
+            //fm + psg + pcm + cdda
+            case 27 -> mix(psg, fm, pcm, cdda);
             default -> {
                 LOG.error("Unable to mix the sound setup: {}", soundDeviceSetup);
                 yield 0;
@@ -102,7 +116,17 @@ public class JavaSoundManager extends AbstractSoundManager {
         return len;
     }
 
+    private int mix(SoundDevice src1, SoundDevice src2, SoundDevice src3, SoundDevice src4) {
+        int len = mix(src1, src2, src3);
+        if (src4.getFrameData().stereoBytesLen > 0) {
+            len = SoundUtil.mixTwoSources(src4.getFrameData().lineBuffer, mix_buf_bytes16Stereo, mix_buf_bytes16Stereo,
+                    src4.getFrameData().stereoBytesLen, len);
+        }
+        return len;
+    }
+
     private long lastFrame = -1;
+    private int lastProduced = 0;
 
     private void playSound(int inputLen) {
         long frame = Telemetry.getInstance().getFrameCounter();
@@ -111,19 +135,23 @@ public class JavaSoundManager extends AbstractSoundManager {
             return;
         }
         lastFrame = frame;
-        if (inputLen > 0) {
-            final long current = sync.incrementAndGet();
-            executorService.submit(() -> {
-                SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, 0, inputLen);
-                if (BufferUtil.assertionsEnabled) {
-                    if (current != sync.get()) {
-                        LOG.info("Audio thread too slow: {} vs {}", current, sync.get());
-                    }
-                }
-            });
-        } else {
+        if (inputLen == 0) {
+            inputLen = lastProduced;
             LOG.warn("Empty sound buffer!!");
         }
+        assert inputLen > 0;
+        final int playLen = inputLen;
+        samplesProducedCount += inputLen;
+        lastProduced = inputLen;
+        final long current = sync.incrementAndGet();
+        executorService.submit(() -> {
+            samplesConsumedCount += SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, 0, playLen);
+            if (BufferUtil.assertionsEnabled) {
+                if (current != sync.get()) {
+                    LOG.info("Audio thread too slow: {} vs {}", current, sync.get());
+                }
+            }
+        });
     }
 
 

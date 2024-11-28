@@ -137,4 +137,9 @@ public class GenericAudioProvider implements FmProvider {
         stereoQueueLen.set(0);
         start();
     }
+
+    @Override
+    public SampleBufferContext getFrameData() {
+        throw new RuntimeException("invalid");
+    }
 }

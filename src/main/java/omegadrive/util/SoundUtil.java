@@ -22,6 +22,7 @@ package omegadrive.util;
 import omegadrive.sound.SoundDevice.SampleBufferContext;
 import omegadrive.sound.SoundProvider;
 import org.slf4j.Logger;
+import s32x.util.blipbuffer.BlipBufferHelper;
 
 import javax.sound.sampled.*;
 import java.io.File;
@@ -168,107 +169,48 @@ public class SoundUtil {
         } else {
             int len = Math.min(inputLen1, inputLen2);
             for (int i = 0; i < len; i += 4) {
-                output[i] = (byte) ((input1[i] + input2[i]) >> 1);
-                output[i + 1] = (byte) ((input1[i + 1] + input2[i + 1]) >> 1);
-                output[i + 2] = (byte) ((input1[i + 2] + input2[i + 2]) >> 1);
-                output[i + 3] = (byte) ((input1[i + 3] + input2[i + 3]) >> 1);
+                short l1 = getSigned16LE(input1[i + 1], input1[i]);
+                short l2 = getSigned16LE(input2[i + 1], input2[i]);
+                short r1 = getSigned16LE(input1[i + 3], input1[i + 2]);
+                short r2 = getSigned16LE(input2[i + 3], input2[i + 2]);
+                short resL = (short) BlipBufferHelper.clampToShort((l1 + l2) >> 1);
+                short resR = (short) BlipBufferHelper.clampToShort((r1 + r2) >> 1);
+                setSigned16LE(resL, output, i);
+                setSigned16LE(resR, output, i + 2);
             }
             if (inputLen1 != inputLen2) {
-                LogHelper.logWarnOnceForce(LOG, "len mismatch: {}, {}", inputLen1, inputLen2);
-                assert (Math.abs(inputLen1 - inputLen2) % 4) == 0;
-                byte[] shorter = maxLen == inputLen1 ? input2 : input1;
-                byte[] longer = maxLen == inputLen1 ? input1 : input2;
-                int shorterLast = shorter[shorter.length - 1];
-                for (int i = len; i < maxLen; i++) {
-                    output[i] = (byte) ((longer[i] + shorterLast) >> 1);
-                }
+                fill(input1, input2, output, inputLen1, inputLen2);
             }
         }
         return maxLen;
     }
 
-    public static void intStereo16ToByteStereo16Mix(int[] input, byte[] output, int inputLen) {
-        for (int i = 0, k = 0; i < inputLen; i += 2, k += 4) {
-            output[k] = (byte) (input[i] & 0xFF); //left lsb
-            output[k + 1] = (byte) ((input[i] >> 8) & 0xFF); //left msb
-            output[k + 2] = (byte) (input[i + 1] & 0xFF); //left lsb
-            output[k + 3] = (byte) ((input[i + 1] >> 8) & 0xFF); //left msb
+    private static void fill(byte[] input1, byte[] input2, byte[] output, int inputLen1, int inputLen2) {
+        LogHelper.logWarnOnceForce(LOG, "len mismatch: {}, {}", inputLen1, inputLen2);
+        int maxLen = Math.max(inputLen1, inputLen2);
+        int minLen = Math.min(inputLen1, inputLen2);
+        assert (Math.abs(inputLen1 - inputLen2) % 4) == 0;
+        byte[] shorter = maxLen == inputLen1 ? input2 : input1;
+        byte[] longer = maxLen == inputLen1 ? input1 : input2;
+        short lastR = getSigned16LE(shorter[minLen - 1], shorter[minLen - 2]);
+        short lastL = getSigned16LE(shorter[minLen - 3], shorter[minLen - 4]);
+        for (int i = minLen; i < maxLen; i += 4) {
+            short left = getSigned16LE(longer[i + 1], longer[i]);
+            short right = getSigned16LE(longer[i + 3], longer[i + 2]);
+            short resL = (short) BlipBufferHelper.clampToShort((left + lastL) >> 1);
+            short resR = (short) BlipBufferHelper.clampToShort((right + lastR) >> 1);
+            setSigned16LE(resL, output, i);
+            setSigned16LE(resR, output, i + 2);
         }
     }
 
-    public static void intStereo14ToByteStereo16PwmMix(byte[] output, int[] fmStereo16, int[] pwmStereo16,
-                                                       byte[] psgMono8, int inputLen) {
-        int j = 0; //psg index
-        int k = 0; //output index
-        for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
-            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg = psgMono8[j];
-            psg = DEFAULT_PSG_SHIFT_BITS > 0 ? psg << DEFAULT_PSG_SHIFT_BITS : psg >> -DEFAULT_PSG_SHIFT_BITS;
-            int out16L = (fmStereo16[i] + pwmStereo16[i] + psg);
-            int out16R = (fmStereo16[i + 1] + pwmStereo16[i + 1] + psg);
-            out16L = Math.min(Math.max(out16L, Short.MIN_VALUE), Short.MAX_VALUE);
-            out16R = Math.min(Math.max(out16R, Short.MIN_VALUE), Short.MAX_VALUE);
-            output[k] = (byte) (out16L & 0xFF); //lsb left
-            output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
-            output[k + 2] = (byte) (out16R & 0xFF); //lsb right
-            output[k + 3] = (byte) ((out16R >> 8) & 0xFF); //msb right
-        }
+    public static short getSigned16LE(byte msb, byte lsb) {
+        return (short) ((lsb & 0xFF) + ((msb & 0xFF) << 8));
     }
 
-    public static void intStereo14ToByteStereo16Mix(int[] input, byte[] output, byte[] psgMono8, int inputLen) {
-        int j = 0; //psg index
-        int k = 0; //output index
-        for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
-            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg = psgMono8[j];
-            psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
-            int out16L = (input[i] + psg);
-            int out16R = (input[i + 1] + psg);
-            out16L = (out16L << 1) - (out16L >> 1); //mult by 1.5
-            out16R = (out16R << 1) - (out16R >> 1);
-            //avg fm and psg
-            out16L = Math.min(Math.max(out16L, Short.MIN_VALUE), Short.MAX_VALUE);
-            out16R = Math.min(Math.max(out16R, Short.MIN_VALUE), Short.MAX_VALUE);
-            output[k] = (byte) (out16L & 0xFF); //lsb left
-            output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
-            output[k + 2] = (byte) (out16R & 0xFF); //lsb right
-            output[k + 3] = (byte) ((out16R >> 8) & 0xFF); //msb right
-        }
-    }
-
-    public static void intStereo14ToByteStereo16MixFloat(int[] input, float[] output, byte[] psgMono8, int inputLen) {
-        int j = 0; //psg index
-        int k = 0; //output index
-        for (int i = 0; i < inputLen; i += 2, j++, k += 2) {
-            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg = psgMono8[j];
-            psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
-            int out16L = (input[i] + psg);
-            int out16R = (input[i + 1] + psg);
-            out16L = (out16L << 1) - out16L; //mult by 1.5
-            out16R = (out16R << 1) - out16R;
-            //avg fm and psg
-            out16L = Math.min(Math.max(out16L, Short.MIN_VALUE), Short.MAX_VALUE);
-            out16R = Math.min(Math.max(out16R, Short.MIN_VALUE), Short.MAX_VALUE);
-            output[k] = out16L / 32768f;
-            output[k + 1] = out16R / 32768f;
-        }
-    }
-
-    public static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output, int inputLen) {
-        for (int j = 0, i = 0; j < inputLen; j++, i += 4) {
-            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg16 = psgMono8[j] << 7;
-            output[i] = (byte) (psg16 & 0xFF); //lsb
-            output[i + 1] = (byte) ((psg16 >> 8) & 0xFF); //msb
-            output[i + 2] = output[i];
-            output[i + 3] = output[i + 1];
-        }
-    }
-
-    @Deprecated
-    public static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output) {
-        byteMono8ToByteStereo16Mix(psgMono8, output, psgMono8.length);
+    public static void setSigned16LE(short value, byte[] data, int startIndex) {
+        data[startIndex] = (byte) value;
+        data[startIndex + 1] = (byte) (value >> 8);
     }
 
     public static void close(DataLine line) {

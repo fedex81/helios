@@ -10,7 +10,7 @@ import s32x.util.blipbuffer.BlipBufferHelper;
 
 import java.nio.ByteBuffer;
 
-import static mcd.MegaCd2.MCD_SUB_68K_CLOCK_MHZ;
+import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
 import static mcd.bus.MegaCdSubCpuBus.logAccessReg;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.th;
@@ -68,14 +68,14 @@ public class McdPcm implements BufferUtil.StepDevice {
     private ByteBuffer waveData, pcmRegs;
     private PcmChannelContext[] chan;
 
-    private BlipSoundProvider playSupport;
+    public BlipSoundProvider playSupport;
 
     private int channelBank, waveBank, active, chanControl;
     private int ls, rs;
 
     int sampleNum = 0;
 
-    //TODO
+    @Deprecated
     public static McdPcm pcm;
 
     static class PcmChannelContext {
@@ -91,7 +91,7 @@ public class McdPcm implements BufferUtil.StepDevice {
         waveData = ByteBuffer.allocate(PCM_WAVE_DATA_SIZE);
         pcmRegs = ByteBuffer.allocate(PCM_REG_SIZE);
         chan = new PcmChannelContext[PCM_NUM_CHANNELS];
-        playSupport = new BlipSoundProviderDataLine("PCM", RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
+        playSupport = new BlipSoundProvider.BlipSoundProviderImpl("PCM", RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
                 pcmSampleRateHz);
         for (int i = 0; i < PCM_NUM_CHANNELS; i++) {
             chan[i] = new PcmChannelContext();
@@ -296,8 +296,9 @@ public class McdPcm implements BufferUtil.StepDevice {
         playSupport.updateRegion(videoMode.getRegion());
     }
 
+    @Deprecated
     public void newFrame() {
-        playSupport.newFrame();
+        playSupport.onNewFrame();
         sampleNum = 0;
     }
 

@@ -3,7 +3,6 @@ package s32x;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.MdBusProvider;
-import omegadrive.sound.PwmProvider;
 import omegadrive.system.Megadrive;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
@@ -42,8 +41,6 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycleResettable {
 
     private static final Logger LOG = LogHelper.getLogger(Md32x.class.getSimpleName());
-
-    private static final boolean ENABLE_FM, ENABLE_PWM;
     public static final boolean SH2_DEBUG_DRC;
 
     //23.01Mhz NTSC
@@ -67,8 +64,6 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         sh2Config = new Sh2Config(prefEn, drcEn, pollEn, ignoreDelays);
 
         SH2_DEBUG_DRC = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.drc.debug", "false"));
-        ENABLE_FM = Boolean.parseBoolean(System.getProperty("helios.32x.fm.enable", "true"));
-        ENABLE_PWM = Boolean.parseBoolean(System.getProperty("helios.32x.pwm.enable", "true"));
         SH2_CYCLES_PER_STEP = Integer.parseInt(System.getProperty("helios.32x.sh2.cycles", "32")); //32
         Sh2Context.burstCycles = SH2_CYCLES_PER_STEP;
 //        System.setProperty("68k.debug", "true");
@@ -77,7 +72,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 //        System.setProperty("helios.z80.debug.mode", "2");
 //        System.setProperty("sh2.master.debug", "true");
 //        System.setProperty("sh2.slave.debug", "true");
-        LOG.info("Enable FM: {}, Enable PWM: {}, Sh2Cycles: {}", ENABLE_FM, ENABLE_PWM, SH2_CYCLES_PER_STEP);
+        LOG.info("Sh2Cycles: {}", SH2_CYCLES_PER_STEP);
         for (int i = 0; i < sh2CycleTable.length; i++) {
             sh2CycleTable[i] = Math.max(1, (int) Math.round(i * SH2_CYCLE_DIV));
         }
@@ -108,9 +103,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         marsVdp.updateDebugView(((MdVdp) vdp).getDebugViewer());
         super.initAfterRomLoad(); //needs to be last
         //TODO super inits the soundProvider
-        launchCtx.pwm.setPwmProvider(ENABLE_PWM ? sound.getPwm() : PwmProvider.NO_SOUND);
-        sound.setEnabled(sound.getFm(), ENABLE_FM);
-//        sound.setEnabled(sound.getPwm(), !Pwm.PWM_USE_BLIP);
+        launchCtx.pwm.setPwmProvider(sound.getPwm());
     }
 
     public static SystemProvider createNewInstance32x(DisplayWindow emuFrame) {
@@ -197,6 +190,11 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
             assert (launchCtx.s32XMMREG.aden & 1) > 0 ? nextSSh2Cycle - counter > 0 : true;
             nextSSh2Cycle = Math.max(launchCtx.s32XMMREG.aden & 1, nextSSh2Cycle - counter);
         }
+    }
+
+    @Override
+    public void newFrame() {
+        super.newFrame();
         launchCtx.pwm.newFrame();
         launchCtx.mDevCtx.sh2MMREG.newFrame();
         launchCtx.sDevCtx.sh2MMREG.newFrame();

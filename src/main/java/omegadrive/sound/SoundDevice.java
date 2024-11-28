@@ -1,16 +1,18 @@
 package omegadrive.sound;
 
 import omegadrive.Device;
+import omegadrive.util.RegionDetector.Region;
+import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
 
 /**
  * Federico Berti
  * <p>
  * Copyright 2022
  */
-public interface SoundDevice extends Device {
+public interface SoundDevice extends Device, Device.Tickable, BaseVdpAdapterEventSupport.VdpEventListener {
 
     enum SoundDeviceType {
-        NONE(0), FM(1), PSG(2), PWM(4), PCM(8);
+        NONE(0), FM(1), PSG(2), PWM(4), PCM(8), CDDA(16);
 
         private final int bit;
 
@@ -23,8 +25,6 @@ public interface SoundDevice extends Device {
         }
     }
 
-    SoundDevice NO_SOUND = () -> SoundDeviceType.NONE;
-
     class SampleBufferContext {
         public byte[] lineBuffer;
         //16 bit stereo @ 44100 hz = 44100*4 bytes
@@ -33,7 +33,7 @@ public interface SoundDevice extends Device {
 
     SoundDeviceType getType();
 
-    default SampleBufferContext getFrameData() {
-        return null;
-    }
+    SampleBufferContext getFrameData();
+
+    void updateRate(Region region, int clockRate);
 }

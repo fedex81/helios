@@ -188,12 +188,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
         }
     }
 
-    @Override
-    public void newFrame() {
-        super.newFrame();
-        sound.onNewFrame();
-    }
-
     private void handleInterrupt(){
         bus.handleInterrupts(vdpInterruptType);
     }

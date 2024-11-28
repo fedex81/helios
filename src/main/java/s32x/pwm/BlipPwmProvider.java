@@ -50,7 +50,7 @@ public class BlipPwmProvider extends BlipBaseSound.BlipBaseSoundImpl implements 
             LOG.info("PWM cycle: {}", cycle);
             this.cycle = cycle;
             if (cycle != 0) {
-                blipProvider.updateRegion(region, (int) (sh2ClockMhz / cycle));
+                blipProvider.updateRate(region, (int) (sh2ClockMhz / cycle));
                 scale = (Short.MAX_VALUE << 1) / (double) cycle;
             }
         }

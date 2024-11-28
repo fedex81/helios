@@ -23,6 +23,10 @@ import java.nio.ByteBuffer;
 
 public interface Device {
 
+    interface Tickable {
+        void tick();
+    }
+
     default void init() {
         //DO NOTHING
     }

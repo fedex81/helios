@@ -45,13 +45,13 @@ import static omegadrive.util.Util.GEN_NTSC_MCLOCK_MHZ;
 import static omegadrive.util.Util.GEN_PAL_MCLOCK_MHZ;
 
 /**
- * Megadrive main class
+ * Mega Cd main class
  *
  * @author Federico Berti
  */
-public class MegaCd2 extends Megadrive {
+public class MegaCd extends Megadrive {
 
-    private final static Logger LOG = LogHelper.getLogger(MegaCd2.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(MegaCd.class.getSimpleName());
 
     public final static boolean verbose = false;
     public final static double MCD_SUB_68K_CLOCK_MHZ = 12_500_000;
@@ -78,13 +78,13 @@ public class MegaCd2 extends Megadrive {
     protected McdDeviceHelper.McdLaunchContext mcdLaunchContext;
     protected double nextSub68kCycle = M68K_DIVIDER;
 
-    protected MegaCd2(DisplayWindow emuFrame) {
+    protected MegaCd(DisplayWindow emuFrame) {
         super(emuFrame);
         systemType = SystemLoader.SystemType.MEGACD;
     }
 
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
-        return new MegaCd2(emuFrame);
+        return new MegaCd(emuFrame);
     }
 
     @Override
@@ -164,10 +164,10 @@ public class MegaCd2 extends Megadrive {
 
     @Override
     public void newFrame() {
+        super.newFrame();
         mcdLaunchContext.pcm.newFrame();
         mcdLaunchContext.cdd.newFrame();
         displayContext.megaCdLedState = Optional.of(mcdLaunchContext.subBus.getLedState());
-        super.newFrame();
     }
 
     protected UpdatableViewer createMemView() {

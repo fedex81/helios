@@ -20,22 +20,9 @@
 package omegadrive.sound.psg;
 
 import omegadrive.sound.SoundDevice;
-import omegadrive.sound.psg.msx.BlipAy38910Psg;
-import omegadrive.sound.psg.white.BlipSN76489Psg;
 import omegadrive.util.RegionDetector;
 
-import javax.sound.sampled.AudioFormat;
-
 public interface PsgProvider extends SoundDevice {
-
-    static PsgProvider createSnInstance(RegionDetector.Region region, AudioFormat audioFormat) {
-        return BlipSN76489Psg.createInstance(region, audioFormat);
-    }
-
-    static PsgProvider createAyInstance(RegionDetector.Region region, int sampleRate) {
-        return BlipAy38910Psg.createInstance(region, sampleRate);
-    }
-
     //SN style PSG
     void write(int data);
 
@@ -54,15 +41,22 @@ public interface PsgProvider extends SoundDevice {
         return SoundDeviceType.PSG;
     }
 
-    PsgProvider NO_SOUND = data -> {
+    PsgProvider NO_SOUND = new PsgProvider() {
+        @Override
+        public void tick() {
+        }
+
+        @Override
+        public void write(int data) {
+        }
+
+        @Override
+        public SampleBufferContext getFrameData() {
+            return null;
+        }
+
+        @Override
+        public void updateRate(RegionDetector.Region region, int clockRate) {
+        }
     };
-
-    default void onNewFrame() {
-    }
-
-    default void tick() {
-    }
-
-    default void updateRate(RegionDetector.Region region, int clockRate) {
-    }
 }

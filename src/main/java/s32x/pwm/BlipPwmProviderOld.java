@@ -24,13 +24,28 @@ import static s32x.pwm.PwmUtil.*;
  * <p>
  */
 @Deprecated
-public class BlipPwmProviderold implements PwmProvider {
+public class BlipPwmProviderOld implements PwmProvider {
 
-    private static final Logger LOG = LogHelper.getLogger(BlipPwmProviderold.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(BlipPwmProviderOld.class.getSimpleName());
 
     private static final int BUF_SIZE_MS = 50;
 
     private final AtomicReference<BlipBufferContext> ref = new AtomicReference<>();
+
+    @Override
+    public SampleBufferContext getFrameData() {
+        return null;
+    }
+
+    @Override
+    public void updateRate(RegionDetector.Region region, int clockRate) {
+        throw new RuntimeException("illegal");
+    }
+
+    @Override
+    public void tick() {
+        throw new RuntimeException("illegal");
+    }
 
     static class BlipBufferContext {
         BlipBufferIntf blipBuffer;
@@ -64,7 +79,7 @@ public class BlipPwmProviderold implements PwmProvider {
     private final ExecutorService exec =
             Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, "pwm"));
 
-    public BlipPwmProviderold(RegionDetector.Region region) {
+    public BlipPwmProviderOld(RegionDetector.Region region) {
         ref.set(new BlipBufferContext());
         frameIntervalMs = region.getFrameIntervalMs();
         dataLine = SoundUtil.createDataLine(pwmAudioFormat);
@@ -131,7 +146,7 @@ public class BlipPwmProviderold implements PwmProvider {
     //TODO if framerate slows down we get periods where the wave goes back to zero -> poor sound quality
     //TODO S32xPwmProvider fills the gaps and it sounds better
     @Override
-    public void newFrame() {
+    public void onNewFrame() {
         BlipBufferContext context = ref.get();
         BlipBufferIntf blip = context.blipBuffer;
         blip.endFrame(context.inputClocksForInterval);

@@ -31,6 +31,7 @@ import org.jaudiolibs.audioservers.ext.Connections;
 import org.jaudiolibs.audioservers.javasound.JSTimingMode;
 import org.slf4j.Logger;
 
+import javax.sound.sampled.AudioFormat;
 import java.nio.FloatBuffer;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -52,12 +53,19 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     volatile int fmSizeMono;
     private float[] buffer;
 
+    protected int fmSize, psgSize;
+
     //stats
     private Telemetry telemetry;
     private volatile int samplesProducedCount, samplesConsumedCount, audioThreadLoops, audioThreadEmptyLoops;
 
+    static int getFmBufferIntSize(AudioFormat audioFormat) {
+        return SoundUtil.getStereoSamplesBufferSize(audioFormat);
+    }
+
     @Override
     public void init() {
+        fmSize = getFmBufferIntSize(audioFormat);
         fm_buf_ints = new int[fmSize];
         mix_buf_bytes16Stereo = new byte[fm_buf_ints.length << 1];
         psg_buf_bytes = new byte[psgSize];

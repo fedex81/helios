@@ -19,6 +19,8 @@
 
 package omegadrive.sound.javasound;
 
+import mcd.cdd.CddImpl;
+import mcd.pcm.McdPcm;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.sound.PcmProvider;
@@ -59,10 +61,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
     protected volatile PsgProvider psg;
     protected volatile FmProvider fm;
     protected volatile PwmProvider pwm;
-    protected volatile PcmProvider pcm;
+    protected volatile SoundDevice pcm, cdda;
     protected SoundPersister soundPersister;
-    protected int fmSize, psgSize;
-
     protected SourceDataLine dataLine;
     protected boolean soundEnabled = true;
     private SystemLoader.SystemType type;
@@ -87,11 +87,17 @@ public abstract class AbstractSoundManager implements SoundProvider {
         psg = (PsgProvider) soundDeviceMap.get(SoundDeviceType.PSG);
         fm = (FmProvider) soundDeviceMap.get(SoundDeviceType.FM);
         pwm = (PwmProvider) soundDeviceMap.get(SoundDeviceType.PWM);
-        pcm = (PcmProvider) soundDeviceMap.get(SoundDeviceType.PCM);
+        pcm = soundDeviceMap.get(SoundDeviceType.PCM);
+        cdda = soundDeviceMap.get(SoundDeviceType.CDDA);
+        //TODO
+        if (McdPcm.pcm != null) {
+            pcm = McdPcm.pcm.playSupport;
+        }
+        if (CddImpl.bsp != null) {
+            cdda = CddImpl.bsp;
+        }
         updateSoundDeviceSetup();
         soundPersister = new FileSoundPersister();
-        fmSize = SoundProvider.getFmBufferIntSize(audioFormat);
-        psgSize = SoundProvider.getPsgBufferByteSize(audioFormat);
         init();
     }
 
@@ -101,17 +107,16 @@ public abstract class AbstractSoundManager implements SoundProvider {
         soundDeviceSetup |= (psg != PsgProvider.NO_SOUND) ? SoundDeviceType.PSG.getBit() : 0;
         soundDeviceSetup |= (pwm != PwmProvider.NO_SOUND) ? SoundDeviceType.PWM.getBit() : 0;
         soundDeviceSetup |= (pcm != PcmProvider.NO_SOUND) ? SoundDeviceType.PCM.getBit() : 0;
+        soundDeviceSetup |= (cdda != PcmProvider.NO_SOUND) ? SoundDeviceType.CDDA.getBit() : 0;
     }
 
     @Override
     public void init() {
         assert initedOnce.compareAndSet(false, true);
         assert dataLine == null && executorService == null;
-
         dataLine = SoundUtil.createDataLine(audioFormat);
         executorService = Executors.newSingleThreadExecutor
                 (new PriorityThreadFactory(Thread.MAX_PRIORITY, AbstractSoundManager.class.getSimpleName()));
-        LOG.info("Output audioFormat: {}, bufferSize: {}, region: {}", audioFormat, fmSize, region);
     }
 
     @Override
@@ -130,7 +135,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     }
 
     @Override
-    public PcmProvider getPcm() {
+    public SoundDevice getPcm() {
         return pcm;
     }
 
@@ -174,7 +179,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
         LOG.info("Set sound enabled: {}", enabled);
     }
 
-    //SMS only
     @Override
     public void setEnabled(Device device, boolean enabled) {
         if (fm == device) {
@@ -201,7 +205,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         } else if (pcm == device) {
             boolean isEnabled = pcm != PcmProvider.NO_SOUND;
             if (isEnabled != enabled) {
-                this.pcm = (PcmProvider) (enabled ? soundDeviceMap.get(SoundDeviceType.PCM) : PcmProvider.NO_SOUND);
+                this.pcm = (enabled ? soundDeviceMap.get(SoundDeviceType.PCM) : PcmProvider.NO_SOUND);
                 updateSoundDeviceSetup();
                 LOG.info("PCM enabled: {}", enabled);
             }

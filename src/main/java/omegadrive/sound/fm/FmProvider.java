@@ -20,13 +20,11 @@
 package omegadrive.sound.fm;
 
 import omegadrive.sound.SoundDevice;
-import omegadrive.vdp.model.BaseVdpProvider;
+import omegadrive.util.RegionDetector;
 
-public interface FmProvider extends SoundDevice, BaseVdpProvider.VdpEventListener {
+public interface FmProvider extends SoundDevice {
 
     int readRegister(int type, int regNumber);
-
-    void tick();
 
     default void setMicrosPerTick(double microsPerTick) {
         throw new RuntimeException("Invalid");
@@ -44,6 +42,10 @@ public interface FmProvider extends SoundDevice, BaseVdpProvider.VdpEventListene
         return SoundDeviceType.FM;
     }
 
+    default void updateRate(RegionDetector.Region region, int clockRate) {
+        throw new RuntimeException("Invalid");
+    }
+
     FmProvider NO_SOUND = new FmProvider() {
 
         @Override
@@ -53,12 +55,10 @@ public interface FmProvider extends SoundDevice, BaseVdpProvider.VdpEventListene
 
         @Override
         public void write(int addr, int data) {
-
         }
 
         @Override
         public void setMicrosPerTick(double microsPerTick) {
-
         }
 
         @Override
@@ -68,6 +68,11 @@ public interface FmProvider extends SoundDevice, BaseVdpProvider.VdpEventListene
 
         @Override
         public void tick() {
+        }
+
+        @Override
+        public SampleBufferContext getFrameData() {
+            return null;
         }
     };
 }

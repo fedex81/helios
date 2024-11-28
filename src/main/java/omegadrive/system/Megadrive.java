@@ -193,17 +193,12 @@ public class Megadrive extends BaseSystem<MdBusProvider> {
     protected void updateVideoMode(boolean force) {
         if (force || displayContext.videoMode != vdp.getVideoMode()) {
             displayContext.videoMode = vdp.getVideoMode();
-            double microsPerTick = getMicrosPerTick();
-            sound.getFm().setMicrosPerTick(microsPerTick);
             targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
-            updatePsgRate(displayContext.videoMode.getRegion());
-            LOG.info("Video mode changed: {}, microsPerTick: {}", displayContext.videoMode, microsPerTick);
+            updateSoundRates(displayContext.videoMode.getRegion(), getMicrosPerTick(),
+                    displayContext.videoMode.getRegion() == EUROPE ? PAL_PSG_SAMPLES_PER_FRAME : NTSC_PSG_SAMPLES_PER_FRAME);
+            LOG.info("Video mode changed: {}, microsPerTick: {}", displayContext.videoMode, getMicrosPerTick());
 
         }
-    }
-
-    private void updatePsgRate(RegionDetector.Region region) {
-        sound.getPsg().updateRate(region, region == EUROPE ? PAL_PSG_SAMPLES_PER_FRAME : NTSC_PSG_SAMPLES_PER_FRAME);
     }
 
     protected double getMicrosPerTick() {
@@ -222,10 +217,9 @@ public class Megadrive extends BaseSystem<MdBusProvider> {
 
     @Override
     public void newFrame() {
+        super.newFrame();
         checkSvp();
         memView.update();
-        sound.onNewFrame();
-        super.newFrame();
     }
 
     private void checkSvp() {

@@ -333,7 +333,7 @@ public class Pwm implements StepDevice {
         pwmSamplesPerFrame = 0;
         stepsPerFrame = 0;
         dreqPerFrame = 0;
-        playSupport.newFrame();
+        playSupport.onNewFrame();
     }
 
     @Override

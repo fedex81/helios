@@ -1,5 +1,6 @@
 package omegadrive.sound;
 
+import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 
 /**
@@ -20,10 +21,22 @@ public interface PwmProvider extends SoundDevice {
         return SoundDeviceType.PWM;
     }
 
-    default void newFrame() {
-    }
-
     PwmProvider NO_SOUND = new PwmProvider() {
+        @Override
+        public void tick() {
+
+        }
+
+        @Override
+        public SampleBufferContext getFrameData() {
+            return null;
+        }
+
+        @Override
+        public void updateRate(RegionDetector.Region region, int clockRate) {
+
+        }
+
         @Override
         public void updatePwmCycle(int cycle) {
         }

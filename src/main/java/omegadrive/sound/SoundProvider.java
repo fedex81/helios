@@ -24,12 +24,9 @@ import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
-import omegadrive.util.SoundUtil;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
-
-import javax.sound.sampled.AudioFormat;
 
 public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener {
     Logger LOG = LogHelper.getLogger(SoundProvider.class.getSimpleName());
@@ -57,15 +54,7 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
 
     PwmProvider getPwm();
 
-    PcmProvider getPcm();
-
-    static int getPsgBufferByteSize(AudioFormat audioFormat) {
-        return getFmBufferIntSize(audioFormat) >> 1;
-    }
-
-    static int getFmBufferIntSize(AudioFormat audioFormat) {
-        return SoundUtil.getStereoSamplesBufferSize(audioFormat);
-    }
+    SoundDevice getPcm();
 
     static double getPsgSoundClock(RegionDetector.Region r) {
         return (RegionDetector.Region.EUROPE != r ? NTSC_PSG_CLOCK : PAL_PSG_CLOCK);

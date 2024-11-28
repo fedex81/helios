@@ -233,6 +233,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         }
     }
 
+    protected void updateSoundRates(RegionDetector.Region region, double microsPerTick, int psgSamplesPerFrame) {
+        sound.getPsg().updateRate(region, psgSamplesPerFrame);
+        sound.getFm().setMicrosPerTick(microsPerTick);
+    }
+
     protected void handleCloseRom() {
         handleRomInternal();
     }
@@ -336,6 +341,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         futureDoneFlag = runningRomFuture.isDone();
         handleSoftReset();
         inputProvider.handleEvents();
+        sound.onNewFrame();
 //        LOG.info("Frame: {}", getFrameCounter());
 //        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
     }

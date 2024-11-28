@@ -2,7 +2,6 @@ package omegadrive.sound;
 
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.RegionDetector.Region;
 import org.slf4j.Logger;
 import s32x.util.blipbuffer.BlipBufferIntf;
@@ -27,16 +26,23 @@ public interface BlipSoundProvider extends SoundDevice {
 
     void playSample(int left, int right);
 
-    void updateRegion(RegionDetector.Region region, int clockRate);
-
     @Deprecated
-    default void updateRegion(Region region) {
-        //Do Nothing
-    }
+    void updateRegion(Region region);
 
     SampleBufferContext getDataBuffer();
 
-    void newFrame();
+    default SampleBufferContext getFrameData() {
+        return getDataBuffer();
+    }
+
+    @Override
+    default SoundDeviceType getType() {
+        return SoundDeviceType.NONE;
+    }
+
+    default void tick() {
+        throw new RuntimeException("illegal");
+    }
 
     class BlipBufferContext extends SampleBufferContext {
         BlipBufferIntf blipBuffer;
@@ -81,7 +87,7 @@ public interface BlipSoundProvider extends SoundDevice {
             bbc.lineBuffer = new byte[0];
             bbc.blipBuffer = blip;
             ref.set(bbc);
-            updateRegion(region, (int) clockRate);
+            updateRate(region, (int) clockRate);
             logInfo(bbc);
         }
 
@@ -102,13 +108,18 @@ public interface BlipSoundProvider extends SoundDevice {
             deltaTime++;
         }
 
+        @Override
+        public void updateRegion(Region region) {
+            updateRate(region, (int) clockRate);
+        }
+
         private int prevSampleAvail = 0;
 
         @Override
-        public void newFrame() {
+        public void onNewFrame() {
             BlipBufferContext context = ref.get();
             BlipBufferIntf blip = context.blipBuffer;
-            if (blip == null) {
+            if (blip == null || deltaTime == 0) {
                 return;
             }
             assert context.inputClocksForInterval.get() > 0;
@@ -132,7 +143,7 @@ public interface BlipSoundProvider extends SoundDevice {
         }
 
         @Override
-        public void updateRegion(Region region, int clockRate) {
+        public void updateRate(Region region, int clockRate) {
             BlipBufferContext ctx = ref.get();
             if (region != this.region || ctx.blipBuffer.clockRate() != clockRate) {
                 this.region = region;
@@ -152,16 +163,12 @@ public interface BlipSoundProvider extends SoundDevice {
 
         @Override
         public void close() {
+            LOG.warn("TODO close");
         }
 
         @Override
         public void reset() {
             LOG.warn("TODO reset");
-        }
-
-        @Override
-        public SoundDeviceType getType() {
-            return null;
         }
     }
 }

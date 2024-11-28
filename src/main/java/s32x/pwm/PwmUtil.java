@@ -79,11 +79,6 @@ public class PwmUtil {
         }
     }
 
-    public static void setSigned16LE(short value, byte[] data, int startIndex) {
-        data[startIndex] = (byte) value;
-        data[startIndex + 1] = (byte) (value >> 8);
-    }
-
     /**
      * DC blocker + low pass filter
      */
