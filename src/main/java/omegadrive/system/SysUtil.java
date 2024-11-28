@@ -26,8 +26,6 @@ import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
 import s32x.Md32x;
 import s32x.pwm.BlipPwmProvider;
-import s32x.pwm.Pwm;
-import s32x.pwm.S32xPwmProvider;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -169,7 +167,7 @@ public class SysUtil {
 
     public static SoundDevice getPwmProvider(SystemType systemType, Region region) {
         return switch (systemType) {
-            case S32X -> Pwm.PWM_USE_BLIP ? new BlipPwmProvider(region) : new S32xPwmProvider(region);
+            case S32X -> new BlipPwmProvider(region, AbstractSoundManager.audioFormat);
             default -> PwmProvider.NO_SOUND;
         };
     }

@@ -53,8 +53,6 @@ public class Pwm implements StepDevice {
         public PwmChannel channel;
     }
 
-    public static boolean PWM_USE_BLIP = false;
-
     private static final int PWM_DMA_CHANNEL = 1;
     private static final int chLeft = LEFT.ordinal(), chRight = RIGHT.ordinal();
     private static final int PWM_FIFO_SIZE = 3;
@@ -355,20 +353,12 @@ public class Pwm implements StepDevice {
             ctx.ls = Math.min(ctx.cycle - SAMPLE_LIMIT_DELTA, readFifo(fifoMapLeft.fifo, fifoMapLeft.channel) + SAMPLE_LIMIT_DELTA);
             ctx.rs = Math.min(ctx.cycle - SAMPLE_LIMIT_DELTA, readFifo(fifoMapRight.fifo, fifoMapRight.channel) + SAMPLE_LIMIT_DELTA);
             assert ctx.ls >= SAMPLE_LIMIT_DELTA && ctx.rs >= SAMPLE_LIMIT_DELTA;
-            if (PWM_USE_BLIP) {
-                playSupport.playSample(ctx.ls, ctx.rs);
-            }
+            playSupport.playSample(ctx.ls, ctx.rs);
             if (--ctx.sh2ticksToNextPwmInterrupt == 0) {
                 intControls[MASTER.ordinal()].setIntPending(IntControl.Sh2Interrupt.PWM_06, true);
                 intControls[SLAVE.ordinal()].setIntPending(IntControl.Sh2Interrupt.PWM_06, true);
                 ctx.sh2ticksToNextPwmInterrupt = ctx.interruptInterval;
                 dreq();
-            }
-        }
-        if (!PWM_USE_BLIP) {
-            if (--ctx.sh2TicksToNext22khzSample == 0) {
-                playSupport.playSample(ctx.ls, ctx.rs);
-                ctx.sh2TicksToNext22khzSample = CYCLE_22khz;
             }
         }
     }

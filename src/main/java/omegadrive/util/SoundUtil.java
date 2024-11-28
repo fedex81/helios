@@ -19,6 +19,7 @@
 
 package omegadrive.util;
 
+import omegadrive.sound.SoundDevice.SampleBufferContext;
 import omegadrive.sound.SoundProvider;
 import org.slf4j.Logger;
 
@@ -154,16 +155,17 @@ public class SoundUtil {
         }
     }
 
-    public static void mixTwoSources(byte[] input1, byte[] input2, byte[] output, int inputLen1, int inputLen2) {
+    public static int mixTwoSources(SampleBufferContext src1, SampleBufferContext src2, byte[] output) {
+        return mixTwoSources(src1.lineBuffer, src2.lineBuffer, output, src1.stereoBytesLen, src2.stereoBytesLen);
+    }
+
+    public static int mixTwoSources(byte[] input1, byte[] input2, byte[] output, int inputLen1, int inputLen2) {
+        int maxLen = Math.max(inputLen1, inputLen2);
         if (inputLen1 == 0) {
-            System.arraycopy(input2, 0, output, 0, inputLen2);
+            if (input2 != output) System.arraycopy(input2, 0, output, 0, inputLen2);
         } else if (inputLen2 == 0) {
-            System.arraycopy(input1, 0, output, 0, inputLen1);
+            if (input1 != output) System.arraycopy(input1, 0, output, 0, inputLen1);
         } else {
-            if (inputLen1 != inputLen2) {
-                LOG.error("oops, " + inputLen1 + "," + inputLen2);
-            }
-            //TODO ugly hack
             int len = Math.min(inputLen1, inputLen2);
             for (int i = 0; i < len; i += 4) {
                 output[i] = (byte) ((input1[i] + input2[i]) >> 1);
@@ -171,7 +173,18 @@ public class SoundUtil {
                 output[i + 2] = (byte) ((input1[i + 2] + input2[i + 2]) >> 1);
                 output[i + 3] = (byte) ((input1[i + 3] + input2[i + 3]) >> 1);
             }
+            if (inputLen1 != inputLen2) {
+                LogHelper.logWarnOnceForce(LOG, "len mismatch: {}, {}", inputLen1, inputLen2);
+                assert (Math.abs(inputLen1 - inputLen2) % 4) == 0;
+                byte[] shorter = maxLen == inputLen1 ? input2 : input1;
+                byte[] longer = maxLen == inputLen1 ? input1 : input2;
+                int shorterLast = shorter[shorter.length - 1];
+                for (int i = len; i < maxLen; i++) {
+                    output[i] = (byte) ((longer[i] + shorterLast) >> 1);
+                }
+            }
         }
+        return maxLen;
     }
 
     public static void intStereo16ToByteStereo16Mix(int[] input, byte[] output, int inputLen) {

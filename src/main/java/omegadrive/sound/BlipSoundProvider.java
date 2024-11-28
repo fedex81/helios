@@ -110,7 +110,7 @@ public class BlipSoundProvider implements McdPcmProvider {
             LOG.info("{} Audio buffer size: {} -> {} bytes", instanceId, context.lineBuffer.length, availMonoSamples << 2);
             context.lineBuffer = new byte[availMonoSamples << 2];
         }
-        context.stereoBytesLen = blip.readSamples16bitStereo(context.lineBuffer, 0, availMonoSamples) << 2;
+        context.stereoBytesLen = blip.readSamples16bitStereoLen(context.lineBuffer, 0, availMonoSamples);
         prevSampleAvail = availMonoSamples;
     }
 

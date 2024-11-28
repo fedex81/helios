@@ -21,6 +21,7 @@ import static omegadrive.util.Util.th;
  * Copyright 2022
  * <p>
  */
+@Deprecated
 public class BlipSoundProviderDataLine implements McdPcmProvider {
 
     private static final Logger LOG = LogHelper.getLogger(BlipSoundProviderDataLine.class.getSimpleName());

@@ -20,6 +20,7 @@ import static s32x.pwm.PwmUtil.PwmStats.NO_STATS;
  * TODO: anything not using 22khz sounds bad (ie. Bad Apple 32x, cycle 719*60 -> 43khz)
  * TODO: other problematic stuff: Mars Test #2 (should be mute?), OutRom.bin
  */
+@Deprecated
 public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider {
 
     private static final Logger LOG = LogHelper.getLogger(S32xPwmProvider.class.getSimpleName());

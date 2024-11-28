@@ -19,7 +19,7 @@
 
 package omegadrive.sound.javasound;
 
-import omegadrive.sound.SoundDevice.SampleBufferContext;
+import omegadrive.sound.SoundDevice;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
@@ -27,11 +27,12 @@ import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
 import org.slf4j.Logger;
 
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class JavaSoundManager2 extends AbstractSoundManager {
+public class JavaSoundManager extends AbstractSoundManager {
 
-    private static final Logger LOG = LogHelper.getLogger(JavaSoundManager2.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(JavaSoundManager.class.getSimpleName());
     private byte[] mix_buf_bytes16Stereo;
     private final AtomicInteger sync = new AtomicInteger();
 
@@ -51,6 +52,7 @@ public class JavaSoundManager2 extends AbstractSoundManager {
         doStats();
         psg.onNewFrame();
         fm.onNewFrame();
+        pwm.newFrame();
         int len = mixAudioProviders();
         playSound(len);
     }
@@ -60,46 +62,44 @@ public class JavaSoundManager2 extends AbstractSoundManager {
         if (!soundEnabled) {
             return 0;
         }
-        int len = 0;
-        switch (soundDeviceSetup) {
-            case 1: //fm only
-                System.arraycopy(fm.getFrameData().lineBuffer, 0, mix_buf_bytes16Stereo, 0, fm.getFrameData().stereoBytesLen);
-                len = fm.getFrameData().stereoBytesLen;
-                break;
-            case 2: //psg only
-                System.arraycopy(psg.getFrameData().lineBuffer, 0, mix_buf_bytes16Stereo, 0, psg.getFrameData().stereoBytesLen);
-                len = psg.getFrameData().stereoBytesLen;
-                break;
-            case 3: //fm + psg
-                SoundUtil.mixTwoSources(psg.getFrameData().lineBuffer, fm.getFrameData().lineBuffer, mix_buf_bytes16Stereo,
-                        psg.getFrameData().stereoBytesLen, fm.getFrameData().stereoBytesLen);
-                //TODO ugly hack
-                len = Math.min(psg.getFrameData().stereoBytesLen, fm.getFrameData().stereoBytesLen);
-                break;
-            case 6: //pwm + psg
-//                SoundUtil.intStereo14ToByteStereo16Mix(pwm_buf_ints, mix_buf_bytes16Stereo, psg_buf_bytes, inputLen);
-                throw new RuntimeException("" + soundDeviceSetup);
-//                break;
-            case 7: //fm + psg + pwm
-//                SoundUtil.intStereo14ToByteStereo16PwmMix(mix_buf_bytes16Stereo, fm_buf_ints, pwm_buf_ints, psg_buf_bytes, inputLen);
-//                break;
-                throw new RuntimeException("" + soundDeviceSetup);
-            case 11: //fm + psg + pcm
-//                SoundUtil.intStereo14ToByteStereo16PwmMix(mix_buf_bytes16Stereo, fm_buf_ints, pcm_buf_ints, psg_buf_bytes, inputLen);
-//                break;
-                throw new RuntimeException("" + soundDeviceSetup);
-            default:
+        Arrays.fill(mix_buf_bytes16Stereo, (byte) 0);
+        int len = switch (soundDeviceSetup) {
+            //fm only
+            case 1 -> mix(fm);
+            //psg only
+            case 2 -> mix(psg);
+            //fm + psg
+            case 3 -> mix(psg, fm);
+            //pwm + psg
+            case 6 -> mix(psg, pwm);
+            //fm + psg + pwm
+            case 7 -> mix(psg, fm, pwm);
+            //fm + psg + pcm
+            case 11 -> mix(psg, fm, pcm);
+            default -> {
                 LOG.error("Unable to mix the sound setup: {}", soundDeviceSetup);
-                break;
-        }
+                yield 0;
+            }
+        };
         return len;
     }
 
-    private void playSound(SampleBufferContext context) {
-        if (context.stereoBytesLen > 0) {
-            System.arraycopy(context.lineBuffer, 0, mix_buf_bytes16Stereo, 0, context.stereoBytesLen);
-            playSound(context.stereoBytesLen);
+    private int mix(SoundDevice src) {
+        System.arraycopy(src.getFrameData().lineBuffer, 0, mix_buf_bytes16Stereo, 0, src.getFrameData().stereoBytesLen);
+        return src.getFrameData().stereoBytesLen;
+    }
+
+    private int mix(SoundDevice src1, SoundDevice src2) {
+        return SoundUtil.mixTwoSources(src1.getFrameData(), src2.getFrameData(), mix_buf_bytes16Stereo);
+    }
+
+    private int mix(SoundDevice src1, SoundDevice src2, SoundDevice src3) {
+        int len = mix(src1, src2);
+        if (src3.getFrameData().stereoBytesLen > 0) {
+            len = SoundUtil.mixTwoSources(src3.getFrameData().lineBuffer, mix_buf_bytes16Stereo, mix_buf_bytes16Stereo,
+                    src3.getFrameData().stereoBytesLen, len);
         }
+        return len;
     }
 
     private long lastFrame = -1;

@@ -18,7 +18,6 @@ import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 import s32x.bus.S32xBus;
 import s32x.event.PollSysEventManager;
-import s32x.pwm.Pwm;
 import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Helper.Sh2Config;
@@ -67,7 +66,6 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         boolean ignoreDelays = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.ignore.delays", "false"));
         sh2Config = new Sh2Config(prefEn, drcEn, pollEn, ignoreDelays);
 
-        Pwm.PWM_USE_BLIP = Boolean.parseBoolean(System.getProperty("helios.32x.pwm.use.blip", "false"));
         SH2_DEBUG_DRC = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.drc.debug", "false"));
         ENABLE_FM = Boolean.parseBoolean(System.getProperty("helios.32x.fm.enable", "true"));
         ENABLE_PWM = Boolean.parseBoolean(System.getProperty("helios.32x.pwm.enable", "true"));
@@ -112,7 +110,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         //TODO super inits the soundProvider
         launchCtx.pwm.setPwmProvider(ENABLE_PWM ? sound.getPwm() : PwmProvider.NO_SOUND);
         sound.setEnabled(sound.getFm(), ENABLE_FM);
-        sound.setEnabled(sound.getPwm(), !Pwm.PWM_USE_BLIP);
+//        sound.setEnabled(sound.getPwm(), !Pwm.PWM_USE_BLIP);
     }
 
     public static SystemProvider createNewInstance32x(DisplayWindow emuFrame) {
