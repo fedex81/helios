@@ -40,10 +40,6 @@ public interface FmProvider extends SoundDevice, BaseVdpProvider.VdpEventListene
         throw new RuntimeException("Invalid");
     }
 
-    default void output(int[] buf_lr) {
-        updateStereo16(buf_lr, 0, buf_lr.length / 2);
-    }
-
     default SoundDeviceType getType() {
         return SoundDeviceType.FM;
     }

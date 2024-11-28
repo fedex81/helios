@@ -35,8 +35,6 @@ import java.nio.FloatBuffer;
 import java.util.List;
 import java.util.ServiceLoader;
 
-import static omegadrive.sound.SoundDevice.SoundDeviceType.FM;
-
 public class JalSoundManager extends AbstractSoundManager implements AudioClient {
 
     private static final Logger LOG = LogHelper.getLogger(JalSoundManager.class.getSimpleName());
@@ -127,22 +125,22 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
         };
     }
 
-    private int playOnceStereo(int fmBufferLenMono) {
-        int fmMonoActual = fm.updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;
-        //if FM is present load a matching number of psg samples
-        fmBufferLenMono = (soundDeviceSetup & FM.getBit()) > 0 ? fmMonoActual : fmBufferLenMono;
-        psg.updateMono8(psg_buf_bytes, 0, fmBufferLenMono);
-        int fmBufferLenStereo = fmBufferLenMono << 1;
-        samplesProducedCount += fmBufferLenStereo;
-
-        try {
-            //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
-            SoundUtil.intStereo14ToByteStereo16MixFloat(fm_buf_ints, buffer, psg_buf_bytes, fmBufferLenStereo);
-        } catch (Exception e) {
-            LOG.error("Unexpected sound error", e);
-        }
-        return fmMonoActual;
-    }
+//    private int playOnceStereo(int fmBufferLenMono) {
+//        int fmMonoActual = fm.updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;
+//        //if FM is present load a matching number of psg samples
+//        fmBufferLenMono = (soundDeviceSetup & FM.getBit()) > 0 ? fmMonoActual : fmBufferLenMono;
+//        psg.updateMono8(psg_buf_bytes, 0, fmBufferLenMono);
+//        int fmBufferLenStereo = fmBufferLenMono << 1;
+//        samplesProducedCount += fmBufferLenStereo;
+//
+//        try {
+//            //FM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
+//            SoundUtil.intStereo14ToByteStereo16MixFloat(fm_buf_ints, buffer, psg_buf_bytes, fmBufferLenStereo);
+//        } catch (Exception e) {
+//            LOG.error("Unexpected sound error", e);
+//        }
+//        return fmMonoActual;
+//    }
 
     @Override
     public void onNewFrame() {
@@ -173,7 +171,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
         if (buffer == null || buffer.length != nframes << 1) {
             buffer = new float[nframes << 1]; //stereo
         }
-        int resFrames = playOnceStereo(nframes);
+        int resFrames = 0; //playOnceStereo(nframes);
         if (resFrames != nframes) {
 //            LOG.info("xrun! req {}, actual {}", nframes, resFrames);
         }

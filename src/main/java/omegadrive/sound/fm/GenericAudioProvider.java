@@ -42,7 +42,6 @@ public class GenericAudioProvider implements FmProvider {
         LOG.info("Input sound source format: {}, audioScaleBits: {}", inputAudioFormat, audioScaleBits);
     }
 
-    @Override
     public int updateStereo16(int[] buf_lr, int offset, int count) {
         if (!running) {
             return 0;

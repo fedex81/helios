@@ -5,7 +5,7 @@ import mcd.cdc.Cdc;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.BlipSoundProviderDataLine;
-import mcd.pcm.McdPcmProvider;
+import omegadrive.sound.BlipSoundProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.*;
@@ -18,7 +18,6 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
-import static omegadrive.sound.SoundProvider.ENABLE_SOUND;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.th;
 
@@ -41,7 +40,7 @@ class CddImpl implements Cdd {
     private final MegaCdMemoryContext memoryContext;
     private final McdSubInterruptHandler interruptHandler;
     private final Cdc cdc;
-    private final McdPcmProvider playSupport;
+    private final BlipSoundProvider playSupport;
     private ExtendedCueSheet extCueSheet;
 
     private final CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();
@@ -52,8 +51,8 @@ class CddImpl implements Cdd {
         memoryContext = mc;
         interruptHandler = ih;
         cdc = c;
-        playSupport = ENABLE_SOUND ?
-                new BlipSoundProviderDataLine("CDDA", RegionDetector.Region.USA, PwmUtil.pwmAudioFormat, SoundProvider.SAMPLE_RATE_HZ) : BlipSoundProviderDataLine.NO_SOUND;
+        playSupport =
+                new BlipSoundProviderDataLine("CDDA", RegionDetector.Region.USA, PwmUtil.pwmAudioFormat, SoundProvider.SAMPLE_RATE_HZ);
         setDataOrMusicBit(CddControl_DM_bit.DATA_1);
         setIoStatus(NoDisc);
         statusChecksum();

@@ -20,6 +20,7 @@
 package omegadrive.sound;
 
 
+import omegadrive.sound.BlipSoundProvider.BlipSoundProviderImpl;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector.Region;
 import org.slf4j.Logger;
@@ -52,7 +53,7 @@ public interface BlipBaseSound extends SoundDevice {
             this.region = region;
             this.name = name;
             this.channel = channel;
-            blipProvider = new BlipSoundProvider(name, region, audioFormat, blipClockRate);
+            blipProvider = new BlipSoundProviderImpl(name, region, audioFormat, blipClockRate);
         }
 
         @Override
