@@ -28,6 +28,35 @@ import static s32x.sh2.drc.Sh2DrcBlockOptimizer.PollType.*;
  * <p>
  * Copyright 2022
  */
+
+/**
+ * SRB2 32XN
+ * 2024-12-24 23:36:34.012 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: MASTER Poll ignored at PC 20190e8: 603bf3a NONE
+ * 020190e8	6031	mov.w @R3, R0
+ * 000190ea	6121	mov.w @R2, R1
+ * 000190ec	611d	extu.w R1, R1
+ * 000190ee	c901	and H'01, R0
+ * 000190f0	3010	cmp/eq R1, R0
+ * 000190f2	8bf9	bf H'000190e8
+ * <p>
+ * 2024-12-24 23:36:34.488 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: SLAVE Poll ignored at PC 600654e: 20004038 PWM
+ * 0600654e	6b41	mov.w @R4, R11
+ * 00006550	4b11	cmp/pz R11
+ * 00006552	8bfc	bf H'0000654e
+ * <p>
+ * 2024-12-24 23:36:34.488 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: SLAVE Poll ignored at PC 600654e: 20004038 PWM
+ * 0600654e	6b41	mov.w @R4, R11
+ * 00006550	4b11	cmp/pz R11
+ * 00006552	8bfc	bf H'0000654e
+ * <p>
+ * 2024-12-24 23:39:33.693 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: MASTER Poll ignored at PC 2016e40: 2603bf2c NONE
+ * 02016e40	6642	mov.l @R4, R6
+ * 00016e42	6163	mov R6, R1
+ * 00016e44	3178	sub R7, R1
+ * 00016e46	31a3	cmp/ge R10, R1
+ * 00016e48	8ffa	bf/s H'00016e40
+ * 00016e4a	e363	mov H'63, R3
+ */
 public class Sh2DrcBlockOptimizer {
     private final static Logger LOG = LogHelper.getLogger(Sh2DrcBlockOptimizer.class.getSimpleName());
 
