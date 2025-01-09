@@ -11,10 +11,12 @@ helios.prefs
 test_roms/
 docs
 *.col
+*.sms
 **/ym3438/*
 /savestate/
 misc/
 test_output.log
 /.run/
 /perf/
-sms
+res/bios/sms
+res/bios/mcd
