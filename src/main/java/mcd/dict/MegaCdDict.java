@@ -14,7 +14,7 @@ import static mcd.dict.MegaCdDict.McdRegCpuType.*;
 import static mcd.dict.MegaCdDict.McdRegType.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
-import static omegadrive.bus.model.MdBusProvider.MEGA_CD_EXP_START;
+import static omegadrive.bus.model.MdMainBusProvider.MEGA_CD_EXP_START;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.th;
 

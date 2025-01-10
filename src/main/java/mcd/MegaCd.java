@@ -25,53 +25,35 @@ import mcd.cdd.ExtendedCueSheet;
 import mcd.util.McdMemView;
 import omegadrive.SystemLoader;
 import omegadrive.bus.md.SvpMapper;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
-import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.ssp16.Ssp16;
-import omegadrive.cpu.z80.Z80CoreWrapper;
-import omegadrive.cpu.z80.Z80Provider;
-import omegadrive.input.InputProvider;
-import omegadrive.joypad.MdJoypad;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.savestate.BaseStateHandler;
-import omegadrive.system.BaseSystem;
+import omegadrive.system.Megadrive;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.*;
-import omegadrive.vdp.model.BaseVdpProvider;
-import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.util.Optional;
 
-import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.GEN_NTSC_MCLOCK_MHZ;
 import static omegadrive.util.Util.GEN_PAL_MCLOCK_MHZ;
 
 /**
- * MegaCd main class
+ * Megadrive main class
  *
  * @author Federico Berti
  */
-@Deprecated
-public class MegaCd extends BaseSystem<MdBusProvider> {
+public class MegaCd extends Megadrive {
 
     private final static Logger LOG = LogHelper.getLogger(MegaCd.class.getSimpleName());
 
     public final static boolean verbose = false;
-    //the emulation runs at MCLOCK_MHZ/MCLK_DIVIDER
-    public final static int MCLK_DIVIDER = 7;
-    protected final static double VDP_RATIO = 4.0 / MCLK_DIVIDER;  //16 -> MCLK/4, 20 -> MCLK/5
-    protected final static int M68K_DIVIDER = 7 / MCLK_DIVIDER;
-    public final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
-    protected final static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
-    protected final static int FM_DIVIDER = 42 / MCLK_DIVIDER;
-
     public final static double MCD_SUB_68K_CLOCK_MHZ = 12_500_000;
 
     //mcd-verificator(NTSC) is very sensitive
@@ -90,58 +72,43 @@ public class MegaCd extends BaseSystem<MdBusProvider> {
         System.setProperty("z80.debug", "false");
     }
 
-    protected Z80Provider z80;
-    protected M68kProvider cpu;
     protected M68kProvider subCpu;
 
     protected McdSubInterruptHandler interruptHandler;
-    protected MdRuntimeData rt;
     protected McdDeviceHelper.McdLaunchContext mcdLaunchContext;
-    protected UpdatableViewer memView;
-    protected double nextVdpCycle = vdpVals[0];
-    protected int next68kCycle = M68K_DIVIDER;
-    protected int nextZ80Cycle = Z80_DIVIDER;
-    protected int nextFMCycle = FM_DIVIDER;
-
     protected double nextSub68kCycle = M68K_DIVIDER;
 
-    @Deprecated
     protected MegaCd(DisplayWindow emuFrame) {
         super(emuFrame);
         systemType = SystemLoader.SystemType.MEGACD;
     }
 
-    @Deprecated
     public static SystemProvider createNewInstance(DisplayWindow emuFrame) {
         return new MegaCd(emuFrame);
     }
 
     @Override
     public void init() {
-        super.init();
-        stateHandler = BaseStateHandler.EMPTY_STATE;
-        joypad = MdJoypad.create(this);
-        inputProvider = InputProvider.createInstance(joypad);
-
-        memory = MemoryProvider.createMdInstance();
         mcdLaunchContext = McdDeviceHelper.setupDevices();
-        bus = mcdLaunchContext.mainBus;
-        vdp = MdVdpProvider.createVdp(bus);
-        cpu = MC68000Wrapper.createInstance(M68K, bus);
-        z80 = Z80CoreWrapper.createInstance(getSystemType(), bus);
+        super.init();
         vdp.addVdpEventListener(mcdLaunchContext.subBus);
         bus.attachDevices(this, memory, joypad, vdp, cpu, z80, sound);
         mcdLaunchContext.subBus.attachDevice(this);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
-        reloadWindowState();
-        createAndAddVdpEventListener();
+    }
+
+    @Override
+    protected MdMainBusProvider createBus() {
+        assert mcdLaunchContext.mainBus != null;
+        bus = mcdLaunchContext.mainBus;
+        return bus;
     }
 
     protected void loop() {
         updateVideoMode(true);
         do {
-            runMain68k();
+            run68k();
             runSub68k();
             runZ80();
             runFM();
@@ -149,34 +116,6 @@ public class MegaCd extends BaseSystem<MdBusProvider> {
             runVdp();
             cycleCounter++;
         } while (!futureDoneFlag);
-    }
-
-    protected final void runVdp() {
-        while (nextVdpCycle <= cycleCounter) {
-            //NOTE counter could be reset to 0 when calling vdp::runSlot
-            int vdpMclk = vdp.runSlot();
-            nextVdpCycle += vdpVals[vdpMclk - 4];
-            assert nextVdpCycle > cycleCounter;
-        }
-    }
-
-    protected final void runMain68k() {
-        while (next68kCycle <= cycleCounter) {
-            boolean isRunning = bus.is68kRunning();
-            boolean canRun = !cpu.isStopped() && isRunning;
-            int cycleDelay = 1;
-            if (canRun) {
-                MdRuntimeData.setAccessTypeExt(M68K);
-                cycleDelay = cpu.runInstruction() + MdRuntimeData.resetCpuDelayExt();
-            }
-            //interrupts are processed after the current instruction
-            if (isRunning) {
-                bus.handleVdpInterrupts68k();
-            }
-            cycleDelay = Math.max(1, cycleDelay);
-            next68kCycle += M68K_DIVIDER * cycleDelay;
-            assert MdRuntimeData.resetCpuDelayExt() == 0;
-        }
     }
 
     double subCnt = 0;
@@ -200,46 +139,17 @@ public class MegaCd extends BaseSystem<MdBusProvider> {
         }
     }
 
-    protected final void runZ80() {
-        while (nextZ80Cycle <= cycleCounter) {
-            int cycleDelay = 0;
-            boolean running = bus.isZ80Running();
-            if (running) {
-                MdRuntimeData.setAccessTypeExt(Z80);
-                cycleDelay = z80.executeInstruction();
-                bus.handleVdpInterruptsZ80();
-                cycleDelay += MdRuntimeData.resetCpuDelayExt();
-            }
-            cycleDelay = Math.max(1, cycleDelay);
-            nextZ80Cycle += Z80_DIVIDER * cycleDelay;
-            assert MdRuntimeData.resetCpuDelayExt() == 0;
-        }
-    }
-
-    protected final void runFM() {
-        while (nextFMCycle <= cycleCounter) {
-            bus.getFm().tick();
-            nextFMCycle += FM_DIVIDER;
-        }
-    }
     @Override
     protected void updateVideoMode(boolean force) {
-        if (force || displayContext.videoMode != vdp.getVideoMode()) {
-            displayContext.videoMode = vdp.getVideoMode();
-            double microsPerTick = getMicrosPerTick();
-            sound.getFm().setMicrosPerTick(microsPerTick);
-            targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
+        VideoMode prev = displayContext.videoMode;
+        super.updateVideoMode(force);
+        if (force || prev != vdp.getVideoMode()) {
             mcd68kRatio = displayContext.videoMode.isPal() ? MCD_68K_RATIO_PAL : MCD_68K_RATIO_NTSC;
             mcdLaunchContext.pcm.updateVideoMode(displayContext.videoMode);
             mcdLaunchContext.cdd.updateVideoMode(displayContext.videoMode);
-            LOG.info("Video mode changed: {}, mcd68kRatio: {}, microsPerTick: {}", displayContext.videoMode, mcd68kRatio, microsPerTick);
             mcdLaunchContext.interruptHandler.setRegion(displayContext.videoMode.getRegion());
+            LOG.info("Video mode changed: {}, mcd68kRatio: {}", displayContext.videoMode, mcd68kRatio);
         }
-    }
-
-    private double getMicrosPerTick() {
-        double mclkhz = displayContext.videoMode.isPal() ? GEN_PAL_MCLOCK_MHZ : GEN_NTSC_MCLOCK_MHZ;
-        return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
     }
 
     @Override
@@ -254,7 +164,6 @@ public class MegaCd extends BaseSystem<MdBusProvider> {
 
     @Override
     public void newFrame() {
-        memView.update();
         mcdLaunchContext.pcm.newFrame();
         mcdLaunchContext.cdd.newFrame();
         displayContext.megaCdLedState = Optional.of(mcdLaunchContext.subBus.getLedState());
@@ -270,15 +179,10 @@ public class MegaCd extends BaseSystem<MdBusProvider> {
      */
     @Override
     protected void resetCycleCounters(int counter) {
-        assert nextZ80Cycle >= counter && next68kCycle >= counter &&
-                nextSub68kCycle >= counter &&
-                nextVdpCycle + 1 >= counter;
+        super.resetCycleCounters(counter);
+        assert nextSub68kCycle >= counter;
         logSlowFrames();
-        nextZ80Cycle = Math.max(1, nextZ80Cycle - counter);
-        next68kCycle = Math.max(1, next68kCycle - counter);
         nextSub68kCycle = Math.max(1, nextSub68kCycle - counter);
-        nextVdpCycle = Math.max(1, nextVdpCycle - counter);
-        nextFMCycle = Math.max(1, nextFMCycle - counter);
     }
 
     @Override
@@ -319,11 +223,7 @@ public class MegaCd extends BaseSystem<MdBusProvider> {
     @Override
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
-        MdRuntimeData.releaseInstance();
-        rt = MdRuntimeData.newInstance(systemType, this);
-        cpu.reset();
         subCpu.reset();
-        z80.reset(); //TODO confirm this is needed
     }
 
     @Override
@@ -336,7 +236,7 @@ public class MegaCd extends BaseSystem<MdBusProvider> {
     @Override
     protected void handleSoftReset() {
         if (softReset) {
-            cpu.softReset();
+            subCpu.softReset();
         }
         super.handleSoftReset();
     }

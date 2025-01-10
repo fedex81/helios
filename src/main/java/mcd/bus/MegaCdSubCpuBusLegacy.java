@@ -7,18 +7,16 @@ import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.McdPcm;
 import omegadrive.Device;
-import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.md.BusArbiter;
+import omegadrive.bus.md.MdBus;
 import omegadrive.bus.model.MdM68kBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
-import omegadrive.joypad.MdJoypad;
-import omegadrive.system.SystemProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent;
-import omegadrive.vdp.model.MdVdpProvider;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
@@ -49,18 +47,19 @@ import static omegadrive.util.Util.*;
  * <p>
  * Copyright 2023
  */
-public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements MegaCdSubCpuBusIntf {
+@Deprecated
+public class MegaCdSubCpuBusLegacy extends MdBus implements MegaCdSubCpuBusIntf {
 
-    private static final Logger LOG = LogHelper.getLogger(MegaCdSubCpuBus.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MegaCdSubCpuBusLegacy.class.getSimpleName());
 
-    private static class TimerContext {
+    private class TimerContext {
         public int counter, rate;
     }
 
     //32552/434 = 75 Hz
     public static final int PCM_CLOCK_DIVIDER_TO_75HZ = 434;
 
-    private static class Counter32p5Khz {
+    private class Counter32p5Khz {
         //mcd_verificator requires such precise value
         public static final int limit = MCD_PCM_DIVIDER;
         public int cycleAccumulator = limit;
@@ -86,7 +85,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     private TimerContext timerContext;
     private Counter32p5Khz counter32p5Khz;
 
-    public MegaCdSubCpuBus(MegaCdMemoryContext ctx) {
+    public MegaCdSubCpuBusLegacy(MegaCdMemoryContext ctx) {
         cpuType = CpuDeviceAccess.SUB_M68K;
         subCpuRam = ByteBuffer.wrap(ctx.prgRam);
         sysGateRegs = ctx.getGateSysRegs(cpuType);
@@ -103,7 +102,8 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     }
 
     @Override
-    public MdM68kBusProvider attachDevice(Device device) {
+    public MdMainBusProvider attachDevice(Device device) {
+        super.attachDevice(device);
         if (device instanceof McdSubInterruptHandler ih) {
             this.interruptHandler = ih;
         }
@@ -122,9 +122,6 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         if (device instanceof MC68000Wrapper c) {
             assert subCpu == null;
             this.subCpu = c;
-        }
-        if (device instanceof SystemProvider s) {
-            this.systemProvider = s;
         }
         return this;
     }
@@ -162,7 +159,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     }
 
 
-    final BusWriteRunnable wramRunnable = new BusWriteRunnable() {
+    final MdM68kBusProvider.BusWriteRunnable wramRunnable = new MdM68kBusProvider.BusWriteRunnable() {
         @Override
         public void run() {
             memCtx.wramHelper.writeWordRam(cpuType, address, data, size);
@@ -233,7 +230,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     private int handleMegaCdExpReadInternal(int address, Size size) {
         RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
         logAccess(regSpec, cpuType, address, 0, size, true);
-        if (regSpec == RegSpecMcd.INVALID) {
+        if (regSpec == MegaCdDict.RegSpecMcd.INVALID) {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return 0;
         }
@@ -262,9 +259,9 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     }
 
     private void handleMegaCdExpWriteInternal(int address, int data, Size size) {
-        RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
+        MegaCdDict.RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
         MegaCdDict.logAccess(regSpec, cpuType, address, data, size, false);
-        if (regSpec == RegSpecMcd.INVALID) {
+        if (regSpec == MegaCdDict.RegSpecMcd.INVALID) {
             LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
             return;
         }
@@ -289,7 +286,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         LogHelper.doLog = false;
     }
 
-    private void handleSysRegWrite(RegSpecMcd regSpec, int address, int data, Size size) {
+    private void handleSysRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         assert size != Size.LONG;
         ByteBuffer regs = memCtx.getRegBuffer(cpuType, regSpec);
         switch (regSpec) {
@@ -403,7 +400,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         }
     }
 
-    private void handleCommRegWrite(RegSpecMcd regSpec, int address, int data, Size size) {
+    private void handleCommRegWrite(MegaCdDict.RegSpecMcd regSpec, int address, int data, Size size) {
         if (address >= START_MCD_SUB_GA_COMM_W && address < END_MCD_SUB_GA_COMM_W) { //MAIN COMM
             LogHelper.logInfo(LOG, "S Write MEGA_CD_COMM: {}, {}, {}", th(address), th(data), size);
             writeReg(memCtx, cpuType, regSpec, address & MDC_SUB_GATE_REGS_MASK, data, size);
@@ -416,31 +413,8 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     }
 
     @Override
-    public void handleVdpInterrupts68k() {
-        throw new RuntimeException("handleVdpInterrupts68k");
-    }
-
-    @Override
-    public void ackInterrupt68k(int level) {
-        //ignored
-//        LOG.info("ackInterrupt68k: {}", level);
-    }
-
-    @Override
     public void resetFrom68k() {
         //do nothing??
-    }
-
-    @Override
-    public boolean is68kRunning() {
-        //unused/ignored
-        throw new RuntimeException("is68kRunning");
-    }
-
-
-    @Override
-    public SystemProvider getSystem() {
-        return systemProvider;
     }
 
     public void resetDone() {
@@ -452,6 +426,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
 
     @Override
     public void onVdpEvent(VdpEvent event, Object value) {
+        super.onVdpEvent(event, value);
         //vBlankOn fire LEV2
         if (event == VdpEvent.V_BLANK_CHANGE && (boolean) value) {
             interruptHandler.raiseInterrupt(INT_LEVEL2);
@@ -507,6 +482,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     int subCpuResetFrameCount = 0;
 
     public void onNewFrame() {
+        super.onNewFrame();
         logSlowFrames();
         if (subCpuResetFrameCount > 0) {
             if (--subCpuResetFrameCount == 0) {

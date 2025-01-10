@@ -19,7 +19,7 @@
 
 package omegadrive.cart.mapper.md;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.LogHelper;
@@ -46,7 +46,7 @@ public class ExSsfMapper extends Ssf2Mapper {
     @Override
     public int readData(int address, Size size) {
         address &= MD_PC_MASK;
-        if (address >= BANKABLE_START_ADDRESS && address <= MdBusProvider.DEFAULT_ROM_END_ADDRESS) {
+        if (address >= BANKABLE_START_ADDRESS && address <= MdMainBusProvider.DEFAULT_ROM_END_ADDRESS) {
             return super.readData(address, size);
         } else if (address < BANKABLE_START_ADDRESS) { //exSSf can remap < 0x80000
 

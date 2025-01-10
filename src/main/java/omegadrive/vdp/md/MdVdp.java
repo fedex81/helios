@@ -20,7 +20,7 @@
 package omegadrive.vdp.md;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Size;
@@ -138,7 +138,7 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     int satStart;
     int fifoEmpty = 1, fifoFull = 0;
 
-    private MdBusProvider bus;
+    private MdMainBusProvider bus;
     protected VdpInterruptHandler interruptHandler;
     private VdpMemoryInterface memoryInterface;
     private VdpDmaHandler dmaHandler;
@@ -150,7 +150,7 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     private UpdatableViewer debugViewer;
     private VdpPortAccessLogger vdpPortAccessLogger;
 
-    public static MdVdp createInstance(MdBusProvider bus, VdpMemoryInterface memoryInterface,
+    public static MdVdp createInstance(MdMainBusProvider bus, VdpMemoryInterface memoryInterface,
                                        VdpDmaHandler dmaHandler, RegionDetector.Region region) {
         MdVdp v = new MdVdp();
         v.bus = bus;
@@ -161,7 +161,7 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
         return v;
     }
 
-    public static MdVdp createInstance(MdBusProvider bus, VdpMemoryInterface memoryInterface) {
+    public static MdVdp createInstance(MdMainBusProvider bus, VdpMemoryInterface memoryInterface) {
         MdVdp v = new MdVdp();
         v.bus = bus;
         v.memoryInterface = memoryInterface;
@@ -171,7 +171,7 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
         return v;
     }
 
-    public static MdVdp createInstance(MdBusProvider bus) {
+    public static MdVdp createInstance(MdMainBusProvider bus) {
         return createInstance(bus, MdVdpMemoryInterface.createInstance());
     }
 

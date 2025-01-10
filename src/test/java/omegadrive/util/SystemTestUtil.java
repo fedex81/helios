@@ -5,7 +5,7 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.md.BusArbiter;
 import omegadrive.bus.md.MdBus;
 import omegadrive.bus.md.MdZ80BusProviderImpl;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.bus.model.Z80BusProvider;
 import omegadrive.bus.z80.ColecoBus;
@@ -40,7 +40,7 @@ import omegadrive.vdp.md.MdVdpMemoryInterface;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import org.junit.Assert;
-import s32x.bus.S32xBus;
+import s32x.bus.S32xBusIntf;
 
 import java.nio.file.Path;
 
@@ -53,21 +53,21 @@ import static omegadrive.SystemLoader.SystemType.SMS;
  */
 public class SystemTestUtil {
 
-    public static MdBusProvider setupNewMdSystem() {
+    public static MdMainBusProvider setupNewMdSystem() {
         return setupNewMdSystem(MemoryProvider.createMdInstance(), MdVdpMemoryInterface.createInstance());
     }
 
-    public static MdBusProvider setupNewMdSystem(VdpMemoryInterface vdpMem) {
+    public static MdMainBusProvider setupNewMdSystem(VdpMemoryInterface vdpMem) {
         return setupNewMdSystem(MemoryProvider.createMdInstance(), vdpMem);
     }
 
-    public static MdBusProvider setupNewMdSystem(IMemoryProvider cpuMem) {
+    public static MdMainBusProvider setupNewMdSystem(IMemoryProvider cpuMem) {
         return setupNewMdSystem(cpuMem, MdVdpMemoryInterface.createInstance());
     }
 
-    public static MdBusProvider setupNewMdSystem(IMemoryProvider cpuMem1, VdpMemoryInterface vdpMem) {
+    public static MdMainBusProvider setupNewMdSystem(IMemoryProvider cpuMem1, VdpMemoryInterface vdpMem) {
         SystemProvider systemProvider = MdVdpTestUtil.createTestMdProvider(cpuMem1);
-        MdBusProvider busProvider = new MdBus();
+        MdMainBusProvider busProvider = new MdBus();
         MdZ80BusProvider z80bus = new MdZ80BusProviderImpl();
         MdVdpProvider vdpProvider1 = MdVdp.createInstance(busProvider, vdpMem);
         MC68000Wrapper cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, busProvider);
@@ -94,7 +94,7 @@ public class SystemTestUtil {
         return busProvider1;
     }
 
-    public static MdBusProvider setupNewMdSystem(S32xBus busProvider, IMemoryProvider cpuMem1) {
+    public static MdMainBusProvider setupNewMdSystem(S32xBusIntf busProvider, IMemoryProvider cpuMem1) {
         VdpMemoryInterface vdpMem = MdVdpMemoryInterface.createInstance();
         MdZ80BusProvider z80bus = new MdZ80BusProviderImpl();
         MdVdpProvider vdpProvider1 = MdVdp.createInstance(busProvider, vdpMem);

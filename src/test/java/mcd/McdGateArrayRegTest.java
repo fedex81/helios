@@ -2,7 +2,7 @@ package mcd;
 
 import mcd.bus.McdSubInterruptHandler;
 import mcd.dict.MegaCdDict;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Size;
 import org.junit.Ignore;
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdDict.START_MCD_SUB_GATE_ARRAY_REGS;
-import static omegadrive.bus.model.MdBusProvider.MEGA_CD_EXP_START;
+import static omegadrive.bus.model.MdMainBusProvider.MEGA_CD_EXP_START;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 
@@ -132,7 +132,7 @@ public class McdGateArrayRegTest extends McdRegTestBase {
 
     private int readWordReg(CpuDeviceAccess cpu, int address) {
         assert cpu == M68K || cpu == SUB_M68K;
-        MdBusProvider bus = cpu == M68K ? mainCpuBus : subCpuBus;
+        BaseBusProvider bus = cpu == M68K ? mainCpuBus : subCpuBus;
         return bus.read(address, Size.WORD);
     }
 

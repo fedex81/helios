@@ -1,18 +1,11 @@
 package s32x.bus;
 
 import omegadrive.Device;
-import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.md.MdBus;
 import omegadrive.bus.model.MdMainBusProvider;
-import omegadrive.cart.MdCartInfoProvider;
-import omegadrive.joypad.MdJoypad;
 import omegadrive.sound.PwmProvider;
-import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.psg.PsgProvider;
-import omegadrive.system.SystemProvider;
 import omegadrive.util.*;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
-import omegadrive.vdp.model.MdVdpProvider;
 import org.slf4j.Logger;
 import s32x.DmaFifo68k;
 import s32x.S32XMMREG;
@@ -37,9 +30,10 @@ import static omegadrive.util.Util.th;
  * <p>
  * Copyright 2021
  */
-public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements S32xBusIntf {
+@Deprecated
+public class S32xBusLegacy extends MdBus implements S32xBusIntf {
 
-    private static final Logger LOG = LogHelper.getLogger(S32xBus.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(S32xBusLegacy.class.getSimpleName());
     static final boolean verboseMd = false;
     private BiosHolder.BiosData bios68k;
     private S32XMMREG s32XMMREG;
@@ -48,8 +42,6 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
     private S32xBusContext busContext;
     private int bankSetShift;
 
-    protected MdMainBusProvider mdBus;
-
     static class S32xBusContext implements Serializable {
         @Serial
         private static final long serialVersionUID = 3705180248407931780L;
@@ -57,39 +49,21 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
         public int bankSetValue;
     }
 
-    public static S32xBusIntf createS32xBus(MdMainBusProvider mdBus) {
-        return new S32xBus(mdBus);
-    }
-
-    public static S32xBusIntf createS32xBus() {
-        return new S32xBus(new MdBus());
-    }
-
-    private S32xBus(MdMainBusProvider mdBus) {
+    public S32xBusLegacy() {
         busContext = new S32xBusContext();
         bankSetShift = busContext.bankSetValue << 20;
         Util.writeData(busContext.writeableHint, 0, -1, Size.LONG);
-        this.mdBus = mdBus;
         Gs32xStateHandler.addDevice(this);
     }
 
     @Override
-    public void init() {
-        super.init();
-        mdBus.init();
-    }
-
-    @Override
     public MdMainBusProvider attachDevice(Device device) {
-        super.attachDevice(device);
         if (device instanceof Sh2) {
             sh2 = (Sh2) device;
         } else if (device instanceof S32XMMREG) {
             s32XMMREG = (S32XMMREG) device;
-        } else if (vdpProvider != null) {
-            vdpProvider.addVdpEventListener(this);
         }
-        return (MdMainBusProvider) mdBus.attachDevice(device);
+        return super.attachDevice(device);
     }
 
     public void setRom(ByteBuffer b) {
@@ -131,96 +105,6 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
         }
     }
 
-    @Override
-    public void writeIoPort(int port, int value) {
-        mdBus.writeIoPort(port, value);
-    }
-
-    @Override
-    public MdCartInfoProvider getCartridgeInfoProvider() {
-        return mdBus.getCartridgeInfoProvider();
-    }
-
-    @Override
-    public void handleVdpInterrupts68k() {
-        mdBus.handleVdpInterrupts68k();
-    }
-
-    @Override
-    public void handleVdpInterruptsZ80() {
-        mdBus.handleVdpInterruptsZ80();
-    }
-
-    @Override
-    public void ackInterrupt68k(int level) {
-        mdBus.ackInterrupt68k(level);
-    }
-
-    @Override
-    public void resetFrom68k() {
-        mdBus.resetFrom68k();
-    }
-
-    @Override
-    public boolean is68kRunning() {
-        return mdBus.is68kRunning();
-    }
-
-    @Override
-    public void setVdpBusyState(MdVdpProvider.VdpBusyState state) {
-        mdBus.setVdpBusyState(state);
-    }
-
-    @Override
-    public boolean isZ80Running() {
-        return mdBus.isZ80Running();
-    }
-
-    @Override
-    public boolean isZ80ResetState() {
-        return mdBus.isZ80ResetState();
-    }
-
-    @Override
-    public boolean isZ80BusRequested() {
-        return mdBus.isZ80BusRequested();
-    }
-
-    @Override
-    public void setZ80ResetState(boolean z80ResetState) {
-        mdBus.setZ80ResetState(z80ResetState);
-    }
-
-    @Override
-    public void setZ80BusRequested(boolean z80BusRequested) {
-        mdBus.setZ80BusRequested(z80BusRequested);
-    }
-
-    @Override
-    public PsgProvider getPsg() {
-        return mdBus.getPsg();
-    }
-
-    @Override
-    public FmProvider getFm() {
-        return mdBus.getFm();
-    }
-
-    @Override
-    public SystemProvider getSystem() {
-        return mdBus.getSystem();
-    }
-
-    @Override
-    public MdVdpProvider getVdp() {
-        return mdBus.getVdp();
-    }
-
-    @Override
-    public int readIoPort(int port) {
-        return mdBus.readIoPort(port);
-    }
-
     private int readAdapterEnOn(int address, Size size) {
         int res = 0;
         if (address < S32xDict.M68K_END_VECTOR_ROM) {
@@ -230,13 +114,13 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
             }
         } else if (address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR) {
             if (!DmaFifo68k.rv) {
-                res = mdBus.read(address & S32xDict.M68K_ROM_WINDOW_MASK, size);
+                res = super.read(address & S32xDict.M68K_ROM_WINDOW_MASK, size);
             } else {
                 LOG.warn("Ignoring read access to ROM mirror when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
             }
         } else if (address >= S32xDict.M68K_START_ROM_MIRROR_BANK && address < S32xDict.M68K_END_ROM_MIRROR_BANK) {
             if (!DmaFifo68k.rv) {
-                res = mdBus.read(bankSetShift | (address & S32xDict.M68K_ROM_MIRROR_MASK), size);
+                res = super.read(bankSetShift | (address & S32xDict.M68K_ROM_MIRROR_MASK), size);
             } else {
                 LOG.warn("Ignoring read access to ROM mirror bank when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
             }
@@ -254,7 +138,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
             assert address == S32xDict.M68K_START_MARS_ID;
             res = 0x4d415253; //'MARS'
         } else {
-            if (!DmaFifo68k.rv && address <= DEFAULT_ROM_END_ADDRESS) {
+            if (!DmaFifo68k.rv && address <= MdBus.DEFAULT_ROM_END_ADDRESS) {
                 logWarnOnce(LOG, "Ignoring read access to ROM when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return size.getMask();
             }
@@ -262,7 +146,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
             if (assertionsEnabled && romReadQuirk(address)) {
                 return size.getMask();
             }
-            res = mdBus.read(address, size);
+            res = super.read(address, size);
         }
         if (verboseMd) {
             LOG.info("Read address: {}, size: {}, result: {}", th(address), size, th(res));
@@ -277,7 +161,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
         } else if (address >= S32xDict.M68K_START_32X_SYSREG && address < S32xDict.M68K_END_32X_SYSREG) {
             res = read32xWord((address & S32xDict.M68K_MASK_32X_SYSREG) | S32xDict.SH2_SYSREG_32X_OFFSET, size);
         } else {
-            res = mdBus.read(address, size);
+            res = super.read(address, size);
         }
         if (verboseMd) {
             LOG.info("Read address: {}, size: {}, result: {}", th(address), size, th(res));
@@ -310,7 +194,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
         } else if (address >= S32xDict.M68K_START_ROM_MIRROR_BANK && address < S32xDict.M68K_END_ROM_MIRROR_BANK) {
             if (!DmaFifo68k.rv) {
                 //NOTE it could be writing to SRAM via the rom mirror
-                mdBus.write((address & S32xDict.M68K_ROM_MIRROR_MASK) | bankSetShift, data, size);
+                super.write((address & S32xDict.M68K_ROM_MIRROR_MASK) | bankSetShift, data, size);
             } else {
                 LOG.warn("Ignoring write access to ROM mirror bank when RV={}, addr: {}, addr68k: {}, val: {} {}",
                         DmaFifo68k.rv, th(address), Util.th(address & S32xDict.M68K_ROM_WINDOW_MASK), th(data), size);
@@ -318,7 +202,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
         } else if (address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR) {
             //NOTE should not happen, SoulStar buggy?
             if (!DmaFifo68k.rv) {
-                mdBus.write(address & S32xDict.M68K_ROM_WINDOW_MASK, data, size);
+                super.write(address & S32xDict.M68K_ROM_WINDOW_MASK, data, size);
             } else {
                 LOG.warn("Ignoring write access to ROM mirror when RV={}, addr: {}, addr68k: {}, val: {} {}",
                         DmaFifo68k.rv, th(address), Util.th(address & S32xDict.M68K_ROM_WINDOW_MASK), th(data), size);
@@ -332,11 +216,11 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
                 logWarnOnce(LOG, "Ignoring write access to vector rom, RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return;
             }
-            if (!DmaFifo68k.rv && address <= DEFAULT_ROM_END_ADDRESS) {
+            if (!DmaFifo68k.rv && address <= MdBus.DEFAULT_ROM_END_ADDRESS) {
                 LOG.warn("Ignoring write access to ROM when RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return;
             }
-            mdBus.write(address, data, size);
+            super.write(address, data, size);
         }
     }
 
@@ -346,7 +230,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
             write32xWordDirect(addr, data, size);
             checkBankSetRegister(addr, size);
         } else {
-            mdBus.write(address, data, size);
+            super.write(address, data, size);
         }
     }
 
@@ -408,7 +292,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
     @Override
     public int readRom(int address, Size size) {
         assert address < DEFAULT_ROM_END_ADDRESS;
-        return mdBus.read(address, size);
+        return super.read(address, size);
     }
 
     public MarsVdp getMarsVdp() {
@@ -417,7 +301,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
 
     @Override
     public void onVdpEvent(BaseVdpAdapterEventSupport.VdpEvent event, Object value) {
-        ((BaseVdpAdapterEventSupport.VdpEventListener) mdBus).onVdpEvent(event, value); //TODO
+        super.onVdpEvent(event, value);
         switch (event) {
             case V_BLANK_CHANGE -> s32XMMREG.setVBlank((boolean) value);
             case H_BLANK_CHANGE -> s32XMMREG.setHBlank((boolean) value);

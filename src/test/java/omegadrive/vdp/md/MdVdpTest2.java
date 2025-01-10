@@ -19,7 +19,7 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
@@ -36,7 +36,7 @@ import org.slf4j.Logger;
 import java.util.Optional;
 
 import static omegadrive.SystemLoader.SystemType.MD;
-import static omegadrive.bus.model.MdBusProvider.VDP_ADDRESS_SPACE_START;
+import static omegadrive.bus.model.MdMainBusProvider.VDP_ADDRESS_SPACE_START;
 import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.*;
 import static omegadrive.vdp.model.MdVdpProvider.VramMode.*;
@@ -47,7 +47,7 @@ public class MdVdpTest2 {
 
     MdVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
-    MdBusProvider busProvider;
+    MdMainBusProvider busProvider;
 
     static final int VDP_CONTROL_PORT = VDP_ADDRESS_SPACE_START + 4;
 

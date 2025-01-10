@@ -19,7 +19,7 @@
 
 package omegadrive.vdp;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
@@ -74,7 +74,7 @@ public class BaseVdpDmaBandwidthTest {
     @Before
     public void setup() {
         memoryInterface = new TestMdVdpMemoryInterface();
-        MdBusProvider busProvider = SystemTestUtil.setupNewMdSystem(memoryInterface);
+        MdMainBusProvider busProvider = SystemTestUtil.setupNewMdSystem(memoryInterface);
         Optional<MdVdpProvider> opt = busProvider.getBusDeviceIfAny(MdVdpProvider.class);
         Optional<IMemoryProvider> optMem = busProvider.getBusDeviceIfAny(IMemoryProvider.class);
         Assert.assertTrue(opt.isPresent());

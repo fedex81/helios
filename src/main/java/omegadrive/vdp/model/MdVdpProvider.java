@@ -19,7 +19,7 @@
 
 package omegadrive.vdp.model;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.md.VdpFifo;
@@ -163,7 +163,7 @@ public interface MdVdpProvider extends BaseVdpProvider {
     }
 
 
-    static MdVdpProvider createVdp(MdBusProvider bus) {
+    static MdVdpProvider createVdp(MdMainBusProvider bus) {
         return MdVdp.createInstance(bus);
     }
 

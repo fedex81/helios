@@ -19,7 +19,7 @@
 
 package omegadrive.vdp;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.save.MdSavestateTest;
 import omegadrive.system.Megadrive;
@@ -63,7 +63,7 @@ public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
 
     protected MdVdpProvider prepareVdp(Path saveFile) {
         SystemProvider MdProvider = createTestProvider();
-        MdBusProvider busProvider = MdSavestateTest.loadSaveState(saveFile);
+        MdMainBusProvider busProvider = MdSavestateTest.loadSaveState(saveFile);
         busProvider.attachDevice(MdProvider).attachDevice(createTestJoypadProvider());
         busProvider.init();
         vdpProvider = busProvider.getVdp();

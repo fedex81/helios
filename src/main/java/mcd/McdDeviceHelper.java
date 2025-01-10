@@ -2,13 +2,13 @@ package mcd;
 
 import mcd.asic.Asic;
 import mcd.asic.AsicModel;
-import mcd.bus.McdSubInterruptHandler;
-import mcd.bus.MegaCdMainCpuBus;
-import mcd.bus.MegaCdSubCpuBus;
+import mcd.bus.*;
 import mcd.cdc.Cdc;
 import mcd.cdd.Cdd;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.McdPcm;
+import omegadrive.bus.md.MdBus;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
@@ -36,8 +36,9 @@ public class McdDeviceHelper {
 
     public static class McdLaunchContext {
         public MC68000Wrapper subCpu;
-        public MegaCdSubCpuBus subBus;
-        public MegaCdMainCpuBus mainBus;
+        public MdMainBusProvider mdBus;
+        public MegaCdSubCpuBusIntf subBus;
+        public MegaCdMainCpuBusIntf mainBus;
         public MegaCdMemoryContext memoryContext;
         public McdSubInterruptHandler interruptHandler;
 
@@ -51,16 +52,18 @@ public class McdDeviceHelper {
         public void initContext() {
             memoryContext = new MegaCdMemoryContext();
             pcm = new McdPcm();
+
+            mdBus = new MdBus();
             subBus = new MegaCdSubCpuBus(memoryContext);
-            mainBus = new MegaCdMainCpuBus(memoryContext);
+            mainBus = new MegaCdMainCpuBus(memoryContext, mdBus);
+
             subCpu = MC68000Wrapper.createInstance(SUB_M68K, subBus);
             interruptHandler = McdSubInterruptHandler.create(memoryContext, subCpu);
             cdc = Cdc.createInstance(memoryContext, interruptHandler);
             cdd = Cdd.createInstance(memoryContext, interruptHandler, cdc);
             asic = new Asic(memoryContext, interruptHandler);
             subBus.attachDevices(subCpu, pcm, cdd, asic, cdc, interruptHandler);
-            mainBus.subCpu = subCpu;
-            mainBus.subCpuBus = subBus;
+            mainBus.setSubDevices(subCpu, subBus);
             //TODO check, on boot the sub bus is set to request (ie. main has it) hence sub cpu cannot run
             subCpu.setStop(true);
         }

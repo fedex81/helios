@@ -20,8 +20,8 @@
 package omegadrive.cpu.z80;
 
 import omegadrive.SystemLoader.SystemType;
-import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.bus.model.MdZ80BusProvider;
+import omegadrive.bus.model.Z80BusProvider;
 import omegadrive.cpu.z80.debug.Z80CoreWrapperFastDebug;
 import omegadrive.savestate.StateUtil;
 import omegadrive.util.LogHelper;
@@ -51,17 +51,18 @@ public class Z80CoreWrapper implements Z80Provider {
     }
 
     protected Z80 z80Core;
-    protected BaseBusProvider z80BusProvider;
+    protected Z80BusProvider z80BusProvider;
     protected Z80MemIoOps memIoOps;
     protected int instCyclesPenalty = 0;
     protected int memPtrInitVal;
 
-    public static Z80CoreWrapper createInstance(SystemType systemType, BaseBusProvider busProvider) {
+    public static Z80CoreWrapper createInstance(SystemType systemType, Z80BusProvider busProvider) {
         Z80CoreWrapper w = null;
         switch (systemType) {
             case MD:
             case S32X:
             case MEGACD:
+            case MEGACD_S32X:
                 w = createMdInstanceInternal(busProvider);
                 break;
             case GG:
@@ -96,14 +97,14 @@ public class Z80CoreWrapper implements Z80Provider {
         return this;
     }
 
-    private static Z80CoreWrapper createInstanceInternal(BaseBusProvider busProvider) {
+    private static Z80CoreWrapper createInstanceInternal(Z80BusProvider busProvider) {
         Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperFastDebug() : new Z80CoreWrapper();
         w.z80BusProvider = busProvider;
         w.memIoOps = Z80MemIoOps.createInstance(w.z80BusProvider);
         return w.setupInternal(null);
     }
 
-    private static Z80CoreWrapper createMdInstanceInternal(BaseBusProvider busProvider) {
+    private static Z80CoreWrapper createMdInstanceInternal(Z80BusProvider busProvider) {
         Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperFastDebug() : new Z80CoreWrapper();
         w.z80BusProvider = MdZ80BusProvider.createInstance(busProvider);
         w.memIoOps = Z80MemIoOps.createMdInstance(w.z80BusProvider);
@@ -177,7 +178,7 @@ public class Z80CoreWrapper implements Z80Provider {
     }
 
     @Override
-    public BaseBusProvider getZ80BusProvider() {
+    public Z80BusProvider getZ80BusProvider() {
         return z80BusProvider;
     }
 

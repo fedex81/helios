@@ -1,6 +1,6 @@
 package omegadrive.cpu.z80;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.Size;
@@ -21,7 +21,7 @@ import static omegadrive.util.Util.th;
 public class Z80BusTest {
 
     MdZ80BusProvider z80bus;
-    MdBusProvider mainBus;
+    MdMainBusProvider mainBus;
     IMemoryProvider memoryProvider;
 
     @Before

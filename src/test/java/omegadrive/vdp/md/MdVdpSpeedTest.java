@@ -19,7 +19,7 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.system.Megadrive;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -41,7 +41,7 @@ public class MdVdpSpeedTest {
 
     MdVdpProvider vdpProvider;
     VdpMemoryInterface memoryInterface;
-    MdBusProvider busProvider;
+    MdMainBusProvider busProvider;
 
     @Before
     public void setup() {

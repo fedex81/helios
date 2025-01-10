@@ -2,7 +2,7 @@ package mcd.util;
 
 import com.google.common.collect.ObjectArrays;
 import mcd.McdDeviceHelper.McdLaunchContext;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.memory.ReadableByteMemory;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.MdRuntimeData;
@@ -31,12 +31,12 @@ public class McdMemView extends MemView {
     public static final MemViewData[] mcdMemViewData =
             ObjectArrays.concat(mdMemViewData, McdMemViewType.values(), MemViewData.class);
 
-    public static UpdatableViewer createInstance(MdBusProvider m, McdLaunchContext ctx,
+    public static UpdatableViewer createInstance(MdMainBusProvider m, McdLaunchContext ctx,
                                                  VdpMemoryInterface vdpMem) {
         return VdpDebugView.DEBUG_VIEWER_ENABLED ? new McdMemView(m, ctx, vdpMem) : NO_MEMVIEW;
     }
 
-    protected McdMemView(MdBusProvider m, McdLaunchContext ctx, VdpMemoryInterface vdpMem) {
+    protected McdMemView(MdMainBusProvider m, McdLaunchContext ctx, VdpMemoryInterface vdpMem) {
         super(mcdMemViewData, m, getReader(ctx), vdpMem);
 
     }

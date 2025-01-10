@@ -17,7 +17,7 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.SystemTestUtil;
@@ -47,7 +47,7 @@ public class BaseVdpDmaHandlerTest {
 
     @Before
     public void setup() {
-        MdBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
+        MdMainBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
         Optional<MdVdpProvider> opt = busProvider.getBusDeviceIfAny(MdVdpProvider.class);
         Assert.assertTrue(opt.isPresent());
         vdpProvider = opt.get();

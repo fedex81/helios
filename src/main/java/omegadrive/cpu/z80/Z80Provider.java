@@ -20,7 +20,7 @@
 package omegadrive.cpu.z80;
 
 import omegadrive.Device;
-import omegadrive.bus.model.BaseBusProvider;
+import omegadrive.bus.model.Z80BusProvider;
 import z80core.Z80State;
 
 public interface Z80Provider extends Device {
@@ -39,7 +39,7 @@ public interface Z80Provider extends Device {
 
     void writeMemory(int address, int data);
 
-    BaseBusProvider getZ80BusProvider();
+    Z80BusProvider getZ80BusProvider();
 
     void addCyclePenalty(int value);
 

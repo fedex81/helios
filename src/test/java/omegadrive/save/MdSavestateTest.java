@@ -21,7 +21,7 @@ package omegadrive.save;
 
 import m68k.cpu.MC68000;
 import omegadrive.Device;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80Provider;
@@ -60,8 +60,8 @@ public class MdSavestateTest extends BaseSavestateTest {
         return files;
     }
 
-    public static MdBusProvider loadSaveState(Path saveFile) {
-        MdBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
+    public static MdMainBusProvider loadSaveState(Path saveFile) {
+        MdMainBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
         BaseStateHandler loadHandler = BaseStateHandler.createInstance(
                 MD, saveFile.toAbsolutePath().toString(), Type.LOAD, busProvider.getAllDevices(Device.class));
         loadHandler.processState();
@@ -81,7 +81,7 @@ public class MdSavestateTest extends BaseSavestateTest {
         }
     }
 
-    private void compareZ80(Z80Provider z80p1, Z80Provider z80p2, MdBusProvider bus1, MdBusProvider bus2) {
+    private void compareZ80(Z80Provider z80p1, Z80Provider z80p2, MdMainBusProvider bus1, MdMainBusProvider bus2) {
         compareZ80(z80p1, z80p2);
 
         IntStream.range(0, MdZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
@@ -128,7 +128,7 @@ public class MdSavestateTest extends BaseSavestateTest {
     @Override
     protected void testLoadSaveInternal(Path saveFile) {
         String filePath = saveFile.toAbsolutePath().toString();
-        MdBusProvider busProvider1 = SystemTestUtil.setupNewMdSystem();
+        MdMainBusProvider busProvider1 = SystemTestUtil.setupNewMdSystem();
 
         BaseStateHandler loadHandler = BaseStateHandler.createInstance(
                 MD, filePath, Type.LOAD, busProvider1.getAllDevices(Device.class));
@@ -141,7 +141,7 @@ public class MdSavestateTest extends BaseSavestateTest {
         BaseStateHandler saveHandler = BaseStateHandler.createInstance(
                 MD, name, Type.SAVE, busProvider1.getAllDevices(Device.class));
 
-        MdBusProvider busProvider2 = SystemTestUtil.setupNewMdSystem();
+        MdMainBusProvider busProvider2 = SystemTestUtil.setupNewMdSystem();
 
         BaseStateHandler loadHandler1 = BaseStateHandler.createInstance(
                 MD, filePath, Type.LOAD, busProvider2.getAllDevices(Device.class));
@@ -153,7 +153,7 @@ public class MdSavestateTest extends BaseSavestateTest {
         Assert.assertArrayEquals("Data mismatch", data, savedData);
     }
 
-    private void compareDevices(MdBusProvider b1, MdBusProvider b2) {
+    private void compareDevices(MdMainBusProvider b1, MdMainBusProvider b2) {
         compareVdp(getDevice(b1, MdVdpProvider.class), getDevice(b2, MdVdpProvider.class));
         compare68k(getDevice(b1, MC68000Wrapper.class), getDevice(b2, MC68000Wrapper.class),
                 getDevice(b1, IMemoryProvider.class), getDevice(b2, IMemoryProvider.class));

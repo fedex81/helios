@@ -19,7 +19,7 @@
 
 package omegadrive.cart.cheat;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
@@ -62,7 +62,7 @@ public class CheatCodeHelper {
     }
 
     public static boolean isRamPatch(BasicMdRawCode code) {
-        return code.getAddress() >= MdBusProvider.ADDRESS_RAM_MAP_START && code.getAddress() <= MdBusProvider.ADDRESS_UPPER_LIMIT;
+        return code.getAddress() >= MdMainBusProvider.ADDRESS_RAM_MAP_START && code.getAddress() <= MdMainBusProvider.ADDRESS_UPPER_LIMIT;
     }
 
     public static boolean isRomPatch(BasicMdRawCode code) {

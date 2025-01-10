@@ -24,4 +24,8 @@ import omegadrive.cpu.z80.Z80Provider;
 public interface Z80BusProvider extends BaseBusProvider {
 
     void handleInterrupts(Z80Provider.Interrupt type);
+
+    void writeIoPort(int port, int value);
+
+    int readIoPort(int port);
 }

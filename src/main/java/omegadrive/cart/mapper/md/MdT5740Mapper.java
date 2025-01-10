@@ -15,8 +15,8 @@ import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
-import static omegadrive.bus.model.MdBusProvider.DEFAULT_ROM_END_ADDRESS;
-import static omegadrive.bus.model.MdBusProvider.TIME_LINE_START;
+import static omegadrive.bus.model.MdMainBusProvider.DEFAULT_ROM_END_ADDRESS;
+import static omegadrive.bus.model.MdMainBusProvider.TIME_LINE_START;
 import static omegadrive.cart.mapper.md.Ssf2Mapper.BANK_MASK;
 import static omegadrive.cart.mapper.md.Ssf2Mapper.BANK_SHIFT;
 import static omegadrive.util.Util.th;

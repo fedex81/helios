@@ -22,7 +22,7 @@ package omegadrive.savestate;
 import com.google.common.collect.ImmutableSet;
 import m68k.cpu.MC68000;
 import omegadrive.Device;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80Provider;
@@ -74,7 +74,7 @@ public class GstStateHandler implements BaseStateHandler {
     protected static final String extension = ".gs";
 
     private static final Set<Class<? extends Device>> deviceClassSet = ImmutableSet.of(Z80Provider.class,
-            MdVdpProvider.class, IMemoryProvider.class, MdBusProvider.class, SoundProvider.class, MC68000Wrapper.class);
+            MdVdpProvider.class, IMemoryProvider.class, MdMainBusProvider.class, SoundProvider.class, MC68000Wrapper.class);
 
     protected ByteBuffer buffer;
     protected int version;
@@ -110,7 +110,7 @@ public class GstStateHandler implements BaseStateHandler {
     @Override
     public void processState() {
 //        Level prev = LogManager.getRootLogger().getLevel();
-        MdBusProvider bus = StateUtil.getInstanceOrThrow(deviceList, MdBusProvider.class);
+        MdMainBusProvider bus = StateUtil.getInstanceOrThrow(deviceList, MdMainBusProvider.class);
         BaseVdpProvider vdp = StateUtil.getInstanceOrThrow(deviceList, BaseVdpProvider.class);
         Z80Provider z80 = StateUtil.getInstanceOrThrow(deviceList, Z80Provider.class);
         IMemoryProvider mem = StateUtil.getInstanceOrThrow(deviceList, IMemoryProvider.class);
@@ -182,7 +182,7 @@ public class GstStateHandler implements BaseStateHandler {
         }
     }
 
-    protected void loadZ80(Z80Provider z80, MdBusProvider bus) {
+    protected void loadZ80(Z80Provider z80, MdMainBusProvider bus) {
         int z80BankInt = getInt4Fn.apply(buffer, 0x43C);
         MdZ80BusProvider.setRomBank68kSerial(z80, z80BankInt);
 
@@ -264,7 +264,7 @@ public class GstStateHandler implements BaseStateHandler {
         IntStream.range(0, 24).forEach(i -> buffer.put(i + VDP_REG_OFFSET, (byte) vdp.getRegisterData(i)));
     }
 
-    protected void saveZ80(Z80Provider z80, MdBusProvider bus) {
+    protected void saveZ80(Z80Provider z80, MdMainBusProvider bus) {
         IntStream.range(0, MdZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
                 i -> buffer.put(Z80_RAM_DATA_OFFSET + i, (byte) z80.readMemory(i)));
         buffer.put(0x438, (byte) (bus.isZ80ResetState() ? 1 : 0));

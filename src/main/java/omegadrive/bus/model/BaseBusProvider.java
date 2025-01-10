@@ -33,10 +33,6 @@ public interface BaseBusProvider extends Device, ReadableByteMemory {
 
     void write(int address, int data, Size size);
 
-    void writeIoPort(int port, int value);
-
-    int readIoPort(int port);
-
     default void closeRom() {
         //do nothing
     }

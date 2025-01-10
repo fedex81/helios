@@ -227,6 +227,7 @@ public class SystemLoader {
         MD("MD"),
         MEGACD("MCD"),
         S32X("32X"),
+        MEGACD_S32X("MCD_32X"), //tower of power
         SG_1000("SG"),
         COLECO("CV"),
         MSX("MSX"),

@@ -1,7 +1,7 @@
 package mcd;
 
-import mcd.bus.MegaCdMainCpuBus;
-import mcd.bus.MegaCdSubCpuBus;
+import mcd.bus.MegaCdMainCpuBusIntf;
+import mcd.bus.MegaCdSubCpuBusIntf;
 import mcd.dict.MegaCdDict.RegSpecMcd;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.SystemLoader;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 import static mcd.dict.MegaCdDict.START_MCD_SUB_GATE_ARRAY_REGS;
-import static omegadrive.bus.model.MdBusProvider.MEGA_CD_EXP_START;
+import static omegadrive.bus.model.MdMainBusProvider.MEGA_CD_EXP_START;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 
@@ -28,8 +28,8 @@ public class McdRegTestBase {
 
     protected McdDeviceHelper.McdLaunchContext lc;
     MegaCdMemoryContext ctx;
-    MegaCdMainCpuBus mainCpuBus;
-    MegaCdSubCpuBus subCpuBus;
+    MegaCdMainCpuBusIntf mainCpuBus;
+    MegaCdSubCpuBusIntf subCpuBus;
 
     MC68000Wrapper subCpu;
 

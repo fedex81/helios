@@ -22,8 +22,9 @@ package omegadrive.bus.md;
 import omegadrive.Device;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.model.BaseBusProvider;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.MdZ80BusProvider;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.LogHelper;
@@ -44,7 +45,7 @@ public class MdZ80BusProviderImpl extends DeviceAwareBus implements MdZ80BusProv
     //    bit 15 and ending with bit 23.
     private int romBank68kSerial;
 
-    private MdBusProvider mainBusProvider;
+    private MdMainBusProvider mainBusProvider;
     private BusArbiter busArbiter;
     private FmProvider fmProvider;
     private byte[] ram;
@@ -53,8 +54,8 @@ public class MdZ80BusProviderImpl extends DeviceAwareBus implements MdZ80BusProv
 
     @Override
     public BaseBusProvider attachDevice(Device device) {
-        if (device instanceof MdBusProvider) {
-            this.mainBusProvider = (MdBusProvider) device;
+        if (device instanceof MdMainBusProvider) {
+            this.mainBusProvider = (MdMainBusProvider) device;
             this.mainBusProvider.getBusDeviceIfAny(BusArbiter.class).ifPresent(this::attachDevice);
         }
         if (device instanceof IMemoryRam z80Memory) {
@@ -91,7 +92,7 @@ public class MdZ80BusProviderImpl extends DeviceAwareBus implements MdZ80BusProv
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
             int addressB = romBank68kSerial | (address & M68K_BANK_MASK);
-            if (addressB >= MdBusProvider.ADDRESS_RAM_MAP_START && addressB < MdBusProvider.ADDRESS_UPPER_LIMIT) {
+            if (addressB >= MdMainBusProvider.ADDRESS_RAM_MAP_START && addressB < MdMainBusProvider.ADDRESS_UPPER_LIMIT) {
                 LOG.warn("Z80 reading from 68k RAM");
             } else {
                 data = mainBusProvider.read(addressB, Size.BYTE);
@@ -166,5 +167,10 @@ public class MdZ80BusProviderImpl extends DeviceAwareBus implements MdZ80BusProv
 
     public int getRomBank68kSerial() {
         return romBank68kSerial;
+    }
+
+    @Override
+    public void handleInterrupts(Z80Provider.Interrupt type) {
+        LOG.warn("Ignored Z80 interrupt: {} ", type);
     }
 }

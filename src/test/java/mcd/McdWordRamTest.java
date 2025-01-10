@@ -21,7 +21,7 @@ import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
 import static mcd.dict.MegaCdMemoryContext.WramSetup.*;
-import static omegadrive.bus.model.MdBusProvider.MEGA_CD_EXP_START;
+import static omegadrive.bus.model.MdMainBusProvider.MEGA_CD_EXP_START;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 

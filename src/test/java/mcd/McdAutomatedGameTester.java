@@ -191,7 +191,7 @@ public class McdAutomatedGameTester {
             return;
         }
         Util.sleep(BOOT_DELAY_MS << 1);
-        Optional<MdJoypad> optPad = ((MegaCd2) system).mcdLaunchContext.mainBus.getBusDeviceIfAny(MdJoypad.class);
+        Optional<MdJoypad> optPad = ((MegaCd) system).mcdLaunchContext.mainBus.getBusDeviceIfAny(MdJoypad.class);
         MdJoypad joypad = optPad.get();
         joypad.setButtonAction(P1, S, PRESSED);
         Util.sleep(BOOT_DELAY_MS << 1);

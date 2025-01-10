@@ -22,7 +22,7 @@ package omegadrive.system;
 import omegadrive.SystemLoader;
 import omegadrive.bus.md.MdBus;
 import omegadrive.bus.md.SvpMapper;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
@@ -54,7 +54,7 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
  *
  * TODO this is used by 32x as a base class, unify with the other variants
  */
-public class Megadrive extends BaseSystem<MdBusProvider> {
+public class Megadrive extends BaseSystem<MdMainBusProvider> {
 
     public final static boolean verbose = false;
     //the emulation runs at MCLOCK_MHZ/MCLK_DIVIDER
@@ -177,7 +177,7 @@ public class Megadrive extends BaseSystem<MdBusProvider> {
         }
     }
 
-    protected MdBusProvider createBus() {
+    protected MdMainBusProvider createBus() {
         return new MdBus();
     }
 

@@ -2,7 +2,7 @@ package s32x;
 
 import omegadrive.Device;
 import omegadrive.SystemLoader;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.sound.PwmProvider;
 import omegadrive.system.Megadrive;
 import omegadrive.system.SysUtil;
@@ -14,9 +14,11 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Sleeper;
 import omegadrive.vdp.md.MdVdp;
+import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 import s32x.bus.S32xBus;
+import s32x.bus.S32xBusIntf;
 import s32x.event.PollSysEventManager;
 import s32x.pwm.Pwm;
 import s32x.sh2.Sh2;
@@ -98,9 +100,15 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     }
 
     @Override
+    public void init() {
+        super.init();
+        vdp.addVdpEventListener((BaseVdpAdapterEventSupport.VdpEventListener) bus);
+    }
+
+    @Override
     protected void initAfterRomLoad() {
         rt = MdRuntimeData.newInstance(systemType, this);
-        launchCtx = MarsLauncherHelper.setupRom((S32xBus) bus, memory.getRomHolder());
+        launchCtx = MarsLauncherHelper.setupRom(getS32xBus(), memory.getRomHolder());
         masterCtx = launchCtx.masterCtx;
         slaveCtx = launchCtx.slaveCtx;
         sh2 = launchCtx.sh2;
@@ -113,6 +121,10 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         launchCtx.pwm.setPwmProvider(ENABLE_PWM ? sound.getPwm() : PwmProvider.NO_SOUND);
         sound.setEnabled(sound.getFm(), ENABLE_FM);
         sound.setEnabled(sound.getPwm(), !Pwm.PWM_USE_BLIP);
+    }
+
+    protected S32xBusIntf getS32xBus() {
+        return (S32xBusIntf) bus;
     }
 
     public static SystemProvider createNewInstance32x(DisplayWindow emuFrame) {
@@ -156,7 +168,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         }
     }
 
-    private void runDevices() {
+    protected void runDevices() {
         assert MdRuntimeData.getCpuDelayExt() == 0;
         //NOTE if Pwm triggers dreq, the cpuDelay should be assigned to the DMA engine, not to the CPU itself
         launchCtx.pwm.step(SH2_CYCLE_RATIO);
@@ -166,8 +178,8 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     }
 
     @Override
-    protected MdBusProvider createBus() {
-        return new S32xBus();
+    protected MdMainBusProvider createBus() {
+        return S32xBus.createS32xBus();
     }
 
     @Override

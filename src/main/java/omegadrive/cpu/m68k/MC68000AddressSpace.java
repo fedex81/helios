@@ -20,15 +20,16 @@
 package omegadrive.cpu.m68k;
 
 import m68k.memory.AddressSpace;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdM68kBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.Size;
 
 public class MC68000AddressSpace implements AddressSpace {
 
-    private MdBusProvider busProvider;
+    private MdM68kBusProvider busProvider;
 
-    public static AddressSpace createInstance(MdBusProvider busProvider) {
+    public static AddressSpace createInstance(MdM68kBusProvider busProvider) {
         MC68000AddressSpace m = new MC68000AddressSpace();
         m.busProvider = busProvider;
         return m;
@@ -112,6 +113,6 @@ public class MC68000AddressSpace implements AddressSpace {
     @Override
     public int size() {
         //NOTE: used for debugging
-        return MdBusProvider.ADDRESS_UPPER_LIMIT + 1;
+        return MdMainBusProvider.ADDRESS_UPPER_LIMIT + 1;
     }
 }

@@ -18,8 +18,8 @@
 package omegadrive.bus.md;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.model.BaseBusProvider;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
+import omegadrive.bus.model.Z80BusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
@@ -39,7 +39,7 @@ public class BusArbiterTest {
 
     private boolean verbose = false;
     private MdVdpProvider vdp;
-    private MdBusProvider bus;
+    private MdMainBusProvider bus;
     private BusArbiter busArbiter;
     int hCounterIntAccepted = -1;
 
@@ -50,7 +50,7 @@ public class BusArbiterTest {
     int vCounterIntAccepted = -1;
     private MC68000Wrapper cpu;
 
-    private BaseBusProvider z80bus;
+    private Z80BusProvider z80bus;
 
     @Before
     public void setup() {

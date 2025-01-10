@@ -22,7 +22,7 @@ package omegadrive.bus.md;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.SvpBus;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.loader.MdRomDbModel;
@@ -61,8 +61,7 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.Util.th;
 
-public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements MdBusProvider, RomMapper {
-
+public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements MdMainBusProvider, RomMapper {
 
     private static final Logger LOG = LogHelper.getLogger(MdBus.class.getSimpleName());
 
@@ -152,7 +151,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
     }
 
     @Override
-    public MdBusProvider attachDevice(Device device) {
+    public MdMainBusProvider attachDevice(Device device) {
         if (device instanceof BusArbiter) {
             this.busArbiter = (BusArbiter) device;
         }
@@ -189,7 +188,11 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
     @Override
     public void init() {
         initializeRomData();
-        attachDevice(BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider));
+        if (busArbiter == null || busArbiter == BusArbiter.NO_OP) {
+            attachDevice(BusArbiter.createInstance(vdpProvider, m68kProvider, z80Provider));
+        } else {
+            LOG.warn("BusArbiter already created");
+        }
         this.z80BusRequested = false;
         this.z80ResetState = true;
         detectState();
@@ -640,7 +643,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
             LOG.warn("68k read access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
             return 0; //TODO this should return z80 open bus (ie. prefetch?)
         }
-        int addressZ = (address & MdBusProvider.M68K_TO_Z80_MEMORY_MASK);
+        int addressZ = (address & MdMainBusProvider.M68K_TO_Z80_MEMORY_MASK);
         if (size == Size.BYTE) {
             return z80Provider.readMemory(addressZ);
         } else if (size == Size.WORD) {
@@ -660,7 +663,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
             logWarnOnce(LOG, "68k write access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
             return;
         }
-        address &= MdBusProvider.M68K_TO_Z80_MEMORY_MASK;
+        address &= MdMainBusProvider.M68K_TO_Z80_MEMORY_MASK;
         if (size == Size.BYTE) {
             z80Provider.writeMemory(address, dataL);
         } else if (size == Size.WORD) {
@@ -950,6 +953,10 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
             m = (StateAwareMapper) mapper;
         }
         return m;
+    }
+
+    public MdCartInfoProvider getCartridgeInfoProvider() {
+        return cartridgeInfoProvider;
     }
 
     private static void logInfo(String str, Object... args) {

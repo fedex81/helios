@@ -1,6 +1,6 @@
 package omegadrive.cpu.z80;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Assertions;
 
 import java.util.Optional;
 
-import static omegadrive.bus.model.MdBusProvider.Z80_BUS_REQ_CONTROL_START;
-import static omegadrive.bus.model.MdBusProvider.Z80_RESET_CONTROL_START;
+import static omegadrive.bus.model.MdMainBusProvider.Z80_BUS_REQ_CONTROL_START;
+import static omegadrive.bus.model.MdMainBusProvider.Z80_RESET_CONTROL_START;
 
 /**
  * Federico Berti
@@ -22,7 +22,7 @@ import static omegadrive.bus.model.MdBusProvider.Z80_RESET_CONTROL_START;
 public class Z80ResetTest {
 
     MdZ80BusProvider z80bus;
-    MdBusProvider mainBus;
+    MdMainBusProvider mainBus;
     Z80Provider z80;
 
     static final int RESET_ON = 0, BUSREQ_OFF = 0, RESET_OFF = 1, BUSREQ_ON = 1;

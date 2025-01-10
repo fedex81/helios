@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import s32x.DmaFifo68k;
 import s32x.Md32x;
 import s32x.S32XMMREG;
-import s32x.bus.S32xBus;
+import s32x.bus.S32xBusIntf;
 import s32x.bus.Sh2Bus;
 import s32x.bus.Sh2BusImpl;
 import s32x.bus.Sh2MemoryParallel;
@@ -84,11 +84,11 @@ public class MarsLauncherHelper {
         return biosHolder;
     }
 
-    public static Sh2LaunchContext setupRom(S32xBus bus, RomHolder romHolder) {
+    public static Sh2LaunchContext setupRom(S32xBusIntf bus, RomHolder romHolder) {
         return setupRom(bus, romHolder, initBios());
     }
 
-    public static Sh2LaunchContext setupRom(S32xBus bus, RomHolder romHolder, BiosHolder biosHolder) {
+    public static Sh2LaunchContext setupRom(S32xBusIntf bus, RomHolder romHolder, BiosHolder biosHolder) {
         Sh2LaunchContext ctx = new Sh2LaunchContext();
         ctx.masterCtx = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, masterDebug);
         ctx.slaveCtx = new Sh2Context(BufferUtil.CpuDeviceAccess.SLAVE, slaveDebug);
@@ -123,7 +123,7 @@ public class MarsLauncherHelper {
     public static class Sh2LaunchContext {
         public Sh2Context masterCtx, slaveCtx;
         public Sh2DeviceContext mDevCtx, sDevCtx;
-        public S32xBus bus;
+        public S32xBusIntf bus;
         public BiosHolder biosHolder;
         public Sh2Bus memory;
         public Sh2 sh2;
@@ -145,8 +145,7 @@ public class MarsLauncherHelper {
             dmaFifo68k.setDmac(mDevCtx.dmaC, sDevCtx.dmaC);
             bus.setBios68k(biosHolder.getBiosData(BufferUtil.CpuDeviceAccess.M68K));
             bus.setRom(rom);
-            bus.masterCtx = masterCtx;
-            bus.slaveCtx = slaveCtx;
+            bus.setSh2Context(masterCtx, slaveCtx);
             sh2.reset(masterCtx);
             sh2.reset(slaveCtx);
             marsVdp = bus.getMarsVdp();

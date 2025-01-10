@@ -20,7 +20,7 @@
 package omegadrive.vdp.md;
 
 import omegadrive.SystemLoader;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
@@ -45,7 +45,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     protected MdVdpProvider vdpProvider;
     protected VdpMemoryInterface memoryInterface;
-    protected MdBusProvider busProvider;
+    protected MdMainBusProvider busProvider;
 
     private int dmaFillData;
     private DmaMode dmaMode = null;
@@ -55,7 +55,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private final VdpFifo.VdpFifoEntry pendingReadEntry = new VdpFifo.VdpFifoEntry();
 
     public static VdpDmaHandler createInstance(MdVdpProvider vdpProvider, VdpMemoryInterface memoryInterface,
-                                               MdBusProvider busProvider) {
+                                               MdMainBusProvider busProvider) {
         VdpDmaHandlerImpl d = new VdpDmaHandlerImpl();
         d.vdpProvider = vdpProvider;
         d.busProvider = busProvider;

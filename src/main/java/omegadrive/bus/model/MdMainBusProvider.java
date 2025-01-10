@@ -19,19 +19,21 @@
 
 package omegadrive.bus.model;
 
-import com.google.common.base.MoreObjects;
+import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
-import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
-import omegadrive.util.Size;
 import omegadrive.vdp.model.MdVdpProvider;
 import org.slf4j.Logger;
 
 import static omegadrive.memory.MemoryProvider.M68K_RAM_SIZE;
 
-public interface MdBusProvider extends BaseBusProvider {
+/**
+ * A bus with M68K, Z80 and Vdp connected and a busArbiter
+ */
+public interface MdMainBusProvider extends MdM68kBusProvider, Z80BusProvider {
 
     int[] EMPTY = new int[0];
     //http://gendev.spritesmind.net/forum/viewtopic.php?f=25&t=1283
@@ -71,29 +73,10 @@ public interface MdBusProvider extends BaseBusProvider {
 
     int NUM_MAPPER_BANKS = 8;
 
-    Logger LOG = LogHelper.getLogger(MdBusProvider.class.getSimpleName());
-
-    abstract class BusWriteRunnable implements Runnable {
-        public CpuDeviceAccess cpu;
-        public int address;
-        public int data;
-        public Size size;
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("address", address)
-                    .add("data", data)
-                    .add("size", size)
-                    .toString();
-        }
-    }
-
-    void handleVdpInterrupts68k();
+    Logger LOG = LogHelper.getLogger(MdMainBusProvider.class.getSimpleName());
 
     void handleVdpInterruptsZ80();
 
-    void ackInterrupt68k(int level);
 
     /**
      * VRES is fed to 68000 for 128 VCLKs (16.7us); ZRES is fed
@@ -101,8 +84,6 @@ public interface MdBusProvider extends BaseBusProvider {
      * deassert it; VDP and IO chip are unaffected.
      */
     void resetFrom68k();
-
-    boolean is68kRunning();
 
     void setVdpBusyState(MdVdpProvider.VdpBusyState state);
 
@@ -133,7 +114,6 @@ public interface MdBusProvider extends BaseBusProvider {
     }
 
     //Z80 for genesis doesnt do IO
-    @Override
     default int readIoPort(int port) {
         //TF4 calls this by mistake
         //LOG.debug("inPort: {}", port);
@@ -141,12 +121,18 @@ public interface MdBusProvider extends BaseBusProvider {
     }
 
     //Z80 for genesis doesnt do IO
-    @Override
     default void writeIoPort(int port, int value) {
         LOG.warn("outPort: {}, data: {}", port, value);
+    }
+
+    default void handleInterrupts(Z80Provider.Interrupt type) {
+        LOG.warn("Ignoring interrupt: {}", type);
     }
 
     default boolean isSvp() {
         return false;
     }
+
+
+    MdCartInfoProvider getCartridgeInfoProvider();
 }

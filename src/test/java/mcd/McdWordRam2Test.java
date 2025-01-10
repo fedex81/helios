@@ -1,8 +1,8 @@
 package mcd;
 
 import mcd.dict.MegaCdDict;
-import omegadrive.bus.md.MdBus;
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.BaseBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
@@ -62,7 +62,7 @@ public class McdWordRam2Test extends McdRegTestBase {
     public void testSwitch01() {
         assert ctx.wramSetup.mode == _2M;
         McdWordRamTest.setWramSub2M(lc);
-        int mainMemModeAddr = MdBusProvider.MEGA_CD_EXP_START +
+        int mainMemModeAddr = MdMainBusProvider.MEGA_CD_EXP_START +
                 MegaCdDict.RegSpecMcd.MCD_MEM_MODE.addr + 1;
         int val = mainCpuBus.read(mainMemModeAddr, Size.BYTE);
         //reset DMNA from MAIN, ignored
@@ -75,7 +75,7 @@ public class McdWordRam2Test extends McdRegTestBase {
     private void write1mString(CpuDeviceAccess cpu, String s, Size size) {
         assert lc.memoryContext.wramSetup.mode == _1M;
         int bank = getBank1M(lc.memoryContext.wramSetup, cpu);
-        MdBus bus = cpu == M68K ? mainCpuBus : subCpuBus;
+        BaseBusProvider bus = cpu == M68K ? mainCpuBus : subCpuBus;
         int baseAddr = START_MCD_SUB_WORD_RAM_1M;
         if (cpu == M68K) {
             baseAddr = bank == 0 ? START_MCD_MAIN_WORD_RAM : START_MCD_MAIN_WORD_RAM + MCD_WORD_RAM_1M_SIZE;
@@ -94,7 +94,7 @@ public class McdWordRam2Test extends McdRegTestBase {
 
     private String read1mString(CpuDeviceAccess cpu, int len, Size size) {
         assert lc.memoryContext.wramSetup.mode == _1M;
-        MdBus bus = cpu == M68K ? mainCpuBus : subCpuBus;
+        BaseBusProvider bus = cpu == M68K ? mainCpuBus : subCpuBus;
         int baseAddr = cpu == M68K ? START_MCD_MAIN_WORD_RAM : START_MCD_SUB_WORD_RAM_1M;
         String res = "";
         MdRuntimeData.setAccessTypeExt(cpu);

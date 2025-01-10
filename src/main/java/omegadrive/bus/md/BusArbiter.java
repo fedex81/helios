@@ -28,6 +28,8 @@ import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.MdVdpProvider.VdpBusyState;
 import org.slf4j.Logger;
 
+import java.util.Objects;
+
 import static omegadrive.bus.md.BusArbiter.isVdpVInt;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess;
 
@@ -46,6 +48,9 @@ public interface BusArbiter extends Device, BaseVdpProvider.VdpEventListener {
     enum InterruptEvent {Z80_INT_ON, Z80_INT_OFF}
 
     static BusArbiter createInstance(MdVdpProvider vdp, M68kProvider m68k, Z80Provider z80) {
+        Objects.requireNonNull(vdp);
+        Objects.requireNonNull(m68k);
+        Objects.requireNonNull(z80);
         BusArbiterImpl b = new BusArbiterImpl();
         b.vdp = vdp;
         b.m68k = m68k;

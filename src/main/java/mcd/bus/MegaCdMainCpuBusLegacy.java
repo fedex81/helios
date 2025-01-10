@@ -4,20 +4,12 @@ import mcd.cdd.CdBiosHelper;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.util.McdBiosHolder;
-import omegadrive.Device;
-import omegadrive.bus.DeviceAwareBus;
-import omegadrive.bus.model.MdMainBusProvider;
-import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.bus.md.MdBus;
 import omegadrive.cpu.m68k.MC68000Wrapper;
-import omegadrive.joypad.MdJoypad;
-import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.psg.PsgProvider;
-import omegadrive.system.SystemProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import omegadrive.vdp.model.MdVdpProvider;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
@@ -39,10 +31,12 @@ import static omegadrive.util.Util.*;
  * <p>
  * Copyright 2023
  * <p>
+ *  TODO remove
  */
-public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements MegaCdMainCpuBusIntf {
+@Deprecated
+public class MegaCdMainCpuBusLegacy extends MdBus implements MegaCdMainCpuBusIntf {
 
-    private static final Logger LOG = LogHelper.getLogger(MegaCdMainCpuBus.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MegaCdMainCpuBusLegacy.class.getSimpleName());
 
     public static final int MCD_GATE_REGS_SIZE = 0x40;
     public static final int MCD_GATE_REGS_MASK = MCD_GATE_REGS_SIZE - 1;
@@ -74,16 +68,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
 
     private int maskMode1;
 
-    protected MdMainBusProvider mdBus;
-
-    @Deprecated
-    public static boolean subCpuReset = false;
-
-    @Deprecated
-    //detects 0->1, 1->0 transitions only when written to
-    public static int ifl2Trigger = 0;
-
-    public MegaCdMainCpuBus(MegaCdMemoryContext ctx, MdMainBusProvider mdBus) {
+    public MegaCdMainCpuBusLegacy(MegaCdMemoryContext ctx) {
         cpu = M68K;
         prgRam = ByteBuffer.wrap(ctx.prgRam);
         sysGateRegs = ctx.getGateSysRegs(cpu);
@@ -94,14 +79,12 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         writeBufferRaw(sysGateRegs, MCD_CDC_REG_DATA.addr, 0xFFFF, Size.WORD);
         biosHolder = McdBiosHolder.getInstance();
         maskMode1 = !enableMode1 ? MCD_MAIN_MODE1_MASK : 0;
-        this.mdBus = mdBus;
     }
 
     @Override
     public void init() {
-        mdBus.init();
+        super.init();
         enableMode1 = true;
-        MdCartInfoProvider cartridgeInfoProvider = mdBus.getCartridgeInfoProvider();
         isBios = cartridgeInfoProvider.getSerial().startsWith("BR ");
         //bios aka bootRom
         if (isBios) {
@@ -118,12 +101,6 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         //mode1 and cue
         bios = biosHolder.getBiosBuffer(systemProvider.getRegion());
         maskMode1 = !enableMode1 ? MCD_MAIN_MODE1_MASK : 0;
-    }
-
-    @Override
-    public MdMainBusProvider attachDevice(Device device) {
-        super.attachDevice(device);
-        return (MdMainBusProvider) mdBus.attachDevice(device); //TODO
     }
 
     @Override
@@ -160,7 +137,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                     res = readBuffer(bios, addr & MCD_BOOT_ROM_MASK, size);
                 }
             } else {
-                res = mdBus.read(address, size);
+                res = super.read(address, size);
             }
         }
         return res & size.getMask();
@@ -207,98 +184,8 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                 return;
             }
         }
-        mdBus.write(address, data, size);
-        CdBiosHelper.checkMainMemRegion(memoryProvider.getRamData(), address);
-    }
-
-    @Override
-    public void writeIoPort(int port, int value) {
-        mdBus.writeIoPort(port, value);
-    }
-
-    @Override
-    public MdCartInfoProvider getCartridgeInfoProvider() {
-        return mdBus.getCartridgeInfoProvider();
-    }
-
-    @Override
-    public void handleVdpInterrupts68k() {
-        mdBus.handleVdpInterrupts68k();
-    }
-
-    @Override
-    public void handleVdpInterruptsZ80() {
-        mdBus.handleVdpInterruptsZ80();
-    }
-
-    @Override
-    public void ackInterrupt68k(int level) {
-        mdBus.ackInterrupt68k(level);
-    }
-
-    @Override
-    public void resetFrom68k() {
-        mdBus.resetFrom68k();
-    }
-
-    @Override
-    public boolean is68kRunning() {
-        return mdBus.is68kRunning();
-    }
-
-    @Override
-    public void setVdpBusyState(MdVdpProvider.VdpBusyState state) {
-        mdBus.setVdpBusyState(state);
-    }
-
-    @Override
-    public boolean isZ80Running() {
-        return mdBus.isZ80Running();
-    }
-
-    @Override
-    public boolean isZ80ResetState() {
-        return mdBus.isZ80ResetState();
-    }
-
-    @Override
-    public boolean isZ80BusRequested() {
-        return mdBus.isZ80BusRequested();
-    }
-
-    @Override
-    public void setZ80ResetState(boolean z80ResetState) {
-        mdBus.setZ80ResetState(z80ResetState);
-    }
-
-    @Override
-    public void setZ80BusRequested(boolean z80BusRequested) {
-        mdBus.setZ80BusRequested(z80BusRequested);
-    }
-
-    @Override
-    public PsgProvider getPsg() {
-        return mdBus.getPsg();
-    }
-
-    @Override
-    public FmProvider getFm() {
-        return mdBus.getFm();
-    }
-
-    @Override
-    public SystemProvider getSystem() {
-        return mdBus.getSystem();
-    }
-
-    @Override
-    public MdVdpProvider getVdp() {
-        return mdBus.getVdp();
-    }
-
-    @Override
-    public int readIoPort(int port) {
-        return mdBus.readIoPort(port);
+        super.write(address, data, size);
+        CdBiosHelper.checkMainMemRegion(ram, address);
     }
 
     private int readHintVector(int addr, Size size) {
@@ -398,6 +285,12 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
             default -> LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
         }
     }
+
+//    public static boolean subCpuReset = false;
+
+    //detects 0->1, 1->0 transitions only when written to
+//    public static int ifl2Trigger = 0;
+
     private void handleReg0Write(int address, int data, Size size) {
         int curr = readBufferWord(sysGateRegs, MCD_RESET.addr);
         int res = memCtx.handleRegWrite(cpu, MCD_RESET, address, data, size);
@@ -433,13 +326,13 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         int subIntReg = (res >> 8) & 1; //IFL2
         if (subIntReg > 0) {
             if (((prev >> 8) & 1) == 0) {
-                ifl2Trigger = 1;
+                MegaCdMainCpuBus.ifl2Trigger = 1;
                 LogHelper.logInfo(LOG, "M SubCpu int2 request");
                 subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
             }
         } else if (subIntReg == 0) {
             //explicit set ifl2 to 0
-            ifl2Trigger = 0;
+            MegaCdMainCpuBus.ifl2Trigger = 0;
         }
     }
 

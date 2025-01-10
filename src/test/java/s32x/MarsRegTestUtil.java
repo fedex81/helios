@@ -83,7 +83,7 @@ public class MarsRegTestUtil {
         MdRuntimeData.releaseInstance();
         MdRuntimeData.newInstance(SystemLoader.SystemType.S32X, SystemProvider.NO_CLOCK);
         RomHolder romHolder = new RomHolder(irom);
-        Sh2LaunchContext lc = MarsLauncherHelper.setupRom(new S32xBus(), romHolder, createTestBiosHolder());
+        Sh2LaunchContext lc = MarsLauncherHelper.setupRom(S32xBus.createS32xBus(), romHolder, createTestBiosHolder());
         IMemoryProvider mp = MemoryProvider.createMdInstance();
         mp.setRomData(irom);
         SystemTestUtil.setupNewMdSystem(lc.bus, mp);

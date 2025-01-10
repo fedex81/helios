@@ -1,6 +1,6 @@
 package omegadrive.mapper;
 
-import omegadrive.bus.model.MdBusProvider;
+import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
 import omegadrive.memory.IMemoryProvider;
@@ -13,7 +13,7 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-import static omegadrive.bus.model.MdBusProvider.SRAM_LOCK;
+import static omegadrive.bus.model.MdMainBusProvider.SRAM_LOCK;
 import static omegadrive.cart.MdCartInfoProvider.MdRomHeaderField.SYSTEM_TYPE;
 import static omegadrive.util.UtilTest.RUNNING_IN_GITHUB;
 
@@ -45,7 +45,7 @@ public class MdMapperTest {
         int val1 = 0x55_66_77_88;
 
         buffer.putInt(address1, val1);
-        MdBusProvider bus = loadRomData();
+        MdMainBusProvider bus = loadRomData();
 
         testBusRead(bus, address, 0xFFFF_FFFF); //read to unmapped address space
         testBusRead(bus, address1, val1);
@@ -70,7 +70,7 @@ public class MdMapperTest {
         int val = 0x11_22_33_44;
         buffer.putInt(address, val);
         buffer.putInt(address1, val);
-        MdBusProvider bus = loadRomData();
+        MdMainBusProvider bus = loadRomData();
         bus.write(SRAM_LOCK, 0, Size.BYTE); //enable ssfMapper, disable SRAM
         testBusRead(bus, address, val);
         testBusRead(bus, address1, val);
@@ -131,7 +131,7 @@ public class MdMapperTest {
         int val1 = 0x55_66_77_88;
         buffer.putInt(address, val);
         buffer.putInt(address1, val1);
-        MdBusProvider bus = loadRomData();
+        MdMainBusProvider bus = loadRomData();
 
         testBusRead(bus, address, val);
         testBusRead(bus, address1, val1);
@@ -143,7 +143,7 @@ public class MdMapperTest {
     @Test
     public void testSramReadOnlyFlag() {
         prepareRomData(0x50_0000, "SEGA GENESIS"); //40 Mbit
-        MdBusProvider bus = loadRomData();
+        MdMainBusProvider bus = loadRomData();
         int address = 0x20_00FF;
         int sramData = 0x1234_5678;
         int val = 0x99_34_56_78;
@@ -168,7 +168,7 @@ public class MdMapperTest {
         int val1 = 0x55_66_77_88;
 
         buffer.putInt(address1, val1);
-        MdBusProvider bus = loadRomData();
+        MdMainBusProvider bus = loadRomData();
 
         //unmapped read
         testBusRead(bus, address, 0xFFFF_FFFF);
@@ -181,7 +181,7 @@ public class MdMapperTest {
         testBusRead(bus, address2, val2);
     }
 
-    private void testBusRead(MdBusProvider bus, int address, final int expectedLong) {
+    private void testBusRead(MdMainBusProvider bus, int address, final int expectedLong) {
         for (Size size : Size.values()) {
             switch (size) {
                 case BYTE:
@@ -210,9 +210,9 @@ public class MdMapperTest {
         buffer.putInt(0x20_FFFF); //sram end
     }
 
-    private MdBusProvider loadRomData() {
+    private MdMainBusProvider loadRomData() {
         mem.setRomData(buffer.array());
-        MdBusProvider bus = SystemTestUtil.setupNewMdSystem(mem);
+        MdMainBusProvider bus = SystemTestUtil.setupNewMdSystem(mem);
         bus.init();
         return bus;
     }

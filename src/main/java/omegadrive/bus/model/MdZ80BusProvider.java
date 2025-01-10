@@ -26,7 +26,7 @@ import omegadrive.memory.IMemoryRam;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
-public interface MdZ80BusProvider extends BaseBusProvider {
+public interface MdZ80BusProvider extends Z80BusProvider {
 
     Logger LOG = LogHelper.getLogger(MdZ80BusProvider.class.getSimpleName());
 
@@ -54,7 +54,7 @@ public interface MdZ80BusProvider extends BaseBusProvider {
     int Z80_RAM_MEMORY_SIZE = 0x2000;
 
 
-    static MdZ80BusProvider createInstance(BaseBusProvider busProvider) {
+    static MdZ80BusProvider createInstance(Z80BusProvider busProvider) {
         IMemoryRam ram = new Z80Memory(Z80_RAM_MEMORY_SIZE);
         MdZ80BusProvider b = new MdZ80BusProviderImpl();
         b.attachDevices(busProvider, ram);
@@ -66,7 +66,6 @@ public interface MdZ80BusProvider extends BaseBusProvider {
     int getRomBank68kSerial();
 
     //Z80 for genesis doesnt do IO
-    @Override
     default int readIoPort(int port) {
         //TF4 calls this by mistake
         //LOG.debug("inPort: {}", port);
@@ -74,7 +73,6 @@ public interface MdZ80BusProvider extends BaseBusProvider {
     }
 
     //Z80 for genesis doesnt do IO
-    @Override
     default void writeIoPort(int port, int value) {
         LOG.warn("outPort: {}, data: {}", port, value);
     }

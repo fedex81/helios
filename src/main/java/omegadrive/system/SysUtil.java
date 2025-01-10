@@ -2,7 +2,7 @@ package omegadrive.system;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import mcd.MegaCd2;
+import mcd.MegaCd;
 import omegadrive.Device;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;
@@ -25,6 +25,7 @@ import omegadrive.vdp.model.BaseVdpAdapter;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
 import s32x.Md32x;
+import s32x.MegaCd32x;
 import s32x.pwm.BlipPwmProvider;
 import s32x.pwm.Pwm;
 import s32x.pwm.S32xPwmProvider;
@@ -138,10 +139,12 @@ public class SysUtil {
             }
         }
         SystemProvider systemProvider = switch (type) {
-//            case MD -> Megadrive.createNewInstance(display);
-            case MD -> MegaCd2.createNewInstance(display);
-            case MEGACD -> MegaCd2.createNewInstance(display);
+            case MD -> Megadrive.createNewInstance(display);
+            case MEGACD -> MegaCd.createNewInstance(display);
+//            case MEGACD -> MegaCd32x.createNewInstance(display);
             case S32X -> Md32x.createNewInstance32x(display);
+//            case S32X -> MegaCd32x.createNewInstance(display);
+            case MEGACD_S32X -> MegaCd32x.createNewInstance(display);
             case SG_1000 -> Z80BaseSystem.createNewInstance(SG_1000, display);
             case COLECO -> Z80BaseSystem.createNewInstance(COLECO, display);
             case MSX -> Z80BaseSystem.createNewInstance(MSX, display);
@@ -232,17 +235,6 @@ public class SysUtil {
         public void write(int address, int data, Size size) {
 
         }
-
-        @Override
-        public void writeIoPort(int port, int value) {
-
-        }
-
-        @Override
-        public int readIoPort(int port) {
-            return 0;
-        }
-
         @Override
         public BaseBusProvider attachDevice(Device device) {
             return null;

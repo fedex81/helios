@@ -50,6 +50,7 @@ public abstract class DeviceAwareBus<V extends BaseVdpProvider, J extends Joypad
 
     @Override
     public BaseBusProvider attachDevice(Device device) {
+        assert device != null;
         deviceSet.add(device);
         loadMappings();
         return this;

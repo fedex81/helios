@@ -11,7 +11,7 @@ import java.util.Arrays;
 import static mcd.dict.MegaCdDict.MCD_MAIN_PRG_RAM_WINDOW_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_COMM0;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_COMM3;
-import static omegadrive.bus.model.MdBusProvider.MEGA_CD_EXP_START;
+import static omegadrive.bus.model.MdMainBusProvider.MEGA_CD_EXP_START;
 
 /**
  * Federico Berti
@@ -24,8 +24,9 @@ public class McdMemoryMapMirrors extends McdRegTestBase {
     //$440000-$5FFFFF repeatedly mirrors the $400000-$43FFFF area. (7 copies of Boot ROM / PRG RAM)
     @Test
     public void testBootRomPrgRamMirrors() {
-        lc.mainBus.bios = ByteBuffer.allocate(0x1000);
-        Arrays.fill(lc.mainBus.bios.array(), (byte) 0xAB);
+        ByteBuffer biosbb = ByteBuffer.allocate(0x1000);
+        Arrays.fill(biosbb.array(), (byte) 0xAB);
+        lc.mainBus.setBios(biosbb);
         testMirrorsInternal(MegaCdDict.START_MCD_MAIN_PRG_RAM_MODE1 | 0x144);
 
         //test boot rom mirrors

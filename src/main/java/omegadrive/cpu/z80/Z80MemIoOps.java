@@ -19,8 +19,8 @@
 
 package omegadrive.cpu.z80;
 
-import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.bus.model.MdZ80BusProvider;
+import omegadrive.bus.model.Z80BusProvider;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.util.Size;
 import z80core.IMemIoOps;
@@ -29,7 +29,7 @@ import static omegadrive.util.Util.th;
 
 public class Z80MemIoOps implements IMemIoOps {
 
-    private BaseBusProvider z80BusProvider;
+    private Z80BusProvider z80BusProvider;
     private long tstatesCount = 0;
     private boolean activeInterrupt;
     private byte[] ram;
@@ -37,15 +37,15 @@ public class Z80MemIoOps implements IMemIoOps {
     private int pcUpperLimit = 0xFFFF;
     public int lastFetch;
 
-    public static Z80MemIoOps createMdInstance(BaseBusProvider z80BusProvider) {
+    public static Z80MemIoOps createMdInstance(Z80BusProvider z80BusProvider) {
         return createMdInstanceInternal(new Z80MemIoOps(), z80BusProvider);
     }
 
-    public static Z80MemIoOps createDebugMdInstance(BaseBusProvider z80BusProvider, StringBuilder sb, int logAddressAccess) {
+    public static Z80MemIoOps createDebugMdInstance(Z80BusProvider z80BusProvider, StringBuilder sb, int logAddressAccess) {
         return createMdInstanceInternal(createDbgMemIoOps(sb, logAddressAccess), z80BusProvider);
     }
 
-    private static Z80MemIoOps createMdInstanceInternal(Z80MemIoOps m, BaseBusProvider z80BusProvider) {
+    private static Z80MemIoOps createMdInstanceInternal(Z80MemIoOps m, Z80BusProvider z80BusProvider) {
         m.z80BusProvider = z80BusProvider;
         IMemoryRam mem = z80BusProvider.getBusDeviceIfAny(IMemoryRam.class).
                 orElseThrow(() -> new RuntimeException("Invalid setup"));
@@ -55,7 +55,7 @@ public class Z80MemIoOps implements IMemIoOps {
         return m;
     }
 
-    public static Z80MemIoOps createInstance(BaseBusProvider z80BusProvider) {
+    public static Z80MemIoOps createInstance(Z80BusProvider z80BusProvider) {
         Z80MemIoOps m = new Z80MemIoOps() {
             @Override
             public int fetchOpcode(int address) {
