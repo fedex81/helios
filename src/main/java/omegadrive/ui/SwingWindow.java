@@ -135,7 +135,7 @@ public class SwingWindow implements DisplayWindow {
         regionLabel.setText(icon == null ? romContext.region.name() : "");
         regionLabel.setToolTipText(romContext.region.name());
         reloadRecentFiles();
-        if (mainEmu.getSystemType() == SystemType.MEGACD) {
+        if (mainEmu.getSystemType().isMegaCdAttached()) {
             megaCdLedLabel.setIcon(IconsLoader.getLedIcon(0));
         }
     }

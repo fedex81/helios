@@ -115,7 +115,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
         if (romPath == null) {
             return NO_OP_HANDLER;
         }
-        if (systemType == SystemLoader.SystemType.MEGACD) {
+        if (systemType.isMegaCdAttached()) {
             LOG.info("Disabling MSU-MD handling, {} detected.", systemType);
             return NO_OP_HANDLER;
         }

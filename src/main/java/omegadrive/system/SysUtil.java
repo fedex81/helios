@@ -206,6 +206,7 @@ public class SysUtil {
             case MD:
             case S32X:
             case MEGACD:
+            case MEGACD_S32X:
                 fmProvider = MdFmProvider.createInstance(region, AbstractSoundManager.audioFormat);
                 break;
             case SMS:

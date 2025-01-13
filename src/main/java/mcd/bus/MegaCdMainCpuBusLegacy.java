@@ -389,6 +389,11 @@ public class MegaCdMainCpuBusLegacy extends MdBus implements MegaCdMainCpuBusInt
     }
 
     @Override
+    public void setEnableMode1(boolean enableMode1) {
+        this.enableMode1 = enableMode1;
+    }
+
+    @Override
     public void setBios(ByteBuffer buffer) {
         this.bios = buffer;
     }

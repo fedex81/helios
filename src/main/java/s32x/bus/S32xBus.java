@@ -276,6 +276,10 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
             res = 0x4d415253; //'MARS'
         } else if (address >= S32xDict.M68K_START_32X_SYSREG && address < S32xDict.M68K_END_32X_SYSREG) {
             res = read32xWord((address & S32xDict.M68K_MASK_32X_SYSREG) | S32xDict.SH2_SYSREG_32X_OFFSET, size);
+        } else if (address >= S32xDict.M68K_START_32X_VDPREG && address < S32xDict.M68K_END_32X_VDPREG) {
+            res = read32xWord((address & S32xDict.M68K_MASK_32X_VDPREG) | S32xDict.SH2_VDPREG_32X_OFFSET, size);
+        } else if (address >= S32xDict.M68K_START_32X_COLPAL && address < S32xDict.M68K_END_32X_COLPAL) {
+            res = read32xWord((address & S32xDict.M68K_MASK_32X_COLPAL) | S32xDict.SH2_COLPAL_32X_OFFSET, size);
         } else {
             res = mdBus.read(address, size);
         }
@@ -345,6 +349,10 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
             int addr = (address & S32xDict.M68K_MASK_32X_SYSREG) | S32xDict.SH2_SYSREG_32X_OFFSET;
             write32xWordDirect(addr, data, size);
             checkBankSetRegister(addr, size);
+        } else if (address >= S32xDict.M68K_START_32X_VDPREG && address < S32xDict.M68K_END_32X_VDPREG) {
+            write32xWord((address & S32xDict.M68K_MASK_32X_VDPREG) | S32xDict.SH2_VDPREG_32X_OFFSET, data, size);
+        } else if (address >= S32xDict.M68K_START_32X_COLPAL && address < S32xDict.M68K_END_32X_COLPAL) {
+            write32xWord((address & S32xDict.M68K_MASK_32X_COLPAL) | S32xDict.SH2_COLPAL_32X_OFFSET, data, size);
         } else {
             mdBus.write(address, data, size);
         }

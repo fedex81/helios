@@ -19,7 +19,6 @@
 
 package omegadrive.vdp.md;
 
-import omegadrive.SystemLoader;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
@@ -91,7 +90,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                     WRAM_2M($200_000-$23f_fff)
                     PRGRAM ($020_000-$03f_fff)
         */
-        boolean isMegaCd = (busProvider.getSystem().getSystemType() == SystemLoader.SystemType.MEGACD);
+        boolean isMegaCd = busProvider.getSystem().getSystemType().isMegaCdAttached();
         //TODO mode1
         boolean megaCdDma = isMegaCd && (
                 ((dmaSrcHigh & 0xF0) == 0x30) || //wram_1M

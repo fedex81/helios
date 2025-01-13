@@ -24,11 +24,9 @@ import mcd.cart.MegaCdCartInfoProvider;
 import mcd.cdd.ExtendedCueSheet;
 import mcd.util.McdMemView;
 import omegadrive.SystemLoader;
-import omegadrive.bus.md.SvpMapper;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
-import omegadrive.cpu.ssp16.Ssp16;
 import omegadrive.system.Megadrive;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
@@ -188,16 +186,11 @@ public class MegaCd extends Megadrive {
     @Override
     protected void initAfterRomLoad() {
         super.initAfterRomLoad();
-        bus.attachDevice(sound);
-        vdp.addVdpEventListener(sound);
-        SvpMapper.ssp16 = Ssp16.NO_SVP;
-        resetAfterRomLoad();
-        megaCdDiscInsert();
-        memView = createMemView();
+        megaCdDiscInsert(mcdLaunchContext, romContext);
     }
 
     //fudge it
-    private void megaCdDiscInsert() {
+    public static void megaCdDiscInsert(McdDeviceHelper.McdLaunchContext mcdLaunchContext, RomContext romContext) {
         boolean segaMode1 = mcdLaunchContext.mainBus.isEnableMode1();
         boolean bios = mcdLaunchContext.mainBus.isBios();
         boolean tryInsertAsDisc = !segaMode1 && !bios && romContext.romFileType.isDiscImage();

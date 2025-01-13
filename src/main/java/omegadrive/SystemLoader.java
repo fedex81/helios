@@ -245,5 +245,9 @@ public class SystemLoader {
         public String getShortName() {
             return shortName;
         }
+
+        public boolean isMegaCdAttached() {
+            return this == MEGACD || this == MEGACD_S32X;
+        }
     }
 }

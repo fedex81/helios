@@ -1772,7 +1772,7 @@ public class Sh2Impl implements Sh2 {
 
     protected final void SLEEP(int code) {
         ctx.cycles -= 4;
-        LOG.info("{} exec sleep at PC: {}", ctx.cpuAccess, th(ctx.PC));
+//        LOG.info("{} exec sleep at PC: {}", ctx.cpuAccess, th(ctx.PC));
     }
 
     protected final void STCSR(int code) {

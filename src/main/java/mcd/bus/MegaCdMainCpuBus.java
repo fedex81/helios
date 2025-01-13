@@ -491,6 +491,11 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         return enableMode1;
     }
 
+    @Override
+    public void setEnableMode1(boolean enableMode1) {
+        this.enableMode1 = enableMode1;
+    }
+
     public boolean isBios() {
         return isBios;
     }

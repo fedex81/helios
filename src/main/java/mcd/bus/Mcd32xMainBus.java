@@ -1,229 +1,197 @@
 package mcd.bus;
 
-import mcd.dict.MegaCdMemoryContext;
+import mcd.McdDeviceHelper;
 import omegadrive.Device;
-import omegadrive.bus.md.MdBus;
-import omegadrive.bus.model.BaseBusProvider;
+import omegadrive.SystemLoader;
+import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.joypad.MdJoypad;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
+import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.vdp.model.MdVdpProvider;
+import org.slf4j.Logger;
 import s32x.bus.S32xBus;
 import s32x.bus.S32xBusIntf;
+import s32x.dict.S32xDict;
 
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.nio.ByteBuffer;
 
 /**
  * Federico Berti
  * <p>
  * Copyright 2025
  *
- * @Deprecated rewrite
  */
-public class Mcd32xMainBus extends MdBus {
+public class Mcd32xMainBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements MdMainBusProvider {
+
+    private static final Logger LOG = LogHelper.getLogger(Mcd32xMainBus.class.getSimpleName());
     public final S32xBusIntf s32xBus;
     public final MegaCdMainCpuBusIntf mcdMainBus;
 
-    private final MdMainBusProvider busHack;
+    private final MdMainBusProvider mdBus;
 
-    private final static AtomicBoolean notFound = new AtomicBoolean();
+    //TODO remove at some point
+    private final SystemLoader.SystemType forceSystem;
 
-    public Mcd32xMainBus(MegaCdMemoryContext cdMemoryContext) {
-        busHack = getBusHack();
-        s32xBus = S32xBus.createS32xBus(this);
-        mcdMainBus = new MegaCdMainCpuBus(cdMemoryContext, this);
+
+    public Mcd32xMainBus(McdDeviceHelper.McdLaunchContext mcdLaunchContext, SystemLoader.SystemType forceSystem) {
+        this.mdBus = mcdLaunchContext.mdBus;
+        s32xBus = S32xBus.createS32xBus(mdBus);
+        mcdMainBus = mcdLaunchContext.mainBus;
+        this.forceSystem = forceSystem;
+        if (forceSystem != null) {
+            LOG.warn("Forcing MEGACD-32x to handle: {}", forceSystem);
+        }
     }
-
-    private static MdMainBusProvider getBusHack() {
-        return new MdMainBusProviderAdapter() {
-            @Override
-            public int read(int address, Size size) {
-                notFound.set(true);
-                return 0;
-            }
-
-            @Override
-            public void write(int address, int data, Size size) {
-                notFound.set(true);
-            }
-        };
-    }
-
-    private final AtomicBoolean inited = new AtomicBoolean(false);
 
     @Override
     public void init() {
-        if (inited.compareAndSet(false, true)) {
-            super.init();
-            mcdMainBus.init();
-            s32xBus.init();
-        } else {
-            System.err.println("Recursive init call");
-        }
+        super.init();
+        mcdMainBus.init();
+        s32xBus.init();
+        //TODO improve, 32x set cart = NOT_PRESENT
+        s32xBus.setRom(ByteBuffer.allocate(0));
     }
 
     @Override
     public MdMainBusProvider attachDevice(Device device) {
-        if (getBusDeviceIfAny(device.getClass()).isEmpty()) {
-            super.attachDevice(device);
-        }
-        if (mcdMainBus.getBusDeviceIfAny(device.getClass()).isEmpty()) {
-            mcdMainBus.attachDevice(device);
-        }
-        if (s32xBus.getBusDeviceIfAny(device.getClass()).isEmpty()) {
-            s32xBus.attachDevice(device);
-        }
-        return this;
+        super.attachDevice(device);
+        mcdMainBus.attachDevice(device);
+        s32xBus.attachDevice(device);
+        return (MdMainBusProvider) mdBus.attachDevice(device);
     }
-
-    int depth = 0;
 
     @Override
     public int read(int address, Size size) {
-        if (++depth >= 2) {
-            notFound.set(true);
-            return 0;
+        address &= 0xFF_FFFF;
+        SystemLoader.SystemType st = forceSystem;
+        if (st == null) {
+            st = byAddress(address);
         }
-        notFound.set(false);
-        int res = s32xBus.read(address, size);
-        if (notFound.compareAndSet(true, false)) {
-            res = mcdMainBus.read(address, size);
-            if (notFound.compareAndSet(true, false)) {
-                res = readData(address, size);
-                assert !notFound.get();
-            }
-        }
-        depth = 0;
-        return res;
+//        LogHelper.logWarnOnceForce(LOG, "{} Read {}", st, th(address));
+            return switch (st) {
+            case S32X -> s32xBus.read(address, size);
+            case MEGACD -> mcdMainBus.read(address, size);
+                default -> throw new RuntimeException(st.toString());
+        };
     }
 
     @Override
     public void write(int address, int data, Size size) {
-        if (++depth >= 2) {
-            notFound.set(true);
-            return;
+        address &= 0xFF_FFFF;
+        SystemLoader.SystemType st = forceSystem;
+        if (st == null) {
+            st = byAddress(address);
         }
-        notFound.set(false);
-        s32xBus.write(address, data, size);
-        if (notFound.compareAndSet(true, false)) {
-            mcdMainBus.write(address, data, size);
-            if (notFound.compareAndSet(true, false)) {
-                writeData(address, data, size);
-                assert !notFound.get();
+//        LogHelper.logWarnOnceForce(LOG, "{} Write {}", st, th(address));
+            switch (st) {
+                case S32X -> s32xBus.write(address, data, size);
+                case MEGACD -> mcdMainBus.write(address, data, size);
+                default -> throw new RuntimeException(st.toString());
             }
-        }
-        depth = 0;
     }
 
-    static class MdMainBusProviderAdapter implements MdMainBusProvider {
+    /**
+     * 0x84_0000 ... 0x88_0000 FB
+     * 0xA1_5100 ... 0xA1_5400 regs
+     *
+     * @param address
+     * @return
+     */
+    private static SystemLoader.SystemType byAddress(int address) {
+        assert !(address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR);
+        boolean is32xAddr =
+                //TODO only when forcing S32X
+//                (address < S32xDict.M68K_END_VECTOR_ROM) ||
+                (address >= S32xDict.M68K_START_FRAME_BUFFER && address < S32xDict.M68K_END_OVERWRITE_IMAGE) ||
+//                TODO rom mirror should not work as there is no cart ??
+//                (address >= S32xDict.M68K_START_FRAME_BUFFER && address < S32xDict.M68K_END_ROM_MIRROR_BANK) ||
+                        (address >= S32xDict.M68K_START_32X_SYSREG && address < S32xDict.M68K_END_32X_COLPAL) ||
+                        (address >= S32xDict.M68K_START_MARS_ID && address < S32xDict.M68K_END_MARS_ID);
+        return is32xAddr ? SystemLoader.SystemType.S32X : SystemLoader.SystemType.MEGACD;
+    }
 
-        @Override
-        public int read(int address, Size size) {
-            return 0;
-        }
+    @Override
+    public void handleVdpInterrupts68k() {
+        mdBus.handleVdpInterrupts68k();
+    }
 
-        @Override
-        public void write(int address, int data, Size size) {
-        }
+    @Override
+    public void ackInterrupt68k(int level) {
+        mdBus.ackInterrupt68k(level);
+    }
 
-        @Override
-        public BaseBusProvider attachDevice(Device device) {
-            return null;
-        }
+    @Override
+    public boolean is68kRunning() {
+        return mdBus.is68kRunning();
+    }
 
-        @Override
-        public <T extends Device> Optional<T> getBusDeviceIfAny(Class<T> clazz) {
-            return Optional.empty();
-        }
+    @Override
+    public void handleVdpInterruptsZ80() {
+        mdBus.handleVdpInterruptsZ80();
+    }
 
-        @Override
-        public <T extends Device> Set<T> getAllDevices(Class<T> clazz) {
-            return null;
-        }
+    @Override
+    public void resetFrom68k() {
+        mdBus.resetFrom68k();
+    }
 
-        @Override
-        public void handleVdpInterrupts68k() {
+    @Override
+    public void setVdpBusyState(MdVdpProvider.VdpBusyState state) {
+        mdBus.setVdpBusyState(state);
+    }
 
-        }
+    @Override
+    public boolean isZ80Running() {
+        return mdBus.isZ80Running();
+    }
 
-        @Override
-        public void ackInterrupt68k(int level) {
+    @Override
+    public boolean isZ80ResetState() {
+        return mdBus.isZ80ResetState();
+    }
 
-        }
+    @Override
+    public boolean isZ80BusRequested() {
+        return mdBus.isZ80BusRequested();
+    }
 
-        @Override
-        public boolean is68kRunning() {
-            return false;
-        }
+    @Override
+    public void setZ80ResetState(boolean z80ResetState) {
+        mdBus.setZ80ResetState(z80ResetState);
+    }
 
-        @Override
-        public void handleVdpInterruptsZ80() {
+    @Override
+    public void setZ80BusRequested(boolean z80BusRequested) {
+        mdBus.setZ80BusRequested(z80BusRequested);
+    }
 
-        }
+    @Override
+    public PsgProvider getPsg() {
+        return mdBus.getPsg();
+    }
 
-        @Override
-        public void resetFrom68k() {
+    @Override
+    public FmProvider getFm() {
+        return mdBus.getFm();
+    }
 
-        }
+    @Override
+    public SystemProvider getSystem() {
+        return mdBus.getSystem();
+    }
 
-        @Override
-        public void setVdpBusyState(MdVdpProvider.VdpBusyState state) {
+    @Override
+    public MdVdpProvider getVdp() {
+        return mdBus.getVdp();
+    }
 
-        }
-
-        @Override
-        public boolean isZ80Running() {
-            return false;
-        }
-
-        @Override
-        public boolean isZ80ResetState() {
-            return false;
-        }
-
-        @Override
-        public boolean isZ80BusRequested() {
-            return false;
-        }
-
-        @Override
-        public void setZ80ResetState(boolean z80ResetState) {
-
-        }
-
-        @Override
-        public void setZ80BusRequested(boolean z80BusRequested) {
-
-        }
-
-        @Override
-        public PsgProvider getPsg() {
-            return null;
-        }
-
-        @Override
-        public FmProvider getFm() {
-            return null;
-        }
-
-        @Override
-        public SystemProvider getSystem() {
-            return null;
-        }
-
-        @Override
-        public MdVdpProvider getVdp() {
-            return null;
-        }
-
-        @Override
-        public MdCartInfoProvider getCartridgeInfoProvider() {
-            return null;
-        }
+    @Override
+    public MdCartInfoProvider getCartridgeInfoProvider() {
+        return mdBus.getCartridgeInfoProvider();
     }
 }

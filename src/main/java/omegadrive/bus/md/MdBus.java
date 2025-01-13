@@ -20,7 +20,6 @@
 package omegadrive.bus.md;
 
 import omegadrive.Device;
-import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.SvpBus;
@@ -515,7 +514,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         //	Version register (read-only word-long)
         if ((address & 0xFFF) <= 1) {
             //expansion unit not connected bit#5 set (0x20), otherwise 0
-            int expUnit = systemProvider.getSystemType() == SystemLoader.SystemType.MEGACD ? 0 : 0x20;
+            int expUnit = systemProvider.getSystemType().isMegaCdAttached() ? 0 : 0x20;
             data = expUnit | systemProvider.getRegionCode() | (enableTmss ? 1 : 0);
             data = size == Size.WORD ? (data << 8) | data : data;
             return data;
