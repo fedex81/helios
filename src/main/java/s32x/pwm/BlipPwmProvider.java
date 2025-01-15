@@ -60,6 +60,8 @@ public class BlipPwmProvider implements PwmProvider {
     private final SourceDataLine dataLine;
     private Warmup warmup = NO_WARMUP;
 
+    public static boolean mute = false;
+
     private final ExecutorService exec =
             Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, "pwm"));
 
@@ -151,7 +153,7 @@ public class BlipPwmProvider implements PwmProvider {
         }
         final long current = sync.incrementAndGet();
         int stereoBytes = blip.readSamples16bitStereo(context.lineBuffer, 0, availMonoSamples) << 2;
-        if (stereoBytes > 0) {
+        if (stereoBytes > 0 && !mute) {
             exec.submit(() -> {
                 SoundUtil.writeBufferInternal(dataLine, context.lineBuffer, 0, stereoBytes);
                 if (BufferUtil.assertionsEnabled) {

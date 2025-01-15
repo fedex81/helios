@@ -19,6 +19,7 @@
 
 package omegadrive.sound.javasound;
 
+import mcd.pcm.BlipPcmProvider;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.sound.PcmProvider;
@@ -36,9 +37,11 @@ import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
 import org.slf4j.Logger;
+import s32x.pwm.BlipPwmProvider;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -68,6 +71,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
     private SystemLoader.SystemType type;
     protected RegionDetector.Region region;
     protected volatile int soundDeviceSetup = SoundDeviceType.NONE.getBit();
+
+    protected List<SoundDevice.MutableDevice> mutableDeviceList = new ArrayList<>();
     protected AtomicBoolean initedOnce = new AtomicBoolean(false);
 
     public static SoundProvider createSoundProvider(SystemLoader.SystemType systemType) {
@@ -164,6 +169,11 @@ public abstract class AbstractSoundManager implements SoundProvider {
     }
 
     @Override
+    public void addExternalSoundSource(SoundDevice.MutableDevice mutableDevice) {
+        mutableDeviceList.add(mutableDevice);
+    }
+
+    @Override
     public boolean isMute() {
         return !soundEnabled;
     }
@@ -172,6 +182,10 @@ public abstract class AbstractSoundManager implements SoundProvider {
     public void setEnabled(boolean enabled) {
         this.soundEnabled = enabled;
         LOG.info("Set sound enabled: {}", enabled);
+        //TODO hack
+        BlipPcmProvider.mute = !enabled;
+        BlipPwmProvider.mute = !enabled;
+//        mutableDeviceList.forEach(d -> d.setEnabled(enabled));
     }
 
     //SMS only

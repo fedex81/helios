@@ -5,7 +5,7 @@ import mcd.cdc.Cdc;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.BlipPcmProvider;
-import mcd.pcm.McdPcmProvider;
+import omegadrive.sound.PcmProvider;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.*;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ class CddImpl implements Cdd {
     private final MegaCdMemoryContext memoryContext;
     private final McdSubInterruptHandler interruptHandler;
     private final Cdc cdc;
-    private final McdPcmProvider playSupport;
+    private final PcmProvider playSupport;
     private ExtendedCueSheet extCueSheet;
 
     private final CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();

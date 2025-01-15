@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 
-public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener {
+public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener, SoundDevice.MutableDevice {
     Logger LOG = LogHelper.getLogger(SoundProvider.class.getSimpleName());
 
     long PAL_PSG_CLOCK = Util.GEN_PAL_MCLOCK_MHZ / 15; // 3546893
@@ -129,7 +129,18 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
         }
     };
 
+    void setEnabled(Device device, boolean enabled);
+
     void close();
+
+    /***
+     * TODO HACK
+     * PWM, PCM use their own dataLine and need to be explicitely muted.
+     */
+    @Deprecated
+    default void addExternalSoundSource(SoundDevice.MutableDevice mutableDevice) {
+        LOG.warn("Ignoring: {}", mutableDevice.getClass());
+    }
 
     default boolean isRecording() {
         return false;
@@ -138,10 +149,4 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener 
     default void setRecording(boolean recording) {
         //NO OP
     }
-
-    boolean isMute();
-
-    void setEnabled(boolean mute);
-
-    void setEnabled(Device device, boolean enabled);
 }

@@ -2,6 +2,7 @@ package mcd.pcm;
 
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdDict.RegSpecMcd;
+import omegadrive.sound.PcmProvider;
 import omegadrive.util.*;
 import org.slf4j.Logger;
 import s32x.util.blipbuffer.BlipBufferHelper;
@@ -67,7 +68,7 @@ public class McdPcm implements BufferUtil.StepDevice {
     private ByteBuffer waveData, pcmRegs;
     private PcmChannelContext[] chan;
 
-    private McdPcmProvider playSupport = McdPcmProvider.NO_SOUND;
+    private PcmProvider playSupport = PcmProvider.NO_SOUND;
 
     private int channelBank, waveBank, active, chanControl;
     private int ls, rs;
@@ -90,7 +91,7 @@ public class McdPcm implements BufferUtil.StepDevice {
         waveData = ByteBuffer.allocate(PCM_WAVE_DATA_SIZE);
         pcmRegs = ByteBuffer.allocate(PCM_REG_SIZE);
         chan = new PcmChannelContext[PCM_NUM_CHANNELS];
-        playSupport = ENABLE_SOUND ? new BlipPcmProvider("PCM", RegionDetector.Region.USA, pcmSampleRateHz) : McdPcmProvider.NO_SOUND;
+        playSupport = ENABLE_SOUND ? new BlipPcmProvider("PCM", RegionDetector.Region.USA, pcmSampleRateHz) : PcmProvider.NO_SOUND;
         for (int i = 0; i < PCM_NUM_CHANNELS; i++) {
             chan[i] = new PcmChannelContext();
             chan[i].num = i;

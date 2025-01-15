@@ -9,6 +9,12 @@ import omegadrive.Device;
  */
 public interface SoundDevice extends Device {
 
+    interface MutableDevice {
+        void setEnabled(boolean mute);
+
+        boolean isMute();
+    }
+
     enum SoundDeviceType {
         NONE(0), FM(1), PSG(2), PWM(4), PCM(8);
 

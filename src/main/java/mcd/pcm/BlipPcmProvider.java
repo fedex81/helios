@@ -1,5 +1,6 @@
 package mcd.pcm;
 
+import omegadrive.sound.PcmProvider;
 import omegadrive.util.*;
 import org.slf4j.Logger;
 import s32x.util.blipbuffer.BlipBufferIntf;
@@ -21,7 +22,7 @@ import static s32x.pwm.PwmUtil.pwmAudioFormat;
  * Copyright 2022
  * <p>
  */
-public class BlipPcmProvider implements McdPcmProvider {
+public class BlipPcmProvider implements PcmProvider {
 
     private static final Logger LOG = LogHelper.getLogger(BlipPcmProvider.class.getSimpleName());
 
@@ -52,6 +53,10 @@ public class BlipPcmProvider implements McdPcmProvider {
     private final ExecutorService exec;
 
     private final String instanceId;
+
+    //TODO hack
+    @Deprecated
+    public static boolean mute = false;
 
     public BlipPcmProvider(String name, RegionDetector.Region region, double clockRate) {
         ref.set(new BlipBufferContext());
@@ -121,7 +126,7 @@ public class BlipPcmProvider implements McdPcmProvider {
         }
         final long current = sync.incrementAndGet();
         int stereoBytes = blip.readSamples16bitStereo(context.lineBuffer, 0, availMonoSamples) << 2;
-        if (stereoBytes > 0) {
+        if (stereoBytes > 0 && !mute) {
             exec.submit(() -> {
                 SoundUtil.writeBufferInternal(dataLine, context.lineBuffer, 0, stereoBytes);
                 if (BufferUtil.assertionsEnabled) {
