@@ -38,8 +38,7 @@ public class MarsLauncherHelper {
     static final boolean masterDebug = Boolean.parseBoolean(System.getProperty("sh2.master.debug", "false"));
     static final boolean slaveDebug = Boolean.parseBoolean(System.getProperty("sh2.slave.debug", "false"));
 
-    //TODO homebrew bios does not support SCD-32X mode (ie. no 32x cart, waitForCD and then boot)
-    static final boolean homebrewBios = false; //Boolean.parseBoolean(System.getProperty("32x.use.homebrew.bios", "true"));
+    static final boolean homebrewBios = Boolean.parseBoolean(System.getProperty("32x.use.homebrew.bios", "true"));
 
     static String biosBasePath = "res/bios/";
 

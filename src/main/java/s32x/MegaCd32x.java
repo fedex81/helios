@@ -56,6 +56,8 @@ public class MegaCd32x extends Md32x {
     double subCnt = 0;
 
     static {
+        //TODO homebrew bios does not support SCD-32X mode (ie. no 32x cart, waitForCD and then boot)
+        System.setProperty("32x.use.homebrew.bios", "false");
 //        System.setProperty("68k.debug", "true");
 //        System.setProperty("helios.68k.debug.mode", "2");
 //        System.setProperty("sh2.master.debug", "true");
