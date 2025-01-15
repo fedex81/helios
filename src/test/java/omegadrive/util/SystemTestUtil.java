@@ -108,6 +108,7 @@ public class SystemTestUtil {
         z80bus.attachDevice(BusArbiter.NO_OP).attachDevice(busProvider);
         busProvider.attachDevice(vdpProvider1).attachDevice(cpu).attachDevice(joypad).attachDevice(z80bus).
                 attachDevice(cpuMem1).attachDevice(z80p1).attachDevice(sp1).attachDevice(systemProvider);
+        busProvider.attachDevice(systemProvider);
         busProvider.init();
         return busProvider;
     }

@@ -89,7 +89,8 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
         } else if (vdpProvider != null) {
             vdpProvider.addVdpEventListener(this);
         }
-        return (MdMainBusProvider) mdBus.attachDevice(device);
+        mdBus.attachDevice(device);
+        return this;
     }
 
     public void setRom(ByteBuffer b) {

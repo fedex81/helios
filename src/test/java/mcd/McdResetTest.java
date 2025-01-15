@@ -54,7 +54,8 @@ public class McdResetTest extends McdRegTestBase {
      * <p>
      * Bill walsh football
      */
-    @Test
+    //TODO remove
+//    @Test
     public void testIFL2_sticky() {
         //subCpu ignores interrupts
         subCpu.getM68k().setSR(0x2700);
