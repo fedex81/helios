@@ -31,13 +31,12 @@ import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static net.java.games.input.Component.Identifier.Button.Axis;
 import static omegadrive.input.jinput.JinputGamepadMapping.DEFAULT_PAD_NAME;
@@ -63,8 +62,12 @@ public class JinputGamepadInputProvider implements InputProvider {
     public static final int AXIS_m1 = -1;
 
     private final List<String> controllerNames;
-    private List<Controller> controllers;
+    private final Map<String, Controller> controllers;
+
     private UpdatedGamepadCtx gamepadCtx;
+
+    private static final BiFunction<List<Controller>, Integer, String> toNameFn = (l, i)
+            -> l.get(i).getName() + " #" + i;
 
     private final Map<PlayerNumber, String> playerControllerMap = Maps.newHashMap(
             ImmutableMap.of(PlayerNumber.P1, KEYBOARD_CONTROLLER,
@@ -78,7 +81,7 @@ public class JinputGamepadInputProvider implements InputProvider {
 
     public JinputGamepadInputProvider() {
         controllerNames = new ArrayList<>(DEFAULT_CONTROLLERS);
-        controllers = new ArrayList<>();
+        controllers = new HashMap<>();
     }
 
     public static InputProvider getInstance(JoypadProvider joypadProvider) {
@@ -96,8 +99,13 @@ public class JinputGamepadInputProvider implements InputProvider {
         if (INSTANCE == NO_OP) {
             JinputGamepadInputProvider g = new JinputGamepadInputProvider();
             g.joypadProvider = joypadProvider;
-            g.controllerNames.addAll(controllers.stream().map(Controller::getName).toList());
-            g.controllers = controllers;
+            assert controllers.size() == DEFAULT_CONTROLLERS.size();
+            IntStream.range(0, controllers.size()).
+                    forEach(i -> {
+                        String name = toNameFn.apply(controllers, i);
+                        g.controllers.put(name, controllers.get(i));
+                        g.controllerNames.add(name);
+                    });
             g.gamepadCtx = new UpdatedGamepadCtx();
             g.initPollingThreadMaybe();
             INSTANCE = g;
@@ -149,8 +157,8 @@ public class JinputGamepadInputProvider implements InputProvider {
 
     @Override
     public void handleAllEvents(InputEventCallback callback) {
-        for (Controller controller : controllers) {
-            String ctrlName = controller.getName();
+        for (var entry : controllers.entrySet()) {
+            Controller controller = entry.getValue();
             boolean ok = controller.poll();
             if (!ok) {
                 return;
@@ -171,8 +179,9 @@ public class JinputGamepadInputProvider implements InputProvider {
     }
 
     private void handleEventsInternal() {
-        for (Controller controller : controllers) {
-            String ctrlName = controller.getName();
+        for (var entryC : controllers.entrySet()) {
+            Controller controller = entryC.getValue();
+            String ctrlName = entryC.getKey();
             boolean ok = controller.poll();
             if (!ok) {
                 return;
@@ -232,7 +241,7 @@ public class JinputGamepadInputProvider implements InputProvider {
             LOG.info("{}: {}", id, value);
             System.out.println(id + ": " + value);
         }
-        Map<Component.Identifier, Object> map = getDeviceMappings(ctrlName);
+        Map<Component.Identifier, Object> map = getDeviceMappings(controllers.get(ctrlName).getName());
         Object res = map.getOrDefault(id, null);
         if (res instanceof JoypadButton) {
             joypadProvider.setButtonAction(playerNumber, (JoypadButton) res, action);
