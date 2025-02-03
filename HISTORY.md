@@ -1,3 +1,18 @@
+#25.0203
+32x: fifa hack (disabled)
+32x: reads to cache purge behave like writes
+32x: hack for COMM race conditions, fixes Brutal
+gg: always 60fps
+helios: {pwm, pcm} can be muted
+helios: initial TowerOfPower (MegaCd_S32x) support
+helios: fix an issue with stuck keys
+helios: improve multi-screen behaviour
+infra: update to gradle 8
+mcd: lots of fixes, still WIP
+md: parse supported devices from rom header
+md: ignore byte-wide ioWrites on even address, fix read timeControl area
+sms: change default z80 SP value
+
 #24.0720
 helios: fix setByteInWordBE
 helios: show rom info dialog, show region flag

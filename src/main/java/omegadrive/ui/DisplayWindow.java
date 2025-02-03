@@ -40,8 +40,8 @@ public interface DisplayWindow {
     class DisplayContext {
         public int[] data;
         public VideoMode videoMode;
-        public Optional<String> label;
-        public Optional<Integer> megaCdLedState;
+        public Optional<String> label = Optional.empty();
+        public Optional<Integer> megaCdLedState = Optional.empty();
     }
 
 

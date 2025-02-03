@@ -1,13 +1,14 @@
 def dateString = getDate()
 group 'com.fbdev.helios'
 
+
+def javaVersion = JavaVersion.VERSION_17;
+
 //version dateString
 version dateString + '-SNAPSHOT'
 def jarNameHead = rootProject.name + "-" + version
 
 String packageDir = getLayout().getBuildDirectory().dir("packageDir").get()
-
-assert JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) : "Java 17 or newer is required"
 
 apply plugin: 'java'
 
@@ -51,6 +52,13 @@ def static getDate() {
     date.substring(0,2) + "." + date.substring(2)
 }
 
+// Java
+java.toolchain {
+    languageVersion.set(JavaLanguageVersion.of(javaVersion.getMajorVersion()))
+    assert JavaVersion.current().isCompatibleWith(javaVersion): "Java " + javaVersion + " or newer is required"
+    println("Java version: " + JavaVersion.current())
+}
+
 //create a single Jar with all dependencies
 tasks.register('fatJar', Jar) {
     manifest {
@@ -78,7 +86,7 @@ tasks.register('copyRes') {
             include "res/**"
         }
         into packageDir
-        exclude "**/*.col", "**/bios.sms", "**/site/**", "**/misc/**", "**/sms/**", "**/mcd/**"
+        exclude "**/*.col", "**/bios.sms", "**/site/**", "**/misc/**", "**/sms/**", "**/mcd/**", "**/32x_bios_?.bin"
     }
     copy {
         from {
