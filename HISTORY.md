@@ -1,5 +1,5 @@
-#25.0203
-32x: fifa hack (disabled)
+## 25.0203
+
 32x: reads to cache purge behave like writes
 32x: hack for COMM race conditions, fixes Brutal
 gg: always 60fps
@@ -13,7 +13,8 @@ md: parse supported devices from rom header
 md: ignore byte-wide ioWrites on even address, fix read timeControl area
 sms: change default z80 SP value
 
-#24.0720
+## 24.0720
+
 helios: fix setByteInWordBE
 helios: show rom info dialog, show region flag
 helios: fix clamp method (!)
@@ -23,6 +24,7 @@ sms: fix port 3E bug, fix region override
 mcd: started work on it, not ready yet
 
 ## 23.1207
+
 32x: improve handling of multiple interrupts
 32x: add FRT support, disabled by default
 32x: add eeprom games, tweak eeprom handling
@@ -36,17 +38,20 @@ md: fix io ports word-wide reads, duplicate lsb to msb; stub serial ports
 sh2: fix MOVBM, MOVWM, MOVLM when applied to the same register
 
 ## 23.0814
+
 helios: add default keyboard mappings file, defaults to 1 player only
 md: add flag to allow sram writes when in read-only mode
 svp: fix cart loading as words (16 bits)
 z80: tweak zreset, zbusreq handling
 
 ## 23.0506
+
 helios: add Sega 32x emulation by merging the helios32x project: https://github.com/fedex81/helios32x
 md: improve rom header parsing
 md: improve support for roms > 4Mbit with sram
 
 ## 22.1205
+
 68k: support cycle table from genPlusGx
 68k: fix *bcd, link corner cases
 fm: fix sustain level check
@@ -334,4 +339,4 @@ md: allow to busy-wait when set so
 
 ## v001  
 20180618  
-* first public build  
+* first public build
