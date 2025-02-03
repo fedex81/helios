@@ -2,6 +2,7 @@ package omegadrive.vdp.util;
 
 import omegadrive.util.LogHelper;
 import omegadrive.util.PriorityThreadFactory;
+import omegadrive.util.Util;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
 import omegadrive.vdp.model.VdpRenderHandler;
@@ -108,14 +109,14 @@ public class VdpDebugView implements UpdatableViewer {
         if (s32xMode) {
             planeViewer.update();
         }
-        service.submit(() -> {
+        service.submit(Util.wrapRunnableEx(() -> {
             cramViewer.update();
             tileViewer.update();
             if (!s32xMode) {
                 planeViewer.update();
             }
             qLen.decrementAndGet();
-        });
+        }));
     }
 
     @Override

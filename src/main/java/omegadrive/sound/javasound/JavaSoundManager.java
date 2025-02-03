@@ -20,10 +20,7 @@
 package omegadrive.sound.javasound;
 
 import omegadrive.system.perf.Telemetry;
-import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.Sleeper;
-import omegadrive.util.SoundUtil;
+import omegadrive.util.*;
 import org.slf4j.Logger;
 
 import java.util.Arrays;
@@ -95,7 +92,7 @@ public class JavaSoundManager extends AbstractSoundManager {
     }
 
     private Runnable getRunnable() {
-        return () -> {
+        return Util.wrapRunnableEx(() -> {
             final int monoSize = Math.min(fmSizeMono, SoundUtil.getMonoSamplesBufferSize(audioFormat, 25));
             try {
                 do {
@@ -113,7 +110,7 @@ public class JavaSoundManager extends AbstractSoundManager {
             LOG.info("Stopping sound thread");
             psg.reset();
             fm.reset();
-        };
+        });
     }
 
     //FM,PWM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit

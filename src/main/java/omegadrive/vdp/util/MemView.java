@@ -257,7 +257,7 @@ public class MemView implements Device, UpdatableViewer {
             data = new byte[len];
         }
         doMemoryRead(current, len, readerFn);
-        Util.executorService.submit(() -> updateFromMemory(current.getStart(), current.getEnd()));
+        Util.executorService.submit(Util.wrapRunnableEx(() -> updateFromMemory(current.getStart(), current.getEnd())));
     }
 
     private void updateSelected(ActionEvent e) {

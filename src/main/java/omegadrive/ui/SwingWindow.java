@@ -250,13 +250,8 @@ public class SwingWindow implements DisplayWindow {
             dcCopy.megaCdLedState = dc.megaCdLedState;
             dcCopy.label = dc.label;
             dcCopy.videoMode = dc.videoMode;
-            previousFrame = executorService.submit(() -> {
-                try {
-                    renderScreenLinearInternal(pixelsSrc, dcCopy);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
+            previousFrame =
+                    executorService.submit(Util.wrapRunnableEx(() -> renderScreenLinearInternal(pixelsSrc, dcCopy)));
         } else {
             renderScreenLinearInternal(pixelsSrc, dc);
         }

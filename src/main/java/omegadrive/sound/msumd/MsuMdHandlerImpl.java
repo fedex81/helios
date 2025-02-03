@@ -314,7 +314,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
                 LOG.warn("Unknown command: {}", commandArg.command);
         }
         if (r != null) {
-            Util.executorService.submit(r);
+            Util.executorService.submit(Util.wrapRunnableEx(r));
         }
     }
 

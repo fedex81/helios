@@ -186,7 +186,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         init();
         Runnable runnable = new RomRunnable(romSpec);
         PrefStore.addRecentFile(romSpec.toString());
-        runningRomFuture = executorService.submit(runnable, null);
+        runningRomFuture = executorService.submit(Util.wrapRunnableEx(runnable), null);
     }
 
     private void handleCloseApp() {

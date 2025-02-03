@@ -403,4 +403,14 @@ public class Util {
         assert (size != Size.BYTE ? (address & 1) == 0 : true) : (th(address) + "," + size);
         return true;
     }
+
+    public static Runnable wrapRunnableEx(Runnable r) {
+        return () -> {
+            try {
+                r.run();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+    }
 }

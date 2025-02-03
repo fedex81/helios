@@ -22,6 +22,7 @@ package omegadrive.sound.javasound;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.util.LogHelper;
 import omegadrive.util.SoundUtil;
+import omegadrive.util.Util;
 import org.jaudiolibs.audioservers.AudioClient;
 import org.jaudiolibs.audioservers.AudioConfiguration;
 import org.jaudiolibs.audioservers.AudioServer;
@@ -114,7 +115,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     }
 
     private Runnable getServerRunnable(AudioServer server) {
-        return () -> {
+        return Util.wrapRunnableEx(() -> {
             try {
                 server.run();
             } catch (InterruptedException ie) {
@@ -124,7 +125,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
                 LOG.error("Error", ex);
                 ex.printStackTrace();
             }
-        };
+        });
     }
 
     private int playOnceStereo(int fmBufferLenMono) {

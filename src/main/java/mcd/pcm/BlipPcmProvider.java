@@ -127,14 +127,14 @@ public class BlipPcmProvider implements PcmProvider {
         final long current = sync.incrementAndGet();
         int stereoBytes = blip.readSamples16bitStereo(context.lineBuffer, 0, availMonoSamples) << 2;
         if (stereoBytes > 0 && !mute) {
-            exec.submit(() -> {
+            exec.submit(Util.wrapRunnableEx(() -> {
                 SoundUtil.writeBufferInternal(dataLine, context.lineBuffer, 0, stereoBytes);
                 if (BufferUtil.assertionsEnabled) {
                     if (current != sync.get()) {
                         LOG.info("{} Blip audio thread too slow: {} vs {}", instanceId, current, sync.get());
                     }
                 }
-            });
+            }));
         }
         prevSampleAvail = availMonoSamples;
     }

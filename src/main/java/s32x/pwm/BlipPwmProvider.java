@@ -154,14 +154,14 @@ public class BlipPwmProvider implements PwmProvider {
         final long current = sync.incrementAndGet();
         int stereoBytes = blip.readSamples16bitStereo(context.lineBuffer, 0, availMonoSamples) << 2;
         if (stereoBytes > 0 && !mute) {
-            exec.submit(() -> {
+            exec.submit(Util.wrapRunnableEx(() -> {
                 SoundUtil.writeBufferInternal(dataLine, context.lineBuffer, 0, stereoBytes);
                 if (BufferUtil.assertionsEnabled) {
                     if (current != sync.get()) {
                         LOG.info("Pwm audio thread too slow: {} vs {}", current, sync.get());
                     }
                 }
-            });
+            }));
         }
         prevSampleAvail = availMonoSamples;
     }

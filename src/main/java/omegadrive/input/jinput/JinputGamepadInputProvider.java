@@ -119,7 +119,7 @@ public class JinputGamepadInputProvider implements InputProvider {
             if (executorService == null) {
                 executorService = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MIN_PRIORITY, JinputGamepadInputProvider.class.getSimpleName()));
             }
-            executorService.submit(inputRunnable());
+            executorService.submit(Util.wrapRunnableEx(inputRunnable()));
         }
     }
 

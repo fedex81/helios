@@ -146,13 +146,13 @@ public class Telemetry {
             String header = String.format("frame,%s,frameTimeMs,frameEndTime",
                     String.join(",", data.rowKeySet()));
             LOG.info("Logging telemetry file to: {}", telemetryFile.toAbsolutePath());
-            Util.executorService.submit(() -> writeToFile(telemetryFile, header));
+            Util.executorService.submit(Util.wrapRunnableEx(() -> writeToFile(telemetryFile, header)));
         }
         if (frameCounter % 600 == 0) {
             String res = "\n" + data.columnKeySet().stream().map(this::toLogString).
                     collect(Collectors.joining("\n"));
             data.clear();
-            Util.executorService.submit(() -> writeToFile(telemetryFile, res));
+            Util.executorService.submit(Util.wrapRunnableEx(() -> writeToFile(telemetryFile, res)));
         }
     }
 
