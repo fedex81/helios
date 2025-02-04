@@ -50,6 +50,8 @@ public class Sh2Context implements Device, Serializable {
 
     public transient Sh2DeviceContext devices;
 
+    public transient final String sh2ShortCode;
+
     public Sh2Context(CpuDeviceAccess cpuAccess) {
         this(cpuAccess, false);
     }
@@ -57,6 +59,7 @@ public class Sh2Context implements Device, Serializable {
     public Sh2Context(CpuDeviceAccess cpuAccess, boolean debug) {
         this.registers = new int[NUM_REG];
         this.cpuAccess = cpuAccess;
+        this.sh2ShortCode = cpuAccess.cpuShortCode;
         this.sh2TypeCode = cpuAccess.name().substring(0, 1);
         this.fetchResult = new FetchResult();
         this.fetchResult.block = Sh2Block.INVALID_BLOCK;

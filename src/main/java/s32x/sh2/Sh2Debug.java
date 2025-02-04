@@ -163,7 +163,7 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
 
     @Override
     public String getInstructionOnly(int pc, int opcode) {
-        return Sh2Helper.getInstString(ctx.sh2TypeCode, pc, opcode);
+        return Sh2Helper.getInstString(ctx.sh2ShortCode, pc, opcode);
     }
 
     /**
@@ -173,7 +173,7 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
     public String getInstructionOnly(int pc) {
         assert pc != ctx.PC;
         int delay = MdRuntimeData.getCpuDelayExt();
-        String res = Sh2Helper.getInstString(ctx.sh2TypeCode, pc, memory.read16(pc));
+        String res = Sh2Helper.getInstString(ctx.sh2ShortCode, pc, memory.read16(pc));
         MdRuntimeData.resetCpuDelayExt(delay);
         return res;
     }

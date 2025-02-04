@@ -263,7 +263,7 @@ public class BufferUtil {
     public enum S32xRegSide {MD, SH2}
 
     public enum CpuDeviceAccess {
-        MASTER("M"), SLAVE("S"), M68K("68M"), Z80("Z80"), SUB_M68K("68S");
+        MASTER("SHM"), SLAVE("SHS"), M68K("68M"), Z80("Z80"), SUB_M68K("68S");
 
         public final S32xRegSide regSide;
         public final String cpuShortCode;

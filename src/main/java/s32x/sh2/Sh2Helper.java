@@ -169,7 +169,7 @@ public class Sh2Helper {
 
     public static String getInstString(Sh2Context ctx) {
         assert ctx.opcode > 0;
-        return String.format(simpleFormat, ctx.sh2TypeCode, ctx.PC, ctx.opcode, disasm.disassemble(ctx.PC, ctx.opcode));
+        return String.format(simpleFormat, ctx.sh2ShortCode, ctx.PC, ctx.opcode, disasm.disassemble(ctx.PC, ctx.opcode));
     }
 
     public static String getInstString(int pc, int opcode) {
@@ -204,7 +204,7 @@ public class Sh2Helper {
 
     public static String toDebuggingString(Sh2Context ctx) {
         StringBuilder sb = new StringBuilder("\n");
-        sb.append(getInstString(ctx.sh2TypeCode, ctx.PC, ctx.opcode)).append("\n");
+        sb.append(getInstString(ctx.sh2ShortCode, ctx.PC, ctx.opcode)).append("\n");
         sb.append(String.format("PC : %08x\t", ctx.PC));
         sb.append(String.format("GBR: %08x\t", ctx.GBR));
         sb.append(String.format("VBR: %08x\t", ctx.VBR));
