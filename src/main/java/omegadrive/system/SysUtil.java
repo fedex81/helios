@@ -203,10 +203,12 @@ public class SysUtil {
     public static SoundDevice getFmProvider(SystemType systemType, Region region) {
         SoundDevice fmProvider = FmProvider.NO_SOUND;
         switch (systemType) {
+            case MEGACD_S32X:
+                fmProvider = MdFmProvider.createFastInstance(region, AbstractSoundManager.audioFormat);
+                break;
             case MD:
             case S32X:
             case MEGACD:
-            case MEGACD_S32X:
                 fmProvider = MdFmProvider.createInstance(region, AbstractSoundManager.audioFormat);
                 break;
             case SMS:

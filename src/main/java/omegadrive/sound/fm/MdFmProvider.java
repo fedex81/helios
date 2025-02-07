@@ -19,6 +19,7 @@
 
 package omegadrive.sound.fm;
 
+import omegadrive.sound.fm.ym2612.YM2612;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.RegionDetector;
@@ -53,10 +54,20 @@ public interface MdFmProvider extends FmProvider {
     int FM_MODE_RESET_A_MASK = 0x10;
     int FM_MODE_RESET_B_MASK = 0x20;
 
+    static MdFmProvider createFastInstance(RegionDetector.Region region, AudioFormat audioFormat) {
+        LOG.warn("YM2612, creating fast instance, less accurate");
+        return createInstance(region, audioFormat, true);
+    }
+
     static MdFmProvider createInstance(RegionDetector.Region region, AudioFormat audioFormat) {
+        return createInstance(region, audioFormat, false);
+    }
+
+    private static MdFmProvider createInstance(RegionDetector.Region region, AudioFormat audioFormat, boolean fast) {
         double clock = getFmSoundClock(region);
-        MdFmProvider fmProvider = new Ym2612Nuke(AbstractSoundManager.audioFormat, clock);
-        LOG.info("FM instance, clock: {}, sampleRate: {}", clock, audioFormat.getSampleRate());
+        MdFmProvider fmProvider = fast ? new YM2612((int) clock, (int) audioFormat.getSampleRate()) :
+                new Ym2612Nuke(AbstractSoundManager.audioFormat, clock);
+        LOG.info("FM instance {}, clock: {}, sampleRate: {}", fmProvider.getClass().getSimpleName(), clock, audioFormat.getSampleRate());
         return fmProvider;
     }
 }
