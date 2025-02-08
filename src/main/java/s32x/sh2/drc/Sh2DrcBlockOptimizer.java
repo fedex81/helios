@@ -8,6 +8,7 @@ import omegadrive.util.Size;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
 import s32x.dict.S32xDict;
+import s32x.dict.S32xDict.RegSpecS32x;
 import s32x.event.PollSysEventManager;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Debug;
@@ -38,16 +39,6 @@ import static s32x.sh2.drc.Sh2DrcBlockOptimizer.PollType.*;
  * 000190ee	c901	and H'01, R0
  * 000190f0	3010	cmp/eq R1, R0
  * 000190f2	8bf9	bf H'000190e8
- * <p>
- * 2024-12-24 23:36:34.488 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: SLAVE Poll ignored at PC 600654e: 20004038 PWM
- * 0600654e	6b41	mov.w @R4, R11
- * 00006550	4b11	cmp/pz R11
- * 00006552	8bfc	bf H'0000654e
- * <p>
- * 2024-12-24 23:36:34.488 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: SLAVE Poll ignored at PC 600654e: 20004038 PWM
- * 0600654e	6b41	mov.w @R4, R11
- * 00006550	4b11	cmp/pz R11
- * 00006552	8bfc	bf H'0000654e
  * <p>
  * 2024-12-24 23:39:33.693 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: MASTER Poll ignored at PC 2016e40: 2603bf2c NONE
  * 02016e40	6642	mov.l @R4, R6
@@ -85,10 +76,10 @@ public class Sh2DrcBlockOptimizer {
         NONE,
         BUSY_LOOP(true),
         SDRAM(true),
-        FRAMEBUFFER, //TODO DoomRes, is it worth it?
+        FRAMEBUFFER,         //NOTE DoomRes, seems not worth it
         COMM(true),
         DMA,
-        PWM,
+        PWM,         //NOTE DoomRes, seems not worth it
         SYS(true),
         VDP(true);
 
@@ -443,7 +434,10 @@ public class Sh2DrcBlockOptimizer {
                 return FRAMEBUFFER;
             case 0:
             case 0x20: {
-                PollType pt = ptMap.get(S32xDict.getRegSpec(BufferUtil.CpuDeviceAccess.MASTER, address).deviceType);
+                RegSpecS32x regSpec = S32xDict.getRegSpec(BufferUtil.CpuDeviceAccess.MASTER, address);
+                PollType pt = ptMap.get(regSpec.deviceType);
+                //only polling on PWM_MONO is supported
+                assert pt == PWM ? regSpec == RegSpecS32x.PWM_MONO : true;
 //                assert pt != null : th(address);
                 return pt == null ? NONE : pt;
             }

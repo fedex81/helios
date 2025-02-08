@@ -10,9 +10,11 @@ import org.slf4j.Logger;
 import s32x.S32XMMREG;
 import s32x.dict.S32xDict;
 import s32x.dict.S32xDict.RegSpecS32x;
+import s32x.event.PollSysEventManager;
 import s32x.savestate.Gs32xStateHandler;
 import s32x.sh2.device.DmaC;
 import s32x.sh2.device.IntControl;
+import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -24,6 +26,7 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.RegSpecS32x.*;
+import static s32x.event.PollSysEventManager.SysEvent.PWM;
 import static s32x.pwm.Pwm.PwmChannel.LEFT;
 import static s32x.pwm.Pwm.PwmChannel.RIGHT;
 import static s32x.pwm.Pwm.PwmChannelSetup.OFF;
@@ -321,6 +324,28 @@ public class Pwm implements StepDevice {
         int fifoEmpty = ((ctx.fifoLeft.isEmptyBit() & ctx.fifoRight.isEmptyBit()) << PWM_FIFO_EMPTY_BIT_POS);
         int regValue = fifoFull | fifoEmpty;
         writeBuffers(sysRegsMd, sysRegsSh2, PWM_MONO.addr, regValue, Size.WORD);
+        updatePolling();
+    }
+
+    private void updatePolling() {
+        if (!Sh2DrcBlockOptimizer.PollType.PWM.supported) {
+            return;
+        }
+        switch (PollSysEventManager.instance.anyPollerActive()) {
+            case 1 -> checkPoller(MASTER);
+            case 2 -> checkPoller(SLAVE);
+            case 3 -> {
+                checkPoller(MASTER);
+                checkPoller(SLAVE);
+            }
+        }
+    }
+
+    private void checkPoller(CpuDeviceAccess cpu) {
+        Sh2DrcBlockOptimizer.PollerCtx c = PollSysEventManager.instance.getPoller(cpu);
+        if (c.isPollingActive() && PWM == c.event) {
+            PollSysEventManager.instance.fireSysEvent(cpu, c.event);
+        }
     }
 
     public void writeMono(int value) {
