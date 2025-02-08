@@ -85,8 +85,5 @@ Tomek Rekawek, GameBoy emulator: [coffee-gb](https://github.com/trekawek/coffee-
 
 C-BIOS Association for their open source [MSX bios](http://cbios.sourceforge.net/)
 
-Hitachi SH2 cpu emulator adapted from [esoteric_emu](https://github.com/fedex81/esoteric_emu)'s
-SH4 implementation
-
 # License
 Released under GPL v3.0
