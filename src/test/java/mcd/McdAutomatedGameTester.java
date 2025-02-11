@@ -21,7 +21,7 @@ package mcd;
 
 import omegadrive.SystemLoader;
 import omegadrive.joypad.MdJoypad;
-import omegadrive.system.SysUtil;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileUtil;
 import omegadrive.util.RegionDetector;
@@ -145,7 +145,7 @@ public class McdAutomatedGameTester {
         for (Path rom : testRoms) {
             jbBtnPressDone = false;
             bootTimeMs = System.currentTimeMillis();
-            SysUtil.RomSpec romSpec = SysUtil.RomSpec.of(rom);
+            MediaSpecHolder romSpec = MediaSpecHolder.of(rom);
             String name = FileUtil.getFileName(rom);
             System.out.println(count++ + ": " + name);
             system = systemLoader.handleNewRomFile(romSpec);

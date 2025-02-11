@@ -37,7 +37,6 @@ import omegadrive.sound.msumd.MsuMdHandler;
 import omegadrive.sound.msumd.MsuMdHandlerImpl;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.system.SystemProvider;
-import omegadrive.system.SystemProvider.RomContext;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
@@ -106,8 +105,9 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
     }
 
     void initializeRomData() {
-        RomContext romContext = systemProvider.getRomContext();
-        cartridgeInfoProvider = (MdCartInfoProvider) romContext.cartridgeInfoProvider;
+//        assert systemProvider.getMediaSpec().cartFile.bootable;
+        cartridgeInfoProvider = (MdCartInfoProvider) systemProvider.getMediaSpec().getBootableMedia().mediaInfoProvider;
+        assert cartridgeInfoProvider != null;
         ROM_END_ADDRESS = Math.min(cartridgeInfoProvider.getRomSize(), Z80_ADDRESS_SPACE_START);
         assert ROM_END_ADDRESS > 0;
         if (cartridgeInfoProvider.getEntry().hasEeprom()) {

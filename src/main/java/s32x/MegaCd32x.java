@@ -7,7 +7,7 @@ import mcd.bus.McdSubInterruptHandler;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cpu.m68k.M68kProvider;
-import omegadrive.system.SysUtil;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
@@ -188,7 +188,7 @@ public class MegaCd32x extends Md32x {
     }
 
     @Override
-    public void handleNewRom(SysUtil.RomSpec romSpec) {
+    public void handleNewRom(MediaSpecHolder romSpec) {
         super.handleNewRom(romSpec);
         StaticBootstrapSupport.initStatic(this);
     }
@@ -210,6 +210,6 @@ public class MegaCd32x extends Md32x {
     @Override
     protected void initAfterRomLoad() {
         super.initAfterRomLoad();
-        MegaCd.megaCdDiscInsert(mcdLaunchContext, romContext);
+        MegaCd.megaCdDiscInsert(mcdLaunchContext, mediaSpec);
     }
 }

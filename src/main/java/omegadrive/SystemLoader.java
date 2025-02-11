@@ -20,8 +20,8 @@
 package omegadrive;
 
 import omegadrive.input.KeyboardInputHelper;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SysUtil;
-import omegadrive.system.SysUtil.RomSpec;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipEntry;
 
 import static omegadrive.input.InputProvider.bootstrap;
-import static omegadrive.system.SystemProvider.RomContext.NO_ROM;
+import static omegadrive.system.MediaSpecHolder.NO_ROM;
 import static omegadrive.system.SystemProvider.SystemEvent.NEW_ROM;
 
 public class SystemLoader {
@@ -95,7 +95,7 @@ public class SystemLoader {
             Util.sleep(250);
             String filePath = args[0];
             LOG.info("Launching file at: {}", filePath);
-            RomSpec romSpec = RomSpec.of(filePath);
+            MediaSpecHolder romSpec = MediaSpecHolder.of(filePath);
             INSTANCE.handleNewRomFile(romSpec);
             Util.sleep(1_000); //give the game thread a chance
         }
@@ -147,7 +147,7 @@ public class SystemLoader {
         SystemLoader.headless = headless;
     }
 
-    public SystemProvider handleNewRomFile(RomSpec file) {
+    public SystemProvider handleNewRomFile(MediaSpecHolder file) {
         systemProvider = createSystemProvider(file);
         if (systemProvider != null) {
             emuFrame.reloadSystem(systemProvider);
@@ -164,7 +164,7 @@ public class SystemLoader {
                 LOG.info("Event: {}, with parameter: {}", event, parameter);
                 switch (event) {
                     case NEW_ROM:
-                        handleNewRomFile((RomSpec) parameter);
+                        handleNewRomFile((MediaSpecHolder) parameter);
                         break;
                     case CLOSE_ROM:
                         break;
@@ -187,7 +187,7 @@ public class SystemLoader {
             }
 
             @Override
-            public RomContext getRomContext() {
+            public MediaSpecHolder getMediaSpec() {
                 return NO_ROM;
             }
 
@@ -213,7 +213,7 @@ public class SystemLoader {
         return lowerCaseName;
     }
 
-    public SystemProvider createSystemProvider(RomSpec file) {
+    public SystemProvider createSystemProvider(MediaSpecHolder file) {
         systemProvider = SysUtil.createSystemProvider(file, emuFrame);
         return systemProvider;
     }

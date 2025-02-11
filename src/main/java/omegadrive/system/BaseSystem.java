@@ -24,7 +24,6 @@ import omegadrive.SystemLoader;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.UserConfigHolder;
 import omegadrive.bus.model.BaseBusProvider;
-import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.input.InputProvider;
 import omegadrive.input.KeyboardInput;
 import omegadrive.joypad.JoypadProvider;
@@ -32,7 +31,6 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
-import omegadrive.system.SysUtil.RomSpec;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
@@ -47,7 +45,7 @@ import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
-import static omegadrive.system.SystemProvider.RomContext.NO_ROM;
+import static omegadrive.system.MediaSpecHolder.NO_ROM;
 
 public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         SystemProvider, SystemProvider.NewFrameListener, SystemProvider.SystemClock {
@@ -64,7 +62,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     protected InputProvider inputProvider;
     protected BUS bus;
     protected SystemType systemType;
-    protected RomContext romContext = NO_ROM;
+    protected MediaSpecHolder mediaSpec = NO_ROM;
     protected Future<Void> runningRomFuture;
     protected DisplayWindow display;
 
@@ -105,10 +103,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         displayContext.megaCdLedState = Optional.empty();
         displayContext.videoMode = VideoMode.PAL_H40_V30;
         telemetry = Telemetry.resetClock(this);
+        mediaSpec.region = RegionDetector.selectRegion(display, mediaSpec.getBootableMedia().mediaInfoProvider);
     }
 
     protected void initAfterRomLoad() {
-        sound.init(romContext.region);
+        sound.init(mediaSpec.getRegion());
     }
 
     protected abstract void resetCycleCounters(int counter);
@@ -124,7 +123,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         LOG.info("Event: {}, with parameter: {}", event, parameter);
         switch (event) {
             case NEW_ROM:
-                handleNewRom((RomSpec) parameter);
+                handleNewRom((MediaSpecHolder) parameter);
                 break;
             case CLOSE_ROM:
                 handleCloseRom();
@@ -182,7 +181,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         display.reloadControllers(inputProvider.getAvailableControllers());
     }
 
-    public void handleNewRom(RomSpec romSpec) {
+    public void handleNewRom(MediaSpecHolder romSpec) {
+        mediaSpec = romSpec;
         init();
         Runnable runnable = new RomRunnable(romSpec);
         PrefStore.addRecentFile(romSpec.toString());
@@ -294,7 +294,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
             while (isRomRunning()) {
                 Util.sleep(100);
             }
-            LOG.info("Rom thread cancel: {}", romContext.romSpec);
+            LOG.info("Rom thread cancel: {}", mediaSpec);
             display.resetScreen();
             sound.reset();
             bus.closeRom();
@@ -343,11 +343,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     final Consumer<String> statsConsumer = st -> displayContext.label = Optional.of(st);
 
     class RomRunnable implements Runnable {
-        private final RomSpec romSpec;
+        private final MediaSpecHolder romSpec;
         private static final String threadNamePrefix = "cycle-";
 
-        public RomRunnable(RomSpec romSpec) {
-            assert romSpec != RomSpec.NO_ROM;
+        public RomRunnable(MediaSpecHolder romSpec) {
+            assert romSpec != NO_ROM;
             this.romSpec = romSpec;
         }
 
@@ -355,18 +355,17 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         public void run() {
             try {
                 assert romSpec.systemType != SystemType.NONE ? romSpec.systemType == getSystemType() : true;
-                byte[] data = FileUtil.readBinaryFile(romSpec.file, getSystemType());
+                byte[] data = FileUtil.readBinaryFile(romSpec.getBootableMedia().romFile, getSystemType());
                 if (data.length == 0) {
                     LOG.error("Unable to open/access file: {}", romSpec);
                     return;
                 }
                 memory.setRomData(data);
-                romContext = createRomContext(romSpec);
-                String romName = FileUtil.getFileName(romSpec.file);
-                display.setRomData(romContext);
+                String romName = FileUtil.getFileName(romSpec.getBootableMedia().romFile);
+                display.setRomData(romSpec);
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
-                LOG.info("Running rom: {},\n{}", romName, romContext);
+                LOG.info("Running rom: {},\n{}", romName, romSpec);
                 initAfterRomLoad();
                 sound.setEnabled(soundEnFlag);
                 LOG.info("Starting game loop");
@@ -378,13 +377,6 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
             }
             handleCloseRom();
         }
-    }
-
-    protected RomContext createRomContext(RomSpec rom) {
-        RomContext rc = new RomContext(rom);
-        rc.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memory, rom.file);
-        rc.region = RegionDetector.selectRegion(display, rc.cartridgeInfoProvider);
-        return rc;
     }
 
     protected void handleVdpDumpScreenData() {
@@ -412,11 +404,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     @Override
     public void reset() {
         handleCloseRom();
-        handleNewRom(romContext.romSpec);
+        handleNewRom(mediaSpec);
     }
 
     protected void resetAfterRomLoad() {
-        vdp.setRegion(romContext.region);
+        vdp.setRegion(mediaSpec.getRegion());
         //detect ROM first
         joypad.init();
         vdp.init();
@@ -430,9 +422,9 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     }
 
     @Override
-    public RomContext getRomContext() {
-        assert romContext != null;
-        return romContext;
+    public MediaSpecHolder getMediaSpec() {
+        assert mediaSpec != null;
+        return mediaSpec;
     }
 
     @Override

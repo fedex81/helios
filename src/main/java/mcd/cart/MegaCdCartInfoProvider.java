@@ -1,10 +1,10 @@
 package mcd.cart;
 
 import mcd.cdd.CdModel;
+import mcd.cdd.ExtendedCueSheet;
 import omegadrive.cart.MdCartInfoProvider;
-import omegadrive.memory.IMemoryProvider;
+import omegadrive.system.MediaSpecHolder.MediaSpec;
 import omegadrive.system.SysUtil;
-import omegadrive.system.SystemProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Federico Berti
@@ -47,36 +48,48 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
     }
 
 
+    private MediaSpec mediaSpec;
     public SysUtil.RomFileType detectedRomFileType;
     public RegionDetector.Region securityCodeRegion;
 
 
-    public static MegaCdCartInfoProvider createMcdInstance(IMemoryProvider memoryProvider, SystemProvider.RomContext rom) {
-        MegaCdCartInfoProvider m = new MegaCdCartInfoProvider(memoryProvider, rom);
+    public static MegaCdCartInfoProvider createMcdInstance(MediaSpec rom) {
+        MegaCdCartInfoProvider m = new MegaCdCartInfoProvider(rom);
         m.init();
         return m;
     }
 
-    private MegaCdCartInfoProvider(IMemoryProvider memoryProvider, SystemProvider.RomContext rom) {
-        super(memoryProvider, rom);
+    private MegaCdCartInfoProvider(MediaSpec rom) {
+        super(getTrack01(rom));
+        this.mediaSpec = rom;
     }
 
     @Override
     protected void init() {
         super.init();
-        detectedRomFileType = romContext.romFileType;
-        securityCodeRegion = romContext.region;
+        detectedRomFileType = mediaSpec.type;
+        securityCodeRegion = mediaSpec.region; //TODO check
         //NOTE flux
-        if (romContext.romFileType.isDiscImage()) {
-            CdModel.ExtendedTrackData t1 = romContext.sheet.extTracks.get(0);
+        if (mediaSpec.type.isDiscImage()) {
+            Optional<ExtendedCueSheet> sheetOpt = mediaSpec.sheetOpt;
+            assert sheetOpt.isPresent();
+            CdModel.ExtendedTrackData t1 = sheetOpt.get().extTracks.get(0);
             checkTrack01Header(t1);
             securityCodeRegion = verifySecurityCodeRegion(t1);
+            romSize = t1.lenBytes;
         }
+    }
+
+    private static RandomAccessFile getTrack01(MediaSpec mediaSpec) {
+        Optional<ExtendedCueSheet> sheetOpt = mediaSpec.sheetOpt;
+        assert sheetOpt.isPresent();
+        CdModel.ExtendedTrackData t1 = sheetOpt.get().extTracks.get(0);
+        return t1.file;
     }
 
     private void checkTrack01Header(CdModel.ExtendedTrackData track01) {
         //check that *.iso is really an iso file internally
-        SysUtil.RomFileType romFileType = romContext.sheet.romFileType;
+        SysUtil.RomFileType romFileType = mediaSpec.type;
         try {
             byte[] header = new byte[headerLen];
             RandomAccessFile raf = track01.file;

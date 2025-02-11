@@ -20,7 +20,7 @@
 package omegadrive.ui;
 
 import omegadrive.SystemLoader.SystemType;
-import omegadrive.system.SysUtil.RomSpec;
+import omegadrive.system.MediaSpecHolder;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,15 +93,15 @@ public class PrefStoreTest {
 
     @Test
     public void testItemName() {
-        Function<SystemType, RomSpec> toRomSpec =
-                v -> RomSpec.of(Paths.get("file" + v.hashCode()), v);
+        Function<SystemType, MediaSpecHolder> toRomSpec =
+                v -> MediaSpecHolder.of(Paths.get("file" + v.hashCode()), v);
         Arrays.stream(SystemType.values()).forEach(v -> {
             if (v != NONE) {
                 addSet(toRomSpec.apply(v).toString());
             }
         });
         PrefStore.getRecentFilesList().forEach(str -> {
-            RomSpec r = PrefStore.getRomSpecFromRecentItem(str);
+            MediaSpecHolder r = PrefStore.getRomSpecFromRecentItem(str);
             Assertions.assertNotEquals(NONE, r.systemType);
         });
 
@@ -111,7 +111,7 @@ public class PrefStoreTest {
         List<String> l = PrefStore.getRecentFilesList();
         for (int i = 0; i < names.length; i++) {
             String v = l.get(i);
-            RomSpec romSpec = PrefStore.getRomSpecFromRecentItem(v);
+            MediaSpecHolder romSpec = PrefStore.getRomSpecFromRecentItem(v);
             Assertions.assertEquals(NONE, romSpec.systemType);
         }
     }
@@ -129,9 +129,9 @@ public class PrefStoreTest {
         Collections.reverse(expTyp);
         for (int i = 0; i < names.length; i++) {
             String v = l.get(i);
-            RomSpec romSpec = PrefStore.getRomSpecFromRecentItem(v);
+            MediaSpecHolder romSpec = PrefStore.getRomSpecFromRecentItem(v);
             Assertions.assertEquals(expTyp.get(i), romSpec.systemType);
-            Assertions.assertEquals(p, romSpec.file);
+            Assertions.assertEquals(p, romSpec.getBootableMedia().romFile);
         }
     }
 }

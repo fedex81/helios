@@ -20,6 +20,7 @@
 package omegadrive.automated;
 
 import omegadrive.SystemLoader;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
@@ -184,7 +185,7 @@ public class AutomatedGameTester {
         SystemLoader systemLoader = SystemLoader.getInstance();
         SystemProvider system;
         for (Path rom : testRoms) {
-            RomSpec romSpec = RomSpec.of(rom);
+            MediaSpecHolder romSpec = MediaSpecHolder.of(rom);
             String name = rom.getFileName().toString();
             System.out.println(count++ + ": " + name);
             system = systemLoader.handleNewRomFile(romSpec);

@@ -4,8 +4,8 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.sound.PwmProvider;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.Megadrive;
-import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.BufferUtil;
@@ -255,7 +255,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     }
 
     @Override
-    public void handleNewRom(SysUtil.RomSpec romSpec) {
+    public void handleNewRom(MediaSpecHolder romSpec) {
         super.handleNewRom(romSpec);
         StaticBootstrapSupport.initStatic(this);
     }

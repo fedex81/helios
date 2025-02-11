@@ -21,9 +21,8 @@ package omegadrive.util;
 
 import com.google.common.base.Strings;
 import mcd.cart.MegaCdCartInfoProvider;
-import omegadrive.cart.CartridgeInfoProvider;
 import omegadrive.cart.MdCartInfoProvider;
-import omegadrive.ui.DisplayWindow;
+import omegadrive.cart.MediaInfoProvider;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -36,6 +35,10 @@ public class RegionDetector {
 
     public final static int PAL_FPS = 50;
     public final static int NTSC_FPS = 60;
+
+    public interface RegionOverrideSupplier {
+        String getRegionOverride();
+    }
 
     public static Region detectHeaderRegion(MdCartInfoProvider cartInfoProvider, boolean verbose) {
         String s = cartInfoProvider.getRegion();
@@ -65,7 +68,7 @@ public class RegionDetector {
         return detectHeaderRegion(cartInfo, false);
     }
 
-    public static Region selectRegion(DisplayWindow w, CartridgeInfoProvider cip) {
+    public static Region selectRegion(RegionOverrideSupplier w, MediaInfoProvider cip) {
         assert cip != MdCartInfoProvider.NO_PROVIDER;
         Region regionFileName = getRegionFileName(cip.getRomName());
         Region regionOvrUi = RegionDetector.getRegion(w.getRegionOverride());

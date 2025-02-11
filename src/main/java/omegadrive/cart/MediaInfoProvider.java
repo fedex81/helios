@@ -20,9 +20,6 @@
 package omegadrive.cart;
 
 import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.system.SysUtil;
-import omegadrive.system.SystemProvider.RomContext;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
@@ -31,36 +28,32 @@ import org.slf4j.Logger;
 import java.nio.file.Path;
 import java.util.Optional;
 
-public class CartridgeInfoProvider {
+public class MediaInfoProvider {
 
-    private static final Logger LOG = LogHelper.getLogger(CartridgeInfoProvider.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(MediaInfoProvider.class.getSimpleName());
 
     public static final boolean AUTOFIX_CHECKSUM = false;
-
-    protected IMemoryProvider memoryProvider = MemoryProvider.NO_MEMORY;
-
-    protected RomContext romContext = RomContext.NO_ROM;
     private long checksum;
     private long computedChecksum;
     private String sha1;
     private String crc32;
 
-    protected String romName;
+    private Optional<IMemoryProvider> memoryProviderOptional = Optional.empty();
 
-    public static CartridgeInfoProvider createInstance(IMemoryProvider memoryProvider, Path rom) {
-        CartridgeInfoProvider provider = new CartridgeInfoProvider();
-        provider.memoryProvider = memoryProvider;
-        provider.romContext = new RomContext(SysUtil.RomSpec.of(rom));
+    public String romName;
+
+    public int romSize;
+
+    public static MediaInfoProvider createInstance(IMemoryProvider memoryProvider, Path rom) {
+        MediaInfoProvider provider = new MediaInfoProvider();
+        provider.memoryProviderOptional = Optional.of(memoryProvider);
+        provider.romName = rom.getFileName().toString();
         provider.init();
         return provider;
     }
 
     public String getRomName() {
         return romName;
-    }
-
-    public RomContext getRomContext() {
-        return romContext;
     }
 
     public String getRegion() {
@@ -84,11 +77,17 @@ public class CartridgeInfoProvider {
     }
 
     protected void init() {
-        romName = Optional.ofNullable(romContext.romSpec.file).map(p -> p.getFileName().toString()).orElse("norom.bin");
         this.initChecksum();
+        if (memoryProviderOptional.isPresent()) {
+            romSize = memoryProviderOptional.get().getRomSize();
+        }
     }
 
     protected void initChecksum() {
+        if (memoryProviderOptional.isEmpty()) {
+            return;
+        }
+        IMemoryProvider memoryProvider = memoryProviderOptional.get();
         this.checksum = memoryProvider.readRomByte(getChecksumStartAddress());
         this.computedChecksum = Util.computeChecksum(memoryProvider);
         this.sha1 = Util.computeSha1Sum(memoryProvider);
@@ -106,4 +105,8 @@ public class CartridgeInfoProvider {
         return "ROM sha1: " + sha1 + " - ROM CRC32: " + crc32;
     }
 
+    public int getRomSize() {
+        assert romSize > 0;
+        return romSize;
+    }
 }

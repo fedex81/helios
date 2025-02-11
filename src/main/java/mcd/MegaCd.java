@@ -20,18 +20,19 @@
 package mcd;
 
 import mcd.bus.McdSubInterruptHandler;
-import mcd.cart.MegaCdCartInfoProvider;
 import mcd.cdd.ExtendedCueSheet;
 import mcd.util.McdMemView;
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.MdMainBusProvider;
-import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.Megadrive;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.util.*;
+import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
+import omegadrive.util.VideoMode;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 
@@ -150,15 +151,15 @@ public class MegaCd extends Megadrive {
         }
     }
 
-    @Override
-    protected RomContext createRomContext(SysUtil.RomSpec rom) {
-        RomContext rc = new RomContext(rom);
-        assert rc.romFileType.isDiscImage() ? !ZipUtil.isCompressedByteStream(rom.file) : true;
-        MdCartInfoProvider mcip = MegaCdCartInfoProvider.createMcdInstance(memory, rc);
-        rc.cartridgeInfoProvider = mcip;
-        rc.region = RegionDetector.selectRegion(display, mcip);
-        return rc;
-    }
+//    @Override
+//    protected RomContext createRomContext(MediaSpecHolder rom) {
+//        RomContext rc = new RomContext(rom);
+//        assert rc.romFileType.isDiscImage() ? !ZipUtil.isCompressedByteStream(rom.cdFile.romFile) : true;
+//        MdCartInfoProvider mcip = MegaCdCartInfoProvider.createMcdInstance(memory, rc);
+//        rc.cartridgeInfoProvider = mcip;
+//        rc.region = RegionDetector.selectRegion(display, mcip);
+//        return rc;
+//    }
 
     @Override
     public void newFrame() {
@@ -186,21 +187,22 @@ public class MegaCd extends Megadrive {
     @Override
     protected void initAfterRomLoad() {
         super.initAfterRomLoad();
-        megaCdDiscInsert(mcdLaunchContext, romContext);
+        megaCdDiscInsert(mcdLaunchContext, mediaSpec);
     }
 
     //fudge it
-    public static void megaCdDiscInsert(McdDeviceHelper.McdLaunchContext mcdLaunchContext, RomContext romContext) {
+    public static void megaCdDiscInsert(McdDeviceHelper.McdLaunchContext mcdLaunchContext, MediaSpecHolder mediaSpec) {
         boolean segaMode1 = mcdLaunchContext.mainBus.isEnableMode1();
         boolean bios = mcdLaunchContext.mainBus.isBios();
-        boolean tryInsertAsDisc = !segaMode1 && !bios && romContext.romFileType.isDiscImage();
+        boolean tryInsertAsDisc = !segaMode1 && !bios && mediaSpec.hasDiscImage();
         boolean biosNoDisc = false;
         boolean biosCdAudio = true;
         if (bios) {
             LOG.info("Bios mode, noDisc: {}, cdAudio: {}", biosNoDisc, biosCdAudio);
         }
         if (tryInsertAsDisc) {
-            mcdLaunchContext.cdd.tryInsert(romContext.sheet);
+//            mcdLaunchContext.cdd.tryInsert(romContext.sheet); //TODO fix
+            new RuntimeException("oops");
         } else if (segaMode1 || (!bios || biosCdAudio)) {
             //insert an audio CD, for testing mode1 CD Player
             Path p = Path.of("./test_roms/SonicCD", "SonicCD_AudioOnly.cue");
@@ -236,7 +238,7 @@ public class MegaCd extends Megadrive {
 
     private void logSlowFrames() {
         long fc = getFrameCounter();
-        if ((fc + 1) % romContext.region.getFps() == 0) {
+        if ((fc + 1) % mediaSpec.getRegion().getFps() == 0) {
             boolean rangeOk = Math.abs(MCD_SUB_68K_CLOCK_MHZ - subCnt) < 100_000; //100Khz slack
             if (fc > 100 && !rangeOk) {
                 LOG.warn("Frame#{} SubCpu timing off!!!, 68K clock: {}, mode: {}", fc, subCnt, displayContext.videoMode);

@@ -19,170 +19,27 @@
 
 package omegadrive.cart;
 
+import omegadrive.cart.header.MdHeader.DeviceSupportField;
+import omegadrive.cart.header.MdHeader.MdRomHeaderField;
 import omegadrive.cart.loader.MdLoader;
 import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.mapper.md.MdMapperType;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.system.SysUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
-import static omegadrive.cart.MdCartInfoProvider.MdRomHeaderField.*;
-import static omegadrive.system.SystemProvider.RomContext;
+import static omegadrive.cart.header.MdHeader.MdRomHeaderField.*;
 import static omegadrive.util.Util.th;
 
-public class MdCartInfoProvider extends CartridgeInfoProvider {
-
-    public static Charset SHIFT_JIS;
-
-    static {
-        try {
-            SHIFT_JIS = Charset.forName("SHIFT-JIS");
-        } catch (Exception e) {
-            System.out.println("Charset SHIFT-JIS not supported");
-            SHIFT_JIS = null;
-        }
-    }
-
-    public enum DeviceSupportField {
-        J("3-button controller"),
-        _6("6", "6-button controller"),
-        _0("0", "Master System controller"),
-        A("Analog joystick"),
-        _4("4", "Multitap"),
-
-        G("Lightgun"),
-
-        L("Activator"),
-
-        M("Mouse"),
-
-        B("Trackball"),
-
-        T("Tablet"),
-
-        V("Paddle"),
-
-        K("Keyboard or keypad"),
-
-        R("RS-232"),
-
-        P("Printer"),
-
-        C("CD-ROM (Sega CD)"),
-
-        F("Floppy drive"),
-
-        D("Download?");
-
-        public final String code;
-        public final String explain;
-
-        DeviceSupportField(String name) {
-            this.code = name();
-            this.explain = name;
-        }
-
-        DeviceSupportField(String code, String name) {
-            this.code = code;
-            this.explain = name;
-        }
-
-        public static Optional<DeviceSupportField> getDeviceMappingIfAny(String s) {
-            Optional<DeviceSupportField> dsf = Optional.empty();
-            try {
-                dsf = Optional.of(DeviceSupportField.valueOf(s));
-            } catch (Exception e) {
-                try {
-                    dsf = Optional.of(DeviceSupportField.valueOf("_" + s));
-                } catch (Exception e1) {
-                }
-            }
-            return dsf;
-        }
-    }
-
-    //from https://plutiedev.com/rom-header
-    public enum MdRomHeaderField {
-        SYSTEM_TYPE(0x100, 16),
-        COPYRIGHT_RELEASE_DATE(0x110, 16),
-        TITLE_DOMESTIC(0x120, 48),
-        TITLE_OVERSEAS(0x150, 48),
-        SERIAL_NUMBER(0x180, 14),
-        ROM_CHECKSUM(0x18E, 2, true),
-        DEVICE_SUPPORT(0x190, 16),
-        ROM_ADDR_RANGE(0x1A0, 8, true),
-        RAM_ADDR_RANGE(0x1A8, 8, true),
-        EXTRA_MEMORY(0x1B0, 12),
-        MODEM_SUPPORT(0x1BC, 12),
-        RESERVED1(0x1C8, 40),
-        REGION_SUPPORT(0x1F0, 3),
-        RESERVED2(0x1F3, 13);
-
-        static final HexFormat hf = HexFormat.of().withSuffix(" ");
-
-        public final int startOffset;
-        public final int len;
-        public final boolean rawNumber;
-
-        MdRomHeaderField(int so, int l) {
-            this(so, l, false);
-        }
-
-        MdRomHeaderField(int so, int l, boolean rn) {
-            startOffset = so;
-            len = l;
-            rawNumber = rn;
-        }
-
-        public String getValue(byte[] data) {
-            if (this == EXTRA_MEMORY) {
-                return extraMemStr(data);
-            }
-            if (this == TITLE_DOMESTIC) {
-                return titleDomesticStr(data);
-            }
-            return rawNumber
-                    ? hf.formatHex(data, startOffset, startOffset + len).trim()
-                    : new String(data, startOffset, len, StandardCharsets.US_ASCII);
-        }
-
-        public String getStringView(byte[] data) {
-            return this + ": " + getValue(data);
-        }
-
-        private static String titleDomesticStr(byte[] data) {
-            String s1 = new String(data, TITLE_DOMESTIC.startOffset, TITLE_DOMESTIC.len);
-            if (SHIFT_JIS != null) {
-                String s2 = new String(data, TITLE_DOMESTIC.startOffset, TITLE_DOMESTIC.len, SHIFT_JIS);
-                if (!s1.equals(s2)) {
-                    s1 = s2;
-                }
-            }
-            return s1;
-        }
-
-
-        private static String extraMemStr(byte[] data) {
-            int skipRaOffset = 2;
-            String s = new String(data, EXTRA_MEMORY.startOffset, skipRaOffset) + " ";
-            if (s.trim().isEmpty()) {
-                skipRaOffset = 0;
-            }
-            s += hf.formatHex(data, EXTRA_MEMORY.startOffset + skipRaOffset,
-                    EXTRA_MEMORY.startOffset + EXTRA_MEMORY.len).trim();
-            return s;
-        }
-    }
-
+public class MdCartInfoProvider extends MediaInfoProvider {
     public static final MdRomHeaderField[] rhf = MdRomHeaderField.values();
     public static final long DEFAULT_SRAM_START_ADDRESS = 0x20_0000;
     public static final long DEFAULT_SRAM_END_ADDRESS = 0x20_FFFF;
@@ -197,10 +54,12 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     public static final int SRAM_END_ADDRESS = 0x1B8;
     public static final String EXTERNAL_RAM_FLAG_VALUE = "RA";
 
+    public static final int HEADER_SIZE = 0x200;
+    private ByteBuffer headerBuf;
+
     private long sramStart;
     private long sramEnd;
     private boolean sramEnabled;
-    private int romSize;
     private String systemType, region = "";
 
     private Set<DeviceSupportField> deviceSupport = Collections.emptySet();
@@ -212,16 +71,14 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     private boolean isSvp;
     private String serial = "MISSING";
 
+    public static final MdCartInfoProvider NO_PROVIDER = new MdCartInfoProvider();
+
     public int getSramSizeBytes() {
         return (int) (sramEnd - sramStart + 1);
     }
 
     public boolean isSramEnabled() {
         return sramEnabled;
-    }
-
-    public int getRomSize() {
-        return romSize;
     }
 
     @Override
@@ -232,7 +89,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     @Override
     protected void init() {
         super.init();
-        initMemoryLayout(memoryProvider);
+        initMemoryLayout();
         entry = MdLoader.getEntry(serial);
     }
 
@@ -240,7 +97,8 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(systemType).append(", serial: ").append(serial);
-        sb.append(", ").append(memoryProvider.getRomHolder().toString());
+//        TODO fix
+//        sb.append(", ").append(memoryProvider.getRomHolder().toString());
         sb.append(", SRAM flag: ").append(sramEnabled).append("\n");
         sb.append(super.toString());
         if (sramEnabled) {
@@ -252,17 +110,37 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         return sb.append(headerInfo).toString();
     }
 
-    public static final MdCartInfoProvider NO_PROVIDER = new MdCartInfoProvider(MemoryProvider.NO_MEMORY, RomContext.NO_ROM);
 
-    public static MdCartInfoProvider createMdInstance(IMemoryProvider memoryProvider, RomContext rom) {
-        MdCartInfoProvider m = new MdCartInfoProvider(memoryProvider, rom);
+
+    public static MdCartInfoProvider createMdInstance(RandomAccessFile raf) {
+        MdCartInfoProvider m = new MdCartInfoProvider(raf);
         m.init();
         return m;
     }
 
-    protected MdCartInfoProvider(IMemoryProvider memoryProvider, RomContext rom) {
-        this.memoryProvider = memoryProvider;
-        this.romContext = rom;
+    public static MdCartInfoProvider createMdInstance(byte[] header) {
+        assert header.length >= HEADER_SIZE;
+        MdCartInfoProvider m = new MdCartInfoProvider();
+        m.headerBuf = ByteBuffer.wrap(header, 0, HEADER_SIZE);
+        m.init();
+        m.romSize = header.length;
+        LOG.warn("Setting romSize to: {}", m.romSize);
+        return m;
+    }
+
+    protected MdCartInfoProvider() {
+    }
+
+    protected MdCartInfoProvider(RandomAccessFile raf) {
+        byte[] hd = new byte[HEADER_SIZE];
+        try {
+            raf.seek(0);
+            raf.read(hd);
+            this.headerBuf = ByteBuffer.wrap(hd);
+            romSize = (int) raf.length();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean isSramUsedWithBrokenHeader(long address) {
@@ -277,37 +155,33 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
         return serial;
     }
 
-    private void initMemoryLayout(IMemoryProvider memoryProvider) {
-        byte[] header = memoryProvider.getRomData();
-        if (romContext.romFileType == SysUtil.RomFileType.BIN_CUE) {
-            header = romContext.sheet.getRomHeader();
-        }
-        detectHeaderMetadata(header);
+    private void initMemoryLayout() {
+        detectHeaderMetadata(headerBuf.array());
         detectSram();
     }
 
 
     private void detectSram() {
-        String sramFlag = String.valueOf((char) memoryProvider.readRomByte(SRAM_FLAG_ADDRESS));
-        sramFlag += (char) memoryProvider.readRomByte(SRAM_FLAG_ADDRESS + 1);
+        String sramFlag = String.valueOf((char) headerBuf.get(SRAM_FLAG_ADDRESS));
+        sramFlag += (char) headerBuf.get(SRAM_FLAG_ADDRESS + 1);
         boolean externalRamEnabled = EXTERNAL_RAM_FLAG_VALUE.equals(sramFlag);
 
         if (externalRamEnabled) {
-            long byte1 = memoryProvider.readRomByte(SRAM_FLAG_ADDRESS + 2);
-            long byte2 = memoryProvider.readRomByte(SRAM_FLAG_ADDRESS + 3);
+            long byte1 = headerBuf.get(SRAM_FLAG_ADDRESS + 2);
+            long byte2 = headerBuf.get(SRAM_FLAG_ADDRESS + 3);
             boolean isBackup = Util.bitSetTest(byte1, 7); //backup vs volatile
             boolean isSramType = (byte2 & 0x20) == 0x20; //sram vs EEPROM
             if (isBackup) { //&& isSramType) {
                 sramEnabled = true;
-                sramStart = Util.readData(memoryProvider.getRomData(), SRAM_START_ADDRESS, Size.LONG);
-                sramEnd = Util.readData(memoryProvider.getRomData(), SRAM_END_ADDRESS, Size.LONG);
+                sramStart = Util.readData(headerBuf.array(), SRAM_START_ADDRESS, Size.LONG);
+                sramEnd = Util.readData(headerBuf.array(), SRAM_END_ADDRESS, Size.LONG);
                 if (sramEnd - sramStart < 0) {
                     LOG.error("Unexpected SRAM setup: {}", this);
                     sramStart = DEFAULT_SRAM_START_ADDRESS;
                     sramEnd = DEFAULT_SRAM_END_ADDRESS;
                 }
             } else if (isSramType) {
-                LOG.warn("Volatile SRAM? {}", romName);
+                LOG.warn("Volatile SRAM? {}", "TODO romName");
             }
         }
     }
@@ -316,7 +190,6 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
      * @param romHeader initial 0x200 bytes
      */
     private void detectHeaderMetadata(byte[] romHeader) {
-        romSize = memoryProvider.getRomData().length;
         int send = SERIAL_NUMBER.startOffset + SERIAL_NUMBER.len;
         if (romHeader.length < send) {
             return;
@@ -328,8 +201,7 @@ public class MdCartInfoProvider extends CartridgeInfoProvider {
             if (f == DEVICE_SUPPORT) {
                 processDeviceSupport(romHeader);
                 if (!deviceSupport.isEmpty()) {
-                    sv += "\n\t" + Arrays.toString(deviceSupport.stream().map(df -> df.explain).
-                            collect(Collectors.toList()).toArray());
+                    sv += "\n\t" + Arrays.toString(deviceSupport.stream().map(df -> df.explain).toArray());
                 }
             }
             sb.append(sv).append("\n");

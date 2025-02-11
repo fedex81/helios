@@ -93,7 +93,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     protected void loop() {
         //gameGear always 60fps
         double frameMs = systemType == SystemLoader.SystemType.GG ?
-                USA.getFrameIntervalMs() : romContext.region.getFrameIntervalMs();
+                USA.getFrameIntervalMs() : mediaSpec.getRegion().getFrameIntervalMs();
         targetNs = (long) (frameMs * Util.MILLI_IN_NS);
         do {
             runZ80(cycleCounter);

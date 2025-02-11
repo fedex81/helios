@@ -19,8 +19,10 @@
 
 package omegadrive.ui;
 
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileUtil;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 
 import java.awt.event.KeyListener;
@@ -28,7 +30,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Optional;
 
-public interface DisplayWindow {
+public interface DisplayWindow extends RegionDetector.RegionOverrideSupplier {
 
     String APP_NAME = "Helios";
     String VERSION = FileUtil.loadVersionFromManifest();
@@ -52,7 +54,7 @@ public interface DisplayWindow {
         }
 
         @Override
-        public void setRomData(SystemProvider.RomContext rom) {
+        public void setRomData(MediaSpecHolder rom) {
 
         }
 
@@ -87,7 +89,7 @@ public interface DisplayWindow {
         }
     };
 
-    void setRomData(SystemProvider.RomContext rom);
+    void setRomData(MediaSpecHolder rom);
 
     void init();
 

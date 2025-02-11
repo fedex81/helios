@@ -30,8 +30,6 @@ import s32x.pwm.BlipPwmProvider;
 import s32x.pwm.Pwm;
 import s32x.pwm.S32xPwmProvider;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.util.*;
 
 import static omegadrive.SystemLoader.SystemType.*;
@@ -84,44 +82,10 @@ public class SysUtil {
         }
     }
 
-    public static class RomSpec {
-
-        public static final RomSpec NO_ROM = RomSpec.of(new File("./NO_FILE"));
-
-        public Path file;
-        public SystemType systemType;
-
-        public static RomSpec of(Path path) {
-            return of(path, SystemType.NONE);
-        }
-
-        public static RomSpec of(String filePath) {
-            return of(Path.of(filePath), SystemType.NONE);
-        }
-
-        public static RomSpec of(File file) {
-            return of(Path.of(file.getAbsolutePath()), SystemType.NONE);
-        }
-
-        public static RomSpec of(File file, SystemType systemType) {
-            return of(Path.of(file.getAbsolutePath()), systemType);
-        }
-
-        public static RomSpec of(Path file, SystemType systemType) {
-            RomSpec r = new RomSpec();
-            r.systemType = systemType;
-            r.file = file;
-            return r;
-        }
-
-        @Override
-        public String toString() {
-            return systemType + "," + file.toAbsolutePath();
-        }
-    }
-
-    public static SystemProvider createSystemProvider(RomSpec romSpec, DisplayWindow display) {
-        String lowerCaseName = handleCompressedFiles(romSpec.file, romSpec.file.toString().toLowerCase());
+    public static SystemProvider createSystemProvider(MediaSpecHolder romSpec, DisplayWindow display) {
+        MediaSpecHolder.MediaSpec mediaSpec = romSpec.getBootableMedia();
+        String lcName = mediaSpec.romFile.getFileName().toString().toLowerCase();
+        String lowerCaseName = handleCompressedFiles(mediaSpec.romFile, lcName);
 
         if (lowerCaseName == null) {
             LOG.error("Unable to load file: {}", romSpec);
@@ -138,6 +102,8 @@ public class SysUtil {
                 }
             }
         }
+        romSpec.systemType = type;
+        romSpec.reload();
         SystemProvider systemProvider = switch (type) {
             case MD -> Megadrive.createNewInstance(display);
             case MEGACD -> MegaCd.createNewInstance(display);

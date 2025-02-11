@@ -20,7 +20,7 @@
 package omegadrive.ui;
 
 import omegadrive.SystemLoader;
-import omegadrive.system.SysUtil;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
@@ -83,7 +83,7 @@ public class PrefStore {
         return l;
     }
 
-    public static SysUtil.RomSpec getRomSpecFromRecentItem(String text) {
+    public static MediaSpecHolder getRomSpecFromRecentItem(String text) {
         int idx = text.indexOf(',');
         int tknLimit = idx > 0 ? 2 : 0;
         String[] tkn = text.split(",", tknLimit);
@@ -98,7 +98,7 @@ public class PrefStore {
             st = SystemLoader.SystemType.NONE;
             file = tkn[0];
         }
-        return SysUtil.RomSpec.of(Path.of(file), st);
+        return MediaSpecHolder.of(Path.of(file), st);
     }
 
     public static int getSwingUiThemeIndex() {

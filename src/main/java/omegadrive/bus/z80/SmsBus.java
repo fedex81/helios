@@ -22,7 +22,7 @@ package omegadrive.bus.z80;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.model.Z80BusProvider;
-import omegadrive.cart.CartridgeInfoProvider;
+import omegadrive.cart.MediaInfoProvider;
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.sms.SmsMapper;
@@ -109,7 +109,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
     }
 
     protected void setupCartHw() {
-        CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
+        MediaInfoProvider cartridgeInfoProvider = MediaInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
         MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(),
                 cartridgeInfoProvider.getCrc32());
         LOG.info(cartridgeInfoProvider.toString());

@@ -23,7 +23,7 @@ import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.model.Z80BusProvider;
-import omegadrive.cart.CartridgeInfoProvider;
+import omegadrive.cart.MediaInfoProvider;
 import omegadrive.cart.mapper.MapperSelector;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.msx.MsxMapper;
@@ -278,7 +278,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
 
     private void setupCartHw() {
         int len = memoryProvider.getRomSize();
-        CartridgeInfoProvider cartridgeInfoProvider = CartridgeInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
+        MediaInfoProvider cartridgeInfoProvider = MediaInfoProvider.createInstance(memoryProvider, systemProvider.getRomPath());
         MapperSelector.Entry e = MapperSelector.getMapperData(systemProvider.getSystemType(), cartridgeInfoProvider.getSha1());
         if (e != MapperSelector.MISSING_DATA) {
             LOG.info("Cart Hw match:\n{}", e);

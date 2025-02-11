@@ -2,6 +2,7 @@ package omegadrive.mapper;
 
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
+import omegadrive.cart.header.MdHeader;
 import omegadrive.cart.mapper.md.MdBackupMemoryMapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
@@ -14,7 +15,6 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 
 import static omegadrive.bus.model.MdMainBusProvider.SRAM_LOCK;
-import static omegadrive.cart.MdCartInfoProvider.MdRomHeaderField.SYSTEM_TYPE;
 import static omegadrive.util.UtilTest.RUNNING_IN_GITHUB;
 
 /**
@@ -27,7 +27,7 @@ public class MdMapperTest {
     IMemoryProvider mem;
     ByteBuffer buffer;
 
-    public static final int ROM_HEADER_START = SYSTEM_TYPE.startOffset;
+    public static final int ROM_HEADER_START = MdHeader.MdRomHeaderField.SYSTEM_TYPE.startOffset;
 
     private void prepareRomData(int size, String systemType) {
         buffer = ByteBuffer.allocate(size);

@@ -20,6 +20,7 @@
 package s32x;
 
 import omegadrive.SystemLoader;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileUtil;
@@ -136,7 +137,7 @@ public class S32xAutomatedGameTester {
         SystemLoader systemLoader = SystemLoader.getInstance();
         SystemProvider system;
         for (Path rom : testRoms) {
-            SysUtil.RomSpec romSpec = SysUtil.RomSpec.of(rom);
+            MediaSpecHolder romSpec = MediaSpecHolder.of(rom);
             String name = FileUtil.getFileName(rom);
             System.out.println(count++ + ": " + name);
             system = systemLoader.handleNewRomFile(romSpec);

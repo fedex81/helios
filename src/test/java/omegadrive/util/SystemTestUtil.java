@@ -12,7 +12,6 @@ import omegadrive.bus.z80.ColecoBus;
 import omegadrive.bus.z80.MsxBus;
 import omegadrive.bus.z80.Sg1000Bus;
 import omegadrive.bus.z80.SmsBus;
-import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
@@ -28,7 +27,7 @@ import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.psg.PsgProvider;
-import omegadrive.system.SysUtil;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.Z80BaseSystem;
 import omegadrive.ui.DisplayWindow;
@@ -197,12 +196,7 @@ public class SystemTestUtil {
     public static SystemProvider createTestMdProvider(IMemoryProvider memoryProvider) {
         return new SystemProvider() {
 
-            private RomContext romContext;
-
-            {
-                romContext = new RomContext(SysUtil.RomSpec.NO_ROM);
-                romContext.cartridgeInfoProvider = MdCartInfoProvider.createMdInstance(memoryProvider, RomContext.NO_ROM);
-            }
+            private MediaSpecHolder romContext = MediaSpecHolder.NO_ROM;
 
             @Override
             public RegionDetector.Region getRegion() {
@@ -225,7 +219,7 @@ public class SystemTestUtil {
             }
 
             @Override
-            public RomContext getRomContext() {
+            public MediaSpecHolder getMediaSpec() {
                 return romContext;
             }
 

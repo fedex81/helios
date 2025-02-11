@@ -23,7 +23,6 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.md.MdBus;
 import omegadrive.bus.md.SvpMapper;
 import omegadrive.bus.model.MdMainBusProvider;
-import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.ssp16.Ssp16;
@@ -36,7 +35,6 @@ import omegadrive.savestate.BaseStateHandler;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
-import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.MdVdpProvider;
@@ -197,14 +195,15 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
     }
 
-    @Override
-    protected RomContext createRomContext(SysUtil.RomSpec rom) {
-        RomContext rc = new RomContext(rom);
-        MdCartInfoProvider mcip = MdCartInfoProvider.createMdInstance(memory, rc);
-        rc.cartridgeInfoProvider = mcip;
-        rc.region = RegionDetector.selectRegion(display, mcip);
-        return rc;
-    }
+//    @Override
+//    protected RomContext createRomContext(MediaSpecHolder rom) {
+//        RomContext rc = new RomContext(rom);
+//        MdCartInfoProvider mcip = (MdCartInfoProvider) rom.cartFile.mediaInfoProvider;
+//        assert mcip != null;
+//        rc.cartridgeInfoProvider = mcip;
+//        rc.region = RegionDetector.selectRegion(display, mcip);
+//        return rc;
+//    }
 
     @Override
     public void newFrame() {

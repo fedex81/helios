@@ -2,7 +2,7 @@ package s32x;
 
 import omegadrive.SystemLoader;
 import omegadrive.input.InputProvider;
-import omegadrive.system.SysUtil;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -47,7 +47,7 @@ public class S32XPerformanceTest {
     protected static SystemProvider createTestProvider() {
         InputProvider.bootstrap();
         Assertions.assertTrue(testFilePath.toFile().exists(), "File not found: " + testFilePath.toAbsolutePath());
-        return SystemLoader.getInstance().handleNewRomFile(SysUtil.RomSpec.of(testFilePath));
+        return SystemLoader.getInstance().handleNewRomFile(MediaSpecHolder.of(testFilePath));
     }
 
     private static void printFramePerf(long sampleCnt, long nowNs, long lastNs, long startNs, int frameCount) {

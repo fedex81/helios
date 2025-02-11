@@ -1,10 +1,6 @@
 package omegadrive.automated;
 
-import omegadrive.cart.MdCartInfoProvider;
-import omegadrive.memory.IMemoryProvider;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.system.SysUtil;
-import omegadrive.util.FileUtil;
+import omegadrive.system.MediaSpecHolder;
 
 import java.io.File;
 import java.nio.file.FileVisitOption;
@@ -15,7 +11,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static omegadrive.automated.AutomatedGameTester.testGenRomsPredicate;
-import static omegadrive.system.SystemProvider.RomContext;
 
 /**
  * Federico Berti
@@ -41,11 +36,8 @@ public class MdRomHeaderTest {
         for (Path rom : testRoms) {
             System.out.println(rom.toAbsolutePath());
             try {
-                RomContext romContext = new RomContext(SysUtil.RomSpec.of(rom));
-                byte[] data = FileUtil.readBinaryFile(rom);
-                IMemoryProvider memoryProvider = MemoryProvider.createInstance(data, 0);
-                MdCartInfoProvider cartridgeInfoProvider = MdCartInfoProvider.createMdInstance(memoryProvider, romContext);
-                System.out.println(cartridgeInfoProvider);
+                MediaSpecHolder msh = MediaSpecHolder.of(rom);
+                System.out.println(msh);
             } catch (Exception e) {
                 System.err.println("Exception: " + rom.getFileName());
                 e.printStackTrace();

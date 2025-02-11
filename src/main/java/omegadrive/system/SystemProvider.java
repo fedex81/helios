@@ -19,64 +19,13 @@
 
 package omegadrive.system;
 
-import mcd.cdd.ExtendedCueSheet;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
-import omegadrive.cart.CartridgeInfoProvider;
-import omegadrive.memory.MemoryProvider;
-import omegadrive.system.SysUtil.RomSpec;
 import omegadrive.util.RegionDetector;
 
 import java.nio.file.Path;
-import java.util.StringJoiner;
-
-import static omegadrive.system.SysUtil.RomFileType;
 
 public interface SystemProvider extends Device {
-
-    class RomContext {
-
-        public static final RomContext NO_ROM;
-
-        static {
-            NO_ROM = new RomContext();
-            NO_ROM.region = RegionDetector.Region.USA;
-            NO_ROM.romSpec = RomSpec.of(Path.of("NO_PATH"));
-            NO_ROM.cartridgeInfoProvider = CartridgeInfoProvider.createInstance(MemoryProvider.NO_MEMORY, NO_ROM.romSpec.file);
-        }
-
-        public RegionDetector.Region region;
-
-        public RomSpec romSpec = RomSpec.NO_ROM;
-        public CartridgeInfoProvider cartridgeInfoProvider;
-        public RomFileType romFileType = RomFileType.UNKNOWN;
-
-        public ExtendedCueSheet sheet;
-
-        private RomContext() {
-        }
-
-        public RomContext(RomSpec r) {
-            romSpec = r;
-            romFileType = r.file.toString().endsWith(".cue") ? RomFileType.BIN_CUE : romFileType;
-            romFileType = r.file.toString().endsWith(".iso") ? RomFileType.ISO : romFileType;
-            if (romFileType == RomFileType.UNKNOWN) {
-                romFileType = RomFileType.CART_ROM;
-            }
-            if (romFileType.isDiscImage()) {
-                sheet = new ExtendedCueSheet(r.file, romFileType);
-            }
-        }
-
-        @Override
-        public String toString() {
-            return new StringJoiner(", ", RomContext.class.getSimpleName() + "[", "]")
-                    .add("region=" + region)
-                    .add("romSpec=" + romSpec)
-                    .add("\ncartridgeInfoProvider=" + cartridgeInfoProvider)
-                    .toString();
-        }
-    }
 
     void handleSystemEvent(SystemEvent event, Object parameter);
 
@@ -86,12 +35,12 @@ public interface SystemProvider extends Device {
 
     boolean isRomRunning();
 
-    RomContext getRomContext();
+    MediaSpecHolder getMediaSpec();
 
     SystemLoader.SystemType getSystemType();
 
     default RegionDetector.Region getRegion() {
-        return getRomContext().region;
+        return getMediaSpec().getRegion();
     }
 
     default int getRegionCode() {
@@ -99,7 +48,7 @@ public interface SystemProvider extends Device {
     }
 
     default Path getRomPath() {
-        return getRomContext().romSpec.file;
+        return getMediaSpec().getBootableMedia().romFile;
     }
 
     enum SystemEvent {

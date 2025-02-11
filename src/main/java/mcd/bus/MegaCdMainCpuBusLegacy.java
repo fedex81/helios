@@ -94,7 +94,7 @@ public class MegaCdMainCpuBusLegacy extends MdBus implements MegaCdMainCpuBusInt
             bios = McdBiosHolder.loadBios(systemProvider.getRegion(), systemProvider.getRomPath());
             return;
         }
-        if (cartridgeInfoProvider.getRomContext().romFileType.isDiscImage()) {
+        if (systemProvider.getMediaSpec().hasDiscImage()) {
             enableMode1 = false;
             LOG.info("CUE/ISO file detected, disabling mode1 mapper");
         }

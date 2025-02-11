@@ -111,7 +111,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
             bios = McdBiosHolder.loadBios(systemProvider.getRegion(), systemProvider.getRomPath());
             return;
         }
-        if (cartridgeInfoProvider.getRomContext().romFileType.isDiscImage()) {
+        if (systemProvider.getMediaSpec().hasDiscImage()) {
             enableMode1 = false;
             LOG.info("CUE/ISO file detected, disabling mode1 mapper");
         }

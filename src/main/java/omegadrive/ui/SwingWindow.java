@@ -25,7 +25,7 @@ import omegadrive.SystemLoader.SystemType;
 import omegadrive.input.InputProvider;
 import omegadrive.input.InputProvider.PlayerNumber;
 import omegadrive.joypad.JoypadProvider.JoypadType;
-import omegadrive.system.SysUtil.RomSpec;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.flatlaf.FlatLafHelper;
 import omegadrive.ui.util.IconsLoader;
@@ -58,7 +58,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static omegadrive.system.SystemProvider.RomContext;
+import static omegadrive.system.MediaSpecHolder.NO_ROM;
 import static omegadrive.system.SystemProvider.SystemEvent;
 import static omegadrive.system.SystemProvider.SystemEvent.*;
 import static omegadrive.ui.PrefStore.getRomSpecFromRecentItem;
@@ -109,7 +109,7 @@ public class SwingWindow implements DisplayWindow {
     private MouseCursorHandler cursorHandler;
     private AWTEventListener awtEventListener;
 
-    private RomContext romContext = RomContext.NO_ROM;
+    private MediaSpecHolder mediaSpec = NO_ROM;
     private final ExecutorService executorService;
 
     public SwingWindow(SystemProvider mainEmu) {
@@ -123,17 +123,18 @@ public class SwingWindow implements DisplayWindow {
     }
 
     @Override
-    public void setRomData(RomContext rom) {
-        this.romContext = rom;
-        if (romContext == RomContext.NO_ROM) {
+    public void setRomData(MediaSpecHolder rom) {
+        this.mediaSpec = rom;
+        if (mediaSpec == NO_ROM) {
             return;
         }
         jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() + " " + VERSION + " - " +
-                FileUtil.getFileName(romContext.romSpec.file));
-        Icon icon = IconsLoader.getRegionIcon(romContext.region);
+                FileUtil.getFileName(rom.getBootableMedia().romFile));
+        RegionDetector.Region region = rom.getRegion();
+        Icon icon = IconsLoader.getRegionIcon(region);
         regionLabel.setIcon(icon);
-        regionLabel.setText(icon == null ? romContext.region.name() : "");
-        regionLabel.setToolTipText(romContext.region.name());
+        regionLabel.setText(icon == null ? region.name() : "");
+        regionLabel.setToolTipText(region.name());
         reloadRecentFiles();
         if (mainEmu.getSystemType().isMegaCdAttached()) {
             megaCdLedLabel.setIcon(IconsLoader.getLedIcon(0));
@@ -397,7 +398,7 @@ public class SwingWindow implements DisplayWindow {
                 KeyBindingsHandler.toConfigString()));
 
         JMenuItem romInfoItem = new JMenuItem("Rom Info");
-        addAction(romInfoItem, e -> showHelpMessage(romInfoItem.getText(), romContext.toString()));
+        addAction(romInfoItem, e -> showHelpMessage(romInfoItem.getText(), mediaSpec.toString()));
 
         JMenuItem readmeItem = new JMenuItem("Readme");
         addAction(readmeItem, e -> showHelpMessage(readmeItem.getText(),
@@ -527,11 +528,11 @@ public class SwingWindow implements DisplayWindow {
         };
     }
 
-    private Optional<RomSpec> loadFileDialog(Component parent, FileResourceType type) {
+    private Optional<MediaSpecHolder> loadFileDialog(Component parent, FileResourceType type) {
         return fileDialog(parent, type, true);
     }
 
-    private Optional<RomSpec> fileDialog(Component parent, FileResourceType type, boolean load) {
+    private Optional<MediaSpecHolder> fileDialog(Component parent, FileResourceType type, boolean load) {
         int dialogType = load ? JFileChooser.OPEN_DIALOG : JFileChooser.SAVE_DIALOG;
         boolean isSaveState = type == SAVE_STATE_RES;
         String lastFileStr = isSaveState ? PrefStore.lastSaveFile : PrefStore.lastRomFile;
@@ -554,7 +555,7 @@ public class SwingWindow implements DisplayWindow {
                     fileChooser.getFileFilter().getDescription(), mainEmu.getSystemType());
         }
         final SystemType st = systemType;
-        return res.map(f -> RomSpec.of(f, st));
+        return res.map(f -> MediaSpecHolder.of(f, st));
     }
 
     @Override
@@ -563,12 +564,12 @@ public class SwingWindow implements DisplayWindow {
         showInfoCount = SHOW_INFO_FRAMES_DELAY;
     }
 
-    private Optional<RomSpec> loadRomDialog(Component parent) {
+    private Optional<MediaSpecHolder> loadRomDialog(Component parent) {
         return loadFileDialog(parent, FileResourceType.ROM);
     }
 
     private Optional<File> loadStateFileDialog(Component parent) {
-        return loadFileDialog(parent, SAVE_STATE_RES).map(r -> r.file.toFile());
+        return loadFileDialog(parent, SAVE_STATE_RES).map(r -> r.getBootableMedia().romFile.toFile());
     }
 
     private void handleLoadState() {
@@ -596,24 +597,24 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private void handleSaveState() {
-        Optional<File> optFile = fileDialog(jFrame, SAVE_STATE_RES, false).map(r -> r.file.toFile());
+        Optional<File> optFile = fileDialog(jFrame, SAVE_STATE_RES, false).map(r -> r.getBootableMedia().romFile.toFile());
         optFile.ifPresent(file -> handleSystemEvent(SAVE_STATE, file.toPath(), file.getName()));
     }
 
     private void handleNewRom() {
         handleSystemEvent(CLOSE_ROM, null, null);
-        Optional<RomSpec> optFile = loadRomDialog(jFrame);
+        Optional<MediaSpecHolder> optFile = loadRomDialog(jFrame);
         if (optFile.isPresent()) {
-            RomSpec romSpec = optFile.get();
+            MediaSpecHolder romSpec = optFile.get();
             SystemLoader.getInstance().handleNewRomFile(romSpec);
             reloadRecentFiles();
             showInfo(NEW_ROM + ": " + romSpec);
-            PrefStore.lastRomFile = romSpec.file.toString();
+            PrefStore.lastRomFile = romSpec.toString();
         }
     }
 
     private void handleNewRomFromRecent(String path) {
-        RomSpec romSpec = getRomSpecFromRecentItem(path);
+        MediaSpecHolder romSpec = getRomSpecFromRecentItem(path);
         showInfo(NEW_ROM + ": " + romSpec);
         SystemLoader.getInstance().handleNewRomFile(romSpec);
         PrefStore.lastRomFile = romSpec.toString();
@@ -638,7 +639,7 @@ public class SwingWindow implements DisplayWindow {
                     }
                     Path path = file.toPath();
                     if (UiFileFilters.ROM_FILTER.accept(file)) {
-                        SystemLoader.getInstance().handleNewRomFile(RomSpec.of(path));
+                        SystemLoader.getInstance().handleNewRomFile(MediaSpecHolder.of(path));
                         reloadRecentFiles();
                         showInfo(NEW_ROM + ": " + path.getFileName());
                     } else if (UiFileFilters.SAVE_STATE_FILTER.accept(file)) {
@@ -658,7 +659,7 @@ public class SwingWindow implements DisplayWindow {
 
         Arrays.stream(jFrame.getKeyListeners()).forEach(jFrame::removeKeyListener);
         Optional.ofNullable(mainEmu).ifPresent(sp -> {
-            setRomData(RomContext.NO_ROM);
+            setRomData(MediaSpecHolder.NO_ROM);
             boolean en = mainEmu.getSystemType() == SystemType.MD ||
                     mainEmu.getSystemType() == SystemType.S32X;
             joypadTypeMenu.setEnabled(en);
