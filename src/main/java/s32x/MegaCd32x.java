@@ -79,6 +79,7 @@ public class MegaCd32x extends Md32x {
         mcdLaunchContext.subBus.attachDevice(this);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
+        MegaCd.megaCdDiscInsert(mcdLaunchContext, mediaSpec);
     }
 
     @Override
@@ -205,11 +206,5 @@ public class MegaCd32x extends Md32x {
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
         subCpu.reset();
-    }
-
-    @Override
-    protected void initAfterRomLoad() {
-        super.initAfterRomLoad();
-        MegaCd.megaCdDiscInsert(mcdLaunchContext, mediaSpec);
     }
 }

@@ -102,11 +102,14 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     @Override
     public void init() {
         super.init();
+        init32x();
         vdp.addVdpEventListener((BaseVdpAdapterEventSupport.VdpEventListener) bus);
+        //TODO bit of a hack
+        memView = createMemView();
     }
 
-    @Override
-    protected void initAfterRomLoad() {
+
+    protected void init32x() {
         rt = MdRuntimeData.newInstance(systemType, this);
         launchCtx = MarsLauncherHelper.setupRom(getS32xBus(), memory.getRomHolder());
         masterCtx = launchCtx.masterCtx;
@@ -116,8 +119,6 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         //aden 0 -> cycle = 0 = not running
         nextSSh2Cycle = nextMSh2Cycle = launchCtx.s32XMMREG.aden & 1;
         marsVdp.updateDebugView(((MdVdp) vdp).getDebugViewer());
-        super.initAfterRomLoad(); //needs to be last
-        //TODO super inits the soundProvider
         launchCtx.pwm.setPwmProvider(ENABLE_PWM ? sound.getPwm() : PwmProvider.NO_SOUND);
         sound.setEnabled(sound.getFm(), ENABLE_FM);
         sound.setEnabled(sound.getPwm(), !Pwm.PWM_USE_BLIP);
@@ -244,7 +245,10 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     }
 
     protected UpdatableViewer createMemView() {
-        return S32xMemView.createInstance(bus, launchCtx.memory, vdp.getVdpMemory());
+        if (launchCtx != null) {
+            return S32xMemView.createInstance(bus, launchCtx.memory, vdp.getVdpMemory());
+        }
+        return UpdatableViewer.NO_OP_VIEWER;
     }
 
     @Override

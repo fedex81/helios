@@ -99,15 +99,14 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     @Override
     public void init() {
         sound = AbstractSoundManager.createSoundProvider(systemType);
+        mediaSpec.region = RegionDetector.selectRegion(display, mediaSpec.getBootableMedia().mediaInfoProvider);
+        sound.init(mediaSpec.getRegion());
         displayContext = new DisplayWindow.DisplayContext();
         displayContext.megaCdLedState = Optional.empty();
         displayContext.videoMode = VideoMode.PAL_H40_V30;
         telemetry = Telemetry.resetClock(this);
-        mediaSpec.region = RegionDetector.selectRegion(display, mediaSpec.getBootableMedia().mediaInfoProvider);
-    }
 
-    protected void initAfterRomLoad() {
-        sound.init(mediaSpec.getRegion());
+        LOG.info("Region set as: {}", mediaSpec.region);
     }
 
     protected abstract void resetCycleCounters(int counter);
@@ -366,7 +365,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
                 LOG.info("Running rom: {},\n{}", romName, romSpec);
-                initAfterRomLoad();
+                resetAfterRomLoad();
                 sound.setEnabled(soundEnFlag);
                 LOG.info("Starting game loop");
                 loop();

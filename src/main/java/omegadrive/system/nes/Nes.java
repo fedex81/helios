@@ -96,12 +96,6 @@ public class Nes extends BaseSystem<BaseBusProvider> {
     }
 
     @Override
-    protected void initAfterRomLoad() {
-        super.initAfterRomLoad();
-        resetAfterRomLoad();
-    }
-
-    @Override
     protected void resetCycleCounters(int counter) {
         //DO NOTHING
     }

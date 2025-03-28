@@ -111,12 +111,6 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     }
 
     @Override
-    protected void initAfterRomLoad() {
-        super.initAfterRomLoad();
-        resetAfterRomLoad();
-    }
-
-    @Override
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
         z80.reset();

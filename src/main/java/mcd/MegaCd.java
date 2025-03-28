@@ -95,6 +95,7 @@ public class MegaCd extends Megadrive {
         mcdLaunchContext.subBus.attachDevice(this);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
+        megaCdDiscInsert(mcdLaunchContext, mediaSpec);
     }
 
     @Override
@@ -151,16 +152,6 @@ public class MegaCd extends Megadrive {
         }
     }
 
-//    @Override
-//    protected RomContext createRomContext(MediaSpecHolder rom) {
-//        RomContext rc = new RomContext(rom);
-//        assert rc.romFileType.isDiscImage() ? !ZipUtil.isCompressedByteStream(rom.cdFile.romFile) : true;
-//        MdCartInfoProvider mcip = MegaCdCartInfoProvider.createMcdInstance(memory, rc);
-//        rc.cartridgeInfoProvider = mcip;
-//        rc.region = RegionDetector.selectRegion(display, mcip);
-//        return rc;
-//    }
-
     @Override
     public void newFrame() {
         mcdLaunchContext.pcm.newFrame();
@@ -184,12 +175,6 @@ public class MegaCd extends Megadrive {
         nextSub68kCycle = Math.max(1, nextSub68kCycle - counter);
     }
 
-    @Override
-    protected void initAfterRomLoad() {
-        super.initAfterRomLoad();
-        megaCdDiscInsert(mcdLaunchContext, mediaSpec);
-    }
-
     //fudge it
     public static void megaCdDiscInsert(McdDeviceHelper.McdLaunchContext mcdLaunchContext, MediaSpecHolder mediaSpec) {
         boolean segaMode1 = mcdLaunchContext.mainBus.isEnableMode1();
@@ -201,8 +186,8 @@ public class MegaCd extends Megadrive {
             LOG.info("Bios mode, noDisc: {}, cdAudio: {}", biosNoDisc, biosCdAudio);
         }
         if (tryInsertAsDisc) {
-//            mcdLaunchContext.cdd.tryInsert(romContext.sheet); //TODO fix
-            new RuntimeException("oops");
+            assert mediaSpec.getBootableMedia().sheetOpt.isPresent();
+            mcdLaunchContext.cdd.tryInsert(mediaSpec.getBootableMedia().sheetOpt.get());
         } else if (segaMode1 || (!bios || biosCdAudio)) {
             //insert an audio CD, for testing mode1 CD Player
             Path p = Path.of("./test_roms/SonicCD", "SonicCD_AudioOnly.cue");

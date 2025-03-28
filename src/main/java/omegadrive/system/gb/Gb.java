@@ -92,12 +92,6 @@ public class Gb extends BaseSystem<BaseBusProvider> {
     }
 
     @Override
-    protected void initAfterRomLoad() {
-        super.initAfterRomLoad();
-        resetAfterRomLoad();
-    }
-
-    @Override
     protected void handleCloseRom() {
         Optional.ofNullable(emulator).ifPresent(Emulator::stop);
         super.handleCloseRom();

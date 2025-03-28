@@ -106,12 +106,6 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
         } while (!runningRomFuture.isDone());
     }
 
-    @Override
-    protected void initAfterRomLoad() {
-        super.initAfterRomLoad();
-        resetAfterRomLoad();
-    }
-
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
         z80.reset();

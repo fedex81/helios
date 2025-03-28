@@ -50,7 +50,6 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
  *
  * @author Federico Berti
  *
- * TODO this is used by 32x as a base class, unify with the other variants
  */
 public class Megadrive extends BaseSystem<MdMainBusProvider> {
 
@@ -110,6 +109,10 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         bus.attachDevices(this, memory, joypad, vdp, cpu, z80, sound);
         reloadWindowState();
         createAndAddVdpEventListener();
+
+        SvpMapper.ssp16 = Ssp16.NO_SVP;
+        memView.reset();
+        memView = createMemView();
     }
 
     protected void loop() {
@@ -195,16 +198,6 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         return 1_000_000.0 / (mclkhz / (FM_DIVIDER * MCLK_DIVIDER));
     }
 
-//    @Override
-//    protected RomContext createRomContext(MediaSpecHolder rom) {
-//        RomContext rc = new RomContext(rom);
-//        MdCartInfoProvider mcip = (MdCartInfoProvider) rom.cartFile.mediaInfoProvider;
-//        assert mcip != null;
-//        rc.cartridgeInfoProvider = mcip;
-//        rc.region = RegionDetector.selectRegion(display, mcip);
-//        return rc;
-//    }
-
     @Override
     public void newFrame() {
         checkSvp();
@@ -230,15 +223,6 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         nextZ80Cycle = Math.max(1, nextZ80Cycle - counter);
         next68kCycle = Math.max(1, next68kCycle - counter);
         nextVdpCycle = Math.max(1, nextVdpCycle - counter);
-    }
-
-    @Override
-    protected void initAfterRomLoad() {
-        super.initAfterRomLoad();
-        SvpMapper.ssp16 = Ssp16.NO_SVP;
-        resetAfterRomLoad();
-        memView.reset();
-        memView = createMemView();
     }
 
     @Override
