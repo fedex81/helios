@@ -20,6 +20,9 @@ import s32x.dict.S32xDict;
 
 import java.nio.ByteBuffer;
 
+import static m68k.cpu.Cpu.PC_MASK;
+import static omegadrive.util.Util.th;
+
 /**
  * Federico Berti
  * <p>
@@ -31,21 +34,15 @@ public class Mcd32xMainBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imple
     private static final Logger LOG = LogHelper.getLogger(Mcd32xMainBus.class.getSimpleName());
     public final S32xBusIntf s32xBus;
     public final MegaCdMainCpuBusIntf mcdMainBus;
-
     private final MdMainBusProvider mdBus;
 
-    //TODO remove at some point
-    private final SystemLoader.SystemType forceSystem;
+    private boolean cartBoot;
 
 
-    public Mcd32xMainBus(McdDeviceHelper.McdLaunchContext mcdLaunchContext, SystemLoader.SystemType forceSystem) {
+    public Mcd32xMainBus(McdDeviceHelper.McdLaunchContext mcdLaunchContext) {
         this.mdBus = mcdLaunchContext.mdBus;
         s32xBus = S32xBus.createS32xBus(mdBus);
         mcdMainBus = mcdLaunchContext.mainBus;
-        this.forceSystem = forceSystem;
-        if (forceSystem != null) {
-            LOG.warn("Forcing MEGACD-32x to handle: {}", forceSystem);
-        }
     }
 
     @Override
@@ -53,8 +50,12 @@ public class Mcd32xMainBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imple
         super.init();
         mcdMainBus.init();
         s32xBus.init();
+        cartBoot = true;
         //TODO improve, 32x set cart = NOT_PRESENT
-        s32xBus.setRom(ByteBuffer.allocate(0));
+        if (getSystem().getMediaSpec().cdFile.bootable) {
+            s32xBus.setRom(ByteBuffer.allocate(0));
+            cartBoot = false;
+        }
     }
 
     @Override
@@ -67,49 +68,48 @@ public class Mcd32xMainBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imple
 
     @Override
     public int read(int address, Size size) {
-        address &= 0xFF_FFFF;
-        SystemLoader.SystemType st = forceSystem;
-        if (st == null) {
-            st = byAddress(address);
-        }
+        assert cartBoot == mcdMainBus.isEnableMode1();
+        address &= PC_MASK;
+//        SystemLoader.SystemType st = byAddress(address);
 //        LogHelper.logWarnOnceForce(LOG, "{} Read {}", st, th(address));
-            return switch (st) {
+        return switch (byAddress(address, cartBoot)) {
             case S32X -> s32xBus.read(address, size);
             case MEGACD -> mcdMainBus.read(address, size);
-                default -> throw new RuntimeException(st.toString());
+            default -> throw new RuntimeException(byAddress(address, cartBoot).toString());
         };
     }
 
     @Override
     public void write(int address, int data, Size size) {
-        address &= 0xFF_FFFF;
-        SystemLoader.SystemType st = forceSystem;
-        if (st == null) {
-            st = byAddress(address);
-        }
+        assert cartBoot == mcdMainBus.isEnableMode1();
+        address &= PC_MASK;
+//        SystemLoader.SystemType st = byAddress(address);
 //        LogHelper.logWarnOnceForce(LOG, "{} Write {}", st, th(address));
-            switch (st) {
-                case S32X -> s32xBus.write(address, data, size);
-                case MEGACD -> mcdMainBus.write(address, data, size);
-                default -> throw new RuntimeException(st.toString());
-            }
+        switch (byAddress(address, cartBoot)) {
+            case S32X -> s32xBus.write(address, data, size);
+            case MEGACD -> mcdMainBus.write(address, data, size);
+            default -> throw new RuntimeException(byAddress(address, cartBoot).toString());
+        }
     }
 
     /**
      * 0x84_0000 ... 0x88_0000 FB
      * 0xA1_5100 ... 0xA1_5400 regs
-     *
-     * @param address
-     * @return
      */
-    private static SystemLoader.SystemType byAddress(int address) {
-        assert !(address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR);
+    private static SystemLoader.SystemType byAddress(int address, boolean cartBoot) {
+        if (cartBoot) {    //TODO doom fusion
+            if (address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR) {
+                return SystemLoader.SystemType.S32X;
+            }
+            if ((address < S32xDict.M68K_END_VECTOR_ROM)) {
+                return SystemLoader.SystemType.S32X;
+            }
+        } else {
+            //rom mirror should not work as there is no cart
+            assert !(address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR) : th(address);
+        }
         boolean is32xAddr =
-                //TODO only when forcing S32X
-//                (address < S32xDict.M68K_END_VECTOR_ROM) ||
                 (address >= S32xDict.M68K_START_FRAME_BUFFER && address < S32xDict.M68K_END_OVERWRITE_IMAGE) ||
-//                TODO rom mirror should not work as there is no cart ??
-//                (address >= S32xDict.M68K_START_FRAME_BUFFER && address < S32xDict.M68K_END_ROM_MIRROR_BANK) ||
                         (address >= S32xDict.M68K_START_32X_SYSREG && address < S32xDict.M68K_END_32X_COLPAL) ||
                         (address >= S32xDict.M68K_START_MARS_ID && address < S32xDict.M68K_END_MARS_ID);
         return is32xAddr ? SystemLoader.SystemType.S32X : SystemLoader.SystemType.MEGACD;

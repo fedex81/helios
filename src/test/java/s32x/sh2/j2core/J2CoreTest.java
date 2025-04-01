@@ -10,8 +10,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import s32x.DmaFifo68k;
-import s32x.S32XMMREG;
 import s32x.Sh2MMREG;
 import s32x.bus.Sh2Bus;
 import s32x.sh2.Sh2;
@@ -110,9 +108,8 @@ public class J2CoreTest {
     public static Sh2Context createContext(BufferUtil.CpuDeviceAccess cpu, Sh2Bus memory) {
         Sh2Cache cache = Sh2Cache.createCacheInstance(cpu, memory);
         Sh2MMREG sh2MMREG = new Sh2MMREG(cpu, cache);
-        S32XMMREG s32XMMREG = new S32XMMREG();
         Sh2Context context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, sh2Debug);
-        context.devices = Sh2DeviceHelper.createDevices(cpu, memory, new DmaFifo68k(s32XMMREG.regContext), sh2MMREG);
+        context.devices = Sh2DeviceHelper.createDevices(cpu, memory, sh2MMREG);
         sh2MMREG.init(context.devices);
         MdRuntimeData.newInstance(SystemLoader.SystemType.S32X, SystemProvider.NO_CLOCK);
         return context;

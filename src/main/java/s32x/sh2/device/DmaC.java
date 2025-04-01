@@ -5,7 +5,6 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
-import s32x.DmaFifo68k;
 import s32x.Sh2MMREG;
 import s32x.bus.Sh2Bus;
 import s32x.bus.Sh2MemoryParallel;
@@ -38,16 +37,14 @@ public class DmaC implements BufferUtil.Sh2Device {
 
     private final IntControl intControl;
     private final Sh2Bus memory;
-    private final DmaFifo68k dma68k;
     private final BufferUtil.CpuDeviceAccess cpu;
     private final DmaHelper.DmaChannelSetup[] dmaChannelSetup;
     private boolean oneDmaInProgress = false;
 
-    public DmaC(BufferUtil.CpuDeviceAccess cpu, IntControl intControl, Sh2Bus memory, DmaFifo68k dma68k, ByteBuffer regs) {
+    public DmaC(BufferUtil.CpuDeviceAccess cpu, IntControl intControl, Sh2Bus memory, ByteBuffer regs) {
         this.cpu = cpu;
         this.regs = regs;
         this.memory = memory;
-        this.dma68k = dma68k;
         this.intControl = intControl;
         this.dmaChannelSetup = new DmaHelper.DmaChannelSetup[]{DmaHelper.createChannel(0), DmaHelper.createChannel(1)};
     }
@@ -198,9 +195,12 @@ public class DmaC implements BufferUtil.Sh2Device {
             c.dmaInProgress = false;
             c.dreqLevel = false;
             updateOneDmaInProgress();
-            if (!c.chcr_autoReq) {
-                dma68k.dmaEnd();
-            }
+            //TODO MASTER doing FIFO -> RAM dma
+            //TODO SLAVE doing RAM -> PWM dma, when slave is done, this causes the MASTER DMA to stop
+            //TODO this is actually not needed
+//            if (!c.chcr_autoReq) {
+//                dma68k.dmaEnd();
+//            }
             //transfer ended normally, ie. TCR = 0
             if (normal) {
                 int chcr = setDmaChannelBitVal(c.channel, DMA_CHCR0.addr + 2, SH2_CHCR_TRANSFER_END_BIT, 1, Size.WORD);

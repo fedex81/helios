@@ -6,12 +6,15 @@ import mcd.bus.Mcd32xMainBus;
 import mcd.bus.McdSubInterruptHandler;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.MdMainBusProvider;
+import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.system.MediaSpecHolder;
+import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
+import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
@@ -46,13 +49,6 @@ public class MegaCd32x extends Md32x {
     protected McdDeviceHelper.McdLaunchContext mcdLaunchContext;
     private double mcd68kRatio;
     protected S32xBusIntf s32xBus;
-
-    //TODO debug
-    private final static SystemType forceSystem
-            = null;
-//                = SystemType.MEGACD;
-    // = SystemType.S32X;
-
     double subCnt = 0;
 
     static {
@@ -80,6 +76,7 @@ public class MegaCd32x extends Md32x {
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
         MegaCd.megaCdDiscInsert(mcdLaunchContext, mediaSpec);
+        checkDoomFusion();
     }
 
     @Override
@@ -148,7 +145,7 @@ public class MegaCd32x extends Md32x {
 
     @Override
     protected MdMainBusProvider createBus() {
-        Mcd32xMainBus b = new Mcd32xMainBus(mcdLaunchContext, forceSystem);
+        Mcd32xMainBus b = new Mcd32xMainBus(mcdLaunchContext);
         s32xBus = b.s32xBus;
         return b;
     }
@@ -165,9 +162,7 @@ public class MegaCd32x extends Md32x {
     protected void doRendering(int[] data) {
         super.doRendering(data);
         //TODO use MD video mode, 32x can use a different video mode
-        if (forceSystem == SystemType.MEGACD) {
-            displayContext.videoMode = vdp.getVideoMode();
-        }
+        displayContext.videoMode = vdp.getVideoMode();
     }
 
     @Override
@@ -206,5 +201,33 @@ public class MegaCd32x extends Md32x {
     protected void resetAfterRomLoad() {
         super.resetAfterRomLoad();
         subCpu.reset();
+    }
+
+    @Override
+    protected void init32x() {
+        super.init32x();
+    }
+
+    private void checkDoomFusion() {
+        //TODO HACK for Doom Fusion
+        //CD32x official releases boot from CD with no cart inserted
+        //DoomFusion boots from cart with CD inserted
+        MdCartInfoProvider cartInfo = ((MdCartInfoProvider) mediaSpec.getBootableMedia().mediaInfoProvider);
+        String serial = cartInfo.getSerial();
+        String name = cartInfo.getRomName();
+        if (name.startsWith("DCD32X") || serial.contains("DMF32XCD")) {
+            String isoName = Util.getNameWithoutExtension(name) + ".iso";
+            MediaSpecHolder.MediaSpec iso = MediaSpecHolder.MediaSpec.of(
+                    mediaSpec.getBootableMedia().romFile.resolveSibling(isoName), SysUtil.RomFileType.ISO, mediaSpec.systemType);
+            assert iso.romFile.toFile().exists();
+            LOG.warn("DoomCD32x Fusion detected attempting to load iso file: {}", iso.romFile.toAbsolutePath());
+            mediaSpec.cdFile = iso;
+            mediaSpec.systemType = iso.systemType = mediaSpec.cartFile.systemType = SystemType.MEGACD_S32X;
+            mediaSpec.reload();
+            MegaCd.megaCdDiscInsert(mcdLaunchContext, mediaSpec);
+        } else {
+            assert mediaSpec.hasDiscImage();
+            mediaSpec.systemType = mediaSpec.cdFile.systemType = SystemType.MEGACD_S32X;
+        }
     }
 }

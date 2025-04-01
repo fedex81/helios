@@ -246,6 +246,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
                 break;
         }
         block.start = block.pcMasked;
+        assert block.fetchBuffer != null && block.fetchBuffer.array().length > 1 : cpu + " " + th(pc) + " " + block;
     }
 
 

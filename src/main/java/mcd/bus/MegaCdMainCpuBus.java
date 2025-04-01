@@ -100,24 +100,22 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
     @Override
     public void init() {
         mdBus.init();
-        enableMode1 = true;
+        setEnableMode1(true);
         MdCartInfoProvider cartridgeInfoProvider = mdBus.getCartridgeInfoProvider();
         isBios = cartridgeInfoProvider.getSerial().startsWith("BR ");
         //bios aka bootRom
         if (isBios) {
-            enableMode1 = false;
+            setEnableMode1(false);
             LOG.info("Bios detected with serial: {}, disabling mode1 mapper", cartridgeInfoProvider.getSerial());
             //NOTE: load bios as a file, use it as the current bios, disregarding the default bios
             bios = McdBiosHolder.loadBios(systemProvider.getRegion(), systemProvider.getRomPath());
             return;
         }
-        if (systemProvider.getMediaSpec().hasDiscImage()) {
-            enableMode1 = false;
+        if (systemProvider.getMediaSpec().hasDiscImage() && systemProvider.getMediaSpec().cdFile.bootable) {
+            setEnableMode1(false);
             LOG.info("CUE/ISO file detected, disabling mode1 mapper");
         }
-        //mode1 and cue
         bios = biosHolder.getBiosBuffer(systemProvider.getRegion());
-        maskMode1 = !enableMode1 ? MCD_MAIN_MODE1_MASK : 0;
     }
 
     @Override
@@ -494,6 +492,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
     @Override
     public void setEnableMode1(boolean enableMode1) {
         this.enableMode1 = enableMode1;
+        maskMode1 = !enableMode1 ? MCD_MAIN_MODE1_MASK : 0;
     }
 
     public boolean isBios() {

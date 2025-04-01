@@ -24,7 +24,6 @@ import omegadrive.util.Size;
 import omegadrive.vdp.model.BaseVdpAdapter;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
-import s32x.Md32x;
 import s32x.MegaCd32x;
 import s32x.pwm.BlipPwmProvider;
 import s32x.pwm.Pwm;
@@ -108,8 +107,10 @@ public class SysUtil {
             case MD -> Megadrive.createNewInstance(display);
             case MEGACD -> MegaCd.createNewInstance(display);
 //            case MEGACD -> MegaCd32x.createNewInstance(display);
-            case S32X -> Md32x.createNewInstance32x(display);
-//            case S32X -> MegaCd32x.createNewInstance(display);
+            //TODO Doom fusion
+//            case S32X -> Md32x.createNewInstance32x(display);
+            case S32X -> MegaCd32x.createNewInstance(display);
+            //TODO Doom fusion
             case MEGACD_S32X -> MegaCd32x.createNewInstance(display);
             case SG_1000 -> Z80BaseSystem.createNewInstance(SG_1000, display);
             case COLECO -> Z80BaseSystem.createNewInstance(COLECO, display);

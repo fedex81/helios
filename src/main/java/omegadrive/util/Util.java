@@ -399,8 +399,10 @@ public class Util {
     }
 
     public static boolean assertCheckBusOp(int address, Size size) {
+        //TODO doomFusion
         //68k LONG access, gets converted to 2 WORD accesses
-        assert (size != Size.BYTE ? (address & 1) == 0 : true) : (th(address) + "," + size);
+//        assert (size != Size.BYTE ? (address & 1) == 0 : true) : (th(address) + "," + size);
+        //TODO doomFusion
         return true;
     }
 

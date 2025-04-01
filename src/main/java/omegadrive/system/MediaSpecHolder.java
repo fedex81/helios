@@ -52,7 +52,7 @@ public class MediaSpecHolder {
 
         protected void init() {
             boolean isCartBased = !type.isDiscImage();
-            boolean isCartMdBased = isCartBased && systemType == SystemType.MD || systemType == SystemType.S32X;
+            boolean isCartMdBased = isCartBased && (systemType == SystemType.MD || systemType == SystemType.S32X || systemType == SystemType.MEGACD_S32X);
             boolean validPath = !romFile.toAbsolutePath().equals(NO_PATH.toAbsolutePath());
             if (isCartMdBased && validPath) {
                 mediaInfoProvider = getMdInfoProvider(romFile, compressed);
@@ -115,8 +115,8 @@ public class MediaSpecHolder {
         return mdi;
     }
 
-    private MediaSpec cartFile;
-    private MediaSpec cdFile;
+    public MediaSpec cartFile;
+    public MediaSpec cdFile;
     public SystemType systemType;
     public RegionDetector.Region region;
 
@@ -174,7 +174,7 @@ public class MediaSpecHolder {
 
     public MediaSpec getBootableMedia() {
         if (hasDiscImage() && hasRomCart()) {
-            throw new RuntimeException("TODO");
+            return cdFile.bootable ? cdFile : cartFile;
         }
         if (hasRomCart()) return cartFile;
         if (hasDiscImage()) return cdFile;

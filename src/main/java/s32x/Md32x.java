@@ -8,11 +8,8 @@ import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.Megadrive;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.util.BufferUtil;
+import omegadrive.util.*;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
-import omegadrive.util.LogHelper;
-import omegadrive.util.MdRuntimeData;
-import omegadrive.util.Sleeper;
 import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
 import omegadrive.vdp.util.UpdatableViewer;
@@ -89,7 +86,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     }
 
     public int nextMSh2Cycle = 0, nextSSh2Cycle = 0;
-    private Sh2LaunchContext launchCtx;
+    protected Sh2LaunchContext launchCtx;
     private Sh2 sh2;
     private Sh2Context masterCtx, slaveCtx;
     private MarsVdp marsVdp;
@@ -111,6 +108,11 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 
     protected void init32x() {
         rt = MdRuntimeData.newInstance(systemType, this);
+//        assert mediaSpec.cartFile.bootable; //TODO
+        //TODO should not need to load the file contents
+        if (mediaSpec.hasRomCart()) {
+            memory.setRomData(FileUtil.readFileSafe(mediaSpec.cartFile.romFile));
+        }
         launchCtx = MarsLauncherHelper.setupRom(getS32xBus(), memory.getRomHolder());
         masterCtx = launchCtx.masterCtx;
         slaveCtx = launchCtx.slaveCtx;

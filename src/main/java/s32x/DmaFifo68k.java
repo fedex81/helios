@@ -139,7 +139,10 @@ public class DmaFifo68k implements Device {
         }
     }
 
-    public void dmaEnd() {
+    private void dmaEnd() {
+        if (!ctx.fifo.isEmpty()) {
+            LOG.warn("dmaEnd but fifo not empty, #{} items", ctx.fifo.getLevel());
+        }
         ctx.fifo.clear();
         updateFifoState();
         evaluateDreqTrigger(true); //force clears the dreqLevel in DMAC

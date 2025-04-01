@@ -186,8 +186,8 @@ public class MegaCd extends Megadrive {
             LOG.info("Bios mode, noDisc: {}, cdAudio: {}", biosNoDisc, biosCdAudio);
         }
         if (tryInsertAsDisc) {
-            assert mediaSpec.getBootableMedia().sheetOpt.isPresent();
-            mcdLaunchContext.cdd.tryInsert(mediaSpec.getBootableMedia().sheetOpt.get());
+            assert mediaSpec.cdFile.sheetOpt.isPresent();
+            mcdLaunchContext.cdd.tryInsert(mediaSpec.cdFile.sheetOpt.get());
         } else if (segaMode1 || (!bios || biosCdAudio)) {
             //insert an audio CD, for testing mode1 CD Player
             Path p = Path.of("./test_roms/SonicCD", "SonicCD_AudioOnly.cue");
