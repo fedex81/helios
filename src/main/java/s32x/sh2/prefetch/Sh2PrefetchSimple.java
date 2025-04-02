@@ -150,12 +150,11 @@ public class Sh2PrefetchSimple implements Sh2Prefetcher {
             int opc = isCache ? sh2Cache.readDirect(cpc, Size.WORD) : pctx.buf.getShort(bytePos) & 0xFFFF;
             pctx.prefetchWords[w] = opc;
             Sh2Instructions.Sh2BaseInstruction instType = Sh2Instructions.sh2OpcodeMap[opc];
-            if (instType.isBranchDelaySlot) {
+            if (instType.isBranchDelaySlot()) {
                 outNext = true;
-            } else if (instType.isBranch || outNext) {
+            } else if (instType.isBranch() || outNext) {
                 if (outNext) {
-                    assert Arrays.binarySearch(Sh2Instructions.illegalSlotOpcodes,
-                            Sh2Instructions.instOpcodeMap[opc].inst) < 0 : Sh2Instructions.instOpcodeMap[opc].inst;
+                    assert !Sh2Instructions.instOpcodeMap[opc].inst.isIllegalSlot() : Sh2Instructions.instOpcodeMap[opc].inst;
                 }
                 pctx.end = bytePos + 2;
                 break;

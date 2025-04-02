@@ -27,6 +27,7 @@ public interface Sh2 extends Device {
     int SR_MASK = 0x3F3;
 
     int ILLEGAL_INST_VN = 4; //vector number
+    int ILLEGAL_SLOT_INST_VN = 6; //vector number
 
     void reset(Sh2Context context);
 

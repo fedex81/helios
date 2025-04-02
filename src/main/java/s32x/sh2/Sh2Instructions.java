@@ -950,163 +950,194 @@ public class Sh2Instructions {
     }
 
     public enum Sh2BaseInstruction {
-        ADD(0, 0, 0, 1),
-        ADDC(0, 0, 0, 1),
-        ADDI(0, 0, 0, 1),
-        ADDV(0, 0, 0, 1),
-        AND(0, 0, 0, 1),
-        ANDI(0, 0, 0, 1),
-        ANDM(0, 0, 0, 3),
-        BF(1, 0, 0, 1, 3),
-        BFS(1, 1, 0, 1, 2),
-        BRA(1, 1, 0, 2, 2),
-        BRAF(1, 1, 0, 2, 2),
-        BSR(1, 1, 0, 2, 2),
-        BSRF(1, 1, 0, 2, 2),
-        BT(1, 0, 0, 1, 3),
-        BTS(1, 1, 0, 1, 2),
-        CLRMAC(0, 0, 0, 1),
-        CLRT(0, 0, 0, 1),
-        CMPEQ(0, 0, 0, 1),
-        CMPGE(0, 0, 0, 1),
-        CMPGT(0, 0, 0, 1),
-        CMPHI(0, 0, 0, 1),
-        CMPHS(0, 0, 0, 1),
-        CMPIM(0, 0, 0, 1),
-        CMPPL(0, 0, 0, 1),
-        CMPPZ(0, 0, 0, 1),
-        CMPSTR(0, 0, 0, 1),
-        DIV0S(0, 0, 0, 1),
-        DIV0U(0, 0, 0, 1),
-        DIV1(0, 0, 0, 1),
-        DMULS(0, 0, 0, 2),
-        DMULU(0, 0, 0, 2),
-        DT(0, 0, 0, 1),
-        EXTSB(0, 0, 0, 1),
-        EXTSW(0, 0, 0, 1),
-        EXTUB(0, 0, 0, 1),
-        EXTUW(0, 0, 0, 1),
-        ILLEGAL(0, 0, 1, 5),
-        JMP(1, 1, 0, 2, 2),
-        JSR(1, 1, 0, 2, 2),
-        LDCGBR(0, 0, 0, 1),
-        LDCMGBR(0, 0, 0, 3),
-        LDCMSR(0, 0, 0, 3),
-        LDCMVBR(0, 0, 0, 3),
-        LDCSR(0, 0, 0, 1),
-        LDCVBR(0, 0, 0, 1),
-        LDSMACH(0, 0, 0, 2),
-        LDSMACL(0, 0, 0, 2),
-        LDSMMACH(0, 0, 0, 1),
-        LDSMMACL(0, 0, 0, 1),
-        LDSMPR(0, 0, 0, 1),
-        LDSPR(0, 0, 0, 1),
-        MACL(0, 0, 0, 2),
-        MACW(0, 0, 0, 2),
-        MOV(0, 0, 0, 1),
-        MOVA(0, 0, 0, 1),
-        MOVBL(0, 0, 0, 1),
-        MOVBL0(0, 0, 0, 1),
-        MOVBL4(0, 0, 0, 1),
-        MOVBLG(0, 0, 0, 1),
-        MOVBM(0, 0, 0, 1),
-        MOVBP(0, 0, 0, 1),
-        MOVBS(0, 0, 0, 1),
-        MOVBS0(0, 0, 0, 1),
-        MOVBS4(0, 0, 0, 1),
-        MOVBSG(0, 0, 0, 1),
-        MOVI(0, 0, 0, 1),
-        MOVLI(0, 0, 0, 1),
-        MOVLL(0, 0, 0, 1),
-        MOVLL0(0, 0, 0, 1),
-        MOVLL4(0, 0, 0, 1),
-        MOVLLG(0, 0, 0, 1),
-        MOVLM(0, 0, 0, 1),
-        MOVLP(0, 0, 0, 1),
-        MOVLS(0, 0, 0, 1),
-        MOVLS0(0, 0, 0, 1),
-        MOVLS4(0, 0, 0, 1),
-        MOVLSG(0, 0, 0, 1),
-        MOVT(0, 0, 0, 1),
-        MOVWI(0, 0, 0, 1),
-        MOVWL(0, 0, 0, 1),
-        MOVWL0(0, 0, 0, 1),
-        MOVWL4(0, 0, 0, 1),
-        MOVWLG(0, 0, 0, 1),
-        MOVWM(0, 0, 0, 1),
-        MOVWP(0, 0, 0, 1),
-        MOVWS(0, 0, 0, 1),
-        MOVWS0(0, 0, 0, 1),
-        MOVWS4(0, 0, 0, 1),
-        MOVWSG(0, 0, 0, 1),
-        MULL(0, 0, 0, 2),
-        MULSU(0, 0, 0, 2),
-        MULSW(0, 0, 0, 2),
-        NEG(0, 0, 0, 1),
-        NEGC(0, 0, 0, 1),
-        NOP(0, 0, 0, 1),
-        NOT(0, 0, 0, 1),
-        OR(0, 0, 0, 1),
-        ORI(0, 0, 0, 1),
-        ORM(0, 0, 0, 3),
-        ROTCL(0, 0, 0, 1),
-        ROTCR(0, 0, 0, 1),
-        ROTL(0, 0, 0, 1),
-        ROTR(0, 0, 0, 1),
-        RTE(1, 1, 0, 4, 4),
-        RTS(1, 1, 0, 2, 2),
-        SETT(0, 0, 0, 1),
-        SHAL(0, 0, 0, 1),
-        SHAR(0, 0, 0, 1),
-        SHLL(0, 0, 0, 1),
-        SHLL16(0, 0, 0, 1),
-        SHLL2(0, 0, 0, 1),
-        SHLL8(0, 0, 0, 1),
-        SHLR(0, 0, 0, 1),
-        SHLR16(0, 0, 0, 1),
-        SHLR2(0, 0, 0, 1),
-        SHLR8(0, 0, 0, 1),
-        SLEEP(0, 0, 0, 4),
-        STCGBR(0, 0, 0, 2),
-        STCMGBR(0, 0, 0, 2),
-        STCMSR(0, 0, 0, 2),
-        STCMVBR(0, 0, 0, 2),
-        STCSR(0, 0, 0, 2),
-        STCVBR(0, 0, 0, 2),
-        STSMACH(0, 0, 0, 1),
-        STSMACL(0, 0, 0, 1),
-        STSMMACH(0, 0, 0, 1),
-        STSMMACL(0, 0, 0, 1),
-        STSMPR(0, 0, 0, 1),
-        STSPR(0, 0, 0, 2),
-        SUB(0, 0, 0, 1),
-        SUBC(0, 0, 0, 1),
-        SUBV(0, 0, 0, 1),
-        SWAPB(0, 0, 0, 1),
-        SWAPW(0, 0, 0, 1),
-        TAS(0, 0, 0, 1),
-        TRAPA(1, 0, 0, 8),
-        TST(0, 0, 0, 1),
-        TSTI(0, 0, 0, 1),
-        TSTM(0, 0, 0, 3),
-        XOR(0, 0, 0, 1),
-        XORI(0, 0, 0, 1),
-        XORM(0, 0, 0, 3),
-        XTRCT(0, 0, 0, 1);
+        ADD(0, 1),
+        ADDC(0, 1),
+        ADDI(0, 1),
+        ADDV(0, 1),
+        AND(0, 1),
+        ANDI(0, 1),
+        ANDM(0, 3),
+        BF(9, 1, 3), //isBranch,illegalDelaySlot
+        BFS(11, 1, 2), //isBranch,isBranchDelaySlot,illegalDelaySlot
+        BRA(11, 2, 2), //isBranch,isBranchDelaySlot,illegalDelaySlot
+        BRAF(11, 2, 2), //isBranch,isBranchDelaySlot,illegalDelaySlot
+        BSR(11, 2, 2), //isBranch,isBranchDelaySlot,illegalDelaySlot
+        BSRF(11, 2, 2), //isBranch,isBranchDelaySlot,illegalDelaySlot
+        BT(9, 1, 3), //isBranch,illegalDelaySlot
+        BTS(11, 1, 2), //isBranch,isBranchDelaySlot,illegalDelaySlot
+        CLRMAC(0, 1),
+        CLRT(0, 1),
+        CMPEQ(0, 1),
+        CMPGE(0, 1),
+        CMPGT(0, 1),
+        CMPHI(0, 1),
+        CMPHS(0, 1),
+        CMPIM(0, 1),
+        CMPPL(0, 1),
+        CMPPZ(0, 1),
+        CMPSTR(0, 1),
+        DIV0S(0, 1),
+        DIV0U(0, 1),
+        DIV1(0, 1),
+        DMULS(0, 2),
+        DMULU(0, 2),
+        DT(0, 1),
+        EXTSB(0, 1),
+        EXTSW(0, 1),
+        EXTUB(0, 1),
+        EXTUW(0, 1),
+        ILLEGAL(4, 5), //illegal,
+        JMP(11, 2, 2), //isBranch,isBranchDelaySlot,illegalDelaySlot
+        JSR(11, 2, 2), //isBranch,isBranchDelaySlot,illegalDelaySlot
+        LDCGBR(0, 1),
+        LDCMGBR(0, 3),
+        LDCMSR(0, 3),
+        LDCMVBR(0, 3),
+        LDCSR(0, 1),
+        LDCVBR(0, 1),
+        LDSMACH(0, 2),
+        LDSMACL(0, 2),
+        LDSMMACH(0, 1),
+        LDSMMACL(0, 1),
+        LDSMPR(0, 1),
+        LDSPR(0, 1),
+        MACL(0, 2),
+        MACW(0, 2),
+        MOV(0, 1),
+        MOVA(0, 1),
+        MOVBL(0, 1),
+        MOVBL0(0, 1),
+        MOVBL4(0, 1),
+        MOVBLG(0, 1),
+        MOVBM(0, 1),
+        MOVBP(0, 1),
+        MOVBS(0, 1),
+        MOVBS0(0, 1),
+        MOVBS4(0, 1),
+        MOVBSG(0, 1),
+        MOVI(0, 1),
+        MOVLI(0, 1),
+        MOVLL(0, 1),
+        MOVLL0(0, 1),
+        MOVLL4(0, 1),
+        MOVLLG(0, 1),
+        MOVLM(0, 1),
+        MOVLP(0, 1),
+        MOVLS(0, 1),
+        MOVLS0(0, 1),
+        MOVLS4(0, 1),
+        MOVLSG(0, 1),
+        MOVT(0, 1),
+        MOVWI(0, 1),
+        MOVWL(0, 1),
+        MOVWL0(0, 1),
+        MOVWL4(0, 1),
+        MOVWLG(0, 1),
+        MOVWM(0, 1),
+        MOVWP(0, 1),
+        MOVWS(0, 1),
+        MOVWS0(0, 1),
+        MOVWS4(0, 1),
+        MOVWSG(0, 1),
+        MULL(0, 2),
+        MULSU(0, 2),
+        MULSW(0, 2),
+        NEG(0, 1),
+        NEGC(0, 1),
+        NOP(0, 1),
+        NOT(0, 1),
+        OR(0, 1),
+        ORI(0, 1),
+        ORM(0, 3),
+        ROTCL(0, 1),
+        ROTCR(0, 1),
+        ROTL(0, 1),
+        ROTR(0, 1),
+        RTE(11, 4, 4), //isBranch,isBranchDelaySlot,illegalDelaySlot
+        RTS(11, 2, 2), //isBranch,isBranchDelaySlot,illegalDelaySlot
+        SETT(0, 1),
+        SHAL(0, 1),
+        SHAR(0, 1),
+        SHLL(0, 1),
+        SHLL16(0, 1),
+        SHLL2(0, 1),
+        SHLL8(0, 1),
+        SHLR(0, 1),
+        SHLR16(0, 1),
+        SHLR2(0, 1),
+        SHLR8(0, 1),
+        SLEEP(0, 4),
+        STCGBR(0, 2),
+        STCMGBR(0, 2),
+        STCMSR(0, 2),
+        STCMVBR(0, 2),
+        STCSR(0, 2),
+        STCVBR(0, 2),
+        STSMACH(0, 1),
+        STSMACL(0, 1),
+        STSMMACH(0, 1),
+        STSMMACL(0, 1),
+        STSMPR(0, 1),
+        STSPR(0, 2),
+        SUB(0, 1),
+        SUBC(0, 1),
+        SUBV(0, 1),
+        SWAPB(0, 1),
+        SWAPW(0, 1),
+        TAS(0, 1),
+        TRAPA(8, 8), //illegalDelaySlot
+        TST(0, 1),
+        TSTI(0, 1),
+        TSTM(0, 3),
+        XOR(0, 1),
+        XORI(0, 1),
+        XORM(0, 3),
+        XTRCT(0, 1);
+
+        public static final int FLAG_BRANCH = 0;
+        public static final int FLAG_BRANCH_DELAY_SLOT = 1;
+        public static final int FLAG_ILLEGAL = 2;
+        public static final int FLAG_ILLEGAL_SLOT = 3;
+        public static final int FLAG_BRANCH_MASK = 1 << FLAG_BRANCH;
+        public static final int FLAG_BRANCH_DELAY_SLOT_MASK = 1 << FLAG_BRANCH_DELAY_SLOT;
+        public static final int FLAG_ILLEGAL_MASK = 1 << FLAG_ILLEGAL;
+        public static final int FLAG_ILLEGAL_SLOT_MASK = 1 << FLAG_ILLEGAL_SLOT;
 
         public final int cycles, cyclesBranch;
-        public final boolean isBranch, isBranchDelaySlot, isIllegal;
 
-        Sh2BaseInstruction(int isBranch, int isBranchDelaySlot, int isIllegal, int cycles) {
-            this(isBranch, isBranchDelaySlot, isIllegal, cycles, 0);
+        /**
+         * Bitfield:
+         * bit0 : isBranch
+         * bit1 : isBranchDelaySlot
+         * bit2 : isIllegal
+         * bit3 : isIllegalDelaySlot
+         */
+        public final int flags;
+
+        Sh2BaseInstruction(int flags, int cycles) {
+            this(flags, cycles, 0);
         }
 
-        Sh2BaseInstruction(int isBranch, int isBranchDelaySlot, int isIllegal, int cycles, int cyclesBranch) {
-            this.isBranch = isBranch > 0;
-            this.isBranchDelaySlot = isBranchDelaySlot > 0;
-            this.isIllegal = isIllegal > 0;
+        Sh2BaseInstruction(int flags, int cycles, int cyclesBranch) {
+            this.flags = flags;
             this.cycles = cycles;
             this.cyclesBranch = cyclesBranch;
+        }
+
+        public boolean isBranch() {
+            return (flags & FLAG_BRANCH_MASK) > 0;
+        }
+
+        public boolean isBranchDelaySlot() {
+            return (flags & FLAG_BRANCH_DELAY_SLOT_MASK) > 0;
+        }
+
+        public boolean isIllegal() {
+            return (flags & FLAG_ILLEGAL_MASK) > 0;
+        }
+
+        public boolean isIllegalSlot() {
+            return (flags & FLAG_ILLEGAL_SLOT_MASK) > 0;
         }
 
         /**
@@ -1117,17 +1148,34 @@ public class Sh2Instructions {
             //Delayed branch instructions: JMP, JSR, BRA, BSR, RTS, RTE, BF/S, BT/S, BSRF,BRAF
             Predicate<String> isBranchDelaySlotPred = n -> n.startsWith("J") || n.startsWith("BRA") ||
                     n.startsWith("BSR") || n.startsWith("RT") || n.startsWith("BTS") || n.startsWith("BFS");
+            //Illegal slot instruction: JMP, JSR, BRA, BSR, RTS, RTE, BT, BF, TRAPA, BFS, BTS, BSRF, BRAF
+            Predicate<String> illegalDelaySlotPred = n -> n.startsWith("J") || n.startsWith("BRA") ||
+                    n.startsWith("BSR") || n.startsWith("RT") || n.startsWith("BT") || n.startsWith("BF") || n.startsWith("TRAPA");
             Map<Sh2BaseInstruction, String> instSet = new EnumMap<>(Sh2BaseInstruction.class);
+            Map<Sh2BaseInstruction, String> explain = new EnumMap<>(Sh2BaseInstruction.class);
             for (Sh2BaseInstruction i : Sh2BaseInstruction.values()) {
                 boolean isBranch = isBranchPred.test(i.name());
-                String s = i + "(" + (isBranch ? 1 : 0) + "," +
-                        (isBranchDelaySlotPred.test(i.name()) ? 1 : 0) + "," +
-                        (i == ILLEGAL ? 1 : 0)
-                        + "," + 1 + ((isBranch ? "," + 3 : "") + "),");
-                instSet.put(i, s);
+                int cycles = i.cycles;
+                String s = (isBranch ? "isBranch," : "") +
+                        (isBranchDelaySlotPred.test(i.name()) ? "isBranchDelaySlot," : "") +
+                        (i == ILLEGAL ? "illegal," : "") +
+                        (illegalDelaySlotPred.test(i.name()) ? "illegalDelaySlot" : "");
+                explain.put(i, s);
+
+                int flags = ((isBranch ? 1 : 0) << FLAG_BRANCH) |
+                        ((isBranchDelaySlotPred.test(i.name()) ? 1 : 0) << FLAG_BRANCH_DELAY_SLOT) |
+                        ((i == ILLEGAL ? 1 : 0) << FLAG_ILLEGAL) |
+                        ((illegalDelaySlotPred.test(i.name()) ? 1 : 0) << FLAG_ILLEGAL_SLOT);
+                String val = i + "(" + flags + "," + cycles + (isBranch ? "," + i.cyclesBranch : "") + "), " +
+                        (s.length() > 0 ? "//" + s : "");
+                instSet.put(i, val);
             }
             String header = "inst,isBranch,isBranchDelaySlot,isIllegal,cycles,cyclesBranchTaken";
-            String res = String.join("\n", instSet.values());
+            String res = String.join("\n", explain.values());
+            System.out.println(header + "\n" + res);
+
+            header = "inst,flags,cycles,cyclesBranchTaken, explain";
+            res = String.join("\n", instSet.values());
             System.out.println(header + "\n" + res);
         }
     }

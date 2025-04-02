@@ -34,9 +34,8 @@ import static omegadrive.vdp.util.MemView.NO_MEMVIEW;
  * <p>
  * Copyright 2025
  *
- * This supports CD only MCD_32X, cart slot is empty.
+ * MCD_32X software, cart slot is empty.
  * - Night Trap (USA) (Disc 1) (Sega CD 32X) (RE-1), works with choppy audio (SegaCD emulation issue)
- * TODO support CD + cart
  */
 public class MegaCd32x extends Md32x {
 

@@ -108,7 +108,12 @@ public class Sh2Impl implements Sh2 {
 
     protected final void decodeDelaySlot(int opcode) {
         printDebugMaybe(opcode);
-        opcodeMap[opcode].runnable.run();
+        //Surgical Strike MCD_32X
+        if (Sh2Instructions.instOpcodeMap[opcode].inst.isIllegalSlot()) {
+            ILLEGAL_SLOT(opcode);
+        } else {
+            opcodeMap[opcode].runnable.run();
+        }
     }
 
     /*
@@ -249,6 +254,15 @@ public class Sh2Impl implements Sh2 {
         LOG.error("{} illegal instruction: {}\n{}", ctx.cpuAccess, th(code),
                 Sh2Helper.toDebuggingString(ctx));
         ctx.PC = memory.read32(ctx.VBR + (ILLEGAL_INST_VN << 2));
+        ctx.cycles -= 5;
+    }
+
+    protected final void ILLEGAL_SLOT(int code) {
+        push(ctx.SR);
+        push(ctx.PC);
+        LogHelper.logWarnOnce(LOG, "{} illegal slot instruction: {}\n{}", ctx.cpuAccess, th(code),
+                Sh2Helper.toDebuggingString(ctx));
+        ctx.PC = memory.read32(ctx.VBR + (ILLEGAL_SLOT_INST_VN << 2));
         ctx.cycles -= 5;
     }
 

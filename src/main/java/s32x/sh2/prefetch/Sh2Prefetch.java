@@ -20,6 +20,7 @@ import s32x.util.BiosHolder;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static omegadrive.util.BufferUtil.assertionsEnabled;
 import static omegadrive.util.Util.readBufferWord;
 import static omegadrive.util.Util.th;
 import static s32x.sh2.Sh2Helper.*;
@@ -187,17 +188,19 @@ public class Sh2Prefetch implements Sh2Prefetcher {
             int val = isCache ? sh2Cache.readDirect(currentPc, Size.WORD) : readBufferWord(fetchBuffer, bytePos) & 0xFFFF;
             final Sh2Instructions.Sh2BaseInstruction inst = op[val].inst;
             opcodeWords[wordsCount++] = val;
-            if (inst.isIllegal) {
+            if (inst.isIllegal()) {
                 LOG.error("{} Invalid fetch, start PC: {}, current: {} opcode: {}", cpu, th(pc), th(bytePos), th(val));
                 break;
             }
-            if (inst.isBranch) {
-                if (inst.isBranchDelaySlot) {
+            if (inst.isBranch()) {
+                if (inst.isBranchDelaySlot()) {
                     int nextVal = isCache ? sh2Cache.readDirect(currentPc + 2, Size.WORD) :
                             readBufferWord(fetchBuffer, bytePos + 2) & 0xFFFF;
                     opcodeWords[wordsCount++] = nextVal;
-                    assert Arrays.binarySearch(Sh2Instructions.illegalSlotOpcodes,
-                            Sh2Instructions.instOpcodeMap[nextVal].inst) < 0;
+                    if (assertionsEnabled && inst.isIllegalSlot()) {
+                        LogHelper.logWarnOnce(LOG, "{} Illegal delay slot opcode, start PC: {}, current: {} opcode: {}",
+                                cpu, th(pc), th(bytePos), th(val));
+                    }
                 }
                 breakOnJump = true;
                 break;

@@ -16,6 +16,8 @@ import java.util.Set;
 
 import static omegadrive.util.Util.th;
 import static org.objectweb.asm.Opcodes.*;
+import static s32x.sh2.Sh2.ILLEGAL_INST_VN;
+import static s32x.sh2.Sh2.ILLEGAL_SLOT_INST_VN;
 import static s32x.sh2.Sh2Impl.RM;
 import static s32x.sh2.Sh2Impl.RN;
 import static s32x.sh2.drc.Ow2Sh2Helper.DRC_CLASS_FIELD.regs;
@@ -711,18 +713,31 @@ public class Ow2Sh2Bytecode {
     }
 
     public static void ILLEGAL(BytecodeContext ctx) {
-        LOG.error("{} illegal instruction: {}\n{}", ctx.drcCtx.sh2Ctx.cpuAccess, th(ctx.opcode),
+        illegalBase(ctx, ILLEGAL_INST_VN);
+    }
+
+    public static void ILLEGAL_SLOT(BytecodeContext ctx) {
+        illegalBase(ctx, ILLEGAL_SLOT_INST_VN);
+    }
+
+    public static void illegalBase(BytecodeContext ctx, int vectorNum) {
+        LogHelper.logWarnOnce(LOG, "{} illegal #{} instruction: {}\n{}", ctx.drcCtx.sh2Ctx.cpuAccess, vectorNum, th(ctx.opcode),
                 Sh2Helper.toDebuggingString(ctx.drcCtx.sh2Ctx));
-        pushSh2ContextIntField(ctx, PC.name());
         pushSh2ContextIntField(ctx, PC.name());
         pushSh2ContextIntField(ctx, SR.name());
         sh2PushReg15(ctx);
         sh2PushReg15(ctx);
+
+        //ctx.PC = memory.read32(ctx.VBR + (vn << 2));
+        pushSh2Context(ctx);
+        pushMemory(ctx);
         pushSh2ContextIntField(ctx, VBR.name());
-        emitPushConstToStack(ctx, Sh2.ILLEGAL_INST_VN << 2);
+        emitPushConstToStack(ctx, vectorNum << 2);
         ctx.mv.visitInsn(IADD);
         readMem(ctx, Size.LONG);
-        ctx.mv.visitFieldInsn(PUTFIELD, Type.getInternalName(Sh2Context.class), PC.name(), Ow2Sh2BlockRecompiler.intDesc);
+        popSh2ContextIntField(ctx, PC.name());
+        //replace the original inst cycles with ILLEGAL
+        subCyclesExt(ctx, Sh2Instructions.Sh2BaseInstruction.ILLEGAL.cycles + ctx.sh2Inst.cycles);
     }
 
     public static void JMP(BytecodeContext ctx) {
@@ -1464,7 +1479,11 @@ public class Ow2Sh2Bytecode {
         assert ctx.delaySlotCtx != null && ctx.delaySlotCtx.delaySlot && !ctx.delaySlot;
         assert ctx.drcCtx.sh2Ctx == ctx.delaySlotCtx.drcCtx.sh2Ctx;
         ctx.delaySlotCtx.branchPc = branchPc;
-        createInst(ctx.delaySlotCtx);
+        if (ctx.delaySlotCtx.sh2Inst.isIllegalSlot()) {
+            Ow2Sh2Bytecode.ILLEGAL_SLOT(ctx.delaySlotCtx);
+        } else {
+            createInst(ctx.delaySlotCtx);
+        }
     }
 
     public final static void SETT(BytecodeContext ctx) {

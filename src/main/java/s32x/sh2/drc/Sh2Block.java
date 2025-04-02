@@ -89,7 +89,7 @@ public class Sh2Block {
         do {
             sh2.printDebugMaybe(curr.opcode);
             curr.runnable.run();
-            if (curr.inst.isBranchDelaySlot || curr.next == null) {
+            if (curr.inst.isBranchDelaySlot() || curr.next == null) {
                 break;
             }
             curr = curr.next;
@@ -119,7 +119,7 @@ public class Sh2Block {
         for (int i = 1; i < inst.length - 1; i++) {
             inst[i].next = inst[i + 1];
             inst[i].pc = prefetchPc + (i << 1);
-            assert !inst[i].inst.isBranch || inst[i].inst.isBranchDelaySlot;
+            assert !inst[i].inst.isBranch() || inst[i].inst.isBranchDelaySlot();
         }
         Sh2Prefetcher.Sh2BlockUnit sbu = inst[lastIdx];
         sbu.pc = prefetchPc + (lastIdx << 1);
@@ -127,8 +127,8 @@ public class Sh2Block {
         assert sbu.pc != 0;
         //TODO fix prefetch
         assert inst.length >= (MAX_INST_LEN - 1) ||
-                (sbu.inst.isBranch || (inst[Math.max(0, lastIdx - 1)].inst.isBranchDelaySlot && !sbu.inst.isBranch))
-                || sbu.inst.isIllegal :
+                (sbu.inst.isBranch() || (inst[Math.max(0, lastIdx - 1)].inst.isBranchDelaySlot() && !sbu.inst.isBranch()))
+                || sbu.inst.isIllegal() :
                 th(sbu.pc) + "," + inst.length + "\n" + this;
     }
 

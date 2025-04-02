@@ -115,18 +115,18 @@ public class Ow2Sh2BlockRecompiler implements Sh2BlockRecompiler.InternalSh2Bloc
             int totCycles = 0;
             for (int i = 0; i < block.prefetchLenWords; i++) {
                 Sh2BlockRecompiler.setDrcContext(ctx, block.inst[i], false);
-                if (ctx.sh2Inst.isBranchDelaySlot) {
+                if (ctx.sh2Inst.isBranchDelaySlot()) {
                     Sh2BlockRecompiler.setDrcContext(dsCtx, block.inst[i + 1], true);
                     ctx.delaySlotCtx = dsCtx;
                     //LOG.info("Block at PC {}, setting delaySlot ctx\nctx {}\nds  {}", th(block.prefetchPc), ctx, dsCtx);
                 }
                 Ow2Sh2Helper.createInst(ctx);
                 //branch inst cycles taken are not known at this point
-                if (!ctx.sh2Inst.isBranch) {
+                if (!ctx.sh2Inst.isBranch()) {
                     totCycles += ctx.sh2Inst.cycles;
                 }
                 //delay slot will be run within
-                if (ctx.sh2Inst.isBranchDelaySlot) {
+                if (ctx.sh2Inst.isBranchDelaySlot()) {
                     break;
                 }
             }
