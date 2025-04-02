@@ -119,11 +119,6 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
             LOG.info("Disabling MSU-MD handling, {} detected.", systemType);
             return NO_OP_HANDLER;
         }
-        //TODO Doom fusion
-        if (systemType == SystemLoader.SystemType.S32X) {
-            LOG.info("Disabling MSU-MD handling, {} detected, Doom fusion", systemType);
-            return NO_OP_HANDLER;
-        }
         CueSheet cueSheet = MsuMdHandlerImpl.initCueSheet(romPath);
         if (cueSheet == null) {
             LOG.info("Disabling MSU-MD handling, unable to find CUE file.");

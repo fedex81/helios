@@ -91,7 +91,7 @@ public class PrefStore {
         String file;
         try {
             //"<systemType>,<filePath>", ie: "MD,<filePath>"
-            st = SystemLoader.SystemType.valueOf(tkn[0]);
+            st = SystemLoader.SystemType.valueOf(getSystemStringFromRecentItem(text));
             file = tkn[1];
         } catch (Exception e) {
             //"<filePath>"
@@ -99,6 +99,22 @@ public class PrefStore {
             file = tkn[0];
         }
         return MediaSpecHolder.of(Path.of(file), st);
+    }
+
+    public static String getSystemStringFromRecentItem(String text) {
+        String sys = SystemLoader.SystemType.NONE.name();
+        int idx = text.indexOf(',');
+        int tknLimit = idx > 0 ? 2 : 0;
+        if (tknLimit == 0) {
+            return sys;
+        }
+        try {
+            String[] tkn = text.split(",", tknLimit);
+            //"<systemType>,<filePath>", ie: "MD,<filePath>"
+            sys = tkn[0];
+        } catch (Exception ignored) {
+        }
+        return sys;
     }
 
     public static int getSwingUiThemeIndex() {

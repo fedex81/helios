@@ -788,8 +788,9 @@ public class SwingWindow implements DisplayWindow {
         IntStream.range(0, recentFilesItems.length).forEach(i -> {
             String val = i < l.size() ? l.get(i) : "<none>";
             val = Strings.isNullOrEmpty(val) ? "<none>" : val;
+            String system = PrefStore.getSystemStringFromRecentItem(val);
             int idx = val.lastIndexOf(File.separatorChar);
-            String text = i + ". " + (idx > 0 ? val.substring(idx + 1) : val);
+            String text = i + ". [" + system + "] " + (idx > 0 ? val.substring(idx + 1) : val);
             recentFilesItems[i].setVisible(true);
             recentFilesItems[i].setEnabled(!Strings.isNullOrEmpty(val));
             recentFilesItems[i].setText(text);

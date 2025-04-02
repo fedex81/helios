@@ -24,6 +24,7 @@ import omegadrive.util.Size;
 import omegadrive.vdp.model.BaseVdpAdapter;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
+import s32x.Md32x;
 import s32x.MegaCd32x;
 import s32x.pwm.BlipPwmProvider;
 import s32x.pwm.Pwm;
@@ -48,18 +49,18 @@ public class SysUtil {
 
     public static final String SMD_INTERLEAVED_EXT = ".smd";
 
-    public static final Map<SystemType, String[]> sysFileExtensionsMap = ImmutableMap.of(
-            MD, new String[]{".md", ".bin", SMD_INTERLEAVED_EXT},
-            S32X, new String[]{".32x", ".bin", ".md"},
-            MEGACD, new String[]{".cue", ".bin", ".iso"},
-            SG_1000, new String[]{".sg", ".sc"},
-            COLECO, new String[]{".col"},
-            MSX, new String[]{".rom"},
-            SMS, new String[]{".sms"},
-            GG, new String[]{".gg"},
-            NES, new String[]{".nes"},
-            GB, new String[]{".gb"}
-    );
+    public static final Map<SystemType, String[]> sysFileExtensionsMap = ImmutableMap.<SystemType, String[]>builder()
+            .put(MD, new String[]{".md", ".bin", SMD_INTERLEAVED_EXT})
+            .put(S32X, new String[]{".32x", ".bin", ".md"})
+            .put(MEGACD, new String[]{".cue", ".bin", ".iso"})
+            .put(MEGACD_S32X, new String[]{".cue", ".bin", ".iso", ".32x"})
+            .put(SG_1000, new String[]{".sg", ".sc"})
+            .put(COLECO, new String[]{".col"})
+            .put(MSX, new String[]{".rom"})
+            .put(SMS, new String[]{".sms"})
+            .put(GG, new String[]{".gg"})
+            .put(NES, new String[]{".nes"})
+            .put(GB, new String[]{".gb"}).build();
     public static final String[] compressedBinaryTypes = {".gz", ".zip"};
 
     public static final Set<String> binaryTypesSet;
@@ -106,11 +107,7 @@ public class SysUtil {
         SystemProvider systemProvider = switch (type) {
             case MD -> Megadrive.createNewInstance(display);
             case MEGACD -> MegaCd.createNewInstance(display);
-//            case MEGACD -> MegaCd32x.createNewInstance(display);
-            //TODO Doom fusion
-//            case S32X -> Md32x.createNewInstance32x(display);
-            case S32X -> MegaCd32x.createNewInstance(display);
-            //TODO Doom fusion
+            case S32X -> Md32x.createNewInstance32x(display);
             case MEGACD_S32X -> MegaCd32x.createNewInstance(display);
             case SG_1000 -> Z80BaseSystem.createNewInstance(SG_1000, display);
             case COLECO -> Z80BaseSystem.createNewInstance(COLECO, display);
