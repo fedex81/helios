@@ -15,6 +15,7 @@ import s32x.sh2.Sh2Debug;
 import s32x.sh2.Sh2Disassembler;
 import s32x.sh2.Sh2Helper;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
@@ -30,24 +31,6 @@ import static s32x.sh2.drc.Sh2DrcBlockOptimizer.PollType.*;
  * Copyright 2022
  */
 
-/**
- * SRB2 32XN
- * 2024-12-24 23:36:34.012 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: MASTER Poll ignored at PC 20190e8: 603bf3a NONE
- * 020190e8	6031	mov.w @R3, R0
- * 000190ea	6121	mov.w @R2, R1
- * 000190ec	611d	extu.w R1, R1
- * 000190ee	c901	and H'01, R0
- * 000190f0	3010	cmp/eq R1, R0
- * 000190f2	8bf9	bf H'000190e8
- * <p>
- * 2024-12-24 23:39:33.693 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: MASTER Poll ignored at PC 2016e40: 2603bf2c NONE
- * 02016e40	6642	mov.l @R4, R6
- * 00016e42	6163	mov R6, R1
- * 00016e44	3178	sub R7, R1
- * 00016e46	31a3	cmp/ge R10, R1
- * 00016e48	8ffa	bf/s H'00016e40
- * 00016e4a	e363	mov H'63, R3
- */
 public class Sh2DrcBlockOptimizer {
     private final static Logger LOG = LogHelper.getLogger(Sh2DrcBlockOptimizer.class.getSimpleName());
 
@@ -318,7 +301,14 @@ public class Sh2DrcBlockOptimizer {
                 block.drcContext.cpu + "," + th(block.prefetchPc) + "," + th(block.hashCodeWords);
         if (block.pollType == UNKNOWN) {
             PollerCtx ctx = PollerCtx.create(piw);
-            ctx.blockPollData.init();
+            BlockPollData src = HardcodePoller.hardcodePollers.get(block.hashCodeWords);
+            if (src == null) {
+                ctx.blockPollData.init();
+            } else {
+                HardcodePoller.copyData(src, ctx.blockPollData);
+                parseMemLoad(ctx.blockPollData, ctx.blockPollData.ctx, ctx.blockPollData.memLoadOpcode);
+                ctx.blockPollData.branchDestPc = getBranchDestination(ctx.blockPollData.branchOpcode, ctx.blockPollData.branchPc);
+            }
             piw.block.poller = addPollMaybe(ctx, block);
         }
         //mark this block as processed
@@ -366,7 +356,7 @@ public class Sh2DrcBlockOptimizer {
             //TSTM TST.B #imm,@(R0,GBR) 11001100iiiiiiii     (R0 + GBR) & imm;if the result is 0, 1→T
             bpd.memLoadTarget = r[0] + sh2Context.GBR;
             bpd.memLoadTargetSize = Size.BYTE;
-        } else if ((memReadOpcode & 0xF0FF) == 0x401b) { //TAS.B @Rn
+        } else if (isTasOpcode.test(memReadOpcode)) { //TAS.B @Rn
             bpd.memLoadTarget = r[RN(memReadOpcode)];
             bpd.memLoadTargetSize = Size.BYTE;
         }
@@ -406,8 +396,12 @@ public class Sh2DrcBlockOptimizer {
             block.pollType = NONE;
         }
         if (LOG_POLL_DETECT_UNSUPPORTED && !block.pollType.supported && bpd.branchDestPc == bpd.pc) {
-            if (bpd.words.length < 10) {
-                logPollBlock(block, bpd, false);
+            boolean ignore = Arrays.stream(block.inst).map(sbu -> sbu.inst.name()).anyMatch(in -> in.startsWith("ADD")
+                    || in.startsWith("DT") || in.startsWith("SUB"));
+            String listInst = Sh2Helper.toListOfInst(block).toString();
+            ignore |= listInst.contains("-R") || listInst.contains("+,");
+            if (!ignore) {
+                logPollBlock(block, bpd, listInst, false);
             }
         }
         assert block.pollType != UNKNOWN;
@@ -416,11 +410,15 @@ public class Sh2DrcBlockOptimizer {
     }
 
     private static void logPollBlock(Sh2Block block, BlockPollData bpd, boolean supported) {
+        logPollBlock(block, bpd, Sh2Helper.toListOfInst(block).toString(), supported);
+    }
+
+    private static void logPollBlock(Sh2Block block, BlockPollData bpd, String listOfInst, boolean supported) {
         LOG.makeLoggingEventBuilder(supported ? Level.INFO : Level.ERROR).log(
                 "{} Poll {} at PC {}: {} {}\n{}", block.drcContext.cpu,
                 supported ? "detected" : "ignored", th(block.prefetchPc),
                 th(bpd.memLoadTarget), block.pollType,
-                Sh2Helper.toListOfInst(block));
+                listOfInst);
     }
 
     //TODO poll on cached address??? tas poll is allowed even on cached addresses
@@ -491,6 +489,8 @@ public class Sh2DrcBlockOptimizer {
                 LOG.info("{} avoid re-entering {} poll at PC {}, on address: {}", blockPoller.cpu, pollType,
                         th(blockPoller.pc), th(blockPoller.blockPollData.memLoadTarget));
             if (blockPoller.spinCount == POLLER_ACTIVATE_LIMIT - 1) {
+                assert !blockPoller.blockPollData.isBusyLoop ? blockPoller.blockPollData.memLoadTarget != 0 : true;
+                //Vf needs it
                 Sh2DrcBlockOptimizer.parseMemLoad(blockPoller.blockPollData);
                 blockPoller.pollValue = PollSysEventManager.readPollValue(blockPoller);
             }
