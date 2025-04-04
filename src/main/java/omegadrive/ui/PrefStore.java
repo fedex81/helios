@@ -19,7 +19,7 @@
 
 package omegadrive.ui;
 
-import omegadrive.SystemLoader;
+import omegadrive.SystemLoader.SystemType;
 import omegadrive.system.MediaSpecHolder;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
@@ -87,22 +87,22 @@ public class PrefStore {
         int idx = text.indexOf(',');
         int tknLimit = idx > 0 ? 2 : 0;
         String[] tkn = text.split(",", tknLimit);
-        SystemLoader.SystemType st;
+        SystemType st;
         String file;
         try {
             //"<systemType>,<filePath>", ie: "MD,<filePath>"
-            st = SystemLoader.SystemType.valueOf(getSystemStringFromRecentItem(text));
+            st = SystemType.valueOf(getSystemStringFromRecentItem(text));
             file = tkn[1];
         } catch (Exception e) {
             //"<filePath>"
-            st = SystemLoader.SystemType.NONE;
+            st = SystemType.NONE;
             file = tkn[0];
         }
         return MediaSpecHolder.of(Path.of(file), st);
     }
 
     public static String getSystemStringFromRecentItem(String text) {
-        String sys = SystemLoader.SystemType.NONE.name();
+        String sys = SystemType.NONE.name();
         int idx = text.indexOf(',');
         int tknLimit = idx > 0 ? 2 : 0;
         if (tknLimit == 0) {
@@ -115,6 +115,15 @@ public class PrefStore {
         } catch (Exception ignored) {
         }
         return sys;
+    }
+
+    public static SystemType getSystemTypeFromRecentItem(String text) {
+        SystemType st = SystemType.NONE;
+        try {
+            st = SystemType.valueOf(text);
+        } catch (Exception ignored) {
+        }
+        return st;
     }
 
     public static int getSwingUiThemeIndex() {

@@ -113,8 +113,7 @@ public class PrefStoreTest {
         List<String> l = PrefStore.getRecentFilesList();
         for (int i = 0; i < names.length; i++) {
             String v = l.get(i);
-            MediaSpecHolder romSpec = PrefStore.getRomSpecFromRecentItem(v);
-            Assertions.assertEquals(NONE, romSpec.systemType);
+            Assertions.assertEquals(NONE, PrefStore.getSystemTypeFromRecentItem(v));
         }
     }
 
