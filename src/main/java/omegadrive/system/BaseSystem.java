@@ -353,13 +353,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         @Override
         public void run() {
             try {
-                assert romSpec.systemType != SystemType.NONE ? romSpec.systemType == getSystemType() : true;
-                byte[] data = FileUtil.readBinaryFile(romSpec.getBootableMedia().romFile, getSystemType());
-                if (data.length == 0) {
-                    LOG.error("Unable to open/access file: {}", romSpec);
+                loadRomDataIfEmpty(mediaSpec, memory);
+                if (memory.getRomData().length == 0) {
                     return;
                 }
-                memory.setRomData(data);
                 String romName = FileUtil.getFileName(romSpec.getBootableMedia().romFile);
                 display.setRomData(romSpec);
                 Thread.currentThread().setName(threadNamePrefix + romName);
@@ -375,6 +372,17 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
                 LOG.error("Error", e);
             }
             handleCloseRom();
+        }
+    }
+
+    protected void loadRomDataIfEmpty(MediaSpecHolder mediaSpec, IMemoryProvider memoryProvider) {
+        assert mediaSpec.systemType != SystemType.NONE ? mediaSpec.systemType == getSystemType() : true;
+        if (memoryProvider.getRomHolder() == RomHolder.EMPTY_ROM) {
+            byte[] d = FileUtil.readBinaryFile(mediaSpec.getBootableMedia().romFile, getSystemType());
+            if (d.length == 0) {
+                LOG.error("Unable to open/access file: {}", mediaSpec);
+            }
+            memoryProvider.setRomData(d);
         }
     }
 
