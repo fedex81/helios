@@ -2,6 +2,7 @@ package omegadrive.util;
 
 import org.slf4j.Logger;
 
+import static omegadrive.cart.MdCartInfoProvider.HEADER_SIZE;
 import static omegadrive.util.Util.th;
 
 /**
@@ -13,7 +14,7 @@ public class RomHolder {
 
     private final static Logger LOG = LogHelper.getLogger(RomHolder.class.getSimpleName());
 
-    public static final RomHolder EMPTY_ROM = new RomHolder(new byte[1]);
+    public static final RomHolder EMPTY_ROM = new RomHolder(new byte[HEADER_SIZE << 1]);
 
     public final int baseSize;
     public final int size;

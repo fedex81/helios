@@ -19,13 +19,12 @@
 
 package omegadrive.vdp;
 
-import omegadrive.SystemLoader;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.system.BaseSystem;
-import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.SystemTestUtil;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.md.VdpFifo;
@@ -277,37 +276,8 @@ public class MdVdpTestUtil {
     }
 
     public static SystemProvider createTestMdProvider() {
-        return createTestMdProvider(MemoryProvider.createMdInstance());
+        return SystemTestUtil.createTestMdProvider(MemoryProvider.createMdInstance());
     }
-
-    public static SystemProvider createTestMdProvider(IMemoryProvider memoryProvider) {
-        return new SystemProvider() {
-
-            private MediaSpecHolder romContext = MediaSpecHolder.NO_ROM;
-
-            @Override
-            public void handleSystemEvent(SystemEvent event, Object parameter) {
-
-            }
-
-            @Override
-            public boolean isRomRunning() {
-                return false;
-            }
-
-            @Override
-            public MediaSpecHolder getMediaSpec() {
-                return romContext;
-            }
-
-            @Override
-            public SystemLoader.SystemType getSystemType() {
-                return SystemLoader.SystemType.MD;
-            }
-
-        };
-    }
-
 
     public static class VdpAdaptor implements MdVdpProvider {
 

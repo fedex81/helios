@@ -116,7 +116,11 @@ public class DmaFifoTest {
             Assertions.assertFalse(isFifoFull());
             Assertions.assertTrue(isFifoEmpty());
             cnt++;
-        } while (!isDmaDoneM68k());
+            /**
+             * TODO use to be isDmaDoneM68k() but it was not the right behaviour (DoomFusionV2)
+             */
+//        } while (!isDmaDoneM68k());
+        } while (idx != data.length);
         Assertions.assertEquals(data.length, idx);
     }
 

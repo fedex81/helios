@@ -12,6 +12,7 @@ import omegadrive.bus.z80.ColecoBus;
 import omegadrive.bus.z80.MsxBus;
 import omegadrive.bus.z80.Sg1000Bus;
 import omegadrive.bus.z80.SmsBus;
+import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
@@ -31,7 +32,6 @@ import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.Z80BaseSystem;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.SmsVdp;
 import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.vdp.md.MdVdp;
@@ -44,6 +44,7 @@ import s32x.bus.S32xBusIntf;
 import java.nio.file.Path;
 
 import static omegadrive.SystemLoader.SystemType.SMS;
+import static omegadrive.system.MediaSpecHolder.NO_ROM;
 
 /**
  * Federico Berti
@@ -65,7 +66,7 @@ public class SystemTestUtil {
     }
 
     public static MdMainBusProvider setupNewMdSystem(IMemoryProvider cpuMem1, VdpMemoryInterface vdpMem) {
-        SystemProvider systemProvider = MdVdpTestUtil.createTestMdProvider(cpuMem1);
+        SystemProvider systemProvider = createTestMdProvider(cpuMem1);
         MdMainBusProvider busProvider = new MdBus();
         MdZ80BusProvider z80bus = new MdZ80BusProviderImpl();
         MdVdpProvider vdpProvider1 = MdVdp.createInstance(busProvider, vdpMem);
@@ -195,8 +196,15 @@ public class SystemTestUtil {
 
     public static SystemProvider createTestMdProvider(IMemoryProvider memoryProvider) {
         return new SystemProvider() {
+            private MediaSpecHolder msh;
 
-            private MediaSpecHolder romContext = MediaSpecHolder.NO_ROM;
+            {
+                msh = NO_ROM;
+                assert msh.cartFile != null;
+                assert memoryProvider.getRomData() != null;
+                msh.cartFile.mediaInfoProvider = MdCartInfoProvider.createMdInstance(memoryProvider.getRomData());
+                msh.reload();
+            }
 
             @Override
             public RegionDetector.Region getRegion() {
@@ -220,7 +228,7 @@ public class SystemTestUtil {
 
             @Override
             public MediaSpecHolder getMediaSpec() {
-                return romContext;
+                return msh;
             }
 
             @Override

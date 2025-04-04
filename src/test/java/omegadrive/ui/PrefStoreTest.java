@@ -21,6 +21,7 @@ package omegadrive.ui;
 
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.system.MediaSpecHolder;
+import omegadrive.system.SysUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,6 +37,7 @@ import java.util.function.Function;
 
 import static omegadrive.SystemLoader.SystemType.NONE;
 import static omegadrive.SystemLoader.SystemType.S32X;
+import static omegadrive.system.MediaSpecHolder.NO_PATH;
 
 public class PrefStoreTest {
 
@@ -94,15 +96,15 @@ public class PrefStoreTest {
     @Test
     public void testItemName() {
         Function<SystemType, MediaSpecHolder> toRomSpec =
-                v -> MediaSpecHolder.of(Paths.get("file" + v.hashCode()), v);
+                v -> fakeHolder("file" + v.hashCode(), v);
         Arrays.stream(SystemType.values()).forEach(v -> {
             if (v != NONE) {
                 addSet(toRomSpec.apply(v).toString());
             }
         });
         PrefStore.getRecentFilesList().forEach(str -> {
-            MediaSpecHolder r = PrefStore.getRomSpecFromRecentItem(str);
-            Assertions.assertNotEquals(NONE, r.systemType);
+            String system = PrefStore.getSystemStringFromRecentItem(str);
+            Assertions.assertNotEquals(NONE.name(), system);
         });
 
         PrefStore.initPrefs();
@@ -119,7 +121,7 @@ public class PrefStoreTest {
     @Test
     public void testItemNameParse() {
         PrefStore.initPrefs();
-        String path = "Darxide (Europe) (En,Fr,De,Es).32x.zip";
+        String path = NO_PATH.toString();
         Path p = Paths.get(path);
         List<SystemType> typ = List.of(NONE, S32X);
         String[] names = new String[]{typ.get(0).name() + "," + path, typ.get(1).name() + "," + path};
@@ -133,5 +135,15 @@ public class PrefStoreTest {
             Assertions.assertEquals(expTyp.get(i), romSpec.systemType);
             Assertions.assertEquals(p, romSpec.getBootableMedia().romFile);
         }
+    }
+
+    private static MediaSpecHolder fakeHolder(String filename, SystemType v) {
+        MediaSpecHolder msh = new MediaSpecHolder();
+        MediaSpecHolder.MediaSpec ms = new MediaSpecHolder.MediaSpec();
+        ms.romFile = Paths.get(filename);
+        ms.type = SysUtil.RomFileType.CART_ROM;
+        ms.systemType = v;
+        msh.cartFile = ms;
+        return msh;
     }
 }
