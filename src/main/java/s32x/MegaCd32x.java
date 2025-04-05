@@ -76,6 +76,7 @@ public class MegaCd32x extends Md32x {
         interruptHandler = mcdLaunchContext.interruptHandler;
         MegaCd.megaCdDiscInsert(mcdLaunchContext, mediaSpec);
         checkDoomFusion();
+        subCpu.reset();
     }
 
     @Override
@@ -190,16 +191,10 @@ public class MegaCd32x extends Md32x {
 
     @Override
     protected void handleSoftReset() {
-        super.handleSoftReset();
-        if (softReset) {
+        if (softResetPending) {
             subCpu.softReset();
         }
-    }
-
-    @Override
-    protected void resetAfterRomLoad() {
-        super.resetAfterRomLoad();
-        subCpu.reset();
+        super.handleSoftReset();
     }
 
     @Override

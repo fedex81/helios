@@ -73,10 +73,12 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     protected volatile boolean saveStateFlag = false;
     protected volatile BaseStateHandler stateHandler;
 
+    protected MdRuntimeData rt;
+
     private boolean vdpDumpScreenData = false;
     private volatile boolean pauseFlag = false;
     protected volatile boolean futureDoneFlag = false;
-    protected volatile boolean softReset = false;
+    protected volatile boolean softResetPending = false;
     private boolean soundEnFlag = true;
 
     protected int cycleCounter = 1;
@@ -98,6 +100,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
     @Override
     public void init() {
+        MdRuntimeData.releaseInstance();
+        rt = MdRuntimeData.newInstance(systemType, this);
         sound = AbstractSoundManager.createSoundProvider(systemType);
         mediaSpec.region = RegionDetector.selectRegion(display, mediaSpec.getBootableMedia().mediaInfoProvider);
         sound.init(mediaSpec.getRegion());
@@ -105,6 +109,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         displayContext.megaCdLedState = Optional.empty();
         displayContext.videoMode = VideoMode.PAL_H40_V30;
         telemetry = Telemetry.resetClock(this);
+        display.setRomData(mediaSpec);
 
         LOG.info("Region set as: {}", mediaSpec.region);
     }
@@ -156,7 +161,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
                 inputProvider.setPlayerController(InputProvider.PlayerNumber.valueOf(s[0]), s[1]);
                 break;
             case SOFT_RESET:
-                softReset = true;
+                softResetPending = true;
                 break;
             case PAD_SETUP_CHANGE:
             case FORCE_PAD_TYPE:
@@ -169,10 +174,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     }
 
     protected void handleSoftReset() {
-        if (softReset) {
+        if (softResetPending) {
             LOG.info("Soft Reset");
         }
-        softReset = false;
+        softResetPending = false;
     }
 
     protected void reloadWindowState() {
@@ -183,6 +188,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     public void handleNewRom(MediaSpecHolder romSpec) {
         mediaSpec = romSpec;
         init();
+        postInit();
         Runnable runnable = new RomRunnable(romSpec);
         PrefStore.addRecentFile(romSpec.toString());
         runningRomFuture = executorService.submit(Util.wrapRunnableEx(runnable), null);
@@ -300,6 +306,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
             telemetry.reset();
             Optional.ofNullable(vdp).ifPresent(Device::reset);
             cycleCounter = 1;
+            MdRuntimeData.releaseInstance();
         }
     }
 
@@ -353,17 +360,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         @Override
         public void run() {
             try {
-                loadRomDataIfEmpty(mediaSpec, memory);
                 if (memory.getRomData().length == 0) {
                     return;
                 }
                 String romName = FileUtil.getFileName(romSpec.getBootableMedia().romFile);
-                display.setRomData(romSpec);
+                LOG.info("Running rom: {},\n{}", romName, romSpec);
                 Thread.currentThread().setName(threadNamePrefix + romName);
                 Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
-                LOG.info("Running rom: {},\n{}", romName, romSpec);
-                resetAfterRomLoad();
-                sound.setEnabled(soundEnFlag);
                 LOG.info("Starting game loop");
                 loop();
                 LOG.info("Exiting rom thread loop");
@@ -376,8 +379,10 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     }
 
     protected void loadRomDataIfEmpty(MediaSpecHolder mediaSpec, IMemoryProvider memoryProvider) {
+        assert memoryProvider != null;
         assert mediaSpec.systemType != SystemType.NONE ? mediaSpec.systemType == getSystemType() : true;
-        if (memoryProvider.getRomHolder() == RomHolder.EMPTY_ROM) {
+        boolean isRomCart = !mediaSpec.getBootableMedia().type.isDiscImage();
+        if (isRomCart && memoryProvider.getRomHolder() == RomHolder.EMPTY_ROM) {
             byte[] d = FileUtil.readBinaryFile(mediaSpec.getBootableMedia().romFile, getSystemType());
             if (d.length == 0) {
                 LOG.error("Unable to open/access file: {}", mediaSpec);
@@ -414,13 +419,16 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         handleNewRom(mediaSpec);
     }
 
-    protected void resetAfterRomLoad() {
+    protected void postInit() {
+        assert vdp != null && joypad != null && bus != null && memory != null;
+        loadRomDataIfEmpty(mediaSpec, memory);
         vdp.setRegion(mediaSpec.getRegion());
         //detect ROM first
         joypad.init();
         vdp.init();
         bus.init();
         futureDoneFlag = false;
+        sound.setEnabled(soundEnFlag);
     }
 
     @Override

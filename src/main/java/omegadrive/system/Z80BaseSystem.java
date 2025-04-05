@@ -106,8 +106,8 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
         } while (!runningRomFuture.isDone());
     }
 
-    protected void resetAfterRomLoad() {
-        super.resetAfterRomLoad();
+    protected void postInit() {
+        super.postInit();
         z80.reset();
     }
 

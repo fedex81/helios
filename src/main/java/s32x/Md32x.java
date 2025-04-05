@@ -110,7 +110,6 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 
 
     protected void init32x() {
-        rt = MdRuntimeData.newInstance(systemType, this);
 //        assert mediaSpec.cartFile.bootable;
         if (mediaSpec.hasRomCart()) { //MCD_32X has no cart
             loadRomDataIfEmpty(mediaSpec, memory);
@@ -321,12 +320,13 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     //TODO buggy
     @Override
     protected void handleSoftReset() {
-        if (softReset) {
+        if (softResetPending) {
             sh2.reset(masterCtx);
             sh2.reset(slaveCtx);
             launchCtx.reset();
             MdRuntimeData.resetAllCpuDelayExt();
             StaticBootstrapSupport.initStatic(this);
+            nextMSh2Cycle = nextSSh2Cycle = 1;
         }
         super.handleSoftReset();
     }

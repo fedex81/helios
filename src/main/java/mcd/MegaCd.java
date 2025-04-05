@@ -96,6 +96,7 @@ public class MegaCd extends Megadrive {
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
         megaCdDiscInsert(mcdLaunchContext, mediaSpec);
+        subCpu.reset();
     }
 
     @Override
@@ -201,12 +202,6 @@ public class MegaCd extends Megadrive {
     }
 
     @Override
-    protected void resetAfterRomLoad() {
-        super.resetAfterRomLoad();
-        subCpu.reset();
-    }
-
-    @Override
     protected void handleCloseRom() {
         super.handleCloseRom();
         mcdLaunchContext.cdd.close();
@@ -215,7 +210,7 @@ public class MegaCd extends Megadrive {
 
     @Override
     protected void handleSoftReset() {
-        if (softReset) {
+        if (softResetPending) {
             subCpu.softReset();
         }
         super.handleSoftReset();

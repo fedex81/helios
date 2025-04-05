@@ -41,7 +41,7 @@ public class MdRuntimeData {
 
     public static MdRuntimeData newInstance(SystemType type, SystemClock clock) {
         if (rt != null) {
-            LOG.error("Previous instance has not been released! {}", rt);
+            LOG.error("Previous instance has not been released! {}", rt.type);
         }
         MdRuntimeData mrt = new MdRuntimeData(type, clock);
         rt = mrt;

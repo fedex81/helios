@@ -78,7 +78,6 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     protected M68kProvider cpu;
     protected Ssp16 ssp16 = Ssp16.NO_SVP;
     protected UpdatableViewer memView = UpdatableViewer.NO_OP_VIEWER;
-    protected MdRuntimeData rt;
     protected boolean hasSvp = ssp16 != Ssp16.NO_SVP;
     protected double nextVdpCycle = vdpVals[0];
     protected int next68kCycle = M68K_DIVIDER;
@@ -109,7 +108,6 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         bus.attachDevices(this, memory, joypad, vdp, cpu, z80, sound);
         reloadWindowState();
         createAndAddVdpEventListener();
-
         SvpMapper.ssp16 = Ssp16.NO_SVP;
         memView.reset();
         memView = createMemView();
@@ -226,18 +224,17 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     }
 
     @Override
-    protected void resetAfterRomLoad() {
-        super.resetAfterRomLoad();
-        MdRuntimeData.releaseInstance();
-        rt = MdRuntimeData.newInstance(systemType, this);
+    protected void postInit() {
+        super.postInit();
         cpu.reset();
         z80.reset(); //TODO confirm this is needed
     }
 
     @Override
     protected void handleSoftReset() {
-        if (softReset) {
+        if (softResetPending) {
             cpu.softReset();
+            z80.reset(); //TODO confirm this is needed
         }
         super.handleSoftReset();
     }

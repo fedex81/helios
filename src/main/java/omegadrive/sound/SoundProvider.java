@@ -135,7 +135,7 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener,
 
     /***
      * TODO HACK
-     * PWM, PCM use their own dataLine and need to be explicitely muted.
+     * PWM, PCM use their own dataLine and need to be explicitly muted.
      */
     @Deprecated
     default void addExternalSoundSource(SoundDevice.MutableDevice mutableDevice) {
