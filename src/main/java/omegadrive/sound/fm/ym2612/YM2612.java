@@ -574,8 +574,8 @@ public final class YM2612 extends Ym2612RegSupport implements MdFmProvider {
         pcmMicrosAcc += microsPerTick;
         //sync every microsecond
         if (microsAcc > 1) {
-            synchronizeTimers(1);
-            microsAcc -= 1;
+            synchronizeTimers((int) microsAcc);
+            microsAcc -= (int) microsAcc;
         }
         //TODO check this, MICROS_PER_PCM ~ BUSY_CYCLES_MICROS
         if (pcmMicrosAcc > MICROS_PER_PCM) {
