@@ -54,10 +54,8 @@ public class IntControlImpl implements IntControl {
     private final ByteBuffer regs;
     private final BufferUtil.CpuDeviceAccess cpu;
 
-    private static final boolean legacy = false;
-
     public static IntControl createInstance(BufferUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
-        return legacy ? new IntControlImplOld(cpu, regs) : new IntControlImpl(cpu, regs);
+        return new IntControlImpl(cpu, regs);
     }
 
     public IntControlImpl(BufferUtil.CpuDeviceAccess cpu, ByteBuffer regs) {

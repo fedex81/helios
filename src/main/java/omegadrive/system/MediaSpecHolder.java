@@ -52,7 +52,7 @@ public class MediaSpecHolder {
 
         protected void init() {
             boolean isCartBased = !type.isDiscImage();
-            boolean isCartMdBased = isCartBased && (systemType == SystemType.MD || systemType == SystemType.S32X || systemType == SystemType.MEGACD_S32X);
+            boolean isCartMdBased = isCartBased && systemType.isMdBased();
             boolean validPath = !romFile.toAbsolutePath().equals(NO_PATH.toAbsolutePath());
             if (isCartMdBased && validPath) {
                 mediaInfoProvider = getMdInfoProvider(romFile, compressed);
@@ -183,6 +183,17 @@ public class MediaSpecHolder {
 
     public RegionDetector.Region getRegion() {
         return region;
+    }
+
+    public String toInfoString() {
+        String s = toString();
+        if (cartFile != null) {
+            s += "\n" + cartFile;
+        }
+        if (cdFile != null) {
+            s += "\n" + cdFile;
+        }
+        return s;
     }
 
     @Override

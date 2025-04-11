@@ -12,6 +12,7 @@ import static mcd.cdc.CdcImpl.verbose;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
 import static mcd.dict.MegaCdDict.START_MCD_SUB_WORD_RAM_1M;
 import static mcd.dict.MegaCdDict.START_MCD_SUB_WORD_RAM_2M;
+import static mcd.dict.MegaCdMemoryContext.MCD_PRG_RAM_MASK;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.th;
 
@@ -98,17 +99,19 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
             return;
         }
         assert t.destination.isValid();
-        int data = ram.getShort(t.source);
+        int data = ram.getShort(t.source) & 0xFFFF;
         switch (t.destination) {
             case DMA_SUB_WRAM_7 -> { //WRAM
                 int baseAddr = memoryContext.wramSetup.mode == MegaCdMemoryContext.WordRamMode._1M
                         ? START_MCD_SUB_WORD_RAM_1M : START_MCD_SUB_WORD_RAM_2M;
                 memoryContext.wramHelper.writeWordRamWord(SUB_M68K, baseAddr | t.address, data);
-                if (verbose) LOG.info("CDC,DMA_WRAM,wram[{}]={}", th(baseAddr | t.address), th(data));
+                if (verbose) LOG.info("CDC,DMA_WRAM {},wram[{}]={}", memoryContext.wramSetup,
+                        th(baseAddr | t.address), th(data));
             }
             case DMA_PROGRAM_5 -> {  //PRG-RAM
-                memoryContext.writeProgRam(t.address, data, Size.WORD);
-                //mcd.write(1, 1, 0x000000 | (n19) address & ~1, data);
+                assert (t.address & 1) == 0;
+                memoryContext.writeProgRam(t.address & MCD_PRG_RAM_MASK, data, Size.WORD);
+                if (verbose) LOG.info("CDC,DMA_PRG-RAM,prg-ram[{}]={}", th(t.address & MCD_PRG_RAM_MASK), th(data));
             }
             case DMA_PCM_4 -> {
                 assert t.length > 0;
@@ -146,7 +149,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
         address &= PCM_ADDRESS_MASK;
         if (verbose) LOG.info("CDC,DMA_PCM,pcm_ram[{}]={},srcAddrWord={},len={}",
                 th(address & PCM_ADDRESS_MASK), th(data & 0xFF), th(t.source), th(t.length));
-        McdPcm.pcm.pcmDataWrite(address & PCM_ADDRESS_MASK, data, Size.BYTE);
+        McdPcm.pcm.pcmDataWriteByte(address & PCM_ADDRESS_MASK, data);
     }
 
     @Override

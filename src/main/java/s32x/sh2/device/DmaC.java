@@ -162,8 +162,6 @@ public class DmaC implements BufferUtil.Sh2Device {
         int destAddress = readBufferForChannel(c.channel, DMA_DAR0.addr, Size.LONG);
         int steps = c.transfersPerStep;
         assert cpu == MdRuntimeData.getAccessTypeExt();
-//        assert (destAddress >> Sh2Prefetch.PC_CACHE_AREA_SHIFT) != 0 : th(srcAddress) +"," + th(destAddress);
-//        assert (srcAddress >> Sh2Prefetch.PC_CACHE_AREA_SHIFT) != 0 : th(srcAddress) +"," + th(destAddress);
         destAddress |= S32xDict.SH2_CACHE_THROUGH_OFFSET;
         srcAddress |= S32xDict.SH2_CACHE_THROUGH_OFFSET;
 

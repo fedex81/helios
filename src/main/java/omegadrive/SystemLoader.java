@@ -249,5 +249,10 @@ public class SystemLoader {
         public boolean isMegaCdAttached() {
             return this == MEGACD || this == MEGACD_S32X;
         }
+
+        public boolean isMdBased() {
+            return this == SystemType.MD || this == SystemType.S32X || this == SystemType.MEGACD_S32X
+                    || this == SystemType.MEGACD;
+        }
     }
 }

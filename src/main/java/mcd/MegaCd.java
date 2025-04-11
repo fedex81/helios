@@ -95,8 +95,13 @@ public class MegaCd extends Megadrive {
         mcdLaunchContext.subBus.attachDevice(this);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
-        megaCdDiscInsert(mcdLaunchContext, mediaSpec);
         subCpu.reset();
+    }
+
+    @Override
+    protected void postInit() {
+        super.postInit();
+        megaCdDiscInsert(mcdLaunchContext, mediaSpec);
     }
 
     @Override

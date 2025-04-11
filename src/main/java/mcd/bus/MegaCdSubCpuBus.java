@@ -184,6 +184,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
                     wramRunnable.address = address;
                     wramRunnable.data = data;
                     wramRunnable.size = size;
+                    //TODO fix, WRAM_2M handling is buggy?
 //                    boolean res = wramRunLater.compareAndSet(null, wramRunnable);
 //                    assert res;
 //                    MC68000Wrapper.subCpuBusHalt = true;

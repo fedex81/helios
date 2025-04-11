@@ -102,7 +102,9 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         mdBus.init();
         setEnableMode1(true);
         MdCartInfoProvider cartridgeInfoProvider = mdBus.getCartridgeInfoProvider();
-        isBios = cartridgeInfoProvider.getSerial().startsWith("BR ");
+        //TODO hack McdVer mode1
+        boolean mcdVer = cartridgeInfoProvider.toString().contains("krikzz");
+        isBios = cartridgeInfoProvider.getSerial().startsWith("BR ") && !mcdVer;
         //bios aka bootRom
         if (isBios) {
             setEnableMode1(false);

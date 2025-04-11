@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static omegadrive.sound.javasound.AbstractSoundManager.audioFormat;
 import static omegadrive.util.Util.th;
 import static s32x.pwm.PwmUtil.pwmAudioFormat;
 
@@ -70,7 +71,7 @@ public class BlipPcmProvider implements PcmProvider {
 
     private void setup() {
         BlipBufferIntf blip = new StereoBlipBuffer(instanceId);
-        blip.setSampleRate((int) pwmAudioFormat.getSampleRate(), BUF_SIZE_MS);
+        blip.setSampleRate((int) audioFormat.getSampleRate(), BUF_SIZE_MS);
         blip.setClockRate((int) clockRate);
         BlipBufferContext bbc = new BlipBufferContext();
         bbc.lineBuffer = new byte[0];
@@ -91,7 +92,7 @@ public class BlipPcmProvider implements PcmProvider {
                 LOG.info("{} R {} -> {}, absDiff: {}", instanceId, th(prevRSample), th((short) rsample), th(Math.abs(rsample - prevRSample)));
             }
         }
-        ref.get().blipBuffer.addDelta((int) deltaTime, lsample - prevLSample, rsample - prevRSample);
+        ref.get().blipBuffer.addDelta((int) deltaTime, (short) (lsample - prevLSample), (short) (rsample - prevRSample));
         prevLSample = (short) lsample;
         prevRSample = (short) rsample;
         deltaTime++;

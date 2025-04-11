@@ -97,8 +97,6 @@ public class MdCartInfoProvider extends MediaInfoProvider {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(systemType).append(", serial: ").append(serial);
-//        TODO fix
-//        sb.append(", ").append(memoryProvider.getRomHolder().toString());
         sb.append(", SRAM flag: ").append(sramEnabled).append("\n");
         sb.append(super.toString());
         if (sramEnabled) {
@@ -124,7 +122,6 @@ public class MdCartInfoProvider extends MediaInfoProvider {
         m.headerBuf = ByteBuffer.wrap(header, 0, HEADER_SIZE);
         m.init();
         m.romSize = header.length;
-        LOG.warn("Setting romSize to: {}", m.romSize);
         return m;
     }
 

@@ -398,7 +398,7 @@ public class SwingWindow implements DisplayWindow {
                 KeyBindingsHandler.toConfigString()));
 
         JMenuItem romInfoItem = new JMenuItem("Rom Info");
-        addAction(romInfoItem, e -> showHelpMessage(romInfoItem.getText(), mediaSpec.toString()));
+        addAction(romInfoItem, e -> showHelpMessage(romInfoItem.getText(), mediaSpec.toInfoString()));
 
         JMenuItem readmeItem = new JMenuItem("Readme");
         addAction(readmeItem, e -> showHelpMessage(readmeItem.getText(),

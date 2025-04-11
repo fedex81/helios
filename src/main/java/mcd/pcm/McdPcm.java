@@ -78,6 +78,8 @@ public class McdPcm implements BufferUtil.StepDevice {
     //TODO
     public static McdPcm pcm;
 
+    final boolean verbose = false;
+
     static class PcmChannelContext {
         public int num, on, env, panl, panr, freqDelta, loopAddr, startAddr;
         public int addrCounter, factorl, factorr;
@@ -143,10 +145,12 @@ public class McdPcm implements BufferUtil.StepDevice {
         assert size == Size.BYTE : th(address) + "," + size;
         if (address >= PCM_START_WAVE_DATA_WINDOW) {
             //NOTE, this only support reading from [0x2000-0x4000] which in turns maps to [0-0x1000] | waveBank
+            int addr = address;
             assert address >= 0x2000 && address < 0x4000 : th(address);
             address = waveBank | ((address & PCM_WAVE_DATA_WINDOW_MASK_EXT) >> 1);
             int res = BufferUtil.readBuffer(waveData, address, size);
-//            LOG.info("PCM R {}(ext {}), val: {} {}", th(address), th(ta), th(res & size.getMask()), size);
+            if (verbose)
+                LOG.info("PCM R {}(ext {}), val: {} {}", th(address), th(addr), th(res & size.getMask()), size);
             return res;
         }
         LogHelper.logWarnOnce(LOG, "Unhandled PCM read: {} {}", th(address), size);
@@ -157,13 +161,14 @@ public class McdPcm implements BufferUtil.StepDevice {
         assert size != Size.LONG;
         if (size == Size.WORD) {
             address |= 1; //write LSB only to odd byte
+            size = Size.BYTE;
         }
         address &= PCM_ADDRESS_MASK;
         value &= size.getMask();
         if (address >= PCM_START_WAVE_DATA_WINDOW) {
             //NOTE, this only support writing to [0x2000-0x4000) which in turns maps to [0-0x1000) | waveBank
             assert address >= 0x2000 && address < 0x4000 : th(address);
-            pcmDataWrite(address, value, size);
+            pcmDataWriteByte(address, value);
         } else if (address < PCM_REG_MASK) {
             RegSpecMcd regSpec = getPcmReg(address);
             logAccessReg(regSpec, SUB_M68K, address, size, false);
@@ -174,9 +179,9 @@ public class McdPcm implements BufferUtil.StepDevice {
         }
     }
 
-    public void pcmDataWrite(int address, int value, Size size) {
-        address = waveBank | ((address & PCM_WAVE_DATA_WINDOW_MASK_EXT) >> 1);
-//        LOG.info("PCM W {}(ext {}) val: {} {}", th(address),th(ta), th(value & size.getMask()), size);
+    public void pcmDataWriteByte(int addr, int value) {
+        int address = waveBank | ((addr & PCM_WAVE_DATA_WINDOW_MASK_EXT) >> 1);
+        if (verbose) LOG.info("PCM W {}(ext {}) val: {} {}", th(address), th(addr), th(value & 0xFF), Size.BYTE);
         BufferUtil.writeBufferRaw(waveData, address, value, Size.BYTE);
     }
 
@@ -184,11 +189,11 @@ public class McdPcm implements BufferUtil.StepDevice {
         PcmChannelContext channel = chan[channelBank];
         switch (regSpec) {
             case MCD_PCM_ENV -> {
-                channel.env = value;
+                channel.env = value & 0xFF; //8-bit ENV
                 channel.updateChannelFactors();
             }
             case MCD_PCM_PAN -> {
-                channel.panl = value >>> 4;
+                channel.panl = (value >>> 4) & 0xF; //4-bit PAN
                 channel.panr = value & 0xF;
                 channel.updateChannelFactors();
             }
@@ -205,7 +210,7 @@ public class McdPcm implements BufferUtil.StepDevice {
                     int wb = waveBank;
                     waveBank = (value & 0xf) << PCM_WAVE_BANK_SHIFT;
                     if (wb != waveBank) {
-//                        LOG.info("PCM bank: {}", th(waveBank));
+                        if (verbose) LOG.info("PCM bank: {}", th(waveBank));
                     }
                 }
             }
