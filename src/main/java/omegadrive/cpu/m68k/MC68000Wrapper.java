@@ -19,8 +19,8 @@
 
 package omegadrive.cpu.m68k;
 
+import m68k.cpu.CpuConfig;
 import m68k.cpu.MC68000;
-import m68k.cpu.instructions.TAS;
 import m68k.memory.AddressSpace;
 import omegadrive.bus.model.MdM68kBusProvider;
 import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
@@ -53,13 +53,14 @@ public class MC68000Wrapper implements M68kProvider {
 
     public static boolean subCpuBusHalt = false;
 
+    private static final CpuConfig tasBrokenConfig = new CpuConfig(true, false, false);
+
     public MC68000Wrapper(CpuDeviceAccess cpu, MdM68kBusProvider busProvider) {
         this.cpu = cpu;
-        this.m68k = createCpu();
+        this.m68k = createCpu(cpu == CpuDeviceAccess.M68K ? tasBrokenConfig : CpuConfig.DEFAULT_CONFIG);
         this.busProvider = busProvider;
         this.addressSpace = createAddressSpace();
         m68k.setAddressSpace(addressSpace);
-        TAS.EMULATE_BROKEN_TAS = MC68000Helper.MD_TAS_BROKEN;
     }
 
     public static MC68000Wrapper createInstance(MdM68kBusProvider busProvider) {
@@ -151,8 +152,8 @@ public class MC68000Wrapper implements M68kProvider {
         return m68k;
     }
 
-    private MC68000 createCpu() {
-        return new MC68000() {
+    private MC68000 createCpu(CpuConfig config) {
+        return new MC68000(config) {
             @Override
             public void raiseException(int vector) {
                 super.raiseException(vector);
