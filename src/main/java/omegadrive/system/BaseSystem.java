@@ -261,10 +261,14 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     }
 
     protected void getStats(long nowNs, long prevStartNs) {
-        if (!SystemLoader.showFps) {
-            return;
-        }
-        telemetry.newFrame(nowNs - prevStartNs, driftNs).ifPresent(statsConsumer);
+        final long fc = telemetry.getFrameCounter();
+        Optional<String> statsOpt = telemetry.newFrame(nowNs - prevStartNs, driftNs);
+        statsOpt.ifPresent(st -> {
+            if (SystemLoader.showFps) {
+                statsConsumer.accept(st);
+            }
+            displayContext.fps = Optional.of(telemetry.getAvgFps(fc));
+        });
     }
 
     protected long syncCycle(long startCycle) {

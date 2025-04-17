@@ -96,9 +96,13 @@ public class Telemetry {
         return fpsFormatter.format(1000.0 / avgFrameTimeMs);
     }
 
-    private double getAvgFrameTimeMs() {
-        Timing current = frameTimeStamp.get(frameCounter);
-        Timing prev = frameTimeStamp.getOrDefault(frameCounter - STATS_EVERY_FRAMES, NO_TIMING);
+    public double getAvgFps(long fc) {
+        return 1000.0 / getAvgFrameTimeMs(fc);
+    }
+
+    public double getAvgFrameTimeMs(long fc) {
+        Timing current = frameTimeStamp.get(fc);
+        Timing prev = frameTimeStamp.getOrDefault(fc - STATS_EVERY_FRAMES, NO_TIMING);
         if (prev == NO_TIMING) { //first frame gets a huge frame delay
             return 16.6;
         }
@@ -113,7 +117,7 @@ public class Telemetry {
         Optional<String> o = Optional.empty();
         if (hasNewStats()) {
             Optional<String> arc = AudioRateControl.getLatestStats();
-            double ft = getAvgFrameTimeMs();
+            double ft = getAvgFrameTimeMs(frameCounter);
             o = Optional.of(fpsFormatter.format(ft) + "ms (" + getAvgFpsRounded(ft) + "fps)"
                     + (arc.map(s -> ", " + s).orElse("")));
         }

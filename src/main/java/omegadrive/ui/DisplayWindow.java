@@ -43,6 +43,8 @@ public interface DisplayWindow extends RegionDetector.RegionOverrideSupplier {
         public int[] data;
         public VideoMode videoMode;
         public Optional<String> label = Optional.empty();
+
+        public Optional<Double> fps = Optional.empty();
         public Optional<Integer> megaCdLedState = Optional.empty();
     }
 

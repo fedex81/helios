@@ -86,9 +86,10 @@ public class SwingWindow implements DisplayWindow {
     private double scale = DEFAULT_SCALE_FACTOR;
 
     private final JLabel screenLabel = new JLabel();
-    private final JLabel perfLabel = new JLabel("");
+    private final JLabel eventInfoLabel = new JLabel("");
     private final JLabel regionLabel = new JLabel("");
     private final JLabel megaCdLedLabel = new JLabel("");
+    private final JLabel fpsLabel = new JLabel("");
 
     private JFrame jFrame;
     private SystemProvider mainEmu;
@@ -200,7 +201,7 @@ public class SwingWindow implements DisplayWindow {
             if (!fullScreenItem.getState()) {
                 jFrame.getJMenuBar().setVisible(true);
             }
-            perfLabel.setVisible(state);
+            eventInfoLabel.setVisible(state);
             jFrame.repaint();
         });
     }
@@ -211,10 +212,11 @@ public class SwingWindow implements DisplayWindow {
             Arrays.fill(pixelsDest, 0);
             screenLabel.invalidate();
             screenLabel.repaint();
-            perfLabel.setText("");
+            eventInfoLabel.setText("");
             regionLabel.setIcon(null);
             regionLabel.setText("");
             megaCdLedLabel.setIcon(null);
+            fpsLabel.setText("");
             jFrame.setTitle(FRAME_TITLE_HEAD);
             cursorHandler.reset();
             LOG.info("Blanking screen");
@@ -251,6 +253,7 @@ public class SwingWindow implements DisplayWindow {
             dcCopy.megaCdLedState = dc.megaCdLedState;
             dcCopy.label = dc.label;
             dcCopy.videoMode = dc.videoMode;
+            dcCopy.fps = dc.fps;
             previousFrame =
                     executorService.submit(Util.wrapRunnableEx(() -> renderScreenLinearInternal(pixelsSrc, dcCopy)));
         } else {
@@ -348,10 +351,22 @@ public class SwingWindow implements DisplayWindow {
         JMenu helpMenu = new JMenu("Help");
         bar.add(helpMenu);
         bar.add(Box.createHorizontalGlue());
-        bar.add(perfLabel);
+        bar.add(eventInfoLabel);
         bar.add(Box.createHorizontalGlue());
-        bar.add(megaCdLedLabel);
-        bar.add(regionLabel);
+
+        JPanel infoPanel = new JPanel();
+        BoxLayout bl = new BoxLayout(infoPanel, BoxLayout.X_AXIS);
+        infoPanel.setLayout(bl);
+
+        fpsLabel.setMaximumSize(new Dimension(25, 25));
+
+        infoPanel.add(fpsLabel);
+        infoPanel.add(Box.createHorizontalStrut(2));
+        infoPanel.add(megaCdLedLabel);
+        infoPanel.add(Box.createHorizontalStrut(2));
+        infoPanel.add(regionLabel);
+
+        bar.add(infoPanel);
 
         JMenuItem loadRomItem = new JMenuItem("Load ROM");
         addKeyAction(loadRomItem, NEW_ROM, e -> handleNewRom());
@@ -447,11 +462,21 @@ public class SwingWindow implements DisplayWindow {
     private void renderScreenLinearInternal(int[] data, DisplayContext dc) {
         resizeScreen(dc.videoMode);
         RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
-        dc.label.ifPresent(this::showLabel);
+        dc.label.ifPresent(l -> showEventInfo());
+        dc.fps.ifPresent(f -> showFpsIcon(f, dc.label));
         dc.megaCdLedState.ifPresent(v -> megaCdLedLabel.setIcon(IconsLoader.getLedIcon(v)));
         screenLabel.repaint();
         detectUserScreenChange();
         cursorHandler.newFrame();
+    }
+
+    private void showFpsIcon(double fps, Optional<String> explain) {
+        long fpsr = Math.round(fps);
+        int limit = mediaSpec.getRegion().getFps() - 1;
+        String htmlColor = fpsr < limit ? "red" : "green";
+        String s = "<html><font size=\"4\" color=\"" + htmlColor + "\"><b>" + fpsr + "</b></font></html>";
+        fpsLabel.setText(s);
+        explain.ifPresent(fpsLabel::setToolTipText);
     }
 
     private void detectUserScreenChange() {
@@ -466,16 +491,17 @@ public class SwingWindow implements DisplayWindow {
         }
     }
 
-    private void showLabel(String label) {
+    /**
+     * Show a recent event if any
+     */
+    private void showEventInfo() {
         showInfoCount--;
         if (actionInfo.isPresent()) {
-            label += " - " + actionInfo.get();
-        }
-        if (!label.equalsIgnoreCase(perfLabel.getText())) {
-            perfLabel.setText(label);
+            eventInfoLabel.setText(actionInfo.get());
         }
         if (showInfoCount <= 0) {
             actionInfo = Optional.empty();
+            eventInfoLabel.setText("");
         }
     }
 
