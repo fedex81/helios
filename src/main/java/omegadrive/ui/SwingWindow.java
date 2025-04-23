@@ -558,7 +558,7 @@ public class SwingWindow implements DisplayWindow {
         return fileDialog(parent, type, true);
     }
 
-    private Optional<MediaSpecHolder> fileDialog(Component parent, FileResourceType type, boolean load) {
+    private JFileChooser createFileChooser(FileResourceType type, boolean load) {
         int dialogType = load ? JFileChooser.OPEN_DIALOG : JFileChooser.SAVE_DIALOG;
         boolean isSaveState = type == SAVE_STATE_RES;
         String lastFileStr = isSaveState ? PrefStore.lastSaveFile : PrefStore.lastRomFile;
@@ -571,6 +571,21 @@ public class SwingWindow implements DisplayWindow {
         if (lastFile.isFile()) {
             fileChooser.setSelectedFile(lastFile);
         }
+        return fileChooser;
+    }
+
+    private Optional<File> fileDialogState(Component parent, FileResourceType type, boolean load) {
+        JFileChooser fileChooser = createFileChooser(type, load);
+        int result = fileChooser.showDialog(parent, null);
+        Optional<File> res = Optional.empty();
+        if (result == JFileChooser.APPROVE_OPTION) {
+            res = Optional.ofNullable(fileChooser.getSelectedFile());
+        }
+        return res;
+    }
+
+    private Optional<MediaSpecHolder> fileDialog(Component parent, FileResourceType type, boolean load) {
+        JFileChooser fileChooser = createFileChooser(type, load);
         int result = fileChooser.showDialog(parent, null);
 
         SystemType systemType = SystemType.NONE;
@@ -623,7 +638,7 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private void handleSaveState() {
-        Optional<File> optFile = fileDialog(jFrame, SAVE_STATE_RES, false).map(r -> r.getBootableMedia().romFile.toFile());
+        Optional<File> optFile = fileDialogState(jFrame, SAVE_STATE_RES, false);
         optFile.ifPresent(file -> handleSystemEvent(SAVE_STATE, file.toPath(), file.getName()));
     }
 
