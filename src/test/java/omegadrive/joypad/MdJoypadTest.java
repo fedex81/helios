@@ -21,13 +21,22 @@ package omegadrive.joypad;
 
 import omegadrive.input.InputProvider;
 import omegadrive.joypad.JoypadProvider.JoypadType;
+import omegadrive.joypad.MdInputModel.PeripheralId;
 import omegadrive.system.SystemProvider;
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import static omegadrive.joypad.JoypadProvider.JoypadType.*;
+import static omegadrive.joypad.MdInputModel.PeripheralId.MD_PAD;
+import static omegadrive.joypad.MdInputModel.PeripheralId.UNDETECTABLE;
+import static omegadrive.joypad.MdInputModel.toPeripheralId;
 import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.util.Util.th;
 
@@ -139,6 +148,35 @@ public class MdJoypadTest {
         testGreatestHeavyweightsInternal(BUTTON_3, new int[]{0x33, 0x33, 0x33});
         testGreatestHeavyweightsInternal(BUTTON_6, new int[]{0x30, 0x3f, 0x33});
     }
+
+    @Test
+    public void testPeripheralId() {
+        Map<MdJoypad, PeripheralId[]> m = Map.of(
+                create(BUTTON_3, BUTTON_6, NO_CLOCK), new PeripheralId[]{MD_PAD, MD_PAD},
+                createBoth(NONE), new PeripheralId[]{UNDETECTABLE, UNDETECTABLE},
+                create(BUTTON_3, NONE, NO_CLOCK), new PeripheralId[]{MD_PAD, UNDETECTABLE},
+                create(NONE, BUTTON_6, NO_CLOCK), new PeripheralId[]{UNDETECTABLE, MD_PAD}
+        );
+        for (var e : m.entrySet()) {
+            MdJoypad j = e.getKey();
+            PeripheralId[] pers = e.getValue();
+            j.writeControlRegister1(0x40);
+            j.writeControlRegister2(0x40);
+
+            List<Consumer<Integer>> dataW = List.of(v -> j.writeDataRegister1(v), v -> j.writeDataRegister2(v));
+            List<Supplier<Integer>> dataR = List.of(() -> j.readDataRegister1(), () -> j.readDataRegister2());
+            for (int i = 0; i < 2; i++) {
+                dataW.get(i).accept(0x40);
+                int res1 = dataR.get(i).get().intValue() & 0xF;
+                dataW.get(i).accept(0);
+                int res2 = dataR.get(i).get().intValue() & 0xF;
+
+                PeripheralId peripheralId = toPeripheralId.apply(res1, res2);
+                Assertions.assertEquals(pers[i], peripheralId);
+            }
+        }
+    }
+
 
     private void testInitAndResetInternal(JoypadType type) {
         MdJoypad j = createBoth(type);

@@ -23,18 +23,17 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import omegadrive.UserConfigHolder;
 import omegadrive.input.InputProvider.PlayerNumber;
+import omegadrive.joypad.MdInputModel.*;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.SystemProvider.SystemEvent;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
-import java.util.StringJoiner;
-import java.util.function.Predicate;
-
 import static omegadrive.input.InputProvider.PlayerNumber.P1;
 import static omegadrive.input.InputProvider.PlayerNumber.P2;
 import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.*;
+import static omegadrive.joypad.MdInputModel.*;
 import static omegadrive.util.Util.th;
 
 /**
@@ -58,58 +57,6 @@ public class MdJoypad extends BasePadAdapter {
             Boolean.parseBoolean(System.getProperty("helios.md.pad.asterix.hack", "false"));
 
     protected static final boolean verbose = false;
-
-    /**
-     * 0 TH = 1 : ?1CBRLDU    3-button pad return value (default state)
-     * 1 TH = 0 : ?0SA00DU    3-button pad return value (D3,D2 are forced to 0, indicates the presence of a controller)
-     * 2 TH = 1 : ?1CBRLDU    3-button pad return value
-     * 3 TH = 0 : ?0SA00DU    3-button pad return value
-     * 4 TH = 1 : ?1CBRLDU    3-button pad return value
-     * 5 TH = 0 : ?0SA0000    D3-0 are forced to '0' (indicate 6 buttons)
-     * 6 TH = 1 : ?1CBMXYZ    Extra buttons returned in D3-0
-     * 7 TH = 0 : ?0SA1111    D3-0 are forced to '1'
-     * (0 TH = 1 : ?1CBRLDU    3-button pad return value) (default state)
-     */
-    public enum SixButtonState {
-        CBRLDU_0,
-        SA00DU_1,
-        CBRLDU_2,
-        SA00DU_3,
-        CBRLDU_4,
-        SA0000_5,
-        CBMXYZ_6,
-        SA1111_7;
-
-        public static final SixButtonState[] vals = SixButtonState.values();
-    }
-
-    static class MdPadContext {
-        int control = 0, //SGDK needs 0 here, otherwise it is considered a RESET
-                data, readMask, readStep;
-        final int player;
-        int latestWriteCycleCounter;
-
-        MdPadContext(int p) {
-            this.player = p;
-        }
-
-        @Override
-        public String toString() {
-            return new StringJoiner(", ", MdPadContext.class.getSimpleName() + "[", "]")
-                    .add("control=" + control)
-                    .add("data=" + data)
-                    .add("readMask=" + readMask)
-                    .add("readStep=" + readStep)
-                    .add("player=" + player)
-                    .add("latestWriteCycleCounter=" + latestWriteCycleCounter)
-                    .toString();
-        }
-    }
-
-    private static final int DATA_TH_LOW = 0, DATA_TH_HIGH = 0x40, TH_MASK = 0x40, CTRL_PIN_INPUT = 0, CTRL_PIN_OUTPUT = 0x40;
-
-    private static final Predicate<Integer> isCtrlThInput = v -> (v & TH_MASK) == CTRL_PIN_INPUT;
-    private static final Predicate<Integer> isDataThHigh = v -> (v & TH_MASK) == DATA_TH_HIGH;
 
     protected final MdPadContext ctx1 = new MdPadContext(1);
     protected final MdPadContext ctx2 = new MdPadContext(2);
