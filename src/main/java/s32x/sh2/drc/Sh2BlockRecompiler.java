@@ -77,7 +77,7 @@ public class Sh2BlockRecompiler {
     }
 
     public Runnable createDrcClass(Sh2Block block, Sh2DrcContext drcCtx) {
-        String blockClass = drcPackage + "." + drcCtx.sh2Ctx.sh2TypeCode + "_" + th(block.prefetchPc)
+        String blockClass = drcPackage + "." + drcCtx.sh2Ctx.sh2ShortCode + "_" + th(block.prefetchPc)
                 + "_" + th(block.hashCodeWords) + "_" + System.nanoTime();
         memoryClass = drcCtx.memory instanceof Sh2BusImpl ? Sh2BusImpl.class : Sh2Bus.class;
         Runnable r;

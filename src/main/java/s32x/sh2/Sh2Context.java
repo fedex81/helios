@@ -22,7 +22,7 @@ import java.util.StringJoiner;
 public class Sh2Context implements Device, Serializable {
 
     @Serial
-    private static final long serialVersionUID = -4974422545596588148L;
+    private static final long serialVersionUID = -5401399583243385001L;
 
     final static int NUM_REG = 16;
     public static int burstCycles = 1;
@@ -43,14 +43,13 @@ public class Sh2Context implements Device, Serializable {
     public int cycles_ran;
 
     public transient CpuDeviceAccess cpuAccess;
-    public final String sh2TypeCode;
     public boolean delaySlot;
     public final boolean debug;
     public transient FetchResult fetchResult;
 
     public transient Sh2DeviceContext devices;
 
-    public transient final String sh2ShortCode;
+    public final String sh2ShortCode;
 
     public Sh2Context(CpuDeviceAccess cpuAccess) {
         this(cpuAccess, false);
@@ -60,7 +59,6 @@ public class Sh2Context implements Device, Serializable {
         this.registers = new int[NUM_REG];
         this.cpuAccess = cpuAccess;
         this.sh2ShortCode = cpuAccess.cpuShortCode;
-        this.sh2TypeCode = cpuAccess.name().substring(0, 1);
         this.fetchResult = new FetchResult();
         this.fetchResult.block = Sh2Block.INVALID_BLOCK;
         this.debug = debug;
@@ -82,8 +80,8 @@ public class Sh2Context implements Device, Serializable {
     }
 
     public void loadContext(Sh2Context ctx) {
-        assert ctx.sh2TypeCode.equals(sh2TypeCode);
-        cpuAccess = CpuDeviceAccess.fromCpuCode(sh2TypeCode);
+        assert ctx.sh2ShortCode.equals(sh2ShortCode);
+        cpuAccess = CpuDeviceAccess.fromCpuCode(ctx.sh2ShortCode);
         System.arraycopy(ctx.registers, 0, registers, 0, registers.length);
         PC = ctx.PC;
         opcode = ctx.opcode;
@@ -119,7 +117,7 @@ public class Sh2Context implements Device, Serializable {
                 .add("cycles=" + cycles)
                 .add("cycles_ran=" + cycles_ran)
                 .add("cpuAccess=" + cpuAccess)
-                .add("sh2TypeCode='" + sh2TypeCode + "'")
+                .add("sh2TypeCode='" + sh2ShortCode + "'")
                 .add("delaySlot=" + delaySlot)
                 .add("debug=" + debug)
                 .add("fetchResult=" + fetchResult)
