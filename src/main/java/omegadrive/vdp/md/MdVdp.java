@@ -235,21 +235,6 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     }
 
     @Override
-    public boolean isIe0() {
-        return ie0;
-    }
-
-    @Override
-    public boolean isIe1() {
-        return ie1;
-    }
-
-    @Override
-    public boolean isIe2() {
-        return ie2;
-    }
-
-    @Override
     public int getRegisterData(int reg) {
         return registers[reg];
     }
@@ -592,10 +577,27 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
         m3 = newM3;
     }
 
+    private void updateIe0(boolean newIe0) {
+        if (ie0 != newIe0) {
+            ie0 = newIe0;
+            fireVdpEvent(VdpEvent.VDP_IE0_VINT, ie0);
+            if (verbose) LOG.info("Update ie0 register: {}, {}", newIe0 ? 1 : 0, getVdpStateString());
+        }
+    }
+
     private void updateIe1(boolean newIe1) {
         if (ie1 != newIe1) {
             ie1 = newIe1;
+            fireVdpEvent(VdpEvent.VDP_IE1_HINT, ie1);
             if (verbose) LOG.info("Update ie1 register: {}, {}", newIe1 ? 1 : 0, getVdpStateString());
+        }
+    }
+
+    private void updateIe2(boolean newIe2) {
+        if (ie2 != newIe2) {
+            ie2 = newIe2;
+            fireVdpEvent(VdpEvent.VDP_IE2_EXT_INT, ie2);
+            if (verbose) LOG.info("Update ie2 register: {}, {}", newIe2 ? 1 : 0, getVdpStateString());
         }
     }
 
@@ -671,7 +673,7 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
                     if (verbose) LOG.debug("128kb VRAM: {}", exVram);
                 }
                 displayEnable = bitSetTest(data, 6);
-                ie0 = bitSetTest(data, 5);
+                updateIe0(bitSetTest(data, 5));
                 m1 = bitSetTest(data, 4);
                 m2 = bitSetTest(data, 3);
                 boolean mode5 = bitSetTest(data, 2);
@@ -708,7 +710,7 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
                 updateSatLocation();
                 break;
             case MODE_3:
-                ie2 = bitSetTest(data, 3);
+                updateIe2(bitSetTest(data, 3));
                 break;
             default:
                 break;

@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 
 import java.util.Objects;
 
-import static omegadrive.bus.md.BusArbiter.isVdpVInt;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess;
 
 public interface BusArbiter extends Device, BaseVdpProvider.VdpEventListener {
@@ -85,10 +84,6 @@ public interface BusArbiter extends Device, BaseVdpProvider.VdpEventListener {
             public void addCyclePenalty(CpuType cpuType, int value) {
             }
         };
-    }
-
-    static boolean isVdpVInt(MdVdpProvider vdp) {
-        return vdp.getVip() && vdp.isIe0();
     }
 }
 
@@ -270,12 +265,15 @@ class BusArbiterImpl implements BusArbiter {
     }
 
     private void checkInterrupts68k() {
-        if (isVdpVInt(vdp) || isVdpHInt()) {
+        if (anyHint) {
             int68k = IntState.PENDING;
-            vdpLevel |= isVdpVInt(vdp) ? (VDP_IPL1 + VDP_IPL2) : isVdpHInt() ? VDP_IPL2 : 0;
+            vdpLevel |= vint ? (VDP_IPL1 + VDP_IPL2) : hint ? VDP_IPL2 : 0;
             if (verbose) logInfo("68k int{}, vdpLevel{}: {}", getLevel68k(), vdpLevel, int68k);
         }
     }
+
+    private boolean hip, vip, ie0, ie1;
+    private boolean vint, hint, anyHint;
 
     @Override
     public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
@@ -287,7 +285,29 @@ class BusArbiterImpl implements BusArbiter {
             case NEW_FRAME:
                 if (verbose) logInfo("NewFrame");
                 break;
+            case VDP_VINT_PENDING:
+                vip = (Boolean) value;
+                recalc();
+                break;
+            case VDP_HINT_PENDING:
+                hip = (Boolean) value;
+                recalc();
+                break;
+            case VDP_IE0_VINT:
+                ie0 = (Boolean) value;
+                recalc();
+                break;
+            case VDP_IE1_HINT:
+                ie1 = (Boolean) value;
+                recalc();
+                break;
         }
+    }
+
+    private void recalc() {
+        hint = ie1 && hip;
+        vint = ie0 && vip;
+        anyHint = hint || vint;
     }
 
     @Override
@@ -296,15 +316,9 @@ class BusArbiterImpl implements BusArbiter {
         state68k = CpuState.HALTED;
         if (verbose) logInfo("68k State {} , vdp {}", state68k, vdpBusyState);
     }
-
-
-    private boolean isVdpHInt() {
-        return vdp.getHip() && vdp.isIe1();
-    }
-
     private int getLevel68k() {
         //TODO titan2 this can return 0, why investigate
-        return isVdpVInt(vdp) ? M68kProvider.VBLANK_INTERRUPT_LEVEL : (isVdpHInt() ? M68kProvider.HBLANK_INTERRUPT_LEVEL : 0);
+        return vint ? M68kProvider.VBLANK_INTERRUPT_LEVEL : (hint ? M68kProvider.HBLANK_INTERRUPT_LEVEL : 0);
     }
 
     private void logInfo(String str, Object... args) {

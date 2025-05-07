@@ -166,9 +166,8 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
         }
         if (vCounterInternal == vdpCounterMode.vBlankSet &&
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
-            vIntPending = true;
+            setvIntPending(true);
             vdpEvent.fireVdpEvent(INTERRUPT, BusArbiter.InterruptEvent.Z80_INT_ON);
-            vdpEvent.fireVdpEvent(VDP_VINT_PENDING, true);
             if (verbose) LOG.info("Set VIP: true");
         } else if (vCounterInternal == vdpCounterMode.vBlankSet + 1 &&
                 hCounterInternal == VINT_SET_ON_HCOUNTER_VALUE) {
@@ -189,7 +188,7 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
             resetHLinesCounter();
         }
         if (hLinePassed < 0) {
-            hIntPending = true;
+            setHIntPending(true);
             if (verbose) LOG.info("Set HIP: true, hLinePassed: {}", hLinePassed);
             vdpEvent.fireVdpEvent(H_LINE_UNDERFLOW, vCounterInternal);
             resetHLinesCounter();
@@ -233,8 +232,11 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
     }
 
     public void setvIntPending(boolean vIntPending) {
-        this.vIntPending = vIntPending;
-        if (verbose) LOG.info("Set VIP: {}", vIntPending);
+        if (this.vIntPending != vIntPending) {
+            this.vIntPending = vIntPending;
+            if (verbose) LOG.info("Set VIP: {}", vIntPending);
+            vdpEvent.fireVdpEvent(VDP_VINT_PENDING, vIntPending);
+        }
     }
 
     public boolean isHIntPending() {
@@ -242,8 +244,11 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
     }
 
     public void setHIntPending(boolean hIntPending) {
-        if (verbose) LOG.info("Set HIP: {}", hIntPending);
-        this.hIntPending = hIntPending;
+        if (hIntPending != this.hIntPending) {
+            if (verbose) LOG.info("Set HIP: {}", hIntPending);
+            this.hIntPending = hIntPending;
+            vdpEvent.fireVdpEvent(VDP_HINT_PENDING, hIntPending);
+        }
     }
 
     /**

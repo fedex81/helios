@@ -105,7 +105,7 @@ public class BusArbiterTest {
         vdp.resetVideoMode(true);
         do {
             MdVdpTestUtil.runVdpSlot(vdp);
-            if (BusArbiter.isVdpVInt(vdp) && hCounterPending < 0) {
+            if (MdVdpTestUtil.isVdpVInt(vdp) && hCounterPending < 0) {
                 hCounterPending = vdp.getHCounter();
                 vCounterPending = vdp.getVCounter();
             }
@@ -266,7 +266,7 @@ public class BusArbiterTest {
         bus.ackInterrupt68k(4); //simulate the CPU acking level 4
 
         //check that vint was accepted instead of hint
-        Assert.assertFalse(vdp.getVip());
+        Assert.assertFalse(MdVdpTestUtil.getVip(vdp));
         Assert.assertTrue(vdp.getHip());
     }
 
@@ -308,7 +308,7 @@ public class BusArbiterTest {
         bus.ackInterrupt68k(6); //simulate the CPU acking level 6
 
         //check that vint was accepted
-        Assert.assertFalse(vdp.getVip());
+        Assert.assertFalse(MdVdpTestUtil.getVip(vdp));
         Assert.assertTrue(vdp.getHip());
     }
 

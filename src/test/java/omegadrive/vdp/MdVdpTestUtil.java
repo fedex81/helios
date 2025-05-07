@@ -137,11 +137,21 @@ public class MdVdpTestUtil {
     }
 
     public static boolean isVBlank(MdVdpProvider vdp) {
-        return (vdp.readVdpPortWord(CONTROL) & 0x8) == 8;
+        return (vdp.readVdpPortWord(CONTROL) & 0x8) > 0;
     }
 
     public static boolean isHBlank(MdVdpProvider vdp) {
-        return (vdp.readVdpPortWord(CONTROL) & 0x4) == 4;
+        return (vdp.readVdpPortWord(CONTROL) & 0x4) > 0;
+    }
+
+    public static boolean isIe0(MdVdpProvider vdp) {
+        int val = vdp.getRegisterData(MODE_2);
+        return (val & 0x20) > 0;
+    }
+
+    public static boolean getVip(MdVdpProvider vdp) {
+//        return (vdp.readVdpPortWord(CONTROL) & 0x40) > 0;
+        return vdp.getVip();
     }
 
     public static void setH32(MdVdpProvider vdp) {
@@ -178,6 +188,10 @@ public class MdVdpTestUtil {
         int val = vdp.getRegisterData(MODE_2) & toResetMaskFn.apply(DMA_EN_BIT_POS);
         int den = en ? toMaskFn.apply(DMA_EN_BIT_POS) : 0;
         vdp.writeControlPort(CTRL_PORT_MODE_2 | (val | den));
+    }
+
+    public static boolean isVdpVInt(MdVdpProvider vdp) {
+        return MdVdpTestUtil.getVip(vdp) && isIe0(vdp);
     }
 
     public static String printVdpMemory(VdpMemoryInterface memoryInterface, MdVdpProvider.VdpRamType type, int from, int to) {

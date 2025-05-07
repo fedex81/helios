@@ -111,7 +111,7 @@ public class MC68000Wrapper implements M68kProvider {
 
     public void setStop(boolean value) {
         if (stop != value) {
-            LOG.info("{} stop: {}", cpu, value);
+            LogHelper.logWarnOnce(LOG, "{} stop: {}", cpu, value);
         }
         this.stop = value;
     }
@@ -179,7 +179,7 @@ public class MC68000Wrapper implements M68kProvider {
             @Override
             public void stop() {
                 setStop(true);
-                LOG.info("{} Stop: true", cpu);
+                LogHelper.logWarnOnceForce(LOG, "{} Stop: true", cpu);
             }
         };
     }
