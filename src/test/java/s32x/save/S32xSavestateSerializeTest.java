@@ -62,6 +62,10 @@ public class S32xSavestateSerializeTest {
     /**
      * Has the serialization format been changed?
      * Let's try to deserialize a byte stream, if it fails something is broken.
+     *
+     * Find the serialVersionUID in the bytestream
+     * System.out.println(Long.toHexString(-4974422545596588148L));
+     * look for the bytes
      */
     @ParameterizedTest
     @MethodSource("fileProvider")
@@ -78,7 +82,7 @@ public class S32xSavestateSerializeTest {
 
         ignoreKnownIssues(stateHandler, saveHandler);
 
-//        FileUtil.writeFileSafe(Paths.get(p.getParent().toAbsolutePath().toString(), "test.bin"), saveHandler.getData());
+//        FileUtil.writeFileSafe(Paths.get(p.getParent().toAbsolutePath().toString(), p.getFileName().toString() + ".new"), saveHandler.getData());
         Assertions.assertArrayEquals(stateHandler.getData(), saveHandler.getData());
 
         //check fetchResult has been invalidated
