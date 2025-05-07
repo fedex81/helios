@@ -83,8 +83,8 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     //	Reg 0
     //	Left Column Blank
     boolean lcb;
-    //	Enable HINT
-    boolean ie1;
+    //	Enable VINT, HINT, EXT_INT
+    boolean ie0, ie1, ie2;
     //	HV Counter Latch
     boolean m3;
 
@@ -96,8 +96,6 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     //filled with the backdrop color. During this time, you can freely access
     //VDP memory with no limitations on the number of writes per line.
     boolean displayEnable;
-    //	Enable VINT
-    boolean ie0;
     //	Enable DMA
     boolean m1;
     //	Enable V30 Mode
@@ -244,6 +242,11 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     @Override
     public boolean isIe1() {
         return ie1;
+    }
+
+    @Override
+    public boolean isIe2() {
+        return ie2;
     }
 
     @Override
@@ -703,6 +706,9 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
                 break;
             case SPRITE_TABLE_LOC:
                 updateSatLocation();
+                break;
+            case MODE_3:
+                ie2 = bitSetTest(data, 3);
                 break;
             default:
                 break;

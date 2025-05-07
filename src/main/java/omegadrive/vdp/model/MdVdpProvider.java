@@ -180,9 +180,14 @@ public interface MdVdpProvider extends BaseVdpProvider {
 
     void setAddressRegister(int value);
 
+    //VINT
     boolean isIe0();
 
+    //HINT
     boolean isIe1();
+
+    //EXT_INT
+    boolean isIe2();
 
     void setDmaFlag(int value);
 
