@@ -32,7 +32,9 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.MdJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
+import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Util;
@@ -64,6 +66,15 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     protected static final int SVP_CYCLES = 100;
     protected static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
     static final int SVP_CYCLES_MASK = SVP_CYCLES - 1;
+
+    private static final int FAST_FM_DIV = 128;
+    private static final int FAST_FM_DIV_MASK = FAST_FM_DIV - 1;
+
+    private boolean isNuke;
+
+    static {
+        BufferUtil.assertPowerOf2Minus1("FAST_FM_DIV_MASK", FAST_FM_DIV_MASK);
+    }
 
     private final static Logger LOG = LogHelper.getLogger(Megadrive.class.getSimpleName());
 
@@ -111,6 +122,7 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         SvpMapper.ssp16 = Ssp16.NO_SVP;
         memView.reset();
         memView = createMemView();
+        isNuke = sound.getFm() instanceof Ym2612Nuke;
     }
 
     protected void loop() {
@@ -119,9 +131,7 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
             run68k();
             runZ80();
             runFM();
-            if (hasSvp && (cycleCounter & SVP_CYCLES_MASK) == 0) {
-                ssp16.ssp1601_run(SVP_RUN_CYCLES);
-            }
+            if (hasSvp) runSvp();
             //this should be last as it could change the counter
             runVdp();
             cycleCounter++;
@@ -169,10 +179,19 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
             assert MdRuntimeData.resetCpuDelayExt() == 0;
         }
     }
-
     protected final void runFM() {
-        if ((cycleCounter & 1) == 0 && (cycleCounter % FM_DIVIDER) == 0) { //perf, avoid some divs
+        if (isNuke) {
+            if ((cycleCounter & 1) == 0 && (cycleCounter % FM_DIVIDER) == 0) { //perf, avoid some divs
+                bus.getFm().tick();
+            }
+        } else if ((cycleCounter & FAST_FM_DIV_MASK) == 0) {
             bus.getFm().tick();
+        }
+    }
+
+    protected final void runSvp() {
+        if ((cycleCounter & SVP_CYCLES_MASK) == 0) {
+            ssp16.ssp1601_run(SVP_RUN_CYCLES);
         }
     }
 
@@ -185,6 +204,7 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         if (force || displayContext.videoMode != vdp.getVideoMode()) {
             displayContext.videoMode = vdp.getVideoMode();
             double microsPerTick = getMicrosPerTick();
+            microsPerTick = !isNuke ? microsPerTick * FAST_FM_DIV / FM_DIVIDER : microsPerTick;
             sound.getFm().setMicrosPerTick(microsPerTick);
             targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
             LOG.info("Video mode changed: {}, microsPerTick: {}", displayContext.videoMode, microsPerTick);

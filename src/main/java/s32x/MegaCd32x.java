@@ -8,12 +8,14 @@ import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cpu.m68k.M68kProvider;
-import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.util.*;
+import omegadrive.util.LogHelper;
+import omegadrive.util.MdRuntimeData;
+import omegadrive.util.Util;
+import omegadrive.util.VideoMode;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 import s32x.bus.S32xBusIntf;
@@ -91,12 +93,11 @@ public class MegaCd32x extends Md32x {
     protected void loop() {
         updateVideoMode(true);
         assert cycleCounter == 1;
-        isNuke = sound.getFm() instanceof Ym2612Nuke;
         do {
             run68k();
             runSub68k();
             runZ80();
-            runFmFaster();
+            runFM();
             runSh2();
             runDevices();
             //this should be last as it could change the counter
@@ -104,26 +105,6 @@ public class MegaCd32x extends Md32x {
             cycleCounter++;
         } while (!futureDoneFlag);
     }
-
-    private static final int ACTUAL_FM_DIV = 128;
-    private static final int ACTUAL_FM_DIV_MASK = ACTUAL_FM_DIV - 1;
-
-    private boolean isNuke;
-
-    static {
-        BufferUtil.assertPowerOf2Minus1("ACTUAL_FM_DIV_MASK", ACTUAL_FM_DIV_MASK);
-    }
-
-    protected final void runFmFaster() {
-        if (isNuke) {
-            super.runFM();
-            return;
-        }
-        if ((cycleCounter & ACTUAL_FM_DIV_MASK) == 0) {
-            bus.getFm().tick();
-        }
-    }
-
     protected void runSub68k() {
         while (nextSub68kCycle <= cycleCounter) {
             boolean canRun = !subCpu.isStopped();// && !MC68000Wrapper.subCpuBusHalt;
@@ -147,9 +128,6 @@ public class MegaCd32x extends Md32x {
     protected void updateVideoMode(boolean force) {
         VideoMode prev = displayContext.videoMode;
         super.updateVideoMode(force);
-        if (!isNuke) {
-            sound.getFm().setMicrosPerTick(getMicrosPerTick() * ACTUAL_FM_DIV / FM_DIVIDER);
-        }
         //Mcd stuff
         if (force || prev != vdp.getVideoMode()) {
             assert displayContext.videoMode == vdp.getVideoMode();

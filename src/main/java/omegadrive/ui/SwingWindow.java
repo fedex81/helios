@@ -473,7 +473,7 @@ public class SwingWindow implements DisplayWindow {
     private void showFpsIcon(double fps, Optional<String> explain) {
         long fpsr = Math.round(fps);
         int limit = mediaSpec.getRegion().getFps() - 1;
-        String htmlColor = fpsr < limit ? "red" : "green";
+        String htmlColor = fpsr < limit ? "red" : "lime";
         String s = "<html><font size=\"4\" color=\"" + htmlColor + "\"><b>" + fpsr + "</b></font></html>";
         fpsLabel.setText(s);
         explain.ifPresent(fpsLabel::setToolTipText);
