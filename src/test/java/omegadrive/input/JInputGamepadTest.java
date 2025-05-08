@@ -19,7 +19,6 @@
 
 package omegadrive.input;
 
-import omegadrive.input.swing.GamepadSetupView;
 import omegadrive.util.Util;
 
 import java.io.File;
@@ -41,17 +40,15 @@ public class JInputGamepadTest {
         System.setProperty("net.java.games.input.librarypath", lib);
         InputProvider inputProvider = createInstance(createTestJoypadProvider());
         List<String> l = inputProvider.getAvailableControllers();
-        GamepadSetupView gsw = GamepadSetupView.createInstance(inputProvider);
         if (l.size() > 2) {
             inputProvider.setPlayerController(PlayerNumber.P1, inputProvider.getAvailableControllers().get(2));
-            pollInputs(inputProvider, gsw);
+            pollInputs(inputProvider);
         }
     }
 
-    private static void pollInputs(InputProvider inputProvider, GamepadSetupView gsw) {
+    private static void pollInputs(InputProvider inputProvider) {
         while (true) {
-            inputProvider.handleAllEvents(gsw);
-            gsw.updateDone();
+            inputProvider.handleEvents();
             Util.sleep(20);
         }
     }
