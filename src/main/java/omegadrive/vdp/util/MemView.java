@@ -24,9 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
-import static omegadrive.bus.model.MdMainBusProvider.ADDRESS_UPPER_LIMIT;
-import static omegadrive.bus.model.MdMainBusProvider.M68K_RAM_MASK;
+import static omegadrive.bus.model.MdMainBusProvider.ADDRESS_RAM_MAP_START;
 import static omegadrive.bus.model.MdZ80BusProvider.END_RAM;
+import static omegadrive.memory.MemoryProvider.M68K_RAM_SIZE;
 import static omegadrive.vdp.model.MdVdpProvider.*;
 import static omegadrive.vdp.util.MemView.MemViewOwner.*;
 
@@ -75,6 +75,10 @@ public class MemView implements Device, UpdatableViewer {
 
         int getEnd();
 
+        default int getBusBaseAddress() {
+            return 0;
+        }
+
         MemViewOwner getOwner();
 
         default VdpRamType getVdpRamType() {
@@ -86,24 +90,34 @@ public class MemView implements Device, UpdatableViewer {
         MD_VDP_VRAM(MD_VDP, 0, VDP_VRAM_SIZE, VdpRamType.VRAM),
         MD_VDP_VSRAM(MD_VDP, 0, VDP_VSRAM_SIZE, VdpRamType.VSRAM),
         MD_VDP_CRAM(MD_VDP, 0, VDP_CRAM_SIZE, VdpRamType.CRAM),
-        M68K_SDRAM(M68K, ADDRESS_UPPER_LIMIT - M68K_RAM_MASK, ADDRESS_UPPER_LIMIT + 1),
+        M68K_SDRAM(M68K, 0, M68K_RAM_SIZE, ADDRESS_RAM_MAP_START),
         Z80_RAM(Z80, 0, END_RAM / 2),
         ;
 
-        private int start, end;
-        private MemViewOwner owner;
+        private final int start, end;
+        private final MemViewOwner owner;
 
-        private VdpRamType vdpRamType;
+        private final int busBaseAddress;
 
+        private final VdpRamType vdpRamType;
+
+        MdMemViewType(MemViewOwner c, int s, int e, int base) {
+            this(c, s, e, null, base);
+        }
         MdMemViewType(MemViewOwner c, int s, int e) {
-            this(c, s, e, null);
+            this(c, s, e, null, 0);
         }
 
         MdMemViewType(MemViewOwner c, int s, int e, VdpRamType v) {
+            this(c, s, e, v, 0);
+        }
+
+        MdMemViewType(MemViewOwner c, int s, int e, VdpRamType v, int baseAddr) {
             start = s;
             end = e;
             owner = c;
             vdpRamType = v;
+            busBaseAddress = baseAddr;
         }
 
         @Override
@@ -114,6 +128,11 @@ public class MemView implements Device, UpdatableViewer {
         @Override
         public int getEnd() {
             return end;
+        }
+
+        @Override
+        public int getBusBaseAddress() {
+            return busBaseAddress;
         }
 
         @Override
@@ -172,7 +191,7 @@ public class MemView implements Device, UpdatableViewer {
         readerMap = Map.of(
                 MCD_SUB_CPU, (v, i) -> bus.read(i, Size.BYTE),
                 SH2, (v, i) -> bus.read(i, Size.BYTE),
-                M68K, (v, i) -> m.read(i, Size.BYTE),
+                M68K, (v, i) -> m.read(v.getBusBaseAddress() + i, Size.BYTE),
                 Z80, (v, i) -> z80b.read(i, Size.BYTE),
                 MD_VDP, (v, i) -> (int) mdVdpMem.read(v, i),
                 SH2_WORD, (v, i) -> bus.read(i, Size.WORD)

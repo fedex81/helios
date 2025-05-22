@@ -105,6 +105,8 @@ public class CpuFastDebug {
     private final CpuDebugInfoProvider debugInfoProvider;
     private int delay;
 
+    private boolean isBusy;
+
     private final String logHead;
     private final static boolean VERBOSE = false;
     public static final int CK_DELAY_ON_LOOP = 50;
@@ -124,7 +126,7 @@ public class CpuFastDebug {
     }
 
     public void resetWrapper() {
-        LOG.warn("Resetting known and visited PCs!!");
+        LOG.warn("{} Resetting known and visited PCs!!", logHead);
         for (int i = 0; i < ctx.pcAreasMaskMap.length; i++) {
             int pcAreaSize = ctx.pcAreasMaskMap[i] + 1;
             if (pcAreaSize > 1) {
@@ -219,7 +221,7 @@ public class CpuFastDebug {
                     loops++;
                     if (!looping && loops > pcHistorySize) {
                         handleLoop(pc, opcode);
-                        looping = true;
+                        looping = isBusy;
                     }
                 } else { //opcodes are different
                     handleStopLoop(pc);
@@ -233,6 +235,7 @@ public class CpuFastDebug {
             FRONT = (FRONT + 1) & 1;
             BACK = (BACK + 1) & 1;
         }
+        assert looping ? delay > 0 : delay == 0 : looping + "," + delay;
         return delay;
     }
 
@@ -243,24 +246,27 @@ public class CpuFastDebug {
         if (!isKnownLoop) {
             if (VERBOSE) {
                 String s = debugInfoProvider.getInstructionOnly();
-                LOG.info("Stop loop: {}", s);
-                System.out.println("Stop loop: " + s);
+                LOG.info("{} Stop loop: {}", logHead, s);
+                System.out.println(logHead + " Stop loop: " + s);
             }
         }
     }
 
     private void handleLoop(int pc, int opcode) {
         final int[] opcodes = Arrays.stream(opcodesHistory[FRONT]).distinct().sorted().toArray();
-        final boolean isBusy = isBusyLoop(ctx.isLoopOpcode, opcodes);
+        isBusy = isBusyLoop(ctx.isLoopOpcode, opcodes);
         delay = isBusy ? CK_DELAY_ON_LOOP : 0;
         final int area = pc >>> ctx.pcAreaShift;
         final int mask = ctx.pcAreasMaskMap[area];
         final int pcMasked = pc & mask;
         PcInfoWrapper piw = pcInfoWrapper[area][pcMasked];
         if (piw != NOT_VISITED && piw.pcLoops > 0) {
+            if (!isKnownLoop && isBusy) {
+                printLoopInfo();
+            }
             isKnownLoop = true;
             if (VERBOSE && isBusy) {
-                LOG.info("Known loop at: {}, busy: {}", th(pc), isBusy);
+                LOG.info("{} Known loop at: {}, busy: {}", logHead, th(pc), isBusy);
                 System.out.println("Known loop at: " + th(pc) + ", busy: " + isBusy);
             }
             return;
@@ -272,16 +278,18 @@ public class CpuFastDebug {
         isKnownLoop = false;
         loopsCounter++;
         piw.pcLoops = loopsCounter;
-        if (true) {
+        if (false) {
             boolean ignore = isIgnore(ctx.isIgnoreOpcode, opcodes);
             if (!ignore) {
-                int[] pcs = Arrays.stream(pcHistory[FRONT]).distinct().sorted().toArray();
-                String s = Arrays.stream(pcs).mapToObj(debugInfoProvider::getInstructionOnly).collect(Collectors.joining("\n"));
-//                if(pcs.length < 4 && !isBusy) {
-                System.out.println(pcs.length + " Loop, isBusy: " + isBusy + "\n" + s + "\n" + debugInfoProvider.getCpuState(""));
-//                }
+                printLoopInfo();
             }
         }
+    }
+
+    private void printLoopInfo() {
+        int[] pcs = Arrays.stream(pcHistory[FRONT]).distinct().sorted().toArray();
+        String s = Arrays.stream(pcs).mapToObj(debugInfoProvider::getInstructionOnly).collect(Collectors.joining("\n"));
+        System.out.println(logHead + "\t" + pcs.length + " Loop, isBusy: " + isBusy + "\n" + s + "\n" + debugInfoProvider.getCpuState(""));
     }
 
     public static boolean isBusyLoop(final Predicate<Integer> isLoopOpcode, final int[] opcodes) {

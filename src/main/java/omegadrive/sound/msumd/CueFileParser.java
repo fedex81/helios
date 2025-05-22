@@ -8,9 +8,7 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.text.NumberFormat;
 import java.util.function.Function;
 
@@ -44,7 +42,8 @@ public class CueFileParser {
     public static CueSheet parse(Path cueFilePath) {
         CueSheet cueSheet = null;
         try {
-            cueSheet = parse(Files.newInputStream(cueFilePath, StandardOpenOption.READ));
+            //NOTE required by msu-md
+            cueSheet = CueParser.parse(cueFilePath, Charset.defaultCharset());
         } catch (IOException e) {
             LOG.warn("Unable to open BIN/CUE file: {}, {}", cueFilePath, e.getMessage());
         }
