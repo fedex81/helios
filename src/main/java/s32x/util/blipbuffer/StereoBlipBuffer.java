@@ -1,8 +1,7 @@
 package s32x.util.blipbuffer;
 
-import s32x.pwm.PwmUtil;
-
-import static s32x.pwm.PwmUtil.setSigned16LE;
+import static omegadrive.util.ArrayEndianUtil.setSigned16LE;
+import static omegadrive.util.SoundFilterUtil.dcBlockerLpfMono;
 
 /**
  * StereoBuffer
@@ -116,10 +115,10 @@ public final class StereoBlipBuffer implements BlipBufferIntf {
         }
         assert pos == 0;
         int actualMonoLeft = BlipBufferHelper.readSamples16bitMono(left(), preFilter, pos, countMono);
-        prevSampleL = PwmUtil.dcBlockerLpfMono(preFilter, postFilterL, prevSampleL, actualMonoLeft);
+        prevSampleL = dcBlockerLpfMono(preFilter, postFilterL, prevSampleL, actualMonoLeft);
         int actualMonoRight = BlipBufferHelper.readSamples16bitMono(right(), preFilter, pos, countMono);
         assert actualMonoRight == actualMonoLeft;
-        prevSampleR = PwmUtil.dcBlockerLpfMono(preFilter, postFilterR, prevSampleR, actualMonoRight);
+        prevSampleR = dcBlockerLpfMono(preFilter, postFilterR, prevSampleR, actualMonoRight);
         for (int i = 0; i < countMono; i++) {
             setSigned16LE((short) postFilterL[i], out, pos); //left
             setSigned16LE((short) postFilterR[i], out, pos + 2); //right

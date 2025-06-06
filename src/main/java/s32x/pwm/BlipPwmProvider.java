@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static omegadrive.sound.javasound.AbstractSoundManager.audioFormat;
 import static omegadrive.util.Util.th;
 import static s32x.pwm.PwmUtil.*;
 
@@ -68,7 +69,7 @@ public class BlipPwmProvider implements PwmProvider {
     public BlipPwmProvider(RegionDetector.Region region) {
         ref.set(new BlipBufferContext());
         frameIntervalMs = region.getFrameIntervalMs();
-        dataLine = SoundUtil.createDataLine(pwmAudioFormat);
+        dataLine = SoundUtil.createDataLine(audioFormat);
         sh2ClockMhz = region == RegionDetector.Region.EUROPE ? PAL_SH2CLOCK_MHZ : NTSC_SH2CLOCK_MHZ;
         updatePwmCycle(1042);
     }
@@ -80,7 +81,7 @@ public class BlipPwmProvider implements PwmProvider {
             return;
         }
         BlipBufferIntf blip = new StereoBlipBuffer("pwm");
-        blip.setSampleRate((int) pwmAudioFormat.getSampleRate(), BUF_SIZE_MS);
+        blip.setSampleRate((int) audioFormat.getSampleRate(), BUF_SIZE_MS);
         blip.setClockRate((int) (sh2ClockMhz / cycle));
 
         BlipBufferContext bbc = new BlipBufferContext();
@@ -88,7 +89,7 @@ public class BlipPwmProvider implements PwmProvider {
         bbc.scale = (Short.MAX_VALUE << 1) / (float) cycle;
         bbc.inputClocksForInterval = (int) (1.0 * blip.clockRate() * frameIntervalMs / 1000.0);
 
-        int outSamplesPerInterval = (int) (pwmAudioFormat.getSampleRate() * BUF_SIZE_MS / 1000.0);
+        int outSamplesPerInterval = (int) (audioFormat.getSampleRate() * BUF_SIZE_MS / 1000.0);
         preFilter = new int[outSamplesPerInterval];
         bbc.lineBuffer = new byte[0];
         bbc.blipBuffer = blip;
@@ -167,10 +168,10 @@ public class BlipPwmProvider implements PwmProvider {
     }
 
     private void logInfo(BlipBufferContext ctx) {
-        int outSamplesPerInterval = (int) (pwmAudioFormat.getSampleRate() * BUF_SIZE_MS / 1000.0);
+        int outSamplesPerInterval = (int) (audioFormat.getSampleRate() * BUF_SIZE_MS / 1000.0);
         int inSamplesPerInterval = (int) (ctx.blipBuffer.clockRate() * BUF_SIZE_MS / 1000.0);
         LOG.info("{}\nOutput sampleRate: {}, Input sampleRate: {}, outputBufLenMs: {}, outputBufLenSamples: {}" +
-                        ", inputBufLenSamples: {}", ctx, pwmAudioFormat.getSampleRate(), ctx.blipBuffer.clockRate(), BUF_SIZE_MS,
+                        ", inputBufLenSamples: {}", ctx, audioFormat.getSampleRate(), ctx.blipBuffer.clockRate(), BUF_SIZE_MS,
                 outSamplesPerInterval, inSamplesPerInterval);
     }
 

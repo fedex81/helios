@@ -109,4 +109,9 @@ public class ArrayEndianUtil {
     public static int getNibbleInByteBE(int byteVal, int nibblePos) {
         return (byteVal >> ((~nibblePos & 1) << 2)) & 0xF;
     }
+
+    public static void setSigned16LE(short value, byte[] data, int startIndex) {
+        data[startIndex] = (byte) value;
+        data[startIndex + 1] = (byte) (value >> 8);
+    }
 }

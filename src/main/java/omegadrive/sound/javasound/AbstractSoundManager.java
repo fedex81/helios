@@ -19,6 +19,7 @@
 
 package omegadrive.sound.javasound;
 
+import com.google.common.collect.ImmutableMap;
 import mcd.pcm.BlipPcmProvider;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
@@ -55,14 +56,17 @@ public abstract class AbstractSoundManager implements SoundProvider {
     private static final int OUTPUT_SAMPLE_SIZE = 16;
     private static final int OUTPUT_CHANNELS = 2;
     public static final AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
+
+    private static final Map<SoundDeviceType, SoundDevice> noSoundMap = ImmutableMap.of(
+            SoundDeviceType.FM, FmProvider.NO_SOUND,
+            SoundDeviceType.PSG, PsgProvider.NO_SOUND,
+            SoundDeviceType.PWM, PwmProvider.NO_SOUND,
+            SoundDeviceType.PCM, PcmProvider.NO_SOUND
+    );
     public volatile boolean close;
 
     protected ExecutorService executorService;
-    protected volatile Map<SoundDeviceType, SoundDevice> soundDeviceMap;
-    protected volatile PsgProvider psg;
-    protected volatile FmProvider fm;
-    protected volatile PwmProvider pwm;
-    protected volatile PcmProvider pcm;
+    protected volatile Map<SoundDeviceType, SoundDevice> soundDeviceMap, activeSoundDeviceMap;
     protected SoundPersister soundPersister;
     protected int fmSize, psgSize;
 
@@ -88,11 +92,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
     @Override
     public void init(RegionDetector.Region region) {
         this.region = region;
-        soundDeviceMap = SysUtil.getSoundDevices(type, region);
-        psg = (PsgProvider) soundDeviceMap.get(SoundDeviceType.PSG);
-        fm = (FmProvider) soundDeviceMap.get(SoundDeviceType.FM);
-        pwm = (PwmProvider) soundDeviceMap.get(SoundDeviceType.PWM);
-        pcm = (PcmProvider) soundDeviceMap.get(SoundDeviceType.PCM);
+        activeSoundDeviceMap = SysUtil.getSoundDevices(type, region);
+        soundDeviceMap = ImmutableMap.copyOf(activeSoundDeviceMap);
         updateSoundDeviceSetup();
         soundPersister = new FileSoundPersister();
         fmSize = SoundProvider.getFmBufferIntSize(audioFormat);
@@ -102,10 +103,13 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     protected void updateSoundDeviceSetup() {
         soundDeviceSetup = 0;
-        soundDeviceSetup |= (fm != FmProvider.NO_SOUND) ? SoundDeviceType.FM.getBit() : 0;
-        soundDeviceSetup |= (psg != PsgProvider.NO_SOUND) ? SoundDeviceType.PSG.getBit() : 0;
-        soundDeviceSetup |= (pwm != PwmProvider.NO_SOUND) ? SoundDeviceType.PWM.getBit() : 0;
-        soundDeviceSetup |= (pcm != PcmProvider.NO_SOUND) ? SoundDeviceType.PCM.getBit() : 0;
+        for (var entry : activeSoundDeviceMap.entrySet()) {
+            SoundDeviceType type = entry.getKey();
+            SoundDevice current = soundDeviceMap.get(type);
+            SoundDevice noSound = noSoundMap.get(type);
+            assert current != null && noSound != null;
+            soundDeviceSetup |= current != noSound ? type.getBit() : 0;
+        }
     }
 
     @Override
@@ -121,22 +125,22 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     @Override
     public PsgProvider getPsg() {
-        return psg;
+        return (PsgProvider) activeSoundDeviceMap.get(SoundDeviceType.PSG);
     }
 
     @Override
     public FmProvider getFm() {
-        return fm;
+        return (FmProvider) activeSoundDeviceMap.get(SoundDeviceType.FM);
     }
 
     @Override
     public PwmProvider getPwm() {
-        return pwm;
+        return (PwmProvider) activeSoundDeviceMap.get(SoundDeviceType.PWM);
     }
 
     @Override
     public PcmProvider getPcm() {
-        return pcm;
+        return (PcmProvider) activeSoundDeviceMap.get(SoundDeviceType.PCM);
     }
 
     @Override
@@ -190,36 +194,18 @@ public abstract class AbstractSoundManager implements SoundProvider {
 //        mutableDeviceList.forEach(d -> d.setEnabled(enabled));
     }
 
-    //SMS only
     @Override
     public void setEnabled(Device device, boolean enabled) {
-        if (fm == device) {
-            boolean isEnabled = fm != FmProvider.NO_SOUND;
-            if (isEnabled != enabled) {
-                this.fm = enabled ? (FmProvider) soundDeviceMap.get(SoundDeviceType.FM) : FmProvider.NO_SOUND;
+        if (device instanceof SoundDevice sd) {
+            SoundDevice noSound = noSoundMap.get(sd.getType());
+            assert noSound != null;
+            boolean isEnabledNow = device != noSound;
+            if (enabled != isEnabledNow) {
+                SoundDevice playDevice = soundDeviceMap.get(sd.getType());
+                SoundDevice currentDevice = enabled ? playDevice : noSound;
+                activeSoundDeviceMap.put(sd.getType(), currentDevice);
                 updateSoundDeviceSetup();
-                LOG.info("FM enabled: {}", enabled);
-            }
-        } else if (psg == device) {
-            boolean isEnabled = psg != PsgProvider.NO_SOUND;
-            if (isEnabled != enabled) {
-                this.psg = (PsgProvider) (enabled ? soundDeviceMap.get(SoundDeviceType.PSG) : PsgProvider.NO_SOUND);
-                updateSoundDeviceSetup();
-                LOG.info("PSG enabled: {}", enabled);
-            }
-        } else if (pwm == device) {
-            boolean isEnabled = pwm != PwmProvider.NO_SOUND;
-            if (isEnabled != enabled) {
-                this.pwm = (PwmProvider) (enabled ? soundDeviceMap.get(SoundDeviceType.PWM) : PwmProvider.NO_SOUND);
-                updateSoundDeviceSetup();
-                LOG.info("PWM enabled: {}", enabled);
-            }
-        } else if (pcm == device) {
-            boolean isEnabled = pcm != PcmProvider.NO_SOUND;
-            if (isEnabled != enabled) {
-                this.pcm = (PcmProvider) (enabled ? soundDeviceMap.get(SoundDeviceType.PCM) : PcmProvider.NO_SOUND);
-                updateSoundDeviceSetup();
-                LOG.info("PCM enabled: {}", enabled);
+                LOG.info("{} enabled: {}", sd.getType(), enabled);
             }
         }
     }

@@ -7,6 +7,8 @@ import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 import s32x.util.blipbuffer.BlipBufferHelper;
 
+import static omegadrive.sound.javasound.AbstractSoundManager.audioFormat;
+import static omegadrive.util.SoundFilterUtil.dcBlockerLpf;
 import static omegadrive.util.Util.th;
 import static s32x.pwm.Pwm.CYCLE_LIMIT;
 import static s32x.pwm.PwmUtil.*;
@@ -35,7 +37,7 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
     private PwmStats stats = NO_STATS;
 
     public S32xPwmProvider(RegionDetector.Region region) {
-        super(pwmAudioFormat);
+        super(audioFormat);
         this.fps = region.getFps();
         this.sh2ClockMhz = region == RegionDetector.Region.EUROPE ? PAL_SH2CLOCK_MHZ : NTSC_SH2CLOCK_MHZ;
         if (collectStats) this.stats = new PwmStats();

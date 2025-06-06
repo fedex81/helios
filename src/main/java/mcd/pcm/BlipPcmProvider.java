@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static omegadrive.sound.javasound.AbstractSoundManager.audioFormat;
 import static omegadrive.util.Util.th;
-import static s32x.pwm.PwmUtil.pwmAudioFormat;
 
 /**
  * Federico Berti
@@ -61,7 +60,7 @@ public class BlipPcmProvider implements PcmProvider {
 
     public BlipPcmProvider(String name, RegionDetector.Region region, double clockRate) {
         ref.set(new BlipBufferContext());
-        dataLine = SoundUtil.createDataLine(pwmAudioFormat);
+        dataLine = SoundUtil.createDataLine(audioFormat);
         this.region = region;
         this.clockRate = clockRate;
         this.instanceId = name + "_" + (int) clockRate;
@@ -148,10 +147,10 @@ public class BlipPcmProvider implements PcmProvider {
     }
 
     private void logInfo(BlipBufferContext ctx) {
-        int outSamplesPerInterval = (int) (pwmAudioFormat.getSampleRate() * BUF_SIZE_MS / 1000.0);
+        int outSamplesPerInterval = (int) (audioFormat.getSampleRate() * BUF_SIZE_MS / 1000.0);
         int inSamplesPerInterval = (int) (ctx.blipBuffer.clockRate() * BUF_SIZE_MS / 1000.0);
         LOG.info("{}: {}\nOutput sampleRate: {}, Input sampleRate: {}, outputBufLenMs: {}, outputBufLenSamples: {}" +
-                        ", inputBufLenSamples: {}", instanceId, ctx, pwmAudioFormat.getSampleRate(), ctx.blipBuffer.clockRate(), BUF_SIZE_MS,
+                        ", inputBufLenSamples: {}", instanceId, ctx, audioFormat.getSampleRate(), ctx.blipBuffer.clockRate(), BUF_SIZE_MS,
                 outSamplesPerInterval, inSamplesPerInterval);
     }
 

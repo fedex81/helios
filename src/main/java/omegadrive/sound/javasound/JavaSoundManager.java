@@ -19,6 +19,7 @@
 
 package omegadrive.sound.javasound;
 
+import omegadrive.sound.SoundDevice;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.util.*;
 import org.slf4j.Logger;
@@ -57,14 +58,14 @@ public class JavaSoundManager extends AbstractSoundManager {
     }
 
     private int playOnceStereo(int fmBufferLenMono) {
-        int fmMonoActual = fm.updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;
+        int fmMonoActual = getFm().updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;
         //if FM is present load a matching number of psg samples
         fmBufferLenMono = (soundDeviceSetup & FM.getBit()) > 0 ? fmMonoActual : fmBufferLenMono;
-        int pwmMonoActual = pwm.updateStereo16(pwm_buf_ints, 0, fmBufferLenMono) >> 1;
-        int pcmMonoActual = pcm.updateStereo16(pcm_buf_ints, 0, fmBufferLenMono) >> 1;
+        int pwmMonoActual = getPwm().updateStereo16(pwm_buf_ints, 0, fmBufferLenMono) >> 1;
+        int pcmMonoActual = getPcm().updateStereo16(pcm_buf_ints, 0, fmBufferLenMono) >> 1;
         fmBufferLenMono = (soundDeviceSetup & PWM.getBit()) > 0 ? pwmMonoActual : fmBufferLenMono;
         fmBufferLenMono = (soundDeviceSetup & PCM.getBit()) > 0 ? pcmMonoActual : fmBufferLenMono;
-        psg.updateMono8(psg_buf_bytes, 0, fmBufferLenMono);
+        getPsg().updateMono8(psg_buf_bytes, 0, fmBufferLenMono);
 
         final int fmBufferLenStereo = fmBufferLenMono << 1;
         /**
@@ -108,8 +109,7 @@ public class JavaSoundManager extends AbstractSoundManager {
                 LOG.error("Unexpected sound error, stopping", e);
             }
             LOG.info("Stopping sound thread");
-            psg.reset();
-            fm.reset();
+            soundDeviceMap.values().forEach(SoundDevice::reset);
         });
     }
 
@@ -146,7 +146,7 @@ public class JavaSoundManager extends AbstractSoundManager {
     @Override
     public void onNewFrame() {
         doStats();
-        fm.onNewFrame();
+        getFm().onNewFrame();
     }
 
     private void doStats() {

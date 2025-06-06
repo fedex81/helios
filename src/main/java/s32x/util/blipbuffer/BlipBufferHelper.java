@@ -1,6 +1,7 @@
 package s32x.util.blipbuffer;
 
-import static s32x.pwm.PwmUtil.setSigned16LE;
+
+import omegadrive.util.ArrayEndianUtil;
 
 /**
  * Federico Berti
@@ -30,8 +31,8 @@ public class BlipBufferHelper {
                 if ((short) s != s)
                     s = clampToShort(s);
 
-                setSigned16LE((short) s, out, pos);
-                setSigned16LE((short) s, out, pos + 2);
+                ArrayEndianUtil.setSigned16LE((short) s, out, pos);
+                ArrayEndianUtil.setSigned16LE((short) s, out, pos + 2);
                 pos += 4;
             }
             while (++i < countMono);

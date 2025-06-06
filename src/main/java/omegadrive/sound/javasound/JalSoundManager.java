@@ -129,10 +129,10 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     }
 
     private int playOnceStereo(int fmBufferLenMono) {
-        int fmMonoActual = fm.updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;
+        int fmMonoActual = getFm().updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;
         //if FM is present load a matching number of psg samples
         fmBufferLenMono = (soundDeviceSetup & FM.getBit()) > 0 ? fmMonoActual : fmBufferLenMono;
-        psg.updateMono8(psg_buf_bytes, 0, fmBufferLenMono);
+        getPsg().updateMono8(psg_buf_bytes, 0, fmBufferLenMono);
         int fmBufferLenStereo = fmBufferLenMono << 1;
         samplesProducedCount += fmBufferLenStereo;
 
@@ -148,7 +148,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     @Override
     public void onNewFrame() {
         doStats();
-        fm.onNewFrame();
+        getFm().onNewFrame();
     }
 
     private void doStats() {
