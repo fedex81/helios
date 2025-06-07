@@ -507,7 +507,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
-        logHelper.logWarningOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
+        logHelper.logWarningOnceWhenEnRepeat(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
                 size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
     }
 }

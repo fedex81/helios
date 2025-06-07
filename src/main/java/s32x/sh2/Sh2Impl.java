@@ -260,7 +260,7 @@ public class Sh2Impl implements Sh2 {
     protected final void ILLEGAL_SLOT(int code) {
         push(ctx.SR);
         push(ctx.PC);
-        LogHelper.logWarnOnce(LOG, "{} illegal slot instruction: {}\n{}", ctx.cpuAccess, th(code),
+        LogHelper.logWarnOnceWhenEn(LOG, "{} illegal slot instruction: {}\n{}", ctx.cpuAccess, th(code),
                 Sh2Helper.toDebuggingString(ctx));
         ctx.PC = memory.read32(ctx.VBR + (ILLEGAL_SLOT_INST_VN << 2));
         ctx.cycles -= 5;

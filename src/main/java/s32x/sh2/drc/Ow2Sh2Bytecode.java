@@ -721,7 +721,7 @@ public class Ow2Sh2Bytecode {
     }
 
     public static void illegalBase(BytecodeContext ctx, int vectorNum) {
-        LogHelper.logWarnOnce(LOG, "{} illegal #{} instruction: {}\n{}", ctx.drcCtx.sh2Ctx.cpuAccess, vectorNum, th(ctx.opcode),
+        LogHelper.logWarnOnceWhenEn(LOG, "{} illegal #{} instruction: {}\n{}", ctx.drcCtx.sh2Ctx.cpuAccess, vectorNum, th(ctx.opcode),
                 Sh2Helper.toDebuggingString(ctx.drcCtx.sh2Ctx));
         pushSh2ContextIntField(ctx, PC.name());
         pushSh2ContextIntField(ctx, SR.name());

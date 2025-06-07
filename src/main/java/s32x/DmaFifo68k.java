@@ -118,7 +118,7 @@ public class DmaFifo68k implements Device {
             if (verbose)
                 LOG.info("{} write DREQ_CTL, dmaOn: {} , RV: {}", MdRuntimeData.getAccessTypeExt(), ctx.m68S, rv);
             if (wasDmaOn && !ctx.m68S) {
-                LogHelper.logWarnOnceForce(LOG, "{} Setting 68S = 0, stops DMA while running", MdRuntimeData.getAccessTypeExt());
+                LogHelper.logWarnOnce(LOG, "{} Setting 68S = 0, stops DMA while running", MdRuntimeData.getAccessTypeExt());
                 dmaEnd();
             }
             updateFifoState();

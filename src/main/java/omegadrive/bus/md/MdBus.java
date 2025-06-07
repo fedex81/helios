@@ -57,6 +57,7 @@ import static omegadrive.system.SystemProvider.SystemEvent.FORCE_PAD_TYPE;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
 import static omegadrive.util.LogHelper.logWarnOnce;
+import static omegadrive.util.LogHelper.logWarnOnceWhenEn;
 import static omegadrive.util.Util.th;
 
 public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements MdMainBusProvider, RomMapper {
@@ -264,8 +265,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
             return;
         }
         //Batman&Robin writes to address 0 - tries to enable debug mode?
-        LogHelper.logWarnOnce(LOG, "Unexpected write to ROM address {}, value {} {}", th(addressL),
-                th(data), size);
+        LogHelper.logWarnOnce(LOG, "Unexpected write to ROM address {} {}", th(addressL), size);
     }
 
     private void reservedWrite(int addressL, int data, Size size) {
@@ -616,7 +616,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
                 break;
             default:
                 if (address >= 0xE && address < 0x20) {
-                    logWarnOnce(LOG, "Write serial control: {}", th(addressL));
+                    logWarnOnceWhenEn(LOG, "Write serial control: {}", th(addressL));
                     Util.writeData(serialPortData, address - 0xE, data, size);
                 } else { //Reserved
                     LOG.error("Unexpected ioWrite {}, data {}", th(addressL), th(data));

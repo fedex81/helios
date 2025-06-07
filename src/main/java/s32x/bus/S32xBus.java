@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import static m68k.cpu.Cpu.PC_MASK;
 import static omegadrive.util.BufferUtil.assertionsEnabled;
 import static omegadrive.util.LogHelper.logWarnOnce;
+import static omegadrive.util.LogHelper.logWarnOnceWhenEn;
 import static omegadrive.util.Util.th;
 
 /**
@@ -334,7 +335,7 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
             Util.writeData(busContext.writeableHint, address & 3, data, size);
         } else {
             if (address < S32xDict.M68K_END_VECTOR_ROM) {
-                logWarnOnce(LOG, "Ignoring write access to vector rom, RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
+                logWarnOnceWhenEn(LOG, "Ignoring write access to vector rom, RV={}, addr: {} {}", DmaFifo68k.rv, th(address), size);
                 return;
             }
             if (!DmaFifo68k.rv && address <= DEFAULT_ROM_END_ADDRESS) {

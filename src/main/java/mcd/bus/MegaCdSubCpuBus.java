@@ -338,7 +338,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
                 recalcFontData(regs);
             }
             default -> {
-                logHelper.logWarningOnce(LOG,
+                LogHelper.logWarnOnce(LOG,
                         "S write unhandled MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, th(data), size);
                 writeReg(memCtx, cpuType, regSpec, address, data, size);
 //                assert false;
@@ -574,17 +574,17 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     }
 
     public void logAccess(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
-        logHelper.logWarningOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
+        logHelper.logWarningOnceWhenEnRepeat(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
                 size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
     }
 
     public static void logAccessReg(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, int value, Size size, boolean read) {
-        LogHelper.logWarnOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
+        LogHelper.logWarnOnceWhenEn(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
                 size, regSpec.getName(), th(address), !read ? ": " + th(value) : "");
     }
 
     public static void logAccessReg(RegSpecMcd regSpec, CpuDeviceAccess cpu, int address, Size size, boolean read) {
-        LogHelper.logWarnOnce(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
+        LogHelper.logWarnOnceWhenEn(LOG, "{} MCD reg {} {} ({}) {} {}", cpu, read ? "read" : "write",
                 size, regSpec.getName(), th(address));
     }
 }

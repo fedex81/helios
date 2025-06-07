@@ -40,21 +40,21 @@ public class LogHelper {
         }
     }
 
-    public static void logWarnOnce(Logger log, String str, Object... o) {
+    public static void logWarnOnceWhenEn(Logger log, String str, Object... o) {
         String msg = formatMessage(str, o);
         if (msgCacheShared.add(msg)) {
             logWarn(log, msg + " (ONCE)");
         }
     }
 
-    public static void logWarnOnceForce(Logger log, String str, Object... o) {
+    public static void logWarnOnce(Logger log, String str, Object... o) {
         String msg = formatMessage(str, o);
         if (msgCacheShared.add(msg)) {
             log.warn(msg + " (ONCE)");
         }
     }
 
-    public void logWarningOnce(Logger log, String str, Object... o) {
+    public void logWarningOnceWhenEnRepeat(Logger log, String str, Object... o) {
         String msg = formatMessage(str, o);
         if (msgCache.add(msg)) {
             logWarn(log, msg + " (ONCE)");

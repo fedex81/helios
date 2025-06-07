@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static omegadrive.util.LogHelper.logWarnOnce;
+import static omegadrive.util.LogHelper.logWarnOnceWhenEn;
 import static omegadrive.util.Util.assertCheckBusOp;
 import static omegadrive.util.Util.th;
 
@@ -123,7 +124,7 @@ public final class Sh2BusImpl implements Sh2Bus {
                     res = bios[cpuAccess.ordinal()].readBuffer(address, size);
                     S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.BOOT_ROM);
                 } else {
-                    logWarnOnce(LOG, "{} read from addr: {}, {}", cpuAccess, th(address), size);
+                    logWarnOnce(LOG, "{} invalid read from addr: {}, {}", cpuAccess, th(address), size);
                 }
                 break;
             case Sh2Cache.CACHE_IO_H3: //0xF
@@ -132,13 +133,13 @@ public final class Sh2BusImpl implements Sh2Bus {
                 } else if (address >= S32xDict.SH2_START_DRAM_MODE && address < S32xDict.SH2_END_DRAM_MODE) {
                     res = sh2MMREGS[cpuAccess.ordinal()].readDramMode(address & 0xFFFF, size);
                 } else {
-                    logWarnOnce(LOG, "{} read from addr: {}, {}", cpuAccess, th(address), size);
+                    logWarnOnce(LOG, "{} invalid read from addr: {}, {}", cpuAccess, th(address), size);
 //                    throw new RuntimeException();
                 }
                 break;
             default:
                 res = size.getMask();
-                logWarnOnce(LOG, "{} read from addr: {}, {}", cpuAccess, th(address), size);
+                logWarnOnce(LOG, "{} invalid read from addr: {}, {}", cpuAccess, th(address), size);
                 if (true) throw new RuntimeException();
                 break;
         }
@@ -189,7 +190,7 @@ public final class Sh2BusImpl implements Sh2Bus {
                     }
                     s32XMMREG.write(address, val, size);
                 } else {
-                    logWarnOnce(LOG, "{} write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
+                    logWarnOnce(LOG, "{} invalid write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
                 }
                 break;
             case Sh2Cache.CACHE_IO_H3: //0xF
@@ -198,12 +199,11 @@ public final class Sh2BusImpl implements Sh2Bus {
                 } else if (address >= S32xDict.SH2_START_DRAM_MODE && address < S32xDict.SH2_END_DRAM_MODE) {
                     sh2MMREGS[cpuAccess.ordinal()].writeDramMode(address & 0xFFFF, val, size);
                 } else {
-                    logWarnOnce(LOG, "{} write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
+                    logWarnOnce(LOG, "{} invalid write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
                 }
                 break;
             default:
-                logWarnOnce(LOG, "{} write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
-                if (true) throw new RuntimeException();
+                logWarnOnce(LOG, "{} invalid write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
                 break;
         }
         if (hasMemoryChanged) {
@@ -266,7 +266,7 @@ public final class Sh2BusImpl implements Sh2Bus {
 
     private static boolean logWarnIllegalAccess(CpuDeviceAccess cpu, String rw, String memType, String accessType,
                                                 Object val, int address, Size size) {
-        logWarnOnce(LOG, ILLEGAL_ACCESS_STR, cpu, rw, memType, accessType, val, th(address), size);
+        logWarnOnceWhenEn(LOG, ILLEGAL_ACCESS_STR, cpu, rw, memType, accessType, val, th(address), size);
         return true;
     }
 }

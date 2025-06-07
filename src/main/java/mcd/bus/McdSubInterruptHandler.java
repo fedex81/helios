@@ -155,7 +155,7 @@ public interface McdSubInterruptHandler extends Device {
             //OK -> US-bios 1.00 (c5c24e6439a148b7f4c7ea269d09b7a23fe25075)
             //OK -> JP-bios 1.00H (aka 100s) (230ebfc49dc9e15422089474bcc9fa040f2c57eb)
             //for JP press start and then select CD-ROM
-            LogHelper.logWarnOnceForce(LOG, "MegaCd interrupt hack active!!");
+            LogHelper.logWarnOnce(LOG, "MegaCd interrupt hack active!!");
             return region == Region.EUROPE ? true : raised;
         }
 

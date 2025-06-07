@@ -118,13 +118,13 @@ public class McdWordRamHelper {
         MegaCdMemoryContext.WramSetup prev = memoryContext.wramSetup;
         if (mode > 0) {
             if (c == SUB_M68K) {
-                LogHelper.logWarnOnce(LOG, "{} Switch bank requested, ret: {}, current setup {}", c, ret, memoryContext.wramSetup);
+                LogHelper.logWarnOnceWhenEn(LOG, "{} Switch bank requested, ret: {}, current setup {}", c, ret, memoryContext.wramSetup);
                 memoryContext.wramSetup = ret == 0 ? MegaCdMemoryContext.WramSetup.W_1M_WR0_MAIN : MegaCdMemoryContext.WramSetup.W_1M_WR0_SUB;
                 if (ret > 0) {
                     dmna = 0;
                 }
                 McdRegBitUtil.setSharedBitBothCpu(memoryContext, DMNA, dmna << 1);
-                LogHelper.logWarnOnce(LOG, "Setting wordRam to {}", memoryContext.wramSetup);
+                LogHelper.logWarnOnceWhenEn(LOG, "Setting wordRam to {}", memoryContext.wramSetup);
             }
             if (c == M68K) {
                 boolean swapRequest = dmna == 0;
@@ -137,7 +137,7 @@ public class McdWordRamHelper {
                     McdRegBitUtil.setSharedBitBothCpu(memoryContext, RET, ret);
                     //DMNA has no effect, ie. MAIN cannot switch banks directly, it needs to ask SUB to do it
                     memoryContext.wramSetup = ret == 0 ? MegaCdMemoryContext.WramSetup.W_1M_WR0_MAIN : MegaCdMemoryContext.WramSetup.W_1M_WR0_SUB;
-                    LogHelper.logWarnOnce(LOG, "Setting wordRam to {}", memoryContext.wramSetup);
+                    LogHelper.logWarnOnceWhenEn(LOG, "Setting wordRam to {}", memoryContext.wramSetup);
                 }
             }
             return memoryContext.wramSetup;
@@ -185,11 +185,11 @@ public class McdWordRamHelper {
         int otherBank = ~assignedBank & 1;
         int word = readWordRamBank(otherBank, address & ~1);
         if (size == Size.BYTE) {
-            LogHelper.logWarnOnceForce(LOG, "readCellMapped BYTE");
+            logWarnOnce(LOG, "readCellMapped BYTE");
             return (address & 1) == 0 ? word >> 8 : word;
         } else if (size == Size.LONG) { //TODO check, Dune
             word = (word << 16) | readCellMapped(address + 2, Size.WORD);
-            LogHelper.logWarnOnceForce(LOG, "readCellMapped LONG");
+            logWarnOnce(LOG, "readCellMapped LONG");
         }
         return word;
     }

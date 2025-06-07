@@ -62,7 +62,7 @@ public class MegaCd32x extends Md32x {
     public MegaCd32x(DisplayWindow emuFrame) {
         super(emuFrame);
         systemType = SystemType.MEGACD_S32X;
-        LogHelper.logWarnOnceForce(LOG, "TowerOfPower");
+        LogHelper.logWarnOnce(LOG, "TowerOfPower");
     }
 
     @Override

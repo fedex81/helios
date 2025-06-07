@@ -44,7 +44,7 @@ public class MegaCdRegWriteHandlers {
             int newDmna = d & DMNA.getBitMask();
             boolean dmnaWriteOk = newDmna == 0 || (newDmna > 0 && prevDmna > 0); //DMNA write only 0
             if (!dmnaWriteOk) {
-                LogHelper.logWarnOnceForce(LOG, "{} illegal DMNA write: {}->{}", SUB_M68K, prevDmna, newDmna);
+                LogHelper.logWarnOnce(LOG, "{} illegal DMNA write: {}->{}", SUB_M68K, prevDmna, newDmna);
             }
         }
 
@@ -90,7 +90,7 @@ public class MegaCdRegWriteHandlers {
             //Flux sets IEN2 = 1
             boolean ien2ok = (d & IEN2.getBitMask()) > 0 ? (now & IEN2.getBitMask()) > 0 : true; //IEN2 write only 0
             if (!ien2ok) {
-                LogHelper.logWarnOnceForce(LOG, "{} illegal IEN2 write: {}->{}", M68K, now & IEN2.getBitMask(),
+                LogHelper.logWarnOnce(LOG, "{} illegal IEN2 write: {}->{}", M68K, now & IEN2.getBitMask(),
                         d & IEN2.getBitMask());
                 d &= ~IEN2.getBitMask();
             }
@@ -112,11 +112,11 @@ public class MegaCdRegWriteHandlers {
             //star wars_E_Demo sets mode = 1
             boolean modeWriteOk = newMode == 0 || (newMode > 0 && prevMode > 0); //MODE write only 0
             if (!retWriteOk) {
-                LogHelper.logWarnOnceForce(LOG, "{} illegal RET write: {}->{}", M68K, prevRet, newRet);
+                LogHelper.logWarnOnce(LOG, "{} illegal RET write: {}->{}", M68K, prevRet, newRet);
                 d &= ~RET.getBitMask();
             }
             if (!modeWriteOk) {
-                LogHelper.logWarnOnceForce(LOG, "{} illegal MODE write: {}->{}", M68K, prevMode, newMode);
+                LogHelper.logWarnOnce(LOG, "{} illegal MODE write: {}->{}", M68K, prevMode, newMode);
                 d &= ~MODE.getBitMask();
             }
         }

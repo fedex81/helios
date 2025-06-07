@@ -175,7 +175,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
 
     private void printInfoLess(String head, int srcAddress, Integer data) {
         String str = getDmaStateString(head, srcAddress, data);
-        LogHelper.logWarnOnceForce(LOG, str);
+        LogHelper.logWarnOnce(LOG, str);
 //        LOG.info(str);
         if (printToSysOut) {
             System.out.println(str);

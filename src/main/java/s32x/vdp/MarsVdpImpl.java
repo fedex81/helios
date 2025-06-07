@@ -124,7 +124,7 @@ public class MarsVdpImpl implements MarsVdp {
             switch (size) {
                 case WORD, LONG -> writeBufferRaw(colorPalette, address & S32xDict.S32X_COLPAL_MASK, value, size);
                 default ->
-                        LOG.error("{} write, unable to access colorPalette as {}", MdRuntimeData.getAccessTypeExt(), size);
+                        LogHelper.logWarnOnce(LOG, "{} write, unable to access colorPalette as {}", MdRuntimeData.getAccessTypeExt(), size);
             }
             S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.PALETTE);
         } else if (address >= S32xDict.START_DRAM_CACHE && address < S32xDict.END_DRAM_CACHE) {
