@@ -24,6 +24,7 @@ import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Helper;
 import omegadrive.cpu.z80.disasm.Z80Dasm;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import z80core.Z80State;
@@ -69,6 +70,7 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
         ctx.isLoopOpcode = isLoopOpcode;
         ctx.isIgnoreOpcode = isIgnoreOpcode;
         ctx.debugMode = debugMode;
+        ctx.cpuCode = BufferUtil.CpuDeviceAccess.Z80.cpuShortCode;
         return ctx;
     }
 

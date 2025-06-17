@@ -9,6 +9,8 @@ package omegadrive.cpu.z80.disasm;
 
 import z80core.IMemIoOps;
 
+import java.util.Arrays;
+
 import static omegadrive.cpu.z80.disasm.Z80DasmIntf.e_mnemonics.zDB;
 
 
@@ -43,6 +45,8 @@ public class Z80Dasm extends Z80DasmIntf {
 	}
 
 	public static String disassemble(int pc, int[] opcodes, IMemIoOps memIoOps) {
+		Arrays.fill(opcodes, -1);
+		pc &= memIoOps.getPcUpperLimit();
 		int offset = 0, opIdx = 0, pos = pc;
 		StringBuilder stream = new StringBuilder();
 		String ixy = "oops!!";

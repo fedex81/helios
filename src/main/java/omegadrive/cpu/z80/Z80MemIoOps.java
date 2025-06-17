@@ -51,7 +51,11 @@ public class Z80MemIoOps implements IMemIoOps {
                 orElseThrow(() -> new RuntimeException("Invalid setup"));
         m.ram = mem.getRamData();
         m.ramSizeMask = m.ram.length - 1;
-        m.pcUpperLimit = MdZ80BusProvider.END_RAM;
+        /**
+         * NOTE, I think this is not correct should be 0xFFFF
+         * but allows both Z80 WAV Player v0.1 and sgdk_badapple_202506.bin to work.
+         */
+        m.pcUpperLimit = MdZ80BusProvider.START_68K_BANK - 1;
         return m;
     }
 

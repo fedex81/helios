@@ -1,3 +1,6 @@
+TODO
+https://github.com/ekeeke/Genesis-Plus-GX/issues/533
+
 CDC-INIT mcd-verificator
 it needs a media inserted
 

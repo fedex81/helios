@@ -91,7 +91,6 @@ public class Z80CoreWrapper implements Z80Provider {
         if (z80State != null) {
             z80Core.setZ80State(z80State);
         }
-        //md: fixes Z80 WAV Player v0.1
         z80Core.setRegSP(memIoOps.getPcUpperLimit());
         memPtrInitVal = memIoOps.getPcUpperLimit();
         return this;
