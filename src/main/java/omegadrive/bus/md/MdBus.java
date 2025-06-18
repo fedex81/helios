@@ -319,7 +319,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
             return z80BusReqRead(size);
         } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
             //NOTE few roms read a11200
-            LOG.warn("Unexpected Z80 read at: {}, {}", th(address), size);
+            LogHelper.logWarnOnce(LOG, "Unexpected Z80 read at: {}, {}", th(address), size);
         } else if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
             return msuMdHandler.handleMsuMdRead(address, size);
         } else if (address >= TIME_LINE_START && address <= TIME_LINE_END) {

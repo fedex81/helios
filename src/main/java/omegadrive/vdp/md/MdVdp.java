@@ -686,7 +686,13 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
             case MODE_4:
                 boolean rs0 = bitSetTest(data, 7);
                 boolean rs1 = bitSetTest(data, 0);
-                h40 = rs0 && rs1;
+                //NOTE test drive 2, Populous imply that rs1 alone switches to h40
+                if (rs0 != rs1) {
+                    LogHelper.logWarnOnce(LOG, "rs0 and rs1 not matching, using rs1=" + rs1);
+                    rs0 = rs1;
+//                    registers[regNumber] = (data & 0x7f) | (rs1 ? 0x80 :0); //TODO needed?
+                }
+                h40 = rs1 && rs0;
                 boolean val = bitSetTest(data, 3);
                 if (val != ste) {
                     if (verbose) LOG.debug("Shadow highlight: {}", val);
