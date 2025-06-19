@@ -197,9 +197,11 @@ public class Sh2Prefetch implements Sh2Prefetcher {
                     int nextVal = isCache ? sh2Cache.readDirect(currentPc + 2, Size.WORD) :
                             readBufferWord(fetchBuffer, bytePos + 2) & 0xFFFF;
                     opcodeWords[wordsCount++] = nextVal;
-                    if (assertionsEnabled && inst.isIllegalSlot()) {
-                        LogHelper.logWarnOnce(LOG, "{} Illegal delay slot opcode, start PC: {}, current: {} opcode: {}",
-                                cpu, th(pc), th(bytePos), th(val));
+                    if (assertionsEnabled) {
+                        if (op[nextVal].inst.isIllegalSlot()) {
+                            LogHelper.logWarnOnce(LOG, "{} Illegal delay slot opcode, start PC: {}, current: {} opcode: {}, inst: {}",
+                                    cpu, th(pc), th(bytePos), th(nextVal), op[nextVal].inst);
+                        }
                     }
                 }
                 breakOnJump = true;
