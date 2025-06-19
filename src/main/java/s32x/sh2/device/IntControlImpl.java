@@ -339,7 +339,7 @@ public class IntControlImpl implements IntControl {
     }
 
     private static void setBit(InterruptContext ctx, int bitPos, int bitValue) {
-        ctx.intState = (ctx.intState & ~(1 << bitPos)) | (bitValue << bitPos);
+        ctx.intState = Util.setBit(ctx.intState, bitPos, bitValue);
     }
 
     @Override

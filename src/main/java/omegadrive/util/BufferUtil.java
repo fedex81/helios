@@ -135,8 +135,7 @@ public class BufferUtil {
     public static boolean setBit(ByteBuffer b, int pos, int bitPos, int bitValue, Size size) {
         assert (bitValue & 1) == bitValue;
         int val = readBuffer(b, pos, size);
-        //clear bit and then set it
-        int newVal = (val & ~(1 << bitPos)) | (bitValue << bitPos);
+        int newVal = Util.setBit(val, bitPos, bitValue);
         if (val != newVal) {
             writeBufferRaw(b, pos, newVal, size);
             return true;
@@ -149,8 +148,7 @@ public class BufferUtil {
      */
     public static int setBitVal(ByteBuffer b, int pos, int bitPos, int bitValue, Size size) {
         int val = readBuffer(b, pos, size);
-        //clear bit and then set it
-        int newVal = (val & ~(1 << bitPos)) | (bitValue << bitPos);
+        int newVal = Util.setBit(val, bitPos, bitValue);
         if (val != newVal) {
             writeBufferRaw(b, pos, newVal, size);
             return newVal;

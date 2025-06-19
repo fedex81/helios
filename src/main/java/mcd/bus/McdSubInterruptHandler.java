@@ -132,11 +132,8 @@ public interface McdSubInterruptHandler extends Device {
         }
         private void setPending(SubCpuInterrupt sint, int val) {
             assert (val & 1) == val;
-            int pending = (val << sint.ordinal());
-            //clear bit, then set it
-            pendingMask &= ~(1 << sint.ordinal());
-            pendingMask |= pending;
-            pendingInterrupts[sint.ordinal()] = pending > 0;
+            pendingMask = Util.setBit(pendingMask, sint.ordinal(), val);
+            pendingInterrupts[sint.ordinal()] = val > 0;
         }
 
         private int getRegMask() {

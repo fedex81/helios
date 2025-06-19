@@ -21,10 +21,7 @@ package omegadrive.vdp.md;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.MdMainBusProvider;
-import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.Size;
-import omegadrive.util.VideoMode;
+import omegadrive.util.*;
 import omegadrive.vdp.model.*;
 import omegadrive.vdp.util.UpdatableViewer;
 import omegadrive.vdp.util.VdpDebugView;
@@ -84,7 +81,7 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     //	Left Column Blank
     boolean lcb;
     //	Enable VINT, HINT, EXT_INT
-    boolean ie0, ie1, ie2;
+    int ieMask;
     //	HV Counter Latch
     boolean m3;
 
@@ -577,30 +574,15 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
         m3 = newM3;
     }
 
-    private void updateIe0(boolean newIe0) {
-        if (ie0 != newIe0) {
-            ie0 = newIe0;
-            fireVdpEvent(VdpEvent.VDP_IE0_VINT, ie0);
-            if (verbose) LOG.info("Update ie0 register: {}, {}", newIe0 ? 1 : 0, getVdpStateString());
+    private void updateIe(VDP_INT ie, boolean newIe) {
+        int prev = ieMask;
+        ieMask = Util.setBit(ieMask, ie.ordinal(), newIe ? 1 : 0);
+
+        if (prev != ieMask) {
+            fireVdpEvent(ie.event, newIe);
+            if (verbose) LOG.info("Update {} register: {}, {}", ie, newIe ? 1 : 0, getVdpStateString());
         }
     }
-
-    private void updateIe1(boolean newIe1) {
-        if (ie1 != newIe1) {
-            ie1 = newIe1;
-            fireVdpEvent(VdpEvent.VDP_IE1_HINT, ie1);
-            if (verbose) LOG.info("Update ie1 register: {}, {}", newIe1 ? 1 : 0, getVdpStateString());
-        }
-    }
-
-    private void updateIe2(boolean newIe2) {
-        if (ie2 != newIe2) {
-            ie2 = newIe2;
-            fireVdpEvent(VdpEvent.VDP_IE2_EXT_INT, ie2);
-            if (verbose) LOG.info("Update ie2 register: {}, {}", newIe2 ? 1 : 0, getVdpStateString());
-        }
-    }
-
     private void updateLcb(boolean newLcb) {
         if (newLcb != lcb) {
             lcb = newLcb;
@@ -664,16 +646,17 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
             case MODE_1:
                 updateLcb(bitSetTest(data, 5));
                 updateM3(bitSetTest(data, 1));
-                updateIe1(bitSetTest(data, 4));
+                updateIe(VDP_INT.IE1, bitSetTest(data, 4));
                 break;
             case MODE_2:
                 boolean ext = bitSetTest(data, 7);
                 if (exVram != ext) {
                     exVram = ext;
+                    if (exVram) LogHelper.logWarnOnce(LOG, "128kb VRAM Mode: {}", exVram);
                     if (verbose) LOG.debug("128kb VRAM: {}", exVram);
                 }
                 displayEnable = bitSetTest(data, 6);
-                updateIe0(bitSetTest(data, 5));
+                updateIe(VDP_INT.IE0, bitSetTest(data, 5));
                 m1 = bitSetTest(data, 4);
                 m2 = bitSetTest(data, 3);
                 boolean mode5 = bitSetTest(data, 2);
@@ -716,7 +699,7 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
                 updateSatLocation();
                 break;
             case MODE_3:
-                updateIe2(bitSetTest(data, 3));
+                updateIe(VDP_INT.IE2, bitSetTest(data, 3));
                 break;
             default:
                 break;
@@ -854,7 +837,8 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     }
 
     private String getVdpStateString(String head) {
-        return interruptHandler.getStateString(head + " - ") + ", ieVINT" + (ie0 ? 1 : 0) + ",ieHINT" + (ie1 ? 1 : 0);
+        return interruptHandler.getStateString(head + " - ") + ", " +
+                "ie0_VINT" + (ieMask & VDP_INT.IE0.ordinal()) + ",ie1_HINT" + (ieMask & VDP_INT.IE1.ordinal());
     }
 
     //NOTE: used by helios32x

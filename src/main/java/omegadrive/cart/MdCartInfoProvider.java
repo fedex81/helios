@@ -164,8 +164,8 @@ public class MdCartInfoProvider extends MediaInfoProvider {
         boolean externalRamEnabled = EXTERNAL_RAM_FLAG_VALUE.equals(sramFlag);
 
         if (externalRamEnabled) {
-            long byte1 = headerBuf.get(SRAM_FLAG_ADDRESS + 2);
-            long byte2 = headerBuf.get(SRAM_FLAG_ADDRESS + 3);
+            byte byte1 = headerBuf.get(SRAM_FLAG_ADDRESS + 2);
+            byte byte2 = headerBuf.get(SRAM_FLAG_ADDRESS + 3);
             boolean isBackup = Util.bitSetTest(byte1, 7); //backup vs volatile
             boolean isSramType = (byte2 & 0x20) == 0x20; //sram vs EEPROM
             if (isBackup) { //&& isSramType) {

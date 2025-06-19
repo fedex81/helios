@@ -31,6 +31,10 @@ import org.slf4j.Logger;
 import java.util.Objects;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess;
+import static omegadrive.util.Util.bitSetTest;
+import static omegadrive.util.Util.setBit;
+import static omegadrive.vdp.model.MdVdpProvider.VDP_INT.IE0;
+import static omegadrive.vdp.model.MdVdpProvider.VDP_INT.IE1;
 
 public interface BusArbiter extends Device, BaseVdpProvider.VdpEventListener {
 
@@ -204,14 +208,8 @@ class BusArbiterImpl implements BusArbiter {
     @Override
     public void addCyclePenalty(CpuType cpuType, int value) {
         switch (cpuType) {
-            case M68K:
-                m68k.addCyclePenalty(value);
-                break;
-            case Z80:
-                z80.addCyclePenalty(value);
-                break;
-            default:
-                break;
+            case M68K -> m68k.addCyclePenalty(value);
+            case Z80 -> z80.addCyclePenalty(value);
         }
     }
 
@@ -225,12 +223,8 @@ class BusArbiterImpl implements BusArbiter {
      */
     private void handleInterrupts68k() {
         switch (int68k) {
-            case NONE:
-                checkInterrupts68k();
-                break;
-            case PENDING:
-                raiseInterrupts68k();
-                break;
+            case NONE -> checkInterrupts68k();
+            case PENDING -> raiseInterrupts68k();
         }
     }
 
@@ -248,17 +242,15 @@ class BusArbiterImpl implements BusArbiter {
                     ackLevel == M68kProvider.VBLANK_INTERRUPT_LEVEL ? "vip" : "hip");
         }
         switch (ackLevel) {
-            case M68kProvider.VBLANK_INTERRUPT_LEVEL:
+            case M68kProvider.VBLANK_INTERRUPT_LEVEL -> {
                 vdp.setVip(false);
                 vdpLevel = 0;
-                break;
-            case M68kProvider.HBLANK_INTERRUPT_LEVEL:
+            }
+            case M68kProvider.HBLANK_INTERRUPT_LEVEL -> {
                 vdp.setHip(false);
                 vdpLevel = 0;
-                break;
-            default:
-                LOG.error("Unexpected vdpLevel {}, 68kLevel: {}", vdpLevel, level);
-                break;
+            }
+            default -> LOG.error("Unexpected vdpLevel {}, 68kLevel: {}", vdpLevel, level);
         }
         int68k = IntState.NONE;
         if (verbose) logInfo("68k int{}: {} (ACKED)", level, int68k);
@@ -272,41 +264,39 @@ class BusArbiterImpl implements BusArbiter {
         }
     }
 
-    private boolean hip, vip, ie0, ie1;
+    private boolean hip, vip;
+    private int ieVdp;
     private boolean vint, hint, anyHint;
 
     @Override
     public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
+        boolean doRecalc = false;
         switch (event) {
-            case INTERRUPT:
+            case INTERRUPT -> {
                 InterruptEvent ievent = (InterruptEvent) value;
                 setZ80Int(ievent);
-                break;
-            case NEW_FRAME:
-                if (verbose) logInfo("NewFrame");
-                break;
-            case VDP_VINT_PENDING:
+            }
+            case VDP_VINT_PENDING -> {
                 vip = (Boolean) value;
-                recalc();
-                break;
-            case VDP_HINT_PENDING:
+                doRecalc = true;
+            }
+            case VDP_HINT_PENDING -> {
                 hip = (Boolean) value;
-                recalc();
-                break;
-            case VDP_IE0_VINT:
-                ie0 = (Boolean) value;
-                recalc();
-                break;
-            case VDP_IE1_HINT:
-                ie1 = (Boolean) value;
-                recalc();
-                break;
+                doRecalc = true;
+            }
+            case VDP_IE0_VINT, VDP_IE1_HINT, VDP_IE2_EXT_INT -> {
+                ieVdp = setBit(ieVdp, MdVdpProvider.eventMap.get(event).ordinal(), (boolean) value ? 1 : 0);
+                doRecalc = true;
+            }
+        }
+        if (doRecalc) {
+            recalc();
         }
     }
 
     private void recalc() {
-        hint = ie1 && hip;
-        vint = ie0 && vip;
+        hint = bitSetTest(ieVdp, IE1.ordinal()) && hip;
+        vint = bitSetTest(ieVdp, IE0.ordinal()) && vip;
         anyHint = hint || vint;
     }
 

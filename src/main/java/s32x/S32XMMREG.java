@@ -264,7 +264,7 @@ public class S32XMMREG implements Device {
         interruptControls[cpu.ordinal()].clearExternalInterrupt(intType);
         //autoclear Int_control_reg too
         if (intType == CMD_08) {
-            int newVal = readWordFromBuffer(MD_INT_CTRL) & ~(1 << cpu.ordinal());
+            int newVal = Util.setBit(readWordFromBuffer(MD_INT_CTRL), cpu.ordinal(), 0);
             boolean change = handleIntControlWriteMd(MD_INT_CTRL.addr, newVal, Size.WORD);
             if (change && verbose) {
                 LOG.info("{} auto clear {}", cpu, intType);

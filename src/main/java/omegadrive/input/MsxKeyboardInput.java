@@ -19,6 +19,8 @@
 
 package omegadrive.input;
 
+import omegadrive.util.Util;
+
 import java.awt.*;
 import java.awt.event.KeyEvent;
 
@@ -193,7 +195,7 @@ public class MsxKeyboardInput extends KeyboardInput {
          * Set value at given row/bit position to false.
          */
         private void depressKey(int row, int bit) {
-            rows[row] = (byte)((rows[row] & 0xff) & ~(1 << bit));
+            rows[row] = (byte) (Util.setBit(rows[row] & 0xff, bit, 0));
         }
 
         /**

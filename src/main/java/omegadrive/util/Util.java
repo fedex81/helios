@@ -197,11 +197,16 @@ public class Util {
     }
 
     //bit 1 -> true
-    public static boolean bitSetTest(long number, int position) {
+    public static boolean bitSetTest(int number, int position) {
+        assert position >= 0 && position < Integer.SIZE;
         return ((number & (1 << position)) != 0);
     }
 
-
+    public static int setBit(int val, int bitPos, int bitValue) {
+        assert (bitValue & 1) == bitValue : bitValue;
+        assert bitPos >= 0 && bitPos < Integer.SIZE;
+        return (val & ~(1 << bitPos)) | (bitValue << bitPos);
+    }
 
     public static int readBufferByte(ByteBuffer b, int pos) {
         return b.get(pos);

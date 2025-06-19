@@ -25,6 +25,8 @@ import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.md.VdpFifo;
 import org.slf4j.Logger;
 
+import java.util.EnumMap;
+
 public interface MdVdpProvider extends BaseVdpProvider {
 
     Logger LOG = LogHelper.getLogger(MdVdpProvider.class.getSimpleName());
@@ -159,6 +161,18 @@ public interface MdVdpProvider extends BaseVdpProvider {
                 return NOT_BUSY;
             }
             return values[mode.ordinal()];
+        }
+    }
+
+    EnumMap<VdpEvent, VDP_INT> eventMap = new EnumMap<>(VdpEvent.class);
+
+    enum VDP_INT {
+        IE0(VdpEvent.VDP_IE0_VINT), IE1(VdpEvent.VDP_IE1_HINT), IE2(VdpEvent.VDP_IE2_EXT_INT);
+        public final VdpEvent event;
+
+        VDP_INT(VdpEvent event) {
+            this.event = event;
+            eventMap.put(event, this);
         }
     }
 
