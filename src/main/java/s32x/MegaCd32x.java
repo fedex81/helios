@@ -16,7 +16,6 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
-import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 import s32x.bus.S32xBusIntf;
 
@@ -25,7 +24,6 @@ import java.util.Optional;
 import static mcd.MegaCd.MCD_68K_RATIO_NTSC;
 import static mcd.MegaCd.MCD_68K_RATIO_PAL;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
-import static omegadrive.vdp.util.MemView.NO_MEMVIEW;
 
 /**
  * MegaCd + 32x
@@ -51,8 +49,6 @@ public class MegaCd32x extends Md32x {
     double subCnt = 0;
 
     static {
-        //TODO homebrew bios does not support SCD-32X mode (ie. no 32x cart, waitForCD and then boot)
-        System.setProperty("32x.use.homebrew.bios", "false");
 //        System.setProperty("68k.debug", "true");
 //        System.setProperty("helios.68k.debug.mode", "2");
 //        System.setProperty("sh2.master.debug", "true");
@@ -168,10 +164,6 @@ public class MegaCd32x extends Md32x {
         super.resetCycleCounters(counter);
         assert nextSub68kCycle >= counter;
         nextSub68kCycle = Math.max(1, nextSub68kCycle - counter);
-    }
-
-    protected UpdatableViewer createMemView() {
-        return NO_MEMVIEW;
     }
 
     @Override

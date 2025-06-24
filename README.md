@@ -85,5 +85,7 @@ Tomek Rekawek, GameBoy emulator: [coffee-gb](https://github.com/trekawek/coffee-
 
 C-BIOS Association for their open source [MSX bios](http://cbios.sourceforge.net/)
 
+Devster for their Freeware 32x BIOS files [Devster](https://devster.monkeeh.com/segapage.html)
+
 # License
 Released under GPL v3.0

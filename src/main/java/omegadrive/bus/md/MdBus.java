@@ -20,6 +20,7 @@
 package omegadrive.bus.md;
 
 import omegadrive.Device;
+import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.SvpBus;
@@ -107,6 +108,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
 
     void initializeRomData() {
 //        assert systemProvider.getMediaSpec().cartFile.bootable;
+        SystemLoader.SystemType st = systemProvider.getSystemType();
         cartridgeInfoProvider = (MdCartInfoProvider) systemProvider.getMediaSpec().getBootableMedia().mediaInfoProvider;
         assert cartridgeInfoProvider != null;
         ROM_END_ADDRESS = Math.min(cartridgeInfoProvider.getRomSize(), Z80_ADDRESS_SPACE_START);
@@ -120,9 +122,9 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         if (cartridgeInfoProvider.isSsfMapper()) {
             checkExSsfMapper();
         }
-        msuMdHandler = MsuMdHandlerImpl.createInstance(systemProvider.getSystemType(), systemProvider.getRomPath());
+        msuMdHandler = MsuMdHandlerImpl.createInstance(st, systemProvider.getRomPath());
         //some homebrews use a flat ROM mapper, in theory up to Z80_ADDRESS_SPACE_START
-        if (!cartridgeInfoProvider.isSsfMapper() && ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
+        if (st == SystemLoader.SystemType.MD && !cartridgeInfoProvider.isSsfMapper() && ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
             LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
         }
         if (cartridgeInfoProvider.isSvp()) {

@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import omegadrive.UserConfigHolder;
 import omegadrive.input.InputProvider.PlayerNumber;
-import omegadrive.joypad.MdInputModel.*;
 import omegadrive.system.SystemProvider;
 import omegadrive.system.SystemProvider.SystemEvent;
 import omegadrive.util.LogHelper;
@@ -97,7 +96,7 @@ public class MdJoypad extends BasePadAdapter {
     @Override
     public void reset() {
         super.reset();
-        ctx1.data = ctx2.data = ctx3.data = 0x40;
+        ctx1.data = ctx2.data = ctx3.data = DATA_TH_HIGH;
     }
 
     @Override
@@ -157,7 +156,7 @@ public class MdJoypad extends BasePadAdapter {
     }
 
     private void resetPad(MdPadContext ctx) {
-        ctx.data = ASTERIX_HACK ? 0 : 0x40;
+        ctx.data = ASTERIX_HACK ? DATA_TH_LOW : DATA_TH_HIGH;
         ctx.readMask = 0x80 | (ctx.control & ctx.data); //bit 7 is latched from the latest data port write
         ctx.readStep = ASTERIX_HACK ? 1 : 0;
         ctx.latestWriteCycleCounter = 0;
@@ -212,7 +211,7 @@ public class MdJoypad extends BasePadAdapter {
     }
 
     private void writeControlCheck(MdPadContext ctx, int value) {
-        if (value != 0x40 && value != 0) {
+        if (value != CTRL_PIN_OUTPUT && value != CTRL_PIN_INPUT) {
             if (verbose) LOG.warn("writeCtrlReg: data {}, {}", th(value), ctx);
         } else {
             if (verbose) LOG.info("writeCtrlReg: data {}, {}", th(value), ctx);

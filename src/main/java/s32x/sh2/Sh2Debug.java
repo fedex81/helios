@@ -3,7 +3,6 @@ package s32x.sh2;
 import com.google.common.collect.ImmutableMap;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.DebugMode;
-import omegadrive.cpu.CpuFastDebug.PcInfoWrapper;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
@@ -97,8 +96,6 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
 
     private final CpuFastDebug[] fastDebug = new CpuFastDebug[2];
 
-    private static PcInfoWrapper[][] piw;
-
     public Sh2Debug(Sh2Bus memory) {
         super(memory);
         LOG.warn("Sh2 cpu: creating debug instance");
@@ -111,7 +108,6 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
         fastDebug[1] = new CpuFastDebug(this, createContext());
         fastDebug[0].debugMode = DebugMode.NEW_INST_ONLY;
         fastDebug[1].debugMode = DebugMode.NEW_INST_ONLY;
-        piw = fastDebug[0].pcInfoWrapper;
     }
 
     static String[] latestBlock = {"", ""};
