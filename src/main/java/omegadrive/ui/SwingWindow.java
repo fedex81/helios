@@ -884,7 +884,7 @@ public class SwingWindow implements DisplayWindow {
     }
 
     private void setIcons(Window w) {
-        if (!WINDOW_ICONS_PATH.toFile().exists()) {
+        if (Files.notExists(WINDOW_ICONS_PATH)) {
             LOG.warn("Unable to find icons at: {}", WINDOW_ICONS_PATH.toAbsolutePath());
             return;
         }

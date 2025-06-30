@@ -8,6 +8,7 @@ import omegadrive.util.Size;
 import omegadrive.util.Util;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -65,9 +66,9 @@ public class BiosHolder {
     }
 
     private void init() {
-        assert sh2m.toFile().exists();
-        assert sh2s.toFile().exists();
-        assert m68k.toFile().exists();
+        assert Files.exists(sh2m);
+        assert Files.exists(sh2s);
+        assert Files.exists(m68k);
 
         biosData[CpuDeviceAccess.MASTER.ordinal()] = new BiosData(FileUtil.readFileSafe(sh2m));
         biosData[CpuDeviceAccess.SLAVE.ordinal()] = new BiosData(FileUtil.readFileSafe(sh2s));

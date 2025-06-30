@@ -10,6 +10,7 @@ import s32x.sh2.prefetch.Sh2Prefetch.BytecodeContext;
 import s32x.sh2.prefetch.Sh2Prefetch.Sh2DrcContext;
 import s32x.sh2.prefetch.Sh2Prefetcher.Sh2BlockUnit;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -109,7 +110,7 @@ public class Sh2BlockRecompiler {
             return;
         }
         boolean res = drcFolder.toFile().mkdirs();
-        if (!res && !drcFolder.toFile().exists()) {
+        if (!res && Files.notExists(drcFolder)) {
             LOG.error("Unable to log files to: {}", drcFolder.toFile());
             return;
         }

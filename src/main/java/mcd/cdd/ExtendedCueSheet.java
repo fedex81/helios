@@ -14,6 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -74,7 +75,7 @@ public class ExtendedCueSheet implements Closeable {
         //first check if we have a matching *.cue file
         Path mcp = Paths.get(path.toAbsolutePath().toString().replace(".iso", ".cue"));
         Path cp = path.resolveSibling(mcp);
-        if (cp.toFile().exists()) {
+        if (Files.exists(cp)) {
             isoPathCue = Optional.of(cp);
             cs = CueFileParser.parse(isoPathCue.get());
             ref.set(isoPathCue.get());

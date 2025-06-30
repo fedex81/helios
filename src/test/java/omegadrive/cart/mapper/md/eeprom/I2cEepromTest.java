@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -64,9 +65,9 @@ public class I2cEepromTest {
         Path p = Paths.get(baseFolder.toAbsolutePath().toString(), fileName);
         Path eepromBefore = Paths.get(eepromFolder.toAbsolutePath().toString(), getFileEepromBefore(fileName));
         Path eepromAfter = Paths.get(eepromFolder.toAbsolutePath().toString(), getFileEepromAfter(fileName));
-        Assertions.assertTrue(p.toFile().exists());
-        Assertions.assertTrue(eepromBefore.toFile().exists());
-        Assertions.assertTrue(eepromAfter.toFile().exists());
+        Assertions.assertTrue(Files.exists(p));
+        Assertions.assertTrue(Files.exists(eepromBefore));
+        Assertions.assertTrue(Files.exists(eepromAfter));
         List<String> lines = FileUtil.readFileContent(p);
         Assertions.assertFalse(lines.isEmpty());
         I2cEeprom eeprom = createInstance(type, lineMap);

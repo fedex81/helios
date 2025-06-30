@@ -36,6 +36,7 @@ import omegadrive.util.VideoMode;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -199,7 +200,7 @@ public class MegaCd extends Megadrive {
             Path p = Path.of("./test_roms/SonicCD", "SonicCD_AudioOnly.cue");
             //test mcd-ver
 //            Path p = Path.of("./test_roms/SonicCD", "SonicCD.cue");
-            if (p.toFile().exists()) {
+            if (Files.exists(p)) {
                 ExtendedCueSheet cueSheet = new ExtendedCueSheet(p, SysUtil.RomFileType.BIN_CUE);
                 mcdLaunchContext.cdd.tryInsert(cueSheet);
             }

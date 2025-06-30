@@ -20,6 +20,7 @@
 package omegadrive.vdp;
 
 import com.google.common.collect.ImmutableList;
+import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -44,7 +45,7 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
     );
 
     static Stream<String> fileProvider() {
-        File[] files = Paths.get(baseDataFolder).toFile().listFiles();
+        File[] files = FileUtil.listFilesSafe(Paths.get(baseDataFolder).toFile());
         Predicate<File> validFile = f -> !f.isDirectory() && !ignoredTests.contains(f.getName());
         return Arrays.stream(files).filter(validFile).map(f -> f.getName()).sorted();
     }

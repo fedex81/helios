@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import s32x.util.BiosHolder;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumMap;
@@ -61,7 +62,7 @@ public class McdBiosHolder {
         Path u = Paths.get(biosBasePath, masterBiosNameUs);
         Path e = Paths.get(biosBasePath, masterBiosNameEu);
         Path j = Paths.get(biosBasePath, masterBiosNameJp);
-        boolean pathOk = u.toFile().exists() && e.toFile().exists() && j.toFile().exists();
+        boolean pathOk = Files.exists(u) && Files.exists(e) && Files.exists(j);
         if (!pathOk) {
             LOG.error("One or more bios not found: \n{}\n{}\n{}", u, e, j);
             return;
@@ -95,7 +96,7 @@ public class McdBiosHolder {
     public static ByteBuffer loadBios(Region region, Path p) {
         ByteBuffer bios;
         try {
-            assert p.toFile().exists();
+            assert Files.exists(p);
             byte[] b = FileUtil.readBinaryFile(p, ".bin", ".md");
             assert b.length > 0;
             bios = ByteBuffer.wrap(b);

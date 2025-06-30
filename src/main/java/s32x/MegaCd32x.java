@@ -19,6 +19,7 @@ import omegadrive.util.VideoMode;
 import org.slf4j.Logger;
 import s32x.bus.S32xBusIntf;
 
+import java.nio.file.Files;
 import java.util.Optional;
 
 import static mcd.MegaCd.MCD_68K_RATIO_NTSC;
@@ -203,7 +204,7 @@ public class MegaCd32x extends Md32x {
             String isoName = Util.getNameWithoutExtension(name) + ".iso";
             MediaSpecHolder.MediaSpec iso = MediaSpecHolder.MediaSpec.of(
                     mediaSpec.getBootableMedia().romFile.resolveSibling(isoName), SysUtil.RomFileType.ISO, mediaSpec.systemType);
-            assert iso.romFile.toFile().exists();
+            assert Files.exists(iso.romFile);
             LOG.warn("DoomCD32x Fusion detected attempting to load iso file: {}", iso.romFile.toAbsolutePath());
             mediaSpec.cdFile = iso;
             mediaSpec.systemType = iso.systemType = mediaSpec.cartFile.systemType = SystemType.MEGACD_S32X;

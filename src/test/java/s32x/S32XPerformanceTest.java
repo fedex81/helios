@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -46,7 +47,7 @@ public class S32XPerformanceTest {
 
     protected static SystemProvider createTestProvider() {
         InputProvider.bootstrap();
-        Assertions.assertTrue(testFilePath.toFile().exists(), "File not found: " + testFilePath.toAbsolutePath());
+        Assertions.assertTrue(Files.exists(testFilePath), "File not found: " + testFilePath.toAbsolutePath());
         return SystemLoader.getInstance().handleNewRomFile(MediaSpecHolder.of(testFilePath));
     }
 

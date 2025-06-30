@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -29,7 +30,7 @@ public class UtilTest {
     static {
         System.out.println(new File(".").getAbsolutePath());
         Path p = Paths.get(".", sentinelPath);
-        RUNNING_IN_GITHUB = !p.toFile().exists();
+        RUNNING_IN_GITHUB = Files.notExists(p);
         System.err.println("Ignore tests failing in GitHub: " + RUNNING_IN_GITHUB);
     }
 

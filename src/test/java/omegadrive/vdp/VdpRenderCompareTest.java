@@ -19,6 +19,7 @@
 
 package omegadrive.vdp;
 
+import omegadrive.util.FileUtil;
 import omegadrive.util.TestFileUtil;
 import omegadrive.util.TestRenderUtil;
 import omegadrive.util.Util;
@@ -58,7 +59,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     @Ignore
     public void testCompareAll() {
 //        SHOW_IMAGES_ON_FAILURE = true;
-        File[] files = Paths.get(baseDataFolder).toFile().listFiles();
+        File[] files = FileUtil.listFilesSafe(Paths.get(baseDataFolder).toFile());
         StringBuilder sb = new StringBuilder();
         for (File file : files) {
             if (file.isDirectory()) {

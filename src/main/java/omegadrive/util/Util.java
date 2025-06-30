@@ -420,4 +420,11 @@ public class Util {
             }
         };
     }
+
+    public static <T> Optional<T> optWarnOnce(T obj) {
+        if (obj == null) {
+            LogHelper.logWarnOnce(LOG, "Object of class {} is null", obj.getClass());
+        }
+        return Optional.ofNullable(obj);
+    }
 }

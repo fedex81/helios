@@ -39,12 +39,15 @@ import java.util.stream.Collectors;
 
 import static omegadrive.SystemLoader.smdFileAsInterleaved;
 import static omegadrive.ui.util.UiFileFilters.ROM_FILTER;
+import static omegadrive.util.Util.optWarnOnce;
 
 public class FileUtil {
 
     private static final Logger LOG = LogHelper.getLogger(FileUtil.class.getSimpleName());
 
     private static final int[] EMPTY = new int[0];
+    public static final File[] EMPTY_FILES = new File[0];
+
 
     public static final String basePath = System.getProperty("user.home") + File.separatorChar + "roms";
 
@@ -91,7 +94,7 @@ public class FileUtil {
     public static List<String> readFileContent(Path pathObj) {
         List<String> lines = Collections.emptyList();
         String fileName = pathObj.getFileName().toString();
-        if(pathObj.toFile().exists()) {
+        if (Files.exists(pathObj)) {
             try {
                 lines = Files.readAllLines(pathObj);
             } catch (IOException e) {
@@ -108,7 +111,7 @@ public class FileUtil {
     }
 
     public static byte[] loadBiosFile(Path file) {
-        if (file.toFile().exists()) {
+        if (Files.exists(file)) {
             return readFileSafe(file);
         }
         String classPath = getCurrentClasspath();
@@ -249,5 +252,9 @@ public class FileUtil {
 
     public static int readShortBE(RandomAccessFile file) throws IOException {
         return (short) ((file.read() << 8) + (file.read()));
+    }
+
+    public static File[] listFilesSafe(File folder) {
+        return optWarnOnce(folder.listFiles()).orElse(EMPTY_FILES);
     }
 }

@@ -19,6 +19,7 @@
 
 package s32x.vdp.composite_render;
 
+import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.junit.jupiter.api.Assertions;
@@ -29,6 +30,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -53,7 +55,7 @@ public abstract class VdpRenderCompareTest {
 
     public static Stream<String> getFileProvider(Path baseDataFolder) {
         System.out.println(baseDataFolder.toAbsolutePath());
-        File[] files = baseDataFolder.toFile().listFiles();
+        File[] files = FileUtil.listFilesSafe(baseDataFolder.toFile());
         return Arrays.stream(files).filter(File::isFile).map(f -> f.getName()).sorted();
     }
 
@@ -62,7 +64,7 @@ public abstract class VdpRenderCompareTest {
     }
 
     protected void testCompareFile(Path file, boolean overwrite) {
-        Assertions.assertTrue(file.toFile().exists(), "Missing " + file.toAbsolutePath());
+        Assertions.assertTrue(Files.exists(file), "Missing " + file.toAbsolutePath());
         if (overwrite) {
             testOverwriteBaselineImage(file);
         }

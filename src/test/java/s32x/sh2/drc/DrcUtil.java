@@ -10,6 +10,7 @@ import s32x.sh2.Sh2Helper;
 import s32x.sh2.Sh2Helper.Sh2Config;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -34,7 +35,7 @@ public class DrcUtil {
     static {
         System.out.println(new File(".").getAbsolutePath());
         Path p = Paths.get(".", sentinelPath);
-        RUNNING_IN_GITHUB = !p.toFile().exists();
+        RUNNING_IN_GITHUB = Files.notExists(p);
         System.err.println("Ignore tests failing in GitHub: " + RUNNING_IN_GITHUB);
     }
 

@@ -79,7 +79,7 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
     }
 
     static Stream<String> fileProvider() {
-        File[] files = saveStateFolderPath.toFile().listFiles();
+        File[] files = FileUtil.listFilesSafe(saveStateFolderPath.toFile());
         Predicate<File> validFile = f -> !f.isDirectory() && !f.getName().endsWith(".dat") &&
                 !excluded.contains(f.getName());
         return Arrays.stream(files).filter(validFile).map(f -> f.getName()).sorted();
