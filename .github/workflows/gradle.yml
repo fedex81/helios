@@ -13,7 +13,7 @@ jobs:
       uses: actions/setup-java@v2
       with:
         distribution: 'zulu'
-        java-version: '17'      
+        java-version: '21'
     - name: Build with Gradle
       run: ./gradlew packageDistribution
     - uses: actions/upload-artifact@v4
