@@ -18,7 +18,7 @@ import static omegadrive.bus.model.MdMainBusProvider.MEGA_CD_EXP_START;
  * <p>
  * Copyright 2024
  */
-public class McdMemoryMapMirrors extends McdRegTestBase {
+public class McdMainMemoryMapMirrors extends McdRegTestBase {
 
 
     //$440000-$5FFFFF repeatedly mirrors the $400000-$43FFFF area. (7 copies of Boot ROM / PRG RAM)

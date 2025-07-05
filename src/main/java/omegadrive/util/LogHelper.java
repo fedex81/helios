@@ -16,6 +16,8 @@ public class LogHelper {
 
     public static boolean doLog = false;
 
+    public static final boolean isWarnEnabled = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME).isWarnEnabled();
+
     private Set<String> msgCache = new HashSet<>();
 
     private RepeaterDetector rd = new RepeaterDetector();
@@ -41,6 +43,9 @@ public class LogHelper {
     }
 
     public static void logWarnOnceWhenEn(Logger log, String str, Object... o) {
+        if (!isWarnEnabled) {
+            return;
+        }
         String msg = formatMessage(str, o);
         if (msgCacheShared.add(msg)) {
             logWarn(log, msg + " (ONCE)");
@@ -48,6 +53,9 @@ public class LogHelper {
     }
 
     public static void logWarnOnce(Logger log, String str, Object... o) {
+        if (!isWarnEnabled) {
+            return;
+        }
         String msg = formatMessage(str, o);
         if (msgCacheShared.add(msg)) {
             log.warn(msg + " (ONCE)");
@@ -55,6 +63,9 @@ public class LogHelper {
     }
 
     public void logWarningOnceWhenEnRepeat(Logger log, String str, Object... o) {
+        if (!isWarnEnabled) {
+            return;
+        }
         String msg = formatMessage(str, o);
         if (msgCache.add(msg)) {
             logWarn(log, msg + " (ONCE)");

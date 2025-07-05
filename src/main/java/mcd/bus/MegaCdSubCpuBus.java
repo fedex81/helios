@@ -38,9 +38,9 @@ import static mcd.util.BuramHelper.readBackupRam;
 import static mcd.util.BuramHelper.writeBackupRam;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
 import static mcd.util.McdRegBitUtil.setSharedBitBothCpu;
-import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.setBit;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.*;
 
@@ -133,7 +133,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     public int read(int address, Size size) {
         assert MdRuntimeData.getAccessTypeExt() == SUB_M68K;
         assert assertCheckBusOp(address, size);
-        address &= MD_PC_MASK;
+        address &= MCD_SUB_ADDRESS_MASK;
         int res = size.getMask();
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
             if (memCtx.wramSetup.mode == WordRamMode._2M) {
@@ -175,7 +175,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     public void write(int address, int data, Size size) {
         assert MdRuntimeData.getAccessTypeExt() == SUB_M68K;
         assert assertCheckBusOp(address, size);
-        address &= MD_PC_MASK;
+        address &= MCD_SUB_ADDRESS_MASK;
         if (address >= START_MCD_SUB_WORD_RAM_2M && address < END_MCD_SUB_WORD_RAM_2M) {
             if (memCtx.wramSetup.mode == WordRamMode._2M) {
                 if (memCtx.wramSetup.cpu == SUB_M68K) {
@@ -202,7 +202,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address <= END_MCD_SUB_GATE_ARRAY_REGS) {
             handleMegaCdExpWrite(address, data, size);
         } else if (address >= START_MCD_SUB_PCM_AREA && address < END_MCD_SUB_PCM_AREA) {
-            assert address < 0xFF_4000; //Panic! (USA)
+            assert address < (0xFF_4000 & MCD_SUB_ADDRESS_MASK); //Panic! (USA)
             pcm.write(address, data, size);
         } else if (address >= START_MCD_SUB_BRAM_AREA && address < END_MCD_SUB_BRAM_AREA) {
             writeBackupRam(memCtx.backupRam, address, data, size);

@@ -2,6 +2,8 @@
 sudo usermod -a -G audio <user>
 sudo usermod -a -G pulse-rt <user>
 sudo usermod -a -G pipewire <user>
+sudo dnf install realtime-setup
+sudo usermod -a -G realtime <user>
 
 #set Pulse latency
 export PULSE_LATENCY_MSEC=50

@@ -73,6 +73,16 @@ public class HardcodePoller {
          * 00016e48	8ffa	bf/s H'00016e40
          * 00016e4a	e363	mov H'63, R3
          */
+        w = new int[]{0x6642, 0x6163, 0x3178, 0x31a3, 0x8ffa, 0xe363};
+        bpd = new Sh2DrcBlockOptimizer.BlockPollData(null, null, -1, w);
+        bpd.memLoadPos = 0;
+        bpd.memLoadTargetSize = Size.LONG;
+        bpd.memLoadOpcode = bpd.words[bpd.memLoadPos];
+        bpd.cmpPos = 3;
+        bpd.cmpOpcode = bpd.words[bpd.cmpPos];
+        bpd.branchPos = 4;
+        bpd.branchOpcode = bpd.words[bpd.branchPos];
+        hardcodePollers.put(BufferUtil.hashCode(bpd.words, bpd.words.length), bpd);
     }
 
     public static void copyData(Sh2DrcBlockOptimizer.BlockPollData src, Sh2DrcBlockOptimizer.BlockPollData dest) {

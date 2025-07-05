@@ -36,6 +36,10 @@ public class Sh2DrcBlockOptimizer {
 
     //toggle poll detection but keep busyLoop detection enabled
     public final static boolean ENABLE_POLL_DETECT = true;
+    /**
+     * DoomFusionV2.2 actually shows perf decrease
+     */
+    public final static boolean ENABLE_HARDCODED_POLLER = false;
     private final static boolean LOG_POLL_DETECT = false;
 
     private final static boolean LOG_POLL_DETECT_UNSUPPORTED = false;
@@ -301,13 +305,18 @@ public class Sh2DrcBlockOptimizer {
                 block.drcContext.cpu + "," + th(block.prefetchPc) + "," + th(block.hashCodeWords);
         if (block.pollType == UNKNOWN) {
             PollerCtx ctx = PollerCtx.create(piw);
-            BlockPollData src = HardcodePoller.hardcodePollers.get(block.hashCodeWords);
-            if (src == null) {
-                ctx.blockPollData.init();
+            if (ENABLE_HARDCODED_POLLER) {
+                BlockPollData src = HardcodePoller.hardcodePollers.get(block.hashCodeWords);
+                if (src == null) {
+                    ctx.blockPollData.init();
+                } else {
+                    LogHelper.logWarnOnce(LOG, "{} Block match from hardcoded poller: {}", ctx.cpu, th(ctx.pc));
+                    HardcodePoller.copyData(src, ctx.blockPollData);
+                    parseMemLoad(ctx.blockPollData, ctx.blockPollData.ctx, ctx.blockPollData.memLoadOpcode);
+                    ctx.blockPollData.branchDestPc = getBranchDestination(ctx.blockPollData.branchOpcode, ctx.blockPollData.branchPc);
+                }
             } else {
-                HardcodePoller.copyData(src, ctx.blockPollData);
-                parseMemLoad(ctx.blockPollData, ctx.blockPollData.ctx, ctx.blockPollData.memLoadOpcode);
-                ctx.blockPollData.branchDestPc = getBranchDestination(ctx.blockPollData.branchOpcode, ctx.blockPollData.branchPc);
+                ctx.blockPollData.init();
             }
             piw.block.poller = addPollMaybe(ctx, block);
         }

@@ -400,6 +400,8 @@ public class MegaCdDict {
     /**
      * SUB
      */
+    //SUB CPU only has VA1-VA19 connected to the Gate Array,
+    public static final int MCD_SUB_ADDRESS_MASK = 0xF_FFFF;
     public static final int START_MCD_SUB_PRG_RAM = 0;
     public static final int END_MCD_SUB_PRG_RAM = START_MCD_SUB_PRG_RAM + MCD_PRG_RAM_SIZE;
 
@@ -411,15 +413,15 @@ public class MegaCdDict {
     public static final int MCD_SUB_BRAM_MEMORY_WINDOW = MCD_SUB_BRAM_SIZE << 1;
 
     public static final int MCD_SUB_BRAM_MEM_WINDOW_MASK = MCD_SUB_BRAM_MEMORY_WINDOW - 1;
-    public static final int START_MCD_SUB_BRAM_AREA = 0xFE_0000;
+    public static final int START_MCD_SUB_BRAM_AREA = 0xFE_0000 & MCD_SUB_ADDRESS_MASK;
 
     //bram size is 0x4000 but is mirrored within a 0x10_000 area
-    public static final int END_MCD_SUB_BRAM_AREA = 0xFF_0000;
-    public static final int START_MCD_SUB_PCM_AREA = 0xFF_0000;
+    public static final int END_MCD_SUB_BRAM_AREA = 0xFF_0000 & MCD_SUB_ADDRESS_MASK;
+    public static final int START_MCD_SUB_PCM_AREA = END_MCD_SUB_BRAM_AREA;
 
-    public static final int END_MCD_SUB_PCM_AREA = 0xFF_8000;
+    public static final int END_MCD_SUB_PCM_AREA = 0xFF_8000 & MCD_SUB_ADDRESS_MASK;
     public static final int START_MCD_SUB_GATE_ARRAY_REGS = END_MCD_SUB_PCM_AREA;
-    public static final int END_MCD_SUB_GATE_ARRAY_REGS = 0xFF_8200;
+    public static final int END_MCD_SUB_GATE_ARRAY_REGS = 0xFF_8200 & MCD_SUB_ADDRESS_MASK;
 
     public static final int START_MCD_SUB_GA_COMM_W = START_MCD_SUB_GATE_ARRAY_REGS + 0x20;
     public static final int END_MCD_SUB_GA_COMM_W = START_MCD_SUB_GA_COMM_W + 0x10;
