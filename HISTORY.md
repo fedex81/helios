@@ -1,3 +1,17 @@
+## 25.0711
+
+32x: handle sh2 illegalSlot instructions
+fm2612: revive old-fast-buggy implementation, use it for mcd32x
+helios: mcd32x support for DoomFusion
+helios: support ExtInterrupt enable, refactor vdp interrupts
+helios: fix saving state to file
+helios: show fps icon, resize icons
+helios: Nuked-OPN2 as an external lib
+mcd: sub68k has a working TAS instruction
+mcd32x: fix bug in 32x homebrew bios
+md: vdp h40 switching, undocumented
+z80: change pc range for md
+
 ## 25.0203
 
 32x: reads to cache purge behave like writes
