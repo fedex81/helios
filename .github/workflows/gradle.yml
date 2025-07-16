@@ -9,7 +9,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up JDK 1.17
+    - name: Set up JDK
       uses: actions/setup-java@v2
       with:
         distribution: 'zulu'
