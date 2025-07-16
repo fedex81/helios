@@ -2,7 +2,7 @@ def dateString = getDate()
 group 'com.fbdev.helios'
 
 
-def javaVersion = JavaVersion.VERSION_17;
+def javaVersion = JavaVersion.VERSION_21;
 
 //version dateString
 version dateString + '-SNAPSHOT'

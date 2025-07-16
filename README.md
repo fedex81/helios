@@ -21,7 +21,7 @@ Sega 32x: The target is a modern mobile cpu capable of boosting ~4Ghz
 this should allow perf close to 60fps for most titles, YMMV.
 
 # How to Run
-Requires java 17+ installed.
+Requires java 21+ installed.
 
 Get the most recent zip file from the download section,  
 for example `helios-19.1108.zip` and extract to a folder.

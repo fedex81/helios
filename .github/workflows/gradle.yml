@@ -9,11 +9,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up JDK 1.17
+    - name: Set up JDK
       uses: actions/setup-java@v2
       with:
         distribution: 'zulu'
-        java-version: '17'      
+        java-version: '21'
     - name: Build with Gradle
       run: ./gradlew packageDistribution
     - uses: actions/upload-artifact@v4
