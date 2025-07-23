@@ -110,7 +110,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         } else if (address < secondarySlot[secSlotNumber].length) {
             res = secondarySlot[secSlotNumber][address];
         } else {
-            LOG.error("Unexpected read: {}, slot: {}", th(addressL), secSlotNumber);
+            LogHelper.logWarnOnce(LOG, "Unexpected read at: {}, slot: {}", th(addressL), secSlotNumber);
         }
         return res;
     }
@@ -136,8 +136,7 @@ public class MsxBus extends DeviceAwareBus<Tms9918aVdp, MsxPad> implements Z80Bu
         } else if (mapper != RomMapper.NO_OP_MAPPER && secSlotNumber > 0 && secSlotNumber < 3) {
             mapper.writeData(addressL, data, size);
         } else {
-            LOG.error("Unexpected write: {}, data: {}, slot: {}", th(addressL),
-                    th(data), secSlotNumber);
+            LogHelper.logWarnOnce(LOG, "Unexpected write at: {}, slot: {}", th(addressL), secSlotNumber);
         }
     }
 
