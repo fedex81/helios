@@ -59,6 +59,7 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.LogHelper.logWarnOnceWhenEn;
+import static omegadrive.util.Util.setBit;
 import static omegadrive.util.Util.th;
 
 public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements MdMainBusProvider, RomMapper {
@@ -379,13 +380,14 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
     //0 means the Z80 bus can be accessed by 68k (/BUSACK asserted and/ZRESET released).
     private int z80BusReqRead(Size size) {
         int prefetch = m68kProvider.getPrefetchWord(); //shadow beast[U] needs the prefetch
-        int value = (prefetch & 0xFE) | ((z80BusRequested && !z80ResetState) ? 0 : 1);
+        int bitVal = (z80BusRequested && !z80ResetState) ? 0 : 1;
+        int res = setBit(prefetch, 0, bitVal); //set byte only
         if (size == Size.WORD) {
             //NOTE: Time Killers is buggy and needs bit0 !=0
-            value = (value << 8) | (prefetch & 0xFEFF);
+            res = setBit(prefetch, 8, bitVal); //set word only
         }
 //        LOG.debug("Read Z80 busReq: {} {}", th(value), size);
-        return value;
+        return res & size.getMask();
     }
 
     /**

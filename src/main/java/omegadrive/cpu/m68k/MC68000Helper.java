@@ -225,7 +225,7 @@ public class MC68000Helper {
     }
 
     public static void printCpuState(Cpu cpu, String head) {
-        LOG.info("{}{}", head, getCpuState(cpu, head));
+        LOG.info("{}", getCpuState(cpu, head));
     }
 
     public static class M68kState {

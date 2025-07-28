@@ -81,7 +81,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
             throw new RuntimeException("oops");
         }
         if (!busyLoopDetection) {
-            McdHacks.runMcdHacks(fastDebug, cpu, currentPC, m68k);
+//            McdHacks.runMcdHacks(fastDebug, cpu, currentPC, m68k);
             //            checkInterruptLevelChange();
             return super.runInstruction();
         }

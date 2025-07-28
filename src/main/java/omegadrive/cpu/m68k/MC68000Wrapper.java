@@ -53,7 +53,7 @@ public class MC68000Wrapper implements M68kProvider {
 
     public static boolean subCpuBusHalt = false;
 
-    private static final CpuConfig tasBrokenConfig = new CpuConfig(true, false, false);
+    private static final CpuConfig tasBrokenConfig = CpuConfig.DEFAULT_CONFIG.withBrokenTas(true);
 
     public MC68000Wrapper(CpuDeviceAccess cpu, MdM68kBusProvider busProvider) {
         this.cpu = cpu;
@@ -95,7 +95,7 @@ public class MC68000Wrapper implements M68kProvider {
 
     @Override
     public int getPrefetchWord() {
-        return addressSpace.readWord(m68k.getPC()); //TODO do it properly
+        return m68k.getPrefetchWord();
     }
 
     @Override
