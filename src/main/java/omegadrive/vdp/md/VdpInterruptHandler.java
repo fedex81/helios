@@ -188,9 +188,8 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
             resetHLinesCounter();
         }
         if (hLinePassed < 0) {
-            setHIntPending(true);
             if (verbose) LOG.info("Set HIP: true, hLinePassed: {}", hLinePassed);
-            vdpEvent.fireVdpEvent(H_LINE_UNDERFLOW, vCounterInternal);
+            setHIntPending(true);
             resetHLinesCounter();
         }
     }
@@ -244,11 +243,10 @@ public class VdpInterruptHandler implements BaseVdpProvider.VdpEventListener, De
     }
 
     public void setHIntPending(boolean hIntPending) {
-        if (hIntPending != this.hIntPending) {
-            if (verbose) LOG.info("Set HIP: {}", hIntPending);
-            this.hIntPending = hIntPending;
-            vdpEvent.fireVdpEvent(VDP_HINT_PENDING, hIntPending);
-        }
+        //NOTE: set even when this.hIntPending is already set (Beastball Proto)
+        if (verbose) LOG.info("Set HIP: {}", hIntPending);
+        this.hIntPending = hIntPending;
+        vdpEvent.fireVdpEvent(VDP_HINT_PENDING, hIntPending);
     }
 
     /**

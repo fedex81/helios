@@ -236,7 +236,8 @@ public class McdPcm implements BufferUtil.StepDevice {
 
     @Override
     public void step(int cycles) {
-        if (chanControl == 0 && active == 0) {
+        //TODO check
+        if (chanControl == 0 || active == 0) {
             return;
         }
         generateOneSample();

@@ -99,7 +99,10 @@ public class BaseVdpInterruptHandlerTest {
         printMsg(h.getStateString("Start Line: " + line));
     }
 
-    private void hIntPendingEvent(VdpInterruptHandler h) {
+    protected void hIntPending(VdpInterruptHandler h, boolean value) {
+        if (!value) {
+            return;
+        }
         printMsg(h.getStateString("HINT pending, Line: " + line));
         if (line >= actualLineInt.length) {
             Assert.fail(h.getStateString("Line: " + line));
@@ -118,9 +121,6 @@ public class BaseVdpInterruptHandlerTest {
                     return;
                 }
                 switch (event) {
-                    case H_LINE_UNDERFLOW:
-                        hIntPendingEvent(h);
-                        break;
                     case INTERRUPT:
                         h.setvIntPending(false);
                         break;
@@ -138,6 +138,9 @@ public class BaseVdpInterruptHandlerTest {
                         break;
                     case REG_H_LINE_COUNTER_CHANGE:
                         printMsg(h.getStateString("Line: " + line + ", hLine Counter changed"));
+                        break;
+                    case VDP_HINT_PENDING:
+                        hIntPending(h, (boolean) value);
                         break;
                 }
             }

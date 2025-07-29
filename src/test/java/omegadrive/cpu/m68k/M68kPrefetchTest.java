@@ -6,8 +6,9 @@ import omegadrive.bus.md.MdBus;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
-import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 
@@ -22,22 +23,22 @@ public class M68kPrefetchTest {
 
     final static int nopOpcode = 0x4E71;
 
-    final static short[] sb_opcodes = {
+    final static short[] tk_opcodes = {
             //68M 00E0_0000 3239 00a11100           move.w   $00a11100,d1
             0x3239, 0x00A1, 0x1100,
-            //68M 00E0_0006 67f8                    beq.s    $0001eb2a [NEW]
-            0x67f8,
+            //68M 00E0_0006 0801 0000               btst     #$0,d1
+            0x0801, 0,
+            //68M 00E0_000A 67f4                    beq.s    $00E0_0000
+            0x67f4,
             //68M 00E0_0008 4e71 NOP
             0x4E71
     };
 
-    final static short[] tk_opcodes = {
+    final static short[] sb_opcodes = {
             //68M 00E0_0000 4a39 00a11100           tst.b    $00a11100 [NEW]
             0x4a39, 0x00A1, 0x1100,
-            //68M 00E0_0006 0801 0000               btst     #$0,d1
-            0x0801, 0,
-            //68M 00E0_000A 67f4                    beq.s    $00000000
-            0x67f4,
+            //68M 00E0_000A 67f8                    beq.s    $00E0_0000
+            0x67f9,
             //68M 00E0_000C 4e71 NOP
             0x4E71
     };
@@ -68,7 +69,7 @@ public class M68kPrefetchTest {
     private MC68000Wrapper w;
 
 
-    @Before
+    @BeforeEach
     public void init() {
         bus = SystemTestUtil.setupNewMdSystem();
         w = bus.getBusDeviceIfAny(MC68000Wrapper.class).get();
@@ -83,7 +84,7 @@ public class M68kPrefetchTest {
      * 68M 0002e962   0801 0000               btst     #$0,d1
      * 68M 0002e966   67f4                    beq.s    $0002e95c
      */
-    @org.junit.Test
+    @Test
     public void testTimeKillers() {
         Cpu m68k = w.m68k;
         writeCodeToRam(w.addressSpace, tk_opcodes);
@@ -97,7 +98,9 @@ public class M68kPrefetchTest {
         checkZ80BusControlValue(0);
 
         m68k.setPC(MdBus.ADDRESS_RAM_MAP_START);
+//        MC68000Helper.printCpuState(m68k, "");
         m68k.execute();
+//        MC68000Helper.printCpuState(m68k, "");
 
         checkZ80BusControlValue(0);
 
@@ -105,9 +108,13 @@ public class M68kPrefetchTest {
         int res = bus.read(Z80_BUS_REQ_CONTROL_START, Size.WORD);
         Assertions.assertEquals(1, res & 1);
 
+//        MC68000Helper.printCpuState(m68k, "");
         m68k.execute();
+//        MC68000Helper.printCpuState(m68k, "");
         m68k.execute();
+//        MC68000Helper.printCpuState(m68k, "");
         m68k.execute();
+//        MC68000Helper.printCpuState(m68k, "");
         Assertions.assertEquals(nopIdx + 2, m68k.getPC());
         Assertions.assertEquals(nopOpcode, m68k.getOpcode());
 
@@ -118,7 +125,7 @@ public class M68kPrefetchTest {
      * 68M 0001eb2a   4a39 00a11100           tst.b    $00a11100
      * 68M 0001eb30   67f8                    beq.s    $0001eb2a
      */
-    @org.junit.Test
+    @Test
     public void testShadowOfTheBeast() {
         MC68000Wrapper w = bus.getBusDeviceIfAny(MC68000Wrapper.class).get();
         Assertions.assertNotNull(w);

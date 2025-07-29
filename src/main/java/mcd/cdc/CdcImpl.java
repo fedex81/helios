@@ -390,6 +390,7 @@ public class CdcImpl implements Cdc {
      */
     public void step(int cycles) {
         cdcContext.stopwatch = (cdcContext.stopwatch + 1) & 0xFFF;
+        //TODO check, should this be set when reading the register?
         setTimerBuffer();
     }
 
