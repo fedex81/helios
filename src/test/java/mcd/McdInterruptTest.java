@@ -2,11 +2,13 @@ package mcd;
 
 import m68k.cpu.CpuException;
 import mcd.bus.McdSubInterruptHandler;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 
 /**
  * Federico Berti
@@ -21,6 +23,7 @@ public class McdInterruptTest extends McdRegTestBase {
      */
     @Test
     public void testAsicIntPending() {
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
         //subCpu ignores interrupts
         subCpu.getM68k().setSR(0x2700);
 

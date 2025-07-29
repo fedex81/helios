@@ -32,11 +32,12 @@ public class McdRegTestBase {
     MegaCdSubCpuBusIntf subCpuBus;
 
     MC68000Wrapper subCpu;
-
     @BeforeEach
     public void setupBase() {
+        MdRuntimeData.releaseInstance();
         MdRuntimeData.newInstance(SystemLoader.SystemType.MEGACD, SystemProvider.NO_CLOCK);
-        lc = McdDeviceHelper.setupDevices();
+        MdRuntimeData.setAccessTypeExt(M68K);
+        lc = McdDeviceHelper.setupDevicesTest();
         ctx = lc.memoryContext;
         mainCpuBus = lc.mainBus;
         subCpuBus = lc.subBus;
@@ -56,12 +57,19 @@ public class McdRegTestBase {
     }
 
     protected int readRegWord(CpuDeviceAccess cpu, RegSpecMcd regSpec) {
+        MdRuntimeData.setAccessTypeExt(cpu);
         return getBus(cpu).read(getMemMapAddress(cpu, regSpec.addr), Size.WORD);
     }
 
     protected int readRegSize(CpuDeviceAccess cpu, RegSpecMcd regSpec, boolean even, Size size) {
         assert size != Size.LONG; //TODO check
+        MdRuntimeData.setAccessTypeExt(cpu);
         return getBus(cpu).read(getMemMapAddress(cpu, regSpec.addr) + (even ? 0 : 1), size);
+    }
+
+    protected int readAddressSize(CpuDeviceAccess cpu, int addr, Size size) {
+        MdRuntimeData.setAccessTypeExt(cpu);
+        return getBus(cpu).read(addr, size);
     }
 
     protected void writeRegWord(CpuDeviceAccess cpu, RegSpecMcd regSpec, int value) {
@@ -70,7 +78,13 @@ public class McdRegTestBase {
 
     protected void writeRegSize(CpuDeviceAccess cpu, RegSpecMcd regSpec, boolean even, int value, Size size) {
         assert size != Size.LONG; //TODO check
+        MdRuntimeData.setAccessTypeExt(cpu);
         getBus(cpu).write(getMemMapAddress(cpu, regSpec.addr) + (even ? 0 : 1), value, size);
+    }
+
+    protected void writeAddressSize(CpuDeviceAccess cpu, int addr, int value, Size size) {
+        MdRuntimeData.setAccessTypeExt(cpu);
+        getBus(cpu).write(addr, value, size);
     }
 
     protected void writeSubRegWord(RegSpecMcd regSpec, int value) {

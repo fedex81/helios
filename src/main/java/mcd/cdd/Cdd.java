@@ -172,8 +172,8 @@ public interface Cdd extends BufferUtil.StepDevice {
     CddRequest[] requestVals = CddRequest.values();
 
 
-    static Cdd createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih, Cdc cdc) {
-        return new CddImpl(memoryContext, ih, cdc);
+    static Cdd createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih, Cdc cdc, boolean soundEnabled) {
+        return new CddImpl(memoryContext, ih, cdc, soundEnabled);
     }
 
     static int getCddChecksum(int[] vals) {

@@ -10,6 +10,7 @@ import mcd.pcm.McdPcm;
 import omegadrive.bus.md.MdBus;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
+import omegadrive.sound.SoundProvider;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
@@ -30,7 +31,16 @@ public class McdDeviceHelper {
 
     public static McdLaunchContext setupDevices() {
         McdLaunchContext ctx = new McdLaunchContext();
-        ctx.initContext();
+        ctx.initContext(false);
+        return ctx;
+    }
+
+    /**
+     * NO_SOUND
+     */
+    public static McdLaunchContext setupDevicesTest() {
+        McdLaunchContext ctx = new McdLaunchContext();
+        ctx.initContext(true);
         return ctx;
     }
 
@@ -49,10 +59,11 @@ public class McdDeviceHelper {
 
         public AsicModel.AsicOp asic;
 
-        public void initContext() {
+        public void initContext(boolean testMode) {
+            boolean soundEnabled = !testMode && SoundProvider.ENABLE_SOUND;
+            LOG.info("Sound enabled: {}, testMode: {}, enableSound flag: {}", soundEnabled, testMode, SoundProvider.ENABLE_SOUND);
             memoryContext = new MegaCdMemoryContext();
-            pcm = new McdPcm();
-
+            pcm = new McdPcm(soundEnabled);
             mdBus = new MdBus();
             subBus = new MegaCdSubCpuBus(memoryContext);
             mainBus = new MegaCdMainCpuBus(memoryContext, mdBus);
@@ -60,7 +71,7 @@ public class McdDeviceHelper {
             subCpu = MC68000Wrapper.createInstance(SUB_M68K, subBus);
             interruptHandler = McdSubInterruptHandler.create(memoryContext, subCpu);
             cdc = Cdc.createInstance(memoryContext, interruptHandler);
-            cdd = Cdd.createInstance(memoryContext, interruptHandler, cdc);
+            cdd = Cdd.createInstance(memoryContext, interruptHandler, cdc, soundEnabled);
             asic = new Asic(memoryContext, interruptHandler);
             subBus.attachDevices(subCpu, pcm, cdd, asic, cdc, interruptHandler);
             mainBus.setSubDevices(subCpu, subBus);

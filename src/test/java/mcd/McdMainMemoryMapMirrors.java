@@ -1,8 +1,11 @@
 package mcd;
 
 import mcd.dict.MegaCdDict;
+import omegadrive.util.BufferUtil;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -20,6 +23,11 @@ import static omegadrive.bus.model.MdMainBusProvider.MEGA_CD_EXP_START;
  */
 public class McdMainMemoryMapMirrors extends McdRegTestBase {
 
+    @BeforeEach
+    public void setup() {
+        super.setupBase();
+        MdRuntimeData.setAccessTypeExt(BufferUtil.CpuDeviceAccess.M68K);
+    }
 
     //$440000-$5FFFFF repeatedly mirrors the $400000-$43FFFF area. (7 copies of Boot ROM / PRG RAM)
     @Test

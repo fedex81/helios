@@ -10,6 +10,8 @@ import java.util.function.Consumer;
 
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_COMM_FLAGS;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
+import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.random;
 import static omegadrive.util.Util.th;
 
@@ -112,15 +114,15 @@ public class McdCommRegTest extends McdRegTestBase {
             System.out.println(th(i));
             int mreg = START_MCD_MAIN_GA_COMM_R + i;
             int sreg = START_MCD_SUB_GA_COMM_R + i;
-            int res = mainCpuBus.read(mreg, size);
-            int sres = subCpuBus.read(sreg, size);
+            int res = readAddressSize(M68K, mreg, size);
+            int sres = readAddressSize(SUB_M68K, mreg, size);
             Assertions.assertEquals(sres, res);
             Assertions.assertEquals(0, res);
             //master write
             int vm = 1 + Util.random.nextInt(max - 1);
-            mainCpuBus.write(mreg, vm, size);
-            res = mainCpuBus.read(mreg, size);
-            sres = subCpuBus.read(sreg, size);
+            writeAddressSize(M68K, mreg, vm, size);
+            res = readAddressSize(M68K, mreg, size);
+            sres = readAddressSize(SUB_M68K, sreg, size);
             if (mreg < END_MCD_MAIN_GA_COMM_W) {
                 Assertions.assertEquals(sres, res);
             } else {
@@ -129,9 +131,9 @@ public class McdCommRegTest extends McdRegTestBase {
             }
             //slave write
             int vs = Math.max(1, vm + 1);
-            subCpuBus.write(sreg, vs, size);
-            res = mainCpuBus.read(mreg, size);
-            sres = subCpuBus.read(sreg, size);
+            writeAddressSize(SUB_M68K, sreg, vs, size);
+            res = readAddressSize(M68K, mreg, size);
+            sres = readAddressSize(SUB_M68K, sreg, size);
             if (sreg >= START_MCD_SUB_GA_COMM_W) {
                 Assertions.assertEquals(sres, res);
             } else {

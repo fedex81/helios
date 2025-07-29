@@ -4,6 +4,7 @@ import mcd.bus.McdSubInterruptHandler;
 import mcd.dict.MegaCdDict;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
+import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
@@ -110,11 +111,9 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         Assertions.assertEquals(regSpec.addr, regSpec.addr);
         int mreg = readWordReg(M68K, mainAddr);
 
-
-
         //SUB write doesn't change MAIN
         int val = reg0SubMask;
-        subCpuBus.write(subAddr, val, Size.WORD);
+        writeAddressSize(SUB_M68K, subAddr, val, Size.WORD);
         int mreg2 = readWordReg(M68K, mainAddr);
         int sreg2 = readWordReg(SUB_M68K, subAddr);
 //        Assertions.assertEquals(val & subMask, sreg2);
@@ -123,7 +122,7 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         //MAIN write doesn't change SUB
         val = 0x301;
         int sreg = readWordReg(SUB_M68K, subAddr);
-        mainCpuBus.write(mainAddr, val, Size.WORD);
+        writeAddressSize(M68K, mainAddr, val, Size.WORD);
         mreg2 = readWordReg(M68K, mainAddr);
         sreg2 = readWordReg(SUB_M68K, subAddr);
         Assertions.assertEquals(val & reg0MainMask, mreg2);
@@ -133,6 +132,7 @@ public class McdGateArrayRegTest extends McdRegTestBase {
     private int readWordReg(CpuDeviceAccess cpu, int address) {
         assert cpu == M68K || cpu == SUB_M68K;
         BaseBusProvider bus = cpu == M68K ? mainCpuBus : subCpuBus;
+        MdRuntimeData.setAccessTypeExt(cpu);
         return bus.read(address, Size.WORD);
     }
 
@@ -150,22 +150,23 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         int mainAddr = MEGA_CD_EXP_START + regSpec.addr;
         int subAddr = START_MCD_SUB_GATE_ARRAY_REGS + regSpec.addr;
         Assertions.assertEquals(regSpec.addr, regSpec.addr);
-        int sreg = subCpuBus.read(subAddr, Size.WORD);
+        int sreg = readWordReg(SUB_M68K, subAddr);
 
         //MAIN write doesnt change SUB
         int val = 0x7EDC;
-        mainCpuBus.write(mainAddr, val, Size.WORD);
-        int mreg = mainCpuBus.read(mainAddr, Size.WORD);
-        int sreg2 = subCpuBus.read(subAddr, Size.WORD);
+        writeAddressSize(M68K, mainAddr, val, Size.WORD);
+
+        int mreg = readWordReg(M68K, mainAddr);
+        int sreg2 = readWordReg(SUB_M68K, subAddr);
         Assertions.assertEquals(val & reg0MainMask, mreg);
         Assertions.assertEquals(sreg, sreg2);
 
         //SUB write doesnt change MAIN
         val = 0x300;
-        mreg = mainCpuBus.read(mainAddr, Size.WORD);
-        subCpuBus.write(subAddr, val, Size.WORD);
-        int mreg2 = mainCpuBus.read(mainAddr, Size.WORD);
-        sreg = subCpuBus.read(subAddr, Size.WORD);
+        mreg = readWordReg(M68K, mainAddr);
+        writeAddressSize(SUB_M68K, subAddr, val, Size.WORD);
+        int mreg2 = readWordReg(M68K, mainAddr);
+        sreg = readWordReg(SUB_M68K, subAddr);
         //reset goes to 1 immediately
         Assertions.assertEquals(val | 1, sreg & 0xFFFF);
         Assertions.assertEquals(mreg, mreg2);
@@ -175,23 +176,23 @@ public class McdGateArrayRegTest extends McdRegTestBase {
         int mainAddr = MEGA_CD_EXP_START + regSpec.addr;
         int subAddr = START_MCD_SUB_GATE_ARRAY_REGS + regSpec.addr;
         Assertions.assertEquals(regSpec.addr, regSpec.addr);
-        int sreg = subCpuBus.read(subAddr, Size.WORD);
+        int sreg = readWordReg(SUB_M68K, subAddr);
 
         //MAIN write doesnt change SUB
         int val = 0x7EDC;
-        mainCpuBus.write(mainAddr, val, Size.WORD);
-        int mreg = mainCpuBus.read(mainAddr, Size.WORD);
-        int sreg2 = subCpuBus.read(subAddr, Size.WORD);
+        writeAddressSize(M68K, mainAddr, val, Size.WORD);
+        int mreg = readWordReg(M68K, mainAddr);
+        int sreg2 = readWordReg(SUB_M68K, subAddr);
         Assertions.assertEquals(val & 0xFFFF, mreg);
         Assertions.assertEquals(sreg, sreg2);
 
         //SUB write doesnt change MAIN
         val = 0x300;
-        mreg = mainCpuBus.read(mainAddr, Size.WORD);
-        subCpuBus.write(subAddr, val, Size.WORD);
-        int mreg2 = mainCpuBus.read(mainAddr, Size.WORD);
+        mreg = readWordReg(M68K, mainAddr);
+        writeAddressSize(SUB_M68K, subAddr, val, Size.WORD);
+        int mreg2 = readWordReg(M68K, mainAddr);
         //CDC data read, should return 0xFF
-        sreg = subCpuBus.read(subAddr, Size.WORD);
+        sreg = readWordReg(SUB_M68K, subAddr);
         Assertions.assertEquals(0xFF, sreg & 0xFF);
         Assertions.assertEquals(mreg, mreg2);
     }
@@ -250,13 +251,13 @@ public class McdGateArrayRegTest extends McdRegTestBase {
     @Test
     public void testResetReg_IEN2_disable() {
         //enable IEN2
-        subCpuBus.write(SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
+        writeAddressSize(SUB_M68K, SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
         //set IFL2
-        int val = mainCpuBus.read(MAIN_RESET_REG, Size.BYTE);
-        mainCpuBus.write(MAIN_RESET_REG, val | 1, Size.BYTE);
+        int val = readAddressSize(M68K, MAIN_RESET_REG, Size.BYTE);
+        writeAddressSize(M68K, MAIN_RESET_REG, val | 1, Size.BYTE);
         //disable IEN2
-        subCpuBus.write(SUB_INT_MASK_ODD, 0, Size.BYTE);
-        val = mainCpuBus.read(MAIN_RESET_REG, Size.BYTE);
+        writeAddressSize(SUB_M68K, SUB_INT_MASK_ODD, 0, Size.BYTE);
+        val = readAddressSize(M68K, MAIN_RESET_REG, Size.BYTE);
         //IFL2 goes to 0
         Assertions.assertEquals(0, val & 1);
     }

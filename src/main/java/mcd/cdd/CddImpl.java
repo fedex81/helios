@@ -16,7 +16,6 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
-import static omegadrive.sound.SoundProvider.ENABLE_SOUND;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.th;
 
@@ -46,11 +45,11 @@ class CddImpl implements Cdd {
     private boolean hasMedia;
 
 
-    public CddImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih, Cdc c) {
+    public CddImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih, Cdc c, boolean soundEnabled) {
         memoryContext = mc;
         interruptHandler = ih;
         cdc = c;
-        playSupport = ENABLE_SOUND ?
+        playSupport = soundEnabled ?
                 new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100) : BlipPcmProvider.NO_SOUND;
         setDataOrMusicBit(CddControl_DM_bit.DATA_1);
         setIoStatus(NoDisc);
