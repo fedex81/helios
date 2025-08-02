@@ -33,10 +33,17 @@ import java.util.stream.Collectors;
  * Federico Berti
  * <p>
  * Copyright 2020
+ *
+ * TODO clear frameTimeStamp periodically ?
  */
 public class Telemetry {
     private final static Logger LOG = LogHelper.getLogger(Telemetry.class.getSimpleName());
-    public static final boolean enable = false;
+    public static final boolean enableLogToFile = false;
+
+    private static final String FPS_KEY = "fps";
+    private static final String DRIFT_KEY = "driftNs";
+
+    private static final String WAIT_KEY = "waitNs";
 
     private static final Function<Map<?, Double>, String> toStringFn = map -> {
         String res = Arrays.toString(map.values().toArray());
@@ -58,10 +65,11 @@ public class Telemetry {
     private final Table<String, Long, Double> data = TreeBasedTable.create();
     private final Map<Long, Timing> frameTimeStamp = new HashMap<>();
 
-    private void addFrameTimestamp() {
+    private void addFrameTimestamp(double waitNs) {
         Timing t = new Timing();
         t.instantNow = Instant.now().toEpochMilli();
         t.nanoTime = System.nanoTime();
+        t.frameWaitNs = (long) waitNs;
         frameTimeStamp.put(systemClock.getFrameCounter(), t);
     }
 
@@ -84,7 +92,7 @@ public class Telemetry {
     }
 
     public void addSample(String type, double value) {
-        if (!enable) {
+        if (!enableLogToFile) {
             return;
         }
         if (frameCounter > 0) {
@@ -109,15 +117,23 @@ public class Telemetry {
         return 1.0 * (current.instantNow - prev.instantNow) / STATS_EVERY_FRAMES;
     }
 
-    public boolean hasNewStats() {
-        return frameCounter % STATS_EVERY_FRAMES == 0; //update fps label every N frames
+    public long getAvgWaitTimeNs(long fc) {
+        long totWaitNs = 0;
+        for (long i = fc - STATS_EVERY_FRAMES; i <= fc; i++) {
+            totWaitNs += frameTimeStamp.getOrDefault(i, NO_TIMING).frameWaitNs;
+        }
+        return totWaitNs / STATS_EVERY_FRAMES;
     }
 
-    public Optional<String> getNewStats() {
+    public boolean hasNewStats(long fc) {
+        return fc % STATS_EVERY_FRAMES == 0; //update fps label every N frames
+    }
+
+    public Optional<String> getNewStats(long fc) {
         Optional<String> o = Optional.empty();
-        if (hasNewStats()) {
+        if (hasNewStats(fc)) {
             Optional<String> arc = AudioRateControl.getLatestStats();
-            double ft = getAvgFrameTimeMs(frameCounter);
+            double ft = getAvgFrameTimeMs(fc);
             o = Optional.of(fpsFormatter.format(ft) + "ms (" + getAvgFpsRounded(ft) + "fps)"
                     + (arc.map(s -> ", " + s).orElse("")));
         }
@@ -131,18 +147,24 @@ public class Telemetry {
         telemetryFile = null;
     }
 
-    public Optional<String> newFrame(double frameTimeNs, double driftNs) {
-        addFrameTimestamp();
-        addSample("fps", (1.0 * Util.SECOND_IN_NS) / frameTimeNs);
-        addSample("driftNs", driftNs);
-        Optional<String> os = getNewStats();
+    public void newFrame(double frameTimeNs, double driftNs, double waitNs) {
+        addFrameTimestamp(waitNs);
+        if (enableLogToFile) {
+            addSample(FPS_KEY, (1.0 * Util.SECOND_IN_NS) / frameTimeNs);
+            addSample(DRIFT_KEY, driftNs);
+            addSample(WAIT_KEY, waitNs);
+        }
         newFrame();
-        return os;
+    }
+
+    public static int frameWaitAsPerc(double fps, double frameWaitNs) {
+        double frameDurationNs = 1_000_000_000L / fps;
+        return (int) (100 * (frameWaitNs / frameDurationNs));
     }
 
     public void newFrame() {
         frameCounter++;
-        if (!enable) {
+        if (!enableLogToFile) {
             return;
         }
         if (frameCounter == 2) {
@@ -170,6 +192,7 @@ public class Telemetry {
     static class Timing {
         long instantNow;
         long nanoTime;
+        long frameWaitNs;
     }
 
     public long getFrameCounter() {

@@ -339,7 +339,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                 break;
         }
         if (mode == null) {
-            LOG.error("Unexpected setup: {}, vramDestination: {}", dmaBits, vramMode);
+            LogHelper.logWarnOnce(LOG, "Unexpected setup: {}, vramDestination: {}", dmaBits, vramMode);
         }
         return mode;
     }

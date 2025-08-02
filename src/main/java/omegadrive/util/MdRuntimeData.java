@@ -127,4 +127,11 @@ public class MdRuntimeData {
     public static SystemClock getSystemClockExt() {
         return rt.clock;
     }
+
+    public static void assertInstanceSet() {
+        assert rt != null;
+        if (rt == null) {
+            LOG.error("Instance not set!!");
+        }
+    }
 }

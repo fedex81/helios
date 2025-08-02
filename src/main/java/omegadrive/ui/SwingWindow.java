@@ -27,6 +27,7 @@ import omegadrive.input.InputProvider.PlayerNumber;
 import omegadrive.joypad.JoypadProvider.JoypadType;
 import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
+import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.flatlaf.FlatLafHelper;
 import omegadrive.ui.util.IconsLoader;
 import omegadrive.ui.util.UiFileFilters;
@@ -90,6 +91,7 @@ public class SwingWindow implements DisplayWindow {
     private final JLabel regionLabel = new JLabel("");
     private final JLabel megaCdLedLabel = new JLabel("");
     private final JLabel fpsLabel = new JLabel("");
+    private final JLabel waitTimePercLabel = new JLabel("");
 
     private JFrame jFrame;
     private SystemProvider mainEmu;
@@ -217,6 +219,7 @@ public class SwingWindow implements DisplayWindow {
             regionLabel.setText("");
             megaCdLedLabel.setIcon(null);
             fpsLabel.setText("");
+            waitTimePercLabel.setText("");
             jFrame.setTitle(FRAME_TITLE_HEAD);
             cursorHandler.reset();
             LOG.info("Blanking screen");
@@ -254,6 +257,7 @@ public class SwingWindow implements DisplayWindow {
             dcCopy.label = dc.label;
             dcCopy.videoMode = dc.videoMode;
             dcCopy.fps = dc.fps;
+            dcCopy.waitNs = dc.waitNs;
             previousFrame =
                     executorService.submit(Util.wrapRunnableEx(() -> renderScreenLinearInternal(pixelsSrc, dcCopy)));
         } else {
@@ -359,8 +363,11 @@ public class SwingWindow implements DisplayWindow {
         infoPanel.setLayout(bl);
 
         fpsLabel.setMaximumSize(new Dimension(25, 25));
+        waitTimePercLabel.setMaximumSize(new Dimension(25, 25));
 
         infoPanel.add(fpsLabel);
+        infoPanel.add(Box.createHorizontalStrut(2));
+        infoPanel.add(waitTimePercLabel);
         infoPanel.add(Box.createHorizontalStrut(2));
         infoPanel.add(megaCdLedLabel);
         infoPanel.add(Box.createHorizontalStrut(2));
@@ -464,6 +471,7 @@ public class SwingWindow implements DisplayWindow {
         RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
         dc.label.ifPresent(l -> showEventInfo());
         dc.fps.ifPresent(f -> showFpsIcon(f, dc.label));
+        dc.waitNs.ifPresent(w -> showFrameWaitIcon(Telemetry.frameWaitAsPerc(dc.fps.get(), w)));
         dc.megaCdLedState.ifPresent(v -> megaCdLedLabel.setIcon(IconsLoader.getLedIcon(v)));
         screenLabel.repaint();
         detectUserScreenChange();
@@ -477,6 +485,15 @@ public class SwingWindow implements DisplayWindow {
         String s = "<html><font size=\"4\" color=\"" + htmlColor + "\"><b>" + fpsr + "</b></font></html>";
         fpsLabel.setText(s);
         explain.ifPresent(fpsLabel::setToolTipText);
+    }
+
+    private void showFrameWaitIcon(double frameWaitPerc) {
+        int wti = (int) Math.round(frameWaitPerc);
+        double limit1 = 10.0, limit2 = 5.0;
+        String htmlColor = wti < limit2 ? "red" : (wti < limit1 ? "orange" : "lime");
+        String s = "<html><font size=\"2\" color=\"" + htmlColor + "\"><b>" + wti + "%</b></font></html>";
+        waitTimePercLabel.setText(s);
+        waitTimePercLabel.setToolTipText("Percentage of the frameTime spent idle: " + wti + "%");
     }
 
     private void detectUserScreenChange() {

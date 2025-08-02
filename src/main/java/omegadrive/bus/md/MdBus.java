@@ -349,7 +349,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
 //            $A11OO0 D8 ( W)
 //            O: ROM MODE
 //            1: D-RAM MODE
-            LOG.info("Setting memory mode to: {}", data);
+            LogHelper.logWarnOnce(LOG, "Setting memory mode to: {}", data);
         } else if (address >= Z80_BUS_REQ_CONTROL_START && address <= Z80_BUS_REQ_CONTROL_END) {
             z80BusReqWrite(data, size);
         } else if (address >= Z80_RESET_CONTROL_START && address <= Z80_RESET_CONTROL_END) {
@@ -426,7 +426,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
             }
             if (verbose) LOG.debug("Mapper register set: {}, {}", data, mapper.getClass().getSimpleName());
         } else {
-            LOG.warn("Unexpected mapper set, address: {}, data: {} {}", th(addressL), th(data), size);
+            LogHelper.logWarnOnce(LOG, "Unexpected mapper set, address: {}, data: {} {}", th(addressL), th(data), size);
         }
     }
 
@@ -434,7 +434,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         if (addressL == SRAM_LOCK && size == Size.BYTE) { //chaotix
             return sramLockValue;
         }
-        LOG.warn("Unexpected /TIME or mapper read at: {} {}", th(addressL), size);
+        LogHelper.logWarnOnce(LOG, "Unexpected /TIME or mapper read at: {} {}", th(addressL), size);
         return size.getMask();
     }
 

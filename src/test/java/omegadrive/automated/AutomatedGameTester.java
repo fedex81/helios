@@ -20,6 +20,7 @@
 package omegadrive.automated;
 
 import omegadrive.SystemLoader;
+import omegadrive.SystemLoader.SystemType;
 import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.FileUtil;
@@ -29,15 +30,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static omegadrive.SystemLoader.SystemType.*;
-import static omegadrive.system.SysUtil.*;
+import static omegadrive.SystemLoader.SystemType.MD;
+import static omegadrive.system.SysUtil.compressedBinaryTypes;
+import static omegadrive.system.SysUtil.sysFileExtensionsMap;
 import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_ROM;
 
 public class AutomatedGameTester {
@@ -47,7 +47,7 @@ public class AutomatedGameTester {
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
 
-    private static String romFolder = "/home/fede/roms/md/nointro2020";
+    private static String romFolder = ".";
 
     private static boolean noIntro = true;
     private static String header = "rom;boot;sound";
@@ -59,30 +59,26 @@ public class AutomatedGameTester {
     private static List<String> blackList = FileUtil.readFileContent(Paths.get(resFolder.toAbsolutePath().toString()
             , "blacklist.txt"));
 
-    public static Predicate<Path> testGenRomsPredicate = p ->
-            Arrays.stream(sysFileExtensionsMap.get(MD)).anyMatch(p.toString()::endsWith) ||
-                    Arrays.stream(compressedBinaryTypes).anyMatch(p.toString()::endsWith);
+    private static EnumMap<SystemType, Predicate<Path>> systemFilterMap;
 
-    private static Predicate<Path> testSgRomsPredicate = p ->
-            Arrays.stream(sysFileExtensionsMap.get(SG_1000)).anyMatch(p.toString()::endsWith);
+    public static BiPredicate<SystemType, Path> testSystemRomsPredicate = (st, p) ->
+            Arrays.stream(sysFileExtensionsMap.get(st)).anyMatch(p.toString()::endsWith);
 
-    private static Predicate<Path> testColecoRomsPredicate = p ->
-            Arrays.stream(sysFileExtensionsMap.get(COLECO)).anyMatch(p.toString()::endsWith);
-
-    private static Predicate<Path> testMsxRomsPredicate = p ->
-            Arrays.stream(sysFileExtensionsMap.get(MSX)).anyMatch(p.toString()::endsWith);
-
-    private static Predicate<Path> testSmsRomsPredicate = p ->
-            Arrays.stream(sysFileExtensionsMap.get(SMS)).anyMatch(p.toString()::endsWith);
-
-    private static Predicate<Path> testGgRomsPredicate = p ->
-            Arrays.stream(sysFileExtensionsMap.get(GG)).anyMatch(p.toString()::endsWith);
-
-    private static Predicate<Path> testAllRomsPredicate = p ->
-            Arrays.stream(binaryTypes).anyMatch(p.toString()::endsWith);
+    static {
+        systemFilterMap = new EnumMap<>(SystemType.class);
+        Predicate<Path> mdFilter = p -> testSystemRomsPredicate.test(MD, p) ||
+                Arrays.stream(compressedBinaryTypes).anyMatch(p.toString()::endsWith);
+        Predicate<Path> mdExtraFilter = p -> !p.toString().toLowerCase().contains("32x");
+        systemFilterMap.put(MD, mdExtraFilter.and(mdFilter));
+        for (SystemType st : SystemType.values()) {
+            if (st != MD) {
+                systemFilterMap.put(st, p -> testSystemRomsPredicate.test(st, p));
+            }
+        }
+    }
 
     private static Predicate<Path> testVerifiedRomsPredicate = p ->
-            testGenRomsPredicate.test(p) &&
+            systemFilterMap.get(MD).test(p) &&
                     (noIntro || p.getFileName().toString().contains("[!]"));
 
     static {
@@ -102,19 +98,15 @@ public class AutomatedGameTester {
         System.out.println("Blacklist entries: " + blackList.size());
 //        new AutomatedGameTester().testAll(false);
 //        new AutomatedGameTester().testList();
-//        new AutomatedGameTester().bootRomsSg1000(true);
-//        new AutomatedGameTester().bootRomsColeco(true);
-//        new AutomatedGameTester().bootRomsMsx(true);
-//        new AutomatedGameTester().bootRomsSms(true);
-//        new AutomatedGameTester().bootRomsGg(true);
-        new AutomatedGameTester().bootRecursiveRoms(true);
+        new AutomatedGameTester().bootRecursiveRoms(MD, true);
         System.exit(0);
     }
 
-    private void bootRecursiveRoms(boolean shuffle) throws IOException {
+    private void bootRecursiveRoms(SystemType st, boolean shuffle) throws IOException {
         Path folder = Paths.get(romFolder);
         List<Path> testRoms = Files.walk(folder, FileVisitOption.FOLLOW_LINKS).
-                filter(p -> testGenRomsPredicate.test(p)).collect(Collectors.toList());
+                filter(p -> systemFilterMap.get(st).test(p)).collect(Collectors.toList());
+        System.out.println("Folder: " + folder.toAbsolutePath());
         System.out.println("Loaded files: " + testRoms.size());
         System.out.println("Randomizer seed: " + seed);
         if (shuffle) {
@@ -125,30 +117,6 @@ public class AutomatedGameTester {
         } catch (Exception | Error e) {
             e.printStackTrace();
         }
-    }
-
-    private void bootRomsSg1000(boolean shuffle) throws IOException {
-        filterAndBootRoms(testSgRomsPredicate, shuffle);
-    }
-
-    private void bootRomsColeco(boolean shuffle) throws IOException {
-        filterAndBootRoms(testColecoRomsPredicate, shuffle);
-    }
-
-    private void bootRomsMd(boolean shuffle) throws IOException {
-        filterAndBootRoms(testVerifiedRomsPredicate, shuffle);
-    }
-
-    private void bootRomsMsx(boolean shuffle) throws IOException {
-        filterAndBootRoms(testMsxRomsPredicate, shuffle);
-    }
-
-    private void bootRomsSms(boolean shuffle) throws IOException {
-        filterAndBootRoms(testSmsRomsPredicate, shuffle);
-    }
-
-    private void bootRomsGg(boolean shuffle) throws IOException {
-        filterAndBootRoms(testGgRomsPredicate, shuffle);
     }
 
     private void filterAndBootRoms(Predicate<Path> p, boolean shuffle) throws IOException {
@@ -183,12 +151,16 @@ public class AutomatedGameTester {
         long logFileLen = 0;
         int count = 1;
         SystemLoader systemLoader = SystemLoader.getInstance();
-        SystemProvider system;
+        SystemProvider system = null;
         for (Path rom : testRoms) {
-            MediaSpecHolder romSpec = MediaSpecHolder.of(rom);
             String name = rom.getFileName().toString();
             System.out.println(count++ + ": " + name);
-            system = systemLoader.handleNewRomFile(romSpec);
+            try {
+                MediaSpecHolder romSpec = MediaSpecHolder.of(rom);
+                system = systemLoader.handleNewRomFile(romSpec);
+            } catch (Exception | Error e) {
+                e.printStackTrace();
+            }
             if (system == null) {
                 System.out.print(" - SKIP");
                 continue;

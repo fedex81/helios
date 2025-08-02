@@ -150,7 +150,7 @@ public class JavaSoundManager extends AbstractSoundManager {
     }
 
     private void doStats() {
-        if (Telemetry.enable) {
+        if (Telemetry.enableLogToFile) {
             telemetry.addSample("audioThreadLoops", audioThreadLoops);
             telemetry.addSample("audioThreadEmptyLoops", audioThreadEmptyLoops);
             telemetry.addSample("audioSamplesConsumed", samplesConsumedCount);

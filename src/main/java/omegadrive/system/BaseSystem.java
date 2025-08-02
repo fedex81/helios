@@ -20,7 +20,6 @@
 package omegadrive.system;
 
 import omegadrive.Device;
-import omegadrive.SystemLoader;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.UserConfigHolder;
 import omegadrive.bus.model.BaseBusProvider;
@@ -43,7 +42,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
 
 import static omegadrive.system.MediaSpecHolder.NO_ROM;
 
@@ -262,13 +260,13 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
     protected void getStats(long nowNs, long prevStartNs) {
         final long fc = telemetry.getFrameCounter();
-        Optional<String> statsOpt = telemetry.newFrame(nowNs - prevStartNs, driftNs);
-        statsOpt.ifPresent(st -> {
-            if (SystemLoader.showFps) {
-                statsConsumer.accept(st);
-            }
+        //NOTE this bumps the frameCounter
+        telemetry.newFrame(nowNs - prevStartNs, driftNs, elapsedWaitNs);
+        if (telemetry.hasNewStats(fc)) {
+            displayContext.label = telemetry.getNewStats(fc);
             displayContext.fps = Optional.of(telemetry.getAvgFps(fc));
-        });
+            displayContext.waitNs = Optional.of(telemetry.getAvgWaitTimeNs(fc));
+        }
     }
 
     protected long syncCycle(long startCycle) {
@@ -350,7 +348,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 //        LOG.info("{}, {}", elapsedWaitNs, frameProcessingDelayNs);
     }
 
-    final Consumer<String> statsConsumer = st -> displayContext.label = Optional.of(st);
+//    final Consumer<String> statsConsumer = st -> displayContext.label = Optional.of(st);
 
     class RomRunnable implements Runnable {
         private final MediaSpecHolder romSpec;
@@ -363,6 +361,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
 
         @Override
         public void run() {
+            MdRuntimeData.assertInstanceSet();
             try {
                 if (memory.getRomData().length == 0) {
                     return;

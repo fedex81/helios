@@ -152,7 +152,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     }
 
     private void doStats() {
-        if (Telemetry.enable) {
+        if (Telemetry.enableLogToFile) {
             telemetry.addSample("audioThreadLoops", audioThreadLoops);
             telemetry.addSample("audioThreadEmptyLoops", audioThreadEmptyLoops);
             telemetry.addSample("audioSamplesConsumed", samplesConsumedCount);

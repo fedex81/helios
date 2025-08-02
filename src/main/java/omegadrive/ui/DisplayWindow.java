@@ -45,6 +45,8 @@ public interface DisplayWindow extends RegionDetector.RegionOverrideSupplier {
         public Optional<String> label = Optional.empty();
 
         public Optional<Double> fps = Optional.empty();
+
+        public Optional<Long> waitNs = Optional.empty();
         public Optional<Integer> megaCdLedState = Optional.empty();
     }
 

@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static omegadrive.automated.AutomatedGameTester.testGenRomsPredicate;
+import static omegadrive.SystemLoader.SystemType.MD;
 
 /**
  * Federico Berti
@@ -30,7 +30,7 @@ public class MdRomHeaderTest {
     private void testCartridgeInfo() throws Exception {
         Path folder = Paths.get(romFolder);
         List<Path> testRoms = Files.walk(folder, FileVisitOption.FOLLOW_LINKS).
-                filter(p -> testGenRomsPredicate.test(p)).collect(Collectors.toList());
+                filter(p -> AutomatedGameTester.testSystemRomsPredicate.test(MD, p)).collect(Collectors.toList());
         System.out.println("Loaded files: " + testRoms.size());
         System.out.close();
         for (Path rom : testRoms) {

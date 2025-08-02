@@ -470,7 +470,7 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     private int readDataPortInternal() {
         int res = memoryInterface.readVideoRamWord(vramMode, addressRegister);
         if (vramMode == null || vramMode.isWriteMode()) {
-            LOG.error("Unexpected vramMode: {}, vdp should lock up", vramMode);
+            LogHelper.logWarnOnce(LOG, "Unexpected vramMode: {}, vdp should lock up", vramMode);
             return res;
         }
         int fifoData = fifo.peek().data;
