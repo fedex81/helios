@@ -2,6 +2,7 @@ package s32x.sh2.drc;
 
 import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
+import s32x.sh2.drc.Sh2DrcBlockOptimizer.BlockPollData;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +14,7 @@ import java.util.Map;
  */
 public class HardcodePoller {
 
-    public static Map<Integer, Sh2DrcBlockOptimizer.BlockPollData> hardcodePollers = new HashMap<>();
+    public static Map<Integer, BlockPollData> hardcodePollers = new HashMap<>();
 
     static {
         /**
@@ -26,18 +27,10 @@ public class HardcodePoller {
          *  00002612	51f2	mov.l @(2, R15), R1
          */
         int[] w = new int[]{0x471b, 0x0829, 0x2888, 0x8dfb, 0x51f2};
-        Sh2DrcBlockOptimizer.BlockPollData bpd = new Sh2DrcBlockOptimizer.BlockPollData(null, null, -1, w);
-        bpd.memLoadPos = 0;
-        bpd.memLoadTargetSize = Size.BYTE;
-        bpd.memLoadOpcode = bpd.words[bpd.memLoadPos];
-        bpd.cmpPos = 2;
-        bpd.cmpOpcode = bpd.words[bpd.cmpPos];
-        bpd.branchPos = 3;
-        bpd.branchOpcode = bpd.words[bpd.branchPos];
-        hardcodePollers.put(BufferUtil.hashCode(bpd.words, bpd.words.length), bpd);
+        createAddBlockPollData(w, 0, Size.BYTE, 2, 3);
 
         /**
-         * Doom Fusion V2
+         * Doom Fusion V2,DoomRes 3.3a
          *  2025-02-06 22:58:33.445 ERROR [XF_V2.32x)] Sh2DrcBlockOptimizer: MASTER Poll ignored at PC 201215a: 603f190 NONE
          *   0201215a	6b81	mov.w @R8, R11
          *   0001215c	2bb8	tst R11, R11
@@ -45,26 +38,10 @@ public class HardcodePoller {
          *   00012160	5cfb	mov.l @(11, R15), R12
          */
         w = new int[]{0x6b81, 0x2bb8, 0x8ffc, 0x5cfb};
-        bpd = new Sh2DrcBlockOptimizer.BlockPollData(null, null, -1, w);
-        bpd.memLoadPos = 0;
-        bpd.memLoadTargetSize = Size.WORD;
-        bpd.memLoadOpcode = bpd.words[bpd.memLoadPos];
-        bpd.cmpPos = 1;
-        bpd.cmpOpcode = bpd.words[bpd.cmpPos];
-        bpd.branchPos = 2;
-        bpd.branchOpcode = bpd.words[bpd.branchPos];
-        hardcodePollers.put(BufferUtil.hashCode(bpd.words, bpd.words.length), bpd);
+        createAddBlockPollData(w, 0, Size.WORD, 1, 2);
 
         /**
          * SRB2 32XN
-         * 2024-12-24 23:36:34.012 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: MASTER Poll ignored at PC 20190e8: 603bf3a NONE
-         * 020190e8	6031	mov.w @R3, R0
-         * 000190ea	6121	mov.w @R2, R1
-         * 000190ec	611d	extu.w R1, R1
-         * 000190ee	c901	and H'01, R0
-         * 000190f0	3010	cmp/eq R1, R0
-         * 000190f2	8bf9	bf H'000190e8
-         * <p>
          * 2024-12-24 23:39:33.693 ERROR [X_v0.1.32x] Sh2DrcBlockOptimizer: MASTER Poll ignored at PC 2016e40: 2603bf2c NONE
          * 02016e40	6642	mov.l @R4, R6
          * 00016e42	6163	mov R6, R1
@@ -74,18 +51,42 @@ public class HardcodePoller {
          * 00016e4a	e363	mov H'63, R3
          */
         w = new int[]{0x6642, 0x6163, 0x3178, 0x31a3, 0x8ffa, 0xe363};
-        bpd = new Sh2DrcBlockOptimizer.BlockPollData(null, null, -1, w);
-        bpd.memLoadPos = 0;
-        bpd.memLoadTargetSize = Size.LONG;
-        bpd.memLoadOpcode = bpd.words[bpd.memLoadPos];
-        bpd.cmpPos = 3;
-        bpd.cmpOpcode = bpd.words[bpd.cmpPos];
-        bpd.branchPos = 4;
-        bpd.branchOpcode = bpd.words[bpd.branchPos];
-        hardcodePollers.put(BufferUtil.hashCode(bpd.words, bpd.words.length), bpd);
+        createAddBlockPollData(w, 0, Size.LONG, 3, 4);
+
+        /**
+         * DoomRes 3.3a
+         *
+         * 6002a02	471b	tas.b @R7
+         * 00002a04	0829	movt R8
+         * 00002a06	2888	tst R8, R8
+         * 00002a08	8dfb	bt/s H'00002a02
+         * 00002a0a	5ef2	mov.l @(2, R15), R14
+         */
+        w = new int[]{0x471b, 0x0829, 0x2888, 0x8dfb, 0x5ef2};
+        createAddBlockPollData(w, 0, Size.BYTE, 2, 3);
     }
 
-    public static void copyData(Sh2DrcBlockOptimizer.BlockPollData src, Sh2DrcBlockOptimizer.BlockPollData dest) {
+    private static void addPoller(BlockPollData bpd) {
+        BlockPollData prev = hardcodePollers.put(BufferUtil.hashCode(bpd.words, bpd.words.length), bpd);
+//        System.out.println(Arrays.toString(bpd.words) + "," + BufferUtil.hashCode(bpd.words, bpd.words.length));
+        assert prev == null;
+    }
+
+    private static BlockPollData createAddBlockPollData(int[] words, int memLoadPos, Size memLoadSize, int cmpPos, int branchPos) {
+        BlockPollData bpd = new BlockPollData(null, null, -1, words);
+        bpd.memLoadPos = memLoadPos;
+        bpd.memLoadTargetSize = memLoadSize;
+        bpd.memLoadOpcode = bpd.words[bpd.memLoadPos];
+        bpd.cmpPos = cmpPos;
+        bpd.cmpOpcode = bpd.words[bpd.cmpPos];
+        bpd.branchPos = branchPos;
+        bpd.branchOpcode = bpd.words[bpd.branchPos];
+        addPoller(bpd);
+        return bpd;
+
+    }
+
+    public static void copyData(BlockPollData src, BlockPollData dest) {
         dest.memLoadPos = src.memLoadPos;
         dest.memLoadTargetSize = src.memLoadTargetSize;
         dest.memLoadOpcode = src.memLoadOpcode;
@@ -95,5 +96,9 @@ public class HardcodePoller {
         dest.branchOpcode = src.branchOpcode;
         dest.branchPc = dest.pc + (dest.branchPos << 1);
         dest.isPoller = true;
+    }
+
+    public static void main(String[] args) {
+        System.out.println("test");
     }
 }

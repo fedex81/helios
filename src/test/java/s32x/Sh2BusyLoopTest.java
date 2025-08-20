@@ -590,6 +590,21 @@ public class Sh2BusyLoopTest {
         Assertions.assertFalse(isBusyLoopSequence(opcodes));
 
         /**
+         * TODO NOT Supported two mem loads, doomRes 3.3a
+         *  SLAVE Poll ignored at PC 6002a02: 603ffa8 NONE
+         *  06002a02	471b	tas.b @R7
+         *  00002a04	0829	movt R8
+         *  00002a06	2888	tst R8, R8
+         *  00002a08	8dfb	bt/s H'00002a02
+         *  00002a0a	5ef2	mov.l @(2, R15), R14
+         */
+        clearSh2Context();
+        setReg(sh2Context, 7, S32xDict.START_DRAM);
+        opcodes = new int[]{0x471b, 0x0829, 0x2888, 0x8dfb, 0x5ef2};
+        Assertions.assertFalse(isPollSequence(opcodes));
+        Assertions.assertFalse(isBusyLoopSequence(opcodes));
+
+        /**
          *
          * Doom res
          *
