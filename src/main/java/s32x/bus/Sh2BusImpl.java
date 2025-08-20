@@ -18,7 +18,6 @@ import s32x.sh2.prefetch.Sh2PrefetchSimple;
 import s32x.sh2.prefetch.Sh2Prefetcher;
 import s32x.util.BiosHolder;
 import s32x.util.debug.MemAccessStats;
-import s32x.util.debug.SdramSyncTester;
 
 import java.nio.ByteBuffer;
 
@@ -35,7 +34,6 @@ public final class Sh2BusImpl implements Sh2Bus {
 
     private static final String ILLEGAL_ACCESS_STR = "{} sh2 {} access to {} when {}={}, addr: {} {}";
 
-    private static final boolean SDRAM_SYNC_TESTER = false;
     public BiosHolder.BiosData[] bios = new BiosHolder.BiosData[2];
     public ByteBuffer sdram;
     public ByteBuffer rom;
@@ -51,8 +49,6 @@ public final class Sh2BusImpl implements Sh2Bus {
     private final MdRomAccess mdBus;
     private final MemoryDataCtx memoryDataCtx;
     private final Sh2Config config;
-
-    private final SdramSyncTester sdramSyncTester;
 
     public Sh2BusImpl(S32XMMREG s32XMMREG, ByteBuffer rom, BiosHolder biosHolder, MdRomAccess mdBus, Sh2Prefetch.Sh2DrcContext... drcCtx) {
         memoryDataCtx = new MemoryDataCtx();
@@ -73,7 +69,6 @@ public final class Sh2BusImpl implements Sh2Bus {
         memoryDataCtx.romMask = romMask = Util.getRomMask(romSize);
         prefetch = sh2Config.drcEn ? new Sh2Prefetch(this, cache, drcCtx) : new Sh2PrefetchSimple(this, cache);
         config = Sh2Config.get();
-        sdramSyncTester = SDRAM_SYNC_TESTER ? new SdramSyncTester(sdram) : SdramSyncTester.NO_OP;
         Gs32xStateHandler.addDevice(this);
         LOG.info("Rom size: {}, mask: {}", th(romSize), th(romMask));
     }
@@ -109,9 +104,6 @@ public final class Sh2BusImpl implements Sh2Bus {
                 } else if (address >= S32xDict.SH2_START_SDRAM && address < S32xDict.SH2_END_SDRAM) {
                     res = BufferUtil.readBuffer(sdram, address & S32xDict.SH2_SDRAM_MASK, size);
                     S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.SDRAM);
-                    if (SDRAM_SYNC_TESTER) {
-                        sdramSyncTester.readSyncCheck(cpuAccess, address, size);
-                    }
                 } else if (address >= S32xDict.START_DRAM && address < S32xDict.END_DRAM_OVER_MIRROR) {
                     if (BufferUtil.ENFORCE_FM_BIT_ON_READS && s32XMMREG.fm == 0) {
                         logWarnIllegalAccess(cpuAccess, "read", "FB/OVER", "FM",
@@ -175,9 +167,6 @@ public final class Sh2BusImpl implements Sh2Bus {
                     }
                     s32XMMREG.write(address & S32xDict.DRAM_OVER_MIRROR_MASK, val, size);
                 } else if (address >= S32xDict.SH2_START_SDRAM && address < S32xDict.SH2_END_SDRAM) {
-                    if (SDRAM_SYNC_TESTER) {
-                        sdramSyncTester.writeSyncCheck(cpuAccess, address, val, size);
-                    }
                     hasMemoryChanged = BufferUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, val, size);
                     S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.SDRAM);
                 } else if (address >= S32xDict.START_32X_SYSREG && address < S32xDict.END_32X_SYSREG) {
@@ -241,9 +230,6 @@ public final class Sh2BusImpl implements Sh2Bus {
     @Override
     public void newFrame() {
         prefetch.newFrame();
-        if (SDRAM_SYNC_TESTER) {
-            sdramSyncTester.newFrameSync();
-        }
     }
 
     @Override

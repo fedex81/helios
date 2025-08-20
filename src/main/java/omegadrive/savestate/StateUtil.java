@@ -2,7 +2,6 @@ package omegadrive.savestate;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
-import com.google.common.primitives.Bytes;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.cpu.z80.Z80Helper;
@@ -24,6 +23,7 @@ import java.util.zip.ZipEntry;
 
 import static omegadrive.util.ArrayEndianUtil.getUInt32LE;
 import static omegadrive.util.ArrayEndianUtil.setUInt32LE;
+import static omegadrive.util.BufferUtil.indexOf;
 
 /**
  * Federico Berti
@@ -191,10 +191,8 @@ public class StateUtil {
         return buffer;
     }
 
-    //TODO copies the array
     private static int getNextPosForPattern(byte[] buf, int startPos, String pattern) {
-        byte[] ba2 = Arrays.copyOfRange(buf, startPos, buf.length);
-        int endPos = Bytes.indexOf(ba2, pattern.getBytes()) + startPos;
+        int endPos = indexOf(buf, pattern.getBytes(), startPos);
         return endPos > startPos ? endPos : buf.length;
     }
 

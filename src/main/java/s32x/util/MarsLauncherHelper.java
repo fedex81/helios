@@ -5,12 +5,10 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.RomHolder;
 import org.slf4j.Logger;
 import s32x.DmaFifo68k;
-import s32x.Md32x;
 import s32x.S32XMMREG;
 import s32x.bus.S32xBusIntf;
 import s32x.bus.Sh2Bus;
 import s32x.bus.Sh2BusImpl;
-import s32x.bus.Sh2MemoryParallel;
 import s32x.pwm.Pwm;
 import s32x.sh2.Sh2;
 import s32x.sh2.Sh2Context;
@@ -107,7 +105,7 @@ public class MarsLauncherHelper {
         sDrcCtx.cpu = ctx.slaveCtx.cpuAccess;
 
         Sh2Bus memory = new Sh2BusImpl(ctx.s32XMMREG, ctx.rom, biosHolder, bus, mDrcCtx, sDrcCtx);
-        ctx.memory = Md32x.SH2_DEBUG_DRC ? new Sh2MemoryParallel(memory) : memory;
+        ctx.memory = memory;
         ctx.mDevCtx = Sh2DeviceHelper.createDevices(BufferUtil.CpuDeviceAccess.MASTER, ctx);
         ctx.sDevCtx = Sh2DeviceHelper.createDevices(BufferUtil.CpuDeviceAccess.SLAVE, ctx);
         ctx.mDevCtx.sci.setOther(ctx.sDevCtx.sci);

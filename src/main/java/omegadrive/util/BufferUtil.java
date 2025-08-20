@@ -1,5 +1,6 @@
 package omegadrive.util;
 
+import com.google.common.base.Preconditions;
 import com.google.common.math.IntMath;
 import omegadrive.Device;
 import omegadrive.util.RegSpec.BytePosReg;
@@ -256,6 +257,30 @@ public class BufferUtil {
         }
 
         return result;
+    }
+
+    /**
+     * Modified from Guava Bytes.indexOf(byte[], byte[])
+     */
+    public static int indexOf(byte[] array, byte[] target, int startPosSrc) {
+        Preconditions.checkNotNull(array, "array");
+        Preconditions.checkNotNull(target, "target");
+        if (target.length == 0) {
+            return 0;
+        } else {
+            label28:
+            for (int i = startPosSrc; i < array.length - target.length + 1; ++i) {
+                for (int j = 0; j < target.length; ++j) {
+                    if (array[i + j] != target[j]) {
+                        continue label28;
+                    }
+                }
+
+                return i;
+            }
+
+            return -1;
+        }
     }
 
     public enum S32xRegSide {MD, SH2}

@@ -87,7 +87,8 @@ public class Sh2Impl implements Sh2 {
         boolean legal = Arrays.binarySearch(Sh2Instructions.intDisabledOpcodes, instWrapper.inst) < 0;
 //				assert legal : th(inst.pc) + "," + inst.inst;
         if (!legal) {
-            LogHelper.logWarnOnce(LOG, "{}, {}", th(ctx.PC), instWrapper.inst);
+            LogHelper.logWarnOnce(LOG, "{} Illegal opcode when disabling interrupts: {}, {}",
+                    ctx.cpuAccess, th(ctx.PC), instWrapper.inst);
         }
     }
 

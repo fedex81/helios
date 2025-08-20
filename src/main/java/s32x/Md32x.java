@@ -47,7 +47,6 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     private static final Logger LOG = LogHelper.getLogger(Md32x.class.getSimpleName());
 
     private static final boolean ENABLE_FM, ENABLE_PWM;
-    public static final boolean SH2_DEBUG_DRC;
 
     //23.01Mhz NTSC
     protected final static int SH2_CYCLES_PER_STEP;
@@ -62,6 +61,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 
     //NOTE vr helios.32x.sh2.cycles = 32
     //TODO chaotix,break with poll1, see startPollingMaybe
+    //TODO spot proto special stage (press Y during gameplay) needs cycles < 32
     static {
         boolean prefEn = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.prefetch", "true"));
         boolean drcEn = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.drc", "true"));
@@ -70,10 +70,9 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         sh2Config = new Sh2Config(prefEn, drcEn, pollEn, ignoreDelays);
 
         Pwm.PWM_USE_BLIP = Boolean.parseBoolean(System.getProperty("helios.32x.pwm.use.blip", "false"));
-        SH2_DEBUG_DRC = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.drc.debug", "false"));
         ENABLE_FM = Boolean.parseBoolean(System.getProperty("helios.32x.fm.enable", "true"));
         ENABLE_PWM = Boolean.parseBoolean(System.getProperty("helios.32x.pwm.enable", "true"));
-        SH2_CYCLES_PER_STEP = Integer.parseInt(System.getProperty("helios.32x.sh2.cycles", "32")); //32
+        SH2_CYCLES_PER_STEP = Integer.parseInt(System.getProperty("helios.32x.sh2.cycles", "30")); //32
         Sh2Context.burstCycles = SH2_CYCLES_PER_STEP;
 //        System.setProperty("68k.debug", "true");
 //        System.setProperty("helios.68k.debug.mode", "2");

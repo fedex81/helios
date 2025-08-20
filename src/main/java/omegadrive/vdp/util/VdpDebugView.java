@@ -127,7 +127,7 @@ public class VdpDebugView implements UpdatableViewer {
     public void setAdditionalPanel(JPanel panel) {
         this.additionalPanel = panel;
         s32xMode = panel != null;
-        buildPanel();
+        SwingUtilities.invokeLater(() -> buildPanel());
     }
 
     @Override

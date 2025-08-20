@@ -113,11 +113,10 @@ public interface PollSysEventManager extends Device {
         }
         assert MdRuntimeData.getCpuDelayExt(cpu) == 0;
         int value = readPollValue(pctx);
-        if (value == pctx.pollValue) {
-            System.out.println("?? Poll stop but value unchanged: " + th(pctx.pollValue) + "," + th(value));
-        }
         //TODO spot proto
-        assert value != pctx.pollValue;
+        if (value == pctx.pollValue) {
+            LogHelper.logWarnOnce(LOG, "?? Poll stop but value unchanged: {}, {}\n{}", th(pctx.pollValue), th(value), pctx);
+        }
         return true;
     }
 

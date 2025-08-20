@@ -300,13 +300,15 @@ public class MemView implements Device, UpdatableViewer {
             HexFormat hf = HexFormat.of().withSuffix(" ");
             sb.append(String.format("%8x", start)).append(": ");
             int len = end - start;
-            for (int i = start; i < end; i += BYTES_PER_LINE) {
+            int startZero = start > 0 ? 0 : start; //zero based
+            int endZero = startZero + len;
+            for (int i = startZero; i < endZero; i += BYTES_PER_LINE) {
                 int slen = Math.min(len, BYTES_PER_LINE);
                 hf.formatHex(sb, data, i, i + slen).append("  ");
                 for (int j = i; j < i + slen; j++) {
                     sb.append(toAsciiChar(data[j])).append(" ");
                 }
-                if ((i - start) + BYTES_PER_LINE < len) {
+                if ((i - startZero) + BYTES_PER_LINE < len) {
                     sb.append("\n").append(String.format("%8x", i + BYTES_PER_LINE)).append(": ");
                 }
             }

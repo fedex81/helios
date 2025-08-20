@@ -20,6 +20,7 @@
 package omegadrive.vdp.model;
 
 import omegadrive.util.FastBitSet;
+import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.VdpMisc.RenderType;
 
 import java.util.Arrays;
@@ -170,9 +171,10 @@ public interface VdpRenderHandler {
                     priority == that.priority;
         }
 
-        //TODO Objects::hashCode allocates an array!!
         @Override
         public int hashCode() {
+            //NOTE Objects::hash allocates an array!!
+            LogHelper.logWarnOnce(LOG, "TileDataHolder hashcode slow");
             return Objects.hash(tileIndex, horFlip, vertFlip, paletteLineIndex, priority);
         }
     }
@@ -211,6 +213,8 @@ public interface VdpRenderHandler {
 
         @Override
         public int hashCode() {
+            //NOTE Objects::hash allocates an array!!
+            LogHelper.logWarnOnce(LOG, "SpriteDataHolder hashcode slow");
             return Objects.hash(super.hashCode(), verticalPos, horizontalPos, horizontalCellSize, verticalCellSize, linkData);
         }
     }

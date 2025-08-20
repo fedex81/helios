@@ -7,7 +7,6 @@ import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.Sh2MMREG;
 import s32x.bus.Sh2Bus;
-import s32x.bus.Sh2MemoryParallel;
 import s32x.dict.S32xDict;
 
 import java.nio.ByteBuffer;
@@ -165,7 +164,6 @@ public class DmaC implements BufferUtil.Sh2Device {
         destAddress |= S32xDict.SH2_CACHE_THROUGH_OFFSET;
         srcAddress |= S32xDict.SH2_CACHE_THROUGH_OFFSET;
 
-        assert !(memory instanceof Sh2MemoryParallel);
         do {
             int val = memory.read(srcAddress, c.trnSize);
             memory.write(destAddress, val, c.trnSize);
