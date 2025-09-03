@@ -2,6 +2,7 @@ package s32x.sh2;
 
 
 import omegadrive.util.BufferUtil;
+import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
@@ -68,7 +69,9 @@ public class Sh2Impl implements Sh2 {
         return (ctx.SR & flagIMASK) >>> 4;
     }
 
-    private boolean acceptInterrupts(final int level) {
+    private boolean acceptInterrupts() {
+        final IntControl intControl = ctx.devices.intC;
+        final int level = intControl.getInterruptLevel();
         if (level > getIMASK()) {
             if (BufferUtil.assertionsEnabled && !sh2Config.prefetchEn) {
                 //this should only be checked when prefetch is off, as prefetch aligns the interrupt
@@ -123,18 +126,21 @@ public class Sh2Impl implements Sh2 {
      */
     public void run(final Sh2Context ctx) {
         this.ctx = ctx;
-        final IntControl intControl = ctx.devices.intC;
-        final PollSysEventManager instance = PollSysEventManager.instance;
         for (; ctx.cycles >= 0; ) {
             decode();
-            boolean res = acceptInterrupts(intControl.getInterruptLevel());
+            boolean res = acceptInterrupts();
             ctx.cycles -= MdRuntimeData.resetCpuDelayExt(); //TODO check perf
-            if (res || instance.getPoller(ctx.cpuAccess).isPollingActive()) {
-                break;
-            }
+            if (res) break;
         }
         ctx.cycles_ran = Sh2Context.burstCycles - ctx.cycles;
         ctx.cycles = Sh2Context.burstCycles;
+    }
+
+    private void stopCpuPollingWhenActive(CpuDeviceAccess cpu) {
+        Sh2DrcBlockOptimizer.PollerCtx p = PollSysEventManager.instance.getPoller(cpu);
+        if (p.isPollingActive()) {
+            PollSysEventManager.instance.fireSysEvent(cpu, p.event);
+        }
     }
 
     protected final void decode() {
@@ -175,22 +181,22 @@ public class Sh2Impl implements Sh2 {
             }
             return;
         }
-        //nextBlock matches what we expect
-        boolean nextBlockOk = block.nextBlock.prefetchPc == ctx.PC && block.nextBlock.isValid();
-        if (nextBlockOk) {
-            setNextBlock(fr, block);
-        } else {
-            PollSysEventManager.instance.resetPoller(ctx.cpuAccess);
-            fetchNextBlock(fr);
-        }
-        assert fr.block.isValid();
+        assert !PollSysEventManager.instance.getPoller(ctx.cpuAccess).isPollingActive();
         block.poller.spinCount = 0;
+        setNextBlock(fr, block);
     }
 
     private void setNextBlock(final Sh2Helper.FetchResult fr, Sh2Block block) {
-        fr.pc = ctx.PC;
-        fr.block = block.nextBlock;
-        fr.opcode = block.prefetchWords[0];
+        boolean nextBlockOk = block.nextBlock.prefetchPc == ctx.PC && block.nextBlock.isValid();
+        //nextBlock matches what we expect
+        if (nextBlockOk) {
+            fr.pc = ctx.PC;
+            fr.block = block.nextBlock;
+            fr.opcode = block.prefetchWords[0];
+        } else {
+            fetchNextBlock(fr);
+        }
+        assert fr.block.isValid();
     }
 
     private void fetchNextBlock(final Sh2Helper.FetchResult fr) {

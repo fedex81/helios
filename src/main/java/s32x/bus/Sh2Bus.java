@@ -26,7 +26,11 @@ public interface Sh2Bus extends Sh2Prefetcher, ReadableByteMemory, Device {
 
     MemoryDataCtx EMPTY = new MemoryDataCtx();
 
-    void write(int register, int value, Size size);
+    default void write(int register, int value, Size size) {
+        write(register, value, size, true);
+    }
+
+    void write(int register, int value, Size size, boolean checkPoll);
 
     int read(int register, Size size);
 

@@ -101,7 +101,7 @@ public interface Sh2Cache extends Device {
     }
 
     default void writeMemoryUncached(Sh2Bus memory, int address, int value, Size size) {
-        memory.write(address | CACHE_THROUGH, value, size);
+        memory.write(address | CACHE_THROUGH, value, size, false);
     }
 
     //set to false only for testing

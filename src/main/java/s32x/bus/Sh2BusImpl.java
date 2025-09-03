@@ -139,7 +139,7 @@ public final class Sh2BusImpl implements Sh2Bus {
     }
 
     @Override
-    public void write(int address, int val, Size size) {
+    public void write(int address, int val, Size size, final boolean checkPoll) {
         CpuDeviceAccess cpuAccess = MdRuntimeData.getAccessTypeExt();
         assert assertCheckBusOp(address, size);
         val &= size.getMask();
@@ -198,7 +198,7 @@ public final class Sh2BusImpl implements Sh2Bus {
         if (hasMemoryChanged) {
             prefetch.dataWrite(cpuAccess, address, val, size);
         }
-        if (config.pollDetectEn) {
+        if (checkPoll && config.pollDetectEn) {
             Sh2Prefetch.checkPoller(cpuAccess, PollSysEventManager.SysEvent.SDRAM, address, val, size);
         }
     }

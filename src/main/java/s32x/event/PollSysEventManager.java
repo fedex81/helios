@@ -3,7 +3,6 @@ package s32x.event;
 import omegadrive.Device;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
-import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer.PollerCtx;
@@ -14,7 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
-import static omegadrive.util.Util.th;
 import static s32x.sh2.drc.Sh2DrcBlockOptimizer.NO_POLLER;
 
 /**
@@ -105,19 +103,6 @@ public interface PollSysEventManager extends Device {
         //could there be instances where only the memory value changes? Yes, but we already detect them (?)
         return memory.readMemoryUncachedNoDelay(blockPoller.blockPollData.memLoadTarget,
                 blockPoller.blockPollData.memLoadTargetSize);
-    }
-
-    static boolean pollValueCheck(CpuDeviceAccess cpu, SysEvent event, PollerCtx pctx) {
-        if (event == SysEvent.INT) {
-            return true;
-        }
-        assert MdRuntimeData.getCpuDelayExt(cpu) == 0;
-        int value = readPollValue(pctx);
-        //TODO spot proto
-        if (value == pctx.pollValue) {
-            LogHelper.logWarnOnce(LOG, "?? Poll stop but value unchanged: {}, {}\n{}", th(pctx.pollValue), th(value), pctx);
-        }
-        return true;
     }
 
     interface SysEventListener {

@@ -473,7 +473,7 @@ public class Sh2DrcBlockOptimizer {
             if (blockPoller != NO_POLLER) {
                 PollSysEventManager.instance.setPoller(cpu, blockPoller);
             } else {
-                //tempo
+                //tempo, DMA polling not supported
                 assert ENABLE_POLL_DETECT ? !block.pollType.supported : true : block + "\n" + blockPoller;
                 if (verbose) LOG.info("{} ignoring {} poll at PC {}", cpu, block.pollType, th(block.prefetchPc));
                 block.pollType = PollType.NONE;

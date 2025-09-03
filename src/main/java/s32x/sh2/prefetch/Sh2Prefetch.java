@@ -374,8 +374,8 @@ public class Sh2Prefetch implements Sh2Prefetcher {
                 LOG.info("{} Poll write addr: {} {}, target: {} {} {}, val: {}", cpuWrite,
                         th(addr), size, c.cpu, th(c.blockPollData.memLoadTarget),
                         c.blockPollData.memLoadTargetSize, th(val));
-            boolean skipVdp = type == PollSysEventManager.SysEvent.VDP && c.pollValue == PollSysEventManager.readPollValue(c);
-            if (!skipVdp) {
+            boolean pollValuedUnchanged = c.pollValue == PollSysEventManager.readPollValue(c);
+            if (!pollValuedUnchanged) {
                 PollSysEventManager.instance.fireSysEvent(c.cpu, type);
             }
         }

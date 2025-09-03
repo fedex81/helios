@@ -299,9 +299,9 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         if (stopOk) {
             if (verbose) LOG.info("{} stop polling {} {}: {}", cpu, event, cycleCounter, pctx);
             setNextCycle(cpu, cycleCounter + 1);
-            assert PollSysEventManager.pollValueCheck(cpu, event, pctx);
             PollSysEventManager.instance.resetPoller(cpu);
-        } else {
+        }
+        if (BufferUtil.assertionsEnabled && !stopOk) {
             LOG.warn("{} {} ignore stop polling: {}", cpu, event, pctx);
         }
     }

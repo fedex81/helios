@@ -143,7 +143,7 @@ public class J2CoreTest {
         final ByteBuffer ram = ByteBuffer.allocateDirect(ramSize);
         return new Sh2Bus() {
             @Override
-            public void write(int address, int value, Size size) {
+            public void write(int address, int value, Size size, boolean checkPoll) {
                 long lreg = address & 0xFFFF_FFFFL;
                 if (lreg < romSize) {
                     writeBufferRaw(rom, (int) lreg, value, size);
