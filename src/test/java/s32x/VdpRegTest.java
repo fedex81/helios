@@ -4,6 +4,7 @@ import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import s32x.vdp.MarsVdp;
 
 import static s32x.MarsRegTestUtil.*;
 
@@ -25,6 +26,8 @@ public class VdpRegTest {
     @Test
     public void testPEN() {
         s32XMMREG.write(SH2_FBCR_OFFSET, 0, Size.WORD);
+        //PACKED-PIXEL MODE
+        s32XMMREG.write(SH2_BITMAP_MODE_OFFSET, MarsVdp.BitmapMode.PACKED_PX.ordinal(), Size.WORD);
         //startup, vblankOn, pen= true
         assertPEN(s32XMMREG, true);
         s32XMMREG.setVBlank(true);
@@ -50,6 +53,15 @@ public class VdpRegTest {
         s32XMMREG.setVBlank(false);
         s32XMMREG.setHBlank(false);
         assertPEN(s32XMMREG, false);
+
+        s32XMMREG.write(SH2_BITMAP_MODE_OFFSET, MarsVdp.BitmapMode.BLANK.ordinal(), Size.WORD);
+        assertPEN(s32XMMREG, true);
+
+        s32XMMREG.write(SH2_BITMAP_MODE_OFFSET, MarsVdp.BitmapMode.PACKED_PX.ordinal(), Size.WORD);
+        assertPEN(s32XMMREG, false);
+
+        s32XMMREG.write(SH2_BITMAP_MODE_OFFSET, MarsVdp.BitmapMode.DIRECT_COL.ordinal(), Size.WORD);
+        assertPEN(s32XMMREG, true);
     }
 
     /**

@@ -182,12 +182,24 @@ public class S32xDict {
     public static final int FBCR_HBLK_BIT_POS = 14;
     public static final int FBCR_FRAMESEL_BIT_POS = 0;
     public static final int FBCR_nFEN_BIT_POS = 1;
+    public static final int FBCR_nFEN = 1 << FBCR_nFEN_BIT_POS;
     public static final int P32XV_VBLK = (1 << FBCR_VBLK_BIT_POS);
-    public static final int P32XV_PAL = (1 << 15);
 
-    public static final int P32XV_PEN = (1 << 13);
-    public static final int P32XV_PRIO = (1 << 7);
-    public static final int P32XV_240 = (1 << 6);
+    public static final int P32XV_PAL_POS = 15;
+    public static final int P32XV_PAL = (1 << P32XV_PAL_POS);
+
+    public static final int P32XV_PEN_WORD_POS = 13;
+    public static final int P32XV_PEN_WORD = (1 << P32XV_PEN_WORD_POS);
+    public static final int P32XV_PEN_BYTE_POS = P32XV_PEN_WORD_POS - 8;
+
+
+    public static final int P32XV_PRIO_POS = 7;
+    public static final int P32XV_PRIO = (1 << P32XV_PRIO_POS);
+    public static final int P32XV_240_POS = 6;
+    public static final int P32XV_240 = (1 << P32XV_240_POS);
+
+    public static final int P32XV_M0_POS = 0;
+    public static final int P32XV_M1_POS = 1;
 
     public static final int SH2_PC_AREAS = 0x100;
     public static final int SH2_PC_AREA_SHIFT = 24;

@@ -209,12 +209,12 @@ public class Util {
     }
 
     public static int readBufferByte(ByteBuffer b, int pos) {
-        return b.get(pos);
+        return b.get(pos) & 0xFF;
     }
 
     public static int readBufferWord(ByteBuffer b, int pos) {
         assert (pos & 1) == 0;
-        return b.getShort(pos);
+        return b.getShort(pos) & 0xFFFF;
     }
 
     public static int readBufferLong(ByteBuffer b, int pos) {

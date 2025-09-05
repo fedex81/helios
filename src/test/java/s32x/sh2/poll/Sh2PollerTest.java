@@ -263,7 +263,8 @@ public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
         Assertions.assertTrue(isPollerActive());
 
         //write to sdram should trigger an event
-        lc.memory.write8(SH2_START_SDRAM | c.memLoadAddress, (byte) c.noMatchVal);
+        int val = lc.memory.read8(SH2_START_SDRAM | c.memLoadAddress);
+        lc.memory.write8(SH2_START_SDRAM | c.memLoadAddress, (byte) (val + 1));
         Assertions.assertEquals(CpuDeviceAccess.MASTER, lastCpuEvent);
         Assertions.assertEquals(PollSysEventManager.SysEvent.SDRAM, lastEvent);
         Assertions.assertFalse(isPollerActive());
@@ -314,14 +315,13 @@ public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
             cnt++;
         } while (cnt < POLLER_ACTIVATE_LIMIT << 1);
 
-        ByteBuffer sdram = lc.memory.getMemoryDataCtx().sdram;
         //now we start looping
-        sdram.putShort(c.memLoadAddress, (short) c.noMatchVal);
+        lc.memory.write(SH2_START_SDRAM | c.memLoadAddress, c.noMatchVal, Size.WORD);
         loopUntilPollingActive(sh2Context);
         Assertions.assertTrue(wrapper.block.poller.isPollingActive());
 
         //stop looping
-        sdram.putShort(c.memLoadAddress, (short) c.matchVal);
+        lc.memory.write(SH2_START_SDRAM | c.memLoadAddress, c.matchVal, Size.WORD);
         runBlock(sh2Context, cycles);
         Assertions.assertFalse(isPollerActive());
     }

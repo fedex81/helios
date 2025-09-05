@@ -135,6 +135,8 @@ public class BufferUtil {
      */
     public static boolean setBit(ByteBuffer b, int pos, int bitPos, int bitValue, Size size) {
         assert (bitValue & 1) == bitValue;
+        assert size != Size.BYTE ? (pos & 1) == 0 : true;
+        assert size == Size.BYTE ? bitPos >= 0 && bitPos < 8 : true;
         int val = readBuffer(b, pos, size);
         int newVal = Util.setBit(val, bitPos, bitValue);
         if (val != newVal) {

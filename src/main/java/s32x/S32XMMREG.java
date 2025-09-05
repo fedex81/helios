@@ -285,7 +285,10 @@ public class S32XMMREG implements Device {
     private boolean handleReg2Write(CpuDeviceAccess cpu, int reg, int value, Size size) {
         boolean res = switch (cpu.regSide) {
             case MD -> handleIntControlWriteMd(reg, value, size);
-            case SH2 -> writeBufferRaw(sysRegsSh2, reg, value, size); //TODO access prohibited, check
+            case SH2 -> {
+                LogHelper.logWarnOnce(LOG, "{} write access prohibited to {} ??", cpu, MD_INT_CTRL);
+                yield writeBufferRaw(sysRegsSh2, reg, value, size); //TODO access prohibited, check
+            }
         };
         return res;
     }

@@ -248,7 +248,7 @@ public class Sh2CacheTest extends Sh2MultiTestBase {
 
         for (int i = 0; i < Sh2Cache.DATA_ARRAY_SIZE; i++) {
             if (i < dataArraySize) {
-                Assertions.assertEquals((byte) vals[i], memory.read(dataArrayStart + i, Size.BYTE), th(dataArrayStart + i));
+                Assertions.assertEquals(vals[i], memory.read(dataArrayStart + i, Size.BYTE), th(dataArrayStart + i));
             } else {
                 Assertions.assertEquals(Size.BYTE.getMask(), memory.read(dataArrayStart + i, Size.BYTE), th(dataArrayStart + i));
             }
