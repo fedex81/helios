@@ -68,6 +68,10 @@ public class S32XMMREG implements Device {
     private MarsVdpContext vdpContext;
     private int deviceAccessType;
 
+    public interface Dma68SHandler {
+        void clear68S();
+    }
+
     private static class S32XMMREGContext implements Serializable {
         @Serial
         private static final long serialVersionUID = 8103806630860480125L;

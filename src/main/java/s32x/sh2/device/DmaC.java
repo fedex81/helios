@@ -5,6 +5,7 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
+import s32x.S32XMMREG.Dma68SHandler;
 import s32x.Sh2MMREG;
 import s32x.bus.Sh2Bus;
 import s32x.dict.S32xDict;
@@ -25,7 +26,7 @@ import static s32x.sh2.device.IntControl.Sh2Interrupt.DMAC1;
  * <p>
  * 32X Hardware Manual Supplement 1/2,  Chaotix, Primal Rage, and Virtua Racing
  */
-public class DmaC implements BufferUtil.Sh2Device {
+public class DmaC implements BufferUtil.Sh2Device, Sh2MMREG.DmaTriggerHandler {
 
     private static final Logger LOG = LogHelper.getLogger(DmaC.class.getSimpleName());
 
@@ -38,6 +39,8 @@ public class DmaC implements BufferUtil.Sh2Device {
     private final Sh2Bus memory;
     private final BufferUtil.CpuDeviceAccess cpu;
     private final DmaHelper.DmaChannelSetup[] dmaChannelSetup;
+
+    private Dma68SHandler dma68SHandler;
     private boolean oneDmaInProgress = false;
 
     public DmaC(BufferUtil.CpuDeviceAccess cpu, IntControl intControl, Sh2Bus memory, ByteBuffer regs) {
@@ -146,6 +149,7 @@ public class DmaC implements BufferUtil.Sh2Device {
         if (verbose) LOG.info("{} DreqPwm{} Level: {}", cpu, channel, enable);
     }
 
+    @Override
     public void dmaReqTrigger(int channel, boolean enable) {
         dmaChannelSetup[channel].dreqLevel = enable;
         if (enable) {
@@ -193,10 +197,10 @@ public class DmaC implements BufferUtil.Sh2Device {
             updateOneDmaInProgress();
             //TODO MASTER doing FIFO -> RAM dma
             //TODO SLAVE doing RAM -> PWM dma, when slave is done, this causes the MASTER DMA to stop
-            //TODO this is actually not needed
-//            if (!c.chcr_autoReq) {
-//                dma68k.dmaEnd();
-//            }
+            //TODO VR needs this, check
+            if (!c.chcr_autoReq) {
+                dma68SHandler.clear68S();
+            }
             //transfer ended normally, ie. TCR = 0
             if (normal) {
                 int chcr = setDmaChannelBitVal(c.channel, DMA_CHCR0.addr + 2, SH2_CHCR_TRANSFER_END_BIT, 1, Size.WORD);
@@ -211,6 +215,11 @@ public class DmaC implements BufferUtil.Sh2Device {
 
     private void updateOneDmaInProgress() {
         oneDmaInProgress = dmaChannelSetup[0].dmaInProgress || dmaChannelSetup[1].dmaInProgress;
+    }
+
+    public void setDma68s(Dma68SHandler dmaFifo68k) {
+        assert dma68SHandler == null;
+        this.dma68SHandler = dmaFifo68k;
     }
 
     @Override

@@ -5,9 +5,9 @@ import omegadrive.util.*;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import org.slf4j.Logger;
 import s32x.S32XMMREG.RegContext;
+import s32x.Sh2MMREG.DmaTriggerHandler;
 import s32x.dict.S32xDict.RegSpecS32x;
 import s32x.savestate.Gs32xStateHandler;
-import s32x.sh2.device.DmaC;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -24,8 +24,7 @@ import static s32x.dict.S32xDict.RegSpecS32x.*;
  * <p>
  * 32X Hardware Manual Supplement 1
  */
-public class DmaFifo68k implements Device {
-
+public class DmaFifo68k implements Device, S32XMMREG.Dma68SHandler {
     private static final Logger LOG = LogHelper.getLogger(DmaFifo68k.class.getSimpleName());
     public static final int M68K_FIFO_FULL_BIT = 7;
     public static final int M68K_68S_BIT_POS = 2;
@@ -35,7 +34,7 @@ public class DmaFifo68k implements Device {
     public static final int DMA_FIFO_SIZE = 8;
     public static final int M68K_DMA_FIFO_LEN_MASK = 0xFFFC;
     private final ByteBuffer sysRegsMd, sysRegsSh2;
-    private DmaC[] dmac;
+    private DmaTriggerHandler[] dmac;
     private DmaFifo68kContext ctx;
     public static boolean rv = false;
     private static final boolean verbose = false;
@@ -135,8 +134,15 @@ public class DmaFifo68k implements Device {
                 LOG.error("DMA Fifo full, discarding data");
             }
         } else {
-            LOG.error("DMA off, ignoring FIFO write: {}", th(value));
+            LogHelper.logWarnOnce(LOG, "DMA off, ignoring FIFO write: {}", th(value));
         }
+    }
+
+    @Override
+    public void clear68S() {
+        //set 68S to 0
+        BufferUtil.setBit(sysRegsMd, sysRegsSh2, SH2_DREQ_CTRL.addr + 1, M68K_68S_BIT_POS, 0, Size.BYTE);
+        ctx.m68S = false;
     }
 
     private void dmaEnd() {
@@ -146,9 +152,7 @@ public class DmaFifo68k implements Device {
         ctx.fifo.clear();
         updateFifoState();
         evaluateDreqTrigger(true); //force clears the dreqLevel in DMAC
-        //set 68S to 0
-        BufferUtil.setBit(sysRegsMd, sysRegsSh2, SH2_DREQ_CTRL.addr + 1, M68K_68S_BIT_POS, 0, Size.BYTE);
-        ctx.m68S = false;
+        clear68S();
     }
 
     public void updateFifoState() {
@@ -218,11 +222,8 @@ public class DmaFifo68k implements Device {
         rv = ctx.rv;
     }
 
-    public void setDmac(DmaC... dmac) {
+    public void setDmac(DmaTriggerHandler... dmac) {
+        assert this.dmac == null;
         this.dmac = dmac;
-    }
-
-    public DmaC[] getDmac() {
-        return dmac;
     }
 }

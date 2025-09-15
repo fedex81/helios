@@ -12,6 +12,7 @@ import s32x.DmaFifo68k;
 import s32x.MarsRegTestUtil;
 import s32x.S32XMMREG;
 import s32x.sh2.device.DmaHelper.DmaChannelSetup;
+import s32x.util.MarsLauncherHelper;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -38,9 +39,10 @@ public class DmaCTest {
 
     @BeforeEach
     public void beforeEach() {
-        s32XMMREG = MarsRegTestUtil.createTestInstance().s32XMMREG;
-        masterDmac = s32XMMREG.dmaFifoControl.getDmac()[MASTER.ordinal()];
-        slaveDmac = s32XMMREG.dmaFifoControl.getDmac()[SLAVE.ordinal()];
+        MarsLauncherHelper.Sh2LaunchContext sh2LaunchContext = MarsRegTestUtil.createTestInstance();
+        s32XMMREG = sh2LaunchContext.s32XMMREG;
+        masterDmac = sh2LaunchContext.mDevCtx.dmaC;
+        slaveDmac = sh2LaunchContext.sDevCtx.dmaC;
         dmaFifo68k = s32XMMREG.dmaFifoControl;
     }
 

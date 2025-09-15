@@ -31,6 +31,10 @@ public class Sh2MMREG implements Device {
     public static final int SH2_REG_SIZE = 0x200;
     public static final int SH2_REG_MASK = SH2_REG_SIZE - 1;
 
+    public interface DmaTriggerHandler {
+        void dmaReqTrigger(int channel, boolean enable);
+    }
+
     public static class Sh2MMREGContext implements Serializable {
         @Serial
         private static final long serialVersionUID = 7541275278019348341L;

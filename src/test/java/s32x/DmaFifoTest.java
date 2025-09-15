@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.sh2.device.DmaC;
+import s32x.util.MarsLauncherHelper;
 
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -43,9 +44,10 @@ public class DmaFifoTest {
 
     @BeforeEach
     public void beforeEach() {
-        s32XMMREG = MarsRegTestUtil.createTestInstance().s32XMMREG;
+        MarsLauncherHelper.Sh2LaunchContext sh2LaunchContext = MarsRegTestUtil.createTestInstance();
+        s32XMMREG = sh2LaunchContext.s32XMMREG;
         IntStream.range(0, data.length).forEach(i -> data[i] = i);
-        masterDmac = s32XMMREG.dmaFifoControl.getDmac()[MASTER.ordinal()];
+        masterDmac = sh2LaunchContext.mDevCtx.dmaC;
     }
 
     @Test
