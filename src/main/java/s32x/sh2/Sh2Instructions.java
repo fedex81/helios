@@ -1085,7 +1085,7 @@ public class Sh2Instructions {
         SWAPB(0, 1),
         SWAPW(0, 1),
         TAS(0, 1),
-        TRAPA(8, 8), //illegalDelaySlot
+        TRAPA(9, 8), //isBranch, illegalDelaySlot
         TST(0, 1),
         TSTI(0, 1),
         TSTM(0, 3),
@@ -1144,7 +1144,8 @@ public class Sh2Instructions {
          * Generate Sh2Inst list, cycle timing needs to be adjusted.
          */
         public static void main(String[] args) {
-            Predicate<String> isBranchPred = n -> n.startsWith("B") || n.startsWith("J") || n.startsWith("RT") || n.startsWith("BRA");
+            Predicate<String> isBranchPred = n -> n.startsWith("B") || n.startsWith("J") || n.startsWith("RT") || n.startsWith("BRA")
+                    || n.startsWith("TRAP");
             //Delayed branch instructions: JMP, JSR, BRA, BSR, RTS, RTE, BF/S, BT/S, BSRF,BRAF
             Predicate<String> isBranchDelaySlotPred = n -> n.startsWith("J") || n.startsWith("BRA") ||
                     n.startsWith("BSR") || n.startsWith("RT") || n.startsWith("BTS") || n.startsWith("BFS");
