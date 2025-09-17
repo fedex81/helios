@@ -228,6 +228,10 @@ public class Sh2Impl implements Sh2 {
         return ((x >> 4) & 0xf);
     }
 
+    public static final long mac64(int mach, int macl) {
+        return ((mach & 0xFFFF_FFFFL) << 32) + (macl & 0xFFFF_FFFFL);
+    }
+
     public void reset(Sh2Context ctx) {
         MdRuntimeData.setAccessTypeExt(ctx.cpuAccess);
         ctx.VBR = 0;
@@ -1045,7 +1049,7 @@ public class Sh2Impl implements Sh2 {
 //        String s = String.format("####,MACL,%8X,%8X,%8X,%8X,%d", regN, regM, ctx.MACH, ctx.MACL, ((ctx.SR & flagS) > 0) ? 1 : 0);
 
         long res = regM * regN;
-        res += ((ctx.MACH & 0xFFFF_FFFFL) << 32) + (ctx.MACL & 0xFFFF_FFFFL);
+        res += mac64(ctx.MACH, ctx.MACL);
         if ((ctx.SR & flagS) > 0) {
             if (res > 0x7FFF_FFFF_FFFFL) {
                 res = 0x7FFF_FFFF_FFFFL;
@@ -1053,9 +1057,7 @@ public class Sh2Impl implements Sh2 {
                 res = 0xFFFF_8000_0000_0000L;
             }
         }
-        ctx.MACH = (int) (res >> 32);
-        ctx.MACL = (int) (res & 0xFFFF_FFFF);
-
+        setMAC(ctx, res);
 //        s += String.format(",%8X,%8X",ctx.MACH,ctx.MACL);
 //        logWarnOnce(LOG, s);
         ctx.cycles -= 2;
@@ -1075,8 +1077,9 @@ public class Sh2Impl implements Sh2 {
     protected static final void MACW(Sh2Context ctx, short rn, short rm) {
 //		String s = "#### " + th(rn) + "," + th(rm) + "," + th(ctx.MACH) + "," + th(ctx.MACL) + ",S=" +
 //				((ctx.SR & flagS) > 0);
+        long prod = rm * rn;
         if ((ctx.SR & flagS) > 0) { //16 x 16 + 32
-            long res = rm * rn + (long) ctx.MACL;
+            long res = prod + (long) ctx.MACL;
             //saturation
             if (res > 0x7FFF_FFFFL) {
                 res = 0x7FFF_FFFFL;
@@ -1087,11 +1090,9 @@ public class Sh2Impl implements Sh2 {
             }
             ctx.MACL = (int) (res & 0xFFFF_FFFF);
         } else { //16 x 16 + 64
-            long prod = rm * rn;
-            long mac = ((ctx.MACH & 0xFFFF_FFFFL) << 32) + (ctx.MACL & 0xFFFF_FFFFL);
+            long mac = mac64(ctx.MACH, ctx.MACL);
             long res = prod + mac;
-            ctx.MACH = (int) (res >> 32);
-            ctx.MACL = (int) (res & 0xFFFF_FFFF);
+            setMAC(ctx, res);
             //overflow
             if ((prod > 0 && mac > 0 && res < 0) || (mac < 0 && prod < 0 && res > 0)) {
                 ctx.MACH |= 1;
@@ -1101,6 +1102,11 @@ public class Sh2Impl implements Sh2 {
         ctx.PC += 2;
 //		s += "," + th(ctx.MACH) + "," + th(ctx.MACL);
 //        logWarnOnce(LOG, s);
+    }
+
+    public static void setMAC(Sh2Context ctx, long val) {
+        ctx.MACH = (int) (val >>> 32);
+        ctx.MACL = (int) (val & 0xFFFF_FFFFL);
     }
 
     protected final void MULL(int code) {
