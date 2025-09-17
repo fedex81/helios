@@ -179,7 +179,7 @@ public final class Sh2BusImpl implements Sh2Bus {
                     }
                     s32XMMREG.write(address, val, size);
                 } else {
-                    logWarnOnce(LOG, "{} invalid write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
+                    logWarnOnce(LOG, "{} invalid write to addr: {} {}", cpuAccess, th(address), size);
                 }
                 break;
             case Sh2Cache.CACHE_IO_H3: //0xF
@@ -188,11 +188,11 @@ public final class Sh2BusImpl implements Sh2Bus {
                 } else if (address >= S32xDict.SH2_START_DRAM_MODE && address < S32xDict.SH2_END_DRAM_MODE) {
                     sh2MMREGS[cpuAccess.ordinal()].writeDramMode(address & 0xFFFF, val, size);
                 } else {
-                    logWarnOnce(LOG, "{} invalid write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
+                    logWarnOnce(LOG, "{} invalid write to addr: {} {}", cpuAccess, th(address), size);
                 }
                 break;
             default:
-                logWarnOnce(LOG, "{} invalid write to addr: {}, {} {}", cpuAccess, th(address), th(val), size);
+                logWarnOnce(LOG, "{} invalid write to addr: {} {}", cpuAccess, th(address), size);
                 break;
         }
         if (hasMemoryChanged) {

@@ -35,9 +35,7 @@ public class MarsLauncherHelper {
 
     static final boolean masterDebug = Boolean.parseBoolean(System.getProperty("sh2.master.debug", "false"));
     static final boolean slaveDebug = Boolean.parseBoolean(System.getProperty("sh2.slave.debug", "false"));
-
-    //TODO cd32x requires official 32x bios, as the homebrew bioses do not support boot from CD
-    static final boolean homebrewBios = Boolean.parseBoolean(System.getProperty("32x.use.homebrew.bios", "false"));
+    static final boolean homebrewBios = Boolean.parseBoolean(System.getProperty("32x.use.homebrew.bios", "true"));
 
     static String biosBasePath = "res/bios/";
 
