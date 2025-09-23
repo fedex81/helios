@@ -427,4 +427,29 @@ public class Util {
         }
         return Optional.ofNullable(obj);
     }
+
+    public static boolean isSubSequence(byte[] s1, byte[] s2) {
+        return indexOfSubSequence(s1, s2) >= 0;
+    }
+
+    public static int indexOfSubSequence(byte[] s1, byte[] s2) {
+        int n = s1.length, m = s2.length;
+        int i = 0, j = 0;
+        int startj = -1;
+        while (i < n && j < m) {
+            if (s1[i] != s2[j]) {
+                i = 0;
+                startj = -1;
+            }
+            if (s1[i] == s2[j]) {
+                i++;
+                startj = startj < 0 ? j : startj;
+            }
+            j++;
+        }
+        /*If i reaches end of s1,that mean we found all
+        characters of s1 in s2,
+        so s1 is subsequence of s2, else not*/
+        return i == n ? startj : -1;
+    }
 }

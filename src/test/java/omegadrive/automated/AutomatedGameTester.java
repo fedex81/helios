@@ -59,7 +59,7 @@ public class AutomatedGameTester {
     private static List<String> blackList = FileUtil.readFileContent(Paths.get(resFolder.toAbsolutePath().toString()
             , "blacklist.txt"));
 
-    private static EnumMap<SystemType, Predicate<Path>> systemFilterMap;
+    public static final EnumMap<SystemType, Predicate<Path>> systemFilterMap;
 
     public static BiPredicate<SystemType, Path> testSystemRomsPredicate = (st, p) ->
             Arrays.stream(sysFileExtensionsMap.get(st)).anyMatch(p.toString()::endsWith);

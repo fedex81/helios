@@ -375,17 +375,21 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         }
     }
 
+    int fakeBitVal = 0;
+
     // Bit 0 of A11100h (byte access) or bit 8 of A11100h (word access) controls
     // the Z80's /BUSREQ line.
     //0 means the Z80 bus can be accessed by 68k (/BUSACK asserted and/ZRESET released).
     private int z80BusReqRead(Size size) {
+        //NOTE: Time Killers is buggy and needs bit0 !=0
         int prefetch = m68kProvider.getPrefetchWord(); //shadow beast[U] needs the prefetch
         int bitVal = (z80BusRequested && !z80ResetState) ? 0 : 1;
-        int res = setBit(prefetch, 0, bitVal); //set byte only
-        if (size == Size.WORD) {
-            //NOTE: Time Killers is buggy and needs bit0 !=0
-            res = setBit(prefetch, 8, bitVal); //set word only
-        }
+        //TODO
+//        fakeBitVal = (fakeBitVal + 1) & 1;
+//        bitVal = fakeBitVal;
+        //TODO
+        int res = setBit(prefetch, 8, bitVal); //set on word
+        res = size == Size.BYTE ? res >>> 8 : res;
 //        LOG.debug("Read Z80 busReq: {} {}", th(value), size);
         return res & size.getMask();
     }

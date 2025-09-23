@@ -3,11 +3,13 @@ package omegadrive.util;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import static omegadrive.util.ArrayEndianUtil.*;
 
@@ -133,5 +135,19 @@ public class UtilTest {
             //expected
             System.out.println(e.getMessage());
         }
+    }
+
+    @Test
+    public void testSubSequence() {
+        String sega = "SEGA";
+        String[] falseList = {"", "SEG", "SEG ", " SEG", "SESEG_A", "SSEEGGAA", "sega"};
+        String[] trueList = {sega, "_" + sega, sega + " ", "SE" + sega, "123" + sega, "1234" + sega, "12345" + sega};
+
+        Arrays.stream(falseList).forEach(s -> checkSubSeq(sega, s, false));
+        Arrays.stream(trueList).forEach(s -> checkSubSeq(sega, s, true));
+    }
+
+    private void checkSubSeq(String s1, String s2, boolean exp) {
+        Assertions.assertEquals(exp, Util.isSubSequence(s1.getBytes(), s2.getBytes()));
     }
 }
