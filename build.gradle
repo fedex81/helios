@@ -20,14 +20,14 @@ dependencies {
     // https://mvnrepository.com/artifact/net.java.jinput/jinput
     implementation group: 'net.java.jinput', name: 'jinput', version: '2.0.10'
     // https://mvnrepository.com/artifact/com.google.guava/guava
-    implementation group: 'com.google.guava', name: 'guava', version: '33.4.8-jre'
+    implementation group: 'com.google.guava', name: 'guava', version: '33.5.0-jre'
     implementation group: 'org.jctools', name: 'jctools-core', version: '4.0.4'
     // https://mvnrepository.com/artifact/org.digitalmediaserver/cuelib-core
     implementation group: 'org.digitalmediaserver', name: 'cuelib-core', version: '2.0.0'
     implementation group: 'com.github.trilarion', name: 'java-vorbis-support', version: '1.2.1'
     // https://mvnrepository.com/artifact/org.jaudiolibs/audioservers-javasound
     implementation group: 'org.jaudiolibs', name: 'audioservers-javasound', version: '2.0.0'
-    implementation 'com.google.code.gson:gson:2.13.1'
+    implementation 'com.google.code.gson:gson:2.13.2'
     implementation 'com.formdev:flatlaf:3.6.1'
     implementation group: 'org.ow2.asm', name: 'asm', version: '9.8'
     implementation group: 'org.ow2.asm', name: 'asm-commons', version: '9.8'
