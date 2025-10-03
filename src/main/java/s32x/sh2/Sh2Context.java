@@ -22,7 +22,7 @@ import java.util.StringJoiner;
 public class Sh2Context implements Device, Serializable {
 
     @Serial
-    private static final long serialVersionUID = -5401399583243385001L;
+    private static final long serialVersionUID = 6_912_884_586_514_774_317L;
 
     final static int NUM_REG = 16;
     public static int burstCycles = 1;
@@ -96,6 +96,7 @@ public class Sh2Context implements Device, Serializable {
         PR = ctx.PR;
         cycles = ctx.cycles;
         cycles_ran = ctx.cycles_ran;
+        checkInterrupt = ctx.checkInterrupt;
         //invalidate on load
         fetchResult.block = Sh2Block.INVALID_BLOCK;
         fetchResult.pc = 0;

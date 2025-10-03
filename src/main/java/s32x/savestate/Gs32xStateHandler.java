@@ -4,6 +4,7 @@ import com.google.common.primitives.Bytes;
 import omegadrive.Device;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.GshStateHandler;
+import omegadrive.savestate.MapLikeHolder;
 import omegadrive.savestate.StateUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
@@ -40,8 +41,21 @@ public class Gs32xStateHandler extends GshStateHandler {
 
     static class S32xContainer implements Serializable {
         @Serial
-        private static final long serialVersionUID = 5388883919206790206L;
-        public Map<String, byte[]> dataMap = new LinkedHashMap<>();
+        private static final long serialVersionUID = 1_489_781_526_854_636_458L;
+
+        public final MapLikeHolder mph = new MapLikeHolder();
+
+        //do not serialize as the format changes between java releases
+        public transient Map<String, byte[]> dataMap = new LinkedHashMap<>();
+
+        public void storeFromMap() {
+            mph.storeFromMap(dataMap);
+        }
+
+        public void loadToMap() {
+            dataMap = new LinkedHashMap<>();
+            mph.loadToMap(dataMap);
+        }
     }
 
     public static BaseStateHandler createInstance(String fileName, Type type, Set<Device> deviceSet) {
@@ -129,6 +143,7 @@ public class Gs32xStateHandler extends GshStateHandler {
                 b.rewind().get(data).rewind();
                 container.dataMap.put(d.getClass().getSimpleName(), data);
             }
+            container.storeFromMap();
             buffer = storeSerializedData(START_32X_TOKEN, END_32X_TOKEN, container, buffer);
         } else {
             int s32xStart = Bytes.indexOf(buffer.array(), START_32X_TOKEN.getBytes()) + START_32X_TOKEN.length();
@@ -137,6 +152,7 @@ public class Gs32xStateHandler extends GshStateHandler {
                 Serializable s = Util.deserializeObject(buffer.array(), s32xStart, s32xEnd);
                 assert s instanceof S32xContainer;
                 S32xContainer container = (S32xContainer) s;
+                container.loadToMap();
                 byte[] data = container.dataMap.get(Sh2ContextWrap.class.getSimpleName());
                 s = Util.deserializeObject(data);
                 assert s instanceof Sh2ContextWrap;

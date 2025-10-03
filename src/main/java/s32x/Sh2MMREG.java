@@ -2,6 +2,7 @@ package s32x;
 
 import com.google.common.collect.Maps;
 import omegadrive.Device;
+import omegadrive.savestate.MapLikeHolder;
 import omegadrive.util.*;
 import org.slf4j.Logger;
 import s32x.savestate.Gs32xStateHandler;
@@ -39,9 +40,11 @@ public class Sh2MMREG implements Device {
 
     public static class Sh2MMREGContext implements Serializable {
         @Serial
-        private static final long serialVersionUID = 7541275278019348341L;
+        private static final long serialVersionUID = 5846719206198171920L;
         public final byte[] regsByte = new byte[SH2_REG_SIZE];
-        public final Map<Integer, Integer> dramModeRegs = Maps.newHashMap(dramModeRegsSpec);
+
+        public final MapLikeHolder mlh = new MapLikeHolder();
+        public transient Map<Integer, Integer> dramModeRegs = Maps.newLinkedHashMap(dramModeRegsSpec);
     }
 
     private Sh2MMREGContext ctx;
@@ -233,6 +236,7 @@ public class Sh2MMREG implements Device {
     public void saveContext(ByteBuffer buffer) {
         Device.super.saveContext(buffer);
         regs.rewind().get(ctx.regsByte).rewind();
+        ctx.mlh.storeFromMap(ctx.dramModeRegs);
         buffer.put(Util.serializeObject(ctx));
     }
 
@@ -242,6 +246,8 @@ public class Sh2MMREG implements Device {
         Serializable s = Util.deserializeObject(buffer);
         assert s instanceof Sh2MMREGContext;
         ctx = (Sh2MMREGContext) s;
+        ctx.dramModeRegs = Maps.newLinkedHashMap();
+        ctx.mlh.loadToMap(ctx.dramModeRegs);
         regs.rewind().put(ctx.regsByte).rewind();
     }
 
