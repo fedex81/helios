@@ -64,6 +64,19 @@ public class Sh2Impl implements Sh2 {
         }
     }
 
+    public void run(final Sh2Context ctx) {
+        this.ctx = ctx;
+        for (; ctx.cycles >= 0; ) {
+            decode();
+            ctx.cycles -= MdRuntimeData.resetCpuDelayExt();
+            if (ctx.checkInterrupt && acceptInterrupts()) {
+                break;
+            }
+        }
+        ctx.cycles_ran = Sh2Context.burstCycles - ctx.cycles;
+        ctx.cycles = Sh2Context.burstCycles;
+    }
+
     // get interrupt masks bits int the SR register
     private int getIMASK() {
         return (ctx.SR & flagIMASK) >>> 4;
@@ -80,6 +93,8 @@ public class Sh2Impl implements Sh2 {
             }
             processInterrupt(ctx, level);
             ctx.devices.intC.clearCurrentInterrupt();
+            ctx.checkInterrupt = false;
+            ctx.cycles -= MdRuntimeData.resetCpuDelayExt();
             return true;
         }
         return false;
@@ -118,22 +133,6 @@ public class Sh2Impl implements Sh2 {
         } else {
             opcodeMap[opcode].runnable.run();
         }
-    }
-
-    /*
-     * Because an instruction in a delay slot cannot alter the PC we can do this.
-     * Perf: better to keep run() close to decode()
-     */
-    public void run(final Sh2Context ctx) {
-        this.ctx = ctx;
-        for (; ctx.cycles >= 0; ) {
-            decode();
-            boolean res = acceptInterrupts();
-            ctx.cycles -= MdRuntimeData.resetCpuDelayExt(); //TODO check perf
-            if (res) break;
-        }
-        ctx.cycles_ran = Sh2Context.burstCycles - ctx.cycles;
-        ctx.cycles = Sh2Context.burstCycles;
     }
 
     private void stopCpuPollingWhenActive(CpuDeviceAccess cpu) {

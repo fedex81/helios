@@ -3,6 +3,7 @@ package s32x.sh2.device;
 import omegadrive.util.BufferUtil;
 import s32x.Sh2MMREG;
 import s32x.bus.Sh2Bus;
+import s32x.sh2.Sh2Context;
 import s32x.util.MarsLauncherHelper.Sh2LaunchContext;
 
 /**
@@ -25,20 +26,20 @@ public class Sh2DeviceHelper {
         public Sh2MMREG sh2MMREG;
     }
 
-    public static Sh2DeviceContext createDevices(BufferUtil.CpuDeviceAccess cpu, Sh2LaunchContext ctx) {
-        return createDevices(cpu, ctx.memory, ctx.memory.getSh2MMREGS(cpu));
+    public static Sh2DeviceContext createDevices(Sh2Context sh2Context, Sh2LaunchContext ctx) {
+        return createDevices(sh2Context, ctx.memory, ctx.memory.getSh2MMREGS(sh2Context.cpuAccess));
     }
 
-    public static Sh2DeviceContext createDevices(BufferUtil.CpuDeviceAccess cpu, Sh2Bus memory, Sh2MMREG sh2Regs) {
+    public static Sh2DeviceContext createDevices(Sh2Context sh2Context, Sh2Bus memory, Sh2MMREG sh2Regs) {
         Sh2DeviceContext ctx = new Sh2DeviceContext();
-        ctx.cpu = cpu;
+        ctx.cpu = sh2Context.cpuAccess;
         ctx.sh2MMREG = sh2Regs;
-        ctx.intC = IntControlImpl.createInstance(cpu, sh2Regs.getRegs());
-        ctx.dmaC = new DmaC(cpu, ctx.intC, memory, sh2Regs.getRegs());
-        ctx.sci = new SerialCommInterface(cpu, ctx.intC, sh2Regs.getRegs());
-        ctx.divUnit = new DivUnit(cpu, ctx.intC, sh2Regs.getRegs());
-        ctx.wdt = new WatchdogTimer(cpu, ctx.intC, sh2Regs.getRegs());
-        ctx.frt = new FreeRunningTimer(cpu, ctx.intC, sh2Regs.getRegs());
+        ctx.intC = IntControlImpl.createInstance(sh2Context, sh2Regs.getRegs());
+        ctx.dmaC = new DmaC(ctx.cpu, ctx.intC, memory, sh2Regs.getRegs());
+        ctx.sci = new SerialCommInterface(ctx.cpu, ctx.intC, sh2Regs.getRegs());
+        ctx.divUnit = new DivUnit(ctx.cpu, ctx.intC, sh2Regs.getRegs());
+        ctx.wdt = new WatchdogTimer(ctx.cpu, ctx.intC, sh2Regs.getRegs());
+        ctx.frt = new FreeRunningTimer(ctx.cpu, ctx.intC, sh2Regs.getRegs());
         return ctx;
     }
 }

@@ -24,7 +24,7 @@ import static s32x.sh2.device.IntControl.Sh2Interrupt.DMAC1;
  * <p>
  * Copyright 2021
  * <p>
- * 32X Hardware Manual Supplement 1/2,  Chaotix, Primal Rage, and Virtua Racing
+ * 32X Hardware Manual Supplement 1/2,  Chaotix, Primal Rage, and Virtua Racing, DoomFusion 2.2
  */
 public class DmaC implements BufferUtil.Sh2Device, Sh2MMREG.DmaTriggerHandler {
 
@@ -158,6 +158,11 @@ public class DmaC implements BufferUtil.Sh2Device, Sh2MMREG.DmaTriggerHandler {
         if (verbose) LOG.info("{} Dreq{} Level: {}", cpu, channel, enable);
     }
 
+    @Override
+    public boolean isOneDmaInProgress() {
+        return oneDmaInProgress;
+    }
+
     //TODO 4. When the cache is used as on-chip RAM, the DMAC cannot access this RAM.
     private void dmaOneStep(DmaHelper.DmaChannelSetup c) {
         int len = readBufferForChannel(c.channel, DMA_TCR0.addr, Size.LONG) & 0xFF_FFFF;
@@ -190,16 +195,19 @@ public class DmaC implements BufferUtil.Sh2Device, Sh2MMREG.DmaTriggerHandler {
         writeBufferForChannel(c.channel, DMA_TCR0.addr, Math.max(len, 0), Size.LONG);
     }
 
+    /**
+     * //TODO MASTER doing FIFO -> RAM dma
+     * //TODO SLAVE doing RAM -> PWM dma, when slave is done, this causes the MASTER DMA to stop
+     * //TODO clear68S without checking the other cpu breaks DoomFusion 2.2 (MASTER and SLAVE are both doing DMA)
+     */
     private void dmaEnd(DmaHelper.DmaChannelSetup c, boolean normal) {
         if (c.dmaInProgress) {
             c.dmaInProgress = false;
             c.dreqLevel = false;
             updateOneDmaInProgress();
-            //TODO MASTER doing FIFO -> RAM dma
-            //TODO SLAVE doing RAM -> PWM dma, when slave is done, this causes the MASTER DMA to stop
-            //TODO VR needs this, check
-            if (!c.chcr_autoReq) {
-                dma68SHandler.clear68S();
+
+            if (!c.chcr_autoReq && !oneDmaInProgress) {
+                dma68SHandler.clear68S(cpu);
             }
             //transfer ended normally, ie. TCR = 0
             if (normal) {

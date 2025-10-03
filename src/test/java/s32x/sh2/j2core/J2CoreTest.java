@@ -109,7 +109,7 @@ public class J2CoreTest {
         Sh2Cache cache = Sh2Cache.createCacheInstance(cpu, memory);
         Sh2MMREG sh2MMREG = new Sh2MMREG(cpu, cache);
         Sh2Context context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, sh2Debug);
-        context.devices = Sh2DeviceHelper.createDevices(cpu, memory, sh2MMREG);
+        context.devices = Sh2DeviceHelper.createDevices(context, memory, sh2MMREG);
         sh2MMREG.init(context.devices);
         MdRuntimeData.newInstance(SystemLoader.SystemType.S32X, SystemProvider.NO_CLOCK);
         return context;

@@ -51,6 +51,7 @@ public class Sh2Context implements Device, Serializable {
 
     public final String sh2ShortCode;
 
+    public boolean checkInterrupt;
     public Sh2Context(CpuDeviceAccess cpuAccess) {
         this(cpuAccess, false);
     }

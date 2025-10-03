@@ -139,7 +139,14 @@ public class DmaFifo68k implements Device, S32XMMREG.Dma68SHandler {
     }
 
     @Override
-    public void clear68S() {
+    public void clear68S(CpuDeviceAccess cpu) {
+        boolean value = dmac[0].isOneDmaInProgress() || dmac[1].isOneDmaInProgress();
+        if (!value) {
+            clear68S();
+        }
+    }
+
+    private void clear68S() {
         //set 68S to 0
         BufferUtil.setBit(sysRegsMd, sysRegsSh2, SH2_DREQ_CTRL.addr + 1, M68K_68S_BIT_POS, 0, Size.BYTE);
         ctx.m68S = false;
@@ -152,6 +159,7 @@ public class DmaFifo68k implements Device, S32XMMREG.Dma68SHandler {
         ctx.fifo.clear();
         updateFifoState();
         evaluateDreqTrigger(true); //force clears the dreqLevel in DMAC
+        //M68K can just set to 0 regardless of what SH2s are doing
         clear68S();
     }
 

@@ -104,8 +104,8 @@ public class MarsLauncherHelper {
 
         Sh2Bus memory = new Sh2BusImpl(ctx.s32XMMREG, ctx.rom, biosHolder, bus, mDrcCtx, sDrcCtx);
         ctx.memory = memory;
-        ctx.mDevCtx = Sh2DeviceHelper.createDevices(BufferUtil.CpuDeviceAccess.MASTER, ctx);
-        ctx.sDevCtx = Sh2DeviceHelper.createDevices(BufferUtil.CpuDeviceAccess.SLAVE, ctx);
+        ctx.mDevCtx = Sh2DeviceHelper.createDevices(ctx.masterCtx, ctx);
+        ctx.sDevCtx = Sh2DeviceHelper.createDevices(ctx.slaveCtx, ctx);
         ctx.mDevCtx.sci.setOther(ctx.sDevCtx.sci);
         ctx.sh2 = (ctx.masterCtx.debug || ctx.slaveCtx.debug) ?
                 new Sh2Debug(ctx.memory) : new Sh2Impl(ctx.memory);

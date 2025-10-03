@@ -69,7 +69,7 @@ public class S32XMMREG implements Device {
     private int deviceAccessType;
 
     public interface Dma68SHandler {
-        void clear68S();
+        void clear68S(CpuDeviceAccess cpu);
     }
 
     private static class S32XMMREGContext implements Serializable {

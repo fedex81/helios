@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import s32x.dict.S32xDict;
 import s32x.dict.Sh2Dict.RegSpecSh2;
 import s32x.event.PollSysEventManager;
+import s32x.sh2.Sh2Context;
 import s32x.sh2.drc.Sh2DrcBlockOptimizer;
 
 import java.nio.ByteBuffer;
@@ -53,15 +54,17 @@ public class IntControlImpl implements IntControl {
     private final ByteBuffer sh2_int_mask;
     private final ByteBuffer regs;
     private final BufferUtil.CpuDeviceAccess cpu;
+    private final Sh2Context sh2Context;
 
-    public static IntControl createInstance(BufferUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
-        return new IntControlImpl(cpu, regs);
+    public static IntControl createInstance(Sh2Context ctx, ByteBuffer regs) {
+        return new IntControlImpl(ctx, regs);
     }
 
-    public IntControlImpl(BufferUtil.CpuDeviceAccess cpu, ByteBuffer regs) {
+    public IntControlImpl(Sh2Context ctx, ByteBuffer regs) {
         sh2_int_mask = ByteBuffer.allocate(2);
         this.regs = regs;
-        this.cpu = cpu;
+        this.sh2Context = ctx;
+        this.cpu = ctx.cpuAccess;
         this.s32xInt = new HashMap<>(Sh2Interrupt.values().length);
         this.onChipDevicePriority = new HashMap<>();
         init();
@@ -244,6 +247,7 @@ public class IntControlImpl implements IntControl {
             if (ctx != NO_POLLER && (ctx.isPollingActive() || ctx.isPollingBusyLoop())) {
                 PollSysEventManager.instance.fireSysEvent(cpu, PollSysEventManager.SysEvent.INT);
             }
+            sh2Context.checkInterrupt = true;
         }
     }
 

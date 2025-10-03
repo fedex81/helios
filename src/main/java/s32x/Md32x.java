@@ -72,7 +72,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         Pwm.PWM_USE_BLIP = Boolean.parseBoolean(System.getProperty("helios.32x.pwm.use.blip", "false"));
         ENABLE_FM = Boolean.parseBoolean(System.getProperty("helios.32x.fm.enable", "true"));
         ENABLE_PWM = Boolean.parseBoolean(System.getProperty("helios.32x.pwm.enable", "true"));
-        SH2_CYCLES_PER_STEP = Integer.parseInt(System.getProperty("helios.32x.sh2.cycles", "30")); //32
+        SH2_CYCLES_PER_STEP = Integer.parseInt(System.getProperty("helios.32x.sh2.cycles", "32")); //32
         Sh2Context.burstCycles = SH2_CYCLES_PER_STEP;
 //        System.setProperty("68k.debug", "true");
 //        System.setProperty("helios.68k.debug.mode", "2");

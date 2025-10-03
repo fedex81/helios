@@ -33,6 +33,8 @@ public class Sh2MMREG implements Device {
 
     public interface DmaTriggerHandler {
         void dmaReqTrigger(int channel, boolean enable);
+
+        boolean isOneDmaInProgress();
     }
 
     public static class Sh2MMREGContext implements Serializable {

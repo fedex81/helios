@@ -1,10 +1,10 @@
 package s32x.sh2.j2core;
 
-import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.*;
 import s32x.bus.Sh2Bus;
+import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Disassembler;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.device.IntControl.Sh2Interrupt;
@@ -63,7 +63,7 @@ public class J2CoreInterruptsTest extends J2CoreTest {
     @BeforeEach
     public void before() {
         super.before();
-        ctx.devices.intC = createIntControl(ctx.cpuAccess, ctx.devices.sh2MMREG.getRegs());
+        ctx.devices.intC = createIntControl(ctx, ctx.devices.sh2MMREG.getRegs());
         sh2.reset(ctx);
         System.out.println("Reset, PC: " + ctx.PC + ", SP: " + ctx.registers[15]);
     }
@@ -117,8 +117,8 @@ public class J2CoreInterruptsTest extends J2CoreTest {
         //do nothing
     }
 
-    public static IntControl createIntControl(CpuDeviceAccess cpu, ByteBuffer regs) {
-        return new IntControlImpl(cpu, regs) {
+    public static IntControl createIntControl(Sh2Context ctx, ByteBuffer regs) {
+        return new IntControlImpl(ctx, regs) {
             //supports all interrupts, NMI, level15, etc
             {
                 orderedIntCtx = Arrays.stream(Sh2Interrupt.vals).map(s32xInt::get).toArray(InterruptContext[]::new);
