@@ -56,20 +56,20 @@ public interface Sh2Cache extends Device {
     int DATA_ARRAY_SIZE = 0x1000;
     int DATA_ARRAY_MASK = DATA_ARRAY_SIZE - 1;
 
+    int CACHE_LINE_DISABLED_MASK = 1 << 31;
     class Sh2CacheLine implements Serializable {
         @Serial
         private static final long serialVersionUID = -8588821133794717884L;
-        public int tag; //u32
-        public int v;
-        public byte[] data = new byte[CACHE_BYTES_PER_LINE]; //u8
+        public int tag = CACHE_LINE_DISABLED_MASK; //u32
+        public final byte[] data = new byte[CACHE_BYTES_PER_LINE]; //u8
     }
 
     class Sh2CacheEntry implements Serializable {
         @Serial
         private static final long serialVersionUID = 4340652925400702503L;
         int enable; //u32
-        int[] lru = new int[CACHE_LINES]; //u32
-        Sh2CacheLine[][] way = new Sh2CacheLine[CACHE_WAYS][CACHE_LINES];
+        final int[] lru = new int[CACHE_LINES]; //u32
+        final Sh2CacheLine[][] way = new Sh2CacheLine[CACHE_WAYS][CACHE_LINES];
     }
 
     class CacheInvalidateContext {

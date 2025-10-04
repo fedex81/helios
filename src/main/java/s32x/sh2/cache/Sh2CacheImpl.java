@@ -83,7 +83,7 @@ public class Sh2CacheImpl implements Sh2Cache {
             ca.lru[entry] = 0;
             for (int way = 0; way < CACHE_WAYS; way++) {
                 invalidatePrefetcher(ca.way[way][entry], entry, -1);
-                ca.way[way][entry].v = 0;
+                ca.way[way][entry].tag |= CACHE_LINE_DISABLED_MASK;
             }
         }
         if (verbose) LOG.info("{} Cache clear", cpu);
@@ -100,7 +100,7 @@ public class Sh2CacheImpl implements Sh2Cache {
 
                     for (int i = 0; i < CACHE_WAYS; i++) {
                         Sh2CacheLine line = ca.way[i][entry];
-                        if ((line.v > 0) && (line.tag == tagaddr)) {
+                        if (line.tag == tagaddr) {
                             return getCachedData(line.data, addr & LINE_MASK, size) & size.getMask();
                         }
                     }
@@ -180,8 +180,8 @@ public class Sh2CacheImpl implements Sh2Cache {
         final int entry = (addr & ENTRY_MASK) >> ENTRY_SHIFT;
 
         for (int i = 0; i < CACHE_WAYS; i++) {
-            Sh2CacheLine line = ca.way[i][entry];
-            if ((line.v > 0) && (line.tag == tagaddr)) {
+            if (ca.way[i][entry].tag == tagaddr) {
+                Sh2CacheLine line = ca.way[i][entry];
                 updateLru(i, ca.lru, entry);
                 if (verbose) LOG.info("{} Cache hit, read at {} {}, val: {}", cpu, th(addr), size,
                         th(getCachedData(line.data, addr & LINE_MASK, size)));
@@ -197,10 +197,11 @@ public class Sh2CacheImpl implements Sh2Cache {
         invalidatePrefetcher(line, entry, addr); //MetalHead needs this
         updateLru(lruway, ca.lru, entry);
         line.tag = tagaddr;
+        assert (tagaddr & CACHE_LINE_DISABLED_MASK) == 0;
 
         refillCache(line.data, addr);
 
-        line.v = 1; //becomes valid
+        line.tag &= ~CACHE_LINE_DISABLED_MASK; //becomes valid
         if (verbose) LOG.info("{} Cache miss, read at {} {}, val: {}", cpu, th(addr), size,
                 th(getCachedData(line.data, addr & LINE_MASK, size)));
         return getCachedData(line.data, addr & LINE_MASK, size);
@@ -213,7 +214,7 @@ public class Sh2CacheImpl implements Sh2Cache {
         boolean change = false;
         for (int i = 0; i < CACHE_WAYS; i++) {
             Sh2CacheLine line = ca.way[i][entry];
-            if ((line.v > 0) && (line.tag == tagaddr)) {
+            if (line.tag == tagaddr) {
                 assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && i > 1);
                 int prev = getCachedData(line.data, addr & LINE_MASK, size);
                 if (prev != val) {
@@ -270,8 +271,9 @@ public class Sh2CacheImpl implements Sh2Cache {
         final int entry = (addr & ENTRY_MASK) >> ENTRY_SHIFT;
         ca.lru[entry] = (data >> 6) & 63;
         Sh2CacheLine line = ca.way[cacheRegCtx.way][entry];
-        line.v = (addr >> 2) & 1;
-        line.tag = tagaddr;
+        int en = ((addr >> 2) & 1) == 0 ? CACHE_LINE_DISABLED_MASK : 0;
+        assert (tagaddr & CACHE_LINE_DISABLED_MASK) == 0;
+        line.tag = tagaddr | en;
     }
 
     //NOTE seems unused
@@ -289,7 +291,7 @@ public class Sh2CacheImpl implements Sh2Cache {
             if (ca.way[i][entry].tag == tagaddr) {
                 assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && i > 1);
                 //only v bit is changed, the rest of the data remains
-                ca.way[i][entry].v = 0;
+                ca.way[i][entry].tag |= CACHE_LINE_DISABLED_MASK;
                 MdRuntimeData.addCpuDelayExt(CACHE_PURGE_DELAY);
                 invalidatePrefetcher(ca.way[i][entry], entry, addr & CACHE_PURGE_MASK);
             }
@@ -349,7 +351,7 @@ public class Sh2CacheImpl implements Sh2Cache {
 
         for (int i = 0; i < 4; i++) {
             Sh2CacheLine line = cache.ca.way[i][entry];
-            if ((line.v > 0) && (line.tag == tagaddr)) {
+            if (line.tag == tagaddr) {
                 return Optional.of(getCachedData(line.data, addr & LINE_MASK, size));
             }
         }
@@ -407,7 +409,7 @@ public class Sh2CacheImpl implements Sh2Cache {
     }
 
     private void invalidatePrefetcher(Sh2CacheLine line, int entry, int addr) {
-        if (line.v > 0) {
+        if ((line.tag & CACHE_LINE_DISABLED_MASK) == 0) {
             boolean force = addr < 0;
             invalidCtx.line = line;
             invalidCtx.prevCacheAddr = line.tag | (entry << ENTRY_SHIFT);
