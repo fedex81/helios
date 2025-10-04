@@ -59,7 +59,10 @@ public class MdVdpTestUtil {
         boolean isStart;
         do {
             h.increaseHCounter();
-            isStart = h.gethCounterInternal() == 0 && h.getvCounterInternal() == 0;
+            //Just before the first HINT would be fired, ie. line = -1
+            //H40: when Hcounter reaches 0xa5(0x14a), Vcnt goes to 0 and the 1st HINT is fired
+            //H32: hcnt 0x10a
+            isStart = h.gethCounterInternal() == 0x100 && h.getvCounterInternal() == 0x1FF;
         } while (!isStart);
         h.setHIntPending(false);
         h.setvIntPending(false);

@@ -27,7 +27,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 
-@Ignore
 public class SmsVdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
 
     private static final Logger LOG = LogHelper.getLogger(SmsVdpInterruptHandlerTest.class.getSimpleName());
@@ -44,6 +43,7 @@ public class SmsVdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
      * (etc)	(etc)
      */
     @Test
+    @Ignore("TODO fix")
     public void testSmsHLinesCounter() {
         testSmsHLinesCounterInternal(0);
         testSmsHLinesCounterInternal(1);
@@ -57,7 +57,6 @@ public class SmsVdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
     }
 
     @Test
-    @Ignore("TODO fix")
     public void testHLinesCounter() {
         int hLinePassed = 0;
         BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();

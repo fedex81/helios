@@ -30,6 +30,9 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.slf4j.Logger;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Ignore
 public class BaseVdpInterruptHandlerTest {
 
@@ -40,6 +43,8 @@ public class BaseVdpInterruptHandlerTest {
     protected int numberOfHint = 0;
     protected int line = 0, lineCount = 0;
     private boolean[] actualLineInt;
+
+    private static Set<VdpEventListener> addedListeners = new HashSet<>();
 
     protected static void printMsg(String msg) {
         if (verbose) {
@@ -57,7 +62,10 @@ public class BaseVdpInterruptHandlerTest {
     protected void prepareVdp(BaseVdpProvider vdp, VdpInterruptHandler h,
                               VideoMode mode) {
         MdVdpTestUtil.updateVideoMode(vdp, mode);
-        vdp.addVdpEventListener(getVdpEventListener(h));
+        addedListeners.forEach(vdp::removeVdpEventListener);
+        VdpEventListener vdpEv = getVdpEventListener(h);
+        addedListeners.add(vdpEv);
+        vdp.addVdpEventListener(vdpEv);
         System.out.println("STARTING: " + mode);
         MdVdpTestUtil.runCounterToStartFrame(h);
         printMsg(h.getStateString("Start frame: "));
@@ -79,9 +87,20 @@ public class BaseVdpInterruptHandlerTest {
     public void hLinesCounterBasic2(BaseVdpProvider vdp, VdpInterruptHandler h, VideoMode mode) {
         before();
         VdpCounterMode counterMode = VdpCounterMode.getCounterMode(mode);
-        int totalCount = counterMode.vTotalCount * 3 + 5;
-        //V28: triggers on line [0-E0] - includes vblank line (??)
+        int totalCount = counterMode.vTotalCount * 3 - 1;
+        //V28: triggers on line [0-E0] - 225 hints ( from line -1 -> 0, to 0xDF -> 0xE0)
         int expectedNumberOfHint = (counterMode.vBlankSet + 1) * 3;
+        prepareVdp(vdp, h, mode);
+        do {
+            h.increaseHCounter();
+        } while (lineCount < totalCount);
+        Assert.assertEquals(expectedNumberOfHint, numberOfHint);
+    }
+
+    public void hLinesCounterTotal(BaseVdpProvider vdp, VdpInterruptHandler h,
+                                   VideoMode mode, int expectedNumberOfHint) {
+        before();
+        int totalCount = VdpCounterMode.getCounterMode(mode).vTotalCount;
         prepareVdp(vdp, h, mode);
         do {
             h.increaseHCounter();
@@ -121,9 +140,6 @@ public class BaseVdpInterruptHandlerTest {
                     return;
                 }
                 switch (event) {
-                    case INTERRUPT:
-                        h.setvIntPending(false);
-                        break;
                     case H_BLANK_CHANGE:
                         boolean hBlankState = (boolean) value;
                         if (!hBlankState) {

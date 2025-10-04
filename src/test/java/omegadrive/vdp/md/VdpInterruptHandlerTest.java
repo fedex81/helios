@@ -57,7 +57,6 @@ public class VdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
      * 3. hint gets reloaded correctly
      */
     @Test
-    @Ignore("TODO fix")
     public void testHLinesCounter_01() {
         int hLinePassed = 0;
         BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
@@ -141,5 +140,26 @@ public class VdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
             }
         } while (lineCount < totalCount);
         Assert.assertTrue(atLeastOneVInt);
+    }
+
+    /**
+     * V28 has 225 hints
+     * //V28: triggers on line [0-E0] - 225 hints ( from line -1 -> 0, to 0xDF -> 0xE0)
+     */
+    @Test
+    public void testHIntsPerFrame() {
+        for (VideoMode vm : VideoMode.values()) {
+            if (VdpCounterMode.getCounterMode(vm) == null) continue;
+            int expNumInt = vm.getDimension().height + 1;
+            testHIntInternal(vm, expNumInt);
+        }
+    }
+
+    private void testHIntInternal(VideoMode vm, int expNumHInt) {
+        int hLinePassed = 0;
+        BaseVdpProvider vdp = MdVdpTestUtil.createBaseTestVdp();
+        VdpInterruptHandler h = VdpInterruptHandler.createMdInstance(vdp);
+        MdVdpTestUtil.updateHCounter(vdp, hLinePassed);
+        hLinesCounterTotal(vdp, h, vm, expNumHInt);
     }
 }
