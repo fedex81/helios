@@ -44,7 +44,7 @@ public class McdWordRamHelper {
             case BYTE -> {
                 int bank = getBank(memoryContext.wramSetup, cpu, address);
                 int addr = getAddress(memoryContext.wramSetup, address, bank) | (address & 1);
-                Util.writeData(wordRam01[bank], addr, value, Size.BYTE);
+                Util.writeDataByte(wordRam01[bank], addr, value);
             }
             default -> {
                 assert false;
@@ -83,11 +83,11 @@ public class McdWordRamHelper {
     }
 
     public void writeWordRamBank(int bank, int address, int value) {
-        Util.writeData(wordRam01[bank], getAddress(memoryContext.wramSetup, address, bank), value, Size.WORD);
+        Util.writeDataWord(wordRam01[bank], getAddress(memoryContext.wramSetup, address, bank), value);
     }
 
     public int readWordRamBank(int bank, int address) {
-        return Util.readData(wordRam01[bank], getAddress(memoryContext.wramSetup, address, bank), Size.WORD);
+        return Util.readDataWord(wordRam01[bank], getAddress(memoryContext.wramSetup, address, bank));
     }
 
     public static int getBank(MegaCdMemoryContext.WramSetup wramSetup, CpuDeviceAccess cpu, int address) {

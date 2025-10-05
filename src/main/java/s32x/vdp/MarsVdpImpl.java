@@ -173,6 +173,11 @@ public class MarsVdpImpl implements MarsVdp {
     }
 
     @Override
+    public void readCacheLine(int address, byte[] data) {
+        dramBanks[vdpContext.frameBufferWritable].get(address & S32xDict.DRAM_MASK, data);
+    }
+
+    @Override
     public boolean vdpRegWrite(RegSpecS32x reg32x, int reg, int value, Size size) {
         switch (size) {
             case WORD:

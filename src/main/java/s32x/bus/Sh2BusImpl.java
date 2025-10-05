@@ -25,8 +25,9 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.MASTER;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SLAVE;
 import static omegadrive.util.LogHelper.logWarnOnce;
 import static omegadrive.util.LogHelper.logWarnOnceWhenEn;
-import static omegadrive.util.Util.assertCheckBusOp;
-import static omegadrive.util.Util.th;
+import static omegadrive.util.Util.*;
+import static s32x.dict.S32xDict.*;
+import static s32x.sh2.cache.Sh2Cache.*;
 
 public final class Sh2BusImpl implements Sh2Bus {
 
@@ -82,43 +83,14 @@ public final class Sh2BusImpl implements Sh2Bus {
             memAccessStats.addMemHit(true, address, size);
         }
         switch ((address >>> Sh2Cache.CACHE_ADDRESS_BITS) & 0xFF) {
+            case Sh2Cache.CACHE_THROUGH_H3:
+                res = readCacheThrough(address, size, cpuAccess);
+                break;
             case Sh2Cache.CACHE_USE_H3:
             case Sh2Cache.CACHE_PURGE_H3: //chaotix, bit 27,28 are ignored -> 4
             case Sh2Cache.CACHE_ADDRESS_ARRAY_H3: //chaotix
             case Sh2Cache.CACHE_DATA_ARRAY_H3: //vr
                 return cache[cpuAccess.ordinal()].cacheMemoryRead(address, size);
-            case Sh2Cache.CACHE_THROUGH_H3:
-                if (address >= S32xDict.SH2_START_ROM && address < S32xDict.SH2_END_ROM) {
-                    //TODO RV bit, sh2 should stall
-                    assert DmaFifo68k.rv ? logWarnIllegalAccess(cpuAccess, "read", "ROM", "rv",
-                            DmaFifo68k.rv, address, size) : true;
-                    res = mdBus.readRom(address & 0xFF_FFFF, size);
-                    S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.ROM);
-                } else if (address >= S32xDict.START_32X_SYSREG && address < S32xDict.END_32X_COLPAL) {
-                    if (BufferUtil.ENFORCE_FM_BIT_ON_READS && s32XMMREG.fm == 0 && address >= S32xDict.START_32X_VDPREG) {
-                        logWarnIllegalAccess(cpuAccess, "read", "VDP regs", "FM",
-                                s32XMMREG.fm, address, size);
-                        return size.getMask();
-                    }
-                    res = s32XMMREG.read(address, size);
-                } else if (address >= S32xDict.SH2_START_SDRAM && address < S32xDict.SH2_END_SDRAM) {
-                    res = BufferUtil.readBuffer(sdram, address & S32xDict.SH2_SDRAM_MASK, size);
-                    S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.SDRAM);
-                } else if (address >= S32xDict.START_DRAM && address < S32xDict.END_DRAM_OVER_MIRROR) {
-                    if (BufferUtil.ENFORCE_FM_BIT_ON_READS && s32XMMREG.fm == 0) {
-                        logWarnIllegalAccess(cpuAccess, "read", "FB/OVER", "FM",
-                                s32XMMREG.fm, address, size);
-                        return size.getMask();
-                    }
-                    res = s32XMMREG.read(address & S32xDict.DRAM_OVER_MIRROR_MASK, size);
-                    S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.FRAME_BUFFER);
-                } else if (address >= S32xDict.SH2_START_BOOT_ROM && address < S32xDict.SH2_END_BOOT_ROM) {
-                    res = bios[cpuAccess.ordinal()].readBuffer(address, size);
-                    S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.BOOT_ROM);
-                } else {
-                    logWarnOnce(LOG, "{} invalid read from addr: {}, {}", cpuAccess, th(address), size);
-                }
-                break;
             case Sh2Cache.CACHE_IO_H3: //0xF
                 if ((address & S32xDict.SH2_ONCHIP_REG_MASK) == S32xDict.SH2_ONCHIP_REG_MASK) {
                     res = sh2MMREGS[cpuAccess.ordinal()].read(address & 0xFFFF, size);
@@ -136,6 +108,51 @@ public final class Sh2BusImpl implements Sh2Bus {
                 break;
         }
         return res & size.getMask();
+    }
+
+    private int readCacheThrough(int address, Size size, CpuDeviceAccess cpuAccess) {
+        int res = 0;
+        int memDelay = 0;
+        switch (address >>> 24) {
+            case SH2_ROM_AREA_WT -> {
+                //TODO RV bit, sh2 should stall
+                assert DmaFifo68k.rv ? logWarnIllegalAccess(cpuAccess, "read", "ROM", "rv",
+                        DmaFifo68k.rv, address, size) : true;
+                res = mdBus.readRom(address & 0xFF_FFFF, size);
+                memDelay = S32xMemAccessDelay.ROM;
+            }
+            case SH2_SDRAM_AREA_WT -> {
+                res = BufferUtil.readBuffer(sdram, address & S32xDict.SH2_SDRAM_MASK, size);
+                memDelay = S32xMemAccessDelay.SDRAM;
+            }
+            case SH2_VDP_FB_AREA_WT -> {
+                if (BufferUtil.ENFORCE_FM_BIT_ON_READS && s32XMMREG.fm == 0) {
+                    logWarnIllegalAccess(cpuAccess, "read", "FB/OVER", "FM",
+                            s32XMMREG.fm, address, size);
+                    return size.getMask();
+                }
+                res = s32XMMREG.read(address & S32xDict.DRAM_OVER_MIRROR_MASK, size);
+                memDelay = S32xMemAccessDelay.FRAME_BUFFER;
+            }
+            case SH2_BIOS_SH2REGS_AREA_WT -> {
+                if (address < START_32X_SYSREG) {
+                    res = bios[cpuAccess.ordinal()].readBuffer(address, size);
+                    memDelay = S32xMemAccessDelay.BOOT_ROM;
+                } else {
+                    if (BufferUtil.ENFORCE_FM_BIT_ON_READS && s32XMMREG.fm == 0 && address >= S32xDict.START_32X_VDPREG) {
+                        logWarnIllegalAccess(cpuAccess, "read", "VDP regs", "FM",
+                                s32XMMREG.fm, address, size);
+                        return size.getMask();
+                    }
+                    res = s32XMMREG.read(address, size);
+                }
+            }
+            default -> logWarnOnce(LOG, "{} invalid read from addr: {}, {}", cpuAccess, th(address), size);
+        }
+        if (memDelay > 0) {
+            S32xMemAccessDelay.addWriteCpuDelay(memDelay);
+        }
+        return res;
     }
 
     @Override
@@ -159,28 +176,7 @@ public final class Sh2BusImpl implements Sh2Bus {
                 //NOTE as the next cache access will reload the data from MEM
                 break;
             case Sh2Cache.CACHE_THROUGH_H3:
-                if (address >= S32xDict.START_DRAM && address < S32xDict.END_DRAM_OVER_MIRROR) {
-                    if (s32XMMREG.fm == 0) {
-                        logWarnIllegalAccess(cpuAccess, "write", "FB/OVER", "FM",
-                                s32XMMREG.fm, address, size);
-                        return;
-                    }
-                    s32XMMREG.write(address & S32xDict.DRAM_OVER_MIRROR_MASK, val, size);
-                } else if (address >= S32xDict.SH2_START_SDRAM && address < S32xDict.SH2_END_SDRAM) {
-                    hasMemoryChanged = BufferUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, val, size);
-                    S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.SDRAM);
-                } else if (address >= S32xDict.START_32X_SYSREG && address < S32xDict.END_32X_SYSREG) {
-                    s32XMMREG.write(address, val, size);
-                } else if (address >= S32xDict.START_32X_VDPREG && address < S32xDict.END_32X_COLPAL) {
-                    if (s32XMMREG.fm == 0) {
-                        logWarnIllegalAccess(cpuAccess, "write", " VDP regs", "FM",
-                                s32XMMREG.fm, address, size);
-                        return;
-                    }
-                    s32XMMREG.write(address, val, size);
-                } else {
-                    logWarnOnce(LOG, "{} invalid write to addr: {} {}", cpuAccess, th(address), size);
-                }
+                hasMemoryChanged = writeCacheThrough(address, val, size, cpuAccess);
                 break;
             case Sh2Cache.CACHE_IO_H3: //0xF
                 if ((address & S32xDict.SH2_ONCHIP_REG_MASK) == S32xDict.SH2_ONCHIP_REG_MASK) {
@@ -202,6 +198,64 @@ public final class Sh2BusImpl implements Sh2Bus {
             Sh2Prefetch.checkPoller(cpuAccess, PollSysEventManager.SysEvent.SDRAM, address, val, size);
         }
     }
+
+    private boolean writeCacheThrough(int address, int val, Size size, CpuDeviceAccess cpuAccess) {
+        boolean hasMemoryChanged = false;
+        int memDelay = 0;
+        switch (address >>> 24) {
+            case SH2_VDP_FB_AREA_WT -> {
+                if (s32XMMREG.fm == 0) {
+                    logWarnIllegalAccess(cpuAccess, "write", "FB/OVER", "FM",
+                            s32XMMREG.fm, address, size);
+                    return false;
+                }
+                s32XMMREG.write(address & S32xDict.DRAM_OVER_MIRROR_MASK, val, size);
+            }
+            case SH2_SDRAM_AREA_WT -> {
+                hasMemoryChanged = BufferUtil.writeBufferRaw(sdram, address & S32xDict.SH2_SDRAM_MASK, val, size);
+                memDelay = S32xMemAccessDelay.SDRAM;
+            }
+            case SH2_BIOS_SH2REGS_AREA_WT -> {
+                if (address >= S32xDict.START_32X_SYSREG && address < S32xDict.END_32X_SYSREG) {
+                    s32XMMREG.write(address, val, size);
+                } else if (address >= S32xDict.START_32X_VDPREG && address < S32xDict.END_32X_COLPAL) {
+                    if (s32XMMREG.fm == 0) {
+                        logWarnIllegalAccess(cpuAccess, "write", " VDP regs", "FM",
+                                s32XMMREG.fm, address, size);
+                        return false;
+                    }
+                    s32XMMREG.write(address, val, size);
+                }
+            }
+            default -> logWarnOnce(LOG, "{} invalid write to addr: {} {}", cpuAccess, th(address), size);
+        }
+        if (memDelay > 0) {
+            S32xMemAccessDelay.addWriteCpuDelay(memDelay);
+        }
+        return hasMemoryChanged;
+    }
+
+    /**
+     * For cache reads of 16 consecutive bytes
+     */
+    @Override
+    public void readMemoryUncachedNoDelay(int address, byte[] data) {
+        assert data.length == CACHE_BYTES_PER_LINE;
+        switch (address >> 24) {
+            case SH2_SDRAM_AREA_CACHE -> sdram.get(address & SH2_SDRAM_MASK, data);
+            case SH2_ROM_AREA_CACHE -> rom.get(address & SH2_ROM_MASK, data);
+            case SH2_VDP_FB_AREA_CACHE -> s32XMMREG.getVdp().readCacheLine(address, data);
+            default -> {
+                int delay = MdRuntimeData.getCpuDelayExt();
+                for (int i = 0; i < CACHE_BYTES_PER_LINE; i += 4) {
+                    int val = read32((address + i) | CACHE_THROUGH);
+                    writeDataLong(data, i & LINE_MASK, val);
+                }
+                MdRuntimeData.resetCpuDelayExt(delay);
+            }
+        }
+    }
+
 
     @Override
     public void invalidateCachePrefetch(Sh2Cache.CacheInvalidateContext ctx) {

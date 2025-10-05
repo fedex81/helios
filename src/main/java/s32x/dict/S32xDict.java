@@ -211,7 +211,7 @@ public class S32xDict {
     public static final int SH2_SDRAM_SIZE = 0x4_0000; // 256kb
     private static final int SH2_MAX_ROM_SIZE = 0x40_0000; // 256kb
     public static final int SH2_SDRAM_MASK = SH2_SDRAM_SIZE - 1;
-    private static final int SH2_ROM_MASK = SH2_MAX_ROM_SIZE - 1;
+    public static final int SH2_ROM_MASK = SH2_MAX_ROM_SIZE - 1;
 
     public static final int SH2_CACHE_THROUGH_OFFSET = 0x2000_0000;
 
@@ -277,6 +277,15 @@ public class S32xDict {
      */
     public static final int END_DRAM_OVER_MIRROR = END_OVER_IMAGE_CACHE + SH2_CACHE_THROUGH_OFFSET + DRAM_SIZE;
     public static final int DRAM_OVER_MIRROR_MASK = 0xFFF3_FFFF;
+
+    public static final int SH2_SDRAM_AREA_CACHE = SH2_START_SDRAM_CACHE >> 24;
+    public static final int SH2_ROM_AREA_CACHE = SH2_START_ROM_CACHE >> 24;
+    public static final int SH2_VDP_FB_AREA_CACHE = START_DRAM_CACHE >> 24;
+
+    public static final int SH2_SDRAM_AREA_WT = SH2_START_SDRAM >> 24;
+    public static final int SH2_ROM_AREA_WT = SH2_START_ROM >> 24;
+    public static final int SH2_VDP_FB_AREA_WT = START_DRAM >> 24;
+    public static final int SH2_BIOS_SH2REGS_AREA_WT = SH2_CACHE_THROUGH_OFFSET >> 24;
 
     /**
      * M68K memory map

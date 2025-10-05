@@ -58,6 +58,10 @@ public interface MarsVdp extends Device {
         throw new UnsupportedOperationException();
     }
 
+    default void readCacheLine(int address, byte[] data) {
+        throw new UnsupportedOperationException();
+    }
+
     void setHBlank(boolean hBlankOn, int hen);
 
     void setVBlank(boolean vBlankOn);

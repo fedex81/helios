@@ -226,23 +226,47 @@ public class Util {
         return readData(src, address & mask, size);
     }
 
+    public static int readDataByte(byte[] src, int address) {
+        return src[address];
+    }
+
+    public static int readDataWord(byte[] src, int address) {
+        return ((src[address] & 0xFF) << 8) | (src[address + 1] & 0xFF);
+    }
+
+    public static int readDataLong(byte[] src, int address) {
+        return ((src[address] & 0xFF) << 24) | (src[address + 1] & 0xFF) << 16 |
+                (src[address + 2] & 0xFF) << 8 | (src[address + 3] & 0xFF);
+    }
+
     public static int readData(byte[] src, int address, Size size) {
 //        assert size != Size.BYTE ? (address & 1) == 0 : true; //TODO sram word reads on odd addresses
         return switch (size) {
-            case WORD -> ((src[address] & 0xFF) << 8) | (src[address + 1] & 0xFF);
-            case LONG -> ((src[address] & 0xFF) << 24) | (src[address + 1] & 0xFF) << 16 |
-                    (src[address + 2] & 0xFF) << 8 | (src[address + 3] & 0xFF);
-            case BYTE -> src[address];
+            case WORD -> readDataWord(src, address);
+            case LONG -> readDataLong(src, address);
+            case BYTE -> readDataByte(src, address);
         };
     }
 
     public static void writeData(byte[] dest, int address, int data, Size size) {
 //        assert size != Size.BYTE ? (address & 1) == 0 : true; //TODO sram word writes on odd addresses
         switch (size) {
-            case WORD -> SHORT_BYTEARR_HANDLE.set(dest, address, (short) data);
-            case LONG -> INT_BYTEARR_HANDLE.set(dest, address, data);
-            case BYTE -> dest[address] = (byte) data;
+            case WORD -> writeDataWord(dest, address, data);
+            case LONG -> writeDataLong(dest, address, data);
+            case BYTE -> writeDataByte(dest, address, data);
         }
+    }
+
+    public static void writeDataByte(byte[] dest, int address, int data) {
+        dest[address] = (byte) data;
+    }
+
+    public static void writeDataWord(byte[] dest, int address, int data) {
+        SHORT_BYTEARR_HANDLE.set(dest, address, (short) data);
+    }
+
+    public static void writeDataLong(byte[] dest, int address, int data) {
+        INT_BYTEARR_HANDLE.set(dest, address, data);
     }
 
     public static void writeDataMask(byte[] dest, int address, int data, final int mask, Size size) {

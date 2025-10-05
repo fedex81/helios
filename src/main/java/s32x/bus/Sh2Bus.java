@@ -83,6 +83,13 @@ public interface Sh2Bus extends Sh2Prefetcher, ReadableByteMemory, Device {
         return res;
     }
 
+    /**
+     * Read data to fill a cache line (16 bytes)
+     */
+    default void readMemoryUncachedNoDelay(int address, byte[] data) {
+        throw new UnsupportedOperationException();
+    }
+
     default void invalidateCachePrefetch(CacheInvalidateContext ctx) {
         //do nothing
     }

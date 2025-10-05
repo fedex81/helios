@@ -402,10 +402,7 @@ public class Sh2CacheImpl implements Sh2Cache {
     private void refillCache(byte[] data, int addr) {
         MdRuntimeData.addCpuDelayExt(4);
         assert cpu == MdRuntimeData.getAccessTypeExt();
-        for (int i = 0; i < CACHE_BYTES_PER_LINE; i += 4) {
-            int val = memory.readMemoryUncachedNoDelay((addr & 0xFFFFFFF0) + i, Size.LONG);
-            setCachedData(data, i & LINE_MASK, val, Size.LONG);
-        }
+        memory.readMemoryUncachedNoDelay(addr & 0xFFFFFFF0, data);
     }
 
     private void invalidatePrefetcher(Sh2CacheLine line, int entry, int addr) {
