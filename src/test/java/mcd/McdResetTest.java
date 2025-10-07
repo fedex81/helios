@@ -15,6 +15,7 @@ import static mcd.McdGateArrayRegTest.MAIN_RESET_REG;
 public class McdResetTest extends McdRegTestBase {
 
     public static final int BUS_REQ_MASK = 2;
+    public static final int RESET_MASK = 1;
 
     public static final int MAIN_RESET_REG_ODD = MAIN_RESET_REG + 1;
 
@@ -30,7 +31,7 @@ public class McdResetTest extends McdRegTestBase {
     @Test
     public void testBusReq() {
         int mreg = mainCpuBus.read(MAIN_RESET_REG_ODD, Size.BYTE);
-        assert mreg == BUS_REQ_MASK;
+        Assertions.assertEquals(BUS_REQ_MASK, mreg);
         //subCpu is halted, toggling SBRK doesn't change that
         testBusReqInternal(mreg, new boolean[]{true, true});
 
@@ -45,6 +46,27 @@ public class McdResetTest extends McdRegTestBase {
         mreg = 3;
         mainCpuBus.write(MAIN_RESET_REG_ODD, mreg, Size.BYTE);
         testBusReqInternal(mreg, new boolean[]{false, true});
+    }
+
+    /**
+     * SRES = 0 forces SBRK to 1
+     */
+    @Test
+    public void testResetAndBusReq() {
+        int mreg = mainCpuBus.read(MAIN_RESET_REG_ODD, Size.BYTE);
+        if (mreg != 0) {
+//            System.out.println(th(mreg));
+            //reset=1, busReq to 0
+            mainCpuBus.write(MAIN_RESET_REG_ODD, RESET_MASK, Size.BYTE);
+            waitForBusReq(0);
+        }
+        //now SRES = 1, SBRK = 0
+        mreg = mainCpuBus.read(MAIN_RESET_REG_ODD, Size.BYTE);
+        Assertions.assertEquals(RESET_MASK, mreg);
+
+        //SRES = 0 -> SBRK goes to 1
+        mainCpuBus.write(MAIN_RESET_REG_ODD, 0, Size.BYTE);
+        waitForBusReq(BUS_REQ_MASK);
     }
 
     /**

@@ -28,6 +28,7 @@ import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
+import static mcd.util.McdRegBitUtil.setBitDefInternal;
 import static mcd.util.McdRegBitUtil.setSharedBitBothCpu;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
@@ -404,6 +405,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
 
         int sreset = res & 1;
         int sbusreq = (res >> 1) & 1;
+
         assert subCpu != null && subCpuBus != null;
         handleIfl2(curr, res, address, size);
 
@@ -414,6 +416,11 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         if ((curr & 3) == (res & 3)) {
             return;
         }
+        //sreset = 0 forces sbusreq = 1
+        boolean sresChanged = (curr & 1) != sreset;
+        sbusreq = sresChanged && sreset == 0 ? 1 : sbusreq;
+        setBitDefInternal(memCtx, M68K, BitRegDef.SBRQ, sbusreq << 1);
+
         boolean stopped = sreset == 0 || sbusreq > 0;
         boolean triggerReset = ((curr & 1) == 0) && sreset > 0;
         if (triggerReset) {
