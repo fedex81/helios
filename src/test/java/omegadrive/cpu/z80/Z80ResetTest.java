@@ -75,10 +75,9 @@ public class Z80ResetTest {
         Assertions.assertFalse(mainBus.isZ80BusRequested());
         Assertions.assertTrue(mainBus.isZ80Running());
 
-        //reset ignored as busreqOff
         mainBus.write(Z80_RESET_CONTROL_START, RESET_ON, Size.BYTE);
-        Assertions.assertFalse(mainBus.isZ80ResetState());
-        Assertions.assertTrue(mainBus.isZ80Running());
+        Assertions.assertTrue(mainBus.isZ80ResetState());
+        Assertions.assertFalse(mainBus.isZ80Running());
 
         mainBus.write(Z80_BUS_REQ_CONTROL_START, BUSREQ_ON, Size.BYTE);
         Assertions.assertTrue(mainBus.isZ80BusRequested());
@@ -98,9 +97,8 @@ public class Z80ResetTest {
         //now Z80 should be running
         Assertions.assertTrue(mainBus.isZ80Running());
 
-        //reset ignored as busreqOff
         mainBus.write(Z80_RESET_CONTROL_START, RESET_ON, Size.BYTE);
-        Assertions.assertFalse(mainBus.isZ80ResetState());
-        Assertions.assertTrue(mainBus.isZ80Running());
+        Assertions.assertTrue(mainBus.isZ80ResetState());
+        Assertions.assertFalse(mainBus.isZ80Running());
     }
 }

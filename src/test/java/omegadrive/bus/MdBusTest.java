@@ -25,7 +25,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
-import static omegadrive.bus.model.MdMainBusProvider.SRAM_LOCK;
+import java.util.function.Supplier;
+
+import static omegadrive.bus.model.MdMainBusProvider.*;
 
 /**
  * MdBusTest
@@ -110,5 +112,36 @@ public class MdBusTest {
         Assertions.assertEquals(expWord, res);
     }
 
+    private static int M68K_ACCESS = 0;
+    private static int Z80_ACCESS_W = 0x100;
 
+    /**
+     * Mountain Sports Proto
+     * 68M 0000210a   33fc 0100 00a11100      move.w   #$0100,$00a11100
+     * 68M 00002112   3239 00a11100           move.w   $00a11100,d1
+     * 68M 00002118   0241 0100               andi.w   #$0100,d1
+     * 68M 0000211c   4a41                    tst.w    d1
+     * 68M 0000211e   67ea                    beq.s    $0000210a
+     */
+    @Test
+    public void testResetWhileBusUnRequested() {
+        Supplier<Integer> readFn = () -> bus.read(Z80_BUS_REQ_CONTROL_START, Size.WORD);
+        //0xA11100 returns 0, Z80 not reset, M68k has the bus
+//        z80BusRequested = true
+//        z80ResetState = false
+        bus.setZ80BusRequested(true);
+        bus.setZ80ResetState(false);
+        Assertions.assertEquals(M68K_ACCESS, readFn.get());
+
+        //sets 0 while bus unrequested, M68K access
+        bus.write(Z80_RESET_CONTROL_START, 0, Size.WORD);
+        Assertions.assertEquals(true, bus.isZ80ResetState());
+        Assertions.assertEquals(Z80_ACCESS_W, readFn.get());
+
+        bus.write(Z80_BUS_REQ_CONTROL_START, 0x100, Size.WORD);
+        //now reset and
+        Assertions.assertEquals(true, bus.isZ80ResetState());
+        Assertions.assertEquals(true, bus.isZ80BusRequested());
+        Assertions.assertEquals(Z80_ACCESS_W, readFn.get());
+    }
 }

@@ -454,12 +454,8 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         //only data bit0 is connected to the bus arbiter
         boolean reset = (data & 1) == 0;
         if (reset) {
-            if (z80BusRequested) {
-                z80ResetState = true;
-                if (verbose) LOG.info("Reset while busRequested: {}", z80BusRequested);
-            } else {
-                if (verbose) LOG.warn("Reset while busUnrequested, ignoring");
-            }
+            z80ResetState = true;
+            if (verbose) LOG.info("Reset while busRequested: {}", z80BusRequested);
         } else {
             if (z80ResetState) {
                 doZ80Reset();
