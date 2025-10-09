@@ -158,7 +158,7 @@ public class SysUtil {
                 //no PSG, external audio set as FM
                 break;
             default:
-                psgProvider = PsgProvider.createSnInstance(region, SAMPLE_RATE_HZ);
+                psgProvider = PsgProvider.createSnInstance(systemType, region, SAMPLE_RATE_HZ);
                 break;
         }
         return psgProvider;
@@ -190,6 +190,12 @@ public class SysUtil {
                 break;
         }
         return fmProvider;
+    }
+
+    //TODO
+    public static boolean isBlipSound(SystemType systemType) {
+        return systemType == SystemType.SMS || systemType == SystemType.GG ||
+                systemType == SystemType.COLECO || systemType == SG_1000 || systemType == MSX;
     }
 
     public static final BaseBusProvider NO_OP_BUS = new BaseBusProvider() {

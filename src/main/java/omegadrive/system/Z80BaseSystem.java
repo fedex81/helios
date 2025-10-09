@@ -32,12 +32,16 @@ import omegadrive.joypad.MsxPad;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
+import omegadrive.sound.SoundDevice;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector.Region;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.Tms9918aVdp;
 import org.slf4j.Logger;
+
+import static omegadrive.util.RegionDetector.Region.EUROPE;
 
 public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
@@ -83,6 +87,10 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
     private static final int VDP_DIVIDER = 1;  //10.738635 Mhz
     private static final int Z80_DIVIDER = 3; //3.579545 Mhz
 
+    private static final int PSG_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
+    protected static final int PAL_PSG_SAMPLES_PER_FRAME = 991 * 50;
+    protected static final int NTSC_PSG_SAMPLES_PER_FRAME = 49780;
+
     private void initCommon() {
         stateHandler = BaseStateHandler.EMPTY_STATE;
         inputProvider = InputProvider.createInstance(joypad);
@@ -102,9 +110,11 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
         do {
             runZ80(cycleCounter);
             runVdp(cycleCounter);
+            runSound(cycleCounter);
             cycleCounter++;
         } while (!runningRomFuture.isDone());
     }
+
 
     protected void postInit() {
         super.postInit();
@@ -122,6 +132,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
         if (force || displayContext.videoMode != vm) {
             LOG.info("Video mode changed: {}", vm);
             displayContext.videoMode = vm;
+            updateSoundRate(vm.getRegion());
         }
     }
 
@@ -160,6 +171,24 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
             cycleDelay = Math.max(1, cycleDelay);
             nextZ80Cycle += Z80_DIVIDER * cycleDelay;
         }
+    }
+
+    protected final void runSound(int counter) {
+        if ((counter + 1) % PSG_DIVIDER == 0) {
+            sound.getPsg().tick();
+        }
+    }
+
+    @Override
+    protected void updateSoundRate(Region region) {
+        sound.updateDeviceRate(SoundDevice.SoundDeviceType.PSG, region,
+                region == EUROPE ? PAL_PSG_SAMPLES_PER_FRAME : NTSC_PSG_SAMPLES_PER_FRAME);
+    }
+
+    @Override
+    public void onNewFrame() {
+        super.onNewFrame();
+        sound.onNewFrame();
     }
 
     private void handleInterrupt(){

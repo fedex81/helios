@@ -23,6 +23,7 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.sound.PcmProvider;
 import omegadrive.sound.PwmProvider;
+import omegadrive.sound.SoundDevice;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
@@ -191,6 +192,10 @@ public class SystemTestUtil {
 
         @Override
         public void setEnabled(Device device, boolean enabled) {
+        }
+
+        @Override
+        public void updateDeviceRate(SoundDevice.SoundDeviceType sdt, RegionDetector.Region region, int clockRateHz) {
         }
     }
 

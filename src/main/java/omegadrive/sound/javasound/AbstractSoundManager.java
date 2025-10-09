@@ -84,7 +84,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
             LOG.warn("Sound disabled");
             return NO_SOUND;
         }
-        AbstractSoundManager jsm = JAL_SOUND_MGR ? new JalSoundManager() : new JavaSoundManager();
+        AbstractSoundManager jsm = JAL_SOUND_MGR ? new JalSoundManager() :
+                (SysUtil.isBlipSound(systemType) ? new JavaSoundManagerBlip() : new JavaSoundManager());
         jsm.type = systemType;
         return jsm;
     }
@@ -208,5 +209,12 @@ public abstract class AbstractSoundManager implements SoundProvider {
                 LOG.info("{} enabled: {}", sd.getType(), enabled);
             }
         }
+    }
+
+    @Override
+    public void updateDeviceRate(SoundDeviceType sdt, RegionDetector.Region r, int clockRateHz) {
+        assert soundDeviceMap.containsKey(sdt) && activeSoundDeviceMap.containsKey(sdt);
+        soundDeviceMap.get(sdt).updateRate(r, clockRateHz);
+        activeSoundDeviceMap.get(sdt).updateRate(r, clockRateHz);
     }
 }

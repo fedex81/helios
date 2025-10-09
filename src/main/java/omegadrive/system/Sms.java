@@ -28,12 +28,15 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
+import omegadrive.sound.SoundDevice;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import omegadrive.vdp.SmsVdp;
 import org.slf4j.Logger;
 
+import static omegadrive.util.RegionDetector.Region.EUROPE;
 import static omegadrive.util.RegionDetector.Region.USA;
 
 public class Sms extends BaseSystem<Z80BusProvider> {
@@ -54,6 +57,8 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     protected static final int VDP_DIVIDER = 2;  //10.738635 Mhz
     protected static final int Z80_DIVIDER = 3; //3.579545 Mhz
     protected static final int FM_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
+    protected static final int PAL_PSG_SAMPLES_PER_FRAME = 991 * 50;
+    protected static final int NTSC_PSG_SAMPLES_PER_FRAME = 49780;
 
     protected Z80Provider z80;
     int nextZ80Cycle = Z80_DIVIDER;
@@ -95,12 +100,11 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         double frameMs = systemType == SystemLoader.SystemType.GG ?
                 USA.getFrameIntervalMs() : mediaSpec.getRegion().getFrameIntervalMs();
         targetNs = (long) (frameMs * Util.MILLI_IN_NS);
+        updateSoundRate(getRegion());
         do {
             runZ80(cycleCounter);
             runVdp(cycleCounter);
-            if (ENABLE_FM) {
-                runFM(cycleCounter);
-            }
+            runSound(cycleCounter);
             cycleCounter++;
         } while (!runningRomFuture.isDone());
     }
@@ -108,6 +112,7 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     @Override
     protected void updateVideoMode(boolean force) {
         displayContext.videoMode = vdp.getVideoMode();
+        updateSoundRate(displayContext.videoMode.getRegion());
     }
 
     @Override
@@ -139,10 +144,19 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         }
     }
 
-    protected void runFM(int counter) {
+    protected final void runSound(int counter) {
         if ((counter + 1) % FM_DIVIDER == 0) {
-            sound.getFm().tick();
+            sound.getPsg().tick();
+            if (ENABLE_FM) {
+                sound.getFm().tick();
+            }
         }
+    }
+
+    @Override
+    protected void updateSoundRate(RegionDetector.Region region) {
+        sound.updateDeviceRate(SoundDevice.SoundDeviceType.PSG, region,
+                region == EUROPE ? PAL_PSG_SAMPLES_PER_FRAME : NTSC_PSG_SAMPLES_PER_FRAME);
     }
 
     private void handleMaskableInterrupts(){

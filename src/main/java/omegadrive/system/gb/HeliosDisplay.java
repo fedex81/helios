@@ -66,7 +66,7 @@ public class HeliosDisplay implements Display, BaseVdpAdapter.ScreenDataSupplier
             Arrays.fill(rgb, 0);
         }
         i = 0;
-        system.newFrame();
+        system.onNewFrame();
     }
 
     @Override

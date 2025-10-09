@@ -139,7 +139,7 @@ public class BlipPwmProvider implements PwmProvider {
     //TODO if framerate slows down we get periods where the wave goes back to zero -> poor sound quality
     //TODO S32xPwmProvider fills the gaps and it sounds better
     @Override
-    public void newFrame() {
+    public void onNewFrame() {
         BlipBufferContext context = ref.get();
         BlipBufferIntf blip = context.blipBuffer;
         blip.endFrame(context.inputClocksForInterval);

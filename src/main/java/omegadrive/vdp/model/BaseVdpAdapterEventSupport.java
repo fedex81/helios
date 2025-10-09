@@ -1,5 +1,7 @@
 package omegadrive.vdp.model;
 
+import omegadrive.system.SystemProvider;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EventListener;
@@ -47,7 +49,7 @@ public interface BaseVdpAdapterEventSupport {
         VDP_VINT_PENDING, VDP_ACTIVE_DISPLAY_CHANGE, VDP_HINT_PENDING, VDP_IE0_VINT, VDP_IE1_HINT, VDP_IE2_EXT_INT,
     }
 
-    interface VdpEventListener extends EventListener {
+    interface VdpEventListener extends EventListener, SystemProvider.NewFrameListener {
 
         default int order() {
             return 0;

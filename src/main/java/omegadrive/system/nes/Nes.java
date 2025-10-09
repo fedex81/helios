@@ -33,6 +33,7 @@ import omegadrive.system.SysUtil;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
@@ -97,6 +98,11 @@ public class Nes extends BaseSystem<BaseBusProvider> {
 
     @Override
     protected void resetCycleCounters(int counter) {
+        //DO NOTHING
+    }
+
+    @Override
+    protected void updateSoundRate(RegionDetector.Region region) {
         //DO NOTHING
     }
 

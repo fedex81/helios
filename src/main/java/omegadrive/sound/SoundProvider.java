@@ -20,10 +20,11 @@
 package omegadrive.sound;
 
 import omegadrive.Device;
+import omegadrive.sound.SoundDevice.SoundDeviceType;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
+import omegadrive.util.RegionDetector.Region;
 import omegadrive.util.SoundUtil;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
@@ -49,7 +50,7 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener,
 
     boolean JAL_SOUND_MGR = Boolean.parseBoolean(System.getProperty("helios.jal.sound.mgr", "false"));
 
-    void init(RegionDetector.Region region);
+    void init(Region region);
 
     PsgProvider getPsg();
 
@@ -67,12 +68,12 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener,
         return SoundUtil.getStereoSamplesBufferSize(audioFormat);
     }
 
-    static double getPsgSoundClock(RegionDetector.Region r) {
-        return (RegionDetector.Region.EUROPE != r ? NTSC_PSG_CLOCK : PAL_PSG_CLOCK);
+    static double getPsgSoundClock(Region r) {
+        return (Region.EUROPE != r ? NTSC_PSG_CLOCK : PAL_PSG_CLOCK);
     }
 
-    static double getFmSoundClock(RegionDetector.Region r) {
-        return (RegionDetector.Region.EUROPE != r ? NTSC_FM_CLOCK : PAL_FM_CLOCK);
+    static double getFmSoundClock(Region r) {
+        return (Region.EUROPE != r ? NTSC_FM_CLOCK : PAL_FM_CLOCK);
     }
 
     SoundProvider NO_SOUND = new SoundProvider() {
@@ -97,7 +98,7 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener,
         }
 
         @Override
-        public void init(RegionDetector.Region region) {
+        public void init(Region region) {
         }
 
         @Override
@@ -106,12 +107,14 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener,
 
         @Override
         public void reset() {
-
         }
 
         @Override
         public void close() {
+        }
 
+        @Override
+        public void updateDeviceRate(SoundDeviceType sdt, Region r, int clockRateHz) {
         }
 
         @Override
@@ -125,13 +128,14 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener,
 
         @Override
         public void setEnabled(Device device, boolean mute) {
-
         }
     };
 
     void setEnabled(Device device, boolean enabled);
 
     void close();
+
+    void updateDeviceRate(SoundDeviceType sdt, Region region, int clockRateHz);
 
     /***
      * TODO HACK

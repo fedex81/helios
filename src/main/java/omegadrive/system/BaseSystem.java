@@ -34,6 +34,7 @@ import omegadrive.system.perf.Telemetry;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.ui.PrefStore;
 import omegadrive.util.*;
+import omegadrive.util.RegionDetector.Region;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEventListener;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.slf4j.Logger;
@@ -115,6 +116,8 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     protected abstract void resetCycleCounters(int counter);
 
     protected abstract void updateVideoMode(boolean force);
+
+    protected abstract void updateSoundRate(Region region);
 
     protected BaseSystem(DisplayWindow emuFrame) {
         this.display = emuFrame;
@@ -316,7 +319,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         vdp.addVdpEventListener(new VdpEventListener() {
             @Override
             public void onNewFrame() {
-                newFrame();
+                BaseSystem.this.onNewFrame();
             }
 
             @Override
@@ -327,7 +330,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
     }
 
     @Override
-    public void newFrame() {
+    public void onNewFrame() {
         long startWaitNs = System.nanoTime();
         long prevStartNs = startNs;
         elapsedWaitNs = syncCycle(startNs) - startWaitNs;

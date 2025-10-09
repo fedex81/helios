@@ -836,7 +836,7 @@ class CddImpl implements Cdd {
 
     @Override
     public void newFrame() {
-        playSupport.newFrame();
+        playSupport.onNewFrame();
     }
 
     @Override

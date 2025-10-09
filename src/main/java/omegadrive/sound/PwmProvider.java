@@ -20,9 +20,6 @@ public interface PwmProvider extends SoundDevice, SoundDevice.MutableDevice {
         return SoundDeviceType.PWM;
     }
 
-    default void newFrame() {
-    }
-
     @Override
     default void setEnabled(boolean mute) {
     }

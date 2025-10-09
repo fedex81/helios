@@ -74,7 +74,7 @@ public interface SystemProvider extends Device {
     }
 
     interface NewFrameListener {
-        void newFrame();
+        void onNewFrame();
     }
 
     interface SystemClock {

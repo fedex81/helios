@@ -11,12 +11,14 @@ public interface PcmProvider extends SoundDevice, SoundDevice.MutableDevice {
 
     void playSample(int left, int right);
 
-    void updateRegion(RegionDetector.Region region);
-    default SoundDeviceType getType() {
-        return SoundDeviceType.PCM;
+    default void updateRegion(RegionDetector.Region region) {
+        throw new RuntimeException("illegal");
     }
 
-    default void newFrame() {
+    default void updateRegion(RegionDetector.Region region, int clockRate) {
+    }
+    default SoundDeviceType getType() {
+        return SoundDeviceType.PCM;
     }
 
     default void setEnabled(boolean mute) {
@@ -39,6 +41,11 @@ public interface PcmProvider extends SoundDevice, SoundDevice.MutableDevice {
         @Override
         public int updateStereo16(int[] buf_lr, int offset, int count) {
             return 0;
+        }
+
+        @Override
+        public void onNewFrame() {
+
         }
     };
 }

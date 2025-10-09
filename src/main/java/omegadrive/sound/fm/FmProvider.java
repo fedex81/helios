@@ -20,9 +20,8 @@
 package omegadrive.sound.fm;
 
 import omegadrive.sound.SoundDevice;
-import omegadrive.vdp.model.BaseVdpProvider;
 
-public interface FmProvider extends SoundDevice, BaseVdpProvider.VdpEventListener {
+public interface FmProvider extends SoundDevice {
 
     /**
      * @return stereo samples effectively added to the buffer
@@ -62,12 +61,10 @@ public interface FmProvider extends SoundDevice, BaseVdpProvider.VdpEventListene
 
         @Override
         public void write(int addr, int data) {
-
         }
 
         @Override
         public void setMicrosPerTick(double microsPerTick) {
-
         }
 
         @Override

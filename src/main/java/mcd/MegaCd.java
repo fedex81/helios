@@ -160,11 +160,11 @@ public class MegaCd extends Megadrive {
     }
 
     @Override
-    public void newFrame() {
+    public void onNewFrame() {
         mcdLaunchContext.pcm.newFrame();
         mcdLaunchContext.cdd.newFrame();
         displayContext.megaCdLedState = Optional.of(mcdLaunchContext.subBus.getLedState());
-        super.newFrame();
+        super.onNewFrame();
     }
 
     protected UpdatableViewer createMemView() {

@@ -302,7 +302,7 @@ public class McdPcm implements BufferUtil.StepDevice {
     }
 
     public void newFrame() {
-        playSupport.newFrame();
+        playSupport.onNewFrame();
         sampleNum = 0;
     }
 

@@ -19,9 +19,10 @@
 
 package omegadrive.sound.psg;
 
+import omegadrive.SystemLoader.SystemType;
 import omegadrive.sound.SoundDevice;
-import omegadrive.sound.psg.msx.Ay38910Psg;
-import omegadrive.sound.psg.white.SN76489Psg;
+import omegadrive.sound.psg.msx.BlipAy38910Psg;
+import omegadrive.sound.psg.white.BlipSN76489Psg;
 import omegadrive.util.RegionDetector;
 
 import static omegadrive.sound.SoundProvider.LOG;
@@ -29,29 +30,30 @@ import static omegadrive.sound.SoundProvider.getPsgSoundClock;
 
 public interface PsgProvider extends SoundDevice {
 
-    static PsgProvider createSnInstance(RegionDetector.Region region, int sampleRate) {
+    static PsgProvider createSnInstance(SystemType systemType, RegionDetector.Region region, int sampleRate) {
         int clockHz = (int) getPsgSoundClock(region);
-        LOG.info("PSG instance, clockHz: {}, sampleRate: {}", clockHz, sampleRate);
-        return SN76489Psg.createInstance(clockHz, sampleRate);
+        LOG.info("PSG instance, region: {}, clockHz: {}, sampleRate: {}", region, clockHz, sampleRate);
+        return BlipSN76489Psg.createInstance(region, sampleRate);
     }
 
     static PsgProvider createAyInstance(RegionDetector.Region region, int sampleRate) {
-        int clockHz = (int) getPsgSoundClock(region);
-        LOG.info("PSG instance, clockHz: {}, sampleRate: {}", clockHz, sampleRate);
-        return Ay38910Psg.createInstance(sampleRate);
+        LOG.info("PSG instance, clockHz: {}, sampleRate: {}", (int) getPsgSoundClock(region), sampleRate);
+        return BlipAy38910Psg.createInstance(region, sampleRate);
     }
 
     //SN style PSG
-    void write(int data);
+    default void write(int data) {
+        throw new UnsupportedOperationException();
+    }
 
     //AY style psg
     default void write(int register, int data) {
-        write(data);
+        throw new UnsupportedOperationException();
     }
 
     //AY style psg
     default int read(int register) {
-        return 0xFF;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -60,12 +62,5 @@ public interface PsgProvider extends SoundDevice {
     }
 
     PsgProvider NO_SOUND = new PsgProvider() {
-        @Override
-        public void write(int data) {
-        }
-
-        @Override
-        public void updateMono8(byte[] output, int offset, int end) {
-        }
     };
 }

@@ -1,13 +1,15 @@
 package omegadrive.sound;
 
 import omegadrive.Device;
+import omegadrive.system.SystemProvider;
+import omegadrive.util.RegionDetector;
 
 /**
  * Federico Berti
  * <p>
  * Copyright 2022
  */
-public interface SoundDevice extends Device {
+public interface SoundDevice extends Device, SystemProvider.NewFrameListener {
 
     interface MutableDevice {
         void setEnabled(boolean mute);
@@ -31,6 +33,12 @@ public interface SoundDevice extends Device {
 
     SoundDevice NO_SOUND = () -> SoundDeviceType.NONE;
 
+    class SampleBufferContext {
+        public byte[] lineBuffer;
+        //16 bit stereo @ 44100 hz = 44100*4 bytes
+        public int stereoBytesLen;
+    }
+
     /**
      * Typical FM output
      */
@@ -47,6 +55,20 @@ public interface SoundDevice extends Device {
 
     default void updateMono8(byte[] output) {
         updateMono8(output, 0, output.length);
+    }
+
+    default void updateRate(RegionDetector.Region region, int clockRate) {
+    }
+
+    default SampleBufferContext getFrameData() {
+        return null;
+    }
+
+    default void tick() {
+    }
+
+    @Override
+    default void onNewFrame() {
     }
 
     SoundDeviceType getType();

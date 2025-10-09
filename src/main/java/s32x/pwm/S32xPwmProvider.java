@@ -135,7 +135,7 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
     }
 
     @Override
-    public void newFrame() {
+    public void onNewFrame() {
         int monoLen = stereoQueueLen.get() >> 1;
         if (collectStats) {
             stats.print(monoLen);

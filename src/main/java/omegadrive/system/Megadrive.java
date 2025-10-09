@@ -34,10 +34,7 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.util.BufferUtil;
-import omegadrive.util.LogHelper;
-import omegadrive.util.MdRuntimeData;
-import omegadrive.util.Util;
+import omegadrive.util.*;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.util.MemView;
@@ -203,12 +200,17 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     protected void updateVideoMode(boolean force) {
         if (force || displayContext.videoMode != vdp.getVideoMode()) {
             displayContext.videoMode = vdp.getVideoMode();
-            double microsPerTick = getMicrosPerTick();
-            microsPerTick = !isNuke ? microsPerTick * FAST_FM_DIV / FM_DIVIDER : microsPerTick;
-            sound.getFm().setMicrosPerTick(microsPerTick);
-            targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
-            LOG.info("Video mode changed: {}, microsPerTick: {}", displayContext.videoMode, microsPerTick);
+            updateSoundRate(vdp.getVideoMode().getRegion());
+            LOG.info("Video mode changed: {}", displayContext.videoMode);
         }
+    }
+
+    @Override
+    protected void updateSoundRate(RegionDetector.Region region) {
+        double microsPerTick = getMicrosPerTick();
+        microsPerTick = !isNuke ? microsPerTick * FAST_FM_DIV / FM_DIVIDER : microsPerTick;
+        sound.getFm().setMicrosPerTick(microsPerTick);
+        targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
     }
 
     protected double getMicrosPerTick() {
@@ -217,10 +219,10 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     }
 
     @Override
-    public void newFrame() {
+    public void onNewFrame() {
         checkSvp();
         memView.update();
-        super.newFrame();
+        super.onNewFrame();
     }
 
     private void checkSvp() {
