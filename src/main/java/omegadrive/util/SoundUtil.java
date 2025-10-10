@@ -171,10 +171,8 @@ public class SoundUtil {
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
             int psg = psgMono8[j];
             psg = DEFAULT_PSG_SHIFT_BITS > 0 ? psg << DEFAULT_PSG_SHIFT_BITS : psg >> -DEFAULT_PSG_SHIFT_BITS;
-            int out16L = (fmStereo16[i] + pwmStereo16[i] + psg);
-            int out16R = (fmStereo16[i + 1] + pwmStereo16[i + 1] + psg);
-            out16L = Math.min(Math.max(out16L, Short.MIN_VALUE), Short.MAX_VALUE);
-            out16R = Math.min(Math.max(out16R, Short.MIN_VALUE), Short.MAX_VALUE);
+            int out16L = clampToShort(fmStereo16[i] + pwmStereo16[i] + psg);
+            int out16R = clampToShort(fmStereo16[i + 1] + pwmStereo16[i + 1] + psg);
             output[k] = (byte) (out16L & 0xFF); //lsb left
             output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
             output[k + 2] = (byte) (out16R & 0xFF); //lsb right
@@ -191,11 +189,9 @@ public class SoundUtil {
             psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
             int out16L = (input[i] + psg);
             int out16R = (input[i + 1] + psg);
-            out16L = (out16L << 1) - (out16L >> 1); //mult by 1.5
-            out16R = (out16R << 1) - (out16R >> 1);
+            out16L = clampToShort((out16L << 1) - (out16L >> 1)); //mult by 1.5
+            out16R = clampToShort((out16R << 1) - (out16R >> 1));
             //avg fm and psg
-            out16L = Math.min(Math.max(out16L, Short.MIN_VALUE), Short.MAX_VALUE);
-            out16R = Math.min(Math.max(out16R, Short.MIN_VALUE), Short.MAX_VALUE);
             output[k] = (byte) (out16L & 0xFF); //lsb left
             output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
             output[k + 2] = (byte) (out16R & 0xFF); //lsb right
@@ -212,11 +208,9 @@ public class SoundUtil {
             psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
             int out16L = (input[i] + psg);
             int out16R = (input[i + 1] + psg);
-            out16L = (out16L << 1) - out16L; //mult by 1.5
-            out16R = (out16R << 1) - out16R;
+            out16L = clampToShort((out16L << 1) - out16L); //mult by 1.5
+            out16R = clampToShort((out16R << 1) - out16R);
             //avg fm and psg
-            out16L = Math.min(Math.max(out16L, Short.MIN_VALUE), Short.MAX_VALUE);
-            out16R = Math.min(Math.max(out16R, Short.MIN_VALUE), Short.MAX_VALUE);
             output[k] = out16L / 32768f;
             output[k + 1] = out16R / 32768f;
         }
@@ -282,5 +276,25 @@ public class SoundUtil {
             ioe.printStackTrace();
             System.out.println("Error writing WAV file");
         }
+    }
+
+    public static short clampToShort(int value) {
+        if (value > Short.MAX_VALUE) {
+            return Short.MAX_VALUE;
+        }
+        if (value < Short.MIN_VALUE) {
+            return Short.MIN_VALUE;
+        }
+        return (short) value;
+    }
+
+    public static byte clampToByte(int value) {
+        if (value > Byte.MAX_VALUE) {
+            return Byte.MAX_VALUE;
+        }
+        if (value < Byte.MIN_VALUE) {
+            return Byte.MIN_VALUE;
+        }
+        return (byte) value;
     }
 }

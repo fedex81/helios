@@ -16,7 +16,10 @@ import javax.sound.sampled.AudioFormat;
  * Federico Berti
  * <p>
  * Copyright 2020
+ *
+ * @Deprecated use {@link BlipGbSoundWrapper}
  */
+@Deprecated
 public class GbSoundWrapper extends GenericAudioProvider implements SoundOutput {
 
     private static final Logger LOG = LogHelper.getLogger(GbSoundWrapper.class.getSimpleName());

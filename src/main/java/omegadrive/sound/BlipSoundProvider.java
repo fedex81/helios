@@ -1,12 +1,9 @@
-package mcd.pcm;
+package omegadrive.sound;
 
-import omegadrive.sound.IBlipSoundProvider;
-import omegadrive.sound.SoundDevice;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector.Region;
 import org.slf4j.Logger;
-import s32x.util.blipbuffer.BlipBufferHelper;
 import s32x.util.blipbuffer.BlipBufferIntf;
 import s32x.util.blipbuffer.StereoBlipBuffer;
 
@@ -15,6 +12,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static omegadrive.util.SoundUtil.clampToShort;
 import static omegadrive.util.Util.th;
 
 /**
@@ -84,13 +82,13 @@ public class BlipSoundProvider implements IBlipSoundProvider {
             if (Math.abs(rsample - prevRSample) > 0xD000) {
                 LOG.info("{} R {} -> {}, absDiff: {}", instanceId, th(prevRSample), th((short) rsample), th(Math.abs(rsample - prevRSample)));
             }
-            assert lsample == BlipBufferHelper.clampToShort(lsample);
-            assert rsample == BlipBufferHelper.clampToShort(rsample);
-            assert lsample - prevLSample < 0xFFFF;
-            assert rsample - prevRSample < 0xFFFF;
+            assert lsample == (short) lsample;
+            assert rsample == (short) rsample;
+            assert lsample - prevLSample == (short) (lsample - prevLSample);
+            assert rsample - prevRSample == (short) (rsample - prevRSample);
         }
-        lsample = BlipBufferHelper.clampToShort(lsample);
-        rsample = BlipBufferHelper.clampToShort(rsample);
+        lsample = clampToShort(lsample);
+        rsample = clampToShort(rsample);
         ref.get().blipBuffer.addDelta((int) deltaTime, lsample - prevLSample, rsample - prevRSample);
         prevLSample = (short) lsample;
         prevRSample = (short) rsample;

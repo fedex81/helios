@@ -20,7 +20,7 @@
 package omegadrive.sound.fm.ym2413;
 
 
-import mcd.pcm.BlipSoundProvider;
+import omegadrive.sound.BlipSoundProvider;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.LogHelper;

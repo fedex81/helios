@@ -14,10 +14,10 @@ import omegadrive.sound.fm.MdFmProvider;
 import omegadrive.sound.fm.ym2413.BlipYm2413Provider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.sound.psg.PsgProvider;
+import omegadrive.system.gb.BlipGbSoundWrapper;
 import omegadrive.system.gb.Gb;
-import omegadrive.system.gb.GbSoundWrapper;
+import omegadrive.system.nes.BlipNesSoundWrapper;
 import omegadrive.system.nes.Nes;
-import omegadrive.system.nes.NesSoundWrapper;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -181,10 +181,10 @@ public class SysUtil {
                 }
                 break;
             case NES:
-                fmProvider = new NesSoundWrapper(region);
+                fmProvider = new BlipNesSoundWrapper(region);
                 break;
             case GB:
-                fmProvider = new GbSoundWrapper(region);
+                fmProvider = new BlipGbSoundWrapper(region);
                 break;
             default:
                 break;
@@ -195,7 +195,8 @@ public class SysUtil {
     //TODO
     public static boolean isBlipSound(SystemType systemType) {
         return systemType == SystemType.SMS || systemType == SystemType.GG ||
-                systemType == SystemType.COLECO || systemType == SG_1000 || systemType == MSX;
+                systemType == SystemType.COLECO || systemType == SG_1000 || systemType == MSX || systemType == NES
+                || systemType == GB;
     }
 
     public static final BaseBusProvider NO_OP_BUS = new BaseBusProvider() {

@@ -99,6 +99,12 @@ public class Gb extends BaseSystem<BaseBusProvider> {
     }
 
     @Override
+    public void onNewFrame() {
+        super.onNewFrame();
+        sound.onNewFrame();
+    }
+
+    @Override
     protected void processSaveState() {
         //DO NOTHING
     }

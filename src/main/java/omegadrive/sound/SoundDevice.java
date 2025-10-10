@@ -52,7 +52,7 @@ public interface SoundDevice extends Device, SystemProvider.NewFrameListener {
      * Typical PSG output
      */
     default void updateMono8(byte[] output, int offset, int end) {
-        throw new RuntimeException("Not implemented");
+        //DO NOTHING
     }
 
     default void updateMono8(byte[] output) {

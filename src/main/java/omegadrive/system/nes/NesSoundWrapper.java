@@ -5,6 +5,7 @@ import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.GenericAudioProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.SoundUtil;
 import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
@@ -15,7 +16,10 @@ import javax.sound.sampled.AudioFormat;
  * Federico Berti
  * <p>
  * Copyright 2020
+ *
+ * @Deprecated use {@link BlipNesSoundWrapper}
  */
+@Deprecated
 public class NesSoundWrapper extends GenericAudioProvider implements AudioOutInterface {
 
     private static final Logger LOG = LogHelper.getLogger(NesSoundWrapper.class.getSimpleName());
@@ -32,8 +36,7 @@ public class NesSoundWrapper extends GenericAudioProvider implements AudioOutInt
     @Override
     public void outputSample(int sample) {
         sample *= VOLUME; //VOLUME <= 1.0
-        sample = sample < Short.MIN_VALUE ? Short.MIN_VALUE :
-                (sample > Short.MAX_VALUE ? Short.MAX_VALUE : sample);
+        sample = SoundUtil.clampToShort(sample);
         addMonoSample(sample);
     }
 

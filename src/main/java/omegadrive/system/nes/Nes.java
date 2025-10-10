@@ -97,6 +97,12 @@ public class Nes extends BaseSystem<BaseBusProvider> {
     }
 
     @Override
+    public void onNewFrame() {
+        super.onNewFrame();
+        sound.onNewFrame();
+    }
+
+    @Override
     protected void resetCycleCounters(int counter) {
         //DO NOTHING
     }

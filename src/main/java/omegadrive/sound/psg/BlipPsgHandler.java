@@ -1,6 +1,6 @@
 package omegadrive.sound.psg;
 
-import mcd.pcm.BlipSoundProvider;
+import omegadrive.sound.BlipSoundProvider;
 import omegadrive.sound.IBlipSoundProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.LogHelper;

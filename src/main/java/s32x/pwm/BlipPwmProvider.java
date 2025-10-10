@@ -3,7 +3,6 @@ package s32x.pwm;
 import omegadrive.sound.PwmProvider;
 import omegadrive.util.*;
 import org.slf4j.Logger;
-import s32x.util.blipbuffer.BlipBufferHelper;
 import s32x.util.blipbuffer.BlipBufferIntf;
 import s32x.util.blipbuffer.StereoBlipBuffer;
 
@@ -15,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static omegadrive.sound.javasound.AbstractSoundManager.audioFormat;
+import static omegadrive.util.SoundUtil.clampToShort;
 import static omegadrive.util.Util.th;
 import static s32x.pwm.PwmUtil.*;
 
@@ -122,7 +122,7 @@ public class BlipPwmProvider implements PwmProvider {
             LOG.warn("PWM value out of range (16 bit signed): {}, scale: {}, " +
                     "pwmVal: {}", th(scaled), scale, sample);
             LOG.warn("Reducing scale: {} -> {}", scale, ref.get().scale);
-            scaled = (short) BlipBufferHelper.clampToShort(vsample);
+            scaled = clampToShort(vsample);
         }
         return scaled;
     }

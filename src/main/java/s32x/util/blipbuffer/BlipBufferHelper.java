@@ -3,6 +3,9 @@ package s32x.util.blipbuffer;
 
 import omegadrive.util.ArrayEndianUtil;
 
+import static omegadrive.util.SoundUtil.clampToByte;
+import static omegadrive.util.SoundUtil.clampToShort;
+
 /**
  * Federico Berti
  * <p>
@@ -133,25 +136,5 @@ public class BlipBufferHelper {
             blipBuffer.removeSamples(count);
         }
         return count;
-    }
-
-    public static int clampToShort(int value) {
-        if (value > Short.MAX_VALUE) {
-            return Short.MAX_VALUE;
-        }
-        if (value < Short.MIN_VALUE) {
-            return Short.MIN_VALUE;
-        }
-        return value;
-    }
-
-    public static int clampToByte(int value) {
-        if (value > Byte.MAX_VALUE) {
-            return Byte.MAX_VALUE;
-        }
-        if (value < Byte.MIN_VALUE) {
-            return Byte.MIN_VALUE;
-        }
-        return value;
     }
 }

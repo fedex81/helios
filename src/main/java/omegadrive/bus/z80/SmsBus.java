@@ -46,7 +46,7 @@ import static omegadrive.util.ArrayEndianUtil.unsignedToByteArray;
 import static omegadrive.util.Util.th;
 
 /**
- * TODO: add support for port 3E
+ * SmsBus
  */
 public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements Z80BusProvider, RomMapper {
 

@@ -71,7 +71,7 @@ public abstract class BasePadAdapter implements JoypadProvider {
         if (getMap(number).containsKey(button)) {
             getMap(number).replace(button, action);
         } else {
-            LOG.warn("Ignored mapping {}, {} {}", number, button, action);
+            LogHelper.logWarnOnce(LOG, "Ignored mapping {}, {} {}", number, button, action);
         }
     }
 

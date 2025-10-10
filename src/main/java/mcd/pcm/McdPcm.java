@@ -5,13 +5,13 @@ import mcd.dict.MegaCdDict.RegSpecMcd;
 import omegadrive.sound.PcmProvider;
 import omegadrive.util.*;
 import org.slf4j.Logger;
-import s32x.util.blipbuffer.BlipBufferHelper;
 
 import java.nio.ByteBuffer;
 
 import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
 import static mcd.bus.MegaCdSubCpuBus.logAccessReg;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
+import static omegadrive.util.SoundUtil.clampToShort;
 import static omegadrive.util.Util.th;
 
 /**
@@ -288,10 +288,10 @@ public class McdPcm implements BufferUtil.StepDevice {
 
         /* Limiter (signed 16-bit) */
         if (ls != (short) ls) {
-            ls = BlipBufferHelper.clampToShort(ls);
+            ls = clampToShort(ls);
         }
         if (rs != (short) rs) {
-            rs = BlipBufferHelper.clampToShort(rs);
+            rs = clampToShort(rs);
         }
         /* 16-bit DAC output (interleaved) */
         playSupport.playSample(ls, rs);

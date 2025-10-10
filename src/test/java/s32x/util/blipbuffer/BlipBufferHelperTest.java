@@ -3,8 +3,8 @@ package s32x.util.blipbuffer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static s32x.util.blipbuffer.BlipBufferHelper.clampToByte;
-import static s32x.util.blipbuffer.BlipBufferHelper.clampToShort;
+import static omegadrive.util.SoundUtil.clampToByte;
+import static omegadrive.util.SoundUtil.clampToShort;
 
 /**
  * Federico Berti
