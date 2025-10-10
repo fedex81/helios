@@ -39,6 +39,8 @@ public interface SoundDevice extends Device, SystemProvider.NewFrameListener {
         public int stereoBytesLen;
     }
 
+    SampleBufferContext NO_DATA_CTX = new SampleBufferContext();
+
     /**
      * Typical FM output
      */
@@ -61,7 +63,7 @@ public interface SoundDevice extends Device, SystemProvider.NewFrameListener {
     }
 
     default SampleBufferContext getFrameData() {
-        return null;
+        return NO_DATA_CTX;
     }
 
     default void tick() {

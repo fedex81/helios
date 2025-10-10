@@ -106,7 +106,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         soundDeviceSetup = 0;
         for (var entry : activeSoundDeviceMap.entrySet()) {
             SoundDeviceType type = entry.getKey();
-            SoundDevice current = soundDeviceMap.get(type);
+            SoundDevice current = entry.getValue();
             SoundDevice noSound = noSoundMap.get(type);
             assert current != null && noSound != null;
             soundDeviceSetup |= current != noSound ? type.getBit() : 0;
@@ -209,6 +209,10 @@ public abstract class AbstractSoundManager implements SoundProvider {
                 LOG.info("{} enabled: {}", sd.getType(), enabled);
             }
         }
+    }
+
+    protected boolean isEnabled(SoundDeviceType sdt) {
+        return (soundDeviceSetup & sdt.getBit()) > 0;
     }
 
     @Override

@@ -89,7 +89,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     private static final int PSG_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
     protected static final int PAL_PSG_SAMPLES_PER_FRAME = 991 * 50;
-    protected static final int NTSC_PSG_SAMPLES_PER_FRAME = 49780;
+    protected static final int NTSC_PSG_SAMPLES_PER_FRAME = 829 * 60;
 
     private void initCommon() {
         stateHandler = BaseStateHandler.EMPTY_STATE;

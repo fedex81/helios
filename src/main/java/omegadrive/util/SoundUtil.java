@@ -233,6 +233,26 @@ public class SoundUtil {
         }
     }
 
+    public static int mixTwoSources(byte[] input1, byte[] input2, byte[] output, int inputLen1, int inputLen2) {
+        int len = inputLen1;
+        if (inputLen1 == 0) {
+            System.arraycopy(input2, 0, output, 0, inputLen2);
+            len = input2.length;
+        } else if (inputLen2 == 0) {
+            System.arraycopy(input1, 0, output, 0, inputLen1);
+            len = input1.length;
+        } else {
+            assert inputLen1 == inputLen2;
+            for (int i = 0; i < input1.length; i += 4) {
+                output[i] = (byte) ((input1[i] + input2[i]) >> 1);
+                output[i + 1] = (byte) ((input1[i + 1] + input2[i + 1]) >> 1);
+                output[i + 2] = (byte) ((input1[i + 2] + input2[i + 2]) >> 1);
+                output[i + 3] = (byte) ((input1[i + 3] + input2[i + 3]) >> 1);
+            }
+        }
+        return len;
+    }
+
     public static void close(DataLine line) {
         if (line != null) {
             line.stop();

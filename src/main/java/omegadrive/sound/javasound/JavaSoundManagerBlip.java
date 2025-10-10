@@ -28,45 +28,83 @@ import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
 import org.slf4j.Logger;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static omegadrive.util.SoundUtil.mixTwoSources;
 
 public class JavaSoundManagerBlip extends AbstractSoundManager {
 
     private static final Logger LOG = LogHelper.getLogger(JavaSoundManagerBlip.class.getSimpleName());
 
-    /**
-     * NOTE, this seems to work in practice, but volatile does not guarantee volatile semantics to array elements
-     * (ie. arr[i]) but only for the "arr" reference.
-     */
-    private volatile byte[] mix_buf_bytes16Stereo;
+    static class AudioMixContext {
+        public volatile int soundDeviceSetup;
+        public final Map<SoundDevice.SoundDeviceType, SoundDevice> map;
+        public final byte[] mix_buf_bytes16Stereo;
+
+        public AudioMixContext(Map<SoundDevice.SoundDeviceType, SoundDevice> m, byte[] b) {
+            map = m;
+            mix_buf_bytes16Stereo = b;
+        }
+    }
     private final AtomicInteger sync = new AtomicInteger();
+    private volatile AudioMixContext audioMixContext;
 
     //stats
     private Telemetry telemetry;
     private volatile int samplesProducedCount, samplesConsumedCount;
 
+
     @Override
     public void init(RegionDetector.Region region) {
         super.init(region);
-        mix_buf_bytes16Stereo = new byte[fmSize << 1];
+        audioMixContext = new AudioMixContext(activeSoundDeviceMap, new byte[fmSize << 1]);
         telemetry = Telemetry.getInstance();
     }
 
     @Override
     public void onNewFrame() {
         doStats();
-        soundDeviceMap.values().forEach(SoundDevice::onNewFrame);
-        SampleBufferContext psgContext = getPsg().getFrameData();
-        playSound(psgContext);
+        activeSoundDeviceMap.values().forEach(SoundDevice::onNewFrame);
+        int len = activeSoundDeviceMap.values().stream().
+                mapToInt(d -> d.getFrameData().stereoBytesLen).max().orElse(0);
+        playSound(len);
     }
 
-    private void playSound(SampleBufferContext context) {
-        if (context.stereoBytesLen > 0) {
-            System.arraycopy(context.lineBuffer, 0, mix_buf_bytes16Stereo, 0, context.stereoBytesLen);
-            final int len = context.stereoBytesLen;
+    //FM,PWM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
+    protected static int mixAudioProviders(AudioMixContext amc) {
+        int len = 0;
+        SoundDevice device = SoundDevice.NO_SOUND;
+        SoundDevice fm = amc.map.get(SoundDevice.SoundDeviceType.FM);
+        SoundDevice psg = amc.map.get(SoundDevice.SoundDeviceType.PSG);
+        switch (amc.soundDeviceSetup) {
+            case 1: //fm only
+                device = fm;
+            case 2: //psg only
+                device = device == SoundDevice.NO_SOUND ? psg : device;
+                SampleBufferContext sbc = device.getFrameData();
+                System.arraycopy(sbc.lineBuffer, 0, amc.mix_buf_bytes16Stereo, 0, sbc.stereoBytesLen);
+                len = sbc.stereoBytesLen;
+                break;
+            case 3: //fm + psg
+                len = mixTwoSources(psg.getFrameData().lineBuffer, fm.getFrameData().lineBuffer, amc.mix_buf_bytes16Stereo,
+                        psg.getFrameData().stereoBytesLen, fm.getFrameData().stereoBytesLen);
+                break;
+        }
+        return len;
+    }
+
+    private void playSound(int inputLen) {
+        if (!soundEnabled) {
+            return;
+        }
+        if (inputLen > 0) {
             final long current = sync.incrementAndGet();
+            audioMixContext.soundDeviceSetup = soundDeviceSetup;
+            final AudioMixContext amc = audioMixContext;
             executorService.submit(() -> {
-                SoundUtil.writeBufferInternal(dataLine, mix_buf_bytes16Stereo, 0, len);
+                mixAudioProviders(amc);
+                SoundUtil.writeBufferInternal(dataLine, amc.mix_buf_bytes16Stereo, 0, inputLen);
                 if (BufferUtil.assertionsEnabled) {
                     if (current != sync.get()) {
                         LOG.info("Audio thread too slow: {} vs {}", current, sync.get());

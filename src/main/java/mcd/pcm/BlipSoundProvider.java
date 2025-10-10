@@ -70,7 +70,7 @@ public class BlipSoundProvider implements IBlipSoundProvider {
         bbc.lineBuffer = new byte[0];
         bbc.blipBuffer = blip;
         ref.set(bbc);
-        updateRegion(region, (int) clockRate);
+        initRegion(region, (int) clockRate);
         logInfo(bbc);
     }
 
@@ -142,11 +142,16 @@ public class BlipSoundProvider implements IBlipSoundProvider {
     public void updateRegion(Region region, int clockRate) {
         BlipBufferContext ctx = ref.get();
         if (region != this.region || ctx.blipBuffer.clockRate() != clockRate) {
-            this.region = region;
-            ctx.blipBuffer.setClockRate(clockRate);
-            ctx.inputClocksForInterval.set((int) (1.0 * ctx.blipBuffer.clockRate() * region.getFrameIntervalMs() / 1000.0));
-            LOG.info("{} updating region: {} and ticksPerFrame: {}", instanceId, region, ctx.inputClocksForInterval);
+            initRegion(region, clockRate);
         }
+    }
+
+    private void initRegion(Region region, int clockRate) {
+        BlipBufferContext ctx = ref.get();
+        this.region = region;
+        ctx.blipBuffer.setClockRate(clockRate);
+        ctx.inputClocksForInterval.set((int) (1.0 * ctx.blipBuffer.clockRate() * region.getFrameIntervalMs() / 1000.0));
+        LOG.info("{} updating region: {} and ticksPerFrame: {}", instanceId, region, ctx.inputClocksForInterval);
     }
 
     private void logInfo(BlipBufferContext ctx) {

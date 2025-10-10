@@ -43,7 +43,7 @@ public interface PsgProvider extends SoundDevice {
 
     //SN style PSG
     default void write(int data) {
-        throw new UnsupportedOperationException();
+        //DO NOTHING
     }
 
     //AY style psg

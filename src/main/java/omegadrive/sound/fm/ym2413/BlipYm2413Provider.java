@@ -1,6 +1,6 @@
 /*
  * Ym2413Provider
- * Copyright (c) 2018-2019 Federico Berti
+ * Copyright (c) 2025 Federico Berti
  * Last modified: 27/10/19 13:13
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,39 +20,44 @@
 package omegadrive.sound.fm.ym2413;
 
 
+import mcd.pcm.BlipSoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.fm.VariableSampleRateSource;
+import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 
-/**
- * @Deprecated use {@link BlipYm2413Provider}
- */
-@Deprecated
-public class Ym2413Provider extends VariableSampleRateSource {
+public class BlipYm2413Provider implements FmProvider {
 
-    private static final Logger LOG = LogHelper.getLogger(Ym2413Provider.class.getSimpleName());
+    private static final Logger LOG = LogHelper.getLogger(BlipYm2413Provider.class.getSimpleName());
 
-    public static final double FM_RATE = 49716.0;
+    public static final double FM_RATE = 49740.0;
     // Input clock
     private static final int CLOCK_HZ = 3579545;
     final double ratio;
     double rateAccum;
-    double adjustedRatio;
 
+    private BlipSoundProvider blipProvider;
     private OPLL opll;
     private int sample;
 
-    protected Ym2413Provider(AudioFormat audioFormat) {
-        super(FM_RATE, audioFormat, "fm2413");
-        ratio = microsPerOutputSample / microsPerInputSample;
+    private String name;
+
+    long tickCnt = 0;
+
+    protected BlipYm2413Provider(AudioFormat audioFormat) {
+        name = "fm2413";
+        ratio = FM_RATE / audioFormat.getSampleRate();
+
     }
 
     public static FmProvider createInstance(AudioFormat audioFormat) {
-        Ym2413Provider p = new Ym2413Provider(audioFormat);
+        BlipYm2413Provider p = new BlipYm2413Provider(audioFormat);
         p.init();
+        p.blipProvider = new BlipSoundProvider(p.name, RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
+                FM_RATE);
         return p;
     }
 
@@ -69,12 +74,18 @@ public class Ym2413Provider extends VariableSampleRateSource {
     //this should be called 49716 times per second
     @Override
     public void tick() {
-        rateAccum += adjustedRatio;
+        rateAccum += ratio;
         spinOnce();
         if (rateAccum > 1) {
-            addMonoSample(sample);
+            blipProvider.playSample(sample << 4, sample << 4);
+            tickCnt++;
             rateAccum -= 1;
         }
+    }
+
+    @Override
+    public int updateStereo16(int[] buf_lr, int offset, int count) {
+        throw new RuntimeException("Illegal method call: updateStereo16");
     }
 
     @Override
@@ -100,15 +111,24 @@ public class Ym2413Provider extends VariableSampleRateSource {
         opll = Emu2413.OPLL_new();
     }
 
-    @Override
-    protected void spinOnce() {
+    private void spinOnce() {
         sample = Emu2413.OPLL_calc(opll);
     }
 
     @Override
+    public SampleBufferContext getFrameData() {
+        assert tickCnt == 0;
+        return blipProvider.getDataBuffer();
+    }
+
+    @Override
     public void onNewFrame() {
-        super.onNewFrame();
-        adjustedRatio = microsPerInputSample / fmCalcsPerMicros;
+        if (tickCnt > 0) {
+            blipProvider.onNewFrame();
+            tickCnt = 0;
+        } else {
+            LogHelper.logWarnOnce(LOG, "newFrame called with tickCnt: {}", tickCnt);
+        }
     }
 
     public enum FmReg {ADDR_LATCH_REG, DATA_REG}

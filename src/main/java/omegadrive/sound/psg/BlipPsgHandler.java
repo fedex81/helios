@@ -56,6 +56,7 @@ public abstract class BlipPsgHandler implements PsgProvider {
         if (tickCnt > 0) {
             assert tickCnt - samplePlayed < outputBufferMask;
             playAccumulatedSamples(tickCnt & outputBufferMask);
+            //generate new samples
             blipProvider.onNewFrame();
             tickCnt = 0;
         } else {
