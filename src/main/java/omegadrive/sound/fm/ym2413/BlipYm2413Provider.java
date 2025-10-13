@@ -20,43 +20,53 @@
 package omegadrive.sound.fm.ym2413;
 
 
+import omegadrive.bus.z80.SmsBus;
 import omegadrive.sound.BlipSoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 
+import static omegadrive.util.SoundUtil.AF_8bit_Mono;
+
 public class BlipYm2413Provider implements FmProvider {
 
     private static final Logger LOG = LogHelper.getLogger(BlipYm2413Provider.class.getSimpleName());
 
+    private static final AudioFormat audioFormat = AF_8bit_Mono;
+
     public static final double FM_RATE = 49740.0;
     // Input clock
     private static final int CLOCK_HZ = 3579545;
+
+    private static final int VOLUME_BOOST = 4;
     final double ratio;
     double rateAccum;
 
     private BlipSoundProvider blipProvider;
     private OPLL opll;
+
+    /**
+     * this is not a 8 bit output, more of a faint 16 bit
+     */
     private int sample;
 
     private String name;
 
     long tickCnt = 0;
 
-    protected BlipYm2413Provider(AudioFormat audioFormat) {
+    protected BlipYm2413Provider() {
         name = "fm2413";
         ratio = FM_RATE / audioFormat.getSampleRate();
 
     }
 
-    public static FmProvider createInstance(AudioFormat audioFormat) {
-        BlipYm2413Provider p = new BlipYm2413Provider(audioFormat);
+    public static FmProvider createInstance() {
+        BlipYm2413Provider p = new BlipYm2413Provider();
         p.init();
-        p.blipProvider = new BlipSoundProvider(p.name, RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
+        p.blipProvider = new BlipSoundProvider(p.name, RegionDetector.Region.USA, audioFormat,
                 FM_RATE);
         return p;
     }
@@ -77,7 +87,7 @@ public class BlipYm2413Provider implements FmProvider {
         rateAccum += ratio;
         spinOnce();
         if (rateAccum > 1) {
-            blipProvider.playSample(sample << 4, sample << 4);
+            blipProvider.playSample16(sample << VOLUME_BOOST);
             tickCnt++;
             rateAccum -= 1;
         }
@@ -95,7 +105,7 @@ public class BlipYm2413Provider implements FmProvider {
 
     @Override
     public void write(int addr, int data) {
-        switch (FmReg.values()[addr]) {
+        switch (SmsBus.FmReg.values()[addr]) {
             case ADDR_LATCH_REG:
                 Emu2413.OPLL_writeIO(opll, 0, data);
                 break;
@@ -117,7 +127,6 @@ public class BlipYm2413Provider implements FmProvider {
 
     @Override
     public SampleBufferContext getFrameData() {
-        assert tickCnt == 0;
         return blipProvider.getDataBuffer();
     }
 
@@ -130,6 +139,4 @@ public class BlipYm2413Provider implements FmProvider {
             LogHelper.logWarnOnce(LOG, "newFrame called with tickCnt: {}", tickCnt);
         }
     }
-
-    public enum FmReg {ADDR_LATCH_REG, DATA_REG}
 }

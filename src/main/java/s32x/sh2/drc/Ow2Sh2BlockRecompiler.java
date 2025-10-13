@@ -7,10 +7,8 @@ import org.objectweb.asm.util.ASMifier;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 import org.slf4j.Logger;
-import s32x.Sh2MMREG;
 import s32x.bus.Sh2Bus;
 import s32x.sh2.Sh2Context;
-import s32x.sh2.device.Sh2DeviceHelper;
 import s32x.sh2.prefetch.Sh2Prefetch.BytecodeContext;
 import s32x.sh2.prefetch.Sh2Prefetch.Sh2DrcContext;
 
@@ -20,7 +18,6 @@ import java.nio.file.Path;
 
 import static org.objectweb.asm.Opcodes.*;
 import static s32x.sh2.drc.Ow2Sh2Helper.DRC_CLASS_FIELD.*;
-import static s32x.sh2.drc.Ow2Sh2Helper.SH2CTX_CLASS_FIELD.devices;
 import static s32x.sh2.drc.Ow2Sh2Helper.SH2_DRC_CTX_CLASS_FIELD.sh2Ctx;
 
 /**
@@ -53,7 +50,6 @@ public class Ow2Sh2BlockRecompiler implements Sh2BlockRecompiler.InternalSh2Bloc
             cw.visitField(ACC_PRIVATE | ACC_FINAL, opcodes.name(), intArrayDesc, null, null).visitEnd();
             cw.visitField(ACC_PRIVATE | ACC_FINAL, sh2DrcContext.name(), Type.getDescriptor(Sh2DrcContext.class), null, null).visitEnd();
             cw.visitField(ACC_PRIVATE | ACC_FINAL, sh2Context.name(), Type.getDescriptor(Sh2Context.class), null, null).visitEnd();
-            cw.visitField(ACC_PRIVATE | ACC_FINAL, sh2MMREG.name(), Type.getDescriptor(Sh2MMREG.class), null, null).visitEnd();
             cw.visitField(ACC_PRIVATE | ACC_FINAL, memory.name(), Type.getDescriptor(memoryClass), null, null).visitEnd();
         }
         {
@@ -75,18 +71,6 @@ public class Ow2Sh2BlockRecompiler implements Sh2BlockRecompiler.InternalSh2Bloc
                 mv.visitVarInsn(ALOAD, 3); // push `sh2DrcContext`
                 mv.visitFieldInsn(GETFIELD, Type.getInternalName(Sh2DrcContext.class), sh2Ctx.name(), Type.getDescriptor(Sh2Context.class));
                 mv.visitFieldInsn(PUTFIELD, blockClassDesc, sh2Context.name(), Type.getDescriptor(Sh2Context.class));
-
-                //set sh2mmreg
-                mv.visitVarInsn(ALOAD, 0); // push `this`
-                mv.visitVarInsn(ALOAD, 3); // push `sh2DrcContext`
-                mv.visitFieldInsn(GETFIELD, Type.getInternalName(Sh2DrcContext.class), sh2Ctx.name(),
-                        Type.getDescriptor(Sh2Context.class));
-                mv.visitFieldInsn(GETFIELD, Type.getInternalName(Sh2Context.class), devices.name(),
-                        Type.getDescriptor(Sh2DeviceHelper.Sh2DeviceContext.class));
-                mv.visitFieldInsn(GETFIELD, Type.getInternalName(Sh2DeviceHelper.Sh2DeviceContext.class),
-                        Ow2Sh2Helper.SH2_DEVICE_CTX_CLASS_FIELD.sh2MMREG.name(),
-                        Type.getDescriptor(Sh2MMREG.class));
-                mv.visitFieldInsn(PUTFIELD, blockClassDesc, sh2MMREG.name(), Type.getDescriptor(Sh2MMREG.class));
 
                 //set memory
                 mv.visitVarInsn(ALOAD, 0); // push `this`

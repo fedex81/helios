@@ -20,6 +20,7 @@
 package omegadrive.util;
 
 import omegadrive.sound.SoundProvider;
+import omegadrive.sound.javasound.AbstractSoundManager;
 import org.slf4j.Logger;
 
 import javax.sound.sampled.*;
@@ -31,6 +32,14 @@ import java.lang.reflect.Field;
 public class SoundUtil {
 
     private static final Logger LOG = LogHelper.getLogger(SoundUtil.class.getSimpleName());
+
+
+    public static final AudioFormat AF_16bit_Mono =
+            new AudioFormat(AbstractSoundManager.SAMPLE_RATE_HZ, 16, 1, true, false);
+    public static final AudioFormat AF_8bit_Mono =
+            new AudioFormat(AbstractSoundManager.SAMPLE_RATE_HZ, 8, 1, true, false);
+    public static final AudioFormat AF_8bit_Stereo =
+            new AudioFormat(AbstractSoundManager.SAMPLE_RATE_HZ, 8, 2, true, false);
 
     public static final byte ZERO_BYTE = 0;
 

@@ -32,6 +32,7 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.MdJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
+import omegadrive.sound.fm.FmProvider;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.*;
@@ -91,6 +92,8 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     protected int next68kCycle = M68K_DIVIDER;
     protected int nextZ80Cycle = Z80_DIVIDER;
 
+    protected FmProvider fm;
+
     protected Megadrive(DisplayWindow emuFrame) {
         super(emuFrame);
         systemType = SystemLoader.SystemType.MD;
@@ -120,6 +123,7 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         memView.reset();
         memView = createMemView();
         isNuke = sound.getFm() instanceof Ym2612Nuke;
+        fm = sound.getFm();
     }
 
     protected void loop() {
@@ -177,12 +181,15 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         }
     }
     protected final void runFM() {
+        if ((cycleCounter & 1) > 0) {
+            return;
+        }
         if (isNuke) {
-            if ((cycleCounter & 1) == 0 && (cycleCounter % FM_DIVIDER) == 0) { //perf, avoid some divs
-                bus.getFm().tick();
+            if ((cycleCounter % FM_DIVIDER) == 0) { //perf, avoid some divs
+                fm.tick();
             }
         } else if ((cycleCounter & FAST_FM_DIV_MASK) == 0) {
-            bus.getFm().tick();
+            fm.tick();
         }
     }
 

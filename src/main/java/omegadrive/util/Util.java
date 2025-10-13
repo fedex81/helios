@@ -439,7 +439,7 @@ public class Util {
         return () -> {
             try {
                 r.run();
-            } catch (Exception e) {
+            } catch (Exception | Error e) {
                 e.printStackTrace();
             }
         };

@@ -4,13 +4,14 @@ import com.grapeshot.halfnes.audio.AudioOutInterface;
 import omegadrive.sound.BlipSoundProvider;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
 import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
+
+import static omegadrive.util.SoundUtil.AF_16bit_Mono;
 
 /**
  * NesSoundWrapperFM_RATE
@@ -24,7 +25,7 @@ public class BlipNesSoundWrapper implements AudioOutInterface, FmProvider {
     private static final Logger LOG = LogHelper.getLogger(BlipNesSoundWrapper.class.getSimpleName());
 
     private static final double VOLUME = 13107 / 16384.;
-    public static final AudioFormat nesAudioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, 16, 1, true, false);
+    private static final AudioFormat audioFormat = AF_16bit_Mono;
 
     private int tickCnt = 0;
     private String name;
@@ -34,7 +35,7 @@ public class BlipNesSoundWrapper implements AudioOutInterface, FmProvider {
     public BlipNesSoundWrapper(RegionDetector.Region region) {
         name = "nes";
         assert VOLUME <= 1.0;
-        blipProvider = new BlipSoundProvider(name, RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
+        blipProvider = new BlipSoundProvider(name, RegionDetector.Region.USA, audioFormat,
                 SoundProvider.SAMPLE_RATE_HZ);
     }
 
@@ -42,7 +43,7 @@ public class BlipNesSoundWrapper implements AudioOutInterface, FmProvider {
     public void outputSample(int sample) {
         sample *= VOLUME; //VOLUME <= 1.0
         sample = SoundUtil.clampToShort(sample);
-        blipProvider.playSample(sample, sample);
+        blipProvider.playSample16(sample);
         tickCnt++;
     }
 
@@ -70,7 +71,6 @@ public class BlipNesSoundWrapper implements AudioOutInterface, FmProvider {
 
     @Override
     public SampleBufferContext getFrameData() {
-//        assert tickCnt == 0;
         return blipProvider.getDataBuffer();
     }
 

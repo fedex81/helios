@@ -349,6 +349,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
         if (res == 0) {
             return;
         }
+        assert res <= 3;
         if ((res & 1) > 0) {
             Sh2DrcBlockOptimizer.PollerCtx c = PollSysEventManager.instance.getPoller(CpuDeviceAccess.MASTER);
             if (c.isPollingActive() && type == c.event) {
@@ -375,6 +376,7 @@ public class Sh2Prefetch implements Sh2Prefetcher {
                         th(addr), size, c.cpu, th(c.blockPollData.memLoadTarget),
                         c.blockPollData.memLoadTargetSize, th(val));
             boolean pollValuedUnchanged = c.pollValue == PollSysEventManager.readPollValue(c);
+            assert !pollValuedUnchanged; //should not happen
             if (!pollValuedUnchanged) {
                 PollSysEventManager.instance.fireSysEvent(c.cpu, type);
             }
@@ -398,14 +400,15 @@ public class Sh2Prefetch implements Sh2Prefetcher {
             }
             final Sh2Block b = piw.block;
             final int bend = b.prefetchPc + ((b.prefetchLenWords - 1) << 1); //inclusive
+            if (bend - addr < 0) {
+                break;
+            }
             if (rangeIntersect(b.prefetchPc, bend, addr, wend)) {
                 invalidateMemoryLocationForCpu(blockOwner, piw, addr, i, val);
                 if (isWriteThrough) {
                     invalidateMemoryLocationForCpu(otherCpu, addr, i, val);
                 }
             }
-            //TODO slow, enabling this needs the nested block attribute implemented
-//            break;
         }
     }
 

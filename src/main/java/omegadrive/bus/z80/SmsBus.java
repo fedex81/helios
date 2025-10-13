@@ -39,8 +39,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.ADDR_LATCH_REG;
-import static omegadrive.sound.fm.ym2413.Ym2413Provider.FmReg.DATA_REG;
 import static omegadrive.util.ArrayEndianUtil.toUnsignedIntArray;
 import static omegadrive.util.ArrayEndianUtil.unsignedToByteArray;
 import static omegadrive.util.Util.th;
@@ -56,6 +54,9 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
 
     public static boolean HW_ENABLE_FM = false;
     public static final boolean HW_ENABLE_BIOS = false;
+
+    public enum FmReg {ADDR_LATCH_REG, DATA_REG}
+
     /**
      * Horizontal Counter Latch
      */
@@ -190,7 +191,7 @@ public class SmsBus extends DeviceAwareBus<SmsVdp, TwoButtonsJoypad> implements 
                 if (isAudioControl) {
                     handleAudioControl(value);
                 } else if (isFmWrite) {
-                    int fmPort = port == 0xF0 ? ADDR_LATCH_REG.ordinal() : DATA_REG.ordinal();
+                    int fmPort = port == 0xF0 ? FmReg.ADDR_LATCH_REG.ordinal() : FmReg.DATA_REG.ordinal();
                     soundProvider.getFm().write(fmPort, value);
                 }
                 break;

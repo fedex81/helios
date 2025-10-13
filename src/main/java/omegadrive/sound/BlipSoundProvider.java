@@ -4,6 +4,7 @@ import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector.Region;
 import org.slf4j.Logger;
+import s32x.util.blipbuffer.BlipBuffer;
 import s32x.util.blipbuffer.BlipBufferIntf;
 import s32x.util.blipbuffer.StereoBlipBuffer;
 
@@ -61,7 +62,7 @@ public class BlipSoundProvider implements IBlipSoundProvider {
     }
 
     private void setup() {
-        BlipBufferIntf blip = new StereoBlipBuffer(instanceId);
+        BlipBufferIntf blip = audioFormat.getChannels() == 2 ? new StereoBlipBuffer(instanceId) : new BlipBuffer();
         blip.setSampleRate((int) audioFormat.getSampleRate(), BUF_SIZE_MS);
         blip.setClockRate((int) clockRate);
         BlipBufferContext bbc = new BlipBufferContext();
@@ -74,7 +75,7 @@ public class BlipSoundProvider implements IBlipSoundProvider {
 
 
     @Override
-    public void playSample(int lsample, int rsample) {
+    public void playSample16(int lsample, int rsample) {
         if (BufferUtil.assertionsEnabled) {
             if (Math.abs(lsample - prevLSample) > 0xD000) {
                 LOG.info("{} L {} -> {}, absDiff: {}", instanceId, th(prevLSample), th((short) lsample), th(Math.abs(lsample - prevLSample)));
@@ -82,8 +83,8 @@ public class BlipSoundProvider implements IBlipSoundProvider {
             if (Math.abs(rsample - prevRSample) > 0xD000) {
                 LOG.info("{} R {} -> {}, absDiff: {}", instanceId, th(prevRSample), th((short) rsample), th(Math.abs(rsample - prevRSample)));
             }
-            assert lsample == (short) lsample;
-            assert rsample == (short) rsample;
+            assert lsample == (short) lsample : th(lsample);
+            assert rsample == (short) rsample : th(rsample);
             assert lsample - prevLSample == (short) (lsample - prevLSample);
             assert rsample - prevRSample == (short) (rsample - prevRSample);
         }

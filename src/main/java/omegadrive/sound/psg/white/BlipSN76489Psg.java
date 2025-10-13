@@ -24,12 +24,16 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 
+import javax.sound.sampled.AudioFormat;
+
 import static omegadrive.sound.SoundProvider.getPsgSoundClock;
+import static omegadrive.util.SoundUtil.AF_8bit_Mono;
 
 public class BlipSN76489Psg extends BlipPsgHandler {
 
     private final static Logger LOG = LogHelper.getLogger(BlipSN76489Psg.class.getSimpleName());
 
+    private static final AudioFormat audioFormat = AF_8bit_Mono;
     protected SN76489 psg;
 
     public static BlipSN76489Psg createInstance(RegionDetector.Region region, int outputSampleRate) {
@@ -40,7 +44,7 @@ public class BlipSN76489Psg extends BlipPsgHandler {
     }
 
     private BlipSN76489Psg() {
-        super("psg-sn");
+        super("psg-sn", audioFormat);
     }
 
     @Override

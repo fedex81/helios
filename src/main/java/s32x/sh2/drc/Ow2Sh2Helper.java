@@ -25,7 +25,7 @@ public class Ow2Sh2Helper {
     /**
      * Boundaries between ASM generated code and normal code
      */
-    public enum DRC_CLASS_FIELD {regs, opcodes, sh2DrcContext, sh2Context, sh2MMREG, memory}
+    public enum DRC_CLASS_FIELD {regs, opcodes, sh2DrcContext, sh2Context, memory}
 
     public enum SH2CTX_CLASS_FIELD {PC, PR, SR, GBR, VBR, MACH, MACL, delaySlot, cycles, devices}
 

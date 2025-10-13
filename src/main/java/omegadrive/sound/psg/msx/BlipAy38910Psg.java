@@ -24,9 +24,14 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 
+import javax.sound.sampled.AudioFormat;
+
+import static omegadrive.util.SoundUtil.AF_8bit_Mono;
+
 public class BlipAy38910Psg extends BlipPsgHandler {
 
     private final static Logger LOG = LogHelper.getLogger(BlipAy38910Psg.class.getSimpleName());
+    private static final AudioFormat audioFormat = AF_8bit_Mono;
 
     protected Ay38910 psg;
 
@@ -37,7 +42,7 @@ public class BlipAy38910Psg extends BlipPsgHandler {
     }
 
     private BlipAy38910Psg() {
-        super("psg-ay");
+        super("psg-ay", audioFormat);
     }
 
     @Override

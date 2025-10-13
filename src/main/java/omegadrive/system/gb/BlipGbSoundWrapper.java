@@ -3,14 +3,14 @@ package omegadrive.system.gb;
 import eu.rekawek.coffeegb.Gameboy;
 import eu.rekawek.coffeegb.sound.SoundOutput;
 import omegadrive.sound.BlipSoundProvider;
-import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
-import omegadrive.sound.javasound.AbstractSoundManager;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
+
+import static omegadrive.util.SoundUtil.AF_8bit_Stereo;
 
 /**
  * NesSoundWrapper
@@ -22,12 +22,10 @@ import javax.sound.sampled.AudioFormat;
 public class BlipGbSoundWrapper implements SoundOutput, FmProvider {
 
     private static final Logger LOG = LogHelper.getLogger(BlipGbSoundWrapper.class.getSimpleName());
-    public static final AudioFormat gbAudioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, 8, 2, true, false);
+    private static final AudioFormat audioFormat = AF_8bit_Stereo;
     private final static int OUTPUT_RATE_HZ = 740 * 60;
 
     private final static int MAX_TICKS = 2500;
-
-    private final static int VOLUME_BOOST = 8;
     private final int divider;
     private int tickCnt = 0;
 
@@ -38,10 +36,9 @@ public class BlipGbSoundWrapper implements SoundOutput, FmProvider {
 
     public BlipGbSoundWrapper(RegionDetector.Region region) {
         name = "gb";
-        divider = (int) (Gameboy.TICKS_PER_SEC / gbAudioFormat.getSampleRate());
-        blipProvider = new BlipSoundProvider(name, RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
+        divider = (int) (Gameboy.TICKS_PER_SEC / audioFormat.getSampleRate());
+        blipProvider = new BlipSoundProvider(name, RegionDetector.Region.USA, audioFormat,
                 OUTPUT_RATE_HZ);
-        System.out.println(blipProvider);
     }
 
     @Override
@@ -60,7 +57,7 @@ public class BlipGbSoundWrapper implements SoundOutput, FmProvider {
         }
         //should be ~2200 per frame, some early frames are skipping vsync (?) and it gets to 10000
         if (tickCnt < MAX_TICKS) {
-            blipProvider.playSample(left << VOLUME_BOOST, right << VOLUME_BOOST);
+            blipProvider.playSample8(left, right);
         }
         tickCnt++;
     }
@@ -78,7 +75,6 @@ public class BlipGbSoundWrapper implements SoundOutput, FmProvider {
 
     @Override
     public SampleBufferContext getFrameData() {
-//        assert tickCnt == 0;
         return blipProvider.getDataBuffer();
     }
 

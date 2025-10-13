@@ -177,7 +177,7 @@ public class SysUtil {
                 break;
             case SMS:
                 if (Sms.ENABLE_FM) {
-                    fmProvider = BlipYm2413Provider.createInstance(AbstractSoundManager.audioFormat);
+                    fmProvider = BlipYm2413Provider.createInstance();
                 }
                 break;
             case NES:

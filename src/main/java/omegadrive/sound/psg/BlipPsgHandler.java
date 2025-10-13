@@ -7,6 +7,8 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 
+import javax.sound.sampled.AudioFormat;
+
 /**
  * Federico Berti
  * <p>
@@ -24,9 +26,13 @@ public abstract class BlipPsgHandler implements PsgProvider {
     private int tickCnt = 0, samplePlayed = 0;
     private final byte[] output = new byte[outputBufferSize];
 
-    protected BlipPsgHandler(String name) {
-        blipProvider = new BlipSoundProvider(name, RegionDetector.Region.USA, AbstractSoundManager.audioFormat,
+    private final AudioFormat af;
+
+    protected BlipPsgHandler(String name, AudioFormat audioFormat) {
+        blipProvider = new BlipSoundProvider(name, RegionDetector.Region.USA, audioFormat,
                 DEFAULT_CLOCK_RATE);
+        af = audioFormat;
+        assert audioFormat.getChannels() == 1 && audioFormat.getSampleSizeInBits() == 8;
     }
 
     @Override
@@ -47,7 +53,6 @@ public abstract class BlipPsgHandler implements PsgProvider {
 
     @Override
     public SampleBufferContext getFrameData() {
-        assert tickCnt == 0;
         return blipProvider.getDataBuffer();
     }
 
@@ -67,7 +72,7 @@ public abstract class BlipPsgHandler implements PsgProvider {
     private void playAccumulatedSamples(int num) {
         updateMono8(output, 0, num);
         for (int i = 0; i < num; i++) {
-            blipProvider.playSample(output[i] << 8, output[i] << 8);
+            blipProvider.playSample8(output[i]);
         }
         samplePlayed += num;
     }

@@ -22,10 +22,7 @@ package omegadrive.sound.javasound;
 import omegadrive.sound.SoundDevice;
 import omegadrive.sound.SoundDevice.SampleBufferContext;
 import omegadrive.system.perf.Telemetry;
-import omegadrive.util.BufferUtil;
-import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector;
-import omegadrive.util.SoundUtil;
+import omegadrive.util.*;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -102,7 +99,7 @@ public class JavaSoundManagerBlip extends AbstractSoundManager {
             final long current = sync.incrementAndGet();
             audioMixContext.soundDeviceSetup = soundDeviceSetup;
             final AudioMixContext amc = audioMixContext;
-            executorService.submit(() -> {
+            executorService.submit(Util.wrapRunnableEx(() -> {
                 mixAudioProviders(amc);
                 SoundUtil.writeBufferInternal(dataLine, amc.mix_buf_bytes16Stereo, 0, inputLen);
                 if (BufferUtil.assertionsEnabled) {
@@ -110,7 +107,7 @@ public class JavaSoundManagerBlip extends AbstractSoundManager {
                         LOG.info("Audio thread too slow: {} vs {}", current, sync.get());
                     }
                 }
-            });
+            }));
         } else {
             LOG.warn("Empty sound buffer!!");
         }
