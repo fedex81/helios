@@ -1,4 +1,4 @@
-package s32x.util.blipbuffer;// Band-limited sound synthesis buffer
+package omegadrive.sound.blip;// Band-limited sound synthesis buffer
 // http://www.slack.net/~ant/
 
 /* Copyright (C) 2003-2007 Shay Green. This module is free software; you
@@ -30,6 +30,7 @@ public final class BlipBuffer implements BlipBufferIntf {
 
     // Sets input clock rate. Must be set after sample rate.
     public void setClockRate(int rate) {
+        assert sampleRate > 0;
         clockRate_ = rate;
         assert clockRate_ > 0;
         factor = (int) (sampleRate / (float) clockRate_ * (1 << timeBits) + 0.5);
@@ -150,7 +151,7 @@ public final class BlipBuffer implements BlipBufferIntf {
     }
 
     public int readSamples16bitStereo(byte[] out, int pos, int countMono) {
-        return BlipBufferHelper.readSamples16bitStereo(this, out, pos, countMono);
+        return BlipBufferHelper.readSamples16bitMono_StereoOut(this, out, pos, countMono);
     }
 
 // internal

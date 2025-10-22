@@ -30,15 +30,15 @@ import static omegadrive.sound.SoundProvider.getPsgSoundClock;
 
 public interface PsgProvider extends SoundDevice {
 
-    static PsgProvider createSnInstance(SystemType systemType, RegionDetector.Region region, int sampleRate) {
+    static SoundDevice createSnInstance(SystemType systemType, RegionDetector.Region region, int sampleRate) {
         int clockHz = (int) getPsgSoundClock(region);
         LOG.info("PSG instance, region: {}, clockHz: {}, sampleRate: {}", region, clockHz, sampleRate);
-        return BlipSN76489Psg.createInstance(region, sampleRate);
+        return BlipSN76489Psg.createInstance(systemType, region, sampleRate);
     }
 
-    static PsgProvider createAyInstance(RegionDetector.Region region, int sampleRate) {
+    static SoundDevice createAyInstance(SystemType systemType, RegionDetector.Region region, int sampleRate) {
         LOG.info("PSG instance, clockHz: {}, sampleRate: {}", (int) getPsgSoundClock(region), sampleRate);
-        return BlipAy38910Psg.createInstance(region, sampleRate);
+        return BlipAy38910Psg.createInstance(systemType, region, sampleRate);
     }
 
     //SN style PSG
@@ -56,11 +56,22 @@ public interface PsgProvider extends SoundDevice {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Typical PSG output
+     * 8-bit mono
+     */
+    default void fillBuffer(byte[] output, int offset, int end) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     default SoundDeviceType getType() {
         return SoundDeviceType.PSG;
     }
 
     PsgProvider NO_SOUND = new PsgProvider() {
+        @Override
+        public void fillBuffer(byte[] output, int offset, int end) {
+        }
     };
 }

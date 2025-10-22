@@ -19,7 +19,9 @@
 
 package omegadrive.sound.psg.msx;
 
-import omegadrive.sound.psg.BlipPsgHandler;
+import omegadrive.SystemLoader.SystemType;
+import omegadrive.sound.psg.BlipCapableDevice;
+import omegadrive.sound.psg.PsgProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
@@ -28,21 +30,21 @@ import javax.sound.sampled.AudioFormat;
 
 import static omegadrive.util.SoundUtil.AF_8bit_Mono;
 
-public class BlipAy38910Psg extends BlipPsgHandler {
+public class BlipAy38910Psg extends BlipCapableDevice implements PsgProvider {
 
     private final static Logger LOG = LogHelper.getLogger(BlipAy38910Psg.class.getSimpleName());
     private static final AudioFormat audioFormat = AF_8bit_Mono;
 
     protected Ay38910 psg;
 
-    public static BlipAy38910Psg createInstance(RegionDetector.Region region, int outputSampleRate) {
-        BlipAy38910Psg s = new BlipAy38910Psg();
+    public static BlipAy38910Psg createInstance(SystemType systemType, RegionDetector.Region region, int outputSampleRate) {
+        BlipAy38910Psg s = new BlipAy38910Psg(systemType);
         s.psg = new Ay38910(outputSampleRate);
         return s;
     }
 
-    private BlipAy38910Psg() {
-        super("psg-ay", audioFormat);
+    private BlipAy38910Psg(SystemType systemType) {
+        super(systemType, systemType + "-psg-ay", audioFormat);
     }
 
     @Override
@@ -56,9 +58,14 @@ public class BlipAy38910Psg extends BlipPsgHandler {
     }
 
     @Override
-    public void updateMono8(byte[] out, int offset, int end) {
+    public void fillBuffer(byte[] output, int offset, int end) {
         for (int i = offset; i < end; i++) {
-            out[i] = (byte) psg.getSoundSigned();
+            output[i] = (byte) psg.getSoundSigned();
         }
+    }
+
+    @Override
+    public SoundDeviceType getType() {
+        return SoundDeviceType.PSG;
     }
 }

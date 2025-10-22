@@ -1,8 +1,7 @@
-package s32x.util.blipbuffer;
+package omegadrive.sound.blip;
 
 
-import omegadrive.util.ArrayEndianUtil;
-
+import static omegadrive.util.ArrayEndianUtil.setSigned16LE;
 import static omegadrive.util.SoundUtil.clampToByte;
 import static omegadrive.util.SoundUtil.clampToShort;
 
@@ -14,9 +13,51 @@ import static omegadrive.util.SoundUtil.clampToShort;
 public class BlipBufferHelper {
 
     /**
+     * BlipBuffer stores 16 bit stereo samples, convert to byte[] format: 16 bit stereo
+     */
+    public static int readSamples16bitStereo(StereoBlipBuffer blipBuffer, byte[] out, int pos, int countMono) {
+        final int availMonoSamples = blipBuffer.samplesAvail();
+        if (countMono > availMonoSamples)
+            countMono = availMonoSamples;
+
+        if (countMono > 0) {
+            BlipBuffer left = blipBuffer.left();
+            BlipBuffer right = blipBuffer.right();
+            final int[] deltaBufL = left.buf;
+            final int[] deltaBufR = right.buf;
+            // Integrate
+            int accumL = left.accum.get();
+            int accumR = right.accum.get();
+            int i = 0;
+            do {
+                accumL += deltaBufL[i] - (accumL >> 9);
+                accumR += deltaBufR[i] - (accumR >> 9);
+                int sl = accumL >> 15;
+                int sr = accumR >> 15;
+
+                // clamp to 16 bits
+                if ((short) sl != sl)
+                    sl = clampToShort(sl);
+                if ((short) sr != sr)
+                    sr = clampToShort(sr);
+
+                setSigned16LE((short) sl, out, pos);
+                setSigned16LE((short) sr, out, pos + 2);
+                pos += 4;
+            }
+            while (++i < countMono);
+            left.accum.set(accumL);
+            right.accum.set(accumR);
+            left.removeSamples(countMono);
+            right.removeSamples(countMono);
+        }
+        return countMono;
+    }
+
+    /**
      * BlipBuffer stores 16 bit mono samples, convert to byte[] format: 16 bit stereo
      */
-    public static int readSamples16bitStereo(BlipBuffer blipBuffer, byte[] out, int pos, int countMono) {
+    public static int readSamples16bitMono_StereoOut(BlipBuffer blipBuffer, byte[] out, int pos, int countMono) {
         final int availMonoSamples = blipBuffer.samplesAvail();
         if (countMono > availMonoSamples)
             countMono = availMonoSamples;
@@ -34,8 +75,8 @@ public class BlipBufferHelper {
                 if ((short) s != s)
                     s = clampToShort(s);
 
-                ArrayEndianUtil.setSigned16LE((short) s, out, pos);
-                ArrayEndianUtil.setSigned16LE((short) s, out, pos + 2);
+                setSigned16LE((short) s, out, pos);
+                setSigned16LE((short) s, out, pos + 2);
                 pos += 4;
             }
             while (++i < countMono);

@@ -2,7 +2,8 @@ package omegadrive.system.gb;
 
 import eu.rekawek.coffeegb.Gameboy;
 import eu.rekawek.coffeegb.sound.SoundOutput;
-import omegadrive.sound.BlipSoundProvider;
+import omegadrive.sound.blip.BlipSoundProvider;
+import omegadrive.sound.blip.IBlipSoundProvider.BlipBufferContext;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -74,8 +75,8 @@ public class BlipGbSoundWrapper implements SoundOutput, FmProvider {
     }
 
     @Override
-    public SampleBufferContext getFrameData() {
-        return blipProvider.getDataBuffer();
+    public BlipBufferContext getBufferContext() {
+        return blipProvider.getBufferContext();
     }
 
     @Override
@@ -86,9 +87,5 @@ public class BlipGbSoundWrapper implements SoundOutput, FmProvider {
     @Override
     public int readRegister(int type, int regNumber) {
         return 0;
-    }
-
-    @Override
-    public void tick() {
     }
 }

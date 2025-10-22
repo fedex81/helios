@@ -36,6 +36,8 @@ public class SoundUtil {
 
     public static final AudioFormat AF_16bit_Mono =
             new AudioFormat(AbstractSoundManager.SAMPLE_RATE_HZ, 16, 1, true, false);
+    public static final AudioFormat AF_16bit_Stereo =
+            new AudioFormat(AbstractSoundManager.SAMPLE_RATE_HZ, 16, 2, true, false);
     public static final AudioFormat AF_8bit_Mono =
             new AudioFormat(AbstractSoundManager.SAMPLE_RATE_HZ, 8, 1, true, false);
     public static final AudioFormat AF_8bit_Stereo =
@@ -43,7 +45,7 @@ public class SoundUtil {
 
     public static final byte ZERO_BYTE = 0;
 
-    private static final int DEFAULT_PSG_SHIFT_BITS = 6;
+    public static final int DEFAULT_PSG_SHIFT_BITS = 6;
     public static final double PSG_ATTENUATION = Double.parseDouble(System.getProperty("sound.psg.attenuation", "1.0"));
     private static final int USER_PSG_ATT_BITS;
     private static final int PSG_SHIFT_BITS;
@@ -172,8 +174,21 @@ public class SoundUtil {
         }
     }
 
-    public static void intStereo14ToByteStereo16PwmMix(byte[] output, int[] fmStereo16, int[] pwmStereo16,
-                                                       byte[] psgMono8, int inputLen) {
+    public static void intStereo14ToByteStereo16PwmMix(byte[] output, int[] fmStereo16, int[] pwmStereo16, int inputLen) {
+        int j = 0; //psg index
+        int k = 0; //output index
+        for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
+            int out16L = clampToShort(fmStereo16[i] + pwmStereo16[i]);
+            int out16R = clampToShort(fmStereo16[i + 1] + pwmStereo16[i + 1]);
+            output[k] = (byte) (out16L & 0xFF); //lsb left
+            output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
+            output[k + 2] = (byte) (out16R & 0xFF); //lsb right
+            output[k + 3] = (byte) ((out16R >> 8) & 0xFF); //msb right
+        }
+    }
+
+    public static void intStereo14ToByteStereo16PsgPwmMix(byte[] output, int[] fmStereo16, int[] pwmStereo16,
+                                                          byte[] psgMono8, int inputLen) {
         int j = 0; //psg index
         int k = 0; //output index
         for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
@@ -245,13 +260,31 @@ public class SoundUtil {
             System.arraycopy(input1, 0, output, 0, inputLen1);
             len = input1.length;
         } else {
-            assert inputLen1 == inputLen2;
-            for (int i = 0; i < input1.length; i += 4) {
+//            assert inputLen1 == inputLen2 : inputLen1 + "," + inputLen2;
+            len = Math.min(inputLen1, inputLen2);
+            for (int i = 0; i < len; i += 4) {
                 output[i] = (byte) ((input1[i] + input2[i]) >> 1);
                 output[i + 1] = (byte) ((input1[i + 1] + input2[i + 1]) >> 1);
                 output[i + 2] = (byte) ((input1[i + 2] + input2[i + 2]) >> 1);
                 output[i + 3] = (byte) ((input1[i + 3] + input2[i + 3]) >> 1);
             }
+        }
+        return len;
+    }
+
+    /**
+     * Fast resampler
+     */
+    public static int resample(byte[] data, byte[] output, int inputLen, int outputLen) {
+        assert (outputLen - inputLen) % 4 == 0;
+        int len = Math.min(inputLen, outputLen);
+        System.arraycopy(data, 0, output, 0, len);
+        //do this only for upsampling
+        if (len != outputLen) {
+            for (int i = inputLen; i < outputLen; i += 4) {
+                System.arraycopy(data, inputLen - 4, output, i, 4);
+            }
+            len = outputLen;
         }
         return len;
     }

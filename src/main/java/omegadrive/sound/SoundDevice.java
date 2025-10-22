@@ -1,7 +1,9 @@
 package omegadrive.sound;
 
 import omegadrive.Device;
+import omegadrive.sound.blip.IBlipSoundProvider.BlipBufferContext;
 import omegadrive.system.SystemProvider;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.RegionDetector;
 
 /**
@@ -9,7 +11,7 @@ import omegadrive.util.RegionDetector;
  * <p>
  * Copyright 2022
  */
-public interface SoundDevice extends Device, SystemProvider.NewFrameListener {
+public interface SoundDevice extends Device, SystemProvider.NewFrameListener, BufferUtil.StepDevice {
 
     interface MutableDevice {
         void setEnabled(boolean mute);
@@ -39,34 +41,13 @@ public interface SoundDevice extends Device, SystemProvider.NewFrameListener {
         public int stereoBytesLen;
     }
 
-    SampleBufferContext NO_DATA_CTX = new SampleBufferContext();
-
-    /**
-     * Typical FM output
-     */
-    default int updateStereo16(int[] buf_lr, int offset, int count) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    /**
-     * Typical PSG output
-     */
-    default void updateMono8(byte[] output, int offset, int end) {
-        //DO NOTHING
-    }
-
-    default void updateMono8(byte[] output) {
-        updateMono8(output, 0, output.length);
-    }
+    BlipBufferContext NO_DATA_CTX = new BlipBufferContext();
 
     default void updateRate(RegionDetector.Region region, int clockRate) {
     }
 
-    default SampleBufferContext getFrameData() {
+    default BlipBufferContext getBufferContext() {
         return NO_DATA_CTX;
-    }
-
-    default void tick() {
     }
 
     @Override

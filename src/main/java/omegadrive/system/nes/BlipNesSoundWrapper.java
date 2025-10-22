@@ -1,8 +1,9 @@
 package omegadrive.system.nes;
 
 import com.grapeshot.halfnes.audio.AudioOutInterface;
-import omegadrive.sound.BlipSoundProvider;
 import omegadrive.sound.SoundProvider;
+import omegadrive.sound.blip.BlipSoundProvider;
+import omegadrive.sound.blip.IBlipSoundProvider.BlipBufferContext;
 import omegadrive.sound.fm.FmProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -70,8 +71,8 @@ public class BlipNesSoundWrapper implements AudioOutInterface, FmProvider {
     }
 
     @Override
-    public SampleBufferContext getFrameData() {
-        return blipProvider.getDataBuffer();
+    public BlipBufferContext getBufferContext() {
+        return blipProvider.getBufferContext();
     }
 
     @Override
@@ -82,11 +83,6 @@ public class BlipNesSoundWrapper implements AudioOutInterface, FmProvider {
     @Override
     public int readRegister(int type, int regNumber) {
         return 0;
-    }
-
-    @Override
-    public void tick() {
-        //DO NOTHING
     }
 
     @Override

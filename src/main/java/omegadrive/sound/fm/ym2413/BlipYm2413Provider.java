@@ -20,9 +20,10 @@
 package omegadrive.sound.fm.ym2413;
 
 
+import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.z80.SmsBus;
-import omegadrive.sound.BlipSoundProvider;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.psg.BlipCapableDevice;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
@@ -31,7 +32,7 @@ import javax.sound.sampled.AudioFormat;
 
 import static omegadrive.util.SoundUtil.AF_8bit_Mono;
 
-public class BlipYm2413Provider implements FmProvider {
+public class BlipYm2413Provider extends BlipCapableDevice implements FmProvider {
 
     private static final Logger LOG = LogHelper.getLogger(BlipYm2413Provider.class.getSimpleName());
 
@@ -44,8 +45,6 @@ public class BlipYm2413Provider implements FmProvider {
     private static final int VOLUME_BOOST = 4;
     final double ratio;
     double rateAccum;
-
-    private BlipSoundProvider blipProvider;
     private OPLL opll;
 
     /**
@@ -53,21 +52,16 @@ public class BlipYm2413Provider implements FmProvider {
      */
     private int sample;
 
-    private String name;
-
     long tickCnt = 0;
 
     protected BlipYm2413Provider() {
-        name = "fm2413";
+        super(SystemType.SMS, SystemType.SMS + "-fm2413", audioFormat);
         ratio = FM_RATE / audioFormat.getSampleRate();
-
     }
 
     public static FmProvider createInstance() {
         BlipYm2413Provider p = new BlipYm2413Provider();
         p.init();
-        p.blipProvider = new BlipSoundProvider(p.name, RegionDetector.Region.USA, audioFormat,
-                FM_RATE);
         return p;
     }
 
@@ -83,7 +77,7 @@ public class BlipYm2413Provider implements FmProvider {
 
     //this should be called 49716 times per second
     @Override
-    public void tick() {
+    public void step() {
         rateAccum += ratio;
         spinOnce();
         if (rateAccum > 1) {
@@ -94,13 +88,8 @@ public class BlipYm2413Provider implements FmProvider {
     }
 
     @Override
-    public int updateStereo16(int[] buf_lr, int offset, int count) {
-        throw new RuntimeException("Illegal method call: updateStereo16");
-    }
-
-    @Override
     public int readRegister(int type, int regNumber) {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -126,8 +115,13 @@ public class BlipYm2413Provider implements FmProvider {
     }
 
     @Override
-    public SampleBufferContext getFrameData() {
-        return blipProvider.getDataBuffer();
+    protected void fillBuffer(byte[] output, int offset, int end) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateRate(RegionDetector.Region region, int clockRate) {
+        blipProvider.updateRegion(region, clockRate);
     }
 
     @Override

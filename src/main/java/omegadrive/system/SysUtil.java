@@ -151,7 +151,7 @@ public class SysUtil {
         SoundDevice psgProvider = PsgProvider.NO_SOUND;
         switch (systemType) {
             case MSX:
-                psgProvider = PsgProvider.createAyInstance(region, SAMPLE_RATE_HZ);
+                psgProvider = PsgProvider.createAyInstance(systemType, region, SAMPLE_RATE_HZ);
                 break;
             case NES:
             case GB:
@@ -194,9 +194,10 @@ public class SysUtil {
 
     //TODO
     public static boolean isBlipSound(SystemType systemType) {
-        return systemType == SystemType.SMS || systemType == SystemType.GG ||
-                systemType == SystemType.COLECO || systemType == SG_1000 || systemType == MSX || systemType == NES
-                || systemType == GB;
+        return true;
+//        systemType == SystemType.SMS || systemType == SystemType.GG ||
+//                systemType == SystemType.COLECO || systemType == SG_1000 || systemType == MSX || systemType == NES
+//                || systemType == GB;
     }
 
     public static final BaseBusProvider NO_OP_BUS = new BaseBusProvider() {

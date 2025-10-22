@@ -42,12 +42,11 @@ import s32x.pwm.BlipPwmProvider;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AbstractSoundManager implements SoundProvider {
     private static final Logger LOG = LogHelper.getLogger(AbstractSoundManager.class.getSimpleName());
@@ -57,7 +56,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     private static final int OUTPUT_CHANNELS = 2;
     public static final AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
 
-    private static final Map<SoundDeviceType, SoundDevice> noSoundMap = ImmutableMap.of(
+    protected static final Map<SoundDeviceType, SoundDevice> noSoundMap = ImmutableMap.of(
             SoundDeviceType.FM, FmProvider.NO_SOUND,
             SoundDeviceType.PSG, PsgProvider.NO_SOUND,
             SoundDeviceType.PWM, PwmProvider.NO_SOUND,
@@ -72,28 +71,34 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     protected SourceDataLine dataLine;
     protected boolean soundEnabled = true;
-    private SystemLoader.SystemType type;
+    protected SystemLoader.SystemType type;
     protected RegionDetector.Region region;
     protected volatile int soundDeviceSetup = SoundDeviceType.NONE.getBit();
 
+    public static final boolean BLIP_SOUND_MANAGER = false;
+
     protected List<SoundDevice.MutableDevice> mutableDeviceList = new ArrayList<>();
     protected AtomicBoolean initedOnce = new AtomicBoolean(false);
+
+    protected static AtomicReference<Map<SoundDeviceType, SoundDevice>> sdRef = new AtomicReference<>();
 
     public static SoundProvider createSoundProvider(SystemLoader.SystemType systemType) {
         if (!ENABLE_SOUND) {
             LOG.warn("Sound disabled");
             return NO_SOUND;
         }
-        AbstractSoundManager jsm = JAL_SOUND_MGR ? new JalSoundManager() :
-                (SysUtil.isBlipSound(systemType) ? new JavaSoundManagerBlip() : new JavaSoundManager());
-        jsm.type = systemType;
+        AbstractSoundManager jsm = JAL_SOUND_MGR ? new JalSoundManager(systemType) :
+                (BLIP_SOUND_MANAGER ? new JavaSoundManagerBlip(systemType) : new JavaSoundManager(systemType));
         return jsm;
     }
 
     @Override
     public void init(RegionDetector.Region region) {
         this.region = region;
-        activeSoundDeviceMap = SysUtil.getSoundDevices(type, region);
+        if (sdRef.get() == null) {
+            sdRef.set(SysUtil.getSoundDevices(type, region));
+        }
+        activeSoundDeviceMap = new EnumMap<>(sdRef.get());
         soundDeviceMap = ImmutableMap.copyOf(activeSoundDeviceMap);
         updateSoundDeviceSetup();
         soundPersister = new FileSoundPersister();
@@ -206,13 +211,27 @@ public abstract class AbstractSoundManager implements SoundProvider {
                 SoundDevice currentDevice = enabled ? playDevice : noSound;
                 activeSoundDeviceMap.put(sd.getType(), currentDevice);
                 updateSoundDeviceSetup();
-                LOG.info("{} enabled: {}", sd.getType(), enabled);
+                LOG.info("{} enabled: {}", sd.getType(), isEnabledNow);
             }
         }
     }
 
     protected boolean isEnabled(SoundDeviceType sdt) {
         return (soundDeviceSetup & sdt.getBit()) > 0;
+    }
+
+    public void setDisablePermanent(SoundDevice.SoundDeviceType sdt) {
+        SoundDevice ns = noSoundMap.get(sdt);
+        activeSoundDeviceMap.put(sdt, ns);
+        setSoundDeviceMap(sdt, ns);
+        updateSoundDeviceSetup();
+    }
+
+    public void setSoundDeviceMap(SoundDevice.SoundDeviceType sdt, SoundDevice sd) {
+        var m = new HashMap<>(soundDeviceMap);
+        m.put(sdt, sd);
+        soundDeviceMap = m;
+        setEnabled(sd, true);
     }
 
     @Override

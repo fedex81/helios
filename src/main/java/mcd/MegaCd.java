@@ -118,7 +118,7 @@ public class MegaCd extends Megadrive {
             run68k();
             runSub68k();
             runZ80();
-            runFM();
+            runSound();
             //this should be last as it could change the counter
             runVdp();
             cycleCounter++;

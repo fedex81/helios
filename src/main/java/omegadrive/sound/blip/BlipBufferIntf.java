@@ -1,4 +1,4 @@
-package s32x.util.blipbuffer;
+package omegadrive.sound.blip;
 
 /**
  * Federico Berti

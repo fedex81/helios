@@ -1,10 +1,10 @@
 package mcd.pcm;
 
 import omegadrive.sound.PcmProvider;
+import omegadrive.sound.blip.BlipBufferIntf;
+import omegadrive.sound.blip.StereoBlipBuffer;
 import omegadrive.util.*;
 import org.slf4j.Logger;
-import s32x.util.blipbuffer.BlipBufferIntf;
-import s32x.util.blipbuffer.StereoBlipBuffer;
 
 import javax.sound.sampled.SourceDataLine;
 import java.util.StringJoiner;

@@ -16,6 +16,10 @@ public interface PwmProvider extends SoundDevice, SoundDevice.MutableDevice {
 
     void playSample(int left, int right);
 
+    default int updateStereo16(int[] buf_lr, int offset, int count) {
+        throw new RuntimeException("Not implemented");
+    }
+
     default SoundDeviceType getType() {
         return SoundDeviceType.PWM;
     }

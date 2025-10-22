@@ -28,7 +28,7 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.TwoButtonsJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.sound.SoundDevice;
+import omegadrive.sound.SoundDevice.SoundDeviceType;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -44,8 +44,8 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     public static final boolean ENABLE_FM = Boolean.parseBoolean(System.getProperty("sms.enable.fm", "false"));
     private static final Logger LOG = LogHelper.getLogger(Sms.class.getSimpleName());
 
-    public static final int MCLK_PAL = 53203424;
-    public static final int MCLK_NTSC = 53693175;
+    public static final int MCLK_PAL = 53_203_424;
+    public static final int MCLK_NTSC = 53_693_175;
     public static final int VDP_CLK_NTSC = MCLK_NTSC / 5;
     public static final int VDP_CLK_PAL = MCLK_PAL / 5;
 
@@ -54,11 +54,18 @@ public class Sms extends BaseSystem<Z80BusProvider> {
      * Z80 and PSG clock is 53203424 / 15 or VDP clock / 3.
      * NTSC Master clock is 53693175 Hz.
      */
-    protected static final int VDP_DIVIDER = 2;  //10.738635 Mhz
+    protected static final int VDP_DIVIDER = 2;  //5320342410.738635 Mhz
     protected static final int Z80_DIVIDER = 3; //3.579545 Mhz
-    protected static final int FM_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
-    protected static final int PAL_PSG_SAMPLES_PER_FRAME = 991 * 50;
-    protected static final int NTSC_PSG_SAMPLES_PER_FRAME = 829 * 60;
+
+    /**
+     * PSG clocked a Z80/72 = 49716hz NTSC, 49262hz PAL
+     * MCLK/15/72/60 = NTSC PSG samples per frame
+     */
+    protected static final int SOUND_DIVIDER = (int) (Z80_DIVIDER * 72.0); //49716 hz
+
+    public static final int PAL_PSG_SAMPLES_PER_SEC = (int) Math.round(MCLK_PAL / 15.0 / 72);
+    public static final int NTSC_PSG_SAMPLES_PER_SEC = (int) Math.round(MCLK_NTSC / 15.0 / 72);
+
 
     protected Z80Provider z80;
     int nextZ80Cycle = Z80_DIVIDER;
@@ -104,7 +111,9 @@ public class Sms extends BaseSystem<Z80BusProvider> {
         do {
             runZ80(cycleCounter);
             runVdp(cycleCounter);
-            runSound(cycleCounter);
+            if (ENABLE_FM) {
+                runSound(cycleCounter);
+            }
             cycleCounter++;
         } while (!runningRomFuture.isDone());
     }
@@ -145,18 +154,15 @@ public class Sms extends BaseSystem<Z80BusProvider> {
     }
 
     protected final void runSound(int counter) {
-        if ((counter + 1) % FM_DIVIDER == 0) {
-            sound.getPsg().tick();
-            if (ENABLE_FM) {
-                sound.getFm().tick();
-            }
+        if ((counter + 1) % SOUND_DIVIDER == 0) {
+            sound.getFm().step();
         }
     }
 
     @Override
     protected void updateSoundRate(RegionDetector.Region region) {
-        sound.updateDeviceRate(SoundDevice.SoundDeviceType.PSG, region,
-                region == EUROPE ? PAL_PSG_SAMPLES_PER_FRAME : NTSC_PSG_SAMPLES_PER_FRAME);
+        sound.updateDeviceRate(SoundDeviceType.PSG, region,
+                region == EUROPE ? PAL_PSG_SAMPLES_PER_SEC : NTSC_PSG_SAMPLES_PER_SEC);
     }
 
     private void handleMaskableInterrupts(){

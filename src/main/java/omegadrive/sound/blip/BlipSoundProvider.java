@@ -1,16 +1,11 @@
-package omegadrive.sound;
+package omegadrive.sound.blip;
 
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector.Region;
 import org.slf4j.Logger;
-import s32x.util.blipbuffer.BlipBuffer;
-import s32x.util.blipbuffer.BlipBufferIntf;
-import s32x.util.blipbuffer.StereoBlipBuffer;
 
 import javax.sound.sampled.AudioFormat;
-import java.util.StringJoiner;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static omegadrive.util.SoundUtil.clampToShort;
@@ -30,20 +25,9 @@ public class BlipSoundProvider implements IBlipSoundProvider {
 
     private final AtomicReference<BlipBufferContext> ref = new AtomicReference<>();
 
-    static class BlipBufferContext extends SoundDevice.SampleBufferContext {
-        BlipBufferIntf blipBuffer;
-        AtomicInteger inputClocksForInterval = new AtomicInteger();
+    private int deltaTime;
 
-        @Override
-        public String toString() {
-            return new StringJoiner(", ", BlipBufferContext.class.getSimpleName() + "[", "]")
-                    .add("inputClocksForInterval=" + inputClocksForInterval)
-                    .toString();
-        }
-    }
-
-    private double deltaTime;
-
+    private int prevSampleAvail = 0;
     private short prevLSample, prevRSample;
     private Region region;
 
@@ -96,8 +80,6 @@ public class BlipSoundProvider implements IBlipSoundProvider {
         deltaTime++;
     }
 
-    private int prevSampleAvail = 0;
-    private final AtomicInteger sync = new AtomicInteger();
 
     @Override
     public void onNewFrame() {
@@ -107,7 +89,7 @@ public class BlipSoundProvider implements IBlipSoundProvider {
             return;
         }
         assert context.inputClocksForInterval.get() > 0;
-        blip.endFrame(context.inputClocksForInterval.get());
+        blip.endFrame((int) (context.inputClocksForInterval.get()));
         deltaTime = 0;
         int availMonoSamples = blip.samplesAvail();
         if (availMonoSamples + 5 < prevSampleAvail) {
@@ -117,23 +99,12 @@ public class BlipSoundProvider implements IBlipSoundProvider {
             LOG.info("{} Audio buffer size: {} -> {} bytes", instanceId, context.lineBuffer.length, availMonoSamples << 2);
             context.lineBuffer = new byte[availMonoSamples << 2];
         }
-        final long current = sync.incrementAndGet();
         context.stereoBytesLen = blip.readSamples16bitStereo(context.lineBuffer, 0, availMonoSamples) << 2;
-        if (context.stereoBytesLen > 0) {
-//            exec.submit(() -> {
-//                SoundUtil.writeBufferInternal(dataLine, context.lineBuffer, 0, stereoBytes);
-//                if (BufferUtil.assertionsEnabled) {
-//                    if (current != sync.get()) {
-//                        LOG.info("{} Blip audio thread too slow: {} vs {}", instanceId, current, sync.get());
-//                    }
-//                }
-//            });
-        }
         prevSampleAvail = availMonoSamples;
     }
 
     @Override
-    public SoundDevice.SampleBufferContext getDataBuffer() {
+    public BlipBufferContext getBufferContext() {
         return ref.get();
     }
 

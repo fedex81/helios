@@ -21,6 +21,10 @@ public interface PcmProvider extends SoundDevice, SoundDevice.MutableDevice {
         return SoundDeviceType.PCM;
     }
 
+    default int updateStereo16(int[] buf_lr, int offset, int count) {
+        throw new RuntimeException("Not implemented");
+    }
+
     default void setEnabled(boolean mute) {
     }
 
@@ -35,17 +39,8 @@ public interface PcmProvider extends SoundDevice, SoundDevice.MutableDevice {
         }
 
         @Override
-        public void updateRegion(RegionDetector.Region region) {
-        }
-
-        @Override
         public int updateStereo16(int[] buf_lr, int offset, int count) {
             return 0;
-        }
-
-        @Override
-        public void onNewFrame() {
-
         }
     };
 }

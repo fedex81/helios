@@ -175,7 +175,7 @@ public class Z80BaseSystem extends BaseSystem<Z80BusProvider> {
 
     protected final void runSound(int counter) {
         if ((counter + 1) % PSG_DIVIDER == 0) {
-            sound.getPsg().tick();
+            sound.getPsg().step();
         }
     }
 

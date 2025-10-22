@@ -127,11 +127,6 @@ public class GenericAudioProvider implements FmProvider {
     }
 
     @Override
-    public void tick() {
-
-    }
-
-    @Override
     public void reset() {
         stop();
         sampleQueue.clear();

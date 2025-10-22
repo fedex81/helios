@@ -19,6 +19,7 @@
 
 package omegadrive.sound.javasound;
 
+import omegadrive.SystemLoader;
 import omegadrive.system.perf.Telemetry;
 import omegadrive.util.LogHelper;
 import omegadrive.util.SoundUtil;
@@ -58,6 +59,10 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
     //stats
     private Telemetry telemetry;
     private volatile int samplesProducedCount, samplesConsumedCount, audioThreadLoops, audioThreadEmptyLoops;
+
+    public JalSoundManager(SystemLoader.SystemType systemType) {
+        type = systemType;
+    }
 
     @Override
     public void init() {
@@ -132,7 +137,7 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
         int fmMonoActual = getFm().updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;
         //if FM is present load a matching number of psg samples
         fmBufferLenMono = (soundDeviceSetup & FM.getBit()) > 0 ? fmMonoActual : fmBufferLenMono;
-        getPsg().updateMono8(psg_buf_bytes, 0, fmBufferLenMono);
+        getPsg().fillBuffer(psg_buf_bytes, 0, fmBufferLenMono);
         int fmBufferLenStereo = fmBufferLenMono << 1;
         samplesProducedCount += fmBufferLenStereo;
 

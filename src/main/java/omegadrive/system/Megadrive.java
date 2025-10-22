@@ -32,7 +32,9 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.MdJoypad;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
-import omegadrive.sound.fm.FmProvider;
+import omegadrive.sound.SoundDevice;
+import omegadrive.sound.SoundDevice.SoundDeviceType;
+import omegadrive.sound.fm.ym2612.nukeykt.BlipYm2612Nuke;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.*;
@@ -42,8 +44,11 @@ import omegadrive.vdp.util.MemView;
 import omegadrive.vdp.util.UpdatableViewer;
 import org.slf4j.Logger;
 
+import static omegadrive.system.Sms.NTSC_PSG_SAMPLES_PER_SEC;
+import static omegadrive.system.Sms.PAL_PSG_SAMPLES_PER_SEC;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.Z80;
+import static omegadrive.util.RegionDetector.Region.EUROPE;
 
 /**
  * Megadrive main class
@@ -67,7 +72,6 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
 
     private static final int FAST_FM_DIV = 128;
     private static final int FAST_FM_DIV_MASK = FAST_FM_DIV - 1;
-
     private boolean isNuke;
 
     static {
@@ -86,13 +90,15 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     protected Z80Provider z80;
     protected M68kProvider cpu;
     protected Ssp16 ssp16 = Ssp16.NO_SVP;
+
+    private SoundDevice fm;
     protected UpdatableViewer memView = UpdatableViewer.NO_OP_VIEWER;
     protected boolean hasSvp = ssp16 != Ssp16.NO_SVP;
     protected double nextVdpCycle = vdpVals[0];
     protected int next68kCycle = M68K_DIVIDER;
     protected int nextZ80Cycle = Z80_DIVIDER;
 
-    protected FmProvider fm;
+    protected int nextFmCycle = FM_DIVIDER;
 
     protected Megadrive(DisplayWindow emuFrame) {
         super(emuFrame);
@@ -122,8 +128,8 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         SvpMapper.ssp16 = Ssp16.NO_SVP;
         memView.reset();
         memView = createMemView();
-        isNuke = sound.getFm() instanceof Ym2612Nuke;
         fm = sound.getFm();
+        isNuke = fm instanceof Ym2612Nuke || fm instanceof BlipYm2612Nuke;
     }
 
     protected void loop() {
@@ -131,7 +137,7 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         do {
             run68k();
             runZ80();
-            runFM();
+            runSound();
             if (hasSvp) runSvp();
             //this should be last as it could change the counter
             runVdp();
@@ -180,16 +186,17 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
             assert MdRuntimeData.resetCpuDelayExt() == 0;
         }
     }
-    protected final void runFM() {
-        if ((cycleCounter & 1) > 0) {
-            return;
-        }
+
+    protected final void runSound() {
         if (isNuke) {
-            if ((cycleCounter % FM_DIVIDER) == 0) { //perf, avoid some divs
-                fm.tick();
+            if (--nextFmCycle == 0) {
+                fm.step();
+                nextFmCycle = FM_DIVIDER;
             }
-        } else if ((cycleCounter & FAST_FM_DIV_MASK) == 0) {
-            fm.tick();
+        } else {
+            if ((cycleCounter & FAST_FM_DIV_MASK) == 0) {
+                fm.step();
+            }
         }
     }
 
@@ -218,6 +225,10 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         microsPerTick = !isNuke ? microsPerTick * FAST_FM_DIV / FM_DIVIDER : microsPerTick;
         sound.getFm().setMicrosPerTick(microsPerTick);
         targetNs = (long) (getRegion().getFrameIntervalMs() * Util.MILLI_IN_NS);
+        sound.updateDeviceRate(SoundDeviceType.PSG, region,
+                region == EUROPE ? PAL_PSG_SAMPLES_PER_SEC : NTSC_PSG_SAMPLES_PER_SEC);
+        sound.updateDeviceRate(SoundDeviceType.FM, region,
+                region == EUROPE ? PAL_PSG_SAMPLES_PER_SEC : NTSC_PSG_SAMPLES_PER_SEC);
     }
 
     protected double getMicrosPerTick() {

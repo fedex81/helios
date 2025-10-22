@@ -94,7 +94,7 @@ public class MegaCd32x extends Md32x {
             run68k();
             runSub68k();
             runZ80();
-            runFM();
+            runSound();
             runSh2();
             runDevices();
             //this should be last as it could change the counter

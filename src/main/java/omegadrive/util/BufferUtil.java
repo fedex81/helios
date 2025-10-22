@@ -40,6 +40,10 @@ public class BufferUtil {
     public interface StepDevice extends Device {
         default void step(int cycles) {
         } //DO NOTHING
+
+        default void step() {
+            step(0);
+        }
     }
 
     public interface Sh2Device extends StepDevice {

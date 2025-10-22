@@ -141,7 +141,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         do {
             run68k();
             runZ80();
-            runFM();
+            runSound();
             runSh2();
             runDevices();
             //this should be last as it could change the counter

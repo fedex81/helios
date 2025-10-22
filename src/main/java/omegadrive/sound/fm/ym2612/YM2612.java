@@ -390,7 +390,7 @@ public final class YM2612 extends Ym2612RegSupport implements MdFmProvider {
 
     boolean initing = false;
 
-    public final void init(int Clock, int Rate) {
+    private final void init(int Clock, int Rate) {
         int i, j;
         double x;
         initing = true;
@@ -569,7 +569,7 @@ public final class YM2612 extends Ym2612RegSupport implements MdFmProvider {
     }
 
     @Override
-    public void tick() {
+    public void step() {
         microsAcc += microsPerTick;
         pcmMicrosAcc += microsPerTick;
         //sync every microsecond
