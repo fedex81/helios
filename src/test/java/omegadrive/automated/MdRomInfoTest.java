@@ -1,5 +1,8 @@
 package omegadrive.automated;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
+import m68k.cpu.M68kVectors;
 import omegadrive.system.MediaSpecHolder;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
@@ -11,12 +14,14 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static omegadrive.SystemLoader.SystemType.MD;
-import static omegadrive.util.Util.isSubSequence;
+import static omegadrive.util.Util.*;
 
 /**
  * Federico Berti
@@ -30,7 +35,8 @@ public class MdRomInfoTest {
     public static void main(String[] args) throws Exception {
         System.out.println("Current folder: " + new File(".").getAbsolutePath());
 //        new MdRomHeaderTest().testCartridgeInfo();
-        new MdRomInfoTest().testCodeBlock();
+//        new MdRomInfoTest().testCodeBlock();
+        new MdRomInfoTest().testAddressError();
         System.exit(0);
     }
 
@@ -50,6 +56,42 @@ public class MdRomInfoTest {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void testAddressError() throws Exception {
+        Path folder = Paths.get(romFolder);
+        List<Path> testRoms = Files.walk(folder, FileVisitOption.FOLLOW_LINKS).
+                filter(p -> AutomatedGameTester.systemFilterMap.get(MD).test(p)).collect(Collectors.toList());
+        System.out.println("Loaded files: " + testRoms.size());
+        System.out.close();
+        Table<M68kVectors, String, List<String>> m = HashBasedTable.create();
+        int cnt = 0;
+        for (Path rom : testRoms) {
+//            System.out.println(rom.toAbsolutePath());
+            if ((++cnt % 200) == 0) {
+                System.err.println(cnt);
+                break;
+            }
+            try {
+                MediaSpecHolder msh = MediaSpecHolder.of(rom);
+                byte[] data = FileUtil.readBinaryFile(msh.cartFile.romFile, MD);
+                for (M68kVectors mv : M68kVectors.vals) {
+                    String v = th(readDataLong(data, mv.pos));
+                    var list = m.get(mv, v);
+                    if (list == null) {
+                        list = new ArrayList<>();
+                    }
+                    list.add(msh.cartFile.mediaInfoProvider.romName);
+                    m.put(mv, v, list);
+                }
+//                System.out.println(msh);
+            } catch (Exception e) {
+                System.err.println("Exception: " + rom.getFileName());
+                e.printStackTrace();
+            }
+        }
+        String s = m.cellSet().stream().map(Objects::toString).collect(Collectors.joining("\n"));
+        System.err.println(s);
     }
 
     private void testValidRom() throws Exception {

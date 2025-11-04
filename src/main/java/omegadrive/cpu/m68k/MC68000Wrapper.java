@@ -20,6 +20,7 @@
 package omegadrive.cpu.m68k;
 
 import m68k.cpu.CpuConfig;
+import m68k.cpu.M68kVectors;
 import m68k.cpu.MC68000;
 import m68k.memory.AddressSpace;
 import omegadrive.bus.model.MdM68kBusProvider;
@@ -29,6 +30,7 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
 
+import static m68k.cpu.Cpu.AUTO_VECTOR_EXCEPTION_OFFSET;
 import static omegadrive.util.Util.th;
 
 /**
@@ -80,7 +82,7 @@ public class MC68000Wrapper implements M68kProvider {
             instCycles = 0;
         } catch (Exception e) {
             LOG.error("68k error", e);
-            m68k.raiseException(ILLEGAL_ACCESS_EXCEPTION); //avoid the intack dance
+            m68k.raiseException(M68kVectors.ILLEGAL_INST_4.ordinal()); //avoid the intack dance
             if (MC68000Helper.STOP_ON_EXCEPTION) {
                 LOG.error(MC68000Helper.getCpuState(m68k, ""));
                 throw e;
@@ -188,10 +190,10 @@ public class MC68000Wrapper implements M68kProvider {
      * Only for LEV4, LEV6 interrupts
      */
     private void handleIntAck(int vector) {
-        if (vector == LEV4_EXCEPTION || vector == LEV6_EXCEPTION) {
+        if (vector == M68kVectors.LEV4_VECTOR_28.ordinal() || vector == M68kVectors.LEV6_VECTOR_30.ordinal()) {
             //interrupt processing time, the Ack happens after ~10cycles, we make it happen immediately
             instCycles += 44;
-            busProvider.ackInterrupt68k(vector - EXCEPTION_OFFSET);
+            busProvider.ackInterrupt68k(vector - AUTO_VECTOR_EXCEPTION_OFFSET);
             stop = false;
         }
     }

@@ -24,12 +24,11 @@ import omegadrive.Device;
 
 public interface M68kProvider extends Device {
 
-    int EXCEPTION_OFFSET = 24;
+    //M68kVectors.LEV6_VECTOR_30.pos - EXCEPTION_OFFSET;
     int VBLANK_INTERRUPT_LEVEL = 6;
+
+    //M68kVectors.LEV4_VECTOR_28.pos - EXCEPTION_OFFSET;
     int HBLANK_INTERRUPT_LEVEL = 4;
-    int ILLEGAL_ACCESS_EXCEPTION = 4;
-    int LEV4_EXCEPTION = EXCEPTION_OFFSET + HBLANK_INTERRUPT_LEVEL;
-    int LEV6_EXCEPTION = EXCEPTION_OFFSET + VBLANK_INTERRUPT_LEVEL;
 
     //PC is 24 bits
     int MD_PC_MASK = Cpu.PC_MASK;

@@ -20,6 +20,7 @@
 package omegadrive.cpu.m68k.debug;
 
 import com.google.common.collect.ImmutableMap;
+import m68k.cpu.M68kVectors;
 import omegadrive.bus.model.MdM68kBusProvider;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.CpuDebugContext;
@@ -79,6 +80,11 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         //pc went off a cliff
         if (currentPC == opcode && opcode == 0) {
             throw new RuntimeException("oops");
+        }
+        //address error
+        if ((currentPC & 1) == 1) {
+            m68k.raiseException(M68kVectors.ADDRESS_ERROR_3.ordinal());
+            return 0;
         }
         if (!busyLoopDetection) {
 //            McdHacks.runMcdHacks(fastDebug, cpu, currentPC, m68k);
