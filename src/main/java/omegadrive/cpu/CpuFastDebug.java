@@ -186,7 +186,7 @@ public class CpuFastDebug {
     }
 
     private void doPrintInst(String tail, String instOnly) {
-        log(logHead + " " + instOnly, tail);
+        log((logHead.isEmpty() ? "" : logHead + " ") + instOnly, tail);
     }
 
     private PcInfoWrapper createPcWrapper(int pcMasked, int area, int opcode) {

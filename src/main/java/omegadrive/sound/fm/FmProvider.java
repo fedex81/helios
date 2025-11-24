@@ -58,5 +58,18 @@ public interface FmProvider extends SoundDevice {
         public int updateStereo16(int[] buf_lr, int offset, int count) {
             return 0;
         }
+
+        @Override
+        public void setMicrosPerTick(double microsPerTick) {
+        }
+
+        @Override
+        public int read() {
+            return 0;
+        }
+
+        @Override
+        public void write(int addr, int data) {
+        }
     };
 }
