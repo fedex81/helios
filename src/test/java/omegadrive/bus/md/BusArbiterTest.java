@@ -33,6 +33,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static omegadrive.cpu.m68k.M68kProvider.HBLANK_INTERRUPT_LEVEL;
+import static omegadrive.cpu.m68k.M68kProvider.VBLANK_INTERRUPT_LEVEL;
 import static omegadrive.util.SystemTestUtil.createTestJoypadProvider;
 
 public class BusArbiterTest {
@@ -263,7 +265,7 @@ public class BusArbiterTest {
         set68kIntMask(0);
 
         checkIntAccepted(true);
-        bus.ackInterrupt68k(4); //simulate the CPU acking level 4
+        bus.ackInterrupt68k(HBLANK_INTERRUPT_LEVEL); //simulate the CPU acking level 4
 
         //check that vint was accepted instead of hint
         Assert.assertFalse(MdVdpTestUtil.getVip(vdp));
@@ -272,10 +274,10 @@ public class BusArbiterTest {
 
     /**
      * Similar to FatalRewind but 68k acks for lev6, but the vdp thinks it's a lev4.
-     * In this case make sure we are acking lev6.
+     * (Decoder unlicensed rom)
      */
     @Test
-    public void testLotus2() {
+    public void testDecoder() {
         hCounterIntAccepted = -1;
         vCounterIntAccepted = -1;
 
@@ -293,9 +295,9 @@ public class BusArbiterTest {
 
         //enable VINT
         vdp.writeControlPort(0x8164);
-        //disable HINT
+        //enable HINT
         vdp.writeControlPort(0x8A01); //hint every line
-        vdp.writeControlPort(0x8014);
+        vdp.writeControlPort(0x801C);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
 
         checkIntAccepted(false);
@@ -305,11 +307,14 @@ public class BusArbiterTest {
         set68kIntMask(0);
 
         checkIntAccepted(true);
-        bus.ackInterrupt68k(6); //simulate the CPU acking level 6
-
-        //check that vint was accepted
-        Assert.assertFalse(MdVdpTestUtil.getVip(vdp));
+        vdp.setVip(true);
         Assert.assertTrue(vdp.getHip());
+        bus.ackInterrupt68k(VBLANK_INTERRUPT_LEVEL); //simulate the CPU acking level 6
+
+        //check that vint was not accepted
+        Assert.assertTrue(MdVdpTestUtil.getVip(vdp));
+        //check that hint was accepted
+        Assert.assertFalse(vdp.getHip());
     }
 
     private void checkIntAccepted(boolean accepted) {

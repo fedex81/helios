@@ -235,13 +235,12 @@ class BusArbiterImpl implements BusArbiter {
 
     @Override
     public void ackInterrupt68k(int level) {
-        //ackLev4 can become ackLev6 (Fatal Rewind), but ackLev6 shouldn't become ackLev4 (Lotus2)
-        int ackLevel = vdpLevel | level;
-        if (ackLevel != level) {
-            LOG.warn("68k level: {} but vdp thinks: {}, setting {}=false", level, ackLevel,
-                    ackLevel == M68kProvider.VBLANK_INTERRUPT_LEVEL ? "vip" : "hip");
+        //68kLevel6 but vdp thinks HINT (Decoder.unl), 68kLevel4 but vdp thinks VINT (Fatal Rewind)
+        if (level != vdpLevel) {
+            LOG.warn("68k level: {} but vdp thinks: {}, setting {}=false", level, vdpLevel,
+                    vdpLevel == M68kProvider.VBLANK_INTERRUPT_LEVEL ? "vip" : "hip");
         }
-        switch (ackLevel) {
+        switch (vdpLevel) {
             case M68kProvider.VBLANK_INTERRUPT_LEVEL -> {
                 vdp.setVip(false);
                 vdpLevel = 0;
@@ -267,7 +266,6 @@ class BusArbiterImpl implements BusArbiter {
     private boolean hip, vip;
     private int ieVdp;
     private boolean vint, hint, anyHint;
-
     @Override
     public void onVdpEvent(BaseVdpProvider.VdpEvent event, Object value) {
         boolean doRecalc = false;
