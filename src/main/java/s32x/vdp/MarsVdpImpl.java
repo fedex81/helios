@@ -70,7 +70,7 @@ public class MarsVdpImpl implements MarsVdp {
     private S32XMMREG s32XMMREG;
     private S32XMMREG.RegContext regContext;
 
-    private int[] buffer;
+    private int[] buffer = new int[0];
     private static final boolean verbose = false, verboseRead = false;
 
     static {
@@ -609,9 +609,12 @@ public class MarsVdpImpl implements MarsVdp {
     }
 
     private void updateVideoModeInternal(VideoMode videoMode) {
-        this.buffer = new int[videoMode.getDimension().width * videoMode.getDimension().height];
-        ctx.renderContext.screen = buffer;
-        LOG.info("Updating videoMode, {} -> {}", vdpContext.videoMode, videoMode);
+        int bsize = videoMode.getDimension().width * videoMode.getDimension().height;
+        if (bsize != buffer.length) {
+            this.buffer = new int[bsize];
+            ctx.renderContext.screen = buffer;
+            LOG.info("Updating videoMode, {} -> {}", vdpContext.videoMode, videoMode);
+        }
     }
 
     @Override

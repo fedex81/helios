@@ -209,7 +209,7 @@ public class IntControlImpl implements IntControl {
             String str =
                     Arrays.stream(orderedIntCtx).filter(c -> c.intState > INT_TRIGGER_MASK).
                             map(InterruptContext::toString).collect(Collectors.joining(","));
-            logWarnOnce(LOG, "Multiple interrupts: " + str);
+            logWarnOnce(LOG, "{} Multiple interrupts: {}", cpu, str);
         }
     }
     private InterruptContext getCurrentInterrupt() {

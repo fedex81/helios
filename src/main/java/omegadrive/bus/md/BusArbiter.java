@@ -237,7 +237,7 @@ class BusArbiterImpl implements BusArbiter {
     public void ackInterrupt68k(int level) {
         //68kLevel6 but vdp thinks HINT (Decoder.unl), 68kLevel4 but vdp thinks VINT (Fatal Rewind)
         if (level != vdpLevel) {
-            LOG.warn("68k level: {} but vdp thinks: {}, setting {}=false", level, vdpLevel,
+            LogHelper.logWarnOnce(LOG, "68k level: {} but vdp thinks: {}, setting {}=false", level, vdpLevel,
                     vdpLevel == M68kProvider.VBLANK_INTERRUPT_LEVEL ? "vip" : "hip");
         }
         switch (vdpLevel) {

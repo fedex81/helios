@@ -137,9 +137,11 @@ public class WatchdogTimer implements BufferUtil.Sh2Device {
 
     private void handleTimerEnable(int value) {
         timerMode = ((value >> WT_IT_BIT_POS) & 1) == 0;
+        if (clockDivider != clockDivs[value & 7]) {
+            clockDivider = clockDivs[value & 7];
+            sh2TicksToNextWdtClock = clockDivider;
+        }
         wdtTimerEnable = ((value >> TME_BIT_POS) & 1) > 0;
-        clockDivider = clockDivs[value & 7];
-        sh2TicksToNextWdtClock = clockDivider;
         if (verbose) LOG.info("WDT timer mode: {}, timer enable: {}, clock div: {}, overflow: {}",
                 timerMode, wdtTimerEnable, clockDivider, (value >> 7) & 1);
         if (!wdtTimerEnable) {
@@ -148,23 +150,33 @@ public class WatchdogTimer implements BufferUtil.Sh2Device {
         assert !(wdtTimerEnable && !timerMode);
     }
 
+
+    /**
+     * docs:
+     * wdt frequency @ 28.7Mhz, clockDiv = 4096 -> 36.5ms
+     * wdt frequency @ 23.01 Mhz, clockDiv = 4096 -> 45.52ms
+     * 45.52/16.6=2.73 wdtInterrupts per frame -> 3 cycles matches
+     * but there is frameskip??
+     */
     @Override
     public void step(int cycles) {
         if (wdtTimerEnable) {
-            while (cycles-- > 0) {
-                stepOne();
-            }
+            stepInternal(cycles);
         }
     }
 
-    private void stepOne() {
-        assert sh2TicksToNextWdtClock > 0;
-        if (--sh2TicksToNextWdtClock == 0) {
-            sh2TicksToNextWdtClock = clockDivider;
+    int ovfCnt = 0;
+
+    private void stepInternal(double cycles) {
+        sh2TicksToNextWdtClock -= cycles;
+        if (sh2TicksToNextWdtClock <= 0) {
+            sh2TicksToNextWdtClock += clockDivider;
+            assert sh2TicksToNextWdtClock > 0;
             int cnt = increaseCount();
             if (cnt == 0) { //overflow
                 BufferUtil.setBit(regs, WTCSR_ADDR_READ, OVF_BIT_POS, 1, Size.BYTE);
                 intControl.setOnChipDeviceIntPending(WDTS);
+                //LOG.info("WDT overflow: {}", ++ovfCnt);
             }
         }
     }

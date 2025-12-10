@@ -107,7 +107,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         boolean ok = super.raiseInterrupt(level);
         if (ok) {
             int lv = m68k.getInterruptLevel();
-            System.out.println(cpu + " INT" + lv + "\t" + prev + "->" + lv);
+//            System.out.println(cpu + " INT" + lv + "\t" + prev + "->" + lv);
 //            LOG.info("intLevel: {} -> {}", prev, lv);
         }
         return ok;

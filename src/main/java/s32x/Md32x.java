@@ -8,11 +8,8 @@ import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.Megadrive;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
-import omegadrive.util.BufferUtil;
+import omegadrive.util.*;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
-import omegadrive.util.LogHelper;
-import omegadrive.util.MdRuntimeData;
-import omegadrive.util.Sleeper;
 import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
 import omegadrive.vdp.util.UpdatableViewer;
@@ -197,8 +194,11 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         }
         int[] fg = marsVdp.doCompositeRendering(displayContext.videoMode, data, ctx);
         //Use 32x videoMode, can be different from MD videoMode
+        //TODO support two different video modes when rendering
+        VideoMode mdVm = displayContext.videoMode;
         displayContext.videoMode = ctx.vdpContext.videoMode;
         super.doRendering(fg);
+        displayContext.videoMode = mdVm;
     }
 
     @Override
