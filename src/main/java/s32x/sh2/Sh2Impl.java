@@ -91,9 +91,9 @@ public class Sh2Impl implements Sh2 {
                 //to the end of a block
                 checkInterruptDisabledOpcode();
             }
+            ctx.checkInterrupt = false;
             processInterrupt(ctx, level);
             ctx.devices.intC.clearCurrentInterrupt();
-            ctx.checkInterrupt = false;
             ctx.cycles -= MdRuntimeData.resetCpuDelayExt();
             return true;
         }
