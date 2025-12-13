@@ -237,13 +237,13 @@ public final class Sh2BusImpl implements Sh2Bus {
 
     /**
      * For cache reads of 16 consecutive bytes
+     * Do not read from the rom buffer directly as we need to go through the mapper (if any)
      */
     @Override
     public void readMemoryUncachedNoDelay(int address, byte[] data) {
         assert data.length == CACHE_BYTES_PER_LINE;
         switch (address >> 24) {
             case SH2_SDRAM_AREA_CACHE -> sdram.get(address & SH2_SDRAM_MASK, data);
-            case SH2_ROM_AREA_CACHE -> rom.get(address & SH2_ROM_MASK, data);
             case SH2_VDP_FB_AREA_CACHE -> s32XMMREG.getVdp().readCacheLine(address, data);
             default -> {
                 int delay = MdRuntimeData.getCpuDelayExt();
