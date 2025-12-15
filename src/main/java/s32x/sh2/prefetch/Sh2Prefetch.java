@@ -379,6 +379,12 @@ public class Sh2Prefetch implements Sh2Prefetcher {
             assert !pollValuedUnchanged; //should not happen
             if (!pollValuedUnchanged) {
                 PollSysEventManager.instance.fireSysEvent(c.cpu, type);
+            } else {
+                if (verbose)
+                    LOG.info("{} poll value has not changed, poll write addr: {} {}, target: {} {} {}, writeVal: {}, " +
+                                    "currVal: {}", cpuWrite,
+                            th(addr), size, c.cpu, th(c.blockPollData.memLoadTarget),
+                            c.blockPollData.memLoadTargetSize, th(val), th(PollSysEventManager.readPollValue(c)));
             }
         }
     }

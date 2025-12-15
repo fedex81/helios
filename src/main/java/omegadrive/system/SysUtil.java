@@ -174,7 +174,7 @@ public class SysUtil {
             case MD:
             case MEGACD:
             case S32X:
-                boolean fast = systemType == S32X && !Sh2Helper.Sh2Config.get().fastFm ? false : true;
+                boolean fast = systemType == S32X && Sh2Helper.Sh2Config.get().fastFm;
                 fmProvider = MdFmProvider.createInstance(region, AbstractSoundManager.audioFormat, fast);
                 break;
             case SMS:

@@ -960,7 +960,8 @@ public final class YM2612 extends Ym2612RegSupport implements MdFmProvider {
                 }
                 break;
             default:
-                if (!isResetting) LOG.warn("Invalid write to addr: {}, data: {}", th(address), th(data));
+                if (!isResetting)
+                    LogHelper.logWarnOnce(LOG, "Invalid write to addr: {}, data: {}", th(address), th(data));
                 break;
         }
         return 0;
