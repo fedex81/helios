@@ -29,6 +29,7 @@ import s32x.MegaCd32x;
 import s32x.pwm.BlipPwmProvider;
 import s32x.pwm.Pwm;
 import s32x.pwm.S32xPwmProvider;
+import s32x.sh2.Sh2Helper;
 
 import java.util.*;
 
@@ -171,9 +172,10 @@ public class SysUtil {
                 fmProvider = MdFmProvider.createFastInstance(region, AbstractSoundManager.audioFormat);
                 break;
             case MD:
-            case S32X:
             case MEGACD:
-                fmProvider = MdFmProvider.createInstance(region, AbstractSoundManager.audioFormat);
+            case S32X:
+                boolean fast = systemType == S32X && !Sh2Helper.Sh2Config.get().fastFm ? false : true;
+                fmProvider = MdFmProvider.createInstance(region, AbstractSoundManager.audioFormat, fast);
                 break;
             case SMS:
                 if (Sms.ENABLE_FM) {

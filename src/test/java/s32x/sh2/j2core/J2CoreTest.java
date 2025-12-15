@@ -65,7 +65,7 @@ public class J2CoreTest {
     protected Sh2 sh2;
     protected Sh2Context ctx;
     private static Sh2Config config = new Sh2Config(false, false, false,
-            false, 0);
+            false, 0).withCycles(1);
 
     @BeforeAll
     public static void beforeAll() {
@@ -84,8 +84,8 @@ public class J2CoreTest {
     public void before() {
         Sh2Config.reset(config);
         Sh2Bus memory = getMemoryInt(rom);
-        sh2 = getSh2Interpreter(memory, sh2Debug);
         ctx = createContext(BufferUtil.CpuDeviceAccess.MASTER, memory);
+        sh2 = getSh2Interpreter(memory, sh2Debug);
         sh2.reset(ctx);
         System.out.println("Reset, PC: " + ctx.PC + ", SP: " + ctx.registers[15]);
     }
@@ -108,7 +108,7 @@ public class J2CoreTest {
     public static Sh2Context createContext(BufferUtil.CpuDeviceAccess cpu, Sh2Bus memory) {
         Sh2Cache cache = Sh2Cache.createCacheInstance(cpu, memory);
         Sh2MMREG sh2MMREG = new Sh2MMREG(cpu, cache);
-        Sh2Context context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, sh2Debug);
+        Sh2Context context = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, config.sh2Cycles, sh2Debug);
         context.devices = Sh2DeviceHelper.createDevices(context, memory, sh2MMREG);
         sh2MMREG.init(context.devices);
         MdRuntimeData.newInstance(SystemLoader.SystemType.S32X, SystemProvider.NO_CLOCK);

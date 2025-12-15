@@ -46,13 +46,12 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     private static final boolean ENABLE_FM, ENABLE_PWM;
 
     //23.01Mhz NTSC
-    protected final static int SH2_CYCLES_PER_STEP;
     //3 cycles @ 23Mhz = 1 cycle @ 7.67, 23.01/7.67 = 3
     protected final static int SH2_CYCLE_RATIO = 3;
     private static final double SH2_CYCLE_DIV = 1 / Double.parseDouble(System.getProperty("helios.32x.sh2.cycle.div", "3.0"));
-    private static final int CYCLE_TABLE_LEN_MASK = 0xFF;
+    private static final int CYCLE_TABLE_LEN_MASK = 0x1FF;
     private final static int[] sh2CycleTable = new int[CYCLE_TABLE_LEN_MASK + 1];
-    private final static Sh2Config sh2Config;
+    private final static Sh2Config BASE_SH2_CONFIG;
 
     public static final int SH2_SLEEP_VALUE = -10000;
 
@@ -63,20 +62,18 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
         boolean drcEn = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.drc", "true"));
         boolean pollEn = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.poll.detect", "true"));
         boolean ignoreDelays = Boolean.parseBoolean(System.getProperty("helios.32x.sh2.ignore.delays", "false"));
-        sh2Config = new Sh2Config(prefEn, drcEn, pollEn, ignoreDelays);
+        BASE_SH2_CONFIG = new Sh2Config(prefEn, drcEn, pollEn, ignoreDelays);
 
         Pwm.PWM_USE_BLIP = Boolean.parseBoolean(System.getProperty("helios.32x.pwm.use.blip", "false"));
         ENABLE_FM = Boolean.parseBoolean(System.getProperty("helios.32x.fm.enable", "true"));
         ENABLE_PWM = Boolean.parseBoolean(System.getProperty("helios.32x.pwm.enable", "true"));
-        SH2_CYCLES_PER_STEP = Integer.parseInt(System.getProperty("helios.32x.sh2.cycles", "30")); //30
-        Sh2Context.burstCycles = SH2_CYCLES_PER_STEP;
 //        System.setProperty("68k.debug", "true");
 //        System.setProperty("helios.68k.debug.mode", "2");
 //        System.setProperty("z80.debug", "true");
 //        System.setProperty("helios.z80.debug.mode", "2");
 //        System.setProperty("sh2.master.debug", "true");
 //        System.setProperty("sh2.slave.debug", "true");
-        LOG.info("Enable FM: {}, Enable PWM: {}, Sh2Cycles: {}", ENABLE_FM, ENABLE_PWM, SH2_CYCLES_PER_STEP);
+        LOG.info("Enable FM: {}, Enable PWM: {}", ENABLE_FM, ENABLE_PWM);
         for (int i = 0; i < sh2CycleTable.length; i++) {
             sh2CycleTable[i] = Math.max(1, (int) Math.round(i * SH2_CYCLE_DIV));
         }
@@ -96,6 +93,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 
     @Override
     public void init() {
+        Sh2Config.setConfig(BASE_SH2_CONFIG.withFastMode());
         super.init();
         init32x();
         vdp.addVdpEventListener((BaseVdpAdapterEventSupport.VdpEventListener) bus);

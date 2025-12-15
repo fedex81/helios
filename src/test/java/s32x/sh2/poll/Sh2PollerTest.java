@@ -224,6 +224,7 @@ public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
     }
 
     private void testInterruptInternal(LocalTestCtx c) {
+        reloadSh2Cycles(c.cyclesPerBlock);
         int startRom = SH2_START_ROM | c.start;
         Sh2Context sh2Context = lc.masterCtx;
         setupMemSh2(c);
@@ -245,6 +246,7 @@ public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
     }
 
     private void testMemLoadInternal(LocalTestCtx c) {
+        reloadSh2Cycles(c.cyclesPerBlock);
         setupMemSh2(c);
 
         int startRom = SH2_START_ROM | c.start;
@@ -402,11 +404,15 @@ public class Sh2PollerTest implements PollSysEventManager.SysEventListener {
     }
 
     private void runBlock(Sh2Context sh2Context, int cycles) {
-        Sh2Context.burstCycles = cycles;
         sh2Context.cycles = cycles;
         lc.sh2.run(sh2Context);
         //TODO initial loop does nothing, see run()
         Assertions.assertTrue(sh2Context.cycles < 0 || sh2Context.cycles == cycles);
+    }
+
+    private void reloadSh2Cycles(int cycles) {
+        Sh2Config.reset(Sh2Config.get().withCycles(cycles));
+        lc = createTestInstance();
     }
 
     public boolean isPollerActive() {

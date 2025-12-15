@@ -22,10 +22,9 @@ import java.util.StringJoiner;
 public class Sh2Context implements Device, Serializable {
 
     @Serial
-    private static final long serialVersionUID = 6_912_884_586_514_774_317L;
+    private static final long serialVersionUID = 2187364810718100709L;
 
     final static int NUM_REG = 16;
-    public static int burstCycles = 1;
 
     /* System Registers */
     public final int[] registers;
@@ -45,6 +44,7 @@ public class Sh2Context implements Device, Serializable {
     public transient CpuDeviceAccess cpuAccess;
     public boolean delaySlot;
     public final boolean debug;
+    public int burstCycles;
     public transient FetchResult fetchResult;
 
     public transient Sh2DeviceContext devices;
@@ -52,17 +52,23 @@ public class Sh2Context implements Device, Serializable {
     public final String sh2ShortCode;
 
     public boolean checkInterrupt;
+
     public Sh2Context(CpuDeviceAccess cpuAccess) {
-        this(cpuAccess, false);
+        this(cpuAccess, Sh2Helper.Sh2Config.DEFAULT_SH2_CYCLES, false);
     }
 
-    public Sh2Context(CpuDeviceAccess cpuAccess, boolean debug) {
+    public Sh2Context(CpuDeviceAccess cpuAccess, int burstCycles) {
+        this(cpuAccess, burstCycles, false);
+    }
+
+    public Sh2Context(CpuDeviceAccess cpuAccess, int burstCycles, boolean debug) {
         this.registers = new int[NUM_REG];
         this.cpuAccess = cpuAccess;
         this.sh2ShortCode = cpuAccess.cpuShortCode;
         this.fetchResult = new FetchResult();
         this.fetchResult.block = Sh2Block.INVALID_BLOCK;
         this.debug = debug;
+        this.burstCycles = burstCycles;
         Gs32xStateHandler.addDevice(this);
     }
 
@@ -97,6 +103,7 @@ public class Sh2Context implements Device, Serializable {
         cycles = ctx.cycles;
         cycles_ran = ctx.cycles_ran;
         checkInterrupt = ctx.checkInterrupt;
+        burstCycles = ctx.burstCycles;
         //invalidate on load
         fetchResult.block = Sh2Block.INVALID_BLOCK;
         fetchResult.pc = 0;
@@ -119,10 +126,12 @@ public class Sh2Context implements Device, Serializable {
                 .add("cycles=" + cycles)
                 .add("cycles_ran=" + cycles_ran)
                 .add("cpuAccess=" + cpuAccess)
-                .add("sh2TypeCode='" + sh2ShortCode + "'")
                 .add("delaySlot=" + delaySlot)
                 .add("debug=" + debug)
+                .add("burstCycles=" + burstCycles)
                 .add("fetchResult=" + fetchResult)
+                .add("sh2ShortCode='" + sh2ShortCode + "'")
+                .add("checkInterrupt=" + checkInterrupt)
                 .toString();
     }
 }

@@ -63,7 +63,7 @@ public interface MdFmProvider extends FmProvider {
         return createInstance(region, audioFormat, false);
     }
 
-    private static MdFmProvider createInstance(RegionDetector.Region region, AudioFormat audioFormat, boolean fast) {
+    static MdFmProvider createInstance(RegionDetector.Region region, AudioFormat audioFormat, boolean fast) {
         double clock = getFmSoundClock(region);
         MdFmProvider fmProvider = fast ? new YM2612((int) clock, (int) audioFormat.getSampleRate()) :
                 new Ym2612Nuke(AbstractSoundManager.audioFormat, clock);

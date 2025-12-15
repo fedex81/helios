@@ -10,10 +10,7 @@ import s32x.bus.S32xBusIntf;
 import s32x.bus.Sh2Bus;
 import s32x.bus.Sh2BusImpl;
 import s32x.pwm.Pwm;
-import s32x.sh2.Sh2;
-import s32x.sh2.Sh2Context;
-import s32x.sh2.Sh2Debug;
-import s32x.sh2.Sh2Impl;
+import s32x.sh2.*;
 import s32x.sh2.device.Sh2DeviceHelper;
 import s32x.sh2.device.Sh2DeviceHelper.Sh2DeviceContext;
 import s32x.vdp.MarsVdp;
@@ -87,9 +84,10 @@ public class MarsLauncherHelper {
     }
 
     public static Sh2LaunchContext setupRom(S32xBusIntf bus, RomHolder romHolder, BiosHolder biosHolder) {
+        Sh2Helper.Sh2Config cfg = Sh2Helper.Sh2Config.get();
         Sh2LaunchContext ctx = new Sh2LaunchContext();
-        ctx.masterCtx = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, masterDebug);
-        ctx.slaveCtx = new Sh2Context(BufferUtil.CpuDeviceAccess.SLAVE, slaveDebug);
+        ctx.masterCtx = new Sh2Context(BufferUtil.CpuDeviceAccess.MASTER, cfg.sh2Cycles, masterDebug);
+        ctx.slaveCtx = new Sh2Context(BufferUtil.CpuDeviceAccess.SLAVE, cfg.sh2Cycles, slaveDebug);
         ctx.biosHolder = biosHolder;
         ctx.bus = bus;
         ctx.rom = ByteBuffer.wrap(romHolder.data);

@@ -65,6 +65,7 @@ public class Sh2Impl implements Sh2 {
     }
 
     public void run(final Sh2Context ctx) {
+        assert ctx.burstCycles == Sh2Config.get().sh2Cycles;
         this.ctx = ctx;
         for (; ctx.cycles >= 0; ) {
             decode();
@@ -73,8 +74,8 @@ public class Sh2Impl implements Sh2 {
                 break;
             }
         }
-        ctx.cycles_ran = Sh2Context.burstCycles - ctx.cycles;
-        ctx.cycles = Sh2Context.burstCycles;
+        ctx.cycles_ran = ctx.burstCycles - ctx.cycles;
+        ctx.cycles = ctx.burstCycles;
     }
 
     // get interrupt masks bits int the SR register
@@ -237,7 +238,7 @@ public class Sh2Impl implements Sh2 {
         ctx.PC = memory.read32(0);
         ctx.SR = flagIMASK;
         ctx.registers[15] = memory.read32(4); //SP
-        ctx.cycles = Sh2Context.burstCycles;
+        ctx.cycles = ctx.burstCycles;
         LOG.info("{} Reset, PC: {}, SP: {}", ctx.cpuAccess, th(ctx.PC), th(ctx.registers[15]));
     }
 

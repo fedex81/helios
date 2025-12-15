@@ -6,6 +6,7 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 import s32x.bus.Sh2Bus;
+import s32x.sh2.Sh2Helper;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -104,8 +105,7 @@ public interface Sh2Cache extends Device {
         memory.write(address | CACHE_THROUGH, value, size, false);
     }
 
-    //set to false only for testing
-    boolean USE_CACHE = true;
+    boolean USE_CACHE = Sh2Helper.Sh2Config.get().enableSh2Cache;
 
     static Sh2Cache createCacheInstance(CpuDeviceAccess cpu, final Sh2Bus memory) {
         Sh2Cache c;

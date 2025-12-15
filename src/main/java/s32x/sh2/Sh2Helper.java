@@ -231,12 +231,18 @@ public class Sh2Helper {
 
     public static class Sh2Config {
         public final static Sh2Config DEFAULT_CONFIG = new Sh2Config();
+
+        public final static int DEFAULT_SH2_CYCLES = Integer.parseInt(System.getProperty("helios.32x.sh2.cycles", "30"));
+        public final static int MAX_SH2_CYCLES = 192;
         private static final AtomicReference<Sh2Config> instance = new AtomicReference<>(DEFAULT_CONFIG);
-        public final boolean prefetchEn, drcEn, pollDetectEn, ignoreDelays, tasQuirk;
+        public final boolean prefetchEn, drcEn, pollDetectEn, ignoreDelays, tasQuirk, enableSh2Cache, fastFm;
+
+        public final int sh2Cycles;
 
         private Sh2Config() {
-            tasQuirk = true;
-            prefetchEn = drcEn = pollDetectEn = ignoreDelays = false;
+            enableSh2Cache = tasQuirk = true;
+            fastFm = prefetchEn = drcEn = pollDetectEn = ignoreDelays = false;
+            sh2Cycles = DEFAULT_SH2_CYCLES;
             LOG.info("Default config: {}", this);
         }
 
@@ -246,20 +252,42 @@ public class Sh2Helper {
 
 
         public Sh2Config(boolean prefetchEn, boolean drcEn, boolean pollDetectEn, boolean ignoreDelays, int tasQuirk) {
+            this(prefetchEn, drcEn, pollDetectEn, ignoreDelays, true, false, tasQuirk, DEFAULT_SH2_CYCLES);
+        }
+
+        public Sh2Config(boolean prefetchEn, boolean drcEn, boolean pollDetectEn, boolean ignoreDelays,
+                         boolean enableSh2Cache, boolean fastFm, int tasQuirk, int sh2Cycles) {
             this.prefetchEn = prefetchEn;
             this.drcEn = drcEn;
             this.pollDetectEn = pollDetectEn;
             this.ignoreDelays = ignoreDelays;
+            this.enableSh2Cache = enableSh2Cache;
+            this.fastFm = fastFm;
             this.tasQuirk = tasQuirk > 0;
-            if (instance.compareAndSet(DEFAULT_CONFIG, this)) {
-                LOG.info("Using config: {}", this);
+            this.sh2Cycles = sh2Cycles;
+            assert sh2Cycles > 0;
+        }
+
+        public static void setConfig(Sh2Config cfg) {
+            if (instance.compareAndSet(DEFAULT_CONFIG, cfg)) {
+                LOG.info("Using config: {}", cfg);
             } else {
-                LOG.error("Ignoring config: {}, current: {}", this, instance);
+                LOG.error("Ignoring config: {}, current: {}", cfg, instance);
             }
         }
 
         public static Sh2Config get() {
             return instance.get();
+        }
+
+        public Sh2Config withFastMode() {
+            return new Sh2Config(prefetchEn, drcEn, pollDetectEn, ignoreDelays,
+                    false, true, tasQuirk ? 1 : 0, MAX_SH2_CYCLES);
+        }
+
+        public Sh2Config withCycles(int cycles) {
+            return new Sh2Config(prefetchEn, drcEn, pollDetectEn, ignoreDelays,
+                    enableSh2Cache, fastFm, tasQuirk ? 1 : 0, cycles);
         }
 
         //force config, test only
@@ -275,6 +303,10 @@ public class Sh2Helper {
                     .add("drcEn=" + drcEn)
                     .add("pollDetectEn=" + pollDetectEn)
                     .add("ignoreDelays=" + ignoreDelays)
+                    .add("tasQuirk=" + tasQuirk)
+                    .add("enableSh2Cache=" + enableSh2Cache)
+                    .add("fastFm=" + fastFm)
+                    .add("sh2Cycles=" + sh2Cycles)
                     .toString();
         }
     }
