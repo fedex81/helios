@@ -4,6 +4,7 @@ import m68k.cpu.Cpu;
 import m68k.memory.AddressSpace;
 import omegadrive.bus.md.MdBus;
 import omegadrive.bus.model.MdMainBusProvider;
+import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
 import org.junit.jupiter.api.Assertions;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 
+import static omegadrive.bus.model.MdMainBusProvider.Z80_ADDRESS_SPACE_START;
 import static omegadrive.bus.model.MdMainBusProvider.Z80_BUS_REQ_CONTROL_START;
 
 /**
@@ -39,6 +41,15 @@ public class M68kPrefetchTest {
             0x4a39, 0x00A1, 0x1100,
             //68M 00E0_000A 67f8                    beq.s    $00E0_0000
             0x67f9,
+            //68M 00E0_000C 4e71 NOP
+            0x4E71
+    };
+
+    final static short[] uwol_opcodes = {
+            //68M 00E0_0000 1039 00a04000           move.b   $00a04000,d0
+            0x4a39, 0x00A1, 0x1100,
+            //68M 00E0_000A 6df8                    blt.s    $00E0_0000
+            0x6df8,
             //68M 00E0_000C 4e71 NOP
             0x4E71
     };
@@ -159,6 +170,52 @@ public class M68kPrefetchTest {
         checkZ80BusControlValue(0);
     }
 
+    /**
+     * 68M 000004e0	1039 00a04000           move.b   $00a04000,d0
+     * 68M 000004e6	6df8                    blt.s    $000004e0
+     */
+    @Test
+    public void testUwol() {
+        MC68000Wrapper w = bus.getBusDeviceIfAny(MC68000Wrapper.class).get();
+        Z80Provider z = bus.getBusDeviceIfAny(Z80Provider.class).get();
+        Assertions.assertNotNull(w);
+        Cpu m68k = w.m68k;
+        int memAddress = Z80_ADDRESS_SPACE_START | 0x4000;
+        int z80MemAddr = memAddress & MdMainBusProvider.M68K_TO_Z80_MEMORY_MASK;
+
+        writeCodeToRam(w.addressSpace, uwol_opcodes);
+        z.writeMemory(z80MemAddr, 0xDD);
+        z.writeMemory(z80MemAddr + 1, 0xEE);
+
+        int nopIdx = MdBus.ADDRESS_RAM_MAP_START + ((uwol_opcodes.length - 1) << 1);
+
+        //68k cannot access Z80 RAM
+        bus.setZ80BusRequested(false);
+        bus.setZ80ResetState(false);
+
+        checkZ80BusControlValue(1);
+
+        m68k.setPC(MdBus.ADDRESS_RAM_MAP_START);
+        m68k.execute();
+
+        int prefetch = uwol_opcodes[3]; //blt
+
+        int res = bus.read(memAddress, Size.BYTE);
+        Assertions.assertEquals(prefetch >>> 8, res);
+
+        res = bus.read(memAddress, Size.WORD);
+        Assertions.assertEquals(prefetch, res);
+
+        checkZ80BusControlValue(1);
+
+        m68k.execute();
+        m68k.execute();
+
+        Assertions.assertEquals(nopIdx + 2, m68k.getPC());
+        Assertions.assertEquals(nopOpcode, m68k.getOpcode());
+
+        checkZ80BusControlValue(1);
+    }
 
     /**
      * 68M 00000656   41f9 00ff002c           lea      $00ff002c,a0

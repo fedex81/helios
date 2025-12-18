@@ -140,7 +140,11 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
     public void resetFrom68k() {
         this.getFm().reset();
         this.z80Provider.reset();
-        z80ResetState = true;
+        setZ80ResetState(true);
+        if (z80BusRequested) {
+            LogHelper.logWarnOnce(LOG, "Check z80busReq change on reset, causing issues?");
+        }
+        setZ80BusRequested(false);
     }
 
     @Override
@@ -196,8 +200,8 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         } else {
             LOG.warn("BusArbiter already created");
         }
-        this.z80BusRequested = false;
-        this.z80ResetState = true;
+        setZ80BusRequested(false);
+        setZ80ResetState(true);
         detectState();
         LOG.info("Bus state: {}", busState);
         ram = memoryProvider.getRamData();
@@ -383,7 +387,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
     private int z80BusReqRead(Size size) {
         //NOTE: Time Killers is buggy and needs bit0 !=0
         int prefetch = m68kProvider.getPrefetchWord(); //shadow beast[U] needs the prefetch
-        int bitVal = (z80BusRequested && !z80ResetState) ? 0 : 1;
+        int bitVal = canM68kAccessZ80Bus() ? 0 : 1;
         //TODO
 //        fakeBitVal = (fakeBitVal + 1) & 1;
 //        bitVal = fakeBitVal;
@@ -454,12 +458,12 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         //only data bit0 is connected to the bus arbiter
         boolean reset = (data & 1) == 0;
         if (reset) {
-            z80ResetState = true;
+            setZ80ResetState(true);
             if (verbose) LOG.info("Reset while busRequested: {}", z80BusRequested);
         } else {
             if (z80ResetState) {
                 doZ80Reset();
-                z80ResetState = false;
+                setZ80ResetState(false);
             }
             if (verbose) LOG.info("Disable reset, busReq : {}", z80BusRequested);
         }
@@ -483,13 +487,13 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         if (busReq) {
             if (!z80BusRequested) {
                 if (verbose) LOG.info("busRequested, reset: {}", z80ResetState);
-                z80BusRequested = true;
+                setZ80BusRequested(true);
             } else {
                 if (verbose) LOG.info("busRequested, ignored, reset: {}", z80ResetState);
             }
         } else {
             if (z80BusRequested) {
-                z80BusRequested = false;
+                setZ80BusRequested(false);
                 if (verbose) LOG.info("busUnrequested, reset : {}", z80ResetState);
             } else {
                 if (verbose) LOG.info("busUnrequested ignored");
@@ -641,10 +645,11 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
 //            access it's own banked memory.
     private int z80MemoryRead(int address, Size size) {
         busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-        if (!z80BusRequested || z80ResetState) {
+        if (!canM68kAccessZ80Bus()) {
             //uwol
-            LOG.warn("68k read access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
-            return 0; //TODO this should return z80 open bus (ie. prefetch?)
+            LogHelper.logWarnOnce(LOG, "68k read access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
+            int w = m68kProvider.getPrefetchWord();
+            return size == Size.WORD || (address & 1) == 1 ? w : w >>> 8;
         }
         int addressZ = (address & MdMainBusProvider.M68K_TO_Z80_MEMORY_MASK);
         if (size == Size.BYTE) {
@@ -662,7 +667,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
 
     private void z80MemoryWrite(int address, Size size, int dataL) {
         busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
-        if (!z80BusRequested || z80ResetState) {
+        if (!canM68kAccessZ80Bus()) {
             logWarnOnce(LOG, "68k write access to Z80 bus with busreq: {}, z80reset: {}", z80BusRequested, z80ResetState);
             return;
         }
@@ -873,6 +878,10 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         }
         backupMemMapper.setSramMode(sramMode);
         this.mapper = backupMemMapper;
+    }
+
+    private boolean canM68kAccessZ80Bus() {
+        return z80BusRequested && !z80ResetState;
     }
 
     @Override
