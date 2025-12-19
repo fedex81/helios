@@ -1,6 +1,8 @@
 package omegadrive.vdp.model;
 
 import omegadrive.system.SystemProvider;
+import omegadrive.util.LogHelper;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,6 +15,8 @@ import java.util.List;
  * Copyright 2021
  */
 public interface BaseVdpAdapterEventSupport {
+
+    Logger LOG = LogHelper.getLogger(BaseVdpAdapterEventSupport.class.getSimpleName());
 
     default List<BaseVdpProvider.VdpEventListener> getVdpEventListenerList() {
         return Collections.emptyList();
@@ -33,6 +37,10 @@ public interface BaseVdpAdapterEventSupport {
 
     default boolean addVdpEventListener(BaseVdpProvider.VdpEventListener l) {
         List<BaseVdpProvider.VdpEventListener> l1 = getVdpEventListenerList();
+        if (l1.contains(l)) {
+            LOG.warn("Attempting to re-add a listener: {}", l);
+            return true;
+        }
         boolean res = l1.add(l);
         //NOTE: make sure the baseSystem's is the last listener to be called
         l1.sort(Comparator.comparingInt(VdpEventListener::order));

@@ -737,6 +737,7 @@ public class SwingWindow implements DisplayWindow {
             }
         };
         Toolkit.getDefaultToolkit().addAWTEventListener(awtEventListener, AWTEvent.KEY_EVENT_MASK);
+        LOG.info("#AWTEventListeners: {}", Toolkit.getDefaultToolkit().getAWTEventListeners().length);
     }
 
     private void handleSystemInputEvent(KeyListener keyAdapter, KeyEvent ke) {

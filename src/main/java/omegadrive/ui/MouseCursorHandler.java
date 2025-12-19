@@ -37,6 +37,7 @@ public class MouseCursorHandler extends MouseMotionAdapter {
     public MouseCursorHandler(Component cmp) {
         cmp.addMouseMotionListener(this);
         this.cmp = cmp;
+        LOG.info("#MouseMotionListeners: {}", cmp.getMouseMotionListeners().length);
     }
 
     @Override

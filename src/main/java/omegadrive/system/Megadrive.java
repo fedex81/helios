@@ -267,14 +267,14 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     protected void postInit() {
         super.postInit();
         cpu.reset();
-        z80.reset(); //TODO confirm this is needed
+        z80.reset();
     }
 
     @Override
     protected void handleSoftReset() {
         if (softResetPending) {
             cpu.softReset();
-            z80.reset(); //TODO confirm this is needed
+            z80.reset();
         }
         super.handleSoftReset();
     }
