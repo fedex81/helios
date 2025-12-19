@@ -428,10 +428,12 @@ public class S32xBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements 
     @Override
     public void onVdpEvent(BaseVdpAdapterEventSupport.VdpEvent event, Object value) {
         ((BaseVdpAdapterEventSupport.VdpEventListener) mdBus).onVdpEvent(event, value); //TODO
+        final MarsVdp marsVdp = getMarsVdp();
         switch (event) {
-            case V_BLANK_CHANGE -> s32XMMREG.setVBlank((boolean) value);
-            case H_BLANK_CHANGE -> s32XMMREG.setHBlank((boolean) value);
-            case VIDEO_MODE -> s32XMMREG.updateVideoMode((VideoMode) value);
+            case V_BLANK_CHANGE -> marsVdp.setVBlank((boolean) value);
+            case H_BLANK_CHANGE -> marsVdp.setHBlank((boolean) value, s32XMMREG.getHen());
+            case VIDEO_MODE -> marsVdp.updateVideoMode((VideoMode) value);
+            case V_COUNT_INC -> marsVdp.setLine((Integer) value);
         }
     }
 

@@ -105,14 +105,6 @@ public class S32XMMREG implements Device {
         return vdp;
     }
 
-    public void setHBlank(boolean hBlankOn) {
-        vdp.setHBlank(hBlankOn, ctx.hen);
-    }
-
-    public void setVBlank(boolean vBlankOn) {
-        vdp.setVBlank(vBlankOn);
-    }
-
     public void write(int address, int value, Size size) {
         address &= S32xDict.SH2_CACHE_THROUGH_MASK;
         if (address >= S32xDict.START_32X_SYSREG_CACHE && address < S32xDict.END_32X_VDPREG_CACHE) {
@@ -398,6 +390,10 @@ public class S32XMMREG implements Device {
         LOG.info("Cart set to {}inserted: {}", (ctx.cart > 0 ? "not " : ""), ctx.cart);
     }
 
+    public int getHen() {
+        return ctx.hen;
+    }
+
     private void setAdenSh2Reg(int aden) {
         this.aden = aden;
         BufferUtil.setBit(interruptControls[0].getSh2_int_mask_regs(),
@@ -434,10 +430,6 @@ public class S32XMMREG implements Device {
             return reg == 0x2c; //FIFA
         }
         return true;
-    }
-
-    public void updateVideoMode(VideoMode value) {
-        vdp.updateVideoMode(value);
     }
 
     @Override

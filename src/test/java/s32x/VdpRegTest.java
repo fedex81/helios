@@ -4,6 +4,7 @@ import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import s32x.util.MarsLauncherHelper;
 import s32x.vdp.MarsVdp;
 
 import static s32x.MarsRegTestUtil.*;
@@ -16,10 +17,13 @@ import static s32x.MarsRegTestUtil.*;
 public class VdpRegTest {
 
     private S32XMMREG s32XMMREG;
+    private MarsVdp marsVdp;
 
     @BeforeEach
     public void before() {
-        s32XMMREG = createTestInstance().s32XMMREG;
+        MarsLauncherHelper.Sh2LaunchContext slc = MarsRegTestUtil.createTestInstance();
+        s32XMMREG = slc.s32XMMREG;
+        marsVdp = slc.marsVdp;
     }
 
     //palette enable bit#13
@@ -30,28 +34,28 @@ public class VdpRegTest {
         s32XMMREG.write(SH2_BITMAP_MODE_OFFSET, MarsVdp.BitmapMode.PACKED_PX.ordinal(), Size.WORD);
         //startup, vblankOn, pen= true
         assertPEN(s32XMMREG, true);
-        s32XMMREG.setVBlank(true);
+        marsVdp.setVBlank(true);
 
-        s32XMMREG.setHBlank(true);
+        setHBlank(true);
         assertPEN(s32XMMREG, true);
 
-        s32XMMREG.setHBlank(false); //vblank on
+        setHBlank(false); //vblank on
         assertPEN(s32XMMREG, true);
 
-        s32XMMREG.setVBlank(true);
-        s32XMMREG.setHBlank(true);
+        marsVdp.setVBlank(true);
+        setHBlank(true);
         assertPEN(s32XMMREG, true);
 
-        s32XMMREG.setVBlank(true);
-        s32XMMREG.setHBlank(false);
+        marsVdp.setVBlank(true);
+        setHBlank(false);
         assertPEN(s32XMMREG, true);
 
-        s32XMMREG.setVBlank(false);
-        s32XMMREG.setHBlank(true);
+        marsVdp.setVBlank(false);
+        setHBlank(true);
         assertPEN(s32XMMREG, true);
 
-        s32XMMREG.setVBlank(false);
-        s32XMMREG.setHBlank(false);
+        marsVdp.setVBlank(false);
+        setHBlank(false);
         assertPEN(s32XMMREG, false);
 
         s32XMMREG.write(SH2_BITMAP_MODE_OFFSET, MarsVdp.BitmapMode.BLANK.ordinal(), Size.WORD);
@@ -97,8 +101,8 @@ public class VdpRegTest {
         assertFEN(s32XMMREG, 1);
 
         //toggle hblank
-        s32XMMREG.setHBlank(true);
-        s32XMMREG.setHBlank(false);
+        setHBlank(true);
+        setHBlank(false);
 
         //fen should go back to 0
         assertFEN(s32XMMREG, 0);
@@ -108,8 +112,8 @@ public class VdpRegTest {
     public void testFBCR_ReadOnly() {
         s32XMMREG.write(SH2_FBCR_OFFSET, 0, Size.WORD);
 
-        s32XMMREG.setVBlank(true);
-        s32XMMREG.setHBlank(true);
+        marsVdp.setVBlank(true);
+        setHBlank(true);
         s32XMMREG.write(SH2_FBCR_OFFSET, 0, Size.WORD);
         assertVBlank(s32XMMREG, true);
         assertHBlank(s32XMMREG, true);
@@ -121,14 +125,14 @@ public class VdpRegTest {
         s32XMMREG.write(SH2_BITMAP_MODE_OFFSET, 0, Size.WORD);
         assertPRIO(s32XMMREG, false);
 
-        s32XMMREG.setVBlank(true);
+        marsVdp.setVBlank(true);
         s32XMMREG.write(SH2_BITMAP_MODE_OFFSET, 0x80, Size.WORD);
         assertPRIO(s32XMMREG, true);
 
         s32XMMREG.write(SH2_BITMAP_MODE_OFFSET, 0, Size.WORD);
         assertPRIO(s32XMMREG, false);
 
-        s32XMMREG.setVBlank(false);
+        marsVdp.setVBlank(false);
 
         //TODO only allowed during vblank
 //        s32XMMREG.write(SH2_BITMAP_MODE_OFFSET, 0x80, Size.WORD);
@@ -184,5 +188,9 @@ public class VdpRegTest {
         Assertions.assertEquals(0, res & 0x1FFF);
 
         testByteWriteRegIgnoresEvenByte(SH2_FBCR_OFFSET, 3, 0x1FFF);
+    }
+
+    private void setHBlank(boolean hb) {
+        marsVdp.setHBlank(hb, s32XMMREG.getHen());
     }
 }

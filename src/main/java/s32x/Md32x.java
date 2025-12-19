@@ -94,6 +94,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     @Override
     public void init() {
         Sh2Config.setConfig(BASE_SH2_CONFIG.withFastMode());
+//        Sh2Config.setConfig(BASE_SH2_CONFIG);
         super.init();
         init32x();
         vdp.addVdpEventListener((BaseVdpAdapterEventSupport.VdpEventListener) bus);

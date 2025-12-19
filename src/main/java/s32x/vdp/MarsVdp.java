@@ -66,6 +66,8 @@ public interface MarsVdp extends Device {
 
     void setVBlank(boolean vBlankOn);
 
+    void setLine(int line);
+
     enum VdpPriority {MD, S32X}
 
     enum BitmapMode {

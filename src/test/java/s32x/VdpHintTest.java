@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import s32x.sh2.device.IntControl;
 import s32x.sh2.device.IntControl.Sh2Interrupt;
 import s32x.util.MarsLauncherHelper;
+import s32x.vdp.MarsVdp;
 
 import static omegadrive.util.Util.th;
 import static s32x.dict.S32xDict.RegSpecS32x.SH2_HCOUNT_REG;
@@ -27,12 +28,14 @@ public class VdpHintTest {
 
     private MarsLauncherHelper.Sh2LaunchContext lc;
     private S32XMMREG s32XMMREG;
+    private MarsVdp marsVdp;
     private IntControl masterIntControl;
 
     @BeforeEach
     public void before() {
         lc = MarsRegTestUtil.createTestInstance();
         s32XMMREG = lc.s32XMMREG;
+        marsVdp = lc.marsVdp;
         masterIntControl = lc.mDevCtx.intC;
         MdRuntimeData.setAccessTypeExt(BufferUtil.CpuDeviceAccess.MASTER);
     }
@@ -66,9 +69,9 @@ public class VdpHintTest {
 
     private void setReloadHCount(int hCount) {
         s32XMMREG.write(HCOUNT_OFFSET, hCount, Size.WORD);
-        s32XMMREG.setVBlank(false);
-        s32XMMREG.setHBlank(true);
-        s32XMMREG.setHBlank(false);
+        marsVdp.setVBlank(false);
+        setHBlank(true);
+        setHBlank(false);
     }
 
     private int testInternal(VideoMode vm, boolean hen) {
@@ -80,11 +83,11 @@ public class VdpHintTest {
         int frame = 0;
         int line = 0;
         int hint = 0;
-        s32XMMREG.setVBlank(false);
+        marsVdp.setVBlank(false);
         Sh2Interrupt actualInt;
         do {
             //visible line, then
-            s32XMMREG.setHBlank(true);
+            setHBlank(true);
 
             lev = masterIntControl.getInterruptLevel();
             actualInt = IntControl.intVals[lev];
@@ -95,17 +98,21 @@ public class VdpHintTest {
             }
             line++;
             if (line == lineVBlankSet) {
-                s32XMMREG.setVBlank(true);
+                marsVdp.setVBlank(true);
             }
             if (line == lines) {
                 frame++;
                 line = 0;
-                s32XMMREG.setVBlank(false);
+                marsVdp.setVBlank(false);
             }
-            s32XMMREG.setHBlank(false);
+            setHBlank(false);
         } while (frame < 30);
 
         System.out.println(th(hint));
         return hint;
+    }
+
+    private void setHBlank(boolean hb) {
+        marsVdp.setHBlank(hb, s32XMMREG.getHen());
     }
 }

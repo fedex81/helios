@@ -46,7 +46,7 @@ public class S32xAutomatedGameTester {
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
 
-    private static String romFolder = "./res/misc/roms/32x";
+    private static String romFolder = "./test_roms/32x";
 
     private static boolean noIntro = true;
     private static String header = "rom;boot;sound";
@@ -84,10 +84,12 @@ public class S32xAutomatedGameTester {
         System.exit(0);
     }
 
+    private static final Predicate<Path> ignoreBIN = p -> !p.getFileName().toString().endsWith(".bin");
+
     private void bootRecursiveRoms(boolean shuffle) throws IOException {
         Path folder = Paths.get(romFolder);
         List<Path> testRoms = Files.walk(folder, FileVisitOption.FOLLOW_LINKS).
-                filter(p -> testAllRomsPredicate.test(p)).collect(Collectors.toList());
+                filter(p -> testAllRomsPredicate.and(ignoreBIN).test(p)).toList();
         System.out.println("Loaded files: " + testRoms.size());
         System.out.println("Randomizer seed: " + seed);
         if (shuffle) {

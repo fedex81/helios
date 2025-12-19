@@ -38,6 +38,8 @@ public class MarsVdpImpl implements MarsVdp {
 
     private static final Logger LOG = LogHelper.getLogger(MarsVdpImpl.class.getSimpleName());
 
+    public static final boolean ENABLE_LINE_PALETTE_RENDERING_PACKED_PX = true;
+
     private static class MarsVdpSaveContext implements Serializable {
         @Serial
         private static final long serialVersionUID = -7332632984301857483L;
@@ -54,11 +56,13 @@ public class MarsVdpImpl implements MarsVdp {
         private boolean wasBlankScreen = false;
     }
 
-    private final ByteBuffer colorPalette = ByteBuffer.allocate(SIZE_32X_COLPAL);
+    //FRONT = palette for current line, BACK = palette for previous line
+    private static final int CP_FRONT = 0, CP_BACK = 1;
+    private final ByteBuffer[] colorPalette = {ByteBuffer.allocate(SIZE_32X_COLPAL), ByteBuffer.allocate(SIZE_32X_COLPAL)};
     private final ByteBuffer[] dramBanks = new ByteBuffer[2];
 
     private final ShortBuffer[] frameBuffersWord = new ShortBuffer[NUM_FB];
-    private final ShortBuffer colorPaletteWords = colorPalette.asShortBuffer();
+    private final ShortBuffer[] colorPaletteWords = {colorPalette[CP_FRONT].asShortBuffer(), colorPalette[CP_BACK].asShortBuffer()};
     private final short[] fbDataWords = new short[DRAM_SIZE >> 1];
     private final int[] lineTableWords = new int[LINE_TABLE_WORDS];
 
@@ -70,8 +74,15 @@ public class MarsVdpImpl implements MarsVdp {
     private S32XMMREG s32XMMREG;
     private S32XMMREG.RegContext regContext;
 
+    private MidLinePaletteChangeContext plCtx;
+
     private int[] buffer = new int[0];
     private static final boolean verbose = false, verboseRead = false;
+
+    static class MidLinePaletteChangeContext {
+        public int line = 0, lastLineDrawn = 0;
+        public int paletteHashcode = Integer.MAX_VALUE;
+    }
 
     static {
         MarsVdp.initBgrMapper();
@@ -81,7 +92,7 @@ public class MarsVdpImpl implements MarsVdp {
     public static MarsVdp createInstance(MarsVdpContext vdpContext,
                                          ShortBuffer frameBuffer0, ShortBuffer frameBuffer1, ShortBuffer colorPalette) {
         MarsVdpImpl v = (MarsVdpImpl) createInstance(vdpContext, new S32XMMREG());
-        v.colorPaletteWords.put(colorPalette);
+        v.colorPaletteWords[CP_FRONT].put(colorPalette);
         v.frameBuffersWord[0].put(frameBuffer0);
         v.frameBuffersWord[1].put(frameBuffer1);
         return v;
@@ -103,6 +114,7 @@ public class MarsVdpImpl implements MarsVdp {
         vsc.renderContext.screen = v.buffer;
         vsc.renderContext.vdpContext = v.vdpContext = vdpContext;
         v.updateVideoModeInternal(vdpContext.videoMode);
+        v.plCtx = new MidLinePaletteChangeContext();
         Gs32xStateHandler.addDevice(v);
         v.init();
         return v;
@@ -127,7 +139,7 @@ public class MarsVdpImpl implements MarsVdp {
                         LogHelper.logWarnOnce(LOG, "{} Write to palette when palette disabled, pen: {}",
                                 MdRuntimeData.getAccessTypeExt(), ctx.pen);
                     }
-                    writeBufferRaw(colorPalette, address & S32xDict.S32X_COLPAL_MASK, value, size);
+                    writeBufferRaw(colorPalette[CP_FRONT], address & S32xDict.S32X_COLPAL_MASK, value, size);
                 }
                 default ->
                         LogHelper.logWarnOnce(LOG, "{} write, unable to access colorPalette as {}", MdRuntimeData.getAccessTypeExt(), size);
@@ -155,7 +167,7 @@ public class MarsVdpImpl implements MarsVdp {
         if (address >= S32xDict.START_32X_COLPAL_CACHE && address < S32xDict.END_32X_COLPAL_CACHE) {
             assert MdRuntimeData.getAccessTypeExt() != BufferUtil.CpuDeviceAccess.Z80;
             if (size == Size.WORD) {
-                res = BufferUtil.readBuffer(colorPalette, address & S32xDict.S32X_COLPAL_MASK, size);
+                res = BufferUtil.readBuffer(colorPalette[CP_FRONT], address & S32xDict.S32X_COLPAL_MASK, size);
             } else {
                 logWarnOnce(LOG, "{} read, unable to access colorPalette as {}", MdRuntimeData.getAccessTypeExt(), size);
             }
@@ -348,6 +360,21 @@ public class MarsVdpImpl implements MarsVdp {
 //        System.out.println("VBlank: " + vBlankOn);
     }
 
+    @Override
+    public void setLine(int line) {
+        if (vdpContext.vBlankOn) {
+            plCtx.line = -1;
+            plCtx.lastLineDrawn = -1;
+            plCtx.paletteHashcode = Integer.MAX_VALUE;
+        } else {
+            plCtx.line = line;
+        }
+        if (line == 0) {
+            System.arraycopy(colorPalette[CP_FRONT].array(), 0, colorPalette[CP_BACK].array(), 0, SIZE_32X_COLPAL);
+            plCtx.paletteHashcode = Arrays.hashCode(colorPalette[CP_FRONT].array());
+        }
+    }
+
     public void setHBlank(boolean hBlankOn, int hen) {
         vdpContext.hBlankOn = hBlankOn;
         setBitFromWord(FBCR, S32xDict.FBCR_HBLK_BIT_POS, hBlankOn ? 1 : 0);
@@ -369,6 +396,25 @@ public class MarsVdpImpl implements MarsVdp {
         vdpRegChange(FBCR);
         s32XMMREG.interruptControls[0].setIntPending(IntControl.Sh2Interrupt.HINT_10, hintOn);
         s32XMMREG.interruptControls[1].setIntPending(IntControl.Sh2Interrupt.HINT_10, hintOn);
+        handleMidLinePaletteChange();
+    }
+
+    private void handleMidLinePaletteChange() {
+        if (!ENABLE_LINE_PALETTE_RENDERING_PACKED_PX) {
+            return;
+        }
+        if (vdpContext.hBlankOn) {
+            if (vdpContext.bitmapMode == BitmapMode.PACKED_PX && plCtx.line >= 1) {
+                int hc = Arrays.hashCode(colorPalette[CP_FRONT].array());
+                if (hc != plCtx.paletteHashcode) {
+                    int line = plCtx.line - 1;
+                    drawPackedPixelLine(vdpContext, colorPaletteWords[CP_BACK], Math.max(0, plCtx.lastLineDrawn), line);
+                    System.arraycopy(colorPalette[CP_FRONT].array(), 0, colorPalette[CP_BACK].array(), 0, SIZE_32X_COLPAL);
+                    plCtx.lastLineDrawn = line;
+                    plCtx.paletteHashcode = hc;
+                }
+            }
+        }
     }
 
     private void vdpRegChange(RegSpecS32x reg32x) {
@@ -504,6 +550,14 @@ public class MarsVdpImpl implements MarsVdp {
 
     //32X Sample Program - Celtic - PWM Test
     void drawPackedPixel(MarsVdpContext context) {
+        drawPackedPixelLine(context, colorPaletteWords[CP_FRONT], Math.max(0, plCtx.lastLineDrawn), context.videoMode.getDimension().height);
+    }
+
+    void drawPackedPixelLine(MarsVdpContext context, ShortBuffer palette, int startLine, int endLine) {
+        assert endLine >= startLine;
+        if (endLine == startLine) {
+            return;
+        }
         final ShortBuffer b = frameBuffersWord[context.frameBufferDisplay];
         final int[] imgData = buffer;
         populateLineTable(b);
@@ -513,15 +567,16 @@ public class MarsVdpImpl implements MarsVdp {
 
         final int h = context.videoMode.getDimension().height;
         final int w = context.videoMode.getDimension().width;
+        assert endLine <= h;
 
-        for (int row = 0; row < h; row++) {
+        for (int row = startLine; row < endLine; row++) {
             final int linePos = lineTableWords[row] + context.screenShift;
             final int basePos = row * w;
             for (int col = 0, wordOffset = 0; col < w; col += 2, wordOffset++) {
                 final int palWordIdx1 = (fbDataWords[linePos + wordOffset] >> 8) & 0xFF;
                 final int palWordIdx2 = fbDataWords[linePos + wordOffset] & 0xFF;
-                imgData[basePos + col] = getColorWithPriority(palWordIdx1);
-                imgData[basePos + col + 1] = getColorWithPriority(palWordIdx2);
+                imgData[basePos + col] = getColorWithPriority(palette, palWordIdx1);
+                imgData[basePos + col + 1] = getColorWithPriority(palette, palWordIdx2);
             }
         }
         ctx.wasBlankScreen = false;
@@ -575,7 +630,11 @@ public class MarsVdpImpl implements MarsVdp {
 
     //NOTE: encodes priority as the LSB (bit) of the word
     private int getColorWithPriority(int palWordIdx) {
-        int palValue = colorPaletteWords.get(palWordIdx) & 0xFFFF;
+        return getColorWithPriority(colorPaletteWords[CP_FRONT], palWordIdx);
+    }
+
+    private int getColorWithPriority(ShortBuffer paletteBuffer, int palWordIdx) {
+        int palValue = paletteBuffer.get(palWordIdx) & 0xFFFF;
         return getDirectColorWithPriority(palValue);
     }
 
@@ -635,7 +694,7 @@ public class MarsVdpImpl implements MarsVdp {
         ctx.renderContext.screen = buffer;
         dramBanks[0].rewind().get(ctx.fb0);
         dramBanks[1].rewind().get(ctx.fb1);
-        colorPalette.rewind().get(ctx.palette);
+        colorPalette[CP_FRONT].rewind().get(ctx.palette);
         bb.put(Util.serializeObject(ctx));
     }
 
@@ -649,7 +708,7 @@ public class MarsVdpImpl implements MarsVdp {
         vdpContext = ctx.renderContext.vdpContext;
         dramBanks[0].rewind().put(ctx.fb0);
         dramBanks[1].rewind().put(ctx.fb1);
-        colorPalette.rewind().put(ctx.palette);
+        colorPalette[CP_FRONT].rewind().put(ctx.palette);
     }
 
     @Override
@@ -663,9 +722,9 @@ public class MarsVdpImpl implements MarsVdp {
         frameBuffersWord[0].get(d.frameBuffer0);
         frameBuffersWord[1].get(d.frameBuffer1);
 
-        colorPaletteWords.position(0);
-        d.palette = new short[colorPaletteWords.capacity()];
-        colorPaletteWords.get(d.palette);
+        colorPaletteWords[CP_FRONT].position(0);
+        d.palette = new short[colorPaletteWords[CP_FRONT].capacity()];
+        colorPaletteWords[CP_FRONT].get(d.palette);
         //NOTE needs to redraw as the buffer and the context might be out of sync
         draw(d.renderContext.vdpContext);
         d.renderContext.screen = buffer;

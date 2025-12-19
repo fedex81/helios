@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.dict.S32xDict;
+import s32x.util.MarsLauncherHelper;
+import s32x.vdp.MarsVdp;
 
 import static s32x.MarsRegTestUtil.assertHBlank;
 import static s32x.dict.S32xDict.P32XV_240;
@@ -19,17 +21,20 @@ import static s32x.dict.S32xDict.P32XV_PAL;
 public class FrameBufferControlTest {
 
     private S32XMMREG s32XMMREG;
+    private MarsVdp marsVdp;
 
     @BeforeEach
     public void before() {
-        s32XMMREG = MarsRegTestUtil.createTestInstance().s32XMMREG;
+        MarsLauncherHelper.Sh2LaunchContext slc = MarsRegTestUtil.createTestInstance();
+        s32XMMREG = slc.s32XMMREG;
+        marsVdp = slc.marsVdp;
     }
 
     @Test
     public void testFrameBufferSelect_BlankMode() {
         s32XMMREG.write(MarsRegTestUtil.SH2_BITMAP_MODE_OFFSET, 0, Size.WORD); //blank
 
-        s32XMMREG.setVBlank(false);
+        marsVdp.setVBlank(false);
         assertVBlank(false);
         assertFrameBufferDisplay(0);
 
@@ -40,7 +45,7 @@ public class FrameBufferControlTest {
         assertFrameBufferDisplay(1);
 
         //no further change at vblank
-        s32XMMREG.setVBlank(true);
+        marsVdp.setVBlank(true);
         assertVBlank(true);
         assertFrameBufferDisplay(1);
 
@@ -54,7 +59,7 @@ public class FrameBufferControlTest {
     @Test
     public void testFrameBufferSelect() {
         s32XMMREG.write(MarsRegTestUtil.SH2_BITMAP_MODE_OFFSET, 1, Size.WORD); //packed pixel
-        s32XMMREG.setVBlank(true);
+        marsVdp.setVBlank(true);
         assertVBlank(true);
         assertFrameBufferDisplay(0);
 
@@ -65,13 +70,13 @@ public class FrameBufferControlTest {
         assertFrameBufferDisplay(1);
 
         //change FB during display -> no change until next vblank
-        s32XMMREG.setVBlank(false);
+        marsVdp.setVBlank(false);
         res = s32XMMREG.read(MarsRegTestUtil.SH2_FBCR_OFFSET, Size.WORD);
         s32XMMREG.write(MarsRegTestUtil.SH2_FBCR_OFFSET, res ^ 1, Size.WORD);
         assertVBlank(false);
         assertFrameBufferDisplay(1);
 
-        s32XMMREG.setVBlank(true);
+        marsVdp.setVBlank(true);
         assertVBlank(true);
         assertFrameBufferDisplay(0);
     }
@@ -81,28 +86,28 @@ public class FrameBufferControlTest {
         assertPal(false);
         assert240(false);
 
-        s32XMMREG.updateVideoMode(VideoMode.PAL_H40_V28);
+        marsVdp.updateVideoMode(VideoMode.PAL_H40_V28);
         assertPal(true);
         assert240(false);
 
-        s32XMMREG.updateVideoMode(VideoMode.NTSCU_H40_V28);
+        marsVdp.updateVideoMode(VideoMode.NTSCU_H40_V28);
         assertPal(false);
         assert240(false);
 
-        s32XMMREG.updateVideoMode(VideoMode.PAL_H40_V30);
+        marsVdp.updateVideoMode(VideoMode.PAL_H40_V30);
         assertPal(true);
         assert240(true);
 
-        s32XMMREG.updateVideoMode(VideoMode.PAL_H40_V28);
+        marsVdp.updateVideoMode(VideoMode.PAL_H40_V28);
         assertPal(true);
         assert240(false);
 
-        s32XMMREG.updateVideoMode(VideoMode.PAL_H40_V30);
+        marsVdp.updateVideoMode(VideoMode.PAL_H40_V30);
         assertPal(true);
         assert240(true);
 
         //NTSC forces 240 -> 224
-        s32XMMREG.updateVideoMode(VideoMode.NTSCU_H40_V28);
+        marsVdp.updateVideoMode(VideoMode.NTSCU_H40_V28);
         assertPal(false);
         assert240(false);
     }
@@ -121,7 +126,7 @@ public class FrameBufferControlTest {
         assert240(false);
 
         //PAL 0->1
-        s32XMMREG.updateVideoMode(VideoMode.PAL_H40_V28);
+        marsVdp.updateVideoMode(VideoMode.PAL_H40_V28);
         assertPal(true);
         assert240(false);
 
@@ -146,7 +151,7 @@ public class FrameBufferControlTest {
         assertPal(false);
         assert240(false);
 
-        s32XMMREG.updateVideoMode(VideoMode.PAL_H40_V28);
+        marsVdp.updateVideoMode(VideoMode.PAL_H40_V28);
         assertPal(true);
         assert240(false);
 
@@ -193,8 +198,8 @@ public class FrameBufferControlTest {
         int maskWord = 0xC000;
         boolean hb = (startVal & 1) > 0;
         boolean vb = ((startVal >> 1) & 1) > 0;
-        s32XMMREG.setVBlank(vb);
-        s32XMMREG.setHBlank(hb);
+        marsVdp.setVBlank(vb);
+        marsVdp.setHBlank(hb, s32XMMREG.getHen());
         int res = s32XMMREG.read(MarsRegTestUtil.SH2_FBCR_OFFSET, Size.WORD) & 0xFFFF;
         Assertions.assertEquals(startVal, res >>> 14);
         for (int i = 0; i < combinations; i++) {

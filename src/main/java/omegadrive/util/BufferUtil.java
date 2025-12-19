@@ -100,6 +100,19 @@ public class BufferUtil {
         writeRegBuffer(r.regSpec, b, value, size);
     }
 
+    public static boolean isDifferentValue(ByteBuffer b, int pos, int value, Size size) {
+        if (size == Size.WORD) {
+            return (short) SHORT_BYTEBUF_HANDLE.get(b, pos) != value;
+        } else if (size == Size.LONG) {
+            return (int) INT_BYTEBUF_HANDLE.get(b, pos) != value;
+        } else if (size == Size.BYTE) {
+            return b.get(pos) != value;
+        }
+        assert false;
+        return false;
+    }
+
+
     public static boolean writeBufferRaw(ByteBuffer b, int pos, int value, Size size) {
         boolean changed = false;
         if (size == Size.WORD) {
