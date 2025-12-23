@@ -366,11 +366,39 @@ public class Pwm implements StepDevice {
     @Override
     public void step(int cycles) {
         if (verbose) stepsPerFrame += cycles;
-        while (ctx.pwmEnable && cycles-- > 0) {
-            stepOne();
-        }
+        if (!ctx.pwmEnable) return;
+        stepInternal(cycles);
     }
 
+    private void stepInternal(int cycles) {
+        ctx.sh2TicksToNextPwmSample -= cycles;
+        if (ctx.sh2TicksToNextPwmSample <= 0) {
+            ctx.sh2TicksToNextPwmSample = ctx.cycle;
+            assert ctx.sh2TicksToNextPwmSample > 0;
+            if (verbose) pwmSamplesPerFrame++;
+            //sample range should be [0,cycle], let's clamp to [sld, cycle - sld]
+            ctx.ls = Math.min(ctx.cycle - SAMPLE_LIMIT_DELTA, readFifo(fifoMapLeft.fifo, fifoMapLeft.channel) + SAMPLE_LIMIT_DELTA);
+            ctx.rs = Math.min(ctx.cycle - SAMPLE_LIMIT_DELTA, readFifo(fifoMapRight.fifo, fifoMapRight.channel) + SAMPLE_LIMIT_DELTA);
+            assert ctx.ls >= SAMPLE_LIMIT_DELTA && ctx.rs >= SAMPLE_LIMIT_DELTA;
+            if (PWM_USE_BLIP) {
+                playSupport.playSample(ctx.ls, ctx.rs);
+            }
+            if (--ctx.sh2ticksToNextPwmInterrupt == 0) {
+                intControls[MASTER.ordinal()].setIntPending(IntControl.Sh2Interrupt.PWM_06, true);
+                intControls[SLAVE.ordinal()].setIntPending(IntControl.Sh2Interrupt.PWM_06, true);
+                ctx.sh2ticksToNextPwmInterrupt = ctx.interruptInterval;
+                dreq();
+            }
+        }
+        if (!PWM_USE_BLIP) {
+            ctx.sh2TicksToNextPwmSample -= cycles;
+            if (ctx.sh2TicksToNext22khzSample <= 0) {
+                playSupport.playSample(ctx.ls, ctx.rs);
+                ctx.sh2TicksToNext22khzSample = CYCLE_22khz;
+                assert ctx.sh2TicksToNext22khzSample > 0;
+            }
+        }
+    }
 
     private void stepOne() {
         if (--ctx.sh2TicksToNextPwmSample == 0) {
