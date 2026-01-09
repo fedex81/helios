@@ -548,7 +548,8 @@ public class MdVdp implements MdVdpProvider, BaseVdpAdapterEventSupport.VdpEvent
     }
 
     private void updateSatLocation() {
-        int res = VdpRenderHandler.getSpriteTableLocation(this, videoMode.isH40());
+        //videoMode gets changed at vblank, but we need to know the live h40 state
+        int res = VdpRenderHandler.getSpriteTableLocation(this, h40);
         if (res != satStart) {
             if (verbose) LOG.info("Sat location: {} -> {}", th(satStart), th(res));
             satStart = res;

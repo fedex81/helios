@@ -58,6 +58,7 @@ public class BusArbiterTest {
     public void setup() {
         SystemProvider emu = MdVdpTestUtil.createTestMdProvider();
         bus = new MdBus();
+        bus.attachDevice(emu);
         vdp = MdVdpProvider.createVdp(bus);
         Z80Provider z80 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.MD, bus);
         z80bus = z80.getZ80BusProvider();

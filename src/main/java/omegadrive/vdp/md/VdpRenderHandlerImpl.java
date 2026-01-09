@@ -664,11 +664,11 @@ public class VdpRenderHandlerImpl implements VdpRenderHandler, VdpEventListener 
             return holder;
         }
         int satAddress = spriteIdx << 3;
-        int[] satCache = memoryInterface.getSatCache();
-        int byte0 = satCache[satAddress];
-        int byte1 = satCache[satAddress + 1];
-        int byte2 = satCache[satAddress + 2];
-        int byte3 = satCache[satAddress + 3];
+        byte[] satCache = memoryInterface.getSatCache();
+        int byte0 = satCache[satAddress] & 0xFF;
+        int byte1 = satCache[satAddress + 1] & 0xFF;
+        int byte2 = satCache[satAddress + 2] & 0xFF;
+        int byte3 = satCache[satAddress + 3] & 0xFF;
 
         holder.linkData = byte3 & 0x7F;
         holder.verticalPos = ((byte0 & 0x1) << 8) | byte1;

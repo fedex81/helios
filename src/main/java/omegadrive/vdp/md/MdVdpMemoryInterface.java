@@ -43,7 +43,7 @@ public class MdVdpMemoryInterface implements VdpMemoryInterface {
     private ByteBuffer cram;
     private ByteBuffer vsram;
     private int[] javaPalette;
-    private final int[] satCache = new int[MAX_SPRITES_PER_FRAME_H40 * 8]; //8 bytes per sprite
+    private final byte[] satCache = new byte[MAX_SPRITES_PER_FRAME_H40 * 8]; //8 bytes per sprite
     private int satBaseAddress = 0, satEndAddress = satBaseAddress + satCache.length;
 
     private final VdpColorMapper colorMapper;
@@ -83,7 +83,7 @@ public class MdVdpMemoryInterface implements VdpMemoryInterface {
     //    The address register wraps past address FFFFh.
     protected void writeVramByte(int address, byte data) {
         vram.put(address & VDP_VRAM_MASK, data);
-        updateSatCache(address, data);
+        updateSatCache(address & VDP_VRAM_MASK, data);
     }
 
     @Override
@@ -147,7 +147,7 @@ public class MdVdpMemoryInterface implements VdpMemoryInterface {
 
     private void updateSatCache(int vramAddress, byte value) {
         if (vramAddress >= satBaseAddress && vramAddress < satEndAddress) {
-            satCache[vramAddress - satBaseAddress] = value & 0xFF;
+            satCache[vramAddress - satBaseAddress] = value;
         }
     }
 
@@ -158,7 +158,7 @@ public class MdVdpMemoryInterface implements VdpMemoryInterface {
     }
 
     @Override
-    public int[] getSatCache() {
+    public byte[] getSatCache() {
         return satCache;
     }
 

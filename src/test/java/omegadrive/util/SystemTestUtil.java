@@ -69,6 +69,7 @@ public class SystemTestUtil {
     public static MdMainBusProvider setupNewMdSystem(IMemoryProvider cpuMem1, VdpMemoryInterface vdpMem) {
         SystemProvider systemProvider = createTestMdProvider(cpuMem1);
         MdMainBusProvider busProvider = new MdBus();
+        busProvider.attachDevice(systemProvider);
         MdZ80BusProvider z80bus = new MdZ80BusProviderImpl();
         MdVdpProvider vdpProvider1 = MdVdp.createInstance(busProvider, vdpMem);
         MC68000Wrapper cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, busProvider);
@@ -96,11 +97,13 @@ public class SystemTestUtil {
     }
 
     public static MdMainBusProvider setupNewMdSystem(S32xBusIntf busProvider, IMemoryProvider cpuMem1) {
+        SystemProvider systemProvider = createTestMdProvider(cpuMem1);
         VdpMemoryInterface vdpMem = MdVdpMemoryInterface.createInstance();
         MdZ80BusProvider z80bus = new MdZ80BusProviderImpl();
+        busProvider.attachDevice(systemProvider);
         MdVdpProvider vdpProvider1 = MdVdp.createInstance(busProvider, vdpMem);
         MC68000Wrapper cpu = new MC68000Wrapper(BufferUtil.CpuDeviceAccess.M68K, busProvider);
-        SystemProvider systemProvider = createTestMdProvider(cpuMem1);
+
         MdJoypad joypad = new MdJoypad(null);
         Z80Provider z80p1 = Z80CoreWrapper.createInstance(SystemLoader.SystemType.MD, busProvider);
         FmProvider fm1 = new Ym2612Nuke(AbstractSoundManager.audioFormat, 0);
@@ -109,7 +112,7 @@ public class SystemTestUtil {
         z80bus.attachDevice(BusArbiter.NO_OP).attachDevice(busProvider);
         busProvider.attachDevice(vdpProvider1).attachDevice(cpu).attachDevice(joypad).attachDevice(z80bus).
                 attachDevice(cpuMem1).attachDevice(z80p1).attachDevice(sp1).attachDevice(systemProvider);
-        busProvider.attachDevice(systemProvider);
+
         busProvider.init();
         return busProvider;
     }

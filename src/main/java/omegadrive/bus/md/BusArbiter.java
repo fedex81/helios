@@ -240,6 +240,9 @@ class BusArbiterImpl implements BusArbiter {
             LogHelper.logWarnOnce(LOG, "68k level: {} but vdp thinks: {}, setting {}=false", level, vdpLevel,
                     vdpLevel == M68kProvider.VBLANK_INTERRUPT_LEVEL ? "vip" : "hip");
         }
+        //TODO lemmings fix, breaks Bari Arm(CD)
+//        vdpLevel = level;
+        //TODO lemmings fix
         switch (vdpLevel) {
             case M68kProvider.VBLANK_INTERRUPT_LEVEL -> {
                 vdp.setVip(false);

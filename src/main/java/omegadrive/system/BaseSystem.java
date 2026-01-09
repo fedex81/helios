@@ -111,6 +111,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         display.setRomData(mediaSpec);
 
         LOG.info("Region set as: {}", mediaSpec.region);
+        LogHelper.clear();
     }
 
     protected abstract void resetCycleCounters(int counter);

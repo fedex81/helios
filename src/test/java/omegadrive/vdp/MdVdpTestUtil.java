@@ -50,7 +50,7 @@ public class MdVdpTestUtil {
     static final int DMA_EN_BIT_POS = 4;
     static final int MODE_5_BIT_POS = 2;
     static final int CTRL_PORT_MODE_2 = 0x8100;
-    static final int CTRL_PORT_MODE_4 = 0x8C00;
+    public static final int CTRL_PORT_MODE_4 = 0x8C00;
 
     static Function<Integer, Integer> toMaskFn = bp -> 1 << bp;
     static Function<Integer, Integer> toResetMaskFn = bp -> ~(1 << bp);

@@ -49,8 +49,8 @@ public interface VdpMemoryInterface {
         throw new RuntimeException("Vsram not available");
     }
 
-    default int[] getSatCache() {
-        return new int[0];
+    default byte[] getSatCache() {
+        return new byte[0];
     }
 
     default void setSatBaseAddress(int address) {
