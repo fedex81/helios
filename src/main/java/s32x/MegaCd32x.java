@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static mcd.MegaCd.MCD_68K_RATIO_NTSC;
 import static mcd.MegaCd.MCD_68K_RATIO_PAL;
+import static omegadrive.system.SysUtil.ISO_EXT;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 
 /**
@@ -201,7 +202,7 @@ public class MegaCd32x extends Md32x {
         String serial = cartInfo.getSerial();
         String name = cartInfo.getRomName();
         if (name.startsWith("DCD32X") || serial.contains("DMF32XCD")) {
-            String isoName = Util.getNameWithoutExtension(name) + ".iso";
+            String isoName = Util.getNameWithoutExtension(name) + ISO_EXT;
             MediaSpecHolder.MediaSpec iso = MediaSpecHolder.MediaSpec.of(
                     mediaSpec.getBootableMedia().romFile.resolveSibling(isoName), SysUtil.RomFileType.ISO, mediaSpec.systemType);
             assert Files.exists(iso.romFile);

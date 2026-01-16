@@ -18,6 +18,9 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.StringJoiner;
 
+import static omegadrive.system.SysUtil.CUE_EXT;
+import static omegadrive.system.SysUtil.ISO_EXT;
+
 /**
  * Federico Berti
  * <p>
@@ -140,8 +143,8 @@ public class MediaSpecHolder {
         MediaSpecHolder r = new MediaSpecHolder();
         r.systemType = systemType;
         RomFileType rft = RomFileType.CART_ROM;
-        rft = file.toString().endsWith(".cue") ? RomFileType.BIN_CUE : rft;
-        rft = file.toString().endsWith(".iso") ? RomFileType.ISO : rft;
+        rft = file.toString().endsWith(CUE_EXT) ? RomFileType.BIN_CUE : rft;
+        rft = file.toString().endsWith(ISO_EXT) ? RomFileType.ISO : rft;
         MediaSpec ms = MediaSpec.of(file, rft, systemType);
         if (rft.isDiscImage()) {
             r.cdFile = ms;

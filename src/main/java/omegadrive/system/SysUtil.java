@@ -50,11 +50,15 @@ public class SysUtil {
 
     public static final String SMD_INTERLEAVED_EXT = ".smd";
 
+    public static final String CUE_EXT = ".cue";
+    public static final String BIN_EXT = ".bin";
+    public static final String ISO_EXT = ".iso";
+
     public static final Map<SystemType, String[]> sysFileExtensionsMap = ImmutableMap.<SystemType, String[]>builder()
-            .put(MD, new String[]{".md", ".bin", SMD_INTERLEAVED_EXT})
-            .put(S32X, new String[]{".32x", ".bin", ".md"})
-            .put(MEGACD, new String[]{".cue", ".bin", ".iso"})
-            .put(MEGACD_S32X, new String[]{".cue", ".bin", ".iso", ".32x"})
+            .put(MD, new String[]{".md", BIN_EXT, SMD_INTERLEAVED_EXT})
+            .put(S32X, new String[]{".32x", BIN_EXT, ".md"})
+            .put(MEGACD, new String[]{CUE_EXT, BIN_EXT, ISO_EXT})
+            .put(MEGACD_S32X, new String[]{CUE_EXT, BIN_EXT, ISO_EXT, ".32x"})
             .put(SG_1000, new String[]{".sg", ".sc"})
             .put(COLECO, new String[]{".col"})
             .put(MSX, new String[]{".rom"})

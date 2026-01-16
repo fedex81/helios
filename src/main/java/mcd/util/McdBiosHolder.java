@@ -14,6 +14,7 @@ import java.util.Map;
 
 import static mcd.dict.MegaCdDict.MCD_BOOT_ROM_WINDOW_SIZE;
 import static omegadrive.SystemLoader.biosFolder;
+import static omegadrive.system.SysUtil.BIN_EXT;
 import static omegadrive.util.RegionDetector.Region;
 
 /**
@@ -97,7 +98,7 @@ public class McdBiosHolder {
         ByteBuffer bios;
         try {
             assert Files.exists(p);
-            byte[] b = FileUtil.readBinaryFile(p, ".bin", ".md");
+            byte[] b = FileUtil.readBinaryFile(p, BIN_EXT, ".md");
             assert b.length > 0;
             bios = ByteBuffer.wrap(b);
             LOG.info("Loading bios at {}, region: {}, size: {}", p.toAbsolutePath(), region, b.length);

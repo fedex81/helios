@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static omegadrive.system.SysUtil.CUE_EXT;
 import static omegadrive.util.Util.th;
 
 /**
@@ -151,7 +152,7 @@ public class MsuMdHandlerImpl implements MsuMdHandler {
 
     private static CueSheet initCueSheet(Path romPath) {
         String romName = romPath.getFileName().toString();
-        String cueFileName = romName.replace("." + Files.getFileExtension(romName), ".cue");
+        String cueFileName = romName.replace("." + Files.getFileExtension(romName), CUE_EXT);
         return CueFileParser.parse(romPath.resolveSibling(cueFileName));
     }
 

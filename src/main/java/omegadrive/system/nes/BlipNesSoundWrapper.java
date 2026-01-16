@@ -78,6 +78,7 @@ public class BlipNesSoundWrapper implements AudioOutInterface, FmProvider {
     @Override
     public int updateStereo16(int[] buf_lr, int offset, int count) {
         throw new UnsupportedOperationException();
+        //TODO Nes audio is broken
     }
 
     @Override

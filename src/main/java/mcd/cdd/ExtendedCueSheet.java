@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static mcd.cdd.CdModel.ExtendedTrackData.NO_TRACK;
+import static omegadrive.system.SysUtil.CUE_EXT;
+import static omegadrive.system.SysUtil.ISO_EXT;
 
 /**
  * Federico Berti
@@ -73,7 +75,7 @@ public class ExtendedCueSheet implements Closeable {
     private CueSheet parseCueForIso(Path path, AtomicReference<Path> ref) {
         CueSheet cs = null;
         //first check if we have a matching *.cue file
-        Path mcp = Paths.get(path.toAbsolutePath().toString().replace(".iso", ".cue"));
+        Path mcp = Paths.get(path.toAbsolutePath().toString().replace(ISO_EXT, CUE_EXT));
         Path cp = path.resolveSibling(mcp);
         if (Files.exists(cp)) {
             isoPathCue = Optional.of(cp);

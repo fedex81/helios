@@ -797,9 +797,8 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         if (!valid) {
             LOG.error("Illegal VDP write, address {}, data {}, size {}",
                     th(addressLong), th(data), size);
-            //NOTE: theSource32x writes here, it works on emu and everdrive pro
-            //don't think it works on real hw as it'd lock the vdp?
-            throw new RuntimeException("Illegal VDP write");
+            //NOTE: theSource32x writes here, it works on everdrive pro
+            //shouldn't this lock the vdp?
         }
 
         int address = addressLong & 0x1F; //low 5 bits
