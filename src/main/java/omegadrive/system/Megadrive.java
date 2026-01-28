@@ -207,7 +207,7 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     }
 
     protected MdMainBusProvider createBus() {
-        return new MdBus();
+        return new MdBus().attachDevice(this);
     }
 
     @Override

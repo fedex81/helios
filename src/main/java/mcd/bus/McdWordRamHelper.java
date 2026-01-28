@@ -43,7 +43,7 @@ public class McdWordRamHelper {
             }
             case BYTE -> {
                 int bank = getBank(memoryContext.wramSetup, cpu, address);
-                int addr = getAddress(memoryContext.wramSetup, address, bank) | (address & 1);
+                int addr = getAddress(memoryContext.wramSetup, address) | (address & 1);
                 Util.writeDataByte(wordRam01[bank], addr, value);
             }
             default -> {
@@ -83,11 +83,11 @@ public class McdWordRamHelper {
     }
 
     public void writeWordRamBank(int bank, int address, int value) {
-        Util.writeDataWord(wordRam01[bank], getAddress(memoryContext.wramSetup, address, bank), value);
+        Util.writeDataWord(wordRam01[bank], getAddress(memoryContext.wramSetup, address), value);
     }
 
     public int readWordRamBank(int bank, int address) {
-        return Util.readDataWord(wordRam01[bank], getAddress(memoryContext.wramSetup, address, bank));
+        return Util.readDataWord(wordRam01[bank], getAddress(memoryContext.wramSetup, address));
     }
 
     public static int getBank(MegaCdMemoryContext.WramSetup wramSetup, CpuDeviceAccess cpu, int address) {
@@ -102,13 +102,11 @@ public class McdWordRamHelper {
         return wramSetup.cpu == cpu ? 0 : 1;
     }
 
-    public static int getAddress(MegaCdMemoryContext.WramSetup wramSetup, int address, int bank) {
+    public static int getAddress(MegaCdMemoryContext.WramSetup wramSetup, int address) {
         if (wramSetup.mode == _2M) {
-            address = ((address & MCD_WORD_RAM_2M_MASK) >> 1) - bank;
-        } else {
-            address = (address & MCD_WORD_RAM_1M_MASK);
+            return ((address & MCD_WORD_RAM_2M_MASK) >> 1) & ~1; //TODO test
         }
-        return address;
+        return address & MCD_WORD_RAM_1M_MASK;
     }
 
     public MegaCdMemoryContext.WramSetup update(CpuDeviceAccess c, int reg2) {

@@ -143,6 +143,7 @@ public class MegaCd32x extends Md32x {
     protected MdMainBusProvider createBus() {
         Mcd32xMainBus b = new Mcd32xMainBus(mcdLaunchContext);
         s32xBus = b.s32xBus;
+        s32xBus.attachDevice(this);
         return b;
     }
 

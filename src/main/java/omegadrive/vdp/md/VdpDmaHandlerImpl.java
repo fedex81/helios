@@ -50,6 +50,8 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     private DmaMode dmaMode = null;
     private boolean dmaFillReady;
 
+    private boolean busHasFastMemAttached;
+
     //TODO this should be in the VDP
     private final VdpFifo.VdpFifoEntry pendingReadEntry = new VdpFifo.VdpFifoEntry();
 
@@ -59,7 +61,12 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         d.vdpProvider = vdpProvider;
         d.busProvider = busProvider;
         d.memoryInterface = memoryInterface;
+        d.init();
         return d;
+    }
+
+    private void init() {
+        busHasFastMemAttached = busProvider.isSvp() || busProvider.getSystem().getSystemType().isMegaCdAttached();
     }
 
     public DmaMode setupDma(MdVdpProvider.VramMode vramMode, int data, boolean m1) {
@@ -79,7 +86,9 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     private void handleDmaFastMemory() {
-        if (dmaMode != DmaMode.MEM_TO_VRAM) {
+        //TODO svp is not set on bootstrap, need to re-eval every time
+        boolean fastMem = busHasFastMemAttached || busProvider.isSvp();
+        if (!fastMem || dmaMode != DmaMode.MEM_TO_VRAM) {
             return;
         }
         int dmaSrcHigh = vdpProvider.getRegisterData(DMA_SOURCE_HIGH);
@@ -92,9 +101,11 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         */
         boolean isMegaCd = busProvider.getSystem().getSystemType().isMegaCdAttached();
         //TODO mode1
+        //wram_1M: [0x30, 0x32) << 1
+        //wram_2M: [0x10, 0x12) << 1
         boolean megaCdDma = isMegaCd && (
-                ((dmaSrcHigh & 0xF0) == 0x30) || //wram_1M
-                        ((dmaSrcHigh & 0xF0) == 0x10)    //wram_2M
+                ((dmaSrcHigh & 0xFE) == 0x30) ||
+                        ((dmaSrcHigh & 0xFE) == 0x10)
         );
         if (isMegaCd) {
             if ((dmaSrcHigh & 0xFF) == 2 || (dmaSrcHigh & 0xFF) == 3) {
@@ -102,8 +113,10 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
             }
         }
         if (megaCdDma || svpDma) {
-            decreaseDmaLength();
-            increaseDestAddress();
+            if (getDmaLength() > 1) { //Snatcher, TODO test
+                decreaseDmaLength();
+                increaseDestAddress();
+            }
         }
     }
 

@@ -109,6 +109,7 @@ public class MegaCd extends Megadrive {
     protected MdMainBusProvider createBus() {
         assert mcdLaunchContext.mainBus != null;
         bus = mcdLaunchContext.mainBus;
+        bus.attachDevice(this);
         return bus;
     }
 

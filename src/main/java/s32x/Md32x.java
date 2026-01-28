@@ -178,7 +178,9 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
 
     @Override
     protected MdMainBusProvider createBus() {
-        return S32xBus.createS32xBus();
+        MdMainBusProvider mdb = S32xBus.createS32xBus();
+        mdb.attachDevice(this);
+        return mdb;
     }
 
     @Override
