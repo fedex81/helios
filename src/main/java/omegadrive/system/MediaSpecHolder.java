@@ -2,6 +2,7 @@ package omegadrive.system;
 
 import mcd.cart.MegaCdCartInfoProvider;
 import mcd.cdd.ExtendedCueSheet;
+import mcd.cdd.TrackContentHelper;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.MediaInfoProvider;
@@ -13,7 +14,6 @@ import omegadrive.util.ZipUtil;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -66,7 +66,9 @@ public class MediaSpecHolder {
             } else if (type.isDiscImage()) {
                 assert !ZipUtil.isCompressedByteStream(romFile);
                 assert !compressed;
-                sheetOpt = Optional.of(new ExtendedCueSheet(romFile, type));
+                if (sheetOpt.isEmpty()) {
+                    sheetOpt = Optional.of(new ExtendedCueSheet(romFile, type));
+                }
                 mediaInfoProvider = getMcdInfoProvider(romFile, this);
 //                mediaSizeBytes = sheetOpt.get().extTracks.get(0).lenBytes; //TODO ??
             }
@@ -108,8 +110,8 @@ public class MediaSpecHolder {
             assert b.length > 0;
             mdi = MdCartInfoProvider.createMdInstance(b);
         } else {
-            try (RandomAccessFile raf = new RandomAccessFile(p.toFile(), "r")) {
-                mdi = MdCartInfoProvider.createMdInstance(raf);
+            try {
+                mdi = MdCartInfoProvider.createMdInstance(TrackContentHelper.ofFile(p.toFile()));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

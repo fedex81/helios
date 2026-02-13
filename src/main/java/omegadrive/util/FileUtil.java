@@ -250,6 +250,10 @@ public class FileUtil {
         return (short) ((file.read() << 0) + (file.read() << 8));
     }
 
+    public static int readShortLE(ByteBuffer bb) throws IOException {
+        return (short) ((bb.get() << 0) + (bb.get() << 8));
+    }
+
     public static int readShortBE(RandomAccessFile file) throws IOException {
         return (short) ((file.read() << 8) + (file.read()));
     }

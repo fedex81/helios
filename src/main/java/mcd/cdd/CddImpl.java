@@ -7,7 +7,10 @@ import mcd.dict.MegaCdMemoryContext;
 import mcd.pcm.BlipPcmProvider;
 import omegadrive.sound.PcmProvider;
 import omegadrive.sound.msumd.CueFileParser;
-import omegadrive.util.*;
+import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector;
+import omegadrive.util.Size;
+import omegadrive.util.VideoMode;
 import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -699,14 +702,15 @@ class CddImpl implements Cdd {
         if (cddContext.io.status == Playing) {
             if (ExtendedCueSheet.isAudioTrack(extCueSheet, cddContext.io.track)) {
                 CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
+                var data = etd.data;
                 //CDDA: 2352 audio data (+ 96 subcode, not dumped)
                 int sectorSize = etd.trackDataType.size.s_size;
                 int trackRelSector = cddContext.io.sector - etd.absoluteSectorStart;
                 assert trackRelSector >= 0;
                 try {
-                    etd.file.seek((sectorSize * trackRelSector) + cddContext.io.sample);
-                    left = FileUtil.readShortLE(etd.file);
-                    right = FileUtil.readShortLE(etd.file);
+                    data.seek((sectorSize * trackRelSector) + cddContext.io.sample);
+                    left = data.readShortLE();
+                    right = data.readShortLE();
                     cddContext.io.sample += 4;
                     if (cddContext.io.sample >= sectorSize) {
                         advance();

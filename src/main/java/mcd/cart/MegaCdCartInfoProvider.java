@@ -2,6 +2,7 @@ package mcd.cart;
 
 import mcd.cdd.CdModel;
 import mcd.cdd.ExtendedCueSheet;
+import mcd.cdd.TrackContentHelper;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.system.MediaSpecHolder.MediaSpec;
 import omegadrive.system.SysUtil;
@@ -11,7 +12,6 @@ import omegadrive.util.Util;
 import omegadrive.vdp.util.MemView;
 import org.slf4j.Logger;
 
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Optional;
@@ -83,11 +83,11 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
         }
     }
 
-    private static RandomAccessFile getTrack01(MediaSpec mediaSpec) {
+    private static TrackContentHelper getTrack01(MediaSpec mediaSpec) {
         Optional<ExtendedCueSheet> sheetOpt = mediaSpec.sheetOpt;
         assert sheetOpt.isPresent();
         CdModel.ExtendedTrackData t1 = sheetOpt.get().extTracks.get(0);
-        return t1.file;
+        return t1.data;
     }
 
     private void checkTrack01Header(CdModel.ExtendedTrackData track01) {
@@ -96,10 +96,10 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
         mediaSpec.bootable = true;
         try {
             byte[] header = new byte[headerLen];
-            RandomAccessFile raf = track01.file;
-            raf.seek(0);
+            TrackContentHelper tca = track01.data;
+            tca.seek(0);
             CdModel.TrackDataType trackDataType = track01.trackDataType;
-            raf.read(header, 0, header.length);
+            tca.read(header, 0, header.length);
             detectedRomFileType = SysUtil.RomFileType.UNKNOWN;
             if (Arrays.equals(SCD_SYS_BYTES, 0, SCD_SYS_BYTES.length, header, 0, SCD_SYS_BYTES.length)) {
                 System.out.println("valid Sega CD image");
@@ -127,7 +127,7 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
             //sector 2352 starts with 0x10 sync/header bytes, ignore them
             int secCodeStart = track01.trackDataType.size == CdModel.SectorSize.S_2048 ?
                     TRACK01_SECURITY_CODE_START : TRACK01_SECURITY_CODE_START + 0x10;
-            RandomAccessFile raf = track01.file;
+            TrackContentHelper raf = track01.data;
             raf.seek(secCodeStart);
             raf.read(secCode);
             ByteBuffer bb = ByteBuffer.wrap(secCode);

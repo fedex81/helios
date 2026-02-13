@@ -5,6 +5,7 @@ import mcd.cdd.CdModel;
 import mcd.cdd.CdModel.ExtendedTrackData;
 import mcd.cdd.Cdd;
 import mcd.cdd.ExtendedCueSheet;
+import mcd.cdd.TrackContentHelper;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.sound.msumd.CueFileParser;
@@ -15,7 +16,6 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -517,29 +517,29 @@ public class CdcImpl implements Cdc {
                 assert track.trackDataType == CdModel.TrackDataType.MODE1_2048;
                 /* read Mode 1 user data (2048 bytes) */
                 int seekPos = sector * S_2048.s_size;
-                doFileRead(track.file, seekPos, S_2048.s_size, offset);
+                doFileRead(track.data, seekPos, S_2048.s_size, offset);
             } else if (cueSheet.romFileType == RomFileType.BIN_CUE) {
                 /* skip block sync pattern (12 bytes) + block header (4 bytes) then read Mode 1 user data (2048 bytes) */
                 assert track.trackDataType.size == S_2352;
                 int seekPos = (sector * track.trackDataType.size.s_size) + 12 + 4;
                 assert checkMode1Data(track, msfHolder, seekPos);
-                doFileRead(track.file, seekPos, S_2048.s_size, offset);
+                doFileRead(track.data, seekPos, S_2048.s_size, offset);
 //                    cdStreamSeek(cdd.toc.tracks[0].fd, (cdd.lba * 2352) + 12 + 4, SEEK_SET);
 //                    cdStreamRead(dst, 2048, 1, cdd.toc.tracks[0].fd);
             }
         }
     }
 
-    private void doFileRead(final RandomAccessFile file, int seekPos, int readChunkSize, int ramOffset) {
+    private void doFileRead(final TrackContentHelper trackData, int seekPos, int readChunkSize, int ramOffset) {
         assert ramOffset < RAM_SIZE;
         try {
-            file.seek(seekPos);
+            trackData.seek(seekPos);
             if (verbose) LOG.info(th(ramOffset) + "," + th(seekPos) + "," + readChunkSize);
             int len = Math.min(RAM_SIZE - ramOffset, readChunkSize);
-            int readN = file.read(ram.array(), ramOffset, len);
+            int readN = trackData.read(ram.array(), ramOffset, len);
             assert readN == len;
             if (len < readChunkSize) {
-                readN += file.read(ram.array(), 0, readChunkSize - len);
+                readN += trackData.read(ram.array(), 0, readChunkSize - len);
             }
             assert readN == readChunkSize;
         } catch (Exception e) {
@@ -558,15 +558,15 @@ public class CdcImpl implements Cdc {
         byte[] syncHeader = new byte[12];
         boolean ok = false;
         try {
-            track.file.seek(dataSeekPos - 16);
-            int readN = track.file.read(syncHeader, 0, syncHeader.length);
+            track.data.seek(dataSeekPos - 16);
+            int readN = track.data.read(syncHeader, 0, syncHeader.length);
             try {
                 assert readN == syncHeader.length : track + ",seekPos:" + th(dataSeekPos); //SurgicalStrike_E
             } catch (Error e) {
                 //try-catch for debugging
                 e.printStackTrace();
             }
-            readN = track.file.read(header, 0, header.length);
+            readN = track.data.read(header, 0, header.length);
             assert readN == header.length;
             ok = Integer.parseInt("" + holder.minute, 16) == header[0] &&
                     Integer.parseInt("" + holder.second, 16) == header[1] &&

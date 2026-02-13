@@ -6,22 +6,27 @@ import mcd.cdd.CdModel.TrackDataType;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.system.SysUtil.RomFileType;
 import omegadrive.util.LogHelper;
+import omegadrive.util.Util;
+import omegadrive.util.ZipUtil;
 import org.digitalmediaserver.cuelib.CueSheet;
 import org.digitalmediaserver.cuelib.TrackData;
 import org.slf4j.Logger;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static mcd.cdd.CdModel.ExtendedTrackData.NO_TRACK;
+import static omegadrive.sound.msumd.MsuMdHandler.CDDA_FORMAT;
 import static omegadrive.system.SysUtil.CUE_EXT;
 import static omegadrive.system.SysUtil.ISO_EXT;
 
@@ -50,7 +55,7 @@ public class ExtendedCueSheet implements Closeable {
     private Optional<Path> isoPathCue = Optional.empty();
     public final List<ExtendedTrackData> extTracks = new ArrayList<>();
     public int numTracks, sectorEnd;
-    protected final Map<String, RandomAccessFile> fileCache = new HashMap<>();
+    protected final Map<String, TrackContentHelper> fileCache = new ConcurrentHashMap<>();
 
     public ExtendedCueSheet(Path discImage, RomFileType rft) {
         assert rft.isDiscImage();
@@ -99,28 +104,31 @@ public class ExtendedCueSheet implements Closeable {
         List<TrackData> tracks = extCueSheet.cueSheet.getAllTrackData();
         assert !tracks.isEmpty();
         extCueSheet.numTracks = tracks.size();
-        for (TrackData track : tracks) {
-            parseTrack(extCueSheet, track.getNumber(), cuePath);
-        }
+        parseTrack(extCueSheet, 1, cuePath);
+        Util.executorService.submit(() -> {
+            long start = System.currentTimeMillis();
+            for (TrackData track : tracks) {
+                if (track.getNumber() != 1) {
+                    parseTrack(extCueSheet, track.getNumber(), cuePath);
+                }
+            }
+            LOG.info("Done parsing tracks from CUE sheet, took {} ms", System.currentTimeMillis() - start);
+        });
     }
 
     private void parseTrack(ExtendedCueSheet extCueSheet, int trackNumber, Path cuePath) {
         TrackData trackData = getTrack(extCueSheet.cueSheet, trackNumber);
-        RandomAccessFile raf = getDataFile(extCueSheet, trackData.getParent().getFile(), cuePath);
-        ExtendedTrackData extTrackData = new ExtendedTrackData(trackData, raf);
+        TrackContentHelper tca = getDataFile(extCueSheet, trackData.getParent().getFile(), cuePath);
+        ExtendedTrackData extTrackData = new ExtendedTrackData(trackData, tca);
         extTrackData.trackDataType = TrackDataType.parse(trackData.getDataType());
         try {
-            /* read Sega CD image header + security code */
-            byte[] sec = new byte[0x200];
-            raf.read(sec, 0, sec.length);
-
             List<ExtendedTrackData> extTracks = extCueSheet.extTracks;
             int sectorStart = 0;
             if (!extTracks.isEmpty()) {
                 sectorStart = extTracks.get(extTracks.size() - 1).absoluteSectorEnd;
             }
             CdModel.SectorSize sectorSize = extTrackData.trackDataType.size;
-            extTrackData.lenBytes = (int) raf.length();
+            extTrackData.lenBytes = (int) tca.length();
             extTrackData.absoluteSectorStart = sectorStart;
             extTrackData.absoluteSectorEnd = sectorStart + (extTrackData.lenBytes / sectorSize.s_size);
             extTrackData.trackLenSectors = extTrackData.absoluteSectorEnd - extTrackData.absoluteSectorStart;
@@ -138,19 +146,37 @@ public class ExtendedCueSheet implements Closeable {
         }
     }
 
-    private static RandomAccessFile getDataFile(ExtendedCueSheet extCueSheet, String key, Path file, Path cuePath) {
-        //TODO close RandomAccessFile
+    private static TrackContentHelper getDataFile(ExtendedCueSheet extCueSheet, String key, Path file, Path cuePath) {
         if (!extCueSheet.fileCache.containsKey(key)) {
-            try {
-                extCueSheet.fileCache.put(key, new RandomAccessFile(file.toFile(), "r"));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            extCueSheet.fileCache.put(key, decompressContent(key, file));
         }
         return extCueSheet.fileCache.get(key);
     }
 
-    private static RandomAccessFile getDataFile(ExtendedCueSheet extCueSheet, String trackFileName, Path cuePath) {
+    private static TrackContentHelper decompressContent(String key, Path file) {
+        TrackContentHelper tca = null;
+        try {
+            tca = TrackContentHelper.ofFile(file.toFile());
+            if (key.endsWith(".ogg")) {
+                try (AudioInputStream ais = AudioSystem.getAudioInputStream(file.toFile());
+                     AudioInputStream dataIn = AudioSystem.getAudioInputStream(CDDA_FORMAT, ais)) {
+                    byte[] b = dataIn.readAllBytes();
+                    tca = TrackContentHelper.ofDataArray(b);
+                }
+            } else if (key.endsWith(".gz")) {
+                long start = System.currentTimeMillis();
+                assert ZipUtil.isCompressedByteStream(file);
+                byte[] b = ZipUtil.readGZipFileContents(file);
+                tca = TrackContentHelper.ofDataArray(b);
+                LOG.info("Done decompressing track1 ({}), took {} ms", file.getFileName(), System.currentTimeMillis() - start);
+            }
+        } catch (Exception e) {
+            LOG.error("Unable to handle content: {}, file: {}", key, file.toAbsolutePath(), e);
+        }
+        return tca;
+    }
+
+    private static TrackContentHelper getDataFile(ExtendedCueSheet extCueSheet, String trackFileName, Path cuePath) {
         Path fp = cuePath.resolveSibling(trackFileName);
         String key = fp.getFileName().toString();
         return getDataFile(extCueSheet, key, fp, cuePath);
@@ -179,20 +205,6 @@ public class ExtendedCueSheet implements Closeable {
         return getExtTrack(extCueSheet, number).trackDataType == TrackDataType.AUDIO;
     }
 
-    public byte[] getRomHeader() {
-        assert romFileType == RomFileType.BIN_CUE;
-        byte[] dest = new byte[0x200];
-        try {
-            RandomAccessFile raf = extTracks.get(0).file;
-            //skip sync pattern(12) + header(4)
-            raf.seek(16);
-            raf.read(dest);
-        } catch (Exception e) {
-            LOG.error("Unable to parse MD header", e);
-        }
-        return dest;
-    }
-
     @Override
     public String toString() {
         String s = "\n\t" + extTracks.stream().map(Objects::toString).collect(Collectors.joining("\n\t")) + "\n";
@@ -213,12 +225,14 @@ public class ExtendedCueSheet implements Closeable {
         assert !extTracks.isEmpty();
         assert numTracks > 0 && sectorEnd > 0;
         assert !fileCache.isEmpty();
-        assert fileCache.values().stream().allMatch(r -> r.getChannel().isOpen());
+        assert fileCache.values().stream().filter(TrackContentHelper::isFileBased).allMatch(tct ->
+                tct.checkOpenIfFileBased(true));
     }
 
     @Override
     public void close() throws IOException {
         extTracks.forEach(ExtendedTrackData::closeQuietly);
-        assert fileCache.values().stream().noneMatch(r -> r.getChannel().isOpen());
+        assert fileCache.values().stream().filter(TrackContentHelper::isFileBased).allMatch(tct ->
+                tct.checkOpenIfFileBased(false));
     }
 }

@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 import static mcd.cdd.CdModel.SectorSize.S_2048;
 import static mcd.cdd.CdModel.SectorSize.S_2352;
@@ -97,20 +96,20 @@ public class CdModel {
 
         public static final ExtendedTrackData NO_TRACK = new ExtendedTrackData(null, null);
         public final TrackData trackData;
-        public final RandomAccessFile file;
+        public final TrackContentHelper data;
         public TrackDataType trackDataType;
         public int absoluteSectorStart, absoluteSectorEnd, lenBytes, trackLenSectors;
 
-        public ExtendedTrackData(TrackData trackData, RandomAccessFile file) {
+        public ExtendedTrackData(TrackData trackData, TrackContentHelper tca) {
             this.trackData = trackData;
-            this.file = file;
+            this.data = tca;
         }
 
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
                     .add("trackData", trackData)
-                    .add("file", file)
+                    .add("data", data)
                     .add("trackDataType", trackDataType)
                     .add("absoluteSectorStart", absoluteSectorStart)
                     .add("absoluteSectorEnd", absoluteSectorEnd)
@@ -125,7 +124,7 @@ public class CdModel {
         }
 
         public void closeQuietly() {
-            ZipUtil.closeQuietly(file);
+            ZipUtil.closeQuietly(data);
         }
     }
 }

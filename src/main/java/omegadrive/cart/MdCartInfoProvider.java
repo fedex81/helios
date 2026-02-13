@@ -19,6 +19,7 @@
 
 package omegadrive.cart;
 
+import mcd.cdd.TrackContentHelper;
 import omegadrive.cart.header.MdHeader.DeviceSupportField;
 import omegadrive.cart.header.MdHeader.MdRomHeaderField;
 import omegadrive.cart.loader.MdLoader;
@@ -29,7 +30,6 @@ import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
@@ -109,9 +109,8 @@ public class MdCartInfoProvider extends MediaInfoProvider {
     }
 
 
-
-    public static MdCartInfoProvider createMdInstance(RandomAccessFile raf) {
-        MdCartInfoProvider m = new MdCartInfoProvider(raf);
+    public static MdCartInfoProvider createMdInstance(TrackContentHelper tch) {
+        MdCartInfoProvider m = new MdCartInfoProvider(tch);
         m.init();
         return m;
     }
@@ -128,13 +127,13 @@ public class MdCartInfoProvider extends MediaInfoProvider {
     protected MdCartInfoProvider() {
     }
 
-    protected MdCartInfoProvider(RandomAccessFile raf) {
+    protected MdCartInfoProvider(TrackContentHelper contentHelper) {
         byte[] hd = new byte[HEADER_SIZE];
         try {
-            raf.seek(0);
-            raf.read(hd);
+            contentHelper.seek(0);
+            contentHelper.read(hd);
             this.headerBuf = ByteBuffer.wrap(hd);
-            romSize = (int) raf.length();
+            romSize = (int) contentHelper.length();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
