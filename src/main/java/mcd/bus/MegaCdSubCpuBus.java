@@ -202,7 +202,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address <= END_MCD_SUB_GATE_ARRAY_REGS) {
             handleMegaCdExpWrite(address, data, size);
         } else if (address >= START_MCD_SUB_PCM_AREA && address < END_MCD_SUB_PCM_AREA) {
-            assert address < (0xFF_4000 & MCD_SUB_ADDRESS_MASK); //Panic! (USA)
+            assert address < (0xFF_4000 & MCD_SUB_ADDRESS_MASK) : th(address); //Panic! (USA)
             pcm.write(address, data, size);
         } else if (address >= START_MCD_SUB_BRAM_AREA && address < END_MCD_SUB_BRAM_AREA) {
             writeBackupRam(memCtx.backupRam, address, data, size);

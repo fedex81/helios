@@ -109,11 +109,17 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         );
         if (isMegaCd) {
             if ((dmaSrcHigh & 0xFF) == 2 || (dmaSrcHigh & 0xFF) == 3) {
-                assert false; //TODO prgRam
+                //TODO test, uses prgRam, Amazing Spider-Man vs. The Kingpin, The (USA)
+                megaCdDma = true;
+                LogHelper.logWarnOnce(LOG, "DMA from prgRam: {}, len: {}", th(getSourceAddress() << 1), getDmaLength());
             }
+            LogHelper.logWarnOnce(LOG, "MegaCd DMA src address: {}, fastMem: {}",
+                    th(dmaSrcHigh), megaCdDma);
         }
         if (megaCdDma || svpDma) {
             if (getDmaLength() > 1) { //Snatcher, TODO test
+                //dest0 gets openBus, src0 goes to dest1, etc
+                vdpProvider.fifoPush(getDestAddress(), busProvider.getOpenBusWord());
                 decreaseDmaLength();
                 increaseDestAddress();
             }

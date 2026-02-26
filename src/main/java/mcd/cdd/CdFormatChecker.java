@@ -9,7 +9,9 @@ import org.slf4j.Logger;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static mcd.cdd.CdModel.SectorSize.S_2352;
 import static omegadrive.sound.msumd.MsuMdHandler.CDDA_FORMAT;
@@ -28,23 +30,29 @@ public class CdFormatChecker {
     private final static Logger LOG = LogHelper.getLogger(CdFormatChecker.class.getSimpleName());
 
     //Silpheed (Demo) JP has issues, see http://redump.org/disc/39378/
-    public static boolean checkTrack1Sectors(CdModel.ExtendedTrackData etd) {
+    public static boolean checkTrack1Sectors(String str, CdModel.ExtendedTrackData etd) {
+        if (etd.trackDataType.size != S_2352) {
+            return true;
+        }
         byte[] sync = new byte[12];
         TrackContentHelper data = etd.data;
+        List<Integer> invalidSectors = new ArrayList<>();
         for (int i = 0; i < etd.trackLenSectors; i++) {
             try {
                 data.seek(i * S_2352.s_size);
                 int r = data.read(sync, 0, sync.length);
-                assert r == sync.length;
+                assert r == sync.length : etd;
                 boolean ok = Arrays.equals(expSync, sync);
                 if (!ok) {
-                    LOG.error("sector {}/{}, sync {}", i, etd.trackLenSectors, ok);
-                } else {
-//                    LOG.info("sector {}/{}, sync {}", i, etd.trackLenSectors, ok);
+                    invalidSectors.add(i);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+        if (invalidSectors.size() > 0) {
+            LOG.warn("Invalid sectors, missing sync, {} out of {}, list: {}, {}", invalidSectors.size(), etd.trackLenSectors,
+                    Arrays.toString(invalidSectors.toArray()), str);
         }
         return true;
     }

@@ -145,36 +145,40 @@ public class McdAutomatedGameTester {
         for (Path rom : testRoms) {
             jbBtnPressDone = false;
             bootTimeMs = System.currentTimeMillis();
-            MediaSpecHolder romSpec = MediaSpecHolder.of(rom);
-            String name = FileUtil.getFileName(rom);
-            System.out.println(count++ + ": " + name);
-            system = systemLoader.handleNewRomFile(romSpec);
-            if (system == null) {
-                System.out.print(" - SKIP");
-                continue;
-            }
-            Util.sleep(BOOT_DELAY_MS);
-            boolean tooManyErrors = false;
-            int totalDelay = BOOT_DELAY_MS;
+            System.out.println(count++ + ": " + rom.getFileName());
+            try {
+                MediaSpecHolder romSpec = MediaSpecHolder.of(rom);
+                String name = FileUtil.getFileName(rom);
+                system = systemLoader.handleNewRomFile(romSpec);
+                if (system == null) {
+                    System.out.print(" - SKIP");
+                    continue;
+                }
+                Util.sleep(BOOT_DELAY_MS);
+                boolean tooManyErrors = false;
+                int totalDelay = BOOT_DELAY_MS;
 
-            if (system.isRomRunning()) {
-                do {
-                    tooManyErrors = checkLogFileSize(logFile, name, logFileLen);
-                    logFileLen = logFileLength(logFile);
-                    Util.sleep(LOG_CHECK_DELAY_MS);
-                    totalDelay += LOG_CHECK_DELAY_MS;
-                    //JP bios need START and then BTN_A press
-                    jbBiosButtonPresses(system);
-                } while (totalDelay < MAX_RUNTIME_MS && !tooManyErrors);
-                system.handleSystemEvent(CLOSE_ROM, null);
-            }
+                if (system.isRomRunning()) {
+                    do {
+                        tooManyErrors = checkLogFileSize(logFile, name, logFileLen);
+                        logFileLen = logFileLength(logFile);
+                        Util.sleep(LOG_CHECK_DELAY_MS);
+                        totalDelay += LOG_CHECK_DELAY_MS;
+                        //JP bios need START and then BTN_A press
+                        jbBiosButtonPresses(system);
+                    } while (totalDelay < MAX_RUNTIME_MS && !tooManyErrors);
+                    system.handleSystemEvent(CLOSE_ROM, null);
+                }
 
-            logFileLen = logFileLength(logFile);
-            Util.sleep(750);
-            long lenByte = logFileLength(logFile);
-            if (lenByte > TEN_MEGABYTES) {
-                fileTooBig(logFile);
-                break;
+                logFileLen = logFileLength(logFile);
+                Util.sleep(750);
+                long lenByte = logFileLength(logFile);
+                if (lenByte > TEN_MEGABYTES) {
+                    fileTooBig(logFile);
+                    break;
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
         }
     }

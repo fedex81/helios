@@ -104,14 +104,17 @@ public class ExtendedCueSheet implements Closeable {
         assert !tracks.isEmpty();
         extCueSheet.numTracks = tracks.size();
         parseTrack(extCueSheet, 1, cuePath);
-        assert CdFormatChecker.checkTrack1Sectors(extTracks.get(0));
-//        Util.executorService.submit(() -> {
-            long start = System.currentTimeMillis();
-            tracks.stream().filter(t -> t.getNumber() != 1).parallel().
-                    forEachOrdered(t -> parseTrack(extCueSheet, t.getNumber(), cuePath));
-            LOG.info("Done parsing tracks from CUE sheet, took {} ms", System.currentTimeMillis() - start);
-            dataReady.countDown();
-//        });
+        assert CdFormatChecker.checkTrack1Sectors(cuePath.toAbsolutePath().toString(), extTracks.get(0));
+        parseOtherTracks(tracks);
+    }
+
+    private void parseOtherTracks(List<TrackData> tracks) {
+        LOG.info("Started parsing audio tracks (track > 1): {}", tracks.size() - 1);
+        long start = System.currentTimeMillis();
+        tracks.stream().filter(t -> t.getNumber() != 1).parallel().
+                forEachOrdered(t -> parseTrack(this, t.getNumber(), cuePath));
+        LOG.info("Done parsing audio tracks from CUE sheet, took {} ms", System.currentTimeMillis() - start);
+        dataReady.countDown();
     }
 
     private void parseTrack(ExtendedCueSheet extCueSheet, int trackNumber, Path cuePath) {

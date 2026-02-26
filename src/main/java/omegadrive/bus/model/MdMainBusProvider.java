@@ -105,6 +105,10 @@ public interface MdMainBusProvider extends MdM68kBusProvider, Z80BusProvider {
 
     MdVdpProvider getVdp();
 
+    default int getOpenBusWord() {
+        throw new RuntimeException("Open bus not supported");
+    }
+
     default int[] getMapperData() {
         return EMPTY;
     }

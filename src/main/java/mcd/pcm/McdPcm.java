@@ -142,6 +142,7 @@ public class McdPcm implements BufferUtil.StepDevice {
             logAccessReg(regSpec, SUB_M68K, address, size, true);
             return BufferUtil.readBuffer(pcmRegs, address, size);
         }
+        //TODO Puggsy (Europe): java.lang.AssertionError: 145e,LONG
         assert size == Size.BYTE : th(address) + "," + size;
         if (address >= PCM_START_WAVE_DATA_WINDOW) {
             //NOTE, this only support reading from [0x2000-0x4000] which in turns maps to [0-0x1000] | waveBank
@@ -174,8 +175,8 @@ public class McdPcm implements BufferUtil.StepDevice {
             logAccessReg(regSpec, SUB_M68K, address, size, false);
             writeRegByte(regSpec, address, value);
         } else {
-            LOG.error("Unhandled write: {}, {} {}", th(address), th(value), size);
-            assert false;
+            //Blackhole Assault (Europe): Unhandled write: 1f, 0 BYTE
+            LogHelper.logWarnOnce(LOG, "Unhandled write: {}, {} {}", th(address), th(value), size);
         }
     }
 

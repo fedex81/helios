@@ -136,7 +136,7 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
                 bb.get(b);
                 String sha1 = Util.computeSha1Sum(b);
                 if (sci.sha1.equalsIgnoreCase(sha1)) {
-                    System.out.println(sci.region);
+                    LOG.info("Security code region: {}", sci.region);
                     return sci.region;
                 }
             }

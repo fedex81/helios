@@ -342,7 +342,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
             checkSvpMapper();
             return svpMapper.m68kSvpRegRead(address, size);
         } else {
-            LOG.error("Unexpected internalRegRead: {} , {}", th(address), size);
+            LogHelper.logWarnOnce(LOG, "Unexpected internalRegRead: {} , {}", th(address), size);
         }
         return 0xFF;
     }
@@ -374,7 +374,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         } else if (address >= MEGA_CD_EXP_START && address <= MEGA_CD_EXP_END) {
             msuMdHandler.handleMsuMdWrite(address, data, size);
         } else {
-            LOG.warn("Unexpected internalRegWrite: {}, {}, {}", th(address),
+            LogHelper.logWarnOnce(LOG, "Unexpected internalRegWrite: {}, {}, {}", th(address),
                     th(data), size);
         }
     }
@@ -906,6 +906,11 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
     @Override
     public MdVdpProvider getVdp() {
         return vdpProvider;
+    }
+
+    @Override
+    public int getOpenBusWord() {
+        return m68kProvider.getPrefetchWord();
     }
 
     @Override
