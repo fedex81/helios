@@ -34,6 +34,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -119,6 +120,18 @@ public class Util {
                 LOG.info("Leaving barrier: {}", e.getClass().getName());
             }
             barrier.reset();
+        }
+    }
+
+    public static void waitOnLatch(CountDownLatch latch, boolean verbose) {
+        try {
+            latch.await();
+        } catch (Exception e) {
+            if (verbose) {
+                LOG.warn("Error on barrier", e);
+            } else {
+                LOG.info("Leaving barrier: {}", e.getClass().getName());
+            }
         }
     }
 

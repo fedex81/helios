@@ -50,6 +50,19 @@ public class McdPrgRamTest extends McdRegTestBase {
         Assertions.assertEquals(0x11223344, res);
     }
 
+    //"what is X-EYE" JP
+    @Test
+    public void testPrgRamLongWriteBoundary() {
+        MdRuntimeData.setAccessTypeExt(SUB_M68K);
+        subCpuBus.write(END_MCD_SUB_PRG_RAM - 2, 0x1122, Size.WORD);
+        subCpuBus.write(0, 0x3344, Size.WORD);
+
+        //long write at boundary
+        subCpuBus.write(END_MCD_SUB_PRG_RAM - 2, 0xAABB_7788, Size.LONG);
+        int res = subCpuBus.read(END_MCD_SUB_PRG_RAM - 2, Size.LONG);
+        Assertions.assertEquals(0xAABB_7788, res);
+    }
+
     int mainResetReg = McdGateArrayRegTest.MAIN_RESET_REG;
 
 

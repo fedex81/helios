@@ -109,7 +109,16 @@ public class MegaCdMemoryContext implements Serializable {
             }
             return;
         }
-        writeData(prgRam, address, val, size);
+        writeProgRamInternal(address, val, size);
+    }
+
+    private void writeProgRamInternal(int address, int val, Size size) {
+        if (size == Size.LONG) {
+            writeData(prgRam, address, val >>> 16, Size.WORD);
+            writeData(prgRam, (address + 2) & MCD_PRG_RAM_MASK, val, Size.WORD);
+        } else {
+            writeData(prgRam, address, val, size);
+        }
     }
 
     public ByteBuffer getGateSysRegs(CpuDeviceAccess cpu) {

@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -56,6 +57,8 @@ public class ExtendedCueSheet implements Closeable {
     public final List<ExtendedTrackData> extTracks = new ArrayList<>();
     public int numTracks, sectorEnd;
     protected final Map<String, TrackContentHelper> fileCache = new ConcurrentHashMap<>();
+
+    protected final CountDownLatch dataReady = new CountDownLatch(1);
 
     public ExtendedCueSheet(Path discImage, RomFileType rft) {
         assert rft.isDiscImage();
@@ -107,12 +110,10 @@ public class ExtendedCueSheet implements Closeable {
         parseTrack(extCueSheet, 1, cuePath);
         Util.executorService.submit(() -> {
             long start = System.currentTimeMillis();
-            for (TrackData track : tracks) {
-                if (track.getNumber() != 1) {
-                    parseTrack(extCueSheet, track.getNumber(), cuePath);
-                }
-            }
+            tracks.stream().filter(t -> t.getNumber() != 1).parallel().
+                    forEachOrdered(t -> parseTrack(extCueSheet, t.getNumber(), cuePath));
             LOG.info("Done parsing tracks from CUE sheet, took {} ms", System.currentTimeMillis() - start);
+            dataReady.countDown();
         });
     }
 
@@ -125,7 +126,10 @@ public class ExtendedCueSheet implements Closeable {
             List<ExtendedTrackData> extTracks = extCueSheet.extTracks;
             int sectorStart = 0;
             if (!extTracks.isEmpty()) {
-                sectorStart = extTracks.get(extTracks.size() - 1).absoluteSectorEnd;
+                int zeroBasedPrevTrackIndex = trackNumber - 1 - 1;
+                assert zeroBasedPrevTrackIndex > 0 && extTracks.get(zeroBasedPrevTrackIndex) != null;
+                sectorStart = extTracks.get(zeroBasedPrevTrackIndex).absoluteSectorEnd;
+                assert sectorStart > 0;
             }
             CdModel.SectorSize sectorSize = extTrackData.trackDataType.size;
             extTrackData.lenBytes = (int) tca.length();
@@ -142,7 +146,7 @@ public class ExtendedCueSheet implements Closeable {
             }
             extTracks.add(extTrackData);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Unable to parse track: {}", trackNumber, e);
         }
     }
 
@@ -191,12 +195,16 @@ public class ExtendedCueSheet implements Closeable {
 
     public static ExtendedTrackData getExtTrack(ExtendedCueSheet extCueSheet, int number) {
         assert number > 0;
+        if (number > 1) {
+            Util.waitOnLatch(extCueSheet.dataReady, true);
+        }
         int zeroBased = number - 1;
         ExtendedTrackData td = NO_TRACK;
         if (zeroBased >= 0 && zeroBased < extCueSheet.extTracks.size()) {
             td = extCueSheet.extTracks.get(zeroBased);
             assert td.trackData.getNumber() == number;
         }
+        assert td != NO_TRACK;
         return td;
     }
 
