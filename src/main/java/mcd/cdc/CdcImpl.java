@@ -1,11 +1,8 @@
 package mcd.cdc;
 
 import mcd.bus.McdSubInterruptHandler;
-import mcd.cdd.CdModel;
+import mcd.cdd.*;
 import mcd.cdd.CdModel.ExtendedTrackData;
-import mcd.cdd.Cdd;
-import mcd.cdd.ExtendedCueSheet;
-import mcd.cdd.TrackContentHelper;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.sound.msumd.CueFileParser;
@@ -17,7 +14,6 @@ import omegadrive.util.Size;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDC;
 import static mcd.cdc.CdcModel.*;
@@ -522,7 +518,7 @@ public class CdcImpl implements Cdc {
                 /* skip block sync pattern (12 bytes) + block header (4 bytes) then read Mode 1 user data (2048 bytes) */
                 assert track.trackDataType.size == S_2352;
                 int seekPos = (sector * track.trackDataType.size.s_size) + 12 + 4;
-                assert checkMode1Data(track, msfHolder, seekPos);
+                assert CdFormatChecker.checkMode1Data(track, msfHolder, cdcContext.header, seekPos);
                 doFileRead(track.data, seekPos, S_2048.s_size, offset);
 //                    cdStreamSeek(cdd.toc.tracks[0].fd, (cdd.lba * 2352) + 12 + 4, SEEK_SET);
 //                    cdStreamRead(dst, 2048, 1, cdd.toc.tracks[0].fd);
@@ -547,41 +543,6 @@ public class CdcImpl implements Cdc {
             e.printStackTrace();
             assert false;
         }
-    }
-
-
-    static final byte[] expSync = {0, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
-            (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, 0};
-
-    private boolean checkMode1Data(ExtendedTrackData track, MsfHolder holder, int dataSeekPos) {
-        byte[] header = new byte[4];
-        byte[] syncHeader = new byte[12];
-        boolean ok = false;
-        try {
-            track.data.seek(dataSeekPos - 16);
-            int readN = track.data.read(syncHeader, 0, syncHeader.length);
-            try {
-                assert readN == syncHeader.length : track + ",seekPos:" + th(dataSeekPos); //SurgicalStrike_E
-            } catch (Error e) {
-                //try-catch for debugging
-                e.printStackTrace();
-            }
-            readN = track.data.read(header, 0, header.length);
-            assert readN == header.length;
-            ok = Integer.parseInt("" + holder.minute, 16) == header[0] &&
-                    Integer.parseInt("" + holder.second, 16) == header[1] &&
-                    Integer.parseInt("" + holder.frame, 16) == header[2];
-            ok &= header[0] == cdcContext.header.minute &&
-                    header[1] == cdcContext.header.second &&
-                    header[2] == cdcContext.header.frame;
-            ok &= header[3] == cdcContext.header.mode; //MODE1
-            ok &= Arrays.equals(expSync, syncHeader);
-        } catch (Exception e) {
-            LOG.error("decode error: {}", e.getMessage());
-            e.printStackTrace();
-            assert false;
-        }
-        return ok;
     }
 
     @Override

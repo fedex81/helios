@@ -92,7 +92,6 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
 
     private void checkTrack01Header(CdModel.ExtendedTrackData track01) {
         //check that *.iso is really an iso file internally
-        SysUtil.RomFileType romFileType = mediaSpec.type;
         mediaSpec.bootable = true;
         try {
             byte[] header = new byte[headerLen];
@@ -102,16 +101,16 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
             tca.read(header, 0, header.length);
             detectedRomFileType = SysUtil.RomFileType.UNKNOWN;
             if (Arrays.equals(SCD_SYS_BYTES, 0, SCD_SYS_BYTES.length, header, 0, SCD_SYS_BYTES.length)) {
-                System.out.println("valid Sega CD image");
+                LOG.info("valid Sega CD ISO image");
                 detectedRomFileType = SysUtil.RomFileType.ISO;
             } else if (Arrays.equals(CD_SYNC_BYTES, 0, CD_SYNC_BYTES.length, header, 0, CD_SYNC_BYTES.length)) {
-                System.out.println("CD-ROM synchro pattern");
+                LOG.info("CD-ROM synchro pattern");
                 detectedRomFileType = SysUtil.RomFileType.BIN_CUE;
             } else if (trackDataType == CdModel.TrackDataType.AUDIO) {
-                System.out.println("CD-AUDIO");
+                LOG.info("CD-AUDIO");
                 detectedRomFileType = SysUtil.RomFileType.BIN_CUE;
             } else {
-                System.out.println("non bootable Sega CD ISO");
+                LOG.info("non bootable Sega CD ISO");
                 detectedRomFileType = SysUtil.RomFileType.ISO;
                 mediaSpec.bootable = false;
             }

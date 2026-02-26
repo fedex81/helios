@@ -187,7 +187,7 @@ public class McdAutomatedGameTester {
             jbBtnPressDone = true;
             return;
         }
-        if (System.currentTimeMillis() - bootTimeMs < 5000) {
+        if (System.currentTimeMillis() - bootTimeMs < 15000) {
             return;
         }
         Util.sleep(BOOT_DELAY_MS << 1);

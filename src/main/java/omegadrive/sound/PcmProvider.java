@@ -1,6 +1,8 @@
 package omegadrive.sound;
 
+import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
+import org.slf4j.Logger;
 
 /**
  * Federico Berti
@@ -9,10 +11,12 @@ import omegadrive.util.RegionDetector;
  */
 public interface PcmProvider extends SoundDevice, SoundDevice.MutableDevice {
 
+    Logger LOG = LogHelper.getLogger(PcmProvider.class.getSimpleName());
+
     void playSample(int left, int right);
 
     default void updateRegion(RegionDetector.Region region) {
-        throw new RuntimeException("illegal");
+        LogHelper.logWarnOnce(LOG, "Ignoring region set: {}", region);
     }
 
     default void updateRegion(RegionDetector.Region region, int clockRate) {

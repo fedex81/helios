@@ -411,7 +411,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
             return;
         }
         if (address >= START_MCD_SUB_GA_COMM_R && address < START_MCD_SUB_GA_COMM_W) { //SUB COMM READ ONLY
-            LOG.error("S illegal write read-only MEGA_CD_COMM reg: {}", th(address));
+            LogHelper.logWarnOnce(LOG, "S illegal write read-only MEGA_CD_COMM reg: {}", th(address));
             return;
         }
     }
