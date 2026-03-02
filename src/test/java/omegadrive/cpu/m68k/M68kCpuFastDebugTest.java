@@ -26,14 +26,15 @@ public class M68kCpuFastDebugTest {
     public void testLoopRepetitionDetection() {
         CpuFastDebug.CpuDebugContext ctx = MC68000WrapperFastDebug.createContext(BufferUtil.CpuDeviceAccess.M68K);
         CpuFastDebug cfd = new CpuFastDebug(null, ctx);
+        CpuBusyLoopDetection busyLoopDetect = new CpuBusyLoopDetection(cfd);
         for (int i = 0; i < test01.length; i++) {
-            cfd.isBusyLoop(test01[i], 1);
+            busyLoopDetect.isBusyLoop(test01[i], 1);
         }
         for (int i = 0; i < test02.length; i++) {
-            cfd.isBusyLoop(test02[i], 1);
+            busyLoopDetect.isBusyLoop(test02[i], 1);
         }
         for (int i = 0; i < test03.length; i++) {
-            cfd.isBusyLoop(test02[i], 1);
+            busyLoopDetect.isBusyLoop(test02[i], 1);
         }
     }
 
@@ -302,10 +303,10 @@ public class M68kCpuFastDebugTest {
     }
 
     private boolean isBusyLoop(int[] opcodes) {
-        return CpuFastDebug.isBusyLoop(MC68000WrapperFastDebug.isLoopOpcode, opcodes);
+        return CpuBusyLoopDetection.isBusyLoop(MC68000WrapperFastDebug.isLoopOpcode, opcodes);
     }
 
     private boolean isIgnored(int[] opcodes) {
-        return CpuFastDebug.isIgnore(MC68000WrapperFastDebug.isIgnoreOpcode, opcodes);
+        return CpuBusyLoopDetection.isIgnore(MC68000WrapperFastDebug.isIgnoreOpcode, opcodes);
     }
 }

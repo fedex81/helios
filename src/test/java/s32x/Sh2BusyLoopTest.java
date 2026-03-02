@@ -1,6 +1,6 @@
 package s32x;
 
-import omegadrive.cpu.CpuFastDebug;
+import omegadrive.cpu.m68k.CpuBusyLoopDetection;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
@@ -776,7 +776,7 @@ public class Sh2BusyLoopTest {
     }
 
     private boolean isPollOrBusyLoop(int[] opcodes) {
-        return CpuFastDebug.isBusyLoop(Sh2Debug.isLoopOpcode, opcodes);
+        return CpuBusyLoopDetection.isBusyLoop(Sh2Debug.isLoopOpcode, opcodes);
     }
 
     private boolean isPollSequence(int[] opcodes) {
@@ -801,7 +801,7 @@ public class Sh2BusyLoopTest {
     }
 
     private boolean isIgnored(int[] opcodes) {
-        return CpuFastDebug.isIgnore(Sh2Debug.isIgnoreOpcode, opcodes);
+        return CpuBusyLoopDetection.isIgnore(Sh2Debug.isIgnoreOpcode, opcodes);
     }
 
     private Sh2Context clearSh2Context() {

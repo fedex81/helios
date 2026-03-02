@@ -21,6 +21,7 @@ package omegadrive.cpu.z80.debug;
 
 import com.google.common.collect.ImmutableMap;
 import omegadrive.cpu.CpuFastDebug;
+import omegadrive.cpu.m68k.CpuBusyLoopDetection;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Helper;
 import omegadrive.cpu.z80.disasm.Z80Dasm;
@@ -41,6 +42,8 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
             0, 0xFFFF);
     protected Z80Dasm z80Disasm;
     private CpuFastDebug fastDebug;
+
+    private CpuBusyLoopDetection busyLoopDetect;
     private int pc, opcode;
 
     @Override
@@ -48,6 +51,7 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
         super.setupInternal(z80State);
         z80Disasm = new Z80Dasm();
         fastDebug = new CpuFastDebug(this, createContext());
+        busyLoopDetect = new CpuBusyLoopDetection(fastDebug);
         return this;
     }
 
@@ -55,7 +59,7 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
     @Override
     public int executeInstruction() {
         printDebugMaybe();
-        return fastDebug.isBusyLoop(pc, opcode) + super.executeInstruction();
+        return busyLoopDetect.isBusyLoop(pc, opcode) + super.executeInstruction();
     }
 
     private void printDebugMaybe() {

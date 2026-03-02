@@ -24,6 +24,7 @@ import m68k.cpu.M68kVectors;
 import omegadrive.bus.model.MdM68kBusProvider;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.CpuDebugContext;
+import omegadrive.cpu.m68k.CpuBusyLoopDetection;
 import omegadrive.cpu.m68k.MC68000Helper;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
@@ -48,6 +49,8 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
     private static final boolean busyLoopDetection = Boolean.parseBoolean(System.getProperty("helios.68k.busy.loop", "false"));
 
     private final CpuFastDebug fastDebug;
+
+    private final CpuBusyLoopDetection busyLoopDetect;
     private int opcode, intLevel;
 
     //this marks memory areas that can store executable code
@@ -59,6 +62,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
     public MC68000WrapperFastDebug(CpuDeviceAccess cpu, MdM68kBusProvider busProvider) {
         super(cpu, busProvider);
         fastDebug = new CpuFastDebug(this, createContext(cpu));
+        busyLoopDetect = new CpuBusyLoopDetection(fastDebug);
         init();
     }
 
@@ -91,7 +95,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
             //            checkInterruptLevelChange();
             return super.runInstruction();
         }
-        return fastDebug.isBusyLoop(currentPC, opcode) + super.runInstruction();
+        return busyLoopDetect.isBusyLoop(currentPC, opcode) + super.runInstruction();
     }
     private void checkInterruptLevelChange() {
         int pl = m68k.getInterruptLevel();
