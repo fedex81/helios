@@ -1,6 +1,6 @@
 package s32x;
 
-import omegadrive.cpu.m68k.CpuBusyLoopDetection;
+import omegadrive.cpu.CpuBusyLoopDetection;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;

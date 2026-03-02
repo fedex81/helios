@@ -182,7 +182,7 @@ public class CpuFastDebug {
         log((logHead.isEmpty() ? "" : logHead + " ") + instOnly, tail);
     }
 
-    public PcInfoWrapper createPcWrapper(int pcMasked, int area, int opcode) {
+    protected PcInfoWrapper createPcWrapper(int pcMasked, int area, int opcode) {
         PcInfoWrapper piw = new PcInfoWrapper(area, pcMasked);
         piw.opcode = opcode;
         return piw;

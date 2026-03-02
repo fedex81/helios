@@ -1,5 +1,6 @@
 package omegadrive.cpu.m68k;
 
+import omegadrive.cpu.CpuBusyLoopDetection;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
 import omegadrive.util.BufferUtil;

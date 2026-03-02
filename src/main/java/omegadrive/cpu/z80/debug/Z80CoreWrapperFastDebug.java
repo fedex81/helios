@@ -20,8 +20,8 @@
 package omegadrive.cpu.z80.debug;
 
 import com.google.common.collect.ImmutableMap;
+import omegadrive.cpu.CpuBusyLoopDetection;
 import omegadrive.cpu.CpuFastDebug;
-import omegadrive.cpu.m68k.CpuBusyLoopDetection;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Helper;
 import omegadrive.cpu.z80.disasm.Z80Dasm;

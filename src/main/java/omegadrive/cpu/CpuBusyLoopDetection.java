@@ -1,6 +1,5 @@
-package omegadrive.cpu.m68k;
+package omegadrive.cpu;
 
-import omegadrive.cpu.CpuFastDebug;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
