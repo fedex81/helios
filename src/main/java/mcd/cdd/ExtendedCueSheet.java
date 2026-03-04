@@ -103,12 +103,16 @@ public class ExtendedCueSheet implements Closeable {
         List<TrackData> tracks = extCueSheet.cueSheet.getAllTrackData();
         assert !tracks.isEmpty();
         extCueSheet.numTracks = tracks.size();
+        LOG.info("Started parsing {} track (track 01)", tracks.get(0).getDataType());
         parseTrack(extCueSheet, 1, cuePath);
         assert CdFormatChecker.checkTrack1Sectors(cuePath.toAbsolutePath().toString(), extTracks.get(0));
         parseOtherTracks(tracks);
     }
 
     private void parseOtherTracks(List<TrackData> tracks) {
+        if (tracks.size() == 1) {
+            return;
+        }
         LOG.info("Started parsing audio tracks (track > 1): {}", tracks.size() - 1);
         long start = System.currentTimeMillis();
         tracks.stream().filter(t -> t.getNumber() != 1).parallel().
@@ -122,6 +126,7 @@ public class ExtendedCueSheet implements Closeable {
         TrackContentHelper tca = getDataFile(extCueSheet, trackData.getParent().getFile(), cuePath);
         ExtendedTrackData extTrackData = new ExtendedTrackData(trackData, tca);
         extTrackData.trackDataType = TrackDataType.parse(trackData.getDataType());
+        assert trackNumber > 1 ? extTrackData.trackDataType == TrackDataType.AUDIO : true;
         try {
             List<ExtendedTrackData> extTracks = extCueSheet.extTracks;
             int sectorStart = 0;

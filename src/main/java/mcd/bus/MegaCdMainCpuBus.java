@@ -58,20 +58,20 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
      * 0x400000 instead of 0x000000. So the BIOS ROM is at 0x400_000, the
      * Program RAM bank is at 0x420_000, and the Word RAM is at 0x600_000.
      */
-    private ByteBuffer prgRam, sysGateRegs, commonGateRegs;
+    private final ByteBuffer prgRam, sysGateRegs, commonGateRegs;
     private int prgRamBankValue = 0, prgRamBankShift = 0;
 
     private boolean enableMCDBus = true, enableMode1 = false, isBios;
 
     public ByteBuffer bios;
-    private LogHelper logHelper = new LogHelper();
-    private MegaCdMemoryContext memCtx;
+    private final LogHelper logHelper = new LogHelper();
+    private final MegaCdMemoryContext memCtx;
 
-    private McdBiosHolder biosHolder;
+    private final McdBiosHolder biosHolder;
 
     public MC68000Wrapper subCpu;
     public MegaCdSubCpuBusIntf subCpuBus;
-    private CpuDeviceAccess cpu;
+    private final CpuDeviceAccess cpu;
 
     private int maskMode1;
 
@@ -355,7 +355,8 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         switch (regSpec.deviceType) {
             case SYS -> handleSysRegWrite(regSpec, address, data, size);
             case COMM -> handleCommWrite(regSpec, address, data, size);
-            default -> LOG.error("M illegal write MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, data, size);
+            default ->
+                    LOG.error("M illegal write MEGA_CD_EXP reg: {} ({}), {} {}", th(address), regSpec, th(data), size);
         }
     }
 
@@ -482,7 +483,6 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         }
         if (address >= MCD_COMM8.addr && address < MCD_TIMER_INT3.addr) { //MAIN COMM READ ONLY
             LOG.error("M illegal write read-only MEGA_CD_COMM reg: {}", th(address));
-            return;
         }
     }
 

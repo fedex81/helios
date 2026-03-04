@@ -31,7 +31,7 @@ public class CdFormatChecker {
 
     //Silpheed (Demo) JP has issues, see http://redump.org/disc/39378/
     public static boolean checkTrack1Sectors(String str, CdModel.ExtendedTrackData etd) {
-        if (etd.trackDataType.size != S_2352) {
+        if (etd.trackDataType == CdModel.TrackDataType.AUDIO || etd.trackDataType.size != S_2352) {
             return true;
         }
         byte[] sync = new byte[12];

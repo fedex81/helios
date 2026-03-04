@@ -6,10 +6,10 @@ import mcd.cdd.TrackContentHelper;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.system.MediaSpecHolder.MediaSpec;
 import omegadrive.system.SysUtil;
+import omegadrive.util.HexUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.Util;
-import omegadrive.vdp.util.MemView;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
@@ -75,9 +75,8 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
             assert sheetOpt.isPresent();
             CdModel.ExtendedTrackData t1 = sheetOpt.get().extTracks.get(0);
             checkTrack01Header(t1);
-            securityCodeRegion = mediaSpec.region;
             if (mediaSpec.bootable) {
-                securityCodeRegion = verifySecurityCodeRegion(t1);
+                securityCodeRegion = verifySecurityCodeRegion(t1, mediaSpec.region);
             }
             romSize = t1.lenBytes;
         }
@@ -120,7 +119,11 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
         }
     }
 
-    private static RegionDetector.Region verifySecurityCodeRegion(CdModel.ExtendedTrackData track01) {
+    private static RegionDetector.Region verifySecurityCodeRegion(CdModel.ExtendedTrackData track01, RegionDetector.Region defaultRegion) {
+        if (track01.trackDataType == CdModel.TrackDataType.AUDIO) {
+            LOG.info("{} using default region: {}", track01.trackDataType, defaultRegion);
+            return defaultRegion;
+        }
         try {
             byte[] secCode = new byte[0x700];
             //sector 2352 starts with 0x10 sync/header bytes, ignore them
@@ -137,18 +140,22 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
                 String sha1 = Util.computeSha1Sum(b);
                 if (sci.sha1.equalsIgnoreCase(sha1)) {
                     LOG.info("Security code region: {}", sci.region);
+                    if (defaultRegion != sci.region) {
+                        LOG.warn("Disc vs Security code region mismatch, {} vs {}, using {}",
+                                defaultRegion, sci.region, sci.region);
+                    }
                     return sci.region;
                 }
             }
             LOG.error("Unknown security code!");
             StringBuilder sb = new StringBuilder(track01 + "\n");
-            MemView.fillFormattedString(sb, secCode, 0, secCode.length);
+            HexUtil.fillFormattedString(sb, secCode);
             System.out.println(sb);
         } catch (Exception e) {
             e.printStackTrace();
             LOG.error(e.getMessage());
         }
-        return null;
+        return defaultRegion;
     }
 
     @Override

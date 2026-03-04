@@ -2,8 +2,8 @@ package mcd.util;
 
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.util.FileUtil;
+import omegadrive.util.HexUtil;
 import omegadrive.util.LogHelper;
-import omegadrive.vdp.util.MemView;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
@@ -81,7 +81,7 @@ public class McdWramCell {
 
     public static void printMemoryBank(MegaCdMemoryContext ctx, int bank) {
         StringBuilder sb = new StringBuilder();
-        MemView.fillFormattedString(sb, ctx.wordRam01[bank], 0, ctx.wordRam01[bank].length);
+        HexUtil.fillFormattedString(sb, ctx.wordRam01[bank]);
         System.out.println("\n\n" + sb);
     }
 

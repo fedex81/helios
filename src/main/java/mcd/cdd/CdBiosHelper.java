@@ -5,8 +5,8 @@ import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Table;
 import m68k.cpu.Cpu;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
+import omegadrive.util.HexUtil;
 import omegadrive.util.LogHelper;
-import omegadrive.vdp.util.MemView;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -425,7 +425,7 @@ public class CdBiosHelper {
     private static boolean printMemRegion(CpuDeviceAccess cpu, byte[] data, CdMemRegion r) {
         int startIncl = r.startInclusive & MAX_AREA_MASK;
         int endIncl = r.endInclusive & MAX_AREA_MASK;
-        MemView.fillFormattedString(sb, data, startIncl, endIncl);
+        HexUtil.fillFormattedString(sb, data, startIncl, endIncl);
         int hc = sb.toString().hashCode();
         int[] areaHash = memAreaHash[cpu == M68K ? 0 : 1];
         //print first write or when changed

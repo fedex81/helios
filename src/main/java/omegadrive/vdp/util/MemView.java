@@ -1,6 +1,5 @@
 package omegadrive.vdp.util;
 
-import com.google.common.base.Ascii;
 import omegadrive.Device;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cpu.z80.Z80Provider;
@@ -18,7 +17,6 @@ import java.awt.event.ActionEvent;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HexFormat;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,6 +25,7 @@ import java.util.function.BiFunction;
 import static omegadrive.bus.model.MdMainBusProvider.ADDRESS_RAM_MAP_START;
 import static omegadrive.bus.model.MdZ80BusProvider.END_RAM;
 import static omegadrive.memory.MemoryProvider.M68K_RAM_SIZE;
+import static omegadrive.util.HexUtil.fillFormattedString;
 import static omegadrive.vdp.model.MdVdpProvider.*;
 import static omegadrive.vdp.util.MemView.MemViewOwner.*;
 
@@ -55,19 +54,18 @@ public class MemView implements Device, UpdatableViewer {
 
     private JFrame frame;
     private JPanel panel;
-    private JScrollPane scrollPane;
     private JTextArea textArea;
     private JComboBox<MemViewData> listComp;
 
     private volatile byte[] data;
-    private AtomicReference<MemViewData> currentViewRef = new AtomicReference<>(MdMemViewType.values()[0]);
+    private final AtomicReference<MemViewData> currentViewRef = new AtomicReference<>(MdMemViewType.values()[0]);
     private final Map<MemViewOwner, BiFunction<MemViewData, Integer, Integer>> readerMap;
     private final StringBuilder sb = new StringBuilder();
 
     private final MemViewData[] memViewData;
 
     public enum MemViewOwner {
-        SH2, M68K, Z80, MD_VDP, SH2_WORD, MCD_SUB_CPU;
+        SH2, M68K, Z80, MD_VDP, SH2_WORD, MCD_SUB_CPU
     }
 
     public interface MemViewData {
@@ -221,7 +219,7 @@ public class MemView implements Device, UpdatableViewer {
         textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
         textArea.setMinimumSize(new Dimension(600, 600));
         textArea.setEditable(false);
-        scrollPane = new JScrollPane(textArea);
+        JScrollPane scrollPane = new JScrollPane(textArea);
         listComp = new JComboBox<>(memViewData);
         listComp.addActionListener(this::updateSelected);
         JPanel topPanel = new JPanel();
@@ -251,7 +249,7 @@ public class MemView implements Device, UpdatableViewer {
     }
 
     private int cnt = 0;
-    private AtomicInteger qLen = new AtomicInteger(0);
+    private final AtomicInteger qLen = new AtomicInteger(0);
 
     public void update() {
         cnt++;
@@ -287,35 +285,11 @@ public class MemView implements Device, UpdatableViewer {
         updateNow();
     }
 
-    private static final int BYTES_PER_LINE = 0x10;
     private void updateFromMemory(int start, int end) {
         fillFormattedString(sb, data, start, end);
         textArea.setText(sb.toString());
         sb.setLength(0);
         qLen.decrementAndGet();
-    }
-
-    public static void fillFormattedString(StringBuilder sb, byte[] data, int start, int end) {
-        try {
-            HexFormat hf = HexFormat.of().withSuffix(" ");
-            sb.append(String.format("%8x", start)).append(": ");
-            int len = end - start;
-            int startZero = start > 0 ? 0 : start; //zero based
-            int endZero = startZero + len;
-            for (int i = startZero; i < endZero; i += BYTES_PER_LINE) {
-                int slen = Math.min(len, BYTES_PER_LINE);
-                hf.formatHex(sb, data, i, i + slen).append("  ");
-                for (int j = i; j < i + slen; j++) {
-                    sb.append(toAsciiChar(data[j])).append(" ");
-                }
-                if ((i - startZero) + BYTES_PER_LINE < len) {
-                    sb.append("\n").append(String.format("%8x", i + BYTES_PER_LINE)).append(": ");
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("Error", e);
-            e.printStackTrace();
-        }
     }
 
     protected void doMemoryRead(MemViewData current, int len, BiFunction<MemViewData, Integer, Integer> readerFn) {
@@ -329,13 +303,9 @@ public class MemView implements Device, UpdatableViewer {
         assert current.getOwner() == SH2;
         final int start = current.getStart();
         for (int i = 0; i < len; i += 2) {
-            int w = readerMap.get(SH2_WORD).apply(current, start + i).intValue();
+            int w = readerMap.get(SH2_WORD).apply(current, start + i);
             Util.writeData(data, i, w, Size.WORD);
         }
-    }
-
-    private static char toAsciiChar(int val) {
-        return val >= Ascii.SPACE && val < Ascii.MAX ? (char) val : '.';
     }
 
     @Override

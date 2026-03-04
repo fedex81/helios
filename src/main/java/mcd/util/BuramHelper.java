@@ -1,8 +1,8 @@
 package mcd.util;
 
+import omegadrive.util.HexUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
-import omegadrive.vdp.util.MemView;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
@@ -36,7 +36,7 @@ public class BuramHelper {
         check_format_bram(bb);
 
         StringBuilder sb = new StringBuilder();
-        MemView.fillFormattedString(sb, bb.array(), 0, bb.capacity());
+        HexUtil.fillFormattedString(sb, bb.array());
         System.out.println(sb);
     }
 
