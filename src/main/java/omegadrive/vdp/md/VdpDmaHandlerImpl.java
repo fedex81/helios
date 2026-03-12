@@ -117,7 +117,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                     th(dmaSrcHigh), megaCdDma);
         }
         if (megaCdDma || svpDma) {
-            LogHelper.logWarnOnce(LOG, "FastDma, {}", getDmaStateStringNoVdp());
+//            LogHelper.logWarnOnce(LOG, "FastDma, {}", getDmaStateStringNoVdp());
             //TODO fix and test
             //Snatcher OK, Willy beamish KO
             //dest0 gets openBus, src0 goes to dest1, etc

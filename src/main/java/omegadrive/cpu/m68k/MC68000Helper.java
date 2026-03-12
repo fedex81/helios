@@ -193,11 +193,11 @@ public class MC68000Helper {
 
     protected static String makeFlagView(Cpu cpu) {
         StringBuilder sb = new StringBuilder(5);
-        sb.append(cpu.isFlagSet(16) ? 'X' : '-');
-        sb.append(cpu.isFlagSet(8) ? 'N' : '-');
-        sb.append(cpu.isFlagSet(4) ? 'Z' : '-');
-        sb.append(cpu.isFlagSet(2) ? 'V' : '-');
-        sb.append(cpu.isFlagSet(1) ? 'C' : '-');
+        sb.append(cpu.isFlagSet(Cpu.X_FLAG) ? 'X' : '-');
+        sb.append(cpu.isFlagSet(Cpu.N_FLAG) ? 'N' : '-');
+        sb.append(cpu.isFlagSet(Cpu.Z_FLAG) ? 'Z' : '-');
+        sb.append(cpu.isFlagSet(Cpu.V_FLAG) ? 'V' : '-');
+        sb.append(cpu.isFlagSet(Cpu.C_FLAG) ? 'C' : '-');
         return sb.toString();
     }
 

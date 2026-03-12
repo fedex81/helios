@@ -1,7 +1,7 @@
 package mcd.dict;
 
 import mcd.bus.McdWordRamHelper;
-import mcd.cdd.CdBiosHelper;
+import mcd.cdd.cdbios.CdBiosHelper;
 import mcd.util.BuramHelper;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;

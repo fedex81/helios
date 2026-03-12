@@ -94,7 +94,7 @@ public abstract class BackupMemoryMapper {
         sram = new byte[sramSize];
         //see GenTechBulletins, StarTrek echoes fails when reading sram with all 0s
         Arrays.fill(sram, DEFAULT_SRAM_BYTE);
-        FileUtil.writeFileSafe(backupFile, sram);
+        FileUtil.writeFileSafeAsync(backupFile, sram);
         return sram.length;
     }
 
@@ -106,7 +106,7 @@ public abstract class BackupMemoryMapper {
         }
         if (Files.isWritable(backupFile)) {
             LOG.info("Writing to sram file: {}, len: {}", this.backupFile, sram.length);
-            FileUtil.writeFileSafe(backupFile, sram);
+            FileUtil.writeFileSafeAsync(backupFile, sram);
         }
     }
 }

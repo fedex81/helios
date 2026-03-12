@@ -53,6 +53,8 @@ public class MegaCdDict {
 
     public static RegSpecMcd[][] mcdRegMapping = new RegSpecMcd[McdRegCpuType.values().length][MDC_SUB_GATE_REGS_MASK];
 
+    public static final int PCM_REG_SHIFT = 0x100;
+
     public enum RegSpecMcd {
         MCD_RESET(SYS, 0),   //Reset
         MCD_MEM_MODE(SYS, 2), //Memory Mode, write protect
@@ -87,62 +89,64 @@ public class MegaCdDict {
         MCD_COMME(COMM, 0x2C), //Communication
         MCD_COMMF(COMM, 0x2E), //Communication
 
-        MCD_TIMER_INT3(SYS, 0x30), //General Use Timer W/INT3
-        MCD_INT_MASK(SYS, 0x32), //Interrupt Mask control
+        MCD_TIMER_INT3(SYS, REG_SUB, 0x30), //General Use Timer W/INT3
+        MCD_INT_MASK(SYS, REG_SUB, 0x32), //Interrupt Mask control
 
-        MCD_CD_FADER(CDD, 0x34), //CD Fader
-        MCD_CDD_CONTROL(CDD, 0x36), //CDD Control
+        MCD_CD_FADER(CDD, REG_SUB, 0x34), //CD Fader
+        MCD_CDD_CONTROL(CDD, REG_SUB, 0x36), //CDD Control
 
-        MCD_CDD_COMM0(CDD, 0x38), //CDD Comm, status[0],[1]
-        MCD_CDD_COMM1(CDD, 0x3A), //CDD Comm, status[2],[3]
-        MCD_CDD_COMM2(CDD, 0x3C), //CDD Comm, status[4],[5]
-        MCD_CDD_COMM3(CDD, 0x3E), //CDD Comm, status[6],[7]
+        MCD_CDD_COMM0(CDD, REG_SUB, 0x38), //CDD Comm, status[0],[1]
+        MCD_CDD_COMM1(CDD, REG_SUB, 0x3A), //CDD Comm, status[2],[3]
+        MCD_CDD_COMM2(CDD, REG_SUB, 0x3C), //CDD Comm, status[4],[5]
+        MCD_CDD_COMM3(CDD, REG_SUB, 0x3E), //CDD Comm, status[6],[7]
 
-        MCD_CDD_COMM4(CDD, 0x40), //CDD Comm, status[8],[9] //9 is checksum
-        MCD_CDD_COMM5(CDD, 0x42), //CDD Comm, command[0],[1]
-        MCD_CDD_COMM6(CDD, 0x44), //CDD Comm, command[2],[3]
-        MCD_CDD_COMM7(CDD, 0x46), //CDD Comm, command[4],[5]
-        MCD_CDD_COMM8(CDD, 0x48), //CDD Comm, command[6],[7]
-        MCD_CDD_COMM9(CDD, 0x4A), //CDD Comm, command[8],[9] //9 is checksum
+        MCD_CDD_COMM4(CDD, REG_SUB, 0x40), //CDD Comm, status[8],[9] //9 is checksum
+        MCD_CDD_COMM5(CDD, REG_SUB, 0x42), //CDD Comm, command[0],[1]
+        MCD_CDD_COMM6(CDD, REG_SUB, 0x44), //CDD Comm, command[2],[3]
+        MCD_CDD_COMM7(CDD, REG_SUB, 0x46), //CDD Comm, command[4],[5]
+        MCD_CDD_COMM8(CDD, REG_SUB, 0x48), //CDD Comm, command[6],[7]
+        MCD_CDD_COMM9(CDD, REG_SUB, 0x4A), //CDD Comm, command[8],[9] //9 is checksum
 
-        MCD_FONT_COLOR(SYS, 0x4C), //Font color
-        MCD_FONT_BIT(SYS, 0x4E), //Font bit
-        MCD_FONT_DATA0(SYS, 0x50), //Font data
-        MCD_FONT_DATA1(SYS, 0x52), //Font data
-        MCD_FONT_DATA2(SYS, 0x54), //Font data
-        MCD_FONT_DATA3(SYS, 0x56), //Font data
+        MCD_FONT_COLOR(SYS, REG_SUB, 0x4C), //Font color
+        MCD_FONT_BIT(SYS, REG_SUB, 0x4E), //Font bit
+        MCD_FONT_DATA0(SYS, REG_SUB, 0x50), //Font data
+        MCD_FONT_DATA1(SYS, REG_SUB, 0x52), //Font data
+        MCD_FONT_DATA2(SYS, REG_SUB, 0x54), //Font data
+        MCD_FONT_DATA3(SYS, REG_SUB, 0x56), //Font data
 
-        MCD_IMG_STAMP_SIZE(ASIC, 0x58), //Image Stamp Size
+        MCD_IMG_STAMP_SIZE(ASIC, REG_SUB, 0x58), //Image Stamp Size
 
         //TODO valid bits depend on setup
-        MCD_IMG_STAMP_MAP_ADDR(ASIC, 0x5A), //Image Stamp map base address
-        MCD_IMG_VCELL(ASIC, 0x5C), //Image buffer V cell size (0-32 cells)
-        MCD_IMG_START_ADDR(ASIC, 0x5E), //Image buffer start address
+        MCD_IMG_STAMP_MAP_ADDR(ASIC, REG_SUB, 0x5A), //Image Stamp map base address
+        MCD_IMG_VCELL(ASIC, REG_SUB, 0x5C), //Image buffer V cell size (0-32 cells)
+        MCD_IMG_START_ADDR(ASIC, REG_SUB, 0x5E), //Image buffer start address
 
-        MCD_IMG_OFFSET(ASIC, 0x60), //Image buffer offset
-        MCD_IMG_HDOT(ASIC, 0x62), //Image buffer H dot size (horizontal dot size overwritten in the buffer)
+        MCD_IMG_OFFSET(ASIC, REG_SUB, 0x60), //Image buffer offset
+        MCD_IMG_HDOT(ASIC, REG_SUB, 0x62), //Image buffer H dot size (horizontal dot size overwritten in the buffer)
 
-        MCD_IMG_VDOT(ASIC, 0x64), //Image buffer V dot size (vertical dot size overwritten in the buffer)
+        MCD_IMG_VDOT(ASIC, REG_SUB, 0x64), //Image buffer V dot size (vertical dot size overwritten in the buffer)
 
-        MCD_IMG_TRACE_VECTOR_ADDR(ASIC, 0x66),
+        MCD_IMG_TRACE_VECTOR_ADDR(ASIC, REG_SUB, 0x66),
         //vector base address(Xstart, Ystart, (Dtita)X, <Del ta), table base address)
 
-        MCD_PCM_ENV(PCM, 0x101),
+        MCD_SUBCODE_ADDR(CDD, REG_SUB, 0x68),
 
-        MCD_PCM_PAN(PCM, 0x103),
+        MCD_PCM_ENV(PCM, REG_SUB, PCM_REG_SHIFT + 1),
 
-        MCD_PCM_FDL(PCM, 0x105),
+        MCD_PCM_PAN(PCM, REG_SUB, PCM_REG_SHIFT + 3),
 
-        MCD_PCM_FDH(PCM, 0x107),
+        MCD_PCM_FDL(PCM, REG_SUB, PCM_REG_SHIFT + 5),
 
-        MCD_PCM_LSL(PCM, 0x109),
-        MCD_PCM_LSH(PCM, 0x10B),
+        MCD_PCM_FDH(PCM, REG_SUB, PCM_REG_SHIFT + 7),
 
-        MCD_PCM_START(PCM, 0x10D),
+        MCD_PCM_LSL(PCM, REG_SUB, PCM_REG_SHIFT + 9),
+        MCD_PCM_LSH(PCM, REG_SUB, PCM_REG_SHIFT + 0xB),
 
-        MCD_PCM_CTRL(PCM, 0x10F),
+        MCD_PCM_START(PCM, REG_SUB, PCM_REG_SHIFT + 0xD),
 
-        MCD_PCM_ON_OFF(PCM, 0x111),
+        MCD_PCM_CTRL(PCM, REG_SUB, PCM_REG_SHIFT + 0xF),
+
+        MCD_PCM_ON_OFF(PCM, REG_SUB, PCM_REG_SHIFT + 0x11),
 
         INVALID(NONE, -1);
 
@@ -422,6 +426,10 @@ public class MegaCdDict {
     public static final int END_MCD_SUB_PCM_AREA = 0xFF_8000 & MCD_SUB_ADDRESS_MASK;
     public static final int START_MCD_SUB_GATE_ARRAY_REGS = END_MCD_SUB_PCM_AREA;
     public static final int END_MCD_SUB_GATE_ARRAY_REGS = 0xFF_8200 & MCD_SUB_ADDRESS_MASK;
+
+    public static final int START_MCD_SUBCODE_BUFFER = START_MCD_SUB_GATE_ARRAY_REGS + 0x6A;
+
+    public static final int START_MCD_SUBCODE_BUFFER_LOW_BYTES_MASK = START_MCD_SUBCODE_BUFFER & MDC_SUB_GATE_REGS_MASK;
 
     public static final int START_MCD_SUB_GA_COMM_W = START_MCD_SUB_GATE_ARRAY_REGS + 0x20;
     public static final int END_MCD_SUB_GA_COMM_W = START_MCD_SUB_GA_COMM_W + 0x10;

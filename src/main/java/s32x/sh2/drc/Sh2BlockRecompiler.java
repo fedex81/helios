@@ -119,7 +119,7 @@ public class Sh2BlockRecompiler {
         Util.executorService.submit(() -> {
             recompiler.printSource(bc, binc);
             LOG.info("Bytecode Class written: {}", bc.toAbsolutePath());
-            FileUtil.writeFileSafe(p, binc);
+            FileUtil.writeFileSafeAsync(p, binc);
             LOG.info("Drc Class written: {}", p.toAbsolutePath());
         });
         LOG.info("{} job submitted", blockClass);

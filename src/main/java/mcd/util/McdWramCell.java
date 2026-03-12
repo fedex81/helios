@@ -76,7 +76,7 @@ public class McdWramCell {
             bb.putInt(entry.getKey());
             bb.putInt(entry.getValue());
         }
-        FileUtil.writeFileSafe(Paths.get("./test.bin"), bb.array());
+        FileUtil.writeFileSafeAsync(Paths.get("./test.bin"), bb.array());
     }
 
     public static void printMemoryBank(MegaCdMemoryContext ctx, int bank) {

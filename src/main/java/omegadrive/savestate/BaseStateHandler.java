@@ -102,7 +102,7 @@ public interface BaseStateHandler {
 
     default void storeData() {
         LOG.info("Persisting savestate to: {}", getFileName());
-        FileUtil.writeFileSafe(Paths.get(getFileName()), getData());
+        FileUtil.writeFileSafeAsync(Paths.get(getFileName()), getData());
     }
 
     enum Type {SAVE, LOAD}

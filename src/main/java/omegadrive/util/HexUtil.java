@@ -29,7 +29,7 @@ public class HexUtil {
         fillFormattedString_ZeroBased(sb, data, start, end, true, true);
     }
 
-    private static void fillFormattedString_ZeroBased(StringBuilder sb, byte[] data, int start, int end, boolean withAscii, boolean withByteIndex) {
+    public static void fillFormattedString_ZeroBased(StringBuilder sb, byte[] data, int start, int end, boolean withAscii, boolean withByteIndex) {
         fillFormattedString(sb, data, start, end, withAscii, withByteIndex, true);
     }
 

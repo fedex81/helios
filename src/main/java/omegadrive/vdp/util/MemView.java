@@ -244,7 +244,7 @@ public class MemView implements Device, UpdatableViewer {
         byte[] local = Arrays.copyOf(data, mvd.getEnd() - mvd.getStart());
         String name = "MemView_" + mvd + "_" + System.currentTimeMillis() + ".dat";
         Path p = Path.of(".", name);
-        FileUtil.writeFileSafe(p, local);
+        FileUtil.writeFileSafeAsync(p, local);
         LOG.info("Exported to: {}", p.toAbsolutePath());
     }
 

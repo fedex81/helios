@@ -87,7 +87,7 @@ public class VdpRasterDataGeneratorTest extends VdpPerformanceTest {
             String writes = logger.getWritesAsString();
             System.out.println(writes);
             logger.reset();
-            FileUtil.writeFileSafe(datPath, writes.getBytes(StandardCharsets.UTF_8));
+            FileUtil.writeFileSafeAsync(datPath, writes.getBytes(StandardCharsets.UTF_8));
             System.out.println("Save dat: " + datPath.toAbsolutePath().toString());
             System.exit(0);
         }

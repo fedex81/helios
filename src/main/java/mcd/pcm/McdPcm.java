@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import java.nio.ByteBuffer;
 
 import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
-import static mcd.bus.MegaCdSubCpuBus.logAccessReg;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.SoundUtil.clampToShort;
 import static omegadrive.util.Util.th;
@@ -139,7 +138,7 @@ public class McdPcm implements BufferUtil.StepDevice {
             return readRamPointerRegs(address, size);
         } else if (address < PCM_REG_MASK) {
             RegSpecMcd regSpec = getPcmReg(address);
-            logAccessReg(regSpec, SUB_M68K, address, size, true);
+//            logAccessReg(regSpec, SUB_M68K, address, size, true);
             return BufferUtil.readBuffer(pcmRegs, address, size);
         }
         //TODO Puggsy (Europe): java.lang.AssertionError: 145e,LONG
@@ -172,7 +171,7 @@ public class McdPcm implements BufferUtil.StepDevice {
             pcmDataWriteByte(address, value);
         } else if (address < PCM_REG_MASK) {
             RegSpecMcd regSpec = getPcmReg(address);
-            logAccessReg(regSpec, SUB_M68K, address, size, false);
+//            logAccessReg(regSpec, SUB_M68K, address, size, false);
             writeRegByte(regSpec, address, value);
         } else {
             //Blackhole Assault (Europe): Unhandled write: 1f, 0 BYTE
@@ -232,7 +231,7 @@ public class McdPcm implements BufferUtil.StepDevice {
     }
 
     private RegSpecMcd getPcmReg(int address) {
-        return MegaCdDict.getRegSpec(SUB_M68K, 0x100 + (address & 0xFF));
+        return MegaCdDict.getRegSpec(SUB_M68K, MegaCdDict.PCM_REG_SHIFT + (address & 0xFF));
     }
 
     @Override

@@ -137,8 +137,7 @@ public class ExtendedCueSheet implements Closeable {
             extTrackData.lenBytes = (int) tca.length();
             assert extTrackData.lenBytes > 0;
             extTrackData.absoluteSectorStart = sectorStart;
-            extTrackData.absoluteSectorEnd = sectorStart + (extTrackData.lenBytes / sectorSize.s_size) +
-                    (trackNumber == 1 ? PREGAP_LEN_LBA : 0);
+            extTrackData.absoluteSectorEnd = sectorStart + (extTrackData.lenBytes / sectorSize.s_size);
             extTrackData.trackLenSectors = extTrackData.absoluteSectorEnd - extTrackData.absoluteSectorStart;
             int startLba = trackNumber > 1 ? extTrackData.absoluteSectorStart + PREGAP_LEN_LBA : extTrackData.absoluteSectorStart;
             CueFileParser.lbaToMsfAdjustPregap(startLba, extTrackData.trackStartMsf);

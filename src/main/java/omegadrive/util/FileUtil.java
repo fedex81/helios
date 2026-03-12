@@ -60,7 +60,7 @@ public class FileUtil {
     public static final int SMD_HEADER_SIZE = 512;
     public static final int SMD_CHUNK_SIZE = 16384;
 
-    public static void writeFileSafe(Path file, byte[] data) {
+    public static void writeFileSafeAsync(Path file, byte[] data) {
         //calling thread could be interrupted while writing -> bad
         Util.executorService.submit(() -> {
             try {

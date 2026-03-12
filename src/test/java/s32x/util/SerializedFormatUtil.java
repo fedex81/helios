@@ -89,7 +89,7 @@ public class SerializedFormatUtil {
 
         String out = Files.getNameWithoutExtension(s);
         Path datFile2 = Paths.get(folder.toAbsolutePath().toString(), out);
-        FileUtil.writeFileSafe(datFile2, Util.serializeObject(dvrcNew));
+        FileUtil.writeFileSafeAsync(datFile2, Util.serializeObject(dvrcNew));
         System.out.println("File written: " + datFile2.toAbsolutePath());
     }
 
@@ -118,7 +118,7 @@ public class SerializedFormatUtil {
 
         String out = Files.getNameWithoutExtension(s);
         Path datFile2 = Paths.get(folder.toAbsolutePath().toString(), out);
-        FileUtil.writeFileSafe(datFile2, Util.serializeObject(dvrcNew));
+        FileUtil.writeFileSafeAsync(datFile2, Util.serializeObject(dvrcNew));
         System.out.println("File written: " + datFile2.toAbsolutePath());
     }
 

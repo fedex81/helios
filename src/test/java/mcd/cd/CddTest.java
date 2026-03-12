@@ -78,7 +78,7 @@ public class CddTest extends McdRegTestBase {
         clearCmdReg(lc);
         cddRequest(lc, CddRequest.DiscCompletionTime);
         lc.cdd.step(1);
-        Assertions.assertEquals("93.001062.55", getStatusString());
+        Assertions.assertEquals("93.000862.5e", getStatusString());
     }
 
     private void checkLeadIn() {

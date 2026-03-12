@@ -83,7 +83,7 @@ public class CdFormatChecker {
             ok &= header[3] == cdcHeader.mode; //MODE1
             ok &= Arrays.equals(expSync, syncHeader);
         } catch (Exception e) {
-            LOG.error("decode error: {}", e.getMessage());
+            LOG.error("decode error: {}, seek: {}", e.getMessage(), dataSeekPos);
             e.printStackTrace();
             assert false;
         }

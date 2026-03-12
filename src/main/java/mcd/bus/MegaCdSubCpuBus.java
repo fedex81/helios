@@ -224,6 +224,13 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     }
 
     private int handleMegaCdExpRead(int address, Size size) {
+        //0xFF_806A - 0xFF_80FE Reserved
+        //0xFF_8100 - 0xFF_817E Subcode buffer area of 64 words x 16 bits
+        //0xFF_8180 - 0xFF_81FE Image of subcode buffer area
+        if ((address & MDC_SUB_GATE_REGS_MASK) >= START_MCD_SUBCODE_BUFFER_LOW_BYTES_MASK) {
+//            LogHelper.logWarnOnce(LOG, "Reading from {}", th(address));
+            return readBuffer(memCtx.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, size);
+        }
         return switch (size) {
             case WORD, BYTE -> handleMegaCdExpReadInternal(address, size);
             case LONG -> ((handleMegaCdExpReadInternal(address, Size.WORD) & 0xFFFF) << 16) |
@@ -233,9 +240,9 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
 
     private int handleMegaCdExpReadInternal(int address, Size size) {
         RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
-        logAccess(regSpec, cpuType, address, 0, size, true);
+//        logAccess(regSpec, cpuType, address, 0, size, true);
         if (regSpec == RegSpecMcd.INVALID) {
-            LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
+            LOG.error("S read unknown MEGA_CD_EXP reg: {}", th(address));
             return 0;
         }
         int res = switch (regSpec.deviceType) {
@@ -266,7 +273,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         RegSpecMcd regSpec = MegaCdDict.getRegSpec(cpuType, address);
         MegaCdDict.logAccess(regSpec, cpuType, address, data, size, false);
         if (regSpec == RegSpecMcd.INVALID) {
-            LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
+            LOG.error("S write unknown MEGA_CD_EXP reg: {}", th(address));
             return;
         }
         if (regSpec.deviceType == McdRegType.CDD || regSpec.deviceType == McdRegType.CDC) {
@@ -279,7 +286,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
             case CDD -> cdd.write(regSpec, address, data, size);
             case CDC -> cdc.write(regSpec, address, data, size);
             case ASIC -> asic.write(regSpec, address, data, size);
-            default -> LOG.error("M read unknown MEGA_CD_EXP reg: {}", th(address));
+            default -> LOG.error("S read unknown MEGA_CD_EXP reg: {}", th(address));
         }
     }
 

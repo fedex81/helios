@@ -1,3 +1,5 @@
+Cosmic JP
+- audio issue with pops, clipping problem? PCM
 
 2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] McdPcm: Unhandled write: 20, 29 BYTE
 2026-02-28 17:45:29.670 ERROR [cycle-BattleTech - Gray Death Legion (USA) (Unl).cue] BaseSystem$RomRunnable: Error: java.lang.AssertionError

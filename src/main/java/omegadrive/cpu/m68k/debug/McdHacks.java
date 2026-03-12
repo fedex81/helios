@@ -5,7 +5,7 @@ import omegadrive.cpu.CpuFastDebug;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
-import static mcd.cdd.CdBiosHelper.logCdPcInfo;
+import static mcd.cdd.cdbios.CdBiosHelper.logCdPcInfo;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess;
 import static omegadrive.util.Util.th;
 

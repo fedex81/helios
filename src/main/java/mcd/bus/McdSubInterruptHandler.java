@@ -130,10 +130,19 @@ public interface McdSubInterruptHandler extends Device {
                 }
             }
         }
+
+        /**
+         * TODO genPlusGx for subcodeInt:
+         * - check reg33 mask -> is Enabled?
+         * - if yes set pending, otherwise missed
+         */
         private void setPending(SubCpuInterrupt sint, int val) {
             assert (val & 1) == val;
+//            boolean pending = ((1 << sint.ordinal()) & getRegMask()) > 0;
+//            if(pending) {
             pendingMask = Util.setBit(pendingMask, sint.ordinal(), val);
             pendingInterrupts[sint.ordinal()] = val > 0;
+//            }
         }
 
         private int getRegMask() {
@@ -146,14 +155,11 @@ public interface McdSubInterruptHandler extends Device {
             if (verbose && raised) {
                 LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
             }
-            //TODO HACK
+            //TODO HACK. allows EU 1.00 to start Mixed-CDs but breaks Audio-CDs
             //if the cpu is masking it, interrupt lost
-            //OK -> EU-bios 1.00 (f891e0ea651e2232af0c5c4cb46a0cae2ee8f356)
-            //OK -> US-bios 1.00 (c5c24e6439a148b7f4c7ea269d09b7a23fe25075)
-            //OK -> JP-bios 1.00H (aka 100s) (230ebfc49dc9e15422089474bcc9fa040f2c57eb)
-            //for JP press start and then select CD-ROM
-            LogHelper.logWarnOnce(LOG, "MegaCd interrupt hack active!!");
+//            LogHelper.logWarnOnce(LOG, "MegaCd interrupt hack active!!");
             return region == Region.EUROPE ? true : raised;
+//            return raised;
         }
 
         @Override

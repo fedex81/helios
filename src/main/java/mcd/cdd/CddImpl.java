@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_SUBCODE;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
@@ -248,10 +249,7 @@ class CddImpl implements Cdd {
             }
 
             /* subcode data processing */
-            //no subcode file
-//            if (cdd.toc.sub) {
-//                cdd_read_subcode();
-//            }
+            cdd_read_subcode(cddContext.io.sector);
             /* track type */
             CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
             boolean isDataTrack = etd.trackDataType != CdModel.TrackDataType.AUDIO;
@@ -284,6 +282,11 @@ class CddImpl implements Cdd {
         if (cddContext.io.status == Scanning) {
             assert false;
         }
+    }
+
+    private void cdd_read_subcode(int lba) {
+        SubcodeHelper.cdd_process_subcode(memoryContext, lba);
+        interruptHandler.raiseInterrupt(INT_SUBCODE);
     }
 
     void cdd_process() {

@@ -18,6 +18,7 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDC;
 import static mcd.cdc.CdcModel.*;
 import static mcd.cdd.CdModel.SECTOR_2352;
 import static mcd.cdd.CdModel.SectorSize.S_2048;
+import static mcd.cdd.CdModel.SectorSize.S_2352;
 import static mcd.cdd.Cdd.CddStatus.Playing;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
@@ -335,7 +336,7 @@ public class CdcImpl implements Cdc {
                 cdcContext.control.form = getBitFromByte(data, 2);
                 cdcContext.control.mode = getBitFromByte(data, 3);
                 cdcContext.control.syncInterrupt = getBitFromByte(data, 7);
-
+                assert cdcContext.control.mode <= 1 && cdcContext.control.form == 0; //MODE 2 not supported
                 cdcContext.decoder.mode = cdcContext.control.mode;
                 cdcContext.decoder.form = cdcContext.control.form & cdcContext.control.autoCorrection;
             }
@@ -485,22 +486,17 @@ public class CdcImpl implements Cdc {
                 ram.put((byte) cdcContext.header.frame);
                 ram.put((byte) cdcContext.header.mode);
                 offset += 4;
-                if (sector < 0) { //reading INDEX00 - silence
-                    //TODO check do we need to write 0s??
-                    //TODO StarWars Array index out of range: 17524
-//                    Arrays.fill(ram.array(), offset, offset + S_2048.s_size, (byte) 0);
-                    return;
-                }
-
                 /* check decoded block mode */
-                if (cdcContext.header.mode == 0x01) {
-                    assert etd.trackDataType != CdModel.TrackDataType.AUDIO;
-                    /* write Mode 1 user data to RAM buffer (2048 bytes) */
-                    cdd_read_data(sector, offset, track01);
-                } else {
-                    assert etd.trackDataType == CdModel.TrackDataType.AUDIO;
-                    //NOTE cdda play
-                }
+                cdd_read_data(sector, offset, etd);
+//                if (cdcContext.header.mode == 0x01) {
+//                    assert etd.trackDataType != CdModel.TrackDataType.AUDIO;
+//                    /* write Mode 1 user data to RAM buffer (2048 bytes) */
+//                    cdd_read_data(sector, offset, etd);
+//                } else {
+//                    assert etd.trackDataType == CdModel.TrackDataType.AUDIO;
+//                    assert false : "TODO read audio data";
+//                    //NOTE cdda play
+//                }
             }
         }
     }
@@ -509,19 +505,33 @@ public class CdcImpl implements Cdc {
      * Only reads DATA tracks
      */
     private void cdd_read_data(int sector, int offset, ExtendedTrackData track) {
+        int trackRelSector = sector - track.absoluteSectorStart; // - PREGAP_LEN_LBA;
+        if (trackRelSector < 0) { //reading INDEX00 - silence
+            //TODO check do we need to write 0s??
+            //TODO StarWars Array index out of range: 17524
+            return;
+        }
         /* only allow reading (first) CD-ROM track sectors */
-        if (track.trackDataType != CdModel.TrackDataType.AUDIO && sector >= 0) {
-            //header(4)
-            if (verbose) LOG.info("Decoding data track sector: {}, cdcRamOffset: {}", sector, th(offset - 4));
+        if (track.trackDataType.content == CdModel.TrackContent.T_DATA) {
+            assert cdcContext.header.mode == 1;
+            if (verbose) LOG.info("Decoding data track sector (abs): {}, cdcRamOffset: {}({})",
+                    trackRelSector, sector, th(offset - 4));
             int seekPos = switch (track.trackDataType.size) {
-                case S_2048 -> sector * S_2048.s_size;
+                case S_2048 -> trackRelSector * S_2048.s_size;
                 case S_2352 -> {
-                    int sk = (sector * track.trackDataType.size.s_size) + 12 + 4; //16 bytes of sync header
+                    int sk = (trackRelSector * track.trackDataType.size.s_size) + 12 + 4; //16 bytes of sync header
                     assert CdFormatChecker.checkMode1Data(track, msfHolder, cdcContext.header, sk);
                     yield sk;
                 }
             };
             doFileRead(track.data, seekPos, S_2048.s_size, offset);
+        } else if (track.trackDataType == CdModel.TrackDataType.AUDIO) {
+            assert cdcContext.header.mode == 0;
+            var data = track.data;
+            //CDDA: 2352 audio data (+ 96 subcode, not dumped)
+            int sectorSize = track.trackDataType.size.s_size;
+            int seekPos = sectorSize * trackRelSector;
+            doFileRead(data, seekPos, S_2352.s_size, offset);
         }
     }
 

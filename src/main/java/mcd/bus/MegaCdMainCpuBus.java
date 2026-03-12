@@ -1,6 +1,6 @@
 package mcd.bus;
 
-import mcd.cdd.CdBiosHelper;
+import mcd.cdd.cdbios.CdBiosHelper;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import mcd.util.McdBiosHolder;
