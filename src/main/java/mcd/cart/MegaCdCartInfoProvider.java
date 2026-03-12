@@ -149,7 +149,7 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
             }
             LOG.error("Unknown security code!");
             StringBuilder sb = new StringBuilder(track01 + "\n");
-            HexUtil.fillFormattedString(sb, secCode);
+            HexUtil.fillFormattedString_ZeroBased(sb, secCode);
             System.out.println(sb);
         } catch (Exception e) {
             e.printStackTrace();

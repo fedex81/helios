@@ -17,27 +17,36 @@ public class HexUtil {
     private static final int BYTES_PER_LINE = 0x10;
 
 
-    public static void fillFormattedString(StringBuilder sb, byte[] data, boolean withAscii, boolean withByteIndex) {
-        fillFormattedString(sb, data, 0, data.length, withAscii, withByteIndex);
+    public static void fillFormattedString_ZeroBased(StringBuilder sb, byte[] data, boolean withAscii, boolean withByteIndex) {
+        fillFormattedString_ZeroBased(sb, data, 0, data.length, withAscii, withByteIndex);
     }
 
-    public static void fillFormattedString(StringBuilder sb, byte[] data) {
-        fillFormattedString(sb, data, true, true);
+    public static void fillFormattedString_ZeroBased(StringBuilder sb, byte[] data) {
+        fillFormattedString_ZeroBased(sb, data, true, true);
+    }
+
+    public static void fillFormattedString_ZeroBased(StringBuilder sb, byte[] data, int start, int end) {
+        fillFormattedString_ZeroBased(sb, data, start, end, true, true);
+    }
+
+    private static void fillFormattedString_ZeroBased(StringBuilder sb, byte[] data, int start, int end, boolean withAscii, boolean withByteIndex) {
+        fillFormattedString(sb, data, start, end, withAscii, withByteIndex, true);
     }
 
     public static void fillFormattedString(StringBuilder sb, byte[] data, int start, int end) {
-        fillFormattedString(sb, data, start, end, true, true);
+        fillFormattedString(sb, data, start, end, true, true, false);
     }
 
-    public static void fillFormattedString(StringBuilder sb, byte[] data, int start, int end, boolean withAscii, boolean withByteIndex) {
+    private static void fillFormattedString(StringBuilder sb, byte[] data, int start, int end,
+                                            boolean withAscii, boolean withByteIndex, boolean zeroBased) {
         try {
             HexFormat hf = HexFormat.of().withSuffix(" ");
             if (withByteIndex) {
                 sb.append(String.format("%8x", start)).append(": ");
             }
             int len = end - start;
-            int startZero = start > 0 ? 0 : start; //zero based
-            int endZero = startZero + len;
+            int startZero = zeroBased ? (start > 0 ? 0 : start) : start; //zero based
+            int endZero = zeroBased ? (startZero + len) : end;
             for (int i = startZero; i < endZero; i += BYTES_PER_LINE) {
                 int slen = Math.min(len, BYTES_PER_LINE);
                 hf.formatHex(sb, data, i, i + slen).append("  ");

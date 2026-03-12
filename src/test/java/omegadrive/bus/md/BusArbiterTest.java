@@ -25,7 +25,6 @@ import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.BufferUtil;
-import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
 import org.junit.Assert;
@@ -36,6 +35,8 @@ import org.junit.Test;
 import static omegadrive.cpu.m68k.M68kProvider.HBLANK_INTERRUPT_LEVEL;
 import static omegadrive.cpu.m68k.M68kProvider.VBLANK_INTERRUPT_LEVEL;
 import static omegadrive.util.SystemTestUtil.createTestJoypadProvider;
+import static omegadrive.vdp.MdVdpTestUtil.*;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
 
 public class BusArbiterTest {
 
@@ -56,7 +57,7 @@ public class BusArbiterTest {
 
     @Before
     public void setup() {
-        SystemProvider emu = MdVdpTestUtil.createTestMdProvider();
+        SystemProvider emu = createTestMdProvider();
         bus = new MdBus();
         bus.attachDevice(emu);
         vdp = MdVdpProvider.createVdp(bus);
@@ -103,12 +104,12 @@ public class BusArbiterTest {
 //    Emulating this is required to make Sesame Street Counting Cafe to work.
     @Test
     public void testSesameStreet() {
-        vdp.writeControlPort(0x8C00);
-        vdp.writeControlPort(0x8174);
+        setVdpRegister(vdp, MODE_4, 0);
+        setVdpRegister(vdp, MODE_2, 0x74);
         vdp.resetVideoMode(true);
         do {
-            MdVdpTestUtil.runVdpSlot(vdp);
-            if (MdVdpTestUtil.isVdpVInt(vdp) && hCounterPending < 0) {
+            runVdpSlot(vdp);
+            if (isVdpVInt(vdp) && hCounterPending < 0) {
                 hCounterPending = vdp.getHCounter();
                 vCounterPending = vdp.getVCounter();
             }
@@ -135,24 +136,24 @@ public class BusArbiterTest {
     @Test
     @Ignore("TODO fix")
     public void testLotus2_hint() {
-        vdp.writeControlPort(0x8C00);
+        setVdpRegister(vdp, MODE_4, 0);
         //disable hint
-        vdp.writeControlPort(0x8AFF);
-        vdp.writeControlPort(0x8004);
-        MdVdpTestUtil.vdpDisplayEnableAndMode5(vdp);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        setVdpRegister(vdp, HCOUNTER_VALUE, 0xFF);
+        setVdpRegister(vdp, MODE_1, 4);
+        vdpDisplayEnableAndMode5(vdp);
+        runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         do {
-            boolean wasVblank = MdVdpTestUtil.isVBlank(vdp);
-            MdVdpTestUtil.runVdpSlot(vdp);
-            boolean vBlankTrigger = !wasVblank && MdVdpTestUtil.isVBlank(vdp);
+            boolean wasVblank = isVBlank(vdp);
+            runVdpSlot(vdp);
+            boolean vBlankTrigger = !wasVblank && isVBlank(vdp);
             if (vBlankTrigger) {
                 vdp.setHip(false);
                 vdp.setVip(false);
                 //enable hint after vblank period
-                vdp.writeControlPort(0x8A00);
-                vdp.writeControlPort(0x8014);
-                MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+                setVdpRegister(vdp, HCOUNTER_VALUE, 0);
+                setVdpRegister(vdp, MODE_1, 0x14);
+                runVdpUntilFifoEmpty(vdp);
                 Assert.assertFalse("HINT should not be pending", vdp.getHip());
             }
             bus.handleVdpInterrupts68k();
@@ -166,21 +167,21 @@ public class BusArbiterTest {
     public void testZ80Interrupt() {
         setupZ80();
         //disable hint
-        vdp.writeControlPort(0x8AFF);
-        vdp.writeControlPort(0x8004);
+        setVdpRegister(vdp, HCOUNTER_VALUE, 0xFF);
+        setVdpRegister(vdp, MODE_1, 4);
         //enable VINT
-        vdp.writeControlPort(0x8164);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        setVdpRegister(vdp, MODE_2, 0x64);
+        runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         VdpCounterMode mode = VdpCounterMode.getCounterMode(vdp.getVideoMode());
         do {
-            MdVdpTestUtil.runVdpSlot(vdp);
+            runVdpSlot(vdp);
             bus.handleVdpInterrupts68k();
         } while (vCounterRaise < 0);
         Assert.assertEquals(mode.vBlankSet, vCounterRaise);
         vCounterRaise = -1;
         do {
-            MdVdpTestUtil.runVdpSlot(vdp);
+            runVdpSlot(vdp);
             bus.handleVdpInterrupts68k();
         } while (vCounterRaise < 0);
         Assert.assertEquals(mode.vBlankSet, vCounterRaise);
@@ -188,41 +189,41 @@ public class BusArbiterTest {
 
     @Test
     public void testVBlankFlagWhenDisplayDisabled() {
-        vdp.writeControlPort(0x8AFF);
-        vdp.writeControlPort(0x8004);
-        MdVdpTestUtil.vdpDisplayEnableAndMode5(vdp);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        setVdpRegister(vdp, HCOUNTER_VALUE, 0xFF);
+        setVdpRegister(vdp, MODE_1, 4);
+        vdpDisplayEnableAndMode5(vdp);
+        runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         do {
-            MdVdpTestUtil.runVdpSlot(vdp);
-        } while (MdVdpTestUtil.isVBlank(vdp));
+            runVdpSlot(vdp);
+        } while (isVBlank(vdp));
 
         //disable display -> vblank on
-        MdVdpTestUtil.vdpDisplayEnable(vdp, false);
-        MdVdpTestUtil.runVdpSlot(vdp);
-        Assert.assertTrue(MdVdpTestUtil.isVBlank(vdp));
+        vdpDisplayEnable(vdp, false);
+        runVdpSlot(vdp);
+        Assert.assertTrue(isVBlank(vdp));
 
         //enable display
-        MdVdpTestUtil.vdpDisplayEnable(vdp, true);
-        MdVdpTestUtil.runVdpSlot(vdp);
-        Assert.assertFalse(MdVdpTestUtil.isVBlank(vdp));
+        vdpDisplayEnable(vdp, true);
+        runVdpSlot(vdp);
+        Assert.assertFalse(isVBlank(vdp));
     }
 
     @Test
     public void testHBlankFlagWhenDisplayDisabled() {
-        vdp.writeControlPort(0x8AFF);
-        vdp.writeControlPort(0x8004);
-        MdVdpTestUtil.vdpDisplayEnableAndMode5(vdp);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        setVdpRegister(vdp, HCOUNTER_VALUE, 0xFF);
+        setVdpRegister(vdp, MODE_1, 4);
+        vdpDisplayEnableAndMode5(vdp);
+        runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
         do {
-            MdVdpTestUtil.runVdpSlot(vdp);
-        } while (MdVdpTestUtil.isHBlank(vdp));
+            runVdpSlot(vdp);
+        } while (isHBlank(vdp));
 
         //disable display -> hblank doesnt change
-        MdVdpTestUtil.vdpDisplayEnable(vdp, false);
-        MdVdpTestUtil.runVdpSlot(vdp);
-        Assert.assertFalse(MdVdpTestUtil.isHBlank(vdp));
+        vdpDisplayEnable(vdp, false);
+        runVdpSlot(vdp);
+        Assert.assertFalse(isHBlank(vdp));
     }
 
     /**
@@ -243,21 +244,21 @@ public class BusArbiterTest {
         cpu.getM68k().setSR(0x2000);
         set68kIntMask(7); //mask all ints
         //disable hint
-        vdp.writeControlPort(0x8AFF);
-        vdp.writeControlPort(0x8004);
+        setVdpRegister(vdp, HCOUNTER_VALUE, 0xFF);
+        setVdpRegister(vdp, MODE_1, 4);
         //enable VINT
-        vdp.writeControlPort(0x8164);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        setVdpRegister(vdp, MODE_2, 0x64);
+        runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
 
         checkIntAccepted(false);
 
         //disable VINT
-        MdVdpTestUtil.vdpDisplayEnable(vdp, true);
+        vdpDisplayEnable(vdp, true);
         //enable HINT
-        vdp.writeControlPort(0x8A01); //hint every line
-        vdp.writeControlPort(0x8014);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        setVdpRegister(vdp, HCOUNTER_VALUE, 0x1); //hint every line
+        setVdpRegister(vdp, MODE_1, 0x14);
+        runVdpUntilFifoEmpty(vdp);
 
         checkIntAccepted(false);
 
@@ -269,7 +270,7 @@ public class BusArbiterTest {
         bus.ackInterrupt68k(HBLANK_INTERRUPT_LEVEL); //simulate the CPU acking level 4
 
         //check that vint was accepted instead of hint
-        Assert.assertFalse(MdVdpTestUtil.getVip(vdp));
+        Assert.assertFalse(getVip(vdp));
         Assert.assertTrue(vdp.getHip());
     }
 
@@ -285,21 +286,21 @@ public class BusArbiterTest {
         cpu.getM68k().setSR(0x2000);
         set68kIntMask(7); //mask all ints
         //enable hint
-        vdp.writeControlPort(0x8A01); //hint every line
-        vdp.writeControlPort(0x8014);
+        setVdpRegister(vdp, HCOUNTER_VALUE, 0x1); //hint every line
+        setVdpRegister(vdp, MODE_1, 0x14);
         //disable VINT
-        MdVdpTestUtil.vdpDisplayEnable(vdp, true);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        vdpDisplayEnable(vdp, true);
+        runVdpUntilFifoEmpty(vdp);
         vdp.resetVideoMode(true);
 
         checkIntAccepted(false);
 
         //enable VINT
-        vdp.writeControlPort(0x8164);
+        setVdpRegister(vdp, MODE_2, 0x64);
         //enable HINT
-        vdp.writeControlPort(0x8A01); //hint every line
-        vdp.writeControlPort(0x801C);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdp);
+        setVdpRegister(vdp, HCOUNTER_VALUE, 0x1); //hint every line
+        setVdpRegister(vdp, MODE_1, 0x1C);
+        runVdpUntilFifoEmpty(vdp);
 
         checkIntAccepted(false);
 
@@ -313,16 +314,16 @@ public class BusArbiterTest {
         bus.ackInterrupt68k(VBLANK_INTERRUPT_LEVEL); //simulate the CPU acking level 6
 
         //check that vint was not accepted
-        Assert.assertTrue(MdVdpTestUtil.getVip(vdp));
+        Assert.assertTrue(getVip(vdp));
         //check that hint was accepted
         Assert.assertFalse(vdp.getHip());
     }
 
     private void checkIntAccepted(boolean accepted) {
         int cnt = 0;
-        MdVdpTestUtil.runToStartFrame(vdp);
+        runToStartFrame(vdp);
         do {
-            MdVdpTestUtil.runVdpSlot(vdp);
+            runVdpSlot(vdp);
             bus.handleVdpInterrupts68k();
             cnt++;
         } while (vCounterIntAccepted < 0 && cnt < 50000);

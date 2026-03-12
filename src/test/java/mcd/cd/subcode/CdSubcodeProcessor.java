@@ -31,7 +31,7 @@ public class CdSubcodeProcessor {
             if(p[0] == 0){
                 continue;
             }
-            HexUtil.fillFormattedString(sb, p, false, false);
+            HexUtil.fillFormattedString_ZeroBased(sb, p, false, false);
 //            all.append(sb).append("\n");
             System.out.printf("%8x\t%s\n", i, sb);
             sb.setLength(0);

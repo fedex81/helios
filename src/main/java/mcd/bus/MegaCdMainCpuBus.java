@@ -209,7 +209,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
             }
         }
         mdBus.write(address, data, size);
-        CdBiosHelper.checkMainMemRegion(memoryProvider.getRamData(), address);
+        CdBiosHelper.checkMainMemRegion(memoryProvider.getRamData(), address, size);
     }
 
     @Override
@@ -443,6 +443,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
             if (((prev >> 8) & 1) == 0) {
                 ifl2Trigger = 1;
                 LogHelper.logInfo(LOG, "M SubCpu int2 request");
+                //TODO should check IEN2 = 1?
                 subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
             }
         } else if (subIntReg == 0) {

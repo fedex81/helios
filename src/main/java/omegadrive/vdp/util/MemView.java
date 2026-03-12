@@ -25,7 +25,7 @@ import java.util.function.BiFunction;
 import static omegadrive.bus.model.MdMainBusProvider.ADDRESS_RAM_MAP_START;
 import static omegadrive.bus.model.MdZ80BusProvider.END_RAM;
 import static omegadrive.memory.MemoryProvider.M68K_RAM_SIZE;
-import static omegadrive.util.HexUtil.fillFormattedString;
+import static omegadrive.util.HexUtil.fillFormattedString_ZeroBased;
 import static omegadrive.vdp.model.MdVdpProvider.*;
 import static omegadrive.vdp.util.MemView.MemViewOwner.*;
 
@@ -286,7 +286,7 @@ public class MemView implements Device, UpdatableViewer {
     }
 
     private void updateFromMemory(int start, int end) {
-        fillFormattedString(sb, data, start, end);
+        fillFormattedString_ZeroBased(sb, data, start, end);
         textArea.setText(sb.toString());
         sb.setLength(0);
         qLen.decrementAndGet();

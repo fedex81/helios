@@ -104,7 +104,7 @@ public class CddLogDecoder {
     }
 
     private void decodeMsf(StringBuilder sb, int[] status) {
-        int lba = CueFileParser.toSector(status[2], status[3], status[4], status[5], status[6], status[7]);
+        int lba = CueFileParser.msfToSectorAdjustPregap(status[2], status[3], status[4], status[5], status[6], status[7]);
         String str = "" + status[2] + status[3] + "m" + status[4] + status[5] +
                 "s" + status[6] + status[7] + "f";
         sb.append(" " + str + ", lba: " + lba);

@@ -35,8 +35,7 @@ public interface Cdd extends BufferUtil.StepDevice {
 
     int CDD_CHECKSUM_BYTE = 9;
 
-    int PREGAP_LEN_LBA = 150;
-
+    //needed by BIOS
     int LBA_READAHEAD_LEN = 3;
 
     enum CddStatus {

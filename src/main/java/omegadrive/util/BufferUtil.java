@@ -267,11 +267,27 @@ public class BufferUtil {
     }
 
     public static int hashCode(int a[], int len) {
+        return hashCode(a, 0, len);
+    }
+
+    public static int hashCode(byte a[], int start, int end) {
         if (a == null)
             return 0;
 
         int result = 1;
-        for (int i = 0; i < len; i++) {
+        for (int i = start; i < end; i++) {
+            result = 31 * result + a[i];
+        }
+
+        return result;
+    }
+
+    public static int hashCode(int a[], int start, int end) {
+        if (a == null)
+            return 0;
+
+        int result = 1;
+        for (int i = start; i < end; i++) {
             result = 31 * result + a[i];
         }
 

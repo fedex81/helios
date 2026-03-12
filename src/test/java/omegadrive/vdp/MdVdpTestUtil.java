@@ -237,6 +237,10 @@ public class MdVdpTestUtil {
         return (MdVdp) f.get(system);
     }
 
+    public static void setVdpRegister(MdVdpProvider vdpProvider, MdVdpProvider.VdpRegisterName reg, int value) {
+        vdpProvider.writeControlPort((0x80 + reg.ordinal() << 8) | value);
+    }
+
     private void dumpTiles() {
         int cnt = 0;
         int start = 47744;

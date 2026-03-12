@@ -23,7 +23,7 @@ import static omegadrive.util.BufferUtil.readBuffer;
  */
 public class CddTestHelper {
 
-    private static CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();
+    public static final CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();
 
     //at 75hz
     static int cddWaitLimit = 1000;
@@ -40,8 +40,7 @@ public class CddTestHelper {
         setCommandChecksum(lc);
     }
 
-    public static void cddRequest(McdLaunchContext lc, Cdd.CddCommand command, int lba) {
-        CueFileParser.toMSF(lba, msfHolder);
+    public static void cddRequest(McdLaunchContext lc, Cdd.CddCommand command) {
         lc.cdd.write(MCD_CDD_COMM5, MCD_CDD_COMM5.addr, command.ordinal(), Size.BYTE);
         int[] vals = {msfHolder.minute / 10, msfHolder.minute % 10,
                 msfHolder.second / 10, msfHolder.second % 10, msfHolder.frame / 10, msfHolder.frame % 10};
@@ -88,7 +87,7 @@ public class CddTestHelper {
 
     public static String setMsfGetTestString(int lba, int[] input) {
         int[] vals = input.clone();
-        CueFileParser.toMSF(lba, msfHolder);
+        CueFileParser.lbaToMsf(lba, msfHolder);
         vals[2] = msfHolder.minute / 10;
         vals[3] = msfHolder.minute % 10;
         vals[4] = msfHolder.second / 10;

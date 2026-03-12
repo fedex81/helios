@@ -15,10 +15,12 @@ import java.util.function.Function;
 public class CueFileParser {
     private static final Logger LOG = LogHelper.getLogger(CueFileParser.class.getSimpleName());
     public static final int MAX_TRACKS = 100; //0-99
+
+    public static final int PREGAP_LEN_LBA = 150;
     static final int SECTOR_SIZE_BYTES = 2352;
 
     public static final Function<Integer, Integer> toBcdByte = n -> {
-        assert n >= 0 && n < 80;
+        assert n >= 0 && n < 100;
         return (((n / 10) << 4) | (n % 10));
     };
 
@@ -60,14 +62,29 @@ public class CueFileParser {
         return cueSheet;
     }
 
-    public static int toSector(int m, int s, int f) {
+    public static int msfToSector(int m, int s, int f) {
+        assert s <= 60 && f <= 75 && m <= 99;
         return (m * 60 + s) * 75 + f;
     }
 
-    public static int toSector(int mH, int mL, int sH, int sL, int fH, int fL) {
-        return toSector(mH * 10 + mL, sH * 10 + sL, fH * 10 + fL);
+    public static int msfToSectorAdjustPregap(int m, int s, int f) {
+        return msfToSector(m, s, f) - PREGAP_LEN_LBA;
     }
-    public static void toMSF(int sector, MsfHolder h) {
+
+    public static int msfToSectorAdjustPregap(int mH, int mL, int sH, int sL, int fH, int fL) {
+        return msfToSectorAdjustPregap(mH * 10 + mL, sH * 10 + sL, fH * 10 + fL);
+    }
+
+    public static void lbaToMsfAdjustPregap(int sector, MsfHolder h) {
+        lbaToMsf(sector + PREGAP_LEN_LBA, h);
+    }
+
+    public static void lbaToMsf(int sector, MsfHolder h) {
+        // If sectors < 0, we wrap around from 100 minutes (450,000 sectors)
+        // This is the standard way to represent lead-in areas before 00:00:00
+        if (sector < 0) {
+            sector += 450000;
+        }
         h.frame = sector % 75;
         sector /= 75;
         h.second = sector % 60;

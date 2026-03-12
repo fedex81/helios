@@ -116,6 +116,11 @@ public class Mcd32xMainBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imple
     }
 
     @Override
+    public int getOpenBusWord() {
+        return mdBus.getOpenBusWord();
+    }
+
+    @Override
     public void handleVdpInterrupts68k() {
         mdBus.handleVdpInterrupts68k();
     }

@@ -36,14 +36,15 @@ import java.util.stream.IntStream;
 import static omegadrive.SystemLoader.SystemType.MD;
 import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.VRAM;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
 
 @Ignore
 public class BaseVdpDmaHandlerTest {
 
     private static final Logger LOG = LogHelper.getLogger(BaseVdpDmaHandlerTest.class.getSimpleName());
 
-    MdVdpProvider vdpProvider;
-    VdpMemoryInterface memoryInterface;
+    protected MdVdpProvider vdpProvider;
+    protected VdpMemoryInterface memoryInterface;
 
     @Before
     public void setup() {
@@ -67,10 +68,10 @@ public class BaseVdpDmaHandlerTest {
 
         MdVdpTestUtil.vdpDisplayEnableAndMode5(vdpProvider);
         MdVdpTestUtil.vdpEnableDma(vdpProvider, true);
-        vdpProvider.writeControlPort(0x8F00 + increment);
-        vdpProvider.writeControlPort(0x9300);
-        vdpProvider.writeControlPort(0x9400);
-        vdpProvider.writeControlPort(0x9780);
+        setVdpRegDma(AUTO_INCREMENT, increment);
+        setVdpRegDma(DMA_LENGTH_LOW, 0);
+        setVdpRegDma(DMA_LENGTH_HIGH, 0);
+        setVdpRegDma(DMA_SOURCE_HIGH, 0x80);
 
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
@@ -97,7 +98,7 @@ public class BaseVdpDmaHandlerTest {
     protected void testDMAFillInternal(int dmaFillLong, int baseAddress, int increment, int fillValueWord,
                                        int[] expected) {
         int toAddress = baseAddress + expected.length;
-        vdpProvider.writeControlPort(0x8F02);
+        setVdpRegDma(AUTO_INCREMENT, 2);
         vdpProvider.writeControlPort(16384);
         vdpProvider.writeControlPort(2);
         vdpProvider.writeDataPort(750);
@@ -129,12 +130,12 @@ public class BaseVdpDmaHandlerTest {
 
         MdVdpTestUtil.vdpDisplayEnableAndMode5(vdpProvider);
         MdVdpTestUtil.vdpEnableDma(vdpProvider, true);
-        vdpProvider.writeControlPort(0x8F00 + increment);
-        vdpProvider.writeControlPort(0x9305);
-        vdpProvider.writeControlPort(0x9400);
-        vdpProvider.writeControlPort(0x9500);
-        vdpProvider.writeControlPort(0x9600);
-        vdpProvider.writeControlPort(0x9780);
+        setVdpRegDma(AUTO_INCREMENT, increment);
+        setVdpRegDma(DMA_LENGTH_LOW, 5);
+        setVdpRegDma(DMA_LENGTH_HIGH, 0);
+        setVdpRegDma(DMA_SOURCE_LOW, 0);
+        setVdpRegDma(DMA_SOURCE_MID, 0);
+        setVdpRegDma(DMA_SOURCE_HIGH, 0x80);
 
         vdpProvider.writeControlPort(dmaFillLong >> 16);
         vdpProvider.writeControlPort(dmaFillLong & 0xFFFF);
@@ -167,7 +168,7 @@ public class BaseVdpDmaHandlerTest {
 
 
     protected void testDMACopyInternal(int increment, int[] expected) {
-        vdpProvider.writeControlPort(0x8F02);
+        setVdpRegDma(AUTO_INCREMENT, 2);
         vdpProvider.writeControlPort(0x4000);
         vdpProvider.writeControlPort(2);
         vdpProvider.writeDataPort(0xf00d);
@@ -204,14 +205,14 @@ public class BaseVdpDmaHandlerTest {
 
         MdVdpTestUtil.vdpDisplayEnableAndMode5(vdpProvider);
         MdVdpTestUtil.vdpEnableDma(vdpProvider, true);
-        vdpProvider.writeControlPort(0x8F00 + increment);
-        vdpProvider.writeControlPort(0x9303);
-        vdpProvider.writeControlPort(0x9400);
+        setVdpRegDma(AUTO_INCREMENT, increment);
+        setVdpRegDma(DMA_LENGTH_LOW, 3);
+        setVdpRegDma(DMA_LENGTH_HIGH, 0);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
 
-        vdpProvider.writeControlPort(0x9500);
-        vdpProvider.writeControlPort(0x9690);
-        vdpProvider.writeControlPort(0x97C0);
+        setVdpRegDma(DMA_SOURCE_LOW, 0);
+        setVdpRegDma(DMA_SOURCE_MID, 0x90);
+        setVdpRegDma(DMA_SOURCE_HIGH, 0xC0);
 
         vdpProvider.writeControlPort(0);
         MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
@@ -231,6 +232,10 @@ public class BaseVdpDmaHandlerTest {
         System.out.println("Actual:   " + Arrays.toString(actual));
 
         Assert.assertArrayEquals(exp, actual);
+    }
+
+    protected void setVdpRegDma(MdVdpProvider.VdpRegisterName reg, int value) {
+        MdVdpTestUtil.setVdpRegister(vdpProvider, reg, value);
     }
 
 }

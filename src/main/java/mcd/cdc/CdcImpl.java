@@ -7,7 +7,6 @@ import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.sound.msumd.CueFileParser.MsfHolder;
-import omegadrive.system.SysUtil.RomFileType;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -19,7 +18,6 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDC;
 import static mcd.cdc.CdcModel.*;
 import static mcd.cdd.CdModel.SECTOR_2352;
 import static mcd.cdd.CdModel.SectorSize.S_2048;
-import static mcd.cdd.CdModel.SectorSize.S_2352;
 import static mcd.cdd.Cdd.CddStatus.Playing;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_CDC_MODE;
@@ -407,6 +405,8 @@ public class CdcImpl implements Cdc {
         writeSysRegWord(memoryContext, M68K, MCD_STOPWATCH, cdcContext.stopwatch);
     }
 
+    private int wasPending = 0;
+
     @Override
     public void poll() {
         CdcIrq irq = cdcContext.irq;
@@ -414,12 +414,13 @@ public class CdcImpl implements Cdc {
         pending |= irq.decoder.enable & irq.decoder.pending;
         pending |= irq.transfer.enable & irq.transfer.pending;
 //        pending |= irq.command.enable & irq.command.pending; //unused
-        if (pending > 0) {
+        if (wasPending == 0 && pending > 0) {
             if (verbose) LOG.info("CDC interrupt");
             interruptHandler.raiseInterrupt(INT_CDC);
         } else {
             interruptHandler.lowerInterrupt(INT_CDC);
         }
+        wasPending = pending;
     }
 
     @Override
@@ -432,7 +433,7 @@ public class CdcImpl implements Cdc {
         /* data decoding enabled ? */
         if (cdcContext.decoder.enable > 0) {
             /* update HEADx registers with current block header */
-            CueFileParser.toMSF(sector + Cdd.PREGAP_LEN_LBA, msfHolder);
+            CueFileParser.lbaToMsfAdjustPregap(sector, msfHolder);
             //bcd format
             cdcContext.header.minute = toBcdByte.apply(msfHolder.minute);
             cdcContext.header.second = toBcdByte.apply(msfHolder.second);
@@ -484,7 +485,10 @@ public class CdcImpl implements Cdc {
                 ram.put((byte) cdcContext.header.frame);
                 ram.put((byte) cdcContext.header.mode);
                 offset += 4;
-                if (sector < 0) {
+                if (sector < 0) { //reading INDEX00 - silence
+                    //TODO check do we need to write 0s??
+                    //TODO StarWars Array index out of range: 17524
+//                    Arrays.fill(ram.array(), offset, offset + S_2048.s_size, (byte) 0);
                     return;
                 }
 
@@ -509,20 +513,15 @@ public class CdcImpl implements Cdc {
         if (track.trackDataType != CdModel.TrackDataType.AUDIO && sector >= 0) {
             //header(4)
             if (verbose) LOG.info("Decoding data track sector: {}, cdcRamOffset: {}", sector, th(offset - 4));
-            if (cueSheet.romFileType == RomFileType.ISO) {
-                assert track.trackDataType == CdModel.TrackDataType.MODE1_2048;
-                /* read Mode 1 user data (2048 bytes) */
-                int seekPos = sector * S_2048.s_size;
-                doFileRead(track.data, seekPos, S_2048.s_size, offset);
-            } else if (cueSheet.romFileType == RomFileType.BIN_CUE) {
-                /* skip block sync pattern (12 bytes) + block header (4 bytes) then read Mode 1 user data (2048 bytes) */
-                assert track.trackDataType.size == S_2352;
-                int seekPos = (sector * track.trackDataType.size.s_size) + 12 + 4;
-                assert CdFormatChecker.checkMode1Data(track, msfHolder, cdcContext.header, seekPos);
-                doFileRead(track.data, seekPos, S_2048.s_size, offset);
-//                    cdStreamSeek(cdd.toc.tracks[0].fd, (cdd.lba * 2352) + 12 + 4, SEEK_SET);
-//                    cdStreamRead(dst, 2048, 1, cdd.toc.tracks[0].fd);
-            }
+            int seekPos = switch (track.trackDataType.size) {
+                case S_2048 -> sector * S_2048.s_size;
+                case S_2352 -> {
+                    int sk = (sector * track.trackDataType.size.s_size) + 12 + 4; //16 bytes of sync header
+                    assert CdFormatChecker.checkMode1Data(track, msfHolder, cdcContext.header, sk);
+                    yield sk;
+                }
+            };
+            doFileRead(track.data, seekPos, S_2048.s_size, offset);
         }
     }
 

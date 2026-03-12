@@ -24,7 +24,6 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
-import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.VdpDmaHandlerTest;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
@@ -38,7 +37,9 @@ import java.util.Optional;
 import static omegadrive.SystemLoader.SystemType.MD;
 import static omegadrive.bus.model.MdMainBusProvider.VDP_ADDRESS_SPACE_START;
 import static omegadrive.system.SystemProvider.NO_CLOCK;
+import static omegadrive.vdp.MdVdpTestUtil.*;
 import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.*;
+import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
 import static omegadrive.vdp.model.MdVdpProvider.VramMode.*;
 
 public class MdVdpTest2 {
@@ -72,22 +73,22 @@ public class MdVdpTest2 {
      */
     @Test
     public void testWriteControlPortLongWordAndDMA() {
-        MdVdpTestUtil.setH32(vdpProvider);
+        setH32(vdpProvider);
 
         int dmaAutoInc = 2;
         int afterDmaAutoInc = 0x20;
 
-        vdpProvider.writeControlPort(0x8124);
-        vdpProvider.writeControlPort(0x8134);
-        vdpProvider.writeControlPort(0x8F00 + dmaAutoInc);
-        vdpProvider.writeControlPort(0x93E8);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        setVdpRegister(vdpProvider, MODE_2, 0x34);
+        setVdpRegister(vdpProvider, AUTO_INCREMENT, dmaAutoInc);
+        setVdpRegister(vdpProvider, DMA_LENGTH_LOW, 0xE8);
+        runVdpUntilFifoEmpty(vdpProvider);
 
-        vdpProvider.writeControlPort(0x9400);
-        vdpProvider.writeControlPort(0x951F);
-        vdpProvider.writeControlPort(0x9683);
-        vdpProvider.writeControlPort(0x977F);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        setVdpRegister(vdpProvider, DMA_LENGTH_HIGH, 0);
+        setVdpRegister(vdpProvider, DMA_SOURCE_LOW, 0x1F);
+        setVdpRegister(vdpProvider, DMA_SOURCE_MID, 0x83);
+        setVdpRegister(vdpProvider, DMA_SOURCE_HIGH, 0x7F);
+
+        runVdpUntilFifoEmpty(vdpProvider);
 
         //setup DMA
         vdpProvider.writeControlPort(0x4400);
@@ -97,12 +98,12 @@ public class MdVdpTest2 {
         //move.l second word, this changes the autoInc value -> needs to happen after DMA!
         busProvider.write(VDP_CONTROL_PORT, 0x8F00 + afterDmaAutoInc, Size.WORD);
         Assert.assertFalse(busProvider.is68kRunning());
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        runVdpUntilFifoEmpty(vdpProvider);
 
         //autoInc has not been changed
         Assert.assertEquals(dmaAutoInc, vdpProvider.getRegisterData(MdVdpProvider.VdpRegisterName.AUTO_INCREMENT));
 
-        MdVdpTestUtil.runVdpUntilDmaDone(vdpProvider);
+        runVdpUntilDmaDone(vdpProvider);
         Assert.assertTrue(busProvider.is68kRunning());
 
         //autoInc has now been changed
@@ -111,23 +112,22 @@ public class MdVdpTest2 {
 
     @Test
     public void testCtrlPortVdpRegisterWriteUpdatesCodeAndAddrRegs() {
-        MdVdpTestUtil.setH32(vdpProvider);
+        setH32(vdpProvider);
 
         //setup vpd
         int autoInc = 2;
-
-        vdpProvider.writeControlPort(0x8124);
-        vdpProvider.writeControlPort(0x8134);
-        vdpProvider.writeControlPort(0x8F00 + autoInc);
-        vdpProvider.writeControlPort(0x93E8);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        setVdpRegister(vdpProvider, MODE_2, 0x34);
+        setVdpRegister(vdpProvider, AUTO_INCREMENT, autoInc);
+        setVdpRegister(vdpProvider, DMA_LENGTH_LOW, 0xE8);
+        runVdpUntilFifoEmpty(vdpProvider);
 
         vdpProvider.writeControlPort(0); //addrReg = 0, codeReg = 0 (vramRead)
         vdpProvider.writeControlPort(0);
 
         memoryInterface.writeVideoRamByte(VRAM, 0xf02, (byte) 0xFF);
 
-        vdpProvider.writeControlPort(0x8f02); //set autoInc = 2, addressRegister -> 0xF02, codeReg = 2 (invalid)
+        //set autoInc = 2, addressRegister -> 0xF02, codeReg = 2 (invalid)
+        setVdpRegister(vdpProvider, AUTO_INCREMENT, autoInc);
         //codeReg should now be 2
         int res = vdpProvider.readVdpPortWord(MdVdpProvider.VdpPortType.DATA);
         Assert.assertEquals(0, res); //invalid read returns 0
@@ -146,16 +146,14 @@ public class MdVdpTest2 {
      */
     @Test
     public void testInvalidModeDataPortWrite() {
-        MdVdpTestUtil.setH32(vdpProvider);
+        setH32(vdpProvider);
 
         //setup vpd
         int autoInc = 2;
-
-        vdpProvider.writeControlPort(0x8124);
-        vdpProvider.writeControlPort(0x8134);
-        vdpProvider.writeControlPort(0x8F00 + autoInc);
-        vdpProvider.writeControlPort(0x93E8);
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        setVdpRegister(vdpProvider, MODE_2, 0x34);
+        setVdpRegister(vdpProvider, AUTO_INCREMENT, autoInc);
+        setVdpRegister(vdpProvider, DMA_LENGTH_LOW, 0xE8);
+        runVdpUntilFifoEmpty(vdpProvider);
 
         int addrReg = 0xf02;
 
@@ -167,10 +165,11 @@ public class MdVdpTest2 {
         int vsram2 = memoryInterface.readVideoRamByte(VSRAM, addrReg + autoInc);
 
         //do work
-        vdpProvider.writeControlPort(0x8f02); //set autoInc = 2, addressRegister -> 0xF02, codeReg = 2 (invalid)
+        //set autoInc = 2, addressRegister -> 0xF02, codeReg = 2 (invalid)
+        setVdpRegister(vdpProvider, AUTO_INCREMENT, autoInc);
         vdpProvider.writeDataPort(0x8032); //attempts to write to address 0xf02, should fail
         vdpProvider.writeDataPort(0x8004); //attempts to write to address 0xf04, should fail
-        MdVdpTestUtil.runVdpUntilFifoEmpty(vdpProvider);
+        runVdpUntilFifoEmpty(vdpProvider);
 
         //verify nothing was written to mem
         Assert.assertEquals(vram0, memoryInterface.readVideoRamByte(VRAM, addrReg));
@@ -192,7 +191,7 @@ public class MdVdpTest2 {
      */
     @Test
     public void testCodeRegisterUpdate() {
-        MdVdpTestUtil.setH32(vdpProvider);
+        setH32(vdpProvider);
 
         //set vramRead
         testCodeRegisterUpdateInternal(vramRead.getAddressMode(), 0, 1280);

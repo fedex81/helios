@@ -37,7 +37,8 @@ public class CdFormatChecker {
         byte[] sync = new byte[12];
         TrackContentHelper data = etd.data;
         List<Integer> invalidSectors = new ArrayList<>();
-        for (int i = 0; i < etd.trackLenSectors; i++) {
+        int len = etd.trackLenSectors - CueFileParser.PREGAP_LEN_LBA;
+        for (int i = 0; i < len; i++) {
             try {
                 data.seek(i * S_2352.s_size);
                 int r = data.read(sync, 0, sync.length);
@@ -96,7 +97,7 @@ public class CdFormatChecker {
             if (key.endsWith(".ogg")) {
                 try (AudioInputStream ais = AudioSystem.getAudioInputStream(file.toFile());
                      AudioInputStream dataIn = AudioSystem.getAudioInputStream(CDDA_FORMAT, ais)) {
-                    byte[] b = dataIn.readAllBytes();
+                    byte[] b = padToCdSector(dataIn.readAllBytes());
                     tca = TrackContentHelper.ofDataArray(b);
                 }
             } else if (key.endsWith(".gz")) {
@@ -110,5 +111,14 @@ public class CdFormatChecker {
             LOG.error("Unable to handle content: {}, file: {}", key, file.toAbsolutePath(), e);
         }
         return tca;
+    }
+
+    private static byte[] padToCdSector(byte[] b) {
+        int rem = b.length % S_2352.s_size;
+        if (rem != 0) {
+            int newLength = b.length + (S_2352.s_size - rem);
+            b = java.util.Arrays.copyOf(b, newLength);
+        }
+        return b;
     }
 }

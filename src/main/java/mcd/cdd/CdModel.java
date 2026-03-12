@@ -1,6 +1,7 @@
 package mcd.cdd;
 
 import com.google.common.base.MoreObjects;
+import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.LogHelper;
 import omegadrive.util.ZipUtil;
 import org.digitalmediaserver.cuelib.TrackData;
@@ -100,9 +101,13 @@ public class CdModel {
         public TrackDataType trackDataType;
         public int absoluteSectorStart, absoluteSectorEnd, lenBytes, trackLenSectors;
 
+        public CueFileParser.MsfHolder trackEndMsf, trackStartMsf;
+
         public ExtendedTrackData(TrackData trackData, TrackContentHelper tca) {
             this.trackData = trackData;
             this.data = tca;
+            this.trackStartMsf = new CueFileParser.MsfHolder();
+            this.trackEndMsf = new CueFileParser.MsfHolder();
         }
 
         @Override
@@ -113,6 +118,8 @@ public class CdModel {
                     .add("trackDataType", trackDataType)
                     .add("absoluteSectorStart", absoluteSectorStart)
                     .add("absoluteSectorEnd", absoluteSectorEnd)
+                    .add("trackStartMsf", trackStartMsf)
+                    .add("trackEndMsf", trackEndMsf)
                     .add("lenSector", trackLenSectors)
                     .add("lenBytes", lenBytes)
                     .toString();

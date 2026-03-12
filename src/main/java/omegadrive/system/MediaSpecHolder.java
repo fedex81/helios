@@ -6,7 +6,6 @@ import mcd.cdd.TrackContentHelper;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.MediaInfoProvider;
-import omegadrive.system.SysUtil.RomFileType;
 import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
@@ -18,8 +17,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.StringJoiner;
 
-import static omegadrive.system.SysUtil.CUE_EXT;
-import static omegadrive.system.SysUtil.ISO_EXT;
+import static omegadrive.system.SysUtil.*;
 
 /**
  * Federico Berti
@@ -64,13 +62,10 @@ public class MediaSpecHolder {
                 mediaInfoProvider = getMediaInfoProvider(romFile);
                 mediaSizeBytes = mediaInfoProvider.getRomSize();
             } else if (type.isDiscImage()) {
-                assert !ZipUtil.isCompressedByteStream(romFile);
-                assert !compressed;
                 if (sheetOpt.isEmpty()) {
                     sheetOpt = Optional.of(new ExtendedCueSheet(romFile, type));
                 }
                 mediaInfoProvider = getMcdInfoProvider(romFile, this);
-//                mediaSizeBytes = sheetOpt.get().extTracks.get(0).lenBytes; //TODO ??
             }
         }
 
@@ -147,6 +142,10 @@ public class MediaSpecHolder {
         RomFileType rft = RomFileType.CART_ROM;
         rft = file.toString().endsWith(CUE_EXT) ? RomFileType.BIN_CUE : rft;
         rft = file.toString().endsWith(ISO_EXT) ? RomFileType.ISO : rft;
+        if (file.toString().endsWith(ISO_GZ_EXT)) {
+            rft = RomFileType.ISO;
+            assert ZipUtil.isGZipByteStream(file) : file;
+        }
         MediaSpec ms = MediaSpec.of(file, rft, systemType);
         if (rft.isDiscImage()) {
             r.cdFile = ms;

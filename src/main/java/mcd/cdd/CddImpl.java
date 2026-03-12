@@ -71,7 +71,7 @@ class CddImpl implements Cdd {
         }
 
         setIoStatus(ReadingTOC);
-        setSector(-1); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
+        setSector(-300); //TODO session.leadIn.lba, should be 150 sectors (2 seconds)
         cddContext.io.track = cddContext.io.sample = cddContext.io.tocRead = 0;
         cdc.setMedia(extCueSheet);
         LOG.info("Using disc: {}", extCueSheet);
@@ -309,8 +309,7 @@ class CddImpl implements Cdd {
                     if (cddContext.statusRegs[1] == 0xF) {
                         /* seeking has ended so we return valid track infos,
                         e.g current absolute time by default (fixes Lunar - The Silver Star) */
-                        int lba = cddContext.io.sector + PREGAP_LEN_LBA;
-                        CueFileParser.toMSF(lba, msfHolder);
+                        CueFileParser.lbaToMsfAdjustPregap(cddContext.io.sector, msfHolder);
                         /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
                         updateStatusesMsf(0, getFlags(isAudio), msfHolder);
                     }
@@ -318,17 +317,16 @@ class CddImpl implements Cdd {
                     else if (cddContext.statusRegs[1] == 0x00) {
                         //TODO is this used??
                         /* current absolute time */
-                        int lba = hasMedia ? cddContext.io.sector + PREGAP_LEN_LBA : 0;
-                        CueFileParser.toMSF(lba, msfHolder);
+                        int lba = hasMedia ? cddContext.io.sector : 0;
+                        CueFileParser.lbaToMsfAdjustPregap(lba, msfHolder);
                         updateStatusesMsf(cddContext.statusRegs[1], getFlags(isAudio), msfHolder);
                     } else if (cddContext.statusRegs[1] == 0x01) {
                         //TODO is this used??
                         CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                         /* current track relative time */
-                        int lba = cddContext.io.sector - etd.absoluteSectorStart + PREGAP_LEN_LBA;
-                        CueFileParser.toMSF(lba, msfHolder);
+                        int lba = Math.abs(cddContext.io.sector - etd.absoluteSectorStart);
+                        CueFileParser.lbaToMsf(lba, msfHolder);
                         updateStatusesMsf(cddContext.statusRegs[1], getFlags(isAudio), msfHolder);
-
                     } else if (cddContext.statusRegs[1] == 0x02) {
                         /* current track number */
 //                        scd.regs[0x3a>>1].w = (cdd.index < cdd.toc.last) ? lut_BCD_16[cdd.index + 1] : 0x0A0A;
@@ -355,12 +353,12 @@ class CddImpl implements Cdd {
                 int index = 0;
 
                 /* new LBA position */
-                int lba = CueFileParser.toSector(cddContext.commandRegs[2], cddContext.commandRegs[3],
+                int lba = CueFileParser.msfToSectorAdjustPregap(cddContext.commandRegs[2], cddContext.commandRegs[3],
                         cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6],
-                        cddContext.commandRegs[7]) - PREGAP_LEN_LBA;
+                        cddContext.commandRegs[7]);
+                CueFileParser.lbaToMsfAdjustPregap(lba, msfHolder);
+                extraInfo.append("lba " + lba + ", msf " + msfHolder);
                 lba -= LBA_READAHEAD_LEN;
-                CueFileParser.toMSF((lba + LBA_READAHEAD_LEN + PREGAP_LEN_LBA), msfHolder);
-                extraInfo.append("lba " + (lba + LBA_READAHEAD_LEN + PREGAP_LEN_LBA) + ", msf " + msfHolder);
 
                 /* CD drive latency */
                 if (cddContext.io.latency == 0) {
@@ -435,12 +433,13 @@ class CddImpl implements Cdd {
                 int index = 0;
 
                 /* new LBA position */
-                int lba = CueFileParser.toSector(cddContext.commandRegs[2], cddContext.commandRegs[3],
+                int lba = CueFileParser.msfToSectorAdjustPregap(cddContext.commandRegs[2], cddContext.commandRegs[3],
                         cddContext.commandRegs[4], cddContext.commandRegs[5], cddContext.commandRegs[6],
-                        cddContext.commandRegs[7]) - PREGAP_LEN_LBA;
-                lba -= LBA_READAHEAD_LEN;
-                CueFileParser.toMSF((lba + PREGAP_LEN_LBA + LBA_READAHEAD_LEN), msfHolder);
-                extraInfo.append("lba " + (lba + PREGAP_LEN_LBA + LBA_READAHEAD_LEN) + ", msf " + msfHolder);
+                        cddContext.commandRegs[7]);
+                CueFileParser.lbaToMsfAdjustPregap(lba, msfHolder);
+                extraInfo.append("lba " + lba + ", msf " + msfHolder);
+//                lba -= LBA_READAHEAD_LEN;
+
                 /* CD drive latency */
                 if (cddContext.io.latency == 0) {
                     cddContext.io.latency = 1 + 10 * CD_LATENCY;
@@ -464,7 +463,12 @@ class CddImpl implements Cdd {
                 /* get current track index */
                 index = inTrack(cddContext.io.sector);
                 if (index == 0) { //sector < 0, use track 1
+                    //TODO should not seek in lead-in?
                     index = 1;
+                }
+                if (index == 0xAA) {
+                    //TODO should not seek in lead-out?
+                    index = 1; //leadout, use last track
                 }
                 CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, index);
 
@@ -595,15 +599,18 @@ class CddImpl implements Cdd {
         /* commands 0x00-0x02 (current block) and 0x03-0x05 (Lead-In) */
         CddRequest request = Cdd.requestVals[cddContext.commandRegs[3]];
         extraInfo.append(" " + request + "(" + request.ordinal() + ") ");
+        if (cddContext.io.track == LEADINNUM || cddContext.io.track == LEADOUTNUM) {
+            LogHelper.logWarnOnce(LOG, "{} while in lead-{}, track {}, lba: {}",
+                    request, cddContext.io.track == LEADINNUM ? "in" : "out", th(cddContext.io.track), cddContext.io.sector);
+//            if (cddContext.io.track == LEADINNUM) {
+//                updateStatus(1, CddRequest.NotReady.ordinal());
+//                return;
+//            }
+        }
         switch (request) {
             /* Current Absolute Time (MM:SS:FF) */
             case AbsoluteTime -> {
-                int lba = cddContext.io.sector + PREGAP_LEN_LBA;
-                if (cddContext.io.track == LEADINNUM) {
-                    updateStatus(1, CddRequest.NotReady.ordinal());
-                    break;
-                }
-                CueFileParser.toMSF(lba, msfHolder);
+                CueFileParser.lbaToMsfAdjustPregap(cddContext.io.sector, msfHolder);
                 updateStatus(0, cddContext.io.status.ordinal());
                 updateStatusesMsf(request.ordinal(), getFlags(isAudio), msfHolder);
             }
@@ -615,17 +622,13 @@ class CddImpl implements Cdd {
                 }
                 CdModel.ExtendedTrackData etd = ExtendedCueSheet.getExtTrack(extCueSheet, cddContext.io.track);
                 /* current track relative time */
-                int lba = Math.max(0, cddContext.io.sector - etd.absoluteSectorStart);
-                CueFileParser.toMSF(lba, msfHolder);
+                int lba = Math.abs(cddContext.io.sector - etd.absoluteSectorStart);
+                CueFileParser.lbaToMsf(lba, msfHolder);
                 updateStatus(0, cddContext.io.status.ordinal());
                 updateStatusesMsf(request.ordinal(), getFlags(isAudio), msfHolder);
             }
             /* Current Track Number */
             case TrackInformation -> {
-                if (cddContext.io.track == LEADINNUM) {
-                    updateStatus(1, CddRequest.NotReady.ordinal());
-                    break;
-                }
                 /* Disk Control Code (?) in RS6 */
                 int rs6 = 0; //TODO
                 //rs2-rs3
@@ -637,8 +640,8 @@ class CddImpl implements Cdd {
             }
             /* Total length (MM:SS:FF), TOCO */
             case DiscCompletionTime -> {
-                int lba = hasMedia ? extCueSheet.sectorEnd + PREGAP_LEN_LBA : 0;
-                CueFileParser.toMSF(lba, msfHolder);
+                int lba = hasMedia ? extCueSheet.sectorEnd : 0;
+                CueFileParser.lbaToMsfAdjustPregap(lba, msfHolder);
                 updateStatus(0, cddContext.io.status.ordinal());
                 updateStatusesMsf(request.ordinal(), getFlags(isAudio), msfHolder);
             }
@@ -653,6 +656,8 @@ class CddImpl implements Cdd {
                         lastTrack / 10, lastTrack % 10, rs6, rs7, getFlags(isAudio));
             }
             /* Track Start Time (MM:SS:FF), TOCN */
+            //INDEX 00 -> LBA -150 -> MSF 00:00:00
+            //INDEX 01 -> LBA 0    -> MSF 00:02:00
             case TrackStartTime -> {
                 int track = cddContext.commandRegs[4] * 10 + cddContext.commandRegs[5];
                 extraInfo.append("\n\tTrack: 0x" + th(track));
@@ -662,12 +667,12 @@ class CddImpl implements Cdd {
                     updateStatus(8, getFlags(isAudio));
                     break;
                 }
-                CueFileParser.toMSF(extTrackData.absoluteSectorStart + PREGAP_LEN_LBA, msfHolder);
+                CueFileParser.MsfHolder msf = extTrackData.trackStartMsf;
                 /* RS6 bit 3 is set for CD-ROM track, Track Number (low digit) */
-                int status6 = (isAudio ? 0 : 0x8) | (msfHolder.frame / 10);
+                int status6 = (isAudio ? 0 : 0x8) | (msf.frame / 10);
                 updateStatus(0, cddContext.io.status.ordinal());
-                updateStatuses(request.ordinal(), msfHolder.minute / 10, msfHolder.minute % 10,
-                        msfHolder.second / 10, msfHolder.second % 10, status6, msfHolder.frame % 10, track % 10);
+                updateStatuses(request.ordinal(), msf.minute / 10, msf.minute % 10,
+                        msf.second / 10, msf.second % 10, status6, msf.frame % 10, track % 10);
             }
             /* Latest Error Information */
             case ErrorInformation -> {
@@ -698,6 +703,10 @@ class CddImpl implements Cdd {
     //should be called at 44.1 khz
     @Override
     public void stepCdda() {
+        if (cddContext.io.latency > 0) {
+//            if(verbose) LOG.info("CDDA nop, still seeking, latency left: {}", cddContext.io.latency);
+            return;
+        }
         int left = 0, right = 0;
         if (cddContext.io.status == Playing) {
             if (ExtendedCueSheet.isAudioTrack(extCueSheet, cddContext.io.track)) {
@@ -749,8 +758,18 @@ class CddImpl implements Cdd {
                 return ext.trackData.getNumber();
             }
         }
-        //TODO slodemo.iso breaks
-        assert lba < 0;
+        //this is absolute-time LBA
+        if (lba < -CueFileParser.PREGAP_LEN_LBA) {
+            LogHelper.logWarnOnce(LOG, "LBA in LEAD-IN: {}", lba);
+            return 0;
+        } else if (lba >= extCueSheet.sectorEnd) {
+            LogHelper.logWarnOnce(LOG, "LBA in LEAD-OUT: {}", lba);
+            return 0xAA;
+        } else if (lba < 0) {
+            LogHelper.logWarnOnce(LOG, "LBA in TRACK1 PREGAP: {}", lba);
+            return 1;
+        }
+        LogHelper.logWarnOnce(LOG, "LBA in OOPS: {}", lba);
         return 0;
     }
     private void setTrack(int track) {
@@ -774,8 +793,8 @@ class CddImpl implements Cdd {
     private void setSector(int s) {
         if (s != cddContext.io.sector) {
             if (verbose) {
-                CueFileParser.toMSF(s + PREGAP_LEN_LBA, msfHolder);
-                LOG.info("Sector changed: {} -> {}({}), msf: {}", cddContext.io.sector, s, s + PREGAP_LEN_LBA, msfHolder);
+                CueFileParser.lbaToMsfAdjustPregap(s, msfHolder);
+                LOG.info("Sector changed: {} -> {}, msf: {}", cddContext.io.sector, s, msfHolder);
             }
             cddContext.io.sector = s;
         }

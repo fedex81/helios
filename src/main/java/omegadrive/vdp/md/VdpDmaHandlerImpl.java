@@ -117,11 +117,14 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
                     th(dmaSrcHigh), megaCdDma);
         }
         if (megaCdDma || svpDma) {
-            if (getDmaLength() > 1) { //Snatcher, TODO test
-                //dest0 gets openBus, src0 goes to dest1, etc
-                vdpProvider.fifoPush(getDestAddress(), busProvider.getOpenBusWord());
+            LogHelper.logWarnOnce(LOG, "FastDma, {}", getDmaStateStringNoVdp());
+            //TODO fix and test
+            //Snatcher OK, Willy beamish KO
+            //dest0 gets openBus, src0 goes to dest1, etc
+            vdpProvider.fifoPush(getDestAddress(), busProvider.getOpenBusWord());
+            increaseDestAddress();
+            if (getDmaLength() > 1) {
                 decreaseDmaLength();
-                increaseDestAddress();
             }
         }
     }
@@ -207,6 +210,14 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
     }
 
     private String getDmaStateString(String head, int srcAddress, Integer data) {
+        return getDmaStateString(head, srcAddress, data, true);
+    }
+
+    private String getDmaStateStringNoVdp() {
+        return getDmaStateString("", Integer.MIN_VALUE, null, false);
+    }
+
+    private String getDmaStateString(String head, int srcAddress, Integer data, boolean vdpState) {
         int dmaLen = getDmaLength();
         String str = dmaMode + " " + head;
         String src = th(srcAddress > Integer.MIN_VALUE ? srcAddress : getSourceAddress());
@@ -217,7 +228,7 @@ public class VdpDmaHandlerImpl implements VdpDmaHandler {
         str += ", destAddr: " + dest + ", destAddrInc: " + destAddressIncrement +
                 ", dmaLen: " + dmaLen + (data != null ? ", data: " + th(data.intValue()) : "")
                 + ", vramMode: " + vdpProvider.getVramMode();
-        str += vdpProvider.getVdpStateString();
+        str += vdpState ? vdpProvider.getVdpStateString() : "";
         return str;
     }
 

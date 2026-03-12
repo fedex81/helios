@@ -36,7 +36,7 @@ public class BuramHelper {
         check_format_bram(bb);
 
         StringBuilder sb = new StringBuilder();
-        HexUtil.fillFormattedString(sb, bb.array());
+        HexUtil.fillFormattedString_ZeroBased(sb, bb.array());
         System.out.println(sb);
     }
 

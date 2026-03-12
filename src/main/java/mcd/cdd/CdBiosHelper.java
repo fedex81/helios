@@ -4,11 +4,14 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Table;
 import m68k.cpu.Cpu;
+import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.HexUtil;
 import omegadrive.util.LogHelper;
+import omegadrive.util.Size;
 import org.slf4j.Logger;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,6 +41,8 @@ public class CdBiosHelper {
     private static final Map<Integer, CdMemRegion> mainMemRegionMap = new HashMap<>();
     private static final int LOW_ENTRY, HIGH_ENTRY;
 
+    private static final String[] supportedCdBiosCalls = {"ROMREADN", "CDBSTAT", "DRVINIT", "BOOTSTAT"};
+
     public static final boolean enabled;
 
     static class CdMemRegion {
@@ -51,7 +56,8 @@ public class CdBiosHelper {
     }
 
     static {
-        enabled = false && Boolean.valueOf(System.getProperty("68k.debug", "false"));
+        Arrays.sort(supportedCdBiosCalls);
+        enabled = Boolean.valueOf(System.getProperty("68k.debug", "false"));
         Map<String, Integer> cdBiosFunMap = new HashMap<>();
         Map<String, Integer> cdBootFunMap = new HashMap<>();
         Map<String, Integer> cdBuramFunMap = new HashMap<>();
@@ -127,7 +133,6 @@ public class CdBiosHelper {
         m.put("BRMVERIFY", 0x0008);
         var m1 = cdBiosEntryPointMap;
         m1.put("_ADRERR", 0x00005F40);
-        m1.put("_BOOTSTAT", 0x00005EA0);
         m1.put("_BURAM", 0x00005F16);
         m1.put("_CDBIOS", 0x00005F22);
         m1.put("_CDBOOT", 0x00005F1C);
@@ -248,6 +253,8 @@ public class CdBiosHelper {
         addToSubMemRegion("headerBuffer", 0x5b4e, 4);
         addToSubMemRegion("frameCheckValue", 0x5b52, 1);
 
+        addToSubMemRegion("CDBSTAT_return", 0x5e80, 20);
+        addToSubMemRegion("BOOTSTAT", 0x00005EA0, 2);
         addToSubMemRegion("vBlankFlag", 0x5ea4, 1);
 
         addToSubMemRegion("vblankFlag", 0x833C + 0x3, 1);
@@ -345,10 +352,12 @@ public class CdBiosHelper {
         return invCdBiosEntryPointMap.getOrDefault(pc, NO_ENTRY_POINT);
     }
 
+    private static Cpu secCpu; //TODO hack
     public static void logCdPcInfo(int pc, Cpu m68k) {
         if (!enabled) {
             return;
         }
+        secCpu = m68k;
         if (pc >= LOW_ENTRY && pc <= HIGH_ENTRY) {
             String res = CdBiosHelper.getCdBiosEntryPointIfAny(pc);
             if (res != CdBiosHelper.NO_ENTRY_POINT) {
@@ -357,22 +366,70 @@ public class CdBiosHelper {
                 if (rowFunc != null && !rowFunc.isEmpty()) {
                     String fname = CdBiosHelper.getFunctionName(pc, m68k.getDataRegisterByte(0));
                     assert !NO_FUNCTION.equals(fname);
-                    handleCdBiosCalls(fname, m68k);
                     LOG.warn("calling fn {} #{}({})", res, fname, th(pc));
+                    checkInParameters(fname, m68k);
                 }
             }
         }
     }
 
-    private static void handleCdBiosCalls(String fname, Cpu cpu) {
-        if ("ROMREADN".equalsIgnoreCase(fname)) {
+    private static void checkInParameters(String fname, Cpu cpu) {
+        if ("DRVINIT".equalsIgnoreCase(fname)) {
             int memAddr = cpu.getAddrRegisterLong(0);
-            int firstSector = cpu.readMemoryLong(memAddr);
-            int length = cpu.readMemoryLong(memAddr + 4);
-            LOG.warn("CDBIOS {}, firstSector {}, length {}", fname, firstSector, length);
+            int firstTrack = cpu.readMemoryByte(memAddr);
+            int lastTrack = cpu.readMemoryByte(memAddr + 1);
+            boolean autoPlay = (firstTrack & 0x80) == 0x80;
+            LOG.warn("CDBIOS {}, firstTrack {}, lastTrack {}, autoPlay {}", fname, firstTrack, lastTrack, autoPlay);
         }
     }
 
+    public static void handleCdBiosCalls(CdMemRegion region, Cpu cpu) {
+        int memAddr = region.startInclusive;
+        if ("ROMREADN_return".equalsIgnoreCase(region.name)) {
+            int firstSector = cpu.readMemoryLong(memAddr);
+            int length = cpu.readMemoryLong(memAddr + 4);
+            LOG.warn("CDBIOS {}, firstSector {}, length {}", region.name, firstSector, length);
+        } else if ("CDBSTAT_return".equalsIgnoreCase(region.name)) {
+            int biosStatus = cpu.readMemoryWord(memAddr);
+            int ledStatus = cpu.readMemoryWord(memAddr + 2);
+            int cddStatus1 = cpu.readMemoryLong(memAddr + 4);
+            int absTime = cpu.readMemoryLong(memAddr + 8);
+            int relTime = cpu.readMemoryLong(memAddr + 12);
+            int firstSong = cpu.readMemoryByte(memAddr + 16);
+            int lastSong = cpu.readMemoryByte(memAddr + 17);
+            int driveVersion = cpu.readMemoryByte(memAddr + 18);
+            int flags = cpu.readMemoryByte(memAddr + 19);
+            int leadOutMsf = cpu.readMemoryLong(memAddr + 20);
+            int bp0 = (cddStatus1 >>> 24) & 0xFF;
+            int bp1 = (cddStatus1 >>> 16) & 0xFF;
+            int bp2 = (cddStatus1 >>> 8) & 0xFF;
+            int bp3 = cddStatus1 & 0xFF;
+            LOG.warn("CDBIOS {}, biosStatus {} {}, ledStatus {}, statusCode {}, reportCode {}, " +
+                            "discControlCode {}, songNumber {}", region.name, th(biosStatus >> 8),
+                    th(biosStatus & 0xFF), th(ledStatus), th(bp0), th(bp1), th(bp2), th(bp3));
+        } else if ("CBTCHKDISC_return".equalsIgnoreCase(region.name)) {
+
+        } else if ("BOOTSTAT".equalsIgnoreCase(region.name)) {
+            int type = cpu.readMemoryWord(memAddr);
+            BootstatEnum be = type == -1 ? BootstatEnum.CD_NOTREADY : null;
+            if (type >= 0) {
+                be = type < BootstatEnum.vals.length ? BootstatEnum.vals[type] : null;
+            }
+            LOG.warn("CDBIOS {}, cdType {}({})", region.name, be, th(type));
+        }
+    }
+
+    enum BootstatEnum {
+        CD_NOTREADY(-1), CD_NODISC(0), CD_MUSIC(1), CD_ROM(2), CD_MIXED(3),
+        CD_GAMESYSTEM(4), CD_GAMEDATA(5), CD_GAMEBOOT(6), CD_GAMEDISC(7);
+
+        public static final BootstatEnum[] vals = BootstatEnum.values();
+        public final int val;
+
+        BootstatEnum(int val) {
+            this.val = val;
+        }
+    }
     private static void addToSubMemRegion(String name, int startInclusive, int len) {
         addToMemRegion(subMemRegionMap, name, startInclusive, len);
     }
@@ -393,15 +450,34 @@ public class CdBiosHelper {
         }
     }
 
-    public static void checkMainMemRegion(byte[] data, int address) {
-        checkMemRegion(M68K, data, address & PC_MASK);
+    public static void checkMainMemRegion(byte[] data, int address, Size size) {
+        checkMemRegion(M68K, data, address & PC_MASK, size);
     }
 
-    public static void checkSubMemRegion(byte[] data, int address) {
-        checkMemRegion(SUB_M68K, data, address);
+    public static void checkSubMemRegion(byte[] data, int address, Size size) {
+        checkMemRegion(SUB_M68K, data, address, size);
     }
 
-    public static void checkMemRegion(CpuDeviceAccess cpu, byte[] data, int address) {
+    public static void checkMemRegion(CpuDeviceAccess cpu, byte[] data, int address, Size size) {
+        if (!enabled) {
+            return;
+        }
+        switch (size) {
+            case WORD -> {
+                checkMemRegionByte(cpu, data, address);
+                checkMemRegionByte(cpu, data, address + 1);
+            }
+            case LONG -> {
+                checkMemRegionByte(cpu, data, address);
+                checkMemRegionByte(cpu, data, address + 1);
+                checkMemRegionByte(cpu, data, address + 2);
+                checkMemRegionByte(cpu, data, address + 3);
+            }
+            case BYTE -> checkMemRegionByte(cpu, data, address);
+        }
+    }
+
+    public static void checkMemRegionByte(CpuDeviceAccess cpu, byte[] data, int address) {
         if (!enabled) {
             return;
         }
@@ -410,11 +486,7 @@ public class CdBiosHelper {
         CdMemRegion r = map.get(address);
         if (r != null) {
             boolean change = printMemRegion(cpu, data, r);
-//            if("biosStatus".equals(r.name) && change){
-//                System.out.println("here");
-//            }
         }
-
     }
 
     private static final int MAX_AREA_SIZE = 0x10_000;
@@ -426,13 +498,17 @@ public class CdBiosHelper {
         int startIncl = r.startInclusive & MAX_AREA_MASK;
         int endIncl = r.endInclusive & MAX_AREA_MASK;
         HexUtil.fillFormattedString(sb, data, startIncl, endIncl);
-        int hc = sb.toString().hashCode();
+        int hc = BufferUtil.hashCode(data, startIncl, endIncl);
         int[] areaHash = memAreaHash[cpu == M68K ? 0 : 1];
         //print first write or when changed
         boolean hasChanged = areaHash[startIncl] == 0 || areaHash[startIncl] != hc;
         if (hasChanged) {
             LOG.info("{} {} update\n{}", cpu, r, sb);
             areaHash[startIncl] = hc;
+            String tk = r.name.replace("_return", "");
+            if (Arrays.binarySearch(supportedCdBiosCalls, tk) >= 0) {
+                handleCdBiosCalls(r, secCpu);
+            }
         }
         sb.setLength(0);
         return hasChanged;

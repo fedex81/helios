@@ -93,6 +93,8 @@ public class MegaCdRegWriteHandlers {
                 LogHelper.logWarnOnce(LOG, "{} illegal IEN2 write: {}->{}", M68K, now & IEN2.getBitMask(),
                         d & IEN2.getBitMask());
                 d &= ~IEN2.getBitMask();
+            } else {
+                LogHelper.logWarnOnce(LOG, "Setting IEN2 to 1, illegal?");
             }
         }
         //mcd-ver main sets IFL2 to 0

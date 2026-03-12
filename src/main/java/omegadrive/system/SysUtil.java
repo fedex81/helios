@@ -53,6 +53,7 @@ public class SysUtil {
     public static final String CUE_EXT = ".cue";
     public static final String BIN_EXT = ".bin";
     public static final String ISO_EXT = ".iso";
+    public static final String ISO_GZ_EXT = ".iso.gz";
 
     public static final Map<SystemType, String[]> sysFileExtensionsMap = ImmutableMap.<SystemType, String[]>builder()
             .put(MD, new String[]{".md", BIN_EXT, SMD_INTERLEAVED_EXT})

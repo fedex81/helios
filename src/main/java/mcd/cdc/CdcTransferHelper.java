@@ -86,7 +86,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
             t.length = 0;
             complete();
         } else if (t.length <= 2) {
-            assert t.ready == 1;
+            assert t.ready == 1; //Wheel of Fortune
             t.completed = 1;
             cdc.recalcRegValue(MCD_CDC_MODE);
         }

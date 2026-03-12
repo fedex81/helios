@@ -81,7 +81,7 @@ public class McdWramCell {
 
     public static void printMemoryBank(MegaCdMemoryContext ctx, int bank) {
         StringBuilder sb = new StringBuilder();
-        HexUtil.fillFormattedString(sb, ctx.wordRam01[bank]);
+        HexUtil.fillFormattedString_ZeroBased(sb, ctx.wordRam01[bank]);
         System.out.println("\n\n" + sb);
     }
 

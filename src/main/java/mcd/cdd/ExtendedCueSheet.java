@@ -6,7 +6,6 @@ import mcd.cdd.CdModel.TrackDataType;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.system.SysUtil.RomFileType;
 import omegadrive.util.LogHelper;
-import omegadrive.util.Util;
 import org.digitalmediaserver.cuelib.CueSheet;
 import org.digitalmediaserver.cuelib.TrackData;
 import org.slf4j.Logger;
@@ -19,11 +18,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static mcd.cdd.CdModel.ExtendedTrackData.NO_TRACK;
+import static omegadrive.sound.msumd.CueFileParser.PREGAP_LEN_LBA;
 import static omegadrive.system.SysUtil.CUE_EXT;
 import static omegadrive.system.SysUtil.ISO_EXT;
 
@@ -53,8 +52,6 @@ public class ExtendedCueSheet implements Closeable {
     public final List<ExtendedTrackData> extTracks = new ArrayList<>();
     public int numTracks, sectorEnd;
     protected final Map<String, TrackContentHelper> fileCache = new ConcurrentHashMap<>();
-
-    protected final CountDownLatch dataReady = new CountDownLatch(1);
 
     public ExtendedCueSheet(Path discImage, RomFileType rft) {
         assert rft.isDiscImage();
@@ -103,53 +100,58 @@ public class ExtendedCueSheet implements Closeable {
         List<TrackData> tracks = extCueSheet.cueSheet.getAllTrackData();
         assert !tracks.isEmpty();
         extCueSheet.numTracks = tracks.size();
-        LOG.info("Started parsing {} track (track 01)", tracks.get(0).getDataType());
-        parseTrack(extCueSheet, 1, cuePath);
+        parseTracks(tracks);
         assert CdFormatChecker.checkTrack1Sectors(cuePath.toAbsolutePath().toString(), extTracks.get(0));
-        parseOtherTracks(tracks);
     }
 
-    private void parseOtherTracks(List<TrackData> tracks) {
-        if (tracks.size() == 1) {
-            return;
-        }
-        LOG.info("Started parsing audio tracks (track > 1): {}", tracks.size() - 1);
+    private void parseTracks(List<TrackData> tracks) {
+        LOG.info("Started parsing tracks: {}", tracks.size());
         long start = System.currentTimeMillis();
-        tracks.stream().filter(t -> t.getNumber() != 1).parallel().
-                forEachOrdered(t -> parseTrack(this, t.getNumber(), cuePath));
+        var list = tracks.stream().parallel().map(t -> loadTrackData(this, t.getNumber(), cuePath)).
+                collect(Collectors.toList());
+        extTracks.addAll(list);
+        extTracks.sort(Comparator.comparingInt(e -> e.trackData.getNumber()));
+        tracks.stream().forEachOrdered(t -> parseTrack(this, t.getNumber()));
         LOG.info("Done parsing audio tracks from CUE sheet, took {} ms", System.currentTimeMillis() - start);
-        dataReady.countDown();
     }
 
-    private void parseTrack(ExtendedCueSheet extCueSheet, int trackNumber, Path cuePath) {
+    private ExtendedTrackData loadTrackData(ExtendedCueSheet extCueSheet, int trackNumber, Path cuePath) {
         TrackData trackData = getTrack(extCueSheet.cueSheet, trackNumber);
         TrackContentHelper tca = getDataFile(extCueSheet, trackData.getParent().getFile(), cuePath);
-        ExtendedTrackData extTrackData = new ExtendedTrackData(trackData, tca);
+        return new ExtendedTrackData(trackData, tca);
+    }
+
+    private void parseTrack(ExtendedCueSheet extCueSheet, int trackNumber) {
+        TrackData trackData = getTrack(extCueSheet.cueSheet, trackNumber);
+        ExtendedTrackData extTrackData = getExtTrack(extCueSheet, trackNumber);
+        TrackContentHelper tca = extTrackData.data;
         extTrackData.trackDataType = TrackDataType.parse(trackData.getDataType());
         assert trackNumber > 1 ? extTrackData.trackDataType == TrackDataType.AUDIO : true;
         try {
-            List<ExtendedTrackData> extTracks = extCueSheet.extTracks;
             int sectorStart = 0;
-            if (!extTracks.isEmpty()) {
-                int zeroBasedPrevTrackIndex = trackNumber - 1 - 1;
-                assert zeroBasedPrevTrackIndex >= 0 && extTracks.get(zeroBasedPrevTrackIndex) != null;
-                sectorStart = extTracks.get(zeroBasedPrevTrackIndex).absoluteSectorEnd;
+            if (trackNumber > 1) {
+                sectorStart = getExtTrack(extCueSheet, trackNumber - 1).absoluteSectorEnd;
                 assert sectorStart > 0;
             }
             CdModel.SectorSize sectorSize = extTrackData.trackDataType.size;
             extTrackData.lenBytes = (int) tca.length();
+            assert extTrackData.lenBytes > 0;
             extTrackData.absoluteSectorStart = sectorStart;
-            extTrackData.absoluteSectorEnd = sectorStart + (extTrackData.lenBytes / sectorSize.s_size);
+            extTrackData.absoluteSectorEnd = sectorStart + (extTrackData.lenBytes / sectorSize.s_size) +
+                    (trackNumber == 1 ? PREGAP_LEN_LBA : 0);
             extTrackData.trackLenSectors = extTrackData.absoluteSectorEnd - extTrackData.absoluteSectorStart;
+            int startLba = trackNumber > 1 ? extTrackData.absoluteSectorStart + PREGAP_LEN_LBA : extTrackData.absoluteSectorStart;
+            CueFileParser.lbaToMsfAdjustPregap(startLba, extTrackData.trackStartMsf);
+            CueFileParser.lbaToMsfAdjustPregap(extTrackData.absoluteSectorEnd, extTrackData.trackEndMsf);
+
             extCueSheet.sectorEnd = extTrackData.absoluteSectorEnd;
+            //track divides with no remainder
+            assert sectorSize.s_size * (extTrackData.lenBytes / sectorSize.s_size) == extTrackData.lenBytes;
             //NOTE projectcd.iso fails this one
             if (romFileType != RomFileType.ISO && extTrackData.trackDataType == TrackDataType.MODE1_2352) {
-                //DATA track divides with no remainder
-                assert sectorSize.s_size * (extTrackData.lenBytes / sectorSize.s_size) == extTrackData.lenBytes;
                 /* DATA track length should be at least 2s (BIOS requirement) */
-                assert sectorSize.s_size >= Cdd.PREGAP_LEN_LBA;
+                assert sectorSize.s_size >= PREGAP_LEN_LBA;
             }
-            extTracks.add(extTrackData);
         } catch (Exception e) {
             LOG.error("Unable to parse track: {}", trackNumber, e);
         }
@@ -177,9 +179,6 @@ public class ExtendedCueSheet implements Closeable {
 
     public static ExtendedTrackData getExtTrack(ExtendedCueSheet extCueSheet, int number) {
         assert number > 0;
-        if (number > 1) {
-            Util.waitOnLatch(extCueSheet.dataReady, true);
-        }
         int zeroBased = number - 1;
         ExtendedTrackData td = NO_TRACK;
         if (zeroBased >= 0 && zeroBased < extCueSheet.extTracks.size()) {
