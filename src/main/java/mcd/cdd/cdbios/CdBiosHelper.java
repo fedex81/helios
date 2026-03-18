@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Table;
 import m68k.cpu.Cpu;
 import mcd.cdd.Cdd;
-import mcd.cdd.cdbios.CdBiosModel.*;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.HexUtil;
@@ -53,7 +52,8 @@ public class CdBiosHelper {
     private static final Map<Integer, CdMemRegion> mainMemRegionMap = new HashMap<>();
     private static final int LOW_ENTRY, HIGH_ENTRY;
     private static final String[] noInputParameters = {CBTINIT.name(), CBTINT.name(), CDBSTAT.name(),
-            CBTCHKSTAT.name(), CDBCHK.name(), CDCSTAT.name(), CDCREAD.name(), CDCACK.name()};
+            CBTCHKSTAT.name(), CDBCHK.name(), CDCSTAT.name(), CDCREAD.name(), CDCACK.name(), SCDSTOP.name(),
+            MSCSTOP.name(), CDCSTOP.name()};
 
     public static final boolean enabled;
 
@@ -85,7 +85,7 @@ public class CdBiosHelper {
         for (var fun : CdBiosEntryPoint.values()) {
             cdBiosEntryPointMap.put(fun, fun.getCode());
         }
-        addBiosUs200WRegions();
+//        addBiosUs200WRegions();
         var invCdBiosFunMap = ImmutableBiMap.copyOf(cdBiosFunMap).inverse();
         var invCdBootFunMap = ImmutableBiMap.copyOf(cdBootFunMap).inverse();
         var invCdBuramFunMap = ImmutableBiMap.copyOf(cdBuramFunMap).inverse();
@@ -176,6 +176,14 @@ public class CdBiosHelper {
                 addToSubMemRegion(getReturnString(nc), memAddr0, 24);
             }
             LOG.warn("CDBIOS {}, ramPointer: {}", nc, th(memAddr0));
+        } else if (MSCPLAY == nc) {
+            int memAddr0 = cpu.getAddrRegisterLong(0);
+            int tno = cpu.readMemoryWord(memAddr0);
+            LOG.warn("CDBIOS {}, tableAddr: {}, trackNumber: {}", nc, th(memAddr0), tno);
+        } else if (CDCSTARTP == nc) {
+            int val = cpu.getDataRegisterWord(1);
+            String mode = val == 0xE ? "CD+G" : "TODO";
+            LOG.warn("CDBIOS {}, value: {}, cdcMode: {}", nc, th(val), mode);
         } else {
             if (Arrays.binarySearch(noInputParameters, nc.name()) < 0) {
                 LogHelper.logWarnOnce(LOG, "Not handled: {}", nc);

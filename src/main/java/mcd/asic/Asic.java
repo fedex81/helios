@@ -29,6 +29,10 @@ public class Asic implements AsicOp {
     private static final Logger LOG = LogHelper.getLogger(Asic.class.getSimpleName());
 
     private final boolean verbose = false;
+
+    //bios_EU likes 75
+    //bios_JP 1.00 > 50
+    private static final int ASIC_LINES_AT_32p5Khz = 75;
     private StampConfig stampConfig = new StampConfig();
 
     private MegaCdMemoryContext memoryContext;
@@ -39,6 +43,7 @@ public class Asic implements AsicOp {
     public Asic(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih) {
         this.memoryContext = memoryContext;
         this.interruptHandler = ih;
+        LogHelper.logWarnOnce(LOG, "Asic way too fast, processing {} lines/sec", ASIC_LINES_AT_32p5Khz * 32500);
     }
 
     @Override
@@ -342,7 +347,6 @@ public class Asic implements AsicOp {
             return;
         }
 //        printWram(memoryContext);
-        //bios_EU likes 75
-        doRenderLines(75);
+        doRenderLines(ASIC_LINES_AT_32p5Khz);
     }
 }

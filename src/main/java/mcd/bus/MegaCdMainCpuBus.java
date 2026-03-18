@@ -391,7 +391,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                 if (assertionsEnabled) {
                     int prev = Util.readData(memCtx.writeableHint, 2, Size.WORD);
                     if (prev != data) {
-                        LOG.info("M write MCD_HINT_VECTOR: {} {}", th(data), size);
+                        LogHelper.logWarnOnce(LOG, "M write MCD_HINT_VECTOR: {} {}", th(data), size);
                     }
                 }
                 writeBufferRaw(sysGateRegs, regSpec.addr, data, size);

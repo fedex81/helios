@@ -186,13 +186,16 @@ class CddImpl implements Cdd {
         logStatus(false);
     }
 
-    private boolean once = false;
-    private int prevStatus1 = 0;
+    public void step(int cycles) {
+        stepInternal(cycles);
+        assert commandChecksum();
+        System.out.println(statusString(cddContext.statusRegs, cddContext.commandRegs));
+    }
 
     /**
      * this should be called at 75hz
      */
-    public void step(int cycles) {
+    private void stepInternal(int cycles) {
         logStatus(false, true);
         if (!hasMedia || cddContext.hostClockEnable == 0) {
             return;
@@ -226,7 +229,6 @@ class CddImpl implements Cdd {
                 updateStatus(0, cddContext.io.status.ordinal()); //for seek_pause and seek_play
                 //TODO not needed?
 //                updateStatus(1, prevStatus1);
-                once = false;
                 //TODO not needed?
 //                if (cddContext.io.status == Paused) {
 //                    cdc.cdc_decoder_update(cddContext.io.sector, cddContext.io.track, cddContext.io.status);

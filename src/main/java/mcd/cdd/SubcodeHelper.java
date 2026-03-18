@@ -42,11 +42,19 @@ public class SubcodeHelper {
     //0xFF_8100 - 0xFF_817E words
     public final static int MCD_SUBCODE_ADDR_REG_DATA_MASK = 0x7E;
     public final static int MCD_SUBCODE_BUFFER_REG_OFFSET = 0x100;
-    public final static int SUBCODE_BLOCK_LEN = 98;
+
+
+    public final static int SUBCODE_DUMP_BLOCK_LEN = 96;
+    /**
+     * 96 frames of user data + 2 frames of sync
+     */
+    public final static int SUBCODE_BLOCK_LEN = SUBCODE_DUMP_BLOCK_LEN + 2;
+
 
     private static RandomAccessFile subcodeFile;
-    private static byte[] subcodeData = new byte[96];
+    private static byte[] subcodeData = new byte[SUBCODE_DUMP_BLOCK_LEN];
 
+    //only for fleet.subcode
     private static int fileBase = 4330020;
     public static boolean rawSubcode;
 
@@ -74,7 +82,7 @@ public class SubcodeHelper {
 
         if (lba >= 0) {
             /* read interleaved subcode data from .sub file (12 x 8-bit of P subchannel first, then Q subchannel, etc) */
-            int pos = fileBase + lba * 96;
+            int pos = fileBase + lba * SUBCODE_DUMP_BLOCK_LEN;
             try {
                 subcodeFile.seek(pos);
                 subcodeFile.read(subcodeData);
@@ -86,17 +94,17 @@ public class SubcodeHelper {
             Arrays.fill(subcodeData, (byte) 0);
         }
         if (rawSubcode) {
-            for (int i = 0; i < 96; i += 2) {
+            for (int i = 0; i < SUBCODE_DUMP_BLOCK_LEN; i += 2) {
 
                 int code = ((subcodeData[i] << 8) & 0xFF00) | (subcodeData[i + 1]) & 0xFF;
                 /* subcode buffer is accessed as 16-bit words */
                 writeSubcodeBufferWord(memoryContext, index, code);
                 /* subcode buffer is limited to 64 x 16-bit words */
-                index = (index + 2) & 0x7e;
+                index = (index + 2) & MCD_SUBCODE_ADDR_REG_DATA_MASK;
             }
         } else {
             /* convert back to raw subcode format (96 bytes with 8 x P-W subchannel bits per byte) */
-            for (int i = 0; i < 96; i += 2) {
+            for (int i = 0; i < SUBCODE_DUMP_BLOCK_LEN; i += 2) {
                 int code = 0;
                 for (int j = 0; j < 8; j++) {
                     int bits = (subcodeData[(j * 12) + (i / 8)] >> (6 - (i & 6))) & 3;
@@ -108,7 +116,7 @@ public class SubcodeHelper {
                 writeSubcodeBufferWord(memoryContext, index, code);
 
                 /* subcode buffer is limited to 64 x 16-bit words */
-                index = (index + 2) & 0x7e;
+                index = (index + 2) & MCD_SUBCODE_ADDR_REG_DATA_MASK;
             }
         }
     }
@@ -124,6 +132,10 @@ public class SubcodeHelper {
         writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_SUBCODE_BUFFER_REG_OFFSET + index, val, Size.WORD);
     }
 
+
+    /**
+     * TEST/RESEARCH stuff
+     */
 
     private static final int SECTOR_SIZE = 96;
     private static final int PACK_SIZE = 24;

@@ -584,6 +584,12 @@ public class CdBiosModel {
          * endm
          */
         CDCSTART(0x0087),
+
+        /**
+         * CDCSTARTP, which has the same parameters as CDCSETMODE (the flags expected in d1 are the same)
+         * except it resets buffering, reconfigures the CDC and all that junk. The BIOS uses d1=0E for its CD+G mode,
+         * but I think it also reads out audio data for visualization so that may be part of it as well.
+         */
         CDCSTARTP(0x0088),
         /**
          * ;-----------------------------------------------------------------------
