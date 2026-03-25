@@ -189,7 +189,7 @@ class CddImpl implements Cdd {
     public void step(int cycles) {
         stepInternal(cycles);
         assert commandChecksum();
-        System.out.println(statusString(cddContext.statusRegs, cddContext.commandRegs));
+//        System.out.println(statusString(cddContext.statusRegs, cddContext.commandRegs));
     }
 
     /**

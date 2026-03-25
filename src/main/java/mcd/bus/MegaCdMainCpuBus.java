@@ -25,6 +25,7 @@ import java.util.Objects;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.*;
+import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
@@ -390,29 +391,32 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         }
     }
     private void handleReg0Write(int address, int data, Size size) {
-        int curr = readBufferWord(sysGateRegs, MCD_RESET.addr);
-        int res = memCtx.handleRegWrite(cpu, MCD_RESET, address, data, size);
+        int currWord = readBufferWord(sysGateRegs, MCD_RESET.addr);
+        int resWord = memCtx.handleRegWrite(cpu, MCD_RESET, address, data, size);
 
-        int sreset = res & 1;
-        int sbusreq = (res >> 1) & 1;
+        int sreset = resWord & 1;
+        int sbusreq = (resWord >> 1) & 1;
 
         assert subCpu != null && subCpuBus != null;
-        handleIfl2(curr, res, address, size);
+        boolean isOddByteWrite = (address & 1) == 1 && size == Size.BYTE;
+        if (!isOddByteWrite) {
+            handleIfl2(currWord, resWord);
+        }
 
         if ((address & 1) == 0 && size == Size.BYTE) {
             return;
         }
         LogHelper.logInfo(LOG, "M SubCpu reset: {}, busReq: {}", (sreset == 0 ? "Reset" : "Run"), (sbusreq == 0 ? "Cancel" : "Request"));
-        if ((curr & 3) == (res & 3)) {
+        if ((currWord & 3) == (resWord & 3)) {
             return;
         }
         //sreset = 0 forces sbusreq = 1
-        boolean sresChanged = (curr & 1) != sreset;
+        boolean sresChanged = (currWord & 1) != sreset;
         sbusreq = sresChanged && sreset == 0 ? 1 : sbusreq;
         setBitDefInternal(memCtx, M68K, BitRegDef.SBRQ, sbusreq << 1);
 
         boolean stopped = sreset == 0 || sbusreq > 0;
-        boolean triggerReset = ((curr & 1) == 0) && sreset > 0;
+        boolean triggerReset = ((currWord & 1) == 0) && sreset > 0;
         if (triggerReset) {
             subCpu.reset();
         }
@@ -423,13 +427,11 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         }
     }
 
-    private void handleIfl2(int prev, int res, int address, Size size) {
-        if ((address & 1) == 1 && size == Size.BYTE) {
-            return;
-        }
-        int subIntReg = (res >> 8) & 1; //IFL2
+    private void handleIfl2(int prevWord, int resWord) {
+        int bitWordPos = IFL2.getBitPos() + 8;
+        int subIntReg = (resWord >> bitWordPos) & 1; //IFL2
         if (subIntReg > 0) {
-            if (((prev >> 8) & 1) == 0) {
+            if (((prevWord >> bitWordPos) & 1) == 0) {
                 ifl2Trigger = 1;
                 LogHelper.logInfo(LOG, "M SubCpu int2 request");
                 //TODO should check IEN2 = 1?

@@ -190,6 +190,7 @@ public class FileUtil {
 
     public static byte[] unscrambleSmd(byte[] input) {
         byte[] output = new byte[input.length - SMD_HEADER_SIZE];
+        assert output.length % SMD_CHUNK_SIZE == 0;
         for (int i = SMD_HEADER_SIZE, k = 0; i < input.length; i += SMD_CHUNK_SIZE) {
             int remainHalf = Math.min(SMD_CHUNK_SIZE, input.length - i) >> 1;
             for (int j = 0; j < remainHalf; j++, k += 2) {

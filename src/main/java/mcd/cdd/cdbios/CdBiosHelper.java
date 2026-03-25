@@ -139,7 +139,7 @@ public class CdBiosHelper {
             if (subMemRegionMap.get(memAddr) == null) {
                 addToSubMemRegion(getReturnString(nc), memAddr, 2);
             }
-            LOG.warn("CDBIOS {}, ramPointer {}");
+            LOG.warn("CDBIOS {}, ramPointer {}", nc, th(memAddr));
         } else if (CBTCHKDISC == nc) {
             LOG.warn("CDBIOS {}, ramPointer {}", nc, th(cpu.getAddrRegisterLong(0)));
         } else if (ROMREADN == nc || ROMREAD == nc || ROMREADE == nc || ROMSEEK == nc) {
