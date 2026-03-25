@@ -12,7 +12,6 @@ import static mcd.dict.MegaCdMemoryContext.MCD_WORD_RAM_1M_MASK;
 import static mcd.dict.MegaCdMemoryContext.MCD_WORD_RAM_2M_MASK;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.dict.MegaCdMemoryContext.WordRamMode._2M;
-import static mcd.util.McdWramCell.linearCellMap;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.LogHelper.logWarnOnce;
@@ -160,38 +159,6 @@ public class McdWordRamHelper {
         return memoryContext.wramSetup;
     }
 
-
-    public void writeCellMapped(int addr, int data, Size size) {
-        assert memoryContext.wramSetup.mode == _1M;
-        switch (size) {
-            case BYTE -> {
-                int val = readCellMapped(addr, Size.WORD);
-                ArrayEndianUtil.setByteInWordBE(val, data, addr & 1);
-                writeCell(addr & ~1, val);
-            }
-            case WORD -> writeCell(addr, data);
-            case LONG -> {
-                writeCell(addr, data >> 16);
-                writeCell(addr + 2, data);
-            }
-        }
-    }
-
-    public int readCellMapped(int address, Size size) {
-        assert MdRuntimeData.getAccessTypeExt() == M68K;
-        int assignedBank = memoryContext.wramSetup.cpu == M68K ? 0 : 1;
-        int otherBank = ~assignedBank & 1;
-        int word = readWordRamBank(otherBank, address & ~1);
-        if (size == Size.BYTE) {
-            logWarnOnce(LOG, "readCellMapped BYTE");
-            return (address & 1) == 0 ? word >> 8 : word;
-        } else if (size == Size.LONG) { //TODO check, Dune
-            word = (word << 16) | readCellMapped(address + 2, Size.WORD);
-            logWarnOnce(LOG, "readCellMapped LONG");
-        }
-        return word;
-    }
-
     public int readDotMapped(int address, Size size) {
         return switch (size) {
             case BYTE -> readDotMappedByte(address);
@@ -216,12 +183,6 @@ public class McdWordRamHelper {
                 writeDotMappedByte(spm, address + 3, data >> 0);
             }
         }
-    }
-
-    private void writeCell(int a, int value) {
-        int assignedBank = memoryContext.wramSetup.cpu == M68K ? 0 : 1;
-        int otherBank = ~assignedBank & 1;
-        writeWordRamBank(otherBank, linearCellMap[a & MCD_WORD_RAM_1M_MASK], value);
     }
 
     private int readDotMappedByte(int address) {

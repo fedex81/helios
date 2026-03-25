@@ -27,7 +27,6 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
-import static mcd.dict.MegaCdMemoryContext.WordRamMode._1M;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
 import static mcd.util.McdRegBitUtil.setSharedBitBothCpu;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
@@ -96,6 +95,8 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         biosHolder = McdBiosHolder.getInstance();
         maskMode1 = !enableMode1 ? MCD_MAIN_MODE1_MASK : 0;
         this.mdBus = mdBus;
+        ifl2Trigger = 0;
+        subCpuReset = false;
     }
 
     @Override
@@ -146,12 +147,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                 return readHintVector(addr, size);
             }
             if (addr >= START_MCD_MAIN_WORD_RAM_MODE1 && addr < END_MCD_MAIN_WORD_RAM_MIRROR_MODE1) {
-                addr &= MCD_WORD_RAM_2M_MASK;
-                if (memCtx.wramSetup.mode == _1M && addr >= MCD_WORD_RAM_1M_SIZE) {
-                    res = memCtx.wramHelper.readCellMapped(address, size);
-                } else {
-                    res = memCtx.wramHelper.readWordRam(cpu, addr, size);
-                }
+                res = memCtx.wramHelper.readWordRam(cpu, addr, size);
             } else if (addr >= START_MCD_BOOT_ROM_MODE1 && addr < END_MCD_BOOT_ROM_MIRROR_MODE1) {
                 addr &= MCD_BOOT_ROM_PRGRAM_WINDOW_MASK;
                 if (addr >= MCD_BOOT_ROM_WINDOW_SIZE) {
@@ -197,14 +193,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                     Word-RAM 0/1 assigned to MAIN-CPU
                     VRAM cell image mapped at $220_000-$23F_FFF
                 */
-                addr &= MCD_WORD_RAM_2M_MASK;
-                memCtx.wramHelper.writeWordRam(cpu, addr, data, size);
-                if (addr < MCD_WORD_RAM_1M_SIZE) {
-                    //TODO breaks corpse killer
-                    if (memCtx.wramSetup.mode == _1M) {
-                        memCtx.wramHelper.writeCellMapped(addr, data, size);
-                    }
-                }
+                memCtx.wramHelper.writeWordRam(cpu, addr & MCD_WORD_RAM_2M_MASK, data, size);
                 return;
             }
         }
