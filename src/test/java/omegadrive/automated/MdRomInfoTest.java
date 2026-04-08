@@ -2,10 +2,10 @@ package omegadrive.automated;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+import com.google.common.primitives.Bytes;
 import m68k.cpu.M68kVectors;
 import omegadrive.system.MediaSpecHolder;
 import omegadrive.util.FileUtil;
-import omegadrive.util.Util;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.File;
@@ -21,7 +21,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static omegadrive.SystemLoader.SystemType.MD;
-import static omegadrive.util.Util.*;
+import static omegadrive.util.Util.readDataLong;
+import static omegadrive.util.Util.th;
 
 /**
  * Federico Berti
@@ -109,7 +110,7 @@ public class MdRomInfoTest {
             try {
                 MediaSpecHolder msh = MediaSpecHolder.of(rom);
                 byte[] b = FileUtil.readBinaryFile(msh.cartFile.romFile);
-                Assertions.assertEquals(0x100, isSubSequence("SEGA".getBytes(), b), msh.toString());
+                Assertions.assertEquals(0x100, Bytes.indexOf(b, "SEGA".getBytes()), msh.toString());
             } catch (Exception | Error e) {
                 System.err.println("Exception: " + rom.getFileName());
                 e.printStackTrace();
@@ -127,7 +128,7 @@ public class MdRomInfoTest {
             0x32, 0x39, 0x00, (byte) 0xa1, 0x11, 0x00
     };
 
-    private byte[] sequence2 = "nintendo".getBytes();
+    private byte[] sequence2 = "WAVEfmt".getBytes();
 
     private void testCodeBlock() throws Exception {
         Path folder = Paths.get(romFolder);
@@ -136,7 +137,7 @@ public class MdRomInfoTest {
         System.out.println("Loaded files: " + testRoms.size());
         System.out.close();
         int cnt = 0;
-        byte[] toMatch = sequence;
+        byte[] toMatch = sequence2;
         for (Path rom : testRoms) {
             System.out.println(rom.toAbsolutePath());
             if (++cnt % 100 == 0) {
@@ -145,7 +146,7 @@ public class MdRomInfoTest {
             try {
                 MediaSpecHolder msh = MediaSpecHolder.of(rom);
                 byte[] b = FileUtil.readBinaryFile(msh.cartFile.romFile);
-                int start = Util.indexOfSubSequence(toMatch, b);
+                int start = Bytes.indexOf(b, toMatch);
                 if (start >= 0) {
                     System.err.println("***MATCH***, " + msh);
                     checkMatch(start, b, toMatch);

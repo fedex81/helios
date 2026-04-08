@@ -1,6 +1,10 @@
 package omegadrive.cpu.z80;
 
+import omegadrive.bus.model.Z80BusProvider;
+import omegadrive.cpu.CpuBusyLoopDetection;
 import omegadrive.cpu.z80.disasm.Z80Dasm;
+import omegadrive.memory.ReadableByteMemory;
+import omegadrive.util.ArrayEndianUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import z80core.IMemIoOps;
@@ -9,6 +13,9 @@ import z80core.Z80;
 import z80core.Z80State;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Z80Helper
@@ -165,5 +172,172 @@ public class Z80Helper {
         }
 //        System.out.println(s + ": " + res);
         return res;
+    }
+
+    private static Z80Dasm z80Dasm = new Z80Dasm();
+    static LogHelper logHelper = new LogHelper();
+    public static long hits = 0;
+
+    enum LoopType {NONE, INFINITE_LOOP, BUSY_LOOP}
+
+    private static final Predicate<Integer> validJpOpcode1byte = op -> op == 0x20 || op == 0x28 || op == 0x18;
+    private static final Predicate<Integer> validJpOpcode2bytes = op -> op == 0xF2 || op == 0xC2
+            || op == 0xCA || op == 0xFA || op == 0xC3 || op == 0xE2;
+
+    public static LoopType checkLoops(Z80 z80, ReadableByteMemory bus, IMemIoOps memIoOps) {
+        return checkLoops(z80, z80.getRegPC(), bus, memIoOps);
+    }
+
+    public static LoopType checkLoops(Z80 z80, int pc, ReadableByteMemory bus, IMemIoOps memIoOps) {
+        final int opcode = bus.readRamByte(pc) & 0xFF;
+        LoopType res = switch (opcode) {
+            case 0x7E, 0x1A -> {
+                boolean val = check_AND_JP(bus, pc, 1, memIoOps);
+                val |= checkOR_JR(bus, pc, memIoOps);
+                yield val ? LoopType.BUSY_LOOP : LoopType.NONE;
+            }
+            case 0x3A -> {
+                boolean val = check_AND_JP(bus, pc, 3, memIoOps);
+                val |= checkOR_JR(bus, pc, memIoOps);
+                yield val ? LoopType.BUSY_LOOP : LoopType.NONE;
+            }
+            case 0 -> {
+                //0000009a            00    nop
+                //[...] more Nops
+                //0000009b      C3 9A 00    jp $009A
+                int b1;
+                int lastNopIdx = pc;
+                do {
+                    lastNopIdx++;
+                    b1 = bus.readRamByte(lastNopIdx) & 0xFF;
+                } while (b1 == 0);
+                yield checkJump(bus, lastNopIdx, pc) ? LoopType.INFINITE_LOOP : LoopType.NONE;
+            }
+            //00000048            76    halt
+            case 0x76 -> LoopType.INFINITE_LOOP;
+            //00000000            E9    jp (hl)
+            case 0xE9 -> pc == z80.getRegHL() ? LoopType.INFINITE_LOOP : LoopType.NONE;
+            //00000201      C3 01 02    jp $0201
+            case 0xC3 -> checkJump(bus, pc, pc) ? LoopType.INFINITE_LOOP : LoopType.NONE;
+            //00000003         18 FE    jr $0003
+            case 0x18 -> checkJump(bus, pc, pc) ? LoopType.INFINITE_LOOP : LoopType.NONE;
+            //0000011c            B6    or (hl) //hl = 0x4080 ??
+            //0000011d      E2 1C 01    jp po,$011C
+            case 0xB6 -> checkJump(bus, pc + 1, pc) ? LoopType.BUSY_LOOP : LoopType.NONE;
+            default -> LoopType.NONE;
+        };
+        if (res != LoopType.NONE) {
+            //logHelper.logWarningOnceWhenEnRepeat(LOG, "Z80 loop: {}", Z80Helper.dumpInfo(z80Dasm, memIoOps, z80Core.getRegPC()));
+            hits++;
+            if ((hits & 0xFFF) == 0) {
+                LOG.warn("{} Z80 loop: {}", hits, Z80Helper.dumpInfo(z80Dasm, memIoOps, z80.getRegPC()));
+            }
+        }
+        return res;
+    }
+
+    /**
+     * 00000a0a
+     * 00000a0b         E6 0X    and $0X
+     * 00000a0d         28 FB    jr z,-3
+     * <p>
+     * or
+     * 00000a0b         A7          and a
+     * 00000a0d         C2 0a 0a    jp nz,$0a0a
+     */
+    private static boolean check_AND_JP(ReadableByteMemory bus, int pc, int andOffset, IMemIoOps memIoOps) {
+        int idxAnd = pc + andOffset;
+        int b1 = bus.readRamByte(idxAnd) & 0xFF;
+        boolean checkRet = b1 == 0xA7 || b1 == 0xA2; //and A, and D
+        int jpIdx = idxAnd + 1;
+        if (b1 == 0xE6) { //and 0x
+            byte b2 = (byte) bus.readRamByte(idxAnd + 1);
+            if (b2 == 1 || b2 == 2 || b2 == 3) {
+                checkRet = true;
+                jpIdx = idxAnd + 2;
+            }
+        }
+        if (checkRet) {
+            return checkJump(bus, jpIdx, pc);
+        } else {
+//                            System.out.println(Z80Helper.dumpInfo(z80Dasm, memIoOps, pc + 3));
+            if (memIoOps != null) {
+                LogHelper.logWarnOnce(LOG, Z80Helper.dumpInfo(z80Dasm, memIoOps, idxAnd + 2));
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 0000002a
+     * 0000002b            B7    or a
+     * 0000002c         28 FC    jr z, -2
+     * <p>
+     * or
+     * <p>
+     * 0000002c      CA 2A 00    jp z,$002A
+     */
+    private static boolean checkOR_JR(ReadableByteMemory bus, int pc, IMemIoOps memIoOps) {
+        boolean ok = false;
+        int orIdx = pc + 1;
+        do {
+            ok |= checkOR_JP(bus, pc, orIdx);
+            orIdx++;
+        } while (orIdx - pc < 4);
+        if (ok) {
+            hits++;
+            if ((hits & 0xFFF) == 0) {
+                LOG.warn("{} Z80 loop: {}", hits, Z80Helper.dumpInfo(z80Dasm, memIoOps, pc));
+            }
+        }
+        return ok;
+    }
+
+    private static boolean checkOR_JP(ReadableByteMemory bus, int pc, int orIdx) {
+        int b1 = bus.readRamByte(orIdx) & 0xFF;
+        boolean res = false;
+        if (b1 == 0xB7) { //or
+            res = checkJump(bus, orIdx + 1, pc);
+        }
+        return res;
+    }
+
+    private static boolean checkJump(ReadableByteMemory bus, int firstOpcodeIdx, int pc) {
+        byte b2 = (byte) bus.readRamByte(firstOpcodeIdx);
+        byte b3 = (byte) bus.readRamByte(firstOpcodeIdx + 1);
+        if (validJpOpcode1byte.test(b2 & 0xFF)) {
+            int pcDist = 0xFF - (firstOpcodeIdx - pc) - 1;
+            boolean jumpOk = (b3 & 0xFF) == pcDist;
+            if (!jumpOk) {
+                byte b4 = (byte) bus.readRamByte(firstOpcodeIdx + 2);
+                if (validJpOpcode1byte.test(b4 & 0xFF)) {
+                    byte b5 = (byte) bus.readRamByte(firstOpcodeIdx + 3);
+                    int pcDist1 = pcDist - 2;
+                    jumpOk = (b5 & 0xFF) == pcDist1;
+                }
+                return jumpOk;
+            }
+            return jumpOk;
+        } else if (validJpOpcode2bytes.test(b2 & 0xFF)) {
+            byte b4 = (byte) bus.readRamByte(firstOpcodeIdx + 2);
+            int dest = ArrayEndianUtil.getUShort16LE(b3, b4);
+            return dest == pc;
+        } else {
+//                        LOG.warn("{} Z80 check: {}", hits, Z80Helper.dumpInfo(z80Dasm, memIoOps, pc + 2));
+//                System.out.println(Z80Helper.dumpInfo(z80Dasm, memIoOps, pc + 2));
+        }
+        return false;
+    }
+
+    private static Set<String> missedLoops = new HashSet<>();
+
+    public static void checkMissedLoops(Z80 z80, Z80BusProvider bus, int loopPc, IMemIoOps memIoOps, CpuBusyLoopDetection bld) {
+        LoopType res = Z80Helper.checkLoops(z80, loopPc, bus, memIoOps);
+        if (res == LoopType.NONE) {
+            if (missedLoops.add(bld.getLoopInfo())) {
+                System.out.println("Missed Z80 loop: " + bld.getLoopInfoVerbose());
+//                LogHelper.logWarnOnce(LOG, "Missed Z80 loop: {}", bld.getLoopInfoVerbose());
+            }
+        }
     }
 }

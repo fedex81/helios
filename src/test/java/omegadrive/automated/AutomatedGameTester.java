@@ -47,7 +47,7 @@ public class AutomatedGameTester {
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
 
-    private static String romFolder = ".";
+    private static String romFolder = "./test_roms/md";
 
     private static boolean noIntro = true;
     private static String header = "rom;boot;sound";
@@ -56,8 +56,10 @@ public class AutomatedGameTester {
     private static int AUDIO_DELAY_MS = 25000;
 
     private static String romList = "";
-    private static List<String> blackList = FileUtil.readFileContent(Paths.get(resFolder.toAbsolutePath().toString()
-            , "blacklist.txt"));
+
+    private static Path blacklistPath = Paths.get(resFolder.toAbsolutePath().toString()
+            , "blacklist.txt");
+    private static List<String> blackList = FileUtil.readFileContent(blacklistPath);
 
     public static final EnumMap<SystemType, Predicate<Path>> systemFilterMap;
 
@@ -75,6 +77,7 @@ public class AutomatedGameTester {
                 systemFilterMap.put(st, p -> testSystemRomsPredicate.test(st, p));
             }
         }
+        System.out.println("Blacklist file: " + blacklistPath.toAbsolutePath());
     }
 
     private static Predicate<Path> testVerifiedRomsPredicate = p ->

@@ -33,6 +33,9 @@ import z80core.Z80State;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static omegadrive.cpu.CpuBusyLoopDetection.CK_DELAY_ON_LOOP;
+import static omegadrive.cpu.z80.Z80Helper.checkMissedLoops;
+
 public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDebug.CpuDebugInfoProvider {
 
     private final static Logger LOG = LogHelper.getLogger(Z80CoreWrapperFastDebug.class.getSimpleName());
@@ -59,7 +62,12 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
     @Override
     public int executeInstruction() {
         printDebugMaybe();
-        return busyLoopDetect.isBusyLoop(pc, opcode) + super.executeInstruction();
+        int loopPc = busyLoopDetect.getInitialLoopPc();
+        int delay = busyLoopDetect.isBusyLoop(pc, opcode);
+        if (delay == CK_DELAY_ON_LOOP && pc == loopPc) {
+            checkMissedLoops(getZ80(), getZ80BusProvider(), pc, memIoOps, busyLoopDetect);
+        }
+        return delay + super.executeInstruction();
     }
 
     private void printDebugMaybe() {
@@ -102,6 +110,12 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
     @Override
     public int getOpcode() {
         return opcode;
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+        busyLoopDetect.reset();
     }
 
     public static final Predicate<Integer> isLoopOpcode = op -> {
