@@ -120,7 +120,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     @Override
     public void init() {
-        assert initedOnce.compareAndSet(false, true);
+        boolean initOnceCheck = initedOnce.compareAndSet(false, true);
+        assert initOnceCheck;
         assert dataLine == null && executorService == null;
 
         dataLine = SoundUtil.createDataLine(audioFormat);
@@ -153,6 +154,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
     public void reset() {
         LOG.info("Resetting sound");
         close = true;
+        sdRef.set(null);
         if (initedOnce.get()) {
             List<Runnable> list = executorService.shutdownNow();
             LOG.info("Closing sound, stopping background tasks: #{}", list.size());
