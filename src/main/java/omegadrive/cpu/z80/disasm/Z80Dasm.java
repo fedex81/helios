@@ -44,6 +44,9 @@ public class Z80Dasm extends Z80DasmIntf {
 		return disassemble(pc, opcodes, memIoOps);
 	}
 
+	/**
+	 * TODO when invoked this modifies the t-states in memIoOps
+	 */
 	public static String disassemble(int pc, int[] opcodes, IMemIoOps memIoOps) {
 		Arrays.fill(opcodes, -1);
 		pc &= memIoOps.getPcUpperLimit();

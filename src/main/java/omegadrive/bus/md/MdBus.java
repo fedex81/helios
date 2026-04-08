@@ -228,6 +228,11 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         } else if (address >= VDP_ADDRESS_SPACE_START && address <= VDP_ADDRESS_SPACE_END) { // VDP
             data = vdpRead(address, size);
         } else if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
+            //NOTE: some hacks replace EEPROM with SRAM, but they are detected as EEPROM
+            if (cartridgeInfoProvider.getEntry().hasEeprom()) {
+                LogHelper.logWarnOnce(LOG, "EEPROM entry found, but it seems to be using SRAM (rom hack?): {}",
+                        cartridgeInfoProvider.getEntry());
+            }
             checkBackupMemoryMapper(SramMode.READ_WRITE);
             data = mapper.readData(address, size);
         } else {

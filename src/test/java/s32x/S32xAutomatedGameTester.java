@@ -56,14 +56,16 @@ public class S32xAutomatedGameTester {
     private static final int TEN_MEGABYTES = 10 * 1024 * 1024;
 
     private static String romList = "";
-    private static List<String> blackList = FileUtil.readFileContent(Paths.get(resFolder.toAbsolutePath().toString()
-            , "blacklist.txt"));
+
+    private static Path blacklistPath = Paths.get(resFolder.toAbsolutePath().toString()
+            , "blacklist.txt");
+    private static List<String> blackList = FileUtil.readFileContent(blacklistPath);
 
     private static Predicate<Path> testAllRomsPredicate = p ->
             Arrays.stream(SysUtil.binaryTypes).anyMatch(p.toString()::endsWith);
 
     static {
-        System.setProperty("helios.headless", "false");
+        System.setProperty("helios.headless", "true");
         System.setProperty("md.sram.folder", "/tmp/helios/md/sram");
         System.setProperty("helios.enable.sound", "false");
         System.setProperty("helios.fps", "true");
@@ -79,8 +81,9 @@ public class S32xAutomatedGameTester {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Current folder: " + new File(".").getAbsolutePath());
+        System.out.println("Blacklist file: " + S32xAutomatedGameTester.blacklistPath.toAbsolutePath());
         System.out.println("Blacklist entries: " + blackList.size());
-        new S32xAutomatedGameTester().bootRecursiveRoms(true);
+        new S32xAutomatedGameTester().bootRecursiveRoms(false);
         System.exit(0);
     }
 
@@ -96,7 +99,7 @@ public class S32xAutomatedGameTester {
             Collections.shuffle(testRoms, random);
         }
         try {
-            SystemLoader.main(new String[0]);
+//            SystemLoader.main(new String[0]);
             bootRoms(testRoms);
         } catch (Exception | Error e) {
             e.printStackTrace();
@@ -133,7 +136,7 @@ public class S32xAutomatedGameTester {
         testRoms = testRoms.stream().filter(r -> !shouldSkip(r)).collect(Collectors.toList());
         System.out.println("Testable Roms: " + testRoms.size());
         System.out.println(header);
-        File logFile = new File("./test_output.log");
+        File logFile = new File("./test_output.32x.log");
         long logFileLen = 0;
         int count = 1;
         SystemLoader systemLoader = SystemLoader.getInstance();

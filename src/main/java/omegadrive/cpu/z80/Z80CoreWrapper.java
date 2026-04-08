@@ -39,14 +39,26 @@ public class Z80CoreWrapper implements Z80Provider {
 
     public final static boolean STOP_ON_EXCEPTION;
     public static final boolean Z80_DEBUG;
+
+    public static final boolean Z80_POLL_EN;
+
+    public static final int Z80_POLL_DELAY;
     private final static Logger LOG = LogHelper.getLogger(Z80CoreWrapper.class.getSimpleName());
+
+    @Deprecated
+    public static Z80 z80;
 
     static {
         STOP_ON_EXCEPTION =
                 Boolean.parseBoolean(System.getProperty("z80.stop.on.exception", "false"));
         Z80_DEBUG = Boolean.parseBoolean(System.getProperty("z80.debug", "false"));
+        Z80_POLL_EN = Boolean.parseBoolean(System.getProperty("helios.z80.poll.detect", "true"));
+        Z80_POLL_DELAY = Integer.parseInt(System.getProperty("helios.z80.poll.delay", "100"));
         if (Z80_DEBUG) {
             LOG.info("z80 debug mode: true");
+        }
+        if (Z80_POLL_EN) {
+            LOG.info("z80 poll detection: true, delay: {}", Z80_POLL_DELAY);
         }
     }
 
@@ -54,6 +66,8 @@ public class Z80CoreWrapper implements Z80Provider {
     protected Z80BusProvider z80BusProvider;
     protected Z80MemIoOps memIoOps;
     protected int instCyclesPenalty = 0;
+
+    protected int loopDelay = 0;
     protected int memPtrInitVal;
 
     public static Z80CoreWrapper createInstance(SystemType systemType, Z80BusProvider busProvider) {
@@ -87,6 +101,7 @@ public class Z80CoreWrapper implements Z80Provider {
 
     protected Z80CoreWrapper setupInternal(Z80State z80State) {
         z80Core = new Z80(memIoOps, null);
+        z80 = z80Core;
         z80BusProvider.attachDevice(this);
         if (z80State != null) {
             z80Core.setZ80State(z80State);
@@ -116,6 +131,9 @@ public class Z80CoreWrapper implements Z80Provider {
         memIoOps.reset();
         instCyclesPenalty = 0;
         try {
+            if (Z80_POLL_EN) {
+                checkLoops();
+            }
             z80Core.execute();
         } catch (Exception | Error e) {
             LOG.error("z80 exception", e);
@@ -126,7 +144,17 @@ public class Z80CoreWrapper implements Z80Provider {
                 Util.waitForever();
             }
         }
-        return (int) (memIoOps.getTstates()) + instCyclesPenalty;
+        return (int) (memIoOps.getTstates()) + instCyclesPenalty + loopDelay;
+    }
+
+    private void checkLoops() {
+        Z80Helper.LoopType lt = Z80Helper.checkLoops(z80Core, z80BusProvider, memIoOps);
+        if (lt != Z80Helper.LoopType.NONE) {
+            /**
+             * TODO busy loops on RAM/YM2612 are delayed by 10 cycles, this could affect audio playback
+             */
+            loopDelay = lt == Z80Helper.LoopType.INFINITE_LOOP ? Z80_POLL_DELAY : 10;
+        }
     }
 
     //From the Z80UM.PDF document, a reset clears the interrupt enable, PC and
@@ -146,6 +174,7 @@ public class Z80CoreWrapper implements Z80Provider {
         z80Core.setIFF1(false);
         z80Core.setIFF2(false);
         z80Core.setIM(Z80.IntMode.IM0);
+        loopDelay = 0;
         LogHelper.logWarnOnce(LOG, "Z80 Reset, PC: {}", th(z80Core.getRegPC()));
     }
 
@@ -153,11 +182,13 @@ public class Z80CoreWrapper implements Z80Provider {
     //to occur, it will be missed, rather than made pending.
     @Override
     public boolean interrupt(boolean value) {
+        loopDelay = 0;
         return memIoOps.setActiveINT(value);
     }
 
     @Override
     public void triggerNMI() {
+        loopDelay = 0;
         z80Core.triggerNMI();
     }
 
@@ -204,5 +235,9 @@ public class Z80CoreWrapper implements Z80Provider {
     @Override
     public Z80State getZ80State() {
         return z80Core.getZ80State();
+    }
+
+    public Z80 getZ80() {
+        return z80Core;
     }
 }

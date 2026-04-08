@@ -115,6 +115,9 @@ public class CpuBusyLoopDetection {
         isKnownLoop = false;
         loopsCounter++;
         piw.pcLoops = loopsCounter;
+        if (isBusy) {
+            LogHelper.logWarnOnce(LOG, getLoopInfo());
+        }
         if (false) {
             boolean ignore = isIgnore(ctx.isIgnoreOpcode, opcodes);
             if (!ignore) {
@@ -123,10 +126,33 @@ public class CpuBusyLoopDetection {
         }
     }
 
-    private void printLoopInfo() {
+    public void reset() {
+        Arrays.fill(pcHistory[FRONT], 0);
+        Arrays.fill(pcHistory[BACK], 0);
+        Arrays.fill(opcodesHistory[BACK], 0);
+        Arrays.fill(opcodesHistory[FRONT], 0);
+        handleStopLoop(0);
+        isKnownLoop = isBusy = false;
+        loopsCounter = 0;
+
+    }
+
+    public void printLoopInfo() {
+        System.out.println(getLoopInfo());
+    }
+
+    public String getLoopInfoVerbose() {
+        return getLoopInfo() + "\n" + debugInfoProvider.getCpuState("");
+    }
+
+    public String getLoopInfo() {
         int[] pcs = Arrays.stream(pcHistory[FRONT]).distinct().sorted().toArray();
         String s = Arrays.stream(pcs).mapToObj(debugInfoProvider::getInstructionOnly).collect(Collectors.joining("\n"));
-        System.out.println(logHead + "\t" + pcs.length + " Loop, isBusy: " + isBusy + "\n" + s + "\n" + debugInfoProvider.getCpuState(""));
+        return logHead + "\tLoop len: " + pcs.length + ", isBusy: " + isBusy + "\n" + s;
+    }
+
+    public int getInitialLoopPc() {
+        return Arrays.stream(pcHistory[FRONT]).distinct().sorted().toArray()[0];
     }
 
     public static boolean isBusyLoop(final Predicate<Integer> isLoopOpcode, final int[] opcodes) {

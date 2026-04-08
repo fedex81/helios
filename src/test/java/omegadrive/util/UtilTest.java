@@ -148,6 +148,6 @@ public class UtilTest {
     }
 
     private void checkSubSeq(String s1, String s2, boolean exp) {
-        Assertions.assertEquals(exp, Util.isSubSequence(s1.getBytes(), s2.getBytes()));
+        Assertions.assertEquals(exp, BufferUtil.indexOf(s2.getBytes(), s1.getBytes(), 0) >= 0);
     }
 }
