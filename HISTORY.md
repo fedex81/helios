@@ -1,3 +1,24 @@
+## 26.0408
+
+32x: support palette changes during hblank in packedPx mode
+32x: add fast mode, cache disabled, fast fm, sh2cycle=192
+32x: fix issue on cache refill
+32x: default to homebrew bioses
+32x: 68S should be set to 0 when DMA ends
+68k: update lib with prefect fixes, enable prefetch by default
+helios:update rom db for sms and msx
+mcd: lots of changes and fixes, still WIP
+md: improve vdp sat location update logic
+md: use 68k prefetch on invalid bus read
+md: fix hint pending logic
+md: more vdp interrupt edge cases
+md: process z80res even when !z80busreq
+mcd: lots of changes, still WIP
+sh2: fix macw
+sh2: drc, TRAPA is a branch instruction
+sh2: fix handling of multiple interrupts
+ui: add perf indicator, percentage of frame time spent idle
+
 ## 25.0711
 
 32x: handle sh2 illegalSlot instructions
