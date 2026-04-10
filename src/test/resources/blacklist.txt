@@ -11,3 +11,4 @@ m68k.bin
 track01.bin
 OUT.ISO
 example.cue
+vram - h32
