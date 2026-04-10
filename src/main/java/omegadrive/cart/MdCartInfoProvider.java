@@ -116,9 +116,15 @@ public class MdCartInfoProvider extends MediaInfoProvider {
     }
 
     public static MdCartInfoProvider createMdInstance(byte[] header) {
+        //NOTE: still a valid rom as real hw ignores the header
+        if (header.length <= HEADER_SIZE) {
+            //Snake260, Tiny
+            LogHelper.logWarnOnce(LOG, "rom size smaller then header length: {} vs {} bytes", header.length, HEADER_SIZE);
+            header = Arrays.copyOf(header, HEADER_SIZE);
+        }
         assert header.length >= HEADER_SIZE;
         MdCartInfoProvider m = new MdCartInfoProvider();
-        m.headerBuf = ByteBuffer.wrap(header, 0, HEADER_SIZE);
+        m.headerBuf = ByteBuffer.wrap(header, 0, header.length);
         m.init();
         m.romSize = header.length;
         return m;
