@@ -73,5 +73,14 @@ public interface PsgProvider extends SoundDevice {
         @Override
         public void fillBuffer(byte[] output, int offset, int end) {
         }
+
+        @Override
+        public void write(int register, int data) {
+        }
+
+        @Override
+        public int read(int register) {
+            return 0;
+        }
     };
 }

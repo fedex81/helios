@@ -36,6 +36,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static omegadrive.SystemLoader.SystemType.MD;
+import static omegadrive.SystemLoader.SystemType.SMS;
 import static omegadrive.system.SysUtil.compressedBinaryTypes;
 import static omegadrive.system.SysUtil.sysFileExtensionsMap;
 import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_ROM;
@@ -47,8 +48,8 @@ public class AutomatedGameTester {
     public static Path resFolder = Paths.get(new File(".").getAbsolutePath(),
             "src", "test", "resources");
 
-    private static String romFolder = "./test_roms/md";
-
+    private static String baseRomFolder = "./test_roms/";
+    private static SystemType systemType = SMS;
     private static boolean noIntro = true;
     private static String header = "rom;boot;sound";
     private static int BOOT_DELAY_MS = 500;
@@ -66,8 +67,11 @@ public class AutomatedGameTester {
     public static BiPredicate<SystemType, Path> testSystemRomsPredicate = (st, p) ->
             Arrays.stream(sysFileExtensionsMap.get(st)).anyMatch(p.toString()::endsWith);
 
+    public static final Map<SystemType, String> sysTestFolderMap;
+
     static {
         systemFilterMap = new EnumMap<>(SystemType.class);
+        sysTestFolderMap = new EnumMap<>(SystemType.class);
         Predicate<Path> mdFilter = p -> testSystemRomsPredicate.test(MD, p) ||
                 Arrays.stream(compressedBinaryTypes).anyMatch(p.toString()::endsWith);
         Predicate<Path> mdExtraFilter = p -> !p.toString().toLowerCase().contains("32x");
@@ -76,6 +80,7 @@ public class AutomatedGameTester {
             if (st != MD) {
                 systemFilterMap.put(st, p -> testSystemRomsPredicate.test(st, p));
             }
+            sysTestFolderMap.put(st, baseRomFolder + st.toString().toLowerCase());
         }
         System.out.println("Blacklist file: " + blacklistPath.toAbsolutePath());
     }
@@ -97,16 +102,17 @@ public class AutomatedGameTester {
 
 
     public static void main(String[] args) throws Exception {
+        System.out.println("System: " + systemType);
         System.out.println("Current folder: " + new File(".").getAbsolutePath());
         System.out.println("Blacklist entries: " + blackList.size());
 //        new AutomatedGameTester().testAll(false);
 //        new AutomatedGameTester().testList();
-        new AutomatedGameTester().bootRecursiveRoms(MD, true);
+        new AutomatedGameTester().bootRecursiveRoms(systemType, true);
         System.exit(0);
     }
 
     private void bootRecursiveRoms(SystemType st, boolean shuffle) throws IOException {
-        Path folder = Paths.get(romFolder);
+        Path folder = Paths.get(sysTestFolderMap.get(st));
         List<Path> testRoms = Files.walk(folder, FileVisitOption.FOLLOW_LINKS).
                 filter(p -> systemFilterMap.get(st).test(p)).collect(Collectors.toList());
         System.out.println("Folder: " + folder.toAbsolutePath());
@@ -120,15 +126,6 @@ public class AutomatedGameTester {
         } catch (Exception | Error e) {
             e.printStackTrace();
         }
-    }
-
-    private void filterAndBootRoms(Predicate<Path> p, boolean shuffle) throws IOException {
-        Path folder = Paths.get(romFolder);
-        List<Path> testRoms = Files.list(folder).filter(p).sorted().collect(Collectors.toList());
-        if (shuffle) {
-            Collections.shuffle(testRoms, new Random());
-        }
-        bootRoms(testRoms);
     }
 
     private static boolean shouldSkip(Path rom) {

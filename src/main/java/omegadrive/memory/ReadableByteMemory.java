@@ -10,7 +10,7 @@ import omegadrive.util.Size;
 public interface ReadableByteMemory {
 
     default int readRamByte(int address) {
-        return read(address, Size.BYTE);
+        return read(address, Size.BYTE) & 0xFF;
     }
 
     int read(int a, Size size);

@@ -18,7 +18,11 @@ public class ArrayEndianUtil {
     }
 
     public static short getUShort16LE(byte... bytes) {
-        return (short) (((bytes[1] & 0xFF) << 8) | (bytes[0] & 0xFF));
+        return (short) getUShort16LE_int(bytes);
+    }
+
+    public static int getUShort16LE_int(byte... bytes) {
+        return ((bytes[1] & 0xFF) << 8) | (bytes[0] & 0xFF);
     }
 
     public static int getUInt32LE(int... bytes) {

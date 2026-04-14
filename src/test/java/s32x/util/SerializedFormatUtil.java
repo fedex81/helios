@@ -42,7 +42,7 @@ public class SerializedFormatUtil {
     }
 
     private static void load32xSavestateFiles() throws IOException {
-        String s = "/home/fede/roms/savestate/s32x/blackth/";
+        String s = "./test_roms/savestate/s32x/blackth/";
         Path f = Path.of(s);
         Set<Path> files = java.nio.file.Files.list(f).
                 filter(p -> p.getFileName().toString().contains(Gs32xStateHandler.fileExtension32x)).collect(Collectors.toSet());

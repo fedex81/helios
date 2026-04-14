@@ -21,7 +21,6 @@ package omegadrive.cpu.z80;
 
 import omegadrive.Device;
 import omegadrive.bus.model.Z80BusProvider;
-import z80core.Z80;
 import z80core.Z80State;
 
 public interface Z80Provider extends Device {
@@ -47,9 +46,4 @@ public interface Z80Provider extends Device {
     void loadZ80State(Z80State z80State);
 
     Z80State getZ80State();
-
-    @Deprecated
-    default Z80 getZ80() {
-        return null;
-    }
 }
