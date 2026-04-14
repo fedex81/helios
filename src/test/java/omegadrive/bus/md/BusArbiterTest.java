@@ -85,7 +85,7 @@ public class BusArbiterTest {
     }
 
     private void setupZ80() {
-        Z80Provider z80 = new Z80CoreWrapper() {
+        Z80Provider z80 = new Z80CoreWrapper(SystemLoader.SystemType.MD) {
             {
                 this.z80BusProvider = z80bus;
             }

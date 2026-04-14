@@ -31,7 +31,7 @@ import static omegadrive.util.Util.th;
  */
 public class MdRomInfoTest {
 
-    private static String romFolder = "/home/fede/roms/md";
+    private static String romFolder = "./test_roms/md";
 
     public static void main(String[] args) throws Exception {
         System.out.println("Current folder: " + new File(".").getAbsolutePath());

@@ -3,6 +3,7 @@ package omegadrive.util;
 import com.google.common.base.Preconditions;
 import com.google.common.math.IntMath;
 import omegadrive.Device;
+import omegadrive.memory.ReadableByteMemory;
 import omegadrive.util.RegSpec.BytePosReg;
 import org.slf4j.Logger;
 import s32x.S32XMMREG.RegContext;
@@ -271,6 +272,7 @@ public class BufferUtil {
     }
 
     public static int hashCode(byte a[], int start, int end) {
+        assert end > start;
         if (a == null)
             return 0;
 
@@ -289,6 +291,18 @@ public class BufferUtil {
         int result = 1;
         for (int i = start; i < end; i++) {
             result = 31 * result + a[i];
+        }
+
+        return result;
+    }
+
+    public static int hashCode(ReadableByteMemory bus, int start, int end) {
+        if (bus == null)
+            return 0;
+
+        int result = 1;
+        for (int i = start; i < end; i++) {
+            result = 31 * result + bus.readRamByte(i);
         }
 
         return result;

@@ -24,6 +24,7 @@ import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.MdZ80BusProvider;
+import omegadrive.cpu.z80.Z80LoopHelper;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryRam;
 import omegadrive.sound.fm.FmProvider;
@@ -48,22 +49,27 @@ public class MdZ80BusProviderImpl extends DeviceAwareBus implements MdZ80BusProv
     private MdMainBusProvider mainBusProvider;
     private BusArbiter busArbiter;
     private FmProvider fmProvider;
+
+    private Z80LoopHelper loopHelper;
     private byte[] ram;
     private int ramMask;
 
 
     @Override
     public BaseBusProvider attachDevice(Device device) {
-        if (device instanceof MdMainBusProvider) {
-            this.mainBusProvider = (MdMainBusProvider) device;
+        if (device instanceof MdMainBusProvider mb) {
+            this.mainBusProvider = mb;
             this.mainBusProvider.getBusDeviceIfAny(BusArbiter.class).ifPresent(this::attachDevice);
         }
         if (device instanceof IMemoryRam z80Memory) {
             this.ram = z80Memory.getRamData();
             this.ramMask = ram.length - 1;
         }
-        if (device instanceof BusArbiter) {
-            this.busArbiter = (BusArbiter) device;
+        if (device instanceof BusArbiter ba) {
+            this.busArbiter = ba;
+        }
+        if (device instanceof Z80LoopHelper lh) {
+            loopHelper = lh;
         }
         super.attachDevice(device);
         return this;
@@ -108,6 +114,7 @@ public class MdZ80BusProviderImpl extends DeviceAwareBus implements MdZ80BusProv
         assert size == Size.BYTE;
         if (address <= END_RAM) {
             ram[address & ramMask] = (byte) dataInt;
+            loopHelper.writeMemory(address & ramMask, dataInt);
         } else if (address >= START_YM2612 && address <= END_YM2612) {
             if (mainBusProvider.isZ80ResetState()) {
                 LOG.warn("Illegal write to FM while Z80 reset");

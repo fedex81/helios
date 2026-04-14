@@ -19,15 +19,18 @@
 
 package omegadrive.cpu.z80;
 
+import com.google.common.annotations.VisibleForTesting;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.bus.model.Z80BusProvider;
+import omegadrive.cpu.z80.Z80LoopHelper.LoopType;
 import omegadrive.cpu.z80.debug.Z80CoreWrapperFastDebug;
 import omegadrive.savestate.StateUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
+import s32x.sh2.Sh2Helper;
 import z80core.Z80;
 import z80core.Z80State;
 
@@ -40,31 +43,29 @@ public class Z80CoreWrapper implements Z80Provider {
     public final static boolean STOP_ON_EXCEPTION;
     public static final boolean Z80_DEBUG;
 
-    public static final boolean Z80_POLL_EN;
+    public static boolean Z80_POLL_EN;
 
     public static final int Z80_POLL_DELAY;
     private final static Logger LOG = LogHelper.getLogger(Z80CoreWrapper.class.getSimpleName());
-
-    @Deprecated
-    public static Z80 z80;
 
     static {
         STOP_ON_EXCEPTION =
                 Boolean.parseBoolean(System.getProperty("z80.stop.on.exception", "false"));
         Z80_DEBUG = Boolean.parseBoolean(System.getProperty("z80.debug", "false"));
-        Z80_POLL_EN = Boolean.parseBoolean(System.getProperty("helios.z80.poll.detect", "true"));
-        Z80_POLL_DELAY = Integer.parseInt(System.getProperty("helios.z80.poll.delay", "100"));
+        Z80_POLL_DELAY = Integer.parseInt(System.getProperty("helios.z80.poll.delay", "1000"));
         if (Z80_DEBUG) {
             LOG.info("z80 debug mode: true");
         }
-        if (Z80_POLL_EN) {
-            LOG.info("z80 poll detection: true, delay: {}", Z80_POLL_DELAY);
-        }
+        reloadPollDetection();
     }
 
     protected Z80 z80Core;
     protected Z80BusProvider z80BusProvider;
     protected Z80MemIoOps memIoOps;
+
+    protected Z80LoopHelper loopHelper;
+
+    protected final SystemType systemType;
     protected int instCyclesPenalty = 0;
 
     protected int loopDelay = 0;
@@ -77,14 +78,14 @@ public class Z80CoreWrapper implements Z80Provider {
             case S32X:
             case MEGACD:
             case MEGACD_S32X:
-                w = createMdInstanceInternal(busProvider);
+                w = createMdInstanceInternal(systemType, busProvider);
                 break;
             case GG:
             case SMS:
             case COLECO:
             case SG_1000:
             case MSX:
-                w = createInstanceInternal(busProvider);
+                w = createInstanceInternal(systemType, busProvider);
                 break;
             default:
                 LOG.error("Unexpected system: {}", systemType);
@@ -96,30 +97,34 @@ public class Z80CoreWrapper implements Z80Provider {
         return w;
     }
 
-    protected Z80CoreWrapper() {
+    protected Z80CoreWrapper(SystemType st) {
+        this.systemType = st;
     }
 
     protected Z80CoreWrapper setupInternal(Z80State z80State) {
         z80Core = new Z80(memIoOps, null);
-        z80 = z80Core;
-        z80BusProvider.attachDevice(this);
+        loopHelper = new Z80LoopHelper(systemType, z80Core, z80BusProvider);
+        z80BusProvider.attachDevices(this, loopHelper);
         if (z80State != null) {
             z80Core.setZ80State(z80State);
         }
         z80Core.setRegSP(memIoOps.getPcUpperLimit());
         memPtrInitVal = memIoOps.getPcUpperLimit();
+        reloadPollDetection();
         return this;
     }
 
-    private static Z80CoreWrapper createInstanceInternal(Z80BusProvider busProvider) {
-        Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperFastDebug() : new Z80CoreWrapper();
+    private static Z80CoreWrapper createInstanceInternal(SystemType systemType, Z80BusProvider busProvider) {
+        assert !systemType.isMdBased();
+        Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperFastDebug(systemType) : new Z80CoreWrapper(systemType);
         w.z80BusProvider = busProvider;
         w.memIoOps = Z80MemIoOps.createInstance(w.z80BusProvider);
         return w.setupInternal(null);
     }
 
-    private static Z80CoreWrapper createMdInstanceInternal(Z80BusProvider busProvider) {
-        Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperFastDebug() : new Z80CoreWrapper();
+    private static Z80CoreWrapper createMdInstanceInternal(SystemType systemType, Z80BusProvider busProvider) {
+        assert systemType.isMdBased();
+        Z80CoreWrapper w = Z80_DEBUG ? new Z80CoreWrapperFastDebug(systemType) : new Z80CoreWrapper(systemType);
         w.z80BusProvider = MdZ80BusProvider.createInstance(busProvider);
         w.memIoOps = Z80MemIoOps.createMdInstance(w.z80BusProvider);
         return w.setupInternal(null);
@@ -146,15 +151,12 @@ public class Z80CoreWrapper implements Z80Provider {
         }
         return (int) (memIoOps.getTstates()) + instCyclesPenalty + loopDelay;
     }
-
     private void checkLoops() {
-        Z80Helper.LoopType lt = Z80Helper.checkLoops(z80Core, z80BusProvider, memIoOps);
-        if (lt != Z80Helper.LoopType.NONE) {
+        LoopType lt = loopHelper.checkLoops().loopType;
             /**
              * TODO busy loops on RAM/YM2612 are delayed by 10 cycles, this could affect audio playback
              */
-            loopDelay = lt == Z80Helper.LoopType.INFINITE_LOOP ? Z80_POLL_DELAY : 10;
-        }
+        loopDelay = lt == LoopType.NONE ? 0 : (lt == LoopType.BUSY_LOOP ? 50 : Z80_POLL_DELAY);
     }
 
     //From the Z80UM.PDF document, a reset clears the interrupt enable, PC and
@@ -190,6 +192,18 @@ public class Z80CoreWrapper implements Z80Provider {
     public void triggerNMI() {
         loopDelay = 0;
         z80Core.triggerNMI();
+    }
+
+    /**
+     * Driven by
+     * 1. helios.z80.poll.detect
+     * 2. only for S32X, Sh2Config.z80LoopDetect (takes precedence over #1)
+     */
+    private static void reloadPollDetection() {
+        Z80_POLL_EN = Boolean.parseBoolean(System.getProperty("helios.z80.poll.detect",
+                "" + Sh2Helper.Sh2Config.get().z80LoopDetect));
+        LOG.info("z80 poll detection: {}, sh2Config: {}, delay: {}", Z80_POLL_EN,
+                Sh2Helper.Sh2Config.get().z80LoopDetect, Z80_POLL_DELAY);
     }
 
     @Override
@@ -237,6 +251,7 @@ public class Z80CoreWrapper implements Z80Provider {
         return z80Core.getZ80State();
     }
 
+    @VisibleForTesting
     public Z80 getZ80() {
         return z80Core;
     }

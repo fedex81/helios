@@ -20,7 +20,9 @@
 package omegadrive.cpu.z80.debug;
 
 import com.google.common.collect.ImmutableMap;
+import omegadrive.SystemLoader;
 import omegadrive.cpu.CpuBusyLoopDetection;
+import omegadrive.cpu.CpuBusyLoopDetection.BusyLoopCtx;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.z80.Z80CoreWrapper;
 import omegadrive.cpu.z80.Z80Helper;
@@ -33,8 +35,8 @@ import z80core.Z80State;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import static omegadrive.cpu.CpuBusyLoopDetection.CK_DELAY_ON_LOOP;
-import static omegadrive.cpu.z80.Z80Helper.checkMissedLoops;
+import static omegadrive.cpu.z80.disasm.Z80OpcodeSpecHelper.Z80OpcodeSpec.OP_0xF3;
+import static omegadrive.cpu.z80.disasm.Z80OpcodeSpecHelper.Z80OpcodeSpec.fromOpcode;
 
 public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDebug.CpuDebugInfoProvider {
 
@@ -49,6 +51,10 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
     private CpuBusyLoopDetection busyLoopDetect;
     private int pc, opcode;
 
+    public Z80CoreWrapperFastDebug(SystemLoader.SystemType st) {
+        super(st);
+    }
+
     @Override
     protected Z80CoreWrapper setupInternal(Z80State z80State) {
         super.setupInternal(z80State);
@@ -62,12 +68,12 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
     @Override
     public int executeInstruction() {
         printDebugMaybe();
-        int loopPc = busyLoopDetect.getInitialLoopPc();
-        int delay = busyLoopDetect.isBusyLoop(pc, opcode);
-        if (delay == CK_DELAY_ON_LOOP && pc == loopPc) {
-            checkMissedLoops(getZ80(), getZ80BusProvider(), pc, memIoOps, busyLoopDetect);
+        busyLoopDetect.isBusyLoop(pc, opcode);
+        BusyLoopCtx blctx = busyLoopDetect.getBusyLoopCtx();
+        if (blctx.isBusy && blctx.pc == pc) {
+            loopHelper.checkMissedLoops(pc, busyLoopDetect);
         }
-        return delay + super.executeInstruction();
+        return super.executeInstruction();
     }
 
     private void printDebugMaybe() {
@@ -118,14 +124,19 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
         busyLoopDetect.reset();
     }
 
+    //TODO limitation
+    public static final Predicate<Integer> isIgnoreOpcode = op -> {
+        var opc = fromOpcode(op);
+        return opc.isPrefix() || opc.isRet() || opc.isStack() || opc == OP_0xF3;
+    };
+
     public static final Predicate<Integer> isLoopOpcode = op -> {
         int byte2 = 0;
-        if (op == 0xCB || op == 0xDD || op == 0xED || op == 0xFD) { //TODO limitation
+        if (isIgnoreOpcode.test(op)) {
             return false;
         }
         return Z80Helper.isBusyLoop(op, byte2);
     };
 
-    //TODO limitation
-    public static final Predicate<Integer> isIgnoreOpcode = op -> op == 0xCB || op == 0xDD || op == 0xED || op == 0xFD;
+
 }
