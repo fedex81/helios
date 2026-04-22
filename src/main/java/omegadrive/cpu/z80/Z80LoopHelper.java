@@ -55,7 +55,7 @@ public class Z80LoopHelper implements Device {
         }
     }
 
-    private static final boolean verbose = BufferUtil.assertionsEnabled;
+    private static final boolean verbose = false && BufferUtil.assertionsEnabled;
 
     private static final int BLOCK_MAX_LEN = 16;
     private static final int NUM_BLOCKS = 0x10000;
@@ -123,15 +123,14 @@ public class Z80LoopHelper implements Device {
         var op = fromOpcode(readRamByte(pc));
         LoopType res = switch (op) {
             case OP_0x7E, OP_0x1A, OP_0x3A -> {
-                boolean val = checkOpJump();
-                val |= checkDoubleLoad(pc + op.getImmSize() + 1);
+                boolean val = checkOpJump() || checkDoubleLoad(pc + op.getImmSize() + 1);
                 yield val ? LoopType.BUSY_LOOP : LoopType.NONE;
             }
             case OP_0x21 -> {
-                boolean val = checkLogicalThenJump(pc + 6);
-                val |= checkLogicalThenJump(pc + 4);
-                val |= checkLogicalThenJump(pc + 3);
-                val |= checkDoubleLoad(pc + 3);
+                boolean val = checkLogicalThenJump(pc + 6) ||
+                        checkLogicalThenJump(pc + 4) ||
+                        checkLogicalThenJump(pc + 3) ||
+                        checkDoubleLoad(pc + 3);
                 yield val ? LoopType.BUSY_LOOP : LoopType.NONE;
             }
             case OP_0x2A -> checkDoubleLoad(pc + 3) ? LoopType.BUSY_LOOP : LoopType.NONE;

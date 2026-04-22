@@ -23,14 +23,19 @@ import m68k.cpu.CpuConfig;
 import m68k.cpu.M68kVectors;
 import m68k.cpu.MC68000;
 import m68k.memory.AddressSpace;
+import omegadrive.SystemLoader;
 import omegadrive.bus.model.MdM68kBusProvider;
 import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
+import omegadrive.cpu.m68k.drc.M68kLoopHelper;
+import omegadrive.cpu.m68k.drc.M68kLoopHelper.LoopType;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import org.slf4j.Logger;
 
 import static m68k.cpu.Cpu.AUTO_VECTOR_EXCEPTION_OFFSET;
+import static m68k.cpu.Cpu.PC_MASK;
+import static omegadrive.cpu.z80.Z80CoreWrapper.Z80_POLL_DELAY;
 import static omegadrive.util.Util.th;
 
 /**
@@ -51,9 +56,14 @@ public class MC68000Wrapper implements M68kProvider {
     protected final CpuDeviceAccess cpu;
     private boolean stop;
     protected int currentPC;
-    protected int instCycles = 0;
+    protected int instCycles = 0, loopDelay = 0;
+
+    protected M68kLoopHelper loopHelper;
 
     public static boolean subCpuBusHalt = false;
+
+    private static final boolean M68K_POLL_EN = false; //Boolean.parseBoolean(System.getProperty("helios.m68k.poll.detect",
+//            "" + Sh2Helper.Sh2Config.get().m68kLoopDetect));
 
     private static final CpuConfig tasBrokenConfig = CpuConfig.DEFAULT_CONFIG.withBrokenTas(true);
 
@@ -62,6 +72,7 @@ public class MC68000Wrapper implements M68kProvider {
         this.m68k = createCpu(cpu == CpuDeviceAccess.M68K ? tasBrokenConfig : CpuConfig.DEFAULT_CONFIG);
         this.busProvider = busProvider;
         this.addressSpace = createAddressSpace();
+        this.loopHelper = M68kLoopHelper.createInstance(SystemLoader.SystemType.MD, m68k, busProvider, M68K_POLL_EN);
         m68k.setAddressSpace(addressSpace);
     }
 
@@ -77,8 +88,11 @@ public class MC68000Wrapper implements M68kProvider {
     public int runInstruction() {
         int res = 0;
         try {
-            currentPC = m68k.getPC();
-            res = m68k.execute() + instCycles;
+            currentPC = m68k.getPC() & PC_MASK;
+            if (M68K_POLL_EN) {
+                checkLoops();
+            }
+            res = m68k.execute() + instCycles + loopDelay;
             instCycles = 0;
         } catch (Exception e) {
             LOG.error("68k error", e);
@@ -89,6 +103,13 @@ public class MC68000Wrapper implements M68kProvider {
             }
         }
         return res >> MC68000Helper.OVERCLOCK_FACTOR;
+    }
+
+    //TODO Tf4 show flickering when enabled
+    protected void checkLoops() {
+        M68kLoopHelper.M68kBlock block = loopHelper.checkLoops(currentPC);
+        LoopType lt = block.loopType;
+        loopDelay = lt == LoopType.NONE ? 0 : (lt == LoopType.BUSY_LOOP ? 50 : Z80_POLL_DELAY);
     }
 
     protected AddressSpace createAddressSpace() {
@@ -135,6 +156,7 @@ public class MC68000Wrapper implements M68kProvider {
         CpuDeviceAccess prev = MdRuntimeData.setAccessTypeExt(cpu);
         m68k.reset();
         MdRuntimeData.setAccessTypeExt(prev);
+        loopDelay = 0;
     }
 
     //X-men uses it
@@ -143,6 +165,7 @@ public class MC68000Wrapper implements M68kProvider {
         reset();
         instCycles += 132;
         setStop(false);
+        loopDelay = 0;
     }
 
     @Override
@@ -161,6 +184,7 @@ public class MC68000Wrapper implements M68kProvider {
                 super.raiseException(vector);
                 handleIntAck(vector);
                 setStop(false);
+                loopDelay = 0;
             }
 
             //http://gendev.spritesmind.net/forum/viewtopic.php?t=1262

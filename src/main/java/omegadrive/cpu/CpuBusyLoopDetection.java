@@ -1,5 +1,6 @@
 package omegadrive.cpu;
 
+import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
@@ -31,7 +32,8 @@ public class CpuBusyLoopDetection {
 
     public static class BusyLoopCtx {
         public int pc;
-        public int[] opcodes;
+        public int[] opcodes = FileUtil.EMPTY;
+        public int[] pcs = FileUtil.EMPTY;
         public boolean isBusy;
     }
     private int FRONT = 0, BACK = 1;
@@ -114,7 +116,7 @@ public class CpuBusyLoopDetection {
             LogHelper.logWarnOnce(LOG, "Ignoring busyLoop of len: " + pcs.length);
             isBusy = false;
         }
-        setBusyLoopCtx(opcodes, isBusy);
+        setBusyLoopCtx(opcodes, pcs, isBusy);
         final int area = pc >>> ctx.pcAreaShift;
         final int mask = ctx.pcAreasMaskMap[area];
         final int pcMasked = pc & mask;
@@ -144,8 +146,8 @@ public class CpuBusyLoopDetection {
         if (busyLoopCtx.isBusy) {
             String str = Arrays.toString(busyLoopCtx.opcodes);
             if (loopDedup.add(str)) {
-                String print = str.contains(jpHlLoop) ? getLoopInfo() : getLoopInfoVerbose();
-                System.out.println(print);
+//                String print = str.contains(jpHlLoop) ? getLoopInfo() : getLoopInfoVerbose();
+//                System.out.println(print);
 //                LogHelper.logWarnOnce(LOG, print);
             }
         }
@@ -153,15 +155,15 @@ public class CpuBusyLoopDetection {
 
     private void setBusyLoopCtx(boolean isBusy) {
         assert !isBusy;
-        setBusyLoopCtx(null, false);
+        setBusyLoopCtx(null, null, false);
     }
 
-    private void setBusyLoopCtx(int[] opcodes, boolean isBusy) {
+    private void setBusyLoopCtx(int[] opcodes, int[] pcs, boolean isBusy) {
         busyLoopCtx.pc = isBusy ? getInitialLoopPc() : -1;
-        busyLoopCtx.opcodes = isBusy ? opcodes : null;
+        busyLoopCtx.opcodes = isBusy ? opcodes : FileUtil.EMPTY;
+        busyLoopCtx.pcs = isBusy ? pcs : FileUtil.EMPTY;
         busyLoopCtx.isBusy = isBusy;
         delay = isBusy ? CK_DELAY_ON_LOOP : 0;
-//        looping = isBusy;
     }
 
     public BusyLoopCtx getBusyLoopCtx() {
@@ -189,13 +191,13 @@ public class CpuBusyLoopDetection {
     }
 
     public String getLoopInfo() {
-        int[] pcs = Arrays.stream(pcHistory[FRONT]).distinct().sorted().toArray();
-        String s = Arrays.stream(pcs).mapToObj(debugInfoProvider::getInstructionOnly).collect(Collectors.joining("\n"));
+        int[] pcs = Arrays.stream(busyLoopCtx.pcs).distinct().sorted().toArray();
+        String s = Arrays.stream(busyLoopCtx.pcs).mapToObj(debugInfoProvider::getInstructionOnly).collect(Collectors.joining("\n"));
         return logHead + "\tLoop len: " + pcs.length + ", isBusy: " + busyLoopCtx.isBusy + "\n" + s;
     }
 
     public String getInstListOnly() {
-        return Arrays.toString(Arrays.stream(opcodesHistory[FRONT]).distinct().sorted().toArray());
+        return Arrays.toString(Arrays.stream(busyLoopCtx.opcodes).distinct().sorted().toArray());
     }
 
 

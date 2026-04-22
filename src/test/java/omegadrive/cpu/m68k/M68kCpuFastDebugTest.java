@@ -3,9 +3,15 @@ package omegadrive.cpu.m68k;
 import omegadrive.cpu.CpuBusyLoopDetection;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
+import omegadrive.cpu.m68k.drc.M68kOpcodeSpecHelper;
+import omegadrive.memory.MemoryProvider;
 import omegadrive.util.BufferUtil;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static omegadrive.cpu.m68k.drc.M68kOpcodeSpecHelper.generateOnce;
+import static omegadrive.util.SystemTestUtil.setupNewMdSystem;
 
 /**
  * Federico Berti
@@ -22,6 +28,13 @@ public class M68kCpuFastDebugTest {
 
     static int[] test03 = {1, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 6, 7, 8, 3, 3,
             2, 3, 3, 2, 3, 3, 2, 3, 3};
+
+    @BeforeEach
+    public void setup() {
+        var bus = setupNewMdSystem(MemoryProvider.createMdInstance());
+        var m68k = bus.getBusDeviceIfAny(MC68000Wrapper.class).get();
+        generateOnce(m68k.getM68k());
+    }
 
     @Test
     public void testLoopRepetitionDetection() {
@@ -222,6 +235,16 @@ public class M68kCpuFastDebugTest {
         Assertions.assertFalse(isIgnored(opcodes));
 
         /*
+         * 000007bc   08d5 0001                bset     #$1,(a5)
+         * 000007c0   67fa                     beq.s    $000007bc
+         *
+         * modifies (a5)
+         */
+        opcodes = new int[]{0x08d5, 0x67fa};
+        Assertions.assertTrue(isBusyLoop(opcodes));
+        Assertions.assertFalse(isIgnored(opcodes));
+
+        /*
          * 0002e784   b3ed ffffd47a                cmpa.l   $d47a(a5),a1
          * 0002e788   67fa                    beq.s    $0002e784
          *
@@ -235,23 +258,13 @@ public class M68kCpuFastDebugTest {
         int[] opcodes;
         /*
          * 0001451e   0810 0004                btst     #$4,(a0)
-         * 00014522   57c8 fffffffa                dbeq     d0,$0001451e
+         * 00014522   57c8 fffffffa            dbeq     d0,$0001451e
          *
          * modifies d0
          */
         opcodes = new int[]{0x0810, 0x57c8};
         Assertions.assertFalse(isBusyLoop(opcodes));
         Assertions.assertTrue(isIgnored(opcodes));
-
-        /*
-         * 000007bc   08d5 0001                bset     #$1,(a5)
-         * 000007c0   67fa                    beq.s    $000007bc
-         *
-         * modifies (a5)
-         */
-        opcodes = new int[]{0x08d5, 0x67fa};
-        Assertions.assertFalse(isBusyLoop(opcodes));
-        Assertions.assertFalse(isIgnored(opcodes));
     }
 
     @Test
@@ -304,10 +317,10 @@ public class M68kCpuFastDebugTest {
     }
 
     private boolean isBusyLoop(int[] opcodes) {
-        return CpuBusyLoopDetection.isBusyLoop(MC68000WrapperFastDebug.isLoopOpcode, opcodes);
+        return CpuBusyLoopDetection.isBusyLoop(M68kOpcodeSpecHelper::isValidOpcodeForLooping, opcodes);
     }
 
     private boolean isIgnored(int[] opcodes) {
-        return CpuBusyLoopDetection.isIgnore(MC68000WrapperFastDebug.isIgnoreOpcode, opcodes);
+        return !isBusyLoop(opcodes);
     }
 }

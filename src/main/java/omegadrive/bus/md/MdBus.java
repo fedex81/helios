@@ -86,7 +86,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         }
     };
 
-    private static long ROM_END_ADDRESS;
+    private long romEndAddress;
 
     enum BusState {READY, NOT_READY}
 
@@ -112,8 +112,8 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         SystemLoader.SystemType st = systemProvider.getSystemType();
         cartridgeInfoProvider = (MdCartInfoProvider) systemProvider.getMediaSpec().getBootableMedia().mediaInfoProvider;
         assert cartridgeInfoProvider != null;
-        ROM_END_ADDRESS = Math.min(cartridgeInfoProvider.getRomSize(), Z80_ADDRESS_SPACE_START);
-        assert ROM_END_ADDRESS > 0;
+        romEndAddress = Math.min(cartridgeInfoProvider.getRomSize(), Z80_ADDRESS_SPACE_START);
+        assert romEndAddress > 0;
         if (cartridgeInfoProvider.getEntry().hasEeprom()) {
             checkBackupMemoryMapper(SramMode.READ_WRITE, cartridgeInfoProvider.getEntry());
         } else if (cartridgeInfoProvider.isSramEnabled()) {
@@ -125,8 +125,8 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         }
         msuMdHandler = MsuMdHandlerImpl.createInstance(st, systemProvider.getRomPath());
         //some homebrews use a flat ROM mapper, in theory up to Z80_ADDRESS_SPACE_START
-        if (st == SystemLoader.SystemType.MD && !cartridgeInfoProvider.isSsfMapper() && ROM_END_ADDRESS > DEFAULT_ROM_END_ADDRESS) {
-            LOG.warn("Assuming flat ROM mapper up to address: {}", ROM_END_ADDRESS);
+        if (st == SystemLoader.SystemType.MD && !cartridgeInfoProvider.isSsfMapper() && romEndAddress > DEFAULT_ROM_END_ADDRESS) {
+            LOG.warn("Assuming flat ROM mapper up to address: {}", romEndAddress);
         }
         if (cartridgeInfoProvider.isSvp()) {
             checkSvpMapper();
@@ -213,7 +213,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
     public int readData(int address, final Size size) {
         address &= MD_PC_MASK;
         int data;
-        if (address < ROM_END_ADDRESS) {  //ROM
+        if (address < romEndAddress) {  //ROM
             data = Util.readDataMask(rom, address, romMask, size);
         } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
             data = Util.readDataMask(ram, address, M68K_RAM_MASK, size);
@@ -258,7 +258,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
             internalRegWrite(address, size, data);
         } else if (address >= VDP_ADDRESS_SPACE_START && address < VDP_ADDRESS_SPACE_END) {  //VDP
             vdpWrite(address, size, data);
-        } else if (address < ROM_END_ADDRESS) {
+        } else if (address < romEndAddress) {
             cartWrite(address, data, size);
         } else if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
             checkBackupMemoryMapper(SramMode.READ_WRITE);
