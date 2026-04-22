@@ -51,7 +51,7 @@ public class Md32x extends Megadrive implements StaticBootstrapSupport.NextCycle
     private static final double SH2_CYCLE_DIV = 1 / Double.parseDouble(System.getProperty("helios.32x.sh2.cycle.div", "3.0"));
     private static final int CYCLE_TABLE_LEN_MASK = 0x1FF;
     private final static int[] sh2CycleTable = new int[CYCLE_TABLE_LEN_MASK + 1];
-    private final static Sh2Config BASE_SH2_CONFIG;
+    public final static Sh2Config BASE_SH2_CONFIG;
 
     public static final int SH2_SLEEP_VALUE = -10000;
 

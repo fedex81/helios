@@ -45,7 +45,7 @@ public class FileUtil {
 
     private static final Logger LOG = LogHelper.getLogger(FileUtil.class.getSimpleName());
 
-    private static final int[] EMPTY = new int[0];
+    public static final int[] EMPTY = new int[0];
     public static final File[] EMPTY_FILES = new File[0];
 
 

@@ -23,16 +23,17 @@ import com.google.common.collect.ImmutableMap;
 import m68k.cpu.M68kVectors;
 import omegadrive.bus.model.MdM68kBusProvider;
 import omegadrive.cpu.CpuBusyLoopDetection;
+import omegadrive.cpu.CpuBusyLoopDetection.BusyLoopCtx;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.CpuDebugContext;
 import omegadrive.cpu.m68k.MC68000Helper;
 import omegadrive.cpu.m68k.MC68000Wrapper;
+import omegadrive.cpu.m68k.drc.M68kOpcodeSpecHelper;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
 import java.util.Map;
-import java.util.function.Predicate;
 
 import static mcd.cdd.cdbios.CdBiosHelper.logCdPcInfo;
 import static omegadrive.cpu.CpuFastDebug.CpuDebugInfoProvider;
@@ -47,7 +48,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
     //DebugMode {NONE, INST_ONLY, NEW_INST_ONLY, STATE}
     private static final int debugMode = Integer.parseInt(System.getProperty("helios.68k.debug.mode",
             String.valueOf(DebugMode.NONE.ordinal())));
-    private static final boolean busyLoopDetection = Boolean.parseBoolean(System.getProperty("helios.68k.busy.loop", "false"));
+    private static final boolean busyLoopDetection = Boolean.parseBoolean(System.getProperty("helios.68k.busy.loop", "true"));
 
     private final CpuFastDebug fastDebug;
 
@@ -70,8 +71,8 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
     public static CpuDebugContext createContext(CpuDeviceAccess cpu) {
         CpuDebugContext ctx = new CpuDebugContext(areaMaskMap);
         ctx.pcAreaShift = 20;
-        ctx.isLoopOpcode = isLoopOpcode;
-        ctx.isIgnoreOpcode = isIgnoreOpcode;
+        ctx.isLoopOpcode = M68kOpcodeSpecHelper::isValidOpcodeForLooping;
+        ctx.isIgnoreOpcode = i -> false;
         ctx.debugMode = debugMode;
         ctx.cpuCode = cpu.cpuShortCode;
         return ctx;
@@ -84,7 +85,7 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         fastDebug.printDebugMaybe();
         //pc went off a cliff
         if (currentPC == opcode && opcode == 0) {
-            throw new RuntimeException("oops");
+            throw new RuntimeException("oops: pc=" + currentPC + ", opcode=" + opcode);
         }
         //address error
         if ((currentPC & 1) == 1) {
@@ -99,8 +100,19 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
             }
             return super.runInstruction();
         }
-        return busyLoopDetect.isBusyLoop(currentPC, opcode) + super.runInstruction();
+        return super.runInstruction();
     }
+
+    @Override
+    protected void checkLoops() {
+        super.checkLoops();
+        busyLoopDetect.isBusyLoop(currentPC, opcode);
+        BusyLoopCtx blc = busyLoopDetect.getBusyLoopCtx();
+        if (blc.isBusy && blc.pc == currentPC) {
+            loopHelper.checkMissedLoops(currentPC, busyLoopDetect);
+        }
+    }
+
     private void checkInterruptLevelChange() {
         int pl = m68k.getInterruptLevel();
         if (pl != intLevel) {
@@ -160,22 +172,5 @@ public class MC68000WrapperFastDebug extends MC68000Wrapper implements CpuDebugI
         return fastDebug;
     }
 
-    private static final Predicate<Integer> isBranch = op -> (op & 0x6000) == 0x6000 || (op & 0xFFC0) == 0x4ec0;
-    //btst     #imm,dX; btst     #imm,addr; btst     dX,(aY)
-    private static final Predicate<Integer> isTest = op -> (op & 0xFFC0) == 0x800 || (op & 0xFF00) == 0x4a00 || (op & 0xFFC0) == 0x500;
-    //move   (aX),dY; move #imm, dX; move   n(aX),dY
-    private static final Predicate<Integer> isMov = op -> (op & 0xC1F8) == 0x10 || (op & 0xC1F8) == 0x38 || (op & 0xC1F8) == 0x28;
-    //andi   #imm,dX;  and    (aX),dY
-    private static final Predicate<Integer> isAndi = op -> (op & 0xFF38) == 0x200 || (op & 0xF138) == 0xC010 || (op & 0xF138) == 0xC038;
-    //cmpi   #imm, val;  cmp #imm, (aX); cmp #imm, dX; cmp n(aX), dY, cmp (aX), dY
-    private static final Predicate<Integer> isCmp = op -> (op & 0xFF38) == 0xC38 || (op & 0xFF38) == 0xC28 || (op & 0xFF38) == 0xC00
-            || (op & 0xFF38) == 0xC10 || (op & 0xF138) == 0xB038 || (op & 0xF138) == 0xB028 || (op & 0xF138) == 0xB010;
-    private static final Predicate<Integer> isNop = op -> op == 0x4e71;
-
-    public static final Predicate<Integer> isLoopOpcode = isBranch.or(isTest).or(isMov).or(isAndi).or(isCmp).or(isNop);
-    public static final Predicate<Integer> isIgnoreOpcode = op ->
-            (op & 0xF0F8) == 0x50C8 ||   //dbcc
-                    (op & 0xFF00) == 0x400 ||   //subi
-                    ((op >> 8) & 0xF1) == 0x51 && (op & 0xC0) != 0xC0       //subq
-            ;
+    ;
 }
