@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static omegadrive.util.Util.th;
@@ -44,6 +45,8 @@ public class CpuFastDebug {
         public final int pcAreasNumber;
         public int pcAreaShift;
         public Predicate<Integer> isLoopOpcode = i -> false;
+
+        public BiPredicate<Integer, Integer> isLoopOpcode2 = null;
         public Predicate<Integer> isIgnoreOpcode = i -> true;
         public int debugMode;
 

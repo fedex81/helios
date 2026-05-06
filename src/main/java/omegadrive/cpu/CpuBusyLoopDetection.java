@@ -4,9 +4,8 @@ import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -108,10 +107,19 @@ public class CpuBusyLoopDetection {
     private static Set<String> loopDedup = new HashSet<>();
     private static final String jpHlLoop = "00000000            E9    jp (hl)";
 
+    private Map<Integer, Integer> toPcOpcodeMap() {
+        Map<Integer, Integer> m = new HashMap<>();
+        for (int i = 0; i < opcodesHistory[FRONT].length; i++) {
+            int opc = opcodesHistory[FRONT][i];
+            int pc = pcHistory[FRONT][i];
+            m.put(pc, opc);
+        }
+        return m;
+    }
     private void handleLoop(int pc, int opcode) {
         int[] pcs = Arrays.stream(pcHistory[FRONT]).distinct().sorted().toArray();
         final int[] opcodes = Arrays.stream(opcodesHistory[FRONT]).distinct().sorted().toArray();
-        boolean isBusy = isBusyLoop(ctx.isLoopOpcode, opcodes);
+        boolean isBusy = checkBusyLoop(opcodes);
         if (pcs.length > 5) {
             LogHelper.logWarnOnce(LOG, "Ignoring busyLoop of len: " + pcs.length);
             isBusy = false;
@@ -141,6 +149,14 @@ public class CpuBusyLoopDetection {
         piw.pcLoops = loopsCounter;
         loopLogging();
     }
+
+    private boolean checkBusyLoop(int[] opcodes) {
+        if (ctx.isLoopOpcode2 != null) {
+            return isBusyLoop(ctx.isLoopOpcode2, toPcOpcodeMap());
+        }
+        return isBusyLoop(ctx.isLoopOpcode, opcodes);
+    }
+
 
     private void loopLogging() {
         if (busyLoopCtx.isBusy) {
@@ -208,6 +224,15 @@ public class CpuBusyLoopDetection {
     public static boolean isBusyLoop(final Predicate<Integer> isLoopOpcode, final int[] opcodes) {
         for (int i = 0; i < opcodes.length; i++) {
             if (!isLoopOpcode.test(opcodes[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isBusyLoop(final BiPredicate<Integer, Integer> isLoopOpcode, Map<Integer, Integer> pcOp) {
+        for (var e : pcOp.entrySet()) {
+            if (!isLoopOpcode.test(e.getKey(), e.getValue())) {
                 return false;
             }
         }

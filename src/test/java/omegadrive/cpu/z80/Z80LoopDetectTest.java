@@ -40,6 +40,10 @@ public class Z80LoopDetectTest {
                 0x201, new int[]{0xC3, 1, 2}));
         l.add(new Z80LoopTrace("Batman (Japan).rom", "00000252      C3 52 02    jp $0252",
                 0x252, new int[]{0xC3, 0x52, 0x02}));
+        l.add(new Z80LoopTrace("u1", "0000000f      C3 0F 00    jp $000F",
+                0xf, new int[]{0xC3, 0x0f, 0}));
+        l.add(new Z80LoopTrace("u2", "000000af            00    nop\n000000b0      C3 AF 00    jp $00AF",
+                0xaf, new int[]{0, 0xC3, 0xAf, 0}));
         l.add(new Z80LoopTrace("Chester Cheetah - Wild Wild Quest (USA)", "00000003         18 FE    jr $0003",
                 3, new int[]{0x18, 0xFE}));
         l.add(new Z80LoopTrace("Home Basic (Japan) (SC-3000).sc", "000000c9         20 FE    jr nz,$00C9",
@@ -142,17 +146,19 @@ public class Z80LoopDetectTest {
                 "00000a7f      3A C1 C1    ld a,($C1C1)\n00000a82            B7    or a\n" +
                         "00000a83      FA 97 0A    jp m,$0A97\n00000a86      C2 7F 0A    jp nz,$0A7F",
                 0xa7f, new int[]{0x3A, 0xC1, 0xC1, 0xB7, 0xFA, 0x97, 0xA, 0xC2, 0x7F, 0xA}));
+        l.add(new Z80LoopTrace("u3", "000002bb         CB 46    bit 0,(hl)\n000002bd      CA BB 02    jp z,$02BB",
+                0x2bb, new int[]{0xCB, 0x46, 0xCA, 0xBB, 2}));
         //TODO 1st jump is to a non-consecutive PC
 //        l.add(new Z80LoopTrace("Pitfall II - The Lost Caverns (Japan).sg", "00000013            7E    ld a,(hl)\n" +
 //                "00000014            B7    or a\n00000015         18 04    jr $001B\n0000001b         28 F6    jr z,$0013",
 //                0x13, new int[]{0x7E, 0xB7, 0x18, 4, 0x28, 0xF6}));
         /*
-        33: Chicago Syndicate (USA, Europe).gg
 Missed Z80 loop: Z80	Loop len: 4, isBusy: true
-00000a7f      3A C1 C1    ld a,($C1C1)
-00000a82            B7    or a
-00000a83      FA 97 0A    jp m,$0A97
-00000a86      C2 7F 0A    jp nz,$0A7F
+00000068      3A FF 1F    ld a,($1FFF)
+0000006b         CB 7F    bit 7,a
+0000006d      CA 96 00    jp z,$0096
+00000096      C3 68 00    jp $0068
+
          */
         traceMap = l.stream().collect(Collectors.toMap(Z80LoopTrace::str, Function.identity()));
     }

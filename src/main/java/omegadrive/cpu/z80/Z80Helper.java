@@ -1,6 +1,7 @@
 package omegadrive.cpu.z80;
 
 import omegadrive.cpu.z80.disasm.Z80Dasm;
+import omegadrive.cpu.z80.disasm.Z80OpcodeSpecHelper.Z80OpcodeSpec;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 import z80core.IMemIoOps;
@@ -138,12 +139,14 @@ public class Z80Helper {
     }
 
     private static boolean[][] generateBLOpcodes() {
-        boolean[][] isBusyOpcode = new boolean[0x100][0x100];
+        final int size = 0x100;
+        boolean[][] isBusyOpcode = new boolean[size][size];
         IMemIoOps memIoOps = new MemIoOps();
-        for (int i = 0; i < 0x100; i++) {
+        for (int i = 0; i < size; i++) {
             memIoOps.poke8(0, i);
-            if (i == 0xCB || i == 0xED) {
-                for (int j = 0; j < 0x100; j++) {
+            var zsp = Z80OpcodeSpec.fromOpcode(i);
+            if (zsp.isPrefix()) {
+                for (int j = 0; j < size; j++) {
                     memIoOps.poke8(1, j);
                     isBusyOpcode[i][j] = isBusyLoopOpcode(memIoOps);
                 }
