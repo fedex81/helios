@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import z80core.Z80State;
 
 import java.util.Map;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static omegadrive.cpu.z80.disasm.Z80OpcodeSpecHelper.Z80OpcodeSpec.OP_0xF3;
@@ -86,6 +87,7 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
         CpuFastDebug.CpuDebugContext ctx = new CpuFastDebug.CpuDebugContext(areaMaskMap);
         ctx.pcAreaShift = 31;
         ctx.isLoopOpcode = isLoopOpcode;
+        ctx.isLoopOpcode2 = isLoopOpcodePc;
         ctx.isIgnoreOpcode = isIgnoreOpcode;
         ctx.debugMode = debugMode;
         ctx.cpuCode = BufferUtil.CpuDeviceAccess.Z80.cpuShortCode;
@@ -124,19 +126,27 @@ public class Z80CoreWrapperFastDebug extends Z80CoreWrapper implements CpuFastDe
         busyLoopDetect.reset();
     }
 
-    //TODO limitation
     public static final Predicate<Integer> isIgnoreOpcode = op -> {
         var opc = fromOpcode(op);
-        return opc.isPrefix() || opc.isRet() || opc.isStack() || opc == OP_0xF3;
+        return opc.isRet() || opc.isStack() || opc == OP_0xF3;
     };
 
-    public static final Predicate<Integer> isLoopOpcode = op -> {
-        int byte2 = 0;
+    public final BiPredicate<Integer, Integer> isLoopOpcodePc = (pc, op) -> {
         if (isIgnoreOpcode.test(op)) {
             return false;
         }
-        return Z80Helper.isBusyLoop(op, byte2);
+        int byte1 = op;
+        int byte2 = 0;
+        var opc = fromOpcode(byte1);
+        if (opc.isPrefix()) {
+            byte2 = pc != Integer.MAX_VALUE ? z80BusProvider.readRamByte(pc + 1) : 0;
+        }
+        return Z80Helper.isBusyLoop(byte1, byte2);
     };
+
+    public final Predicate<Integer> isLoopOpcode = op -> isLoopOpcodePc.test(Integer.MAX_VALUE, op);
+
+
 
 
 }

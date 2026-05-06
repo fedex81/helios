@@ -123,7 +123,7 @@ public class Z80LoopHelper implements Device {
         var op = fromOpcode(readRamByte(pc));
         LoopType res = switch (op) {
             case OP_0x7E, OP_0x1A, OP_0x3A -> {
-                boolean val = checkOpJump() || checkDoubleLoad(pc + op.getImmSize() + 1);
+                boolean val = checkOpJump() || checkDoubleLoad(pc + op.getTotalWidthBytes());
                 yield val ? LoopType.BUSY_LOOP : LoopType.NONE;
             }
             case OP_0x21 -> {
@@ -144,7 +144,8 @@ public class Z80LoopHelper implements Device {
             }
             //0000001e            A6    and (hl)
             //0000001f      C2 1E 00    jp nz,$001E
-            case OP_0xA6, OP_0xB6, OP_0xBE -> checkJump(pc + 1) ? LoopType.BUSY_LOOP : LoopType.NONE;
+            case OP_0xA6, OP_0xB6, OP_0xBE, OP_0xCB ->
+                    checkJump(pc + op.getTotalWidthBytes()) ? LoopType.BUSY_LOOP : LoopType.NONE;
             //00000048            76    halt
             case OP_0x76 -> LoopType.INFINITE_LOOP;
             //00000000            E9    jp (hl)
@@ -171,7 +172,7 @@ public class Z80LoopHelper implements Device {
         var op = fromOpcode(readRamByte(load2Idx));
         boolean res = false;
         if (op == OP_0x7D || op == OP_0x7C || op == OP_0x7E || op == OP_0x21) {
-            int boolIdx = load2Idx + op.getImmSize() + 1;
+            int boolIdx = load2Idx + op.getTotalWidthBytes();
             res |= checkLogicalThenJump(boolIdx);
         }
         return res;
@@ -181,10 +182,10 @@ public class Z80LoopHelper implements Device {
         var op = fromOpcode(readRamByte(loadIdx));
         boolean res = false;
         if (op == OP_0x3E) {
-            int storeIdx = loadIdx + op.getImmSize() + 1;
+            int storeIdx = loadIdx + op.getTotalWidthBytes();
             var op2 = fromOpcode(readRamByte(storeIdx));
             if (op2 == OP_0x32) {
-                int jumpIdx = storeIdx + op2.getImmSize() + 1;
+                int jumpIdx = storeIdx + op2.getTotalWidthBytes();
                 res |= checkJump(jumpIdx);
             }
         }
@@ -219,7 +220,7 @@ public class Z80LoopHelper implements Device {
                 var op2 = fromOpcode(readRamByte(jmpIdx));
                 //Double jump
                 if (op2.isJumpOpcode()) {
-                    res |= checkJump(jmpIdx + op2.getImmSize() + 1);
+                    res |= checkJump(jmpIdx + op2.getTotalWidthBytes());
                 }
             }
         }

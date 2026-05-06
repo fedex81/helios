@@ -247,6 +247,10 @@ public class Z80OpcodeSpecHelper {
             return immSize;
         }
 
+        public int getTotalWidthBytes() {
+            return 1 + (isPrefix() ? 1 : 0) + getImmSize();
+        }
+
         public String getMnemonic() {
             return mnemonic;
         }
