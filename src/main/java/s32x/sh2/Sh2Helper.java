@@ -284,9 +284,10 @@ public class Sh2Helper {
             return instance.get();
         }
 
+        //TODO m68kloopDetect not ready
         public Sh2Config withFastMode() {
             return new Sh2Config(prefetchEn, drcEn, pollDetectEn, ignoreDelays,
-                    false, true, tasQuirk ? 1 : 0, MAX_SH2_CYCLES, true, true);
+                    false, true, tasQuirk ? 1 : 0, MAX_SH2_CYCLES, true, false);
         }
 
         public Sh2Config withCycles(int cycles) {

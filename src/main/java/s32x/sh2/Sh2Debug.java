@@ -1,6 +1,7 @@
 package s32x.sh2;
 
 import com.google.common.collect.ImmutableMap;
+import omegadrive.cpu.CpuBusyLoopDetection;
 import omegadrive.cpu.CpuFastDebug;
 import omegadrive.cpu.CpuFastDebug.DebugMode;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 import static omegadrive.util.Util.th;
+import static s32x.sh2.Sh2Instructions.Sh2BaseInstruction.*;
 
 /**
  * Federico Berti
@@ -87,14 +89,27 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
                     || (op & 0xF000) == 0xD000 //MOV.L@(disp,PC),R0
             ;
 
+    public static final Predicate<Integer> isLogicalOpcode = op -> {
+        var opc = Sh2Instructions.sh2OpcodeMap[op];
+        return opc == AND || opc == ANDI || opc == ANDM || opc == OR || opc == ORI || opc == ORM ||
+                opc == XOR || opc == XORI || opc == XORM || opc == EXTSB || opc == EXTSW || opc == EXTUB || opc == EXTUW ||
+                opc == NEG || opc == NEGC || opc == NOT;
+    };
+
+    public static final Predicate<Integer> isMiscOpcode = op -> {
+        var opc = Sh2Instructions.sh2OpcodeMap[op];
+        return opc == CLRMAC || opc == CLRT || opc.name().startsWith("LD") || opc.name().startsWith("ST") || opc == XTRCT;
+    };
+
     private static final Predicate<Integer> isNopOpcode = op -> op == 9;
     public static final Predicate<Integer> isLoopOpcode = isNopOpcode.or(isBranchNearOpcode).
-            or(isCmpOpcode).or(isTstOpcode).or(isMovOpcode);
+            or(isCmpOpcode).or(isTstOpcode).or(isMovOpcode).or(isLogicalOpcode).or(isMiscOpcode);
     public static final Predicate<Integer> isIgnoreOpcode =
             op -> (op & 0xF0FF) == 0x4010 //dt
             ;
 
     private final CpuFastDebug[] fastDebug = new CpuFastDebug[2];
+    private CpuBusyLoopDetection[] busyLoopDetect = new CpuBusyLoopDetection[2];
 
     public Sh2Debug(Sh2Bus memory) {
         super(memory);
@@ -106,8 +121,10 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
     public void init() {
         fastDebug[0] = new CpuFastDebug(this, createContext());
         fastDebug[1] = new CpuFastDebug(this, createContext());
-        fastDebug[0].debugMode = DebugMode.NEW_INST_ONLY;
-        fastDebug[1].debugMode = DebugMode.NEW_INST_ONLY;
+        fastDebug[0].debugMode = DebugMode.NONE;
+        fastDebug[1].debugMode = DebugMode.NONE;
+        busyLoopDetect[0] = new CpuBusyLoopDetection(fastDebug[0]);
+        busyLoopDetect[1] = new CpuBusyLoopDetection(fastDebug[1]);
     }
 
     static String[] latestBlock = {"", ""};
@@ -141,7 +158,7 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
     public final void printDebugMaybe(int opcode) {
         ctx.opcode = opcode;
         final int n = ctx.cpuAccess.ordinal();
-//        fastDebug[n].isBusyLoop(ctx.PC & 0x0FFF_FFFF, ctx.opcode);
+        busyLoopDetect[n].isBusyLoop(ctx.PC & 0x0FFF_FFFF, ctx.opcode);
         fastDebug[n].printDebugMaybe();
         if ((ctx.PC & 1) > 0) {
             LOG.error("Odd PC: {}", th(ctx.PC));
@@ -167,7 +184,7 @@ public class Sh2Debug extends Sh2Impl implements CpuFastDebug.CpuDebugInfoProvid
      */
     @Override
     public String getInstructionOnly(int pc) {
-        assert pc != ctx.PC;
+//        assert pc != ctx.PC;
         int delay = MdRuntimeData.getCpuDelayExt();
         String res = Sh2Helper.getInstString(ctx.sh2ShortCode, pc, memory.read16(pc));
         MdRuntimeData.resetCpuDelayExt(delay);
