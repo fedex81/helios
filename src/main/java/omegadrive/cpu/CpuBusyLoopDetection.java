@@ -105,7 +105,6 @@ public class CpuBusyLoopDetection {
     }
 
     private static Set<String> loopDedup = new HashSet<>();
-    private static final String jpHlLoop = "00000000            E9    jp (hl)";
 
     private Map<Integer, Integer> toPcOpcodeMap() {
         Map<Integer, Integer> m = new HashMap<>();
@@ -162,8 +161,7 @@ public class CpuBusyLoopDetection {
         if (busyLoopCtx.isBusy) {
             String str = Arrays.toString(busyLoopCtx.opcodes);
             if (loopDedup.add(str)) {
-//                String print = str.contains(jpHlLoop) ? getLoopInfo() : getLoopInfoVerbose();
-//                System.out.println(print);
+//                System.out.println("CPLD: " + getLoopInfoVerbose());
 //                LogHelper.logWarnOnce(LOG, print);
             }
         }

@@ -134,7 +134,7 @@ public class Sh2BusyLoopTest {
         opcodes = new int[]{0x841a, 0x2028, 0x89fc};
         assertPollBusyLoop(opcodes);
 
-        /**
+        /** Darxide
          *          * S 06008f4a	3142	cmp/hs R4, R1
          *          * S 06008f4c	8ffd	bf/s H'06008f4a
          *          * S 06008f4e	6102	mov.l @R0, R1
@@ -278,6 +278,17 @@ public class Sh2BusyLoopTest {
         clearSh2Context();
         setReg(sh2Context, 3, S32xDict.SH2_START_SDRAM);
         opcodes = new int[]{0x6232, 0x3126, 0x89fc};
+        assertPollBusyLoop(opcodes);
+
+        /**
+         * CPLD: 	Loop len: 3, isBusy: true
+         * SHM 06003624	2338	tst R3, R3
+         * SHM 06003626	8ffd	bf/s H'06003624
+         * SHM 06003628	63e2	mov.l @R14, R3
+         */
+        clearSh2Context();
+        setReg(sh2Context, 14, S32xDict.SH2_START_SDRAM);
+        opcodes = new int[]{0x2338, 0x8ffd, 0x63e2};
         assertPollBusyLoop(opcodes);
     }
 
