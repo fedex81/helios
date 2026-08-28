@@ -65,7 +65,7 @@ public class MegaCd32x extends Md32x {
 
     @Override
     public void init() {
-        mcdLaunchContext = McdDeviceHelper.setupDevices();
+        mcdLaunchContext = McdDeviceHelper.setupDevices(mediaSpec);
         super.init();
         vdp.addVdpEventListener(mcdLaunchContext.subBus);
         bus.attachDevices(this, memory, joypad, vdp, cpu, z80, sound);

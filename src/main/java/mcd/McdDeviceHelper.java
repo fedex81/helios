@@ -11,6 +11,7 @@ import omegadrive.bus.md.MdBus;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
 import omegadrive.sound.SoundProvider;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.util.LogHelper;
 import org.slf4j.Logger;
 
@@ -29,9 +30,9 @@ public class McdDeviceHelper {
         assert false;
     }
 
-    public static McdLaunchContext setupDevices() {
+    public static McdLaunchContext setupDevices(MediaSpecHolder mediaSpec) {
         McdLaunchContext ctx = new McdLaunchContext();
-        ctx.initContext(false);
+        ctx.initContext(mediaSpec, false);
         return ctx;
     }
 
@@ -40,7 +41,7 @@ public class McdDeviceHelper {
      */
     public static McdLaunchContext setupDevicesTest() {
         McdLaunchContext ctx = new McdLaunchContext();
-        ctx.initContext(true);
+        ctx.initContext(MediaSpecHolder.NO_ROM, true);
         return ctx;
     }
 
@@ -59,10 +60,10 @@ public class McdDeviceHelper {
 
         public AsicModel.AsicOp asic;
 
-        public void initContext(boolean testMode) {
+        public void initContext(MediaSpecHolder mediaSpec, boolean testMode) {
             boolean soundEnabled = !testMode && SoundProvider.ENABLE_SOUND;
             LOG.info("Sound enabled: {}, testMode: {}, enableSound flag: {}", soundEnabled, testMode, SoundProvider.ENABLE_SOUND);
-            memoryContext = new MegaCdMemoryContext();
+            memoryContext = new MegaCdMemoryContext(mediaSpec);
             pcm = new McdPcm(soundEnabled);
             mdBus = new MdBus();
             subBus = new MegaCdSubCpuBus(memoryContext);

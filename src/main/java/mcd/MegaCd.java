@@ -89,7 +89,7 @@ public class MegaCd extends Megadrive {
 
     @Override
     public void init() {
-        mcdLaunchContext = McdDeviceHelper.setupDevices();
+        mcdLaunchContext = McdDeviceHelper.setupDevices(mediaSpec);
         super.init();
         vdp.addVdpEventListener(mcdLaunchContext.subBus);
         bus.attachDevices(this, memory, joypad, vdp, cpu, z80, sound);
@@ -213,6 +213,7 @@ public class MegaCd extends Megadrive {
         super.handleCloseRom();
         mcdLaunchContext.cdd.close();
         mcdLaunchContext.pcm.close();
+        mcdLaunchContext.memoryContext.close();
     }
 
     @Override

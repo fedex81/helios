@@ -5,7 +5,7 @@ package omegadrive.cart.mapper.md;
 
 import omegadrive.SystemLoader;
 import omegadrive.cart.MdCartInfoProvider;
-import omegadrive.cart.mapper.BackupMemoryMapper;
+import omegadrive.cart.mapper.BackupMemoryFileHandler;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.md.eeprom.EepromBase;
 import omegadrive.cart.mapper.md.eeprom.SpiEeprom;
@@ -35,7 +35,7 @@ import static omegadrive.util.Util.th;
  * <p>
  * Copyright (C) 2023 Federico Berti
  */
-public class MdT5740Mapper extends BackupMemoryMapper implements RomMapper, RomMapper.StateAwareMapper {
+public class MdT5740Mapper extends BackupMemoryFileHandler implements RomMapper, RomMapper.StateAwareMapper {
 
     private static final Logger LOG = LogHelper.getLogger(MdT5740Mapper.class.getSimpleName());
     private static byte[] prot_15e6 = {0, 0, 0, 0x10};
@@ -67,10 +67,10 @@ public class MdT5740Mapper extends BackupMemoryMapper implements RomMapper, RomM
         super(SystemLoader.SystemType.MD, fileType, romName, SpiEeprom.SIZE_BYTES);
         m_bank = new byte[3];
         this.baseMapper = baseMapper;
-        LOG.info("MdT5740Mapper created, using folder: {}", sramFolder);
+        LOG.info("MdT5740Mapper created, using folder: {}", backupRamFolder);
         initBackupFileIfNecessary();
         eeprom = new SpiEeprom();
-        eeprom.setSram(sram);
+        eeprom.setSram(backupRam);
     }
 
 /*-------------------------------------------------

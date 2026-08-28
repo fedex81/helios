@@ -21,7 +21,7 @@ package omegadrive.cart.mapper.sms;
 
 import omegadrive.SystemLoader;
 import omegadrive.bus.z80.SmsBus;
-import omegadrive.cart.mapper.BackupMemoryMapper;
+import omegadrive.cart.mapper.BackupMemoryFileHandler;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.util.LogHelper;
@@ -135,7 +135,7 @@ public class SmsMapper {
     }
 
 
-    class SegaMapper extends BackupMemoryMapper implements RomMapper {
+    class SegaMapper extends BackupMemoryFileHandler implements RomMapper {
 
         //This feature is not known to be used by any software.
         //Ys need this
@@ -176,7 +176,7 @@ public class SmsMapper {
             int address = (addressL & 0xFFFF);
             int page = address >> 14;
             if (sramSlot2Enable && page == 2) {
-                return sram[address & 0x3FFF];
+                return backupRam[address & 0x3FFF];
             }
             return readDataMapper(addressL, size);
         }
@@ -186,7 +186,7 @@ public class SmsMapper {
             int address = (addressL & 0xFFFF);
             int page = address >> 14;
             if (sramSlot2Enable && page == 2) {
-                sram[address & 0x3FFF] = (byte) dataL;
+                backupRam[address & 0x3FFF] = (byte) dataL;
                 return true;
             }
             return false;

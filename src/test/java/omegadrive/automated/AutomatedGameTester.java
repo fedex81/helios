@@ -93,8 +93,8 @@ public class AutomatedGameTester {
         System.setProperty("helios.headless", "true");
         System.setProperty("helios.enable.sound", "false");
         System.setProperty("helios.test.mode", "true");
-        System.setProperty("md.sram.folder", "/tmp/helios/md/sram");
-        new File(System.getProperty("md.sram.folder")).mkdirs();
+        System.setProperty("md.backupram.folder", "/tmp/helios/md/sram");
+        new File(System.getProperty("md.backupram.folder")).mkdirs();
     }
 
     private long seed = System.currentTimeMillis();

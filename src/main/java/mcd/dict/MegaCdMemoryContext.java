@@ -3,11 +3,14 @@ package mcd.dict;
 import mcd.bus.McdWordRamHelper;
 import mcd.cdd.cdbios.CdBiosHelper;
 import mcd.util.BuramHelper;
+import omegadrive.cart.mapper.BackupMemoryFileHandler;
+import omegadrive.system.MediaSpecHolder;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
+import java.io.Closeable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -31,7 +34,7 @@ import static omegadrive.util.Util.writeData;
  * <p>
  * Copyright 2023
  */
-public class MegaCdMemoryContext implements Serializable {
+public class MegaCdMemoryContext implements Serializable, Closeable {
 
     @Serial
     private static final long serialVersionUID = 9209612516906245680L;
@@ -50,11 +53,16 @@ public class MegaCdMemoryContext implements Serializable {
     public static final int MCD_PRAM_WRITE_PROTECT_BLOCK_SIZE = 0x200;
     public static final int MCD_PRAM_WRITE_PROTECT_BLOCK_MASK = MCD_PRAM_WRITE_PROTECT_BLOCK_SIZE - 1;
 
-    public final byte[] prgRam, commonGateRegs, backupRamArr;
+    private static final String fileType = "brm";
+
+    public final byte[] prgRam, commonGateRegs;
     public final byte[][] sysGateRegs;
     public final byte[][] wordRam01 = new byte[2][1];
 
+    public byte[] backupRamArr;
+
     public final McdWordRamHelper wramHelper;
+    private BackupMemoryFileHandler backupFileHandler;
     public final static int WRITABLE_HINT_UNUSED = 0xFFFF_FFFF;
     public final byte[] writeableHint = {(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
 
@@ -83,13 +91,14 @@ public class MegaCdMemoryContext implements Serializable {
         }
     }
 
-    public MegaCdMemoryContext() {
+    public MegaCdMemoryContext(MediaSpecHolder mediaSpec) {
         prgRam = new byte[MCD_PRG_RAM_SIZE];
         wordRam01[0] = new byte[MCD_WORD_RAM_1M_SIZE];
         wordRam01[1] = new byte[MCD_WORD_RAM_1M_SIZE];
         sysGateRegs = new byte[2][NUM_SYS_REG_NON_SHARED];
         commonGateRegs = new byte[MDC_SUB_GATE_REGS_SIZE];
-        backupRamArr = new byte[MCD_SUB_BRAM_SIZE];
+        initBramData(mediaSpec);
+
         commonGateRegsBuf = ByteBuffer.wrap(commonGateRegs);
         backupRam = ByteBuffer.wrap(backupRamArr);
         BuramHelper.check_format_bram(backupRam);
@@ -97,6 +106,15 @@ public class MegaCdMemoryContext implements Serializable {
         sysGateRegsBuf[0] = ByteBuffer.wrap(sysGateRegs[0]);
         sysGateRegsBuf[1] = ByteBuffer.wrap(sysGateRegs[1]);
         wramHelper = new McdWordRamHelper(this, wordRam01);
+    }
+
+
+    private void initBramData(MediaSpecHolder mediaSpec) {
+        backupRamArr = new byte[MCD_SUB_BRAM_SIZE];
+        String romName = mediaSpec.getBootableMedia().mediaInfoProvider.getRomName();
+        backupFileHandler = new BackupMemoryFileHandler(mediaSpec.systemType, fileType, romName, MCD_SUB_BRAM_SIZE);
+        backupFileHandler.initBackupFileIfNecessary();
+        backupRamArr = backupFileHandler.getBackupRam();
     }
 
     public void writeProgRam(int address, int val, Size size) {
@@ -146,5 +164,10 @@ public class MegaCdMemoryContext implements Serializable {
             case BYTE -> setByteRegHandler[address & 1].accept(this, data);
         }
         return readBuffer(b, regSpec.addr, Size.WORD);
+    }
+
+    @Override
+    public void close() {
+        backupFileHandler.writeFile();
     }
 }

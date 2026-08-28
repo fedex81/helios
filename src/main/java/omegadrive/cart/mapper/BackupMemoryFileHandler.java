@@ -30,33 +30,36 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class BackupMemoryMapper {
+public class BackupMemoryFileHandler {
 
-    private final static Logger LOG = LogHelper.getLogger(BackupMemoryMapper.class.getSimpleName());
+    private final static Logger LOG = LogHelper.getLogger(BackupMemoryFileHandler.class.getSimpleName());
 
-    public static final byte DEFAULT_SRAM_BYTE = (byte) 0xFF;
+    public static final byte DEFAULT_BACKUP_RAM_BYTE = (byte) 0xFF;
 
-    protected final String defaultSramFolder;
+    protected final String defaultBackupRamFolder;
 
-    protected final String sramFolder;
-    protected final String sramFolderProp;
+    protected final String backupRamFolder;
+    protected final String backupRamFolderProp;
 
     protected Path backupFile;
-    protected byte[] sram = new byte[0];
+    protected byte[] backupRam = new byte[0];
     protected final String fileType;
     protected final String romName;
 
-    protected final int sramSize, sramMask;
+    protected final int backupRamSize, backupRamMask;
 
-    protected BackupMemoryMapper(SystemLoader.SystemType systemType, String fileType, String romName, int sramSize) {
-        sramFolderProp = systemType.getShortName().toLowerCase() + ".sram.folder";
-        defaultSramFolder = getDefaultBackupFileFolder(systemType);
-        sramFolder = System.getProperty(sramFolderProp, defaultSramFolder);
+    private AtomicInteger lastWrittenHash = new AtomicInteger();
+
+    public BackupMemoryFileHandler(SystemLoader.SystemType systemType, String fileType, String romName, int backupRamSize) {
+        backupRamFolderProp = systemType.getShortName().toLowerCase() + ".backupram.folder";
+        defaultBackupRamFolder = getDefaultBackupFileFolder(systemType);
+        backupRamFolder = System.getProperty(backupRamFolderProp, defaultBackupRamFolder);
         this.romName = romName;
         this.fileType = fileType;
-        this.sramSize = sramSize;
-        sramMask = Util.getRomMask(sramSize);
+        this.backupRamSize = backupRamSize;
+        backupRamMask = Util.getRomMask(backupRamSize);
     }
 
     protected String getDefaultBackupFileFolder(SystemLoader.SystemType type) {
@@ -65,16 +68,16 @@ public abstract class BackupMemoryMapper {
                 "sram";
     }
 
-    protected void initBackupFileIfNecessary() {
+    public void initBackupFileIfNecessary() {
         if (backupFile == null) {
             try {
-                backupFile = Paths.get(sramFolder,
+                backupFile = Paths.get(backupRamFolder,
                         romName + "." + fileType);
                 long size = 0;
                 if (Files.isReadable(backupFile)) {
                     size = Files.size(backupFile);
                     if (size > 0) {
-                        sram = FileUtil.readBinaryFile(backupFile);
+                        backupRam = FileUtil.readBinaryFile(backupFile);
                     } else {
                         LOG.error("Backup file with size 0, attempting to recreate it");
                         size = createBackupFile();
@@ -82,31 +85,45 @@ public abstract class BackupMemoryMapper {
                 } else {
                     size = createBackupFile();
                 }
-                LOG.info("Using sram file: {} size: {} bytes", backupFile, size);
+                LOG.info("Using backupRam file: {} size: {} bytes", backupFile, size);
+                lastWrittenHash.set(Arrays.hashCode(backupRam));
             } catch (Exception e) {
                 LOG.error("Unable to create file for: {}", romName);
             }
         }
     }
 
-    private int createBackupFile() {
-        LOG.info("Creating backup memory file: {}", backupFile);
-        sram = new byte[sramSize];
-        //see GenTechBulletins, StarTrek echoes fails when reading sram with all 0s
-        Arrays.fill(sram, DEFAULT_SRAM_BYTE);
-        FileUtil.writeFileSafeAsync(backupFile, sram);
-        return sram.length;
+    public byte[] getBackupRam() {
+        return backupRam;
     }
 
-    protected void writeFile() {
+    private int createBackupFile() {
+        LOG.info("Creating backup memory file: {}", backupFile);
+        backupRam = new byte[backupRamSize];
+        //see GenTechBulletins, StarTrek echoes fails when reading sram with all 0s
+        Arrays.fill(backupRam, DEFAULT_BACKUP_RAM_BYTE);
+        if (backupFile.getParent().toFile().mkdirs()) {
+            LOG.info("Creating folders: {}", backupFile.getParent());
+        }
+        FileUtil.writeFileSafeAsync(backupFile, backupRam);
+        return backupRam.length;
+    }
+
+    public void writeFile() {
         initBackupFileIfNecessary();
-        if (sram.length == 0) {
-            LOG.error("Unexpected sram length: {}", sram.length);
+        if (backupRam.length == 0) {
+            LOG.error("Unexpected backupRam length: {}", backupRam.length);
             return;
         }
         if (Files.isWritable(backupFile)) {
-            LOG.info("Writing to sram file: {}, len: {}", this.backupFile, sram.length);
-            FileUtil.writeFileSafeAsync(backupFile, sram);
+            int h = Arrays.hashCode(backupRam);
+            boolean update = lastWrittenHash.get() != h;
+            if (update) {
+                FileUtil.writeFileSafeAsync(backupFile, backupRam);
+                lastWrittenHash.set(h);
+            }
+            LOG.info((update ? "" : "Not ") + "writing to backupRam file: {}, len: {}, hc: {}",
+                    backupFile, backupRam.length, h);
         }
     }
 }

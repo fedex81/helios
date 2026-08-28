@@ -66,13 +66,13 @@ public class S32xAutomatedGameTester {
 
     static {
         System.setProperty("helios.headless", "true");
-        System.setProperty("md.sram.folder", "/tmp/helios/md/sram");
+        System.setProperty("md.backupram.folder", "/tmp/helios/md/sram");
         System.setProperty("helios.enable.sound", "false");
         System.setProperty("helios.fps", "true");
         System.setProperty("68k.stop.on.exception", "true");
         System.setProperty("xxmd.show.vdp.debug.viewer", "true");
         System.setProperty("helios.32x.sh2.drc.debug", "false");
-        new File(System.getProperty("md.sram.folder")).mkdirs();
+        new File(System.getProperty("md.backupram.folder")).mkdirs();
     }
 
     private long seed = System.currentTimeMillis();

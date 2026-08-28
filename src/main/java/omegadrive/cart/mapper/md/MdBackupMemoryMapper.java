@@ -24,7 +24,7 @@ import omegadrive.cart.MdCartInfoProvider;
 import omegadrive.cart.loader.MdRomDbModel;
 import omegadrive.cart.loader.MdRomDbModel.RomDbEntry;
 import omegadrive.cart.loader.MdRomDbModel.RomDbEntry.EepromEntry;
-import omegadrive.cart.mapper.BackupMemoryMapper;
+import omegadrive.cart.mapper.BackupMemoryFileHandler;
 import omegadrive.cart.mapper.RomMapper;
 import omegadrive.cart.mapper.md.eeprom.EepromBase;
 import omegadrive.cart.mapper.md.eeprom.I2cEeprom;
@@ -40,7 +40,7 @@ import static omegadrive.cart.MdCartInfoProvider.DEFAULT_SRAM_START_ADDRESS;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.Util.th;
 
-public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMapper {
+public class MdBackupMemoryMapper extends BackupMemoryFileHandler implements RomMapper {
 
     private final static Logger LOG = LogHelper.getLogger(MdBackupMemoryMapper.class.getSimpleName());
 
@@ -73,8 +73,8 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         mapper.baseMapper = baseMapper;
         mapper.sramMode = SramMode.READ_WRITE;
         mapper.eepromDbEntry = Optional.ofNullable(entry.eeprom).orElse(MdRomDbModel.NO_EEPROM);
-        mapper.eeprom = I2cEeprom.createInstance(entry, mapper.sram);
-        LOG.info("BackupMemoryMapper created, using folder: {}", mapper.sramFolder);
+        mapper.eeprom = I2cEeprom.createInstance(entry, mapper.backupRam);
+        LOG.info("BackupMemoryMapper created, using folder: {}", mapper.backupRamFolder);
         mapper.initBackupFileIfNecessary();
         return mapper;
     }
@@ -109,7 +109,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
         if (sramRead) {
             initBackupFileIfNecessary();
 //            assert size == Size.BYTE : size; //TODO MdMapperTest writes word/long, check sw doing that
-            int res = Util.readDataMask(sram, address, sramMask, size);
+            int res = Util.readDataMask(backupRam, address, backupRamMask, size);
             if (verbose) LOG.info("SRAM read at: {} {}, result: {} ", address & 0xFFFF, size, res);
             if (size != Size.BYTE && (address & 1) == 1) {
                 LOG.error("sram read: {} {}, val: {}", th(address), size, th(res));
@@ -129,7 +129,7 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
             initBackupFileIfNecessary();
             if (verbose) LOG.info("SRAM write at: {} {}, data: {} ", address, size, data);
 //            assert size == Size.BYTE : size; //TODO MdMapperTest writes word/long, check sw doing that
-            Util.writeDataMask(sram, address, data, sramMask, size);
+            Util.writeDataMask(backupRam, address, data, backupRamMask, size);
             if (size != Size.BYTE && (address & 1) == 1) {
                 LOG.error("sram write: {} {}, val: {}", th(address), size, th(data));
             }
@@ -164,9 +164,9 @@ public class MdBackupMemoryMapper extends BackupMemoryMapper implements RomMappe
     }
 
     @Override
-    protected void initBackupFileIfNecessary() {
+    public void initBackupFileIfNecessary() {
         super.initBackupFileIfNecessary();
-        eeprom.setSram(sram);
+        eeprom.setSram(backupRam);
     }
 
     @Override
