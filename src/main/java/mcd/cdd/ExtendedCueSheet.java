@@ -7,6 +7,7 @@ import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.system.SysUtil.RomFileType;
 import omegadrive.util.LogHelper;
 import org.digitalmediaserver.cuelib.CueSheet;
+import org.digitalmediaserver.cuelib.Index;
 import org.digitalmediaserver.cuelib.TrackData;
 import org.slf4j.Logger;
 
@@ -134,12 +135,13 @@ public class ExtendedCueSheet implements Closeable {
                 assert sectorStart > 0;
             }
             CdModel.SectorSize sectorSize = extTrackData.trackDataType.size;
+            int index01_lba = getIndex01RelativeLba(trackData);
             extTrackData.lenBytes = (int) tca.length();
             assert extTrackData.lenBytes > 0;
             extTrackData.absoluteSectorStart = sectorStart;
             extTrackData.absoluteSectorEnd = sectorStart + (extTrackData.lenBytes / sectorSize.s_size);
             extTrackData.trackLenSectors = extTrackData.absoluteSectorEnd - extTrackData.absoluteSectorStart;
-            int startLba = trackNumber > 1 ? extTrackData.absoluteSectorStart + PREGAP_LEN_LBA : extTrackData.absoluteSectorStart;
+            int startLba = trackNumber > 1 ? extTrackData.absoluteSectorStart + index01_lba : extTrackData.absoluteSectorStart;
             CueFileParser.lbaToMsfAdjustPregap(startLba, extTrackData.trackStartMsf);
             CueFileParser.lbaToMsfAdjustPregap(extTrackData.absoluteSectorEnd, extTrackData.trackEndMsf);
 
@@ -154,6 +156,14 @@ public class ExtendedCueSheet implements Closeable {
         } catch (Exception e) {
             LOG.error("Unable to parse track: {}", trackNumber, e);
         }
+    }
+
+    /**
+     * 150 lba if missing
+     */
+    private static int getIndex01RelativeLba(TrackData trackData) {
+        Optional<Index> index01 = Optional.ofNullable(trackData.getIndex(1));
+        return index01.map(idx -> idx.getPosition().getTotalFrames()).orElse(PREGAP_LEN_LBA);
     }
 
     private static TrackContentHelper getDataFile(ExtendedCueSheet extCueSheet, String key, Path file, Path cuePath) {
@@ -191,6 +201,10 @@ public class ExtendedCueSheet implements Closeable {
     public static boolean isAudioTrack(ExtendedCueSheet extCueSheet, int number) {
         assert number > 0;
         return getExtTrack(extCueSheet, number).trackDataType == TrackDataType.AUDIO;
+    }
+
+    public boolean isCdAudio() {
+        return isAudioTrack(this, 1);
     }
 
     @Override
