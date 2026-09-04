@@ -137,7 +137,7 @@ public class Ow2Sh2BlockRecompiler implements Sh2BlockRecompiler.InternalSh2Bloc
         ClassReader reader;
         try (
                 FileWriter fileWriter = new FileWriter(file.toFile());
-                PrintWriter pw = new PrintWriter(fileWriter);
+                PrintWriter pw = new PrintWriter(fileWriter)
         ) {
             reader = new ClassReader(code);
             ClassVisitor visitor = new TraceClassVisitor(null, new Textifier(), pw);

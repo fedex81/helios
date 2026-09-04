@@ -64,7 +64,7 @@ public class JavaSoundManager extends AbstractSoundManager {
 
     private int playOnceStereo(int fmBufferLenMono) {
         int numSamples = fmBufferLenMono;
-        int fmMonoActual = 0, pwmMonoActual = 0, pcmMonoActual = 0;
+        int fmMonoActual, pwmMonoActual = 0, pcmMonoActual = 0;
         boolean sameSamples = true;
         if (isEnabled(FM)) {
             fmMonoActual = getFm().updateStereo16(fm_buf_ints, 0, fmBufferLenMono) >> 1;

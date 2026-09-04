@@ -43,7 +43,7 @@ public class McdBiosHolder {
      */
     public static String masterBiosNameJp = "bios_CD_J.bin";
 
-    private Map<Region, BiosHolder.BiosData> biosData = new EnumMap<>(Region.class);
+    private final Map<Region, BiosHolder.BiosData> biosData = new EnumMap<>(Region.class);
 
     private static McdBiosHolder INSTANCE;
 

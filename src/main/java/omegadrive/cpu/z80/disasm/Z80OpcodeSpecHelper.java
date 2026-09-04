@@ -9,7 +9,7 @@ public class Z80OpcodeSpecHelper {
 
 
     enum Z80SpecFlags {
-        JUMP, LOAD_FROM_MEM, STORE_TO_MEM, LOAD_REG, ALU, DEST_REG, IMM8, IMM16, STACK, RET, RST, CALL, PREFIX;
+        JUMP, LOAD_FROM_MEM, STORE_TO_MEM, LOAD_REG, ALU, DEST_REG, IMM8, IMM16, STACK, RET, RST, CALL, PREFIX
     }
 
     //Modifies the Program Counter (PC). (0x01)

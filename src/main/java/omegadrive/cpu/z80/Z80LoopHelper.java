@@ -173,7 +173,7 @@ public class Z80LoopHelper implements Device {
         boolean res = false;
         if (op == OP_0x7D || op == OP_0x7C || op == OP_0x7E || op == OP_0x21) {
             int boolIdx = load2Idx + op.getTotalWidthBytes();
-            res |= checkLogicalThenJump(boolIdx);
+            res = checkLogicalThenJump(boolIdx);
         }
         return res;
     }
@@ -186,7 +186,7 @@ public class Z80LoopHelper implements Device {
             var op2 = fromOpcode(readRamByte(storeIdx));
             if (op2 == OP_0x32) {
                 int jumpIdx = storeIdx + op2.getTotalWidthBytes();
-                res |= checkJump(jumpIdx);
+                res = checkJump(jumpIdx);
             }
         }
         return res;
@@ -266,7 +266,7 @@ public class Z80LoopHelper implements Device {
         return idx;
     }
 
-    private static Set<String> missedLoops = new HashSet<>();
+    private static final Set<String> missedLoops = new HashSet<>();
 
     public void checkMissedLoops(int loopPc, CpuBusyLoopDetection bld) {
         LoopType res = checkLoops(loopPc).loopType;

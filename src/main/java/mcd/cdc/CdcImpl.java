@@ -72,7 +72,6 @@ public class CdcImpl implements Cdc {
 
     @Override
     public void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size) {
-        ByteBuffer regBuffer = memoryContext.getRegBuffer(SUB_M68K, regSpec);
         if (verbose) LOG.info("CDC,regW,{},{},{},{}", th(address), th(value), size, regSpec);
         switch (regSpec) {
             case MCD_CDC_REG_DATA -> {
@@ -152,7 +151,7 @@ public class CdcImpl implements Cdc {
     @Override
     public void setMedia(ExtendedCueSheet extCueSheet) {
         cueSheet = extCueSheet;
-        track01 = cueSheet.extTracks.get(0);
+        track01 = cueSheet.extTracks.getFirst();
         hasMedia = true;
         assert track01 != null && track01 != ExtendedTrackData.NO_TRACK;
     }

@@ -37,7 +37,7 @@ public class Gs32xStateHandler extends GshStateHandler {
     private static final Map<String, Device> s32xDeviceSet = new WeakHashMap<>();
     private static final Sh2ContextWrap wrap = new Sh2ContextWrap();
 
-    private ByteBuffer b = ByteBuffer.allocate(FILE_SIZE << 4);
+    private final ByteBuffer b = ByteBuffer.allocate(FILE_SIZE << 4);
 
     static class S32xContainer implements Serializable {
         @Serial
@@ -81,7 +81,7 @@ public class Gs32xStateHandler extends GshStateHandler {
             this.buffer = ByteBuffer.allocate(FILE_SIZE);
             this.buffer.put(MAGIC_WORD_32X.getBytes());
         } else {
-            this.buffer = StateUtil.loadStateFile(this.fileName, new String[]{".gs"});
+            this.buffer = StateUtil.loadStateFile(this.fileName, ".gs");
             this.detectStateFileType();
         }
     }

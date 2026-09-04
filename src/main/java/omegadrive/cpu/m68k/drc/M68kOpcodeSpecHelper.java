@@ -13,7 +13,7 @@ import static omegadrive.cpu.m68k.drc.M68kOpcodeSpecHelper.M68kOpcodeSpec.*;
  */
 public class M68kOpcodeSpecHelper {
 
-    public class M68kFlags {
+    public static class M68kFlags {
         public static final int SIZE_BYTE = 0x0001;
         public static final int SIZE_WORD = 0x0002;
         public static final int SIZE_LONG = 0x0004;
@@ -378,7 +378,7 @@ public class M68kOpcodeSpecHelper {
 
     private static boolean checkReady(Cpu cpu) {
         //ready to go?
-        boolean ready = false;
+        boolean ready;
         try {
             var inst = cpu.getInstructionFor(0).disassemble(0, 0);
             ready = true;

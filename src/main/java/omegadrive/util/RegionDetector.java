@@ -76,8 +76,7 @@ public class RegionDetector {
         Region securityCodeRegion = null;
         Region romHeaderRegion = RegionDetector.getRegion(cip.getRegion());
         if (cip instanceof MdCartInfoProvider mcip) {
-            regionOvrConfig = RegionDetector.getRegion(Optional.ofNullable((mcip).getEntry().forceRegion).
-                    orElse(null));
+            regionOvrConfig = RegionDetector.getRegion((mcip).getEntry().forceRegion);
             romHeaderRegion = detectHeaderRegion(mcip, false);
         }
         if (cip instanceof MegaCdCartInfoProvider mcdip) {
@@ -177,7 +176,7 @@ public class RegionDetector {
     }
 
     public static Region getRegion(String regionName) {
-        if (Objects.isNull(regionName) || regionName.length() < 1) {
+        if (Objects.isNull(regionName) || regionName.isEmpty()) {
             return null;
         }
         return Region.getRegion(regionName.charAt(0));

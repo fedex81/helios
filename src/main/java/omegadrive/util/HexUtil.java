@@ -45,7 +45,7 @@ public class HexUtil {
                 sb.append(String.format("%8x", start)).append(": ");
             }
             int len = end - start;
-            int startZero = zeroBased ? (start > 0 ? 0 : start) : start; //zero based
+            int startZero = zeroBased ? (Math.min(start, 0)) : start; //zero based
             int endZero = zeroBased ? (startZero + len) : end;
             for (int i = startZero; i < endZero; i += BYTES_PER_LINE) {
                 int slen = Math.min(len, BYTES_PER_LINE);

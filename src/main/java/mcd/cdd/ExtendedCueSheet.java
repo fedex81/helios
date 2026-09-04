@@ -40,14 +40,15 @@ public class ExtendedCueSheet implements Closeable {
     public static final String TEMPLATE_ISO_NAME_PH = "<iso_here>";
 
     public static final String TEMPLATE_CUE_FOR_ISO =
-            "REM CD_ROM, 1 DATA TRACK MAPS TO ISO\n" +
-                    "FILE \"<iso_here>\" BINARY\n" +
-                    "  TRACK 01 MODE1/2048\n" +
-                    "    INDEX 01 00:00:00";
+            """
+                    REM CD_ROM, 1 DATA TRACK MAPS TO ISO
+                    FILE "<iso_here>" BINARY
+                      TRACK 01 MODE1/2048
+                        INDEX 01 00:00:00""";
     public final CueSheet cueSheet;
     public final Path cuePath;
 
-    public RomFileType romFileType = RomFileType.UNKNOWN;
+    public RomFileType romFileType;
 
     private Optional<Path> isoPathCue = Optional.empty();
     public final List<ExtendedTrackData> extTracks = new ArrayList<>();
@@ -57,25 +58,23 @@ public class ExtendedCueSheet implements Closeable {
     public ExtendedCueSheet(Path discImage, RomFileType rft) {
         assert rft.isDiscImage();
         this.romFileType = rft;
-        Path path = discImage;
-        Path cp = path;
         if (rft == RomFileType.ISO) {
             AtomicReference<Path> ref = new AtomicReference<>();
             cueSheet = parseCueForIso(discImage, ref);
             cuePath = ref.get();
         } else {
-            cueSheet = CueFileParser.parse(cp);
-            cuePath = cp;
+            cueSheet = CueFileParser.parse(discImage);
+            cuePath = discImage;
         }
         parseCueSheet();
         assertReady();
         if (romFileType == null || romFileType == RomFileType.UNKNOWN) {
-            throw new IllegalArgumentException("Unsupported rom type: " + path.toAbsolutePath());
+            throw new IllegalArgumentException("Unsupported rom type: " + discImage.toAbsolutePath());
         }
     }
 
     private CueSheet parseCueForIso(Path path, AtomicReference<Path> ref) {
-        CueSheet cs = null;
+        CueSheet cs;
         //first check if we have a matching *.cue file
         Path mcp = Paths.get(path.toAbsolutePath().toString().replace(ISO_EXT, CUE_EXT));
         Path cp = path.resolveSibling(mcp);
@@ -102,14 +101,14 @@ public class ExtendedCueSheet implements Closeable {
         assert !tracks.isEmpty();
         extCueSheet.numTracks = tracks.size();
         parseTracks(tracks);
-        assert CdFormatChecker.checkTrack1Sectors(cuePath.toAbsolutePath().toString(), extTracks.get(0));
+        assert CdFormatChecker.checkTrack1Sectors(cuePath.toAbsolutePath().toString(), extTracks.getFirst());
     }
 
     private void parseTracks(List<TrackData> tracks) {
         LOG.info("Started parsing tracks: {}", tracks.size());
         long start = System.currentTimeMillis();
         var list = tracks.stream().parallel().map(t -> loadTrackData(this, t.getNumber(), cuePath)).
-                collect(Collectors.toList());
+                toList();
         extTracks.addAll(list);
         extTracks.sort(Comparator.comparingInt(e -> e.trackData.getNumber()));
         tracks.stream().forEachOrdered(t -> parseTrack(this, t.getNumber()));

@@ -125,7 +125,6 @@ public class JalSoundManager extends AbstractSoundManager implements AudioClient
                 server.run();
             } catch (InterruptedException ie) {
                 LOG.info("interrupted");
-                return;
             } catch (Exception | Error ex) {
                 LOG.error("Error", ex);
                 ex.printStackTrace();

@@ -21,7 +21,7 @@ public class RegSpec {
     public final int writableBitMask, preserveBitMask;
 
     public enum BytePosReg {
-        BYTE_0, BYTE_1, BYTE_2, BYTE_3;
+        BYTE_0, BYTE_1, BYTE_2, BYTE_3
     }
 
     private static final BytePosReg[] bprVals = BytePosReg.values();

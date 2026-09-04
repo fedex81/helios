@@ -267,11 +267,11 @@ public class BufferUtil {
         }
     }
 
-    public static int hashCode(int a[], int len) {
+    public static int hashCode(int[] a, int len) {
         return hashCode(a, 0, len);
     }
 
-    public static int hashCode(byte a[], int start, int end) {
+    public static int hashCode(byte[] a, int start, int end) {
         assert end > start;
         if (a == null)
             return 0;
@@ -284,7 +284,7 @@ public class BufferUtil {
         return result;
     }
 
-    public static int hashCode(int a[], int start, int end) {
+    public static int hashCode(int[] a, int start, int end) {
         if (a == null)
             return 0;
 

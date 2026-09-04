@@ -100,7 +100,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
     private final boolean enableTmss;
 
     //NOTE only a stub for serial ports, not supported
-    private byte[] serialPortData = new byte[20];
+    private final byte[] serialPortData = new byte[20];
 
     public MdBus() {
         this.mapper = this;
@@ -523,7 +523,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
      * TMSS = REGION_CODE + 1
      */
     private int ioRead(int address, Size size) {
-        int data = 0;
+        int data;
         //	Version register (read-only word-long)
         if ((address & 0xFFF) <= 1) {
             //expansion unit not connected bit#5 set (0x20), otherwise 0
@@ -532,17 +532,14 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
             data = size == Size.WORD ? (data << 8) | data : data;
             return data;
         }
-        switch (size) {
-            case BYTE:
-            case WORD:
-                data = ioReadInternal(address, size);
-                break;
-            case LONG:
+        data = switch (size) {
+            case BYTE, WORD -> ioReadInternal(address, size);
+            case LONG -> {
                 //Codemasters
                 data = ioReadInternal(address, size);
-                data = data << 16 | ioReadInternal(address + 2, size);
-                break;
-        }
+                yield data << 16 | ioReadInternal(address + 2, size);
+            }
+        };
         return data;
     }
 
@@ -708,15 +705,13 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
 //    Reading from even VDP addresses returns the MSB of the 16-bit data,
 //    and reading from odd address returns the LSB:
     private int vdpRead(int address, Size size) {
-        switch (size) {
-            case WORD:
-            case BYTE:
-                return vdpReadInternal(address, size);
-            case LONG:
+        return switch (size) {
+            case WORD, BYTE -> vdpReadInternal(address, size);
+            case LONG -> {
                 int res = vdpReadInternal(address, Size.WORD) << 16;
-                return res | vdpReadInternal(address + 2, Size.WORD);
-        }
-        return 0xFF;
+                yield res | vdpReadInternal(address + 2, Size.WORD);
+            }
+        };
     }
 
 

@@ -13,6 +13,7 @@ import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
 import org.slf4j.Logger;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_CDD;
@@ -132,14 +133,11 @@ class CddImpl implements Cdd {
     private void writeCommByte(MegaCdDict.RegSpecMcd regSpec, int addr, int value) {
         int index = (addr & MDC_SUB_GATE_REGS_MASK) - MCD_CDD_COMM5.addr;
         updateCommand(index, value & 0xF);
-        switch (regSpec) {
-            case MCD_CDD_COMM9 -> {
-                //Transmission Command 9
-                if ((addr & 1) == 1) { //unconfirmed
-                    logStatus(true);
-                    cdd_process();
-                    logStatus(true);
-                }
+        if (Objects.requireNonNull(regSpec) == MCD_CDD_COMM9) {//Transmission Command 9
+            if ((addr & 1) == 1) { //unconfirmed
+                logStatus(true);
+                cdd_process();
+                logStatus(true);
             }
         }
     }
@@ -155,16 +153,17 @@ class CddImpl implements Cdd {
     }
 
     private String statusString(int[] status, int[] command) {
-        String head = "", tail = "";
+        StringBuilder head = new StringBuilder();
+        StringBuilder tail = new StringBuilder();
         for (int i = 0; i < status.length; i++) {
-            head += Integer.toHexString(status[i]);
-            tail += Integer.toHexString(command[i]);
+            head.append(Integer.toHexString(status[i]));
+            tail.append(Integer.toHexString(command[i]));
             if (i == 1 || i == 7) {
-                head += ".";
-                tail += ".";
+                head.append(".");
+                tail.append(".");
             }
         }
-        return head.toUpperCase() + " - " + tail.toUpperCase();
+        return head.toString().toUpperCase() + " - " + tail.toString().toUpperCase();
     }
 
     String prev = "";
@@ -355,7 +354,7 @@ class CddImpl implements Cdd {
             /* Play */
             case SeekPlay -> {
                 /* reset track index */
-                int index = 0;
+                int index;
 
                 /* new LBA position */
                 int lba = CueFileParser.msfToSectorAdjustPregap(cddContext.commandRegs[2], cddContext.commandRegs[3],
@@ -435,7 +434,7 @@ class CddImpl implements Cdd {
             /* Seek */
             case SeekPause -> {
                 /* reset track index */
-                int index = 0;
+                int index;
 
                 /* new LBA position */
                 int lba = CueFileParser.msfToSectorAdjustPregap(cddContext.commandRegs[2], cddContext.commandRegs[3],

@@ -242,7 +242,7 @@ public class SwingWindow implements DisplayWindow {
 
     private Future<?> previousFrame = CompletableFuture.completedFuture(null);
 
-    private DisplayContext dcCopy = new DisplayContext();
+    private final DisplayContext dcCopy = new DisplayContext();
 
     //NOTE: this will copy the input array
     @Override
@@ -513,9 +513,7 @@ public class SwingWindow implements DisplayWindow {
      */
     private void showEventInfo() {
         showInfoCount--;
-        if (actionInfo.isPresent()) {
-            eventInfoLabel.setText(actionInfo.get());
-        }
+        actionInfo.ifPresent(eventInfoLabel::setText);
         if (showInfoCount <= 0) {
             actionInfo = Optional.empty();
             eventInfoLabel.setText("");
@@ -691,7 +689,7 @@ public class SwingWindow implements DisplayWindow {
                     if (droppedFiles.isEmpty()) {
                         return;
                     }
-                    Object firstElement = droppedFiles.get(0);
+                    Object firstElement = droppedFiles.getFirst();
                     if (!(firstElement instanceof File file)) {
                         return;
                     }

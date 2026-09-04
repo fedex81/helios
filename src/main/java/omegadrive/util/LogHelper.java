@@ -18,11 +18,11 @@ public class LogHelper {
 
     public static final boolean isWarnEnabled = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME).isWarnEnabled();
 
-    private Set<String> msgCache = new HashSet<>();
+    private final Set<String> msgCache = new HashSet<>();
 
-    private RepeaterDetector rd = new RepeaterDetector();
+    private final RepeaterDetector rd = new RepeaterDetector();
 
-    private static Set<String> msgCacheShared = new HashSet<>();
+    private static final Set<String> msgCacheShared = new HashSet<>();
 
     public static Logger getLogger(String name) {
         return LoggerFactory.getLogger(name);

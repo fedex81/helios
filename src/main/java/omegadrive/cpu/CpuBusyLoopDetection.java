@@ -104,7 +104,7 @@ public class CpuBusyLoopDetection {
         }
     }
 
-    private static Set<String> loopDedup = new HashSet<>();
+    private static final Set<String> loopDedup = new HashSet<>();
 
     private Map<Integer, Integer> toPcOpcodeMap() {
         Map<Integer, Integer> m = new HashMap<>();

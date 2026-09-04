@@ -59,7 +59,7 @@ public class JavaSoundManagerBlip extends AbstractSoundManager {
 
     private JavaSoundManager javaSoundManager;
 
-    private boolean handleNuke = true;
+    private final boolean handleNuke = true;
 
     //stats
     private Telemetry telemetry;
@@ -130,7 +130,7 @@ public class JavaSoundManagerBlip extends AbstractSoundManager {
 
     //FM,PWM: stereo 16 bit, PSG: mono 8 bit, OUT: stereo 16 bit
     protected static int mixAudioProviders(AudioMixContext amc) {
-        int len = 0;
+        int len;
         SoundDevice device = SoundDevice.NO_SOUND;
         SoundDevice fm = amc.map.get(FM);
         SoundDevice psg = amc.map.get(PSG);
@@ -157,9 +157,9 @@ public class JavaSoundManagerBlip extends AbstractSoundManager {
     }
 
     protected static final int MAX_SAMPLE_DIFF_PER_FRAME = 4;
-    private AtomicInteger bufSel = new AtomicInteger(0);
+    private final AtomicInteger bufSel = new AtomicInteger(0);
 
-    private static byte[][] output = new byte[2][0];
+    private static final byte[][] output = new byte[2][0];
 
     private int getFrontAndFlip() {
         int bufNum = bufSel.incrementAndGet() & 1;

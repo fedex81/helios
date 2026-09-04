@@ -29,7 +29,7 @@ public class Md32xCommHelper {
 
     public static final int CYCLE_LOOKBACK = 50;
 
-    private static Md32xCommHelper INSTANCE = new Md32xCommHelper();
+    private static final Md32xCommHelper INSTANCE = new Md32xCommHelper();
 
     public static Md32xCommHelper getInstance() {
         return INSTANCE;
@@ -60,7 +60,7 @@ public class Md32xCommHelper {
 
     long currentFrame = 0;
 
-    private Table<Integer, RegSpecS32x, CommWriteInfo> t = TreeBasedTable.create();
+    private final Table<Integer, RegSpecS32x, CommWriteInfo> t = TreeBasedTable.create();
 
     public void write(CpuDeviceAccess cpu, RegSpecS32x regSpec, int prevValue, int nextValue, Size size) {
         switch (size) {

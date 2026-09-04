@@ -28,8 +28,8 @@ public class UiFileFilters {
             map(s -> s.replace(".", "")).toArray(String[]::new);
 
     public static final String[] extBinaryTypesList = removeExtensionDot.apply(SysUtil.binaryTypes);
-    private static Set<FileFilter> romFilterSet = new LinkedHashSet<>();
-    private static Map<String, SystemType> romFilterDescMap = new HashMap<>();
+    private static final Set<FileFilter> romFilterSet = new LinkedHashSet<>();
+    private static final Map<String, SystemType> romFilterDescMap = new HashMap<>();
 
     static {
         FileNameExtensionFilter fn = new FileNameExtensionFilter(

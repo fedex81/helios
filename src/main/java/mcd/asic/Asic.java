@@ -33,10 +33,10 @@ public class Asic implements AsicOp {
     //bios_EU likes 75
     //bios_JP 1.00 > 50
     private static final int ASIC_LINES_AT_32p5Khz = 75;
-    private StampConfig stampConfig = new StampConfig();
+    private final StampConfig stampConfig = new StampConfig();
 
-    private MegaCdMemoryContext memoryContext;
-    private McdSubInterruptHandler interruptHandler;
+    private final MegaCdMemoryContext memoryContext;
+    private final McdSubInterruptHandler interruptHandler;
 
     private AsicEvent asicEvent = AsicEvent.AS_STOP;
 
@@ -54,9 +54,7 @@ public class Asic implements AsicOp {
     @Override
     public void write(RegSpecMcd regSpec, int address, int value, Size size) {
         writeBufferRaw(memoryContext.commonGateRegsBuf, address & MDC_SUB_GATE_REGS_MASK, value, size);
-        if (regSpec != MCD_IMG_STAMP_SIZE && regSpec != MCD_IMG_OFFSET) {
-            assert size == Size.WORD : regSpec + "," + size;
-        }
+        assert regSpec == MCD_IMG_STAMP_SIZE || regSpec == MCD_IMG_OFFSET || size == Size.WORD : regSpec + "," + size;
         switch (regSpec) {
             case MCD_IMG_STAMP_SIZE -> {
                 int val = readBufferWord(memoryContext.commonGateRegsBuf, regSpec.addr);
@@ -65,13 +63,11 @@ public class Asic implements AsicOp {
                 stampConfig.stampSize = StampSize.vals[(val >> 1) & 1];
                 stampConfig.stampMapSize = StampMapSize.vals[(val >> 2) & 1];
             }
-            case MCD_IMG_STAMP_MAP_ADDR -> {
-                stampConfig.stampStartLocation = value;
-            }
+            case MCD_IMG_STAMP_MAP_ADDR -> stampConfig.stampStartLocation = value;
             case MCD_IMG_VCELL -> stampConfig.vCellSize = (value & 0x1F) + 1;
             case MCD_IMG_START_ADDR -> stampConfig.imgDestBufferLocation = value;
             case MCD_IMG_OFFSET -> {
-                assert size == Size.BYTE ? (address & 1) == 1 : true;
+                assert size != Size.BYTE || (address & 1) == 1;
                 stampConfig.hPixelOffset = value & 7;
                 stampConfig.vPixelOffset = (value >> 3) & 7;
                 stampConfig.imgOffset = value & 0x3F;

@@ -69,10 +69,12 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         private int ticks32p5, ticks75, frames;
     }
 
-    private ByteBuffer subCpuRam, sysGateRegs, commonGateRegs;
-    private LogHelper logHelper = new LogHelper();
-    private MegaCdMemoryContext memCtx;
-    private CpuDeviceAccess cpuType;
+    private final ByteBuffer subCpuRam;
+    private final ByteBuffer sysGateRegs;
+    private final ByteBuffer commonGateRegs;
+    private final LogHelper logHelper = new LogHelper();
+    private final MegaCdMemoryContext memCtx;
+    private final CpuDeviceAccess cpuType;
 
     @Deprecated
     private McdSubInterruptHandler interruptHandler;
@@ -83,8 +85,8 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     private Cdc cdc;
 
     private MC68000Wrapper subCpu;
-    private TimerContext timerContext;
-    private Counter32p5Khz counter32p5Khz;
+    private final TimerContext timerContext;
+    private final Counter32p5Khz counter32p5Khz;
 
     public MegaCdSubCpuBus(MegaCdMemoryContext ctx) {
         cpuType = CpuDeviceAccess.SUB_M68K;
@@ -145,18 +147,16 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
             res = memCtx.wramHelper.readWordRam(cpuType, address & MCD_WORD_RAM_1M_MASK, size);
-        } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
+        } else if (address < END_MCD_SUB_PRG_RAM) {
             res = readPrgRam(address, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address < END_MCD_SUB_GATE_ARRAY_REGS) {
             res = handleMegaCdExpRead(address, size);
         } else if (address >= START_MCD_SUB_PCM_AREA && address < START_MCD_SUB_GATE_ARRAY_REGS) {
             res = pcm.read(address, size);
-        } else if (address >= START_MCD_SUB_BRAM_AREA && address < END_MCD_SUB_BRAM_AREA) {
+        } else if (address < END_MCD_SUB_BRAM_AREA) {
             res = readBackupRam(memCtx.backupRam, address, size);
-        } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
-            LOG.error("S Read Reserved: {} {}", th(address), size);
         } else {
-            LogHelper.logWarnOnce(LOG, "S Unexpected read access: {} {}", th(address), size);
+            LOG.error("S Read Reserved: {} {}", th(address), size);
         }
         return res & size.getMask();
     }
@@ -197,19 +197,17 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         } else if (address >= START_MCD_SUB_WORD_RAM_1M && address < END_MCD_SUB_WORD_RAM_1M) {
             assert memCtx.wramSetup.mode == WordRamMode._1M;
             memCtx.wramHelper.writeWordRam(cpuType, address, data, size);
-        } else if (address >= START_MCD_SUB_PRG_RAM && address < END_MCD_SUB_PRG_RAM) {
+        } else if (address < END_MCD_SUB_PRG_RAM) {
             memCtx.writeProgRam(address & MCD_PRG_RAM_MASK, data, size);
         } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS && address <= END_MCD_SUB_GATE_ARRAY_REGS) {
             handleMegaCdExpWrite(address, data, size);
         } else if (address >= START_MCD_SUB_PCM_AREA && address < END_MCD_SUB_PCM_AREA) {
             assert address < (0xFF_4000 & MCD_SUB_ADDRESS_MASK) : th(address); //Panic! (USA)
             pcm.write(address, data, size);
-        } else if (address >= START_MCD_SUB_BRAM_AREA && address < END_MCD_SUB_BRAM_AREA) {
+        } else if (address < END_MCD_SUB_BRAM_AREA) {
             writeBackupRam(memCtx.backupRam, address, data, size);
-        } else if (address >= START_MCD_SUB_GATE_ARRAY_REGS) {
-            LOG.error("S Write Reserved: {} {} {}", address, data, size);
         } else {
-            LogHelper.logWarnOnce(LOG, "S Unexpected write access: {} {}", th(address), size);
+            LOG.error("S Write Reserved: {} {} {}", address, data, size);
         }
     }
 
@@ -419,7 +417,6 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         }
         if (address >= START_MCD_SUB_GA_COMM_R && address < START_MCD_SUB_GA_COMM_W) { //SUB COMM READ ONLY
             LogHelper.logWarnOnce(LOG, "S illegal write read-only MEGA_CD_COMM reg: {}", th(address));
-            return;
         }
     }
 

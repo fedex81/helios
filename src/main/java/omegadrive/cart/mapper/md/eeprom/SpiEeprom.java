@@ -27,7 +27,7 @@ public class SpiEeprom implements EepromBase {
 
     private static final Logger LOG = LogHelper.getLogger(SpiEeprom.class.getSimpleName());
 
-    private static int M95320_SIZE = 0x1000;
+    private static final int M95320_SIZE = 0x1000;
     public static int SIZE_BYTES = 0x10_000;
 
     byte[] eeprom_data;

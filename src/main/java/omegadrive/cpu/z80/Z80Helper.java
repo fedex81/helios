@@ -30,10 +30,9 @@ public class Z80Helper {
     }
 
     public static String toStringExt(Z80StateExt state, Z80Dasm disasm, IMemIoOps memIoOps) {
-        String sb = toString(state) + "\n\n" +
+        return toString(state) + "\n\n" +
                 dumpInfo(disasm, memIoOps, state.getRegPC()) + "\n" +
                 state.memAccess;
-        return sb;
     }
 
     public static String toString(Z80State state) {

@@ -84,7 +84,7 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
         private final ByteBuffer pcmRegs;
         private final PcmChannelContext[] chan;
 
-        private PcmProvider playSupport = PcmProvider.NO_SOUND;
+        private final PcmProvider playSupport;
 
         private int channelBank, waveBank, active, chanControl;
         private int ls, rs;

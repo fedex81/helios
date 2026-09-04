@@ -48,7 +48,7 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
     }
 
 
-    private MediaSpec mediaSpec;
+    private final MediaSpec mediaSpec;
     public SysUtil.RomFileType detectedRomFileType;
     public RegionDetector.Region securityCodeRegion;
 
@@ -73,7 +73,7 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
         if (mediaSpec.type.isDiscImage()) {
             Optional<ExtendedCueSheet> sheetOpt = mediaSpec.sheetOpt;
             assert sheetOpt.isPresent();
-            CdModel.ExtendedTrackData t1 = sheetOpt.get().extTracks.get(0);
+            CdModel.ExtendedTrackData t1 = sheetOpt.get().extTracks.getFirst();
             checkTrack01Header(t1);
             if (mediaSpec.bootable) {
                 securityCodeRegion = verifySecurityCodeRegion(t1, mediaSpec.region);
@@ -85,7 +85,7 @@ public class MegaCdCartInfoProvider extends MdCartInfoProvider {
     private static TrackContentHelper getTrack01(MediaSpec mediaSpec) {
         Optional<ExtendedCueSheet> sheetOpt = mediaSpec.sheetOpt;
         assert sheetOpt.isPresent();
-        CdModel.ExtendedTrackData t1 = sheetOpt.get().extTracks.get(0);
+        CdModel.ExtendedTrackData t1 = sheetOpt.get().extTracks.getFirst();
         return t1.data;
     }
 

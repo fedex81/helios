@@ -57,7 +57,8 @@ public class BuramHelper {
      * read 0xFE_0000,Word -> bram[0] = 0xBB, 0x??BB
      */
     public static int readBackupRam(ByteBuffer buffer, int address, Size size) {
-        int res = switch (size) {
+        //        LOG.info("BRAM read: {}({}) {}, {}", th(address),th((address & MCD_SUB_BRAM_MEM_WINDOW_MASK) >> 1),  size, th(res));
+        return switch (size) {
             case BYTE -> {
                 if ((address & 1) == 1) {
                     yield readBuffer(buffer, (address & MCD_SUB_BRAM_MEM_WINDOW_MASK) >> 1, Size.BYTE);
@@ -73,8 +74,6 @@ public class BuramHelper {
                 yield size.getMask();
             }
         };
-//        LOG.info("BRAM read: {}({}) {}, {}", th(address),th((address & MCD_SUB_BRAM_MEM_WINDOW_MASK) >> 1),  size, th(res));
-        return res;
     }
 
     /**

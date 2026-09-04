@@ -31,7 +31,7 @@ public class AsicModel {
     enum StampRepeat {
         BLANK, REPEAT_MAP;
 
-        static StampRepeat[] vals = StampRepeat.values();
+        static final StampRepeat[] vals = StampRepeat.values();
     }
 
     enum StampSize {
@@ -45,7 +45,7 @@ public class AsicModel {
         }
 
 
-        static StampSize[] vals = StampSize.values();
+        static final StampSize[] vals = StampSize.values();
     }
 
     enum StampMapSize {
@@ -57,18 +57,18 @@ public class AsicModel {
             pixelSize = px;
         }
 
-        static StampMapSize[] vals = StampMapSize.values();
+        static final StampMapSize[] vals = StampMapSize.values();
     }
 
     public enum StampPriorityMode {
         PM_OFF, UNDERWRITE, OVERWRITE, ILLEGAL;
-        static StampPriorityMode[] vals = StampPriorityMode.values();
+        static final StampPriorityMode[] vals = StampPriorityMode.values();
     }
 
     enum StampRotationDegrees {
         _0, _90, _180, _270;
 
-        static StampRotationDegrees[] vals = StampRotationDegrees.values();
+        static final StampRotationDegrees[] vals = StampRotationDegrees.values();
     }
 
     static class StampData {

@@ -208,11 +208,10 @@ public class StateUtil {
                                            Set<Device> devs) {
         List<Device> sysList = new ArrayList<>(devs);
         List<Device> ds = new ArrayList<>();
-        for (Iterator<Class<? extends Device>> i = deviceClassSet.iterator(); i.hasNext(); ) {
-            Class<? extends Device> c = i.next();
-            for (int j = 0; j < sysList.size(); j++) {
-                if (c.isAssignableFrom(sysList.get(j).getClass())) {
-                    ds.add(sysList.get(j));
+        for (Class<? extends Device> c : deviceClassSet) {
+            for (Device device : sysList) {
+                if (c.isAssignableFrom(device.getClass())) {
+                    ds.add(device);
                     break;
                 }
             }

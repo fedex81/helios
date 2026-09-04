@@ -94,9 +94,6 @@ public interface Sh2Bus extends Sh2Prefetcher, ReadableByteMemory, Device {
         //do nothing
     }
 
-    default void newFrame() {
-    }
-
     interface MdRomAccess {
         int readRom(int address, Size size);
     }

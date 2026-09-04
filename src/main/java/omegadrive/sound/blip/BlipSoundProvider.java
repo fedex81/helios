@@ -74,7 +74,7 @@ public class BlipSoundProvider implements IBlipSoundProvider {
         }
         lsample = clampToShort(lsample);
         rsample = clampToShort(rsample);
-        ref.get().blipBuffer.addDelta((int) deltaTime, lsample - prevLSample, rsample - prevRSample);
+        ref.get().blipBuffer.addDelta(deltaTime, lsample - prevLSample, rsample - prevRSample);
         prevLSample = (short) lsample;
         prevRSample = (short) rsample;
         deltaTime++;
@@ -89,7 +89,7 @@ public class BlipSoundProvider implements IBlipSoundProvider {
             return;
         }
         assert context.inputClocksForInterval.get() > 0;
-        blip.endFrame((int) (context.inputClocksForInterval.get()));
+        blip.endFrame(context.inputClocksForInterval.get());
         deltaTime = 0;
         int availMonoSamples = blip.samplesAvail();
         if (availMonoSamples + 5 < prevSampleAvail) {

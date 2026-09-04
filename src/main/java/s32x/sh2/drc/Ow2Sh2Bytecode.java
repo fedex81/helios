@@ -48,12 +48,12 @@ public class Ow2Sh2Bytecode {
     }
 
 
-    public static final void ADDC(BytecodeContext ctx) {
+    public static void ADDC(BytecodeContext ctx) {
         sumWithCarry(ctx, true);
     }
 
     //ADDC, SUBC
-    private static final void sumWithCarry(BytecodeContext ctx, boolean add) {
+    private static void sumWithCarry(BytecodeContext ctx, boolean add) {
         int n = RN(ctx.opcode);
         int m = RM(ctx.opcode);
         int tmp0Idx = ctx.mv.newLocal(Type.LONG_TYPE);
@@ -136,7 +136,7 @@ public class Ow2Sh2Bytecode {
         opRegImm(ctx, IADD, n, b);
     }
 
-    public static final void ADDV(BytecodeContext ctx) {
+    public static void ADDV(BytecodeContext ctx) {
         sumWithOverflow(ctx, true);
     }
 

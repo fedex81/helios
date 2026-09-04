@@ -252,7 +252,7 @@ public class SoundUtil {
     }
 
     public static int mixTwoSources(byte[] input1, byte[] input2, byte[] output, int inputLen1, int inputLen2) {
-        int len = inputLen1;
+        int len;
         if (inputLen1 == 0) {
             System.arraycopy(input2, 0, output, 0, inputLen2);
             len = input2.length;

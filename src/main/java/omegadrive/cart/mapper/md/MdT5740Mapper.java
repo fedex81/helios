@@ -38,7 +38,7 @@ import static omegadrive.util.Util.th;
 public class MdT5740Mapper extends BackupMemoryFileHandler implements RomMapper, RomMapper.StateAwareMapper {
 
     private static final Logger LOG = LogHelper.getLogger(MdT5740Mapper.class.getSimpleName());
-    private static byte[] prot_15e6 = {0, 0, 0, 0x10};
+    private static final byte[] prot_15e6 = {0, 0, 0, 0x10};
 
     private static final int BANKBABLE_ADDR_START = 0x280000;
 
@@ -59,8 +59,7 @@ public class MdT5740Mapper extends BackupMemoryFileHandler implements RomMapper,
     }
 
     public static MdT5740Mapper createInstance(String romName, RomMapper baseMapper) {
-        MdT5740Mapper m = new MdT5740Mapper(romName, baseMapper);
-        return m;
+        return new MdT5740Mapper(romName, baseMapper);
     }
 
     private MdT5740Mapper(String romName, RomMapper baseMapper) {

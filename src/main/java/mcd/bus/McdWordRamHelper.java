@@ -25,8 +25,8 @@ import static omegadrive.util.Util.th;
 public class McdWordRamHelper {
 
     private static final Logger LOG = LogHelper.getLogger(McdWordRamHelper.class.getSimpleName());
-    private MegaCdMemoryContext memoryContext;
-    private byte[][] wordRam01;
+    private final MegaCdMemoryContext memoryContext;
+    private final byte[][] wordRam01;
 
     public McdWordRamHelper(MegaCdMemoryContext memoryContext, byte[][] wordRam01) {
         this.memoryContext = memoryContext;

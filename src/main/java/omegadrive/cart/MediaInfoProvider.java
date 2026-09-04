@@ -78,9 +78,7 @@ public class MediaInfoProvider {
 
     protected void init() {
         this.initChecksum();
-        if (memoryProviderOptional.isPresent()) {
-            romSize = memoryProviderOptional.get().getRomSize();
-        }
+        memoryProviderOptional.ifPresent(memoryProvider -> romSize = memoryProvider.getRomSize());
     }
 
     protected void initChecksum() {

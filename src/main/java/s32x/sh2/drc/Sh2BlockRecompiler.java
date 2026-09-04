@@ -38,7 +38,7 @@ public class Sh2BlockRecompiler {
 
     private static Sh2BlockRecompiler current = null;
     private String token;
-    private InternalSh2BlockRecompiler recompiler;
+    private final InternalSh2BlockRecompiler recompiler;
 
     interface InternalSh2BlockRecompiler {
         byte[] createClassBinary(Sh2Block block, Sh2DrcContext drcCtx, String blockClass, Class<?> memoryClass);

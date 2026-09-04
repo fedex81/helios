@@ -74,7 +74,7 @@ public class SysUtil {
 
     static {
         ImmutableSet.Builder<String> b = ImmutableSet.builder();
-        sysFileExtensionsMap.values().stream().flatMap(v -> Arrays.stream(v)).forEach(b::add);
+        sysFileExtensionsMap.values().stream().flatMap(Arrays::stream).forEach(b::add);
         Arrays.stream(compressedBinaryTypes).forEach(b::add);
         binaryTypesSet = b.build();
         binaryTypes = binaryTypesSet.toArray(String[]::new);
@@ -110,7 +110,7 @@ public class SysUtil {
         }
         romSpec.systemType = type;
         romSpec.reload();
-        SystemProvider systemProvider = switch (type) {
+        return switch (type) {
             case MD -> Megadrive.createNewInstance(display);
             case MEGACD -> MegaCd.createNewInstance(display);
             case S32X -> Md32x.createNewInstance32x(display);
@@ -127,7 +127,6 @@ public class SysUtil {
                 yield null;
             }
         };
-        return systemProvider;
     }
 
 
@@ -148,9 +147,7 @@ public class SysUtil {
     }
 
     public static SoundDevice getPcmProvider(SystemType systemType, Region region) {
-        return switch (systemType) {
-            default -> PcmProvider.NO_SOUND;
-        };
+        return PcmProvider.NO_SOUND;
     }
 
     public static SoundDevice getPsgProvider(SystemType systemType, Region region) {

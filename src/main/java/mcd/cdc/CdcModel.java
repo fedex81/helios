@@ -90,8 +90,8 @@ public interface CdcModel {
         NONE_0, NONE_1, MAIN_READ_2, SUB_READ_3, DMA_PCM_4, DMA_PROGRAM_5, NONE_6, DMA_SUB_WRAM_7;
 
         public static CdcTransferDestination[] vals = CdcTransferDestination.values();
-        private boolean dmaDestination;
-        private boolean valid;
+        private final boolean dmaDestination;
+        private final boolean valid;
 
         CdcTransferDestination() {
             dmaDestination = name().startsWith("DMA");
@@ -280,11 +280,11 @@ public interface CdcModel {
     }
 
     enum CdcAddressRead {
-        COMIN, IFSTAT, DBCL, DBCH, HEAD0, HEAD1, HEAD2, HEAD3, PTL, PTH, WAL, WAH, STAT0, STAT1, STAT2, STAT3;
+        COMIN, IFSTAT, DBCL, DBCH, HEAD0, HEAD1, HEAD2, HEAD3, PTL, PTH, WAL, WAH, STAT0, STAT1, STAT2, STAT3
     }
 
     enum CdcAddressWrite {
-        SBOUT, IFCTRL, DBCL, DBCH, DACL, DACH, DTRG, DTACK, WAL, WAH, CTRL0, CTRL1, PTL, PTH, CTRL2, RESET;
+        SBOUT, IFCTRL, DBCL, DBCH, DACL, DACH, DTRG, DTACK, WAL, WAH, CTRL0, CTRL1, PTL, PTH, CTRL2, RESET
     }
 
     CdcAddressRead[] cdcAddrReadVals = CdcAddressRead.values();

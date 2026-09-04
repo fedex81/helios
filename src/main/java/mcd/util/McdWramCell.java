@@ -69,7 +69,7 @@ public class McdWramCell {
     }
 
     private static void writeToFile(Map<Integer, Integer> m) {
-        SortedMap<Integer, Integer> sm = new TreeMap(m);
+        SortedMap<Integer, Integer> sm = new TreeMap<>(m);
         int size = sm.size() * 8;
         ByteBuffer bb = ByteBuffer.allocate(size);
         for (var entry : sm.entrySet()) {

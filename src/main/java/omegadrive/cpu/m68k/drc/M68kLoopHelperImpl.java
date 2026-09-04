@@ -165,7 +165,7 @@ public class M68kLoopHelperImpl implements M68kLoopHelper {
         boolean process = block.instLen > 0;
         if (process) {
             int baseIdx = 0;
-            boolean val = false;
+            boolean val;
             do {
                 val = checkJump(pc, instTemp[baseIdx]);
                 if (val) {
@@ -220,14 +220,14 @@ public class M68kLoopHelperImpl implements M68kLoopHelper {
         };
     }
 
-    private static Set<String> missedLoops = new HashSet<>();
-    private static Set<String> dedupSet = new HashSet<>();
+    private static final Set<String> missedLoops = new HashSet<>();
+    private static final Set<String> dedupSet = new HashSet<>();
 
     public void checkMissedLoops(int loopPc, CpuBusyLoopDetection bld) {
         M68kBlock block = checkLoops(loopPc);
         LoopType lt = block.loopType;
         String str = Arrays.stream(block.instructions).filter(Objects::nonNull).
-                map(di -> di.getOpcode()).sorted().map(i -> "" + i).collect(Collectors.joining(","));
+                map(M68kSimpleInst::getOpcode).sorted().map(i -> "" + i).collect(Collectors.joining(","));
         if (lt != LoopType.NONE && dedupSet.add(str)) {
             System.out.println("68k loop (loopHelper), " + block + "\n" + bld.getLoopInfo());
         }

@@ -50,7 +50,7 @@ public class BackupMemoryFileHandler {
 
     protected final int backupRamSize, backupRamMask;
 
-    private AtomicInteger lastWrittenHash = new AtomicInteger();
+    private final AtomicInteger lastWrittenHash = new AtomicInteger();
 
     public BackupMemoryFileHandler(SystemLoader.SystemType systemType, String fileType, String romName, int backupRamSize) {
         backupRamFolderProp = systemType.getShortName().toLowerCase() + ".backupram.folder";
@@ -73,7 +73,7 @@ public class BackupMemoryFileHandler {
             try {
                 backupFile = Paths.get(backupRamFolder,
                         romName + "." + fileType);
-                long size = 0;
+                long size;
                 if (Files.isReadable(backupFile)) {
                     size = Files.size(backupFile);
                     if (size > 0) {

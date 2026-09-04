@@ -38,7 +38,7 @@ public interface McdSubInterruptHandler extends Device {
      * INT_SUBCODE = LEVEL 6;
      */
     enum SubCpuInterrupt {
-        NONE, INT_ASIC, INT_LEVEL2, INT_TIMER, INT_CDD, INT_CDC, INT_SUBCODE;
+        NONE, INT_ASIC, INT_LEVEL2, INT_TIMER, INT_CDD, INT_CDC, INT_SUBCODE
     }
 
     SubCpuInterrupt[] intVals = SubCpuInterrupt.values();
@@ -71,10 +71,10 @@ public interface McdSubInterruptHandler extends Device {
     }
 
     class McdSubInterruptHandlerImpl implements McdSubInterruptHandler {
-        private M68kProvider subCpu;
-        private MegaCdMemoryContext context;
+        private final M68kProvider subCpu;
+        private final MegaCdMemoryContext context;
 
-        private boolean[] pendingInterrupts = new boolean[intVals.length];
+        private final boolean[] pendingInterrupts = new boolean[intVals.length];
 
         private int pendingMask = 0;
 

@@ -104,13 +104,11 @@ public class MdRomDbModel {
             }
 
             public EepromLineMap getEepromLineMap() {
-                EepromLineMap l = EepromLineMap.valueOf(lineMap);
-                return l;
+                return EepromLineMap.valueOf(lineMap);
             }
 
             public EepromType getEepromType() {
-                EepromType t = EepromType.valueOf(type);
-                return t;
+                return EepromType.valueOf(type);
             }
 
             public int getEepromSize() {

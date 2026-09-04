@@ -53,18 +53,11 @@ public class KeyboardInput extends KeyAdapter {
     public static KeyAdapter createKeyAdapter(SystemLoader.SystemType systemType, JoypadProvider provider) {
         Objects.requireNonNull(provider);
         Objects.requireNonNull(systemType);
-        KeyboardInput res = null;
-        switch (systemType){
-            case COLECO:
-                res = new ColecoKeyboardInput();
-                break;
-            case MSX:
-                res = new MsxKeyboardInput();
-                break;
-            default:
-               res = new KeyboardInput();
-               break;
-        }
+        KeyboardInput res = switch (systemType) {
+            case COLECO -> new ColecoKeyboardInput();
+            case MSX -> new MsxKeyboardInput();
+            default -> new KeyboardInput();
+        };
         res.provider = provider;
         LOG.info("Setting keyAdapter for {}", systemType);
         return res;

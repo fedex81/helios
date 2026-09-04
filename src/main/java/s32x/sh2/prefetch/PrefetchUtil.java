@@ -11,7 +11,6 @@ import s32x.sh2.drc.Sh2Block;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static omegadrive.util.Util.th;
 
@@ -35,14 +34,14 @@ public class PrefetchUtil {
                     if (piw.block.hits < top10) {
                         continue;
                     }
-                    hitMap.put(piw, Long.valueOf(piw.block.hits));
+                    hitMap.put(piw, (long) piw.block.hits);
                     top10 = hitMap.values().stream().sorted().limit(10).findFirst().orElse(10L);
 //                        LOG.info("{} PC: {} hits: {}, {}", cpu, th(pc), piw.hits, piw);
                 }
             }
         }
         List<Map.Entry<CpuFastDebug.PcInfoWrapper, Long>> l = hitMap.entrySet().stream().sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue())).
-                limit(10).collect(Collectors.toList());
+                limit(10).toList();
         StringBuilder sb = new StringBuilder();
         l.forEach(e -> {
             CpuFastDebug.PcInfoWrapper piw = e.getKey();

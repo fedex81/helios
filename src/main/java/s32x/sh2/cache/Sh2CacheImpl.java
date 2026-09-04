@@ -87,7 +87,6 @@ public class Sh2CacheImpl implements Sh2Cache {
             }
         }
         if (verbose) LOG.info("{} Cache clear", cpu);
-        return;
     }
 
     @Override

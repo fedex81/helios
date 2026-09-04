@@ -51,7 +51,7 @@ public class CdFormatChecker {
                 e.printStackTrace();
             }
         }
-        if (invalidSectors.size() > 0) {
+        if (!invalidSectors.isEmpty()) {
             LOG.warn("Invalid sectors, missing sync, {} out of {}, list: {}, {}", invalidSectors.size(), etd.trackLenSectors,
                     Arrays.toString(invalidSectors.toArray()), str);
         }

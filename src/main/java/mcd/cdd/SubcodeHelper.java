@@ -51,14 +51,14 @@ public class SubcodeHelper {
     public final static int SUBCODE_BLOCK_LEN = SUBCODE_DUMP_BLOCK_LEN + 2;
 
 
-    private static RandomAccessFile subcodeFile;
-    private static byte[] subcodeData = new byte[SUBCODE_DUMP_BLOCK_LEN];
+    private static final RandomAccessFile subcodeFile;
+    private static final byte[] subcodeData = new byte[SUBCODE_DUMP_BLOCK_LEN];
 
     //only for fleet.subcode
-    private static int fileBase = 4330020;
+    private static final int fileBase = 4330020;
     public static boolean rawSubcode;
 
-    public static boolean ok = false;
+    public static boolean ok;
 
     static {
         String path = "src/test/resources/subcodes";
@@ -76,9 +76,8 @@ public class SubcodeHelper {
     public static void cdd_process_subcode(MegaCdMemoryContext memoryContext, int lba) {
         if (!ok) return;
         /* update subcode buffer pointer address */
-        int res = bumpSubcodeAddress(memoryContext);
         /* 16-bit register index */
-        int index = res;
+        int index = bumpSubcodeAddress(memoryContext);
 
         if (lba >= 0) {
             /* read interleaved subcode data from .sub file (12 x 8-bit of P subchannel first, then Q subchannel, etc) */
