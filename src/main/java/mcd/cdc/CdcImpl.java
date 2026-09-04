@@ -5,6 +5,7 @@ import mcd.cdd.*;
 import mcd.cdd.CdModel.ExtendedTrackData;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
+import mcd.pcm.McdPcm;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.sound.msumd.CueFileParser.MsfHolder;
 import omegadrive.util.BufferUtil;
@@ -60,13 +61,13 @@ public class CdcImpl implements Cdc {
 
     private boolean hasMedia;
 
-    public CdcImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih) {
+    public CdcImpl(MegaCdMemoryContext mc, McdSubInterruptHandler ih, McdPcm pcm) {
         memoryContext = mc;
         interruptHandler = ih;
         cdcContext = new CdcContext();
         transfer = cdcContext.transfer;
         ram = ByteBuffer.allocate(RAM_SIZE); //16 Kbytes
-        transferHelper = new CdcTransferHelper(this, memoryContext, ram);
+        transferHelper = new CdcTransferHelper(this, memoryContext, ram, pcm);
     }
 
     @Override

@@ -64,14 +64,14 @@ public class McdDeviceHelper {
             boolean soundEnabled = !testMode && SoundProvider.ENABLE_SOUND;
             LOG.info("Sound enabled: {}, testMode: {}, enableSound flag: {}", soundEnabled, testMode, SoundProvider.ENABLE_SOUND);
             memoryContext = new MegaCdMemoryContext(mediaSpec);
-            pcm = new McdPcm(soundEnabled);
+            pcm = McdPcm.create(soundEnabled);
             mdBus = new MdBus();
             subBus = new MegaCdSubCpuBus(memoryContext);
             mainBus = new MegaCdMainCpuBus(memoryContext, mdBus);
 
             subCpu = MC68000Wrapper.createInstance(SUB_M68K, subBus);
             interruptHandler = McdSubInterruptHandler.create(memoryContext, subCpu);
-            cdc = Cdc.createInstance(memoryContext, interruptHandler);
+            cdc = Cdc.createInstance(memoryContext, interruptHandler, pcm);
             cdd = Cdd.createInstance(memoryContext, interruptHandler, cdc, soundEnabled);
             asic = new Asic(memoryContext, interruptHandler);
             subBus.attachDevices(subCpu, pcm, cdd, asic, cdc, interruptHandler);

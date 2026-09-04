@@ -162,8 +162,8 @@ public class MegaCd extends Megadrive {
 
     @Override
     public void onNewFrame() {
-        mcdLaunchContext.pcm.newFrame();
-        mcdLaunchContext.cdd.newFrame();
+        mcdLaunchContext.pcm.onNewFrame();
+        mcdLaunchContext.cdd.onNewFrame();
         displayContext.megaCdLedState = Optional.of(mcdLaunchContext.subBus.getLedState());
         super.onNewFrame();
     }

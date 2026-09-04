@@ -5,6 +5,7 @@ import mcd.bus.McdSubInterruptHandler;
 import mcd.cdd.Cdd.CddStatus;
 import mcd.cdd.ExtendedCueSheet;
 import mcd.dict.MegaCdMemoryContext;
+import mcd.pcm.McdPcm;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
@@ -49,7 +50,7 @@ public interface Cdc extends BufferUtil.StepDevice {
 
     void recalcRegValue(RegSpecMcd regSpec);
 
-    static Cdc createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler interruptHandler) {
-        return new CdcImpl(memoryContext, interruptHandler);
+    static Cdc createInstance(MegaCdMemoryContext memoryContext, McdSubInterruptHandler interruptHandler, McdPcm pcm) {
+        return new CdcImpl(memoryContext, interruptHandler, pcm);
     }
 }

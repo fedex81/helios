@@ -28,18 +28,20 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
     //$FF800A CDC DMA ADDRESS register
     //PCM address: 10 valid bits (0x3FF), reg value is then << 3 => mask = (0x400 << 3) - 1 = 0x1FFF
     public static final int PCM_ADDRESS_MASK = 0x1FFF;
-    private Cdc cdc;
-    private CdcModel.CdcTransfer t;
-    private MegaCdMemoryContext memoryContext;
-    private ByteBuffer ram;
+    private final Cdc cdc;
+    private final CdcModel.CdcTransfer t;
+    private final MegaCdMemoryContext memoryContext;
+    private final ByteBuffer ram;
+    private final McdPcm pcm;
 
 
-    public CdcTransferHelper(Cdc cdc, MegaCdMemoryContext memoryContext, ByteBuffer ram) {
+    public CdcTransferHelper(Cdc cdc, MegaCdMemoryContext memoryContext, ByteBuffer ram, McdPcm pcm) {
         this.cdc = cdc;
         assert cdc.getContext() != null;
         this.t = cdc.getContext().transfer;
         this.memoryContext = memoryContext;
         this.ram = ram;
+        this.pcm = pcm;
     }
 
     @Override
@@ -149,7 +151,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
         address &= PCM_ADDRESS_MASK;
         if (verbose) LOG.info("CDC,DMA_PCM,pcm_ram[{}]={},srcAddrWord={},len={}",
                 th(address & PCM_ADDRESS_MASK), th(data & 0xFF), th(t.source), th(t.length));
-        McdPcm.pcm.pcmDataWriteByte(address & PCM_ADDRESS_MASK, data);
+        pcm.pcmDataWriteByte(address & PCM_ADDRESS_MASK, data);
     }
 
     @Override

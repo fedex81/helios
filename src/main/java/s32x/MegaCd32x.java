@@ -149,8 +149,8 @@ public class MegaCd32x extends Md32x {
 
     @Override
     public void onNewFrame() {
-        mcdLaunchContext.pcm.newFrame();
-        mcdLaunchContext.cdd.newFrame();
+        mcdLaunchContext.pcm.onNewFrame();
+        mcdLaunchContext.cdd.onNewFrame();
         displayContext.megaCdLedState = Optional.of(mcdLaunchContext.subBus.getLedState());
         super.onNewFrame();
     }

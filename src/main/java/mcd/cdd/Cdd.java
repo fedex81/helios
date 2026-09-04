@@ -5,6 +5,7 @@ import mcd.bus.McdSubInterruptHandler;
 import mcd.cdc.Cdc;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
+import omegadrive.system.SystemProvider;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
 import omegadrive.util.VideoMode;
@@ -24,7 +25,7 @@ import static mcd.cdd.Cdd.CddStatus.NoDisc;
  * <p>
  * Copyright 2024
  */
-public interface Cdd extends BufferUtil.StepDevice {
+public interface Cdd extends BufferUtil.StepDevice, SystemProvider.NewFrameListener {
 
     //track numbers for leadin and leadout
     int LEADINNUM = 0;
@@ -110,8 +111,6 @@ public interface Cdd extends BufferUtil.StepDevice {
     CddContext getCddContext();
 
     void updateVideoMode(VideoMode videoMode);
-
-    void newFrame();
 
     void logStatus();
 
