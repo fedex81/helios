@@ -27,7 +27,6 @@ import omegadrive.SystemLoader;
 import omegadrive.bus.model.MdM68kBusProvider;
 import omegadrive.cpu.m68k.debug.MC68000WrapperFastDebug;
 import omegadrive.cpu.m68k.drc.M68kLoopHelper;
-import omegadrive.cpu.m68k.drc.M68kLoopHelper.LoopType;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
@@ -35,7 +34,6 @@ import org.slf4j.Logger;
 
 import static m68k.cpu.Cpu.AUTO_VECTOR_EXCEPTION_OFFSET;
 import static m68k.cpu.Cpu.PC_MASK;
-import static omegadrive.cpu.z80.Z80CoreWrapper.Z80_POLL_DELAY;
 import static omegadrive.util.Util.th;
 
 /**
@@ -105,11 +103,8 @@ public class MC68000Wrapper implements M68kProvider {
         return res >> MC68000Helper.OVERCLOCK_FACTOR;
     }
 
-    //TODO Tf4 show flickering when enabled
     protected void checkLoops() {
-        M68kLoopHelper.M68kBlock block = loopHelper.checkLoops(currentPC);
-        LoopType lt = block.loopType;
-        loopDelay = lt == LoopType.NONE ? 0 : (lt == LoopType.BUSY_LOOP ? 50 : Z80_POLL_DELAY);
+        loopDelay = loopHelper.checkLoops(currentPC).loopType.delay;
     }
 
     protected AddressSpace createAddressSpace() {

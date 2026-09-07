@@ -80,7 +80,7 @@ public class M68kLoopDetectTest {
         l.add(new M68kLoopTrace("Arrow Flash (USA)",
                 "00000486\t4e71                    nop\n00000488\t4e71                    nop\n0000048a\t4e71                    nop\n" +
                         "0000048c\t60f8                    bra.s    $00000486",
-                0x486, new int[]{0x4e71, 0x4e71, 0x4e71, 0x60f8}, LoopType.BUSY_LOOP)); //TODO fix, should be INFINITE_LOOP
+                0x486, new int[]{0x4e71, 0x4e71, 0x4e71, 0x60f8}, LoopType.INFINITE_LOOP));
         l.add(new M68kLoopTrace("Golden Axe (World)",
                 "00000cc6\t1038 c183               move.b   $c183,d0\n00000cca\t66fa                    bne.s    $00000cc6",
                 0xcc6, new int[]{0x1038, 0xc183, 0x66fa}, LoopType.BUSY_LOOP));
@@ -103,13 +103,33 @@ public class M68kLoopDetectTest {
                 "0000045e\t3014                    move.w   (a4),d0\n00000460\t7000                    moveq    #$00,d0\n" +
                         "00000462\t23fc c0000000 00c00004  move.l   #$c0000000,$00c00004",
                 0x45e, new int[]{0x3014, 0x7000, 0x23fc, 0xc000, 0, 0xc0, 4}, LoopType.NONE));
+        l.add(new M68kLoopTrace("none",
+                "00006942\t6700 00fe               beq.w    $00006a42",
+                0x6942, new int[]{0x6700, 0xfe}, LoopType.NONE));
+        l.add(new M68kLoopTrace("none",
+                "000017a4\t6000 0482               bra.w    $00001c28",
+                0x17a4, new int[]{0x6000, 0x482}, LoopType.NONE));
+        l.add(new M68kLoopTrace("none",
+                "00001c7c\t6000 ecba               bra.w    $00000938",
+                0x1c7c, new int[]{0x6000, 0xecba}, LoopType.NONE));
+        l.add(new M68kLoopTrace("none",
+                "0000c4c8\t6100 59fe               bsr.w    $00011ec8",
+                0xc4c8, new int[]{0x6100, 0x59fe}, LoopType.NONE));
+        l.add(new M68kLoopTrace("none",
+                "00005362\t4eba c5a4               jsr      $c5a4(pc)",
+                0x5362, new int[]{0x4eba, 0xc5a4}, LoopType.NONE));
+        l.add(new M68kLoopTrace("none",
+                "000040c0\t4eb8 5f22               jsr      $5f22",
+                0x40c0, new int[]{0x4eb8, 0x5f22}, LoopType.NONE));
+        //JSR does not qualify as it modifies the stack
+        l.add(new M68kLoopTrace("none",
+                "0000198a\t4eba f0ea               jsr      $f0ea(pc) -> a76",
+                0x198a, new int[]{0x4eba, 0xf0ea}, LoopType.NONE));
+        l.add(new M68kLoopTrace("none",
+                "00006066\t4efa fffe               jmp      $fffe(pc)",
+                0x6066, new int[]{0x4efa, 0xfffe}, LoopType.INFINITE_LOOP));
 
-        /*
-         *0000045e	3014                    move.w   (a4),d0
-00000460	7000                    moveq    #$00,d0
-00000462	23fc c0000000 00c00004  move.l   #$c0000000,$00c00004
-         *
-*   */
+
         traceMap = l.stream().collect(Collectors.toMap(M68kLoopTrace::str, Function.identity()));
     }
 

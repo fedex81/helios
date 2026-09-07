@@ -19,7 +19,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static omegadrive.cpu.m68k.drc.M68kOpcodeSpecHelper.M68kOpcodeSpec.find;
+import static omegadrive.cpu.m68k.drc.M68kOpcodeSpecHelper.M68kOpcodeSpec.*;
 import static omegadrive.util.Util.th;
 
 /**
@@ -86,7 +86,7 @@ public class M68kLoopHelperImpl implements M68kLoopHelper {
     }
 
     private M68kBlock getBlock(int pc) {
-        assert pc == (pc & blocksLenMask);
+        assert (pc >> 1) == ((pc >> 1) & blocksLenMask) : th(pc) + "," + th(pc & blocksLenMask);
         M68kBlock block = getBlockFromPc(pc);
         if (block != M68kBlock.NO_BLOCK) {
             if (BufferUtil.assertionsEnabled) {
@@ -122,8 +122,11 @@ public class M68kLoopHelperImpl implements M68kLoopHelper {
         block.opcodes = Arrays.copyOf(opcodeTemp, block.opcodeLen);
         block.instructions = Arrays.copyOf(instTemp, block.instLen);
         block.loopType = res;
+        if (verbose && res != LoopType.NONE) {
+            block.generateInfo();
+            if (verbose) LogHelper.logErrorOnce(LOG, "{}", block);
+        }
         assert Arrays.stream(block.opcodes).noneMatch(v -> v == -1) : th(pc);
-        if (verbose) System.out.println("New Block: " + block);
         var b = block;
         block = null;
         return b;
@@ -166,11 +169,14 @@ public class M68kLoopHelperImpl implements M68kLoopHelper {
         if (process) {
             int baseIdx = 0;
             boolean val;
+            int numNop = 0;
             do {
                 val = checkJump(pc, instTemp[baseIdx]);
+                numNop += NOP.matches(instTemp[baseIdx].getOpcode()) ? 1 : 0;
                 if (val) {
                     res = LoopType.BUSY_LOOP;
-                    if (baseIdx == 0) {
+                    boolean isInf = baseIdx == 0 || (numNop + 1 == block.instLen);
+                    if (isInf) {
 //                        System.out.println("infLoop");
                         res = LoopType.INFINITE_LOOP;
                     }
@@ -184,6 +190,8 @@ public class M68kLoopHelperImpl implements M68kLoopHelper {
     private boolean checkJump(int pc, M68kSimpleInst di) {
         var opc2 = M68kOpcodeSpec.find(di.getOpcode());
         boolean isBranch = opc2 != null && opc2.isBranch();
+        //only JMP, Bcc qualify
+        isBranch &= opc2 == JMP || opc2 == Bcc_S || opc2 == Bcc_W;
         if (isBranch) {
             return pc == getJumpDestAddress(di, pc);
         }
@@ -194,27 +202,31 @@ public class M68kLoopHelperImpl implements M68kLoopHelper {
         final int op2 = di.getOpcode();
         final int jmpIdx = di.getAddress();
         int jmpImmSizeWords = di.immSizeWords();
+
         return switch (jmpImmSizeWords) {
             case 0 -> {
-                int jmpOffset = 0xFF - (op2 & 0xFF) - 1;
-                yield jmpIdx - jmpOffset;
+                int jmpOffset = (byte) op2 + 2;
+                int dest = jmpIdx + jmpOffset;
+                assert di.toString().endsWith(th(dest));
+//                    System.err.println("YYY," + di + " -> " + th(dest));
+                yield dest;
             }
-            case 1 -> {         //6600 fff6               bne.w
+            case 1 -> {
                 int immIdx = (jmpIdx + 2 - pc) >> 1;
-                if (immIdx < opcodeTemp.length) {
-                    int op3 = opcodeTemp[immIdx];
-                    int jmpOffset = 0xFF - (op3 & 0xFF) - 1;
-                    yield jmpIdx - jmpOffset;
-                }
-                yield -1;
+                assert immIdx < opcodeTemp.length;
+                int op3 = opcodeTemp[immIdx];
+                int dest = jmpIdx + (short) op3 + 2;
+//                        System.err.println("XXX," + di + " -> " + th(dest));
+                yield dest;
             }
-            case 2 -> { //4ef9 00000128           jmp      $00000128
-                if (jmpIdx + 2 - pc < opcodeTemp.length) {
-                    int op3 = opcodeTemp[jmpIdx + 1 - pc];
-                    int op4 = opcodeTemp[jmpIdx + 2 - pc];
-                    yield (op3 << 16) | (op4 & 0xFFFF);
-                }
-                yield -1;
+            case 2 -> {
+                int immIdx = (jmpIdx + 2 - pc) >> 1;
+                assert immIdx + 1 < opcodeTemp.length;
+                int op3 = opcodeTemp[immIdx];
+                int op4 = opcodeTemp[immIdx + 1];
+                int dest = (op3 << 16) | (op4 & 0xFFFF);
+//                    System.err.println("ZZZ," + di + " -> " + th(dest));
+                yield dest;
             }
             default -> -1;
         };

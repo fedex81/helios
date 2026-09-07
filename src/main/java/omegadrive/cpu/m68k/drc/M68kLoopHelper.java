@@ -8,7 +8,6 @@ import omegadrive.cpu.CpuBusyLoopDetection;
 import omegadrive.memory.ReadableByteMemory;
 import omegadrive.util.BufferUtil;
 
-import java.util.Arrays;
 import java.util.StringJoiner;
 
 import static omegadrive.bus.model.MdMainBusProvider.ADDRESS_UPPER_LIMIT;
@@ -21,7 +20,15 @@ import static omegadrive.util.Util.th;
  */
 public interface M68kLoopHelper extends Device {
 
-    enum LoopType {NONE, INFINITE_LOOP, BUSY_LOOP}
+    enum LoopType {
+        NONE(0), INFINITE_LOOP(1000), BUSY_LOOP(10);
+
+        public final int delay;
+
+        LoopType(int delayCk) {
+            delay = delayCk;
+        }
+    }
 
     int MAX_INST_PER_BLOCK = 5;
     // M68k inst can be 10 bytes long
@@ -36,21 +43,36 @@ public interface M68kLoopHelper extends Device {
         public LoopType loopType = LoopType.NONE;
         public int hash;
 
+        private String info;
+
         public static final M68kBlock NO_BLOCK = new M68kBlock(-1);
 
         public M68kBlock(int pc) {
             this.pc = pc;
         }
 
+        public void generateInfo() {
+            assert info == null;
+            String is = "";
+            for (var inst : instructions) {
+                is += inst + "\n";
+            }
+            if (is.length() > 0) {
+                is = "\n" + is;
+            }
+            info = is;
+        }
+
         @Override
         public String toString() {
+            assert info != null;
             return new StringJoiner(", ", M68kBlock.class.getSimpleName() + "[", "]")
                     .add("pc=" + th(pc))
                     .add("instLen=" + instLen)
                     .add("opcodeLen=" + opcodeLen)
-                    .add("opcodes=" + Arrays.toString(opcodes))
                     .add("loopType=" + loopType)
                     .add("hash=" + hash)
+                    .add("info=" + info)
                     .toString();
         }
     }
