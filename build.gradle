@@ -20,8 +20,8 @@ dependencies {
     // https://mvnrepository.com/artifact/net.java.jinput/jinput
     implementation group: 'net.java.jinput', name: 'jinput', version: '2.0.10'
     // https://mvnrepository.com/artifact/com.google.guava/guava
-    implementation group: 'com.google.guava', name: 'guava', version: '33.6.0-jre'
-    implementation group: 'org.jctools', name: 'jctools-core', version: '4.0.4'
+    implementation group: 'com.google.guava', name: 'guava', version: '33.7.1-jre'
+    implementation group: 'org.jctools', name: 'jctools-core', version: '4.0.7'
     // https://mvnrepository.com/artifact/org.digitalmediaserver/cuelib-core
     implementation group: 'org.digitalmediaserver', name: 'cuelib-core', version: '2.0.0'
     implementation group: 'com.github.stephengold', name: 'j-ogg-vorbis', version: '1.0.6'
