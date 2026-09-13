@@ -36,10 +36,8 @@ public class BlipBufferHelper {
                 int sr = accumR >> 15;
 
                 // clamp to 16 bits
-                if ((short) sl != sl)
-                    sl = clampToShort(sl);
-                if ((short) sr != sr)
-                    sr = clampToShort(sr);
+                sl = clampToShort(sl);
+                sr = clampToShort(sr);
 
                 setSigned16LE((short) sl, out, pos);
                 setSigned16LE((short) sr, out, pos + 2);
@@ -72,8 +70,7 @@ public class BlipBufferHelper {
                 int s = accum >> 15;
 
                 // clamp to 16 bits
-                if ((short) s != s)
-                    s = clampToShort(s);
+                s = clampToShort(s);
 
                 setSigned16LE((short) s, out, pos);
                 setSigned16LE((short) s, out, pos + 2);
@@ -105,8 +102,7 @@ public class BlipBufferHelper {
                 int sample = accum >> 15;
 
                 // clamp to 16 bits
-                if ((short) sample != sample)
-                    sample = clampToShort(sample);
+                sample = clampToShort(sample);
 
                 out[pos++] = sample;
             }
@@ -163,8 +159,7 @@ public class BlipBufferHelper {
                 int s = accum >> 15;
 
                 // clamp to 16 bits
-                if ((short) s != s)
-                    s = clampToShort(s);
+                s = clampToShort(s);
 
                 // write as little-endian
                 out[pos] = (byte) (s >> 8);
