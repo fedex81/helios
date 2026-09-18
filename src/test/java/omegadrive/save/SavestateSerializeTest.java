@@ -11,6 +11,7 @@ import omegadrive.savestate.GshStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -23,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Ym2612NukeSerializeTest
+ * SavestateSerializeTest
  * <p>
  * Federico Berti
  * <p>
@@ -36,6 +37,12 @@ public class SavestateSerializeTest {
     private static final String svpSavestateName = "svp_serialized_test_01.gsh";
 
     private static final IMemoryProvider NO_MEMORY = MemoryProvider.createInstance(new byte[2], 0);
+
+    @AfterAll
+    public static void afterAll() {
+        SvpMapper.ssp16 = Ssp16.NO_SVP;
+        System.out.println("Setting SVP to NONE");
+    }
 
     /**
      * Has the serialization format been changed?

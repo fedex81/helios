@@ -21,9 +21,11 @@ package omegadrive.save;
 
 import m68k.cpu.MC68000;
 import omegadrive.Device;
+import omegadrive.bus.md.SvpMapper;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.bus.model.MdZ80BusProvider;
 import omegadrive.cpu.m68k.MC68000Wrapper;
+import omegadrive.cpu.ssp16.Ssp16;
 import omegadrive.cpu.z80.Z80Provider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
@@ -36,6 +38,8 @@ import omegadrive.util.JunitTestUtil;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -67,6 +71,11 @@ public class MdSavestateTest extends BaseSavestateTest {
                 MD, saveFile.toAbsolutePath().toString(), Type.LOAD, busProvider.getAllDevices(Device.class));
         loadHandler.processState();
         return busProvider;
+    }
+
+    @BeforeEach
+    public void before() {
+        Assertions.assertEquals(SvpMapper.ssp16, Ssp16.NO_SVP);
     }
 
     @Test

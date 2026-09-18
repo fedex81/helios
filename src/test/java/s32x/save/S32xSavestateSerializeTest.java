@@ -1,6 +1,8 @@
 package s32x.save;
 
 import omegadrive.Device;
+import omegadrive.bus.md.SvpMapper;
+import omegadrive.cpu.ssp16.Ssp16;
 import omegadrive.save.MdSavestateTest;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.util.Size;
@@ -20,6 +22,7 @@ import s32x.util.MarsLauncherHelper;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -48,6 +51,7 @@ public class S32xSavestateSerializeTest {
     public void before() {
         lc = MarsRegTestUtil.createTestInstance();
         StaticBootstrapSupport.instance = NO_OP;
+        Assertions.assertEquals(SvpMapper.ssp16, Ssp16.NO_SVP);
     }
 
     static Stream<Path> fileProvider() throws IOException {
@@ -82,8 +86,15 @@ public class S32xSavestateSerializeTest {
 
         ignoreKnownIssues(stateHandler, saveHandler);
 
+        try {
+            Assertions.assertArrayEquals(stateHandler.getData(), saveHandler.getData());
+        } catch (AssertionError ae) {
+            int diffIndex = Arrays.mismatch(stateHandler.getData(), saveHandler.getData());
+            System.err.println("First diff at index: " + diffIndex);
+            throw ae;
+        }
+
 //        FileUtil.writeFileSafe(Paths.get(p.getParent().toAbsolutePath().toString(), p.getFileName().toString() + ".new"), saveHandler.getData());
-        Assertions.assertArrayEquals(stateHandler.getData(), saveHandler.getData());
 
         //check fetchResult has been invalidated
         Gs32xStateHandler.Sh2ContextWrap scw = Gs32xStateHandler.getSh2ContextWrap();
