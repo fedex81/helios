@@ -22,10 +22,7 @@ package omegadrive.vdp;
 import com.google.common.collect.ImmutableList;
 import omegadrive.util.FileUtil;
 import omegadrive.util.Util;
-import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -37,6 +34,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
 
@@ -66,11 +65,10 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
         if (stopWhenDone && fileName.startsWith("vf2")) {
             Util.waitForever();
         }
-        Assert.assertFalse("Error: " + fileName, error);
+        assertFalse(error, "Error: " + fileName);
     }
 
-    @Ignore
-    @Disabled
+    @org.junit.jupiter.api.Disabled
     @Test
     public void testCompare() {
         Path saveFile = Paths.get(baseDataFolder, "subterr_01.gsh");

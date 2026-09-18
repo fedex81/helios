@@ -17,10 +17,11 @@
 
 package omegadrive.memory;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.stream.IntStream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * MdMemoryProviderTest
@@ -85,6 +86,6 @@ public class MdMemoryProviderTest {
         provider.setRomData(data);
 
         long res = provider.readRomByte(address);
-        Assert.assertEquals(expected, res);
+        assertEquals(expected, res);
     }
 }

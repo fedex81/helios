@@ -28,10 +28,10 @@ import omegadrive.savestate.MekaStateHandler;
 import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
+import omegadrive.util.JunitTestUtil;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.SmsVdp;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -41,6 +41,8 @@ import java.util.stream.IntStream;
 import static omegadrive.SystemLoader.SystemType.SMS;
 import static omegadrive.savestate.BaseStateHandler.Type.LOAD;
 import static omegadrive.savestate.BaseStateHandler.Type.SAVE;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SmsSavestateTest extends BaseSavestateTest {
 
@@ -74,11 +76,11 @@ public class SmsSavestateTest extends BaseSavestateTest {
         BaseStateHandler loadHandler2 = MekaStateHandler.
                 createLoadInstance(name, saveData, busProvider2.getAllDevices(Device.class));
         loadHandler2.processState();
-        Assert.assertArrayEquals(saveData, loadHandler2.getData());
+        assertArrayEquals(saveData, loadHandler2.getData());
 
         compareDevices(busProvider1, busProvider2);
 
-//        Assert.assertArrayEquals("Data mismatch", data, savedData);
+//        assertArrayEquals("Data mismatch", data, savedData);
     }
 
     private void compareDevices(SmsBus b1, SmsBus b2) {
@@ -89,18 +91,18 @@ public class SmsSavestateTest extends BaseSavestateTest {
     }
 
     private void compareBus(SmsBus bus1, SmsBus bus2) {
-        Assert.assertEquals(bus1.getMapperControl(), bus2.getMapperControl());
-        Assert.assertArrayEquals(bus1.getFrameReg(), bus2.getFrameReg());
+        assertEquals(bus1.getMapperControl(), bus2.getMapperControl());
+        assertArrayEquals(bus1.getFrameReg(), bus2.getFrameReg());
     }
 
     private void compareVdp(SmsVdp vdp1, SmsVdp vdp2) {
         IntStream.range(0, SmsVdp.VDP_REGISTERS_SIZE).forEach(i ->
-                Assert.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
+                JunitTestUtil.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
         IntStream.range(0, SmsVdp.VDP_VRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vram" + i, vdp1.getVRAM()[i],
+                JunitTestUtil.assertEquals("Vram" + i, vdp1.getVRAM()[i],
                         vdp2.getVRAM()[i]));
         IntStream.range(0, SmsVdp.VDP_CRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Cram" + i, vdp1.getCRAM()[i],
+                JunitTestUtil.assertEquals("Cram" + i, vdp1.getCRAM()[i],
                         vdp2.getCRAM()[i]));
     }
 }

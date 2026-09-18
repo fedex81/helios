@@ -28,22 +28,21 @@ import omegadrive.ui.DisplayWindow;
 import omegadrive.util.TestRenderUtil;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.MdVdpProvider;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.awt.*;
 import java.nio.file.Path;
 
 import static omegadrive.util.SystemTestUtil.createTestJoypadProvider;
 
-@Ignore
+@org.junit.jupiter.api.Disabled
 public class VdpRenderTest implements BaseVdpProvider.VdpEventListener {
 
     protected static int[] screenData;
     protected static String baseDataFolder = MdSavestateTest.saveStateFolder.toAbsolutePath().toString();
     int count = 0;
 
-    @Before
+    @BeforeEach
     public void beforeTest(){
         System.setProperty("helios.headless", "true");
     }

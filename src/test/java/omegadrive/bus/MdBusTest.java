@@ -20,14 +20,13 @@ package omegadrive.bus;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.function.Supplier;
 
 import static omegadrive.bus.model.MdMainBusProvider.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * MdBusTest
@@ -38,7 +37,7 @@ public class MdBusTest {
 
     private MdMainBusProvider bus;
 
-    @Before
+    @BeforeEach
     public void init() {
         bus = SystemTestUtil.setupNewMdSystem();
     }
@@ -53,22 +52,22 @@ public class MdBusTest {
         bus.write(0xA11100, value, Size.BYTE); //busReq
         bus.write(MdMainBusProvider.Z80_ADDRESS_SPACE_START, value, Size.BYTE);
         long res = bus.read(MdMainBusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
-        Assert.assertEquals(value, res);
+        assertEquals(value, res);
 
         value = 2;
         bus.write(0xA08000, value, Size.BYTE);
         res = bus.read(MdMainBusProvider.Z80_ADDRESS_SPACE_START, Size.BYTE);
-        Assert.assertEquals(value, res);
+        assertEquals(value, res);
 
         value = 3;
         bus.write(0xA08500, value, Size.BYTE);
         res = bus.read(0xA00500, Size.BYTE);
-        Assert.assertEquals(value, res);
+        assertEquals(value, res);
 
         value = 4;
         bus.write(0xA00A00, value, Size.BYTE);
         res = bus.read(0xA08A00, Size.BYTE);
-        Assert.assertEquals(value, res);
+        assertEquals(value, res);
     }
 
     /**
@@ -99,17 +98,17 @@ public class MdBusTest {
         int val = 1;
         bus.write(SRAM_LOCK - 1, val, Size.WORD);
         int res = bus.read(SRAM_LOCK, Size.BYTE);
-        Assertions.assertEquals(val, res);
+        assertEquals(val, res);
     }
 
     private void testIoReadInternal(int ctrlPort, int val, Size size) {
         int res, expWord, expByte = val & 0xFF;
         bus.write(ctrlPort, val, size);
         res = bus.read(ctrlPort, Size.BYTE);
-        Assertions.assertEquals(expByte, res);
+        assertEquals(expByte, res);
         res = bus.read(ctrlPort, Size.WORD);
         expWord = expByte | ((expByte << 8) & 0xFF00);
-        Assertions.assertEquals(expWord, res);
+        assertEquals(expWord, res);
     }
 
     private static int M68K_ACCESS = 0;
@@ -131,17 +130,17 @@ public class MdBusTest {
 //        z80ResetState = false
         bus.setZ80BusRequested(true);
         bus.setZ80ResetState(false);
-        Assertions.assertEquals(M68K_ACCESS, readFn.get());
+        assertEquals(M68K_ACCESS, readFn.get());
 
         //sets 0 while bus unrequested, M68K access
         bus.write(Z80_RESET_CONTROL_START, 0, Size.WORD);
-        Assertions.assertEquals(true, bus.isZ80ResetState());
-        Assertions.assertEquals(Z80_ACCESS_W, readFn.get());
+        assertEquals(true, bus.isZ80ResetState());
+        assertEquals(Z80_ACCESS_W, readFn.get());
 
         bus.write(Z80_BUS_REQ_CONTROL_START, 0x100, Size.WORD);
         //now reset and
-        Assertions.assertEquals(true, bus.isZ80ResetState());
-        Assertions.assertEquals(true, bus.isZ80BusRequested());
-        Assertions.assertEquals(Z80_ACCESS_W, readFn.get());
+        assertEquals(true, bus.isZ80ResetState());
+        assertEquals(true, bus.isZ80BusRequested());
+        assertEquals(Z80_ACCESS_W, readFn.get());
     }
 }

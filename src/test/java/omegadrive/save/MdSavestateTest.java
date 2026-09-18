@@ -32,11 +32,11 @@ import omegadrive.savestate.BaseStateHandler.Type;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.fm.FmProvider;
+import omegadrive.util.JunitTestUtil;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static omegadrive.SystemLoader.SystemType.MD;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class MdSavestateTest extends BaseSavestateTest {
 
@@ -76,8 +77,8 @@ public class MdSavestateTest extends BaseSavestateTest {
     private void compareFm(FmProvider fm1, FmProvider fm2) {
         int limit = GstStateHandler.FM_DATA_SIZE / 2;
         for (int i = 0; i < limit; i++) {
-            Assert.assertEquals("reg0:" + i, fm1.readRegister(0, i), fm2.readRegister(0, i));
-            Assert.assertEquals("reg1:" + i, fm1.readRegister(1, i), fm2.readRegister(1, i));
+            JunitTestUtil.assertEquals("reg0:" + i, fm1.readRegister(0, i), fm2.readRegister(0, i));
+            JunitTestUtil.assertEquals("reg1:" + i, fm1.readRegister(1, i), fm2.readRegister(1, i));
         }
     }
 
@@ -85,11 +86,11 @@ public class MdSavestateTest extends BaseSavestateTest {
         compareZ80(z80p1, z80p2);
 
         IntStream.range(0, MdZ80BusProvider.Z80_RAM_MEMORY_SIZE).forEach(
-                i -> Assert.assertEquals("Z80Ram:" + i, z80p1.readMemory(i), z80p2.readMemory(i))
+                i -> JunitTestUtil.assertEquals("Z80Ram:" + i, z80p1.readMemory(i), z80p2.readMemory(i))
         );
-        Assert.assertEquals("z80Reset", bus1.isZ80ResetState(), bus2.isZ80ResetState());
-        Assert.assertEquals("z80BusReq", bus1.isZ80BusRequested(), bus2.isZ80BusRequested());
-        Assert.assertEquals("z80Banking", MdZ80BusProvider.getRomBank68kSerial(z80p1),
+        JunitTestUtil.assertEquals("z80Reset", bus1.isZ80ResetState(), bus2.isZ80ResetState());
+        JunitTestUtil.assertEquals("z80BusReq", bus1.isZ80BusRequested(), bus2.isZ80BusRequested());
+        JunitTestUtil.assertEquals("z80Banking", MdZ80BusProvider.getRomBank68kSerial(z80p1),
                 MdZ80BusProvider.getRomBank68kSerial(z80p2));
     }
 
@@ -97,32 +98,32 @@ public class MdSavestateTest extends BaseSavestateTest {
         MC68000 cpu1 = cpu1w.getM68k();
         MC68000 cpu2 = cpu2w.getM68k();
 
-        Assert.assertEquals("SR", cpu1.getSR(), cpu2.getSR());
-        Assert.assertEquals("PC", cpu1.getPC(), cpu2.getPC());
-//        Assert.assertEquals("SSP", cpu1.getSSP(), cpu2.getSSP()); TODO
-        Assert.assertEquals("USP", cpu1.getUSP(), cpu2.getUSP());
-        IntStream.range(0, 8).forEach(i -> Assert.assertEquals("D" + i, cpu1.getDataRegisterLong(i),
+        JunitTestUtil.assertEquals("SR", cpu1.getSR(), cpu2.getSR());
+        JunitTestUtil.assertEquals("PC", cpu1.getPC(), cpu2.getPC());
+//        assertEquals("SSP", cpu1.getSSP(), cpu2.getSSP()); TODO
+        JunitTestUtil.assertEquals("USP", cpu1.getUSP(), cpu2.getUSP());
+        IntStream.range(0, 8).forEach(i -> JunitTestUtil.assertEquals("D" + i, cpu1.getDataRegisterLong(i),
                 cpu2.getDataRegisterLong(i)));
-        IntStream.range(0, 8).forEach(i -> Assert.assertEquals("A" + i, cpu1.getAddrRegisterLong(i),
+        IntStream.range(0, 8).forEach(i -> JunitTestUtil.assertEquals("A" + i, cpu1.getAddrRegisterLong(i),
                 cpu2.getAddrRegisterLong(i)));
 
         IntStream.range(0, MemoryProvider.M68K_RAM_SIZE).forEach(i ->
-                Assert.assertEquals("8k Ram" + i, mem1.readRamByte(i), mem2.readRamByte(i)));
+                JunitTestUtil.assertEquals("8k Ram" + i, mem1.readRamByte(i), mem2.readRamByte(i)));
 
     }
 
     private void compareVdp(MdVdpProvider vdp1, MdVdpProvider vdp2) {
         IntStream.range(0, 24).forEach(i ->
-                Assert.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
+                JunitTestUtil.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
 
         VdpMemoryInterface vm1 = vdp1.getVdpMemory();
         VdpMemoryInterface vm2 = vdp2.getVdpMemory();
         IntStream.range(0, MdVdpProvider.VDP_VRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vram" + i, vm1.getVram().get(i), vm2.getVram().get(i)));
+                JunitTestUtil.assertEquals("Vram" + i, vm1.getVram().get(i), vm2.getVram().get(i)));
         IntStream.range(0, MdVdpProvider.VDP_VSRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vsram" + i, vm1.getVsram().get(i), vm2.getVsram().get(i)));
+                JunitTestUtil.assertEquals("Vsram" + i, vm1.getVsram().get(i), vm2.getVsram().get(i)));
         IntStream.range(0, MdVdpProvider.VDP_CRAM_SIZE).forEach(i ->
-                Assert.assertEquals("Cram" + i, vm1.getCram().get(i), vm2.getCram().get(i)));
+                JunitTestUtil.assertEquals("Cram" + i, vm1.getCram().get(i), vm2.getCram().get(i)));
     }
 
     @Override
@@ -150,7 +151,7 @@ public class MdSavestateTest extends BaseSavestateTest {
 
         compareDevices(busProvider1, busProvider2);
 
-        Assert.assertArrayEquals("Data mismatch", data, savedData);
+        assertArrayEquals(data, savedData, "Data mismatch");
     }
 
     private void compareDevices(MdMainBusProvider b1, MdMainBusProvider b2) {

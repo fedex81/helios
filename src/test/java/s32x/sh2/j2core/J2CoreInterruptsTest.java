@@ -2,7 +2,10 @@ package s32x.sh2.j2core;
 
 import omegadrive.util.FileUtil;
 import omegadrive.util.Size;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import s32x.bus.Sh2Bus;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.Sh2Disassembler;
@@ -112,7 +115,7 @@ public class J2CoreInterruptsTest extends J2CoreTest {
     }
 
     @Override
-    @Disabled
+    @org.junit.jupiter.api.Disabled
     public void testJ2() {
         //do nothing
     }

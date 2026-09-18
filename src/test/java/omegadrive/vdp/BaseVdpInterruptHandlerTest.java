@@ -25,15 +25,15 @@ import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEventListener;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
 
-@Ignore
+import static org.junit.jupiter.api.Assertions.*;
+
+@org.junit.jupiter.api.Disabled
 public class BaseVdpInterruptHandlerTest {
 
     private static final Logger LOG = LogHelper.getLogger(BaseVdpInterruptHandlerTest.class.getSimpleName());
@@ -52,7 +52,7 @@ public class BaseVdpInterruptHandlerTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         enableListener = false;
         numberOfHint = line = lineCount = 0;
@@ -81,7 +81,7 @@ public class BaseVdpInterruptHandlerTest {
         do {
             h.increaseHCounter();
         } while (lineCount < totalCount);
-        Assert.assertArrayEquals(expectedLineInt, actualLineInt);
+        assertArrayEquals(expectedLineInt, actualLineInt);
     }
 
     public void hLinesCounterBasic2(BaseVdpProvider vdp, VdpInterruptHandler h, VideoMode mode) {
@@ -94,7 +94,7 @@ public class BaseVdpInterruptHandlerTest {
         do {
             h.increaseHCounter();
         } while (lineCount < totalCount);
-        Assert.assertEquals(expectedNumberOfHint, numberOfHint);
+        assertEquals(expectedNumberOfHint, numberOfHint);
     }
 
     public void hLinesCounterTotal(BaseVdpProvider vdp, VdpInterruptHandler h,
@@ -105,7 +105,7 @@ public class BaseVdpInterruptHandlerTest {
         do {
             h.increaseHCounter();
         } while (lineCount < totalCount);
-        Assert.assertEquals(expectedNumberOfHint, numberOfHint);
+        assertEquals(expectedNumberOfHint, numberOfHint);
     }
 
     private void newLineEvent(VdpInterruptHandler h) {
@@ -124,7 +124,7 @@ public class BaseVdpInterruptHandlerTest {
         }
         printMsg(h.getStateString("HINT pending, Line: " + line));
         if (line >= actualLineInt.length) {
-            Assert.fail(h.getStateString("Line: " + line));
+            fail(h.getStateString("Line: " + line));
         } else {
             actualLineInt[line] = true;
         }

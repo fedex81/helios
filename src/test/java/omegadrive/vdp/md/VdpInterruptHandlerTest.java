@@ -25,17 +25,17 @@ import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class VdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
 
     private static final Logger LOG = LogHelper.getLogger(VdpInterruptHandlerTest.class.getSimpleName());
 
     @Test
-    @Ignore
+    @org.junit.jupiter.api.Disabled
     public void stressTest() {
         do {
             testHLinesCounter_01();
@@ -87,7 +87,7 @@ public class VdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
             h.increaseHCounter();
             if (h.isHIntPending()) {
                 printMsg(h.getStateString("Line: " + line + ", HINT pending"));
-                Assert.assertEquals(hLinePassed, h.getVCounterExternal());
+                assertEquals(hLinePassed, h.getVCounterExternal());
                 h.setHIntPending(false);
             }
         } while (lineCount < totalCount);
@@ -115,7 +115,7 @@ public class VdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
             if (h.isHIntPending()) {
                 printMsg(h.getStateString("Line: " + line + ", HINT pending"));
                 h.setHIntPending(false);
-                Assert.assertEquals("Error on count: " + lineCount, hIntOnLine, line);
+                assertEquals(hIntOnLine, line, "Error on count: " + lineCount);
             }
         } while (lineCount < totalCount);
     }
@@ -132,14 +132,14 @@ public class VdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
         int totalCount = MdVdpProvider.NTSC_SCANLINES * 10 + 5;
         prepareVdp(vdp, h, VideoMode.NTSCU_H40_V30);
         boolean atLeastOneVInt = false;
-        Assert.assertFalse(h.isvBlankSet());
+        assertFalse(h.isvBlankSet());
         do {
             h.increaseHCounter();
             if (h.isvBlankSet()) {
                 atLeastOneVInt = true;
             }
         } while (lineCount < totalCount);
-        Assert.assertTrue(atLeastOneVInt);
+        assertTrue(atLeastOneVInt);
     }
 
     /**

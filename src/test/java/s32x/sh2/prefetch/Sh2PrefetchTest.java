@@ -6,7 +6,6 @@ import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -62,7 +61,7 @@ public class Sh2PrefetchTest extends Sh2CacheTest {
         testRamCacheMasterSlaveInternal();
     }
 
-    @Disabled
+    @org.junit.jupiter.api.Disabled
     @Override
     public void testCache(Sh2Config c) {
     }

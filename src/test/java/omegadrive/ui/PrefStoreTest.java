@@ -22,10 +22,9 @@ package omegadrive.ui;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SysUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,10 +37,11 @@ import java.util.function.Function;
 import static omegadrive.SystemLoader.SystemType.NONE;
 import static omegadrive.SystemLoader.SystemType.S32X;
 import static omegadrive.system.MediaSpecHolder.NO_PATH;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PrefStoreTest {
 
-    @Before
+    @BeforeEach
     public void before() {
         PrefStore.PREF_FILENAME = "noFile";
         PrefStore.initPrefs();
@@ -52,7 +52,7 @@ public class PrefStoreTest {
         String openFile = "test01";
         PrefStore.addRecentFile(openFile);
         List<String> l = PrefStore.getRecentFilesList();
-        Assert.assertEquals(l.get(0), openFile);
+        assertEquals(l.get(0), openFile);
     }
 
     private static void addSet(String val) {
@@ -69,7 +69,7 @@ public class PrefStoreTest {
             addSet("test" + i);
         }
         String exp = "[test9, test8, test7, test6, test5, test4, test3, test2, test1, test0]";
-        Assert.assertEquals(exp, toOrderedString());
+        assertEquals(exp, toOrderedString());
     }
 
     @Test
@@ -77,7 +77,7 @@ public class PrefStoreTest {
         firstRunFill();
         addSet("wrap01");
         String exp = "[wrap01, test9, test8, test7, test6, test5, test4, test3, test2, test1]";
-        Assert.assertEquals(exp, toOrderedString());
+        assertEquals(exp, toOrderedString());
     }
 
     @Test
@@ -88,9 +88,9 @@ public class PrefStoreTest {
         }
         addSet("test5");
         List<String> l = PrefStore.getRecentFilesList();
-        Assert.assertEquals(l.get(0), "test5");
+        assertEquals(l.get(0), "test5");
         String exp = "[test5, test9, test8, test7, test6, test4, test3, test2, test1, test0]";
-        Assert.assertEquals(exp, toOrderedString());
+        assertEquals(exp, toOrderedString());
     }
 
     @Test
@@ -113,7 +113,7 @@ public class PrefStoreTest {
         List<String> l = PrefStore.getRecentFilesList();
         for (int i = 0; i < names.length; i++) {
             String v = l.get(i);
-            Assertions.assertEquals(NONE, PrefStore.getSystemTypeFromRecentItem(v));
+            assertEquals(NONE, PrefStore.getSystemTypeFromRecentItem(v));
         }
     }
 
@@ -131,8 +131,8 @@ public class PrefStoreTest {
         for (int i = 0; i < names.length; i++) {
             String v = l.get(i);
             MediaSpecHolder romSpec = PrefStore.getRomSpecFromRecentItem(v);
-            Assertions.assertEquals(expTyp.get(i), romSpec.systemType);
-            Assertions.assertEquals(p, romSpec.getBootableMedia().romFile);
+            assertEquals(expTyp.get(i), romSpec.systemType);
+            assertEquals(p, romSpec.getBootableMedia().romFile);
         }
     }
 

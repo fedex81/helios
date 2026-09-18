@@ -9,10 +9,11 @@ import omegadrive.system.Sms;
 import omegadrive.system.SystemProvider;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.LogHelper;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * ${FILE}
@@ -26,7 +27,7 @@ public class SmsBusTest {
     private final static Logger LOG = LogHelper.getLogger(SmsBusTest.class);
     private SmsBus bus;
 
-    @Before
+    @BeforeEach
     public void before() {
         SystemProvider sp = Sms.createNewInstance(SystemLoader.SystemType.SMS, DisplayWindow.HEADLESS_INSTANCE);
         IMemoryProvider mem = MemoryProvider.createSmsInstance();
@@ -49,14 +50,14 @@ public class SmsBusTest {
     public void testRegionDetectionDomestic() {
         bus.countryValue = SmsBus.DOMESTIC;
         boolean isDomestic = testRegionDetectInternal();
-        Assert.assertTrue(isDomestic);
+        assertTrue(isDomestic);
     }
 
     @Test
     public void testRegionDetectionOverseas() {
         bus.countryValue = SmsBus.OVERSEAS;
         boolean isDomestic = testRegionDetectInternal();
-        Assert.assertFalse(isDomestic);
+        assertFalse(isDomestic);
     }
 
     @Test
@@ -64,11 +65,11 @@ public class SmsBusTest {
         bus.countryValue = SmsBus.DOMESTIC;
         bus.writeIoPort(0x3F, 0b1111_0101); //Output 1s on both TH lines
         int res = bus.readIoPort(0xDD);
-        Assert.assertEquals(res >> 6, 0b00); //levels are low
+        assertEquals(res >> 6, 0b00); //levels are low
 
         bus.writeIoPort(0x3F, 0b1111_1111); //both TH lines as inputs
         res = bus.readIoPort(0xDD);
-        Assert.assertEquals(res >> 6, 0b11); //levels are high
+        assertEquals(res >> 6, 0b11); //levels are high
     }
 
     @Test
@@ -79,18 +80,18 @@ public class SmsBusTest {
         int prevHCount = bus.hCounter;
 
         bus.writeIoPort(0x3F, 0b0101_1111); //toggle inputs 1->0
-        Assert.assertNotEquals(bus.hCounter, prevHCount); //new hc latched
+        assertNotEquals(bus.hCounter, prevHCount); //new hc latched
         prevHCount = bus.hCounter;
 
         bus.writeIoPort(0x3F, 0b1111_1111); //toggle inputs 0->1
-        Assert.assertNotEquals(bus.hCounter, prevHCount); //new hc latched
+        assertNotEquals(bus.hCounter, prevHCount); //new hc latched
         prevHCount = bus.hCounter;
 
         bus.writeIoPort(0x3F, 0b1111_1111); //all inputs high
         prevHCount = bus.hCounter;
 
         bus.writeIoPort(0x3F, 0b1101_1111); //toggle A input 1->0
-        Assert.assertNotEquals(bus.hCounter, prevHCount); //new hc latched
+        assertNotEquals(bus.hCounter, prevHCount); //new hc latched
         prevHCount = bus.hCounter;
     }
 

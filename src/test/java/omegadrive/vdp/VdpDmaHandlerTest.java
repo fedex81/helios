@@ -20,7 +20,7 @@ package omegadrive.vdp;
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.md.BaseVdpDmaHandlerTest;
 import omegadrive.vdp.model.MdVdpProvider;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import java.util.Arrays;

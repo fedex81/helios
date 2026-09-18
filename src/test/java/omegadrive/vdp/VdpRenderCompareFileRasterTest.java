@@ -26,10 +26,7 @@ import omegadrive.util.TestRenderUtil;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.model.MdVdpProvider;
-import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -48,12 +45,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static omegadrive.vdp.util.VdpPortAccessLogger.VdpWriteContext;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Interlace mode only, store and compares only the even field (#0)
  */
-@Ignore
-@Disabled
+@org.junit.jupiter.api.Disabled
 //TODO when running all tests within the project, it is comparing the wrong field ??
 public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
 
@@ -94,7 +91,7 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
         if (error && fileName.contains("s2_")) {
             Util.waitForever();
         }
-        Assert.assertFalse("Error: " + fileName, error);
+        assertFalse(error, "Error: " + fileName);
 //        Util.waitForever();
     }
 
@@ -168,15 +165,13 @@ public class VdpRenderCompareFileRasterTest extends VdpRenderCompareTest {
         }
     }
 
-    @Ignore
-    @Disabled
+    @org.junit.jupiter.api.Disabled
     @Override
     public void testCompareAll() {
         super.testCompareAll();
     }
 
-    @Ignore
-    @Disabled
+    @org.junit.jupiter.api.Disabled
     @Test
     public void testCompare() {
         String fileName = "ccars_int_01.gsh";

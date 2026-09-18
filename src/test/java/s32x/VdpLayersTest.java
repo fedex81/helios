@@ -4,7 +4,6 @@ import omegadrive.util.ImageUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import omegadrive.vdp.VdpRenderDump;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import s32x.vdp.MarsVdp.VdpPriority;
@@ -23,7 +22,7 @@ import java.nio.file.Paths;
  * <p>
  * Copyright 2021
  */
-@Disabled
+@org.junit.jupiter.api.Disabled
 public class VdpLayersTest {
 
     private final static Logger LOG = LogHelper.getLogger(VdpLayersTest.class.getSimpleName());

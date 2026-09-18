@@ -3,8 +3,9 @@ package omegadrive.vdp;
 import omegadrive.SystemLoader;
 import omegadrive.system.Sms;
 import omegadrive.util.RegionDetector;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * ${FILE}
@@ -45,6 +46,6 @@ public class SmsVdpTest {
         boolean couldBePal = Math.abs(NTSC_FRAME_CYCLES - cycles) > Math.abs(PAL_FRAME_CYCLES - cycles);
         double hz = 1.0 * (couldBePal ? Sms.MCLK_PAL : Sms.MCLK_NTSC) / (cycles * 10);
         System.out.println(region + " effective frequency hz: " + hz);
-        Assert.assertEquals(isPal, couldBePal);
+        assertEquals(isPal, couldBePal);
     }
 }

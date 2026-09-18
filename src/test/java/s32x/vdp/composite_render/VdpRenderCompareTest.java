@@ -23,7 +23,6 @@ import omegadrive.util.FileUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.slf4j.Logger;
 
 import javax.swing.*;
@@ -40,7 +39,7 @@ import static omegadrive.util.TestFileUtil.decompressAndLoadFromZipFile;
 import static omegadrive.util.TestRenderUtil.*;
 
 
-@Disabled
+@org.junit.jupiter.api.Disabled
 public abstract class VdpRenderCompareTest {
 
     protected static boolean SHOW_IMAGES_ON_FAILURE = true;

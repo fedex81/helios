@@ -19,15 +19,10 @@
 
 package omegadrive.vdp;
 
-import omegadrive.util.FileUtil;
-import omegadrive.util.TestFileUtil;
-import omegadrive.util.TestRenderUtil;
-import omegadrive.util.Util;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import omegadrive.util.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,8 +32,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static omegadrive.util.TestRenderUtil.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@Ignore
 @Disabled
 public class VdpRenderCompareTest extends VdpRenderTest {
 
@@ -49,14 +44,14 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     protected static String compareFolder = compareFolderPath.toAbsolutePath().toString();
     private BufferedImage diffImage;
 
-    @Before
+    @BeforeEach
     public void beforeTest() {
         System.setProperty("helios.headless", "true");
         System.setProperty("md.show.vdp.debug.viewer", "false");
     }
 
     @Test
-    @Ignore
+    @org.junit.jupiter.api.Disabled
     public void testCompareAll() {
 //        SHOW_IMAGES_ON_FAILURE = true;
         File[] files = FileUtil.listFilesSafe(Paths.get(baseDataFolder).toFile());
@@ -78,7 +73,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
         if (SHOW_IMAGES_ON_FAILURE) {
             Util.waitForever();
         } else {
-            Assert.assertTrue(sb.toString(), sb.length() == 0);
+            JunitTestUtil.assertTrue(sb.toString(), sb.length() == 0);
         }
     }
 
@@ -99,7 +94,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
             Dimension d1 = baseline.getData().getBounds().getSize();
             Dimension d2 = actual.getData().getBounds().getSize();
 
-            Assert.assertEquals("Image size doesn't match", d1, d2);
+            JunitTestUtil.assertEquals("Image size doesn't match", d1, d2);
 
             diffImage = convertToBufferedImage(baseline);
             for (int i = 0; i < d1.width; i++) {
@@ -136,7 +131,7 @@ public class VdpRenderCompareTest extends VdpRenderTest {
     protected boolean testCompareOne(String saveName, BufferedImage actual) {
         Path baselineZipImageFile = Paths.get(compareFolder, saveName + DOT_EXT);
         Image base = TestFileUtil.decompressAndLoadFromZipFile(baselineZipImageFile, saveName + "." + IMG_EXT, IMG_EXT);
-        Assert.assertNotNull("File missing: " + baselineZipImageFile.toAbsolutePath(), base);
+        assertNotNull(base, "File missing: " + baselineZipImageFile.toAbsolutePath());
         BufferedImage baseLine = convertToBufferedImage(base);
         boolean match = compareImage(baseLine, actual);
         if (!match) {

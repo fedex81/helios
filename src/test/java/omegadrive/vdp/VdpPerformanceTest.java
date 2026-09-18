@@ -26,9 +26,8 @@ import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,7 +35,7 @@ import java.time.Duration;
 
 import static omegadrive.vdp.MdVdpTestUtil.getVdpProvider;
 
-@Ignore
+@org.junit.jupiter.api.Disabled
 public class VdpPerformanceTest {
 
     static Path testFilePath = Paths.get("./test_roms", "tf4.zip");
@@ -49,7 +48,7 @@ public class VdpPerformanceTest {
     int ignoreFramceCounter = 5; //warmup
     long start = System.nanoTime();
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeTest() {
         System.setProperty("helios.headless", "false");
         System.setProperty("helios.fullSpeed", "true");

@@ -23,7 +23,6 @@ import omegadrive.input.InputProvider;
 import omegadrive.joypad.JoypadProvider.JoypadType;
 import omegadrive.joypad.MdInputModel.PeripheralId;
 import omegadrive.system.SystemProvider;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +38,8 @@ import static omegadrive.joypad.MdInputModel.PeripheralId.UNDETECTABLE;
 import static omegadrive.joypad.MdInputModel.toPeripheralId;
 import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.util.Util.th;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * wwf raw 32x, GreatestHeavyweights, Sf2, sgdk joytest,
@@ -110,7 +111,7 @@ public class MdJoypadTest {
     private void testSimpleSequenceInternal(JoypadType type, int[] sequence) {
         System.out.println(type);
         MdJoypad j = createBoth(type, clock);
-        Assert.assertEquals(0, j.ctx1.control);
+        assertEquals(0, j.ctx1.control);
 
         int thControl = 0x40;
         int res, thHigh = 0x40, thLow = 0;
@@ -119,8 +120,8 @@ public class MdJoypadTest {
         for (int i = 0; i < 2; i++) {
             //idle state thHigh
             res = j.readDataRegister1();
-            Assert.assertEquals(thHigh, res & thHigh);
-            Assert.assertEquals(sequence[0], res);
+            assertEquals(thHigh, res & thHigh);
+            assertEquals(sequence[0], res);
             //no button pressed
             int cnt = 1;
             do {
@@ -128,8 +129,8 @@ public class MdJoypadTest {
                 int thVal = (cnt & 1) == 0 ? thHigh : thLow;
                 j.writeDataRegister1(thVal);
                 res = j.readDataRegister1();
-                Assert.assertEquals(thVal, res & thVal);
-                Assert.assertEquals(sequence[cnt], res);
+                assertEquals(thVal, res & thVal);
+                assertEquals(sequence[cnt], res);
                 cnt++;
             } while (cnt < 8);
             j.newFrame();
@@ -172,7 +173,7 @@ public class MdJoypadTest {
                 int res2 = dataR.get(i).get().intValue() & 0xF;
 
                 PeripheralId peripheralId = toPeripheralId.apply(res1, res2);
-                Assertions.assertEquals(pers[i], peripheralId);
+                assertEquals(pers[i], peripheralId);
             }
         }
     }
@@ -181,15 +182,15 @@ public class MdJoypadTest {
     private void testInitAndResetInternal(JoypadType type) {
         MdJoypad j = createBoth(type);
 
-        Assert.assertEquals(0, j.ctx1.control);
-        Assert.assertEquals(0, j.ctx2.control);
+        assertEquals(0, j.ctx1.control);
+        assertEquals(0, j.ctx2.control);
 
         j.writeControlRegister1(0x40);
 
         j.reset();
 
-        Assert.assertEquals(0x40, j.ctx1.control);
-        Assert.assertEquals(0, j.ctx2.control);
+        assertEquals(0x40, j.ctx1.control);
+        assertEquals(0, j.ctx2.control);
     }
 
     private void testNewFrameInternal(JoypadType type) {
@@ -200,26 +201,26 @@ public class MdJoypadTest {
         j.writeDataRegister1(0);
         j.writeDataRegister1(0x40);
         if (type == BUTTON_6) {
-            Assert.assertNotEquals(0, j.ctx1.readStep);
+            assertNotEquals(0, j.ctx1.readStep);
         }
         j.newFrame();
-        Assert.assertEquals(0, j.ctx1.readStep);
+        assertEquals(0, j.ctx1.readStep);
     }
 
     //Samurai Spirit, Power Instinct
     private void testInitDataPortValueInternal(JoypadType type) {
         MdJoypad j = createBoth(type);
 
-        Assertions.assertEquals(0x40, j.ctx1.data);
-        Assertions.assertEquals(0x40, j.ctx2.data);
-        Assertions.assertEquals(0x40, j.ctx3.data);
+        assertEquals(0x40, j.ctx1.data);
+        assertEquals(0x40, j.ctx2.data);
+        assertEquals(0x40, j.ctx3.data);
 
         j.newFrame();
 
         j.reset();
-        Assertions.assertEquals(0x40, j.ctx1.data);
-        Assertions.assertEquals(0x40, j.ctx2.data);
-        Assertions.assertEquals(0x40, j.ctx3.data);
+        assertEquals(0x40, j.ctx1.data);
+        assertEquals(0x40, j.ctx2.data);
+        assertEquals(0x40, j.ctx3.data);
     }
 
     private void testDisabledInternal(JoypadType type) {
@@ -230,24 +231,24 @@ public class MdJoypadTest {
         j.writeDataRegister2(0x40);
         j.writeDataRegister1(0);
         j.writeDataRegister2(0);
-        Assertions.assertEquals(0x33, j.readDataRegister1());
-        Assertions.assertEquals(0x33, j.readDataRegister2());
+        assertEquals(0x33, j.readDataRegister1());
+        assertEquals(0x33, j.readDataRegister2());
 
         j.setPadSetupChange(InputProvider.PlayerNumber.P2, NONE.name());
-        Assertions.assertEquals(0x33, j.readDataRegister1());
-        Assertions.assertEquals(0xFF, j.readDataRegister2());
+        assertEquals(0x33, j.readDataRegister1());
+        assertEquals(0xFF, j.readDataRegister2());
 
         j.setPadSetupChange(InputProvider.PlayerNumber.P1, NONE.name());
-        Assertions.assertEquals(0xFF, j.readDataRegister1());
-        Assertions.assertEquals(0xFF, j.readDataRegister2());
+        assertEquals(0xFF, j.readDataRegister1());
+        assertEquals(0xFF, j.readDataRegister2());
 
         j.setPadSetupChange(InputProvider.PlayerNumber.P1, type.name());
-        Assertions.assertEquals(0x33, j.readDataRegister1());
-        Assertions.assertEquals(0xFF, j.readDataRegister2());
+        assertEquals(0x33, j.readDataRegister1());
+        assertEquals(0xFF, j.readDataRegister2());
 
         j.setPadSetupChange(InputProvider.PlayerNumber.P2, type.name());
-        Assertions.assertEquals(0x33, j.readDataRegister1());
-        Assertions.assertEquals(0x33, j.readDataRegister2());
+        assertEquals(0x33, j.readDataRegister1());
+        assertEquals(0x33, j.readDataRegister2());
     }
 
     /**
@@ -291,7 +292,7 @@ public class MdJoypadTest {
         //bits 11_0000 are output bits and are not set, they should be 0
         Assertions.assertTrue((r2 & 0x30) == 0);
         // bits 1100_0000 are input bits and they are not being driven, assumes pulled-up
-        Assertions.assertEquals(0xC0, r2 & 0xC0);
+        assertEquals(0xC0, r2 & 0xC0);
         MdJoypad.WWF32X_HACK = false;
     }
 
@@ -316,34 +317,34 @@ public class MdJoypadTest {
         cycleCounter += 16_000;
 
         j.writeDataRegister1(0x40);
-        Assert.assertEquals(0x7f, j.readDataRegister1());
+        assertEquals(0x7f, j.readDataRegister1());
 
         j.writeDataRegister1(0);
-        Assert.assertEquals(0x33, j.readDataRegister1());
+        assertEquals(0x33, j.readDataRegister1());
 
         j.writeDataRegister1(0x40);
-        Assert.assertEquals(0x7f, j.readDataRegister1());
+        assertEquals(0x7f, j.readDataRegister1());
 
         j.writeDataRegister1(0);
-        Assert.assertEquals(0x33, j.readDataRegister1());
+        assertEquals(0x33, j.readDataRegister1());
 
         j.writeDataRegister1(0x40);
-        Assert.assertEquals(0x7f, j.readDataRegister1());
+        assertEquals(0x7f, j.readDataRegister1());
 
         j.writeDataRegister1(0);
-        Assert.assertEquals(expect[0], j.readDataRegister1());
+        assertEquals(expect[0], j.readDataRegister1());
 
         j.writeDataRegister1(0x40);
-        Assert.assertEquals(0x7f, j.readDataRegister1());
+        assertEquals(0x7f, j.readDataRegister1());
 
         j.writeDataRegister1(0);
-        Assert.assertEquals(expect[1], j.readDataRegister1());
+        assertEquals(expect[1], j.readDataRegister1());
 
         j.writeDataRegister1(0x40);
-        Assert.assertEquals(0x7f, j.readDataRegister1());
+        assertEquals(0x7f, j.readDataRegister1());
 
         j.writeDataRegister1(0);
-        Assert.assertEquals(expect[2], j.readDataRegister1());
+        assertEquals(expect[2], j.readDataRegister1());
     }
 
 
@@ -393,31 +394,31 @@ public class MdJoypadTest {
 
     private void testDecapAttackInternal(JoypadType type) {
         MdJoypad j = createBoth(type);
-        Assert.assertEquals(0, j.ctx1.control);
+        assertEquals(0, j.ctx1.control);
         j.writeControlRegister1(0x40);
 
         j.newFrame();
         //due to delays this write will cause the data register to change after the next read is performed
         j.writeDataRegister1(0);
         j.writeControlRegister1(0);
-        Assert.assertEquals(0x33, j.readDataRegister1());
+        assertEquals(0x33, j.readDataRegister1());
 
         j.writeDataRegister1(0x40);
         //reset ctrlReg to 0x40, all is fine from now on
         j.writeControlRegister1(0x40);
-        Assert.assertEquals(0x3F, j.readDataRegister1());
+        assertEquals(0x3F, j.readDataRegister1());
 
         j.writeControlRegister1(0x40);
         j.writeDataRegister1(0x40);
-        Assert.assertEquals(0x7F, j.readDataRegister1());
+        assertEquals(0x7F, j.readDataRegister1());
         j.writeDataRegister1(0x40);
-        Assert.assertEquals(0x7F, j.readDataRegister1());
+        assertEquals(0x7F, j.readDataRegister1());
 
         j.writeDataRegister1(0);
-        Assert.assertEquals(0x33, j.readDataRegister1());
+        assertEquals(0x33, j.readDataRegister1());
 
         j.writeDataRegister1(0);
-        Assert.assertEquals(0x33, j.readDataRegister1());
+        assertEquals(0x33, j.readDataRegister1());
 
         j.writeDataRegister1(0x40);
     }

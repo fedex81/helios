@@ -7,11 +7,10 @@ import omegadrive.joypad.JoypadProvider.JoypadButton;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
+import omegadrive.util.JunitTestUtil;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -24,6 +23,7 @@ import static omegadrive.joypad.JoypadProvider.JoypadAction.RELEASED;
 import static omegadrive.joypad.JoypadProvider.JoypadButton.A;
 import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_APP;
 import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_ROM;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * VdpFifoTesting
@@ -32,7 +32,7 @@ import static omegadrive.system.SystemProvider.SystemEvent.CLOSE_ROM;
  * <p>
  * Copyright 2020
  */
-@Ignore
+@org.junit.jupiter.api.Disabled
 public class VdpFifoTesting {
 
     private static final int SUCCESS_TEST_RAM_LOCATION = 0xFF08;
@@ -61,7 +61,7 @@ public class VdpFifoTesting {
             Util.sleep(BOOT_DELAY_MS);
             delay += BOOT_DELAY_MS;
         } while (!system.isRomRunning() && delay < RUN_DELAY_MS);
-        Assert.assertTrue("Unable to run the system", system.isRomRunning());
+        JunitTestUtil.assertTrue("Unable to run the system", system.isRomRunning());
     }
 
     private static <T> T getProvider(SystemProvider systemProvider, String fieldName) {
@@ -70,7 +70,7 @@ public class VdpFifoTesting {
             Field f = systemProvider.getClass().getSuperclass().getDeclaredField(fieldName);
             f.setAccessible(true);
             provider = (T) f.get(systemProvider);
-            Assert.assertNotNull(provider);
+            assertNotNull(provider);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -80,7 +80,7 @@ public class VdpFifoTesting {
     @Test
     public void testVdpFifoTestingSuccessRate() {
         Path file = Paths.get(resFolder.toAbsolutePath().toString(), fileName);
-        Assert.assertNotNull(file);
+        assertNotNull(file);
         SystemLoader systemLoader = SystemLoader.getInstance();
         SystemProvider system = systemLoader.handleNewRomFile(MediaSpecHolder.of(file));
         waitUntilRunning(system);
@@ -105,7 +105,7 @@ public class VdpFifoTesting {
             system.handleSystemEvent(CLOSE_ROM, null);
             system.handleSystemEvent(CLOSE_APP, null);
         }
-        Assert.assertTrue("Number of test passed is less than baseline: "
+        JunitTestUtil.assertTrue("Number of test passed is less than baseline: "
                 + passTest + " < " + SUCCESS_BASELINE, passTest >= SUCCESS_BASELINE);
     }
 }

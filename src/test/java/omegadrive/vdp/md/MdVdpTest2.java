@@ -27,9 +27,8 @@ import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.VdpDmaHandlerTest;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import java.util.Optional;
@@ -41,6 +40,7 @@ import static omegadrive.vdp.MdVdpTestUtil.*;
 import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.*;
 import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
 import static omegadrive.vdp.model.MdVdpProvider.VramMode.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MdVdpTest2 {
 
@@ -52,11 +52,11 @@ public class MdVdpTest2 {
 
     static final int VDP_CONTROL_PORT = VDP_ADDRESS_SPACE_START + 4;
 
-    @Before
+    @BeforeEach
     public void setup() {
         busProvider = SystemTestUtil.setupNewMdSystem();
         Optional<MdVdpProvider> opt = busProvider.getBusDeviceIfAny(MdVdpProvider.class);
-        Assert.assertTrue(opt.isPresent());
+        assertTrue(opt.isPresent());
         vdpProvider = opt.get();
         memoryInterface = vdpProvider.getVdpMemory();
         MdRuntimeData.newInstance(MD, NO_CLOCK);
@@ -97,17 +97,17 @@ public class MdVdpTest2 {
 
         //move.l second word, this changes the autoInc value -> needs to happen after DMA!
         busProvider.write(VDP_CONTROL_PORT, 0x8F00 + afterDmaAutoInc, Size.WORD);
-        Assert.assertFalse(busProvider.is68kRunning());
+        assertFalse(busProvider.is68kRunning());
         runVdpUntilFifoEmpty(vdpProvider);
 
         //autoInc has not been changed
-        Assert.assertEquals(dmaAutoInc, vdpProvider.getRegisterData(MdVdpProvider.VdpRegisterName.AUTO_INCREMENT));
+        assertEquals(dmaAutoInc, vdpProvider.getRegisterData(MdVdpProvider.VdpRegisterName.AUTO_INCREMENT));
 
         runVdpUntilDmaDone(vdpProvider);
-        Assert.assertTrue(busProvider.is68kRunning());
+        assertTrue(busProvider.is68kRunning());
 
         //autoInc has now been changed
-        Assert.assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(MdVdpProvider.VdpRegisterName.AUTO_INCREMENT));
+        assertEquals(afterDmaAutoInc, vdpProvider.getRegisterData(MdVdpProvider.VdpRegisterName.AUTO_INCREMENT));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class MdVdpTest2 {
         setVdpRegister(vdpProvider, AUTO_INCREMENT, autoInc);
         //codeReg should now be 2
         int res = vdpProvider.readVdpPortWord(MdVdpProvider.VdpPortType.DATA);
-        Assert.assertEquals(0, res); //invalid read returns 0
+        assertEquals(0, res); //invalid read returns 0
     }
 
     /**
@@ -172,12 +172,12 @@ public class MdVdpTest2 {
         runVdpUntilFifoEmpty(vdpProvider);
 
         //verify nothing was written to mem
-        Assert.assertEquals(vram0, memoryInterface.readVideoRamByte(VRAM, addrReg));
-        Assert.assertEquals(vram2, memoryInterface.readVideoRamByte(VRAM, addrReg + autoInc));
-        Assert.assertEquals(vsram0, memoryInterface.readVideoRamByte(VSRAM, addrReg));
-        Assert.assertEquals(vsram2, memoryInterface.readVideoRamByte(VSRAM, addrReg + autoInc));
-        Assert.assertEquals(cram0, memoryInterface.readVideoRamByte(CRAM, addrReg));
-        Assert.assertEquals(cram2, memoryInterface.readVideoRamByte(CRAM, addrReg + autoInc));
+        assertEquals(vram0, memoryInterface.readVideoRamByte(VRAM, addrReg));
+        assertEquals(vram2, memoryInterface.readVideoRamByte(VRAM, addrReg + autoInc));
+        assertEquals(vsram0, memoryInterface.readVideoRamByte(VSRAM, addrReg));
+        assertEquals(vsram2, memoryInterface.readVideoRamByte(VSRAM, addrReg + autoInc));
+        assertEquals(cram0, memoryInterface.readVideoRamByte(CRAM, addrReg));
+        assertEquals(cram2, memoryInterface.readVideoRamByte(CRAM, addrReg + autoInc));
     }
 
     /**
@@ -195,7 +195,7 @@ public class MdVdpTest2 {
 
         //set vramRead
         testCodeRegisterUpdateInternal(vramRead.getAddressMode(), 0, 1280);
-        Assert.assertEquals(vramRead, vdpProvider.getVramMode());
+        assertEquals(vramRead, vdpProvider.getVramMode());
 
         // from vramRead_8bit -> cramRead
         testCodeRegisterUpdateInternal(cramRead.getAddressMode(), 0, 1312);
@@ -220,6 +220,6 @@ public class MdVdpTest2 {
         vdpProvider.writeControlPort(secondWord);
 
         MdVdpProvider.VramMode vramMode = vdpProvider.getVramMode();
-        Assert.assertEquals(MdVdpProvider.VramMode.getVramMode(expected), vramMode);
+        assertEquals(MdVdpProvider.VramMode.getVramMode(expected), vramMode);
     }
 }

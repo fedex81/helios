@@ -11,8 +11,7 @@ import omegadrive.savestate.GshStateHandler;
 import omegadrive.savestate.GstStateHandler;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.sound.javasound.AbstractSoundManager;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,6 +19,8 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static omegadrive.SystemLoader.SystemType.MD;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Ym2612NukeSerializeTest
@@ -49,11 +50,11 @@ public class SavestateSerializeTest {
         int hashCode = nuke.getState().hashCode();
         stateHandler.loadFmState(nuke);
         Ym2612Nuke.Ym3438Context context = nuke.getState();
-        Assert.assertNotNull(context);
+        assertNotNull(context);
         int hashCode2 = nuke.getState().hashCode();
         //if the data has been deserialised ok, the context instance should've been replaced
         //with a newly loaded instance
-        Assert.assertNotEquals(hashCode, hashCode2);
+        assertNotEquals(hashCode, hashCode2);
     }
 
     /**
@@ -70,10 +71,10 @@ public class SavestateSerializeTest {
         int hc1 = Arrays.hashCode(ssp16.getSvpContext().iram_rom) + Arrays.hashCode(ssp16.getSvpContext().dram);
         stateHandler.loadSvpState(ssp16);
         Ssp16Types.Svp_t svpCtx = ssp16.getSvpContext();
-        Assert.assertNotNull(svpCtx);
+        assertNotNull(svpCtx);
         int hc2 = Arrays.hashCode(svpCtx.iram_rom) + Arrays.hashCode(svpCtx.dram);
         //if the data has been deserialised ok, the context instance should've been replaced
         //with a newly loaded instance
-        Assert.assertNotEquals(hc1, hc2);
+        assertNotEquals(hc1, hc2);
     }
 }

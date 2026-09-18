@@ -8,7 +8,6 @@ import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -23,7 +22,7 @@ import static omegadrive.vdp.MdVdpTestUtil.getVdpProvider;
  * <p>
  * Copyright 2021
  */
-@Disabled
+@org.junit.jupiter.api.Disabled
 public class S32XPerformanceTest {
 
     static Path testFilePath = Paths.get("./test_roms", "t2.32x");

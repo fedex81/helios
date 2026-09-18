@@ -4,8 +4,8 @@ import omegadrive.cart.mapper.md.Ssf2Mapper;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.Size;
-import org.junit.Assume;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import s32x.bus.S32xBusIntf;
@@ -138,7 +138,7 @@ public class RomAccessTest {
 
     @Test
     public void testRvOn1073Address() {
-        Assume.assumeTrue(assertionsEnabled);
+        Assumptions.assumeTrue(assertionsEnabled);
         int res;
         int[] addrList = {0x1070, 0x2070, 0x3070};
         assert addrList[2] + 8 < ROM_SIZE;

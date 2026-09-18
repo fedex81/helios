@@ -22,8 +22,8 @@ import omegadrive.util.VideoMode;
 import omegadrive.vdp.BaseVdpInterruptHandlerTest;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.BaseVdpProvider;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicInteger;

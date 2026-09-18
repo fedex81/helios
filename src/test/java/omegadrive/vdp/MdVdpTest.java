@@ -20,13 +20,13 @@ package omegadrive.vdp;
 import omegadrive.vdp.md.MdVdpMemoryInterface;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.stream.IntStream;
 
 import static omegadrive.util.Util.th;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MdVdpTest {
 
@@ -38,7 +38,7 @@ public class MdVdpTest {
     long byteSwapData = (lsb << 8) | msb;
     long expected;
 
-    @Before
+    @BeforeEach
     public void init() {
         IntStream.range(0, MdVdpProvider.VDP_CRAM_SIZE - 1).forEach(i ->
                 mem.writeVideoRamWord(MdVdpProvider.VdpRamType.CRAM, 0, i)
@@ -56,11 +56,11 @@ public class MdVdpTest {
     public void testCram_01() {
         mem.writeVideoRamWord(MdVdpProvider.VdpRamType.CRAM, (int) data, 0);
         long res = mem.readVideoRamWord(MdVdpProvider.VdpRamType.CRAM, 0);
-        Assert.assertEquals(data, res);
+        assertEquals(data, res);
 
         mem.writeVideoRamWord(MdVdpProvider.VdpRamType.CRAM, (int) data, 1);
         res = mem.readVideoRamWord(MdVdpProvider.VdpRamType.CRAM, 1);
-        Assert.assertEquals(data, res);
+        assertEquals(data, res);
     }
 
     @Test
@@ -68,15 +68,15 @@ public class MdVdpTest {
         int baseAddress = 0x48;
         mem.writeVideoRamWord(MdVdpProvider.VdpRamType.CRAM, (int) data, baseAddress);
         long res = mem.readVideoRamWord(MdVdpProvider.VdpRamType.CRAM, baseAddress);
-        Assert.assertEquals(data, res);
+        assertEquals(data, res);
 
         mem.writeVideoRamWord(MdVdpProvider.VdpRamType.CRAM, 0x1122, 0);
         res = mem.readVideoRamWord(MdVdpProvider.VdpRamType.CRAM, 0);
-        Assert.assertEquals(0x1122, res);
+        assertEquals(0x1122, res);
 
         mem.writeVideoRamWord(MdVdpProvider.VdpRamType.CRAM, (int) data, MdVdpProvider.VDP_CRAM_SIZE);
         res = mem.readVideoRamWord(MdVdpProvider.VdpRamType.CRAM, MdVdpProvider.VDP_CRAM_SIZE);
-        Assert.assertEquals(data, res);
+        assertEquals(data, res);
     }
 
     @Test
@@ -84,19 +84,19 @@ public class MdVdpTest {
         int baseAddress = 0x48;
         mem.writeVideoRamWord(MdVdpProvider.VdpRamType.VSRAM, (int) data, baseAddress);
         long res = mem.readVideoRamWord(MdVdpProvider.VdpRamType.VSRAM, baseAddress);
-        Assert.assertEquals(data, res);
+        assertEquals(data, res);
 
         mem.writeVideoRamWord(MdVdpProvider.VdpRamType.VSRAM, 0x1122, 0);
         res = mem.readVideoRamWord(MdVdpProvider.VdpRamType.VSRAM, 0);
-        Assert.assertEquals(0x1122, res);
+        assertEquals(0x1122, res);
 
         mem.writeVideoRamWord(MdVdpProvider.VdpRamType.VSRAM, (int) data, MdVdpProvider.VDP_VSRAM_SIZE);
         res = mem.readVideoRamWord(MdVdpProvider.VdpRamType.VSRAM, MdVdpProvider.VDP_VSRAM_SIZE);
-        Assert.assertEquals(th(0x1111), th(res));
+        assertEquals(th(0x1111), th(res));
 
         mem.writeVideoRamWord(MdVdpProvider.VdpRamType.VSRAM, 0x3344, MdVdpProvider.VDP_VSRAM_SIZE - 2);
         res = readVideoRamAddressLong(MdVdpProvider.VdpRamType.VSRAM, MdVdpProvider.VDP_VSRAM_SIZE - 2);
-        Assert.assertEquals(th(0x33441111), th(res));
+        assertEquals(th(0x33441111), th(res));
     }
 
     @Test
@@ -138,39 +138,39 @@ public class MdVdpTest {
         long readData = byteSwap ? byteSwapData : data;
 
         long res = mem.readVideoRamWord(vdpRamType, address);
-        Assert.assertEquals(th(readData), th(res));
+        assertEquals(th(readData), th(res));
 
         res = mem.readVideoRamWord(vdpRamType, address - 1);
         expected = even ? 0 : readData;
-        Assert.assertEquals(th(expected), th(res));
+        assertEquals(th(expected), th(res));
 
         res = mem.readVideoRamWord(vdpRamType, address - 2);
-        Assert.assertEquals(th(0), th(res));
+        assertEquals(th(0), th(res));
 
         res = mem.readVideoRamWord(vdpRamType, address + 1);
         expected = even ? readData : 0;
-        Assert.assertEquals(th(expected), th(res));
+        assertEquals(th(expected), th(res));
 
         res = mem.readVideoRamWord(vdpRamType, address + 2);
-        Assert.assertEquals(th(0), th(res));
+        assertEquals(th(0), th(res));
 
         res = readVideoRamAddressLong(vdpRamType, address);
         expected = readData << 16;
-        Assert.assertEquals(th(expected), th(res));
+        assertEquals(th(expected), th(res));
 
         res = readVideoRamAddressLong(vdpRamType, address - 1);
         expected = even ? readData : readData << 16;
-        Assert.assertEquals(th(expected), th(res));
+        assertEquals(th(expected), th(res));
 
         res = readVideoRamAddressLong(vdpRamType, address - 2);
-        Assert.assertEquals(th(readData), th(res));
+        assertEquals(th(readData), th(res));
 
         res = readVideoRamAddressLong(vdpRamType, address + 1);
         expected = even ? readData << 16 : 0;
-        Assert.assertEquals(th(expected), th(res));
+        assertEquals(th(expected), th(res));
 
         res = readVideoRamAddressLong(vdpRamType, address + 2);
-        Assert.assertEquals(th(0), th(res));
+        assertEquals(th(0), th(res));
     }
 
     private long readVideoRamAddressLong(MdVdpProvider.VdpRamType vdpRamType, int address) {

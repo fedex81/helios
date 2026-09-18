@@ -4,12 +4,14 @@ import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.SystemTestUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * M68Test
@@ -22,7 +24,7 @@ public class M68Test {
 
     private M68kProvider provider;
 
-    @Before
+    @BeforeEach
     public void setup() {
         IMemoryProvider memoryProvider = MemoryProvider.createMdInstance();
         //fill the vector area with non-zero
@@ -30,17 +32,17 @@ public class M68Test {
 
         MdMainBusProvider bus = SystemTestUtil.setupNewMdSystem(memoryProvider);
         Optional<M68kProvider> optM = bus.getBusDeviceIfAny(M68kProvider.class);
-        Assert.assertTrue(optM.isPresent());
+        assertTrue(optM.isPresent());
         provider = optM.get();
     }
 
     @Test
     public void testRaiseInterrupt() {
-        Assert.assertTrue(provider.raiseInterrupt(4));
-        Assert.assertFalse(provider.raiseInterrupt(3));
+        assertTrue(provider.raiseInterrupt(4));
+        assertFalse(provider.raiseInterrupt(3));
         //Lemmings
-        Assert.assertFalse(provider.raiseInterrupt(4));
-        Assert.assertTrue(provider.raiseInterrupt(6));
-        Assert.assertFalse(provider.raiseInterrupt(4));
+        assertFalse(provider.raiseInterrupt(4));
+        assertTrue(provider.raiseInterrupt(6));
+        assertFalse(provider.raiseInterrupt(4));
     }
 }

@@ -25,19 +25,18 @@ import omegadrive.util.Util;
 import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.model.BaseVdpProvider;
 import omegadrive.vdp.util.VdpPortAccessLogger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static omegadrive.vdp.MdVdpTestUtil.getVdpProvider;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
-@Ignore
+@org.junit.jupiter.api.Disabled
 public class VdpRasterDataGeneratorTest extends VdpPerformanceTest {
 
     public static int NO_SAVE_FRAME = Integer.MIN_VALUE;
@@ -53,7 +52,7 @@ public class VdpRasterDataGeneratorTest extends VdpPerformanceTest {
     private MdVdp vdp;
     private VdpPortAccessLogger logger;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeTest() {
         System.setProperty("helios.headless", "false");
         System.setProperty("helios.fullSpeed", "true");
@@ -106,7 +105,7 @@ public class VdpRasterDataGeneratorTest extends VdpPerformanceTest {
             });
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         }
     }
 }

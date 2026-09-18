@@ -2,7 +2,6 @@ package omegadrive.vdp.md;
 
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.MdVdpProvider;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +10,7 @@ import java.util.Arrays;
 import static omegadrive.vdp.MdVdpTestUtil.CTRL_PORT_MODE_4;
 import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.MODE_4;
 import static omegadrive.vdp.model.VdpRenderHandler.SPRITE_TABLE_SHIFT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Federico Berti
@@ -83,11 +83,11 @@ public class MdVdpSpriteAttributeTableTest extends BaseVdpDmaHandlerTest {
         int satAddr = 0xFFFF_0000 | 0xFE00;
         byte val = 0x55;
         writeVramRange(satAddr, 8, val);
-        Assert.assertEquals(val, memoryInterface.getSatCache()[0]);
+        assertEquals(val, memoryInterface.getSatCache()[0]);
     }
 
     private void checkSatHashcode(int hc) {
-        Assert.assertEquals(hc, Arrays.hashCode(memoryInterface.getSatCache()));
+        assertEquals(hc, Arrays.hashCode(memoryInterface.getSatCache()));
     }
 
     private void writeVramRange(int start, int len, byte data) {

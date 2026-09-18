@@ -25,7 +25,6 @@ import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -79,7 +78,7 @@ public class VdpMarsRenderCompareFileTest extends VdpRenderCompareTest {
         Assertions.assertFalse(error, "Error: " + fileName);
     }
 
-    @Disabled
+    @org.junit.jupiter.api.Disabled
     @Test
     public void testCompare() {
         Path saveFile = Paths.get(baseDataFolderName, "spaceh_01.dat.zip");

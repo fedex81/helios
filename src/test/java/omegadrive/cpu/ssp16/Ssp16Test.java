@@ -1,11 +1,12 @@
 package omegadrive.cpu.ssp16;
 
 import omegadrive.cpu.ssp16.Ssp16Types.Ssp1601_t;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static omegadrive.cpu.ssp16.Ssp16Types.Cart;
 import static omegadrive.cpu.ssp16.Ssp16Types.Svp_t;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Ssp16Test {
 
@@ -30,8 +31,8 @@ public class Ssp16Test {
         // rA32 - (val << 16)
         ssp16.OP_CMPA(val);
         //rA32 unchanged
-        Assert.assertEquals(ra32, ssp16.rA32.v);
+        assertEquals(ra32, ssp16.rA32.v);
         //zero flag is set
-        Assert.assertTrue((ssp16.rST.h & Ssp16Impl.SSP_FLAG_Z) > 0);
+        assertTrue((ssp16.rST.h & Ssp16Impl.SSP_FLAG_Z) > 0);
     }
 }

@@ -24,9 +24,7 @@ import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 
 import java.util.Arrays;
@@ -37,8 +35,10 @@ import static omegadrive.SystemLoader.SystemType.MD;
 import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.vdp.model.MdVdpProvider.VdpRamType.VRAM;
 import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Ignore
+@org.junit.jupiter.api.Disabled
 public class BaseVdpDmaHandlerTest {
 
     private static final Logger LOG = LogHelper.getLogger(BaseVdpDmaHandlerTest.class.getSimpleName());
@@ -46,11 +46,11 @@ public class BaseVdpDmaHandlerTest {
     protected MdVdpProvider vdpProvider;
     protected VdpMemoryInterface memoryInterface;
 
-    @Before
+    @BeforeEach
     public void setup() {
         MdMainBusProvider busProvider = SystemTestUtil.setupNewMdSystem();
         Optional<MdVdpProvider> opt = busProvider.getBusDeviceIfAny(MdVdpProvider.class);
-        Assert.assertTrue(opt.isPresent());
+        assertTrue(opt.isPresent());
         vdpProvider = opt.get();
         memoryInterface = vdpProvider.getVdpMemory();
         MdVdpTestUtil.vdpMode5(vdpProvider);
@@ -92,7 +92,7 @@ public class BaseVdpDmaHandlerTest {
 //        System.out.println("Expected: " + Arrays.toString(exp));
 //        System.out.println("Actual: " + Arrays.toString(actual));
 
-        Assert.assertArrayEquals(exp, actual);
+        assertArrayEquals(exp, actual);
     }
 
     protected void testDMAFillInternal(int dmaFillLong, int baseAddress, int increment, int fillValueWord,
@@ -163,7 +163,7 @@ public class BaseVdpDmaHandlerTest {
         System.out.println("Expected: " + Arrays.toString(exp));
         System.out.println("Actual: " + Arrays.toString(actual));
 
-        Assert.assertArrayEquals(exp, actual);
+        assertArrayEquals(exp, actual);
     }
 
 
@@ -231,7 +231,7 @@ public class BaseVdpDmaHandlerTest {
         System.out.println("Expected: " + Arrays.toString(exp));
         System.out.println("Actual:   " + Arrays.toString(actual));
 
-        Assert.assertArrayEquals(exp, actual);
+        assertArrayEquals(exp, actual);
     }
 
     protected void setVdpRegDma(MdVdpProvider.VdpRegisterName reg, int value) {

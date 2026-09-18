@@ -23,8 +23,7 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.VideoMode;
 import omegadrive.vdp.md.VdpInterruptHandler;
 import omegadrive.vdp.model.BaseVdpProvider;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 public class SmsVdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
@@ -43,7 +42,7 @@ public class SmsVdpInterruptHandlerTest extends BaseVdpInterruptHandlerTest {
      * (etc)	(etc)
      */
     @Test
-    @Ignore("TODO fix")
+    @org.junit.jupiter.api.Disabled("TODO fix")
     public void testSmsHLinesCounter() {
         testSmsHLinesCounterInternal(0);
         testSmsHLinesCounterInternal(1);

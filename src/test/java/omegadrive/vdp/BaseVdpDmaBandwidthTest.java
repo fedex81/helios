@@ -27,9 +27,7 @@ import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.md.TestMdVdpMemoryInterface;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpSlotType;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 
 import java.util.Arrays;
@@ -39,13 +37,15 @@ import static omegadrive.SystemLoader.SystemType.MD;
 import static omegadrive.system.SystemProvider.NO_CLOCK;
 import static omegadrive.vdp.MdVdpTestUtil.*;
 import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
  * http://www.tmeeco.eu/BitShit/VDPRATES.TXT
  * https://gendev.spritesmind.net/forum/viewtopic.php?t=1291&start=30
  */
-@Ignore
+@org.junit.jupiter.api.Disabled
 public class BaseVdpDmaBandwidthTest {
 
     private static final Logger LOG = LogHelper.getLogger(BaseVdpDmaBandwidthTest.class.getSimpleName());
@@ -72,14 +72,14 @@ public class BaseVdpDmaBandwidthTest {
     static int BLANKING_DMA_VRAM_PER_LINE_H32 = BLANKING_VRAM_DMA_PER_LINE_H32_WORDS / 2;
     static int BLANKING_DMA_VRAM_PER_LINE_H40 = BLANKING_VRAM_DMA_PER_LINE_H40_WORDS / 2;
 
-    @Before
+    @BeforeEach
     public void setup() {
         memoryInterface = new TestMdVdpMemoryInterface();
         MdMainBusProvider busProvider = SystemTestUtil.setupNewMdSystem(memoryInterface);
         Optional<MdVdpProvider> opt = busProvider.getBusDeviceIfAny(MdVdpProvider.class);
         Optional<IMemoryProvider> optMem = busProvider.getBusDeviceIfAny(IMemoryProvider.class);
-        Assert.assertTrue(opt.isPresent());
-        Assert.assertTrue(optMem.isPresent());
+        assertTrue(opt.isPresent());
+        assertTrue(optMem.isPresent());
         vdpProvider = opt.get();
         memoryProvider = optMem.get();
         vdpMode5(vdpProvider);
@@ -124,9 +124,9 @@ public class BaseVdpDmaBandwidthTest {
 
         if (blanking) {
             int expected = vdpRamType == MdVdpProvider.VdpRamType.VRAM ? dmaLen * 2 + refreshSlots - 1 : dmaLen + refreshSlots;
-            Assert.assertEquals(expected, slots);
+            assertEquals(expected, slots);
         } else {
-            Assert.assertTrue("Should be: " + slots + "> " + slotsPerLine, slots > slotsPerLine);
+            assertTrue(slots > slotsPerLine, "Should be: " + slots + "> " + slotsPerLine);
         }
     }
 
@@ -136,8 +136,8 @@ public class BaseVdpDmaBandwidthTest {
         setupDMAFillInternal(dmaFillCommand, 2, dmaLen);
         int slots = startDmaFill(dmaLen, h32, false);
         // more than one line
-        Assert.assertTrue(vdpProvider.getVCounter() > 0);
-        Assert.assertTrue(slots > slotsPerLine);
+        assertTrue(vdpProvider.getVCounter() > 0);
+        assertTrue(slots > slotsPerLine);
     }
 
     protected void testDMACopyInternal(int dmaLen, boolean h32, boolean duringVBlank) {
@@ -145,11 +145,11 @@ public class BaseVdpDmaBandwidthTest {
         int refreshSlots = h32 ? REFRESH_SLOTS_H32 : REFRESH_SLOTS_H40;
         int slots = startDMACopy(1, dmaLen, duringVBlank);
         // more than one line
-        Assert.assertTrue(vdpProvider.getVCounter() > 0);
+        assertTrue(vdpProvider.getVCounter() > 0);
         if (!duringVBlank) {
-            Assert.assertTrue(slots > slotsPerLine);
+            assertTrue(slots > slotsPerLine);
         } else {
-            Assert.assertEquals(dmaLen * 2 + refreshSlots + 1, slots);
+            assertEquals(dmaLen * 2 + refreshSlots + 1, slots);
         }
     }
 
@@ -189,7 +189,7 @@ public class BaseVdpDmaBandwidthTest {
         System.out.println("Dma done" + vdpProvider.getVdpStateString());
 
         if (waitVBlank) {
-            Assert.assertEquals(dmaLen + refreshSlots, slots);
+            assertEquals(dmaLen + refreshSlots, slots);
         }
         return slots;
     }
@@ -256,7 +256,7 @@ public class BaseVdpDmaBandwidthTest {
         System.out.println("Dma started" + vdpProvider.getVdpStateString());
         memoryInterface.resetStats();
         runToStartNextLine(vdpProvider);
-        Assert.assertEquals(bytesPerLine, memoryInterface.getMemoryWrites(vdpRamType));
+        assertEquals(bytesPerLine, memoryInterface.getMemoryWrites(vdpRamType));
         runVdpUntilDmaDone(vdpProvider);
         System.out.println("Dma done" + vdpProvider.getVdpStateString());
     }

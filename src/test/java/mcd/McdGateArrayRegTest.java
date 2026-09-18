@@ -6,7 +6,6 @@ import omegadrive.bus.model.BaseBusProvider;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +36,7 @@ public class McdGateArrayRegTest extends McdRegTestBase {
     }
 
     //TODO fix
-    @Ignore
+    @org.junit.jupiter.api.Disabled
     public void testSubResetReg() {
         int mreg = mainCpuBus.read(MAIN_RESET_REG, Size.WORD);
         int sreg = subCpuBus.read(SUB_RESET_REG, Size.WORD);
@@ -56,7 +55,7 @@ public class McdGateArrayRegTest extends McdRegTestBase {
 
     //TODO fix
 
-    @Ignore
+    @org.junit.jupiter.api.Disabled
     public void testMainResetReg() {
         int mreg = mainCpuBus.read(MAIN_RESET_REG, Size.WORD);
         int sreg = subCpuBus.read(SUB_RESET_REG, Size.WORD);

@@ -1,9 +1,7 @@
 package omegadrive.util;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -12,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 import static omegadrive.util.ArrayEndianUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * UtilTest
@@ -38,7 +37,7 @@ public class UtilTest {
 
     byte[] input = new byte[SIZE];
 
-    @Before
+    @BeforeEach
     public void setup() {
         int k = 0;
         for (int i = Byte.MIN_VALUE; i <= Byte.MAX_VALUE; i++, k++) {
@@ -50,10 +49,10 @@ public class UtilTest {
     @Test
     public void testReadNegative() {
         long res = Util.readDataMask(input, 0, MASK, Size.WORD);
-        Assert.assertEquals(0x8081, res);
+        assertEquals(0x8081, res);
 
         res = Util.readDataMask(input, 0, MASK, Size.LONG);
-        Assert.assertEquals(0x80818283, res);
+        assertEquals(0x80818283, res);
     }
 
     @Test
@@ -63,7 +62,7 @@ public class UtilTest {
         long expect = 0x7e7f8081;
         try {
             long res = Util.readDataMask(input, address, mask, Size.LONG);
-            Assert.fail();
+            fail();
         } catch (Exception e) {
         } //expected
     }
@@ -83,7 +82,7 @@ public class UtilTest {
         int value = 0x6e6f7071;
         try {
             Util.writeDataMask(input, address, value, MASK, Size.LONG);
-            Assert.fail();
+            fail();
         } catch (Exception e) {
         } //expected
     }
@@ -92,11 +91,11 @@ public class UtilTest {
     public void testToByteArray() {
         int[] iin = toSignedIntArray(input);
         byte[] out = signedToByteArray(iin);
-        Assert.assertArrayEquals(input, out);
+        assertArrayEquals(input, out);
 
         int[] iin2 = toUnsignedIntArray(input);
         byte[] out2 = unsignedToByteArray(iin2);
-        Assert.assertArrayEquals(input, out2);
+        assertArrayEquals(input, out2);
     }
 
     @Test
@@ -104,7 +103,7 @@ public class UtilTest {
         int[] a = {-130};
         try {
             signedToByteArray(a);
-            Assert.fail();
+            fail();
         } catch (Exception e) {
             //expected
             System.out.println(e.getMessage());
@@ -113,7 +112,7 @@ public class UtilTest {
         int[] b = {230};
         try {
             signedToByteArray(b);
-            Assert.fail();
+            fail();
         } catch (Exception e) {
             //expected
             System.out.println(e.getMessage());
@@ -121,7 +120,7 @@ public class UtilTest {
         int[] c = {-1};
         try {
             unsignedToByteArray(c);
-            Assert.fail();
+            fail();
         } catch (Exception e) {
             //expected
             System.out.println(e.getMessage());
@@ -130,7 +129,7 @@ public class UtilTest {
         int[] d = {260};
         try {
             unsignedToByteArray(d);
-            Assert.fail();
+            fail();
         } catch (Exception e) {
             //expected
             System.out.println(e.getMessage());
@@ -148,6 +147,6 @@ public class UtilTest {
     }
 
     private void checkSubSeq(String s1, String s2, boolean exp) {
-        Assertions.assertEquals(exp, BufferUtil.indexOf(s2.getBytes(), s1.getBytes(), 0) >= 0);
+        assertEquals(exp, BufferUtil.indexOf(s2.getBytes(), s1.getBytes(), 0) >= 0);
     }
 }

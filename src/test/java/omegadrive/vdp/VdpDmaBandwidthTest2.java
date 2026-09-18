@@ -21,15 +21,14 @@ package omegadrive.vdp;
 
 import omegadrive.util.LogHelper;
 import omegadrive.vdp.model.MdVdpProvider;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 public class VdpDmaBandwidthTest2 extends BaseVdpDmaBandwidthTest {
 
     private static final Logger LOG = LogHelper.getLogger(VdpDmaBandwidthTest2.class.getSimpleName());
 
-    @Ignore("TODO fix")
+    @org.junit.jupiter.api.Disabled("TODO fix")
     @Test
     public void test68kVramDmaPerLineBlankingH32() {
         MdVdpTestUtil.setH32(vdpProvider);
@@ -42,7 +41,7 @@ public class VdpDmaBandwidthTest2 extends BaseVdpDmaBandwidthTest {
         test68kDmaPerLine(MdVdpProvider.VdpRamType.VRAM, true, false);
     }
 
-    @Ignore("TODO fix")
+    @org.junit.jupiter.api.Disabled("TODO fix")
     @Test
     public void test68kVramDmaPerLineBlankingH40() {
         MdVdpTestUtil.setH40(vdpProvider);

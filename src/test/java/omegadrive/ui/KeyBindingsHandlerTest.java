@@ -20,13 +20,13 @@
 package omegadrive.ui;
 
 import omegadrive.input.InputProvider.PlayerNumber;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static omegadrive.ui.KeyBindingsHandler.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class KeyBindingsHandlerTest {
 
@@ -39,7 +39,7 @@ public class KeyBindingsHandlerTest {
         parsePlayerConfig(l, PlayerNumber.P1);
         parsePlayerConfig(l, PlayerNumber.P2);
         String str2 = toConfigString();
-        Assert.assertEquals(str1, str2);
+        assertEquals(str1, str2);
         System.out.println(str1);
     }
 }

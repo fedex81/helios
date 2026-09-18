@@ -30,8 +30,7 @@ import com.grapeshot.halfnes.mappers.MapperHelper;
 import com.grapeshot.halfnes.state.HalfnesSaveStateHandler;
 import omegadrive.SystemLoader;
 import omegadrive.util.FileUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -42,6 +41,8 @@ import java.util.Map;
 import static com.grapeshot.halfnes.state.HalfnesSaveStateHandler.Type.LOAD;
 import static com.grapeshot.halfnes.state.HalfnesSaveStateHandler.Type.SAVE;
 import static omegadrive.SystemLoader.SystemType.NES;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class NesSavestateTest extends BaseSavestateTest {
 
@@ -75,7 +76,7 @@ public class NesSavestateTest extends BaseSavestateTest {
             mapper.loadrom();
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
         return mapper;
     }
@@ -101,14 +102,14 @@ public class NesSavestateTest extends BaseSavestateTest {
         //TODO ppu.openbus
         saveData[83] = loadData[83];
         //TODO
-        Assert.assertArrayEquals(loadData, saveData);
+        assertArrayEquals(loadData, saveData);
 
         HalfnesSaveStateHandler loadHandler2 = new HalfnesSaveStateHandler();
         ByteBuffer buffer3 = ByteBuffer.wrap(saveData);
         loadHandler2.setBuf(buffer3);
         loadHandler2.processState(LOAD, cpu, ppu, null, cpuram);
         byte[] loadData2 = buffer.array();
-        Assert.assertArrayEquals(loadData2, saveData);
+        assertArrayEquals(loadData2, saveData);
     }
 
     static class TestRomLoader extends ROMLoader {

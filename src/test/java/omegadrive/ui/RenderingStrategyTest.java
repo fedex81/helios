@@ -17,11 +17,11 @@
 
 package omegadrive.ui;
 
-import org.junit.Assert;
-
 import java.awt.*;
 import java.util.Arrays;
 import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RenderingStrategyTest {
 
@@ -51,7 +51,7 @@ public class RenderingStrategyTest {
 
 //        RenderingStrategy.toLinearNew(linearNew, screenData, inputD);
 
-        Assert.assertTrue(Arrays.equals(linear, linearNew));
+        assertTrue(Arrays.equals(linear, linearNew));
 
 
     }

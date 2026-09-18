@@ -26,9 +26,9 @@ import omegadrive.system.MediaSpecHolder;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.Util;
 import omegadrive.vdp.model.BaseVdpProvider;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,7 +48,7 @@ public class TinyRomTest {
 
     private AtomicBoolean done = new AtomicBoolean();
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeTest() {
         System.setProperty("helios.headless", "true");
         System.setProperty("helios.fullSpeed", "false");

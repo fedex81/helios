@@ -27,16 +27,15 @@ import omegadrive.system.SystemProvider;
 import omegadrive.util.BufferUtil;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpCounterMode;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static omegadrive.cpu.m68k.M68kProvider.HBLANK_INTERRUPT_LEVEL;
 import static omegadrive.cpu.m68k.M68kProvider.VBLANK_INTERRUPT_LEVEL;
 import static omegadrive.util.SystemTestUtil.createTestJoypadProvider;
 import static omegadrive.vdp.MdVdpTestUtil.*;
 import static omegadrive.vdp.model.MdVdpProvider.VdpRegisterName.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BusArbiterTest {
 
@@ -55,7 +54,7 @@ public class BusArbiterTest {
 
     private Z80BusProvider z80bus;
 
-    @Before
+    @BeforeEach
     public void setup() {
         SystemProvider emu = createTestMdProvider();
         bus = new MdBus();
@@ -116,9 +115,9 @@ public class BusArbiterTest {
             bus.handleVdpInterrupts68k();
 
         } while (hCounterRaise < 0);
-        Assert.assertEquals(vCounterRaise, vCounterPending);
+        assertEquals(vCounterRaise, vCounterPending);
         //this should be at least 1
-        Assert.assertTrue(hCounterRaise > hCounterPending);
+        assertTrue(hCounterRaise > hCounterPending);
     }
 
     /**
@@ -134,7 +133,7 @@ public class BusArbiterTest {
      * Set HIP: true, hLinePassed: -1, hce=85(10a), vce=0(0), hBlankSet=false,vBlankSet=false, vIntPending=false, hIntPending=true, hLinePassed=-1
      */
     @Test
-    @Ignore("TODO fix")
+    @org.junit.jupiter.api.Disabled("TODO fix")
     public void testLotus2_hint() {
         setVdpRegister(vdp, MODE_4, 0);
         //disable hint
@@ -154,13 +153,13 @@ public class BusArbiterTest {
                 setVdpRegister(vdp, HCOUNTER_VALUE, 0);
                 setVdpRegister(vdp, MODE_1, 0x14);
                 runVdpUntilFifoEmpty(vdp);
-                Assert.assertFalse("HINT should not be pending", vdp.getHip());
+                assertFalse(vdp.getHip(), "HINT should not be pending");
             }
             bus.handleVdpInterrupts68k();
 
         } while (hCounterRaise < 0);
         //this should be at least 1, ie. no HINT triggered on line 0
-        Assert.assertEquals(1, vCounterRaise);
+        assertEquals(1, vCounterRaise);
     }
 
     @Test
@@ -178,13 +177,13 @@ public class BusArbiterTest {
             runVdpSlot(vdp);
             bus.handleVdpInterrupts68k();
         } while (vCounterRaise < 0);
-        Assert.assertEquals(mode.vBlankSet, vCounterRaise);
+        assertEquals(mode.vBlankSet, vCounterRaise);
         vCounterRaise = -1;
         do {
             runVdpSlot(vdp);
             bus.handleVdpInterrupts68k();
         } while (vCounterRaise < 0);
-        Assert.assertEquals(mode.vBlankSet, vCounterRaise);
+        assertEquals(mode.vBlankSet, vCounterRaise);
     }
 
     @Test
@@ -201,12 +200,12 @@ public class BusArbiterTest {
         //disable display -> vblank on
         vdpDisplayEnable(vdp, false);
         runVdpSlot(vdp);
-        Assert.assertTrue(isVBlank(vdp));
+        assertTrue(isVBlank(vdp));
 
         //enable display
         vdpDisplayEnable(vdp, true);
         runVdpSlot(vdp);
-        Assert.assertFalse(isVBlank(vdp));
+        assertFalse(isVBlank(vdp));
     }
 
     @Test
@@ -223,7 +222,7 @@ public class BusArbiterTest {
         //disable display -> hblank doesnt change
         vdpDisplayEnable(vdp, false);
         runVdpSlot(vdp);
-        Assert.assertFalse(isHBlank(vdp));
+        assertFalse(isHBlank(vdp));
     }
 
     /**
@@ -270,8 +269,8 @@ public class BusArbiterTest {
         bus.ackInterrupt68k(HBLANK_INTERRUPT_LEVEL); //simulate the CPU acking level 4
 
         //check that vint was accepted instead of hint
-        Assert.assertFalse(getVip(vdp));
-        Assert.assertTrue(vdp.getHip());
+        assertFalse(getVip(vdp));
+        assertTrue(vdp.getHip());
     }
 
     /**
@@ -310,13 +309,13 @@ public class BusArbiterTest {
 
         checkIntAccepted(true);
         vdp.setVip(true);
-        Assert.assertTrue(vdp.getHip());
+        assertTrue(vdp.getHip());
         bus.ackInterrupt68k(VBLANK_INTERRUPT_LEVEL); //simulate the CPU acking level 6
 
         //check that vint was not accepted
-        Assert.assertTrue(getVip(vdp));
+        assertTrue(getVip(vdp));
         //check that hint was accepted
-        Assert.assertFalse(vdp.getHip());
+        assertFalse(vdp.getHip());
     }
 
     private void checkIntAccepted(boolean accepted) {
@@ -329,8 +328,8 @@ public class BusArbiterTest {
         } while (vCounterIntAccepted < 0 && cnt < 50000);
 
         //vint was not processed
-        Assert.assertEquals(accepted, hCounterIntAccepted >= 0);
-        Assert.assertEquals(accepted, vCounterIntAccepted >= 0);
+        assertEquals(accepted, hCounterIntAccepted >= 0);
+        assertEquals(accepted, vCounterIntAccepted >= 0);
     }
 
     private void set68kIntMask(int level) {

@@ -39,7 +39,7 @@ import omegadrive.vdp.md.MdVdp;
 import omegadrive.vdp.md.MdVdpMemoryInterface;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import s32x.bus.S32xBusIntf;
 
 import java.nio.file.Path;
@@ -135,7 +135,7 @@ public class SystemTestUtil {
                 bus = new ColecoBus();
                 break;
             default:
-                Assert.fail("Unkonwn system: " + systemType);
+                Assertions.fail("Unkonwn system: " + systemType);
         }
         SystemProvider system = Z80BaseSystem.createNewInstance(systemType, DisplayWindow.HEADLESS_INSTANCE);
         Z80Provider z80p1 = Z80CoreWrapper.createInstance(systemType, bus);

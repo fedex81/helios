@@ -8,14 +8,14 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.memory.MemoryProvider;
 import omegadrive.util.Size;
 import omegadrive.util.SystemTestUtil;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 
 import static omegadrive.bus.model.MdMainBusProvider.SRAM_LOCK;
 import static omegadrive.util.UtilTest.RUNNING_IN_GITHUB;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * Federico Berti
@@ -53,7 +53,7 @@ public class MdMapperTest {
 
     @Test
     public void testNoMapperSram() {
-        Assume.assumeFalse(RUNNING_IN_GITHUB);
+        assumeFalse(RUNNING_IN_GITHUB);
         prepareRomData(0x10_0000, "SEGA GENESIS"); //8 Mbit
         prepareSramHeader();
         testSramInternal();
@@ -62,7 +62,7 @@ public class MdMapperTest {
     //see VR 32x japan
     @Test
     public void testMapper() {
-        Assume.assumeFalse(RUNNING_IN_GITHUB);
+        assumeFalse(RUNNING_IN_GITHUB);
         prepareRomData(0x50_0000, "SEGA GENESIS"); //40 Mbit
 
         int address = 0x20_00FF;
@@ -115,7 +115,7 @@ public class MdMapperTest {
     @Test
     //NOTE: fails in github actions
     public void testNoMapperSramDodgy() {
-        Assume.assumeFalse(RUNNING_IN_GITHUB);
+        assumeFalse(RUNNING_IN_GITHUB);
         prepareRomData(0x20_0000, "SEGA GENESIS"); //16 Mbit
         testSramInternal();
     }
@@ -187,15 +187,15 @@ public class MdMapperTest {
                 case BYTE:
                     byte exp = (byte) ((expectedLong >> 24) & 0xFF);
                     byte res = (byte) (bus.read(address, size));
-                    Assert.assertEquals(address + "," + size, exp, res);
+                    assertEquals(exp, res, address + "," + size);
                     break;
                 case WORD:
                     short iexp = (short) ((expectedLong >> 16) & 0xFFFF);
                     short ires = (short) bus.read(address, size);
-                    Assert.assertEquals(address + "," + size, iexp, ires);
+                    assertEquals(iexp, ires, address + "," + size);
                     break;
                 default:
-                    Assert.assertEquals(address + "," + size, expectedLong, bus.read(address, size));
+                    assertEquals(expectedLong, bus.read(address, size), address + "," + size);
                     break;
             }
         }

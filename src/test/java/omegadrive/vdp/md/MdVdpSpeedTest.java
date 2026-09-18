@@ -28,12 +28,13 @@ import omegadrive.vdp.MdVdpTestUtil;
 import omegadrive.vdp.VdpDmaHandlerTest;
 import omegadrive.vdp.model.MdVdpProvider;
 import omegadrive.vdp.model.VdpMemoryInterface;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MdVdpSpeedTest {
 
@@ -43,11 +44,11 @@ public class MdVdpSpeedTest {
     VdpMemoryInterface memoryInterface;
     MdMainBusProvider busProvider;
 
-    @Before
+    @BeforeEach
     public void setup() {
         busProvider = SystemTestUtil.setupNewMdSystem();
         Optional<MdVdpProvider> opt = busProvider.getBusDeviceIfAny(MdVdpProvider.class);
-        Assert.assertTrue(opt.isPresent());
+        assertTrue(opt.isPresent());
         vdpProvider = opt.get();
         memoryInterface = (VdpMemoryInterface) vdpProvider.getVdpMemory();
         MdVdpTestUtil.vdpMode5(vdpProvider);
@@ -83,12 +84,12 @@ public class MdVdpSpeedTest {
             MdVdpTestUtil.setH40(vdpProvider);
         }
         MdVdpTestUtil.vdpDisplayEnable(vdpProvider, true);
-        Assert.assertTrue(vdpProvider.isDisplayEnabled());
+        assertTrue(vdpProvider.isDisplayEnabled());
         MdVdpTestUtil.runToStartFrame(vdpProvider);
         MdVdpTestUtil.runToStartNextLine(vdpProvider);
         MdVdpTestUtil.runToStartNextLine(vdpProvider);
         int vc = vdpProvider.getVCounter();
-        Assert.assertTrue(vc > 0 && vc < 10);
+        assertTrue(vc > 0 && vc < 10);
         //4 = fastDivider, 5 = slowDivider; 4 implies a vdp speed of MCLK/8, 5 implies MCLK/10
         int vdpSpeedDivider;
         do {
@@ -101,8 +102,8 @@ public class MdVdpSpeedTest {
                 clocks_7_68Mhz += Megadrive.vdpVals[vdpSpeedDivider - 4];
                 isStart = vdpProvider.getHCounter() == 0;
             } while (!isStart);
-            Assert.assertTrue(Math.abs(clocks_7_68Mhz - M68KCLK_PER_LINE) < EPSILON);
-            Assert.assertTrue(cnt < (isH32 ? 200 : 250)); //check h32 vs h40 is working
+            assertTrue(Math.abs(clocks_7_68Mhz - M68KCLK_PER_LINE) < EPSILON);
+            assertTrue(cnt < (isH32 ? 200 : 250)); //check h32 vs h40 is working
         } while (!MdVdpTestUtil.isVBlank(vdpProvider));
     }
 }

@@ -28,11 +28,11 @@ import omegadrive.memory.IMemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.savestate.StateUtil;
 import omegadrive.savestate.Z80StateBaseHandler;
+import omegadrive.util.JunitTestUtil;
 import omegadrive.util.SystemTestUtil;
 import omegadrive.vdp.Tms9918aVdp;
 import omegadrive.vdp.model.Tms9918a;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,6 +43,8 @@ import java.util.stream.IntStream;
 import static omegadrive.SystemLoader.SystemType.*;
 import static omegadrive.savestate.BaseStateHandler.Type.LOAD;
 import static omegadrive.savestate.BaseStateHandler.Type.SAVE;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Z80SavestateTest extends BaseSavestateTest {
 
@@ -88,11 +90,11 @@ public class Z80SavestateTest extends BaseSavestateTest {
         BaseStateHandler loadHandler2 = Z80StateBaseHandler.createLoadInstance(name, systemType, saveData,
                 busProvider2.getAllDevices(Device.class));
         loadHandler2.processState();
-        Assert.assertArrayEquals(saveData, loadHandler2.getData());
+        assertArrayEquals(saveData, loadHandler2.getData());
 
         compareDevices(busProvider1, busProvider2);
 
-//        Assert.assertArrayEquals("Data mismatch", data, savedData);
+//        assertArrayEquals("Data mismatch", data, savedData);
     }
 
     private void compareDevices(Z80BusProvider b1, Z80BusProvider b2) {
@@ -107,7 +109,7 @@ public class Z80SavestateTest extends BaseSavestateTest {
     private void compareBus(MsxBus b1, MsxBus b2) {
         MsxBus.MsxBusContext c1 = b1.getCtx();
         MsxBus.MsxBusContext c2 = b2.getCtx();
-        Assert.assertTrue(c1.psgAddressLatch == c2.psgAddressLatch &&
+        assertTrue(c1.psgAddressLatch == c2.psgAddressLatch &&
                 c1.slotSelect == c2.slotSelect &&
                 c1.ppiC_Keyboard == c2.ppiC_Keyboard &&
                 Arrays.equals(c1.pageStartAddress, c2.pageStartAddress) &&
@@ -117,8 +119,8 @@ public class Z80SavestateTest extends BaseSavestateTest {
 
     private void compareVdp(Tms9918aVdp vdp1, Tms9918aVdp vdp2) {
         IntStream.range(0, Tms9918a.REGISTERS).forEach(i ->
-                Assert.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
+                JunitTestUtil.assertEquals("VdpReg" + i, vdp1.getRegisterData(i), vdp2.getRegisterData(i)));
         IntStream.range(0, Tms9918a.RAM_SIZE).forEach(i ->
-                Assert.assertEquals("Vram" + i, vdp1.getVram()[i], vdp2.getVram()[i]));
+                JunitTestUtil.assertEquals("Vram" + i, vdp1.getVram()[i], vdp2.getVram()[i]));
     }
 }

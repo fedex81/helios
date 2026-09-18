@@ -21,12 +21,10 @@ package s32x.vdp.composite_render;
 
 import com.google.common.io.Files;
 import omegadrive.util.FileUtil;
-import omegadrive.util.TestRenderUtil.*;
 import omegadrive.util.Util;
 import omegadrive.util.VideoMode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -82,7 +80,7 @@ public class VdpRenderCompareFileTest extends VdpRenderCompareTest {
         Assertions.assertFalse(error, "Error: " + fileName);
     }
 
-    @Disabled
+    @org.junit.jupiter.api.Disabled
     @Test
     public void testCompare() {
         Path saveFile = Paths.get(baseDataFolderName, "bthorn_01.dat.zip");

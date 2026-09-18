@@ -20,8 +20,7 @@ package omegadrive.cheat;
 import omegadrive.cart.cheat.BasicMdRawCode;
 import omegadrive.cart.cheat.CheatCodeHelper;
 import omegadrive.cart.cheat.GameGenieHelper;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +32,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CheatCodeTest {
 
@@ -54,7 +56,7 @@ public class CheatCodeTest {
     @Test
     public void ggTest() {
         Arrays.stream(codes).forEach(c ->
-                Assert.assertTrue(c.equalsIgnoreCase(GameGenieHelper.encode(GameGenieHelper.decode(c))))
+                assertTrue(c.equalsIgnoreCase(GameGenieHelper.encode(GameGenieHelper.decode(c))))
         );
 //        System.out.println(GameGenieHelper.decode("AABT-AA5J"));
     }
@@ -64,7 +66,7 @@ public class CheatCodeTest {
         System.out.println(new File(".").getAbsolutePath());
         Set<Path> patFiles = Files.list(cheatFolder).
                 filter(p -> p.getFileName().toString().endsWith(PAT_FILES)).collect(Collectors.toSet());
-        Assert.assertFalse(patFiles.isEmpty());
+        assertFalse(patFiles.isEmpty());
         patFiles = new TreeSet<>(patFiles);
         for (Path file : patFiles) {
             System.out.println(file.toString());
