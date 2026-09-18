@@ -256,6 +256,7 @@ public class MegaCdDict {
         public final CpuDeviceAccess cpu;
 
         BitRegDef(CpuDeviceAccess cpu, int p, int rbp) {
+            assert p < 8;
             this.pos = p;
             this.regBytePos = rbp;
             this.bitMask = 1 << pos;

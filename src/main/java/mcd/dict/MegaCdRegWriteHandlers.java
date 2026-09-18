@@ -86,15 +86,23 @@ public class MegaCdRegWriteHandlers {
     private final static BiConsumer<MegaCdMemoryContext, Integer> setByteMSBReg0_M = (ctx, d) -> {
         var buff = ctx.getGateSysRegs(M68K);
         {
-            int now = readBuffer(buff, MCD_RESET.addr, Size.BYTE);
-            //Flux sets IEN2 = 1
-            boolean ien2ok = (d & IEN2.getBitMask()) > 0 ? (now & IEN2.getBitMask()) > 0 : true; //IEN2 write only 0
-            if (!ien2ok) {
-                LogHelper.logWarnOnce(LOG, "{} illegal IEN2 write: {}->{}", M68K, now & IEN2.getBitMask(),
-                        d & IEN2.getBitMask());
-                d &= ~IEN2.getBitMask();
-            } else {
-                LogHelper.logWarnOnce(LOG, "Setting IEN2 to 1, illegal?");
+            if (assertionsEnabled) {
+                int now = readBuffer(buff, MCD_RESET.addr, Size.BYTE);
+                //Flux sets IEN2 = 1
+                //TODO check: IEN2 write only 0 ??
+                int mask = IEN2.getBitMask();
+                boolean stateChanged = ((d ^ now) & mask) != 0;
+                if (stateChanged) {
+                    LogHelper.logWarnOnce(LOG, "{} illegal IEN2 write state changed: {}->{}",
+                            M68K, now & IEN2.getBitMask(),
+                            d & IEN2.getBitMask());
+                    //NOTE just info, we are not writing IEN2 anyway
+                }
+                mask = IFL2.getBitMask();
+                boolean stateChanged1to0 = (~d & now & mask) != 0;
+                if (stateChanged1to0) {
+                    LogHelper.logWarnOnce(LOG, "{} IFL2 1->0 transition, should be ignored?"); //TODO
+                }
             }
         }
         //mcd-ver main sets IFL2 to 0

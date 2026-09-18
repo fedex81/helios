@@ -3,6 +3,7 @@ package mcd.dict;
 import mcd.bus.McdWordRamHelper;
 import mcd.cdd.cdbios.CdBiosHelper;
 import mcd.util.BuramHelper;
+import omegadrive.cart.MediaInfoProvider;
 import omegadrive.cart.mapper.BackupMemoryFileHandler;
 import omegadrive.system.MediaSpecHolder;
 import omegadrive.util.BufferUtil.CpuDeviceAccess;
@@ -14,6 +15,7 @@ import java.io.Closeable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import static mcd.dict.MegaCdDict.MCD_SUB_BRAM_SIZE;
@@ -111,7 +113,8 @@ public class MegaCdMemoryContext implements Serializable, Closeable {
 
     private void initBramData(MediaSpecHolder mediaSpec) {
         backupRamArr = new byte[MCD_SUB_BRAM_SIZE];
-        String romName = mediaSpec.getBootableMedia().mediaInfoProvider.getRomName();
+        String romName = Optional.ofNullable(mediaSpec.getBootableMedia().mediaInfoProvider).
+                map(MediaInfoProvider::getRomName).orElse("NO_ROM");
         backupFileHandler = new BackupMemoryFileHandler(mediaSpec.systemType, fileType, romName, MCD_SUB_BRAM_SIZE);
         backupFileHandler.initBackupFileIfNecessary();
         backupRamArr = backupFileHandler.getBackupRam();

@@ -130,7 +130,7 @@ public class MegaCd extends Megadrive {
 
     protected void runSub68k() {
         while (nextSub68kCycle <= cycleCounter) {
-            boolean canRun = !subCpu.isStopped();// && !MC68000Wrapper.subCpuBusHalt;
+            boolean canRun = !subCpu.isStopped();
             int cycleDelayCpu = 1;
             MdRuntimeData.setAccessTypeExt(SUB_M68K);
             if (canRun) {

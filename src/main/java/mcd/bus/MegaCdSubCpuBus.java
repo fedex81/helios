@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
@@ -161,16 +160,6 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         return res & size.getMask();
     }
 
-
-    final BusWriteRunnable wramRunnable = new BusWriteRunnable() {
-        @Override
-        public void run() {
-            memCtx.wramHelper.writeWordRam(cpuType, address, data, size);
-        }
-    };
-
-    AtomicReference<Runnable> wramRunLater = new AtomicReference<>();
-
     @Override
     public void write(int address, int data, Size size) {
         assert MdRuntimeData.getAccessTypeExt() == SUB_M68K;
@@ -180,15 +169,6 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
             if (memCtx.wramSetup.mode == WordRamMode._2M) {
                 if (memCtx.wramSetup.cpu == SUB_M68K) {
                     memCtx.wramHelper.writeWordRam(cpuType, address, data, size);
-                } else {
-                    wramRunnable.address = address;
-                    wramRunnable.data = data;
-                    wramRunnable.size = size;
-                    //TODO fix, WRAM_2M handling is buggy?
-//                    boolean res = wramRunLater.compareAndSet(null, wramRunnable);
-//                    assert res;
-//                    MC68000Wrapper.subCpuBusHalt = true;
-//                    LOG.info("{} blocked due to write to WRAM {}, {}", cpuType, memCtx.wramSetup, wramRunnable);
                 }
             } else {
                 //dot mapped window
@@ -320,6 +300,7 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
                     int val = IEN2.getBitMask() * ((reg >> 2) & 1);
                     setBitDefInternal(memCtx, M68K, IEN2, val);
                     //disable IEN2 -> resets IFL2
+                    //TODO check
                     if (val == 0) {
                         setBitDefInternal(memCtx, M68K, IFL2, 0);
                     }
@@ -386,27 +367,12 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         int resWord = memCtx.handleRegWrite(cpuType, MCD_MEM_MODE, address, data, size);
         WramSetup prev = memCtx.wramSetup;
         WramSetup ws = memCtx.wramHelper.update(cpuType, resWord);
-        handleWramSetupChange(prev, ws);
         //TODO set DMNA = 1 for 2M_SUB breaks us_bios 1.00, write test
         //set DMNA=0 for 2M_MAIN
         if (ws == WramSetup.W_2M_MAIN) {
             setSharedBitBothCpu(memCtx, SharedBitDef.DMNA, 0);
         }
         asic.setStampPriorityMode((resWord >> 3) & 3);
-    }
-
-    public void handleWramSetupChange(WramSetup prev, WramSetup ws) {
-        if (prev != ws) {
-            if (ws.cpu == SUB_M68K) {
-                Runnable r = wramRunLater.getAndSet(null);
-                if (r != null) {
-                    r.run();
-                    MC68000Wrapper.subCpuBusHalt = false;
-                    LOG.info("{} released as WRAM set to {}, cpu running: {}, busWrite: {}",
-                            cpuType, memCtx.wramSetup, !subCpu.isStopped(), r);
-                }
-            }
-        }
     }
 
     private void handleCommRegWrite(RegSpecMcd regSpec, int address, int data, Size size) {

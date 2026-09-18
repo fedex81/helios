@@ -28,7 +28,7 @@ import static mcd.dict.MegaCdDict.*;
 import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
-import static mcd.util.McdRegBitUtil.setBitDefInternal;
+import static mcd.util.McdRegBitUtil.setBitDefInternalBitVal;
 import static mcd.util.McdRegBitUtil.setSharedBitBothCpu;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
@@ -98,6 +98,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         this.mdBus = mdBus;
         ifl2Trigger = 0;
         subCpuReset = false;
+        mainHasPrgRamAccess = true;
     }
 
     @Override
@@ -178,7 +179,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
             if (addr >= START_MCD_MAIN_PRG_RAM_MODE1 && addr < END_MCD_BOOT_ROM_MIRROR_MODE1) {
                 addr &= MCD_BOOT_ROM_PRGRAM_WINDOW_MASK;
                 if (addr >= MCD_BOOT_ROM_WINDOW_SIZE) {
-                    if (subCpu.isStopped()) {
+                    if (mainHasPrgRamAccess) {
                         addr = prgRamBankShift | (addr & MCD_MAIN_PRG_RAM_WINDOW_MASK);
                         writeBufferRaw(prgRam, addr, data, size);
                     } else {
@@ -390,6 +391,9 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
             default -> LOG.error("M write unknown MEGA_CD_EXP reg: {}", th(address));
         }
     }
+
+    private boolean mainHasPrgRamAccess = false;
+
     private void handleReg0Write(int address, int data, Size size) {
         int currWord = readBufferWord(sysGateRegs, MCD_RESET.addr);
         int resWord = memCtx.handleRegWrite(cpu, MCD_RESET, address, data, size);
@@ -413,9 +417,10 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         //sreset = 0 forces sbusreq = 1
         boolean sresChanged = (currWord & 1) != sreset;
         sbusreq = sresChanged && sreset == 0 ? 1 : sbusreq;
-        setBitDefInternal(memCtx, M68K, BitRegDef.SBRQ, sbusreq << 1);
+        setBitDefInternalBitVal(memCtx, M68K, BitRegDef.SBRQ, sbusreq);
 
-        boolean stopped = sreset == 0 || sbusreq > 0;
+        boolean stopped = sreset == 0;
+        mainHasPrgRamAccess = stopped || sbusreq > 0;
         boolean triggerReset = ((currWord & 1) == 0) && sreset > 0;
         if (triggerReset) {
             subCpu.reset();
@@ -453,11 +458,6 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
             int val = ws.cpu == M68K ? 1 : 0;
             setSharedBitBothCpu(memCtx, SharedBitDef.RET, val);
         }
-//        int after2 = readBuffer(memCtx.getRegBuffer(cpu, MCD_MEM_MODE), MCD_MEM_MODE.addr, Size.WORD);
-//        LOG.info("{} write: {} {} {}, regBefore: {}, regAfter: {}, " +
-//                "wramBefore: {}, wramAfter: {}, regAfter2: {}",
-//                MCD_MEM_MODE, th(address), th(data), size, th(before), th(resWord), prev, ws, th(after2));
-        subCpuBus.handleWramSetupChange(prev, ws);
         //bk0,1
         int bval = (resWord >> 6) & 3;
         if (bval != prgRamBankValue) {

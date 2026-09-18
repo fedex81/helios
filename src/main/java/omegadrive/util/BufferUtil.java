@@ -171,6 +171,7 @@ public class BufferUtil {
         int val = readBuffer(b, pos, size);
         int newVal = Util.setBit(val, bitPos, bitValue);
         if (val != newVal) {
+            assert Integer.bitCount(val ^ newVal) == 1 : val + " -> " + newVal;
             writeBufferRaw(b, pos, newVal, size);
             return newVal;
         }

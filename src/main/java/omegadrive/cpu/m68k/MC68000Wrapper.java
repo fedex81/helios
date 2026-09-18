@@ -58,8 +58,6 @@ public class MC68000Wrapper implements M68kProvider {
 
     protected M68kLoopHelper loopHelper;
 
-    public static boolean subCpuBusHalt = false;
-
     private static final boolean M68K_POLL_EN = false; //Boolean.parseBoolean(System.getProperty("helios.m68k.poll.detect",
 //            "" + Sh2Helper.Sh2Config.get().m68kLoopDetect));
 

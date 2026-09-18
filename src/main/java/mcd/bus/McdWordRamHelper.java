@@ -120,17 +120,17 @@ public class McdWordRamHelper {
                 if (ret > 0) {
                     dmna = 0;
                 }
-                McdRegBitUtil.setSharedBitBothCpu(memoryContext, DMNA, dmna << 1);
+                McdRegBitUtil.setSharedBitBothCpu(memoryContext, DMNA, dmna << DMNA.getBitPos());
                 LogHelper.logWarnOnceWhenEn(LOG, "Setting wordRam to {}", memoryContext.wramSetup);
             }
             if (c == M68K) {
                 boolean swapRequest = dmna == 0;
                 if (swapRequest) {
-                    ret = ~ret & 1;
+                    ret = ret > 0 ? 0 : 1; //invert bit
                     if (ret > 0) {
                         dmna = ret;
                     }
-                    McdRegBitUtil.setSharedBitBothCpu(memoryContext, DMNA, dmna << 1);
+                    McdRegBitUtil.setSharedBitBothCpu(memoryContext, DMNA, dmna << DMNA.getBitPos());
                     McdRegBitUtil.setSharedBitBothCpu(memoryContext, RET, ret);
                     //DMNA has no effect, ie. MAIN cannot switch banks directly, it needs to ask SUB to do it
                     memoryContext.wramSetup = ret == 0 ? MegaCdMemoryContext.WramSetup.W_1M_WR0_MAIN : MegaCdMemoryContext.WramSetup.W_1M_WR0_SUB;
@@ -156,6 +156,7 @@ public class McdWordRamHelper {
             LOG.info("M PROG-RAM Write protection: {} -> {}", th(memoryContext.writeProtectRam), th(wpVal));
             memoryContext.writeProtectRam = wpVal;
         }
+        //LOG.info("{} write to MEM_MODE: {} -> {}, {} -> {}", c, th(before & 7), th(reg2 & 7), prev, memoryContext.wramSetup);
         return memoryContext.wramSetup;
     }
 

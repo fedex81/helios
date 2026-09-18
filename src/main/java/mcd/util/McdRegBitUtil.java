@@ -49,6 +49,14 @@ public class McdRegBitUtil {
         setSharedBitOtherCpu(ctx, cpu, data, bitDef);
     }
 
+    public static void setBitDefInternalBitVal(MegaCdMemoryContext ctx, CpuDeviceAccess cpu,
+                                               MegaCdDict.BitRegisterDef def, int bitVal) {
+        assert !(def instanceof SharedBitDef);
+        assert def.getCpu() == cpu;
+        assert (bitVal & 1) == bitVal;
+        setBitInternal(ctx.getGateSysRegs(cpu), def.getRegBytePos(), def.getBitPos(), bitVal << def.getBitPos());
+    }
+
     public static void setBitDefInternal(MegaCdMemoryContext ctx, CpuDeviceAccess cpu,
                                          MegaCdDict.BitRegisterDef def, int data) {
         assert !(def instanceof SharedBitDef);

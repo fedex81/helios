@@ -7,6 +7,8 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.Size;
 import org.slf4j.Logger;
 
+import static mcd.asic.AsicModel.AsicEvent.AS_START;
+import static mcd.asic.AsicModel.AsicEvent.AS_STOP;
 import static mcd.asic.AsicModel.StampRepeat.REPEAT_MAP;
 import static mcd.asic.AsicModel.StampRepeat.vals;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
@@ -29,21 +31,16 @@ public class Asic implements AsicOp {
     private static final Logger LOG = LogHelper.getLogger(Asic.class.getSimpleName());
 
     private final boolean verbose = false;
-
-    //bios_EU likes 75
-    //bios_JP 1.00 > 50
-    private static final int ASIC_LINES_AT_32p5Khz = 75;
     private final StampConfig stampConfig = new StampConfig();
 
     private final MegaCdMemoryContext memoryContext;
     private final McdSubInterruptHandler interruptHandler;
 
-    private AsicEvent asicEvent = AsicEvent.AS_STOP;
+    private AsicEvent asicEvent = AS_STOP;
 
     public Asic(MegaCdMemoryContext memoryContext, McdSubInterruptHandler ih) {
         this.memoryContext = memoryContext;
         this.interruptHandler = ih;
-        LogHelper.logWarnOnce(LOG, "Asic way too fast, processing {} lines/sec", ASIC_LINES_AT_32p5Khz * 32500);
     }
 
     @Override
@@ -77,7 +74,8 @@ public class Asic implements AsicOp {
             case MCD_IMG_TRACE_VECTOR_ADDR -> {
                 stampConfig.imgTraceTableLocation = (value & ~1) << 2;
                 cd_graphics_dst_y = stampConfig.vPixelOffset;
-                asicEvent(AsicEvent.AS_START);
+                if (verbose) LOG.info("Write to reg {}, trigger asic event: {}", MCD_IMG_TRACE_VECTOR_ADDR, AS_START);
+                asicEvent(AS_START);
                 gfxCycleCost();
             }
             default -> {
@@ -211,7 +209,8 @@ public class Asic implements AsicOp {
             writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_IMG_TRACE_VECTOR_ADDR.addr, tvb + 2, Size.WORD);
             doFetch = true;
             if (stampConfig.imgHeightPx == 0) {
-                asicEvent(AsicEvent.AS_STOP);
+                if (verbose) LOG.info("imgHeightPx is 0, trigger asic event: {}", AS_STOP);
+                asicEvent(AS_STOP);
 //                    printWram(memoryContext);
             }
         }
@@ -323,26 +322,52 @@ public class Asic implements AsicOp {
     }
 
     private void asicEvent(AsicEvent event) {
+        if (verbose) LOG.info("New Asic event {} -> {}", asicEvent, event);
         if (event == asicEvent) {
             assert (readBufferWord(memoryContext.commonGateRegsBuf, MCD_IMG_STAMP_SIZE.addr) >>> 15) == event.ordinal();
             return;
         }
         setBit(memoryContext.commonGateRegsBuf, MCD_IMG_STAMP_SIZE.addr, 15, event.ordinal(), Size.WORD);
-        if (asicEvent != event && event == AsicEvent.AS_STOP) {
+        if (asicEvent != event && event == AS_STOP) {
+            if (verbose) LOG.info("Asic interrupt raised");
             interruptHandler.raiseInterrupt(INT_ASIC);
         }
         asicEvent = event;
     }
 
-    //called at 32.5Khz, 0.0307 ms
-    //12_500_000/32.5Khz = 384
-    //max 32_500 lines/s, 521 lines/frame
-    @Override
+    private int lineAccumulator = 0;
+
+    /**
+     * let's say we render lines a 4khz, 8 ticks @ 32.5Khz -> render one line
+     * <p>
+     * Lines Per 32.5kHz Step: ~0.11 to 0.14 lines
+     * Lines Per Frame: ~62 to 76 lines max
+     * Lines Per Second: ~3,700 to 4,500 lines max
+     */
+//    @Override
+    public void step1(int cycles) {
+        if (asicEvent != AS_START || stampConfig.imgHeightPx == 0) {
+            lineAccumulator = 0; // Reset if idle
+            return;
+        }
+
+        lineAccumulator++;
+        if (lineAccumulator == 8) {
+            doRenderLines(1);
+            lineAccumulator = 0;
+        }
+    }
+
+    //bios_EU likes 75
+    //bios_JP 1.00 > 50
+    final static int ASIC_LINES_AT_32p5Khz = 75;
+
+    //    @Override
     public void step(int cycles) {
         if (asicEvent != AsicEvent.AS_START || stampConfig.imgHeightPx == 0) {
             return;
         }
-//        printWram(memoryContext);
-        doRenderLines(ASIC_LINES_AT_32p5Khz);
+        doRenderLines(75);
+        LogHelper.logWarnOnce(LOG, "Asic way too fast, processing {} lines/sec", ASIC_LINES_AT_32p5Khz * 32500);
     }
 }

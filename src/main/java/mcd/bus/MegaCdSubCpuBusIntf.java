@@ -1,6 +1,5 @@
 package mcd.bus;
 
-import mcd.dict.MegaCdMemoryContext;
 import omegadrive.bus.model.MdM68kBusProvider;
 import omegadrive.util.BufferUtil;
 import omegadrive.vdp.model.BaseVdpAdapterEventSupport;
@@ -15,6 +14,4 @@ public interface MegaCdSubCpuBusIntf extends MdM68kBusProvider, BufferUtil.StepD
     int getLedState();
 
     McdSubInterruptHandler getInterruptHandler();
-
-    void handleWramSetupChange(MegaCdMemoryContext.WramSetup prev, MegaCdMemoryContext.WramSetup ws);
 }

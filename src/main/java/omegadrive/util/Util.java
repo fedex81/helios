@@ -440,6 +440,12 @@ public class Util {
         return (b >> bitPos) & 1;
     }
 
+    public static void setShortLE(byte[] output, int index, short value) {
+        output[index] = (byte) (value & 0xFF);
+        output[index + 1] = (byte) ((value >> 8) & 0xFF);
+    }
+
+
     public static boolean assertCheckBusOp(int address, Size size) {
         //TODO doomFusion
         //68k LONG access, gets converted to 2 WORD accesses

@@ -2,6 +2,7 @@ package omegadrive.util;
 
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -60,6 +61,8 @@ public class Sleeper {
         parkExactly(intervalNs - SLEEP_RESOLUTION_NS);
     }
 
+    static long maxSleepNs = Duration.ofMillis(20).toNanos();
+
     public static void parkExactly(long intervalNs) {
         assert intervalNs > 0;
         if (intervalNs < SLEEP_RESOLUTION_NS) {
@@ -80,6 +83,11 @@ public class Sleeper {
             return;
         }
         do {
+            //TODO I think this has happened??
+            if (intervalNs > maxSleepNs || intervalNs <= 0) {
+                LOG.error("Unexpected Sleep ns: {}", intervalNs);
+                return;
+            }
             LockSupport.parkNanos(intervalNs);
             long nowNs = System.nanoTime();
             intervalNs = Math.max(deadlineNs - intervalNs, SLEEP_RESOLUTION_NS);
