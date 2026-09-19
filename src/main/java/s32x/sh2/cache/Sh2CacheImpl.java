@@ -254,9 +254,7 @@ public class Sh2CacheImpl implements Sh2Cache {
         if (verbose) LOG.info("{} Cache data array read: {}({}) {}, val: {}", cpu, th(addr),
                 th(addr & dataArrayMask), size,
                 Util.th(BufferUtil.readBuffer(data_array, address, size)));
-        if (address == (addr & DATA_ARRAY_MASK)) {
-            BufferUtil.readBuffer(data_array, address, size);
-        } else {
+        if (address != (addr & DATA_ARRAY_MASK)) {
             LOG.error("{} Error Cache data array read: {}({}) {}, val: {}", cpu, th(addr),
                     th(addr & dataArrayMask), size,
                     Util.th(BufferUtil.readBuffer(data_array, address, size)));

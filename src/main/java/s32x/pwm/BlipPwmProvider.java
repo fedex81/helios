@@ -114,14 +114,15 @@ public class BlipPwmProvider implements PwmProvider {
     }
 
     private int scalePwmSample(int sample) {
-        int vsample = (int) ((sample - (ref.get().cycle >> 1)) * ref.get().scale);
+        final var bbc = ref.get();
+        int vsample = (int) ((sample - (bbc.cycle >> 1)) * bbc.scale);
         short scaled = (short) vsample;
         if (scaled != vsample) {
-            float scale = ref.get().scale;
-            ref.get().scale -= 1;
+            float scale = bbc.scale;
+            bbc.scale -= 1;
             LOG.warn("PWM value out of range (16 bit signed): {}, scale: {}, " +
                     "pwmVal: {}", th(scaled), scale, sample);
-            LOG.warn("Reducing scale: {} -> {}", scale, ref.get().scale);
+            LOG.warn("Reducing scale: {} -> {}", scale, bbc.scale);
             scaled = clampToShort(vsample);
         }
         return scaled;

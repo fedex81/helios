@@ -38,6 +38,8 @@ public class DmaC implements BufferUtil.Sh2Device, Sh2MMREG.DmaTriggerHandler {
     private final IntControl intControl;
     private final Sh2Bus memory;
     private final BufferUtil.CpuDeviceAccess cpu;
+
+    //TODO not serialized
     private final DmaHelper.DmaChannelSetup[] dmaChannelSetup;
 
     private Dma68SHandler dma68SHandler;
@@ -238,6 +240,8 @@ public class DmaC implements BufferUtil.Sh2Device, Sh2MMREG.DmaTriggerHandler {
         BufferUtil.writeBufferRaw(regs, DMA_DRCR1.addr, 0, Size.BYTE);
         BufferUtil.writeBufferRaw(regs, DMA_DMAOR.addr, 0, Size.LONG);
         oneDmaInProgress = false;
+        dmaChannelSetup[0] = DmaHelper.createChannel(0);
+        dmaChannelSetup[1] = DmaHelper.createChannel(1);
     }
 
     public DmaHelper.DmaChannelSetup[] getDmaChannelSetup() {

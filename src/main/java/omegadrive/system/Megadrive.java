@@ -66,7 +66,7 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
     public final static double[] vdpVals = {VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_FAST_VDP, VDP_RATIO * BaseVdpProvider.MCLK_DIVIDER_SLOW_VDP};
     protected final static int Z80_DIVIDER = 14 / MCLK_DIVIDER;
     protected final static int FM_DIVIDER = 42 / MCLK_DIVIDER;
-    protected static final int SVP_CYCLES = 100;
+    protected static final int SVP_CYCLES = 128;
     protected static final int SVP_RUN_CYCLES = (int) (SVP_CYCLES * 1.5);
     static final int SVP_CYCLES_MASK = SVP_CYCLES - 1;
 
@@ -76,6 +76,7 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
 
     static {
         BufferUtil.assertPowerOf2Minus1("FAST_FM_DIV_MASK", FAST_FM_DIV_MASK);
+        BufferUtil.assertPowerOf2Minus1("SVP_CYCLES_MASK", SVP_CYCLES_MASK);
     }
 
     private final static Logger LOG = LogHelper.getLogger(Megadrive.class.getSimpleName());

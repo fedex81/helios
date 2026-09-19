@@ -48,7 +48,6 @@ public class MegaCd32x extends Md32x {
     protected McdDeviceHelper.McdLaunchContext mcdLaunchContext;
     private double mcd68kRatio;
     protected S32xBusIntf s32xBus;
-    double subCnt = 0;
 
     static {
 //        System.setProperty("68k.debug", "true");
@@ -113,8 +112,7 @@ public class MegaCd32x extends Md32x {
             }
             //interrupts are processed after the current instruction
             interruptHandler.handleInterrupts();
-            cycleDelayCpu = Math.max(1, cycleDelayCpu);
-            subCnt += cycleDelayCpu; //cycles @ 12.5 Mhz
+            cycleDelayCpu = Math.max(1, cycleDelayCpu); //cycles @ 12.5 Mhz
             mcdLaunchContext.stepDevices(cycleDelayCpu);
             //convert cycles @ 12.5 Mhz to cycles @ 7.67 Mhz
             nextSub68kCycle += M68K_DIVIDER * mcd68kRatio * cycleDelayCpu;

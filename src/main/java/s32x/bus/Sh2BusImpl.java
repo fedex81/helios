@@ -150,7 +150,7 @@ public final class Sh2BusImpl implements Sh2Bus {
             default -> logWarnOnce(LOG, "{} invalid read from addr: {}, {}", cpuAccess, th(address), size);
         }
         if (memDelay > 0) {
-            S32xMemAccessDelay.addWriteCpuDelay(memDelay);
+            S32xMemAccessDelay.addReadCpuDelay(memDelay);
         }
         return res;
     }

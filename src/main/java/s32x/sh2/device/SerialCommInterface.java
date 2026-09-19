@@ -48,6 +48,7 @@ public class SerialCommInterface implements BufferUtil.Sh2Device {
 
     private SerialCommInterface other;
 
+    //TODO: not serialized
     public static final SciData sciData = new SciData();
 
     public SerialCommInterface(BufferUtil.CpuDeviceAccess cpu, IntControl intControl, ByteBuffer regs) {
@@ -197,6 +198,7 @@ public class SerialCommInterface implements BufferUtil.Sh2Device {
         tdre = 1;
         rdrf = 0;
         txEn = rxEn = false;
+        sciData.isDataInTransit = false;
         if (verbose) LOG.info("{} SCI reset end", cpu);
     }
 }

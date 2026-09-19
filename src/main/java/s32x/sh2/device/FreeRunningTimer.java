@@ -115,8 +115,11 @@ public class FreeRunningTimer implements BufferUtil.Sh2Device {
                 break;
             case FRT_TCR:
                 assert size == Size.BYTE;
-                clockDivider = clockDivs[value & 3];
-                sh2TicksToNextFrtClock = clockDivider;
+                if (clockDivider != clockDivs[value & 3]) {
+                    clockDivider = clockDivs[value & 3];
+                    sh2TicksToNextFrtClock = clockDivider;
+                }
+
                 break;
             case FRT_TIER:
                 assert size == Size.BYTE;

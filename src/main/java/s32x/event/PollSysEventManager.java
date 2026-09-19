@@ -69,14 +69,14 @@ public interface PollSysEventManager extends Device {
         if (pctx != NO_POLLER) {
             pctx.stopPolling();
             PollSysEventManager.currentPollers[cpu.ordinal()] = NO_POLLER;
-            pollerActiveMask.set(pollerActiveMask.get() & ~(cpu.ordinal() + 1));
+            pollerActiveMask.set(pollerActiveMask.get() & ~(1 << cpu.ordinal()));
         }
     }
 
     default void setPoller(CpuDeviceAccess cpu, PollerCtx ctx) {
         assert PollSysEventManager.currentPollers[cpu.ordinal()] == NO_POLLER;
         PollSysEventManager.currentPollers[cpu.ordinal()] = ctx;
-        pollerActiveMask.set(pollerActiveMask.get() | (cpu.ordinal() + 1));
+        pollerActiveMask.set(pollerActiveMask.get() | (1 << cpu.ordinal()));
     }
 
     default PollerCtx getPoller(CpuDeviceAccess cpu) {

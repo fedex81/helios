@@ -414,6 +414,28 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         if ((currWord & 3) == (resWord & 3)) {
             return;
         }
+        //TODO check from genplusgx
+//        boolean prevStop = subCpu.isStopped();
+//        if(sreset > 0){
+//            boolean triggerReset = (currWord & 1) == 0;
+//            if (triggerReset) {
+//                subCpu.reset();
+//            }
+//            subCpu.setStop(sbusreq > 0);
+//        } else {
+//            /* SUB-CPU is halted (/HALT and /RESET inputs are asserted) */
+//            subCpu.setStop(true);
+//
+//            /* RESET bit is cleared and BUSREQ bit is set to 1 (verified on real hardware) */
+//            setBitDefInternalBitVal(memCtx, M68K, SBRQ, 1);
+//        }
+//        /* BUSREQ bit remains set to 0 if SUB-CPU is halted while stopped (verified on real hardware) */
+//        if (prevStop) {
+//            setBitDefInternalBitVal(memCtx, M68K, SBRQ, 0);
+//        }
+//        /* PRG-RAM can only be accessed from MAIN-CPU & Z80 when BUSREQ bit is set (Dungeon Explorer USA version) */
+//        mainHasPrgRamAccess = subCpu.isStopped();
+
         //sreset = 0 forces sbusreq = 1
         boolean sresChanged = (currWord & 1) != sreset;
         sbusreq = sresChanged && sreset == 0 ? 1 : sbusreq;
