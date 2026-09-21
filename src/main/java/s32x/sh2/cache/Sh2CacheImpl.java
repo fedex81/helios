@@ -51,6 +51,33 @@ public class Sh2CacheImpl implements Sh2Cache {
 
     //NOTE looks like this is NOT needed, ie. it doesn't improve compat
     public static final boolean PARANOID_ON_CACHE_ENABLED_TOGGLE = false;
+
+    private static final int LRU_SIZE = 64;
+    private static final int[][] LRU_TABLE = new int[CACHE_WAYS][LRU_SIZE];
+
+    // Fast 128-byte primitive array covering both twoWay modes (0 and 1)
+    private static final byte[] REPLACE_WAY_LRU_LUT = {
+            // ---- twoWay = 0 mode (First 64 elements) ----
+            3, 2, 3, 2, 3, 3, 1, 1, 3, 2, 3, 2, 3, 3, 1, 1,
+            3, 3, 3, 3, 3, 3, 1, 1, 3, 3, 3, 3, 3, 3, 1, 1,
+            3, 2, 3, 2, 3, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0,
+
+            // ---- twoWay = 1 mode (Next 64 elements repeating 3, 2, 3, 2...) ----
+            3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2,
+            3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2,
+            3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2,
+            3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2
+    };
+
+    static {
+        for (int lru = 0; lru < LRU_SIZE; lru++) {
+            LRU_TABLE[3][lru] = lru | 0xb;
+            LRU_TABLE[2][lru] = (lru & 0x3E) | 0x14;
+            LRU_TABLE[1][lru] = (lru | (1 << 5)) & 0x39;
+            LRU_TABLE[0][lru] = lru & 0x7;
+        }
+    }
     protected final ByteBuffer data_array = ByteBuffer.allocate(DATA_ARRAY_SIZE); // cache (can be used as RAM)
 
     protected Sh2CacheContext ctx;
@@ -59,6 +86,9 @@ public class Sh2CacheImpl implements Sh2Cache {
     private final CpuDeviceAccess cpu;
     private final Sh2Bus memory;
     private final CacheInvalidateContext invalidCtx;
+
+    private final int[] tags = new int[CACHE_LINES * CACHE_WAYS];
+
 
     protected Sh2CacheImpl(CpuDeviceAccess cpu, Sh2Bus memory) {
         this.memory = memory;
@@ -74,7 +104,33 @@ public class Sh2CacheImpl implements Sh2Cache {
                 ca.way[i][j] = new Sh2CacheLine();
             }
         }
+        rebuildTags();
         Gs32xStateHandler.addDevice(this);
+    }
+
+    private static int tagIndex(int entry, int way) {
+        return entry * CACHE_WAYS + way;
+    }
+
+    private void setTag(int entry, int way, int tagValue) {
+        ca.way[way][entry].tag = tagValue;
+        tags[tagIndex(entry, way)] = tagValue;
+    }
+
+    private void rebuildTags() {
+        for (int entry = 0; entry < CACHE_LINES; entry++) {
+            for (int way = 0; way < CACHE_WAYS; way++) {
+                tags[tagIndex(entry, way)] = ca.way[way][entry].tag;
+            }
+        }
+    }
+
+    private int findWay(int entry, int tagAddr) {
+        final int base = entry * CACHE_WAYS;
+        for (int i = 0; i < CACHE_WAYS; i++) {
+            if (tags[base + i] == tagAddr) return i;
+        }
+        return -1;
     }
 
     @Override
@@ -83,7 +139,7 @@ public class Sh2CacheImpl implements Sh2Cache {
             ca.lru[entry] = 0;
             for (int way = 0; way < CACHE_WAYS; way++) {
                 invalidatePrefetcher(ca.way[way][entry], entry, -1);
-                ca.way[way][entry].tag |= CACHE_LINE_DISABLED_MASK;
+                setTag(entry, way, ca.way[way][entry].tag | CACHE_LINE_DISABLED_MASK);
             }
         }
         if (verbose) LOG.info("{} Cache clear", cpu);
@@ -94,14 +150,10 @@ public class Sh2CacheImpl implements Sh2Cache {
         switch (addr & AREA_MASK) {
             case CACHE_USE:
                 if (ca.enable > 0) {
-                    final int tagaddr = (addr & TAG_MASK);
                     final int entry = (addr & ENTRY_MASK) >> ENTRY_SHIFT;
-
-                    for (int i = 0; i < CACHE_WAYS; i++) {
-                        Sh2CacheLine line = ca.way[i][entry];
-                        if (line.tag == tagaddr) {
-                            return getCachedData(line.data, addr & LINE_MASK, size) & size.getMask();
-                        }
+                    final int way = findWay(entry, addr & TAG_MASK);
+                    if (way >= 0) {
+                        return getCachedData(ca.way[way][entry].data, addr & LINE_MASK, size) & size.getMask();
                     }
                 }
                 assert cpu == MdRuntimeData.getAccessTypeExt();
@@ -178,16 +230,15 @@ public class Sh2CacheImpl implements Sh2Cache {
         final int tagaddr = (addr & TAG_MASK);
         final int entry = (addr & ENTRY_MASK) >> ENTRY_SHIFT;
 
-        for (int i = 0; i < CACHE_WAYS; i++) {
-            if (ca.way[i][entry].tag == tagaddr) {
-                Sh2CacheLine line = ca.way[i][entry];
-                updateLru(i, ca.lru, entry);
-                if (verbose) LOG.info("{} Cache hit, read at {} {}, val: {}", cpu, th(addr), size,
-                        th(getCachedData(line.data, addr & LINE_MASK, size)));
-                //two way uses ways0,1
-                assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && i > 1);
-                return getCachedData(line.data, addr & LINE_MASK, size);
-            }
+        int hitWay = findWay(entry, tagaddr);
+        if (hitWay >= 0) {
+            Sh2CacheLine line = ca.way[hitWay][entry];
+            updateLru(hitWay, ca.lru, entry);
+            if (verbose) LOG.info("{} Cache hit, read at {} {}, val: {}", cpu, th(addr), size,
+                    th(getCachedData(line.data, addr & LINE_MASK, size)));
+            //two way uses ways0,1
+            assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && hitWay > 1);
+            return getCachedData(line.data, addr & LINE_MASK, size);
         }
         // cache miss
         int lruway = selectWayToReplace(cacheRegCtx.twoWay, ca.lru[entry]);
@@ -195,12 +246,12 @@ public class Sh2CacheImpl implements Sh2Cache {
         final Sh2CacheLine line = ca.way[lruway][entry];
         invalidatePrefetcher(line, entry, addr); //MetalHead needs this
         updateLru(lruway, ca.lru, entry);
-        line.tag = tagaddr;
+        setTag(entry, lruway, tagaddr);
         assert (tagaddr & CACHE_LINE_DISABLED_MASK) == 0;
 
         refillCache(line.data, addr);
-
-        line.tag &= ~CACHE_LINE_DISABLED_MASK; //becomes valid
+        //becomes valid
+        setTag(entry, lruway, line.tag & ~CACHE_LINE_DISABLED_MASK);
         if (verbose) LOG.info("{} Cache miss, read at {} {}, val: {}", cpu, th(addr), size,
                 th(getCachedData(line.data, addr & LINE_MASK, size)));
         return getCachedData(line.data, addr & LINE_MASK, size);
@@ -211,19 +262,17 @@ public class Sh2CacheImpl implements Sh2Cache {
         final int entry = (addr & ENTRY_MASK) >> ENTRY_SHIFT;
 
         boolean change = false;
-        for (int i = 0; i < CACHE_WAYS; i++) {
-            Sh2CacheLine line = ca.way[i][entry];
-            if (line.tag == tagaddr) {
-                assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && i > 1);
-                int prev = getCachedData(line.data, addr & LINE_MASK, size);
-                if (prev != val) {
-                    setCachedData(line.data, addr & LINE_MASK, val, size);
-                    change = true;
-                }
-                updateLru(i, ca.lru, entry);
-                if (verbose) LOG.info("Cache write at {}, val: {} {}", th(addr), th(val), size);
-                break;
+        int hitWay = findWay(entry, tagaddr);
+        if (hitWay >= 0) {
+            Sh2CacheLine line = ca.way[hitWay][entry];
+            assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && hitWay > 1);
+            int prev = getCachedData(line.data, addr & LINE_MASK, size);
+            if (prev != val) {
+                setCachedData(line.data, addr & LINE_MASK, val, size);
+                change = true;
             }
+            updateLru(hitWay, ca.lru, entry);
+            if (verbose) LOG.info("Cache write at {}, val: {} {}", th(addr), th(val), size);
         }
         // write through
         writeMemoryUncached(memory, addr, val, size);
@@ -270,7 +319,7 @@ public class Sh2CacheImpl implements Sh2Cache {
         Sh2CacheLine line = ca.way[cacheRegCtx.way][entry];
         int en = ((addr >> 2) & 1) == 0 ? CACHE_LINE_DISABLED_MASK : 0;
         assert (tagaddr & CACHE_LINE_DISABLED_MASK) == 0;
-        line.tag = tagaddr | en;
+        setTag(entry, cacheRegCtx.way, tagaddr | en);
     }
 
     //NOTE seems unused
@@ -288,7 +337,7 @@ public class Sh2CacheImpl implements Sh2Cache {
             if (ca.way[i][entry].tag == tagaddr) {
                 assert cacheRegCtx.twoWay == 0 || (cacheRegCtx.twoWay == 1 && i > 1);
                 //only v bit is changed, the rest of the data remains
-                ca.way[i][entry].tag |= CACHE_LINE_DISABLED_MASK;
+                setTag(entry, i, ca.way[i][entry].tag | CACHE_LINE_DISABLED_MASK);
                 MdRuntimeData.addCpuDelayExt(CACHE_PURGE_DELAY);
                 invalidatePrefetcher(ca.way[i][entry], entry, addr & CACHE_PURGE_MASK);
             }
@@ -355,45 +404,15 @@ public class Sh2CacheImpl implements Sh2Cache {
         return Optional.empty();
     }
 
-    //lru is updated
-//when cache hit occurs during a read
-//when cache hit occurs during a write
-//when replacement occurs after a cache miss
     private static void updateLru(int way, int[] lruArr, int lruPos) {
-        int lru = lruArr[lruPos];
-        if (way == 3) {
-            lru = lru | 0xb;//set bits 3, 1, 0
-        } else if (way == 2) {
-            lru = lru & 0x3E;//set bit 0 to 0
-            lru = lru | 0x14;//set bits 4 and 2
-        } else if (way == 1) {
-            lru = lru | (1 << 5);//set bit 5
-            lru = lru & 0x39;//unset bits 2 and 1
-        } else {
-            lru = lru & 0x7;//unset bits 5,4,3
-        }
-        lruArr[lruPos] = lru;
+        assert way >= 0 && way < CACHE_WAYS;
+        assert (lruArr[lruPos] & ~(LRU_SIZE - 1)) == 0;
+        lruArr[lruPos] = LRU_TABLE[way][lruArr[lruPos]];
     }
 
     private static int selectWayToReplace(int twoWay, int lru) {
-        if (twoWay > 0)//2-way mode
-        {
-            if ((lru & 1) == 1)
-                return 2;
-            else
-                return 3;
-        } else {
-            if ((lru & 0x38) == 0x38)//bits 5, 4, 3 must be 1
-                return 0;
-            else if ((lru & 0x26) == 0x6)//bit 5 must be zero. bits 2 and 1 must be 1
-                return 1;
-            else if ((lru & 0x15) == 1)//bits 4, 2 must be zero. bit 0 must be 1
-                return 2;
-            else if ((lru & 0xB) == 0)//bits 3, 1, 0 must be zero
-                return 3;
-        }
-        //should not happen
-        throw new RuntimeException();
+        assert twoWay >= 0 && twoWay < 2;
+        return REPLACE_WAY_LRU_LUT[(twoWay << 6) | (lru & 0x3F)];
     }
 
     private void refillCache(byte[] data, int addr) {
@@ -445,6 +464,7 @@ public class Sh2CacheImpl implements Sh2Cache {
         data_array.rewind().put(ctx.dataArray);
         ca = ctx.ca;
         cacheRegCtx = ctx.cacheContext;
+        rebuildTags();
     }
 
     @Override
