@@ -4,7 +4,11 @@ import omegadrive.sound.PwmProvider;
 import omegadrive.sound.fm.GenericAudioProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
+import omegadrive.util.SoundFilterUtil;
+import omegadrive.util.SoundFilterUtil.DcBlockLpfHistory;
 import org.slf4j.Logger;
+
+import java.util.Arrays;
 
 import static omegadrive.sound.javasound.AbstractSoundManager.audioFormat;
 import static omegadrive.util.SoundFilterUtil.dcBlockerLpf;
@@ -15,12 +19,19 @@ import static s32x.pwm.PwmUtil.*;
 import static s32x.pwm.PwmUtil.PwmStats.NO_STATS;
 
 /**
+ * S32xPwmProvider
+ *
  * Federico Berti
  * <p>
  * Copyright 2022
  * <p>
- * TODO: anything not using 22khz sounds bad (ie. Bad Apple 32x, cycle 719*60 -> 43khz)
- * TODO: other problematic stuff: Mars Test #2 (should be mute?), OutRom.bin
+ *
+ * Most sw uses cycle ~= 1045 for 22Khz
+ * - Bad Apple 32x, cycle 719*60 -> 43khz
+ * - Space Harrier, cycle 1474*60 -> 88khz
+ * - OutRom.bin, pwm only
+ *
+ * TODO: check?? other problematic stuff: Mars Test #2 (should be mute?)
  */
 public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider {
 
@@ -35,6 +46,20 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
     private boolean shouldPlay;
     private Warmup warmup = NO_WARMUP;
     private PwmStats stats = NO_STATS;
+
+    public static class PwmProcessingData {
+        int[] rawBuffer = new int[0];
+        int[] interpBuffer = new int[0];
+        DcBlockLpfHistory filterHistory = new DcBlockLpfHistory();
+
+        public void reset() {
+            Arrays.fill(rawBuffer, 0);
+            Arrays.fill(interpBuffer, 0);
+            filterHistory.reset();
+        }
+    }
+
+    private PwmProcessingData ppd = new PwmProcessingData();
 
     public S32xPwmProvider(RegionDetector.Region region) {
         super(audioFormat);
@@ -84,67 +109,48 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
             sleft = clampToShort(vleft);
             sright = clampToShort(vright);
         }
-        final int len = stereoQueueLen.get();
-        //very crude adaptive rate control, will break for anything not 22khz
-        if (len < 2000) {
-            addStereoSample(sleft, sright);
-            addStereoSample(sleft, sright);
-            if (collectStats) stats.monoSamplesPush++;
-        } else if (len < 3000) {
-            addStereoSample(sleft, sright);
-            if (collectStats) stats.monoSamplesDiscardHalf++;
-        } else {
-            //drop both samples
-            if (collectStats) stats.monoSamplesDiscard++;
-        }
+        addStereoSample(sleft, sright);
     }
 
-    int[] preFilter = new int[0];
-    int[] prev = new int[2];
-
+    /**
+     * TODO all the post processing should be done in the SoundManager
+     */
     @Override
     public int updateStereo16(int[] buf_lr, int offset, int countMono) {
-        int stereoSamples = countMono << 1;
+        int expStereoSamples = countMono << 1;
         if (countMono == 0 || !running) {
-            return stereoSamples;
+            return expStereoSamples;
         }
-        if (preFilter.length < buf_lr.length) {
-            preFilter = buf_lr.clone();
+        if (ppd.rawBuffer.length < buf_lr.length) {
+            ppd.rawBuffer = buf_lr.clone();
         }
-        int actualStereo = super.updateStereo16(preFilter, offset, countMono);
-        if (collectStats) stats.monoSamplesPull += actualStereo >> 1;
-        if (actualStereo == 0) {
-            if (collectStats) stats.monoSamplesFiller += stereoSamples >> 1;
-            for (int i = 0; i < stereoSamples; i += 2) { //TODO not great
-                buf_lr[i] = prev[0];
-                buf_lr[i + 1] = prev[1];
+        int rawSamplesStereo = super.updateStereo16(ppd.rawBuffer, offset, countMono);
+        if (collectStats) stats.monoSamplesPull += rawSamplesStereo >> 1;
+        if (rawSamplesStereo == 0) {
+            if (collectStats) stats.monoSamplesFiller += expStereoSamples >> 1;
+            LogHelper.logWarnOnce(LOG, "Sample requested {}, zero available!", expStereoSamples >> 1);
+            fillWithLatestValues(buf_lr, expStereoSamples);  //TODO not great
+            return expStereoSamples;
+
+        }
+        int[] srcBuffer = ppd.rawBuffer;
+        if (rawSamplesStereo < expStereoSamples) {
+            if (ppd.interpBuffer.length < expStereoSamples) {
+                ppd.interpBuffer = buf_lr.clone();
             }
-            return stereoSamples;
+            SoundFilterUtil.interpolateInterleavedStereo(ppd.rawBuffer, rawSamplesStereo, ppd.interpBuffer, expStereoSamples);
+            srcBuffer = ppd.interpBuffer;
         }
-        if (actualStereo < stereoSamples) {
-//            LOG.info("Sample requested {}, available: {}", stereoSamples >> 1, actualStereo >> 1);
-            for (int i = actualStereo; i < stereoSamples; i += 2) {
-                preFilter[i] = preFilter[actualStereo - 2];
-                preFilter[i + 1] = preFilter[actualStereo - 1];
-            }
-            if (collectStats) stats.monoSamplesFiller += (stereoSamples - actualStereo) >> 1;
-        }
-        dcBlockerLpf(preFilter, buf_lr, prev, stereoSamples);
-        warmup.doWarmup(buf_lr, stereoSamples);
-        return stereoSamples;
+        //this is needed, see Tempo
+        dcBlockerLpf(srcBuffer, buf_lr, ppd.filterHistory, expStereoSamples);
+        warmup.doWarmup(buf_lr, expStereoSamples);
+        return expStereoSamples;
     }
 
-    @Override
-    public void onNewFrame() {
-        int monoLen = stereoQueueLen.get() >> 1;
-        if (collectStats) {
-            stats.print(monoLen);
-            stats.reset();
-        }
-        if (monoLen > 5000) {
-            LOG.warn("Pwm monoQLen: {}", monoLen);
-            sampleQueue.clear();
-            stereoQueueLen.set(0);
+    private void fillWithLatestValues(int[] buf_lr, int stereoSamples) {
+        for (int i = 0; i < stereoSamples; i += 2) {
+            buf_lr[i] = (int) ppd.filterHistory.lastOutL;
+            buf_lr[i + 1] = (int) ppd.filterHistory.lastOutR;
         }
     }
 
@@ -157,6 +163,7 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
     public void reset() {
         shouldPlay = false;
         WARMUP.reset();
+        ppd.reset();
         super.reset();
     }
 }

@@ -48,8 +48,6 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener,
 
     boolean ENABLE_SOUND = Boolean.parseBoolean(System.getProperty("helios.enable.sound", "true"));
 
-    boolean JAL_SOUND_MGR = Boolean.parseBoolean(System.getProperty("helios.jal.sound.mgr", "false"));
-
     void init(Region region);
 
     PsgProvider getPsg();

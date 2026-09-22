@@ -5,6 +5,7 @@ import omegadrive.bus.md.SvpMapper;
 import omegadrive.cpu.ssp16.Ssp16;
 import omegadrive.save.MdSavestateTest;
 import omegadrive.savestate.BaseStateHandler;
+import omegadrive.util.FileUtil;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
 import omegadrive.util.ZipUtil;
@@ -91,10 +92,9 @@ public class S32xSavestateSerializeTest {
         } catch (AssertionError ae) {
             int diffIndex = Arrays.mismatch(stateHandler.getData(), saveHandler.getData());
             System.err.println("First diff at index: " + diffIndex);
+            if (false) storeNewFile(p, saveHandler);
             throw ae;
         }
-
-//        FileUtil.writeFileSafe(Paths.get(p.getParent().toAbsolutePath().toString(), p.getFileName().toString() + ".new"), saveHandler.getData());
 
         //check fetchResult has been invalidated
         Gs32xStateHandler.Sh2ContextWrap scw = Gs32xStateHandler.getSh2ContextWrap();
@@ -106,6 +106,12 @@ public class S32xSavestateSerializeTest {
         Assertions.assertEquals(Sh2Block.INVALID_BLOCK, fr.block);
         Assertions.assertEquals(0, fr.pc);
         Assertions.assertEquals(0, fr.opcode);
+    }
+
+    private void storeNewFile(Path p, Gs32xStateHandler saveHandler) {
+        Path p1 = Paths.get(p.getParent().toAbsolutePath().toString(), p.getFileName().toString() + ".new");
+        FileUtil.writeFileSafeAsync(p1, saveHandler.getData());
+        System.out.println("Writing new state to: " + p1.toAbsolutePath());
     }
 
     //TODO fix

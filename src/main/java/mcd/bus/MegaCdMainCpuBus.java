@@ -465,6 +465,7 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                 subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
             }
         } else if (subIntReg == 0) {
+            LogHelper.logWarnOnce(LOG, "Main cpu setting IFL2 = 0");
             //explicit set ifl2 to 0
             ifl2Trigger = 0;
         }

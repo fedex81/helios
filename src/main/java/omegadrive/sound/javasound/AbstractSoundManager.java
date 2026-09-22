@@ -38,7 +38,6 @@ import omegadrive.util.PriorityThreadFactory;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundUtil;
 import org.slf4j.Logger;
-import s32x.pwm.BlipPwmProvider;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
@@ -75,8 +74,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
     protected RegionDetector.Region region;
     protected volatile int soundDeviceSetup = SoundDeviceType.NONE.getBit();
 
-    public static final boolean BLIP_SOUND_MANAGER = false;
-
     protected List<SoundDevice.MutableDevice> mutableDeviceList = new ArrayList<>();
     protected AtomicBoolean initedOnce = new AtomicBoolean(false);
 
@@ -87,8 +84,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
             LOG.warn("Sound disabled");
             return NO_SOUND;
         }
-        return JAL_SOUND_MGR ? new JalSoundManager(systemType) :
-                (BLIP_SOUND_MANAGER ? new JavaSoundManagerBlip(systemType) : new JavaSoundManager(systemType));
+        return new JavaSoundManager(systemType);
     }
 
     @Override
@@ -197,7 +193,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
         LOG.info("Set sound enabled: {}", enabled);
         //TODO hack
         BlipPcmProvider.mute = !enabled;
-        BlipPwmProvider.mute = !enabled;
 //        mutableDeviceList.forEach(d -> d.setEnabled(enabled));
     }
 

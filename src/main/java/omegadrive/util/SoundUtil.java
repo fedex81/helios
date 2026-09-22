@@ -167,10 +167,8 @@ public class SoundUtil {
 
     public static void intStereo16ToByteStereo16Mix(int[] input, byte[] output, int inputLen) {
         for (int i = 0, k = 0; i < inputLen; i += 2, k += 4) {
-            output[k] = (byte) (input[i] & 0xFF); //left lsb
-            output[k + 1] = (byte) ((input[i] >> 8) & 0xFF); //left msb
-            output[k + 2] = (byte) (input[i + 1] & 0xFF); //left lsb
-            output[k + 3] = (byte) ((input[i + 1] >> 8) & 0xFF); //left msb
+            Util.setShortLE(output, k, (short) input[i]);
+            Util.setShortLE(output, k + 2, (short) input[i + 1]);
         }
     }
 
@@ -178,12 +176,10 @@ public class SoundUtil {
         int j = 0; //psg index
         int k = 0; //output index
         for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
-            int out16L = clampToShort(fmStereo16[i] + pwmStereo16[i]);
-            int out16R = clampToShort(fmStereo16[i + 1] + pwmStereo16[i + 1]);
-            output[k] = (byte) (out16L & 0xFF); //lsb left
-            output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
-            output[k + 2] = (byte) (out16R & 0xFF); //lsb right
-            output[k + 3] = (byte) ((out16R >> 8) & 0xFF); //msb right
+            short out16L = clampToShort(fmStereo16[i] + pwmStereo16[i]);
+            short out16R = clampToShort(fmStereo16[i + 1] + pwmStereo16[i + 1]);
+            Util.setShortLE(output, k, out16L);
+            Util.setShortLE(output, k + 2, out16R);
         }
     }
 
@@ -195,12 +191,10 @@ public class SoundUtil {
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
             int psg = psgMono8[j];
             psg = DEFAULT_PSG_SHIFT_BITS > 0 ? psg << DEFAULT_PSG_SHIFT_BITS : psg >> -DEFAULT_PSG_SHIFT_BITS;
-            int out16L = clampToShort(fmStereo16[i] + pwmStereo16[i] + psg);
-            int out16R = clampToShort(fmStereo16[i + 1] + pwmStereo16[i + 1] + psg);
-            output[k] = (byte) (out16L & 0xFF); //lsb left
-            output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
-            output[k + 2] = (byte) (out16R & 0xFF); //lsb right
-            output[k + 3] = (byte) ((out16R >> 8) & 0xFF); //msb right
+            short out16L = clampToShort(fmStereo16[i] + pwmStereo16[i] + psg);
+            short out16R = clampToShort(fmStereo16[i + 1] + pwmStereo16[i + 1] + psg);
+            Util.setShortLE(output, k, out16L);
+            Util.setShortLE(output, k + 2, out16R);
         }
     }
 
@@ -211,15 +205,17 @@ public class SoundUtil {
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
             int psg = psgMono8[j];
             psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
-            int out16L = (input[i] + psg);
-            int out16R = (input[i + 1] + psg);
-            out16L = clampToShort((out16L << 1) - (out16L >> 1)); //mult by 1.5
-            out16R = clampToShort((out16R << 1) - (out16R >> 1));
-            //avg fm and psg
-            output[k] = (byte) (out16L & 0xFF); //lsb left
-            output[k + 1] = (byte) ((out16L >> 8) & 0xFF); //msb left
-            output[k + 2] = (byte) (out16R & 0xFF); //lsb right
-            output[k + 3] = (byte) ((out16R >> 8) & 0xFF); //msb right
+
+            // Combine the interleaved inputs with the PSG track
+            int mixedL = input[i] + psg;
+            int mixedR = input[i + 1] + psg;
+
+            // Accurate 1.5x scaling factor without sign-extension distortion
+            short out16L = clampToShort((mixedL * 3) >> 1);
+            short out16R = clampToShort((mixedR * 3) >> 1);
+
+            Util.setShortLE(output, k, out16L);
+            Util.setShortLE(output, k + 2, out16R);
         }
     }
 
@@ -243,11 +239,9 @@ public class SoundUtil {
     public static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output) {
         for (int j = 0, i = 0; j < psgMono8.length; j++, i += 4) {
             //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg16 = psgMono8[j] << 7;
-            output[i] = (byte) (psg16 & 0xFF); //lsb
-            output[i + 1] = (byte) ((psg16 >> 8) & 0xFF); //msb
-            output[i + 2] = output[i];
-            output[i + 3] = output[i + 1];
+            short psg16 = clampToShort(psgMono8[j] << 7);
+            Util.setShortLE(output, i, psg16);
+            Util.setShortLE(output, i + 2, psg16);
         }
     }
 
@@ -268,23 +262,6 @@ public class SoundUtil {
                 output[i + 2] = (byte) ((input1[i + 2] + input2[i + 2]) >> 1);
                 output[i + 3] = (byte) ((input1[i + 3] + input2[i + 3]) >> 1);
             }
-        }
-        return len;
-    }
-
-    /**
-     * Fast resampler
-     */
-    public static int resample(byte[] data, byte[] output, int inputLen, int outputLen) {
-        assert (outputLen - inputLen) % 4 == 0;
-        int len = Math.min(inputLen, outputLen);
-        System.arraycopy(data, 0, output, 0, len);
-        //do this only for upsampling
-        if (len != outputLen) {
-            for (int i = inputLen; i < outputLen; i += 4) {
-                System.arraycopy(data, inputLen - 4, output, i, 4);
-            }
-            len = outputLen;
         }
         return len;
     }
