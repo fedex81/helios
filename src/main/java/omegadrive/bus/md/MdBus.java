@@ -68,6 +68,16 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
 
     public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
+
+    private static final byte REGION_RESERVED = 0;
+    private static final byte REGION_Z80 = 1;
+    private static final byte REGION_IO_OR_REG = 2;
+    private static final byte REGION_INTERNAL_REG = 3;
+    private static final byte REGION_VDP = 4;
+    private static final byte REGION_RAM = 5;
+    private static final byte REGION_UNMAPPED = 6;
+
+    private final byte[] regionByPage = new byte[256];
     protected MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
     private RomMapper exSsfMapper = RomMapper.NO_OP_MAPPER;
@@ -133,6 +143,29 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         }
         if (cartridgeInfoProvider.getEntry().hasForce3Btn()) {
             systemProvider.handleSystemEvent(FORCE_PAD_TYPE, BUTTON_3.name());
+        }
+    }
+
+    private void buildRegionTable() {
+        for (int page = 0; page < regionByPage.length; page++) {
+            int base = page << 16;
+            byte region;
+            if (base > DEFAULT_ROM_END_ADDRESS && base < Z80_ADDRESS_SPACE_START) {
+                region = REGION_RESERVED;
+            } else if (base >= Z80_ADDRESS_SPACE_START && base <= Z80_ADDRESS_SPACE_END) {
+                region = REGION_Z80;
+            } else if (base == (IO_ADDRESS_SPACE_START & 0xFF_0000)) {
+                region = REGION_IO_OR_REG;
+            } else if (base >= INTERNAL_REG_ADDRESS_SPACE_START && base <= INTERNAL_REG_ADDRESS_SPACE_END) {
+                region = REGION_INTERNAL_REG;
+            } else if (base >= VDP_ADDRESS_SPACE_START && base <= VDP_ADDRESS_SPACE_END) {
+                region = REGION_VDP;
+            } else if (base >= ADDRESS_RAM_MAP_START && base <= ADDRESS_UPPER_LIMIT) {
+                region = REGION_RAM;
+            } else {
+                region = REGION_UNMAPPED;
+            }
+            regionByPage[page] = region;
         }
     }
 
@@ -207,64 +240,78 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         ram = memoryProvider.getRamData();
         rom = memoryProvider.getRomData();
         romMask = memoryProvider.getRomMask();
+        buildRegionTable();
     }
 
     @Override
     public int readData(int address, final Size size) {
         address &= MD_PC_MASK;
         int data;
-        if (address < romEndAddress) {  //ROM
+        if (address < romEndAddress) { //ROM
             data = Util.readDataMask(rom, address, romMask, size);
-        } else if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
+        } else if (regionByPage[address >>> 16] == REGION_RAM) {
             data = Util.readDataMask(ram, address, M68K_RAM_MASK, size);
-        } else if (address > DEFAULT_ROM_END_ADDRESS && address < Z80_ADDRESS_SPACE_START) {  //Reserved
-            data = reservedRead(address, size);
-        } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
-            data = z80MemoryRead(address, size);
-        } else if (address >= IO_ADDRESS_SPACE_START && address <= IO_ADDRESS_SPACE_END) {    //IO Addressing space
-            data = ioRead(address, size);
-        } else if (address >= INTERNAL_REG_ADDRESS_SPACE_START && address <= INTERNAL_REG_ADDRESS_SPACE_END) {
-            data = internalRegRead(address, size);
-        } else if (address >= VDP_ADDRESS_SPACE_START && address <= VDP_ADDRESS_SPACE_END) { // VDP
-            data = vdpRead(address, size);
-        } else if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
+        } else {
+            data = readUpper(address, size);
+        }
+        return data & size.getMask();
+    }
+
+    private int readUpper(final int address, final Size size) {
+        return switch (regionByPage[address >>> 16]) {
+            case REGION_VDP -> vdpRead(address, size);
+            case REGION_Z80 -> z80MemoryRead(address, size);
+            case REGION_IO_OR_REG ->
+                    (address <= IO_ADDRESS_SPACE_END) ? ioRead(address, size) : internalRegRead(address, size);
+            case REGION_INTERNAL_REG -> internalRegRead(address, size);
+            case REGION_RESERVED -> reservedRead(address, size);
+            default -> readUnmapped(address, size);
+        };
+    }
+
+    private int readUnmapped(final int address, final Size size) {
+        if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
             //NOTE: some hacks replace EEPROM with SRAM, but they are detected as EEPROM
             if (cartridgeInfoProvider.getEntry().hasEeprom()) {
                 LogHelper.logWarnOnce(LOG, "EEPROM entry found, but it seems to be using SRAM (rom hack?): {}",
                         cartridgeInfoProvider.getEntry());
             }
             checkBackupMemoryMapper(SramMode.READ_WRITE);
-            data = mapper.readData(address, size);
+            return mapper.readData(address, size);
         } else {
             logWarnOnce(LOG, "Unexpected bus read: {}, 68k PC: {}",
                     th(address), th(m68kProvider.getPC()));
-            data = size.getMask();
+            return size.getMask();
         }
-        return data & size.getMask();
     }
 
     @Override
     public void writeData(int address, int data, final Size size) {
-        //RegAccessLogger.regAccess("M68K",  addressL,  data, size, false);
         address &= MD_PC_MASK;
         data &= size.getMask();
-        if (address >= ADDRESS_RAM_MAP_START && address <= ADDRESS_UPPER_LIMIT) {  //RAM (64K mirrored)
-            Util.writeDataMask(ram, address, data, M68K_RAM_MASK, size);
-        } else if (address >= Z80_ADDRESS_SPACE_START && address <= Z80_ADDRESS_SPACE_END) {    //	Z80 addressing space
-            z80MemoryWrite(address, size, data);
-        } else if (address >= IO_ADDRESS_SPACE_START && address <= IO_ADDRESS_SPACE_END) {    //	IO addressing space
-            ioWrite(address, size, data);
-        } else if (address >= INTERNAL_REG_ADDRESS_SPACE_START && address <= INTERNAL_REG_ADDRESS_SPACE_END) {
-            internalRegWrite(address, size, data);
-        } else if (address >= VDP_ADDRESS_SPACE_START && address < VDP_ADDRESS_SPACE_END) {  //VDP
-            vdpWrite(address, size, data);
-        } else if (address < romEndAddress) {
-            cartWrite(address, data, size);
-        } else if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
-            checkBackupMemoryMapper(SramMode.READ_WRITE);
-            mapper.writeData(address, data, size);
-        } else {
-            reservedWrite(address, data, size);
+        switch (regionByPage[address >>> 16]) {
+            case REGION_RAM -> Util.writeDataMask(ram, address, data, M68K_RAM_MASK, size);
+            case REGION_VDP -> vdpWrite(address, size, data);
+            case REGION_Z80 -> z80MemoryWrite(address, size, data);
+            case REGION_IO_OR_REG -> {
+                if ((address <= IO_ADDRESS_SPACE_END)) {
+                    ioWrite(address, size, data);
+                } else {
+                    internalRegWrite(address, size, data);
+                }
+            }
+            case REGION_INTERNAL_REG -> internalRegWrite(address, size, data);
+            case REGION_RESERVED -> reservedRead(address, size);
+            default -> {
+                if (address < romEndAddress) {
+                    cartWrite(address, data, size);
+                } else if (cartridgeInfoProvider.isSramUsedWithBrokenHeader(address)) { // Buck Rogers
+                    checkBackupMemoryMapper(SramMode.READ_WRITE);
+                    mapper.writeData(address, data, size);
+                } else {
+                    reservedWrite(address, data, size);
+                }
+            }
         }
     }
 

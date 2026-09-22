@@ -2,7 +2,6 @@ package mcd.bus;
 
 import mcd.McdDeviceHelper;
 import omegadrive.Device;
-import omegadrive.SystemLoader;
 import omegadrive.bus.DeviceAwareBus;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
@@ -70,25 +69,17 @@ public class Mcd32xMainBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imple
     public int read(int address, Size size) {
         assert cartBoot == mcdMainBus.isEnableMode1();
         address &= PC_MASK;
-//        SystemLoader.SystemType st = byAddress(address);
-//        LogHelper.logWarnOnceForce(LOG, "{} Read {}", st, th(address));
-        return switch (byAddress(address, cartBoot)) {
-            case S32X -> s32xBus.read(address, size);
-            case MEGACD -> mcdMainBus.read(address, size);
-            default -> throw new RuntimeException(byAddress(address, cartBoot).toString());
-        };
+        return is32xAddress(address, cartBoot) ? s32xBus.read(address, size) : mcdMainBus.read(address, size);
     }
 
     @Override
     public void write(int address, int data, Size size) {
         assert cartBoot == mcdMainBus.isEnableMode1();
         address &= PC_MASK;
-//        SystemLoader.SystemType st = byAddress(address);
-//        LogHelper.logWarnOnceForce(LOG, "{} Write {}", st, th(address));
-        switch (byAddress(address, cartBoot)) {
-            case S32X -> s32xBus.write(address, data, size);
-            case MEGACD -> mcdMainBus.write(address, data, size);
-            default -> throw new RuntimeException(byAddress(address, cartBoot).toString());
+        if (is32xAddress(address, cartBoot)) {
+            s32xBus.write(address, data, size);
+        } else {
+            mcdMainBus.write(address, data, size);
         }
     }
 
@@ -96,23 +87,18 @@ public class Mcd32xMainBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imple
      * 0x84_0000 ... 0x88_0000 FB
      * 0xA1_5100 ... 0xA1_5400 regs
      */
-    private static SystemLoader.SystemType byAddress(int address, boolean cartBoot) {
+    private static boolean is32xAddress(int address, boolean cartBoot) {
         if (cartBoot) {    //TODO doom fusion
-            if (address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR) {
-                return SystemLoader.SystemType.S32X;
-            }
-            if ((address < S32xDict.M68K_END_VECTOR_ROM)) {
-                return SystemLoader.SystemType.S32X;
-            }
+            if (address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR) return true;
+            if ((address < S32xDict.M68K_END_VECTOR_ROM)) return true;
         } else {
             //rom mirror should not work as there is no cart
             assert !(address >= S32xDict.M68K_START_ROM_MIRROR && address < S32xDict.M68K_END_ROM_MIRROR) : th(address);
         }
-        boolean is32xAddr =
+        return
                 (address >= S32xDict.M68K_START_FRAME_BUFFER && address < S32xDict.M68K_END_OVERWRITE_IMAGE) ||
                         (address >= S32xDict.M68K_START_32X_SYSREG && address < S32xDict.M68K_END_32X_COLPAL) ||
                         (address >= S32xDict.M68K_START_MARS_ID && address < S32xDict.M68K_END_MARS_ID);
-        return is32xAddr ? SystemLoader.SystemType.S32X : SystemLoader.SystemType.MEGACD;
     }
 
     @Override

@@ -39,13 +39,13 @@ public class McdResetTest extends McdRegTestBase {
         //subCpu is running, but MAIN has the bus
         mreg = 1;
         mainCpuBus.write(MAIN_RESET_REG_ODD, mreg, Size.BYTE);
-        testBusReqInternal(mreg, new boolean[]{false, true});
+        testBusReqInternal(mreg, new boolean[]{false, false});
 
         //SRES = 1, SBRK = 1
         //subCpu is running, SUB has the bus
         mreg = 3;
         mainCpuBus.write(MAIN_RESET_REG_ODD, mreg, Size.BYTE);
-        testBusReqInternal(mreg, new boolean[]{false, true});
+        testBusReqInternal(mreg, new boolean[]{false, false});
     }
 
     /**

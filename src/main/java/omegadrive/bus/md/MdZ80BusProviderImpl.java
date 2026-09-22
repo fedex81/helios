@@ -91,17 +91,16 @@ public class MdZ80BusProviderImpl extends DeviceAwareBus implements MdZ80BusProv
         } else if (address >= START_ROM_BANK_ADDRESS && address <= END_UNUSED) {
             logWarnOnce(LOG, "Z80 read bank switching/unused: {}", th(address));
         } else if (address >= START_VDP && address <= END_VDP_VALID) {
-            int vdpAddress = (VDP_BASE_ADDRESS + address);
             if (verbose) LOG.info("Z80 read VDP memory , address {}", th(address));
-            data = mainBusProvider.read(vdpAddress, Size.BYTE);
+            data = mainBusProvider.read(VDP_BASE_ADDRESS | address, Size.BYTE);
         } else if (address >= START_68K_BANK && address <= END_68K_BANK) {
             busArbiter.addCyclePenalty(BusArbiter.CpuType.Z80, Z80_CYCLE_PENALTY);
             busArbiter.addCyclePenalty(BusArbiter.CpuType.M68K, M68K_CYCLE_PENALTY);
             int addressB = romBank68kSerial | (address & M68K_BANK_MASK);
-            if (addressB >= MdMainBusProvider.ADDRESS_RAM_MAP_START && addressB < MdMainBusProvider.ADDRESS_UPPER_LIMIT) {
-                LOG.warn("Z80 reading from 68k RAM");
-            } else {
+            if (addressB < MdMainBusProvider.ADDRESS_RAM_MAP_START || addressB >= MdMainBusProvider.ADDRESS_UPPER_LIMIT) {
                 data = mainBusProvider.read(addressB, Size.BYTE);
+            } else {
+                LOG.warn("Z80 reading from 68k RAM");
             }
         } else {
             LOG.error("Illegal Z80 memory read: {}", th(address));
@@ -126,8 +125,7 @@ public class MdZ80BusProviderImpl extends DeviceAwareBus implements MdZ80BusProv
         } else if (address >= START_UNUSED && address <= END_UNUSED) {
             LOG.warn("Write to unused memory: {}", th(address));
         } else if (address >= START_VDP && address <= END_VDP_VALID) {
-            int vdpAddress = VDP_BASE_ADDRESS + address;
-            mainBusProvider.write(vdpAddress, dataInt, Size.BYTE);
+            mainBusProvider.write(VDP_BASE_ADDRESS | address, dataInt, Size.BYTE);
         } else if (address > END_VDP_VALID && address <= END_VDP) {
             //Rambo III (W) (REV01) [h1C]
             LOG.error("Machine should be locked, write to address: {}", th(address));
