@@ -77,11 +77,13 @@ public class MarsVdpImpl implements MarsVdp {
     private MidLinePaletteChangeContext plCtx;
 
     private int[] buffer = new int[0];
+
+    private int paletteWriteGen = 0;
     private static final boolean verbose = false, verboseRead = false;
 
     static class MidLinePaletteChangeContext {
         public int line = 0, lastLineDrawn = 0;
-        public int paletteHashcode = Integer.MAX_VALUE;
+        public int paletteSnapshotGen = Integer.MIN_VALUE;
     }
 
     static {
@@ -139,7 +141,10 @@ public class MarsVdpImpl implements MarsVdp {
                         LogHelper.logWarnOnce(LOG, "{} Write to palette when palette disabled, pen: {}",
                                 MdRuntimeData.getAccessTypeExt(), ctx.pen);
                     }
-                    writeBufferRaw(colorPalette[CP_FRONT], address & S32xDict.S32X_COLPAL_MASK, value, size);
+                    boolean change = writeBufferRaw(colorPalette[CP_FRONT], address & S32xDict.S32X_COLPAL_MASK, value, size);
+                    if (change) {
+                        paletteWriteGen++;
+                    }
                 }
                 default ->
                         LogHelper.logWarnOnce(LOG, "{} write, unable to access colorPalette as {}", MdRuntimeData.getAccessTypeExt(), size);
@@ -171,13 +176,13 @@ public class MarsVdpImpl implements MarsVdp {
             } else {
                 logWarnOnce(LOG, "{} read, unable to access colorPalette as {}", MdRuntimeData.getAccessTypeExt(), size);
             }
-            S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.PALETTE);
+            S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.PALETTE);
         } else if (address >= S32xDict.START_DRAM_CACHE && address < S32xDict.END_DRAM_CACHE) {
             res = BufferUtil.readBuffer(dramBanks[vdpContext.frameBufferWritable], address & S32xDict.DRAM_MASK, size);
-            S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.FRAME_BUFFER);
+            S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.FRAME_BUFFER);
         } else if (address >= S32xDict.START_OVER_IMAGE_CACHE && address < S32xDict.END_OVER_IMAGE_CACHE) {
             res = BufferUtil.readBuffer(dramBanks[vdpContext.frameBufferWritable], address & S32xDict.DRAM_MASK, size);
-            S32xMemAccessDelay.addWriteCpuDelay(S32xMemAccessDelay.FRAME_BUFFER);
+            S32xMemAccessDelay.addReadCpuDelay(S32xMemAccessDelay.FRAME_BUFFER);
         } else {
             LOG.error("{} unhandled read: {} {}", MdRuntimeData.getAccessTypeExt(), th(address), size);
         }
@@ -365,13 +370,13 @@ public class MarsVdpImpl implements MarsVdp {
         if (vdpContext.vBlankOn) {
             plCtx.line = -1;
             plCtx.lastLineDrawn = -1;
-            plCtx.paletteHashcode = Integer.MAX_VALUE;
+            plCtx.paletteSnapshotGen = Integer.MIN_VALUE;
         } else {
             plCtx.line = line;
         }
         if (line == 0) {
             System.arraycopy(colorPalette[CP_FRONT].array(), 0, colorPalette[CP_BACK].array(), 0, SIZE_32X_COLPAL);
-            plCtx.paletteHashcode = Arrays.hashCode(colorPalette[CP_FRONT].array());
+            plCtx.paletteSnapshotGen = paletteWriteGen;
         }
     }
 
@@ -405,13 +410,12 @@ public class MarsVdpImpl implements MarsVdp {
         }
         if (vdpContext.hBlankOn) {
             if (vdpContext.bitmapMode == BitmapMode.PACKED_PX && plCtx.line >= 1) {
-                int hc = Arrays.hashCode(colorPalette[CP_FRONT].array());
-                if (hc != plCtx.paletteHashcode) {
+                if (paletteWriteGen != plCtx.paletteSnapshotGen) {
                     int line = plCtx.line - 1;
                     drawPackedPixelLine(vdpContext, colorPaletteWords[CP_BACK], Math.max(0, plCtx.lastLineDrawn), line);
                     System.arraycopy(colorPalette[CP_FRONT].array(), 0, colorPalette[CP_BACK].array(), 0, SIZE_32X_COLPAL);
                     plCtx.lastLineDrawn = line;
-                    plCtx.paletteHashcode = hc;
+                    plCtx.paletteSnapshotGen = paletteWriteGen;
                 }
             }
         }
