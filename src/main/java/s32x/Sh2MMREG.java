@@ -232,6 +232,10 @@ public class Sh2MMREG implements Device {
         ticksPerFrame = sh2TicksPerFrame = 0;
     }
 
+    public BufferUtil.CpuDeviceAccess getCpu() {
+        return cpu;
+    }
+
     @Override
     public void saveContext(ByteBuffer buffer) {
         Device.super.saveContext(buffer);

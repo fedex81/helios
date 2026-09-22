@@ -9,6 +9,7 @@ import omegadrive.savestate.StateUtil;
 import omegadrive.util.LogHelper;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
+import s32x.Sh2MMREG;
 import s32x.StaticBootstrapSupport;
 import s32x.sh2.Sh2Context;
 import s32x.sh2.cache.Sh2Cache;
@@ -107,7 +108,11 @@ public class Gs32xStateHandler extends GshStateHandler {
 
         public Sh2Context[] sh2Ctx = new Sh2Context[2];
         public byte[][] sh2CacheCtx = new byte[2][];
+
+        public byte[][] sh2MmregCtx = new byte[2][];
         public transient Sh2Cache[] sh2Cache = new Sh2Cache[2];
+
+        public transient Sh2MMREG[] sh2MMREG = new Sh2MMREG[2];
     }
 
     public static void addDevice(Device d) {
@@ -117,6 +122,10 @@ public class Gs32xStateHandler extends GshStateHandler {
         }
         if (d instanceof Sh2Cache s) {
             wrap.sh2Cache[s.getCacheContext().cpu.ordinal()] = s;
+            return;
+        }
+        if (d instanceof Sh2MMREG s) {
+            wrap.sh2MMREG[s.getCpu().ordinal()] = s;
             return;
         }
         s32xDeviceSet.put(d.getClass().getSimpleName(), d);
@@ -134,6 +143,11 @@ public class Gs32xStateHandler extends GshStateHandler {
                 wrap.sh2Cache[i].saveContext(b);
                 wrap.sh2CacheCtx[i] = new byte[b.position()];
                 b.rewind().get(wrap.sh2CacheCtx[i]).rewind();
+
+                b.rewind();
+                wrap.sh2MMREG[i].saveContext(b);
+                wrap.sh2MmregCtx[i] = new byte[b.position()];
+                b.rewind().get(wrap.sh2MmregCtx[i]).rewind();
             }
             byte[] dt = Util.serializeObject(wrap);
             container.dataMap.put(wrap.getClass().getSimpleName(), dt);
@@ -160,6 +174,12 @@ public class Gs32xStateHandler extends GshStateHandler {
                 for (int i = 0; i < 2; i++) {
                     wrap.sh2Ctx[i].loadContext(w.sh2Ctx[i]);
                     wrap.sh2Cache[i].loadContext(ByteBuffer.wrap(w.sh2CacheCtx[i]));
+                    //back-compat
+                    if (w.sh2MmregCtx != null && w.sh2MmregCtx[i] != null) {
+                        wrap.sh2MMREG[i].loadContext(ByteBuffer.wrap(w.sh2MmregCtx[i]));
+                    } else {
+                        LOG.warn("Loading (old) savestate, with known issues!");
+                    }
                 }
                 for (Device d : s32xDeviceSet.values()) {
                     data = container.dataMap.get(d.getClass().getSimpleName());
