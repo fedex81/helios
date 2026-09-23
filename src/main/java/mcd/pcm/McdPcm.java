@@ -31,6 +31,9 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
 
     Logger LOG = LogHelper.getLogger(McdPcm.class.getSimpleName());
 
+    //TODO
+    boolean LEGACY_MODE = false;
+
     int PCM_NUM_CHANNELS = 8;
 
     int PCM_REG_SIZE = 0x20;
@@ -74,6 +77,8 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
 
     ByteBuffer getWaveData();
 
+    void setPcmProvider(PcmProvider pcmProvider);
+
     static McdPcm create(boolean soundEnabled) {
         return new McdPcmImpl(soundEnabled);
     }
@@ -84,7 +89,7 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
         private final ByteBuffer pcmRegs;
         private final PcmChannelContext[] chan;
 
-        private final PcmProvider playSupport;
+        private PcmProvider playSupport;
 
         private int channelBank, waveBank, active, chanControl;
         private int ls, rs;
@@ -107,7 +112,7 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
             waveData = ByteBuffer.allocate(PCM_WAVE_DATA_SIZE);
             pcmRegs = ByteBuffer.allocate(PCM_REG_SIZE);
             chan = new PcmChannelContext[PCM_NUM_CHANNELS];
-            playSupport = enableSound ? new BlipPcmProvider("PCM", RegionDetector.Region.USA, pcmSampleRateHz) : PcmProvider.NO_SOUND;
+            playSupport = enableSound && LEGACY_MODE ? new BlipPcmProviderLine("PCM", RegionDetector.Region.USA, pcmSampleRateHz) : PcmProvider.NO_SOUND;
             for (int i = 0; i < PCM_NUM_CHANNELS; i++) {
                 chan[i] = new PcmChannelContext();
                 chan[i].num = i;
@@ -231,7 +236,12 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
                     }
                 }
                 case MCD_PCM_ON_OFF -> {
-                    chanControl = ~value & 0xFF; //ON=0, OFF=1
+                    int now = ~value & 0xFF; //ON=0, OFF=1
+                    if (now == chanControl) {
+                        return;
+                    }
+                    //LOG.info("PCM chanControl {} -> {}", th(chanControl), th(now));
+                    chanControl = now;
                     for (int i = 0; i < PCM_NUM_CHANNELS; i++) {
                         PcmChannelContext ct = chan[i];
                         int chanOn = (chanControl >> i) & 1;
@@ -262,6 +272,15 @@ public interface McdPcm extends BufferUtil.StepDevice, SystemProvider.NewFrameLi
         @Override
         public ByteBuffer getWaveData() {
             return waveData;
+        }
+
+        @Override
+        public void setPcmProvider(PcmProvider pp) {
+            if (LEGACY_MODE) {
+                LOG.warn("Ignore PcmProvider, using its own data line");
+                return;
+            }
+            playSupport = pp;
         }
 
 

@@ -71,7 +71,7 @@ public class PwmUtil {
         }
     }
 
-    static class PwmStats {
+    public static class PwmStats {
 
         public static final PwmStats NO_STATS = new PwmStats();
         public int monoSamplesFiller = 0, monoSamplesPull = 0, monoSamplesPush = 0, monoSamplesDiscard = 0,

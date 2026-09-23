@@ -198,6 +198,11 @@ public class SystemTestUtil {
         }
 
         @Override
+        public PcmProvider getCdda() {
+            return null;
+        }
+
+        @Override
         public void updateDeviceRate(SoundDevice.SoundDeviceType sdt, RegionDetector.Region region, int clockRateHz) {
         }
     }

@@ -4,7 +4,7 @@ import mcd.bus.McdSubInterruptHandler;
 import mcd.cdc.Cdc;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
-import mcd.pcm.BlipPcmProvider;
+import mcd.pcm.BlipPcmProviderLine;
 import omegadrive.sound.PcmProvider;
 import omegadrive.sound.msumd.CueFileParser;
 import omegadrive.util.LogHelper;
@@ -21,6 +21,7 @@ import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_SUBCODE;
 import static mcd.cdd.Cdd.CddStatus.*;
 import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
+import static mcd.pcm.McdPcm.LEGACY_MODE;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.th;
 
@@ -43,7 +44,7 @@ class CddImpl implements Cdd {
     private final MegaCdMemoryContext memoryContext;
     private final McdSubInterruptHandler interruptHandler;
     private final Cdc cdc;
-    private final PcmProvider playSupport;
+    private PcmProvider playSupport;
     private ExtendedCueSheet extCueSheet;
 
     private final CueFileParser.MsfHolder msfHolder = new CueFileParser.MsfHolder();
@@ -54,12 +55,21 @@ class CddImpl implements Cdd {
         memoryContext = mc;
         interruptHandler = ih;
         cdc = c;
-        playSupport = soundEnabled ?
-                new BlipPcmProvider("CDDA", RegionDetector.Region.USA, 44100) : BlipPcmProvider.NO_SOUND;
+        playSupport = soundEnabled && LEGACY_MODE ?
+                new BlipPcmProviderLine("CDDA", RegionDetector.Region.USA, 44100) : BlipPcmProviderLine.NO_SOUND;
         setDataOrMusicBit(CddControl_DM_bit.DATA_1);
         setIoStatus(NoDisc);
         statusChecksum();
         commandChecksum();
+    }
+
+    @Override
+    public void setPcmProvider(PcmProvider pp) {
+        if (LEGACY_MODE) {
+            LOG.warn("Ignore PcmProvider, using its own data line");
+            return;
+        }
+        playSupport = pp;
     }
 
     @Override

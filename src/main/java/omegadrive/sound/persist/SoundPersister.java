@@ -21,29 +21,12 @@ package omegadrive.sound.persist;
 
 public interface SoundPersister {
 
-    enum SoundType {
-        PSG,
-        FM,
-        BOTH
-    }
 
-    void persistSound(SoundType type, byte[] output);
+    void persistSound(String name, byte[] output);
 
     boolean isRecording();
 
     void stopRecording();
 
-    void startRecording(SoundType soundType);
-
-    default void persistPsg(byte[] output) {
-        persistSound(SoundType.PSG, output);
-    }
-
-    default void persistFm(byte[] output) {
-        persistSound(SoundType.FM, output);
-    }
-
-    default void persistMix(byte[] output) {
-        persistSound(SoundType.BOTH, output);
-    }
+    void startRecording(String name);
 }

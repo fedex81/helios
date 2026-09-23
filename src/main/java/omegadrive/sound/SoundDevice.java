@@ -20,7 +20,7 @@ public interface SoundDevice extends Device, SystemProvider.NewFrameListener, Bu
     }
 
     enum SoundDeviceType {
-        NONE(0), FM(1), PSG(2), PWM(4), PCM(8);
+        NONE(0), FM(1), PSG(2), PWM(4), PCM(8), CDDA(16);
 
         private final int bit;
 
@@ -30,6 +30,10 @@ public interface SoundDevice extends Device, SystemProvider.NewFrameListener, Bu
 
         public int getBit() {
             return bit;
+        }
+
+        public boolean isEnabled(int bitMask) {
+            return (bitMask & bit) > 0;
         }
     }
 

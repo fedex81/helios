@@ -21,6 +21,7 @@ package mcd;
 
 import mcd.bus.McdSubInterruptHandler;
 import mcd.cdd.ExtendedCueSheet;
+import mcd.pcm.McdPcm;
 import mcd.util.McdMemView;
 import omegadrive.SystemLoader;
 import omegadrive.bus.model.MdMainBusProvider;
@@ -59,6 +60,7 @@ public class MegaCd extends Megadrive {
     //mcd-verificator(NTSC) is very sensitive
     public final static double MCD_68K_RATIO_NTSC = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_NTSC_MCLOCK_MHZ / 7.0));
     public final static double MCD_68K_RATIO_PAL = 1.0 / (MCD_SUB_68K_CLOCK_MHZ / (GEN_PAL_MCLOCK_MHZ / 7.0));
+    public static final boolean ENABLE_PCM, ENABLE_CDDA;
 
     private double mcd68kRatio;
 
@@ -70,6 +72,8 @@ public class MegaCd extends Megadrive {
         System.setProperty("68k.debug", "false");
         System.setProperty("helios.68k.debug.mode", "0");
         System.setProperty("z80.debug", "false");
+        ENABLE_PCM = Boolean.parseBoolean(System.getProperty("helios.mcd.pcm.enable", "true"));
+        ENABLE_CDDA = Boolean.parseBoolean(System.getProperty("helios.mcd.cdda.enable", "true"));
     }
 
     protected M68kProvider subCpu;
@@ -96,6 +100,12 @@ public class MegaCd extends Megadrive {
         mcdLaunchContext.subBus.attachDevice(this);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
+        if (!McdPcm.LEGACY_MODE) {
+            mcdLaunchContext.pcm.setPcmProvider(sound.getPcm());
+            mcdLaunchContext.cdd.setPcmProvider(sound.getCdda());
+            sound.setEnabled(sound.getPcm(), ENABLE_PCM);
+            sound.setEnabled(sound.getCdda(), ENABLE_CDDA);
+        }
         subCpu.reset();
     }
 

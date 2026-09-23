@@ -20,7 +20,7 @@
 package omegadrive.sound.javasound;
 
 import com.google.common.collect.ImmutableMap;
-import mcd.pcm.BlipPcmProvider;
+import mcd.pcm.BlipPcmProviderLine;
 import omegadrive.Device;
 import omegadrive.SystemLoader;
 import omegadrive.sound.PcmProvider;
@@ -41,7 +41,9 @@ import org.slf4j.Logger;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
-import java.util.*;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -49,8 +51,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AbstractSoundManager implements SoundProvider {
     private static final Logger LOG = LogHelper.getLogger(AbstractSoundManager.class.getSimpleName());
-
-    protected static final SoundPersister.SoundType DEFAULT_SOUND_TYPE = SoundPersister.SoundType.BOTH;
     private static final int OUTPUT_SAMPLE_SIZE = 16;
     private static final int OUTPUT_CHANNELS = 2;
     public static final AudioFormat audioFormat = new AudioFormat(SoundProvider.SAMPLE_RATE_HZ, OUTPUT_SAMPLE_SIZE, OUTPUT_CHANNELS, true, false);
@@ -59,7 +59,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
             SoundDeviceType.FM, FmProvider.NO_SOUND,
             SoundDeviceType.PSG, PsgProvider.NO_SOUND,
             SoundDeviceType.PWM, PwmProvider.NO_SOUND,
-            SoundDeviceType.PCM, PcmProvider.NO_SOUND
+            SoundDeviceType.PCM, PcmProvider.NO_SOUND,
+            SoundDeviceType.CDDA, PcmProvider.NO_SOUND
     );
     public volatile boolean close;
 
@@ -73,8 +74,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
     protected SystemLoader.SystemType type;
     protected RegionDetector.Region region;
     protected volatile int soundDeviceSetup = SoundDeviceType.NONE.getBit();
-
-    protected List<SoundDevice.MutableDevice> mutableDeviceList = new ArrayList<>();
     protected AtomicBoolean initedOnce = new AtomicBoolean(false);
 
     protected static AtomicReference<Map<SoundDeviceType, SoundDevice>> sdRef = new AtomicReference<>();
@@ -146,6 +145,11 @@ public abstract class AbstractSoundManager implements SoundProvider {
     }
 
     @Override
+    public PcmProvider getCdda() {
+        return (PcmProvider) activeSoundDeviceMap.get(SoundDeviceType.CDDA);
+    }
+
+    @Override
     public void reset() {
         LOG.info("Resetting sound");
         close = true;
@@ -173,13 +177,8 @@ public abstract class AbstractSoundManager implements SoundProvider {
         if (isRecording() && !recording) {
             soundPersister.stopRecording();
         } else if (!isRecording() && recording) {
-            soundPersister.startRecording(DEFAULT_SOUND_TYPE);
+            soundPersister.startRecording("MIX");
         }
-    }
-
-    @Override
-    public void addExternalSoundSource(SoundDevice.MutableDevice mutableDevice) {
-        mutableDeviceList.add(mutableDevice);
     }
 
     @Override
@@ -192,8 +191,7 @@ public abstract class AbstractSoundManager implements SoundProvider {
         this.soundEnabled = enabled;
         LOG.info("Set sound enabled: {}", enabled);
         //TODO hack
-        BlipPcmProvider.mute = !enabled;
-//        mutableDeviceList.forEach(d -> d.setEnabled(enabled));
+        BlipPcmProviderLine.mute = !enabled;
     }
 
     @Override
@@ -214,20 +212,6 @@ public abstract class AbstractSoundManager implements SoundProvider {
 
     protected boolean isEnabled(SoundDeviceType sdt) {
         return (soundDeviceSetup & sdt.getBit()) > 0;
-    }
-
-    public void setDisablePermanent(SoundDevice.SoundDeviceType sdt) {
-        SoundDevice ns = noSoundMap.get(sdt);
-        activeSoundDeviceMap.put(sdt, ns);
-        setSoundDeviceMap(sdt, ns);
-        updateSoundDeviceSetup();
-    }
-
-    public void setSoundDeviceMap(SoundDevice.SoundDeviceType sdt, SoundDevice sd) {
-        var m = new HashMap<>(soundDeviceMap);
-        m.put(sdt, sd);
-        soundDeviceMap = m;
-        setEnabled(sd, true);
     }
 
     @Override

@@ -127,22 +127,20 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener,
         @Override
         public void setEnabled(Device device, boolean mute) {
         }
+
+        @Override
+        public PcmProvider getCdda() {
+            return PcmProvider.NO_SOUND;
+        }
     };
 
     void setEnabled(Device device, boolean enabled);
 
+    PcmProvider getCdda();
+
     void close();
 
     void updateDeviceRate(SoundDeviceType sdt, Region region, int clockRateHz);
-
-    /***
-     * TODO HACK
-     * PWM, PCM use their own dataLine and need to be explicitly muted.
-     */
-    @Deprecated
-    default void addExternalSoundSource(SoundDevice.MutableDevice mutableDevice) {
-        LOG.warn("Ignoring: {}", mutableDevice.getClass());
-    }
 
     default boolean isRecording() {
         return false;

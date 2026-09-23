@@ -5,10 +5,8 @@ import omegadrive.sound.fm.GenericAudioProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundFilterUtil;
-import omegadrive.util.SoundFilterUtil.DcBlockLpfHistory;
+import omegadrive.util.SoundFilterUtil.FilterProcessingData;
 import org.slf4j.Logger;
-
-import java.util.Arrays;
 
 import static omegadrive.sound.javasound.AbstractSoundManager.audioFormat;
 import static omegadrive.util.SoundFilterUtil.dcBlockerLpf;
@@ -47,19 +45,7 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
     private Warmup warmup = NO_WARMUP;
     private PwmStats stats = NO_STATS;
 
-    public static class PwmProcessingData {
-        int[] rawBuffer = new int[0];
-        int[] interpBuffer = new int[0];
-        DcBlockLpfHistory filterHistory = new DcBlockLpfHistory();
-
-        public void reset() {
-            Arrays.fill(rawBuffer, 0);
-            Arrays.fill(interpBuffer, 0);
-            filterHistory.reset();
-        }
-    }
-
-    private PwmProcessingData ppd = new PwmProcessingData();
+    private FilterProcessingData ppd = new FilterProcessingData();
 
     public S32xPwmProvider(RegionDetector.Region region) {
         super(audioFormat);
