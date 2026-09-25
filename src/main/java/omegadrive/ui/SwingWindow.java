@@ -56,6 +56,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -76,6 +77,11 @@ public class SwingWindow implements DisplayWindow {
     private static final Path WINDOW_ICONS_PATH = Paths.get("./res", "icon");
     private static final Predicate<Path> ICONS_FILE_FILTER = (p) -> p.getFileName().toString().startsWith("helios") &&
             p.getFileName().toString().endsWith(".jpg");
+
+    private record FileSelection(File f, SystemType st) {
+    }
+
+    ;
 
     private Dimension fullScreenSize;
     private Dimension outputNonScaledScreenSize = DEFAULT_SCALED_SCREEN_SIZE;
@@ -569,7 +575,7 @@ public class SwingWindow implements DisplayWindow {
         };
     }
 
-    private Optional<MediaSpecHolder> loadFileDialog(Component parent, FileResourceType type) {
+    private Optional<FileSelection> loadFileDialog(Component parent, FileResourceType type) {
         return fileDialog(parent, type, true);
     }
 
@@ -599,7 +605,7 @@ public class SwingWindow implements DisplayWindow {
         return res;
     }
 
-    private Optional<MediaSpecHolder> fileDialog(Component parent, FileResourceType type, boolean load) {
+    private Optional<FileSelection> fileDialog(Component parent, FileResourceType type, boolean load) {
         JFileChooser fileChooser = createFileChooser(type, load);
         int result = fileChooser.showDialog(parent, null);
 
@@ -611,7 +617,7 @@ public class SwingWindow implements DisplayWindow {
                     fileChooser.getFileFilter().getDescription(), mainEmu.getSystemType());
         }
         final SystemType st = systemType;
-        return res.map(f -> MediaSpecHolder.of(f, st));
+        return res.map(f -> new FileSelection(f, st));
     }
 
     @Override
@@ -620,12 +626,12 @@ public class SwingWindow implements DisplayWindow {
         showInfoCount = SHOW_INFO_FRAMES_DELAY;
     }
 
-    private Optional<MediaSpecHolder> loadRomDialog(Component parent) {
+    private Optional<FileSelection> loadRomDialog(Component parent) {
         return loadFileDialog(parent, FileResourceType.ROM);
     }
 
     private Optional<File> loadStateFileDialog(Component parent) {
-        return loadFileDialog(parent, SAVE_STATE_RES).map(r -> r.getBootableMedia().romFile.toFile());
+        return loadFileDialog(parent, SAVE_STATE_RES).map(r -> r.f);
     }
 
     private void handleLoadState() {
@@ -659,21 +665,27 @@ public class SwingWindow implements DisplayWindow {
 
     private void handleNewRom() {
         handleSystemEvent(CLOSE_ROM, null, null);
-        Optional<MediaSpecHolder> optFile = loadRomDialog(jFrame);
-        if (optFile.isPresent()) {
-            MediaSpecHolder romSpec = optFile.get();
-            SystemLoader.getInstance().handleNewRomFile(romSpec);
-            reloadRecentFiles();
-            showInfo(NEW_ROM + ": " + romSpec);
-            PrefStore.lastRomFile = romSpec.toString();
-        }
+        loadRomDialog(jFrame).ifPresent(o -> handleMediaSpecDeferred(o.f.getPath(), () ->
+                MediaSpecHolder.of(o.f, o.st)));
+    }
+
+    private void handleMediaSpecDeferred(String path, final Supplier<MediaSpecHolder> specSup) {
+        assert SwingUtilities.isEventDispatchThread();
+        showInfo("LOADING: " + path);
+        showEventInfo();
+        Util.executorService.submit(() -> {
+            MediaSpecHolder romSpec = specSup.get();
+            SwingUtilities.invokeLater(() -> {
+                showInfo("DONE LOADING: " + romSpec);
+                SystemLoader.getInstance().handleNewRomFile(romSpec);
+                reloadRecentFiles();
+                PrefStore.lastRomFile = romSpec.toString();
+            });
+        });
     }
 
     private void handleNewRomFromRecent(String path) {
-        MediaSpecHolder romSpec = getRomSpecFromRecentItem(path);
-        showInfo(NEW_ROM + ": " + romSpec);
-        SystemLoader.getInstance().handleNewRomFile(romSpec);
-        PrefStore.lastRomFile = romSpec.toString();
+        handleMediaSpecDeferred(path, () -> getRomSpecFromRecentItem(path));
     }
 
     private void addDndListener(Component component) {
@@ -695,9 +707,7 @@ public class SwingWindow implements DisplayWindow {
                     }
                     Path path = file.toPath();
                     if (UiFileFilters.ROM_FILTER.accept(file)) {
-                        SystemLoader.getInstance().handleNewRomFile(MediaSpecHolder.of(path));
-                        reloadRecentFiles();
-                        showInfo(NEW_ROM + ": " + path.getFileName());
+                        handleMediaSpecDeferred(path.toAbsolutePath().toString(), () -> MediaSpecHolder.of(path));
                     } else if (UiFileFilters.SAVE_STATE_FILTER.accept(file)) {
                         handleSystemEvent(LOAD_STATE, path, path.getFileName().toString());
                     }
