@@ -41,7 +41,7 @@ public abstract class VariableSampleRateSource extends GenericAudioProvider {
 
     protected VariableSampleRateSource(double sourceSampleRate, AudioFormat audioFormat,
                                        String sourceName, int audioScaleBits) {
-        super(audioFormat, audioScaleBits, (int) audioFormat.getSampleRate()); //500ms maxQueueLen
+        super(sourceName, audioFormat, audioScaleBits, (int) audioFormat.getSampleRate() / 10); //50ms maxQueueLen
         assert audioFormat.getChannels() == 2;
         double outputSampleRate = audioFormat.getSampleRate();
         this.sourceSampleRate = sourceSampleRate;

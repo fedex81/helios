@@ -30,16 +30,23 @@ public class GenericAudioProvider implements FmProvider {
     private final int audioScaleBits;
     private final int sampleShift;
 
-    public GenericAudioProvider(AudioFormat inputAudioFormat) {
+    private final int maxQueueLen;
+
+    private final String name;
+
+    public GenericAudioProvider(SoundDeviceType type, AudioFormat inputAudioFormat) {
         //2 frames maxQueueLen
-        this(inputAudioFormat, 0, ((int) inputAudioFormat.getSampleRate()) << 2);
+        this(type.name(), inputAudioFormat, 0, ((int) inputAudioFormat.getSampleRate()) / 10);
     }
 
-    public GenericAudioProvider(AudioFormat inputAudioFormat, int audioScaleBits, int maxQueueLen) {
+    public GenericAudioProvider(String name, AudioFormat inputAudioFormat, int audioScaleBits, int maxQueueLen) {
         sampleQueue = new SpscAtomicArrayQueue<>(maxQueueLen);
         sampleShift = 16 - inputAudioFormat.getSampleSizeInBits();
         this.audioScaleBits = audioScaleBits;
-        LOG.info("Input sound source format: {}, audioScaleBits: {}", inputAudioFormat, audioScaleBits);
+        this.name = name;
+        this.maxQueueLen = maxQueueLen;
+        LOG.info("Input sound source format: {}, audioScaleBits: {}, maxQueueLen: {}",
+                inputAudioFormat, audioScaleBits, maxQueueLen);
     }
 
     @Override
@@ -61,6 +68,12 @@ public class GenericAudioProvider implements FmProvider {
             //Integer -> short -> int
             buf_lr[i] = ((short) (stereoSamples[0] & 0xFFFF)) << audioScaleBits;
             buf_lr[i + 1] = ((short) (stereoSamples[1] & 0xFFFF)) << audioScaleBits;
+        }
+//        LOG.info("{} QL: {}", name, queueIndicativeLen);
+        if (queueIndicativeLen > maxQueueLen) {
+            LOG.warn("{} queueLen too high: {}/{}, dropping samples", name, queueIndicativeLen, maxQueueLen);
+            sampleQueue.clear();
+            stereoQueueLen.set(0);
         }
         return i;
     }

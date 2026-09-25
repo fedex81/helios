@@ -100,7 +100,7 @@ public class JavaSoundManager extends AbstractSoundManager {
         }
         if (sb.length() > 0) {
 //            LOG.warn("Audio samples mismatch, ref: {}, " + sb, numSamples);
-            LogHelper.logWarnOnce(LOG, "Audio samples mismatch, ref: {}, " + sb, numSamples); //TODO fix PCM
+            LogHelper.logWarnOnce(LOG, "Audio samples mismatch, ref: {}" + sb, numSamples); //TODO fix PCM
         }
         final int bufferLenStereo = bufferLenMono << 1;
         /**
@@ -129,7 +129,7 @@ public class JavaSoundManager extends AbstractSoundManager {
 
     private void checkSamples(StringBuilder s, SoundDeviceType sdt, int ref, int act) {
         if (ref != act) {
-            s.append(sdt + ": " + act);
+            s.append(", " + sdt + ": " + act);
         }
     }
 

@@ -8,6 +8,7 @@ import omegadrive.util.SoundFilterUtil;
 import omegadrive.util.SoundFilterUtil.FilterProcessingData;
 import org.slf4j.Logger;
 
+import static omegadrive.sound.SoundDevice.SoundDeviceType.PWM;
 import static omegadrive.sound.javasound.AbstractSoundManager.audioFormat;
 import static omegadrive.util.SoundFilterUtil.dcBlockerLpf;
 import static omegadrive.util.SoundUtil.clampToShort;
@@ -48,7 +49,7 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
     private FilterProcessingData ppd = new FilterProcessingData();
 
     public S32xPwmProvider(RegionDetector.Region region) {
-        super(audioFormat);
+        super(PWM, audioFormat);
         this.fps = region.getFps();
         this.sh2ClockMhz = region == RegionDetector.Region.EUROPE ? PAL_SH2CLOCK_MHZ : NTSC_SH2CLOCK_MHZ;
         if (collectStats) this.stats = new PwmStats();
@@ -142,7 +143,7 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
 
     @Override
     public SoundDeviceType getType() {
-        return SoundDeviceType.PWM;
+        return PWM;
     }
 
     @Override
