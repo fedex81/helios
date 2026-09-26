@@ -110,17 +110,14 @@ public interface McdSubInterruptHandler extends Device {
             }
             final int mask = getRegMask();
             final int ifl2 = MegaCdMainCpuBus.ifl2Trigger;
-            for (int i = 1; i < pendingInterrupts.length; i++) {
-//            for (int i = pendingInterrupts.length - 1; i > 0; i--) {
+//            for (int i = INT_SUBCODE.ordinal(); i > 0; i--) {
+            for (int i = 1; i < pendingInterrupts.length; i++) { //TODO this is wrong
                 if (pendingInterrupts[i]) {
                     boolean canRaise = ((1 << i) & mask) > 0;
                     //mcd-ver: if ifl2==0 INT#2 is not triggering
-                    canRaise &= (i == INT_LEVEL2.ordinal() && ifl2 == 0) ? false : true;
+                    canRaise &= (i != INT_LEVEL2.ordinal() || ifl2 != 0);
                     if (canRaise && m68kInterrupt(i)) {
                         setPending(intVals[i], 0);
-                        if (intVals[i] == INT_LEVEL2) {
-                            setBitDefInternal(context, M68K, IFL2, 0);
-                        }
                         break;
                     }
                     //ASIC interrupt cannot be made pending and triggered later
@@ -155,11 +152,11 @@ public interface McdSubInterruptHandler extends Device {
             if (verbose && raised) {
                 LOG.info("SubCpu interrupt trigger: {} ({})", intVals[num], num);
             }
-            //TODO HACK. allows EU 1.00 to start Mixed-CDs but breaks Audio-CDs
-            //if the cpu is masking it, interrupt lost
-//            LogHelper.logWarnOnce(LOG, "MegaCd interrupt hack active!!");
-            return region == Region.EUROPE ? true : raised;
-//            return raised;
+            if (raised && intVals[num] == INT_LEVEL2) {
+                setBitDefInternal(context, M68K, IFL2, 0);
+                MegaCdMainCpuBus.ifl2Trigger = 0;
+            }
+            return raised;
         }
 
         @Override
