@@ -38,8 +38,8 @@ import org.slf4j.Logger;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 
+import static omegadrive.ui.DisplayWindow.DisplayContext.MCD_LED_KEY;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.Util.GEN_NTSC_MCLOCK_MHZ;
 import static omegadrive.util.Util.GEN_PAL_MCLOCK_MHZ;
@@ -164,7 +164,7 @@ public class MegaCd extends Megadrive {
     public void onNewFrame() {
         mcdLaunchContext.pcm.onNewFrame();
         mcdLaunchContext.cdd.onNewFrame();
-        displayContext.megaCdLedState = Optional.of(mcdLaunchContext.subBus.getLedState());
+        displayContext.put(MCD_LED_KEY, mcdLaunchContext.subBus.getLedState());
         super.onNewFrame();
     }
 

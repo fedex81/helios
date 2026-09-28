@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.concurrent.*;
 
 import static omegadrive.system.MediaSpecHolder.NO_ROM;
+import static omegadrive.ui.DisplayWindow.DisplayContext.*;
 
 public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         SystemProvider, SystemProvider.NewFrameListener, SystemProvider.SystemClock {
@@ -105,7 +106,7 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         mediaSpec.region = RegionDetector.selectRegion(display, mediaSpec.getBootableMedia().mediaInfoProvider);
         sound.init(mediaSpec.getRegion());
         displayContext = new DisplayWindow.DisplayContext();
-        displayContext.megaCdLedState = Optional.empty();
+        displayContext.put(MCD_LED_KEY, null);
         displayContext.videoMode = VideoMode.PAL_H40_V30;
         telemetry = Telemetry.resetClock(this);
         display.setRomData(mediaSpec);
@@ -267,9 +268,11 @@ public abstract class BaseSystem<BUS extends BaseBusProvider> implements
         //NOTE this bumps the frameCounter
         telemetry.newFrame(nowNs - prevStartNs, driftNs, elapsedWaitNs);
         if (telemetry.hasNewStats(fc)) {
-            displayContext.label = telemetry.getNewStats(fc);
-            displayContext.fps = Optional.of(telemetry.getAvgFps(fc));
-            displayContext.waitNs = Optional.of(telemetry.getAvgWaitTimeNs(fc));
+            displayContext.put(LABEL_KEY, telemetry.getNewStats(fc).orElse(null));
+            displayContext.put(FPS_KEY, telemetry.getAvgFps(fc));
+            displayContext.put(WAIT_NS_KEY, telemetry.getAvgWaitTimeNs(fc));
+            displayContext.put(AUDIO_DELAY_KEY, telemetry.getAvgAudioDelayFrames(fc));
+            displayContext.put(MAX_AUDIO_DELAY_KEY, telemetry.getMaxAudioDelay());
         }
     }
 

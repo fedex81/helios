@@ -149,7 +149,7 @@ public class MegaCd32x extends Md32x {
     public void onNewFrame() {
         mcdLaunchContext.pcm.onNewFrame();
         mcdLaunchContext.cdd.onNewFrame();
-        displayContext.megaCdLedState = Optional.of(mcdLaunchContext.subBus.getLedState());
+        displayContext.put(DisplayWindow.DisplayContext.MCD_LED_KEY, Optional.of(mcdLaunchContext.subBus.getLedState()));
         super.onNewFrame();
     }
 

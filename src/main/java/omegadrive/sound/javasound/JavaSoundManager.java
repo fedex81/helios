@@ -49,6 +49,7 @@ public class JavaSoundManager extends AbstractSoundManager {
     //stats
     private Telemetry telemetry;
     private int samplesProducedCount;
+    private volatile int audioFrameDelay;
 
     private int bufferLenMono16;
 
@@ -163,6 +164,7 @@ public class JavaSoundManager extends AbstractSoundManager {
     }
 
     private final AtomicInteger sync = new AtomicInteger();
+    private volatile int latestDiff = 0;
 
     @Override
     public void onNewFrame() {
@@ -172,8 +174,11 @@ public class JavaSoundManager extends AbstractSoundManager {
         final int frameId = sync.incrementAndGet();
         executorService.submit(() -> {
             int nowFrameId = sync.get();
-            if (nowFrameId != frameId) {
-                LogHelper.logWarnOnce(LOG, "Audio delay in frames (MAX): {}", nowFrameId - frameId);
+            audioFrameDelay = nowFrameId - frameId;
+            if (audioFrameDelay != latestDiff) {
+//                LOG.info("Audio delay in frames: {} -> {}", latestDiff, diff);
+                LogHelper.logWarnOnce(LOG, "Audio delay in frames (MAX): {}", audioFrameDelay);
+                latestDiff = audioFrameDelay;
             }
             int num = adaptiveAudioBuffer.read(playBufBytes16Stereo, playBufBytes16Stereo.length);
             SoundUtil.writeBufferInternal(dataLine, playBufBytes16Stereo, num);
@@ -181,6 +186,8 @@ public class JavaSoundManager extends AbstractSoundManager {
     }
 
     private void doStats() {
+        telemetry = Telemetry.getInstance();
+        telemetry.addAudioDelaySample(audioFrameDelay);
         if (Telemetry.enableLogToFile) {
             telemetry.addSample("audioSamplesProduced", samplesProducedCount);
         }

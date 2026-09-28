@@ -26,9 +26,11 @@ import omegadrive.util.RegionDetector;
 import omegadrive.util.VideoMode;
 
 import java.awt.event.KeyListener;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 public interface DisplayWindow extends RegionDetector.RegionOverrideSupplier {
 
@@ -40,14 +42,32 @@ public interface DisplayWindow extends RegionDetector.RegionOverrideSupplier {
 
 
     class DisplayContext {
+
+        protected final static DecimalFormat audioDelayFormat = new DecimalFormat("0.0");
+        public final static String LABEL_KEY = "label";
+        public final static String FPS_KEY = "fps";
+        public final static String WAIT_NS_KEY = "waitNs";
+        public final static String MCD_LED_KEY = "mcdLedState";
+        public final static String AUDIO_DELAY_KEY = "audioDelay";
+        public final static String MAX_AUDIO_DELAY_KEY = "maxAudioDelay";
+
         public int[] data;
         public VideoMode videoMode;
-        public Optional<String> label = Optional.empty();
 
-        public Optional<Double> fps = Optional.empty();
+        Map<String, Object> values = new HashMap<>();
 
-        public Optional<Long> waitNs = Optional.empty();
-        public Optional<Integer> megaCdLedState = Optional.empty();
+        public Object get(String key) {
+            return values.get(key);
+        }
+
+        public void put(String key, Object value) {
+            values.put(key, value);
+        }
+
+        public void copyValuesFrom(DisplayContext other) {
+            values.clear();
+            values.putAll(other.values);
+        }
     }
 
 

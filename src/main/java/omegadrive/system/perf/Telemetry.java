@@ -44,6 +44,8 @@ public class Telemetry {
     private static final String DRIFT_KEY = "driftNs";
 
     private static final String WAIT_KEY = "waitNs";
+    private static final String AUDIO_DELAY_KEY = "audioDelayFrames";
+    private static final String MAX_AUDIO_DELAY_KEY = "maxAudioDelayFrames";
 
     private static final Function<Map<?, Double>, String> toStringFn = map -> {
         String res = Arrays.toString(map.values().toArray());
@@ -62,6 +64,7 @@ public class Telemetry {
 
     private SystemClock systemClock;
     private long frameCounter = 0;
+    private int maxAudioDelay = 0;
     private final Table<String, Long, Double> data = TreeBasedTable.create();
     private final Map<Long, Timing> frameTimeStamp = new HashMap<>();
 
@@ -100,6 +103,19 @@ public class Telemetry {
         }
     }
 
+    public void addAudioDelaySample(int audioDelay) {
+        long fc = Math.max(0, getFrameCounter() - 1);
+        Timing timing = frameTimeStamp.get(fc);
+        if (timing != null) {
+            timing.audioDelay = audioDelay;
+        }
+        maxAudioDelay = Math.max(audioDelay, maxAudioDelay);
+        if (enableLogToFile) {
+            addSample(AUDIO_DELAY_KEY, audioDelay);
+            addSample(MAX_AUDIO_DELAY_KEY, maxAudioDelay);
+        }
+    }
+
     private String getAvgFpsRounded(double avgFrameTimeMs) {
         return fpsFormatter.format(1000.0 / avgFrameTimeMs);
     }
@@ -125,6 +141,18 @@ public class Telemetry {
         return totWaitNs / STATS_EVERY_FRAMES;
     }
 
+    public double getAvgAudioDelayFrames(long fc) {
+        long tot = 0;
+        for (long i = fc - STATS_EVERY_FRAMES; i <= fc; i++) {
+            tot += frameTimeStamp.getOrDefault(i, NO_TIMING).audioDelay;
+        }
+        return (double) tot / STATS_EVERY_FRAMES;
+    }
+
+    public int getMaxAudioDelay() {
+        return maxAudioDelay;
+    }
+
     public boolean hasNewStats(long fc) {
         return fc % STATS_EVERY_FRAMES == 0; //update fps label every N frames
     }
@@ -145,6 +173,7 @@ public class Telemetry {
         data.clear();
         frameTimeStamp.clear();
         telemetryFile = null;
+        maxAudioDelay = 0;
     }
 
     public void newFrame(double frameTimeNs, double driftNs, double waitNs) {
@@ -193,6 +222,8 @@ public class Telemetry {
         long instantNow;
         long nanoTime;
         long frameWaitNs;
+
+        int audioDelay;
     }
 
     public long getFrameCounter() {

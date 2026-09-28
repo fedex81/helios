@@ -63,6 +63,7 @@ import java.util.stream.IntStream;
 import static omegadrive.system.MediaSpecHolder.NO_ROM;
 import static omegadrive.system.SystemProvider.SystemEvent;
 import static omegadrive.system.SystemProvider.SystemEvent.*;
+import static omegadrive.ui.DisplayWindow.DisplayContext.*;
 import static omegadrive.ui.PrefStore.getRomSpecFromRecentItem;
 import static omegadrive.ui.util.UiFileFilters.FileResourceType.SAVE_STATE_RES;
 import static omegadrive.util.FileUtil.QUICK_SAVE_PATH;
@@ -98,6 +99,8 @@ public class SwingWindow implements DisplayWindow {
     private final JLabel megaCdLedLabel = new JLabel("");
     private final JLabel fpsLabel = new JLabel("");
     private final JLabel waitTimePercLabel = new JLabel("");
+
+    private final JLabel audioDelayLabel = new JLabel("");
 
     private JFrame jFrame;
     private SystemProvider mainEmu;
@@ -225,6 +228,7 @@ public class SwingWindow implements DisplayWindow {
             regionLabel.setText("");
             megaCdLedLabel.setIcon(null);
             fpsLabel.setText("");
+            audioDelayLabel.setText("");
             waitTimePercLabel.setText("");
             jFrame.setTitle(FRAME_TITLE_HEAD);
             cursorHandler.reset();
@@ -259,11 +263,8 @@ public class SwingWindow implements DisplayWindow {
         System.arraycopy(dc.data, 0, pixelsSrc, 0, dc.data.length);
         if (UI_SCALE_ON_THREAD) {
             assert checkSlowDown();
-            dcCopy.megaCdLedState = dc.megaCdLedState;
-            dcCopy.label = dc.label;
             dcCopy.videoMode = dc.videoMode;
-            dcCopy.fps = dc.fps;
-            dcCopy.waitNs = dc.waitNs;
+            dcCopy.copyValuesFrom(dc);
             previousFrame =
                     executorService.submit(Util.wrapRunnableEx(() -> renderScreenLinearInternal(pixelsSrc, dcCopy)));
         } else {
@@ -370,10 +371,13 @@ public class SwingWindow implements DisplayWindow {
 
         fpsLabel.setMaximumSize(new Dimension(25, 25));
         waitTimePercLabel.setMaximumSize(new Dimension(25, 25));
+        audioDelayLabel.setMaximumSize(new Dimension(25, 25));
 
         infoPanel.add(fpsLabel);
         infoPanel.add(Box.createHorizontalStrut(2));
         infoPanel.add(waitTimePercLabel);
+        infoPanel.add(Box.createHorizontalStrut(2));
+        infoPanel.add(audioDelayLabel);
         infoPanel.add(Box.createHorizontalStrut(2));
         infoPanel.add(megaCdLedLabel);
         infoPanel.add(Box.createHorizontalStrut(2));
@@ -475,10 +479,18 @@ public class SwingWindow implements DisplayWindow {
     private void renderScreenLinearInternal(int[] data, DisplayContext dc) {
         resizeScreen(dc.videoMode);
         RenderingStrategy.renderNearest(data, pixelsDest, nativeScreenSize, outputScreenSize);
-        dc.label.ifPresent(l -> showEventInfo());
-        dc.fps.ifPresent(f -> showFpsIcon(f, dc.label));
-        dc.waitNs.ifPresent(w -> showFrameWaitIcon(Telemetry.frameWaitAsPerc(dc.fps.get(), w)));
-        dc.megaCdLedState.ifPresent(v -> megaCdLedLabel.setIcon(IconsLoader.getLedIcon(v)));
+        Optional<String> label = Optional.ofNullable((String) dc.get(LABEL_KEY));
+        Optional<Double> fps = Optional.ofNullable((Double) dc.get(FPS_KEY));
+        Optional<Long> waitNs = Optional.ofNullable((Long) dc.get(WAIT_NS_KEY));
+        Optional<Integer> mcdLed = Optional.ofNullable((Integer) dc.get(MCD_LED_KEY));
+        Optional<Double> audioDelay = Optional.ofNullable((Double) dc.get(AUDIO_DELAY_KEY));
+        Optional<Integer> maxAudioDelay = Optional.ofNullable((Integer) dc.get(MAX_AUDIO_DELAY_KEY));
+        label.ifPresent(l -> showEventInfo());
+        fps.ifPresent(f -> showFpsIcon(f, label));
+        waitNs.ifPresent(w -> showFrameWaitIcon(
+                Telemetry.frameWaitAsPerc(fps.get(), w)));
+        mcdLed.ifPresent(v -> megaCdLedLabel.setIcon(IconsLoader.getLedIcon(v)));
+        audioDelay.ifPresent(d -> setAudioDelay(d, maxAudioDelay.orElse(d.intValue())));
         screenLabel.repaint();
         detectUserScreenChange();
         cursorHandler.newFrame();
@@ -500,6 +512,16 @@ public class SwingWindow implements DisplayWindow {
         String s = "<html><font size=\"2\" color=\"" + htmlColor + "\"><b>" + wti + "%</b></font></html>";
         waitTimePercLabel.setText(s);
         waitTimePercLabel.setToolTipText("Percentage of the frameTime spent idle: " + wti + "%");
+    }
+
+    private void setAudioDelay(double audioDelay, int maxAudioDelay) {
+        double limit1 = 4.0, limit2 = 5.0;
+        String delay = audioDelayFormat.format(audioDelay);
+        String htmlColor = audioDelay > limit2 ? "red" : (audioDelay > limit1 ? "orange" : "lime");
+        String s = "<html><font size=\"2\" color=\"" + htmlColor + "\"><b>" +
+                delay + "/" + maxAudioDelay + "</b></font></html>";
+        audioDelayLabel.setText(s);
+        audioDelayLabel.setToolTipText("Audio delay in frames (avg/max): " + delay + "/" + maxAudioDelay);
     }
 
     private void detectUserScreenChange() {
