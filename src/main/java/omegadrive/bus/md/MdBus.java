@@ -68,15 +68,6 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
 
     public final static boolean verbose = false;
     public static final int M68K_CYCLE_PENALTY = 3;
-
-    private static final byte REGION_RESERVED = 0;
-    private static final byte REGION_Z80 = 1;
-    private static final byte REGION_IO_OR_REG = 2;
-    private static final byte REGION_INTERNAL_REG = 3;
-    private static final byte REGION_VDP = 4;
-    private static final byte REGION_RAM = 5;
-    private static final byte REGION_UNMAPPED = 6;
-
     private final byte[] regionByPage = new byte[256];
     protected MdCartInfoProvider cartridgeInfoProvider;
     private RomMapper mapper;
@@ -143,29 +134,6 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         }
         if (cartridgeInfoProvider.getEntry().hasForce3Btn()) {
             systemProvider.handleSystemEvent(FORCE_PAD_TYPE, BUTTON_3.name());
-        }
-    }
-
-    private void buildRegionTable() {
-        for (int page = 0; page < regionByPage.length; page++) {
-            int base = page << 16;
-            byte region;
-            if (base > DEFAULT_ROM_END_ADDRESS && base < Z80_ADDRESS_SPACE_START) {
-                region = REGION_RESERVED;
-            } else if (base >= Z80_ADDRESS_SPACE_START && base <= Z80_ADDRESS_SPACE_END) {
-                region = REGION_Z80;
-            } else if (base == (IO_ADDRESS_SPACE_START & 0xFF_0000)) {
-                region = REGION_IO_OR_REG;
-            } else if (base >= INTERNAL_REG_ADDRESS_SPACE_START && base <= INTERNAL_REG_ADDRESS_SPACE_END) {
-                region = REGION_INTERNAL_REG;
-            } else if (base >= VDP_ADDRESS_SPACE_START && base <= VDP_ADDRESS_SPACE_END) {
-                region = REGION_VDP;
-            } else if (base >= ADDRESS_RAM_MAP_START && base <= ADDRESS_UPPER_LIMIT) {
-                region = REGION_RAM;
-            } else {
-                region = REGION_UNMAPPED;
-            }
-            regionByPage[page] = region;
         }
     }
 
@@ -240,7 +208,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
         ram = memoryProvider.getRamData();
         rom = memoryProvider.getRomData();
         romMask = memoryProvider.getRomMask();
-        buildRegionTable();
+        buildRegionTable(regionByPage);
     }
 
     @Override
@@ -301,7 +269,7 @@ public class MdBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> implements Md
                 }
             }
             case REGION_INTERNAL_REG -> internalRegWrite(address, size, data);
-            case REGION_RESERVED -> reservedRead(address, size);
+            case REGION_RESERVED -> reservedWrite(address, data, size);
             default -> {
                 if (address < romEndAddress) {
                     cartWrite(address, data, size);
