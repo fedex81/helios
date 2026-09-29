@@ -93,6 +93,10 @@ public class SwingWindow implements DisplayWindow {
     private int[] pixelsDest;
     private double scale = DEFAULT_SCALE_FACTOR;
 
+    private final JPanel infoPanel = new JPanel();
+    private final JPanel statusBar = new JPanel();
+
+    private final JLabel statusLabel = new JLabel();
     private final JLabel screenLabel = new JLabel();
     private final JLabel eventInfoLabel = new JLabel("");
     private final JLabel regionLabel = new JLabel("");
@@ -140,8 +144,10 @@ public class SwingWindow implements DisplayWindow {
         if (mediaSpec == NO_ROM) {
             return;
         }
-        jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() + " " + VERSION + " - " +
-                FileUtil.getFileName(rom.getBootableMedia().romFile));
+        String fname = FileUtil.getFileName(rom.getBootableMedia().romFile);
+        jFrame.setTitle(APP_NAME + mainEmu.getSystemType().getShortName() + " " + VERSION + " - " + fname);
+        String statusText = mainEmu.getSystemType().getShortName() + " |";
+        statusLabel.setText(statusText);
         RegionDetector.Region region = rom.getRegion();
         Icon icon = IconsLoader.getRegionIcon(region);
         regionLabel.setIcon(icon);
@@ -208,9 +214,11 @@ public class SwingWindow implements DisplayWindow {
         SwingUtilities.invokeLater(() -> {
             debugInfoItem.setState(state);
             jFrame.getJMenuBar().setVisible(state);
+            statusBar.setVisible(state);
             //always show the menu when windowed
             if (!fullScreenItem.getState()) {
                 jFrame.getJMenuBar().setVisible(true);
+                statusBar.setVisible(true);
             }
             eventInfoLabel.setVisible(state);
             jFrame.repaint();
@@ -230,6 +238,7 @@ public class SwingWindow implements DisplayWindow {
             fpsLabel.setText("");
             audioDelayLabel.setText("");
             waitTimePercLabel.setText("");
+            statusLabel.setText("");
             jFrame.setTitle(FRAME_TITLE_HEAD);
             cursorHandler.reset();
             LOG.info("Blanking screen");
@@ -361,11 +370,7 @@ public class SwingWindow implements DisplayWindow {
 
         JMenu helpMenu = new JMenu("Help");
         bar.add(helpMenu);
-        bar.add(Box.createHorizontalGlue());
-        bar.add(eventInfoLabel);
-        bar.add(Box.createHorizontalGlue());
 
-        JPanel infoPanel = new JPanel();
         BoxLayout bl = new BoxLayout(infoPanel, BoxLayout.X_AXIS);
         infoPanel.setLayout(bl);
 
@@ -469,11 +474,35 @@ public class SwingWindow implements DisplayWindow {
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         jFrame.setResizable(true);
         jFrame.setJMenuBar(bar);
-        jFrame.add(screenLabel, -1);
+        buildStatusBar();
+        jFrame.add(screenLabel, BorderLayout.CENTER);
+        jFrame.add(statusBar, BorderLayout.SOUTH);
 
         jFrame.pack();
         SwingScreenSupport.showOnCurrentScreen(jFrame);
         showDebugInfo(SystemLoader.showFps);
+    }
+
+    private void buildStatusBar() {
+        statusBar.setLayout(new BoxLayout(statusBar, BoxLayout.X_AXIS));
+        statusBar.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
+        statusLabel.setHorizontalAlignment(SwingConstants.LEFT);
+        eventInfoLabel.setHorizontalAlignment(SwingConstants.LEFT);
+        Dimension barSize = new Dimension(200, 20);
+        Dimension eventSize = new Dimension(400, 20);
+        eventInfoLabel.setMaximumSize(eventSize);
+        eventInfoLabel.setPreferredSize(eventSize);
+        eventInfoLabel.setMinimumSize(eventSize);
+
+        statusBar.add(statusLabel);
+        statusBar.add(Box.createHorizontalGlue());
+        statusBar.add(eventInfoLabel);
+        statusBar.add(Box.createHorizontalGlue());
+        statusBar.add(infoPanel);
+        statusBar.setVisible(true);
+        statusBar.setMaximumSize(barSize);
+        statusBar.setPreferredSize(barSize);
+        statusBar.setMinimumSize(barSize);
     }
 
     private void renderScreenLinearInternal(int[] data, DisplayContext dc) {
@@ -590,6 +619,7 @@ public class SwingWindow implements DisplayWindow {
             screenLabel.setIcon(new ImageIcon(dest));
             jFrame.setPreferredSize(isFullScreen ? fullScreenSize : nativeScreenSize);
             jFrame.getJMenuBar().setVisible(!isFullScreen);
+            statusBar.setVisible(!isFullScreen);
             jFrame.pack();
             SwingScreenSupport.showOnCurrentScreen(jFrame);
             LOG.info("Emulation Viewport size: {}", outputScreenSize);
