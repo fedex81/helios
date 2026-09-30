@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.concurrent.locks.LockSupport;
 
+import static omegadrive.util.Util.*;
+
 /**
  * Federico Berti
  * <p>
@@ -17,6 +19,10 @@ public class Sleeper {
     //Linux has a timer slack of 50micros, windows is hopeless
     //https://lwn.net/Articles/369549/
     public static final long SLEEP_RESOLUTION_NS = 50_000;
+
+    //spin margin for the hybrid sleeper (windows)
+    //parkNanos granularity can exceed 2ms, + 10% margin
+    public static final long SPIN_MARGIN_NS = 2 * MILLI_IN_NS + 200_000; //2.2ms
     private final static Logger LOG = LogHelper.getLogger(Util.class.getSimpleName());
 
     static {
@@ -26,13 +32,13 @@ public class Sleeper {
     }
 
     public static boolean isWindows() {
-        return Util.OS_NAME.contains("win");
+        return OS_NAME.contains("win");
     }
 
     //futile attempt at getting high resolution sleeps on windows
     private static void startSleeperThread() {
         if (isWindows()) {
-            Runnable r = () -> Util.sleep(Long.MAX_VALUE);
+            Runnable r = () -> sleep(Long.MAX_VALUE);
             Thread t = new Thread(r);
             t.setDaemon(true);
             t.setName("sleeperForWindows");
@@ -41,14 +47,14 @@ public class Sleeper {
     }
 
     private static void handleSleepDelay(long prev, long now, long expectedIntervalNs) {
-        if (now - prev > expectedIntervalNs + Util.MILLI_IN_NS) {
+        if (now - prev > expectedIntervalNs + SPIN_MARGIN_NS) {
             LOG.info("JVM over-sleeping ({} ms): {}",
-                    expectedIntervalNs / (double) Util.MILLI_IN_NS, (now - prev) / (double) Util.MILLI_IN_NS);
+                    expectedIntervalNs / (double) MILLI_IN_NS, (now - prev) / (double) MILLI_IN_NS);
         }
     }
 
     private static void handleSlowdown(String when, long now, long deadlineNs) {
-        if (now > deadlineNs + Util.MILLI_IN_NS) {
+        if (now > deadlineNs + MILLI_IN_NS) {
 //            LOG.info("Slowdown detected {} sleeping, delay_ms: {}", when, (now - deadlineNs) / (double) Util.MILLI_IN_NS);
         }
     }
@@ -58,7 +64,13 @@ public class Sleeper {
         if (intervalNs < SLEEP_RESOLUTION_NS) {
             return;
         }
-        parkExactly(intervalNs - SLEEP_RESOLUTION_NS);
+        if (isWindows()) {
+            //windows: parks for most of the interval, and busy-spins for the SPIN_MARGIN_NS period
+            parkExactlyHybrid(intervalNs);
+        } else {
+            //linux: can use a less accurate version where we sleep more and spin less.
+            parkExactly(intervalNs - SLEEP_RESOLUTION_NS);
+        }
     }
 
     static long maxSleepNs = Duration.ofMillis(20).toNanos();
@@ -111,9 +123,9 @@ public class Sleeper {
             return;
         }
         long now = System.nanoTime();
-        if (intervalNs > Util.MILLI_IN_NS) {
+        long spinIntervalNs = SPIN_MARGIN_NS;
+        if (intervalNs > SPIN_MARGIN_NS) {
             long remainingNs = intervalNs;
-            long spinIntervalNs = Util.MILLI_IN_NS;
             do {
                 long prevNow = System.nanoTime();
                 LockSupport.parkNanos(remainingNs - spinIntervalNs);
