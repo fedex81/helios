@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import s32x.bus.S32xBusIntf;
 
 import java.nio.file.Files;
-import java.util.Optional;
 
 import static mcd.MegaCd.MCD_68K_RATIO_NTSC;
 import static mcd.MegaCd.MCD_68K_RATIO_PAL;
@@ -148,7 +147,7 @@ public class MegaCd32x extends Md32x {
     public void onNewFrame() {
         mcdLaunchContext.pcm.onNewFrame();
         mcdLaunchContext.cdd.onNewFrame();
-        displayContext.put(DisplayWindow.DisplayContext.MCD_LED_KEY, Optional.of(mcdLaunchContext.subBus.getLedState()));
+        displayContext.put(DisplayWindow.DisplayContext.MCD_LED_KEY, mcdLaunchContext.subBus.getLedState());
         super.onNewFrame();
     }
 
