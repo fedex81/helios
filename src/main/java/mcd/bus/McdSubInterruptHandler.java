@@ -10,8 +10,7 @@ import org.slf4j.Logger;
 
 import java.util.Arrays;
 
-import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
-import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.*;
 import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_INT_MASK;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
@@ -110,8 +109,7 @@ public interface McdSubInterruptHandler extends Device {
             }
             final int mask = getRegMask();
             final int ifl2 = MegaCdMainCpuBus.ifl2Trigger;
-//            for (int i = INT_SUBCODE.ordinal(); i > 0; i--) {
-            for (int i = 1; i < pendingInterrupts.length; i++) { //TODO this is wrong
+            for (int i = INT_SUBCODE.ordinal(); i > 0; i--) {
                 if (pendingInterrupts[i]) {
                     boolean canRaise = ((1 << i) & mask) > 0;
                     //mcd-ver: if ifl2==0 INT#2 is not triggering
@@ -120,11 +118,11 @@ public interface McdSubInterruptHandler extends Device {
                         setPending(intVals[i], 0);
                         break;
                     }
-                    //ASIC interrupt cannot be made pending and triggered later
-                    if (i == INT_ASIC.ordinal()) {
-                        setPending(INT_ASIC, 0);
-                    }
                 }
+            }
+            //ASIC interrupt cannot be made pending and triggered later
+            if (pendingInterrupts[INT_ASIC.ordinal()]) {
+                setPending(INT_ASIC, 0);
             }
         }
 
