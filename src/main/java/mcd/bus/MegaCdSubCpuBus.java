@@ -17,7 +17,6 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent;
 import omegadrive.vdp.model.MdVdpProvider;
 import org.slf4j.Logger;
 
@@ -25,7 +24,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
-import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_TIMER;
 import static mcd.dict.MegaCdDict.BitRegDef.IEN2;
 import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
@@ -300,9 +298,9 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
                     int val = IEN2.getBitMask() * ((reg >> 2) & 1);
                     setBitDefInternal(memCtx, M68K, IEN2, val);
                     //disable IEN2 -> resets IFL2
-                    //TODO check
                     if (val == 0) {
                         setBitDefInternal(memCtx, M68K, IFL2, 0);
+                        this.interruptHandler.setIFL2Asserted(false);
                     }
                 }
             }
@@ -419,14 +417,6 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
         setBit(sysGateRegs, MCD_RESET.addr + 1, 0, 1, Size.BYTE);
         setBit(memCtx.getRegBuffer(M68K, MCD_RESET), MCD_RESET.addr + 1, 0, 1, Size.BYTE);
         LOG.info("S subCpu reset done");
-    }
-
-    @Override
-    public void onVdpEvent(VdpEvent event, Object value) {
-        //vBlankOn fire LEV2
-        if (event == VdpEvent.V_BLANK_CHANGE && (boolean) value) {
-            interruptHandler.raiseInterrupt(INT_LEVEL2);
-        }
     }
 
     private void timerStep() {

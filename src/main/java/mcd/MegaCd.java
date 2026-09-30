@@ -155,7 +155,6 @@ public class MegaCd extends Megadrive {
             mcd68kRatio = displayContext.videoMode.isPal() ? MCD_68K_RATIO_PAL : MCD_68K_RATIO_NTSC;
             mcdLaunchContext.pcm.updateVideoMode(displayContext.videoMode);
             mcdLaunchContext.cdd.updateVideoMode(displayContext.videoMode);
-            mcdLaunchContext.interruptHandler.setRegion(displayContext.videoMode.getRegion());
             LOG.info("Video mode changed: {}, mcd68kRatio: {}", displayContext.videoMode, mcd68kRatio);
         }
     }

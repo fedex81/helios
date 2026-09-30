@@ -80,10 +80,6 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
     @Deprecated
     public static boolean subCpuReset = false;
 
-    @Deprecated
-    //detects 0->1, 1->0 transitions only when written to
-    public static int ifl2Trigger = 0;
-
     public MegaCdMainCpuBus(MegaCdMemoryContext ctx, MdMainBusProvider mdBus) {
         cpu = M68K;
         prgRam = ByteBuffer.wrap(ctx.prgRam);
@@ -96,7 +92,6 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         biosHolder = McdBiosHolder.getInstance();
         maskMode1 = !enableMode1 ? MCD_MAIN_MODE1_MASK : 0;
         this.mdBus = mdBus;
-        ifl2Trigger = 0;
         subCpuReset = false;
         mainHasPrgRamAccess = true;
     }
@@ -459,15 +454,13 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         int subIntReg = (resWord >> bitWordPos) & 1; //IFL2
         if (subIntReg > 0) {
             if (((prevWord >> bitWordPos) & 1) == 0) {
-                ifl2Trigger = 1;
+                subCpuBus.getInterruptHandler().setIFL2Asserted(true);
                 LogHelper.logInfo(LOG, "M SubCpu int2 request");
                 //TODO should check IEN2 = 1?
                 subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
             }
         } else if (subIntReg == 0) {
-            LogHelper.logWarnOnce(LOG, "Main cpu setting IFL2 = 0");
-            //explicit set ifl2 to 0
-            ifl2Trigger = 0;
+            LogHelper.logWarnOnce(LOG, "Main cpu setting IFL2 = 0, ignoring");
         }
     }
 
