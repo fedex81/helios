@@ -10,7 +10,8 @@ import org.slf4j.Logger;
 
 import java.util.Arrays;
 
-import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.*;
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_SUBCODE;
 import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_INT_MASK;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
@@ -119,10 +120,6 @@ public interface McdSubInterruptHandler extends Device {
                         break;
                     }
                 }
-            }
-            //ASIC interrupt cannot be made pending and triggered later
-            if (pendingInterrupts[INT_ASIC.ordinal()]) {
-                setPending(INT_ASIC, 0);
             }
         }
 
