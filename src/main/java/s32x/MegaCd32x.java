@@ -4,6 +4,7 @@ import mcd.McdDeviceHelper;
 import mcd.MegaCd;
 import mcd.bus.Mcd32xMainBus;
 import mcd.bus.McdSubInterruptHandler;
+import mcd.pcm.McdPcm;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.MdMainBusProvider;
 import omegadrive.cart.MdCartInfoProvider;
@@ -22,8 +23,7 @@ import s32x.bus.S32xBusIntf;
 import java.nio.file.Files;
 import java.util.Optional;
 
-import static mcd.MegaCd.MCD_68K_RATIO_NTSC;
-import static mcd.MegaCd.MCD_68K_RATIO_PAL;
+import static mcd.MegaCd.*;
 import static omegadrive.system.SysUtil.ISO_EXT;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 
@@ -36,6 +36,7 @@ import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
  *
  * MCD_32X software, cart slot is empty.
  * - Night Trap (USA) (Disc 1) (Sega CD 32X) (RE-1), works with choppy audio (SegaCD emulation issue)
+ * - Supreme Warrior EU -> ok, USA -> Choppy audio
  */
 public class MegaCd32x extends Md32x {
 
@@ -71,6 +72,12 @@ public class MegaCd32x extends Md32x {
         mcdLaunchContext.subBus.attachDevice(this);
         subCpu = mcdLaunchContext.subCpu;
         interruptHandler = mcdLaunchContext.interruptHandler;
+        if (!McdPcm.LEGACY_MODE) {
+            mcdLaunchContext.pcm.setPcmProvider(sound.getPcm());
+            mcdLaunchContext.cdd.setPcmProvider(sound.getCdda());
+            sound.setEnabled(sound.getPcm(), ENABLE_PCM);
+            sound.setEnabled(sound.getCdda(), ENABLE_CDDA);
+        }
         MegaCd.megaCdDiscInsert(mcdLaunchContext, mediaSpec);
         checkDoomFusion();
         subCpu.reset();

@@ -1,15 +1,15 @@
 package mcd.pcm;
 
 import omegadrive.sound.PcmProvider;
+import omegadrive.sound.blip.BlipBufferHelper;
 import omegadrive.sound.blip.BlipBufferIntf;
 import omegadrive.sound.blip.StereoBlipBuffer;
-import omegadrive.util.*;
+import omegadrive.util.BufferUtil;
+import omegadrive.util.LogHelper;
+import omegadrive.util.RegionDetector;
 import org.slf4j.Logger;
 
-import javax.sound.sampled.SourceDataLine;
 import java.util.StringJoiner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -19,21 +19,19 @@ import static omegadrive.util.Util.th;
 /**
  * Federico Berti
  * <p>
- * Copyright 2022
+ * Copyright 2026
  * <p>
  */
-@Deprecated
 public class BlipPcmProvider implements PcmProvider {
 
     private static final Logger LOG = LogHelper.getLogger(BlipPcmProvider.class.getSimpleName());
 
     private static final int BUF_SIZE_MS = 50;
 
-    private final AtomicReference<BlipBufferContext> ref = new AtomicReference<>();
+    protected final AtomicReference<BlipBufferContext> ref = new AtomicReference<>();
 
     static class BlipBufferContext {
         BlipBufferIntf blipBuffer;
-        byte[] lineBuffer;
         AtomicInteger inputClocksForInterval = new AtomicInteger();
 
         @Override
@@ -44,28 +42,30 @@ public class BlipPcmProvider implements PcmProvider {
         }
     }
 
-    private double deltaTime;
+    protected double deltaTime;
 
     private short prevLSample, prevRSample;
-    private final SourceDataLine dataLine;
+    protected int prevSampleAvail = 0;
+
     private RegionDetector.Region region;
 
     private final double clockRate;
-    private final ExecutorService exec;
 
-    private final String instanceId;
+    protected final String instanceId;
 
-    //TODO hack
-    @Deprecated
-    public static boolean mute = false;
-
-    public BlipPcmProvider(String name, RegionDetector.Region region, double clockRate) {
+    public BlipPcmProvider(String name, RegionDetector.Region region) {
         ref.set(new BlipBufferContext());
-        dataLine = SoundUtil.createDataLine(audioFormat);
         this.region = region;
-        this.clockRate = clockRate;
+        this.clockRate = audioFormat.getSampleRate();
         this.instanceId = name + "_" + (int) clockRate;
-        exec = Executors.newSingleThreadExecutor(new PriorityThreadFactory(Thread.MAX_PRIORITY, instanceId));
+        setup();
+    }
+
+    public BlipPcmProvider(String name, RegionDetector.Region region, int sampleRateHz) {
+        ref.set(new BlipBufferContext());
+        this.region = region;
+        this.clockRate = sampleRateHz;
+        this.instanceId = name + "_" + (int) clockRate;
         setup();
     }
 
@@ -74,7 +74,6 @@ public class BlipPcmProvider implements PcmProvider {
         blip.setSampleRate((int) audioFormat.getSampleRate(), BUF_SIZE_MS);
         blip.setClockRate((int) clockRate);
         BlipBufferContext bbc = new BlipBufferContext();
-        bbc.lineBuffer = new byte[0];
         bbc.blipBuffer = blip;
         ref.set(bbc);
         updateRegion(region);
@@ -100,44 +99,13 @@ public class BlipPcmProvider implements PcmProvider {
 
     @Override
     public int updateStereo16(int[] buf_lr, int offset, int countMono) {
-        LogHelper.logWarnOnce(LOG, "{} Ignoring sample requests, using its own dataLine", instanceId);
-        return countMono << 1;
-    }
-
-    private int prevSampleAvail = 0;
-    private final AtomicInteger sync = new AtomicInteger();
-
-    @Override
-    public void onNewFrame() {
         BlipBufferContext context = ref.get();
         BlipBufferIntf blip = context.blipBuffer;
-        if (blip == null) {
-            return;
-        }
+        assert blip != null;
         assert context.inputClocksForInterval.get() > 0;
         blip.endFrame(context.inputClocksForInterval.get());
         deltaTime = 0;
-        int availMonoSamples = blip.samplesAvail();
-        if (availMonoSamples + 5 < prevSampleAvail) {
-            LOG.info("{} Audio underrun : {} -> {} samples", instanceId, prevSampleAvail, availMonoSamples);
-        }
-        if (context.lineBuffer.length < availMonoSamples << 2) {
-            LOG.info("{} Audio buffer size: {} -> {} bytes", instanceId, context.lineBuffer.length, availMonoSamples << 2);
-            context.lineBuffer = new byte[availMonoSamples << 2];
-        }
-        final long current = sync.incrementAndGet();
-        int stereoBytes = blip.readSamples16bitStereo(context.lineBuffer, 0, availMonoSamples) << 2;
-        if (stereoBytes > 0 && !mute) {
-            exec.submit(Util.wrapRunnableEx(() -> {
-                SoundUtil.writeBufferInternal(dataLine, context.lineBuffer, 0, stereoBytes);
-                if (BufferUtil.assertionsEnabled) {
-                    if (current != sync.get()) {
-                        LOG.info("{} Blip audio thread too slow: {} vs {}", instanceId, current, sync.get());
-                    }
-                }
-            }));
-        }
-        prevSampleAvail = availMonoSamples;
+        return BlipBufferHelper.readSamples16bitStereo((StereoBlipBuffer) blip, buf_lr, 0, countMono);
     }
 
     @Override
@@ -156,13 +124,10 @@ public class BlipPcmProvider implements PcmProvider {
     }
 
     @Override
-    public void close() {
-        SoundUtil.close(dataLine);
-        exec.shutdown();
-    }
-
-    @Override
     public void reset() {
-        LOG.warn("TODO reset");
+        deltaTime = prevLSample = prevRSample = 0;
+        var bb = ref.get().blipBuffer;
+        bb.endFrame(ref.get().inputClocksForInterval.get());
+        bb.clear();
     }
 }

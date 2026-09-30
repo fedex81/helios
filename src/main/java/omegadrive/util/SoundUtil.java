@@ -19,6 +19,7 @@
 
 package omegadrive.util;
 
+import omegadrive.sound.SoundDevice.SoundDeviceType;
 import omegadrive.sound.SoundProvider;
 import omegadrive.sound.javasound.AbstractSoundManager;
 import org.slf4j.Logger;
@@ -28,6 +29,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Map;
+
+import static omegadrive.sound.SoundDevice.SoundDeviceType.*;
 
 public class SoundUtil {
 
@@ -45,7 +49,7 @@ public class SoundUtil {
 
     public static final byte ZERO_BYTE = 0;
 
-    public static final int DEFAULT_PSG_SHIFT_BITS = 6;
+    private static final int DEFAULT_PSG_SHIFT_BITS = 6;
     public static final double PSG_ATTENUATION = Double.parseDouble(System.getProperty("sound.psg.attenuation", "1.0"));
     private static final int USER_PSG_ATT_BITS;
     private static final int PSG_SHIFT_BITS;
@@ -58,7 +62,7 @@ public class SoundUtil {
             shift++;
         }
         USER_PSG_ATT_BITS = shift;
-        PSG_SHIFT_BITS = DEFAULT_PSG_SHIFT_BITS - USER_PSG_ATT_BITS;
+        PSG_SHIFT_BITS = Math.max(0, DEFAULT_PSG_SHIFT_BITS - USER_PSG_ATT_BITS);
         LOG.info("PSG attenuation: {}, in bits: {}", PSG_ATTENUATION, USER_PSG_ATT_BITS);
     }
 
@@ -165,107 +169,6 @@ public class SoundUtil {
         }
     }
 
-    public static void intStereo16ToByteStereo16Mix(int[] input, byte[] output, int inputLen) {
-        for (int i = 0, k = 0; i < inputLen; i += 2, k += 4) {
-            Util.setShortLE(output, k, (short) input[i]);
-            Util.setShortLE(output, k + 2, (short) input[i + 1]);
-        }
-    }
-
-    public static void intStereo14ToByteStereo16PwmMix(byte[] output, int[] fmStereo16, int[] pwmStereo16, int inputLen) {
-        int j = 0; //psg index
-        int k = 0; //output index
-        for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
-            short out16L = clampToShort(fmStereo16[i] + pwmStereo16[i]);
-            short out16R = clampToShort(fmStereo16[i + 1] + pwmStereo16[i + 1]);
-            Util.setShortLE(output, k, out16L);
-            Util.setShortLE(output, k + 2, out16R);
-        }
-    }
-
-    public static void intStereo14ToByteStereo16PsgPwmMix(byte[] output, int[] fmStereo16, int[] pwmStereo16,
-                                                          byte[] psgMono8, int inputLen) {
-        int j = 0; //psg index
-        int k = 0; //output index
-        for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
-            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg = psgMono8[j];
-            psg = DEFAULT_PSG_SHIFT_BITS > 0 ? psg << DEFAULT_PSG_SHIFT_BITS : psg >> -DEFAULT_PSG_SHIFT_BITS;
-            short out16L = clampToShort(fmStereo16[i] + pwmStereo16[i] + psg);
-            short out16R = clampToShort(fmStereo16[i + 1] + pwmStereo16[i + 1] + psg);
-            Util.setShortLE(output, k, out16L);
-            Util.setShortLE(output, k + 2, out16R);
-        }
-    }
-
-    public static void intStereo14ToByteStereo16Mix(int[] input, byte[] output, byte[] psgMono8, int inputLen) {
-        int j = 0; //psg index
-        int k = 0; //output index
-        for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
-            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg = psgMono8[j];
-            psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
-
-            // Combine the interleaved inputs with the PSG track
-            int mixedL = input[i] + psg;
-            int mixedR = input[i + 1] + psg;
-
-            // Accurate 1.5x scaling factor without sign-extension distortion
-            short out16L = clampToShort((mixedL * 3) >> 1);
-            short out16R = clampToShort((mixedR * 3) >> 1);
-
-            Util.setShortLE(output, k, out16L);
-            Util.setShortLE(output, k + 2, out16R);
-        }
-    }
-
-    public static void intStereo14ToByteStereo16MixFloat(int[] input, float[] output, byte[] psgMono8, int inputLen) {
-        int j = 0; //psg index
-        int k = 0; //output index
-        for (int i = 0; i < inputLen; i += 2, j++, k += 2) {
-            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            int psg = psgMono8[j];
-            psg = PSG_SHIFT_BITS > 0 ? psg << PSG_SHIFT_BITS : psg >> -PSG_SHIFT_BITS;
-            int out16L = (input[i] + psg);
-            int out16R = (input[i + 1] + psg);
-            out16L = clampToShort((out16L << 1) - out16L); //mult by 1.5
-            out16R = clampToShort((out16R << 1) - out16R);
-            //avg fm and psg
-            output[k] = out16L / 32768f;
-            output[k + 1] = out16R / 32768f;
-        }
-    }
-
-    public static void byteMono8ToByteStereo16Mix(byte[] psgMono8, byte[] output) {
-        for (int j = 0, i = 0; j < psgMono8.length; j++, i += 4) {
-            //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
-            short psg16 = clampToShort(psgMono8[j] << 7);
-            Util.setShortLE(output, i, psg16);
-            Util.setShortLE(output, i + 2, psg16);
-        }
-    }
-
-    public static int mixTwoSources(byte[] input1, byte[] input2, byte[] output, int inputLen1, int inputLen2) {
-        int len;
-        if (inputLen1 == 0) {
-            System.arraycopy(input2, 0, output, 0, inputLen2);
-            len = input2.length;
-        } else if (inputLen2 == 0) {
-            System.arraycopy(input1, 0, output, 0, inputLen1);
-            len = input1.length;
-        } else {
-//            assert inputLen1 == inputLen2 : inputLen1 + "," + inputLen2;
-            len = Math.min(inputLen1, inputLen2);
-            for (int i = 0; i < len; i += 4) {
-                output[i] = (byte) ((input1[i] + input2[i]) >> 1);
-                output[i + 1] = (byte) ((input1[i + 1] + input2[i + 1]) >> 1);
-                output[i + 2] = (byte) ((input1[i + 2] + input2[i + 2]) >> 1);
-                output[i + 3] = (byte) ((input1[i + 3] + input2[i + 3]) >> 1);
-            }
-        }
-        return len;
-    }
-
     public static void close(DataLine line) {
         if (line != null) {
             line.stop();
@@ -315,5 +218,54 @@ public class SoundUtil {
             return Byte.MIN_VALUE;
         }
         return (byte) value;
+    }
+
+    public static void mix(int soundDeviceSetup, Map<SoundDeviceType, int[]> deviceAudioBuffers, byte[] psgMono8,
+                           byte[] output, int inputLen) {
+        int j = 0; //psg index
+        int k = 0; //output index
+        final int dfps = Math.max(0, PSG_SHIFT_BITS - 1); //reduce PSG volume, otherwise we get clamping
+        final boolean psgEn = PSG.isEnabled(soundDeviceSetup);
+        final boolean fmEn = FM.isEnabled(soundDeviceSetup);
+        final boolean pwmEn = PWM.isEnabled(soundDeviceSetup);
+        final boolean pcmEn = PCM.isEnabled(soundDeviceSetup);
+        final boolean cddaEn = CDDA.isEnabled(soundDeviceSetup);
+        final int[] fmStereo16 = deviceAudioBuffers.get(FM);
+        final int[] pwmStereo16 = deviceAudioBuffers.get(PWM);
+        final int[] pcmStereo16 = deviceAudioBuffers.get(PCM);
+        final int[] cddaStereo16 = deviceAudioBuffers.get(CDDA);
+
+        for (int i = 0; i < inputLen; i += 2, j++, k += 4) {
+            int l = 0, r = 0;
+            if (psgEn) {
+                //PSG: 8 bit -> 13 bit (attenuate by 2 bit)
+                int psg = psgMono8[j] << dfps;
+                l += psg;
+                r += psg;
+            }
+            if (fmEn) {
+                l += fmStereo16[i];
+                r += fmStereo16[i + 1];
+            }
+            if (pwmEn) {
+                l += pwmStereo16[i];
+                r += pwmStereo16[i + 1];
+            }
+            if (pcmEn) {
+                l += pcmStereo16[i];
+                r += pcmStereo16[i + 1];
+            }
+            if (cddaEn) {
+                l += cddaStereo16[i];
+                r += cddaStereo16[i + 1];
+            }
+            short out16L = clampToShort(l);
+            short out16R = clampToShort(r);
+            if (l != out16L || r != out16R) {
+                LOG.info("Clamped L {} -> {}, R {} -> {}", l, out16L, r, out16R);
+            }
+            Util.setShortLE(output, k, out16L);
+            Util.setShortLE(output, k + 2, out16R);
+        }
     }
 }

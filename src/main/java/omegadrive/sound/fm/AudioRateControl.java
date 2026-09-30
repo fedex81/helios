@@ -53,7 +53,7 @@ public class AudioRateControl {
     private static final double UPPER_LIMIT = FM_CALCS_PER_MICROS * (1 + HALF_LIMIT);
     static final double fastPace = 0.05; //max distortion ~60hz/frame
     static final double slowPace = fastPace / 2;
-    private static final double targetBufferFactor = 0.75;
+    private static final double targetBufferFactor = 0.25;
 
     private final StatsHolder statsHolder;
     private final int stereoBufferSize;

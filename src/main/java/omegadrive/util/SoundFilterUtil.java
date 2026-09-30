@@ -1,5 +1,7 @@
 package omegadrive.util;
 
+import java.util.Arrays;
+
 /**
  * Federico Berti
  * <p>
@@ -198,6 +200,18 @@ public class SoundFilterUtil {
         // Pack values back into the container for the next block boundary
         h.lastLpfL = lastLpfL;
         h.lastLpfR = lastLpfR;
+    }
+
+    public static class FilterProcessingData {
+        public int[] rawBuffer = new int[0];
+        public int[] interpBuffer = new int[0];
+        public final DcBlockLpfHistory filterHistory = new DcBlockLpfHistory();
+
+        public void reset() {
+            Arrays.fill(rawBuffer, 0);
+            Arrays.fill(interpBuffer, 0);
+            filterHistory.reset();
+        }
     }
 
     public static class LpfHistory {

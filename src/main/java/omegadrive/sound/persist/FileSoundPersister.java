@@ -42,9 +42,9 @@ public class FileSoundPersister implements SoundPersister {
     private boolean recording;
 
     @Override
-    public void persistSound(SoundType type, byte[] output) {
+    public void persistSound(String name, byte[] output) {
         if (!recording) {
-            startRecording(type);
+            startRecording(name);
         }
         recordSound(output);
     }
@@ -65,8 +65,8 @@ public class FileSoundPersister implements SoundPersister {
     /**
      * Start sound recording to WAV file.
      */
-    private void startRecordingInternal(SoundType type) {
-        String name = "output_" + type.name() + "_" + System.currentTimeMillis() + ".raw";
+    private void startRecordingInternal(String nameType) {
+        String name = "output_" + nameType + "_" + System.currentTimeMillis() + ".raw";
         try {
             rawFile = Paths.get(".", name).toFile();
             fileStream = Files.asByteSink(rawFile).openBufferedStream();
@@ -101,9 +101,9 @@ public class FileSoundPersister implements SoundPersister {
     }
 
     @Override
-    public void startRecording(SoundType type) {
+    public void startRecording(String name) {
         if (!recording) {
-            startRecordingInternal(type);
+            startRecordingInternal(name);
         }
     }
 

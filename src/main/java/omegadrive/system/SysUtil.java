@@ -3,6 +3,8 @@ package omegadrive.system;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import mcd.MegaCd;
+import mcd.pcm.BlipPcmProvider;
+import mcd.pcm.McdPcm;
 import omegadrive.Device;
 import omegadrive.SystemLoader.SystemType;
 import omegadrive.bus.model.BaseBusProvider;
@@ -134,18 +136,29 @@ public class SysUtil {
         m.put(FM, getFmProvider(systemType, region));
         m.put(PWM, getPwmProvider(systemType, region));
         m.put(PCM, getPcmProvider(systemType, region));
+        m.put(CDDA, getCddaProvider(systemType, region));
         return m;
     }
 
     public static SoundDevice getPwmProvider(SystemType systemType, Region region) {
         return switch (systemType) {
-            case S32X -> new S32xPwmProvider(region);
+            case S32X, MEGACD_S32X -> new S32xPwmProvider(region);
             default -> PwmProvider.NO_SOUND;
         };
     }
 
     public static SoundDevice getPcmProvider(SystemType systemType, Region region) {
-        return PcmProvider.NO_SOUND;
+        if (McdPcm.LEGACY_MODE) {
+            return PcmProvider.NO_SOUND;
+        }
+        return systemType.isMegaCdAttached() ? new BlipPcmProvider("PCM", region, McdPcm.PCM_SAMPLE_RATE_HZ) : PcmProvider.NO_SOUND;
+    }
+
+    public static SoundDevice getCddaProvider(SystemType systemType, Region region) {
+        if (McdPcm.LEGACY_MODE) {
+            return PcmProvider.NO_SOUND;
+        }
+        return systemType.isMegaCdAttached() ? new BlipPcmProvider("CDDA", region) : PcmProvider.NO_SOUND;
     }
 
     public static SoundDevice getPsgProvider(SystemType systemType, Region region) {
@@ -194,13 +207,6 @@ public class SysUtil {
         return fmProvider;
     }
 
-    //TODO
-    public static boolean isBlipSound(SystemType systemType) {
-        return true;
-//        systemType == SystemType.SMS || systemType == SystemType.GG ||
-//                systemType == SystemType.COLECO || systemType == SG_1000 || systemType == MSX || systemType == NES
-//                || systemType == GB;
-    }
 
     public static final BaseBusProvider NO_OP_BUS = new BaseBusProvider() {
         @Override

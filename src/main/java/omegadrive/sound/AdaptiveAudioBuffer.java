@@ -99,6 +99,8 @@ public class AdaptiveAudioBuffer {
         }
     }
 
+    int errCnt = 0;
+
     /**
      * PRODUCER SIDE (Raw Bytes): Processes an array of interleaved stereo bytes.
      * Parses 16-bit signed Little-Endian sample pairs [LSB, MSB, LSB, MSB...]
@@ -116,9 +118,10 @@ public class AdaptiveAudioBuffer {
 
         //TODO when this happens we're gonna have audio issues
         if (count != stereoChunkSize << 1) {
-            LOG.warn("Samples added vs expected: {} vs {}", count, stereoChunkSize << 1);
+            if ((++errCnt & 0xFFF) == 0) {
+                LOG.warn("Samples added vs expected: {} vs {}, times: {}", count, stereoChunkSize << 1, errCnt);
+            }
         }
-
         lock.writeLock().lock();
         try {
             int len = count;

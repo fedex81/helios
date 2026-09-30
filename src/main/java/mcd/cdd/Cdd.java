@@ -5,6 +5,7 @@ import mcd.bus.McdSubInterruptHandler;
 import mcd.cdc.Cdc;
 import mcd.dict.MegaCdDict;
 import mcd.dict.MegaCdMemoryContext;
+import omegadrive.sound.PcmProvider;
 import omegadrive.system.SystemProvider;
 import omegadrive.util.BufferUtil;
 import omegadrive.util.Size;
@@ -98,6 +99,8 @@ public interface Cdd extends BufferUtil.StepDevice, SystemProvider.NewFrameListe
     int FLAGS_iMUTE = 0;
 
     enum CddControl_DM_bit {MUSIC_0, DATA_1}
+
+    void setPcmProvider(PcmProvider pp);
 
     void tryInsert(ExtendedCueSheet cueSheet);
     void write(MegaCdDict.RegSpecMcd regSpec, int address, int value, Size size);

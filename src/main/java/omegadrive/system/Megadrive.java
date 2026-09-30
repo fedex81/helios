@@ -34,7 +34,6 @@ import omegadrive.memory.MemoryProvider;
 import omegadrive.savestate.BaseStateHandler;
 import omegadrive.sound.SoundDevice;
 import omegadrive.sound.SoundDevice.SoundDeviceType;
-import omegadrive.sound.fm.ym2612.nukeykt.BlipYm2612Nuke;
 import omegadrive.sound.fm.ym2612.nukeykt.Ym2612Nuke;
 import omegadrive.ui.DisplayWindow;
 import omegadrive.util.*;
@@ -130,7 +129,7 @@ public class Megadrive extends BaseSystem<MdMainBusProvider> {
         memView.reset();
         memView = createMemView();
         fm = sound.getFm();
-        isNuke = fm instanceof Ym2612Nuke || fm instanceof BlipYm2612Nuke;
+        isNuke = fm instanceof Ym2612Nuke;
     }
 
     protected void loop() {

@@ -42,7 +42,7 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener,
 
     int SAMPLE_RATE_HZ = Integer.parseInt(System.getProperty("audio.sample.rate.hz", "44100"));
 
-    int DEFAULT_BUFFER_SIZE_MS = 50;
+    int DEFAULT_BUFFER_SIZE_MS = 20;
     //TODO max latency seems to be AUDIO_BUFFER_LEN_MS*3
     int AUDIO_BUFFER_LEN_MS = Integer.parseInt(System.getProperty("audio.buffer.length.ms", String.valueOf(DEFAULT_BUFFER_SIZE_MS)));
 
@@ -127,22 +127,20 @@ public interface SoundProvider extends Device, BaseVdpProvider.VdpEventListener,
         @Override
         public void setEnabled(Device device, boolean mute) {
         }
+
+        @Override
+        public PcmProvider getCdda() {
+            return PcmProvider.NO_SOUND;
+        }
     };
 
     void setEnabled(Device device, boolean enabled);
 
+    PcmProvider getCdda();
+
     void close();
 
     void updateDeviceRate(SoundDeviceType sdt, Region region, int clockRateHz);
-
-    /***
-     * TODO HACK
-     * PWM, PCM use their own dataLine and need to be explicitly muted.
-     */
-    @Deprecated
-    default void addExternalSoundSource(SoundDevice.MutableDevice mutableDevice) {
-        LOG.warn("Ignoring: {}", mutableDevice.getClass());
-    }
 
     default boolean isRecording() {
         return false;

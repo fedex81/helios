@@ -5,11 +5,10 @@ import omegadrive.sound.fm.GenericAudioProvider;
 import omegadrive.util.LogHelper;
 import omegadrive.util.RegionDetector;
 import omegadrive.util.SoundFilterUtil;
-import omegadrive.util.SoundFilterUtil.DcBlockLpfHistory;
+import omegadrive.util.SoundFilterUtil.FilterProcessingData;
 import org.slf4j.Logger;
 
-import java.util.Arrays;
-
+import static omegadrive.sound.SoundDevice.SoundDeviceType.PWM;
 import static omegadrive.sound.javasound.AbstractSoundManager.audioFormat;
 import static omegadrive.util.SoundFilterUtil.dcBlockerLpf;
 import static omegadrive.util.SoundUtil.clampToShort;
@@ -47,22 +46,10 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
     private Warmup warmup = NO_WARMUP;
     private PwmStats stats = NO_STATS;
 
-    public static class PwmProcessingData {
-        int[] rawBuffer = new int[0];
-        int[] interpBuffer = new int[0];
-        DcBlockLpfHistory filterHistory = new DcBlockLpfHistory();
-
-        public void reset() {
-            Arrays.fill(rawBuffer, 0);
-            Arrays.fill(interpBuffer, 0);
-            filterHistory.reset();
-        }
-    }
-
-    private PwmProcessingData ppd = new PwmProcessingData();
+    private FilterProcessingData ppd = new FilterProcessingData();
 
     public S32xPwmProvider(RegionDetector.Region region) {
-        super(audioFormat);
+        super(PWM, audioFormat);
         this.fps = region.getFps();
         this.sh2ClockMhz = region == RegionDetector.Region.EUROPE ? PAL_SH2CLOCK_MHZ : NTSC_SH2CLOCK_MHZ;
         if (collectStats) this.stats = new PwmStats();
@@ -156,7 +143,7 @@ public class S32xPwmProvider extends GenericAudioProvider implements PwmProvider
 
     @Override
     public SoundDeviceType getType() {
-        return SoundDeviceType.PWM;
+        return PWM;
     }
 
     @Override
