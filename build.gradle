@@ -33,9 +33,9 @@ dependencies {
     implementation group: 'org.ow2.asm', name: 'asm-commons', version: '9.10.1'
     implementation group: 'org.ow2.asm', name: 'asm-util', version: '9.10.1'
 
-    implementation 'org.tinylog:tinylog-api:2.7.0'
-    implementation 'org.tinylog:tinylog-impl:2.7.0'
-    implementation 'org.tinylog:slf4j-tinylog:2.7.0'
+    implementation 'org.tinylog:tinylog-api:2.8.0'
+    implementation 'org.tinylog:tinylog-impl:2.8.0'
+    implementation 'org.tinylog:slf4j-tinylog:2.8.0'
 
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.13.0'
