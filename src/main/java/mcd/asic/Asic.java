@@ -12,8 +12,10 @@ import static mcd.asic.AsicModel.AsicEvent.AS_STOP;
 import static mcd.asic.AsicModel.StampRepeat.REPEAT_MAP;
 import static mcd.asic.AsicModel.StampRepeat.vals;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
-import static mcd.dict.MegaCdDict.*;
+import static mcd.dict.MegaCdDict.MDC_SUB_GATE_REGS_MASK;
+import static mcd.dict.MegaCdDict.RegSpecMcd;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
+import static mcd.pcm.McdPcm.MCD_PCM_DIVIDER;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.SUB_M68K;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.Util.readBufferWord;
@@ -30,6 +32,9 @@ public class Asic implements AsicOp {
 
     private static final Logger LOG = LogHelper.getLogger(Asic.class.getSimpleName());
 
+    enum GfxTimingModel {BLASTEM, GPGX}
+
+    private static final GfxTimingModel timingModel = GfxTimingModel.GPGX;
     private final boolean verbose = false;
     private final StampConfig stampConfig = new StampConfig();
 
@@ -74,9 +79,11 @@ public class Asic implements AsicOp {
             case MCD_IMG_TRACE_VECTOR_ADDR -> {
                 stampConfig.imgTraceTableLocation = (value & ~1) << 2;
                 cd_graphics_dst_y = stampConfig.vPixelOffset;
-                if (verbose) LOG.info("Write to reg {}, trigger asic event: {}", MCD_IMG_TRACE_VECTOR_ADDR, AS_START);
+                if (verbose) LOG.info(
+                        "Write to reg {}, trigger asic event: {}, current: {}", MCD_IMG_TRACE_VECTOR_ADDR, AS_START, asicEvent);
                 asicEvent(AS_START);
-                gfxCycleCost();
+                remainingCycles = gfxCycleCost();
+                doRenderLines(stampConfig.imgHeightPx);
             }
             default -> {
                 LOG.error("Unhandled: {}, {} {}", regSpec, th(value), size);
@@ -106,13 +113,12 @@ public class Asic implements AsicOp {
     int cycles;
 
     private void doRenderLines(int num) {
+        if (num <= 0 || stampConfig.imgHeightPx == 0) {
+            return;
+        }
         int target = Math.max(0, stampConfig.imgHeightPx - num);
-        int line = stampConfig.imgHeightPx;
         do {
             doRenderingSlot();
-            if (line != stampConfig.imgHeightPx) {
-//                LOG.info("Line: {}", stampConfig.imgHeightPx);
-            }
         } while (target != stampConfig.imgHeightPx);
     }
 
@@ -208,23 +214,7 @@ public class Asic implements AsicOp {
             int tvb = readBuffer(memoryContext.commonGateRegsBuf, MCD_IMG_TRACE_VECTOR_ADDR.addr, Size.WORD);
             writeBufferRaw(memoryContext.commonGateRegsBuf, MCD_IMG_TRACE_VECTOR_ADDR.addr, tvb + 2, Size.WORD);
             doFetch = true;
-            if (stampConfig.imgHeightPx == 0) {
-                if (verbose) LOG.info("imgHeightPx is 0, trigger asic event: {}", AS_STOP);
-                asicEvent(AS_STOP);
-//                    printWram(memoryContext);
-            }
         }
-    }
-
-    public static void printWram(MegaCdMemoryContext mc) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = START_MCD_SUB_WORD_RAM_2M; i < END_MCD_SUB_WORD_RAM_2M; i += 2) {
-            sb.append((mc.wramHelper.readWordRam(SUB_M68K, i, Size.WORD) & 0xFFFF) + ",");
-            if (((i + 2) >> 1) % 16 == 0) {
-                sb.append("\n");
-            }
-        }
-        System.out.println(sb);
     }
 
     private int get_src_pixel() {
@@ -313,13 +303,33 @@ public class Asic implements AsicOp {
     int cycleCost;
 
     public int gfxCycleCost() {
-        // vsize * (13 + 2 * hoffset + 9 * (hdots + hoffset - 1))
-        //with an additional 13? cycle setup cost per line
-        cycleCost = 4 * stampConfig.imgHeightPx *
-                (13 + 2 * stampConfig.hPixelOffset + 9 * (stampConfig.imgWidthPx + stampConfig.hPixelOffset - 1));
-//        System.out.println(cycleCost);
+        cycleCost = switch (timingModel) {
+            case BLASTEM -> gfxCycleCostBlastem();
+            case GPGX -> gfxCycleCostGpgx();
+        };
+        if (verbose) {
+            LOG.info("gfxCost model={} hdots={} hoff={} off={} vdots={} -> blastem={} gpgx={} used={}",
+                    timingModel, stampConfig.imgWidthPx, stampConfig.hPixelOffset, stampConfig.imgOffset,
+                    stampConfig.imgHeightPx, gfxCycleCostBlastem(), gfxCycleCostGpgx(), cycleCost);
+        }
         return cycleCost;
     }
+
+    //Blastem uses cycles @ 50Mhz, we use 12.5Mhz
+    private int gfxCycleCostBlastem() {
+        return stampConfig.imgHeightPx * (13 + 2 * stampConfig.hPixelOffset + 9 *
+                (stampConfig.imgWidthPx + stampConfig.hPixelOffset - 1));
+    }
+
+    //GPGX uses cycles @ 50Mhz, we use 12.5Mhz
+    private int gfxCycleCostGpgx() {
+        int hdots = stampConfig.imgWidthPx;
+        int offset = stampConfig.imgOffset;
+        int cyclesPerLine = 3 * (4 + 2 * hdots + ((hdots + (offset & 3) + 3) >> 2));
+        return cyclesPerLine * stampConfig.imgHeightPx;
+    }
+
+    private int asicCompletions = 0;
 
     private void asicEvent(AsicEvent event) {
         if (verbose) LOG.info("New Asic event {} -> {}", asicEvent, event);
@@ -329,45 +339,24 @@ public class Asic implements AsicOp {
         }
         setBit(memoryContext.commonGateRegsBuf, MCD_IMG_STAMP_SIZE.addr, 15, event.ordinal(), Size.WORD);
         if (asicEvent != event && event == AS_STOP) {
-            if (verbose) LOG.info("Asic interrupt raised");
+            if (verbose) LOG.info("Asic interrupt raised, complete #{} (model={})", ++asicCompletions, timingModel);
             interruptHandler.raiseInterrupt(INT_ASIC);
         }
         asicEvent = event;
     }
 
-    private int lineAccumulator = 0;
+    static final int MASTER_CYCLES_PER_STEP = MCD_PCM_DIVIDER;
+    private int remainingCycles = 0;
 
-    /**
-     * let's say we render lines a 4khz, 8 ticks @ 32.5Khz -> render one line
-     * <p>
-     * Lines Per 32.5kHz Step: ~0.11 to 0.14 lines
-     * Lines Per Frame: ~62 to 76 lines max
-     * Lines Per Second: ~3,700 to 4,500 lines max
-     */
-//    @Override
-    public void step1(int cycles) {
-        if (asicEvent != AS_START || stampConfig.imgHeightPx == 0) {
-            lineAccumulator = 0; // Reset if idle
-            return;
-        }
-
-        lineAccumulator++;
-        if (lineAccumulator == 8) {
-            doRenderLines(1);
-            lineAccumulator = 0;
-        }
-    }
-
-    //bios_EU likes 75
-    //bios_JP 1.00 > 50
-    final static int ASIC_LINES_AT_32p5Khz = 75;
-
-    //    @Override
+    @Override
     public void step(int cycles) {
-        if (asicEvent != AsicEvent.AS_START || stampConfig.imgHeightPx == 0) {
+        if (asicEvent != AsicEvent.AS_START) {
             return;
         }
-        doRenderLines(75);
-        LogHelper.logWarnOnce(LOG, "Asic way too fast, processing {} lines/sec", ASIC_LINES_AT_32p5Khz * 32500);
+        remainingCycles -= MASTER_CYCLES_PER_STEP;
+        if (remainingCycles <= 0) {
+            remainingCycles = 0;
+            asicEvent(AS_STOP);
+        }
     }
 }

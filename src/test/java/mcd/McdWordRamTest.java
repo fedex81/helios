@@ -189,12 +189,7 @@ public class McdWordRamTest extends McdRegTestBase {
         }
     }
 
-    /**
-     * TODO it is not this simple anymore
-     * TODO how this fits with the MAIN CELL rendering??
-     */
-    //TODO fix
-//    @Test
+    @Test
     public void testWRAMDataOnSwitch_1M() {
         setWram1M_W0Main();
         int offsetm = MegaCdDict.START_MCD_MAIN_WORD_RAM;

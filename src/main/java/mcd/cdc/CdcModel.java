@@ -89,7 +89,7 @@ public interface CdcModel {
     enum CdcTransferDestination {
         NONE_0, NONE_1, MAIN_READ_2, SUB_READ_3, DMA_PCM_4, DMA_PROGRAM_5, NONE_6, DMA_SUB_WRAM_7;
 
-        public static CdcTransferDestination[] vals = CdcTransferDestination.values();
+        public static final CdcTransferDestination[] vals = CdcTransferDestination.values();
         private final boolean dmaDestination;
         private final boolean valid;
 

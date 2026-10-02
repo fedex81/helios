@@ -127,6 +127,7 @@ public class CdcTransferHelper implements CdcModel.CdcTransferAction {
                 //address gets halved by the PCM chip, hence the double increment
                 writePcm(t.address, data >> 8);
                 if (t.length - 1 >= 0) {
+                    LogHelper.logWarnOnce(LOG, "Odd PCM DMA length: {}, addr: {}", t.length, th(t.address));
                     writePcm(t.address + 2, data & 0xFF);
                     t.address += 2;
                 }

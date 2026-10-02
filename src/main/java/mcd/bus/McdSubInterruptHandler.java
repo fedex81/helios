@@ -4,14 +4,11 @@ import mcd.dict.MegaCdMemoryContext;
 import omegadrive.Device;
 import omegadrive.cpu.m68k.M68kProvider;
 import omegadrive.util.LogHelper;
-import omegadrive.util.RegionDetector.Region;
 import omegadrive.util.Util;
 import org.slf4j.Logger;
 
-import java.util.Arrays;
-
-import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_ASIC;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
+import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_SUBCODE;
 import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
 import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_INT_MASK;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
@@ -29,9 +26,6 @@ public interface McdSubInterruptHandler extends Device {
 
     boolean verbose = false;
 
-    @Deprecated
-    void setRegion(Region region);
-
     /**
      * INT_ASIC = LEVEL 1
      * ...
@@ -48,6 +42,10 @@ public interface McdSubInterruptHandler extends Device {
     void raiseInterrupt(SubCpuInterrupt intp);
 
     void lowerInterrupt(SubCpuInterrupt intp);
+
+    void setIFL2Asserted(boolean asserted);
+
+    boolean isIFL2Asserted();
 
     static McdSubInterruptHandler create(MegaCdMemoryContext context, M68kProvider c) {
         return new McdSubInterruptHandlerImpl(context, c);
@@ -74,11 +72,9 @@ public interface McdSubInterruptHandler extends Device {
         private final M68kProvider subCpu;
         private final MegaCdMemoryContext context;
 
-        private final boolean[] pendingInterrupts = new boolean[intVals.length];
-
         private int pendingMask = 0;
 
-        private Region region = Region.USA;
+        private boolean ifl2Asserted = false;
 
         private McdSubInterruptHandlerImpl(MegaCdMemoryContext c, M68kProvider subCpu) {
             this.subCpu = subCpu;
@@ -96,11 +92,13 @@ public interface McdSubInterruptHandler extends Device {
         }
 
         @Override
-        public void setRegion(Region region) {
-            if (this.region != region) {
-                LOG.info("Interrupt hack for region: {}", region);
-                this.region = region;
-            }
+        public void setIFL2Asserted(boolean asserted) {
+            ifl2Asserted = asserted;
+        }
+
+        @Override
+        public boolean isIFL2Asserted() {
+            return ifl2Asserted;
         }
 
         @Override
@@ -109,20 +107,14 @@ public interface McdSubInterruptHandler extends Device {
                 return;
             }
             final int mask = getRegMask();
-            final int ifl2 = MegaCdMainCpuBus.ifl2Trigger;
-//            for (int i = INT_SUBCODE.ordinal(); i > 0; i--) {
-            for (int i = 1; i < pendingInterrupts.length; i++) { //TODO this is wrong
-                if (pendingInterrupts[i]) {
-                    boolean canRaise = ((1 << i) & mask) > 0;
+            for (int i = INT_SUBCODE.ordinal(); i > 0; i--) {
+                if (Util.getBitFromByte((byte) pendingMask, i) != 0) {
+                    boolean canRaise = checkInterruptEnabled(mask, i);
                     //mcd-ver: if ifl2==0 INT#2 is not triggering
-                    canRaise &= (i != INT_LEVEL2.ordinal() || ifl2 != 0);
+                    canRaise &= (i != INT_LEVEL2.ordinal() || ifl2Asserted);
                     if (canRaise && m68kInterrupt(i)) {
                         setPending(intVals[i], 0);
                         break;
-                    }
-                    //ASIC interrupt cannot be made pending and triggered later
-                    if (i == INT_ASIC.ordinal()) {
-                        setPending(INT_ASIC, 0);
                     }
                 }
             }
@@ -138,7 +130,6 @@ public interface McdSubInterruptHandler extends Device {
 //            boolean pending = ((1 << sint.ordinal()) & getRegMask()) > 0;
 //            if(pending) {
             pendingMask = Util.setBit(pendingMask, sint.ordinal(), val);
-            pendingInterrupts[sint.ordinal()] = val > 0;
 //            }
         }
 
@@ -154,7 +145,8 @@ public interface McdSubInterruptHandler extends Device {
             }
             if (raised && intVals[num] == INT_LEVEL2) {
                 setBitDefInternal(context, M68K, IFL2, 0);
-                MegaCdMainCpuBus.ifl2Trigger = 0;
+                ifl2Asserted = false;
+                if (verbose) LOG.info("SubCpu IFL2 set to 0");
             }
             return raised;
         }
@@ -162,7 +154,7 @@ public interface McdSubInterruptHandler extends Device {
         @Override
         public void reset() {
             pendingMask = 0;
-            Arrays.fill(pendingInterrupts, false);
+            ifl2Asserted = false;
         }
     }
 }

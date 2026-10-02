@@ -29,7 +29,6 @@ import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
 import static mcd.dict.MegaCdDict.RegSpecMcd.*;
 import static mcd.dict.MegaCdMemoryContext.*;
 import static mcd.util.McdRegBitUtil.setBitDefInternalBitVal;
-import static mcd.util.McdRegBitUtil.setSharedBitBothCpu;
 import static omegadrive.cpu.m68k.M68kProvider.MD_PC_MASK;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
@@ -76,14 +75,6 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
     private int maskMode1;
 
     protected MdMainBusProvider mdBus;
-
-    @Deprecated
-    public static boolean subCpuReset = false;
-
-    @Deprecated
-    //detects 0->1, 1->0 transitions only when written to
-    public static int ifl2Trigger = 0;
-
     public MegaCdMainCpuBus(MegaCdMemoryContext ctx, MdMainBusProvider mdBus) {
         cpu = M68K;
         prgRam = ByteBuffer.wrap(ctx.prgRam);
@@ -96,8 +87,6 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         biosHolder = McdBiosHolder.getInstance();
         maskMode1 = !enableMode1 ? MCD_MAIN_MODE1_MASK : 0;
         this.mdBus = mdBus;
-        ifl2Trigger = 0;
-        subCpuReset = false;
         mainHasPrgRamAccess = true;
     }
 
@@ -149,6 +138,13 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
                 return readHintVector(addr, size);
             }
             if (addr >= START_MCD_MAIN_WORD_RAM_MODE1 && addr < END_MCD_MAIN_WORD_RAM_MIRROR_MODE1) {
+                if (assertionsEnabled) {
+                    if (McdWordRamHelper.WRAM_DIAG && memCtx.wramSetup.cpu == SUB_M68K
+                            && memCtx.wramSetup.mode == WordRamMode._2M) {
+                        MC68000Wrapper main = mdBus.getBusDeviceIfAny(MC68000Wrapper.class).get();
+                        LOG.info("WRAM DIAG main word ram read at {} pc={} setup {}", th(addr), th(main.getPC()), memCtx.wramSetup);
+                    }
+                }
                 res = memCtx.wramHelper.readWordRam(cpu, addr, size);
             } else if (addr >= START_MCD_BOOT_ROM_MODE1 && addr < END_MCD_BOOT_ROM_MIRROR_MODE1) {
                 addr &= MCD_BOOT_ROM_PRGRAM_WINDOW_MASK;
@@ -459,28 +455,18 @@ public class MegaCdMainCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> im
         int subIntReg = (resWord >> bitWordPos) & 1; //IFL2
         if (subIntReg > 0) {
             if (((prevWord >> bitWordPos) & 1) == 0) {
-                ifl2Trigger = 1;
+                subCpuBus.getInterruptHandler().setIFL2Asserted(true);
                 LogHelper.logInfo(LOG, "M SubCpu int2 request");
                 //TODO should check IEN2 = 1?
                 subCpuBus.getInterruptHandler().raiseInterrupt(INT_LEVEL2);
             }
         } else if (subIntReg == 0) {
-            LogHelper.logWarnOnce(LOG, "Main cpu setting IFL2 = 0");
-            //explicit set ifl2 to 0
-            ifl2Trigger = 0;
+            LogHelper.logWarnOnce(LOG, "Main cpu setting IFL2 = 0, ignoring");
         }
     }
 
     private void handleReg2Write(int address, int data, Size size) {
-//        int before = readBuffer(memCtx.getRegBuffer(cpu, MCD_MEM_MODE), MCD_MEM_MODE.addr, Size.WORD);
-        int resWord = memCtx.handleRegWrite(cpu, MCD_MEM_MODE, address, data, size);
-        WramSetup prev = memCtx.wramSetup;
-        WramSetup ws = memCtx.wramHelper.update(cpu, resWord);
-
-        if (ws.mode == WordRamMode._2M) { //set RET=0 for sub, RET=1 for main
-            int val = ws.cpu == M68K ? 1 : 0;
-            setSharedBitBothCpu(memCtx, SharedBitDef.RET, val);
-        }
+        int resWord = memCtx.wramHelper.writeReg2(cpu, address, data, size);
         //bk0,1
         int bval = (resWord >> 6) & 3;
         if (bval != prgRamBankValue) {

@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import s32x.bus.S32xBusIntf;
 
 import java.nio.file.Files;
-import java.util.Optional;
 
 import static mcd.MegaCd.*;
 import static omegadrive.system.SysUtil.ISO_EXT;
@@ -137,7 +136,6 @@ public class MegaCd32x extends Md32x {
             mcd68kRatio = displayContext.videoMode.isPal() ? MCD_68K_RATIO_PAL : MCD_68K_RATIO_NTSC;
             mcdLaunchContext.pcm.updateVideoMode(displayContext.videoMode);
             mcdLaunchContext.cdd.updateVideoMode(displayContext.videoMode);
-            mcdLaunchContext.interruptHandler.setRegion(displayContext.videoMode.getRegion());
             LOG.info("Video mode changed: {}, mcd68kRatio: {}", displayContext.videoMode, mcd68kRatio);
             //32x hack
 //            ((BaseVdpAdapterEventSupport.VdpEventListener)s32xBus).onVdpEvent(BaseVdpAdapterEventSupport.VdpEvent.VIDEO_MODE, displayContext.videoMode);
@@ -156,7 +154,7 @@ public class MegaCd32x extends Md32x {
     public void onNewFrame() {
         mcdLaunchContext.pcm.onNewFrame();
         mcdLaunchContext.cdd.onNewFrame();
-        displayContext.put(DisplayWindow.DisplayContext.MCD_LED_KEY, Optional.of(mcdLaunchContext.subBus.getLedState()));
+        displayContext.put(DisplayWindow.DisplayContext.MCD_LED_KEY, mcdLaunchContext.subBus.getLedState());
         super.onNewFrame();
     }
 

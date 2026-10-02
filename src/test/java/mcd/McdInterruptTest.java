@@ -35,7 +35,7 @@ public class McdInterruptTest extends McdRegTestBase {
 
         //allow int
         subCpu.getM68k().setSR(0x2000);
-        assertNoInterruptTrigger(interruptHandler);
+        assertOneInterruptTrigger(interruptHandler);
 
         //mask all
         subCpuBus.write(McdGateArrayRegTest.SUB_INT_MASK_ODD, 0, Size.BYTE);
@@ -44,10 +44,6 @@ public class McdInterruptTest extends McdRegTestBase {
 
         //unmask all
         subCpuBus.write(McdGateArrayRegTest.SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
-        assertNoInterruptTrigger(interruptHandler);
-
-        //now it triggers
-        interruptHandler.raiseInterrupt(INT_ASIC);
         assertOneInterruptTrigger(interruptHandler);
     }
 

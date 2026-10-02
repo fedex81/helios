@@ -249,16 +249,20 @@ public class McdGateArrayRegTest extends McdRegTestBase {
      */
     @Test
     public void testResetReg_IEN2_disable() {
+        var interruptHandler = subCpuBus.getInterruptHandler();
         //enable IEN2
         writeAddressSize(SUB_M68K, SUB_INT_MASK_ODD, 0xFF, Size.BYTE);
         //set IFL2
         int val = readAddressSize(M68K, MAIN_RESET_REG, Size.BYTE);
         writeAddressSize(M68K, MAIN_RESET_REG, val | 1, Size.BYTE);
+        //IFL2 asserted, gate is set
+        Assertions.assertTrue(interruptHandler.isIFL2Asserted());
         //disable IEN2
         writeAddressSize(SUB_M68K, SUB_INT_MASK_ODD, 0, Size.BYTE);
         val = readAddressSize(M68K, MAIN_RESET_REG, Size.BYTE);
         //IFL2 goes to 0
         Assertions.assertEquals(0, val & 1);
+        Assertions.assertFalse(interruptHandler.isIFL2Asserted());
     }
 
 }

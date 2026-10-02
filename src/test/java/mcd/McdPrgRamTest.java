@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static mcd.dict.MegaCdDict.*;
+import static mcd.dict.MegaCdDict.RegSpecMcd.MCD_MEM_MODE;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.*;
 import static omegadrive.util.Util.readData;
 
@@ -24,7 +25,7 @@ public class McdPrgRamTest extends McdRegTestBase {
         int wp;
         for (int i = 0; i < 9; i++) {
             wp = (1 << i) - 1;
-            ctx.wramHelper.update(M68K, wp << 8);
+            ctx.wramHelper.writeReg2(M68K, MCD_MEM_MODE.addr, wp << 8, Size.WORD);
 
             int wp_size = 0;
             for (int u = 0; u < 0x80000; u += 256) {

@@ -17,7 +17,6 @@ import omegadrive.util.LogHelper;
 import omegadrive.util.MdRuntimeData;
 import omegadrive.util.Size;
 import omegadrive.util.Util;
-import omegadrive.vdp.model.BaseVdpAdapterEventSupport.VdpEvent;
 import omegadrive.vdp.model.MdVdpProvider;
 import org.slf4j.Logger;
 
@@ -25,7 +24,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static mcd.MegaCd.MCD_SUB_68K_CLOCK_MHZ;
-import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_LEVEL2;
 import static mcd.bus.McdSubInterruptHandler.SubCpuInterrupt.INT_TIMER;
 import static mcd.dict.MegaCdDict.BitRegDef.IEN2;
 import static mcd.dict.MegaCdDict.BitRegDef.IFL2;
@@ -36,7 +34,6 @@ import static mcd.pcm.McdPcm.MCD_PCM_DIVIDER;
 import static mcd.util.BuramHelper.readBackupRam;
 import static mcd.util.BuramHelper.writeBackupRam;
 import static mcd.util.McdRegBitUtil.setBitDefInternal;
-import static mcd.util.McdRegBitUtil.setSharedBitBothCpu;
 import static omegadrive.util.BufferUtil.*;
 import static omegadrive.util.BufferUtil.CpuDeviceAccess.M68K;
 import static omegadrive.util.BufferUtil.setBit;
@@ -75,7 +72,6 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     private final MegaCdMemoryContext memCtx;
     private final CpuDeviceAccess cpuType;
 
-    @Deprecated
     private McdSubInterruptHandler interruptHandler;
     private McdPcm pcm;
 
@@ -300,9 +296,9 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
                     int val = IEN2.getBitMask() * ((reg >> 2) & 1);
                     setBitDefInternal(memCtx, M68K, IEN2, val);
                     //disable IEN2 -> resets IFL2
-                    //TODO check
                     if (val == 0) {
                         setBitDefInternal(memCtx, M68K, IFL2, 0);
+                        this.interruptHandler.setIFL2Asserted(false);
                     }
                 }
             }
@@ -364,15 +360,8 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     }
 
     private void handleReg2Write(int address, int data, Size size) {
-        int resWord = memCtx.handleRegWrite(cpuType, MCD_MEM_MODE, address, data, size);
-        WramSetup prev = memCtx.wramSetup;
-        WramSetup ws = memCtx.wramHelper.update(cpuType, resWord);
-        //TODO set DMNA = 1 for 2M_SUB breaks us_bios 1.00, write test
-        //set DMNA=0 for 2M_MAIN
-        if (ws == WramSetup.W_2M_MAIN) {
-            setSharedBitBothCpu(memCtx, SharedBitDef.DMNA, 0);
-        }
-        asic.setStampPriorityMode((resWord >> 3) & 3);
+        int resWord = memCtx.wramHelper.writeReg2(cpuType, address, data, size);
+        asic.setStampPriorityMode((resWord >> 3) & 3); //PM0, PM1
     }
 
     private void handleCommRegWrite(RegSpecMcd regSpec, int address, int data, Size size) {
@@ -412,21 +401,6 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
     @Override
     public SystemProvider getSystem() {
         return systemProvider;
-    }
-
-    public void resetDone() {
-        //TODO when RES0 goes to 1, does SRES (main side) follow??
-        setBit(sysGateRegs, MCD_RESET.addr + 1, 0, 1, Size.BYTE);
-        setBit(memCtx.getRegBuffer(M68K, MCD_RESET), MCD_RESET.addr + 1, 0, 1, Size.BYTE);
-        LOG.info("S subCpu reset done");
-    }
-
-    @Override
-    public void onVdpEvent(VdpEvent event, Object value) {
-        //vBlankOn fire LEV2
-        if (event == VdpEvent.V_BLANK_CHANGE && (boolean) value) {
-            interruptHandler.raiseInterrupt(INT_LEVEL2);
-        }
     }
 
     private void timerStep() {
@@ -474,29 +448,8 @@ public class MegaCdSubCpuBus extends DeviceAwareBus<MdVdpProvider, MdJoypad> imp
             cdc.dma();
         }
     }
-
-    int subCpuResetFrameCount = 0;
-
     public void onNewFrame() {
         logSlowFrames();
-        if (subCpuResetFrameCount > 0) {
-            if (--subCpuResetFrameCount == 0) {
-                releaseSubCpuReset();
-            }
-        }
-        if (MegaCdMainCpuBus.subCpuReset && subCpuResetFrameCount == 0) {
-            subCpuResetFrameCount = 6; //~100ms
-        }
-    }
-
-    private void releaseSubCpuReset() {
-        MegaCdMainCpuBus.subCpuReset = false;
-        subCpu.reset();
-        resetDone();
-        //get SBRQ from main
-        int bval = readBufferByte(memCtx.getGateSysRegs(M68K), MCD_RESET.addr + 1);
-        int sbusreq = (bval >> 1) & 1;
-        subCpu.setStop(sbusreq > 0);
     }
 
     public int getLedState() {
