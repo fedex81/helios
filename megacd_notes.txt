@@ -1,3 +1,11 @@
+Lawnmower man EU
+- thinks it's an Audio Disc, if you play track#2 gets to the end and crashes
+Flashback DEMO EU
+- Odd PCM DMA length: 2047, addr: 0 (ONCE)
+
+Batman Returns EU
+- problem with Asic generated sprites, I think transparency vs MD layer is not handled correctly
+
 Cosmic JP
 - audio issue with pops, clipping problem? PCM
 
